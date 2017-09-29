@@ -892,8 +892,6 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
 
     call alemav &
   ( itrale ,                                               &
-    impale , ialtyb ,                                      &
-    dt     ,                                               &
     xyzno0 )
 
   endif

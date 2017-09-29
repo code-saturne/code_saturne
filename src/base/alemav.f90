@@ -36,16 +36,11 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     itrale        number of the current ALE iteration
-!> \param[in]     impale        indicator of node displacement
-!> \param[in]     ialtyb        ALE Boundary type
-!> \param[in]     dt            time step (per cell)
 !> \param[in,out] xyzno0        nodes coordinates of the initial mesh
 !_______________________________________________________________________________
 
 subroutine alemav &
  ( itrale ,                                                       &
-   impale , ialtyb ,                                              &
-   dt     ,                                                       &
    xyzno0 )
 
 !===============================================================================
@@ -78,9 +73,6 @@ implicit none
 
 integer          itrale
 
-integer          impale(nnod), ialtyb(nfabor)
-
-double precision dt(ncelet)
 double precision xyzno0(3,nnod)
 
 ! Local variables
@@ -88,13 +80,7 @@ double precision xyzno0(3,nnod)
 integer          inod
 integer          iel
 integer          idim
-integer          inc, iprev
 
-double precision, dimension(:,:), pointer :: claale
-double precision, dimension(:,:,:), pointer :: clbale
-
-double precision, allocatable, dimension(:,:) :: dproj
-double precision, allocatable, dimension(:,:,:) :: gradm
 double precision, dimension(:,:), pointer :: mshvel, mshvela
 double precision, dimension(:,:), pointer :: disale, disala
 
@@ -103,7 +89,7 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1. Initialisation
 !===============================================================================
 
 call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
@@ -117,59 +103,19 @@ call field_get_val_prev_v(ivarfl(iuma), mshvela)
 
 call field_get_val_v(fdiale, disale)
 call field_get_val_prev_v(fdiale, disala)
+
 !===============================================================================
-! 2.  MISE A JOUR DE LA GEOMETRIE
+! 2. Update geometry
 !===============================================================================
-! (en utilisant le deplacement predit)
-
-!     Projection du deplacement calcule sur les noeuds
-
-! Allocate a temporary array
-allocate(dproj(3,nnod))
-allocate(gradm(3,3,ncelet))
-
-inc = 1
-iprev = 0
-
-call field_gradient_vector(ivarfl(iuma), iprev, imrgra, inc,      &
-                           gradm)
-
-call field_get_coefa_v(ivarfl(iuma), claale)
-call field_get_coefb_v(ivarfl(iuma), clbale)
-
-call aledis &
-!==========
- ( ialtyb ,                                                       &
-   mshvel , gradm  ,                                              &
-   claale , clbale ,                                              &
-   dt     , dproj  )
-
-! Mise a jour du deplacement sur les noeuds ou on ne l'a pas impose
-!  (disale a alors la valeur du deplacement au pas de temps precedent)
-
-do inod = 1, nnod
-  if (impale(inod).eq.0) then
-    do idim = 1, 3
-      disale(idim,inod) = disale(idim,inod) + dproj(idim,inod)
-    enddo
-  endif
-enddo
-
-! Free memory
-deallocate(dproj)
-deallocate(gradm)
-
-! Mise a jour de la geometrie
 
 do inod = 1, nnod
   do idim = 1, ndim
-    disala(idim,inod) = xyznod(idim,inod) - xyzno0(idim,inod)
     xyznod(idim,inod) = xyzno0(idim,inod) + disale(idim,inod)
+    disala(idim,inod) = xyznod(idim,inod) - xyzno0(idim,inod)
   enddo
 enddo
 
 call algrma(volmin, volmax, voltot)
-!==========
 
 ! Abort at the end of the current time-step if there is a negative volume
 if (volmin.le.0.d0) ntmabs = ntcabs

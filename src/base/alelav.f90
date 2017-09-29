@@ -27,7 +27,8 @@
 !> \file alelav.f90
 !>
 !> \brief This subroutine performs the solving of a Poisson equation
-!> on the mesh velocity for ALE module.
+!> on the mesh velocity for ALE module. It also updates the mesh displacement
+!> so that it can be used to update mass fluxes (due to mesh displacement).
 !>
 !-------------------------------------------------------------------------------
 
@@ -47,11 +48,12 @@ use optcal
 use cstnum
 use cstphy
 use pointe
-use albase, only: ialtyb, iortvm
+use albase, only: ialtyb, iortvm, impale, fdiale
 use parall
 use period
 use mesh
 use field
+use field_operator
 use cs_c_bindings
 
 !===============================================================================
@@ -61,7 +63,7 @@ implicit none
 ! Local variables
 
 character(len=80) :: chaine
-integer          iel   , isou  , jsou  , ifac
+integer          iel   , isou  , jsou  , ifac, inod
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
@@ -69,31 +71,35 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          ivisep
 integer          iswdyp, idftnp, icvflb
 integer          ivoid(1)
+integer          inc, iprev
 
 double precision blencp, epsilp, epsrgp, climgp, thetv
 double precision epsrsp, prosrf
 double precision relaxp
 double precision hint, distbf, srfbn2
 double precision rinfiv(3), pimpv(3)
-
 double precision rvoid(1)
 
-double precision, dimension(:,:), pointer :: cfaale, claale
-double precision, dimension(:,:,:), pointer :: cfbale, clbale
-
+double precision, allocatable, dimension(:,:) :: dproj
+double precision, allocatable, dimension(:,:,:) :: gradm
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:,:) :: smbr
 double precision, allocatable, dimension(:,:,:) :: fimp
+
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, cpro_vism_s
+double precision, dimension(:,:), pointer :: cfaale, claale
+double precision, dimension(:,:,:), pointer :: cfbale, clbale
 double precision, dimension(:,:), pointer :: mshvel, mshvela, cpro_vism_v
+double precision, dimension(:,:), pointer :: disale, disala
+double precision, pointer, dimension(:)   :: dt
 
 type(var_cal_opt)  vcopt
 
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALIZATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays for the radiative equations resolution
@@ -104,6 +110,8 @@ allocate(fimp(3,3,ncelet))
 rinfiv(1) = rinfin
 rinfiv(2) = rinfin
 rinfiv(3) = rinfin
+
+call field_get_val_s_by_name('dt', dt)
 
 if (iortvm.eq.0) then
   call field_get_val_s(ivisma, cpro_vism_s)
@@ -168,7 +176,7 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 2. SOLVING OF THE MESH VELOCITY EQUATION
+! 2. Solving of the mesh velocity equation
 !===============================================================================
 
 if (vcopt%iwarni.ge.1) then
@@ -248,8 +256,49 @@ call coditv &
 deallocate(viscf, viscb)
 deallocate(smbr, fimp)
 
+!===============================================================================
+! 3. Update nodes displacement
+!===============================================================================
+
+call field_get_val_v(fdiale, disale)
+call field_get_val_prev_v(fdiale, disala)
+
+! Allocate a temporary array
+allocate(dproj(3,nnod))
+allocate(gradm(3,3,ncelet))
+
+inc = 1
+iprev = 0
+
+call field_gradient_vector(ivarfl(iuma), iprev, imrgra, inc,      &
+                           gradm)
+
+call field_get_coefa_v(ivarfl(iuma), claale)
+call field_get_coefb_v(ivarfl(iuma), clbale)
+
+call aledis &
+ ( ialtyb ,                                                       &
+   mshvel , gradm  ,                                              &
+   claale , clbale ,                                              &
+   dt     , dproj  )
+
+!FIXME warning if nterup > 1, use itrale ?
+! Update mesh displacement only where it is not imposed by the user (ie when impale <> 1)
+do inod = 1, nnod
+  if (impale(inod).eq.0) then
+    do isou = 1, 3
+      disale(isou,inod) = disala(isou,inod) + dproj(isou,inod)
+    enddo
+  endif
+enddo
+
+! Free memory
+deallocate(dproj)
+deallocate(gradm)
+
+
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -269,7 +318,7 @@ deallocate(smbr, fimp)
 #endif
 
 !----
-! END
+! End
 !----
 
 return

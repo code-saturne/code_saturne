@@ -128,13 +128,14 @@ double precision dtsrom, unsrom, rhom, rovolsdt
 double precision epsrgp, climgp, extrap, xyzmax(3), xyzmin(3)
 double precision thetap, xdu, xdv, xdw
 double precision xxp0 , xyp0 , xzp0
-double precision rhofac, dtfac, ddepx , ddepy, ddepz
+double precision rhofac, dtfac
 double precision xnrdis, xnrtmp
 double precision t1, t2, t3, t4
 double precision visclc, visctc
 double precision distbf, srfbnf, hint
 double precision rnx, rny, rnz
 double precision vr(3), vr1(3), vr2(3), vrn
+double precision disp_fac(3)
 
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
@@ -165,6 +166,7 @@ double precision, dimension(:), pointer :: ivoifl, bvoifl
 double precision, dimension(:), pointer :: coavoi, cobvoi
 double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
+double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:,:), pointer :: disala
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
@@ -525,27 +527,44 @@ if (iprco.le.0) then
     intflx , bouflx )
 
     ! Here we need of the opposite of the mesh velocity.
-    !$omp parallel do if(nfabor > thr_n_min)
     do ifac = 1, nfabor
-      bmasfl(ifac) = bmasfl(ifac) - bouflx(ifac)
-    enddo
-
-    !$omp parallel do private(ddepx, ddepy, ddepz, icpt, ii, inod, &
-    !$omp                     iel1, iel2, dtfac, rhofac)
-    do ifac = 1, nfac
-      ddepx = 0.d0
-      ddepy = 0.d0
-      ddepz = 0.d0
-      icpt  = 0
-      do ii = ipnfac(ifac),ipnfac(ifac+1)-1
-        inod = nodfac(ii)
-        icpt = icpt + 1
-        ddepx = ddepx + xyznod(1,inod)-xyzno0(1,inod) - disala(1,inod)
-        ddepy = ddepy + xyznod(2,inod)-xyzno0(2,inod) - disala(2,inod)
-        ddepz = ddepz + xyznod(3,inod)-xyzno0(3,inod) - disala(3,inod)
-      enddo
       ! Compute the mass flux using the nodes displacement
       if (iflxmw.eq.0) then
+        disp_fac(1) = 0.d0
+        disp_fac(2) = 0.d0
+        disp_fac(3) = 0.d0
+        icpt  = 0
+        do ii = ipnfbr(ifac),ipnfbr(ifac+1)-1
+          inod = nodfbr(ii)
+          icpt = icpt + 1
+          disp_fac(1) = disp_fac(1) + disale(1,inod) - (xyznod(1,inod)-xyzno0(1,inod))
+          disp_fac(2) = disp_fac(2) + disale(2,inod) - (xyznod(2,inod)-xyzno0(2,inod))
+          disp_fac(3) = disp_fac(3) + disale(3,inod) - (xyznod(3,inod)-xyzno0(3,inod))
+        enddo
+        iel = ifabor(ifac)
+        bmasfl(ifac) = bmasfl(ifac) - brom(ifac) * (              &
+              disp_fac(1) * surfbo(1,ifac)                        &
+             +disp_fac(2) * surfbo(2,ifac)                        &
+             +disp_fac(3) * surfbo(3,ifac) )/dt(iel)/icpt
+      else
+        bmasfl(ifac) = bmasfl(ifac) - bouflx(ifac)
+      endif
+    enddo
+
+    do ifac = 1, nfac
+      ! Compute the mass flux using the nodes displacement
+      if (iflxmw.eq.0) then
+        disp_fac(1) = 0.d0
+        disp_fac(2) = 0.d0
+        disp_fac(3) = 0.d0
+        icpt  = 0
+        do ii = ipnfac(ifac),ipnfac(ifac+1)-1
+          inod = nodfac(ii)
+          icpt = icpt + 1
+          disp_fac(1) = disp_fac(1) + disale(1,inod) - (xyznod(1,inod)-xyzno0(1,inod))
+          disp_fac(2) = disp_fac(2) + disale(2,inod) - (xyznod(2,inod)-xyzno0(2,inod))
+          disp_fac(3) = disp_fac(3) + disale(3,inod) - (xyznod(3,inod)-xyzno0(3,inod))
+        enddo
         ! For inner vertices, the mass flux due to the mesh displacement is
         !  recomputed from the nodes displacement
         iel1 = ifacel(1,ifac)
@@ -553,9 +572,9 @@ if (iprco.le.0) then
         dtfac = 0.5d0*(dt(iel1) + dt(iel2))
         rhofac = 0.5d0*(crom(iel1) + crom(iel2))
         imasfl(ifac) = imasfl(ifac) - rhofac*(                    &
-              ddepx*surfac(1,ifac)                                &
-             +ddepy*surfac(2,ifac)                                &
-             +ddepz*surfac(3,ifac) )/dtfac/icpt
+              disp_fac(1) * surfac(1,ifac)                        &
+             +disp_fac(2) * surfac(2,ifac)                        &
+             +disp_fac(3) * surfac(3,ifac) )/dtfac/icpt
       else
         imasfl(ifac) = imasfl(ifac) - intflx(ifac)
       endif
@@ -1046,6 +1065,7 @@ if (iale.eq.1) then
 
   call field_get_val_v(ivarfl(iuma), mshvel)
 
+  call field_get_val_v(fdiale, disale)
   call field_get_val_prev_v(fdiale, disala)
 
   ! One temporary array needed for internal faces, in case some internal vertices
@@ -1079,35 +1099,54 @@ if (iale.eq.1) then
   ! Here we need of the opposite of the mesh velocity.
   !$omp parallel do if(nfabor > thr_n_min)
   do ifac = 1, nfabor
-    bmasfl(ifac) = bmasfl(ifac) - bouflx(ifac)
-  enddo
-
-  !$omp parallel do private(ddepx, ddepy, ddepz, icpt, ii, inod, &
-  !$omp                     iel1, iel2, dtfac, rhofac)
-  do ifac = 1, nfac
-    ddepx = 0.d0
-    ddepy = 0.d0
-    ddepz = 0.d0
-    icpt  = 0
-    do ii = ipnfac(ifac),ipnfac(ifac+1)-1
-      inod = nodfac(ii)
-      icpt = icpt + 1
-      ddepx = ddepx + xyznod(1,inod)-xyzno0(1,inod) - disala(1,inod)
-      ddepy = ddepy + xyznod(2,inod)-xyzno0(2,inod) - disala(2,inod)
-      ddepz = ddepz + xyznod(3,inod)-xyzno0(3,inod) - disala(3,inod)
-    enddo
     ! Compute the mass flux using the nodes displacement
     if (iflxmw.eq.0) then
+      disp_fac(1) = 0.d0
+      disp_fac(2) = 0.d0
+      disp_fac(3) = 0.d0
+      icpt  = 0
+      do ii = ipnfbr(ifac),ipnfbr(ifac+1)-1
+        inod = nodfbr(ii)
+        icpt = icpt + 1
+        disp_fac(1) = disp_fac(1) + disale(1,inod) - (xyznod(1,inod)-xyzno0(1,inod))
+        disp_fac(2) = disp_fac(2) + disale(2,inod) - (xyznod(2,inod)-xyzno0(2,inod))
+        disp_fac(3) = disp_fac(3) + disale(3,inod) - (xyznod(3,inod)-xyzno0(3,inod))
+      enddo
+      iel = ifabor(ifac)
+      bmasfl(ifac) = bmasfl(ifac) - brom(ifac) * (           &
+         disp_fac(1) * surfbo(1,ifac)                        &
+        +disp_fac(2) * surfbo(2,ifac)                        &
+        +disp_fac(3) * surfbo(3,ifac) )/dt(iel)/icpt
+    else
+      bmasfl(ifac) = bmasfl(ifac) - bouflx(ifac)
+    endif
+  enddo
+
+  do ifac = 1, nfac
+    ! Compute the mass flux using the nodes displacement
+    if (iflxmw.eq.0) then
+      disp_fac(1) = 0.d0
+      disp_fac(2) = 0.d0
+      disp_fac(3) = 0.d0
+      icpt  = 0
+      do ii = ipnfac(ifac),ipnfac(ifac+1)-1
+        inod = nodfac(ii)
+        icpt = icpt + 1
+        disp_fac(1) = disp_fac(1) + disale(1,inod) - (xyznod(1,inod)-xyzno0(1,inod))
+        disp_fac(2) = disp_fac(2) + disale(2,inod) - (xyznod(2,inod)-xyzno0(2,inod))
+        disp_fac(3) = disp_fac(3) + disale(3,inod) - (xyznod(3,inod)-xyzno0(3,inod))
+      enddo
+
       ! For inner vertices, the mass flux due to the mesh displacement is
       !  recomputed from the nodes displacement
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
       dtfac = 0.5d0*(dt(iel1) + dt(iel2))
       rhofac = 0.5d0*(crom(iel1) + crom(iel2))
-      imasfl(ifac) = imasfl(ifac) - rhofac*(      &
-            ddepx*surfac(1,ifac)                                &
-           +ddepy*surfac(2,ifac)                                &
-           +ddepz*surfac(3,ifac) )/dtfac/icpt
+      imasfl(ifac) = imasfl(ifac) - rhofac*(                    &
+            disp_fac(1) * surfac(1,ifac)                        &
+           +disp_fac(2) * surfac(2,ifac)                        &
+           +disp_fac(3) * surfac(3,ifac) )/dtfac/icpt
     else
       imasfl(ifac) = imasfl(ifac) - intflx(ifac)
     endif
