@@ -158,7 +158,7 @@ CS_PROCF (eltssc, ELTSSC) (const cs_int_t  *isca,
                            cs_real_t       *smbrs);
 
 void
-CS_PROCF (eltsvv, ELTSVV) (const cs_int_t  *isca,
+CS_PROCF (eltsvv, ELTSVV) (const int       *f_id,
                            cs_real_t       *smbrv);
 
 void

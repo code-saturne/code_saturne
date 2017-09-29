@@ -535,18 +535,13 @@ CS_PROCF (eltssc, ELTSSC) (const cs_int_t  *isca,
 }
 
 void
-CS_PROCF (eltsvv, ELTSVV) (const cs_int_t  *isca,
+CS_PROCF (eltsvv, ELTSVV) (const int       *f_id,
                            cs_real_t       *smbrv)
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
-  const int keysca = cs_field_key_id("scalar_id");
 
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t  *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) == *isca)
-      cs_elec_source_terms_v(mesh, mesh_quantities, f->id, (cs_real_3_t *)smbrv);
-  }
+  cs_elec_source_terms_v(mesh, mesh_quantities, *f_id, (cs_real_3_t *)smbrv);
 }
 
 void
@@ -780,7 +775,7 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   if (cs_gui_file_is_loaded()) {
     CS_PROCF(uicpi1,UICPI1) (&(_elec_option.srrom), diftl0);
     cs_gui_elec_model();
-    _elec_option.pot_diff = 1000.;
+    _elec_option.pot_diff = 1000.;//FIXME
   }
 
   _cs_electrical_model_verify();
@@ -1620,10 +1615,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
   else if (call_id == 2) {
 
-    cs_real_t *Bx, *By, *Bz;
-    BFT_MALLOC(Bx, n_cells_ext, cs_real_t);
-    BFT_MALLOC(By, n_cells_ext, cs_real_t);
-    BFT_MALLOC(Bz, n_cells_ext, cs_real_t);
+    cs_real_3_t *cpro_magfl = (cs_real_3_t *)(CS_F_(magfl)->val);
 
     if (cs_glob_elec_option->ielarc == 2) {
       /* compute magnetic field component B */
@@ -1645,9 +1637,9 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
                                gradv);
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        Bx[iel] = -gradv[iel][1][2]+gradv[iel][2][1];
-        By[iel] =  gradv[iel][0][2]-gradv[iel][2][0];
-        Bz[iel] = -gradv[iel][0][1]+gradv[iel][1][0];
+        cpro_magfl[iel][0] = -gradv[iel][1][2]+gradv[iel][2][1];
+        cpro_magfl[iel][1] =  gradv[iel][0][2]-gradv[iel][2][0];
+        cpro_magfl[iel][2] = -gradv[iel][0][1]+gradv[iel][1][0];
       }
 
       BFT_FREE(gradv);
@@ -1657,21 +1649,15 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
                 _("Error electric arc with ampere theorem not available\n"));
 
     /* compute laplace effect j x B */
-    if (cs_glob_elec_option->ielarc > 0) {
-      cs_real_3_t *cpro_laplf = (cs_real_3_t *)(CS_F_(laplf)->val);
-      cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
-      cs_real_3_t *cpro_magfl = (cs_real_3_t *)(CS_F_(magfl)->val);
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        cpro_laplf[iel][0] =    cpro_curre[iel][1] * Bz[iel]
-                              - cpro_curre[iel][2] * By[iel];
-        cpro_laplf[iel][1] =    cpro_curre[iel][2] * Bx[iel]
-                              - cpro_curre[iel][0] * Bz[iel];
-        cpro_laplf[iel][2] =    cpro_curre[iel][0] * By[iel]
-                              - cpro_curre[iel][1] * Bx[iel];
-        cpro_magfl[iel][0] =    Bx[iel];
-        cpro_magfl[iel][1] =    By[iel];
-        cpro_magfl[iel][2] =    Bz[iel];
-      }
+    cs_real_3_t *cpro_laplf = (cs_real_3_t *)(CS_F_(laplf)->val);
+    cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      cpro_laplf[iel][0] =    cpro_curre[iel][1] * cpro_magfl[iel][2]
+                            - cpro_curre[iel][2] * cpro_magfl[iel][1];
+      cpro_laplf[iel][1] =    cpro_curre[iel][2] * cpro_magfl[iel][0]
+                            - cpro_curre[iel][0] * cpro_magfl[iel][2];
+      cpro_laplf[iel][2] =    cpro_curre[iel][0] * cpro_magfl[iel][1]
+                            - cpro_curre[iel][1] * cpro_magfl[iel][0];
     }
 
     /* compute min max for B */
@@ -1679,49 +1665,46 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       if (modntl == 0) {
         /* Grad PotR = -E */
         double vrmin, vrmax;
-        vrmin = Bx[0];
-        vrmax = Bx[0];
+        vrmin = cpro_magfl[0][0];
+        vrmax = cpro_magfl[0][0];
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          vrmin = CS_MIN(vrmin, Bx[iel]);
-          vrmax = CS_MAX(vrmax, Bx[iel]);
+          vrmin = CS_MIN(vrmin, cpro_magfl[iel][0]);
+          vrmax = CS_MAX(vrmax, cpro_magfl[iel][0]);
         }
 
         cs_parall_min(1, CS_DOUBLE, &vrmin);
         cs_parall_max(1, CS_DOUBLE, &vrmax);
 
-        bft_printf("v  Ch_MagX    %12.5E  %12.5E\n", vrmin, vrmax);
+        bft_printf("v  Magnetic_fieldX    %12.5E  %12.5E\n", vrmin, vrmax);
 
-        vrmin = By[0];
-        vrmax = By[0];
+        vrmin = cpro_magfl[0][1];
+        vrmax = cpro_magfl[0][1];
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          vrmin = CS_MIN(vrmin, By[iel]);
-          vrmax = CS_MAX(vrmax, By[iel]);
+          vrmin = CS_MIN(vrmin, cpro_magfl[iel][1]);
+          vrmax = CS_MAX(vrmax, cpro_magfl[iel][1]);
         }
 
         cs_parall_min(1, CS_DOUBLE, &vrmin);
         cs_parall_max(1, CS_DOUBLE, &vrmax);
 
-        bft_printf("v  Ch_MagY    %12.5E  %12.5E\n", vrmin, vrmax);
+        bft_printf("v  Magnetic_fieldY    %12.5E  %12.5E\n", vrmin, vrmax);
 
-        vrmin = Bz[0];
-        vrmax = Bz[0];
+        vrmin = cpro_magfl[0][2];
+        vrmax = cpro_magfl[0][2];
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          vrmin = CS_MIN(vrmin, Bz[iel]);
-          vrmax = CS_MAX(vrmax, Bz[iel]);
+          vrmin = CS_MIN(vrmin, cpro_magfl[iel][2]);
+          vrmax = CS_MAX(vrmax, cpro_magfl[iel][2]);
         }
 
         cs_parall_min(1, CS_DOUBLE, &vrmin);
         cs_parall_max(1, CS_DOUBLE, &vrmax);
 
-        bft_printf("v  Ch_MagZ    %12.5E  %12.5E\n", vrmin, vrmax);
+        bft_printf("v  Magnetic_fieldZ    %12.5E  %12.5E\n", vrmin, vrmax);
       }
     }
-    BFT_FREE(Bx);
-    BFT_FREE(By);
-    BFT_FREE(Bz);
   }
 
   /* Free memory */
@@ -1809,7 +1792,8 @@ cs_elec_source_terms_v(const cs_mesh_t             *mesh,
 
   /* source term for potential vector */
 
-  if (cs_glob_elec_option->ielarc >= 2) {
+  if (cs_glob_elec_option->ielarc >= 2
+      && f_id == (CS_F_(potva)->id)) {
     cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
 
     if (var_cal_opt.iwarni > 0)
@@ -1996,48 +1980,47 @@ cs_elec_add_property_fields(const int  *ielarc,
   }
 
   /* specific for electric arcs */
-  if (*ielarc > 0) {
-    {
-      f = cs_field_create("laplace_force",
-                          field_type,
-                          CS_MESH_LOCATION_CELLS,
-                          3,    /* dim */
-                          has_previous);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
-      cs_field_set_key_str(f, klbl, "For_Lap");
+  {
+    f = cs_field_create("laplace_force",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        3,    /* dim */
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "For_Lap");
 
-      f = cs_field_create("magnetic_field",
-                          field_type,
-                          CS_MESH_LOCATION_CELLS,
-                          3,    /* dim */
-                          has_previous);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
-      cs_field_set_key_str(f, klbl, "Mag_Field");
-    }
-
-    if (cs_glob_elec_option->ixkabe == 1) {
-      f = cs_field_create("absorption_coeff",
-                          field_type,
-                          CS_MESH_LOCATION_CELLS,
-                          1, /* dim */
-                          has_previous);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
-      cs_field_set_key_str(f, klbl, "Coef_Abso");
-    }
-    else if (cs_glob_elec_option->ixkabe == 2) {
-      f = cs_field_create("radiation_source",
-                          field_type,
-                          CS_MESH_LOCATION_CELLS,
-                          1, /* dim */
-                          has_previous);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
-      cs_field_set_key_str(f, klbl, "TS_radia");
-    }
+    f = cs_field_create("magnetic_field",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        3,    /* dim */
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Mag_Field");
   }
+
+  if (cs_glob_elec_option->ixkabe == 1) {
+    f = cs_field_create("absorption_coeff",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        1, /* dim */
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Coef_Abso");
+  }
+  else if (cs_glob_elec_option->ixkabe == 2) {
+    f = cs_field_create("radiation_source",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        1, /* dim */
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "TS_radia");
+  }
+
 
   _field_pointer_properties_map_electric_arcs();
 }

@@ -107,7 +107,7 @@ double precision smbrv(3,ncelet), fimp(3,3,ncelet)
 
 if (ippmod(ieljou).ge.1 .or.                                      &
     ippmod(ielarc).ge.1       ) then
-  call eltsvv(iscal, smbrv)
+  call eltsvv(ivarfl(isca(iscal)), smbrv)
 endif
 
 !----
