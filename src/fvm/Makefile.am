@@ -83,6 +83,7 @@ fvm_to_catalyst.h \
 fvm_to_ensight.h \
 fvm_to_ensight_case.h \
 fvm_to_histogram.h \
+fvm_to_vtk_histogram.h \
 fvm_to_medcoupling.h \
 fvm_to_plot.h \
 fvm_to_time_plot.h \
