@@ -667,7 +667,7 @@ class Setup:
                     package="scotch",
                     version="6.0.4",
                     archive="scotch_6.0.4.tar.gz",
-                    url="https://gforge.inria.fr/frs/download.php/34099/%s")
+                    url="https://gforge.inria.fr/frs/download.php/file/34618")
 
     #---------------------------------------------------------------------------
 
