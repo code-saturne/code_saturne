@@ -276,6 +276,7 @@ enddo
 do ifac = 1, nfabor
 
   if (icodcl(ifac,iuma).ne.1 .and.                                &
+      icodcl(ifac,iuma).ne.2 .and.                                &
       icodcl(ifac,iuma).ne.3 .and.                                &
       icodcl(ifac,iuma).ne.4 ) then
     if (ialtyb(ifac).gt.0) then
@@ -284,6 +285,7 @@ do ifac = 1, nfabor
     ierror(1) = ierror(1) + 1
   endif
   if (icodcl(ifac,ivma).ne.1 .and.                                &
+      icodcl(ifac,ivma).ne.2 .and.                                &
       icodcl(ifac,ivma).ne.3 .and.                                &
       icodcl(ifac,ivma).ne.4 ) then
     if (ialtyb(ifac).gt.0) then
@@ -292,6 +294,7 @@ do ifac = 1, nfabor
     ierror(2) = ierror(2) + 1
   endif
   if (icodcl(ifac,iwma).ne.1 .and.                                &
+      icodcl(ifac,iwma).ne.2 .and.                                &
       icodcl(ifac,iwma).ne.3 .and.                                &
       icodcl(ifac,iwma).ne.4 ) then
     if (ialtyb(ifac).gt.0) then
