@@ -78,7 +78,7 @@ def process_cmd_line(argv, pkg):
                       metavar="FILE", help="xml FILE of parameters")
 
     parser.add_option("-q", "--quiet",
-                      action="store_true", dest="verbose", default=False,
+                      action="store_true", dest="quiet", default=False,
                       help="don't print status messages to stdout")
 
     parser.add_option("-u", "--update",

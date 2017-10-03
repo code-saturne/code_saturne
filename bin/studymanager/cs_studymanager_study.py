@@ -670,7 +670,7 @@ class Study(object):
     """
     def __init__(self, pkg, parser, study, exe, dif, rlog, n_procs=None,
                  force_rm=False, force_overwrite=False, with_tags=None,
-                 without_tags=None):
+                 without_tags=None, debug=False):
         """
         Constructor.
           1. initialize attributes,
@@ -694,6 +694,8 @@ class Study(object):
         @param with_tags: list of tags given at the command line
         @type without_tags: C{List}
         @param without_tags: list of tags given at the command line
+        @type debug: C{True} or C{False}
+        @param debug: if true, increase verbosity in stdout
         """
         # Initialize attributes
         self.__package  = pkg
@@ -703,6 +705,7 @@ class Study(object):
         self.__log      = rlog
         self.__force_rm = force_rm
         self.__force_ow = force_overwrite
+        self.__debug    = debug
 
         self.__repo = os.path.join(self.__parser.getRepository(),  study)
         self.__dest = os.path.join(self.__parser.getDestination(), study)
@@ -813,7 +816,7 @@ class Study(object):
                                        None, # copy
                                        False,# import_only
                                        False,# use ref
-                                       0)    # verbose
+                                       0)    # quiet
 
             # TODO: copy-from for study. For now, an empty study
             # is created and cases are created one by one with
@@ -866,13 +869,18 @@ class Study(object):
                 self.create_case(c, log_lines);
             else:
                 if self.__force_rm == True:
+                    if self.__debug:
+                        print("Warning: case %s exists in the destination "
+                              "and will be overwritten." % c.label)
                     # Build short path to RESU dir. such as 'CASE1/RESU'
                     _dest_resu_dir = os.path.join(c.label, 'RESU')
                     if os.path.isdir(_dest_resu_dir):
                         shutil.rmtree(_dest_resu_dir)
                         os.makedirs(_dest_resu_dir)
                 else:
-                    print("Warning: the case %s already exists in the destination." % c.label)
+                    if self.__debug:
+                        print("Warning: case %s exists in the destination. "
+                              "It won't be overwritten." % c.label)
 
                 # if overwrite option enabled, overwrite content of DATA, SRC, SCRIPTS
                 if self.__force_ow:
@@ -1084,7 +1092,8 @@ class Studies(object):
                                            options.remove_existing, \
                                            options.force_overwrite, \
                                            self.__with_tags, \
-                                           self.__without_tags)] )
+                                           self.__without_tags, \
+                                           options.debug)] )
             if options.debug:
                 print(" >> Append study ", l)
 
@@ -1096,7 +1105,7 @@ class Studies(object):
         # attributes
 
         self.__debug       = options.debug
-        self.__verbose     = options.verbose
+        self.__quiet       = options.quiet
         self.__running     = options.runcase
         self.__n_iter      = options.n_iterations
         self.__compare     = options.compare
@@ -1149,24 +1158,23 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def reporting(self, msg, screen_only=False):
+    def reporting(self, msg, stdout=True, report=True, status=False):
         """
-        Write the report.
+        Write message on standard output and/or in report.
         http://www.developpez.net/forums/d651999/autres-langages/python-zope/general-python/console-ecrire-ligne-precedente/
         Carriage return "chr(13)" renvoi en debut de ligne et line feed "chr(10)" effectue un saut de ligne.
         @type l: C{String}
-        @param l: the sentence to be writing.
+        @param l: the sentence to be written.
         """
-        if not screen_only:
+        s  = ""
+        if not status:
             s = chr(10)
-        else:
-            s  = ""
 
-        if not self.__verbose:
+        if stdout and not self.__quiet:
             sys.stdout.write (msg + chr(13) + s)
             sys.stdout.flush()
 
-        if not screen_only:
+        if report:
             self.reportFile.write(msg + '\n')
             self.reportFile.flush()
 
@@ -1314,14 +1322,21 @@ class Studies(object):
                                 control_file.flush()
                                 control_file.close
 
-                        self.reporting('    - running %s ...' % case.label, True)
+                        self.reporting('    - running %s ...' % case.label,
+                                       stdout=True, report=False, status=True)
                         error = case.run()
                         if not error:
                             if not case.run_id:
-                                self.reporting('    - run %s --> Warning suffix is not read' % case.label)
+                                self.reporting("    - run %s --> Warning suffix"
+                                               " is not read" % case.label)
 
-                            self.reporting('    - run %s --> OK (%s s) in %s' % (case.label, case.is_time, case.run_id))
-                            self.__parser.setAttribute(case.node, "compute", "off")
+                            self.reporting('    - run %s --> OK (%s s) in %s' \
+                                           % (case.label, \
+                                              case.is_time, \
+                                              case.run_id))
+                            self.__parser.setAttribute(case.node,
+                                                       "compute",
+                                                       "off")
 
                             # update dest="" attribute
                             n1 = self.__parser.getChildren(case.node, "compare")
@@ -1545,13 +1560,26 @@ class Studies(object):
                 if script[i]:
                     cmd = os.path.join(self.__dest, l, "POST", label[i])
                     if os.path.isfile(cmd):
+                        sc_name = os.path.basename(cmd)
                         # ensure script is executable
                         set_executable(cmd)
 
                         list_cases, list_dir = s.getRunDirectories()
-                        cmd += ' ' + args[i] + ' -c "' + list_cases + '" -d "' + list_dir + '" -s ' + l
+                        cmd += ' ' + args[i] + ' -c "' + list_cases + '" -d "' \
+                               + list_dir + '" -s ' + l
+
+                        self.reporting('    - running postpro %s' % sc_name,
+                                       stdout=True, report=False, status=True)
+
                         retcode, t = run_studymanager_command(cmd, self.__log)
-                        self.reporting('    - postpro %s --> OK (%s s)' % (cmd, t))
+
+                        self.reporting('    - postpro %s --> OK (%s s)' \
+                                       % (sc_name, t),
+                                       stdout=True, report=False)
+
+                        self.reporting('    - postpro %s --> OK (%s s)' \
+                                       % (cmd, t),
+                                       stdout=False, report=True)
                     else:
                         self.reporting('    - postpro %s not found' % cmd)
 
