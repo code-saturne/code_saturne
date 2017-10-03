@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>787</width>
-    <height>551</height>
+    <height>594</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,7 +27,7 @@
       <string/>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tabOUTPUT">
       <attribute name="title">
@@ -214,149 +214,6 @@
        <property name="spacing">
         <number>6</number>
        </property>
-       <item row="3" column="0">
-        <widget class="QGroupBox" name="groupBoxOptions">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define options for the selected writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="title">
-          <string>Options</string>
-         </property>
-         <layout class="QGridLayout">
-          <property name="margin">
-           <number>9</number>
-          </property>
-          <property name="spacing">
-           <number>6</number>
-          </property>
-          <item row="0" column="0">
-           <layout class="QHBoxLayout">
-            <property name="spacing">
-             <number>6</number>
-            </property>
-            <property name="margin">
-             <number>0</number>
-            </property>
-            <item>
-             <spacer>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>16</width>
-                <height>16</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <layout class="QGridLayout">
-              <property name="margin">
-               <number>0</number>
-              </property>
-              <property name="spacing">
-               <number>6</number>
-              </property>
-              <item row="0" column="0">
-               <widget class="QLabel" name="labelformat">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a format for the selected writer:&lt;br/&gt;- Binary(native),&lt;br/&gt;- Binary (big endian),&lt;br/&gt;- Text.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>Format</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="comboBoxFormat">
-                <property name="minimumSize">
-                 <size>
-                  <width>120</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a format for the selected writer:&lt;br/&gt;- Binary(native),&lt;br/&gt;- Binary (big endian),&lt;br/&gt;- Text.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="labelPolygon">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polygonal mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polygons are not displayed),&lt;br/&gt;- Subdivide (polygons are subdivided into triangles).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>Polygons</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QComboBox" name="comboBoxPolygon">
-                <property name="minimumSize">
-                 <size>
-                  <width>120</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polygonal mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polygons are not displayed),&lt;br/&gt;- Subdivide (polygons are subdivided into triangles).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="labelPolyhedra">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polyheddral mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polyhedra are not displayed),&lt;br/&gt;- Subdivide (polyhedra are subdivided into pyramids and tetrahedra).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>Polyhedra</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1">
-               <widget class="QComboBox" name="comboBoxPolyhedra">
-                <property name="minimumSize">
-                 <size>
-                  <width>120</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polyheddral mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polyhedra are not displayed),&lt;br/&gt;- Subdivide (polyhedra are subdivided into pyramids and tetrahedra).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="2">
-               <widget class="QCheckBox" name="checkBoxSeparateMeshes">
-                <property name="toolTip">
-                 <string>If checked, separate outputs (i.e. files) will be used for each mesh associated with this writer.</string>
-                </property>
-                <property name="text">
-                 <string>Separate meshes</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <spacer>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>16</width>
-                <height>16</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
        <item row="0" column="0">
         <layout class="QVBoxLayout">
          <property name="spacing">
@@ -492,6 +349,19 @@
             </property>
            </widget>
           </item>
+          <item row="0" column="5">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
           <item row="0" column="3">
            <widget class="QLineEdit" name="lineEditFrequencyTime">
             <property name="minimumSize">
@@ -518,19 +388,6 @@
               <normaloff>:/new/prefix1/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/icons/22x22/preferences-system.png</iconset>
             </property>
            </widget>
-          </item>
-          <item row="0" column="5">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
           </item>
           <item row="1" column="1">
            <widget class="QCheckBox" name="checkBoxOutputStart">
@@ -599,6 +456,163 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Set the time behaviour of the meshes associated to the selected writer. Three choices are possible:&lt;br/&gt;- Fixed mesh: all meshes associated to the selected writer are steady,&lt;br/&gt;- Transient coordinates: associated meshes are deformable,&lt;br/&gt;- Transient connectivity: associated meshes have a transient number of elements (for example, the number of elements can change in relation to a physical criterion)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QGroupBox" name="groupBoxOptions">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define options for the selected writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="title">
+          <string>Options</string>
+         </property>
+         <layout class="QGridLayout">
+          <property name="margin">
+           <number>9</number>
+          </property>
+          <property name="spacing">
+           <number>6</number>
+          </property>
+          <item row="0" column="0">
+           <layout class="QHBoxLayout">
+            <property name="spacing">
+             <number>6</number>
+            </property>
+            <property name="margin">
+             <number>0</number>
+            </property>
+            <item>
+             <spacer>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>16</width>
+                <height>16</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <layout class="QGridLayout">
+              <property name="margin">
+               <number>0</number>
+              </property>
+              <property name="spacing">
+               <number>6</number>
+              </property>
+              <item row="0" column="0" colspan="2">
+               <widget class="QCheckBox" name="checkBoxSeparateMeshes">
+                <property name="toolTip">
+                 <string>If checked, separate outputs (i.e. files) will be used for each mesh associated with this writer.</string>
+                </property>
+                <property name="text">
+                 <string>Separate sub-writer for each mesh</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="labelFormatE">
+                <property name="toolTip">
+                 <string/>
+                </property>
+                <property name="text">
+                 <string>File type</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QComboBox" name="comboBoxFormatE">
+                <property name="minimumSize">
+                 <size>
+                  <width>120</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a format for the selected writer:&lt;br/&gt;- Binary(native),&lt;br/&gt;- Binary (big endian),&lt;br/&gt;- Text.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="labelPolygon">
+                <property name="toolTip">
+                 <string/>
+                </property>
+                <property name="text">
+                 <string>Polygons</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QComboBox" name="comboBoxPolygon">
+                <property name="minimumSize">
+                 <size>
+                  <width>120</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polygonal mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polygons are not displayed),&lt;br/&gt;- Subdivide (polygons are subdivided into triangles).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QLabel" name="labelPolyhedra">
+                <property name="toolTip">
+                 <string/>
+                </property>
+                <property name="text">
+                 <string>Polyhedra</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <widget class="QComboBox" name="comboBoxPolyhedra">
+                <property name="minimumSize">
+                 <size>
+                  <width>120</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polyheddral mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polyhedra are not displayed),&lt;br/&gt;- Subdivide (polyhedra are subdivided into pyramids and tetrahedra).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QComboBox" name="comboBoxFormatH">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select an output variant for the selected writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="labelFormatH">
+                <property name="text">
+                 <string>Output type</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>16</width>
+                <height>16</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
           </item>
          </layout>
         </widget>
@@ -1193,7 +1207,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QComboBox" name="comboBoxHisto">
+             <widget class="QComboBox" name="comboBoxTimePlot">
               <property name="minimumSize">
                <size>
                 <width>200</width>
@@ -1206,7 +1220,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditHisto">
+             <widget class="QLineEdit" name="lineEditTimePlot">
               <property name="minimumSize">
                <size>
                 <width>30</width>
@@ -1225,7 +1239,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditFRHisto">
+             <widget class="QLineEdit" name="lineEditFRTimePlot">
               <property name="minimumSize">
                <size>
                 <width>40</width>

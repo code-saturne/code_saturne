@@ -4123,7 +4123,7 @@ fvm_to_med_version_string(int string_index,
  *   divide_polyhedra    tesselate polyhedra with tetrahedra and pyramids
  *                       (adding a vertex near each polyhedron's center)
  *   serial_io           force serial IO even when parallel IO is available
- *   update              oprn file in update mode
+ *   update              open file in update mode
  *
  * parameters:
  *   name           <-- base output case name.

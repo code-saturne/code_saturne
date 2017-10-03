@@ -76,6 +76,8 @@
 #include "bft_error.h"
 #include "bft_mem.h"
 
+#include "fvm_to_histogram.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -106,12 +108,13 @@ BEGIN_C_DECLS
  *  var_name <--  name of the variable
  */
 /*----------------------------------------------------------------------------*/
+
 void
-_display_histogram_png(cs_real_t                  var_min,
-                       cs_real_t                  var_max,
-                       cs_gnum_t                  count[],
-                       fvm_to_histogram_writer_t *w,
-                       char                      *var_name)
+fvm_to_vtk_display_histogram_png(cs_real_t                   var_min,
+                                 cs_real_t                   var_max,
+                                 cs_gnum_t                   count[],
+                                 fvm_to_histogram_writer_t  *w,
+                                 char                       *var_name)
 {
   double var_step = CS_ABS(var_max - var_min) / w->n_sub;
 

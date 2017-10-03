@@ -101,11 +101,11 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(fvm_to_histogram_display_t) (cs_real_t                  var_min,
-                              cs_real_t                  var_max,
-                              cs_gnum_t                  count[],
-                              fvm_to_histogram_writer_t *w,
-                              char                      *var_name);
+(fvm_to_histogram_display_t) (cs_real_t                   var_min,
+                              cs_real_t                   var_max,
+                              cs_gnum_t                   count[],
+                              fvm_to_histogram_writer_t  *w,
+                              char                       *var_name);
 
 /*=============================================================================
  * Public function prototypes
@@ -115,8 +115,10 @@ typedef void
  * Initialize FVM to histogram file writer.
  *
  * Options are:
- *   txt                 output .txt files
- *   tex                 output .tex files
+ *   txt                 output txt (space-separated) files
+ *   tex                 output TeX (TixZ) files
+ *   png                 output PNG (TixZ) files
+ *   [n_sub]             number of subdivisions
  *
  * parameters:
  *   name           <-- base output case name.

@@ -625,10 +625,12 @@ def main(argv, pkg):
             else:
                 print(cfg.libs[opts.cppflags].flags['ldflags'])
         else:
-            print(cfg.libs[opts.ldflags].flags['ldflags'])
+            if cfg.libs[opts.ldflags].dynamic_load == False:
+                print(cfg.libs[opts.ldflags].flags['ldflags'])
 
     if opts.libs is not None:
-        print(cfg.libs[opts.libs].flags['libs'])
+        if cfg.libs[opts.libs].dynamic_load == False:
+            print(cfg.libs[opts.libs].flags['libs'])
 
     if opts.print_pythondir: print(pkg.get_dir("pythondir"))
     if opts.print_datarootdir: print(pkg.get_dir("datarootdir"))

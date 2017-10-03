@@ -205,6 +205,7 @@ class FormatWriterDelegate(QItemDelegate):
         editor.addItem("CGNS")
         editor.addItem("Catalyst")
         editor.addItem("CCM-IO")
+        editor.addItem("Histogram")
         editor.installEventFilter(self)
 
         import cs_config
@@ -221,7 +222,8 @@ class FormatWriterDelegate(QItemDelegate):
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"ensight": 0, "med": 1, "cgns": 2, "catalyst": 3, "ccm": 4}
+        dico = {"ensight": 0, "med": 1, "cgns": 2, "catalyst": 3, "ccm": 4,
+                "histogram": 5}
         row = index.row()
         string = index.model().dataWriter[row]['format']
         idx = dico[string]
@@ -326,7 +328,8 @@ class LocationSelectorDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                                   to_text_string)
         editor.setText(self.value)
 
 
@@ -761,12 +764,14 @@ class StandardItemModelWriter(QStandardItemModel):
                        "MED" : 'med',
                        "CGNS": 'cgns',
                        "Catalyst": 'catalyst',
-                       "CCM-IO": 'ccm'}
+                       "CCM-IO": 'ccm',
+                       "Histogram": 'histogram'}
         self.dicoM2V= {"ensight" : 'EnSight',
                        "med" : 'MED',
                        "cgns": 'CGNS',
                        "catalyst": 'Catalyst',
-                       "ccm": 'CCM-IO'}
+                       "ccm": 'CCM-IO',
+                       "histogram": 'Histogram'}
         for id in self.mdl.getWriterIdList():
             row = self.rowCount()
             self.setRowCount(row + 1)
@@ -1217,6 +1222,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.mdl = OutputControlModel(self.case)
         self.notebook = NotebookModel(self.case)
 
+        import cs_config
+        cfg = cs_config.config()
+        no_catalyst = False
+        if cfg.libs['catalyst'].have == "no":
+            no_catalyst = True
+
         if self.case['prepro'] == False:
             # lagrangian model
             self.lag_mdl = LagrangianModel(self.case)
@@ -1227,10 +1238,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelNTLAL          = ComboModel(self.comboBoxNTLAL,3,1)
         self.modelFrequency      = ComboModel(self.comboBoxFrequency,4,1)
         self.modelTimeDependency = ComboModel(self.comboBoxTimeDependency,3,1)
-        self.modelFormat         = ComboModel(self.comboBoxFormat,2,1)
+        self.modelFormatE        = ComboModel(self.comboBoxFormatE,2,1)
+        self.modelFormatH        = ComboModel(self.comboBoxFormatH,2,1)
         self.modelPolygon        = ComboModel(self.comboBoxPolygon,3,1)
         self.modelPolyhedra      = ComboModel(self.comboBoxPolyhedra,3,1)
-        self.modelHisto          = ComboModel(self.comboBoxHisto,3,1)
+        self.modelTimePlot       = ComboModel(self.comboBoxTimePlot,3,1)
         self.modelProbeFmt       = ComboModel(self.comboBoxProbeFmt,2,1)
 
         self.modelOutput.addItem(self.tr("No output"), 'None')
@@ -1250,9 +1262,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelTimeDependency.addItem(self.tr("Transient coordinates"), 'transient_coordinates')
         self.modelTimeDependency.addItem(self.tr("Transient connectivity"), 'transient_connectivity')
 
-        self.modelFormat.addItem(self.tr("binary (native)"), 'binary')
-        self.modelFormat.addItem(self.tr("binary (big-endian)"), 'big_endian')
-        self.modelFormat.addItem(self.tr("text"), 'text')
+        self.modelFormatE.addItem(self.tr("binary (native)"), 'binary')
+        self.modelFormatE.addItem(self.tr("binary (big-endian)"), 'big_endian')
+        self.modelFormatE.addItem(self.tr("text"), 'text')
+
+        self.modelFormatH.addItem(self.tr("text"), 'text')
+        self.modelFormatH.addItem(self.tr("TeX (TikZ)"), 'tex')
+        self.modelFormatH.addItem(self.tr("PNG"), 'png', warn=no_catalyst)
 
         self.modelPolygon.addItem(self.tr("display"), 'display')
         self.modelPolygon.addItem(self.tr("discard"), 'discard_polygons')
@@ -1262,10 +1278,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelPolyhedra.addItem(self.tr("discard"), 'discard_polyhedra')
         self.modelPolyhedra.addItem(self.tr("subdivide"), 'divide_polyhedra')
 
-        self.modelHisto.addItem(self.tr("No monitoring points file"), 'None')
-        self.modelHisto.addItem(self.tr("Monitoring points files at each time step"), 'At each step')
-        self.modelHisto.addItem(self.tr("Monitoring points file every 'n' time steps"), 'Frequency_h')
-        self.modelHisto.addItem(self.tr("Monitoring points file every 'x' time_value(s)"), 'Frequency_h_x')
+        self.modelTimePlot.addItem(self.tr("No monitoring points file"), 'None')
+        self.modelTimePlot.addItem(self.tr("Monitoring points files at each time step"), 'At each step')
+        self.modelTimePlot.addItem(self.tr("Monitoring points file every 'n' time steps"), 'Frequency_h')
+        self.modelTimePlot.addItem(self.tr("Monitoring points file every 'x' time_value(s)"), 'Frequency_h_x')
 
         self.modelProbeFmt.addItem(self.tr(".dat"), 'DAT')
         self.modelProbeFmt.addItem(self.tr(".csv"), 'CSV')
@@ -1273,7 +1289,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         # Hide time frequency (in s) when calculation is steady
         if self.case['prepro'] == False:
             if self.isSteady() != 1:
-                self.modelHisto.disableItem(3)
+                self.modelTimePlot.disableItem(3)
 
         # Model for QTableView
 
@@ -1401,17 +1417,18 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.lineEditNTLAL.textChanged[str].connect(self.slotNTLAL)
         self.lineEditFrequency.textChanged[str].connect(self.slotWriterFrequency)
         self.lineEditFrequencyTime.textChanged[str].connect(self.slotWriterFrequencyTime)
-        self.lineEditHisto.textChanged[str].connect(self.slotMonitoringPointFrequency)
-        self.lineEditFRHisto.textChanged[str].connect(self.slotMonitoringPointFrequencyTime)
+        self.lineEditTimePlot.textChanged[str].connect(self.slotMonitoringPointFrequency)
+        self.lineEditFRTimePlot.textChanged[str].connect(self.slotMonitoringPointFrequencyTime)
 
         # comboBox
         self.comboBoxOutput.activated[str].connect(self.slotOutputListing)
         self.comboBoxTimeDependency.activated[str].connect(self.slotWriterTimeDependency)
         self.comboBoxFrequency.activated[str].connect(self.slotWriterFrequencyChoice)
-        self.comboBoxFormat.activated[str].connect(self.slotWriterOptions)
+        self.comboBoxFormatE.activated[str].connect(self.slotWriterOptions)
+        self.comboBoxFormatH.activated[str].connect(self.slotWriterOptions)
         self.comboBoxPolygon.activated[str].connect(self.slotWriterOptions)
         self.comboBoxPolyhedra.activated[str].connect(self.slotWriterOptions)
-        self.comboBoxHisto.activated[str].connect(self.slotMonitoringPoint)
+        self.comboBoxTimePlot.activated[str].connect(self.slotMonitoringPoint)
         self.comboBoxProbeFmt.activated[str].connect(self.slotOutputProbeFmt)
 
 
@@ -1420,18 +1437,18 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         validatorNTLIST = IntValidator(self.lineEditNTLIST, min=1)
         validatorNTLAL = IntValidator(self.lineEditNTLAL)
         validatorFrequency = IntValidator(self.lineEditFrequency, min=1)
-        validatorNTHIST = IntValidator(self.lineEditHisto, min=1)
+        validatorNTHIST = IntValidator(self.lineEditTimePlot, min=1)
         validatorFrequencyTime = DoubleValidator(self.lineEditFrequencyTime)
-        validatorFRHIST = DoubleValidator(self.lineEditFRHisto)
+        validatorFRHIST = DoubleValidator(self.lineEditFRTimePlot)
         validatorRadius = DoubleValidator(self.lineEditProbesRadius, min=0.)
         validatorRadius.setExclusiveMin(True)
 
         self.lineEditNTLIST.setValidator(validatorNTLIST)
         self.lineEditNTLAL.setValidator(validatorNTLAL)
         self.lineEditFrequency.setValidator(validatorFrequency)
-        self.lineEditHisto.setValidator(validatorNTHIST)
+        self.lineEditTimePlot.setValidator(validatorNTHIST)
         self.lineEditFrequencyTime.setValidator(validatorFrequencyTime)
-        self.lineEditFRHisto.setValidator(validatorFRHIST)
+        self.lineEditFRTimePlot.setValidator(validatorFRHIST)
         self.lineEditProbesRadius.setValidator(validatorRadius)
 
         # Initialisation of the listing frequency
@@ -1479,12 +1496,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         m = self.mdl.getMonitoringPointType()
         if m == 'Frequency_h_x' :
             frhist = self.mdl.getMonitoringPointFrequencyTime()
-            self.lineEditFRHisto.setText(str(frhist))
+            self.lineEditFRTimePlot.setText(str(frhist))
         else :
             nthist = self.mdl.getMonitoringPointFrequency()
-            self.lineEditHisto.setText(str(nthist))
-        self.modelHisto.setItem(str_model=m)
-        t = self.modelHisto.dicoM2V[m]
+            self.lineEditTimePlot.setText(str(nthist))
+        self.modelTimePlot.setItem(str_model=m)
+        t = self.modelTimePlot.dicoM2V[m]
         self.slotMonitoringPoint(t)
 
         # Monitoring points initialisation
@@ -2034,17 +2051,23 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         writer_id = self.modelWriter.getItem(row)['id']
         line = []
 
-        opt_format = self.modelFormat.dicoV2M[str(self.comboBoxFormat.currentText())]
-
         # remove previous settings matching this slot
-        for m in (self.modelFormat, self.modelPolygon, self.modelPolyhedra):
+        for m in (self.modelFormatE, self.modelFormatH,
+                  self.modelPolygon, self.modelPolyhedra):
             for s in m.items:
                 if s in options:
                     options.remove(s)
 
         # now append options
-        if opt_format != 'binary':
-            options.append(opt_format)
+        format = self.modelWriter.getItem(row)['format']
+        if format == 'ensight':
+            opt_format = self.modelFormatE.dicoV2M[str(self.comboBoxFormatE.currentText())]
+            if opt_format != 'binary':
+                options.append(opt_format)
+        elif format == 'histogram':
+            opt_format = self.modelFormatH.dicoV2M[str(self.comboBoxFormatH.currentText())]
+            if opt_format != 'text':
+                options.append(opt_format)
 
         opt_polygon = self.modelPolygon.dicoV2M[str(self.comboBoxPolygon.currentText())]
         opt_polyhed = self.modelPolyhedra.dicoV2M[str(self.comboBoxPolyhedra.currentText())]
@@ -2072,22 +2095,19 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         # update widgets from the options list
 
         for opt in opts:
-            if opt in ['binary', 'big_endian', 'text']:
-                self.modelFormat.setItem(str_model=opt)
-
+            if format == 'ensight' and opt in ['binary', 'big_endian', 'text']:
+                self.modelFormatE.setItem(str_model=opt)
+            elif format == 'histogram' and opt in ['text', 'tex', 'png']:
+                self.modelFormatH.setItem(str_model=opt)
             elif opt == 'discard_polygons' or opt == 'divide_polygons':
                 self.modelPolygon.setItem(str_model=opt)
-
             elif opt == 'discard_polyhedra' or opt == 'divide_polyhedra':
                 self.modelPolyhedra.setItem(str_model=opt)
-
             elif opt == 'separate_meshes':
                 self.checkBoxSeparateMeshes.setChecked(True)
 
         # default
 
-        if 'binary' not in opts and 'big_endian' not in opts and 'text' not in opts:
-            self.modelFormat.setItem(str_model='binary')
         if 'discard_polygons' not in opts and 'divide_polygons' not in opts:
             self.modelPolygon.setItem(str_model="display")
         if 'discard_polyhedra' not in opts and 'divide_polyhedra' not in opts:
@@ -2097,30 +2117,42 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # enable and disable options related to the format
 
-        self.modelPolygon.enableItem(str_model='discard_polygons')
-        self.modelPolygon.enableItem(str_model='divide_polygons')
-        self.modelPolyhedra.enableItem(str_model='discard_polyhedra')
-        self.modelPolyhedra.enableItem(str_model='divide_polyhedra')
-        self.comboBoxPolygon.setEnabled(True)
-        self.comboBoxPolyhedra.setEnabled(True)
-
-        if format != "ensight":
+        if format in ["ensight", "med", "cgns"]:
+            self.modelPolygon.enableItem(str_model='discard_polygons')
+            self.modelPolygon.enableItem(str_model='divide_polygons')
+            self.comboBoxPolygon.show()
+            self.labelPolygon.show()
             if format == "cgns":
                 self.modelPolyhedra.setItem(str_model='divide_polyhedra')
                 self.modelPolyhedra.disableItem(str_model='display')
-            elif format in [ "catalyst", "ccm" ]:
-                self.modelPolygon.disableItem(str_model='discard_polygons')
-                self.modelPolygon.disableItem(str_model='divide_polygons')
-                self.modelPolyhedra.disableItem(str_model='discard_polyhedra')
-                self.modelPolyhedra.disableItem(str_model='divide_polyhedra')
-                self.comboBoxPolygon.setEnabled(False)
-                self.comboBoxPolyhedra.setEnabled(False)
-            self.modelFormat.setItem(str_model="binary")
-            self.comboBoxFormat.setEnabled(False)
+            else:
+                self.modelPolyhedra.enableItem(str_model='divide_polyhedra')
+            self.modelPolyhedra.enableItem(str_model='discard_polyhedra')
+            self.comboBoxPolyhedra.show()
+            self.labelPolyhedra.show()
         else:
-            self.modelFormat.enableItem(str_model='text')
-            self.modelFormat.enableItem(str_model='big_endian')
-            self.comboBoxFormat.setEnabled(True)
+            self.comboBoxPolygon.hide()
+            self.labelPolygon.hide()
+            self.comboBoxPolyhedra.hide()
+            self.labelPolyhedra.hide()
+
+        if format == "ensight":
+            if 'binary' not in opts and 'big_endian' not in opts and 'text' not in opts:
+                self.modelFormatE.setItem(str_model='binary')
+            self.modelFormatE.show()
+            self.labelFormatE.show()
+        else:
+            self.modelFormatE.hide()
+            self.labelFormatE.hide()
+
+        if format == "histogram":
+            if 'text' not in opts and 'tex' not in opts and 'png' not in opts:
+                self.modelFormatH.setItem(str_model='text')
+            self.modelFormatH.show()
+            self.labelFormatH.show()
+        else:
+            self.modelFormatH.hide()
+            self.labelFormatH.hide()
 
 
     def __insertMesh(self, name, mesh_id, mesh_type, selection):
@@ -2457,15 +2489,15 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input choice of the output of monitoring points files
         """
-        histo = self.modelHisto.dicoV2M[str(text)]
+        histo = self.modelTimePlot.dicoV2M[str(text)]
         log.debug("slotMonitoringPoint-> histo = %s" % histo)
         self.mdl.setMonitoringPointType(histo)
 
         if histo == "None":
             nthist = -1
             self.mdl.setMonitoringPointFrequency(nthist)
-            self.lineEditHisto.hide()
-            self.lineEditFRHisto.hide()
+            self.lineEditTimePlot.hide()
+            self.lineEditFRTimePlot.hide()
             self.comboBoxProbeFmt.hide()
             self.label.hide()
         else:
@@ -2475,24 +2507,24 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if histo == "At each step":
             nthist = 1
             self.mdl.setMonitoringPointFrequency(nthist)
-            self.lineEditHisto.hide()
-            self.lineEditFRHisto.hide()
+            self.lineEditTimePlot.hide()
+            self.lineEditFRTimePlot.hide()
 
         if histo == "Frequency_h":
-            self.lineEditHisto.show()
-            self.lineEditHisto.setEnabled(True)
+            self.lineEditTimePlot.show()
+            self.lineEditTimePlot.setEnabled(True)
             nthist = self.mdl.getMonitoringPointFrequency()
             if nthist < 1:
                 nthist = 1
                 self.mdl.setMonitoringPointFrequency(nthist)
-            self.lineEditHisto.setText(str(nthist))
-            self.lineEditFRHisto.hide()
+            self.lineEditTimePlot.setText(str(nthist))
+            self.lineEditFRTimePlot.hide()
 
         if histo == "Frequency_h_x":
-            self.lineEditHisto.hide()
-            self.lineEditFRHisto.show()
+            self.lineEditTimePlot.hide()
+            self.lineEditFRTimePlot.show()
             frlist = self.mdl.getMonitoringPointFrequencyTime()
-            self.lineEditFRHisto.setText(str(frlist))
+            self.lineEditFRTimePlot.setText(str(frlist))
 
 
     @pyqtSlot(str)
@@ -2500,7 +2532,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the monitoring point output
         """
-        if self.lineEditFRHisto.validator().state == QValidator.Acceptable:
+        if self.lineEditFRTimePlot.validator().state == QValidator.Acceptable:
             n = from_qvariant(text, float)
             log.debug("slotMonitoringPointFrequencyTime-> FRHIST = %s" % n)
             self.mdl.setMonitoringPointFrequencyTime(n)
@@ -2511,7 +2543,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the monitoring point output
         """
-        if self.lineEditHisto.validator().state == QValidator.Acceptable:
+        if self.lineEditTimePlot.validator().state == QValidator.Acceptable:
             n = from_qvariant(text, int)
             log.debug("slotMonitoringPointFrequency-> NTHIST = %s" % n)
             self.mdl.setMonitoringPointFrequency(n)

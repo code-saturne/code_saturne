@@ -490,18 +490,35 @@ class ComboModel:
             self.combo.setCurrentIndex(index)
 
 
-    def getIndex(self, str_model="", str_view=""):
+    def enableItem(self, index=None, str_model="", str_view=""):
         """
-        Get the index for a string.
+        Enable the item specified with its index or a string.
         """
-        if str_model:
+        if index is not None:
+            self.__enableItem(index)
+
+        elif str_model:
             index = self.items.index(str_model)
+            self.__enableItem(index)
 
         elif str_view:
             str_model = self.dicoV2M[str_view]
             index = self.items.index(str_model)
+            self.__enableItem(index)
 
-        return index
+
+    def hide(self):
+        """
+        Hide combobox.
+        """
+        self.combo.hide()
+
+
+    def show(self):
+        """
+        Show combobox.
+        """
+        self.combo.show()
 
 
     def getItems(self):

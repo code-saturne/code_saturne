@@ -491,7 +491,6 @@ class OutputControlModel(Model):
         Set the format for a writer
         """
         self.isInList(writer_id, self.getWriterIdList())
-        self.isInList(format, ('ensight', 'med', 'cgns', 'catalyst', 'ccm'))
         node = self.node_out.xmlInitNode('writer', 'label', id = writer_id)
         n = node.xmlInitNode('format')
         n['name'] = format

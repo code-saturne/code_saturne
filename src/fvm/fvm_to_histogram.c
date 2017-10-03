@@ -47,7 +47,9 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_base.h"
 #include "fvm_defs.h"
+
 #include "fvm_convert_array.h"
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
@@ -77,8 +79,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-#define FVM_HISTOGRAM_N_STEPS  5  /* Number of categories for histograms */
-
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -91,7 +91,7 @@ typedef struct {
 
   fvm_to_histogram_writer_t  *writer;    /* Pointer to writer structure */
 
-  const char            *name;           /* Field name */
+  const char                 *name;      /* Field name */
 
 } _histogram_context_t;
 
@@ -99,9 +99,41 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
+static void * _catalyst_plugin = NULL;
+
+static fvm_to_histogram_display_t  *_fvm_to_vtk_display_histogram_png = NULL;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+#if defined(HAVE_PLUGIN_CATALYST)
+
+/*----------------------------------------------------------------------------
+ * Load Catalyst plugin.
+ *----------------------------------------------------------------------------*/
+
+static void
+_load_plugin_catalyst(void)
+{
+  /* Open from shared library */
+
+  _catalyst_plugin = cs_base_dlopen_plugin("fvm_catalyst");
+
+  /* Load symbols from shared library */
+
+  /* Function pointers need to be double-casted so as to first convert
+     a (void *) type to a memory address and then convert it back to the
+     original type. Otherwise, the compiler may issue a warning.
+     This is a valid ISO C construction. */
+
+  _fvm_to_vtk_display_histogram_png = (fvm_to_histogram_display_t *) (intptr_t)
+    cs_base_get_dl_function_pointer(_catalyst_plugin,
+                                    "fvm_to_vtk_display_histogram_png",
+                                    true);
+}
+
+#endif /* defined(HAVE_PLUGIN_CATALYST)*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -115,12 +147,13 @@ typedef struct {
  *  var_name <--  name of the variable
  */
 /*----------------------------------------------------------------------------*/
+
 static void
-_display_histogram_txt(cs_real_t                  var_min,
-                       cs_real_t                  var_max,
-                       cs_gnum_t                  count[],
-                       fvm_to_histogram_writer_t *w,
-                       char                      *var_name)
+_display_histogram_txt(cs_real_t                   var_min,
+                       cs_real_t                   var_max,
+                       cs_gnum_t                   count[],
+                       fvm_to_histogram_writer_t  *w,
+                       char                       *var_name)
 {
   double var_step;
   int i, j;
@@ -181,12 +214,13 @@ _display_histogram_txt(cs_real_t                  var_min,
  *  var_name <--  name of the variable
  */
 /*----------------------------------------------------------------------------*/
+
 static void
-_display_histogram_tex(cs_real_t                  var_min,
-                       cs_real_t                  var_max,
-                       cs_gnum_t                  count[],
-                       fvm_to_histogram_writer_t *w,
-                       char                      *var_name)
+_display_histogram_tex(cs_real_t                   var_min,
+                       cs_real_t                   var_max,
+                       cs_gnum_t                   count[],
+                       fvm_to_histogram_writer_t  *w,
+                       char                       *var_name)
 {
   double var_step = CS_ABS(var_max - var_min) / w->n_sub;
   int i;
@@ -469,7 +503,7 @@ _field_output(void           *context,
   } else if (w->format == CS_HISTOGRAM_PNG) {
 
     sprintf(w->file_name, "%s%s%s.png", w->path, w->name, t_stamp);
-    _histogram(n_vals, vals, _display_histogram_png, w, var_name);
+    _histogram(n_vals, vals, _fvm_to_vtk_display_histogram_png, w, var_name);
 
 #endif
   }
@@ -486,6 +520,9 @@ _field_output(void           *context,
  *
  * Options are:
  *   txt                 output txt (space-separated) files
+ *   tex                 output TeX (TixZ) files
+ *   png                 output PNG (TixZ) files
+ *   [n_sub]             number of subdivisions
  *
  * parameters:
  *   name           <-- base output case name.
@@ -555,7 +592,7 @@ fvm_to_histogram_init_writer(const char             *name,
   w->file_name = NULL;
   w->f = NULL;
 
-  w->n_sub = FVM_HISTOGRAM_N_STEPS;
+  w->n_sub = 5; /* default */
 
   /* Parse options */
 
@@ -563,6 +600,7 @@ fvm_to_histogram_init_writer(const char             *name,
 
     int i1, i2, l_opt;
     int l_tot = strlen(options);
+    bool n_sub_read = false;
 
     i1 = 0; i2 = 0;
     while (i1 < l_tot) {
@@ -572,18 +610,31 @@ fvm_to_histogram_init_writer(const char             *name,
 
       if ((l_opt == 3) && (strncmp(options + i1, "txt", l_opt) == 0))
         w->format = CS_HISTOGRAM_TXT;
-      else if ((l_opt == 3) && (strncmp(options + i1, "tex", l_opt) == 0))
+      else if ((l_opt == 3) && (strncmp(options + i1, "tex", l_opt) == 0)) {
         w->format = CS_HISTOGRAM_TEX;
+        if (!n_sub_read)
+          w->n_sub = 10;
+      }
 #if defined(HAVE_CATALYST)
-      else if ((l_opt == 3) && (strncmp(options + i1, "png", l_opt) == 0))
+      else if ((l_opt == 3) && (strncmp(options + i1, "png", l_opt) == 0)) {
         w->format = CS_HISTOGRAM_PNG;
+        if (!n_sub_read)
+          w->n_sub = 10;
+#if defined(HAVE_PLUGIN_CATALYST)
+        _load_plugin_catalyst();
+#else
+        _fvm_to_vtk_display_histogram_png = fvm_to_vtk_display_histogram_png;
+#endif
+      }
 #endif
       else {
         const char *n_sub_opt = options+i1;
         while (*n_sub_opt != '\0' && !isdigit(*n_sub_opt))
           n_sub_opt++;
-        if (atoi(n_sub_opt) > 0)
+        if (atoi(n_sub_opt) > 0) {
           w->n_sub = atoi(n_sub_opt);
+          n_sub_read = true;
+        }
       }
 
       for (i1 = i2 + 1 ; i1 < l_tot && options[i1] == ' ' ; i1++);
@@ -619,6 +670,12 @@ fvm_to_histogram_finalize_writer(void  *writer)
   fvm_to_histogram_flush(writer);
 
   BFT_FREE(w->file_name);
+
+#if defined(HAVE_PLUGIN_CATALYST)
+  if (w->format == CS_HISTOGRAM_PNG)
+    cs_base_dlclose("fvm_catalyst",
+                    _catalyst_plugin); /* decrease reference count or free */
+#endif
 
   BFT_FREE(w);
 

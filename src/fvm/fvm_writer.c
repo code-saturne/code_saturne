@@ -250,7 +250,7 @@ static fvm_writer_format_t _fvm_writer_format_list[9] = {
     "6.3 +",
     (  FVM_WRITER_FORMAT_USE_EXTERNAL
      | FVM_WRITER_FORMAT_HAS_POLYGON),
-    FVM_WRITER_FIXED_MESH,
+    FVM_WRITER_TRANSIENT_CONNECT,
     0,                                 /* dynamic library count */
     NULL,                              /* dynamic library */
 #if defined(HAVE_MEDCOUPLING)
@@ -303,7 +303,7 @@ static fvm_writer_format_t _fvm_writer_format_list[9] = {
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON
      | FVM_WRITER_FORMAT_SEPARATE_MESHES
      | FVM_WRITER_FORMAT_NAME_IS_OPTIONAL),
-       FVM_WRITER_FIXED_MESH,
+       FVM_WRITER_TRANSIENT_CONNECT,
     0,                                 /* dynamic library count */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */
@@ -464,27 +464,23 @@ _get_dl_function_pointer(fvm_writer_format_t  *wf,
                          bool                  errors_are_fatal)
 {
   void  *retval = NULL;
-  char  *error = NULL;
 
   assert(wf != NULL);
   assert(wf->dl_lib != NULL);
 
-  dlerror();    /* Clear any existing error */
-
   if (wf->dl_name == NULL)
-    retval = dlsym(wf->dl_lib, name);
+    retval = cs_base_get_dl_function_pointer(wf->dl_lib,
+                                             name,
+                                             errors_are_fatal);
   else {
     char *_name;
     BFT_MALLOC(_name, strlen(wf->dl_prefix) + strlen(name) + 1, char);
     sprintf(_name, "%s%s", wf->dl_prefix, name);
-    retval = dlsym(wf->dl_lib, _name);
+    retval = cs_base_get_dl_function_pointer(wf->dl_lib,
+                                             _name,
+                                             errors_are_fatal);
     BFT_FREE(_name);
   }
-  error = dlerror();
-
-  if (error != NULL && errors_are_fatal)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error calling dlsym: %s\n"), error);
 
   return retval;
 }
@@ -499,23 +495,9 @@ _get_dl_function_pointer(fvm_writer_format_t  *wf,
 static void
 _load_plugin(fvm_writer_format_t  *wf)
 {
-  char  *lib_path = NULL;
-  const char *pkglibdir = cs_base_get_pkglibdir();
-
   /* Open from shared library */
 
-  BFT_MALLOC(lib_path,
-             strlen(pkglibdir) + 1 + 3 + strlen(wf->dl_name) + 3 + 1,
-             char);
-  sprintf(lib_path, "%s%c%s.so", pkglibdir, DIR_SEPARATOR, wf->dl_name);
-
-  wf->dl_lib = dlopen(lib_path, RTLD_LAZY);
-
-  if (wf->dl_lib == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error loading %s: %s."), lib_path, dlerror());
-
-  BFT_FREE(lib_path);
+  wf->dl_lib = cs_base_dlopen_plugin(wf->dl_name);
 
   /* Increment reference count */
 
@@ -571,9 +553,7 @@ _close_plugin(fvm_writer_format_t  *wf)
   if (wf->dl_lib == NULL)
     return;
 
-  if (dlclose(wf->dl_lib) != 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error unloading library: %s."), dlerror());
+  cs_base_dlclose(wf->name, wf->dl_lib);
 
   wf->dl_lib = NULL;
 

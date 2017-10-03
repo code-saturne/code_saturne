@@ -44,6 +44,10 @@
 #include <unistd.h>
 #endif
 
+#if defined(HAVE_DLOPEN)
+#include <dlfcn.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * PLE library headers
  *----------------------------------------------------------------------------*/
@@ -79,6 +83,8 @@ BEGIN_C_DECLS
 /*============================================================================
  * Local Macro Definitions
  *============================================================================*/
+
+#define DIR_SEPARATOR '/'
 
 /* Fortran API */
 /*-------------*/
@@ -2021,6 +2027,140 @@ cs_base_open_properties_data_file(const char  *base_name)
 
   return f;
 }
+
+#if defined(HAVE_DLOPEN)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Load a dynamic library.
+ *
+ * \param[in]  filename  path to shared library file
+ *
+ * \return  handle to shared library
+ */
+/*----------------------------------------------------------------------------*/
+
+void*
+cs_base_dlopen(const char *filename)
+{
+  void *retval = NULL;
+
+  /* Load symbols from shared library */
+
+  retval = dlopen(filename, RTLD_LAZY);
+
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error loading %s: %s."), filename, dlerror());
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Load a plugin's dynamic library
+ *
+ * This function is similar to \ref cs_base_dlopen, execpt that only
+ * the base plugin file name (with no extension) needs to be given.
+ * It is assumed the file is available in the code's "pkglibdir" directory,
+ *
+ * \param[in]  filename  path to shared library file
+ *
+ * \return  handle to shared library
+ */
+/*----------------------------------------------------------------------------*/
+
+void*
+cs_base_dlopen_plugin(const char *name)
+{
+  void *retval = NULL;
+
+  char  *lib_path = NULL;
+  const char *pkglibdir = cs_base_get_pkglibdir();
+
+  /* Open shared library */
+
+  BFT_MALLOC(lib_path,
+             strlen(pkglibdir) + 1 + 3 + strlen(name) + 3 + 1,
+             char);
+
+  sprintf(lib_path, "%s%c%s.so", pkglibdir, DIR_SEPARATOR, name);
+
+  retval = cs_base_dlopen(lib_path);
+
+  BFT_FREE(lib_path);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Unload a dynamic library.
+ *
+ * Note that the dlopen underlying mechanism uses a reference count, so
+ * a library is really unloaded only one \ref cs_base_dlclose has been called
+ * the same number of times as \ref cs_base_dlopen.
+ *
+ * \param[in]  filename  optional path to shared library file name for error
+ *                       logging, or NULL
+ * \param[in]  handle    handle to shared library
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_dlclose(const char  *filename,
+                void        *handle)
+{
+  int retval = 0;
+
+  if (handle != NULL)
+    retval = dlclose(handle);
+
+  if (retval != 0) {
+    if (filename != NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error decrementing count or unloading %s: %s."),
+                filename, dlerror());
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error decrementing count or unloading %s."),
+                dlerror());
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a shared library function pointer
+ *
+ * \param[in]  handle            handle to shared library
+ * \param[in]  name              name of function symbol in library
+ * \param[in]  errors_are_fatal  abort if true, silently ignore if false
+ *
+ * \return  pointer to function in shared library
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_base_get_dl_function_pointer(void        *handle,
+                                const char  *name,
+                                bool         errors_are_fatal)
+{
+  void  *retval = NULL;
+  char  *error = NULL;
+
+  dlerror();    /* Clear any existing error */
+
+  retval = dlsym(handle, name);
+  error = dlerror();
+
+  if (error != NULL && errors_are_fatal)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error calling dlsym for %s: %s\n"), name, error);
+
+  return retval;
+}
+
+#endif /* defined(HAVE_DLOPEN) */
 
 /*----------------------------------------------------------------------------*/
 

@@ -36,10 +36,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#if defined(HAVE_DLOPEN)
-#include <dlfcn.h>
-#endif
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -458,42 +454,6 @@ _calcium_echo_post_write(cs_calcium_datatype_t  datatype,
 
   _calcium_echo_body(datatype, _cs_calcium_n_echo, n_val, val);
 }
-
-#if defined(HAVE_DLOPEN)
-
-/*----------------------------------------------------------------------------
- * Get a shared library function pointer
- *
- * parameters:
- *   handle           <-- pointer to shared library (result of dlopen)
- *   name             <-- name of function symbol in library
- *   errors_are_fatal <-- abort if true, silently ignore if false
- *
- * returns:
- *   pointer to function in shared library
- *----------------------------------------------------------------------------*/
-
-static void *
-_get_dl_function_pointer(void        *handle,
-                         const char  *name,
-                         bool         errors_are_fatal)
-{
-  void  *retval = NULL;
-  char  *error = NULL;
-
-  dlerror();    /* Clear any existing error */
-
-  retval = dlsym(handle, name);
-  error = dlerror();
-
-  if (error != NULL && errors_are_fatal)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error calling dlsym: %s\n"), dlerror());
-
-  return retval;
-}
-
-#endif /* defined(HAVE_DLOPEN)*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -943,11 +903,7 @@ cs_calcium_load_yacs(const char *lib_path)
 
   /* Load symbols from shared library */
 
-  _cs_calcium_yacslib = dlopen(lib_path, RTLD_LAZY);
-
-  if (_cs_calcium_yacslib == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error loading %s: %s."), lib_path, dlerror());
+  _cs_calcium_yacslib = cs_base_dlopen(lib_path);
 
   /* Function pointers need to be double-casted so as to first convert
      a (void *) type to a memory address and then convert it back to the
@@ -955,25 +911,25 @@ cs_calcium_load_yacs(const char *lib_path)
      This is a valid ISO C construction. */
 
   _cs_calcium_yacsinit = (cs_calcium_yacsinit_t *) (intptr_t)
-    _get_dl_function_pointer(_cs_calcium_yacslib, "yacsinit", true);
+    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "yacsinit", true);
 
   _cs_calcium_read_int = (cs_calcium_read_int_t *) (intptr_t)
-    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_len", true);
+    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_len", true);
 
   _cs_calcium_write_int = (cs_calcium_write_int_t *) (intptr_t)
-    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_een", true);
+    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_een", true);
 
   _cs_calcium_read_float = (cs_calcium_read_float_t *) (intptr_t)
-    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_lre", true);
+    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_lre", true);
 
   _cs_calcium_write_float = (cs_calcium_write_float_t *) (intptr_t)
-    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_ere", true);
+    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_ere", true);
 
   _cs_calcium_read_double = (cs_calcium_read_double_t *) (intptr_t)
-    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_ldb", true);
+    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_ldb", true);
 
   _cs_calcium_write_double = (cs_calcium_write_double_t *) (intptr_t)
-    _get_dl_function_pointer(_cs_calcium_yacslib, "cp_edb", true);
+    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_edb", true);
 
   if (   _cs_calcium_yacsinit == NULL
       || _cs_calcium_read_int == NULL
@@ -982,7 +938,7 @@ cs_calcium_load_yacs(const char *lib_path)
       || _cs_calcium_write_float == NULL
       || _cs_calcium_read_double== NULL
       || _cs_calcium_write_double == NULL) {
-    dlclose(_cs_calcium_yacslib);
+    cs_base_dlclose(lib_path, _cs_calcium_yacslib);
     _cs_calcium_yacslib = NULL;
   }
 
@@ -1005,7 +961,7 @@ cs_calcium_unload_yacs(void)
 #if defined(HAVE_DLOPEN)
 
   if (_cs_calcium_yacslib != NULL)
-    dlclose(_cs_calcium_yacslib);
+    cs_base_dlclose(NULL, _cs_calcium_yacslib);
 
   /* Reset function pointers to NULL */
 

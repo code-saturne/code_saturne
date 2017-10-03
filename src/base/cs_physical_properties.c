@@ -37,10 +37,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(HAVE_DLOPEN)
-#include <dlfcn.h>
-#endif
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -194,74 +190,6 @@ _thermal_table_create(void)
   return tt;
 }
 
-#if defined(HAVE_DLOPEN) && defined(HAVE_EOS)
-
-/*----------------------------------------------------------------------------
- * Get a shared library function pointer for a writer plugin
- *
- * parameters:
- *   name             <-- name of function symbol in library
- *
- * returns:
- *   pointer to function in shared library
- *----------------------------------------------------------------------------*/
-
-static void *
-_get_eos_dl_function_pointer(const char  *name)
-{
-  void  *retval = NULL;
-  char  *error = NULL;
-
-  assert(_cs_eos_dl_lib != NULL);
-
-  dlerror();    /* Clear any existing error */
-
-  retval = dlsym(_cs_eos_dl_lib, name);
-  error = dlerror();
-
-  if (error != NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error calling dlsym: %s\n"), error);
-
-  return retval;
-}
-
-#endif
-
-#if defined(HAVE_PLUGINS) && defined(HAVE_COOLPROP)
-
-/*----------------------------------------------------------------------------
- * Get a shared library function pointer for a writer plugin
- *
- * parameters:
- *   name             <-- name of function symbol in library
- *
- * returns:
- *   pointer to function in shared library
- *----------------------------------------------------------------------------*/
-
-static void *
-_get_coolprop_dl_function_pointer(const char  *name)
-{
-  void  *retval = NULL;
-  char  *error = NULL;
-
-  assert(_cs_coolprop_dl_lib != NULL);
-
-  dlerror();    /* Clear any existing error */
-
-  retval = dlsym(_cs_coolprop_dl_lib, name);
-  error = dlerror();
-
-  if (error != NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error calling dlsym: %s\n"), error);
-
-  return retval;
-}
-
-#endif
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -308,22 +236,10 @@ cs_thermal_table_set(const char *material,
 #if defined(HAVE_COOLPROP)
 #if defined(HAVE_PLUGINS)
     {
-      char  *lib_path = NULL;
-      const char *pkglibdir = cs_base_get_pkglibdir();
-
       /* Open from shared library */
-      BFT_MALLOC(lib_path,
-                 strlen(pkglibdir) + 1 + 3 + strlen("cs_coolprop") + 3 + 1,
-                 char);
-      sprintf(lib_path, "%s%c%s.so", pkglibdir, DIR_SEPARATOR, "cs_coolprop");
-      _cs_coolprop_dl_lib = dlopen(lib_path, RTLD_LAZY);
-      BFT_FREE(lib_path);
+      _cs_coolprop_dl_lib = cs_base_dlopen_plugin("cs_coolprop");
 
       /* Load symbols from shared library */
-
-      if (_cs_coolprop_dl_lib == NULL)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Error loading %s: %s."), lib_path, dlerror());
 
       /* Function pointers need to be double-casted so as to first convert
          a (void *) type to a memory address and then convert it back to the
@@ -331,7 +247,9 @@ cs_thermal_table_set(const char *material,
          This is a valid ISO C construction. */
 
       _cs_phys_prop_coolprop = (cs_phys_prop_coolprop_t *)  (intptr_t)
-        _get_coolprop_dl_function_pointer("cs_phys_prop_coolprop");
+        cs_base_get_dl_function_pointer(_cs_coolprop_dl_lib,
+                                        "cs_phys_prop_coolprop",
+                                        true);
     }
 #else
     _cs_phys_prop_coolprop = (cs_phys_prop_coolprop_t *)  (intptr_t)
@@ -346,22 +264,8 @@ cs_thermal_table_set(const char *material,
     cs_glob_thermal_table->type = 2;
 #if defined(HAVE_EOS)
     {
-      char  *lib_path = NULL;
-      const char *pkglibdir = cs_base_get_pkglibdir();
-
       /* Open from shared library */
-      BFT_MALLOC(lib_path,
-                 strlen(pkglibdir) + 1 + 3 + strlen("cs_eos") + 3 + 1,
-                 char);
-      sprintf(lib_path, "%s%c%s.so", pkglibdir, DIR_SEPARATOR, "cs_eos");
-      _cs_eos_dl_lib = dlopen(lib_path, RTLD_LAZY);
-      BFT_FREE(lib_path);
-
-      /* Load symbols from shared library */
-
-      if (_cs_eos_dl_lib == NULL)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Error loading %s: %s."), lib_path, dlerror());
+      _cs_eos_dl_lib = cs_base_dlopen_plugin("cs_eos");
 
       /* Function pointers need to be double-casted so as to first convert
          a (void *) type to a memory address and then convert it back to the
@@ -369,13 +273,14 @@ cs_thermal_table_set(const char *material,
          This is a valid ISO C construction. */
 
       _cs_eos_create = (cs_eos_create_t *)  (intptr_t)
-        _get_eos_dl_function_pointer("cs_eos_create");
+        cs_base_get_dl_function_pointer(_cs_eos_dl_lib, "cs_eos_create", true);
       _cs_eos_destroy = (cs_eos_destroy_t *)  (intptr_t)
-        _get_eos_dl_function_pointer("cs_eos_destroy");
+        cs_base_get_dl_function_pointer(_cs_eos_dl_lib, "cs_eos_destroy", true);
       _cs_phys_prop_eos = (cs_phys_prop_eos_t *)  (intptr_t)
-        _get_eos_dl_function_pointer("cs_phys_prop_eos");
+        cs_base_get_dl_function_pointer(_cs_eos_dl_lib, "cs_phys_prop_eos", true);
 
-      _cs_eos_create(cs_glob_thermal_table->method, cs_glob_thermal_table->reference);
+      _cs_eos_create(cs_glob_thermal_table->method,
+                     cs_glob_thermal_table->reference);
     }
 #endif
   }
@@ -396,9 +301,7 @@ cs_thermal_table_finalize(void)
 #if defined(HAVE_EOS)
     if (cs_glob_thermal_table->type == 2) {
       _cs_eos_destroy();
-      if (dlclose(_cs_eos_dl_lib) != 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Error unloading library: %s."), dlerror());
+      cs_base_dlclose("cs_eos", _cs_eos_dl_lib);
       _cs_eos_create = NULL;
       _cs_eos_destroy = NULL;
       _cs_phys_prop_eos = NULL;
@@ -406,9 +309,7 @@ cs_thermal_table_finalize(void)
 #endif
 #if defined(HAVE_COOLPROP) && defined(HAVE_PLUGINS)
     if (cs_glob_thermal_table->type == 3) {
-      if (dlclose(_cs_coolprop_dl_lib) != 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Error unloading library: %s."), dlerror());
+      cs_base_dlclose("cs_coolprop", _cs_coolprop_dl_lib);
       _cs_phys_prop_coolprop = NULL;
     }
 #endif
