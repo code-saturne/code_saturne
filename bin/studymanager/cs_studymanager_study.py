@@ -946,6 +946,40 @@ class Study(object):
 
         return msg
 
+    #---------------------------------------------------------------------------
+
+    def needs_report_detailed(self, postpro):
+        """
+        check if study needs a section in the detailed report
+        (for figures, comparison or input)
+        """
+        # study has figures or input figures
+        needs = self.matplotlib_figures or self.input_figures
+
+        for case in self.cases:
+            if case.is_compare == "done":
+                needs = True
+                break
+
+            # handle the input nodes that are inside case nodes
+            if case.plot == "on" and case.is_run != "KO":
+                nodes = self.__parser.getChildren(case.node, "input")
+                if nodes:
+                    needs = True
+                    break
+
+        # handle the input nodes that are inside postpro nodes
+        if postpro:
+            script, label, nodes, args = self.__parser.getPostPro(self.label)
+            for i in range(len(label)):
+                if script[i]:
+                    input_nodes = self.__parser.getChildren(nodes[i], "input")
+                    if input_nodes:
+                        needs = True
+                        break
+
+        return needs
+
 #===============================================================================
 # Studies class
 #===============================================================================
@@ -1627,6 +1661,40 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
+    def report_input(self, doc2, i_nodes, s_label, c_label=None):
+        """
+        Add input to report detailed.
+        """
+        for i_node in i_nodes:
+            f, dest, repo, tex = self.__parser.getInput(i_node)
+            doc2.appendLine("\\subsubsection{%s}" % f)
+
+            if dest:
+                d = dest
+                dd = self.__dest
+            elif repo:
+                d = repo
+                dd = self.__repo
+            else:
+                d = ""
+                dd = ""
+
+            if c_label:
+                ff = os.path.join(dd, s_label, c_label, 'RESU', d, f)
+            else:
+                ff = os.path.join(dd, s_label, 'POST', d, f)
+
+            if not os.path.isfile(ff):
+                print("\n\nWarning: this file does not exist: %s\n\n" % ff)
+            elif ff[-4:] in ('.png', '.jpg', '.pdf') or ff[-5:] == '.jpeg':
+                doc2.addFigure(ff)
+            elif tex == 'on':
+                doc2.addTexInput(ff)
+            else:
+                doc2.addInput(ff)
+
+    #---------------------------------------------------------------------------
+
     def build_reports(self, report1, report2):
         """
         @type report1: C{String}
@@ -1671,6 +1739,9 @@ class Studies(object):
                            self.__pdflatex)
 
             for l, s in self.studies:
+                if not s.needs_report_detailed(self.__postpro):
+                    continue
+
                 doc2.appendLine("\\section{%s}" % l)
 
                 if s.matplotlib_figures or s.input_figures:
@@ -1697,70 +1768,39 @@ class Studies(object):
                             doc2.add_row(case.diff_value, l, case.label)
                         elif self.__compare:
                             doc2.appendLine("No difference between the "
-                                            "repository and the destination.")
+                                            "repository and the "
+                                            "destination.")
 
                     # handle the input nodes that are inside case nodes
                     if case.plot == "on" and case.is_run != "KO":
                         nodes = self.__parser.getChildren(case.node, "input")
                         if nodes:
-                            doc2.appendLine("\\subsection{Results for case %s}" % case.label)
-                            for node in nodes:
-                                f, dest, repo, tex = self.__parser.getInput(node)
-                                doc2.appendLine("\\subsubsection{%s}" % f)
-
-                                if dest:
-                                    d = dest
-                                    dd = self.__dest
-                                elif repo:
-                                    d = repo
-                                    dd = self.__repo
-                                else:
-                                    d = ""
-                                    dd = ""
-
-                                ff = os.path.join(dd, l, case.label, "RESU", d, f)
-
-                                if not os.path.isfile(ff):
-                                    print("\n\nWarning: this file does not exist: %s\n\n" % ff)
-                                elif ff[-4:] in ('.png', '.jpg', '.pdf') or ff[-5:] == '.jpeg':
-                                    doc2.addFigure(ff)
-                                elif tex == 'on':
-                                    doc2.addTexInput(ff)
-                                else:
-                                    doc2.addInput(ff)
+                            doc2.appendLine("\\subsection{Results for "
+                                            "case %s}" % case.label)
+                            self.report_input(doc2, nodes, l, case.label)
 
                 # handle the input nodes that are inside postpro nodes
                 if self.__postpro:
                     script, label, nodes, args = self.__parser.getPostPro(l)
-                    doc2.appendLine("\\subsection{Results for post-processing cases}")
+
+                    needs_pp_input = False
                     for i in range(len(label)):
                         if script[i]:
-                            input_nodes = self.__parser.getChildren(nodes[i], "input")
+                            input_nodes = \
+                                self.__parser.getChildren(nodes[i], "input")
                             if input_nodes:
-                                for node in input_nodes:
-                                    f, dest, repo, tex = self.__parser.getInput(node)
-                                    doc2.appendLine("\\subsubsection{%s}" % f)
+                                needs_pp_input = True
+                                break
 
-                                    if dest:
-                                        d = dest
-                                        dd = self.__dest
-                                    elif repo:
-                                        d = repo
-                                        dd = self.__repo
-                                    else:
-                                        d = ""
-                                        dd = ""
-
-                                    ff = os.path.join(dd, l, "POST", d, f)
-
-                                    if not os.path.isfile(ff):
-                                        print("\n\nWarning: this file does not exist: %s\n\n" % ff)
-                                    elif ff[-4:] in ('.png', '.jpg', '.pdf') or ff[-5:] == '.jpeg':
-                                        doc2.addFigure(ff)
-                                    elif tex == 'on':
-                                        doc2.addTexInput(ff)
-                                    else:
-                                        doc2.addInput(ff)
+                    if needs_pp_input:
+                        doc2.appendLine("\\subsection{Results for "
+                                        "post-processing cases}")
+                        for i in range(len(label)):
+                            if script[i]:
+                                input_nodes = \
+                                    self.__parser.getChildren(nodes[i], "input")
+                                if input_nodes:
+                                    self.report_input(doc2, input_nodes, l)
 
             attached_files.append(doc2.close())
 
