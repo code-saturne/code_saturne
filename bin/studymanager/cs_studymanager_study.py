@@ -101,7 +101,8 @@ class Case(object):
         self.is_plot    = "not done"
         self.is_compare = "not done"
         self.threshold  = "default"
-        self.diff_value = []
+        self.diff_value = [] # list of differences (in case of comparison)
+        self.m_size_eq  = True # mesh sizes equal (in case of comparison)
         self.subdomains = None
         self.run_dir    = ""
 
@@ -509,21 +510,27 @@ class Case(object):
                              universal_newlines=True).stdout
         lines = l.readlines()
 
+        # list of field differences
         tab = []
+        # meshes have same sizes
+        m_size_eq = True
 
         # studymanager compare log only for field of real values
         for i in range(len(lines)):
-            # only select section with "Type" (english and french) on first line
-            if lines[i].find("Type") != -1:
+            # only select line with "Type" (english and french) and ';'
+            # since this should be only true for heads of section
+            if lines[i].find("Type") != -1 and lines[i].find(";") != -1:
                 line = [x.replace("\""," ").strip() for x in lines[i].split(";")]
                 name = line[0]
                 info = [x.split(":") for x in line[1:]]
                 info = [[x[0].strip(),x[1].strip()] for x in info]
+
                 # section with at least 2 informations (location, type) after
                 # their name, and of type r (real)
                 if len(info) >= 2 and info[1][1] in ['r4', 'r8']:
+                    # if next line contains size, this means sizes are different
                     if lines[i+1].find("Taille") != -1 or lines[i+1].find("Size") != -1:
-                        tab = ["mesh_size"]
+                        m_size_eq = False
                         break
                     else:
                         line = [x.strip() for x in lines[i+1].split(";")]
@@ -536,7 +543,7 @@ class Case(object):
 
         os.chdir(home)
 
-        return tab
+        return tab, m_size_eq
 
     #---------------------------------------------------------------------------
 
@@ -1360,20 +1367,23 @@ class Studies(object):
         Compare the results for one computation and report
         """
         case.is_compare = "done"
-        diff_value = case.runCompare(self, repo, dest, threshold, args, reference=reference)
+        diff_value, m_size_eq = case.runCompare(self,
+                                                repo, dest,
+                                                threshold, args,
+                                                reference=reference)
 
         case.diff_value += diff_value
+        case.m_size_eq = case.m_size_eq and m_size_eq
 
         if args:
             s_args = 'with args: %s' % args
         else:
             s_args = 'default mode'
 
-        if len(diff_value):
-            if diff_value[0] == "mesh_size":
-                self.reporting('    - compare %s (%s) --> DIFFERENT MESH SIZES FOUND' % (case.label, s_args))
-            else:
-                self.reporting('    - compare %s (%s) --> DIFFERENCES FOUND' % (case.label, s_args))
+        if not m_size_eq:
+            self.reporting('    - compare %s (%s) --> DIFFERENT MESH SIZES FOUND' % (case.label, s_args))
+        elif diff_value:
+            self.reporting('    - compare %s (%s) --> DIFFERENCES FOUND' % (case.label, s_args))
         else:
             self.reporting('    - compare %s (%s) --> NO DIFFERENCES FOUND' % (case.label, s_args))
 
@@ -1399,13 +1409,23 @@ class Studies(object):
                         if is_compare:
                             for i in range(len(nodes)):
                                 if is_compare[i]:
-                                    self.compare_case_and_report(case, repo[i], dest[i], t[i], args[i], reference=ref)
+                                    self.compare_case_and_report(case,
+                                                                 repo[i],
+                                                                 dest[i],
+                                                                 t[i],
+                                                                 args[i],
+                                                                 reference=ref)
                         if not is_compare or case.is_compare != "done":
                             repo = ""
                             dest = ""
                             t    = None
                             args = None
-                            self.compare_case_and_report(case, repo, dest, t, args, reference=ref)
+                            self.compare_case_and_report(case,
+                                                         repo,
+                                                         dest,
+                                                         t,
+                                                         args,
+                                                         reference=ref)
 
         self.reporting('')
 
@@ -1628,7 +1648,7 @@ class Studies(object):
 
         for l, s in self.studies:
             for case in s.cases:
-                if case.diff_value:
+                if case.diff_value or not case.m_size_eq:
                     is_nodiff = "KO"
                 else:
                     is_nodiff = "OK"
@@ -1665,16 +1685,16 @@ class Studies(object):
                         run_id = None
                         if case.run_id != "":
                             run_id = case.run_id
-                        doc2.appendLine("\\subsection{Comparison for case %s (run_id: %s)}" % (case.label, run_id))
-                        if len(case.diff_value):
-                            if case.diff_value[0] == "mesh_size":
-                                doc2.appendLine("Repository and destination "
-                                                "have apparently not been run "
-                                                "with the same mesh (sizes do "
-                                                "not match).")
-                            else:
-                                print case.diff_value
-                                doc2.add_row(case.diff_value, l, case.label)
+                        doc2.appendLine("\\subsection{Comparison for case "
+                                        "%s (run_id: %s)}"
+                                        % (case.label, run_id))
+                        if not case.m_size_eq:
+                            doc2.appendLine("Repository and destination "
+                                            "have apparently not been run "
+                                            "with the same mesh (sizes do "
+                                            "not match).")
+                        elif case.diff_value:
+                            doc2.add_row(case.diff_value, l, case.label)
                         elif self.__compare:
                             doc2.appendLine("No difference between the "
                                             "repository and the destination.")
