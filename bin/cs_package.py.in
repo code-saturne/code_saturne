@@ -34,7 +34,7 @@ import cs_config
 
 class package:
 
-    def __init__(self, scriptdir = None):
+    def __init__(self):
 
         # System configuration (compilers, pre-requisites, ...)
 
@@ -67,8 +67,6 @@ class package:
         self.srcdir = 'src_saturne'
 
         # Installation directories
-
-        self.scriptdir = scriptdir
 
         self.dirs = {'prefix': ("", "@prefix@"),
                      'exec_prefix': ("", "@exec_prefix@"),
@@ -114,10 +112,12 @@ class package:
         if prefix == None:
             prefix = os.getenv('CFDMODULE_ROOT_DIR')
 
-        # Last, assume that code_saturne main script is used
+        # Last, assume that the standard tree structure is used
         if prefix == None:
-            bindir = os.path.dirname(self.scriptdir)
-            prefix = os.path.dirname(bindir)
+            prefix = os.path.dirname(os.path.realpath(__file__))
+            i = prefix.find(self.dirs['pythondir'][0])
+            if i > -1:
+                prefix = os.path.dirname(prefix[:i+1])
 
         return os.path.join(prefix, self.dirs[installdir][0])
 

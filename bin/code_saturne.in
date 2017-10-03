@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     # Retrieve package information (name, version, installation dirs, ...)
     from cs_package import package
-    pkg = package(scriptdir = rootdir)
+    pkg = package()
 
     # Create an instance of the main script
     cs = master_script(sys.argv[1:], pkg)

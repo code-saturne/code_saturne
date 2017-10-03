@@ -143,10 +143,9 @@ class Case(object):
 
         if runcase.cmd_name == "code_saturne":
             from cs_package import package
-            pkg = package(old_pkg.scriptdir)
         elif runcase.cmd_name == "neptune_cfd":
             from nc_package import package
-            pkg = package(old_pkg.scriptdir)
+        pkg = package()
 
         return runcase.cmd_name, pkg
 
