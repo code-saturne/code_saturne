@@ -522,7 +522,7 @@ class Case(object):
                 # section with at least 2 informations (location, type) after
                 # their name, and of type r (real)
                 if len(info) >= 2 and info[1][1] in ['r4', 'r8']:
-                    if lines[i+1].find("Taille") != 1 or lines[i+1].find("Size") != -1:
+                    if lines[i+1].find("Taille") != -1 or lines[i+1].find("Size") != -1:
                         tab = ["mesh_size"]
                         break
                     else:
