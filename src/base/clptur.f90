@@ -1574,7 +1574,7 @@ do iscal = 1, nscal
       call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
       if (vcopt%icoupl.gt.0) then
-        call cs_ic_set_exchcoeff( f_id, hbord2 )
+        call cs_ic_set_exchcoeff(f_id, hbord2)
       endif
       deallocate(hbord2)
     else

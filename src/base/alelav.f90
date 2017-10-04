@@ -296,7 +296,6 @@ enddo
 deallocate(dproj)
 deallocate(gradm)
 
-
 !--------
 ! Formats
 !--------
