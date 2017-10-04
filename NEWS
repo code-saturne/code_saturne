@@ -26,6 +26,7 @@ Bug fixes
   on vertex boundary conditions; fixes crash in this combination.
 
 - Salome_CFD:
+  * fix build for some system combinations.
   * symbolic link files bug fixed.
   * setup.py save File action bug fixed.
 
