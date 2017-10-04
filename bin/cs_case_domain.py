@@ -640,9 +640,6 @@ class domain(base_domain):
             self.purge_result(link_path) # in case of previous run here
             self.symlink(mesh_input, link_path)
 
-        if not self.exec_solver:
-            return
-
         # Copy data files
 
         dir_files = os.listdir(self.data_dir)
@@ -656,6 +653,9 @@ class domain(base_domain):
                 shutil.copy2(src, os.path.join(self.exec_dir, f))
                 if f == 'cs_user_scripts.py':  # Copy user script to results now
                     shutil.copy2(src,  os.path.join(self.result_dir, f))
+
+        if not self.exec_solver:
+            return
 
         # Call user script if necessary
 

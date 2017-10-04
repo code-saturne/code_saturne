@@ -13,6 +13,8 @@ User changes
 Bug fixes
 ---------
 
+- Fix "code_saturne submit" whith mesh import only mode.
+
 - Fix issue #243 (error in balance by zone the kinematic outlet term).
 
 - Fix for EBRSM with irijco=1 and floatation terms.
