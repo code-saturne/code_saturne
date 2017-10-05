@@ -15,13 +15,11 @@
 # cflags_default         # Base CFLAGS                       (default: "")
 # cflags_default_dbg     # Added to $CFLAGS for debugging    (default: "-g")
 # cflags_default_opt     # Added to $CFLAGS for optimization (default: "-O")
-# cflags_default_prf     # Added to $CFLAGS for profiling    (default: "")
 # cflags_default_omp     # Added to $CFLAGS for OpenMP       (default: "")
 #
 # ldflags_default        # Base LDFLAGS                       (default: "")
 # ldflags_default_dbg    # Added to $LDFLAGS for debugging    (default: "-g")
 # ldflags_default_opt    # Added to $LDFLAGS for optimization (default: "-O")
-# ldflags_default_prf    # Added to $LDFLAGS for profiling    (default: "")
 # ldflags_rpath          # Added to $LDFLAGS for shared libs  (default: "")
 
 # Two other environment variable strings are defined, containing possibly
@@ -125,7 +123,6 @@ if test "x$ple_gcc" = "xgcc"; then
   cflags_default="-std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused"
   cflags_default_dbg="-g"
   cflags_default_opt="-O2"
-  cflags_default_prf="-pg"
   cflags_default_omp="-fopenmp"
 
   # Modify default flags on certain systems
@@ -209,7 +206,6 @@ elif test "x$ple_gcc" = "xicc"; then
   cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
-  cflags_default_prf="-p"
   cflags_default_omp="-qopenmp"
   case "$ple_cc_vers_major" in
     1[0123456])
@@ -235,7 +231,6 @@ elif test "x$ple_gcc" = "xclang"; then
   cflags_default="-std=c99 -funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cflags_default_dbg="-g -O0"
   cflags_default_opt="-O2"
-  cflags_default_prf="-p"
   cflags_default_omp="-openmp"
 
 # Otherwise, are we using pathcc ?
@@ -258,7 +253,6 @@ elif test "x$ple_gcc" = "xpathcc"; then
     cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
     cflags_default_dbg="-g"
     cflags_default_opt="-O2"
-    cflags_default_prf=""
     cflags_default_omp="-openmp"
 
   fi
@@ -284,7 +278,6 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
     cflags_default="-c99 -noswitcherror"
     cflags_default_dbg="-g -Mbounds"
     cflags_default_opt="-O2"
-    cflags_default_prf="-Mprof=func,lines"
     cflags_default_omp="-mp"
 
   fi
@@ -311,14 +304,12 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
     cflags_default="-qlanglvl=stdc99 -q64"
     cflags_default_opt="-O3"
     cflags_default_dbg="-g -qfullpath"
-    cflags_default_prf="-pg -qfullpath"
     cflags_default_omp="-qsmp=omp -qthreaded"
 
     # Default  linker flags
     ldflags_default=""
     ldflags_default_opt="-O3"
     ldflags_default_dbg="-g -qfullpath"
-    ldflags_default_prf="-pg -qfullpath"
 
     # Adjust options for IBM Blue Gene cross-compiler
 
@@ -362,14 +353,12 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
     cflags_default=""                        # "-h c99" by default
     cflags_default_opt="-O2"
     cflags_default_dbg="-g"
-    cflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
     cflags_default_omp="-h omp"              # default: use "-h noomp" to disable
 
     # Default  linker flags
     ldflags_default=""
     ldflags_default_opt="-O2"
     ldflags_default_dbg="-g"
-    ldflags_default_prf="-h profile_generate"
 
   fi
 fi
@@ -401,14 +390,12 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
        cflags_default="-Kc99 -pvctl,loopcnt=2147483647"
        cflags_default_opt=""
        cflags_default_dbg=""
-       cflags_default_prf=""
        cflags_default_omp=""
 
        # Default linker flags
        ldflags_default=""
        ldflags_default_opt="-O"
        ldflags_default_dbg="-g"
-       ldflags_default_prf="-pg"
 
      fi
      ;;
@@ -421,7 +408,6 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
       cflags_default=""
       cflags_default_opt="-O"
       cflags_default_dbg="-g"
-      cflags_default_prf=""
       cflags_default_omp=""
       ;;
 
@@ -446,14 +432,12 @@ if test "x$ple_linker_set" != "xyes" ; then
       ldflags_default=""
       ldflags_default_opt="-O"
       ldflags_default_dbg="-g"
-      ldflags_default_prf="-pg"
       ldflags_rpath="-Wl,-rpath -Wl,"
       ;;
 
     *)
       ldflags_default_opt="-O"
       ldflags_default_dbg="-g"
-      ldflags_default_prf="-pg"
       ;;
 
   esac

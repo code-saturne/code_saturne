@@ -32,14 +32,12 @@
 # cflags_default_dbg     # Added to $CFLAGS for debugging    (default: "-g")
 # cflags_default_opt     # Added to $CFLAGS for optimization (default: "-O")
 # cflags_default_hot     # Optimization for specific files   (default: "-O")
-# cflags_default_prf     # Added to $CFLAGS for profiling    (default: "")
 # cflags_default_omp     # Added to $CFLAGS for OpenMP       (default: "")
 
 # cxxflags_default       # Base CXXFLAGS                       (default: "")
 # cxxflags_default_dbg   # Added to $CXXFLAGS for debugging    (default: "-g")
 # cxxflags_default_opt   # Added to $CXXFLAGS for optimization (default: "-O")
 # cxxflags_default_hot   # Optimization for specific files     (default: "-O")
-# cxxflags_default_prf   # Added to $CXXFLAGS for profiling    (default: "")
 # cxxflags_default_omp   # Added to $CXXFLAGS for OpenMP       (default: "")
 # cxxflags_default_std   # C++ standard variant                (default: "")
 
@@ -47,19 +45,16 @@
 # fcflags_default_dbg    # Added to $FCFLAGS for debugging    (default: "-g")
 # fcflags_default_opt    # Added to $FCFLAGS for optimization (default: "-O")
 # fcflags_default_hot    # Optimization for specific files    (default: "-O")
-# fcflags_default_prf    # Added to $FCFLAGS for profiling    (default: "")
 # fcflags_default_omp    # Added to $FCFLAGS for OpenMP       (default: "")
 #
 # ldflags_default        # Base LDFLAGS                       (default: "")
 # ldflags_default_dbg    # Added to $LDFLAGS for debugging    (default: "-g")
 # ldflags_default_opt    # Added to $LDFLAGS for optimization (default: "-O")
-# ldflags_default_prf    # Added to $LDFLAGS for profiling    (default: "")
 # ldflags_rpath          # Added to $LDFLAGS for shared libs  (default: "")
 
 # libs_default           # Base LIBS                          (default: "")
 # libs_default_dbg       # Added to $LDFLAGS for debugging    (default: "")
 # libs_default_opt       # Added to $LDFLAGS for optimization (default: "")
-# libs_default_prf       # Added to $LDFLAGS for profiling    (default: "")
 
 # Two other environment variable strings are defined, containing possibly
 # more detailed compiler information:
@@ -101,7 +96,6 @@ unset LANG;
 libs_default=""
 libs_default_dbg=""
 libs_default_opt=""
-libs_default_prf=""
 
 ##################
 #                #
@@ -184,7 +178,6 @@ if test "x$cs_gcc" = "xgcc"; then
   cflags_default_dbg="-g"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
-  cflags_default_prf="-pg"
   cflags_default_omp="-fopenmp"
 
   # Modify default flags on certain systems
@@ -271,7 +264,6 @@ elif test "x$cs_gcc" = "xicc"; then
   cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
-  cflags_default_prf="-p"
   cflags_default_omp="-qopenmp"
   case "$cs_cc_vers_major" in
     1[0123456])
@@ -299,7 +291,6 @@ elif test "x$cs_gcc" = "xclang"; then
   cflags_default_dbg="-g -O0"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
-  cflags_default_prf="-p"
   cflags_default_omp="-fopenmp=libomp"
 
 # Otherwise, are we using pathcc ?
@@ -323,7 +314,6 @@ elif test "x$cs_gcc" = "xpathcc"; then
     cflags_default_dbg="-g"
     cflags_default_opt="-O2"
     cflags_default_hot="-Ofast"
-    cflags_default_prf=""
     cflags_default_omp="-openmp"
 
   fi
@@ -350,7 +340,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cflags_default_dbg="-g -Mbounds"
     cflags_default_opt="-O2"
     cflags_default_hot="-fast"
-    cflags_default_prf="-Mprof=func,lines"
     cflags_default_omp="-mp"
 
   fi
@@ -378,14 +367,12 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cflags_default_opt="-O3"
     cflags_default_hot="-O3"
     cflags_default_dbg="-g -qfullpath"
-    cflags_default_prf="-pg -qfullpath"
     cflags_default_omp="-qsmp=omp -qthreaded"
 
     # Default  linker flags
     ldflags_default=""
     ldflags_default_opt="-O3"
     ldflags_default_dbg="-g -qfullpath"
-    ldflags_default_prf="-pg -qfullpath"
     ldflags_rpath="-R"
 
     # Adjust options for IBM Blue Gene cross-compiler
@@ -426,14 +413,12 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cflags_default_opt="-O2"
     cflags_default_hot="-O3"
     cflags_default_dbg="-g"
-    cflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
     cflags_default_omp="-h omp"              # default: use "-h noomp" to disable
 
     # Default  linker flags
     ldflags_default=""
     ldflags_default_opt="-O2"
     ldflags_default_dbg="-g"
-    ldflags_default_prf="-h profile_generate"
 
   fi
 fi
@@ -453,7 +438,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
       cflags_default=""
       cflags_default_opt="-O"
       cflags_default_dbg="-g"
-      cflags_default_prf=""
       cflags_default_omp=""
       ;;
 
@@ -535,7 +519,6 @@ if test "x$cs_gxx" = "xg++"; then
   cxxflags_default_dbg="-g"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
-  cxxflags_default_prf="-pg"
   cxxflags_default_omp="-fopenmp"
   cxxflags_default_std="-ansi -funsigned-char"
 
@@ -605,7 +588,6 @@ elif test "x$cs_gxx" = "xicc"; then
   cxxflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
-  cxxflags_default_prf="-p"
   cxxflags_default_omp="-qopenmp"
   cxxflags_default_std="-strict-ansi -funsigned-char"
 
@@ -635,7 +617,6 @@ elif test "x$cs_gxx" = "xclang"; then
   cxxflags_default_dbg="-g -O0"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
-  cxxflags_default_prf="-p"
   cxxflags_default_omp="-fopenmp=libomp"
   cxxflags_default_std="-strict-ansi -funsigned-char"
 
@@ -658,7 +639,6 @@ else
     cxxflags_default="-noswitcherror"
     cxxflags_default_dbg="-g -Mbounds"
     cxxflags_default_opt="-fast -fastsse"
-    cxxflags_default_prf="-Mprof=func,lines"
     cxxflags_default_omp="-mp"
     cxxflags_default_std="-Xa"
 
@@ -686,7 +666,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_opt="-O3"
     cxxflags_default_hot="-O3"
     cxxflags_default_dbg="-g"
-    cxxflags_default_prf="-pg"
     cxxflags_default_omp="-qsmp=omp -qthreaded"
     cxxflags_default_std=""
 
@@ -725,7 +704,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_opt="-O2"
     cxxflags_default_hot="-O3"
     cxxflags_default_dbg="-g"
-    cfxxlags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
     cfxxlags_default_omp="-h omp"              # default: use "-h noomp" to disable
     cxxflags_default_std=""
 
@@ -753,7 +731,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_dbg="-g"
     cxxflags_default_opt="-O2"
     cxxflags_default_hot="-Ofast"
-    cxxflags_default_prf=""
     cxxflags_default_omp="-openmp"
     cxxflags_default_std=""
 
@@ -776,7 +753,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
       cxxflags_default=""
       cxxflags_default_opt="-O"
       cxxflags_default_dbg="-g"
-      cxxflags_default_prf=""
       cxxflags_default_omp=""
       cxxflags_default_std=""
       ;;
@@ -856,7 +832,6 @@ if test "$?" = "0" ; then
   fcflags_default_dbg="-g -fcheck=bounds"
   fcflags_default_opt="-O"
   fcflags_default_hot="-O2"
-  fcflags_default_prf="-pg"
   fcflags_default_omp="-fopenmp"
 
   if test "xgfortran" = "x$cs_fc_vendor"; then
@@ -904,7 +879,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_dbg="-g -O0 -traceback -check all -check nopointer -fpe0 -ftrapuv"
     fcflags_default_opt="-O2"
     fcflags_default_hot="-O3"
-    fcflags_default_prf="-p"
     fcflags_default_omp="-qopenmp"
 
     case "$cs_cxx_vers_major" in
@@ -936,7 +910,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_dbg="-g -Mbounds"
     fcflags_default_opt="-O2"
     fcflags_default_hot="-fast"
-    fcflags_default_prf="-Mprof=func,lines"
     fcflags_default_omp="-mp"
 
   fi
@@ -962,7 +935,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default="-q64 -qextname -qsuffix=cpp=f90"
     fcflags_default_dbg="-g"
     fcflags_default_opt="-O3"
-    fcflags_default_prf="-pg"
     fcflags_default_omp="-qsmp=omp -qthreaded"
 
     # Adjust options for IBM Blue Gene cross-compiler
@@ -1001,7 +973,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default="-eF -em -J."
     fcflags_default_dbg="-g"
     fcflags_default_opt="-O2"
-    fcflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
     fcflags_default_omp="-h omp"              # default: use "-h noomp" to disable
 
   fi
@@ -1027,7 +998,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_dbg="-g -ffortran-bounds-check"
     fcflags_default_opt="-O"
     fcflags_default_hot="-fast"
-    fcflags_default_prf=""
     fcflags_default_omp="-openmp"
 
   fi
@@ -1046,7 +1016,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
       fcflags_default_opt="-O"
       fcflags_default_hot="-O"
       fcflags_default_dbg="-g"
-      fcflags_default_prf=""
       ;;
 
   esac
@@ -1080,7 +1049,6 @@ if test "x$cs_linker_set" != "xyes" ; then
       ldflags_default=""
       ldflags_default_opt="-O"
       ldflags_default_dbg="-g"
-      ldflags_default_prf="-pg"
       ldflags_rpath="-Wl,-rpath -Wl,"
       if test "x$cs_gfortran" = "xgfortran"; then
         libgfortran_path=`$FC --print-file-name=libgfortran.so`
@@ -1102,7 +1070,6 @@ if test "x$cs_linker_set" != "xyes" ; then
     *)
       ldflags_default_opt="-O"
       ldflags_default_dbg="-g"
-      ldflags_default_prf="-pg"
       ;;
 
   esac
