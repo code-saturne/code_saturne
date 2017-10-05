@@ -321,7 +321,7 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
     if (n_f_p < 1)
       continue;
 
-    cs_lnum_t p_s_id = particles->n_particles +  face_particle_idx[li];
+    cs_lnum_t p_s_id = particles->n_particles + face_particle_idx[li];
 
     const cs_lnum_t face_id = (face_ids != NULL) ? face_ids[li] : li;
 
@@ -447,13 +447,6 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
       const cs_lnum_t *vertex_ids;
       const cs_real_t *face_cog, *face_normal;
 
-      cell_subface_index[i+1] = cell_subface_index[i] + n_cell_faces;
-
-      if (cell_subface_index[i+1] > n_divisions_max) {
-        n_divisions_max = cell_subface_index[i+1]*2;
-        BFT_REALLOC(acc_surf_r, n_divisions_max, cs_real_t);
-      }
-
       /* Outward normal: always well oriented for external faces,
          depend on the connectivity for internal faces */
 
@@ -488,11 +481,18 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
       }
 
+      cell_subface_index[i+1] = cell_subface_index[i] + n_vertices;
+
+      if (cell_subface_index[i+1] > n_divisions_max) {
+        n_divisions_max = cell_subface_index[i+1]*2;
+        BFT_REALLOC(acc_surf_r, n_divisions_max, cs_real_t);
+      }
+
       cs_real_t f_surf
         = _face_sub_surfaces(n_vertices,
                              vertex_ids,
                              (const cs_real_3_t *)mesh->vtx_coord,
-                             face_cog + 3*face_id,
+                             face_cog,
                              acc_surf_r + cell_subface_index[i]);
 
       cs_real_t fh = 0;
@@ -596,7 +596,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
       if (fallback == false) {
 
-        cs_real_t t = pow(r[1], 1./3.) * d_eps;
+        cs_real_t t = pow(r[1], 1./3.) * (1.0 - d_eps);
         for (cs_lnum_t j = 0; j < 3; j++)
           part_coord[j] += (cell_cen[j] - part_coord[j]) * (1. - t);
       }
