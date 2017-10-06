@@ -168,8 +168,8 @@ _line_to_array(FILE      *radfile,
  * \param[in]     xco2          CO2 volume fraction
  * \param[in]     xh2o          H2O volume fraction
  * \param[in]     interp_method Interpolation method
- * \param[inout]  itx           itx(1,:): TPlanck; iTx(2,:): Tloc;
- *                              iTx(3,:): xCO2; iTx(4,:) = xH2O
+ * \param[inout]  itx[4][4]     itx[0]: TPlanck; iTx[1]: Tloc;
+ *                              iTx[2]: xCO2; iTx[3] = xH2O
  */
 /*----------------------------------------------------------------------------*/
 
@@ -179,7 +179,7 @@ _gridposnbsg1(cs_real_t  trad,
               cs_real_t  xco2,
               cs_real_t  xh2o,
               int        interp_method,
-              int        itx[])
+              int        itx[4][4])
 {
 
   int itrad[4] = {0};
@@ -379,13 +379,12 @@ _gridposnbsg1(cs_real_t  trad,
 
   /* attribution itx */
 
-  itx[0 + 0 * 4] = itrad[0];
-  itx[1 + 0 * 4] = ita[0];
-  itx[2 + 0 * 4] = ico2a[0];
-  itx[3 + 0 * 4] = ih2oa[0];
-
-  return;
-
+  for (int k = 0; k < 4; k++) {
+    itx[0][k] = itrad[k];
+    itx[1][k] = ita[k];
+    itx[2][k] = ico2a[k];
+    itx[3][k] = ih2oa[k];
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -657,7 +656,7 @@ _interpolation4d(cs_real_t trad,
                  cs_real_t gdb[],
                  cs_real_t kdb[])
 {
-  int     itx[16];
+  int     itx[4][4];
   int     nix, nit;
 
   cs_real_t *karray, *kint1, *kint2, *kint3;
@@ -700,22 +699,20 @@ _interpolation4d(cs_real_t trad,
 
   /* Attribute interpolation point indexes along T & x */
 
-  int itrada[4] = {0};
-  int ita[4]    = {0};
-  int ico2a[4] = {0};
-  int ih2oa[4] = {0};
+  int itrada[4] = {0, 0, 0, 0};
+  int ita[4]    = {0, 0, 0, 0};
+  int ico2a[4] = {0, 0, 0, 0};
+  int ih2oa[4] = {0, 0, 0, 0};
 
-  for (int i = 0; i < nit; i++)
-    itrada[i] = itx[i * 4 + 0];
+  for (int i = 0; i < nit; i++) {
+    itrada[i] = itx[0][i];
+    ita[i] = itx[1][i];
+  }
 
-  for (int i = 0; i < nit; i++)
-    ita[i] = itx[i * 4 + 1];
-
-  for (int i = 0; i < nix; i++)
-    ico2a[i] = itx[i * 4 + 2];
-
-  for (int i = 0; i < nix; i++)
-    ih2oa[i] = itx[i * 4 + 3];
+  for (int i = 0; i < nix; i++) {
+    ico2a[i] = itx[2][i];
+    ih2oa[i] = itx[3][i];
+  }
 
   for (int ih2o = 0; ih2o < nix; ih2o++) {
     for (int ico2 = 0; ico2 < nix; ico2++) {

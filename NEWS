@@ -13,6 +13,8 @@ User changes
 Bug fixes
 ---------
 
+- Fix in radiative FSCK model.
+
 - Fix "code_saturne submit" whith mesh import only mode.
 
 - Fix issue #243 (error in balance by zone the kinematic outlet term).
