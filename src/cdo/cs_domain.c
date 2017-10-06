@@ -593,14 +593,16 @@ cs_domain_set_advanced_param(cs_domain_t       *domain,
 /*!
  * \brief  Define the value of the time step thanks to a predefined function
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- * \param[in]        func      pointer to a cs_timestep_func_t function
+ * \param[in, out] domain      pointer to a cs_domain_t structure
+ * \param[in]      func        pointer to a cs_timestep_func_t function
+ * \param[in]      func_input  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_def_time_step_by_function(cs_domain_t          *domain,
-                                    cs_timestep_func_t   *func)
+                                    cs_timestep_func_t   *func,
+                                    void                 *func_input)
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
@@ -608,10 +610,13 @@ cs_domain_def_time_step_by_function(cs_domain_t          *domain,
   domain->time_options.idtvar = 1;    /* uniform in space but can change
                                          from one time step to the other */
 
+  cs_xdef_timestep_input_t  def = {.input = func_input,
+                                   .func = func};
+
   domain->time_step_def = cs_xdef_timestep_create(CS_XDEF_BY_TIME_FUNCTION,
                                                   0, // state flag
                                                   0, // meta flag
-                                                  (void *)func);
+                                                  &def);
 
   /* Default initialization.
      To be changed at first call to cs_domain_time_step_increment() */
@@ -991,8 +996,9 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
     if (ts_def->type == CS_XDEF_BY_TIME_FUNCTION) {
 
       /* Compute current time step */
-      cs_timestep_func_t  *func = (cs_timestep_func_t *)ts_def->input;
-      domain->dt_cur = func(nt_cur, t_cur);
+      cs_xdef_timestep_input_t  *param =
+        (cs_xdef_timestep_input_t *)ts_def->input;
+      domain->dt_cur = param->func(nt_cur, t_cur, param->input);
 
       /* Update time_options */
       double  dtmin = CS_MIN(domain->time_options.dtmin, domain->dt_cur);

@@ -104,9 +104,17 @@ typedef struct {
 typedef struct {
 
   void                *input;  // NULL or pointer to a structure cast on-the-fly
-  cs_analytic_func_t  *func;   // analytic function to call
+  cs_analytic_func_t  *func;   // function to call
 
 } cs_xdef_analytic_input_t;
+
+/* Input structure when an analytic function is used for the definition */
+typedef struct {
+
+  void                *input;  // NULL or pointer to a structure cast on-the-fly
+  cs_timestep_func_t  *func;   // function to call
+
+} cs_xdef_timestep_input_t;
 
 /*============================================================================
  * Public function prototypes
@@ -162,25 +170,26 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a new cs_xdef_t structure based on volumic
- *         elements
+ * \brief  Allocate and initialize a new cs_xdef_t structure for setting the
+ *         time step
  *
  * \param[in]  type       type of definition
  * \param[in]  dim        dimension of the values to define
  * \param[in]  z_id       volume zone id
  * \param[in]  state      flag to know if this uniform, cellwise, steady...
  * \param[in]  meta       metadata associated to this description
- * \param[in]  input      pointer to a structure
+ * \param[in]  input      pointer to a structure storing the parameters (cast
+ *                        on-the-fly according to the type of definition)
  *
  * \return a pointer to the new cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_xdef_timestep_create(cs_xdef_type_t    type,
-                        cs_flag_t         state,
-                        cs_flag_t         meta,
-                        void             *input);
+cs_xdef_timestep_create(cs_xdef_type_t             type,
+                        cs_flag_t                  state,
+                        cs_flag_t                  meta,
+                        void                      *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
