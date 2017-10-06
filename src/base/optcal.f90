@@ -467,7 +467,9 @@ module optcal
   !> \ref ntmabs = 3+2 = 5
   integer(c_int), pointer, save :: ntmabs
 
-  !> Number of time steps for initalization.
+  !> Number of time steps for initalization (for all steps between
+  !> 0 and \ref ntinit, pressure is re-set to 0 before prediction
+  !> correction).
   integer(c_int), pointer, save :: ntinit
 
   !> Absolute time value for previous calculation.
