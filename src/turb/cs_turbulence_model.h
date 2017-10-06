@@ -126,6 +126,9 @@ typedef struct {
   int           irijco;       /* coupled solving of Rij
                                  - 1: true
                                  - 0: false (default) */
+  int           iddes;        /* delayed detached eddy simulation
+                                 - 1: true
+                                 - 0: false (default) */
   int           irijnu;       /* pseudo eddy viscosity in the matrix of momentum
                                  equation to partially implicit div( rho R )
                                  - 1: true

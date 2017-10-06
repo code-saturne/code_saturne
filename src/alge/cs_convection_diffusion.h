@@ -2273,23 +2273,25 @@ cs_i_cd_unsteady(const int          ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of an unsteady algorithm and without enabling slope tests.
  *
- * \param[in]     ircflp       recontruction flag
- * \param[in]     ischcp       second order convection scheme flag
- * \param[in]     blencp       proportion of centered or SOLU scheme,
- *                             (1-blencp) is the proportion of upwind.
- * \param[in]     weight       geometrical weight
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
- * \param[in]     gradi        gradient at cell i
- * \param[in]     gradj        gradient at cell j
- * \param[in]     pi           value at cell i
- * \param[in]     pj           value at cell j
- * \param[out]    pif          contribution of i to flux from i to j
- * \param[out]    pjf          contribution of j to flux from j to i
- * \param[out]    pip          reconstructed value at cell i
- * \param[out]    pjp          reconstructed value at cell j
+ * \param[in]     ircflp         recontruction flag
+ * \param[in]     ischcp         second order convection scheme flag
+ * \param[in]     blencp         proportion of centered or SOLU scheme,
+ *                               (1-blencp) is the proportion of upwind.
+ * \param[in]     weight         geometrical weight
+ * \param[in]     cell_ceni      center of gravity coordinates of cell i
+ * \param[in]     cell_cenj      center of gravity coordinates of cell i
+ * \param[in]     i_face_cog     center of gravity coordinates of face ij
+ * \param[in]     hybrid_blend_i blending factor between SOLU and center
+ * \param[in]     hybrid_blend_j blending factor between SOLU and center
+ * \param[in]     dijpf          distance I'J'
+ * \param[in]     gradi          gradient at cell i
+ * \param[in]     gradj          gradient at cell j
+ * \param[in]     pi             value at cell i
+ * \param[in]     pj             value at cell j
+ * \param[out]    pif            contribution of i to flux from i to j
+ * \param[out]    pjf            contribution of j to flux from j to i
+ * \param[out]    pip            reconstructed value at cell i
+ * \param[out]    pjp            reconstructed value at cell j
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2301,6 +2303,8 @@ cs_i_cd_unsteady_vector(const int           ircflp,
                         const cs_real_3_t   cell_ceni,
                         const cs_real_3_t   cell_cenj,
                         const cs_real_3_t   i_face_cog,
+                        const cs_real_t     hybrid_blend_i,
+                        const cs_real_t     hybrid_blend_j,
                         const cs_real_3_t   dijpf,
                         const cs_real_33_t  gradi,
                         const cs_real_33_t  gradj,
@@ -2342,7 +2346,41 @@ cs_i_cd_unsteady_vector(const int           ircflp,
                              pip,
                              pjp,
                              pjf);
+  } else if (ischcp ==3) {
 
+    /* Centered
+       --------*/
+
+    cs_centered_f_val_vector(weight,
+                             pip,
+                             pjp,
+                             pif);
+    cs_centered_f_val_vector(weight,
+                             pip,
+                             pjp,
+                             pjf);
+
+    /* SOLU
+       -----*/
+    cs_real_t pif_up[3], pjf_up[3];
+    cs_real_t hybrid_blend_interp;
+
+    cs_solu_f_val_vector(cell_ceni,
+                         i_face_cog,
+                         gradi,
+                         pi,
+                         pif_up);
+    cs_solu_f_val_vector(cell_cenj,
+                         i_face_cog,
+                         gradj,
+                         pj,
+                         pjf_up);
+
+    for (int isou = 0; isou < 3; isou++) {
+      hybrid_blend_interp = fmin(hybrid_blend_i,hybrid_blend_j);
+      pif[isou] = hybrid_blend_interp*pif[isou] + (1. - hybrid_blend_interp)*pif_up[isou];
+      pjf[isou] = hybrid_blend_interp*pjf[isou] + (1. - hybrid_blend_interp)*pjf_up[isou];
+    }
   } else {
 
     /* Second order

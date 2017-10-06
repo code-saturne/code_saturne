@@ -609,6 +609,7 @@ ihgas = -1
 
 iturb  =-999
 itytur =-999
+iddes  = 0
 
 ! Parfois, IGRHOK=1 donne des vecteurs non physiques en paroi
 !        IGRHOK = 1
@@ -944,6 +945,9 @@ ckwgm1 = ckwbt1/cmu - xkappa**2/(ckwsw1*sqrt(cmu))
 ckwgm2 = ckwbt2/cmu - xkappa**2/(ckwsw2*sqrt(cmu))
 ckwa1  = 0.31d0
 ckwc1  = 10.d0
+
+! pour la ddes
+cddes = 0.65d0
 
 !   pour le modele de Spalart Allmaras
 csab1    = 0.1355d0

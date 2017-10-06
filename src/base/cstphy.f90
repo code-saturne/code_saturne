@@ -510,6 +510,9 @@ module cstphy
   !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwbt2
 
+  !> constant \f$\C_{DDES}\f$ for the \f$k-\omega\f$ SST model.
+  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and iddes=1
+  double precision, save :: cddes
 
   !> \f$\frac{\beta_1}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 1}}\f$
   !> constant \f$\gamma_1\f$ for the \f$k-\omega\f$ SST model.

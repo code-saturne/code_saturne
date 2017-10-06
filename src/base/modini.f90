@@ -868,6 +868,12 @@ else
   endif
 endif
 
+if (iturb.eq.60) then !sst-ddes
+  cddes = 0.65d0
+elseif (iturb.eq.51) then !phif-ddes
+  cddes = 0.60d0
+endif
+
 ! ---> ICLVFL
 !      Si l'utilisateur n'a pas modifie ICLVFL, on prend par defaut :
 !        0 pour les variances

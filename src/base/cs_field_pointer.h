@@ -86,6 +86,8 @@ typedef enum {
   CS_ENUMF_(omg),          /*!< \f$ \omega \f$ for \f$ k-\omega \f$ SST model */
   CS_ENUMF_(nusa),         /*!< \f$ \widetilde{\nu}_T \f$ for Spalart Allmaras */
 
+  CS_ENUMF_(hybrid_blend), /*!< Blending factor for DDES*/
+
   CS_ENUMF_(mesh_u),       /*!< mesh velocity */
 
   CS_ENUMF_(void_f),       /*!< void fraction */

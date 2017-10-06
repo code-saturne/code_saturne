@@ -1305,6 +1305,24 @@ cs_parameters_check(void)
                                  NULL);
   }
 
+  /* Delayed Detached Eddy Simulation model compatible only with RANS
+     k-omega SST model */
+  if (cs_glob_turb_rans_model->iddes == 1) {
+    const int iturb_ddes_vals[1] = {60} ;     /* k-omega */
+
+    cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
+                                 _("while reading input data,\n"
+                                   "Delayed Detached Eddy Simulation is only "
+                                   "compatible with k-omega SST model "
+                                   "(iturb=60)"),
+                                 "cs_glob_turb_model->iturb",
+                                 cs_glob_turb_model->iturb,
+                                 1,
+                                 iturb_ddes_vals,
+                                 NULL);
+
+  }
+
   /* In lagrangian with two-way coupling, k-omega SST is forbidden (not
      properly implemented) */
   if (cs_glob_lagr_time_scheme->iilagr == 2) {

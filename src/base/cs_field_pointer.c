@@ -316,6 +316,8 @@ cs_field_pointer_map_base(void)
   cs_field_pointer_map(CS_ENUMF_(omg), cs_field_by_name_try("omega"));
   cs_field_pointer_map(CS_ENUMF_(nusa), cs_field_by_name_try("nu_tilda"));
 
+  cs_field_pointer_map(CS_ENUMF_(hybrid_blend), cs_field_by_name_try("hybrid_blend"));
+
   cs_field_pointer_map(CS_ENUMF_(mesh_u),
                        cs_field_by_name_try("mesh_velocity"));
 

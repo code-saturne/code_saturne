@@ -117,6 +117,7 @@ double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision thetp1, thetak, thetaw, thets, thetap, epsrsp
 double precision tuexpk, tuexpw
 double precision cdkw, xarg1, xxf1, xgamma, xbeta, sigma, produc
+double precision xlt, xdelta, xrd, xfd, xs2pw2, xdist, xdiff, fddes
 double precision var, vrmin(2), vrmax(2)
 double precision utaurf,ut2,ypa,ya,xunorm, limiter, nu0
 double precision turb_schmidt
@@ -127,6 +128,8 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrk, smbrw
 double precision, allocatable, dimension(:) :: tinstk, tinstw, xf1
 double precision, allocatable, dimension(:,:) :: gradk, grado, grad
+double precision, allocatable, dimension(:,:,:) :: gradv
+double precision, allocatable, dimension(:) :: s2pw2
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: gdkgdw
 double precision, allocatable, dimension(:) :: w5, w6
@@ -148,6 +151,7 @@ double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: c_st_k_p, c_st_omg_p
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cpro_divukw, cpro_s2kw
+double precision, dimension(:), pointer :: ddes_fd_coeff
 double precision, dimension(:), pointer :: w_dist
 
 type(var_cal_opt) :: vcopt_w, vcopt_k
@@ -168,6 +172,10 @@ allocate(w1(ncelet), w2(ncelet))
 allocate(dpvar(ncelet))
 allocate(gdkgdw(ncelet))
 allocate(prodk(ncelet), prodw(ncelet))
+if (iddes.eq.1) then
+  allocate(gradv(3, 3, ncelet))
+  allocate(s2pw2(ncelet))
+endif
 
 epz2 = epzero**2
 iclpkmx(1) = 0
@@ -260,6 +268,18 @@ call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,          &
 call field_gradient_scalar(ivarfl(iomg), iprev, imrgra, inc,        &
                            iccocg,                                  &
                            grado)
+
+if (iddes.eq.1) then
+  call field_get_val_s_by_name("hybrid_blend", ddes_fd_coeff)
+
+  call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,        &
+                             gradv)
+  do iel = 1, ncel
+    s2pw2(iel) = gradv(1,1,iel)**2.d0 + gradv(2,1,iel)**2.d0 + gradv(3,1,iel)**2.d0 &
+               + gradv(1,2,iel)**2.d0 + gradv(2,2,iel)**2.d0 + gradv(3,2,iel)**2.d0 &
+               + gradv(1,3,iel)**2.d0 + gradv(2,3,iel)**2.d0 + gradv(3,3,iel)**2.d0
+  enddo
+end if
 
 do iel = 1, ncel
   gdkgdw(iel) = gradk(1,iel)*grado(1,iel) &
@@ -508,31 +528,78 @@ endif
 !      Les termes sont stockes dans     smbrk, smbrw
 !      En sortie de l'etape on conserve smbrk,smbrw,gdkgdw
 !===============================================================================
+! Standard k-w SST RANS model
+if(iddes.ne.1) then
+  do iel = 1, ncel
 
-do iel = 1, ncel
+    visct  = cpro_pcvto(iel)
+    rho    = cromo(iel)
+    xk     = cvara_k(iel)
+    xw     = cvara_omg(iel)
+    xxf1   = xf1(iel)
+    xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
+    xbeta  = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
 
-  visct  = cpro_pcvto(iel)
-  rho    = cromo(iel)
-  xk     = cvara_k(iel)
-  xw     = cvara_omg(iel)
-  xxf1   = xf1(iel)
-  xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
-  xbeta  = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
+    smbrk(iel) = smbrk(iel) + volume(iel)*(                         &
+                                            prodk(iel)              &
+                                          - cmu*rho*xw*xk )
 
-  smbrk(iel) = smbrk(iel) + volume(iel)*(                         &
-                                          prodk(iel)              &
-                                        - cmu*rho*xw*xk )
+    smbrw(iel) = smbrw(iel)                                                &
+               + volume(iel)*(                                             &
+                               rho*xgamma/visct*prodw(iel)                 &
+                             - xbeta*rho*xw**2                             &
+                             + 2.d0*rho/xw*(1.d0-xxf1)/ckwsw2*gdkgdw(iel)  &
+                             )
 
-  smbrw(iel) = smbrw(iel)                                                &
-             + volume(iel)*(                                             &
-                             rho*xgamma/visct*prodw(iel)                 &
-                           - xbeta*rho*xw**2                             &
-                           + 2.d0*rho/xw*(1.d0-xxf1)/ckwsw2*gdkgdw(iel)  &
-                           )
+    tinstw(iel) = tinstw(iel) + volume(iel)*max(-2.d0*rho/xw**2*(1.d0-xxf1) &
+                                                /ckwsw2*gdkgdw(iel), 0.d0)
+  enddo
+! DDES mode for k-w SST
+else
+  do iel = 1, ncel
 
-  tinstw(iel) = tinstw(iel) + volume(iel)*max(-2.d0*rho/xw**2*(1.d0-xxf1) &
-                                              /ckwsw2*gdkgdw(iel), 0.d0)
-enddo
+    visct  = cpro_pcvto(iel)
+    xnu    = cpro_pcvlo(iel)
+    rho    = cromo(iel)
+    xk     = cvara_k(iel)
+    xw     = cvara_omg(iel)
+    xxf1   = xf1(iel)
+    xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
+    xbeta  = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
+    xs2pw2 = max(sqrt(s2pw2(iel)),epzero)
+    xdist  = max(w_dist(iel),epzero)
+
+    xlt    = sqrt(xk)/(cmu*xw)
+    xdelta = volume(iel)**(1.d0/3.d0)
+    xrd    = (visct + xnu)/ ( xs2pw2 *(xkappa**2) *(xdist**2))
+    xfd    = 1.d0 -tanh((8.d0*xrd)**3)
+    xdiff  = max((xlt-(cddes*xdelta)),0.d0)
+    fddes  = xlt/(xlt-xfd*xdiff)
+
+    ddes_fd_coeff(iel) = xfd
+
+    ! Storage of the Fd coefficient and check locally if
+    ! DDES is activated for post-propcessing
+    ! NB: for RANS zones (L_RANS < L_LES) Fd is clipped to 0
+    if ((cddes*xdelta).ge.xlt)then
+      ddes_fd_coeff(iel) = 0.d0
+    endif
+
+    smbrk(iel) = smbrk(iel) + volume(iel)*(                         &
+                                            prodk(iel)              &
+                                          - cmu*rho*xw*xk*fddes)
+
+    smbrw(iel) = smbrw(iel)                                                &
+               + volume(iel)*(                                             &
+                               rho*xgamma/visct*prodw(iel)                 &
+                             - xbeta*rho*xw**2                             &
+                             + 2.d0*rho/xw*(1.d0-xxf1)/ckwsw2*gdkgdw(iel)  &
+                             )
+
+    tinstw(iel) = tinstw(iel) + volume(iel)*max(-2.d0*rho/xw**2*(1.d0-xxf1) &
+                                                /ckwsw2*gdkgdw(iel), 0.d0)
+  enddo
+endif
 
 ! If the solving of k-omega is uncoupled, negative source terms are implicited
 if (ikecou.eq.0) then
@@ -1164,6 +1231,8 @@ deallocate(tinstk, tinstw, xf1)
 deallocate(w1, w2, usimpk, usimpw)
 deallocate(dpvar)
 deallocate(prodk, prodw)
+if (allocated(gradv)) deallocate(gradv)
+if (allocated(s2pw2)) deallocate(s2pw2)
 
 if (allocated(rotfct))  deallocate(rotfct)
 

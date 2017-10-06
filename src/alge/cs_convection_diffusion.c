@@ -3776,7 +3776,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   } else if (isstpp == 1) {
 
-    if (ischcp < 0 || ischcp > 1) {
+    if (ischcp < 0 || ischcp == 2 || ischcp > 3) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
     }
@@ -3881,6 +3881,15 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_real_3_t pip, pjp;
             cs_real_3_t pif, pjf;
 
+            cs_real_t hybrid_coef_ii, hybrid_coef_jj;
+            if (ischcp == 3) {
+              hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
+              hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+            } else {
+              hybrid_coef_ii = 0.;
+              hybrid_coef_jj = 0.;
+            }
+
             cs_i_cd_unsteady_vector(ircflp,
                                     ischcp,
                                     blencp,
@@ -3888,6 +3897,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     cell_cen[ii],
                                     cell_cen[jj],
                                     i_face_cog[face_id],
+                                    hybrid_coef_ii,
+                                    hybrid_coef_jj,
                                     dijpf[face_id],
                                     (const cs_real_3_t *)grad[ii],
                                     (const cs_real_3_t *)grad[jj],
