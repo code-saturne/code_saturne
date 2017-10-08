@@ -1558,33 +1558,36 @@ do iscal = 1, nscal
     f_id = ivarfl(isca(iscal))
 
     call field_get_dim(f_id, f_dim)
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+    allocate(hbord2(nfabor))
 
     if (f_dim.eq.1) then
 
-      allocate(hbord2(nfabor))
-
       call clptur_scalar &
-      !=================
    ( iscal  , isvhb  , icodcl ,                                     &
      rcodcl ,                                                       &
      byplus , bdplus , buk    ,                                     &
      hbord  , theipb , hbord2 ,                                     &
      tetmax , tetmin , tplumx , tplumn )
 
-      call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
-      if (vcopt%icoupl.gt.0) then
-        call cs_ic_set_exchcoeff(f_id, hbord2)
-      endif
-      deallocate(hbord2)
+    ! Vector field
     else
+
       call clptur_vector &
-      !=================
    ( iscal  , isvhb  , icodcl ,                                     &
      rcodcl ,                                                       &
      byplus , bdplus , buk    ,                                     &
-     hbord  )
+     hbord  , hbord2)
+
     endif
+
+    if (vcopt%icoupl.gt.0) then
+      call cs_ic_set_exchcoeff(f_id, hbord2)
+    endif
+    ! Free memory
+    deallocate(hbord2)
 
   endif
 
@@ -2638,13 +2641,14 @@ end subroutine
 !>                               for scalable wall functions
 !> \param[in]     buk           dimensionless velocity
 !> \param[in,out] hbord         exchange coefficient at boundary
+!> \param[in,out] hbord2        exchange coefficient for internal coupling
 !_______________________________________________________________________________
 
 subroutine clptur_vector &
  ( iscal  , isvhb  , icodcl ,                                     &
    rcodcl ,                                                       &
    byplus , bdplus , buk    ,                                     &
-   hbord  )
+   hbord  , hbord2 )
 
 !===============================================================================
 ! Module files
@@ -2683,8 +2687,8 @@ integer          iscal, isvhb
 integer          icodcl(nfabor,nvar)
 
 double precision rcodcl(nfabor,nvar,3)
-double precision byplus(nfabor), bdplus(nfabor)
-double precision hbord(nfabor), buk(nfabor)
+double precision byplus(nfabor), bdplus(nfabor), buk(nfabor)
+double precision hbord(nfabor), hbord2(nfabor)
 
 ! Local variables
 
@@ -2896,10 +2900,12 @@ do ifac = 1, nfabor
       yptp = hflui/prdtl
       ! Compute lambda/y * (y+-d+)/T+
       hflui = rkl/distbf *hflui
+      hbord2(ifac) = hflui
 
     ! Neumann on the scalar, with wall function (for post-processing)
     elseif (iturb.ne.0.and.icodcl(ifac,ivar).eq.3) then
       call hturbp(iwalfs,prdtl,turb_schmidt,yplus,dplus,hflui,ypth)
+      hbord2(ifac) = rkl/distbf * hflui
       ! y+/T+ *PrT
       yptp = hflui/prdtl
       hflui = hint
@@ -2908,6 +2914,7 @@ do ifac = 1, nfabor
       ! y+/T+ *PrT
       yptp = 1.d0/prdtl
       hflui = hint
+      hbord2(ifac) = hflui
     endif
 
     if (isvhbl.gt.0) hbord(ifac) = hflui
