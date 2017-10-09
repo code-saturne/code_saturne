@@ -8124,6 +8124,10 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
 
   /* Internal coupling variables */
+  cs_real_3_t *pvar_local = NULL;
+  cs_real_33_t *grad_local = NULL;
+  cs_real_6_t *viscce_local = NULL;
+  cs_real_t *weighb_local = NULL;
   cs_lnum_t *faces_local = NULL;
   cs_int_t n_local;
   cs_lnum_t n_distant;
@@ -8573,6 +8577,126 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
         }
       }
     }
+
+    /* The vector is internal_coupled and an implicit contribution
+     * is required */
+    if (icoupl > 0) {
+
+      /* Exchange pvar */
+      BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
+      cs_internal_coupling_exchange_by_cell_id(cpl,
+                                               3, /* Dimension */
+                                               (const cs_real_t*)_pvar,
+                                               (cs_real_t *)pvar_local);
+
+      /* Exchange grad */
+      BFT_MALLOC(grad_local, n_local, cs_real_33_t);
+      cs_internal_coupling_exchange_by_cell_id(cpl,
+                                               9, /* Dimension */
+                                               (const cs_real_t*)grad,
+                                               (cs_real_t *)grad_local);
+
+      /* Exchange viscce */
+      BFT_MALLOC(viscce_local, n_local, cs_real_6_t);
+      cs_internal_coupling_exchange_by_cell_id(cpl,
+                                               6, /* Dimension */
+                                               (const cs_real_t*)viscce,
+                                               (cs_real_t *)viscce_local);
+
+      /* Exchange weighb */
+      BFT_MALLOC(weighb_local, n_local, cs_real_t);
+      cs_internal_coupling_exchange_by_face_id(cpl,
+                                               1, /* Dimension */
+                                               (const cs_real_t*)weighb,
+                                               (cs_real_t *)weighb_local);
+
+      /* Flux contribution */
+      for (cs_lnum_t jj = 0; jj < n_local; jj++) {
+        cs_lnum_t face_id = faces_local[jj];
+        cs_lnum_t ii = b_face_cells[face_id];
+
+        cs_real_t pipp[3], pjpp[3];
+        cs_real_t pi[3], pj[3];
+
+        for (int isou = 0; isou < 3; isou++) {
+          pi[isou] = _pvar[ii][isou];
+          pj[isou] = pvar_local[jj][isou];
+        }
+
+        /* Recompute II" and JJ" */
+        cs_real_t visci[3][3], viscj[3][3];
+        cs_real_t diippf[3], djjppf[3];
+
+        visci[0][0] = viscce[ii][0];
+        visci[1][1] = viscce[ii][1];
+        visci[2][2] = viscce[ii][2];
+        visci[1][0] = viscce[ii][3];
+        visci[0][1] = viscce[ii][3];
+        visci[2][1] = viscce[ii][4];
+        visci[1][2] = viscce[ii][4];
+        visci[2][0] = viscce[ii][5];
+        visci[0][2] = viscce[ii][5];
+
+        /* IF.Ki.S / ||Ki.S||^2 */
+        cs_real_t fikdvi = weighb[face_id];
+
+        /* II" = IF + FI" */
+        for (int i = 0; i < 3; i++) {
+          diippf[i] = b_face_cog[face_id][i]-cell_cen[ii][i]
+                    - fikdvi*( visci[0][i]*b_face_normal[face_id][0]
+                             + visci[1][i]*b_face_normal[face_id][1]
+                             + visci[2][i]*b_face_normal[face_id][2] );
+        }
+
+        viscj[0][0] = viscce_local[jj][0];
+        viscj[1][1] = viscce_local[jj][1];
+        viscj[2][2] = viscce_local[jj][2];
+        viscj[1][0] = viscce_local[jj][3];
+        viscj[0][1] = viscce_local[jj][3];
+        viscj[2][1] = viscce_local[jj][4];
+        viscj[1][2] = viscce_local[jj][4];
+        viscj[2][0] = viscce_local[jj][5];
+        viscj[0][2] = viscce_local[jj][5];
+
+        /* FJ.Kj.S / ||Kj.S||^2
+         * weighb_local defined with vector JF and surface -S */
+        cs_real_t fjkdvi = weighb_local[jj];
+
+        /* JJ" = JF + FJ"
+         *   */
+        for (int i = 0; i < 3; i++) {
+          djjppf[i] = b_face_cog[face_id][i]-cell_cen[ii][i]-cpl->ci_cj_vect[jj][i]
+                    + fjkdvi*( viscj[0][i]*b_face_normal[face_id][0]
+                             + viscj[1][i]*b_face_normal[face_id][1]
+                             + viscj[2][i]*b_face_normal[face_id][2] );
+        }
+
+        for (int isou = 0; isou < 3; isou++) {
+          /* p in I" and J" */
+          pipp[isou] = pi[isou] + ircflp*(  grad[ii][isou][0]*diippf[0]
+                                          + grad[ii][isou][1]*diippf[1]
+                                          + grad[ii][isou][2]*diippf[2]);
+          pjpp[isou] = pj[isou] + ircflp*(  grad_local[jj][isou][0]*djjppf[0]
+                                          + grad_local[jj][isou][1]*djjppf[1]
+                                          + grad_local[jj][isou][2]*djjppf[2]);
+
+          /* Reproduce multiplication by i_visc[face_id] */
+          cs_real_t flux = (pipp[isou] - pjpp[isou])
+            / (weighb[face_id] + weighb_local[jj]);
+
+          rhs[ii][isou] -= thetap*flux;
+        }
+
+      }
+
+      /* Remote data no longer needed */
+      BFT_FREE(pvar_local);
+      BFT_FREE(grad_local);
+      BFT_FREE(viscce_local);
+      BFT_FREE(weighb_local);
+
+    }
+
 
   } /* idtvar */
 

@@ -2257,34 +2257,37 @@ cs_internal_coupling_spmv_contribution(bool              exclude_diag,
     }
 
   } else if (f->dim == 3) {
+
+    cs_real_3_t *_y = (cs_real_3_t *) y;
+    const cs_real_3_t *_x = (const cs_real_3_t *) x;
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
       face_id = faces_local[ii];
       cell_id = b_face_cells[face_id];
 
-      cs_real_3_t fluxi = {0., 0., 0.};
-      cs_real_3_t pi;
+      cs_real_t fluxi[3] = {0., 0., 0.};
+      cs_real_t pi[3];
       /* If exclude_diag, no diagonal term */
       if (exclude_diag) {
         for (int k = 0; k < 3; k++)
           pi[k] = 0.;
       } else {
         for (int k = 0; k < 3; k++)
-          pi[k] = x[cell_id+k];
+          pi[k] = _x[cell_id][k];
       }
-      cs_real_3_t pj = {x_j[ii], x_j[ii+1], x_j[ii+2]};
+      cs_real_t pj[3] = {x_j[ii], x_j[ii+1], x_j[ii+2]};
 
       cs_real_t hint = hintp[face_id];
       cs_real_t hext = hextp[face_id];
       cs_real_t heq = hint * hext / (hint + hext);
 
       cs_b_diff_flux_coupling_vector(idiffp,
-          pi,
-          pj,
-          heq,
-          fluxi);
+                                     pi,
+                                     pj,
+                                     heq,
+                                     fluxi);
 
-      for (int k = 0; k < 3; k++)
-        y[cell_id+k] += thetap * fluxi[k];
+      for (cs_lnum_t k = 0; k < 3; k++)
+        _y[cell_id][k] += thetap * fluxi[k];
     }
 
   }
@@ -2467,6 +2470,11 @@ void
 cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
                                 const char   criteria_cells[])
 {
+  if (_n_internal_couplings > 0)
+    bft_error(__FILE__, __LINE__, 0,
+              "Only one volume can be added in this version."
+              " You can define one zone using the union: creterion1 or criterion2.");
+
   BFT_REALLOC(_internal_coupling,
               _n_internal_couplings + 1,
               cs_internal_coupling_t);
@@ -2654,15 +2662,31 @@ cs_matrix_preconditionning_add_coupling_contribution(void       *input,
     cs_real_t *hintp = f->bc_coeffs->hint;
     cs_real_t *hextp = f->bc_coeffs->hext;
 
-    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-      face_id = faces_local[ii];
-      cell_id = b_face_cells[face_id];
+    if (f->dim == 1) {
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        face_id = faces_local[ii];
+        cell_id = b_face_cells[face_id];
 
-      cs_real_t hint = hintp[face_id];
-      cs_real_t hext = hextp[face_id];
-      cs_real_t heq = hint * hext / (hint + hext);
+        cs_real_t hint = hintp[face_id];
+        cs_real_t hext = hextp[face_id];
+        cs_real_t heq = hint * hext / (hint + hext);
 
-      ad[cell_id] += heq;
+        ad[cell_id] += heq;
+      }
+    /* Vector field */
+    } else {
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        face_id = faces_local[ii];
+        cell_id = b_face_cells[face_id];
+
+        cs_real_t hint = hintp[face_id];
+        cs_real_t hext = hextp[face_id];
+        cs_real_t heq = hint * hext / (hint + hext);
+
+        /* Diagonal part dim x dim */
+        for (cs_lnum_t k = 0; k < f->dim; k++)
+          ad[(f->dim)*(f->dim)*cell_id + (f->dim + 1)*k] += heq;
+      }
     }
   }
 }

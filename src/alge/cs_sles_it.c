@@ -825,54 +825,43 @@ _setup_sles_it(cs_sles_it_t       *c,
     }
     else {
 
-      if (diag_block_size < 3 || block_nn_inverse == false) {
-
-        const cs_lnum_t n_rows = sd->n_rows;
-
+      const cs_lnum_t n_rows = sd->n_rows;
+      if (diag_block_size < 3 || block_nn_inverse == false)
         BFT_REALLOC(sd->_ad_inv, sd->n_rows, cs_real_t);
-        sd->ad_inv = sd->_ad_inv;
+      else
+        BFT_REALLOC(sd->_ad_inv, sd->n_rows*diag_block_size, cs_real_t);
 
+      sd->ad_inv = sd->_ad_inv;
+
+      //FIXME value for block ?
+      if (diag_block_size < 3 || block_nn_inverse == false)
         cs_matrix_copy_diagonal(a, sd->_ad_inv);
 
-        /* Add extended contribution, if necessary */
-        cs_matrix_preconditioner_extend_t *a_preconditioner_extend;
-        void *a_input_extend;
-        cs_matrix_get_extend(a,
-                             NULL, /* vector_multiply_extend */
-                             &a_preconditioner_extend,
-                             &a_input_extend);
+      /* Add extended contribution, if necessary */
+      cs_matrix_preconditioner_extend_t *a_preconditioner_extend;
+      void *a_input_extend;
+      cs_matrix_get_extend(a,
+                           NULL, /* vector_multiply_extend */
+                           &a_preconditioner_extend,
+                           &a_input_extend);
 
-        if (a_preconditioner_extend != NULL)
-          a_preconditioner_extend(a_input_extend,
-                                  sd->_ad_inv);
+      if (a_preconditioner_extend != NULL)
+        a_preconditioner_extend(a_input_extend,
+                                sd->_ad_inv);
 
+      const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
+      const cs_lnum_t  n_blocks = sd->n_rows / diag_block_size;
+
+      if (diag_block_size < 3 || block_nn_inverse == false) {
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_rows; i++)
           sd->_ad_inv[i] = 1.0 / sd->_ad_inv[i];
 
       }
-
-      else if (diag_block_size == 3) {
-
-        BFT_REALLOC(sd->_ad_inv, sd->n_rows*diag_block_size, cs_real_t);
-        sd->ad_inv = sd->_ad_inv;
-
-        const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
-        const cs_lnum_t  n_blocks = sd->n_rows / diag_block_size;
-
+      else if (diag_block_size == 3)
         _fact_lu33(n_blocks, ad, sd->_ad_inv);
-
-      }
-      else {
-
-        BFT_REALLOC(sd->_ad_inv, sd->n_rows*diag_block_size, cs_real_t);
-        sd->ad_inv = sd->_ad_inv;
-
-        const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
-        const cs_lnum_t  n_blocks = sd->n_rows / diag_block_size;
-
+      else
         _fact_lu(n_blocks, diag_block_size, ad, sd->_ad_inv);
-      }
 
     }
 
