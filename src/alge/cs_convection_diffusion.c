@@ -8138,7 +8138,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
   cs_gnum_t n_upwind;
 
   cs_real_6_t *viscce;
-  cs_real_33_t *gradv;
+  cs_real_33_t *grad;
   cs_real_t *bndcel;
 
   cs_field_t *f;
@@ -8148,7 +8148,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
   viscce = NULL;
 
   /* Allocate work arrays */
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  BFT_MALLOC(grad, n_cells_ext, cs_real_33_t);
 
   /* Choose gradient type */
 
@@ -8218,14 +8218,14 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                                     _pvar,
                                     NULL, /* weighted gradient */
                                     cpl,
-                                    gradv);
+                                    grad);
 
   } else {
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
         for (int jsou = 0; jsou < 3; jsou++)
-          gradv[cell_id][isou][jsou] = 0.;
+          grad[cell_id][isou][jsou] = 0.;
       }
     }
   }
@@ -8320,24 +8320,24 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
 
           for (int isou = 0; isou < 3; isou++) {
             /* p in I" and J" */
-            pipp[isou] = pi[isou] + ircflp*( gradv[ii][isou][0]*diippf[0]
-                                           + gradv[ii][isou][1]*diippf[1]
-                                           + gradv[ii][isou][2]*diippf[2]);
-            pjpp[isou] = pj[isou] + ircflp*( gradv[jj][isou][0]*djjppf[0]
-                                           + gradv[jj][isou][1]*djjppf[1]
-                                           + gradv[jj][isou][2]*djjppf[2]);
+            pipp[isou] = pi[isou] + ircflp*( grad[ii][isou][0]*diippf[0]
+                                           + grad[ii][isou][1]*diippf[1]
+                                           + grad[ii][isou][2]*diippf[2]);
+            pjpp[isou] = pj[isou] + ircflp*( grad[jj][isou][0]*djjppf[0]
+                                           + grad[jj][isou][1]*djjppf[1]
+                                           + grad[jj][isou][2]*djjppf[2]);
 
             pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp * pia[isou];
             pjr[isou] = pj[isou]/relaxp - (1.-relaxp)/relaxp * pja[isou];
 
 
             /* pr in I" and J" */
-            pippr[isou] = pir[isou] + ircflp*( gradv[ii][isou][0]*diippf[0]
-                                             + gradv[ii][isou][1]*diippf[1]
-                                             + gradv[ii][isou][2]*diippf[2]);
-            pjppr[isou] = pjr[isou] + ircflp*( gradv[jj][isou][0]*djjppf[0]
-                                             + gradv[jj][isou][1]*djjppf[1]
-                                             + gradv[jj][isou][2]*djjppf[2]);
+            pippr[isou] = pir[isou] + ircflp*( grad[ii][isou][0]*diippf[0]
+                                             + grad[ii][isou][1]*diippf[1]
+                                             + grad[ii][isou][2]*diippf[2]);
+            pjppr[isou] = pjr[isou] + ircflp*( grad[jj][isou][0]*djjppf[0]
+                                             + grad[jj][isou][1]*djjppf[1]
+                                             + grad[jj][isou][2]*djjppf[2]);
 
             cs_real_t fluxi = i_visc[face_id]*(pippr[isou] - pjpp[isou]);
             cs_real_t fluxj = i_visc[face_id]*(pipp[isou] - pjppr[isou]);
@@ -8423,12 +8423,12 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
 
           for (int isou = 0; isou < 3; isou++) {
             /* p in I" and J" */
-            pipp[isou] = pi[isou] + ircflp*( gradv[ii][isou][0]*diippf[0]
-                                           + gradv[ii][isou][1]*diippf[1]
-                                           + gradv[ii][isou][2]*diippf[2]);
-            pjpp[isou] = pj[isou] + ircflp*( gradv[jj][isou][0]*djjppf[0]
-                                           + gradv[jj][isou][1]*djjppf[1]
-                                           + gradv[jj][isou][2]*djjppf[2]);
+            pipp[isou] = pi[isou] + ircflp*( grad[ii][isou][0]*diippf[0]
+                                           + grad[ii][isou][1]*diippf[1]
+                                           + grad[ii][isou][2]*diippf[2]);
+            pjpp[isou] = pj[isou] + ircflp*( grad[jj][isou][0]*djjppf[0]
+                                           + grad[jj][isou][1]*djjppf[1]
+                                           + grad[jj][isou][2]*djjppf[2]);
 
             cs_real_t flux = i_visc[face_id]*(pipp[isou] -pjpp[isou]);
 
@@ -8493,9 +8493,9 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                                + visci[2][i]*b_face_normal[face_id][2] );
           }
           for (int isou = 0; isou < 3; isou++) {
-            pippr[isou] = pir[isou] + ircflp*( gradv[ii][isou][0]*diippf[0]
-                                             + gradv[ii][isou][1]*diippf[1]
-                                             + gradv[ii][isou][2]*diippf[2]);
+            pippr[isou] = pir[isou] + ircflp*( grad[ii][isou][0]*diippf[0]
+                                             + grad[ii][isou][1]*diippf[1]
+                                             + grad[ii][isou][2]*diippf[2]);
           }
           for (int isou = 0; isou < 3; isou++) {
             cs_real_t pfacd = inc*cofafv[face_id][isou];
@@ -8555,9 +8555,9 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                                + visci[2][i]*b_face_normal[face_id][2]);
           }
           for (int isou = 0; isou < 3; isou++) {
-            pipp[isou] = pi[isou] + ircflp*( gradv[ii][isou][0]*diippf[0]
-                                           + gradv[ii][isou][1]*diippf[1]
-                                           + gradv[ii][isou][2]*diippf[2]);
+            pipp[isou] = pi[isou] + ircflp*( grad[ii][isou][0]*diippf[0]
+                                           + grad[ii][isou][1]*diippf[1]
+                                           + grad[ii][isou][2]*diippf[2]);
           }
           for (int isou = 0; isou < 3; isou++) {
             cs_real_t pfacd = inc*cofafv[face_id][isou];
@@ -8577,7 +8577,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
   } /* idtvar */
 
   /* Free memory */
-  BFT_FREE(gradv);
+  BFT_FREE(grad);
 }
 
 
