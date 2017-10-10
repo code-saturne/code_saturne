@@ -2312,6 +2312,39 @@ _compute_face_sup_vectors(int                dim,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Evaluate boundary thickness.
+ *
+ * parameters:
+ *   m             <-- pointer to mesh structure
+ *   m_quantities  <-- pointer to mesh quantities structures.
+ *   b_thickness   --> boundary thickness
+ *----------------------------------------------------------------------------*/
+
+static void
+_b_thickness(const cs_mesh_t             *m,
+             const cs_mesh_quantities_t  *mq,
+             cs_real_t                    b_thickness[])
+{
+  const cs_real_3_t  *cell_cen
+    = (const cs_real_3_t  *)(mq->cell_cen);
+  const cs_real_3_t  *b_face_cog
+    = (const cs_real_3_t  *)(mq->b_face_cog);
+  const cs_real_3_t  *b_face_normal
+    = (const cs_real_3_t  *)(mq->b_face_normal);
+  const cs_real_t  *b_face_surf
+    = (const cs_real_t *)(mq->b_face_surf);
+
+  for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
+    cs_lnum_t c_id = m->b_face_cells[f_id];
+    b_thickness[f_id]
+      = (  (b_face_cog[f_id][0] - cell_cen[c_id][0])*b_face_normal[f_id][0]
+         + (b_face_cog[f_id][1] - cell_cen[c_id][1])*b_face_normal[f_id][1]
+         + (b_face_cog[f_id][2] - cell_cen[c_id][2])*b_face_normal[f_id][2])
+        * 2.0 / b_face_surf[f_id];
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2586,7 +2619,7 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
 }
 
 /*----------------------------------------------------------------------------
- * Compute mesh quantities
+ * Compute mesh quantities needed for preprocessing
  *
  * parameters:
  *   mesh            <-- pointer to a cs_mesh_t structure
@@ -2594,8 +2627,8 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
-                           cs_mesh_quantities_t  *mesh_quantities)
+cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
+                                      cs_mesh_quantities_t  *mesh_quantities)
 {
   cs_lnum_t  dim = mesh->dim;
   cs_lnum_t  n_i_faces = mesh->n_i_faces;
@@ -2635,21 +2668,6 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   if (mesh_quantities->b_face_normal == NULL)
     BFT_MALLOC(mesh_quantities->b_face_normal, n_b_faces*dim, cs_real_t);
 
-  /* Balance porous model */
-  if (cs_glob_porous_model == 3) {
-
-    if (mesh_quantities->i_f_face_normal == NULL)
-      BFT_MALLOC(mesh_quantities->i_f_face_normal, n_i_faces*dim, cs_real_t);
-
-    if (mesh_quantities->b_f_face_normal == NULL)
-      BFT_MALLOC(mesh_quantities->b_f_face_normal, n_b_faces*dim, cs_real_t);
-
-  }
-  else {
-    mesh_quantities->i_f_face_normal = mesh_quantities->i_face_normal;
-    mesh_quantities->b_f_face_normal = mesh_quantities->b_face_normal;
-  }
-
   if (mesh_quantities->b_face_cog == NULL)
     BFT_MALLOC(mesh_quantities->b_face_cog, n_b_faces*dim, cs_real_t);
 
@@ -2659,82 +2677,11 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   if (mesh_quantities->cell_vol == NULL)
     BFT_MALLOC(mesh_quantities->cell_vol, n_cells_with_ghosts, cs_real_t);
 
-  /* Porous models */
-  if (cs_glob_porous_model > 0) {
-    if (mesh_quantities->cell_f_vol == NULL)
-      BFT_MALLOC(mesh_quantities->cell_f_vol, n_cells_with_ghosts, cs_real_t);
-
-    if (mesh_quantities->c_solid_flag == NULL) {
-      BFT_MALLOC(mesh_quantities->c_solid_flag, n_cells_with_ghosts, cs_int_t);
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
-        mesh_quantities->c_solid_flag[cell_id] = 0;
-    }
-
-  }
-  else {
-    mesh_quantities->cell_f_vol = mesh_quantities->cell_vol;
-
-    if (mesh_quantities->c_solid_flag == NULL) {
-      BFT_MALLOC(mesh_quantities->c_solid_flag, 1, cs_int_t);
-      mesh_quantities->c_solid_flag[0] = 0;
-    }
-  }
-
   if (mesh_quantities->i_face_surf == NULL)
     BFT_MALLOC(mesh_quantities->i_face_surf, n_i_faces, cs_real_t);
 
   if (mesh_quantities->b_face_surf == NULL)
     BFT_MALLOC(mesh_quantities->b_face_surf, n_b_faces, cs_real_t);
-
-  /* Balance porous model */
-  if (cs_glob_porous_model == 3) {
-    if (mesh_quantities->i_f_face_surf == NULL)
-      BFT_MALLOC(mesh_quantities->i_f_face_surf, n_i_faces, cs_real_t);
-
-    if (mesh_quantities->b_f_face_surf == NULL)
-      BFT_MALLOC(mesh_quantities->b_f_face_surf, n_b_faces, cs_real_t);
-  }
-  else {
-    mesh_quantities->i_f_face_surf = mesh_quantities->i_face_surf;
-    mesh_quantities->b_f_face_surf = mesh_quantities->b_face_surf;
-  }
-
-  if (mesh_quantities->i_dist == NULL)
-    BFT_MALLOC(mesh_quantities->i_dist, n_i_faces, cs_real_t);
-
-  if (mesh_quantities->b_dist == NULL)
-    BFT_MALLOC(mesh_quantities->b_dist, n_b_faces, cs_real_t);
-
-  if (mesh_quantities->weight == NULL)
-    BFT_MALLOC(mesh_quantities->weight, n_i_faces, cs_real_t);
-
-  if (mesh_quantities->dijpf == NULL)
-    BFT_MALLOC(mesh_quantities->dijpf, n_i_faces*dim, cs_real_t);
-
-  if (mesh_quantities->diipb == NULL)
-    BFT_MALLOC(mesh_quantities->diipb, n_b_faces*dim, cs_real_t);
-
-  if (mesh_quantities->dofij == NULL)
-    BFT_MALLOC(mesh_quantities->dofij, n_i_faces*dim, cs_real_t);
-
-  /* Compute 3x3 cocg dimensionless matrix */
-
-  if (_compute_cocg_it == 1) {
-    if (mesh_quantities->cocg_it == NULL)
-      BFT_MALLOC(mesh_quantities->cocg_it, n_cells_with_ghosts, cs_real_33_t);
-  }
-
-  if (_compute_cocg_lsq == 1) {
-    if (mesh_quantities->cocg_lsq == NULL) {
-      BFT_MALLOC(mesh_quantities->cocg_lsq, n_cells_with_ghosts, cs_real_33_t);
-    }
-  }
-
-  BFT_MALLOC(mesh_quantities->corr_grad_lin_det, n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(mesh_quantities->corr_grad_lin, n_cells_with_ghosts, cs_real_33_t);
-
-  if (mesh_quantities->b_sym_flag == NULL)
-    BFT_MALLOC(mesh_quantities->b_sym_flag, n_b_faces, cs_int_t);
 
   /* Compute centers of gravity, normals, and surfaces of interior faces */
 
@@ -2855,6 +2802,109 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 #endif
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute mesh quantities
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
+                           cs_mesh_quantities_t  *mesh_quantities)
+{
+  cs_lnum_t  dim = mesh->dim;
+  cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  cs_lnum_t  n_b_faces = mesh->n_b_faces;
+  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
+
+  /* Update the number of passes */
+
+  _n_computations++;
+
+  cs_mesh_quantities_compute_preprocess(mesh, mesh_quantities);
+
+  /* Balance porous model */
+  if (cs_glob_porous_model == 3) {
+    if (mesh_quantities->i_f_face_normal == NULL)
+      BFT_MALLOC(mesh_quantities->i_f_face_normal, n_i_faces*dim, cs_real_t);
+
+    if (mesh_quantities->b_f_face_normal == NULL)
+      BFT_MALLOC(mesh_quantities->b_f_face_normal, n_b_faces*dim, cs_real_t);
+
+    if (mesh_quantities->i_f_face_surf == NULL)
+      BFT_MALLOC(mesh_quantities->i_f_face_surf, n_i_faces, cs_real_t);
+
+    if (mesh_quantities->b_f_face_surf == NULL)
+      BFT_MALLOC(mesh_quantities->b_f_face_surf, n_b_faces, cs_real_t);
+  }
+  else {
+    mesh_quantities->i_f_face_normal = mesh_quantities->i_face_normal;
+    mesh_quantities->b_f_face_normal = mesh_quantities->b_face_normal;
+    mesh_quantities->i_f_face_surf = mesh_quantities->i_face_surf;
+    mesh_quantities->b_f_face_surf = mesh_quantities->b_face_surf;
+  }
+
+  /* Porous models */
+  if (cs_glob_porous_model > 0) {
+    if (mesh_quantities->cell_f_vol == NULL)
+      BFT_MALLOC(mesh_quantities->cell_f_vol, n_cells_with_ghosts, cs_real_t);
+
+    if (mesh_quantities->c_solid_flag == NULL) {
+      BFT_MALLOC(mesh_quantities->c_solid_flag, n_cells_with_ghosts, cs_int_t);
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
+        mesh_quantities->c_solid_flag[cell_id] = 0;
+    }
+
+  }
+  else {
+    mesh_quantities->cell_f_vol = mesh_quantities->cell_vol;
+
+    if (mesh_quantities->c_solid_flag == NULL) {
+      BFT_MALLOC(mesh_quantities->c_solid_flag, 1, cs_int_t);
+      mesh_quantities->c_solid_flag[0] = 0;
+    }
+  }
+
+  if (mesh_quantities->i_dist == NULL)
+    BFT_MALLOC(mesh_quantities->i_dist, n_i_faces, cs_real_t);
+
+  if (mesh_quantities->b_dist == NULL)
+    BFT_MALLOC(mesh_quantities->b_dist, n_b_faces, cs_real_t);
+
+  if (mesh_quantities->weight == NULL)
+    BFT_MALLOC(mesh_quantities->weight, n_i_faces, cs_real_t);
+
+  if (mesh_quantities->dijpf == NULL)
+    BFT_MALLOC(mesh_quantities->dijpf, n_i_faces*dim, cs_real_t);
+
+  if (mesh_quantities->diipb == NULL)
+    BFT_MALLOC(mesh_quantities->diipb, n_b_faces*dim, cs_real_t);
+
+  if (mesh_quantities->dofij == NULL)
+    BFT_MALLOC(mesh_quantities->dofij, n_i_faces*dim, cs_real_t);
+
+  /* Compute 3x3 cocg dimensionless matrix */
+
+  if (_compute_cocg_it == 1) {
+    if (mesh_quantities->cocg_it == NULL)
+      BFT_MALLOC(mesh_quantities->cocg_it, n_cells_with_ghosts, cs_real_33_t);
+  }
+
+  if (_compute_cocg_lsq == 1) {
+    if (mesh_quantities->cocg_lsq == NULL) {
+      BFT_MALLOC(mesh_quantities->cocg_lsq, n_cells_with_ghosts, cs_real_33_t);
+    }
+  }
+
+  BFT_MALLOC(mesh_quantities->corr_grad_lin_det, n_cells_with_ghosts, cs_real_t);
+  BFT_MALLOC(mesh_quantities->corr_grad_lin, n_cells_with_ghosts, cs_real_33_t);
+
+  if (mesh_quantities->b_sym_flag == NULL)
+    BFT_MALLOC(mesh_quantities->b_sym_flag, n_b_faces, cs_int_t);
 
   /* Compute some distances relative to faces and associated weighting */
 
@@ -3278,6 +3328,135 @@ int
 cs_mesh_quantities_compute_count(void)
 {
   return _n_computations;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Determine local boundary thickness around each vertex.
+ *
+ * \param[in]   m            pointer to mesh structure
+ * \param[in]   mq           pointer to mesh quantities structures.
+ * \param[in]   n_passes     number of smoothing passes
+ * \param[out]  b_thickness  thickness for each mesh vertex
+ *                           (0 at non-boundary vertices)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_b_thickness_v(const cs_mesh_t             *m,
+                                 const cs_mesh_quantities_t  *mq,
+                                 int                          n_passes,
+                                 cs_real_t                    b_thickness[])
+{
+  cs_real_t *v_sum = NULL;
+  cs_real_t *f_b_thickness = NULL;
+
+  BFT_MALLOC(v_sum, m->n_vertices*2, cs_real_t);
+
+  BFT_MALLOC(f_b_thickness, m->n_b_faces*2, cs_real_t);
+  _b_thickness(m, mq, f_b_thickness);
+
+  if (n_passes < 1)
+    n_passes = 1;
+
+  for (int i = 0; i < n_passes; i++) {
+
+    for (cs_lnum_t j = 0; j < m->n_vertices*2; j++)
+      v_sum[j] = 0.;
+
+    for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
+      cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
+      cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
+      const cs_real_t f_s = mq->b_face_surf[f_id];
+      for (cs_lnum_t k = s_id; k < e_id; k++) {
+        cs_lnum_t v_id = m->b_face_vtx_lst[k];
+        v_sum[v_id]     += f_s * f_b_thickness[f_id];
+        v_sum[v_id*2+1] += f_s;
+      }
+    }
+
+    if (m->vtx_interfaces != NULL)
+      cs_interface_set_sum(m->vtx_interfaces,
+                           m->n_vertices,
+                           2,
+                           true,
+                           CS_REAL_TYPE,
+                           v_sum);
+
+    /* Prepare for next smoothing */
+
+    if (i < n_passes-1) {
+
+      for (cs_lnum_t j = 0; j < m->n_b_faces*2; j++)
+        f_b_thickness[j] = 0.;
+
+      for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
+        cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
+        cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
+        for (cs_lnum_t k = s_id; k < e_id; k++) {
+          cs_lnum_t v_id = m->b_face_vtx_lst[k];
+          f_b_thickness[f_id] += v_sum[v_id*2];
+          f_b_thickness[f_id + m->n_b_faces] += v_sum[v_id*2 + 1];
+        }
+      }
+
+    }
+
+  }
+
+  BFT_FREE(f_b_thickness);
+
+  for (cs_lnum_t j = 0; j < m->n_vertices; j++)
+    b_thickness[j] = v_sum[j*2] / v_sum[j*2+1];
+
+  BFT_FREE(v_sum);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Determine local boundary thickness around each boundary face.
+ *
+ * \param[in]   m            pointer to mesh structure
+ * \param[in]   mq           pointer to mesh quantities structures.
+ * \param[in]   n_passes     number of optional smoothing passes
+ * \param[out]  b_thickness  thickness for each mesh boundary face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_b_thickness_f(const cs_mesh_t             *m,
+                                 const cs_mesh_quantities_t  *mq,
+                                 int                          n_passes,
+                                 cs_real_t                    b_thickness[])
+{
+  if (n_passes < 1)
+    _b_thickness(m, mq, b_thickness);
+
+  else {
+
+    cs_real_t *v_b_thickness = NULL;
+
+    BFT_MALLOC(v_b_thickness, m->n_vertices, cs_real_t);
+
+    cs_mesh_quantities_b_thickness_v(m,
+                                     mq,
+                                     n_passes,
+                                     v_b_thickness);
+
+    for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
+      b_thickness[f_id] = 0;
+      cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
+      cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
+      for (cs_lnum_t k = s_id; k < e_id; k++) {
+        cs_lnum_t v_id = m->b_face_vtx_lst[k];
+        b_thickness[f_id] += v_b_thickness[v_id];
+      }
+      b_thickness[f_id] /= (e_id - s_id);
+    }
+
+    BFT_FREE(v_b_thickness);
+
+  }
 }
 
 /*----------------------------------------------------------------------------

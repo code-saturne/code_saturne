@@ -52,6 +52,7 @@
 
 #include "fvm_io_num.h"
 
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_order.h"
@@ -1439,6 +1440,315 @@ _add_side_faces(cs_mesh_t           *m,
   BFT_FREE(f_shift);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define extrusion vectors by face info.
+ *
+ * \param[in, out]  e    extrusion vectors structure
+ * \param[in]       efi  extrusion face info structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
+                                      const cs_mesh_extrude_face_info_t  *efi)
+{
+  cs_mesh_t *m = cs_glob_mesh;
+
+  cs_mesh_quantities_t *mq = cs_mesh_quantities_create();
+
+  cs_mesh_quantities_compute_preprocess(m, mq);
+
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_vertices = m->n_vertices;
+
+  cs_lnum_t *_n_layers = NULL;
+  float *_expansion = NULL;
+  cs_coord_3_t *_coord_shift = NULL;
+  cs_real_2_t *_thickness_se = NULL;
+
+  /* Determine vertices to extrude */
+
+  cs_real_t  *w = NULL;
+  int        *c = NULL;
+
+  BFT_MALLOC(_n_layers, n_vertices, cs_lnum_t);
+  BFT_MALLOC(_expansion, n_vertices, float);
+  BFT_MALLOC(_thickness_se, n_vertices, cs_real_2_t);
+  BFT_MALLOC(_coord_shift, n_vertices, cs_coord_3_t);
+
+  BFT_MALLOC(w, n_vertices, cs_real_t);
+  BFT_MALLOC(c, n_vertices, int);
+
+  for (cs_lnum_t i = 0; i < n_vertices; i++) {
+    _n_layers[i] = 0;
+    _expansion[i] = 0;
+    _thickness_se[i][0] = 0;
+    _thickness_se[i][1] = 0;
+    _coord_shift[i][0] = 0;
+    _coord_shift[i][1] = 0;
+    _coord_shift[i][2] = 0;
+    w[i] = 0;
+    c[i] = 0;
+  }
+
+  /* Global check for zone thickness specification; compute default
+     thickness based on smoothed cell size it thickness not defined. */
+
+  int z_thickness_spec = 1;
+
+  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+    if (efi->n_layers[i] != 0 && efi->distance[i] < 0)
+      z_thickness_spec = 0;
+  }
+
+  cs_parall_min(1, CS_INT_TYPE, &z_thickness_spec);
+
+  if (z_thickness_spec < 1) {
+
+    cs_real_t *b_thickness;
+    BFT_MALLOC(b_thickness, n_b_faces, cs_real_t);
+
+    cs_mesh_quantities_b_thickness_f(m,
+                                     mq,
+                                     3, /* n_passes */
+                                     b_thickness);
+
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      if (efi->n_layers[i] != 0 && efi->distance[i] < 0)
+        efi->distance[i] = b_thickness[i];
+    }
+
+    BFT_FREE(b_thickness);
+
+  }
+
+  /* Build selected faces ids array */
+
+  {
+    cs_lnum_t n_faces = 0;
+
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+      if (efi->n_layers[f_id] != 0)
+        n_faces++;
+    }
+
+    BFT_REALLOC(e->face_ids, n_faces, cs_lnum_t);
+
+    e->n_faces = n_faces;
+
+    n_faces = 0;
+
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+      if (efi->n_layers[f_id] != 0)
+        e->face_ids[n_faces++] = f_id;
+    }
+
+    assert(n_faces == e->n_faces);
+  }
+
+  /* Now determine other parameters */
+
+  for (cs_lnum_t j = 0; j < e->n_faces; j++) {
+
+    cs_lnum_t f_id = e->face_ids[j];
+
+    const cs_lnum_t n_layers = efi->n_layers[f_id];
+    const cs_real_t distance = efi->distance[f_id];
+    const cs_real_t expansion_factor = efi->expansion_factor[f_id];
+    const cs_real_t thickness_s = n_layers > 2 ? efi->thickness_s[f_id] : 0;
+    const cs_real_t thickness_e = n_layers > 1 ? efi->thickness_e[f_id] : 0;
+
+    cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
+    cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
+    const cs_real_t *f_n = mq->b_face_normal + f_id*3;
+    const cs_real_t f_s = cs_math_3_norm(f_n);
+
+    for (cs_lnum_t k = s_id; k < e_id; k++) {
+      cs_lnum_t v_id = m->b_face_vtx_lst[k];
+      _n_layers[v_id] += n_layers;
+      _expansion[v_id] += expansion_factor * f_s;
+      _thickness_se[v_id][0] += thickness_s * f_s;
+      _thickness_se[v_id][1] += thickness_e * f_s;
+      for (cs_lnum_t l = 0; l < 3; l++)
+        _coord_shift[v_id][l] += distance * f_n[l];
+      w[v_id] += f_s;
+      c[v_id] += 1;
+    }
+  }
+
+  /* Handle parallelism */
+
+  if (m->vtx_interfaces != NULL) {
+    cs_interface_set_sum(m->vtx_interfaces,
+                         m->n_vertices,
+                         1,
+                         true,
+                         CS_LNUM_TYPE,
+                         _n_layers);
+    cs_interface_set_sum(m->vtx_interfaces,
+                         m->n_vertices,
+                         1,
+                         true,
+                         CS_FLOAT,
+                         _expansion);
+    cs_interface_set_sum(m->vtx_interfaces,
+                         m->n_vertices,
+                         2,
+                         true,
+                         CS_REAL_TYPE,
+                         _thickness_se);
+    cs_interface_set_sum(m->vtx_interfaces,
+                         m->n_vertices,
+                         3,
+                         true,
+                         CS_COORD_TYPE,
+                         _coord_shift);
+    cs_interface_set_sum(m->vtx_interfaces,
+                         m->n_vertices,
+                         1,
+                         true,
+                         CS_REAL_TYPE,
+                         w);
+    cs_interface_set_sum(m->vtx_interfaces,
+                         m->n_vertices,
+                         1,
+                         true,
+                         CS_INT_TYPE,
+                         c);
+  }
+
+  for (cs_lnum_t i = 0; i < m->n_vertices; i++) {
+    if (c[i] > 0) {
+      _n_layers[i] /= c[i];
+      _expansion[i] /= w[i];
+      _thickness_se[i][0] /= w[i];
+      _thickness_se[i][1] /= w[i];
+      for (cs_lnum_t l = 0; l < 3; l++)
+        _coord_shift[i][l] /= w[i];
+    }
+    else
+      _n_layers[i] = 0;
+  }
+
+  /* Free temporaries */
+
+  BFT_FREE(c);
+  BFT_FREE(w);
+
+  mq = cs_mesh_quantities_destroy(mq);
+
+  /* Build vertex selection list */
+
+  _select_vertices_from_adj_b_faces(m,
+                                    e->n_faces,
+                                    e->face_ids,
+                                    &(e->n_vertices),
+                                    &(e->vertex_ids));
+
+  BFT_REALLOC(e->n_layers, e->n_vertices, cs_lnum_t);
+  BFT_REALLOC(e->coord_shift, e->n_vertices, cs_coord_3_t);
+
+  for (cs_lnum_t i = 0; i < e->n_vertices; i++) {
+    cs_lnum_t v_id = e->vertex_ids[i];
+    e->n_layers[i] = _n_layers[v_id];
+    for (cs_lnum_t l = 0; l < 3; l++)
+      e->coord_shift[i][l] = _coord_shift[v_id][l];
+  }
+
+  BFT_FREE(_n_layers);
+  BFT_FREE(_coord_shift);
+
+  BFT_REALLOC(e->distribution_idx, e->n_vertices+1, cs_lnum_t);
+
+  e->distribution_idx[0] = 0;
+  for (cs_lnum_t i = 0; i < e->n_vertices; i++)
+    e->distribution_idx[i+1] = e->distribution_idx[i] + e->n_layers[i];
+
+  BFT_REALLOC(e->distribution, e->distribution_idx[e->n_vertices], float);
+
+  /* Compute distribution for each extruded vertex */
+
+  for (cs_lnum_t i = 0; i < e->n_vertices; i++) {
+
+    int n_l = e->n_layers[i];
+
+    if (n_l > 0) {
+
+      cs_lnum_t v_id = e->vertex_ids[i];
+      float *_d = e->distribution + e->distribution_idx[i];
+
+      cs_lnum_t s_id = 0;
+      cs_lnum_t e_id = n_l;
+      double d_expansion = 1;
+
+      /* Handle optional start and end thickness:
+         - transform to relative values, ensure they are within bounds
+           of extrusion distance (reducing them if necessary)
+         - adjust start and end layers for expansion factor-based layers */
+
+      for (int j = 0; j < 2; j++) {
+        if (_thickness_se[v_id][j] < 0)
+          _thickness_se[v_id][j] = 0;
+      }
+
+      if (_thickness_se[v_id][0] + _thickness_se[v_id][1] > 0) {
+        cs_real_t vn = cs_math_3_norm(e->coord_shift[i]);
+        if (vn > 0) {
+          _thickness_se[v_id][0] /= vn;
+          _thickness_se[v_id][1] /= vn;
+        }
+        cs_real_t f = 0;
+        if (_thickness_se[v_id][1] > 0) {
+          f += _thickness_se[v_id][1];
+          n_l -= 1;
+          e_id -= 1;
+        }
+        if (n_l > 0 && _thickness_se[v_id][1] > 0) {
+          f += _thickness_se[v_id][0];
+          n_l -= 1;
+          s_id += 1;
+        }
+        if (f > 1) {
+          if (n_l > 0)
+            f *= 1.2;
+          _thickness_se[v_id][0] /= f;
+          _thickness_se[v_id][1] /= f;
+        }
+
+        d_expansion -= (_thickness_se[v_id][0] + _thickness_se[v_id][1]);
+      }
+
+      /* Estimation to reference distance */
+
+      _d[s_id] = 1;
+      for (cs_lnum_t l_id = s_id + 1; l_id < e_id; l_id++)
+        _d[l_id] = _d[l_id-1]*_expansion[v_id];
+      double d_tot = 0;
+      for (cs_lnum_t l_id = s_id; l_id < e_id; l_id++)
+        d_tot += _d[l_id];
+
+      /* Now set distances */
+
+      assert(s_id == 0);
+      if (s_id > 0)
+        _d[0] = _thickness_se[v_id][0];
+
+      _d[s_id] = d_expansion/d_tot;
+      for (cs_lnum_t l_id = s_id+1; l_id < e_id-1; l_id++)
+        _d[l_id] = _d[l_id-1] + _d[l_id]/d_tot;
+
+      if (e_id < n_l)
+        _d[e_id-1] = _thickness_se[v_id][1];
+
+      _d[n_l-1] = 1.0;
+    }
+  }
+
+  BFT_FREE(_expansion);
+  BFT_FREE(_thickness_se);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1455,38 +1765,21 @@ _add_side_faces(cs_mesh_t           *m,
  * extrusions.
  *
  * \param[in, out]  m             mesh
+ * \param[in]       ev            extrusion vector definitions
  * \param[in]       interior_gc   if true, maintain group classes of
  *                                interior faces previously on boundary
- * \param[in]       n_faces       number of selected boundary faces
- * \param[in]       n_vertices    number of selected vertices
- * \param[in]       faces         list of selected boundary faces (0 to n-1),
- *                                or NULL if no indirection is needed
- * \param[in]       vertices      ids of selected vertices (0 to n-1),
- *                                or NULL if no indirection is needed
- * \param[in]       n_layers      number of layers for each vertex
- * \param[in]       coord_shift   extrusion vector for each vertex
- * \param[in]       distribution  optional distribution of resulting vertices
- *                                along each extrusion vector
- *                                (size: n_vertices*n_layers) with values
- *                                in range ]0, 1].
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_extrude(cs_mesh_t          *m,
-                bool                interior_gc,
-                cs_lnum_t           n_faces,
-                cs_lnum_t           n_vertices,
-                const cs_lnum_t     faces[],
-                const cs_lnum_t     vertices[],
-                const cs_lnum_t     n_layers[],
-                const cs_coord_3_t  coord_shift[],
-                const float         distribution[])
+cs_mesh_extrude(cs_mesh_t                        *m,
+                const cs_mesh_extrude_vectors_t  *e,
+                bool                              interior_gc)
 {
   cs_lnum_t *l_faces = NULL, *l_vertices = NULL;
 
-  const cs_lnum_t *_faces = faces;
-  const cs_lnum_t *_vertices = vertices;
+  const cs_lnum_t *_faces = e->face_ids;
+  const cs_lnum_t *_vertices = e->vertex_ids;
 
   cs_lnum_t  n_cells_ini = m->n_cells;
   cs_lnum_t  n_vtx_ini = m->n_vertices;
@@ -1494,7 +1787,7 @@ cs_mesh_extrude(cs_mesh_t          *m,
 
   /* Check we have something to do */
 
-  cs_gnum_t n_g_sel_faces = n_faces;
+  cs_gnum_t n_g_sel_faces = e->n_faces;
   cs_parall_counter(&n_g_sel_faces, 1);
 
   if (n_g_sel_faces < 1) {
@@ -1503,6 +1796,16 @@ cs_mesh_extrude(cs_mesh_t          *m,
   }
 
   cs_mesh_free_rebuildable(m, false);
+
+  /* Local names for parameters */
+
+  const cs_lnum_t      n_faces = e->n_faces;
+  const cs_lnum_t      n_vertices = e->n_vertices;
+  const cs_lnum_t     *faces = e->face_ids;
+  const cs_lnum_t     *vertices = e->vertex_ids;
+  const cs_lnum_t     *n_layers = e->n_layers;
+  const cs_coord_3_t  *coord_shift = (const cs_coord_3_t *)e->coord_shift;
+  const float         *distribution = e->distribution;
 
   /* Ensure we have explicit selections */
 
@@ -1686,6 +1989,224 @@ cs_mesh_extrude_constant(cs_mesh_t        *m,
                          cs_lnum_t         n_faces,
                          const cs_lnum_t   faces[])
 {
+  cs_mesh_extrude_face_info_t *efi = cs_mesh_extrude_face_info_create(m);
+
+  cs_mesh_extrude_set_info_by_zone(efi,
+                                   n_layers,
+                                   thickness,
+                                   expansion_factor,
+                                   n_faces,
+                                   faces);
+
+  cs_mesh_extrude_vectors_t *e= cs_mesh_extrude_vectors_create(efi);
+
+  cs_mesh_extrude_face_info_destroy(&efi);
+
+  /* Build selection list */
+
+  /* Now call lower-level function */
+
+  cs_mesh_extrude(m, e, interior_gc);
+
+  /* Free work arrays */
+
+  cs_mesh_extrude_vectors_destroy(&e);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a mesh extrusion face information structure.
+ *
+ * \param[in]  m  mesh
+ *
+ * \return pointer to new mesh extrusion face information structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_extrude_face_info_t *
+cs_mesh_extrude_face_info_create(const cs_mesh_t  *m)
+{
+  cs_mesh_extrude_face_info_t *efi;
+
+  const cs_lnum_t n_faces = m->n_b_faces;
+
+  BFT_MALLOC(efi, 1, cs_mesh_extrude_face_info_t);
+
+  BFT_MALLOC(efi->n_layers, n_faces, cs_lnum_t);
+  BFT_MALLOC(efi->distance, n_faces, cs_real_t);
+  BFT_MALLOC(efi->expansion_factor, n_faces, float_t);
+  BFT_MALLOC(efi->thickness_s, n_faces, cs_real_t);
+  BFT_MALLOC(efi->thickness_e, n_faces, cs_real_t);
+
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
+    efi->n_layers[i] = 0;
+    efi->distance[i] = -1;
+    efi->expansion_factor[i] = 0.8;
+    efi->thickness_s[i] = 0;
+    efi->thickness_e[i] = 0;
+  }
+
+  return efi;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a mesh extrusion face information structure.
+ *
+ * \param[in, out]  e  pointer to pointer to mesh extrusion face information.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_extrude_face_info_destroy(cs_mesh_extrude_face_info_t  **efi)
+{
+  if (efi != NULL) {
+    cs_mesh_extrude_face_info_t *_efi = *efi;
+    if (_efi != NULL) {
+      BFT_FREE(_efi->n_layers);
+      BFT_FREE(_efi->distance);
+      BFT_FREE(_efi->expansion_factor);
+      BFT_FREE(_efi->thickness_s);
+      BFT_FREE(_efi->thickness_e);
+      BFT_FREE(*efi);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set face extrusion information by zone.
+ *
+ * \param[in, out]  efi               mesh extrusion face information
+ * \param[in]       n_layers          number of layers for selected faces
+ * \param[in]       distance          extrusion distance for selected faces
+ * \param[in]       expansion_factor  expansion factor for selected faces
+ * \param[in]       n_faces           number of selected faces
+ * \param[in]       face_ids          ids of selected faces, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_extrude_set_info_by_zone(cs_mesh_extrude_face_info_t  *efi,
+                                 int                           n_layers,
+                                 double                        distance,
+                                 float                         expansion_factor,
+                                 const cs_lnum_t               n_faces,
+                                 const cs_lnum_t               face_ids[])
+{
+  if (efi == NULL)
+    return;
+
+  if (face_ids != NULL) {
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+      cs_lnum_t f_id = face_ids[i];
+      efi->n_layers[f_id] = n_layers;
+      efi->distance[f_id] = distance;
+      efi->expansion_factor[f_id] = expansion_factor;
+      efi->thickness_s[f_id] = 0;
+      efi->thickness_e[f_id] = 0;
+    }
+  }
+
+  else {
+    for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
+      efi->n_layers[f_id] = n_layers;
+      efi->distance[f_id] = distance;
+      efi->expansion_factor[f_id] = expansion_factor;
+      efi->thickness_s[f_id] = 0;
+      efi->thickness_e[f_id] = 0;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create and build a mesh extrusion vectors definition.
+ *
+ * Extrusion vectors will be computed based on the provided extrusion
+ * face information structure. If no such structure is provided, an empty
+ * structure is returned.
+ *
+ * \param[in]  efi  mesh extrusion face information, or NULL
+ *
+ * \return pointer to created mesh extrusion vectors definition.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_extrude_vectors_t *
+cs_mesh_extrude_vectors_create(const cs_mesh_extrude_face_info_t  *efi)
+{
+  cs_mesh_extrude_vectors_t *e;
+
+  BFT_MALLOC(e, 1, cs_mesh_extrude_vectors_t);
+
+  e->n_faces = 0;
+  e->n_vertices = 0;
+  e->face_ids = NULL;
+  e->vertex_ids = NULL;
+  e->n_layers = NULL;
+  e->coord_shift = NULL;
+  e->distribution_idx = NULL;
+  e->distribution = NULL;
+
+  if (efi != NULL)
+    _cs_mesh_extrude_vectors_by_face_info(e, efi);
+
+  return e;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a mesh extrusion vectors definition.
+ *
+ *
+ * \param[in, out]  e  pointer to pointer to mesh extrusion vectors definition.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_extrude_vectors_destroy(cs_mesh_extrude_vectors_t **e)
+{
+  if (e != NULL) {
+    cs_mesh_extrude_vectors_t *_e = *e;
+    if (_e != NULL) {
+      BFT_FREE(_e->face_ids);
+      BFT_FREE(_e->vertex_ids);
+      BFT_FREE(_e->n_layers);
+      BFT_FREE(_e->coord_shift);
+      BFT_FREE(_e->distribution_idx);
+      BFT_FREE(_e->distribution);
+      BFT_FREE(*e);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set a given number of layers, a thickness, and a geometric
+ *        expansion factor for extrusion vectors at selected faces.
+ *
+ * \param[in]       m                 mesh
+ * \param[in, out]  e                 extrusion vectors definition
+ * \param[in]       n_layers          number of layers
+ * \param[in]       thickness         extrusion thickness
+ * \param[in]       expansion_factor  geometric expansion factor for
+ *                                    extrusion refinement
+ * \param[in]       n_faces           number of selected boundary faces
+ * \param[in]       faces             list of selected boundary faces (0 to n-1),
+ *                                    or NULL if no indirection is needed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_extrude_set_n_layers(const cs_mesh_t            *m,
+                             cs_mesh_extrude_vectors_t  *e,
+                             cs_lnum_t                   n_layers,
+                             double                      thickness,
+                             double                      expansion_factor,
+                             cs_lnum_t                   n_faces,
+                             const cs_lnum_t             faces[])
+{
   cs_lnum_t n_sel_v = 0;
   cs_lnum_t *sel_v;
 
@@ -1780,17 +2301,6 @@ cs_mesh_extrude_constant(cs_mesh_t        *m,
 
   BFT_FREE(v_coo_tmp);
 
-  /* Now call lower-level function */
-
-  cs_mesh_extrude(m,
-                  interior_gc,
-                  n_faces,
-                  n_sel_v,
-                  faces,
-                  sel_v,
-                  sel_n_layers,
-                  (const cs_coord_3_t *)sel_coord_shift,
-                  sel_distribution);
 
   /* Free work arrays */
 

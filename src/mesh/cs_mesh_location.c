@@ -170,7 +170,7 @@ static cs_lnum_t           *_explicit_ids = NULL;
 static cs_mesh_location_t *
 _mesh_location_by_id(int  id)
 {
-  const cs_mesh_location_t  *retval = NULL;
+  cs_mesh_location_t  *retval = NULL;
 
   if (id < 0 || id > _n_mesh_locations)
     bft_error(__FILE__, __LINE__, 0,

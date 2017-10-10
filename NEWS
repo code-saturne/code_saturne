@@ -44,6 +44,9 @@ Default option changes
 User changes
 ------------
 
+- Change low-level handling of mesh extrusion to allow easier fine
+  control and prepare for boundary layer insertion.
+
 - When importing CGNS files and requiring additional groups for mesh
   sections or zones, do not try to build boundary face groups based
   on vertex boundary conditions.

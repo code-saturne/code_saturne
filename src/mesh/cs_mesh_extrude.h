@@ -46,6 +46,48 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*! Per face mesh extrusion settings;
+
+ * This structure usually created or updated with utility functions, and may
+ * be modified by the user in case fine control is needed */
+
+typedef struct {
+
+  cs_lnum_t   *n_layers;          /*!< number of layers for each boundary face;
+                                   *   (0 for non-extruded faces) */
+
+  cs_real_t   *distance;          /*!< total distance for each boundary face */
+  float       *expansion_factor;  /*!< expansion factor for each boundary face */
+
+  cs_real_t   *thickness_s;       /*!< optional start thickness for each boundary
+                                   *   face; ignored if <= 0 */
+  cs_real_t   *thickness_e;       /*!< optional end thickness for each boundary
+                                   *   face; ignored if <= 0 */
+
+} cs_mesh_extrude_face_info_t;
+
+/*! Mesh extrusion vectors definition;
+
+ * This structure defines local extrusion vectors; it is usually created
+ * or updated with utility functions, and may be modified by the user
+ * in case fine control is needed */
+
+typedef struct {
+
+  cs_lnum_t       n_faces;           /*!< number of associated faces */
+  cs_lnum_t       n_vertices;        /*!< number of associated vertices */
+  cs_lnum_t      *face_ids;          /*!< ids of associated faces, or NULL */
+  cs_lnum_t      *vertex_ids;        /*!< ids of associated vertices, or NULL */
+  cs_lnum_t      *n_layers;          /*!< number of layers for each vertex */
+  cs_coord_3_t   *coord_shift;       /*!< extrusion vector for each vertex */
+  cs_lnum_t      *distribution_idx;  /*!< index of optional distribution */
+  float          *distribution;      /*!< optional distribution of resulting
+                                      *   vertices along each extrusion vector,
+                                      *   with values in range ]0, 1], or NULL
+                                      *   (size: distribution_idx[n_vertices]) */
+
+} cs_mesh_extrude_vectors_t;
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -60,33 +102,16 @@ BEGIN_C_DECLS
  * extrusions.
  *
  * \param[in, out]  m             mesh
+ * \param[in]       ev            extrusion vector definitions
  * \param[in]       interior_gc   if true, maintain group classes of
  *                                interior faces previously on boundary
- * \param[in]       n_faces       number of selected boundary faces
- * \param[in]       n_vertices    number of selected vertices
- * \param[in]       faces         list of selected boundary faces (0 to n-1),
- *                                or NULL if no indirection is needed
- * \param[in]       vertices      ids of selected vertices (0 to n-1),
- *                                or NULL if no indirection is needed
- * \param[in]       n_layers      number of layers for each vertex
- * \param[in]       coord_shift   extrusion vector for each vertex
- * \param[in]       distribution  optional distribution of resulting vertices
- *                                along each extrusion vector
- *                                (size: n_vertices*n_layers) with values
- *                                in range ]0, 1].
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_extrude(cs_mesh_t          *m,
-                bool                interior_gc,
-                cs_lnum_t           n_faces,
-                cs_lnum_t           n_vertices,
-                const cs_lnum_t     faces[],
-                const cs_lnum_t     vertices[],
-                const cs_lnum_t     n_layers[],
-                const cs_coord_3_t  coord_shift[],
-                const float         distribution[]);
+cs_mesh_extrude(cs_mesh_t                        *m,
+                const cs_mesh_extrude_vectors_t  *e,
+                bool                              interior_gc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -114,6 +139,80 @@ cs_mesh_extrude_constant(cs_mesh_t        *m,
                          double            expansion_factor,
                          cs_lnum_t         n_faces,
                          const cs_lnum_t   faces[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a mesh extrusion face information structure.
+ *
+ * \param[in]  m  mesh
+ *
+ * \return pointer to new mesh extrusion face information structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_extrude_face_info_t *
+cs_mesh_extrude_face_info_create(const cs_mesh_t  *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a mesh extrusion face information structure.
+ *
+ * \param[in, out]  e  pointer to pointer to mesh extrusion face information.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_extrude_face_info_destroy(cs_mesh_extrude_face_info_t **efi);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set face extrusion information by zone.
+ *
+ * \param[in, out]  efi               mesh extrusion face information
+ * \param[in]       n_layers          number of layers for selected faces
+ * \param[in]       distance          extrusion distance for selected faces
+ * \param[in]       expansion_factor  expansion factor for selected faces
+ * \param[in]       n_faces           number of selected faces
+ * \param[in]       face_ids          ids of selected faces, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_extrude_set_info_by_zone(cs_mesh_extrude_face_info_t  *efi,
+                                 int                           n_layers,
+                                 double                        distance,
+                                 float                         expansion_factor,
+                                 const cs_lnum_t               n_faces,
+                                 const cs_lnum_t               face_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create and build a mesh extrusion vectors definition.
+ *
+ * Extrusion vectors will be computed based on the provided extrusion
+ * face information structure. If no such structure is provided, an empty
+ * structure is returned.
+ *
+ * \param[in]  efi  mesh extrusion face information, or NULL
+ *
+ * \return pointer to created mesh extrusion vectors definition.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_extrude_vectors_t *
+cs_mesh_extrude_vectors_create(const cs_mesh_extrude_face_info_t  *efi);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a mesh extrusion vectors definition.
+ *
+ *
+ * \param[in, out]  e  pointer to pointer to mesh extrusion vectors definition.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_extrude_vectors_destroy(cs_mesh_extrude_vectors_t  **e);
 
 /*----------------------------------------------------------------------------*/
 

@@ -74,6 +74,7 @@ cs_gwf_tracer.h \
 cs_hho_builder.h \
 cs_hho_scaleq.h \
 cs_hodge.h \
+cs_mesh_deform.h \
 cs_param.h \
 cs_property.h \
 cs_quadrature.h \
@@ -116,6 +117,7 @@ cs_gwf_tracer.c \
 cs_hho_builder.c \
 cs_hho_scaleq.c \
 cs_hodge.c \
+cs_mesh_deform.c \
 cs_param.c \
 cs_property.c \
 cs_quadrature.c \

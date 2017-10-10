@@ -58,8 +58,9 @@
 #include "cs_join.h"
 #include "cs_join_perio.h"
 #include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
+#include "cs_mesh_boundary_layer.h"
+#include "cs_mesh_quantities.h"
 #include "cs_mesh_extrude.h"
 #include "cs_mesh_smoother.h"
 #include "cs_mesh_warping.h"
@@ -204,7 +205,39 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   }
   /*! [mesh_modify_groups_1] */
 
+  /* Insert boundary layers on selected zones.
+   *
+   * Warning:
+   *
+   *   This is incompatible with pre-processed periodicity,
+   *   as the periodicity transformation is not updated.
+   *
+   *   With periodicity, using a coordinate transformation matrix
+   *   in cs_user_mesh_input is preferred. */
 
+  /*! [mesh_modify_boundary_layer] */
+  {
+
+    int n_zones = 2;
+    const int zone_ids[] = {1, 3};
+    const int zone_layers[] = {2, 4};
+    const double zone_thickness[] = {0.1, 0.3};
+    const float zone_expansion[] = {0.8, 0.7};
+
+    cs_lnum_t     *n_layers = NULL;
+    float         *distribution = NULL;
+    cs_coord_3_t  *coord_shift = NULL;
+
+    cs_mesh_boundary_layer_insert(n_zones,
+                                  zone_ids,
+                                  zone_layers,
+                                  zone_thickness,
+                                  zone_expansion,
+                                  n_layers,
+                                  distribution,
+                                  coord_shift);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -276,6 +276,18 @@ cs_mesh_quantities_t *
 cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
+ * Compute mesh quantities needed fo preprocessing
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
+                                      cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
  * Compute mesh quantities
  *
  * parameters:
@@ -422,6 +434,41 @@ cs_mesh_quantities_reduce_extended(const cs_mesh_t       *mesh,
 
 int
 cs_mesh_quantities_compute_count(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Determine local boundary thickness around each vertex.
+ *
+ * \param[in]   m            pointer to mesh structure
+ * \param[in]   mq           pointer to mesh quantities structures.
+ * \param[in]   n_passes     number of smoothing passes
+ * \param[out]  b_thickness  thickness for each mesh vertex
+ *                           (0 at non-boundary vertices)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_b_thickness_v(const cs_mesh_t             *m,
+                                 const cs_mesh_quantities_t  *mq,
+                                 int                          n_passes,
+                                 cs_real_t                    b_thickness[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Determine local boundary thickness around each boundary face.
+ *
+ * \param[in]   m            pointer to mesh structure
+ * \param[in]   mq           pointer to mesh quantities structures.
+ * \param[in]   n_passes     number of optional smoothing passes
+ * \param[out]  b_thickness  thickness for each mesh boundary face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_b_thickness_f(const cs_mesh_t             *m,
+                                 const cs_mesh_quantities_t  *mq,
+                                 int                          n_passes,
+                                 cs_real_t                    b_thickness[]);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_mesh_quantities_t structure

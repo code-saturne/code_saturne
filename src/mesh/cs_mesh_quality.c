@@ -736,39 +736,6 @@ _vtx_from_max_face(const cs_mesh_t     *mesh,
                          vtx_val);
 }
 
-/*----------------------------------------------------------------------------
- * Evaluate boundary thickness.
- *
- * parameters:
- *   mesh             <-- pointer to mesh structure
- *   mesh_quantities  <-- pointer to mesh quantities structures.
- *   b_thickness      --> boundary thickness
- *----------------------------------------------------------------------------*/
-
-static void
-_get_boundary_thickness(const cs_mesh_t             *mesh,
-                        const cs_mesh_quantities_t  *mesh_quantities,
-                        cs_real_t                    b_thickness[])
-{
-  const cs_real_3_t  *cell_cen
-    = (const cs_real_3_t  *)(mesh_quantities->cell_cen);
-  const cs_real_3_t  *b_face_cog
-    = (const cs_real_3_t  *)(mesh_quantities->b_face_cog);
-  const cs_real_3_t  *b_face_normal
-    = (const cs_real_3_t  *)(mesh_quantities->b_face_normal);
-  const cs_real_t  *b_face_surf
-    = (const cs_real_t *)(mesh_quantities->b_face_surf);
-
-  for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
-    cs_lnum_t c_id = mesh->b_face_cells[f_id];
-    b_thickness[f_id]
-      = (  (b_face_cog[f_id][0] - cell_cen[c_id][0])*b_face_normal[f_id][0]
-         + (b_face_cog[f_id][1] - cell_cen[c_id][1])*b_face_normal[f_id][1]
-         + (b_face_cog[f_id][2] - cell_cen[c_id][2])*b_face_normal[f_id][2])
-        * 2.0 / b_face_surf[f_id];
-  }
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the cell -> faces connectivity
@@ -1411,7 +1378,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
     cs_real_t *b_thickness;
     BFT_MALLOC(b_thickness, mesh->n_b_faces, cs_real_t);
 
-    _get_boundary_thickness(mesh, mesh_quantities, b_thickness);
+    cs_mesh_quantities_b_thickness_f(mesh, mesh_quantities, 0, b_thickness);
 
     /* Display histograms */
 

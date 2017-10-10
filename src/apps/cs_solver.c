@@ -225,6 +225,9 @@ cs_run(void)
   cs_preprocessor_data_read_headers(cs_glob_mesh,
                                     cs_glob_mesh_builder);
 
+  cs_gui_zones();
+  cs_user_zones();
+
   /* Activation of the CDO module */
   opts.cdo = cs_user_cdo_activated();
 
@@ -237,9 +240,6 @@ cs_run(void)
     cs_base_fortran_bft_printf_to_f();
 
     cs_gui_init();
-
-    cs_gui_zones();
-    cs_user_zones();
 
     cs_cdo_initialize_setup(opts.cdo);
 
