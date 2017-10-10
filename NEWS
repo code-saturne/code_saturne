@@ -90,6 +90,8 @@ User changes
 Architectural changes
 ---------------------
 
+- When coupling with Syrthes, source Syrthes library path changes only locally.
+
 - Improve Catalyst environment handling for better automation with SALOME.
 
 - Default to PyQt5 instead of PyQt4 when both are available.

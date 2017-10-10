@@ -295,6 +295,8 @@ class Study:
         Create and initialize SYRTHES case directories.
         """
 
+        os_env_save = os.environ
+
         cs_exec_environment.source_syrthes_env(self.package)
         import syrthes
 
@@ -307,6 +309,8 @@ class Study:
             if retval > 0:
                 sys.stderr.write("Cannot create SYRTHES case: '%s'\n" % s)
                 sys.exit(1)
+
+        os_environ = os_env_save
 
 
     def create_aster_case(self, repbase):

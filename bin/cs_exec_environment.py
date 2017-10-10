@@ -689,21 +689,44 @@ def source_syrthes_env(pkg):
     # Determine SYRTHES home
 
     syrthes_home = None
-    env_syrthes_home = os.getenv('SYRTHES4_HOME')
 
+    # Home based on configuration info
+
+    cfg_syrthes_home = None
     config = configparser.ConfigParser()
     config.read(pkg.get_configfiles())
     if config.has_option('install', 'syrthes'):
-        syrthes_home = os.path.join(config.get('install', 'syrthes'))
-        if not os.path.isdir(syrthes_home):
+        cfg_syrthes_home = os.path.join(config.get('install', 'syrthes'))
+        if not os.path.isdir(cfg_syrthes_home):
             sys.stderr.write("\nIncorrect install/syrthes entry "
                          + "specified in one of:\n")
             for f in pkg.get_configfiles():
                 sys.stderr.write("  " + f + "\n")
             sys.stderr.write("Directory: '"
-                             + syrthes_home + "' does not exist.\n")
+                             + cfg_syrthes_home + "' does not exist.\n")
             sys.exit(1)
-    else:
+            cfg_syrthes_home = None
+        else:
+            syrthes_home = cfg_syrthes_home
+
+    # Home based on current environment
+
+    # Try to base Syrthes version on path used to import the syrthes module,
+    # for consistency with case creation parameters; it this is not enough,
+    # use existing environment or load one based on current configuration.
+
+    try:
+        for p in sys.path:
+            if p[-14:] == '/share/syrthes' or p[-14:] == '\share\syrthes':
+                syr_profile = os.path.join(p[:,-14], 'bin', 'syrthes.profile')
+                if os.path.isfile(syr_profile):
+                    source_shell_script(syr_profile)
+    except Exception:
+        pass
+
+    env_syrthes_home = os.getenv('SYRTHES4_HOME')
+
+    if not syrthes_home:
         syrthes_home = env_syrthes_home
 
     if not syrthes_home:
