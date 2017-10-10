@@ -241,6 +241,18 @@ def update_command_single_value(args, options, value):
                 else:
                     j = j+1
 
+    # Special cases at end
+
+    i = 0
+    args_tail = []
+    while i < len(args):
+        if args[i][0] == '$' or args[i] == '&':
+             a = args.pop(i)
+             args_tail.append(a)
+        else:
+             i = i+1
+    args += args_tail
+
     # Return updated list
 
     return args
