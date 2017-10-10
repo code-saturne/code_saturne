@@ -248,7 +248,7 @@ class Parser(object):
                 if label not in labels:
                     labels.append(label)
                 else:
-                    print("Study: %s is repeted in the xml file of paramaters" % label)
+                    print("Several occurences of Study %s in xml file of parameters" % label)
                     sys.exit(1)
         return labels
 
