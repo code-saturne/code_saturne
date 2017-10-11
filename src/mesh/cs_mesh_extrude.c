@@ -1765,7 +1765,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
  * extrusions.
  *
  * \param[in, out]  m             mesh
- * \param[in]       ev            extrusion vector definitions
+ * \param[in]       e             extrusion vector definitions
  * \param[in]       interior_gc   if true, maintain group classes of
  *                                interior faces previously on boundary
  */

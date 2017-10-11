@@ -34,6 +34,7 @@
 #include "cs_defs.h"
 
 #include "cs_mesh.h"
+#include "cs_mesh_extrude.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -55,33 +56,17 @@ BEGIN_C_DECLS
 /*!
  * \brief Insert mesh boundary layers.
  *
- * \param[in]  n_zones         number of zones
- * \param[in]  zone_ids        ids of zones
- * \param[in]  zone_layers     number of extrusion layers per zone, or
- *                             NULL for default (1)
- * \param[in]  zone_thickness  thickness for each zone, or NULL for
- *                             default (based on neighboring cell
- *                             sizes)
- * \param[in]  zone_expansion  parameter for each zone, or NULL for
- *                             default (0.8)
- * \param[in]  n_layers        optional specification of number of layers for
- *                             each vertex, or NULL
- * \param[in]  distribution    optional specification of layer distribution
- *                             for each vertex, or NULL
- * \param[in]  coord_shift     optional definition of coordinate shift for
- *                             each vertex, or NULL
+ * \param[in, out]  m             mesh
+ * \param[in]       e             extrusion vector definitions
+ * \param[in]       interior_gc   if true, maintain group classes of
+ *                                interior faces previously on boundary
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_boundary_layer_insert(int                  n_zones,
-                              const int            zone_ids[],
-                              const int            zone_layers[],
-                              const double         zone_thickness[],
-                              const float          zone_expansion[],
-                              const cs_lnum_t     *n_layers,
-                              const float         *distribution,
-                              const cs_coord_3_t  *coord_shift);
+cs_mesh_boundary_layer_insert(cs_mesh_t                        *m,
+                              const cs_mesh_extrude_vectors_t  *e,
+                              bool                              interior_gc);
 
 /*----------------------------------------------------------------------------*/
 

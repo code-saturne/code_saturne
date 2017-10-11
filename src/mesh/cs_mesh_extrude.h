@@ -102,7 +102,7 @@ typedef struct {
  * extrusions.
  *
  * \param[in, out]  m             mesh
- * \param[in]       ev            extrusion vector definitions
+ * \param[in]       e             extrusion vector definitions
  * \param[in]       interior_gc   if true, maintain group classes of
  *                                interior faces previously on boundary
  */
