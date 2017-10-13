@@ -67,6 +67,8 @@ log.setLevel(logging.NOTSET)
 def nodot(item):
     return item[0] != '.'
 
+
+
 #-------------------------------------------------------------------------------
 
 #===============================================================================
@@ -800,7 +802,7 @@ class Study(object):
 
     def create_cases(self):
         """
-        Create a single study with its all cases.
+        Create a single study with all its cases.
         """
         repbase = os.getcwd()
 
@@ -1179,6 +1181,20 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
+    def report_action_location(self, header_msg, destination=True):
+        """
+        Add a message to report/stdout at head of sections
+        specifying if action is performed in dest or repo.
+        """
+        if destination:
+            header_msg = header_msg + " in destination"
+        else:
+            header_msg = header_msg + " in repository"
+
+        self.reporting(header_msg)
+
+    #---------------------------------------------------------------------------
+
     def updateRepository(self, xml_only=False):
         """
         Update all studies and all cases.
@@ -1198,7 +1214,7 @@ class Studies(object):
         Create all studies and all cases.
         """
         for l, s in self.studies:
-            self.reporting('  o Create study: ' + l)
+            self.reporting("  o Create study " + l)
             log_lines = s.create_cases()
             for line in log_lines:
                 self.reporting(line)
@@ -1299,7 +1315,7 @@ class Studies(object):
         the run of the case is also repeated.
         """
         for l, s in self.studies:
-            self.reporting('  o Script prepro and run for study: ' + l)
+            self.reporting("  o Script prepro and run of study: " + l)
             for case in s.cases:
                 self.prepro(l, s, case)
                 if self.__running:
@@ -1366,7 +1382,8 @@ class Studies(object):
         Stop if you try to make a comparison with a file which does not exist.
         """
         for l, s in self.studies:
-            self.reporting('  o Check compare for study: ' + l)
+            check_msg = "  o Check compare of study: " + l
+            self.report_action_location(check_msg)
 
             # reference directory passed in studymanager command line overwrites
             # destination in all cases (even if compare is defined by a compare
@@ -1484,12 +1501,30 @@ class Studies(object):
         Check coherency between xml file of parameters and repository.
         Stop if you try to run a script with a file which does not exist.
         """
+        scripts_checked = False
         for l, s in self.studies:
-            self.reporting('  o Check scripts for study: ' + l)
+            # search for scripts to check before
+            check_scripts = False
+            for case in s.cases:
+                script, label, nodes, args, repo, dest = \
+                    self.__parser.getScript(case.node)
+                if nodes:
+                    check_scripts = True
+                    break
+
+            if not check_scripts:
+                continue
+
+            # if scripts have to be checked
+            check_msg = "  o Check scripts of study " + l
+            self.report_action_location(check_msg)
+
+            scripts_checked = True
 
             cases_to_disable = []
             for case in s.cases:
-                script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
+                script, label, nodes, args, repo, dest = \
+                    self.__parser.getScript(case.node)
                 for i in range(len(nodes)):
                     if script[i] and case.is_run != "KO":
                         if destination == False:
@@ -1503,7 +1538,10 @@ class Studies(object):
                 msg = s.disable_case(case)
                 self.reporting(msg)
 
-        self.reporting('')
+        if scripts_checked:
+            self.reporting('')
+
+        return scripts_checked
 
     #---------------------------------------------------------------------------
 
@@ -1512,7 +1550,7 @@ class Studies(object):
         Launch external additional scripts with arguments.
         """
         for l, s in self.studies:
-            self.reporting('  o Script postpro study: ' + l)
+            self.reporting("  o Run scripts of study " + l)
             for case in s.cases:
                 script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
                 for i in range(len(label)):
@@ -1553,8 +1591,11 @@ class Studies(object):
                         case.run_id = rep
                         case.run_dir = os.path.join(resu, rep)
 
-            self.reporting('  o Postprocessing cases of study: ' + l)
             script, label, nodes, args = self.__parser.getPostPro(l)
+            if not label:
+                continue
+
+            self.reporting('  o Postprocessing cases of study: ' + l)
             for i in range(len(label)):
                 if script[i]:
                     cmd = os.path.join(self.__dest, l, "POST", label[i])
@@ -1647,7 +1688,8 @@ class Studies(object):
         Stop if you try to make a plot of a file which does not exist.
         """
         for l, s in self.studies:
-            self.reporting('  o Check plots and input for study: ' + l)
+            check_msg = "  o Check plots and input of study " + l
+            self.report_action_location(check_msg)
 
             cases_to_disable = []
             for case in s.cases:

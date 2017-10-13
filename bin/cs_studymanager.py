@@ -367,8 +367,9 @@ def run_studymanager(pkg, options):
     # Postprocess results and probes
 
     if options.post:
-        studies.check_script()
-        studies.scripts()
+        checked_scripts = studies.check_script()
+        if checked_scripts:
+            studies.scripts()
         studies.check_plots_and_input()
         studies.postpro()
         studies.plot()
