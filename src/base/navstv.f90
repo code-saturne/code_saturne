@@ -240,7 +240,7 @@ call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 ! Allocate temporary arrays for the velocity-pressure resolution
 if (vcopt_u%idften.eq.1) then
   allocate(viscf(1, 1, nfac), viscb(ndimfb))
-else if (vcopt_u%idften.eq.6) then
+else if (vcopt_u%idften.eq.36) then
   allocate(viscf(3, 3, nfac), viscb(ndimfb))
 endif
 
@@ -266,7 +266,7 @@ if (vcopt_u%idften.eq.1) then
     viscfi => viscf(:,:,1:nfac)
     viscbi => viscb(1:ndimfb)
   endif
-else if(vcopt_u%idften.eq.6) then
+else if(vcopt_u%idften.eq.36) then
   if (itytur.eq.3.and.irijnu.eq.1) then
     allocate(wvisfi(3,3,nfac), wvisbi(ndimfb))
     viscfi => wvisfi(1:3,1:3,1:nfac)

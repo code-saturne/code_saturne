@@ -1136,7 +1136,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   /* Matrix block size */
   ibsize = 3;
   if (idftnp == 1) iesize = 1;
-  if (idftnp == 6) iesize = 1;
+  if (idftnp == 6 || idftnp == 36) iesize = 1;
 
   db_size[0] = ibsize;
   db_size[1] = ibsize;

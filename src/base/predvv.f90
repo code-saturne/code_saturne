@@ -268,7 +268,7 @@ allocate(tsexp(3,ncelet))
 allocate(tsimp(3,3,ncelet))
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
-if (vcopt_u%idften.eq.6) allocate(viscce(6,ncelet))
+if (vcopt_u%idften.eq.36) allocate(viscce(6,ncelet))
 
 ! Allocate a temporary array for the prediction-stage error estimator
 if (iescal(iespre).gt.0) then
@@ -1038,7 +1038,7 @@ if (vcopt_u%idiff.ge. 1) then
     endif
 
   ! Tensorial diffusion of the velocity (in case of tensorial porosity)
-  else if (vcopt_u%idften.eq.6) then
+  else if (vcopt_u%idften.eq.36) then
 
     do iel = 1, ncel
       do isou = 1, 3

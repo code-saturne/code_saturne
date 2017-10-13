@@ -347,7 +347,7 @@ contains
     if (iporos.eq.2) then
       ! Tensorial diffusivity
       call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-      vcopt%idften = 6
+      vcopt%idften = 36
       call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt)
     endif
 
