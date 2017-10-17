@@ -94,7 +94,6 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 static int ipadom = 0;
-static cs_real_t *wq = NULL;
 
 /*=============================================================================
  * Local Macro Definitions
@@ -795,6 +794,8 @@ cs_rad_transfer_solve(int               bc_type[],
 {
   /* Shorter notation */
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+
+  cs_real_t *wq = cs_glob_rad_transfer_params->wq;
 
   int nwsgg = rt_params->nwsgg;
 
