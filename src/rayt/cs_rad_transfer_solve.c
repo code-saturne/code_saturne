@@ -795,8 +795,6 @@ cs_rad_transfer_solve(int               bc_type[],
   /* Shorter notation */
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
-  cs_real_t *wq = cs_glob_rad_transfer_params->wq;
-
   int nwsgg = rt_params->nwsgg;
 
   /* Physical constants */
@@ -928,10 +926,20 @@ cs_rad_transfer_solve(int               bc_type[],
       tparo[ifac]  = 0.0;
   }
 
+  cs_real_t *wq = cs_glob_rad_transfer_params->wq;
+
   /* FSCK model parameters */
-  if (ipadom == 1)
+  if (wq == NULL) {
     /* Weight of the i-the gaussian quadrature  */
     BFT_MALLOC(wq, nwsgg, cs_real_t);
+    cs_glob_rad_transfer_params->wq = wq;
+
+    /* Must be set to 1 in case of using the standard as well as */
+    /* the ADF radiation models  */
+    for (int i = 0; i < nwsgg; i++)
+      wq[i] = 1.0;
+  }
+
 
   /* Initializations
      --------------- */
@@ -1030,13 +1038,6 @@ cs_rad_transfer_solve(int               bc_type[],
       iempexh2[cell_id + n_cells * icla]    = 0.0;
       iempimh2[cell_id + n_cells * icla]    = 0.0;
     }
-  }
-
-  if (ipadom == 1) {
-    /* Must be set to 1 in case of using the standard as well as */
-    /* the ADF radiation models  */
-    for (int i = 0; i < nwsgg; i++)
-      wq[i] = 1.0;
   }
 
   /* Store temperature (in Kelvin) in tempk(cell_id, irphas) */
