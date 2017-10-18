@@ -1189,9 +1189,9 @@ class Studies(object):
         specifying if action is performed in dest or repo.
         """
         if destination:
-            header_msg = header_msg + " in destination"
+            header_msg = header_msg + " (in destination)"
         else:
-            header_msg = header_msg + " in repository"
+            header_msg = header_msg + " (in repository)"
 
         self.reporting(header_msg)
 
@@ -1385,7 +1385,7 @@ class Studies(object):
         """
         for l, s in self.studies:
             check_msg = "  o Check compare of study: " + l
-            self.report_action_location(check_msg)
+            self.report_action_location(check_msg, destination)
 
             # reference directory passed in studymanager command line overwrites
             # destination in all cases (even if compare is defined by a compare
@@ -1518,8 +1518,8 @@ class Studies(object):
                 continue
 
             # if scripts have to be checked
-            check_msg = "  o Check scripts of study " + l
-            self.report_action_location(check_msg)
+            check_msg = "  o Check scripts of study: " + l
+            self.report_action_location(check_msg, destination)
 
             scripts_checked = True
 
@@ -1552,7 +1552,7 @@ class Studies(object):
         Launch external additional scripts with arguments.
         """
         for l, s in self.studies:
-            self.reporting("  o Run scripts of study " + l)
+            self.reporting("  o Run scripts of study: " + l)
             for case in s.cases:
                 script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
                 for i in range(len(label)):
@@ -1690,8 +1690,8 @@ class Studies(object):
         Stop if you try to make a plot of a file which does not exist.
         """
         for l, s in self.studies:
-            check_msg = "  o Check plots and input of study " + l
-            self.report_action_location(check_msg)
+            check_msg = "  o Check plots and input of study: " + l
+            self.report_action_location(check_msg, destination)
 
             cases_to_disable = []
             for case in s.cases:
