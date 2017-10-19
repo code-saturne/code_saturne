@@ -4530,7 +4530,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   /* 3. Computation of the transpose grad(vel) term and grad(-2/3 div(vel)) */
 
-  if (ivisep == 1) {
+  if (ivisep == 1 && idiffp == 1) {
 
     /* We do not know what condition to put in the inlets and the outlets, so we
        assume that there is an equilibrium. Moreover, cells containing a coupled
@@ -7510,6 +7510,7 @@ cs_generalized_diffusion_vector(int                         idtvar,
                                 cs_real_3_t       *restrict rhs)
 {
   const int nswrgp = var_cal_opt.nswrgr;
+  const int idiffp = var_cal_opt.idiff;
   const int imrgra = var_cal_opt.imrgra;
   const int imligp = var_cal_opt.imligr;
   const int ircflp = var_cal_opt.ircflu;
@@ -7926,7 +7927,7 @@ cs_generalized_diffusion_vector(int                         idtvar,
 
   /* 3. Computation of the transpose grad(vel) term and grad(-2/3 div(vel)) */
 
-  if (ivisep == 1) {
+  if (ivisep == 1 && idiffp == 1) {
 
     /* We do not know what condition to put in the inlets and the outlets, so we
        assume that there is an equilibrium. Moreover, cells containing a coupled
