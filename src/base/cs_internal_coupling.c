@@ -1430,9 +1430,6 @@ cs_internal_coupling_reconstruct_scalar_gradient(
     cs_real_3_t          *restrict r_grad,
     cs_real_3_t                    grad[])
 {
-  int ll;
-  cs_lnum_t face_id, cell_id;
-
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
   const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
@@ -1457,8 +1454,8 @@ cs_internal_coupling_reconstruct_scalar_gradient(
   /* Compute rhs */
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    face_id = faces_local[ii];
-    cell_id = b_face_cells[face_id];
+    cs_lnum_t face_id = faces_local[ii];
+    cs_lnum_t cell_id = b_face_cells[face_id];
 
     /* Reconstruction part
          compared to _iterative_scalar_gradient :
@@ -1468,7 +1465,7 @@ cs_internal_coupling_reconstruct_scalar_gradient(
            +offset_vect[ii][1]*(r_grad_local[ii][1]+r_grad[cell_id][1])
            +offset_vect[ii][2]*(r_grad_local[ii][2]+r_grad[cell_id][2]);
 
-    for (ll = 0; ll < 3; ll++)
+    for (int ll = 0; ll < 3; ll++)
       grad[cell_id][ll] += rfac * b_f_face_normal[face_id][ll];
 
   }
@@ -1493,8 +1490,6 @@ cs_internal_coupling_reconstruct_vector_gradient(
     cs_real_33_t         *restrict r_grad,
     cs_real_33_t                   grad[])
 {
-  cs_lnum_t face_id, cell_id;
-
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
   const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
@@ -1519,8 +1514,8 @@ cs_internal_coupling_reconstruct_vector_gradient(
   /* Compute rhs */
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    face_id = faces_local[ii];
-    cell_id = b_face_cells[face_id];
+    cs_lnum_t face_id = faces_local[ii];
+    cs_lnum_t cell_id = b_face_cells[face_id];
 
     /* Reconstruction part
          compared to _iterative_scalar_gradient :
@@ -1557,8 +1552,6 @@ cs_internal_coupling_reconstruct_tensor_gradient(
     cs_real_63_t         *restrict r_grad,
     cs_real_63_t                   grad[])
 {
-  cs_lnum_t face_id, cell_id;
-
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
   const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
@@ -1583,8 +1576,8 @@ cs_internal_coupling_reconstruct_tensor_gradient(
   /* Compute rhs */
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    face_id = faces_local[ii];
-    cell_id = b_face_cells[face_id];
+    cs_lnum_t face_id = faces_local[ii];
+    cs_lnum_t cell_id = b_face_cells[face_id];
 
     /* Reconstruction part
          compared to _iterative_scalar_gradient :
@@ -1622,7 +1615,6 @@ cs_internal_coupling_lsq_scalar_gradient(
     const int                      w_stride,
     cs_real_4_t                    rhsv[])
 {
-  cs_lnum_t face_id, cell_id;
   cs_real_t pfac;
   cs_real_3_t dc, fctb;
 
@@ -1647,8 +1639,8 @@ cs_internal_coupling_lsq_scalar_gradient(
   cs_real_t *pvar_distant = NULL;
   BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-    face_id = faces_distant[ii];
-    cell_id = b_face_cells[face_id];
+    cs_lnum_t face_id = faces_distant[ii];
+    cs_lnum_t cell_id = b_face_cells[face_id];
     pvar_distant[ii] = rhsv[cell_id][3];
   }
   cs_real_t *pvar_local = NULL;
@@ -1680,8 +1672,8 @@ cs_internal_coupling_lsq_scalar_gradient(
   /* Compute rhs */
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    face_id = faces_local[ii];
-    cell_id = b_face_cells[face_id];
+    cs_lnum_t face_id = faces_local[ii];
+    cs_lnum_t cell_id = b_face_cells[face_id];
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       dc[ll] = ci_cj_vect[ii][ll];
 
@@ -1721,7 +1713,8 @@ cs_internal_coupling_lsq_scalar_gradient(
 
   }
   /* Free memory */
-  if (c_weight != NULL) BFT_FREE(weight);
+  if (c_weight != NULL)
+    BFT_FREE(weight);
   BFT_FREE(pvar_local);
 }
 
@@ -1745,7 +1738,6 @@ cs_internal_coupling_lsq_vector_gradient(
     const cs_real_3_t              pvar[],
     cs_real_33_t                   rhs[])
 {
-  cs_lnum_t face_id, cell_id;
   cs_real_t pfac;
   cs_real_3_t dc, fctb;
 
@@ -1770,8 +1762,8 @@ cs_internal_coupling_lsq_vector_gradient(
   cs_real_3_t *pvar_distant = NULL;
   BFT_MALLOC(pvar_distant, n_distant, cs_real_3_t);
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-    face_id = faces_distant[ii];
-    cell_id = b_face_cells[face_id];
+    cs_lnum_t face_id = faces_distant[ii];
+    cs_lnum_t cell_id = b_face_cells[face_id];
     for (int i = 0; i < 3; i++)
       pvar_distant[ii][i] = pvar[cell_id][i];
   }
@@ -1804,8 +1796,8 @@ cs_internal_coupling_lsq_vector_gradient(
   /* Compute rhs */
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    face_id = faces_local[ii];
-    cell_id = b_face_cells[face_id];
+    cs_lnum_t face_id = faces_local[ii];
+    cs_lnum_t cell_id = b_face_cells[face_id];
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       dc[ll] = ci_cj_vect[ii][ll];
 
@@ -1870,10 +1862,6 @@ void
 cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
                                            cs_real_33_t                   cocg[])
 {
-  int ll, mm;
-  cs_lnum_t face_id, cell_id;
-  cs_real_3_t dddij;
-
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
   const cs_real_3_t *ci_cj_vect = (const cs_real_3_t *)cpl->ci_cj_vect;
@@ -1883,17 +1871,18 @@ cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    face_id = faces_local[ii];
-    cell_id = b_face_cells[face_id];
-    for (ll = 0; ll < 3; ll++)
+    cs_lnum_t face_id = faces_local[ii];
+    cs_lnum_t cell_id = b_face_cells[face_id];
+    cs_real_3_t dddij;
+    for (int ll = 0; ll < 3; ll++)
       dddij[ll] = ci_cj_vect[ii][ll];
 
     cs_real_t umdddij = 1./ cs_math_3_norm(dddij);
-    for (ll = 0; ll < 3; ll++)
+    for (int ll = 0; ll < 3; ll++)
       dddij[ll] *= umdddij;
 
-    for (ll = 0; ll < 3; ll++) {
-      for (mm = 0; mm < 3; mm++)
+    for (int ll = 0; ll < 3; ll++) {
+      for (int mm = 0; mm < 3; mm++)
         cocg[cell_id][ll][mm] += dddij[ll]*dddij[mm];
     }
   }
@@ -1915,9 +1904,6 @@ cs_internal_coupling_lsq_cocg_weighted(const cs_internal_coupling_t  *cpl,
                                        const cs_real_t               *c_weight,
                                        cs_real_33_t                   cocg[])
 {
-  cs_lnum_t face_id, cell_id;
-  cs_real_t dc[3];
-
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
   const cs_real_t* g_weight = cpl->g_weight;
@@ -1936,8 +1922,9 @@ cs_internal_coupling_lsq_cocg_weighted(const cs_internal_coupling_t  *cpl,
                                            cwgt_local);
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    face_id = faces_local[ii];
-    cell_id = b_face_cells[face_id];
+    cs_lnum_t face_id = faces_local[ii];
+    cs_lnum_t cell_id = b_face_cells[face_id];
+    cs_real_t dc[3];
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       dc[ll] = ci_cj_vect[ii][ll];
 
@@ -1973,9 +1960,6 @@ void
 cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
                                           cs_real_33_t                   cocg[])
 {
-  int ll, mm;
-  cs_lnum_t cell_id, face_id;
-
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
   const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
@@ -1990,11 +1974,11 @@ cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    face_id = faces_local[ii];
-    cell_id = b_face_cells[face_id];
+    cs_lnum_t face_id = faces_local[ii];
+    cs_lnum_t cell_id = b_face_cells[face_id];
 
-    for (ll = 0; ll < 3; ll++) {
-      for (mm = 0; mm < 3; mm++)
+    for (int ll = 0; ll < 3; ll++) {
+      for (int mm = 0; mm < 3; mm++)
         cocg[cell_id][ll][mm] -= 0.5 * offset_vect[ii][ll]
                                * b_f_face_normal[face_id][mm] / cell_vol[cell_id];
     }
@@ -2033,8 +2017,6 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
                                          const cs_real_t                tab[],
                                          cs_real_t                      local[])
 {
-  cs_lnum_t face_id;
-
   const cs_lnum_t n_distant = cpl->n_distant;
   const cs_lnum_t *faces_distant = cpl->faces_distant;
 
@@ -2043,7 +2025,7 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
   cs_real_t *distant = NULL;
   BFT_MALLOC(distant, n_distant*stride, cs_real_t);
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-    face_id = faces_distant[ii];
+    cs_lnum_t face_id = faces_distant[ii];
     for (int jj = 0; jj < stride; jj++)
       distant[stride * ii + jj] = tab[stride * face_id + jj];
   }
@@ -2063,7 +2045,7 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
  *
  * parameters:
  *   cpl    <-- pointer to coupling entity
- *   stride <-- number of values (non interlaced) by entity
+ *   stride <-- number of values (interlaced) by entity
  *   tab    <-- variable exchanged
  *   local  --> local data
  *----------------------------------------------------------------------------*/
@@ -2614,7 +2596,7 @@ cs_ic_set_exchcoeff(const int         field_id,
 
   /* Exchange hbord */
   cs_internal_coupling_exchange_by_face_id(cpl,
-                                           1,
+                                           1, /* Dimension */
                                            hbord,
                                            hextloc);
 
@@ -2675,6 +2657,7 @@ cs_matrix_preconditionning_add_coupling_contribution(void       *input,
       }
     /* Vector field */
     } else {
+      cs_real_33_t *_ad = (cs_real_33_t *) ad;
       for (cs_lnum_t ii = 0; ii < n_local; ii++) {
         face_id = faces_local[ii];
         cell_id = b_face_cells[face_id];
@@ -2684,8 +2667,8 @@ cs_matrix_preconditionning_add_coupling_contribution(void       *input,
         cs_real_t heq = hint * hext / (hint + hext);
 
         /* Diagonal part dim x dim */
-        for (cs_lnum_t k = 0; k < f->dim; k++)
-          ad[(f->dim)*(f->dim)*cell_id + (f->dim + 1)*k] += heq;
+        for (int k = 0; k < 3; k++)
+          _ad[cell_id][k][k] += heq;
       }
     }
   }
