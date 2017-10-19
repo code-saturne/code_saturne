@@ -337,6 +337,27 @@ cs_math_33_3_product(const cs_real_t  m[3][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the product of a matrix of 3x3 real values by a vector of 3
+ * real values add.
+ *
+ * \param[in]     m             matrix of 3x3 real values
+ * \param[in]     v             vector of 3 real values
+ * \param[out]    mv            vector of 3 real values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_33_3_product_add(const cs_real_t  m[3][3],
+                         const cs_real_t  v[3],
+                         cs_real_3_t      mv)
+{
+  mv[0] += m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2];
+  mv[1] += m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2];
+  mv[2] += m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the product of the transpose of a matrix of 3x3 real
  * values by a vector of 3 real values.
  *
