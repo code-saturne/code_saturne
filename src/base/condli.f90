@@ -510,21 +510,29 @@ do ii = 1, nscal
                                  iccocg,                            &
                                  grad)
 
+      call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
       if (b_f_id .ge. 0) then
         do ifac = 1 , nfabor
           iel = ifabor(ifac)
           bvar_s(ifac) = cvar_s(iel) &
-                       + grad(1,iel)*diipb(1,ifac) &
-                       + grad(2,iel)*diipb(2,ifac) &
-                       + grad(3,iel)*diipb(3,ifac)
+                       + vcopt%ircflu                &
+                       * (                           &
+                         + grad(1,iel)*diipb(1,ifac) &
+                         + grad(2,iel)*diipb(2,ifac) &
+                         + grad(3,iel)*diipb(3,ifac) &
+                         )
         enddo
       else
         do ifac = 1 , nfabor
           iel = ifabor(ifac)
           theipb(ifac) = cvar_s(iel) &
-                       + grad(1,iel)*diipb(1,ifac) &
-                       + grad(2,iel)*diipb(2,ifac) &
-                       + grad(3,iel)*diipb(3,ifac)
+                       + vcopt%ircflu                &
+                       * (                           &
+                         + grad(1,iel)*diipb(1,ifac) &
+                         + grad(2,iel)*diipb(2,ifac) &
+                         + grad(3,iel)*diipb(3,ifac) &
+                         )
         enddo
       endif
 
@@ -642,13 +650,18 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.iforbr.ge.0) then
     call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
                                gradv)
 
+    call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+
     do isou = 1, 3
       do ifac = 1, nfabor
         iel = ifabor(ifac)
-        velipb(ifac,isou) = gradv(1,isou,iel)*diipb(1,ifac)    &
-                          + gradv(2,isou,iel)*diipb(2,ifac)    &
-                          + gradv(3,isou,iel)*diipb(3,ifac)    &
-                          + vela(isou,iel)
+        velipb(ifac,isou) =  vela(isou,iel)                      &
+                            + vcopt%ircflu                       &
+                            * (                                  &
+                              + gradv(1,isou,iel)*diipb(1,ifac)  &
+                              + gradv(2,isou,iel)*diipb(2,ifac)  &
+                              + gradv(3,isou,iel)*diipb(3,ifac)  &
+                              )
       enddo
     enddo
 
@@ -686,6 +699,8 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
       inc = 1
       iprev = 1
 
+      call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
+
       ! allocate a temporary array
       allocate(gradts(6,3,ncelet))
 
@@ -695,10 +710,13 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
         do isou = 1, 6
-          rijipb(ifac,isou) = cvar_ts(isou,iel)               &
-                            + gradts(isou,1,iel)*diipb(1,ifac) &
-                            + gradts(isou,2,iel)*diipb(2,ifac) &
-                            + gradts(isou,3,iel)*diipb(3,ifac)
+          rijipb(ifac,isou) = cvar_ts(isou,iel)                  &
+                            + vcopt%ircflu                       &
+                            * (                                  &
+                              + gradts(isou,1,iel)*diipb(1,ifac) &
+                              + gradts(isou,2,iel)*diipb(2,ifac) &
+                              + gradts(isou,3,iel)*diipb(3,ifac) &
+                              )
         enddo
       enddo
 
@@ -726,6 +744,7 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
       if (isou.eq.5) ivar = ir23
       if (isou.eq.6) ivar = ir13
 
+      call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
       if (ntcabs.gt.1.and.irijrb.eq.1) then
 
@@ -741,10 +760,13 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
 
         do ifac = 1 , nfabor
           iel = ifabor(ifac)
-          rijipb(ifac,isou) = cvar_s(iel)               &
-                            + grad(1,iel)*diipb(1,ifac) &
-                            + grad(2,iel)*diipb(2,ifac) &
-                            + grad(3,iel)*diipb(3,ifac)
+          rijipb(ifac,isou) = cvar_s(iel)                 &
+                            + vcopt%ircflu                &
+                            * (                           &
+                              + grad(1,iel)*diipb(1,ifac) &
+                              + grad(2,iel)*diipb(2,ifac) &
+                              + grad(3,iel)*diipb(3,ifac) &
+                              )
         enddo
 
       ! nb: at the first time step, coefa and coefb are unknown, so the walue

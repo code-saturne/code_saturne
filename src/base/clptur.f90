@@ -2776,10 +2776,13 @@ call field_gradient_vector(f_id, iprev, imrgra, inc,    &
 do isou = 1, 3
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    vecipb(ifac,isou) =  gradv(1,isou,iel)*diipb(1,ifac)    &
-                       + gradv(2,isou,iel)*diipb(2,ifac)    &
-                       + gradv(3,isou,iel)*diipb(3,ifac)    &
-                       + val_p_v(isou,iel)
+    vecipb(ifac,isou) = val_p_v(isou,iel)                   &
+                      + vcopt%ircflu                        &
+                      * (                                   &
+                        + gradv(1,isou,iel)*diipb(1,ifac)   &
+                        + gradv(2,isou,iel)*diipb(2,ifac)   &
+                        + gradv(3,isou,iel)*diipb(3,ifac)   &
+                        )
   enddo
 enddo
 
