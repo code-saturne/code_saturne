@@ -80,6 +80,7 @@
 #include "cs_rotation.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_stokes_model.h"
 #include "cs_thermal_model.h"
 #include "cs_time_moment.h"
 #include "cs_time_step.h"
@@ -208,6 +209,56 @@ cs_user_model(void)
 void
 cs_user_parameters(void)
 {
+
+  /* Example: set options for Stokes solving */
+  /*-----------------------------------------*/
+
+  /* Members of the strucutre cs_glob_stokes_model:
+   *  ivisse: take viscous term of transposed velocity
+   *          gradient into account in momentum equation
+   *                   - 1: true (default)
+   *                   - 0: false
+   *  arak: Arakawa multiplicator for the Rhie and Chow
+   *        filter (1 by default)
+   *  ipucou: pseudo coupled pressure-velocity solver
+   *                   - 1: true (default)
+   *                   - 0: false
+   *  iccvfg: calculation with a fixed velocity field
+   *                   - 1: true (default)
+   *                   - 0: false
+   *  idilat: algorithm to take into account the density
+   *          variation in time
+   *                   - 1: dilatable steady algorithm (default)
+   *                   - 2: dilatable unsteady algorithm
+   *                   - 3: low-Mach algorithm
+   *                   - 4: algorithm for fire
+   *                   - 0: boussinesq algorithm with constant
+   *                   density
+   *  iphydr: improve hydrostatic pressure algorithm
+   *                   - 1: impose the equilibrium of the hydrostaic
+   *                     part of the pressure with any external force,
+   *                     even head losses
+   *                   - 2: compute an hydrostatic pressure due to
+   *                     buoyancy forces before the prediction step
+   *                   - 0: no treatment (default)
+   *  igprij: improve static pressure algorithm
+   *                   - 1: take -div(rho R) in the static pressure
+   *                     treatment IF iphydr=1
+   *                   - 0: no treatment (default)
+   *  igpust: improve static pressure algorithm
+   *                   - 1: take user momemtum source terms in the
+   *                     static pressure treatment IF iphydr=1 (default)
+   *                   - 0: no treatment
+   */
+
+  /*! [param_stokes_model] */
+
+  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
+  stokes->arak = 0.;
+
+  /*! [param_stokes_model] */
+
+
   /* Example: choose a limiter for a given scalar */
   /*----------------------------------------------*/
 

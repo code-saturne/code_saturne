@@ -51,7 +51,9 @@ BEGIN_C_DECLS
 typedef struct {
 
   int           ivisse;       /* take viscous term of transposed velocity
-                                 gradient into account in momentum equation */
+                                 gradient into account in momentum equation
+                                 - 1: true (default)
+                                 - 0: false */
   int           irevmc;       /* reconstruction of the velocity field with the
                                  updated pressure option
                                  - 0: default */

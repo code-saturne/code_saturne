@@ -25,7 +25,7 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page parameters Input of calculation parameters (C functions)
+  \page parameters Input of calculation parameters (C functions: cs_user_parameters.c)
 
   \section cs_user_parameters_h_intro Introduction
 
@@ -48,10 +48,14 @@
   Most definitions should be done in the \ref cs_user_parameters
   function, which is the C equivalent of the \ref usipsu Fortran routine.
 
-  For example, to add boundary values for all scalars, the
-  following code can be added:
+  For example, to change limiters for the convective scheme for a given scalar:
 
-  \snippet cs_user_parameters-base.c param_var_boundary_vals_1
+  \snippet cs_user_parameters-base.c param_var_limiter_choice
+
+  To set options for the solving of the Stokes problem (velocity pressure coupling
+  see \ref cs_stokes_model_t structure):
+
+  \snippet cs_user_parameters-base.c param_stokes_model
 
   \section cs_user_parameters_h_cs_user_linear_solvers  Linear solver related options
 
@@ -356,6 +360,11 @@
   \snippet cs_user_parameters-fans.c fan_user_1
 
   \section cs_user_parameters_h_postprocess Activate some automatic post-processings
+
+  To add boundary values for all scalars, the
+  following code can be added:
+
+  \snippet cs_user_parameters-base.c param_var_boundary_vals_1
 
   You can activate the post-processing of the Q-criterion on the whole domain
   mesh with:
