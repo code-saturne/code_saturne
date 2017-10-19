@@ -520,6 +520,7 @@ cs_balance_vector(int                  idtvar,
                                    i_visc,
                                    b_visc,
                                    secvif,
+                                   secvib,
                                    smbr);
   }
   /* Symmetric tensor diffusivity (Daly-Harlow, type Nabla(v).K )*/
@@ -547,6 +548,7 @@ cs_balance_vector(int                  idtvar,
                                      i_visc,
                                      b_visc,
                                      secvif,
+                                     secvib,
                                      smbr);
 
     }

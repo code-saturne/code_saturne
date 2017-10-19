@@ -1041,8 +1041,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at boundary faces for the r.h.s.
- * \param[in]     secvif        secondary viscosity at interior faces
- * \param[in]     secvib        secondary viscosity at boundary faces
+ * \param[in]     i_secvis      secondary viscosity at interior faces
+ * \param[in]     b_secvis      secondary viscosity at boundary faces
  * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
@@ -1082,8 +1082,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    const cs_real_t       b_viscm[],
                                    const cs_real_t       i_visc[],
                                    const cs_real_t       b_visc[],
-                                   const cs_real_t       secvif[],
-                                   const cs_real_t       secvib[],
+                                   const cs_real_t       i_secvis[],
+                                   const cs_real_t       b_secvis[],
                                    cs_real_6_t           viscel[],
                                    const cs_real_2_t     weighf[],
                                    const cs_real_t       weighb[],
@@ -1186,36 +1186,26 @@ cs_equation_iterative_solve_vector(int                   idtvar,
    * 1.  Building of the "simplified" matrix
    *==========================================================================*/
 
-  if (iesize == 1)
-    cs_matrix_wrapper_vector(iconvp,
-                             idiffp,
-                             ndircp,
-                             isym,
-                             thetap,
-                             coefbv,
-                             cofbfv,
-                             fimp,
-                             i_massflux,
-                             b_massflux,
-                             i_viscm,
-                             b_viscm,
-                             dam,
-                             xam);
-  else if (iesize == 3)
-    cs_matrix_anisotropic_diffusion_wrapper(iconvp,
-                                            idiffp,
-                                            ndircp,
-                                            isym,
-                                            thetap,
-                                            coefbv,
-                                            cofbfv,
-                                            fimp,
-                                            i_massflux,
-                                            b_massflux,
-                                            (const cs_real_33_t *)i_viscm,
-                                            b_viscm,
-                                            dam,
-                                            xam);
+  int tensorial_diffusion = 1;
+
+  if (iesize == 3)
+    tensorial_diffusion = 2;
+
+  cs_matrix_wrapper_vector(iconvp,
+                           idiffp,
+                           tensorial_diffusion,
+                           ndircp,
+                           isym,
+                           thetap,
+                           coefbv,
+                           cofbfv,
+                           fimp,
+                           i_massflux,
+                           b_massflux,
+                           i_viscm,
+                           b_viscm,
+                           dam,
+                           xam);
 
   /*  For steady computations, the diagonal is relaxed */
   if (idtvar < 0) {
@@ -1264,8 +1254,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       b_massflux,
                       i_visc,
                       b_visc,
-                      secvif,
-                      secvib,
+                      i_secvis,
+                      b_secvis,
                       viscel,
                       weighf,
                       weighb,
@@ -1331,8 +1321,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                     b_massflux,
                     i_visc,
                     b_visc,
-                    secvif,
-                    secvib,
+                    i_secvis,
+                    b_secvis,
                     viscel,
                     weighf,
                     weighb,
@@ -1486,8 +1476,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                         b_massflux,
                         i_visc,
                         b_visc,
-                        secvif,
-                        secvib,
+                        i_secvis,
+                        b_secvis,
                         viscel,
                         weighf,
                         weighb,
@@ -1638,8 +1628,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       b_massflux,
                       i_visc,
                       b_visc,
-                      secvif,
-                      secvib,
+                      i_secvis,
+                      b_secvis,
                       viscel,
                       weighf,
                       weighb,
@@ -1727,8 +1717,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       b_massflux,
                       i_visc,
                       b_visc,
-                      secvif,
-                      secvib,
+                      i_secvis,
+                      b_secvis,
                       viscel,
                       weighf,
                       weighb,
@@ -1974,36 +1964,25 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
    * 1.  Building of the "simplified" matrix
    *==========================================================================*/
 
-  if (iesize == 1)
-    cs_matrix_wrapper_tensor(iconvp,
-                             idiffp,
-                             ndircp,
-                             isym,
-                             thetap,
-                             coefbts,
-                             cofbfts,
-                             fimp,
-                             i_massflux,
-                             b_massflux,
-                             i_viscm,
-                             b_viscm,
-                             dam,
-                             xam);
-  else if (iesize == 6)
-    cs_matrix_anisotropic_diffusion_wrapper_tensor(iconvp,
-                                                   idiffp,
-                                                   ndircp,
-                                                   isym,
-                                                   thetap,
-                                                   coefbts,
-                                                   cofbfts,
-                                                   fimp,
-                                                   i_massflux,
-                                                   b_massflux,
-                                                   (const cs_real_66_t *)i_viscm,
-                                                   b_viscm,
-                                                   dam,
-                                                   (cs_real_662_t *)xam);
+  int tensorial_diffusion = 1;
+  if (iesize == 6)
+    tensorial_diffusion = 2;
+
+  cs_matrix_wrapper_tensor(iconvp,
+                           idiffp,
+                           tensorial_diffusion,
+                           ndircp,
+                           isym,
+                           thetap,
+                           coefbts,
+                           cofbfts,
+                           fimp,
+                           i_massflux,
+                           b_massflux,
+                           i_viscm,
+                           b_viscm,
+                           dam,
+                           xam);
 
   /*  For steady computations, the diagonal is relaxed */
   if (idtvar < 0) {

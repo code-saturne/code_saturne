@@ -3331,6 +3331,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
  * \param[in]     secvif        secondary viscosity at interior faces
+ * \param[in]     secvib        secondary viscosity at boundary faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -3355,6 +3356,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_real_t             i_visc[],
                                const cs_real_t             b_visc[],
                                const cs_real_t             secvif[],
+                               const cs_real_t             secvib[],
                                cs_real_3_t       *restrict rhs)
 {
   const int iconvp = var_cal_opt.iconv;
@@ -3393,6 +3395,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
+  const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
@@ -3401,6 +3404,11 @@ cs_convection_diffusion_vector(int                         idtvar,
     = (const cs_real_3_t *restrict)fvq->i_face_normal;
   const cs_real_3_t *restrict i_f_face_normal
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict dijpf

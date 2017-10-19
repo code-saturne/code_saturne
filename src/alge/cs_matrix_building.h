@@ -157,6 +157,7 @@ cs_matrix_wrapper_scalar_conv_diff(int               iconvp,
 void
 cs_matrix_wrapper_vector(int                  iconvp,
                          int                  idiffp,
+                         int                  tensorial_diffusion,
                          int                  ndircp,
                          int                  isym,
                          double               thetap,
@@ -178,6 +179,7 @@ cs_matrix_wrapper_vector(int                  iconvp,
 void
 cs_matrix_wrapper_tensor(int                  iconvp,
                          int                  idiffp,
+                         int                  tensorial_diffusion,
                          int                  ndircp,
                          int                  isym,
                          double               thetap,
@@ -190,48 +192,6 @@ cs_matrix_wrapper_tensor(int                  iconvp,
                          const cs_real_t      b_visc[],
                          cs_real_66_t         da[],
                          cs_real_t            xa[]);
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_anisotropic_diffusion (or its counterpart for
- * symmetric matrices)
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_anisotropic_diffusion_wrapper(int                  iconvp,
-                                        int                  idiffp,
-                                        int                  ndircp,
-                                        int                  isym,
-                                        double               thetap,
-                                        const cs_real_33_t   coefbu[],
-                                        const cs_real_33_t   cofbfu[],
-                                        const cs_real_33_t   fimp[],
-                                        const cs_real_t      i_massflux[],
-                                        const cs_real_t      b_massflux[],
-                                        const cs_real_33_t   i_visc[],
-                                        const cs_real_t      b_visc[],
-                                        cs_real_33_t         da[],
-                                        cs_real_t            xa[]);
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_anisotropic_diffusion_tensor (or its counterpart for
- * symmetric matrices)
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_anisotropic_diffusion_wrapper_tensor(int                  iconvp,
-                                               int                  idiffp,
-                                               int                  ndircp,
-                                               int                  isym,
-                                               double               thetap,
-                                               const cs_real_66_t   coefbts[],
-                                               const cs_real_66_t   cofbfts[],
-                                               const cs_real_66_t   fimp[],
-                                               const cs_real_t      i_massflux[],
-                                               const cs_real_t      b_massflux[],
-                                               const cs_real_66_t   i_visc[],
-                                               const cs_real_t      b_visc[],
-                                               cs_real_66_t         da[],
-                                               cs_real_662_t        xa[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -380,6 +380,7 @@ cs_matrix_wrapper_scalar_conv_diff(int               iconvp,
 void
 cs_matrix_wrapper_vector(int                  iconvp,
                          int                  idiffp,
+                         int                  tensorial_diffusion,
                          int                  ndircp,
                          int                  isym,
                          double               thetap,
@@ -402,33 +403,69 @@ cs_matrix_wrapper_vector(int                  iconvp,
               _("invalid value of isym"));
   }
 
-  /* Symmetric matrix */
-  if (isym == 1) {
-    cs_sym_matrix_vector(m,
-                         idiffp,
-                         thetap,
-                         cofbfu,
-                         fimp,
-                         i_visc,
-                         b_visc,
-                         da,
-                         xa);
+  /* scalar diffusion or right anisotropic diffusion */
+  if (tensorial_diffusion == 1) {
+    /* Symmetric matrix */
+    if (isym == 1) {
+      cs_sym_matrix_vector(m,
+                           idiffp,
+                           thetap,
+                           cofbfu,
+                           fimp,
+                           i_visc,
+                           b_visc,
+                           da,
+                           xa);
 
-  /* Non-symmetric matrix */
-  } else {
-    cs_matrix_vector(m,
-                     iconvp,
-                     idiffp,
-                     thetap,
-                     coefbu,
-                     cofbfu,
-                     fimp,
-                     i_massflux,
-                     b_massflux,
-                     i_visc,
-                     b_visc,
-                     da,
-                     (cs_real_2_t*) xa);
+    /* Non-symmetric matrix */
+    } else {
+      cs_matrix_vector(m,
+                       iconvp,
+                       idiffp,
+                       thetap,
+                       coefbu,
+                       cofbfu,
+                       fimp,
+                       i_massflux,
+                       b_massflux,
+                       i_visc,
+                       b_visc,
+                       da,
+                       (cs_real_2_t*) xa);
+    }
+  }
+  /* left tensor diffusion */
+  else {
+
+    /* Symmetric matrix */
+    if (isym == 1) {
+      cs_sym_matrix_anisotropic_diffusion(m,
+                                          idiffp,
+                                          thetap,
+                                          cofbfu,
+                                          fimp,
+                                          (const cs_real_33_t *)i_visc,
+                                          b_visc,
+                                          da,
+                                          (cs_real_33_t *) xa);
+
+    /* Non-symmetric matrix */
+    } else {
+      cs_matrix_anisotropic_diffusion(m,
+                                      iconvp,
+                                      idiffp,
+                                      thetap,
+                                      coefbu,
+                                      cofbfu,
+                                      fimp,
+                                      i_massflux,
+                                      b_massflux,
+                                      (const cs_real_33_t *)i_visc,
+                                      b_visc,
+                                      da,
+                                      (cs_real_332_t *) xa);
+    }
+
   }
 
   /* Penalization if non invertible matrix */
@@ -463,6 +500,7 @@ cs_matrix_wrapper_vector(int                  iconvp,
 void
 cs_matrix_wrapper_tensor(int                  iconvp,
                          int                  idiffp,
+                         int                  tensorial_diffusion,
                          int                  ndircp,
                          int                  isym,
                          double               thetap,
@@ -485,201 +523,67 @@ cs_matrix_wrapper_tensor(int                  iconvp,
               _("invalid value of isym"));
   }
 
-  /* Symmetric matrix */
-  if (isym == 1) {
-    cs_sym_matrix_tensor(m,
-                         idiffp,
-                         thetap,
-                         cofbfts,
-                         fimp,
-                         i_visc,
-                         b_visc,
-                         da,
-                         xa);
+  /* scalar diffusion or right anisotropic diffusion */
+  if (tensorial_diffusion == 1) {
+    /* Symmetric matrix */
+    if (isym == 1) {
+      cs_sym_matrix_tensor(m,
+                           idiffp,
+                           thetap,
+                           cofbfts,
+                           fimp,
+                           i_visc,
+                           b_visc,
+                           da,
+                           xa);
 
-  /* Non-symmetric matrix */
-  } else {
-    cs_matrix_tensor(m,
-                     iconvp,
-                     idiffp,
-                     thetap,
-                     coefbts,
-                     cofbfts,
-                     fimp,
-                     i_massflux,
-                     b_massflux,
-                     i_visc,
-                     b_visc,
-                     da,
-                     (cs_real_2_t*) xa);
-  }
-
-  /* Penalization if non invertible matrix */
-
-  /* If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
-     least 1 in order not to shift the diagonal). */
-
-  if (ndircp <= 0) {
-    const double epsi = 1.e-7;
-
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (int isou = 0; isou < 6; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
+    /* Non-symmetric matrix */
+    } else {
+      cs_matrix_tensor(m,
+                       iconvp,
+                       idiffp,
+                       thetap,
+                       coefbts,
+                       cofbfts,
+                       fimp,
+                       i_massflux,
+                       b_massflux,
+                       i_visc,
+                       b_visc,
+                       da,
+                       (cs_real_2_t*) xa);
     }
   }
+  /* left tensor diffusion */
+  else {
+    /* Symmetric matrix */
+    if (isym == 1) {
+      cs_sym_matrix_anisotropic_diffusion_tensor(m,
+                                                 idiffp,
+                                                 thetap,
+                                                 cofbfts,
+                                                 fimp,
+                                                 (cs_real_66_t *)i_visc,
+                                                 b_visc,
+                                                 da,
+                                                 (cs_real_66_t *)xa);
 
-  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    cs_lnum_t corr_cell_id = CS_MIN(cs_glob_porous_model, 1)*cell_id;
-    for (int isou = 0; isou < 6; isou++) {
-      da[cell_id][isou][isou] += mq->c_solid_flag[corr_cell_id];
+    /* Non-symmetric matrix */
+    } else {
+      cs_matrix_anisotropic_diffusion_tensor(m,
+                                             iconvp,
+                                             idiffp,
+                                             thetap,
+                                             coefbts,
+                                             cofbfts,
+                                             fimp,
+                                             i_massflux,
+                                             b_massflux,
+                                             (cs_real_66_t *)i_visc,
+                                             b_visc,
+                                             da,
+                                             (cs_real_662_t *)xa);
     }
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_anisotropic_diffusion (or its counterpart for
- * symmetric matrices)
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_anisotropic_diffusion_wrapper(int                  iconvp,
-                                        int                  idiffp,
-                                        int                  ndircp,
-                                        int                  isym,
-                                        double               thetap,
-                                        const cs_real_33_t   coefbu[],
-                                        const cs_real_33_t   cofbfu[],
-                                        const cs_real_33_t   fimp[],
-                                        const cs_real_t      i_massflux[],
-                                        const cs_real_t      b_massflux[],
-                                        const cs_real_33_t   i_visc[],
-                                        const cs_real_t      b_visc[],
-                                        cs_real_33_t         da[],
-                                        cs_real_t            xa[])
-{
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t n_cells = m->n_cells;
-
-
-  if (isym != 1 && isym != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
-  }
-
-  /* Symmetric matrix */
-  if (isym == 1) {
-    cs_sym_matrix_anisotropic_diffusion(m,
-                                        idiffp,
-                                        thetap,
-                                        cofbfu,
-                                        fimp,
-                                        i_visc,
-                                        b_visc,
-                                        da,
-                                        (cs_real_33_t *) xa);
-
-  /* Non-symmetric matrix */
-  } else {
-    cs_matrix_anisotropic_diffusion(m,
-                                    iconvp,
-                                    idiffp,
-                                    thetap,
-                                    coefbu,
-                                    cofbfu,
-                                    fimp,
-                                    i_massflux,
-                                    b_massflux,
-                                    i_visc,
-                                    b_visc,
-                                    da,
-                                    (cs_real_332_t *) xa);
-  }
-
-  /* Penalization if non invertible matrix */
-
-  /* If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum. */
-
-  if (ndircp <= 0) {
-    const double epsi = 1.e-7;
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (int isou = 0; isou < 3; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
-    }
-  }
-
-  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
-# pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    for (int isou = 0; isou < 3; isou++)
-      da[cell_id][isou][isou] += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_anisotropic_diffusion_tensor (or its counterpart for
- * symmetric matrices)
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_anisotropic_diffusion_wrapper_tensor(int                  iconvp,
-                                               int                  idiffp,
-                                               int                  ndircp,
-                                               int                  isym,
-                                               double               thetap,
-                                               const cs_real_66_t   coefbts[],
-                                               const cs_real_66_t   cofbfts[],
-                                               const cs_real_66_t   fimp[],
-                                               const cs_real_t      i_massflux[],
-                                               const cs_real_t      b_massflux[],
-                                               const cs_real_66_t   i_visc[],
-                                               const cs_real_t      b_visc[],
-                                               cs_real_66_t         da[],
-                                               cs_real_662_t        xa[])
-{
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t n_cells = m->n_cells;
-
-  if (isym != 1 && isym != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
-  }
-
-  /* Symmetric matrix */
-  if (isym == 1) {
-    cs_sym_matrix_anisotropic_diffusion_tensor(m,
-                                               idiffp,
-                                               thetap,
-                                               cofbfts,
-                                               fimp,
-                                               i_visc,
-                                               b_visc,
-                                               da,
-                                               (cs_real_66_t *)xa);
-
-  /* Non-symmetric matrix */
-  } else {
-    cs_matrix_anisotropic_diffusion_tensor(m,
-                                           iconvp,
-                                           idiffp,
-                                           thetap,
-                                           coefbts,
-                                           cofbfts,
-                                           fimp,
-                                           i_massflux,
-                                           b_massflux,
-                                           i_visc,
-                                           b_visc,
-                                           da,
-                                           xa);
   }
 
   /* Penalization if non invertible matrix */
@@ -2241,7 +2145,7 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build the diffusion matrix for a vector field with a
+ * \brief Build the diffusion matrix for a tensor field with a
  * tensorial diffusivity (symmetric matrix).
  *
  * The diffusion is not reconstructed.
