@@ -5,6 +5,16 @@ Trunk (unreleased)
 Release 5.1.0 (October 10 2017)
 ===============================
 
+Physical modelling
+------------------
+
+- Turbulence: add DDES tubulence model
+  * Activated using k-w SST model (iturb = 60) with keyword IDDES = 1
+  * Hybrid Numerical scheme CD/SOLU can be activated with ISCHCV = 3
+
+- Atmospheric model: add an atmostpheric infra-red absorption feature.
+  Based on L. Makke PhD work.
+
 Numerics
 --------
 
