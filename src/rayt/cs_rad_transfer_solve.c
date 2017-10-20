@@ -2058,9 +2058,6 @@ cs_rad_transfer_solve(int               bc_type[],
   BFT_FREE(iabparh2);
   BFT_FREE(iempexh2);
   BFT_FREE(iempimh2);
-
-  if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max)
-    BFT_FREE(wq);
 }
 
 /*----------------------------------------------------------------------------*/
