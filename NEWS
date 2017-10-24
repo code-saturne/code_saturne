@@ -4,6 +4,9 @@ Release 4.0.9 (unreleased)
 Bug fixes:
 ----------
 
+- Major fix in parallel when activating head losses and improved
+  hydrostatic pressure algorithm (iphydr = 1).
+
 - Fix possible crash or error when computing wall distance for 2D
   (single cell layer) meshes.
 

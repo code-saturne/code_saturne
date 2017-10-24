@@ -802,6 +802,10 @@ if ((idften(ipr).eq.6).and.(ippmod(idarcy).eq.-1)) then
     call symmetric_matrix_inverse(hdls, dttens(:, iel))
   enddo
 
+  if (irangp.ge.0) then
+    call syntis(dttens)
+  endif
+
 endif
 
 !===============================================================================
