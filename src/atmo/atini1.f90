@@ -122,10 +122,6 @@ if (ippmod(iatmos).eq.1) then
       visls0(jj) = viscl0
     endif
 
-    vcopt%blencv = 1.d0
-
-    call field_set_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
-
   enddo
 
 endif
@@ -149,10 +145,6 @@ if (ippmod(iatmos).eq.2) then
     if (iscavr(jj).le.0) then
       visls0(jj) = viscl0
     endif
-
-    vcopt%blencv = 1.d0
-
-    call field_set_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
 
   enddo
 
