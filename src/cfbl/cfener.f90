@@ -816,7 +816,7 @@ iescap = 0
 
 !  idtvar = 1  => unsteady
 imucpp = 0  ! not a thermal scalar
-idftnp = 1  ! scalar viscosity
+idftnp = ISOTROPIC_DIFFUSION
 iswdyp = 0  ! no dynamic relaxation
 
 ! impose boundary convective at some faces (face indicator icvfli)

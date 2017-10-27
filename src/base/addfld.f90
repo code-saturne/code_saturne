@@ -155,7 +155,7 @@ do ii = 1, nscal
         call field_set_key_int(iflid, keycpl, 1)
         ! Tensorial diffusivity
         call field_get_key_struct_var_cal_opt(iflid, vcopt_dfm)
-        vcopt_dfm%idften = 6
+        vcopt_dfm%idften = ANISOTROPIC_RIGHT_DIFFUSION
         call field_set_key_struct_var_cal_opt(iflid, vcopt_dfm)
 
       else

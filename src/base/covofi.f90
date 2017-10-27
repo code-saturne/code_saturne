@@ -962,7 +962,7 @@ if (vcopt%idiff.ge.1) then
   endif
 
   ! Scalar diffusivity
-  if (vcopt%idften.eq.1) then
+  if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
     idifftp = vcopt%idifft
     if (ityturt(iscal).eq.3) then
@@ -999,7 +999,7 @@ if (vcopt%idiff.ge.1) then
      viscf  , viscb  )
 
   ! Symmetric tensor diffusivity (GGDH)
-  elseif (vcopt%idften.eq.6) then
+  else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
     ! Allocate temporary arrays
     allocate(viscce(6,ncelet))

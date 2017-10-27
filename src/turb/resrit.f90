@@ -499,7 +499,7 @@ else
    w1     ,                      &
    viscf  , viscb  )
 
-end if
+endif
 
 !===============================================================================
 ! 6. Vectorial solving of the turbulent thermal fluxes
@@ -535,7 +535,7 @@ ircflp = vcopt%ircflu
 ischcp = vcopt%ischcv
 isstpp = vcopt%isstpc
 iescap = 0
-idftnp = 6
+idftnp = vcopt_ut%idften
 iswdyp = vcopt%iswdyn
 iwarnp = vcopt%iwarni
 blencp = vcopt%blencv

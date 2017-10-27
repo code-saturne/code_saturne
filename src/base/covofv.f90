@@ -411,7 +411,7 @@ call field_get_key_int_by_name(iflid, "diffusivity_tensor", idftnp)
 ! considere ici comme non physique.
 if (vcopt%idiff.ge.1) then
   ! Scalar diffusivity
-  if (vcopt%idften.eq.1) then
+  if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
     allocate(w1(ncelet))
     idifftp = vcopt%idifft
@@ -443,7 +443,7 @@ if (vcopt%idiff.ge.1) then
     deallocate(w1)
 
   ! Symmetric tensor diffusivity (GGDH)
-  elseif (vcopt%idften.eq.6) then
+  elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
     ! Allocate temporary arrays
     allocate(viscce(6,ncelet))

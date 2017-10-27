@@ -1383,6 +1383,27 @@ module optcal
   parameter (DRIFT_SCALAR_CENTRIFUGALFORCE=5)
   parameter (DRIFT_SCALAR_IMPOSED_MASS_FLUX=6)
 
+  !> flag for isotropic diffusion
+  integer :: ISOTROPIC_DIFFUSION
+
+  !> flag for orthotropic diffusion
+  integer :: ORTHOTROPIC_DIFFUSION
+
+  !> flag for diffusion by a left-multiplied symmetric 3x3 tensor
+  integer :: ANISOTROPIC_LEFT_DIFFUSION
+
+  ! flag for diffusion by a right-multiplied symmetric 3x3 tensor
+  integer :: ANISOTROPIC_RIGHT_DIFFUSION
+
+  !> flag for diffusion by a symmetric 3x3 tensor
+  integer :: ANISOTROPIC_DIFFUSION
+
+  parameter (ISOTROPIC_DIFFUSION=1)
+  parameter (ORTHOTROPIC_DIFFUSION=2)
+  parameter (ANISOTROPIC_LEFT_DIFFUSION=4)
+  parameter (ANISOTROPIC_RIGHT_DIFFUSION=8)
+  parameter (ANISOTROPIC_DIFFUSION=12)
+
   !> \}
 
   !----------------------------------------------------------------------------

@@ -4088,10 +4088,7 @@ contains
   !> \param[in]     imucpp        indicator
   !>                               - 0 do not multiply the convectiv term by Cp
   !>                               - 1 do multiply the convectiv term by Cp
-  !> \param[in]     idftnp        indicator
-  !>                               - 0 the diffusivity is scalar
-  !>                               - 1 the diffusivity is a diagonal tensor
-  !>                               - 2 the diffusivity is a symmetric tensor
+  !> \param[in]     idftnp        diffusivity type indicator
   !> \param[in]     iswdyp        indicator
   !>                               - 0 no dynamic relaxation
   !>                               - 1 dynamic relaxation depending on

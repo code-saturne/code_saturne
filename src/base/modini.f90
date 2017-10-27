@@ -307,12 +307,12 @@ if (itytur.eq.3) then
     ! Diffusivity model:
     ! Daly Harlow (GGDH) on Rij and epsilon by default
     if (idirsm.ne.0) then
-      vcopt1%idften = 6
-      vcopt%idften  = 6
+      vcopt1%idften = ANISOTROPIC_RIGHT_DIFFUSION
+      vcopt%idften  = ANISOTROPIC_RIGHT_DIFFUSION
       ! Scalar diffusivity (Shir model) elswhere (idirsm = 0)
     else
-      vcopt1%idften = 1
-      vcopt%idften  = 1
+      vcopt1%idften = ISOTROPIC_DIFFUSION
+      vcopt%idften  = ISOTROPIC_DIFFUSION
     endif
 
     call field_set_key_struct_var_cal_opt(ivarfl(irij), vcopt1)
@@ -329,12 +329,12 @@ if (itytur.eq.3) then
     ! Diffusivity model:
     ! Daly Harlow (GGDH) on Rij and epsilon by default
     if (idirsm.ne.0) then
-      vcopt1%idften = 6
-      vcopt%idften  = 6
+      vcopt1%idften = ANISOTROPIC_RIGHT_DIFFUSION
+      vcopt%idften  = ANISOTROPIC_RIGHT_DIFFUSION
       ! Scalar diffusivity (Shir model) elswhere (idirsm = 0)
     else
-      vcopt1%idften = 1
-      vcopt%idften  = 1
+      vcopt1%idften = ISOTROPIC_DIFFUSION
+      vcopt%idften  = ISOTROPIC_DIFFUSION
     endif
 
     call field_set_key_struct_var_cal_opt(ivarfl(ir11), vcopt1)
@@ -951,14 +951,14 @@ if (nscal.gt.0) then
     ! AFM and GGDH on the scalar
     if (ityturt(iscal).eq.1.or.ityturt(iscal).eq.2) then
       call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
-      vcopt%idften = 6
+      vcopt%idften = ANISOTROPIC_RIGHT_DIFFUSION
       ctheta(iscal) = cthafm
       call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
     ! DFM on the scalar
     elseif (ityturt(iscal).eq.3) then
       call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
       vcopt%idifft = 0
-      vcopt%idften = 1
+      vcopt%idften = ISOTROPIC_DIFFUSION
       if (iturt(iscal).eq.31) then
         ctheta(iscal) = cthebdfm
         c2trit = 0.3d0
@@ -972,7 +972,7 @@ if (nscal.gt.0) then
       do ii = 1, nscal
         if (iscavr(ii).eq.iscal) then
           call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
-          vcopt%idften = 6
+          vcopt%idften = ANISOTROPIC_RIGHT_DIFFUSION
           ctheta(ii) = csrij
           call field_set_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
         endif
@@ -988,14 +988,14 @@ if (ippmod(idarcy).eq.1) then
 
   if (darcy_anisotropic_permeability.eq.1) then
     call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-    vcopt%idften = 6
+    vcopt%idften = ANISOTROPIC_LEFT_DIFFUSION
     call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
  endif
 
   if (darcy_anisotropic_dispersion.eq.1) then
     do iscal = 1, nscal
       call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
-      vcopt%idften = 6
+      vcopt%idften = ANISOTROPIC_LEFT_DIFFUSION
       call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
     enddo
   endif

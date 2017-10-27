@@ -1106,18 +1106,18 @@ do ifac = 1, nfabor
   distbf = distb(ifac)
 
   ! if a flux dt.grad p (w/m2) is set in cs_user_boundary
-  if (vcopt%idften.eq.1) then
+  if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
     hint = dt(iel)/distbf
     if (ivofmt.ge.0)  hint = hint/crom(iel)
     if (ippmod(idarcy).eq.1) hint = permeability(iel)/distbf
-  else if (vcopt%idften.eq.3) then
+  else if (iand(vcopt%idften, ORTHOTROPIC_DIFFUSION).ne.0) then
     hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
            + dttens(2, iel)*surfbo(2,ifac)**2              &
            + dttens(3, iel)*surfbo(3,ifac)**2              &
            ) / (surfbn(ifac)**2 * distbf)
     if (ivofmt.ge.0)  hint = hint/crom(iel)
   ! symmetric tensor diffusivity
-  elseif (vcopt%idften.eq.6) then
+  else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
     if (ippmod(idarcy).eq.-1) then
       visci(1,1) = dttens(1,iel)
       visci(2,2) = dttens(2,iel)
@@ -1441,7 +1441,9 @@ elseif (itytur.eq.3) then
 
     call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
 
-    if (vcopt%idften.eq.6) call field_get_val_v(ivsten, visten)
+    if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+      call field_get_val_v(ivsten, visten)
+    endif
 
     do ifac = 1, nfabor
 
@@ -1453,8 +1455,8 @@ elseif (itytur.eq.3) then
       ! --- geometrical quantities
       distbf = distb(ifac)
 
-      ! symmetric tensor diffusivity (daly harlow -- ggdh)\todo
-      if (vcopt%idften.eq.6) then
+      ! symmetric tensor diffusivity (daly harlow - ggdh) TODO
+      if (iand(vcopt%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
 
         visci(1,1) = visclc + visten(1,iel)
         visci(2,2) = visclc + visten(2,iel)
@@ -1608,7 +1610,9 @@ elseif (itytur.eq.3) then
 
       call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-      if (vcopt%idften.eq.6) call field_get_val_v(ivsten, visten)
+      if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+        call field_get_val_v(ivsten, visten)
+      endif
 
       do ifac = 1, nfabor
 
@@ -1621,7 +1625,7 @@ elseif (itytur.eq.3) then
         distbf = distb(ifac)
 
         ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-        if (vcopt%idften.eq.6) then
+        if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
           visci(1,1) = visclc + visten(1,iel)
           visci(2,2) = visclc + visten(2,iel)
@@ -1754,7 +1758,9 @@ elseif (itytur.eq.3) then
 
   call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-  if (vcopt%idften.eq.6) call field_get_val_v(ivsten, visten)
+  if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+    call field_get_val_v(ivsten, visten)
+  endif
 
   do ifac = 1, nfabor
 
@@ -1768,7 +1774,7 @@ elseif (itytur.eq.3) then
     distbf = distb(ifac)
 
     ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-    if (vcopt%idften.eq.6) then
+    if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
       visci(1,1) = visclc + visten(1,iel)/sigmae
       visci(2,2) = visclc + visten(2,iel)/sigmae
@@ -2344,7 +2350,7 @@ if (nscal.ge.1) then
 
     call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-    if (vcopt%idften.eq.6.or.ityturt(ii).eq.3) then
+    if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0.or.ityturt(ii).eq.3) then
       if (iturb.ne.32.or.ityturt(ii).eq.3) then
         call field_get_val_v(ivsten, visten)
       else ! EBRSM and (GGDH or AFM)
@@ -2393,7 +2399,7 @@ if (nscal.ge.1) then
         endif
 
         ! Scalar diffusivity
-        if (vcopt%idften.eq.1) then
+        if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
           if (ippmod(idarcy).eq.-1) then !FIXME
             hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
           else ! idarcy = 1
@@ -2401,7 +2407,7 @@ if (nscal.ge.1) then
           endif
 
         ! Symmetric tensor diffusivity
-        elseif (vcopt%idften.eq.6) then
+        elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
           temp = vcopt%idifft*cpp*ctheta(ii)/csrij
           visci(1,1) = rkl + temp*visten(1,iel)
@@ -2779,7 +2785,7 @@ if (nscal.ge.1) then
         endif
 
         ! Scalar diffusivity
-        if (vcopt%idften.eq.1) then
+        if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
           if (ippmod(idarcy).eq.-1) then !FIXME
             hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
           else ! idarcy = 1
@@ -2794,7 +2800,7 @@ if (nscal.ge.1) then
           hintt(6) = 0.d0
 
         ! Symmetric tensor diffusivity
-        elseif (vcopt%idften.eq.6) then
+        elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
           temp = vcopt%idifft*cpp*ctheta(ii)/csrij
           hintt(1) = (rkl + temp*visten(1,iel))/distbf

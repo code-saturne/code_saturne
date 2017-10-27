@@ -475,7 +475,7 @@ do ifac = 1, nfabor
     if (itytur.eq.3) then
 
       ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-      if (vcopt_rij%idften.eq.6) then
+      if (iand(vcopt_rij%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
 
         visci(1,1) = visclc + visten(1,iel)
         visci(2,2) = visclc + visten(2,iel)
@@ -1107,7 +1107,7 @@ f_id = ivarfl(ivar)
 
 call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
-if (vcopt%idften.eq.6) then
+if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
   if (iturb.ne.32) then
     call field_get_val_v(ivsten, visten)
   else ! EBRSM and (GGDH or AFM)
@@ -1158,7 +1158,7 @@ do ifac = 1, nfabor
     endif
 
     ! Isotropic diffusivity
-    if (vcopt%idften.eq.1) then
+    if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
       hintt(1) = (vcopt%idifft*max(visct(iel),zero)/turb_schmidt + rkl)/distbf
       hintt(2) = hintt(1)
       hintt(3) = hintt(1)
@@ -1166,7 +1166,7 @@ do ifac = 1, nfabor
       hintt(5) = hintt(1)
       hintt(6) = hintt(1)
     ! Symmetric tensor diffusivity
-    elseif (vcopt%idften.eq.6) then
+    elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
       temp = vcopt%idifft*ctheta(iscal)/csrij
       hintt(1) = (temp*visten(1,iel) + rkl)/distbf
       hintt(2) = (temp*visten(2,iel) + rkl)/distbf

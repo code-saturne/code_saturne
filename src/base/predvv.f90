@@ -268,7 +268,10 @@ allocate(tsexp(3,ncelet))
 allocate(tsimp(3,3,ncelet))
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
-if (vcopt_u%idften.eq.36) allocate(viscce(6,ncelet))
+
+idftnp = vcopt_u%idften
+
+if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) allocate(viscce(6,ncelet))
 
 ! Allocate a temporary array for the prediction-stage error estimator
 if (iescal(iespre).gt.0) then
@@ -1016,7 +1019,7 @@ if (vcopt_u%idiff.ge. 1) then
   endif
 
   ! Scalar diffusivity (Default)
-  if (vcopt_u%idften.eq.1) then
+  if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
 
     call viscfa &
    ( imvisf ,                                                       &
@@ -1038,7 +1041,7 @@ if (vcopt_u%idiff.ge. 1) then
     endif
 
   ! Tensorial diffusion of the velocity (in case of tensorial porosity)
-  else if (vcopt_u%idften.eq.36) then
+  else if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
 
     do iel = 1, ncel
       do isou = 1, 3
@@ -1535,7 +1538,6 @@ imligp = vcopt_u%imligr
 ircflp = vcopt_u%ircflu
 ischcp = vcopt_u%ischcv
 isstpp = vcopt_u%isstpc
-idftnp = vcopt_u%idften
 iswdyp = vcopt_u%iswdyn
 iwarnp = vcopt_u%iwarni
 blencp = vcopt_u%blencv

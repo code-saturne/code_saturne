@@ -743,7 +743,8 @@ endif
 
 ! Compute the pseudo tensorial time step if needed for the pressure solving
 
-if ((vcopt_p%idften.eq.6).and.(ippmod(idarcy).eq.-1)) then
+if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0               &
+    .and.(ippmod(idarcy).eq.-1)) then
 
   call field_get_val_v(idtten, dttens)
 

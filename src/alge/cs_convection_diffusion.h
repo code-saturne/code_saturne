@@ -44,8 +44,35 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Local Macro definitions
+ * Macro definitions
  *============================================================================*/
+
+/*!
+ * @addtogroup scalar_params
+ *
+ * @{
+ */
+
+/*
+ * Field property type
+ */
+
+/*! isotropic diffusion */
+#define CS_ISOTROPIC_DIFFUSION (1 << 0)
+
+/*! orthotropic diffusion */
+#define CS_ORTHOTROPIC_DIFFUSION (1 << 1)
+
+/*! diffusion by a left-multiplied symmetric 3x3 tensor */
+#define CS_ANISOTROPIC_LEFT_DIFFUSION (1 << 2)
+
+/*! diffusion by a right-multiplied symmetric 3x3 tensor */
+#define CS_ANISOTROPIC_RIGHT_DIFFUSION (1 << 3)
+
+/*! diffusion by a symmetric 3x3 tensor */
+#define CS_ANISOTROPIC_DIFFUSION ((1 << 2) + (1 << 3))
+
+/*! @} */
 
 /*============================================================================
  * Type definition

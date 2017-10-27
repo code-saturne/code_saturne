@@ -116,10 +116,6 @@ BEGIN_C_DECLS
  * - \f$ Rhs \f$ has already been initialized before calling bilsca!
  * - mind the minus sign
  *
- * Options for the diffusive scheme:
- * - idftnp = 1: scalar diffusivity
- * - idftnp = 6: symmetric tensor diffusivity
- *
  * Options for the convective scheme:
  * - blencp = 0: upwind scheme for the advection
  * - blencp = 1: no upwind scheme except in the slope test
@@ -243,7 +239,7 @@ cs_balance_scalar(int                idtvar,
   }
 
   /* Scalar diffusivity */
-  if (idftnp == 1) {
+  if (idftnp & CS_ISOTROPIC_DIFFUSION) {
     if (imucpp == 0) {
       cs_convection_diffusion_scalar(idtvar,
                                      f_id,
@@ -287,7 +283,7 @@ cs_balance_scalar(int                idtvar,
     }
   }
   /* Symmetric tensor diffusivity */
-  else if (idftnp == 6) {
+  else if (idftnp & CS_ANISOTROPIC_DIFFUSION) {
     var_cal_opt_loc.idiff = 0;
     /* Convective part */
     if (imucpp == 0 && iconvp == 1) {
@@ -378,10 +374,6 @@ cs_balance_scalar(int                idtvar,
  * Warning:
  * - \f$ \vect{Rhs} \f$ has already been initialized before calling bilscv!
  * - mind the sign minus
- *
- * Options for the diffusive scheme:
- * - idftnp = 1: scalar diffusivity
- * - idftnp = 6: symmetric tensor diffusivity
  *
  * Options for the convective scheme:
  * - blencp = 0: upwind scheme for the advection
@@ -500,7 +492,7 @@ cs_balance_vector(int                  idtvar,
   }
 
   /* Scalar diffusivity */
-  if (idftnp == 1) {
+  if (idftnp & CS_ISOTROPIC_DIFFUSION) {
     cs_convection_diffusion_vector(idtvar,
                                    f_id,
                                    var_cal_opt_loc,
@@ -524,7 +516,7 @@ cs_balance_vector(int                  idtvar,
                                    smbr);
   }
   /* Symmetric tensor diffusivity */
-  else if (idftnp == 6 || idftnp == 36) {
+  else if (idftnp & CS_ANISOTROPIC_DIFFUSION) {
     /* ! Nor diffusive part neither secondary viscosity or transpose of gradient */
     var_cal_opt_loc.idiff = 0;
     /* Convective part */
@@ -556,7 +548,7 @@ cs_balance_vector(int                  idtvar,
     /* Diffusive part (with a 3x3 symmetric diffusivity) */
 
     /* either Daly-Harlow type i.e. Nabla(v).K */
-    if (idiffp == 1 && idftnp == 6) {
+    if (idiffp == 1 && idftnp & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
       /* ! Neither diffusive part neither secondary viscosity
          nor transpose of gradient */
       cs_anisotropic_right_diffusion_vector(idtvar,
@@ -579,7 +571,7 @@ cs_balance_vector(int                  idtvar,
     }
 
     /* or K.Nabla(v) ) */
-    else if (idiffp == 1 && idftnp == 36) {
+    else if (idiffp == 1 && idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
       cs_anisotropic_left_diffusion_vector(idtvar,
                                            f_id,
                                            var_cal_opt_loc,
@@ -616,10 +608,6 @@ cs_balance_vector(int                  idtvar,
  * Warning:
  * - \f$ \tens{Rhs} \f$ has already been initialized before calling bilscts!
  * - mind the sign minus
- *
- * Options for the diffusive scheme:
- * - idftnp = 1: scalar diffusivity
- * - idftnp = 6: symmetric tensor diffusivity
  *
  * Options for the convective scheme:
  * - blencp = 0: upwind scheme for the advection
@@ -726,7 +714,7 @@ cs_balance_tensor(int                 idtvar,
   }
 
   /* Scalar diffusivity */
-  if (idftnp == 1) {
+  if (idftnp & CS_ISOTROPIC_DIFFUSION) {
     cs_convection_diffusion_tensor(idtvar,
                                    f_id,
                                    var_cal_opt_loc,
@@ -746,7 +734,7 @@ cs_balance_tensor(int                 idtvar,
                                    smbrp);
   }
   /* Symmetric tensor diffusivity */
-  else if (idftnp == 6) {
+  else if (idftnp & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
     /* No diffusive part */
     var_cal_opt_loc.idiff = 0;
     /* Convective part */

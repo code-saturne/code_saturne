@@ -45,10 +45,6 @@ BEGIN_C_DECLS
  * - \f$ Rhs \f$ has already been initialized before calling bilsca!
  * - mind the minus sign
  *
- * Options for the diffusive scheme:
- * - idftnp = 1: scalar diffusivity
- * - idftnp = 6: symmetric tensor diffusivity
- *
  * Options for the convective scheme:
  * - blencp = 0: upwind scheme for the advection
  * - blencp = 1: no upwind scheme except in the slope test
@@ -152,10 +148,6 @@ cs_balance_scalar(int                idtvar,
  * - \f$ \vect{Rhs} \f$ has already been initialized before calling bilscv!
  * - mind the sign minus
  *
- * Options for the diffusive scheme:
- * - idftnp = 1: scalar diffusivity
- * - idftnp = 6: symmetric tensor diffusivity
- *
  * Options for the convective scheme:
  * - blencp = 0: upwind scheme for the advection
  * - blencp = 1: no upwind scheme except in the slope test
@@ -251,10 +243,6 @@ cs_balance_vector(int                  idtvar,
  * Warning:
  * - \f$ \tens{Rhs} \f$ has already been initialized before calling bilscts!
  * - mind the sign minus
- *
- * Options for the diffusive scheme:
- * - idftnp = 1: scalar diffusivity
- * - idftnp = 6: symmetric tensor diffusivity
  *
  * Options for the convective scheme:
  * - blencp = 0: upwind scheme for the advection

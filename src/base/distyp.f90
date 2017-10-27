@@ -485,7 +485,7 @@ do isweep = 1, ntcmxy
   ! Pas d'estimateurs, ni de multigrille (100 et 10 sont arbitraires)
   iescap = 0
   imucpp = 0
-  idftnp = 1
+  idftnp = ISOTROPIC_DIFFUSION
   iswdyp = 0
   nomva0 = 'yplus_wall'
   ! Ordre 1 en temps (etat stationnaire cherche)

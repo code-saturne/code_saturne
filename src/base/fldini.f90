@@ -164,7 +164,7 @@ do ii = 1, nscal
       iggafm = 1
 
     ! If the user has chosen a tensorial diffusivity
-    else if (vcopt%idften.eq.6) then
+    else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
       idfm = 1
     endif
 
@@ -358,9 +358,9 @@ do ivar = 1, nvar
     iflidp = iflid
     call field_get_name(iflid, name)
     f_name = 'gradient_weighting_'//trim(name)
-    if (vcopt%idften.eq.1) then
+    if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
       idimf = 1
-    elseif (vcopt%idften.eq.6) then
+    else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
       idimf = 6
     endif
     call field_create(f_name, itycat, ityloc, idimf, inoprv, f_id)

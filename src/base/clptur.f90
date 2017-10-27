@@ -1009,7 +1009,7 @@ do ifac = 1, nfabor
       ! Exchange coefficient
 
       ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-      if (vcopt_rij%idften.eq.6) then
+      if (iand(vcopt_rij%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
 
         visci(1,1) = visclc + visten(1,iel)
         visci(2,2) = visclc + visten(2,iel)
@@ -1219,7 +1219,7 @@ do ifac = 1, nfabor
       !      NB: no reconstruction, possibility of partial implicitation
 
       ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-      if (vcopt_ep%idften.eq.6) then
+      if (iand(vcopt_ep%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
         visci(1,1) = visclc + visten(1,iel)/sigmae
         visci(2,2) = visclc + visten(2,iel)/sigmae
@@ -2073,7 +2073,8 @@ endif
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-if (vcopt%idften.eq.6.or.ityturt(iscal).eq.3) then
+if (    iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0             &
+    .or.ityturt(iscal).eq.3) then
   if (iturb.ne.32.or.ityturt(iscal).eq.3) then
     call field_get_val_v(ivsten, visten)
   else ! EBRSM and (GGDH or AFM)
@@ -2258,7 +2259,7 @@ do ifac = 1, nfabor
     endif
 
     ! Scalar diffusivity
-    if (vcopt%idften.eq.1) then
+    if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/TURB_SCHMIDT)
       if (iscal.eq.iscalt .and. itherm.eq.3) then
         if (icp.ge.0) then
@@ -2276,8 +2277,8 @@ do ifac = 1, nfabor
         hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
       endif
 
-      ! Symmetric tensor diffusivity (GGDH or AFM)
-    elseif (vcopt%idften.eq.6) then
+    ! Symmetric tensor diffusivity (GGDH or AFM)
+    else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (iscal.eq.iscalt .and. itherm.eq.3) then
         if (icp.ge.0) then
@@ -2735,7 +2736,7 @@ endif
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-if (vcopt%idften.eq.6.or.ityturt(iscal).eq.3) then
+if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0.or.ityturt(iscal).eq.3) then
   if (iturb.ne.32.or.ityturt(iscal).eq.3) then
     call field_get_val_v(ivsten, visten)
   else ! EBRSM and (GGDH or AFM)
@@ -2888,7 +2889,7 @@ do ifac = 1, nfabor
     endif
 
     ! Scalar diffusivity
-    if (vcopt%idften.eq.1) then
+    if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
       hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
     else
       ! TODO if (vcopt%idften.eq.6)

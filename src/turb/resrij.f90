@@ -588,7 +588,7 @@ endif
 !===============================================================================
 
 ! Symmetric tensor diffusivity (GGDH)
-if (vcopt%idften.eq.6) then
+if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
   call field_get_val_v(ivsten, visten)
 

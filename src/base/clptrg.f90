@@ -1643,7 +1643,7 @@ endif
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-if (vcopt%idften.eq.6.or.ityturt(iscal).eq.3) then
+if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0.or.ityturt(iscal).eq.3) then
   if (iturb.ne.32.or.ityturt(iscal).eq.3) then
     call field_get_val_v(ivsten, visten)
   else ! EBRSM and (GGDH or AFM)
@@ -1804,7 +1804,7 @@ do ifac = 1, nfabor
     endif
 
     ! Scalar diffusivity
-    if (vcopt%idften.eq.1) then
+    if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/TURB_SCHMIDT)
       if (ippmod(icompf) .ge. 0) then
         if (icp.ge.0) then

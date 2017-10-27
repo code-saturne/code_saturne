@@ -269,7 +269,9 @@ allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
 
 ! Associate pointers to pressure diffusion coefficient
 viscap => dt(:)
-if (vcopt_p%idften.eq.6)  vitenp => tpucou(:,:)
+if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+  vitenp => tpucou(:,:)
+endif
 
 ! Index of the field
 iflid = ivarfl(ipr)
@@ -344,13 +346,13 @@ if (ivofmt.ge.0.or.idilat.eq.4) then
   enddo
   call synsca(xunsro)
 
-  if (vcopt_p%idften.eq.1) then
+  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     allocate(xdtsro(ncelet))
     do iel = 1, ncel
       xdtsro(iel) = dt(iel)/crom(iel)
     enddo
     call synsca(xdtsro)
-  elseif (vcopt_p%idften.eq.6) then
+  elseif (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
     allocate(tpusro(6,ncelet))
     do iel = 1, ncel
       tpusro(1,iel) = vitenp(1,iel)*xunsro(iel)
@@ -365,7 +367,9 @@ if (ivofmt.ge.0.or.idilat.eq.4) then
 
   ! Associate pointers to pressure diffusion coefficient
   viscap => xdtsro(:)
-  if (vcopt_p%idften.eq.6)  vitenp => tpusro(:,:)
+  if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+    vitenp => tpusro(:,:)
+  endif
 
 endif
 
@@ -556,10 +560,10 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
 
       iel = ifabor(ifac)
 
-      if (vcopt_p%idften.eq.1) then
+      if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
         hint = dt(iel)/distb(ifac)
       ! Symmetric tensor diffusivity
-      elseif (vcopt_p%idften.eq.6) then
+      elseif (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
         visci(1,1) = vitenp(1,iel)
         visci(2,2) = vitenp(2,iel)
@@ -701,11 +705,11 @@ if (iphydr.eq.1.or.iifren.eq.1) then
         endif
 
         ! Diffusive flux BCs
-        if (vcopt_p%idften.eq.1) then
+        if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
           hint = dt(iel)/distb(ifac)
 
         ! Symmetric tensor diffusivity
-        elseif (vcopt_p%idften.eq.6) then
+        elseif (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
           visci(1,1) = vitenp(1,iel)
           visci(2,2) = vitenp(2,iel)
@@ -820,7 +824,7 @@ endif
 if (vcopt_p%idiff.ge.1) then
 
   ! Scalar diffusivity
-  if (vcopt_p%idften.eq.1) then
+  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
     if (ivofmt.ge.0) then
       imvisp = 1  ! VOF algorithm: continuity of the flux across internal faces
@@ -843,7 +847,7 @@ if (vcopt_p%idiff.ge.1) then
     endif
 
   ! Tensor diffusivity
-  else if (vcopt_p%idften.eq.6) then
+  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
     ! Allocate temporary arrays
     allocate(weighf(2,nfac))
@@ -950,14 +954,14 @@ endif
 !     The RHS contains rho div(u*) and not div(rho u*)
 !     so this term will be add afterwards
 if (idilat.ge.4) then
-  if (vcopt_p%idften.eq.1) then
+  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
       ardtsr  = arak*(dt(iel)/crom(iel))
       do isou = 1, 3
         trav(isou,iel) = ardtsr*trav(isou,iel)
       enddo
     enddo
-  else if (vcopt_p%idften.eq.6) then
+  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
       arsr  = arak/crom(iel)
 
@@ -982,14 +986,14 @@ if (idilat.ge.4) then
 
 ! Standard algorithm
 else
-  if (vcopt_p%idften.eq.1) then
+  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
       ardtsr  = arak*(dt(iel)/crom(iel))
       do isou = 1, 3
         trav(isou,iel) = vel(isou,iel) + ardtsr*trav(isou,iel)
       enddo
     enddo
-  else if (vcopt_p%idften.eq.6) then
+  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
       arsr  = arak/crom(iel)
 
@@ -1062,7 +1066,7 @@ if (iphydr.eq.1) then
   ircflp = vcopt_p%ircflu
 
   ! Scalar diffusivity
-  if (vcopt_p%idften.eq.1) then
+  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     call projts &
     !==========
  ( init   , nswrgp ,                                              &
@@ -1073,7 +1077,7 @@ if (iphydr.eq.1) then
    dt     , dt     , dt     )
 
   ! Tensor diffusivity
-  else if (vcopt_p%idften.eq.6) then
+  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
     call projtv &
     !==========
@@ -1119,7 +1123,7 @@ if (arak.gt.0.d0) then
 
   ! Scalar diffusivity
   !-------------------
-  if (vcopt_p%idften.eq.1) then
+  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
       viscap(iel) = arak*viscap(iel)
     enddo
@@ -1181,7 +1185,7 @@ if (arak.gt.0.d0) then
 
   ! Tensor diffusivity
   !-------------------
-  else if (vcopt_p%idften.eq.6) then
+  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
     do iel = 1, ncel
       vitenp(1,iel) = arak*vitenp(1,iel)
@@ -1271,7 +1275,7 @@ if (arak.gt.0.d0) then
     if (vcopt_p%idiff.ge.1) then
 
       !Scalar diffusivity
-      if (vcopt_p%idften.eq.1) then
+      if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
         if (ivofmt.lt.0) then
           imvisp = imvisf
@@ -1286,7 +1290,7 @@ if (arak.gt.0.d0) then
         viscf  , viscb  )
 
       ! Tensor diffusivity
-      else if (vcopt_p%idften.eq.6) then
+      else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
         iwarnp = vcopt_p%iwarni
 
@@ -1527,7 +1531,7 @@ if (iswdyp.ge.1) then
   extrap = vcopt_p%extrag
   ircflp = vcopt_p%ircflu
 
-  if (vcopt_p%idften.eq.1) then
+  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
     call itrgrp &
     !==========
@@ -1542,7 +1546,7 @@ if (iswdyp.ge.1) then
    viscap ,                                                                    &
    rhs0   )
 
-  else if (vcopt_p%idften.eq.6) then
+  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
     call itrgrv &
     !==========
@@ -1613,7 +1617,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
     climgp = vcopt_p%climgr
     extrap = vcopt_p%extrag
 
-    if (vcopt_p%idften.eq.1) then
+    if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
       call itrgrp &
       !==========
@@ -1629,7 +1633,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
      viscap ,                                                  &
      adxk   )
 
-    else if (vcopt_p%idften.eq.6) then
+    else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
       call itrgrv &
       !==========
@@ -1745,7 +1749,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
   climgp = vcopt_p%climgr
   extrap = vcopt_p%extrag
 
-  if (vcopt_p%idften.eq.1) then
+  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
     call itrgrp &
     !==========
@@ -1760,7 +1764,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
    viscap ,                                                                    &
    rhs    )
 
-  else if (vcopt_p%idften.eq.6) then
+  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
     call itrgrv &
     !==========
@@ -1862,7 +1866,7 @@ epsrgp = vcopt_p%epsrgr
 climgp = vcopt_p%climgr
 extrap = vcopt_p%extrag
 
-if (vcopt_p%idften.eq.1) then
+if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
   call itrmas &
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
@@ -1894,7 +1898,7 @@ if (vcopt_p%idften.eq.1) then
    viscap ,                                                                    &
    imasfl , bmasfl )
 
-else if (vcopt_p%idften.eq.6) then
+else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
   call itrmav &
   !==========
@@ -2017,11 +2021,11 @@ if (idilat.eq.5) then
     qimpv(2) = 0.d0
     qimpv(3) = 0.d0
 
-    if (vcopt_p%idften.eq.1) then
+    if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
       hint = dt(iel)/distb(ifac)
 
     ! Symmetric tensor diffusivity
-    elseif (vcopt_p%idften.eq.6) then
+    else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
       visci(1,1) = vitenp(1,iel)
       visci(2,2) = vitenp(2,iel)
@@ -2218,7 +2222,7 @@ if (idilat.eq.5) then
   climgp = vcopt_p%climgr
   extrap = vcopt_p%extrag
 
-  if (vcopt_p%idften.eq.1) then
+  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     call itrmas &
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
    0      , iwarnp ,                                                           &
@@ -2247,7 +2251,7 @@ if (idilat.eq.5) then
    dt     ,                                                                    &
    imasfl , bmasfl )
 
-  else if (vcopt_p%idften.eq.6) then
+  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
     call itrmav &
    ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &

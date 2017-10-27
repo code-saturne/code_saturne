@@ -1120,6 +1120,7 @@ use entsor
 use numvar
 use cs_c_bindings
 use field
+use optcal
 
 !===============================================================================
 
@@ -1137,7 +1138,7 @@ vcopt%iconv  = 1
 vcopt%istat  = 1
 vcopt%idiff  = 1
 vcopt%idifft = 1
-vcopt%idften = 1
+vcopt%idften = ISOTROPIC_DIFFUSION
 vcopt%iswdyn = 0
 vcopt%ischcv = 1
 vcopt%ibdtso = 1

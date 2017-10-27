@@ -238,9 +238,9 @@ call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
 ! Allocate temporary arrays for the velocity-pressure resolution
-if (vcopt_u%idften.eq.1) then
+if (iand(vcopt_u%idften, ISOTROPIC_DIFFUSION).ne.0) then
   allocate(viscf(1, 1, nfac), viscb(ndimfb))
-else if (vcopt_u%idften.eq.36) then
+else if (iand(vcopt_u%idften, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
   allocate(viscf(3, 3, nfac), viscb(ndimfb))
 endif
 
@@ -257,7 +257,7 @@ if (iphydr.eq.2) then
 else
   grdphd => rvoid2
 endif
-if (vcopt_u%idften.eq.1) then
+if (iand(vcopt_u%idften, ISOTROPIC_DIFFUSION).ne.0) then
   if (itytur.eq.3.and.irijnu.eq.1) then
     allocate(wvisfi(1,1,nfac), wvisbi(ndimfb))
     viscfi => wvisfi(:,:,1:nfac)
@@ -266,7 +266,7 @@ if (vcopt_u%idften.eq.1) then
     viscfi => viscf(:,:,1:nfac)
     viscbi => viscb(1:ndimfb)
   endif
-else if(vcopt_u%idften.eq.36) then
+else if (iand(vcopt_u%idften, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
   if (itytur.eq.3.and.irijnu.eq.1) then
     allocate(wvisfi(3,3,nfac), wvisbi(ndimfb))
     viscfi => wvisfi(1:3,1:3,1:nfac)
@@ -648,23 +648,23 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
   ! Scratch and resize temporary internal faces arrays
 
   deallocate(viscf)
-  if (vcopt_u%idften.eq.1) then
+  if (iand(vcopt_u%idften, ISOTROPIC_DIFFUSION).ne.0) then
     allocate(viscf(1, 1, nfac))
-  else if (vcopt_u%idften.eq.6) then
+  else if (iand(vcopt_u%idften, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
     allocate(viscf(3, 3, nfac))
   endif
 
   if (allocated(wvisfi)) then
     deallocate(viscfi)
 
-    if (vcopt_u%idften.eq.1) then
+    if (iand(vcopt_u%idften, ISOTROPIC_DIFFUSION).ne.0) then
       if (itytur.eq.3.and.irijnu.eq.1) then
         allocate(wvisfi(1,1,nfac))
         viscfi => wvisfi(:,:,1:nfac)
       else
         viscfi => viscf(:,:,1:nfac)
       endif
-    else if(vcopt_u%idften.eq.6) then
+    else if (iand(vcopt_u%idften, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
       if (itytur.eq.3.and.irijnu.eq.1) then
         allocate(wvisfi(3,3,nfac))
         viscfi => wvisfi(1:3,1:3,1:nfac)
@@ -951,7 +951,7 @@ if (ippmod(icompf).lt.0) then
     if (iphydr.eq.1) then
 
       ! Scalar diffusion for the pressure
-      if (vcopt_p%idften.eq.1) then
+      if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
         !$omp parallel do private(dtsrom, isou)
         do iel = 1, ncel
           dtsrom = thetap*dt(iel)/crom(iel)
@@ -962,7 +962,7 @@ if (ippmod(icompf).lt.0) then
         enddo
 
       ! Tensorial diffusion for the pressure
-      else if (vcopt_p%idften.eq.6) then
+      elseif (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
         !$omp parallel do private(unsrom)
         do iel = 1, ncel
           unsrom = thetap/crom(iel)
@@ -1014,18 +1014,18 @@ if (ippmod(icompf).lt.0) then
     else
 
       ! Scalar diffusion for the pressure
-      if (vcopt_p%idften.eq.1) then
+      if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
-      !$omp parallel do private(dtsrom, isou)
-      do iel = 1, ncel
-        dtsrom = thetap*dt(iel)/crom(iel)
-        do isou = 1, 3
-          vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
+        !$omp parallel do private(dtsrom, isou)
+        do iel = 1, ncel
+          dtsrom = thetap*dt(iel)/crom(iel)
+          do isou = 1, 3
+            vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
+          enddo
         enddo
-       enddo
 
       ! Tensorial diffusion for the pressure
-      else if (vcopt_p%idften.eq.6) then
+      elseif (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
         !$omp parallel do private(unsrom)
         do iel = 1, ncel

@@ -1034,7 +1034,7 @@ if (ikecou.eq.1) then
   isstpp = vcopt_k%isstpc
   iwarnp = vcopt_k%iwarni
   imucpp = 0
-  idftnp = 1 ! no tensorial diffusivity
+  idftnp = ISOTROPIC_DIFFUSION
   blencp = vcopt_k%blencv
   epsrgp = vcopt_k%epsrgr
   climgp = vcopt_k%climgr
@@ -1103,7 +1103,7 @@ if (ikecou.eq.1) then
   isstpp = vcopt_e%isstpc
   iwarnp = vcopt_e%iwarni
   imucpp = 0
-  idftnp = 1 ! no tensorial diffusivity
+  idftnp = ISOTROPIC_DIFFUSION
   blencp = vcopt_e%blencv
   epsrgp = vcopt_e%epsrgr
   climgp = vcopt_e%climgr

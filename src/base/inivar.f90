@@ -153,9 +153,10 @@ do ivar = 1, nvar
     iflid = ivarfl(ivar)
     if (iflid.eq.iflidp) cycle
     iflidp = iflid
-    if (vcopt%idften.eq.1) then
+
+    if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
       idimf = 1
-    elseif (vcopt%idften.eq.6) then
+    elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
       idimf = 6
     endif
     call field_get_key_int(iflid, kwgrec, f_id)

@@ -46,6 +46,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_convection_diffusion.h"
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_map.h"
@@ -475,7 +476,7 @@ static cs_var_cal_opt_t _var_cal_opt =
   .istat  = 1,
   .idiff  = 1,
   .idifft = 1,
-  .idften = 1,
+  .idften = CS_ISOTROPIC_DIFFUSION,
   .iswdyn = 0,
   .ischcv = 1,
   .ibdtso = 1,

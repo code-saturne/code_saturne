@@ -157,9 +157,9 @@ allocate(vel0(3,ncelet))
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
-if (vcopt_u%idften.eq.1) then
+if (iand(vcopt_u%idften, ISOTROPIC_DIFFUSION).ne.0) then
   allocate(viscf(1, 1, nfac), viscb(nfabor))
-else if (vcopt_u%idften.eq.6) then
+else if (iand(vcopt_u%idften, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
   allocate(viscf(3, 3, nfac), viscb(nfabor))
   allocate(viscce(6,ncelet))
 endif
@@ -273,7 +273,7 @@ if (itsqdm.ne.0) then
      endif
 
      ! Scalar diffusivity (Default)
-     if (vcopt_u%idften.eq.1) then
+     if (iand(vcopt_u%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
         call viscfa &
         !==========
@@ -282,7 +282,7 @@ if (itsqdm.ne.0) then
        viscf  , viscb  )
 
      ! Tensorial diffusion of the velocity (in case of tensorial porosity)
-     else if (vcopt_u%idften.eq.6) then
+     else if (iand(vcopt_u%idften, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
 
         do iel = 1, ncel
           do isou = 1, 3
