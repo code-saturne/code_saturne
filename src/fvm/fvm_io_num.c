@@ -520,8 +520,6 @@ _fvm_io_num_local_order(fvm_io_num_t     *this_io_num,
   this_io_num->global_count = _fvm_io_num_local_max(this_io_num);
 }
 
-#if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------
  * Copy selected shared global ordering information to private ordering
  * information for an I/O numbering structure.
@@ -572,6 +570,8 @@ _fvm_io_num_try_to_set_shared(fvm_io_num_t      *const this_io_num,
     }
   }
 }
+
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Maximum global number associated with an I/O numbering structure.
