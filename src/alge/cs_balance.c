@@ -523,7 +523,7 @@ cs_balance_vector(int                  idtvar,
                                    secvib,
                                    smbr);
   }
-  /* Symmetric tensor diffusivity (Daly-Harlow, type Nabla(v).K )*/
+  /* Symmetric tensor diffusivity */
   else if (idftnp == 6 || idftnp == 36) {
     /* ! Nor diffusive part neither secondary viscosity or transpose of gradient */
     var_cal_opt_loc.idiff = 0;
@@ -554,45 +554,47 @@ cs_balance_vector(int                  idtvar,
     }
 
     /* Diffusive part (with a 3x3 symmetric diffusivity) */
+
+    /* either Daly-Harlow type i.e. Nabla(v).K */
     if (idiffp == 1 && idftnp == 6) {
-      cs_anisotropic_diffusion_vector(idtvar,
-                                      f_id,
-                                      var_cal_opt_loc,
-                                      inc,
-                                      ivisep,
-                                      pvar,
-                                      pvara,
-                                      coefav,
-                                      coefbv,
-                                      cofafv,
-                                      cofbfv,
-                                      i_visc,
-                                      b_visc,
-                                      secvif,
-                                      viscel,
-                                      weighf,
-                                      weighb,
-                                      smbr);
+      /* ! Neither diffusive part neither secondary viscosity
+         nor transpose of gradient */
+      cs_anisotropic_right_diffusion_vector(idtvar,
+                                            f_id,
+                                            var_cal_opt_loc,
+                                            inc,
+                                            pvar,
+                                            pvara,
+                                            coefav,
+                                            coefbv,
+                                            cofafv,
+                                            cofbfv,
+                                            i_visc,
+                                            b_visc,
+                                            secvif,
+                                            viscel,
+                                            weighf,
+                                            weighb,
+                                            smbr);
     }
 
-  /* Symmetric tensor diffusivity ( type K.Nabla(v) )*/
-  else if (idiffp == 1 && idftnp == 36) {
-    /* ! Nor diffusive part neither secondary viscosity or transpose of gradient */
-      cs_generalized_diffusion_vector(idtvar,
-                                      f_id,
-                                      var_cal_opt_loc,
-                                      inc,
-                                      ivisep,
-                                      pvar,
-                                      pvara,
-                                      coefav,
-                                      coefbv,
-                                      cofafv,
-                                      cofbfv,
-                                      (const cs_real_33_t *)i_visc,
-                                      b_visc,
-                                      secvif,
-                                      smbr);
+    /* or K.Nabla(v) ) */
+    else if (idiffp == 1 && idftnp == 36) {
+      cs_anisotropic_left_diffusion_vector(idtvar,
+                                           f_id,
+                                           var_cal_opt_loc,
+                                           inc,
+                                           ivisep,
+                                           pvar,
+                                           pvara,
+                                           coefav,
+                                           coefbv,
+                                           cofafv,
+                                           cofbfv,
+                                           (const cs_real_33_t *)i_visc,
+                                           b_visc,
+                                           secvif,
+                                           smbr);
     }
   }
 }
