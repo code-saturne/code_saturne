@@ -1464,7 +1464,7 @@ cs_upwind_gradient(const int                     f_id,
 
         cs_lnum_t ii = b_face_cells[face_id];
 
-        cs_lnum_t pfac = pvar[ii];
+        cs_real_t pfac = pvar[ii];
 
         if (b_massflux[face_id] < 0)
           pfac = inc*coefap[face_id] + coefbp[face_id] * pvar[ii];
