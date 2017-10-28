@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-09-28 18:00+0200\n"
+"POT-Creation-Date: 2017-10-28 03:34+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4919,6 +4919,18 @@ msgid "Error opening data file \"%s\""
 msgstr "Erreur à l'ouverture du fichier de données \"%s\""
 
 #, c-format
+msgid "Error decrementing count or unloading %s: %s."
+msgstr "Erreur à la décrémentation du compteur ou déchargement de %s : %s."
+
+#, c-format
+msgid "Error decrementing count or unloading %s."
+msgstr "Erreur à la décrémentation du compteur ou déchargement de %s."
+
+#, c-format
+msgid "Error calling dlsym for %s: %s\n"
+msgstr "Erreur à l'appel de dlsym pour %s : %s\n"
+
+#, c-format
 msgid ""
 "Fatal error: bft_printf() called on a message of size %d\n"
 "whereas the print buffer is of size %d."
@@ -6611,9 +6623,11 @@ msgstr ""
 "Type de diffusivité : scalaire (1), orthotropique (3) ou tenseur symmétrique "
 "(6)"
 
+#, fuzzy
 msgid ""
-"Type of convective scheme: 2nd order linear upwind (0), centered (1), SOLU "
-"(2)"
+"Type of convective scheme: 2nd order with centred-gradientupwind "
+"reconstruction (0), centered (1),2nd order with upwind-gradient upwind-"
+"reconstruction (SOLU) (2)"
 msgstr "Type de schéma convectif : Upwind 2ème ordre (0), centré (1), SOLU (2)"
 
 msgid ""
@@ -6998,6 +7012,14 @@ msgstr ""
 
 msgid ""
 "while reading input data,\n"
+"Delayed Detached Eddy Simulation is only compatible with k-omega SST model "
+"(iturb=60)"
+msgstr ""
+"lors de la lecture des données d'entrée,\n"
+"le modèle DDES n'est compatible qu'avec le modèle k-omega SST (iturb=60)"
+
+msgid ""
+"while reading input data,\n"
 "two way coupling in lagrangian modelling is not compatible with k-omega SST "
 "turbulence model"
 msgstr ""
@@ -7273,10 +7295,6 @@ msgstr ""
 "\n"
 "    Point de référence initial pour la pression\n"
 "    xyzp0:       %14.5e %14.5e %14.5e\n"
-
-#, c-format
-msgid "Error unloading library: %s."
-msgstr "Erreur au déchargement de la bibliothèque : %s."
 
 #, c-format
 msgid "bad choice: you choose to work in the %s plane."
@@ -9438,12 +9456,6 @@ msgid ""
 " Please modify your settings.\n"
 msgstr ""
 
-#, c-format
-msgid ""
-" The given couple of vertices (number): [%d, %d]\n"
-" is not defined in the edge structure.\n"
-msgstr ""
-
 msgid " Convection term is not handled yet.\n"
 msgstr ""
 
@@ -9460,14 +9472,6 @@ msgid ""
 msgstr ""
 
 msgid "Unkwown algorithm for cell center computation\n"
-msgstr ""
-
-msgid " Stop norm computation. Norm value is < 0 !\n"
-msgstr ""
-
-msgid ""
-" Weighted operation needs weigth array to be allocated.\n"
-" Stop execution.\n"
 msgstr ""
 
 msgid ""
@@ -9495,7 +9499,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Undefined type of equation to solve for eq. %s. Please check your settings."
+" Undefined type of schme to solve for eq. %s. Please check your settings."
 msgstr ""
 
 #, c-format
@@ -9712,6 +9716,9 @@ msgstr ""
 
 msgid " Richards eq. is only available for vertex-based schemes."
 msgstr ""
+
+msgid " Unknown cell-type.\n"
+msgstr "type de cellule inconnu.\n"
 
 msgid "VpCd"
 msgstr ""
@@ -14221,6 +14228,7 @@ msgstr ""
 "Options de transfert thermique radiatif\n"
 "----------------------------------------\n"
 
+#, c-format
 msgid ""
 "  Continuous phase:\n"
 "    type:                     %s\n"
@@ -14228,11 +14236,13 @@ msgstr ""
 "  Phase continue :\n"
 "    type:                     %s\n"
 
+#, c-format
 msgid ""
 "    restart                 %3d  (0: no restart; 1: restart)\n"
 "    nfreqr:                 %3d  (Radiation pass frequency)\n"
 msgstr ""
 
+#, c-format
 msgid "    i_quadrature:             %s\n"
 msgstr ""
 
@@ -14916,12 +14926,14 @@ msgid ""
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    ikecou:      %14d (k-epsilon coupling mode)\n"
+"    iddes :      %14d (1: DDES mode)\n"
 "    igrake:      %14d (Account for gravity)\n"
 msgstr ""
 "   k-omega SST         (iturb = 60)\n"
 "    almax:       %14.5e (Longueur caractéristique)\n"
 "    uref:        %14.5e (Vitesse caractéristique)\n"
 "    ikecou:      %14d (Mode de couplage k-epsilon)\n"
+"    iddes :      %14d (1: mode DDES)\n"
 "    igrake:      %14d (Prise en compte de la gravité)\n"
 
 #, c-format
@@ -15235,4 +15247,3 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
-
