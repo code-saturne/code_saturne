@@ -187,7 +187,7 @@ integer          iescap, ircflp, ischcp, isstpp, ivar, f_id0
 integer          nswrsp
 integer          imvisp
 integer          iflid, iflwgr, f_dim, imasac
-
+integer          f_id
 integer          icvflb
 integer          ivoid(1)
 
@@ -208,7 +208,7 @@ type(var_cal_opt) :: vcopt_p, vcopt_u
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: dam, xam
-double precision, allocatable, dimension(:) :: res, divu, presa
+double precision, allocatable, dimension(:) :: res, presa
 double precision, dimension(:,:), allocatable :: gradp
 double precision, allocatable, dimension(:) :: coefaf_dp, coefbf_dp
 double precision, allocatable, dimension(:) :: coefap, coefbp, coefa_dp2
@@ -228,12 +228,14 @@ double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, allocatable, dimension(:) :: iflux, bflux
 double precision, allocatable, dimension(:) :: xunsro
 double precision, allocatable, dimension(:), target :: xdtsro
+double precision, allocatable, dimension(:), target  :: divu
 double precision, allocatable, dimension(:,:), target :: tpusro
 double precision, dimension(:), pointer :: viscap
 double precision, dimension(:,:), pointer :: vitenp
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
+double precision, dimension(:), pointer :: cpro_divu
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:), pointer :: c_estim_der
@@ -255,7 +257,7 @@ call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac))
-allocate(res(ncelet), presa(ncelet), divu(ncelet))
+allocate(res(ncelet), presa(ncelet))
 allocate(rhs(ncelet), rovsdt(ncelet))
 allocate(iflux(nfac), bflux(ndimfb))
 iswdyp = vcopt_p%iswdyn
@@ -286,6 +288,14 @@ if (vcopt_p%iwgrec.eq.1) then
   else
     call field_get_val_s(iflwgr, cpro_wgrec_s)
   endif
+endif
+
+call field_get_id_try("predicted_vel_divergence", f_id)
+if (f_id.ge.0) then
+  call field_get_val_s(f_id, cpro_divu)
+else
+ allocate(divu(ncelet))
+ cpro_divu => divu
 endif
 
 ! --- Writing
@@ -1324,7 +1334,7 @@ nswmpr = vcopt_p%nswrsm
 ! --- Variables are set to 0
 !       cvar_pr    is the increment of the pressure
 !       dpvar      is the increment of the increment between sweeps
-!       divu       is the initial divergence of the predicted mass flux
+!       cpro_divu       is the initial divergence of the predicted mass flux
 do iel = 1, ncel
   cvar_pr(iel) = 0.d0
   dpvar(iel) = 0.d0
@@ -1336,7 +1346,7 @@ relaxp = vcopt_p%relaxv
 ! --- Initial divergence
 init = 1
 
-call divmas(init, imasfl , bmasfl , divu)
+call divmas(init, imasfl , bmasfl , cpro_divu)
 
 ! --- Weakly compressible algorithm: semi analytic scheme
 !     1. The RHS contains rho div(u*) and not div(rho u*)
@@ -1377,23 +1387,23 @@ if (idilat.ge.4) then
 
   if (idilat.eq.4) then
     do iel = 1, ncel
-      divu(iel) = divu(iel) + res(iel)
+      cpro_divu(iel) = cpro_divu(iel) + res(iel)
     enddo
   else
     do iel = 1, ncel
-      divu(iel) = divu(iel) + res(iel)*crom(iel)
+      cpro_divu(iel) = cpro_divu(iel) + res(iel)*crom(iel)
     enddo
   endif
 
   ! 2. Add the dilatation source term D(rho)/Dt
   if (idilat.eq.4) then
     do iel = 1, ncel
-      divu(iel) = divu(iel) &
+      cpro_divu(iel) = cpro_divu(iel) &
                 + cpro_tsrho(iel)/crom(iel)
     enddo
   else
     do iel = 1, ncel
-      divu(iel) = divu(iel) + cpro_tsrho(iel)
+      cpro_divu(iel) = cpro_divu(iel) + cpro_tsrho(iel)
     enddo
   endif
 
@@ -1429,7 +1439,7 @@ endif
 if (ncesmp.gt.0) then
   do ii = 1, ncesmp
     iel = icetsm(ii)
-    divu(iel) = divu(iel) -cell_f_vol(iel)*smacel(ii,ipr)
+    cpro_divu(iel) = cpro_divu(iel) -cell_f_vol(iel)*smacel(ii,ipr)
   enddo
 endif
 
@@ -1438,7 +1448,7 @@ if (nfbpcd.gt.0) then
   do ii = 1, nfbpcd
     ifac= ifbpcd(ii)
     iel = ifabor(ifac)
-    divu(iel) = divu(iel) - surfbn(ifac)*spcond(ii,ipr)
+    cpro_divu(iel) = cpro_divu(iel) - surfbn(ifac)*spcond(ii,ipr)
   enddo
 endif
 
@@ -1462,27 +1472,27 @@ endif
 if (idilat.eq.2.or.idilat.eq.3) then
   do iel = 1, ncel
     drom = crom(iel) - croma(iel)
-    divu(iel) = divu(iel) + drom*cell_f_vol(iel)/dt(iel)
+    cpro_divu(iel) = cpro_divu(iel) + drom*cell_f_vol(iel)/dt(iel)
   enddo
 endif
 
 ! ---> Termes sources Lagrangien
 if (iilagr.eq.2 .and. ltsmas.eq.1) then
   do iel = 1, ncel
-    divu(iel) = divu(iel) -tslagr(iel,itsmas)
+    cpro_divu(iel) = cpro_divu(iel) -tslagr(iel,itsmas)
   enddo
 endif
 
 ! --- Cavitation source term
 if (icavit.gt.0) then
   do iel = 1, ncel
-    divu(iel) = divu(iel) - cell_f_vol(iel)*gamcav(iel)*(1.d0/rho2 - 1.d0/rho1)
+    cpro_divu(iel) = cpro_divu(iel) - cell_f_vol(iel)*gamcav(iel)*(1.d0/rho2 - 1.d0/rho1)
   enddo
 endif
 
 ! --- Initial right hand side
 do iel = 1, ncel
-  rhs(iel) = - divu(iel) - rovsdt(iel)*cvar_pr(iel)
+  rhs(iel) = - cpro_divu(iel) - rovsdt(iel)*cvar_pr(iel)
 enddo
 
 
@@ -1783,7 +1793,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
   endif
 
   do iel = 1, ncel
-    rhs(iel) = - divu(iel) - rhs(iel) - rovsdt(iel)*cvar_pr(iel)
+    rhs(iel) = - cpro_divu(iel) - rhs(iel) - rovsdt(iel)*cvar_pr(iel)
   enddo
 
   ! --- Convergence test
@@ -2327,7 +2337,8 @@ endif
 
 ! Free memory
 deallocate(dam, xam)
-deallocate(res, divu, presa)
+deallocate(res, presa)
+if (allocated(divu)) deallocate(divu)
 deallocate(gradp)
 deallocate(coefaf_dp, coefbf_dp)
 deallocate(rhs, rovsdt)

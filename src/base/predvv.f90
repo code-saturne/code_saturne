@@ -223,7 +223,7 @@ double precision rvoid(1)
 
 ! Working arrays
 double precision, allocatable, dimension(:,:) :: eswork
-double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:,:), target :: grad
 double precision, dimension(:,:), allocatable :: smbr
 double precision, dimension(:,:,:), allocatable :: fimp
 double precision, dimension(:,:), allocatable :: gavinj
@@ -252,6 +252,7 @@ double precision, dimension(:), pointer :: viscl, visct, c_estim
 double precision, allocatable, dimension(:) :: surfbm
 double precision, dimension(:,:), pointer :: lapla, lagr_st_vel
 double precision, dimension(:), pointer :: cpro_tsrho
+double precision, dimension(:,:), pointer :: cpro_gradp
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
@@ -358,8 +359,13 @@ endif
 !-------------------------------------------------------------------------------
 ! ---> Pressure gradient
 
-! Allocate a work array for the gradient calculation
-allocate(grad(3,ncelet))
+call field_get_id_try("pressure_gradient", f_id)
+if (f_id.ge.0) then
+  call field_get_val_v(f_id, cpro_gradp)
+else
+  allocate(grad(3,ncelet))
+ cpro_gradp => grad
+endif
 
 iccocg = 1
 inc    = 1
@@ -376,7 +382,7 @@ endif
 if (ivofmt.lt.0) then
   call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
                                 iccocg, iphydr,                     &
-                                frcxt, grad)
+                                frcxt, cpro_gradp)
 
 else
 
@@ -404,7 +410,7 @@ else
   call gradient_weighted_s(ivarfl(ipr), imrgra, inc, iccocg, nswrgp, imligp,  &
                            iwarnp, epsrgp, climgp, extrap,                    &
                            cvara_pr, xinvro, coefa_p, coefb_p,                &
-                           grad )
+                           cpro_gradp )
 
   deallocate(xinvro)
 
@@ -424,12 +430,12 @@ if (iforbr.ge.0 .and. iterns.eq.1) then
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
     pip = cvara_pr(iel) &
-        + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
+        + diipbx*cpro_gradp(1,iel) + diipby*cpro_gradp(2,iel) + diipbz*cpro_gradp(3,iel)
     pfac = coefa_p(ifac) +coefb_p(ifac)*pip
     pfac1= cvara_pr(iel)                                              &
-         +(cdgfbo(1,ifac)-xyzcen(1,iel))*grad(1,iel)              &
-         +(cdgfbo(2,ifac)-xyzcen(2,iel))*grad(2,iel)              &
-         +(cdgfbo(3,ifac)-xyzcen(3,iel))*grad(3,iel)
+         +(cdgfbo(1,ifac)-xyzcen(1,iel))*cpro_gradp(1,iel)              &
+         +(cdgfbo(2,ifac)-xyzcen(2,iel))*cpro_gradp(2,iel)              &
+         +(cdgfbo(3,ifac)-xyzcen(3,iel))*cpro_gradp(3,iel)
     pfac = coefb_p(ifac)*(vcopt_p%extrag*pfac1                       &
          +(1.d0-vcopt_p%extrag)*pfac)                                &
          +(1.d0-coefb_p(ifac))*pfac                               &
@@ -457,30 +463,30 @@ endif
 if (iappel.eq.1) then
   if (iphydr.eq.1) then
     do iel = 1, ncel
-      trav(1,iel) = (frcxt(1 ,iel) - grad(1,iel)) * cell_f_vol(iel)
-      trav(2,iel) = (frcxt(2 ,iel) - grad(2,iel)) * cell_f_vol(iel)
-      trav(3,iel) = (frcxt(3 ,iel) - grad(3,iel)) * cell_f_vol(iel)
+      trav(1,iel) = (frcxt(1 ,iel) - cpro_gradp(1,iel)) * cell_f_vol(iel)
+      trav(2,iel) = (frcxt(2 ,iel) - cpro_gradp(2,iel)) * cell_f_vol(iel)
+      trav(3,iel) = (frcxt(3 ,iel) - cpro_gradp(3,iel)) * cell_f_vol(iel)
     enddo
   else if (iphydr.eq.2) then
     do iel = 1, ncel
       rom = crom(iel)
-      trav(1,iel) = (rom*gx - grdphd(1,iel) - grad(1,iel)) * cell_f_vol(iel)
-      trav(2,iel) = (rom*gy - grdphd(2,iel) - grad(2,iel)) * cell_f_vol(iel)
-      trav(3,iel) = (rom*gz - grdphd(3,iel) - grad(3,iel)) * cell_f_vol(iel)
+      trav(1,iel) = (rom*gx - grdphd(1,iel) - cpro_gradp(1,iel)) * cell_f_vol(iel)
+      trav(2,iel) = (rom*gy - grdphd(2,iel) - cpro_gradp(2,iel)) * cell_f_vol(iel)
+      trav(3,iel) = (rom*gz - grdphd(3,iel) - cpro_gradp(3,iel)) * cell_f_vol(iel)
     enddo
   else if (ippmod(icompf).ge.0) then
     do iel = 1, ncel
       rom = crom(iel)
-      trav(1,iel) = (rom*gx - grad(1,iel)) * cell_f_vol(iel)
-      trav(2,iel) = (rom*gy - grad(2,iel)) * cell_f_vol(iel)
-      trav(3,iel) = (rom*gz - grad(3,iel)) * cell_f_vol(iel)
+      trav(1,iel) = (rom*gx - cpro_gradp(1,iel)) * cell_f_vol(iel)
+      trav(2,iel) = (rom*gy - cpro_gradp(2,iel)) * cell_f_vol(iel)
+      trav(3,iel) = (rom*gz - cpro_gradp(3,iel)) * cell_f_vol(iel)
     enddo
   else
     do iel = 1, ncel
       drom = (crom(iel)-ro0)
-      trav(1,iel) = (drom*gx - grad(1,iel) ) * cell_f_vol(iel)
-      trav(2,iel) = (drom*gy - grad(2,iel) ) * cell_f_vol(iel)
-      trav(3,iel) = (drom*gz - grad(3,iel) ) * cell_f_vol(iel)
+      trav(1,iel) = (drom*gx - cpro_gradp(1,iel) ) * cell_f_vol(iel)
+      trav(2,iel) = (drom*gy - cpro_gradp(2,iel) ) * cell_f_vol(iel)
+      trav(3,iel) = (drom*gz - cpro_gradp(3,iel) ) * cell_f_vol(iel)
     enddo
   endif
 
@@ -488,30 +494,30 @@ else if(iappel.eq.2) then
 
   if (iphydr.eq.1) then
     do iel = 1, ncel
-      trav(1,iel) = trav(1,iel) + (frcxt(1 ,iel) - grad(1,iel))*cell_f_vol(iel)
-      trav(2,iel) = trav(2,iel) + (frcxt(2 ,iel) - grad(2,iel))*cell_f_vol(iel)
-      trav(3,iel) = trav(3,iel) + (frcxt(3 ,iel) - grad(3,iel))*cell_f_vol(iel)
+      trav(1,iel) = trav(1,iel) + (frcxt(1 ,iel) - cpro_gradp(1,iel))*cell_f_vol(iel)
+      trav(2,iel) = trav(2,iel) + (frcxt(2 ,iel) - cpro_gradp(2,iel))*cell_f_vol(iel)
+      trav(3,iel) = trav(3,iel) + (frcxt(3 ,iel) - cpro_gradp(3,iel))*cell_f_vol(iel)
     enddo
   else if (iphydr.eq.2) then
     do iel = 1, ncel
       rom = crom(iel)
-      trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(1,iel) - grad(1,iel))*cell_f_vol(iel)
-      trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(2,iel) - grad(2,iel))*cell_f_vol(iel)
-      trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(3,iel) - grad(3,iel))*cell_f_vol(iel)
+      trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(1,iel) - cpro_gradp(1,iel))*cell_f_vol(iel)
+      trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(2,iel) - cpro_gradp(2,iel))*cell_f_vol(iel)
+      trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(3,iel) - cpro_gradp(3,iel))*cell_f_vol(iel)
     enddo
   else
     do iel = 1, ncel
       drom = (crom(iel)-ro0)
-      trav(1,iel) = trav(1,iel) + (drom*gx - grad(1,iel))*cell_f_vol(iel)
-      trav(2,iel) = trav(2,iel) + (drom*gy - grad(2,iel))*cell_f_vol(iel)
-      trav(3,iel) = trav(3,iel) + (drom*gz - grad(3,iel))*cell_f_vol(iel)
+      trav(1,iel) = trav(1,iel) + (drom*gx - cpro_gradp(1,iel))*cell_f_vol(iel)
+      trav(2,iel) = trav(2,iel) + (drom*gy - cpro_gradp(2,iel))*cell_f_vol(iel)
+      trav(3,iel) = trav(3,iel) + (drom*gz - cpro_gradp(3,iel))*cell_f_vol(iel)
     enddo
   endif
 
 endif
 
 ! Free memory
-deallocate(grad)
+if (allocated(grad)) deallocate(grad)
 
 
 !   Pour IAPPEL = 1 (ie appel standard sans les estimateurs)

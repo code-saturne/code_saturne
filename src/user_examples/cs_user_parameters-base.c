@@ -180,6 +180,21 @@ cs_user_model(void)
   cs_parameters_add_property("user_b_property_1",
                              1,
                              CS_MESH_LOCATION_BOUNDARY_FACES);
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: add variables to post-process the predicted-velocity divergence
+   * and the pressure gradient in the momentum equation.
+   */
+
+  cs_parameters_add_property("predicted_vel_divergence",
+                             1,
+                             CS_MESH_LOCATION_CELLS);
+
+  cs_parameters_add_property("pressure_gradient",
+                             3,
+                             CS_MESH_LOCATION_CELLS);
+
+
 
   /*--------------------------------------------------------------------------*/
 

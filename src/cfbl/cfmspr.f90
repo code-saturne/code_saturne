@@ -112,6 +112,7 @@ double precision sclnor
 
 integer          imucpp, idftnp, iswdyp
 integer          imvis1, f_id0, idtcfl
+integer          f_id
 
 double precision thetv, relaxp, hint
 
@@ -134,6 +135,7 @@ double precision, dimension(:), pointer :: rhopre, crom, brom
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr, cpro_cp, cpro_cv
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
+double precision, dimension(:), pointer :: cpro_divq
 
 type(var_cal_opt) :: vcopt_p
 
@@ -298,6 +300,15 @@ endif
 
 init = 0
 call divmas(init,wflmas,wflmab,smbrs)
+
+
+call field_get_id_try("predicted_vel_divergence", f_id)
+if (f_id.ge.0) then
+  call field_get_val_s(f_id, cpro_divq)
+  do iel = 1, ncel
+    cpro_divq(iel) = smbrs(iel)
+  enddo
+endif
 
 ! (Delta t)_ij is calculated as the "viscosity" associated to the pressure
 imvis1 = 1
