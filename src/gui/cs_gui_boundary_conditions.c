@@ -599,9 +599,7 @@ _boundary_scalar(const char   *nature,
     choice = cs_gui_get_attribute_value(path_commun);
 
     if (choice != NULL) {
-      if (cs_gui_strcmp(choice, "dirichlet")            ||
-          cs_gui_strcmp(choice, "exchange_coefficient")) {
-
+      if (cs_gui_strcmp(choice, "dirichlet")) {
         cs_xpath_add_element(&path, "dirichlet");
         cs_xpath_add_function_text(&path);
         if (cs_gui_get_double(path, &result)) {
@@ -613,7 +611,6 @@ _boundary_scalar(const char   *nature,
           }
           boundaries->values[f_id][izone * dim + i].val1 = result;
         }
-
       } else if(cs_gui_strcmp(choice, "neumann")) {
         cs_xpath_add_element(&path, "neumann");
         cs_xpath_add_function_text(&path);
@@ -661,6 +658,11 @@ _boundary_scalar(const char   *nature,
           BFT_FREE(t_value);
         }
       } else if (cs_gui_strcmp(choice, "exchange_coefficient")) {
+	cs_xpath_add_element(&path, "dirichlet");
+        cs_xpath_add_function_text(&path);
+	if (cs_gui_get_double(path, &result)) {
+	  boundaries->values[f_id][izone * dim + i].val1 = result;
+	}
         cs_xpath_add_element(&path2, "exchange_coefficient");
         cs_xpath_add_function_text(&path2);
         if (cs_gui_get_double(path2, &result)) {
