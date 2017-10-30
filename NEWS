@@ -1,9 +1,11 @@
 
-Release 5.1.1 (Unreleased)
+Release 5.1.1 (unreleased)
 ==========================
 
 Bug fixes
 ---------
+
+- GUI: fix handling of exchange coefficient boundary conditions.
 
 - Fix automatic installer crash due to malformed string format.
 
