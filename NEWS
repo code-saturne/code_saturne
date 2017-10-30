@@ -4,6 +4,8 @@ Release 4.0.9 (unreleased)
 Bug fixes:
 ----------
 
+- GUI: fix handling of exchange coefficient boundary conditions.
+
 - Major fix in parallel when activating head losses and improved
   hydrostatic pressure algorithm (iphydr = 1).
 
