@@ -13,6 +13,8 @@ User changes
 Bug fixes
 ---------
 
+- GUI: fix handling of exchange coefficient boundary conditions.
+
 - Fix automatic installer crash due to malformed string format.
 
 - Fix in radiative FSCK model.
