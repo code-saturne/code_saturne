@@ -45,7 +45,7 @@
 #include <EOS/API/EOS_Field.hxx>
 #include <EOS/API/EOS_Fields.hxx>
 #include <EOS/API/EOS_Error_Field.hxx>
-#include <EOS/API/EOS_enums.hxx>
+#include <EOS/API/EOS_properties.hxx>
 
 /*----------------------------------------------------------------------------
  *  Local headers
