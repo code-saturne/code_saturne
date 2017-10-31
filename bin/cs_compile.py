@@ -198,6 +198,10 @@ def get_flags(pkg, flag, link_build = False):
         cmd_line.insert(0, "-I" + pkg.get_dir("pkgincludedir"))
     elif flag == 'ldflags':
         cmd_line.insert(0, "-L" + pkg.get_dir("libdir"))
+        # Add library paths which may be indirectly required
+        re_lib_dirs = pkg.config.get_compile_dependency_paths()
+        for d in re_lib_dirs:
+            cmd_line.insert(0, "-L" + d)
 
     # Add CPPFLAGS information when PLE is "internal"
     if pkg.config.libs['ple'].variant == "internal" and flag == 'cppflags':
