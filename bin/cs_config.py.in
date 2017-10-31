@@ -417,6 +417,40 @@ class config:
 
         return lib_dirs, pythonpath_dirs, env_vars
 
+    def __get_dep_libs_path_catalyst__(self):
+        """
+        return Catalyst dependency path required for compilation
+        """
+
+        lib_dirs = []
+
+        # Add possible additional Catalyst dependency paths
+
+        catalyst_ld_add_path = os.getenv('CATALYST_LD_ADD_PATH')
+        if catalyst_ld_add_path:
+            for d in catalyst_ld_add_path.split(os.pathsep):
+                if d: # avoid empty values before first or after last separator
+                    lib_dirs.append(d)
+
+        return lib_dirs
+
+    def get_compile_dependency_paths(self):
+        """
+        return additional library search if available or required
+        """
+
+        lib_dirs = []
+
+        for lib in self.deplibs:
+            if self.libs[lib].have == "yes":
+
+                if lib == 'catalyst':
+                    catalyst_lib_dirs = self.__get_dep_libs_path_catalyst__()
+                    for d in catalyst_lib_dirs:
+                        lib_dirs.append(d)
+
+        return lib_dirs
+
     def print_config(self):
         """
         Print configuration info
