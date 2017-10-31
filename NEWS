@@ -5,6 +5,9 @@ Release 5.1.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix link with user functions for movablebuilds linking directly with
+  Catalyst (e.g. Salome_CFD).
+
 - GUI: fix handling of exchange coefficient boundary conditions.
 
 - Fix automatic installer crash due to malformed string format.

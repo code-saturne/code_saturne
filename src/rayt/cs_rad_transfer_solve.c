@@ -94,7 +94,6 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 static int ipadom = 0;
-static cs_real_t *wq = NULL;
 
 /*=============================================================================
  * Local Macro Definitions
@@ -927,10 +926,20 @@ cs_rad_transfer_solve(int               bc_type[],
       tparo[ifac]  = 0.0;
   }
 
+  cs_real_t *wq = cs_glob_rad_transfer_params->wq;
+
   /* FSCK model parameters */
-  if (ipadom == 1)
+  if (wq == NULL) {
     /* Weight of the i-the gaussian quadrature  */
     BFT_MALLOC(wq, nwsgg, cs_real_t);
+    cs_glob_rad_transfer_params->wq = wq;
+
+    /* Must be set to 1 in case of using the standard as well as */
+    /* the ADF radiation models  */
+    for (int i = 0; i < nwsgg; i++)
+      wq[i] = 1.0;
+  }
+
 
   /* Initializations
      --------------- */
@@ -1029,13 +1038,6 @@ cs_rad_transfer_solve(int               bc_type[],
       iempexh2[cell_id + n_cells * icla]    = 0.0;
       iempimh2[cell_id + n_cells * icla]    = 0.0;
     }
-  }
-
-  if (ipadom == 1) {
-    /* Must be set to 1 in case of using the standard as well as */
-    /* the ADF radiation models  */
-    for (int i = 0; i < nwsgg; i++)
-      wq[i] = 1.0;
   }
 
   /* Store temperature (in Kelvin) in tempk(cell_id, irphas) */
@@ -2056,9 +2058,6 @@ cs_rad_transfer_solve(int               bc_type[],
   BFT_FREE(iabparh2);
   BFT_FREE(iempexh2);
   BFT_FREE(iempimh2);
-
-  if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max)
-    BFT_FREE(wq);
 }
 
 /*----------------------------------------------------------------------------*/
