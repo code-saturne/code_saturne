@@ -5,6 +5,8 @@ Release 5.1.1 (unreleased)
 Bug fixes
 ---------
 
+- Salome_CFD: fix launch for user builds where CS_ROOT_DIR is not defined.
+
 - Fix link with user functions for movable builds linking directly with
   Catalyst (e.g. Salome_CFD).
 
