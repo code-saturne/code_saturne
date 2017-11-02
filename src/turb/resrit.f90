@@ -455,7 +455,7 @@ enddo
 ! 5. Tensorial diffusion
 !===============================================================================
 ! Symmetric tensor diffusivity (GGDH)
-if (vcopt_ut%idften.eq.6) then
+if (iand(vcopt_ut%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
   do iel = 1, ncel
 
     if (ifcvsl.ge.0) then
