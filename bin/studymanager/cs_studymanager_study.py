@@ -739,6 +739,8 @@ class Study(object):
                 tagged = False
                 if with_tags and data['tags']:
                     tagged = all(tag in data['tags'] for tag in with_tags)
+                elif not with_tags:
+                    tagged = True
 
                 # check if none of tags passed by option --without-tags
                 # belong to list of tags of the current case
@@ -747,7 +749,7 @@ class Study(object):
                     exclude = any(tag in data['tags'] for tag in without_tags)
 
                 # do not append case if tags do not match
-                if not with_tags and not without_tags or tagged and not exclude:
+                if tagged and not exclude:
                     c = Case(pkg,
                              self.__log,
                              self.__diff,
