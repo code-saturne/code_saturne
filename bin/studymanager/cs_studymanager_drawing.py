@@ -33,7 +33,12 @@ from string import *
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-import matplotlib
+try:
+    import matplotlib
+except ImportError:
+    print "Warning: import matplotlib failed.\n"
+    pass
+
 matplotlib.use("Agg")
 
 #-------------------------------------------------------------------------------

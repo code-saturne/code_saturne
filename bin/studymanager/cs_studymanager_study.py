@@ -47,10 +47,13 @@ import cs_runcase
 
 from studymanager.cs_studymanager_parser import Parser
 from studymanager.cs_studymanager_texmaker import Report1, Report2
+
 try:
     from studymanager.cs_studymanager_drawing import Plotter
 except Exception:
+    print "Warning: import studymanager Plotter failed. Plotting disabled.\n"
     pass
+
 from studymanager.cs_studymanager_run import run_studymanager_command
 
 #-------------------------------------------------------------------------------
