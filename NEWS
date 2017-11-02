@@ -5,6 +5,8 @@ Release 5.1.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix tensorial left diffusion of vector (used by tensorial porosity iporos=2).
+
 - Fix tags conditions and postpro (disable non available runs) in smgr.
 
 - Salome_CFD: fix launch for user builds where CS_ROOT_DIR is not defined.
