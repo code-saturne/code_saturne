@@ -1593,8 +1593,12 @@ class Studies(object):
                     if case.run_dir == "":
                         resu = os.path.join(self.__dest, l, case.label, case.resu)
                         rep, msg = case.check_dir(None, resu, "", "dest")
-                        case.run_id = rep
-                        case.run_dir = os.path.join(resu, rep)
+                        if msg:
+                            self.reporting(msg)
+                            s.disable_case(case)
+                        else:
+                            case.run_id = rep
+                            case.run_dir = os.path.join(resu, rep)
 
             script, label, nodes, args = self.__parser.getPostPro(l)
             if not label:
