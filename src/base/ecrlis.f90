@@ -78,7 +78,7 @@ double precision dt(ncelet), volume(ncelet)
 
 ! Local variables
 
-integer          ic, icel, f_id, c_id, f_dim
+integer          ic, icel, f_id, c_id, f_dim, f_loc
 integer          kval, nfld, f_type
 integer          length, max_name_width, max_line_width, i
 character(len=400) :: chain, chainc, flabel,fname, line, title
@@ -157,6 +157,10 @@ do f_id = 0, nfld - 1
     chainc = 'c'
     chain = ' '
     ic = 4
+
+    call field_get_location(f_id, f_loc)
+    if (f_loc .ne. 1) cycle
+
     call field_get_dim (f_id, f_dim)
     call field_get_label(f_id, flabel)
     call field_get_name(f_id, fname)
