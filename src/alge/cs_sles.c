@@ -990,7 +990,7 @@ cs_sles_log(cs_log_t  log_type)
 
     /* Logging for each system */
 
-    for (int k = 0; k < _cs_sles_n_systems[j]; k++) {
+    for (int k = 0; k < _cs_sles_n_max_systems[j]; k++) {
       cs_sles_t *sles = _cs_sles_systems[j][k];
 
       if (sles == NULL) continue;
