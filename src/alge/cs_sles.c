@@ -519,6 +519,7 @@ _find_or_add_system_by_name(const char  *name)
   /* Reallocate global array if necessary */
 
   if (_cs_sles_n_systems[1] >= _cs_sles_n_max_systems[1]) {
+    int i = _cs_sles_n_max_systems[1];
 
     if (_cs_sles_n_max_systems[1] == 0)
       _cs_sles_n_max_systems[1] = 1;
@@ -527,6 +528,8 @@ _find_or_add_system_by_name(const char  *name)
                 _cs_sles_n_max_systems[1],
                 cs_sles_t*);
 
+    for (int j = i; j < _cs_sles_n_max_systems[1]; j++)
+      _cs_sles_systems[1][j] = NULL;
   }
 
   /* Insert in sorted list */
