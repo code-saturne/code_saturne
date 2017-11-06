@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-10-28 03:34+0200\n"
+"POT-Creation-Date: 2017-11-06 02:01+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5026,6 +5026,10 @@ msgstr "La définition d'une zone nécessite un nom."
 msgid "    type:                       %d"
 msgstr "    type :                      %d"
 
+#, c-format
+msgid "Boundary zone with id %d is not defined."
+msgstr "La zone de bord avec id %d n'est pas définie."
+
 msgid "face with forbidden zone overlap"
 msgstr ""
 
@@ -5062,10 +5066,6 @@ msgid "%s: selection function pointer must be non-null."
 msgstr ""
 
 #, c-format
-msgid "Boundary zone with id %d is not defined."
-msgstr "La zone de bord avec id %d n'est pas définie."
-
-#, c-format
 msgid "Boundary zone \"%s\" is not defined."
 msgstr "La zone de bord \"%s\" n'est pas définie."
 
@@ -5085,6 +5085,9 @@ msgstr "    id de support :             %d\n"
 
 msgid "    time varying\n"
 msgstr "    variable en temps\n"
+
+msgid "    private (automatic)\n"
+msgstr "    privée (automatique)\n"
 
 msgid "    allow overlay\n"
 msgstr "    recouvrement autorisé\n"

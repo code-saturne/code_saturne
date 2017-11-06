@@ -70,7 +70,7 @@ typedef struct { /* Only shared with a cs_domain_t structure */
  * Static global variables
  *============================================================================*/
 
-cs_domain_post_t  *domain_post = NULL;
+cs_domain_post_t  *_domain_post_d = NULL;
 
 /*============================================================================
  * Private function prototypes
@@ -199,6 +199,9 @@ _domain_post(void                      *input,
   CS_UNUSED(i_face_ids);
   CS_UNUSED(b_face_ids);
 
+  if (_domain_post_d == NULL)
+    return;
+
   if (input == NULL)
     return;
 
@@ -237,14 +240,14 @@ void
 cs_domain_post_init(double                dt,
                     cs_cdo_quantities_t  *quant)
 {
-  BFT_MALLOC(domain_post, 1, cs_domain_post_t);
+  BFT_MALLOC(_domain_post_d, 1, cs_domain_post_t);
 
   /* Shared */
-  domain_post->dt_cur = dt;
-  domain_post->quant = quant;
+  _domain_post_d->dt_cur = dt;
+  _domain_post_d->quant = quant;
 
   /* Set pointers of function if additional postprocessing is requested */
-  cs_post_add_time_mesh_dep_output(_domain_post, domain_post);
+  cs_post_add_time_mesh_dep_output(_domain_post, _domain_post_d);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -258,8 +261,8 @@ cs_domain_post_init(double                dt,
 void
 cs_domain_post_update(double    dt)
 {
-  assert(domain_post != NULL);
-  domain_post->dt_cur = dt;
+  assert(_domain_post_d != NULL);
+  _domain_post_d->dt_cur = dt;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -287,7 +290,7 @@ cs_domain_post_activate(cs_time_step_t    *time_step)
 void
 cs_domain_post(cs_time_step_t    *time_step)
 {
-  assert(domain_post != NULL);
+  assert(_domain_post_d != NULL);
 
   /* Predefined extra-operations related to
      - the domain (advection fields and properties),
@@ -310,7 +313,7 @@ cs_domain_post(cs_time_step_t    *time_step)
 void
 cs_domain_post_finalize(void)
 {
-  BFT_FREE(domain_post);
+  BFT_FREE(_domain_post_d);
 }
 
 /*----------------------------------------------------------------------------*/

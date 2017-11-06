@@ -217,8 +217,6 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
   /*! [mesh_modify_boundary_layer] */
   {
-    cs_mesh_t *m = cs_glob_mesh;
-
     /* Define extrusion parameters for each face */
 
     int n_zones = 2;
@@ -227,12 +225,12 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     const double zone_thickness[] = {0.1, 0.3};
     const float zone_expansion[] = {0.8, 0.7};
 
-    cs_mesh_extrude_face_info_t *efi = cs_mesh_extrude_face_info_create(m);
+    cs_mesh_extrude_face_info_t *efi = cs_mesh_extrude_face_info_create(mesh);
 
     cs_lnum_t n_faces;
     cs_lnum_t *face_list;
 
-    BFT_MALLOC(face_list, n_faces, cs_lnum_t);
+    BFT_MALLOC(face_list, mesh->n_b_faces, cs_lnum_t);
 
     for (int z_id = 0; z_id < n_zones; z_id++) {
 
@@ -240,7 +238,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
       cs_mesh_extrude_set_info_by_zone(efi,
                                        zone_layers[z_id],
-                                       - zone_thickness[z_id],
+                                       zone_thickness[z_id],
                                        zone_expansion[z_id],
                                        n_faces,
                                        face_list);
@@ -257,7 +255,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     cs_mesh_extrude_face_info_destroy(&efi);
 
-    cs_mesh_boundary_layer_insert(m, e, false);
+    cs_mesh_boundary_layer_insert(mesh, e, false);
 
     cs_mesh_extrude_vectors_destroy(&e);
   }

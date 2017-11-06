@@ -275,6 +275,17 @@ cs_mesh_quantities_create(void);
 cs_mesh_quantities_t *
 cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reset a mesh quantities structure to its empty initial state.
+ *
+ * \param[in]   mq           pointer to mesh quantities structures.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq);
+
 /*----------------------------------------------------------------------------
  * Compute mesh quantities needed fo preprocessing
  *

@@ -387,6 +387,34 @@ cs_boundary_zone_n_zones_time_varying(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update association of a given private boundary zone with a mesh.
+ *
+ * For time-varying zones, the associated mesh location is updated.
+ *
+ * \param[in]  mesh_modified  indicate if mesh has been modified
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_build_private(int  id)
+{
+  if (id < 0 || id >= _n_zones)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Boundary zone with id %d is not defined."), id);
+
+  cs_boundary_zone_t *z = _zones[id];
+  if (! (z->type & CS_BOUNDARY_ZONE_PRIVATE))
+    return;
+
+  cs_mesh_t  *m = cs_glob_mesh;
+  cs_mesh_location_build(m, z->location_id);
+
+  z->n_faces = cs_mesh_location_get_n_elts(z->location_id)[0];
+  z->face_ids = cs_mesh_location_get_elt_ids(z->location_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Update association of boundary zones with a mesh.
  *
  * For time-varying zones, the associated mesh location is updated.
@@ -407,7 +435,8 @@ cs_boundary_zone_build_all(bool  mesh_modified)
     cs_boundary_zone_t *z = _zones[i];
     if (z->time_varying) {
       cs_mesh_location_build(m, z->location_id);
-      has_time_varying = true;
+      if (! (z->type & CS_BOUNDARY_ZONE_PRIVATE))
+        has_time_varying = true;
     }
     z->n_faces = cs_mesh_location_get_n_elts(z->location_id)[0];
     z->face_ids = cs_mesh_location_get_elt_ids(z->location_id);
@@ -431,6 +460,8 @@ cs_boundary_zone_build_all(bool  mesh_modified)
 
     for (int i = 1; i < _n_zones; i++) {
       cs_boundary_zone_t *z = _zones[i];
+      if (z->type & CS_BOUNDARY_ZONE_PRIVATE)
+        continue;
       for (cs_lnum_t j = 0; j < z->n_faces; j++) {
         cs_lnum_t f_id = z->face_ids[j];
         int z_id_prev = _zone_id[f_id];
@@ -452,6 +483,8 @@ cs_boundary_zone_build_all(bool  mesh_modified)
 
       for (int i = 1; i < _n_zones; i++) {
         cs_boundary_zone_t *z = _zones[i];
+        if (z->type & CS_BOUNDARY_ZONE_PRIVATE)
+          continue;
         for (cs_lnum_t j = 0; j < z->n_faces; j++) {
           cs_lnum_t f_id = z->face_ids[j];
           int z_id_prev = CS_ABS(_zone_id[f_id]);
@@ -701,7 +734,8 @@ cs_boundary_zone_set_overlay(int   id,
  * \brief Return pointer to zone id associated with each boundary face.
  *
  * In case of overlayed zones, the highest zone id associated with
- * a given face is given.
+ * a given face is given. Private (automatically defined) zones
+ * are excluded from this definition.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -743,7 +777,9 @@ cs_boundary_zone_log_info(const cs_boundary_zone_t  *z)
 
   if (z->time_varying)
     cs_log_printf(CS_LOG_SETUP, _("    time varying\n"));
-  if (z->allow_overlay)
+  if (z->type & CS_BOUNDARY_ZONE_PRIVATE)
+    cs_log_printf(CS_LOG_SETUP, _("    private (automatic)\n"));
+  else if (z->allow_overlay)
     cs_log_printf(CS_LOG_SETUP, _("    allow overlay\n"));
 
   const char *sel_str = cs_mesh_location_get_selection_string(z->location_id);
@@ -787,6 +823,8 @@ cs_boundary_zone_log_setup(void)
  * \brief Return number of boundary zones associated with a
  *        given zone flag.
  *
+ * Private (automatic) zones are excluded from this count.
+ *
  * \param[in]  type_flag  flag to compare to zone type
  *
  * \return  number of zones matching the given type flag
@@ -799,7 +837,8 @@ cs_boundary_zone_n_type_zones(int  type_flag)
   int count = 0;
 
   for (int i = 0; i < _n_zones; i++) {
-    if (_zones[i]->type & type_flag)
+    if (    (_zones[i]->type & type_flag)
+        && !(_zones[i]->type & CS_BOUNDARY_ZONE_PRIVATE))
       count += 1;
   }
 

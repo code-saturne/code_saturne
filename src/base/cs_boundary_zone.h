@@ -59,8 +59,8 @@ BEGIN_C_DECLS
 /*! initialization zone */
 #define CS_BOUNDARY_ZONE_WALL         (1 << 0)
 
-/*! zone defined for CDO domain */
-#define CS_BOUNDARY_ZONE_CDO_DOMAIN   (1 << 1)
+/*! zone defined for internal usage */
+#define CS_BOUNDARY_ZONE_PRIVATE      (1 << 1)
 
 /*! @} */
 
@@ -139,6 +139,19 @@ cs_boundary_zone_n_zones(void);
 
 int
 cs_boundary_zone_n_zones_time_varying(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update association of a given private boundary zone with a mesh.
+ *
+ * For time-varying zones, the associated mesh location is updated.
+ *
+ * \param[in]  mesh_modified  indicate if mesh has been modified
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_build_private(int  id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -278,14 +291,15 @@ cs_boundary_zone_set_time_varying(int   id,
 
 void
 cs_boundary_zone_set_overlay(int   id,
-                             bool  allow_overlay)
-;
+                             bool  allow_overlay);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return pointer to zone id associated with each boundary face.
  *
  * In case of overlayed zones, the highest zone id associated with
- * a given face is given.
+ * a given face is given. Private (automatically defined) zones
+ * are excluded from this definition.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -316,6 +330,8 @@ cs_boundary_zone_log_setup(void);
 /*!
  * \brief Return number of boundary zones associated with a
  *        given zone flag.
+ *
+ * Private (automatic) zones are excluded from this count.
  *
  * \param[in]  type_flag  flag to compare to zone type
  *

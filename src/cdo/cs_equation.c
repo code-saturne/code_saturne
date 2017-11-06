@@ -119,7 +119,6 @@ typedef void *
 typedef void *
 (cs_equation_free_data_t)(void  *scheme_data);
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Create the matrix of the current algebraic system.

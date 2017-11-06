@@ -2502,7 +2502,8 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option)
 }
 
 /*----------------------------------------------------------------------------
- * Compute Fluid volumes and fluid surface in addition to cell volume and surfaces.
+ * Compute Fluid volumes and fluid surface in addition to
+ * cell volumes and surfaces.
  *
  * parameters:
  *   porous_model <-- gradient option (Fortran iporos)
@@ -2575,47 +2576,60 @@ cs_mesh_quantities_create(void)
 cs_mesh_quantities_t *
 cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
 {
-
-  BFT_FREE(mesh_quantities->cell_cen);
-  BFT_FREE(mesh_quantities->cell_vol);
-  if (cs_glob_porous_model > 0)
-    BFT_FREE(mesh_quantities->cell_f_vol);
-  BFT_FREE(mesh_quantities->i_face_normal);
-  BFT_FREE(mesh_quantities->b_face_normal);
-  if (cs_glob_porous_model == 3) {
-    BFT_FREE(mesh_quantities->i_f_face_normal);
-    BFT_FREE(mesh_quantities->b_f_face_normal);
-  }
-  BFT_FREE(mesh_quantities->i_face_cog);
-  BFT_FREE(mesh_quantities->b_face_cog);
-  BFT_FREE(mesh_quantities->i_face_surf);
-  BFT_FREE(mesh_quantities->b_face_surf);
-  if (cs_glob_porous_model == 3) {
-    BFT_FREE(mesh_quantities->i_f_face_surf);
-    BFT_FREE(mesh_quantities->b_f_face_surf);
-  }
-  BFT_FREE(mesh_quantities->i_dist);
-  BFT_FREE(mesh_quantities->b_dist);
-  BFT_FREE(mesh_quantities->weight);
-  BFT_FREE(mesh_quantities->dijpf);
-  BFT_FREE(mesh_quantities->diipb);
-  BFT_FREE(mesh_quantities->dofij);
-  BFT_FREE(mesh_quantities->diipf);
-  BFT_FREE(mesh_quantities->djjpf);
-  BFT_FREE(mesh_quantities->cocgb_s_it);
-  BFT_FREE(mesh_quantities->cocg_s_it);
-  BFT_FREE(mesh_quantities->cocgb_s_lsq);
-  BFT_FREE(mesh_quantities->cocg_it);
-  BFT_FREE(mesh_quantities->cocg_lsq);
-  BFT_FREE(mesh_quantities->corr_grad_lin_det);
-  BFT_FREE(mesh_quantities->corr_grad_lin);
-  BFT_FREE(mesh_quantities->b_sym_flag);
-  BFT_FREE(mesh_quantities->c_solid_flag);
-  BFT_FREE(mesh_quantities->bad_cell_flag);
+  cs_mesh_quantities_free_all(mesh_quantities);
 
   BFT_FREE(mesh_quantities);
 
   return (mesh_quantities);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reset a mesh quantities structure to its empty initial state.
+ *
+ * \param[in]   mq           pointer to mesh quantities structures.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
+{
+  BFT_FREE(mq->cell_cen);
+  BFT_FREE(mq->cell_vol);
+  if (cs_glob_porous_model > 0)
+    BFT_FREE(mq->cell_f_vol);
+  BFT_FREE(mq->i_face_normal);
+  BFT_FREE(mq->b_face_normal);
+  if (cs_glob_porous_model == 3) {
+    BFT_FREE(mq->i_f_face_normal);
+    BFT_FREE(mq->b_f_face_normal);
+  }
+  BFT_FREE(mq->i_face_cog);
+  BFT_FREE(mq->b_face_cog);
+  BFT_FREE(mq->i_face_surf);
+  BFT_FREE(mq->b_face_surf);
+  if (cs_glob_porous_model == 3) {
+    BFT_FREE(mq->i_f_face_surf);
+    BFT_FREE(mq->b_f_face_surf);
+  }
+  BFT_FREE(mq->i_dist);
+  BFT_FREE(mq->b_dist);
+  BFT_FREE(mq->weight);
+  BFT_FREE(mq->dijpf);
+  BFT_FREE(mq->diipb);
+  BFT_FREE(mq->dofij);
+  BFT_FREE(mq->diipf);
+  BFT_FREE(mq->djjpf);
+  BFT_FREE(mq->cocgb_s_it);
+  BFT_FREE(mq->cocg_s_it);
+  BFT_FREE(mq->cocgb_s_lsq);
+  BFT_FREE(mq->cocg_it);
+  BFT_FREE(mq->cocg_lsq);
+  BFT_FREE(mq->corr_grad_lin_det);
+  BFT_FREE(mq->corr_grad_lin);
+  BFT_FREE(mq->b_sym_flag);
+  BFT_FREE(mq->c_solid_flag);
+  BFT_FREE(mq->bad_cell_flag);
 }
 
 /*----------------------------------------------------------------------------
@@ -3406,8 +3420,12 @@ cs_mesh_quantities_b_thickness_v(const cs_mesh_t             *m,
 
   BFT_FREE(f_b_thickness);
 
-  for (cs_lnum_t j = 0; j < m->n_vertices; j++)
-    b_thickness[j] = v_sum[j*2] / v_sum[j*2+1];
+  for (cs_lnum_t j = 0; j < m->n_vertices; j++) {
+    if (v_sum[j*2+1] > 0)
+      b_thickness[j] = v_sum[j*2] / v_sum[j*2+1];
+    else
+      b_thickness[j] = 0;
+  }
 
   BFT_FREE(v_sum);
 }

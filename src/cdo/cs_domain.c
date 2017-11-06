@@ -59,6 +59,7 @@
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
+#include "cs_mesh_deform.h"
 #include "cs_mesh_location.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
@@ -131,6 +132,15 @@ _wall_boundary_selection(void              *input,
 {
   CS_UNUSED(location_id);
 
+  /* Handle case where global domain has a temporary existence
+     and has been destroyed */
+
+  if (cs_glob_domain == NULL) {
+    *n_elts = 0;
+    *elt_ids = NULL;
+    return;
+  }
+
   cs_domain_boundary_t  *db = (cs_domain_boundary_t *)input;
 
   cs_lnum_t  n_wall_elts = 0;
@@ -149,12 +159,11 @@ _wall_boundary_selection(void              *input,
 
         int z_id = db->zone_ids[i];
         const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(z_id);
-        const cs_lnum_t  *_n_elts = cs_mesh_location_get_n_elts(z->location_id);
-        const cs_lnum_t  *_elt_ids =
-          cs_mesh_location_get_elt_list(z->location_id);
+        const cs_lnum_t  _n_faces = z->n_faces;
+        const cs_lnum_t  *_face_ids = z->face_ids;
 
-        for (cs_lnum_t j = 0; j < _n_elts[0]; j++)
-          is_wall[_elt_ids[j]] = false;
+        for (cs_lnum_t j = 0; j < _n_faces; j++)
+          is_wall[_face_ids[j]] = false;
 
       }
     }
@@ -170,12 +179,11 @@ _wall_boundary_selection(void              *input,
 
         int z_id = db->zone_ids[i];
         const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(z_id);
-        const cs_lnum_t  *_n_elts = cs_mesh_location_get_n_elts(z->location_id);
-        const cs_lnum_t  *_elt_ids =
-          cs_mesh_location_get_elt_list(z->location_id);
+        const cs_lnum_t  _n_faces = z->n_faces;
+        const cs_lnum_t  *_face_ids = z->face_ids;
 
-        for (cs_lnum_t j = 0; j < _n_elts[0]; j++)
-          is_wall[_elt_ids[j]] = true;
+        for (cs_lnum_t j = 0; j < _n_faces; j++)
+          is_wall[_face_ids[j]] = true;
 
       }
     }
@@ -326,15 +334,6 @@ cs_domain_create(void)
   domain->time_step_def = NULL;
 
   domain->time_step = cs_get_glob_time_step();
-  domain->time_step->is_variable = 0;
-  domain->time_step->is_local = 0; // In CDO, this is always equal to 0
-  domain->time_step->nt_prev = 0;  // Changed in case of restart
-  domain->time_step->nt_cur =  0;  // Do not modify this value
-  domain->time_step->nt_max = 0;
-  domain->time_step->nt_ini = 2;   // Not useful in CDO module
-  domain->time_step->t_prev = 0.;
-  domain->time_step->t_cur = 0.;   // Assume initial time is 0.0
-  domain->time_step->t_max = 0.;
 
   domain->time_options.inpdt0 = 0; // standard calculation
   domain->time_options.iptlro = 0;
@@ -670,16 +669,18 @@ cs_domain_update_mesh_locations(cs_domain_t   *domain)
 {
   /* Add a new boundary zone (and also a new mesh location) related to all
      wall boundary faces */
-  const char *zone_name =
-    cs_param_get_boundary_domain_name(CS_PARAM_BOUNDARY_WALL);
+  const char *zone_name
+    = cs_param_get_boundary_domain_name(CS_PARAM_BOUNDARY_WALL);
+
+  int flag = CS_BOUNDARY_ZONE_WALL | CS_BOUNDARY_ZONE_PRIVATE;
 
   int  z_id = cs_boundary_zone_define_by_func(zone_name,
                                               _wall_boundary_selection,
                                               domain->boundary_def,
-                                              CS_BOUNDARY_ZONE_CDO_DOMAIN);
+                                              flag);
 
   /* Allow overlay with other boundary zones used to set BCs on transport
-     equations for instance */
+     equations for instance (not really needed since zone is private) */
   cs_boundary_zone_set_overlay(z_id, true);
 }
 
@@ -694,8 +695,6 @@ cs_domain_update_mesh_locations(cs_domain_t   *domain)
 void
 cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
-
   /* Wall distance */
   if (cs_walldistance_is_activated())
     cs_walldistance_setup();
@@ -704,6 +703,10 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
   if (cs_gwf_is_activated())
     cs_gwf_init_setup();
 
+  /* Mesh deformation */
+
+  if (cs_mesh_deform_is_activated())
+    cs_mesh_deform_setup(domain);
 }
 
 /*----------------------------------------------------------------------------*/

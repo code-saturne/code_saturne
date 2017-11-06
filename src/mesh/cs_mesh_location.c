@@ -103,7 +103,8 @@ struct _cs_mesh_location_t {
 
   char                       *select_str;   /* String */
   cs_mesh_location_select_t  *select_fp;    /* Function pointer */
-  void                       *select_input; /* Optional input for the function pointer */
+  void                       *select_input; /* Optional input for the function
+                                               pointer */
   int                         n_sub_ids;    /* Number of mesh location ids
                                                used to build this location */
   int                        *sub_ids;      /* List of mesh location ids */

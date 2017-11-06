@@ -154,6 +154,7 @@ cs_cdo_initialize_setup(int  activation_mode)
   /* According to the settings, add or not predefined equations:
       >> Wall distance
       >> Groundwater flows
+      >> Mesh deformation
   */
   cs_domain_setup_predefined_equations(cs_glob_domain);
 
@@ -318,7 +319,8 @@ cs_cdo_main(void)
 
   cs_timer_stats_stop(cs_cdo_ts_id);
   if (cs_glob_rank_id <= 0)
-    printf("\n  --> Exit CDO module: simulation completed.\n\n");
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "\n  --> Exit CDO module: simulation completed.\n\n");
 
   return;
 }

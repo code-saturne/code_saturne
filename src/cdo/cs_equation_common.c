@@ -583,7 +583,7 @@ cs_equation_free_common_structures(cs_flag_t   scheme_flag)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate a new structure to handle the building of algebraic system
- *         related to an cs_equation_t structure
+ *         related to a cs_equation_t structure
  *
  * \param[in] eqp       pointer to a cs_equation_param_t structure
  * \param[in] mesh      pointer to a cs_mesh_t structure

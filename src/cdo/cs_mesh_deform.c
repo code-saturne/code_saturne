@@ -86,7 +86,12 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
+static bool  _active = false;
+
 /* Displacement to prescribe */
+
+static int           _n_b_zones = 0;
+static int          *_b_zone_ids = NULL;
 
 static cs_lnum_t     _vd_size = 0;
 static cs_real_3_t  *_vd = NULL;
@@ -109,7 +114,8 @@ static cs_lnum_t     _cs_comp_id[] = {0, 1, 2};
  * \param[in]      pt_ids     list of points ids (to access coords and fill)
  * \param[in]      coords     where ?
  * \param[in]      compact    true:no indirection, false:indirection for filling
- * \param[in]      input      pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in]      input      pointer to a structure cast on-the-fly
+ *                            (may be NULL)
  * \param[in, out] res        result of the function
  */
 /*----------------------------------------------------------------------------*/
@@ -150,61 +156,89 @@ _define_displ_bcs(cs_real_t           time,
   }
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify for the computational domain:
- *         -- which type of boundaries closed the computational domain
- *         -- the settings for the time step
- *         -- activate predefined equations or modules
- *         -- add user-defined properties and/or advection fields
- *         -- add user-defined equations
+ * \brief  Test if mesh deformation is activated
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * \return true if mesh deformation computation is requested, false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_cdo_init_setup(cs_domain_t   *domain)
+bool
+cs_mesh_deform_is_activated(void)
 {
-  CS_UNUSED(domain);
+  if (_active)
+    return true;
+  else
+    return false;
+}
 
-  /* Choose a boundary by default.
-     Valid choice is CS_PARAM_BOUNDARY_WALL or CS_PARAM_BOUNDARY_SYMMETRY */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the future mesh deformation
+ */
+/*----------------------------------------------------------------------------*/
 
-  cs_domain_set_default_boundary(domain, CS_PARAM_BOUNDARY_SYMMETRY);
+void
+cs_mesh_deform_activate(void)
+{
+  if (_active)
+    return;
+
+  _active = true;
 
   const char *eq_name[] = {"mesh_deform_x", "mesh_deform_y", "mesh_deform_z"};
 
-  for (int i = 0; i < 3; i++) {
-
+  for (int i = 0; i < 3; i++)
     cs_equation_add(eq_name[i],        // equation name
                     eq_name[i],        // associated variable field name
                     CS_EQUATION_TYPE_PREDEFINED,
                     1,                 // dimension of the unknown
                     CS_PARAM_BC_HMG_NEUMANN); // default boundary
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the boundary zones on which mesh deformation is prescribed.
+ *
+ * Only those values at vertices matching boundary zones with prescribed
+ * displacement will really be used.
+ *
+ * \param[in]  n_boundary_zones   number of boundary zones at which to
+ *                                prescribe displacements
+ * \param[in]  boundary_zone_ids  ids of boundary zones at which to
+ *                                prescribe displacements
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_deform_define_dirichlet_bc_zones(cs_lnum_t  n_boundary_zones,
+                                         const int  boundary_zone_ids[])
+{
+  if (n_boundary_zones != _n_b_zones) {
+    _n_b_zones = n_boundary_zones;
+    BFT_REALLOC(_b_zone_ids, _n_b_zones, int);
+    memcpy(_b_zone_ids, boundary_zone_ids, sizeof(int)*_n_b_zones);
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify the elements such as properties, advection fields,
- *         user-defined equations and modules which have been previously
- *         added.
+ * \brief Setup the equations related to mesh deformation.
  *
  * \param[in, out]   domain     pointer to a cs_domain_t structure
- * \param[in]        n_zones    number of zones with prescribed deformation
- * \param[in]        zones_ids  ids of zones with prescribed deformation
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_cdo_finalize_setup(cs_domain_t   *domain,
-                    int            n_zones,
-                    const int      zone_ids[])
+void
+cs_mesh_deform_setup(cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
-
   cs_property_t  *conductivity = cs_property_by_name("unity");
 
   /* Retrieve the equation to set
@@ -212,12 +246,16 @@ _cdo_finalize_setup(cs_domain_t   *domain,
 
   const char *eq_name[] = {"mesh_deform_x", "mesh_deform_y", "mesh_deform_z"};
 
+  /* TODO implement a finer control to make mesh deformation
+     compatible with other CDO modules */
+  cs_domain_set_default_boundary(domain, CS_PARAM_BOUNDARY_SYMMETRY);
+
   for (int i = 0; i < 3; i++) {
 
     cs_equation_t  *eq = cs_equation_by_name(eq_name[i]);
 
-    for (int j = 0; j < n_zones; j++) {
-      const cs_boundary_zone_t *z = cs_boundary_zone_by_id(zone_ids[j]);
+    for (int j = 0; j < _n_b_zones; j++) {
+      const cs_boundary_zone_t *z = cs_boundary_zone_by_id(_b_zone_ids[j]);
       cs_equation_add_bc_by_analytic(eq,
                                      CS_PARAM_BC_DIRICHLET,
                                      z->name,
@@ -227,38 +265,19 @@ _cdo_finalize_setup(cs_domain_t   *domain,
 
     cs_equation_link(eq, "diffusion", conductivity);
 
+    /* Enforcement of the Dirichlet boundary conditions */
+    // cs_equation_set_param(eq, CS_EQKEY_BC_ENFORCEMENT, "penalization");
+
+    /* System to solve is SPD by construction */
+    cs_equation_set_param(eq, CS_EQKEY_ITSOL, "cg");
+
+#if defined(HAVE_PETSC)  /* Modify the default settings */
+    cs_equation_set_param(eq, CS_EQKEY_SOLVER_FAMILY, "petsc");
+    cs_equation_set_param(eq, CS_EQKEY_PRECOND, "amg");
+#else
+    cs_equation_set_param(eq, CS_EQKEY_PRECOND, "jacobi");
+#endif
   }
-}
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize mesh deformation.
- *
- * \param[in, out]   domain     pointer to a cs_domain_t structure
- * \param[in]        n_zones    number of zones with prescribed deformation
- * \param[in]        zones_ids  ids of zones with prescribed deformation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_mesh_deform_initialize(cs_domain_t   *domain,
-                          int            n_zones,
-                          const int      zone_ids[])
-{
-  if (cs_glob_domain == NULL)
-    cs_glob_domain = cs_domain_create();
-
-  _cdo_init_setup(cs_glob_domain);
-
-  _cdo_finalize_setup(domain,
-                      n_zones,
-                      zone_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -266,17 +285,15 @@ cs_mesh_deform_initialize(cs_domain_t   *domain,
  * \brief Prescribe the displacement vector for a set of vertices.
  *
  * Only those values at vertices matching boundary zones with prescribed
- * displacement will really be used.
+ * displacement will really be used, as defined by
+ * \ref cs_mesh_deform_define_dirichlet_bc_zones.
  *
- * This function may be called multiple times before displacements are
- * are computed, so displacements may be prescribed for different zones
- * separately or simulataneously.
- *
- * \param[in]  n_vertices    number of vertices at which to prescribe
- *                           displacements
- * \param[in]  vertex_ids    ids of vertices at which to prescribe
- *                           displacements, or NULL if [0, ... n_vertices-1]
- * \param[in]  displacement  pointer to prescribed displacements
+ * \param[in]  n_vertices         number of vertices at which to prescribe
+ *                                displacements
+ * \param[in]  vertex_ids         ids of vertices at which to prescribe
+ *                                displacements, or NULL if
+ *                                [0, ... n_vertices-1]
+ * \param[in]  displacement       pointer to prescribed displacements
  */
 /*----------------------------------------------------------------------------*/
 
@@ -286,14 +303,15 @@ cs_mesh_deform_prescribe_displacement(cs_lnum_t          n_vertices,
                                       const cs_real_3_t  displacement[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
+
   if (_vd_size != m->n_vertices) {
-    BFT_REALLOC(_vd, m->n_vertices, cs_real_3_t);
+    _vd_size = m->n_vertices;
+    BFT_REALLOC(_vd, _vd_size, cs_real_3_t);
 #   pragma omp parallel for if (_vd_size > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < m->n_vertices; i++) {
+    for (cs_lnum_t i = 0; i < _vd_size; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
         _vd[i][j] = 0.;
     }
-    _vd_size = m->n_vertices;
   }
 
   if (vertex_ids != NULL) {
@@ -317,19 +335,15 @@ cs_mesh_deform_prescribe_displacement(cs_lnum_t          n_vertices,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute displacement for mesh deformation.
+ *
+ * \param[in, out]   domain     pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_deform_solve_displacement(void)
+cs_mesh_deform_solve_displacement(cs_domain_t  *domain)
 {
-  /*  Build high-level structures and create algebraic systems */
-  cs_domain_t  *domain = cs_glob_domain;
-
   cs_domain_initialize_systems(domain);
-
-  /* Define the current time step */
-  // cs_domain_define_current_time_step(domain);
 
   /* Build and solve equations related to the deformation */
 
@@ -338,6 +352,9 @@ cs_mesh_deform_solve_displacement(void)
   for (int i = 0; i < 3; i++) {
 
     cs_equation_t *eq = cs_equation_by_name(eq_name[i]);
+
+    /* Sanity check */
+    assert(cs_equation_is_steady(eq));
 
     /* Define the algebraic system */
     cs_equation_build_system(domain->mesh,
@@ -391,6 +408,9 @@ cs_mesh_deform_get_displacement(void)
 void
 cs_mesh_deform_finalize(void)
 {
+  BFT_FREE(_b_zone_ids);
+  _n_b_zones = 0;
+
   BFT_FREE(_vd);
   _vd_size = 0;
 }

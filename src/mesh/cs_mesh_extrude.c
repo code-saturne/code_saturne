@@ -1504,23 +1504,20 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
 
   cs_parall_min(1, CS_INT_TYPE, &z_thickness_spec);
 
-  if (z_thickness_spec < 1) {
+  cs_real_t *_distance;
+  BFT_MALLOC(_distance, n_b_faces, cs_real_t);
 
-    cs_real_t *b_thickness;
-    BFT_MALLOC(b_thickness, n_b_faces, cs_real_t);
-
+  if (z_thickness_spec < 1)
     cs_mesh_quantities_b_thickness_f(m,
                                      mq,
                                      3, /* n_passes */
-                                     b_thickness);
+                                     _distance);
 
-    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-      if (efi->n_layers[i] != 0 && efi->distance[i] < 0)
-        efi->distance[i] = b_thickness[i];
-    }
-
-    BFT_FREE(b_thickness);
-
+  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+    if (efi->n_layers[i] == 0)
+      _distance[i] = 0;
+    else if (efi->distance[i] >= 0)
+      _distance[i] = efi->distance[i];
   }
 
   /* Build selected faces ids array */
@@ -1554,7 +1551,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
     cs_lnum_t f_id = e->face_ids[j];
 
     const cs_lnum_t n_layers = efi->n_layers[f_id];
-    const cs_real_t distance = efi->distance[f_id];
+    const cs_real_t distance = _distance[f_id];
     const cs_real_t expansion_factor = efi->expansion_factor[f_id];
     const cs_real_t thickness_s = n_layers > 2 ? efi->thickness_s[f_id] : 0;
     const cs_real_t thickness_e = n_layers > 1 ? efi->thickness_e[f_id] : 0;
@@ -1576,6 +1573,8 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
       c[v_id] += 1;
     }
   }
+
+  BFT_FREE(_distance);
 
   /* Handle parallelism */
 

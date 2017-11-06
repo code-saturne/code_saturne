@@ -173,8 +173,8 @@ BEGIN_C_DECLS
         an initial calculation run with a non-constant time step(\ref idtvar=1 or
         2). It is also the value used to initialise the time step in the case of
         a restart calculation in which the type of time step has been changed
-        (for instance, \ref idtvar=1 in the new calculation and \ref idtvar = 0 or
-        2 in the previous calculation).\n
+        (for instance, \ref idtvar=1 in the new calculation and \ref idtvar = 0
+        or 2 in the previous calculation).\n
         See \ref user_initialization_time_step for examples.
 
   \var  cs_time_step_options_t::coumax

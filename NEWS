@@ -2,6 +2,22 @@
 Trunk (unreleased)
 ==================
 
+Changes
+-------
+
+- Refactored extrusion handling to allow easier and finer control of extrusion
+  vector generation.
+  * a cs_mesh_extrude_face_info_t structure allows simple settings for each
+    boundary face, including number of layers, thickness, and expansion factor,
+    and optionally a start and end thickness. Utility functions allow
+    "per zone" settings.
+  * a cs_mesh_extrude_vectors_t structure defining local extrusion vectors,
+    which is built automatically based on the face settings but can be
+    modified by the user.
+
+- Added boundary layer insertion at selected faces, using a mesh deformation
+  (CDO vertex-based), followed by boundary layer extrusion.
+
 Release 5.1.0 (October 10 2017)
 ===============================
 

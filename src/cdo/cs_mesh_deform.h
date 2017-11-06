@@ -27,12 +27,17 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_defs.h"
-
+#include "cs_domain.h"
 #include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
@@ -53,35 +58,67 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize mesh deformation.
+ * \brief  Test if mesh deformation is activated
  *
- * \param[in, out]   domain     pointer to a cs_domain_t structure
- * \param[in]        n_zones    number of zones with prescribed deformation
- * \param[in]        zones_ids  ids of zones with prescribed deformation
+ * \return true if mesh deformation computation is requested, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_mesh_deform_is_activated(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the future mesh deformation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_deform_initialize(cs_domain_t   *domain,
-                          int            n_zones,
-                          const int      zone_ids[]);
+cs_mesh_deform_activate(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the boundary zones on which mesh deformation is prescribed.
+ *
+ * Only those values at vertices matching boundary zones with prescribed
+ * displacement will really be used.
+ *
+ * \param[in]  n_boundary_zones   number of boundary zones at which to
+ *                                prescribe displacements
+ * \param[in]  boundary_zone_ids  ids of boundary zones at which to
+ *                                prescribe displacements
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_deform_define_dirichlet_bc_zones(cs_lnum_t  n_boundary_zones,
+                                         const int  boundary_zone_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup the equations related to mesh deformation.
+ *
+ * \param[in, out]   domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_deform_setup(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Prescribe the displacement vector for a set of vertices.
  *
  * Only those values at vertices matching boundary zones with prescribed
- * displacement will really be used.
+ * displacement will really be used, as defined by
+ * \ref cs_mesh_deform_define_dirichlet_bc_zones.
  *
- * This function may be called multiple times before displacements are
- * are computed, so displacements may be prescribed for different zones
- * separately or simultaneously.
- *
- * \param[in]  n_vertices    number of vertices at which to prescribe
- *                           displacements
- * \param[in]  vertex_ids    ids of vertices at which to prescribe
- *                           displacements, or NULL if [0, ... n_vertices-1]
- * \param[in]  displacement  pointer to prescribed displacements
+ * \param[in]  n_vertices         number of vertices at which to prescribe
+ *                                displacements
+ * \param[in]  vertex_ids         ids of vertices at which to prescribe
+ *                                displacements, or NULL if
+ *                                [0, ... n_vertices-1]
+ * \param[in]  displacement       pointer to prescribed displacements
  */
 /*----------------------------------------------------------------------------*/
 
@@ -93,11 +130,13 @@ cs_mesh_deform_prescribe_displacement(cs_lnum_t          n_vertices,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute displacement for mesh deformation.
+ *
+ * \param[in, out]   domain     pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_deform_solve_displacement(void);
+cs_mesh_deform_solve_displacement(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
