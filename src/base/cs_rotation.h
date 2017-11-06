@@ -184,6 +184,8 @@ cs_rotation_coriolis_v(const cs_rotation_t  *r,
 
 /*----------------------------------------------------------------------------
  * Add the dual tensor of a rotation vector to a tensor
+ * The dual tensor is such that:
+ *  tr[i][j] * v[j] = (omage ^ v)_(ij)
  *
  * parameters:
  *   r  <-- pointer to rotation structure
@@ -198,18 +200,20 @@ cs_rotation_add_coriolis_t(const cs_rotation_t  *r,
 {
   double f = r->omega * c;
 
-  tr[0][1] += r->axis[2]*f;
-  tr[0][2] -= r->axis[1]*f;
+  tr[0][1] -= r->axis[2]*f;
+  tr[0][2] += r->axis[1]*f;
 
-  tr[1][0] -= r->axis[2]*f;
-  tr[1][2] += r->axis[0]*f;
+  tr[1][0] += r->axis[2]*f;
+  tr[1][2] -= r->axis[0]*f;
 
-  tr[2][0] += r->axis[1]*f;
-  tr[2][1] -= r->axis[0]*f;
+  tr[2][0] -= r->axis[1]*f;
+  tr[2][1] += r->axis[0]*f;
 }
 
 /*----------------------------------------------------------------------------
  * Compute the dual tensor of a rotation vector
+ * The dual tensor is such that:
+ *  tr[i][j] * v[j] = (omage ^ v)_(ij)
  *
  * parameters:
  *   r  <-- pointer to rotation structure
@@ -225,15 +229,15 @@ cs_rotation_coriolis_t(const cs_rotation_t  *r,
   double f = r->omega * c;
 
   tr[0][0] =   0.;
-  tr[0][1] =   r->axis[2]*f;
-  tr[0][2] = - r->axis[1]*f;
+  tr[0][1] = - r->axis[2]*f;
+  tr[0][2] =   r->axis[1]*f;
 
-  tr[1][0] = - r->axis[2]*f;
+  tr[1][0] =   r->axis[2]*f;
   tr[1][1] =   0.;
-  tr[1][2] =   r->axis[0]*f;
+  tr[1][2] = - r->axis[0]*f;
 
-  tr[2][0] =   r->axis[1]*f;
-  tr[2][1] = - r->axis[0]*f;
+  tr[2][0] = - r->axis[1]*f;
+  tr[2][1] =   r->axis[0]*f;
   tr[2][2] =   0.;
 }
 
