@@ -13,6 +13,9 @@ User changes
 Bug fixes
 ---------
 
+- Fix implicit part of the Coriolis source term in the momentum
+  (turbomachinery module).
+
 - Salome_CFD: fix launch for user builds where CS_ROOT_DIR is not defined.
 
 - Fix link with user functions for movable builds linking directly with
