@@ -53,6 +53,7 @@
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
+#include "cs_cdofb_vecteq.h"
 #include "cs_equation_common.h"
 #include "cs_evaluate.h"
 #include "cs_hho_scaleq.h"
@@ -1251,6 +1252,29 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
 
       }
+      else if (eqp->dim == 3) {
+
+        eq->init_context = cs_cdofb_vecteq_init_context;
+        eq->free_context = cs_cdofb_vecteq_free_context;
+        eq->initialize_system = cs_cdofb_vecteq_initialize_system;
+        eq->build_system = cs_cdofb_vecteq_build_system;
+        eq->prepare_solving = _prepare_fb_solving;
+        eq->update_field = cs_cdofb_vecteq_update_field;
+        eq->compute_source = cs_cdofb_vecteq_compute_source;
+        eq->compute_flux_across_plane = NULL;
+        eq->compute_cellwise_diff_flux = NULL;
+        eq->postprocess = cs_cdofb_vecteq_extra_op;
+        eq->get_extra_values = cs_cdofb_vecteq_get_face_values;
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process (OK for a sequential run) */
+        eq->n_sles_gather_elts = eqp->dim * connect->n_faces[0];
+        eq->n_sles_scatter_elts = eqp->dim * connect->n_faces[0];
+
+      }
       else
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Only the scalar-valued and vector-valued cases are"
@@ -2424,7 +2448,6 @@ cs_equation_solve(cs_equation_t   *eq)
   const cs_param_itsol_t  itsol_info = eqp->itsol_info;
 
   /* Sanity checks (up to now, only scalar field are handled) */
-  assert(fld->dim == 1);
   assert(eq->n_sles_gather_elts <= eq->n_sles_scatter_elts);
   assert(eq->n_sles_gather_elts == cs_matrix_get_n_rows(eq->matrix));
 
@@ -2472,13 +2495,13 @@ cs_equation_solve(cs_equation_t   *eq)
                   eq->name, code, n_iters, residual, nnz);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
-    cs_dump_array_to_listing("EQ.AFTER.SOLVE >> X", size, x, 8);
-    cs_dump_array_to_listing("EQ.SOLVE >> RHS", size, b, 8);
+    cs_dump_array_to_listing("EQ.AFTER.SOLVE >> X", size, x, 9);
+    cs_dump_array_to_listing("EQ.SOLVE >> RHS", size, b, 9);
 #if CS_EQUATION_DBG > 2
-    cs_dump_integer_to_listing("ROW_INDEX", size + 1, row_index, 8);
-    cs_dump_integer_to_listing("COLUMN_ID", nnz, col_id, 8);
-    cs_dump_array_to_listing("D_VAL", size, d_val, 8);
-    cs_dump_array_to_listing("X_VAL", nnz, x_val, 8);
+    cs_dump_integer_to_listing("ROW_INDEX", size + 1, row_index, 9);
+    cs_dump_integer_to_listing("COLUMN_ID", nnz, col_id, 9);
+    cs_dump_array_to_listing("D_VAL", size, d_val, 9);
+    cs_dump_array_to_listing("X_VAL", nnz, x_val, 9);
 #endif
 #endif
   }

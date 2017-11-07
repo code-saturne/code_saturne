@@ -310,11 +310,12 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
  * \brief  Assemble a cellwise system related to cell faces into the global
  *         algebraic system
  *
- * \param[in]       csys      cellwise view of the algebraic system
- * \param[in]       rset      pointer to a cs_range_set_t structure on vertices
- * \param[in]       eqp       pointer to a cs_equation_param_t structure
- * \param[in, out]  rhs       array storing the right-hand side
- * \param[in, out]  mav       pointer to a matrix assembler structure
+ * \param[in]      csys         cellwise view of the algebraic system
+ * \param[in]      rset         pointer to a cs_range_set_t structure
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      n_face_dofs  number of DoFs for each face
+ * \param[in, out] rhs          array storing the right-hand side
+ * \param[in, out] mav          pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -322,6 +323,7 @@ void
 cs_equation_assemble_f(const cs_cell_sys_t            *csys,
                        const cs_range_set_t           *rset,
                        const cs_equation_param_t      *eqp,
+                       int                             n_face_dofs,
                        cs_real_t                      *rhs,
                        cs_matrix_assembler_values_t   *mav);
 

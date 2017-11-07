@@ -329,8 +329,8 @@ cs_sdm_copy(cs_sdm_t        *recv,
             const cs_sdm_t  *send)
 {
   /* Sanity check */
-  assert(recv->n_max_rows >= send->n_max_rows);
-  assert(recv->n_max_cols >= send->n_max_cols);
+  assert(recv->n_max_rows >= send->n_rows);
+  assert(recv->n_max_cols >= send->n_cols);
 
   recv->flag = send->flag;
   recv->n_rows = send->n_rows;

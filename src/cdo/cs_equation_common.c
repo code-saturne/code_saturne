@@ -632,7 +632,10 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
   eqb->msh_flag = 0;
   eqb->bd_msh_flag = 0;
   eqb->st_msh_flag = 0;
-  eqb->sys_flag = 0;
+  if (eqp->dim > 1)
+    eqb->sys_flag = CS_FLAG_SYS_VECTOR;
+  else
+    eqb->sys_flag = 0;
 
   /* Handle properties */
   eqb->diff_pty_uniform = true;
@@ -909,7 +912,7 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
      If advection is activated, the resulting system is not symmetric
      Otherwise, the system is symmetric with extra-diagonal terms. */
   /* TODO: Add a symmetric version for optimization */
-  int  block_size = 0;
+  int  bufsize = 0;
   for (short int i = 0; i < n_vc; i++) {
 
     const double  *mval_i = csys->mat->val + i*n_vc;
@@ -928,26 +931,26 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
     /* Diagonal term is excluded in this connectivity. Add it "manually" */
     for (short int j = 0; j < n_vc; j++) {
 
-      grows[block_size] = grow_id;
-      gcols[block_size] = rset->g_id[v_ids[j]];
-      vals[block_size] = mval_i[j];
-      block_size += 1;
+      grows[bufsize] = grow_id;
+      gcols[bufsize] = rset->g_id[v_ids[j]];
+      vals[bufsize] = mval_i[j];
+      bufsize += 1;
 
-      if (block_size == CS_CDO_ASSEMBLE_BUF_SIZE) {
+      if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
 #       pragma omp critical
         cs_matrix_assembler_values_add_g(mav,
                                          CS_CDO_ASSEMBLE_BUF_SIZE,
                                          grows, gcols, vals);
-        block_size = 0;
+        bufsize = 0;
       }
 
     } /* Loop on cell vertices (local cols) */
 
   } /* Loop on cell vertices (local rows) */
 
-  if (block_size > 0) {
+  if (bufsize > 0) {
 #   pragma omp critical
-    cs_matrix_assembler_values_add_g(mav, block_size, grows, gcols, vals);
+    cs_matrix_assembler_values_add_g(mav, bufsize, grows, gcols, vals);
   }
 }
 
@@ -956,11 +959,12 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
  * \brief  Assemble a cellwise system related to cell faces into the global
  *         algebraic system
  *
- * \param[in]       csys      cellwise view of the algebraic system
- * \param[in]       rset      pointer to a cs_range_set_t structure on vertices
- * \param[in]       eqp       pointer to a cs_equation_param_t structure
- * \param[in, out]  rhs       array storing the right-hand side
- * \param[in, out]  mav       pointer to a matrix assembler structure
+ * \param[in]      csys         cellwise view of the algebraic system
+ * \param[in]      rset         pointer to a cs_range_set_t structure
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      n_face_dofs  number of DoFs for each face
+ * \param[in, out] rhs          array storing the right-hand side
+ * \param[in, out] mav          pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -968,6 +972,7 @@ void
 cs_equation_assemble_f(const cs_cell_sys_t            *csys,
                        const cs_range_set_t           *rset,
                        const cs_equation_param_t      *eqp,
+                       int                             n_face_dofs,
                        cs_real_t                      *rhs,
                        cs_matrix_assembler_values_t   *mav)
 {
@@ -976,8 +981,7 @@ cs_equation_assemble_f(const cs_cell_sys_t            *csys,
          eqp->space_scheme == CS_SPACE_SCHEME_HHO_P1 ||
          eqp->space_scheme == CS_SPACE_SCHEME_HHO_P2);
 
-  const short int  n_fc = csys->mat->n_rows;
-  const cs_lnum_t  *f_ids = csys->dof_ids;
+  const cs_lnum_t  *dof_ids = csys->dof_ids;
 
   cs_gnum_t  grows[CS_CDO_ASSEMBLE_BUF_SIZE], gcols[CS_CDO_ASSEMBLE_BUF_SIZE];
   cs_real_t  vals[CS_CDO_ASSEMBLE_BUF_SIZE];
@@ -986,41 +990,110 @@ cs_equation_assemble_f(const cs_cell_sys_t            *csys,
      If advection is activated, the resulting system is not symmetric
      Otherwise, the system is symmetric with extra-diagonal terms. */
   /* TODO: Add a symmetric version for optimization */
-  int  block_size = 0;
-  for (short int i = 0; i < n_fc; i++) {
 
-    const double  *val_rowi = csys->mat->val + i*n_fc;
-    const cs_lnum_t  fi_id = f_ids[i];
+  if (n_face_dofs == 1) { /* Scalar-valued case */
 
-#   pragma omp atomic
-    rhs[fi_id] += csys->rhs[i];
+    int  bufsize = 0;
 
-  const cs_gnum_t  grow_id = rset->g_id[fi_id];
+    const short int  n_fc = csys->mat->n_rows;
+    for (short int i = 0; i < n_fc; i++) {
 
-    /* Diagonal term is excluded in this connectivity. Add it "manually" */
-    for (short int colj = 0; colj < n_fc; colj++) {
+      const double  *val_rowi = csys->mat->val + i*n_fc;
+      const cs_lnum_t  fi_id = dof_ids[i];
 
-      grows[block_size] = grow_id;
-      gcols[block_size] = rset->g_id[f_ids[colj]];
-      vals[block_size] = val_rowi[colj];
-      block_size += 1;
+#     pragma omp atomic
+      rhs[fi_id] += csys->rhs[i];
 
-      if (block_size == CS_CDO_ASSEMBLE_BUF_SIZE) {
-#       pragma omp critical
-        cs_matrix_assembler_values_add_g(mav,
-                                         CS_CDO_ASSEMBLE_BUF_SIZE,
-                                         grows, gcols, vals);
-        block_size = 0;
+      const cs_gnum_t  grow_id = rset->g_id[fi_id];
+
+      /* Diagonal term is excluded in this connectivity. Add it "manually" */
+      for (short int colj = 0; colj < n_fc; colj++) {
+
+        grows[bufsize] = grow_id;
+        gcols[bufsize] = rset->g_id[dof_ids[colj]];
+        vals[bufsize] = val_rowi[colj];
+        bufsize += 1;
+
+        if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
+#         pragma omp critical
+          cs_matrix_assembler_values_add_g(mav,
+                                           CS_CDO_ASSEMBLE_BUF_SIZE,
+                                           grows, gcols, vals);
+          bufsize = 0;
+        }
+
+      } /* Loop on cell faces (local cols) */
+
+    } /* Loop on cell faces (local rows) */
+
+    if (bufsize > 0) {
+#     pragma omp critical
+      cs_matrix_assembler_values_add_g(mav, bufsize, grows, gcols, vals);
+    }
+
+  }
+  else { /* n_face_dofs > 1 */
+
+    const cs_sdm_t  *m = csys->mat;
+
+    assert(m->flag & CS_SDM_BY_BLOCK);
+    assert(m->block_desc != NULL);
+    const cs_sdm_block_t  *bd = m->block_desc;
+    assert(bd->n_row_blocks == bd->n_col_blocks);
+
+    int  bufsize = 0;
+    for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+      const cs_lnum_t  bi_shift = dof_ids[n_face_dofs*bi];
+      const cs_gnum_t  *grow_shift = rset->g_id + bi_shift;
+
+      /* Assemble RHS */
+      cs_real_t  *rhs_shift = rhs + bi_shift;
+      for (short int ii = 0; ii < n_face_dofs; ii++) {
+#       pragma omp atomic
+        rhs_shift[ii] += csys->rhs[bi*n_face_dofs + ii];
       }
 
-    } /* Loop on cell faces (local cols) */
+      for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
-  } /* Loop on cell faces (local rows) */
+        const cs_gnum_t  *gcol_shift = rset->g_id + dof_ids[n_face_dofs*bj];
 
-  if (block_size > 0) {
-#   pragma omp critical
-    cs_matrix_assembler_values_add_g(mav, block_size, grows, gcols, vals);
-  }
+        /* mIJ is a small square matrix of size n_face_dofs */
+        cs_sdm_t  *mIJ = cs_sdm_get_block(m, bi, bj);
+
+        for (short int ii = 0; ii < n_face_dofs; ii++) {
+
+          const cs_gnum_t  grow_id = grow_shift[ii];
+
+          for (short int jj = 0; jj < n_face_dofs; jj++) {
+
+            /* Add an entry */
+            grows[bufsize] = grow_id;
+            gcols[bufsize] = gcol_shift[jj];
+            vals[bufsize] = mIJ->val[ii*n_face_dofs + jj];
+            bufsize += 1;
+
+            if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
+#             pragma omp critical
+              cs_matrix_assembler_values_add_g(mav,
+                                               CS_CDO_ASSEMBLE_BUF_SIZE,
+                                               grows, gcols, vals);
+              bufsize = 0;
+            }
+
+          } /* jj */
+        } /* ii */
+
+      } /* Loop on column blocks */
+    } /* Loop on row blocks */
+
+    if (bufsize > 0) {
+#     pragma omp critical
+      cs_matrix_assembler_values_add_g(mav, bufsize, grows, gcols, vals);
+    }
+
+  } /* n_face_dofs > 1 */
+
 }
 
 /*----------------------------------------------------------------------------*/

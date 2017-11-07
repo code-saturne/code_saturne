@@ -458,6 +458,29 @@ cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
 /*!
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it the given array of values.
+ *         Case of a vector-valued density (vd) defined on primal cells
+ *         by a value.
+ *         Case of face-based schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_cell_builder_t         *cb,
+                             void                      *input,
+                             double                    *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
  *         Case of a scalar density defined at primal cells by an analytical
  *         function.
  *         Use the barycentric approximation as quadrature to evaluate the
@@ -473,6 +496,30 @@ cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
 
 void
 cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
+                                     const cs_cell_mesh_t      *cm,
+                                     cs_cell_builder_t         *cb,
+                                     void                      *input,
+                                     double                    *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a vector-valued density defined at primal cells by an
+ *         analytical function.
+ *         Use the barycentric approximation as quadrature to evaluate the
+ *         integral. Exact for linear function.
+ *         Case of face-based schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
                                      cs_cell_builder_t         *cb,
                                      void                      *input,

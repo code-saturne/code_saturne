@@ -525,12 +525,18 @@ cs_source_term_init(cs_space_scheme_t             space_scheme,
       switch (st_def->type) {
 
       case CS_XDEF_BY_VALUE:
-        compute_source[st_id] = cs_source_term_fbsd_by_value;
+        if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
+          compute_source[st_id] = cs_source_term_fbvd_by_value;
+        else
+          compute_source[st_id] = cs_source_term_fbsd_by_value;
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
         msh_flag |= CS_CDO_LOCAL_PV;
-        compute_source[st_id] = cs_source_term_fbsd_bary_by_analytic;
+        if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
+          compute_source[st_id] = cs_source_term_fbvd_bary_by_analytic;
+        else
+          compute_source[st_id] = cs_source_term_fbsd_bary_by_analytic;
         break;
 
       default:
@@ -1525,6 +1531,42 @@ cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
 /*!
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it the given array of values.
+ *         Case of a vector-valued density (vd) defined on primal cells
+ *         by a value.
+ *         Case of face-based schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_cell_builder_t         *cb,
+                             void                      *input,
+                             double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+
+  const cs_real_t *v_input = (const cs_real_t *)source->input;
+  for (int k = 0; k < source->dim; k++)
+    values[source->dim*cm->n_fc + k] = v_input[k] * cm->vol_c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
  *         Case of a scalar density defined at primal cells by an analytical
  *         function.
  *         Use the barycentric approximation as quadrature to evaluate the
@@ -1565,6 +1607,54 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
              &eval_xc);
 
   values[cm->n_fc] = cm->vol_c * eval_xc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a vector-valued density defined at primal cells by an
+ *         analytical function.
+ *         Use the barycentric approximation as quadrature to evaluate the
+ *         integral. Exact for linear function.
+ *         Case of face-based schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
+                                     const cs_cell_mesh_t      *cm,
+                                     cs_cell_builder_t         *cb,
+                                     void                      *input,
+                                     double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(source->dim < 4);
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+
+  /* Call the analytic function to evaluate the function at xc */
+  const double  tcur = cs_time_step->t_cur;
+  double  eval_xc[3];
+
+  anai->func(tcur, 1, NULL, (const cs_real_t *)cm->xc,
+             true,  // compacted output ?
+             anai->input,
+             eval_xc);
+
+  for (int k = 0; k < source->dim; k++)
+    values[source->dim*cm->n_fc + k] = cm->vol_c * eval_xc[k];
 }
 
 /*----------------------------------------------------------------------------*/

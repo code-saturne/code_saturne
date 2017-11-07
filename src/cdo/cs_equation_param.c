@@ -503,6 +503,7 @@ cs_equation_param_summary(const char                  *eqname,
   case CS_SPACE_SCHEME_CDOFB:
     cs_log_printf(CS_LOG_SETUP,
                   "  <%s/space scheme>  CDO face-based\n", eqname);
+    break;
   case CS_SPACE_SCHEME_HHO_P0:
     cs_log_printf(CS_LOG_SETUP,
                   "  <%s/space scheme>  HHO-P0\n", eqname);

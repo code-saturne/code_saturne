@@ -709,6 +709,73 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement by a
+ *          penalization technique with a huge value.
+ *          Case of a cellwise system defined by block.
+ *
+ * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux trace operator
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
+                                      const cs_cell_mesh_t            *cm,
+                                      cs_cdo_diffusion_flux_trace_t   *flux_op,
+                                      cs_face_mesh_t                  *fm,
+                                      cs_cell_builder_t               *cb,
+                                      cs_cell_sys_t                   *csys)
+{
+  CS_UNUSED(h_info); // Prototype common to cs_cdo_diffusion_enforce_dir_t
+  CS_UNUSED(fm);
+  CS_UNUSED(cm);
+  CS_UNUSED(cb);
+  CS_UNUSED(flux_op);
+
+  /* Sanity checks */
+  assert(cm != NULL && csys != NULL);
+
+  /* Enforcement of the Dirichlet BCs */
+  if (csys->has_dirichlet == false)
+    return; // Nothing to do
+
+  cs_sdm_t  *m = csys->mat;
+  cs_sdm_block_t  *bd = m->block_desc;
+  assert(bd != NULL);
+
+  // Penalize diagonal entry (and its rhs if needed)
+  int  shift = 0;
+  for (short int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+    cs_sdm_t  *mII = cs_sdm_get_block(m, bi, bi);
+    assert(mII->n_rows == mII->n_cols);
+    cs_real_t  *_rhs = csys->rhs + shift;
+    const cs_flag_t  *_flag = csys->dof_flag + shift;
+    const cs_real_t  *_dir_val = csys->dir_values + shift;
+
+    for (int i = 0; i < mII->n_rows; i++) {
+
+      if (_flag[i] & CS_CDO_BC_DIRICHLET) {
+        mII->val[i + mII->n_rows*i] += cs_big_pena_coef;
+        _rhs[i] += _dir_val[i] * cs_big_pena_coef;
+      }
+      else if (_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
+        mII->val[i + mII->n_rows*i] += cs_big_pena_coef;
+
+    }
+
+    shift += mII->n_rows;
+
+  } /* Block bi */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the diffusive flux across dual faces for a given cell
  *          Use the COST algo. for computing the discrete Hodge op.
  *          This function is dedicated to vertex-based schemes.

@@ -211,6 +211,29 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement by a
+ *          penalization technique with a huge value.
+ *          Case of a cellwise system defined by block.
+ *
+ * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux trace operator
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
+                                      const cs_cell_mesh_t            *cm,
+                                      cs_cdo_diffusion_flux_trace_t   *flux_op,
+                                      cs_face_mesh_t                  *fm,
+                                      cs_cell_builder_t               *cb,
+                                      cs_cell_sys_t                   *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment
  *

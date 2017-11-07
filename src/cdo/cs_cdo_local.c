@@ -321,7 +321,7 @@ cs_cell_sys_reset(cs_flag_t        cell_flag,
     csys->has_dirichlet = csys->has_nhmg_neumann = csys->has_robin = false;
 
     memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_fbyc);
-    memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_fbyc);
+    memset(csys->bf_ids, 0, sizeof(short int)*n_fbyc);
     memset(csys->dof_flag, 0, sizeof(cs_flag_t)*n_dofbyc);
 
     memset(csys->dir_values, 0, s);

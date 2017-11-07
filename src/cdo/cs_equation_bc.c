@@ -203,21 +203,25 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
   if (face_flag & CS_CDO_BC_HMG_DIRICHLET) {
 
     csys->has_dirichlet = true;
-    csys->dof_flag[f] |= CS_CDO_BC_HMG_DIRICHLET;
+    for (int k = 0; k < eqp->dim; k++)
+      csys->dof_flag[eqp->dim*f + k] |= CS_CDO_BC_HMG_DIRICHLET;
 
   }
   else if (face_flag & CS_CDO_BC_DIRICHLET) {
 
     csys->has_dirichlet = true;
-    csys->dof_flag[f] |= CS_CDO_BC_DIRICHLET;
-    for (int k = 0; k < eqp->dim; k++)
+    for (int k = 0; k < eqp->dim; k++) {
+      csys->dof_flag[eqp->dim*f + k] |= CS_CDO_BC_DIRICHLET;
       csys->dir_values[eqp->dim*f + k] = dir_values[eqp->dim*bf_id + k];
+    }
 
   }
   else if (face_flag & CS_CDO_BC_NEUMANN) {
 
     csys->has_nhmg_neumann = true;
-    csys->dof_flag[f] |= CS_CDO_BC_NEUMANN;
+    for (int k = 0; k < eqp->dim; k++)
+      csys->dof_flag[eqp->dim*f + k] |= CS_CDO_BC_NEUMANN;
+
     cs_equation_compute_neumann_fb(neu_tags[bf_id], f,
                                    quant,
                                    time_step,
@@ -227,6 +231,7 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
   else if (face_flag & CS_CDO_BC_ROBIN) {
     csys->has_robin = true;
     /* TODO */
+    bft_error(__FILE__, __LINE__, 0, "%s: TODO", __func__);
   }
 
 }
@@ -544,7 +549,8 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
-  cs_dump_array_to_listing("DIRICHLET_VALUES", quant->n_b_faces, dir_val, 8);
+  cs_dump_array_to_listing("DIRICHLET_VALUES",
+                           eqp->dim*quant->n_b_faces, dir_val, 9);
 #endif
 
   return dir_val;
@@ -695,28 +701,39 @@ cs_equation_compute_neumann_fb(short int                    def_id,
 {
   assert(neu_values != NULL && cm != NULL && eqp != NULL);
   assert(def_id > -1);
+  assert(eqp->dim == 1 || eqp->dim == 3);
 
   const cs_xdef_t  *def = eqp->bc_desc[def_id];
 
   /* Flux is a vector in the scalar-valued case and a tensor in the
      vector-valued case */
   assert(def->meta & CS_CDO_BC_NEUMANN); // Neuman BC
-  assert(eqp->dim == 1); /* Only the scalar-valued case is handled */
 
   /* Evaluate the boundary condition at each boundary vertex */
   switch(def->type) {
 
   case CS_XDEF_BY_VALUE:
-    cs_xdef_eval_cw_flux_by_val(cm, f, def->input, neu_values);
+    if (eqp->dim == 1)
+      cs_xdef_eval_cw_flux_by_val(cm, f, def->input, neu_values);
+    else if (eqp->dim == 3)
+      cs_xdef_eval_cw_tensor_flux_by_val(cm, f, def->input, neu_values);
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_xdef_eval_cw_flux_by_analytic(cm,
-                                     f,
-                                     time_step,
-                                     def->input,
-                                     def->qtype,
-                                     neu_values);
+    if (eqp->dim == 1)
+      cs_xdef_eval_cw_flux_by_analytic(cm,
+                                       f,
+                                       time_step,
+                                       def->input,
+                                       def->qtype,
+                                       neu_values);
+    else if (eqp->dim == 3)
+      cs_xdef_eval_cw_tensor_flux_by_analytic(cm,
+                                              f,
+                                              time_step,
+                                              def->input,
+                                              def->qtype,
+                                              neu_values);
     break;
 
   case CS_XDEF_BY_ARRAY:
