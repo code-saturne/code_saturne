@@ -313,6 +313,8 @@ _create_edges(const cs_mesh_t  *m)
                     v2v);
   }
 
+  BFT_FREE(count);
+
   /* Order sub-lists related to each vertex */
 # pragma omp parallel for if (n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_vertices; i++)
@@ -603,9 +605,10 @@ _compute_max_ent(const cs_mesh_t      *m,
 
     for (short int f = 0; f < n_fc; f++) {
 
-      if (c2f_ids[f] < m->n_i_faces) { // Interior face
+      const cs_lnum_t  f_id = c2f_ids[f];
+      if (f_id < m->n_i_faces) { // Interior face
 
-        const cs_lnum_t  *f2v_idx = m->i_face_vtx_idx + f;
+        const cs_lnum_t  *f2v_idx = m->i_face_vtx_idx + f_id;
         const cs_lnum_t  *f2v_ids = m->i_face_vtx_lst + f2v_idx[0];
         const int  n_vf = f2v_idx[1] - f2v_idx[0];
 
@@ -617,7 +620,7 @@ _compute_max_ent(const cs_mesh_t      *m,
       else { // Border face
 
         const cs_lnum_t  *f2v_idx =
-          m->b_face_vtx_idx + c2f_ids[f] - m->n_i_faces;
+          m->b_face_vtx_idx + f_id - m->n_i_faces;
         const cs_lnum_t  *f2v_ids = m->b_face_vtx_lst + f2v_idx[0];
         const int  n_vf = f2v_idx[1] - f2v_idx[0];
 
@@ -633,7 +636,7 @@ _compute_max_ent(const cs_mesh_t      *m,
     for (short int v = 0; v < n_vc; v++) {
 
       const cs_lnum_t  v_id = c2v_ids[v];
-      if (v_count[v_id] > n_max_v2ec) n_max_v2fc = v_count[v_id];
+      if (v_count[v_id] > n_max_v2fc) n_max_v2fc = v_count[v_id];
       v_count[v_id] = 0; // reset
 
     }
