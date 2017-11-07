@@ -113,7 +113,6 @@ static const double  cs_big_pena_coef = 1e13;
  * \param[in]       pcoef     value of the penalization coefficient
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
  * \param[in]       fm        pointer to a cs_face_mesh_t structure
- * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in, out]  ntrgrd    pointer to a local matrix structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
@@ -124,7 +123,6 @@ static void
 _enforce_nitsche(const double              pcoef,
                  const cs_param_hodge_t    h_info,
                  const cs_face_mesh_t     *fm,
-                 const cs_cell_bc_t       *cbc,
                  cs_sdm_t                 *ntrgrd,
                  cs_cell_builder_t        *cb,
                  cs_cell_sys_t            *csys)
@@ -149,7 +147,7 @@ _enforce_nitsche(const double              pcoef,
       const double  pcoef_v = pcoef * fm->wvf[v];
 
       ntrgrd->val[vi + vi*ntrgrd->n_rows] += pcoef_v;
-      csys->rhs[vi] += pcoef_v * cbc->dir_values[vi];
+      csys->rhs[vi] += pcoef_v * csys->dir_values[vi];
 
     } // Dirichlet or homogeneous Dirichlet
     break;
@@ -175,7 +173,7 @@ _enforce_nitsche(const double              pcoef,
           const short int  vj = fm->v_ids[vfj];
 
           ntrg_i[vj] += pcoef_ij;
-          csys->rhs[vi] += pcoef_ij * cbc->dir_values[vj];
+          csys->rhs[vi] += pcoef_ij * csys->dir_values[vj];
 
         } // Loop on face vertices vj
 
@@ -537,7 +535,6 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
  *          technique
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -548,7 +545,6 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
 
 void
 cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
-                                  const cs_cell_bc_t             *cbc,
                                   const cs_cell_mesh_t           *cm,
                                   cs_cdo_diffusion_flux_trace_t  *flux_op,
                                   cs_face_mesh_t                 *fm,
@@ -556,24 +552,20 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
                                   cs_cell_sys_t                  *csys)
 {
   /* Sanity checks */
-  assert(cbc != NULL && cm != NULL);
-  assert(cb != NULL && csys != NULL);
-
-  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_rows = cm->n_vc + 1
-     For VB schemes  cbc->n_dofs = csys->mat->n_rows = cm->n_vc */
+  assert(cm != NULL && cb != NULL && csys != NULL);
 
   /* Enforcement of the Dirichlet BCs */
-  if (cbc->n_dirichlet == 0)
+  if (csys->has_dirichlet == false)
     return; // Nothing to do
 
   const double chi = cs_nitsche_pena_coef * fabs(cb->eig_ratio) * cb->eig_max;
 
-  for (short int i = 0; i < cbc->n_bc_faces; i++) {
-    if (cbc->face_flag[i] & CS_CDO_BC_DIRICHLET ||
-        cbc->face_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+    if (csys->bf_flag[i] & CS_CDO_BC_DIRICHLET ||
+        csys->bf_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
 
       /* Compute the face-view of the mesh */
-      cs_face_mesh_build_from_cell_mesh(cm, cbc->bf_ids[i], fm);
+      cs_face_mesh_build_from_cell_mesh(cm, csys->bf_ids[i], fm);
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
@@ -588,7 +580,7 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
       /* Update the RHS and the local system matrix */
       _enforce_nitsche(chi/sqrt(fm->face.meas), // Penalization coeff.
                        h_info,
-                       fm, cbc,
+                       fm,
                        cb->loc, cb, csys);
 
     } // Dirichlet face
@@ -602,7 +594,6 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
  *          technique plus a symmetric treatment
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -613,7 +604,6 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
 
 void
 cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
-                                  const cs_cell_bc_t              *cbc,
                                   const cs_cell_mesh_t            *cm,
                                   cs_cdo_diffusion_flux_trace_t   *flux_op,
                                   cs_face_mesh_t                  *fm,
@@ -621,23 +611,20 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
                                   cs_cell_sys_t                   *csys)
 {
   /* Sanity checks */
-  assert(cbc != NULL && cm != NULL);
-  assert(cb != NULL && csys != NULL);
-  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_rows = cm->n_vc + 1
-     For VB schemes  cbc->n_dofs = csys->mat->n_rows = cm->n_vc */
+  assert(cm != NULL && cb != NULL && csys != NULL);
 
   /* Enforcement of the Dirichlet BCs */
-  if (cbc->n_dirichlet == 0)
+  if (csys->has_dirichlet == false)
     return; // Nothing to do
 
   const double chi = cs_nitsche_pena_coef * cb->eig_ratio * cb->eig_max;
 
-  for (short int i = 0; i < cbc->n_bc_faces; i++) {
-    if (cbc->face_flag[i] & CS_CDO_BC_DIRICHLET ||
-        cbc->face_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+    if (csys->bf_flag[i] & CS_CDO_BC_DIRICHLET ||
+        csys->bf_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
 
       /* Compute the face-view of the mesh */
-      cs_face_mesh_build_from_cell_mesh(cm, cbc->bf_ids[i], fm);
+      cs_face_mesh_build_from_cell_mesh(cm, csys->bf_ids[i], fm);
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
@@ -654,14 +641,14 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
       cs_sdm_square_add_transpose(cb->loc, cb->aux);
 
       /* Update RHS according to the add of transp (cb->aux) */
-      cs_sdm_square_matvec(cb->aux, cbc->dir_values, cb->values);
-      for (short int v = 0; v < cbc->n_dofs; v++)
+      cs_sdm_square_matvec(cb->aux, csys->dir_values, cb->values);
+      for (short int v = 0; v < csys->n_dofs; v++)
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
       _enforce_nitsche(chi/sqrt(fm->face.meas), // Penalization coeff.
                        h_info,
-                       fm, cbc,
+                       fm,
                        cb->loc, cb, csys);
 
     } /* This boundary face is attached to a Dirichlet BC */
@@ -675,7 +662,6 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
  *          penalization technique with a huge value
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -686,7 +672,6 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
 
 void
 cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
-                                const cs_cell_bc_t              *cbc,
                                 const cs_cell_mesh_t            *cm,
                                 cs_cdo_diffusion_flux_trace_t   *flux_op,
                                 cs_face_mesh_t                  *fm,
@@ -700,26 +685,22 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
   CS_UNUSED(flux_op);
 
   /* Sanity checks */
-  assert(cbc != NULL && cm != NULL);
-  assert(csys != NULL);
-  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_rows = cm->n_vc + 1
-     For VB schemes  cbc->n_dofs = csys->mat->n_rows = cm->n_vc
-     For FB schemes  cbc->n_dofs = csys->mat->n_rows = cm->n_fc */
+  assert(cm != NULL && csys != NULL);
 
   /* Enforcement of the Dirichlet BCs */
-  if (cbc->n_dirichlet == 0)
+  if (csys->has_dirichlet == false)
     return; // Nothing to do
 
   const short int n_dofs = csys->mat->n_rows;
 
   // Penalize diagonal entry (and its rhs if needed)
-  for (short int i = 0; i < cbc->n_dofs; i++) {
+  for (short int i = 0; i < csys->n_dofs; i++) {
 
-    if (cbc->dof_flag[i] & CS_CDO_BC_DIRICHLET) {
+    if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) {
       csys->mat->val[i + n_dofs*i] += cs_big_pena_coef;
-      csys->rhs[i] += cbc->dir_values[i] * cs_big_pena_coef;
+      csys->rhs[i] += csys->dir_values[i] * cs_big_pena_coef;
     }
-    else if (cbc->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
+    else if (csys->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
       csys->mat->val[i + n_dofs*i] += cs_big_pena_coef;
 
   } /* Loop on degrees of freedom */

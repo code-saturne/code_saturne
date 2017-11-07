@@ -39,8 +39,10 @@
 #include "cs_cdo_diffusion.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
+#include "cs_cdovb_scaleq.h"
 #include "cs_equation_param.h"
 #include "cs_hho_builder.h"
+#include "cs_hho_scaleq.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_scheme_geometry.h"
@@ -979,24 +981,16 @@ _test_stiffness_vb(FILE               *out,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Test CDO vertex-based schemes
- *
- * \param[in]    out       output file
- * \param[in]    cm        pointer to a cs_cell_mesh_t structure
- * \param[in]    cbc       pointer to a cs_cell_bc_t structure
- * \param[in]    fm        pointer to a cs_face_mesh_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_test_cdovb_schemes(FILE             *out,
-                    cs_cell_mesh_t   *cm,
-                    cs_cell_bc_t     *cbc,
-                    cs_face_mesh_t   *fm)
+_test_cdovb_schemes(FILE                *out,
+                    cs_cell_mesh_t      *cm,
+                    cs_face_mesh_t      *fm,
+                    cs_cell_sys_t       *csys,
+                    cs_cell_builder_t   *cb)
 {
-  /* Test with VB scheme */
-  cs_cell_builder_t  *cb = cs_cell_builder_create(CS_SPACE_SCHEME_CDOVB,
-                                                  connect);
-  cs_cell_sys_t  *csys = cs_cell_sys_create(connect->n_max_vbyc, 1, NULL);
 
   /* Initialize a cell view of the algebraic system */
   csys->n_dofs = cm->n_vc;
@@ -1024,6 +1018,7 @@ _test_cdovb_schemes(FILE             *out,
                                  .type = CS_PARAM_HODGE_TYPE_VPCD,
                                  .algo = CS_PARAM_HODGE_ALGO_WBS,
                                  .coef = 1.0};
+
   cs_hodge_vpcd_wbs_get(hwbs_info, cm, cb);
   _locmat_dump(out, "\nCDO.VB; HDG.VPCD.WBS; PERMEABILITY.ISO",
                csys->dof_ids, cb->hdg);
@@ -1032,6 +1027,7 @@ _test_cdovb_schemes(FILE             *out,
   cs_hodge_compute_wbs_surfacic(fm, cb->hdg);
   _locmat_dump(out, "\nCDO.VB; HDG.VPCD.WBS.FACE; UNITY",
                csys->dof_ids, cb->hdg);
+
   for (int vi = 0; vi < fm->n_vf; vi++) {
     double  row_sum = 0.0;
     double  *hi = cb->hdg->val + vi*fm->n_vf;
@@ -1062,6 +1058,7 @@ _test_cdovb_schemes(FILE             *out,
                                   .type = CS_PARAM_HODGE_TYPE_EPFD,
                                   .algo = CS_PARAM_HODGE_ALGO_COST,
                                   .coef = 1./3.}; //DGA
+
   cs_hodge_vb_cost_get_stiffness(hcost_info, cm, cb);
   _locmat_dump(out,"\nCDO.VB; STIFFNESS WITH HDG.EPFD.DGA; PERMEABILITY.ISO",
                csys->dof_ids, cb->loc);
@@ -1075,7 +1072,7 @@ _test_cdovb_schemes(FILE             *out,
   _test_stiffness_vb(out, cm, cb->loc);
 
   /* Enforce Dirichlet BC */
-  cs_cdo_diffusion_pena_dirichlet(hcost_info, cbc, cm,
+  cs_cdo_diffusion_pena_dirichlet(hcost_info, cm,
                                   cs_cdovb_diffusion_cost_flux_op,
                                   fm, cb, csys);
   _locsys_dump(out, "\nCDO.VB; PENA.DGA.FLX.COST; PERMEABILITY.ANISO",
@@ -1083,14 +1080,14 @@ _test_cdovb_schemes(FILE             *out,
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
   for (int v = 0; v < cm->n_vc*cm->n_vc; v++) csys->mat->val[v] = 0.;
 
-  cs_cdovb_diffusion_weak_dirichlet(hcost_info, cbc, cm,
+  cs_cdovb_diffusion_weak_dirichlet(hcost_info, cm,
                                     cs_cdovb_diffusion_cost_flux_op,
                                     fm, cb, csys);
   _locsys_dump(out, "\nCDO.VB; WEAK.DGA.FLX.COST; PERMEABILITY.ANISO",
                csys);
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
   for (int v = 0; v < cm->n_vc*cm->n_vc; v++) csys->mat->val[v] = 0.;
-  cs_cdovb_diffusion_wsym_dirichlet(hcost_info, cbc, cm,
+  cs_cdovb_diffusion_wsym_dirichlet(hcost_info, cm,
                                     cs_cdovb_diffusion_cost_flux_op,
                                     fm, cb, csys);
 
@@ -1107,7 +1104,7 @@ _test_cdovb_schemes(FILE             *out,
   _test_stiffness_vb(out, cm, cb->loc);
 
   /* Enforce Dirichlet BC */
-  cs_cdo_diffusion_pena_dirichlet(hvor_info, cbc, cm,
+  cs_cdo_diffusion_pena_dirichlet(hvor_info, cm,
                                   cs_cdovb_diffusion_cost_flux_op,
                                   fm, cb, csys);
   _locsys_dump(out, "\nCDO.VB; PENA.VORO.FLX.COST; PERMEABILITY.ISO",
@@ -1129,7 +1126,7 @@ _test_cdovb_schemes(FILE             *out,
   _test_stiffness_vb(out, cm, cb->loc);
 
   /* Enforce Dirichlet BC */
-  cs_cdo_diffusion_pena_dirichlet(hwbs_info, cbc, cm,
+  cs_cdo_diffusion_pena_dirichlet(hwbs_info, cm,
                                   cs_cdovb_diffusion_wbs_flux_op,
                                   fm, cb, csys);
   _locsys_dump(out, "\nCDO.VB; PENA.WBS.FLX.WBS; PERMEABILITY.ANISO",
@@ -1137,14 +1134,14 @@ _test_cdovb_schemes(FILE             *out,
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
   cs_sdm_square_init(cm->n_vc, csys->mat);
 
-  cs_cdovb_diffusion_weak_dirichlet(hwbs_info, cbc, cm,
+  cs_cdovb_diffusion_weak_dirichlet(hwbs_info, cm,
                                     cs_cdovb_diffusion_wbs_flux_op,
                                     fm, cb, csys);
   _locsys_dump(out, "\nCDO.VB; WEAK.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
   cs_sdm_square_init(cm->n_vc, csys->mat);
 
-  cs_cdovb_diffusion_wsym_dirichlet(hwbs_info, cbc, cm,
+  cs_cdovb_diffusion_wsym_dirichlet(hwbs_info, cm,
                                     cs_cdovb_diffusion_wbs_flux_op,
                                     fm, cb, csys);
   _locsys_dump(out, "\nCDO.VB; WSYM.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
@@ -1438,11 +1435,11 @@ _dump_eval_cmp(FILE             *out,
 /*----------------------------------------------------------------------------*/
 
 static void
-_test_basis_functions(FILE             *out,
-                      int               scheme_order,
-                      cs_cell_mesh_t   *cm)
+_test_basis_functions(FILE               *out,
+                      int                 scheme_order,
+                      cs_cell_mesh_t     *cm,
+                      cs_cell_builder_t  *cb)
 {
-  cs_cell_builder_t  *cb = NULL;
   switch (scheme_order) {
 
   case 0:
@@ -1450,7 +1447,6 @@ _test_basis_functions(FILE             *out,
             "\n ************************************************************\n"
             "                              Oth order\n"
             " ************************************************************\n");
-    cb = cs_cell_builder_create(CS_SPACE_SCHEME_HHO_P0, connect);
     break;
 
   case 1:
@@ -1459,7 +1455,6 @@ _test_basis_functions(FILE             *out,
             "                              1st order\n"
             " ************************************************************\n");
 
-    cb = cs_cell_builder_create(CS_SPACE_SCHEME_HHO_P1, connect);
     break;
 
   case 2:
@@ -1467,7 +1462,6 @@ _test_basis_functions(FILE             *out,
             "\n ************************************************************\n"
             "                              2nd order\n"
             " ************************************************************\n");
-    cb = cs_cell_builder_create(CS_SPACE_SCHEME_HHO_P2, connect);
     break;
 
   default:
@@ -1475,7 +1469,6 @@ _test_basis_functions(FILE             *out,
               __func__);
 
   }
-
 
   /* Test cell basis functions : (flag, order, dim) */
   cs_real_t  c_eval[30], c_eval_mono[30], c_dof[20], c_dof_mono[20];
@@ -1705,33 +1698,33 @@ _test_basis_functions(FILE             *out,
 
   }
 
-  /* Free memory */
-  cs_cell_builder_free(&cb);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Test HHO (Hybrid High Order) schemes
  *
- * \param[in]  out           output file
- * \param[in]  scheme_order  scheme_order
- * \param[in]  cm            pointer to a cs_cell_mesh_t structure
- * \param[in]  cbc           pointer to a cs_cell_bc_t structure
- * \param[in]  fm            pointer to a cs_face_mesh_t structure
+ * \param[in]      out           output file
+ * \param[in]      scheme_order  scheme_order
+ * \param[in]      cm            pointer to a cs_cell_mesh_t structure
+ * \param[in]      fm            pointer to a cs_face_mesh_t structure
+ * \param[in, out] csys          pointer to a cs_cell_sys_t structure
+ * \param[in, out] cb            pointer to a cs_cell_bc_t structure
+ * \param[in, out] hhob          pointer to a cs_hho_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_test_hho_schemes(FILE             *out,
-                  int               scheme_order,
-                  cs_cell_mesh_t   *cm,
-                  cs_cell_bc_t     *cbc,
-                  cs_face_mesh_t   *fm)
+_test_hho_schemes(FILE                *out,
+                  int                  scheme_order,
+                  cs_cell_mesh_t      *cm,
+                  cs_face_mesh_t      *fm,
+                  cs_cell_sys_t       *csys,
+                  cs_cell_builder_t   *cb,
+                  cs_hho_builder_t    *hhob)
 {
-  CS_UNUSED(cbc);
   CS_UNUSED(fm);
-  cs_cell_builder_t  *cb = NULL;
-  cs_hho_builder_t  *hhob = NULL;
+  CS_UNUSED(csys);
 
   switch (scheme_order) {
 
@@ -1740,7 +1733,6 @@ _test_hho_schemes(FILE             *out,
             "\n ************************************************************\n"
             "                              HHO_P0 scheme\n"
             " ************************************************************\n");
-    cb = cs_cell_builder_create(CS_SPACE_SCHEME_HHO_P0, connect);
     break;
 
   case 1:
@@ -1749,9 +1741,7 @@ _test_hho_schemes(FILE             *out,
             "                              HHO_P1 scheme\n"
             " ************************************************************\n");
 
-    cb = cs_cell_builder_create(CS_SPACE_SCHEME_HHO_P1, connect);
     cs_basis_func_set_hho_flag(CS_BASIS_FUNC_MONOMIAL, CS_BASIS_FUNC_MONOMIAL);
-    hhob = cs_hho_builder_create(1, cm->n_fc);
     cs_hho_builder_cellwise_setup(cm, cb, hhob);
     cs_hho_builder_compute_grad_reco(cm, cb, hhob);
 
@@ -1881,7 +1871,6 @@ _test_hho_schemes(FILE             *out,
       cs_xdef_free(x2);
     }
 
-    cs_hho_builder_free(&hhob);
     break;
 
   case 2:
@@ -1889,7 +1878,6 @@ _test_hho_schemes(FILE             *out,
             "\n ************************************************************\n"
             "                              HHO_P2 scheme\n"
             " ************************************************************\n");
-    cb = cs_cell_builder_create(CS_SPACE_SCHEME_HHO_P2, connect);
     break;
 
   default:
@@ -1898,8 +1886,113 @@ _test_hho_schemes(FILE             *out,
 
   }
 
-  /* Free memory */
-  cs_cell_builder_free(&cb);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Test CDO vertex-based schemes
+ *
+ * \param[in] out_hho      output file for HHO schemes
+ * \param[in] out_basis    output file for basis functions
+ * \param[in] flag         flag storing the order of the polynomial basis
+ * \param[in] cm           pointer to a cs_cell_mesh_t structure
+ * \param[in] fm           pointer to a cs_face_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_main_hho_schemes(FILE             *out_hho,
+                  FILE             *out_basis,
+                  cs_flag_t         flag,
+                  cs_cell_mesh_t   *cm,
+                  cs_face_mesh_t   *fm)
+{
+  cs_hho_builder_t  *hhob = NULL;
+  cs_cell_builder_t  *cb = NULL;
+  cs_cell_sys_t  *csys = NULL;
+
+  cs_hho_scaleq_initialize(flag, quant, connect, time_step,
+                           NULL, NULL, NULL, NULL, NULL, NULL);
+  cs_hho_scaleq_get(&csys, &cb, &hhob);
+
+  int order = 0;
+  if (flag & CS_SCHEME_FLAG_POLY2)
+    order = 2;
+  else if (flag & CS_SCHEME_FLAG_POLY1)
+    order = 1;
+
+  _test_basis_functions(out_basis, order, cm, cb);
+  _test_hho_schemes(out_hho, order, cm, fm, csys, cb, hhob);
+
+  cs_hho_scaleq_finalize();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Test CDO vertex-based schemes
+ *
+ * \param[in]    out       output file
+ * \param[in]    case_id   0: hexa; 1: tetra
+ * \param[in]    cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]    fm        pointer to a cs_face_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_main_cdovb_schemes(FILE             *out,
+                    int               case_id,
+                    cs_cell_mesh_t   *cm,
+                    cs_face_mesh_t   *fm)
+{
+  cs_cell_builder_t  *cb = NULL;
+  cs_cell_sys_t  *csys = NULL;
+
+  cs_cdovb_scaleq_initialize(quant, connect, time_step, NULL, NULL);
+  cs_cdovb_scaleq_get(&csys, &cb);
+
+    /* Initialize a cell view of the BC */
+  if (case_id == 0) {
+
+    csys->has_dirichlet = true;
+    csys->n_dofs = cm->n_vc;
+    for (short int i = 0; i < cm->n_vc; i++) {
+      csys->dof_flag[i] = 0;
+      csys->dir_values[i] = csys->neu_values[i] = 0;
+      csys->rob_values[2*i] = csys->rob_values[2*i+1] = 0.;
+    }
+    csys->n_bc_faces = 1;
+    csys->bf_ids[0] = 4; //f_id = 4
+    csys->bf_flag[0] = CS_CDO_BC_DIRICHLET;
+
+    for (short int v = 0; v < fm->n_vf; v++) {
+      csys->dir_values[fm->v_ids[v]] = 1.0;
+      csys->dof_flag[fm->v_ids[v]] |= CS_CDO_BC_DIRICHLET;
+    }
+
+  }
+  else if (case_id == 1) {
+
+    csys->has_dirichlet = true;
+    csys->n_dofs = cm->n_vc;
+    for (short int i = 0; i < cm->n_vc; i++) {
+      csys->dof_flag[i] = 0;
+      csys->dir_values[i] = csys->neu_values[i] = 0;
+      csys->rob_values[2*i] = csys->rob_values[2*i+1] = 0.;
+    }
+    csys->n_bc_faces = 1;
+    csys->bf_ids[0] = 2; //f_id = 2
+    csys->bf_flag[0] = CS_CDO_BC_DIRICHLET;
+
+    for (short int v = 0; v < fm->n_vf; v++) {
+      csys->dir_values[fm->v_ids[v]] = 1.0;
+      csys->dof_flag[fm->v_ids[v]] |= CS_CDO_BC_DIRICHLET;
+    }
+
+  }
+
+  _test_cdovb_schemes(out, cm, fm, csys, cb);
+
+  cs_cdovb_scaleq_finalize();
 }
 
 /*============================================================================
@@ -1941,6 +2034,8 @@ main(int    argc,
   /* TEST DISCRETIZATION SCHEMES */
   /* =========================== */
 
+  /* quant, connect and time_step are declared as static */
+
   /* connectivity */
   BFT_MALLOC(connect, 1, cs_cdo_connect_t);
   connect->n_max_vbyc = 8;
@@ -1961,14 +2056,18 @@ main(int    argc,
   /* Allocate local structures */
   cs_cell_mesh_t  *cm = cs_cell_mesh_create(connect);
   cs_face_mesh_t  *fm = cs_face_mesh_create(connect->n_max_vbyf);
-  cs_cell_bc_t  *cbc = cs_cell_bc_create(connect->n_max_vbyc,
-                                         connect->n_max_vbyf);
 
   /* ========= */
   /* TEST HEXA */
   /* ========= */
 
   _define_cm_hexa_unif(1., cm);
+
+  /* Compute the face mesh for the face id 4 */
+  cs_face_mesh_build_from_cell_mesh(cm, 4, fm);
+
+  /* Operate several basic tests on CDO-Vb schemes */
+  _main_cdovb_schemes(hexa, 0, cm, fm);
 
   /* Compute the cell tensor inertia */
   cs_real_33_t  inertia;
@@ -1981,41 +2080,18 @@ main(int    argc,
           inertia[1][0], inertia[1][1], inertia[1][2],
           inertia[2][0], inertia[2][1], inertia[2][2]);
 
-  /* Initialize a cell view of the BC */
-  cbc->n_dirichlet = 4;
-  cbc->n_nhmg_neuman = cbc->n_robin = 0;
-  cbc->n_dofs = cm->n_vc;
-  for (short int i = 0; i < cm->n_vc; i++) {
-    cbc->dof_flag[i] = 0;
-    cbc->dir_values[i] = cbc->neu_values[i] = 0;
-    cbc->rob_values[2*i] = cbc->rob_values[2*i+1] = 0.;
-  }
-  cbc->n_bc_faces = 1;
-  cbc->bf_ids[0] = 4; //f_id = 4
-  cbc->face_flag[0] = CS_CDO_BC_DIRICHLET;
-
-  cs_face_mesh_build_from_cell_mesh(cm, 4, fm); //f_id = 4
-
-  for (short int v = 0; v < fm->n_vf; v++) {
-    cbc->dir_values[fm->v_ids[v]] = 1.0;
-    cbc->dof_flag[fm->v_ids[v]] |= CS_CDO_BC_DIRICHLET;
-  }
-
-  _test_cdovb_schemes(hexa, cm, cbc, fm);
-
-  _test_basis_functions(hexa, 0, cm);
-  _test_basis_functions(hexa, 1, cm);
-  _test_basis_functions(hexa, 2, cm);
-
-  _test_hho_schemes(hho, 0, cm, cbc, fm);
-  _test_hho_schemes(hho, 1, cm, cbc, fm);
-  _test_hho_schemes(hho, 2, cm, cbc, fm);
+  _main_hho_schemes(hho, hexa, CS_SCHEME_FLAG_POLY0, cm, fm);
+  _main_hho_schemes(hho, hexa, CS_SCHEME_FLAG_POLY1, cm, fm);
+  _main_hho_schemes(hho, hexa, CS_SCHEME_FLAG_POLY2, cm, fm);
 
   /* ========== */
   /* TEST TETRA */
   /* ========== */
 
   _define_cm_tetra_ref(1., cm);
+
+  /* Compute the face mesh for the face id 2 */
+  cs_face_mesh_build_from_cell_mesh(cm, 2, fm);
 
   /* Compute the cell tensor inertia */
   cs_compute_inertia_tensor(cm, cm->xc, inertia);
@@ -2027,40 +2103,16 @@ main(int    argc,
           inertia[1][0], inertia[1][1], inertia[1][2],
           inertia[2][0], inertia[2][1], inertia[2][2]);
 
-  /* Initialize a cell view of the BC */
-  cbc->n_dirichlet = 3;
-  cbc->n_nhmg_neuman = cbc->n_robin = 0;
-  cbc->n_dofs = cm->n_vc;
-  for (short int i = 0; i < cm->n_vc; i++) {
-    cbc->dof_flag[i] = 0;
-    cbc->dir_values[i] = cbc->neu_values[i] = 0;
-    cbc->rob_values[2*i] = cbc->rob_values[2*i+1] = 0.;
-  }
-  cbc->n_bc_faces = 1;
-  cbc->bf_ids[0] = 2; //f_id = 2
-  cbc->face_flag[0] = CS_CDO_BC_DIRICHLET;
+  _main_cdovb_schemes(tetra, 1, cm, fm);
 
-  cs_face_mesh_build_from_cell_mesh(cm, 2, fm); //f_id = 2
-
-  for (short int v = 0; v < fm->n_vf; v++) {
-    cbc->dir_values[fm->v_ids[v]] = 1.0;
-    cbc->dof_flag[fm->v_ids[v]] |= CS_CDO_BC_DIRICHLET;
-  }
-
-  _test_cdovb_schemes(tetra, cm, cbc, fm);
-
-  _test_basis_functions(tetra, 0, cm);
-  _test_basis_functions(tetra, 1, cm);
-  _test_basis_functions(tetra, 2, cm);
-
-  _test_hho_schemes(hho, 0, cm, cbc, fm);
-  _test_hho_schemes(hho, 1, cm, cbc, fm);
-  _test_hho_schemes(hho, 2, cm, cbc, fm);
+  _main_hho_schemes(hho, tetra, CS_SCHEME_FLAG_POLY0, cm, fm);
+  _main_hho_schemes(hho, tetra, CS_SCHEME_FLAG_POLY1, cm, fm);
+  _main_hho_schemes(hho, tetra, CS_SCHEME_FLAG_POLY2, cm, fm);
 
   /* Free memory */
   cs_cell_mesh_free(&cm);
-  cs_cell_bc_free(&cbc);
   cs_face_mesh_free(&fm);
+
   BFT_FREE(connect);
   BFT_FREE(time_step);
 

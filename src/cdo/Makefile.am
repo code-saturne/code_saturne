@@ -65,6 +65,7 @@ cs_cdovcb_scaleq.h \
 cs_domain.h \
 cs_domain_post.h \
 cs_equation.h \
+cs_equation_bc.h \
 cs_equation_common.h \
 cs_equation_param.h \
 cs_evaluate.h \
@@ -108,6 +109,7 @@ cs_cdovcb_scaleq.c \
 cs_domain.c \
 cs_domain_post.c \
 cs_equation.c \
+cs_equation_bc.c \
 cs_equation_common.c \
 cs_equation_param.c \
 cs_evaluate.c \

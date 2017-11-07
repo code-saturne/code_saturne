@@ -129,10 +129,144 @@ static cs_hho_builder_t  **cs_hho_builders = NULL;
 static const cs_cdo_quantities_t  *cs_shared_quant;
 static const cs_cdo_connect_t  *cs_shared_connect;
 static const cs_time_step_t  *cs_shared_time_step;
+static const cs_matrix_assembler_t  *cs_shared_ma0;
+static const cs_matrix_structure_t  *cs_shared_ms0;
+static const cs_matrix_assembler_t  *cs_shared_ma1;
+static const cs_matrix_structure_t  *cs_shared_ms1;
+static const cs_matrix_assembler_t  *cs_shared_ma2;
+static const cs_matrix_structure_t  *cs_shared_ms2;
 
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Initialize the local builder structure used for building the system
+ *          cellwise
+ *
+ * \param[in]  space_scheme   discretization scheme
+ * \param[in]  connect        pointer to a cs_cdo_connect_t structure
+ *
+ * \return a pointer to a new allocated cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_cell_builder_t *
+_cell_builder_create(cs_space_scheme_t         space_scheme,
+                     const cs_cdo_connect_t   *connect)
+{
+  int  size;
+
+  const int  n_fc = connect->n_max_fbyc;
+
+  cs_cell_builder_t *cb = cs_cell_builder_create();
+
+  switch (space_scheme) {
+
+  case CS_SPACE_SCHEME_HHO_P0:  /* TODO */
+    {
+      BFT_MALLOC(cb->ids, n_fc, short int);
+      memset(cb->ids, 0, n_fc*sizeof(short int));
+
+      size = CS_MAX(32, n_fc*(n_fc+1));
+      BFT_MALLOC(cb->values, size, double);
+      memset(cb->values, 0, size*sizeof(cs_real_t));
+
+      size = CS_MAX(2*n_fc, 15);
+      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+
+      /* Local square dense matrices used during the construction of
+         operators */
+      cb->hdg = cs_sdm_square_create(n_fc);
+      cb->loc = cs_sdm_square_create(n_fc + 1);
+      cb->aux = cs_sdm_square_create(n_fc + 1);
+    }
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P1:
+    {
+      /* Store the block size description */
+      size = n_fc + 1;
+      BFT_MALLOC(cb->ids, size, short int);
+      memset(cb->ids, 0, size*sizeof(short int));
+
+      /* Store the face, cell and gradient basis function evaluations and
+         the Gauss point weights
+         --->  42 = 3 + 4 + 3*10 + 5
+         or the factorization of the stiffness matrix used for computing
+         the gradient reconstruction operator
+         --->  n = 9 (10 - 1) --> facto = n*(n+1)/2 = 45
+                              --> tmp buffer for facto = n = 9
+                              --> 45 + 9 = 54
+      */
+      size = 54;
+      BFT_MALLOC(cb->values, size, double);
+      memset(cb->values, 0, size*sizeof(cs_real_t));
+
+      /* Store Gauss points and tensor.n_f products */
+      size = CS_MAX(15, 5 + n_fc);
+      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+
+      /* Local dense matrices used during the construction of operators */
+      const short int g_size = 9;                   /* basis (P_(k+1)) - 1 */
+      for (int i = 0; i < n_fc; i++) cb->ids[i] = 3;
+      cb->ids[n_fc] = 4;
+
+      short int  _sizes[3] = {1, 3, 6}; /* c0, cs-1, cs_kp1 - cs */
+      cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
+      cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
+      cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
+    }
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P2:
+    {
+      /* Store the block size description */
+      size = n_fc + 1;
+      BFT_MALLOC(cb->ids, size, short int);
+      memset(cb->ids, 0, size*sizeof(short int));
+
+      /* Store the face, cell and gradient basis function evaluations and
+         the Gauss point weights */
+      /* Store the face, cell and gradient basis function evaluations and
+         the Gauss point weights
+         --->  91 = 6 (f) + 10 (c) + 3*20 (g) + 15 (gauss)
+         or the factorization of the stiffness matrix used for computing
+         the gradient reconstruction operator
+         --->  n = 19 (20 - 1) --> facto = n*(n+1)/2 = 190
+                               --> tmp buffer for facto = n = 19
+                              --> 190 + 19 = 209
+      */
+      size = 209;
+      BFT_MALLOC(cb->values, size, double);
+      memset(cb->values, 0, size*sizeof(cs_real_t));
+
+      size = 15 + n_fc;  /* Store Gauss points and tensor.n_f products */
+      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+
+      /* Local dense matrices used during the construction of operators */
+      const short int g_size = 19; /* basis (P_(k+1)) - 1 */
+      for (int i = 0; i < n_fc; i++) cb->ids[i] = 6;
+      cb->ids[n_fc] = 10;
+
+      short int  _sizes[3] = {1, 9, 10}; /* c0, cs-1, cs_kp1 - cs */
+      cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
+      cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
+      cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _("Invalid space scheme."));
+
+  } // End of switch on space scheme
+
+  return cb;
+}
 
 /*============================================================================
  * Public function prototypes
@@ -140,40 +274,45 @@ static const cs_time_step_t  *cs_shared_time_step;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers from the main domain members
+ * \brief  Allocate work buffer and general structures related to HHO schemes
+ *         Set shared pointers
  *
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a time step structure
- */
+ * \param[in]  scheme_flag  flag to identify which kind of numerical scheme is
+ *                          requested to solve the computational domain
+ * \param[in]  quant        additional mesh quantities struct.
+ * \param[in]  connect      pointer to a cs_cdo_connect_t struct.
+ * \param[in]  time_step    pointer to a time step structure
+ * \param[in]  ma0          pointer to a cs_matrix_assembler_t structure (P0)
+ * \param[in]  ma1          pointer to a cs_matrix_assembler_t structure (P1)
+ * \param[in]  ma2          pointer to a cs_matrix_assembler_t structure (P2)
+ * \param[in]  ms0          pointer to a cs_matrix_structure_t structure (P0)
+ * \param[in]  ms1          pointer to a cs_matrix_structure_t structure (P1)
+ * \param[in]  ms2          pointer to a cs_matrix_structure_t structure (P2)
+*/
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                  const cs_cdo_connect_t       *connect,
-                                  const cs_time_step_t         *time_step)
+cs_hho_scaleq_initialize(cs_flag_t                      scheme_flag,
+                         const cs_cdo_quantities_t     *quant,
+                         const cs_cdo_connect_t        *connect,
+                         const cs_time_step_t          *time_step,
+                         const cs_matrix_assembler_t   *ma0,
+                         const cs_matrix_assembler_t   *ma1,
+                         const cs_matrix_assembler_t   *ma2,
+                         const cs_matrix_structure_t   *ms0,
+                         const cs_matrix_structure_t   *ms1,
+                         const cs_matrix_structure_t   *ms2)
 {
   /* Assign static const pointers */
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate work buffer and general structures related to HHO schemes
- *
- * \param[in]  scheme_flag   flag to identify which kind of numerical scheme is
- *                           requested to solve the computational domain
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hho_scaleq_initialize(cs_flag_t   scheme_flag)
-{
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-
-  assert(connect != NULL);
+  cs_shared_ma0 = ma0;
+  cs_shared_ms0 = ms0;
+  cs_shared_ma1 = ma1;
+  cs_shared_ms1 = ms1;
+  cs_shared_ma2 = ma2;
+  cs_shared_ms2 = ms2;
 
   const int n_fc = connect->n_max_fbyc;
 
@@ -181,22 +320,31 @@ cs_hho_scaleq_initialize(cs_flag_t   scheme_flag)
   cs_space_scheme_t  space_scheme;
 
   if (scheme_flag & CS_SCHEME_FLAG_POLY2) {
+
     space_scheme = CS_SPACE_SCHEME_HHO_P2;
     fbs = CS_N_FACE_DOFS_2ND; // DoF by face
     cbs = CS_N_CELL_DOFS_2ND; // DoF for the cell
     order = 2;
+    assert(ma2 != NULL && ms2 != NULL);
+
   }
   else if (scheme_flag & CS_SCHEME_FLAG_POLY1) {
+
     space_scheme = CS_SPACE_SCHEME_HHO_P1;
     fbs = CS_N_FACE_DOFS_1ST; // DoF by face
     cbs = CS_N_CELL_DOFS_1ST;  // DoF for the cell
     order = 1;
+    assert(ma1 != NULL && ms1 != NULL);
+
   }
   else {
+
     space_scheme = CS_SPACE_SCHEME_HHO_P0;
     fbs = CS_N_FACE_DOFS_0TH; // DoF by face
     cbs = CS_N_CELL_DOFS_0TH; // DoF for the cell
     order = 0;
+    assert(ma0 != NULL && ms0 != NULL);
+
   }
 
   const int n_dofs = n_fc * fbs + cbs;
@@ -223,27 +371,58 @@ cs_hho_scaleq_initialize(cs_flag_t   scheme_flag)
     int t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
 
-    cs_cell_builder_t  *cb = cs_cell_builder_create(space_scheme, connect);
+    cs_cell_builder_t  *cb = _cell_builder_create(space_scheme, connect);
     cs_hho_cell_bld[t_id] = cb;
     cs_hho_builders[t_id] = cs_hho_builder_create(order, n_fc);
 
     for (int i = 0; i < n_fc; i++) cb->ids[i] = fbs;
     cb->ids[n_fc] = cbs;
 
-    cs_hho_cell_sys[t_id] = cs_cell_sys_create(n_dofs, n_fc + 1, cb->ids);
+    cs_hho_cell_sys[t_id] = cs_cell_sys_create(n_dofs,
+                                               fbs*n_fc,
+                                               n_fc + 1, cb->ids);
   }
 #else
   assert(cs_glob_n_threads == 1);
 
-    cs_cell_builder_t  *cb = cs_cell_builder_create(space_scheme, connect);
+    cs_cell_builder_t  *cb = _cell_builder_create(space_scheme, connect);
     cs_hho_cell_bld[0] = cb;
     cs_hho_builders[0] = cs_hho_builder_create(order, n_fc);
 
     for (int i = 0; i < n_fc; i++) cb->ids[i] = fbs;
     cb->ids[n_fc] = cbs;
 
-    cs_hho_cell_sys[0] = cs_cell_sys_create(n_dofs, n_fc + 1, cb->ids);
+    cs_hho_cell_sys[0] = cs_cell_sys_create(n_dofs,
+                                               fbs*n_fc,
+                                               n_fc + 1, cb->ids);
 #endif /* openMP */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve work buffers used for building a CDO system cellwise
+ *
+ * \param[out]  csys    pointer to a pointer on a cs_cell_sys_t structure
+ * \param[out]  cb      pointer to a pointer on a cs_cell_builder_t structure
+ * \param[out]  hhob    pointer to a pointer on a cs_hho_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hho_scaleq_get(cs_cell_sys_t       **csys,
+                  cs_cell_builder_t   **cb,
+                  cs_hho_builder_t    **hhob)
+{
+  int t_id = 0;
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+  t_id = omp_get_thread_num();
+  assert(t_id < cs_glob_n_threads);
+#endif /* openMP */
+
+  *csys = cs_hho_cell_sys[t_id];
+  *cb = cs_hho_cell_bld[t_id];
+  *hhob = cs_hho_builders[t_id];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -290,8 +469,8 @@ cs_hho_scaleq_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 void  *
-cs_hho_scaleq_init_data(const cs_equation_param_t   *eqp,
-                        cs_equation_builder_t       *eqb)
+cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
+                           cs_equation_builder_t       *eqb)
 {
   /* Sanity checks */
   assert(eqp != NULL);
@@ -302,9 +481,9 @@ cs_hho_scaleq_init_data(const cs_equation_param_t   *eqp,
   const cs_lnum_t  n_faces = connect->n_faces[0];
   const cs_lnum_t  n_cells = connect->n_cells;
 
-  cs_hho_scaleq_t  *eqd = NULL;
+  cs_hho_scaleq_t  *eqc = NULL;
 
-  BFT_MALLOC(eqd, 1, cs_hho_scaleq_t);
+  BFT_MALLOC(eqc, 1, cs_hho_scaleq_t);
 
   /* Mesh flag to know what to build */
   eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ |
@@ -314,16 +493,16 @@ cs_hho_scaleq_init_data(const cs_equation_param_t   *eqp,
   switch (eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_HHO_P0:
-    eqd->n_dofs_by_cell = CS_N_CELL_DOFS_0TH;
-    eqd->n_dofs_by_face = CS_N_FACE_DOFS_0TH;
+    eqc->n_dofs_by_cell = CS_N_CELL_DOFS_0TH;
+    eqc->n_dofs_by_face = CS_N_FACE_DOFS_0TH;
     break;
   case CS_SPACE_SCHEME_HHO_P1:
-    eqd->n_dofs_by_cell = CS_N_CELL_DOFS_1ST;
-    eqd->n_dofs_by_face = CS_N_FACE_DOFS_1ST;
+    eqc->n_dofs_by_cell = CS_N_CELL_DOFS_1ST;
+    eqc->n_dofs_by_face = CS_N_FACE_DOFS_1ST;
     break;
   case CS_SPACE_SCHEME_HHO_P2:
-    eqd->n_dofs_by_cell = CS_N_CELL_DOFS_2ND;
-    eqd->n_dofs_by_face = CS_N_FACE_DOFS_2ND;
+    eqc->n_dofs_by_cell = CS_N_CELL_DOFS_2ND;
+    eqc->n_dofs_by_face = CS_N_FACE_DOFS_2ND;
     break;
     /* TODO: case CS_SPACE_SCHEME_HHO_PK */
   default:
@@ -332,28 +511,28 @@ cs_hho_scaleq_init_data(const cs_equation_param_t   *eqp,
   }
 
   /* System dimension */
-  eqd->n_faces = n_faces;
-  eqd->n_cells = n_cells;
-  eqd->n_dofs = eqd->n_dofs_by_face * n_faces;
-  eqd->n_max_loc_dofs =
-    eqd->n_dofs_by_face*connect->n_max_fbyc + eqd->n_dofs_by_cell;
+  eqc->n_faces = n_faces;
+  eqc->n_cells = n_cells;
+  eqc->n_dofs = eqc->n_dofs_by_face * n_faces;
+  eqc->n_max_loc_dofs =
+    eqc->n_dofs_by_face*connect->n_max_fbyc + eqc->n_dofs_by_cell;
 
   /* Values at each face (interior and border) i.e. take into account BCs */
-  BFT_MALLOC(eqd->face_values, eqd->n_dofs, cs_real_t);
-# pragma omp parallel for if (eqd->n_dofs > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < eqd->n_dofs; i++) eqd->face_values[i] = 0;
+  BFT_MALLOC(eqc->face_values, eqc->n_dofs, cs_real_t);
+# pragma omp parallel for if (eqc->n_dofs > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < eqc->n_dofs; i++) eqc->face_values[i] = 0;
 
   /* Source term */
   if (cs_equation_param_has_sourceterm(eqp)) {
 
-    BFT_MALLOC(eqd->source_terms, n_cells * eqd->n_dofs_by_cell, cs_real_t);
-#pragma omp parallel for if (n_cells * eqd->n_dofs_by_cell > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_cells * eqd->n_dofs_by_cell; i++)
-      eqd->source_terms[i] = 0;
+    BFT_MALLOC(eqc->source_terms, n_cells * eqc->n_dofs_by_cell, cs_real_t);
+#pragma omp parallel for if (n_cells * eqc->n_dofs_by_cell > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_cells * eqc->n_dofs_by_cell; i++)
+      eqc->source_terms[i] = 0;
 
   } /* There is at least one source term */
 
-  return eqd;
+  return eqc;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -367,19 +546,19 @@ cs_hho_scaleq_init_data(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_hho_scaleq_free_data(void   *data)
+cs_hho_scaleq_free_context(void   *data)
 {
-  cs_hho_scaleq_t  *eqd = (cs_hho_scaleq_t *)data;
+  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t *)data;
 
-  if (eqd == NULL)
-    return eqd;
+  if (eqc == NULL)
+    return eqc;
 
   /* Free temporary buffers */
-  BFT_FREE(eqd->source_terms);
-  BFT_FREE(eqd->face_values);
+  BFT_FREE(eqc->source_terms);
+  BFT_FREE(eqc->face_values);
 
   /* Last free */
-  BFT_FREE(eqd);
+  BFT_FREE(eqc);
 
   return NULL;
 }
@@ -399,7 +578,7 @@ cs_hho_scaleq_compute_source(const cs_equation_param_t  *eqp,
                              cs_equation_builder_t      *eqb,
                              void                       *data)
 {
-  cs_hho_scaleq_t  *eqd = (cs_hho_scaleq_t *)data;
+  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t *)data;
 
   if (eqp->n_source_terms == 0)
     return;
@@ -440,17 +619,17 @@ cs_hho_scaleq_initialize_system(const cs_equation_param_t  *eqp,
   switch (eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_HHO_P0:
-    ms = cs_equation_get_matrix_structure(CS_SPACE_SCHEME_HHO_P0);
+    ms = cs_shared_ms0;
     n_elts = quant->n_faces;
     break;
 
   case CS_SPACE_SCHEME_HHO_P1:
-    ms = cs_equation_get_matrix_structure(CS_SPACE_SCHEME_HHO_P1);
+    ms = cs_shared_ms1;
     n_elts = CS_N_FACE_DOFS_1ST * quant->n_faces;
     break;
 
   case CS_SPACE_SCHEME_HHO_P2:
-    ms = cs_equation_get_matrix_structure(CS_SPACE_SCHEME_HHO_P2);
+    ms = cs_shared_ms2;
     n_elts = CS_N_FACE_DOFS_2ND * quant->n_faces;
     break;
 
@@ -511,7 +690,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
     bft_error(__FILE__, __LINE__, 0,
               _(" Unsteady terms are not handled yet.\n"));
 
-  cs_hho_scaleq_t  *eqd = (cs_hho_scaleq_t *)data;
+  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t *)data;
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -523,7 +702,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(dt_cur, quant, connect, eqp, eqb, eqd, rhs, matrix, mav,        \
+  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,        \
          field_val, cs_hho_cell_sys, cs_hho_cell_bld, cs_hho_builders)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -573,7 +752,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       if (c_id % CS_HHO_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
 #endif
 
-      const short int  face_offset = cm->n_fc + eqd->n_dofs_by_face;
+      const short int  face_offset = cm->n_fc + eqc->n_dofs_by_face;
 
       /* DIFFUSION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
       /* ============================================== */
@@ -615,12 +794,12 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
                                         cb,    // mass matrix is cb->hdg
                                         csys); // Fill csys->source
 
-        if (cs_equation_param_has_time(eqp)) {
+        if (cs_equation_param_has_time(eqp) == false) {
 
           /* Same strategy as if one applies a implicit scheme */
           cs_real_t  *_rhs = csys->rhs + face_offset;
           const cs_real_t  *_st = csys->source + face_offset;
-          for (int i = 0; i < eqd->n_dofs_by_cell; i++)
+          for (int i = 0; i < eqc->n_dofs_by_cell; i++)
             _rhs[i] += _st[i];
 
         }
@@ -628,9 +807,9 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
         /* Reset the value of the source term for the cell DoF
            Source term is only hold by the cell DoF in face-based schemes */
         {
-          cs_real_t  *st = eqd->source_terms + c_id * eqd->n_dofs_by_cell;
+          cs_real_t  *st = eqc->source_terms + c_id * eqc->n_dofs_by_cell;
           const cs_real_t  *_st = csys->source + face_offset;
-          for (int i = 0; i < eqd->n_dofs_by_cell; i++)
+          for (int i = 0; i < eqc->n_dofs_by_cell; i++)
             st[i] = _st[i];
         }
 
@@ -661,12 +840,12 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_done(mav); // optional
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 2
-  cs_dump_array_to_listing("FINAL RHS_FACE", eqd->n_dofs, rhs,
-                           eqd->n_dofs_by_face);
-  if (eqd->source_terms != NULL)
+  cs_dump_array_to_listing("FINAL RHS_FACE", eqc->n_dofs, rhs,
+                           eqc->n_dofs_by_face);
+  if (eqc->source_terms != NULL)
     cs_dump_array_to_listing("FINAL RHS_CELL",
                              quant->n_cells,
-                             eqd->source_terms, eqd->n_dofs_by_cell);
+                             eqc->source_terms, eqc->n_dofs_by_cell);
 #endif
 
   cs_timer_t  t1 = cs_timer_time();
@@ -695,12 +874,12 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
                            void                       *data,
                            cs_real_t                  *field_val)
 {
-  cs_hho_scaleq_t  *eqd = (cs_hho_scaleq_t  *)data;
+  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t  *)data;
   cs_timer_t  t0 = cs_timer_time();
 
   /* Set the computed solution in field array */
-# pragma omp parallel for if (eqd->n_dofs > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < eqd->n_dofs; i++)
+# pragma omp parallel for if (eqc->n_dofs > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
     field_val[i] = solu[i];
 
   cs_timer_t  t1 = cs_timer_time();
@@ -721,12 +900,12 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
 double *
 cs_hho_scaleq_get_face_values(const void          *data)
 {
-  const cs_hho_scaleq_t  *eqd = (const cs_hho_scaleq_t  *)data;
+  const cs_hho_scaleq_t  *eqc = (const cs_hho_scaleq_t  *)data;
 
-  if (eqd == NULL)
+  if (eqc == NULL)
     return NULL;
   else
-    return eqd->face_values;
+    return eqc->face_values;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -748,12 +927,12 @@ cs_hho_scaleq_extra_op(const char                 *eqname,
                        cs_equation_builder_t      *eqb,
                        void                       *data)
 {
-  cs_hho_scaleq_t  *eqd = (cs_hho_scaleq_t  *)data;
+  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t  *)data;
 
   // TODO
   CS_UNUSED(eqp);
   CS_UNUSED(eqb);
-  CS_UNUSED(eqd);
+  CS_UNUSED(eqc);
   CS_UNUSED(field);
   CS_UNUSED(eqname);
 }

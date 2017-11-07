@@ -2,7 +2,8 @@
 #define __CS_CDOVB_SCALEQ_H__
 
 /*============================================================================
- * Build an algebraic CDO vertex-based system for scalar conv./diff. eq.
+ * Build an algebraic CDO vertex-based system for unsteady convection diffusion
+ * reaction of scalar-valued equations with source terms
  *============================================================================*/
 
 /*
@@ -31,6 +32,7 @@
 
 #include "cs_base.h"
 #include "cs_cdo_connect.h"
+#include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
 #include "cs_equation_common.h"
 #include "cs_equation_param.h"
@@ -61,28 +63,50 @@ typedef struct _cs_cdovb_scaleq_t cs_cdovb_scaleq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers from the main domain members
+ * \brief    Check if the generic structures for building a CDO-Vb scheme are
+ *           allocated
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_cdovb_scaleq_is_initialized(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief    Allocate work buffer and general structures related to CDO
+ *           vertex-based schemes
+ *           Set shared pointers.
  *
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
+ * \param[in]  ma          pointer to a cs_matrix_assembler_t structure
+ * \param[in]  ms          pointer to a cs_matrix_structure_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                    const cs_cdo_connect_t       *connect,
-                                    const cs_time_step_t         *time_step);
+cs_cdovb_scaleq_initialize(const cs_cdo_quantities_t    *quant,
+                           const cs_cdo_connect_t       *connect,
+                           const cs_time_step_t         *time_step,
+                           const cs_matrix_assembler_t  *ma,
+                           const cs_matrix_structure_t  *ms);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate work buffer and general structures related to CDO
- *         vertex-based schemes
+ * \brief  Retrieve work buffers used for building a CDO system cellwise
+ *
+ * \param[out]  p_csys   pointer to a pointer on a cs_cell_sys_t structure
+ * \param[out]  p_cbc    pointer to a pointer on a cs_cell_cbc_t structure
+ * \param[out]  p_cb     pointer to a pointer on a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_initialize(void);
+cs_cdovb_scaleq_get(cs_cell_sys_t       **csys,
+                    cs_cell_builder_t   **cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -107,8 +131,8 @@ cs_cdovb_scaleq_finalize(void);
 /*----------------------------------------------------------------------------*/
 
 void  *
-cs_cdovb_scaleq_init_data(const cs_equation_param_t   *eqp,
-                          cs_equation_builder_t       *eqb);
+cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
+                             cs_equation_builder_t       *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -121,7 +145,7 @@ cs_cdovb_scaleq_init_data(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdovb_scaleq_free_data(void   *builder);
+cs_cdovb_scaleq_free_context(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -865,11 +865,16 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Allocate and define a new cs_cdo_connect_t structure
- *        Range sets related to vertices and faces are computed inside and
- *        set as members of the cs_mesh_t structure
+ *        Range sets and interface sets are allocated and defined according to
+ *        the value of the different scheme flags.
+ *        cs_range_set_t structure related to vertices is shared the cs_mesh_t
+ *        structure (the global one)
  *
- * \param[in, out]  mesh          pointer to a cs_mesh_t structure
- * \param[in]       scheme_flag   flag storing requested space schemes
+ * \param[in, out]  mesh             pointer to a cs_mesh_t structure
+ * \param[in]       vb_scheme_flag   metadata for Vb schemes
+ * \param[in]       vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]       fb_scheme_flag   metadata for Fb schemes
+ * \param[in]       hho_scheme_flag  metadata for HHO schemes
  *
  * \return  a pointer to a cs_cdo_connect_t structure
  */
@@ -877,7 +882,10 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
 
 cs_cdo_connect_t *
 cs_cdo_connect_init(cs_mesh_t      *mesh,
-                    cs_flag_t       scheme_flag)
+                    cs_flag_t       vb_scheme_flag,
+                    cs_flag_t       vcb_scheme_flag,
+                    cs_flag_t       fb_scheme_flag,
+                    cs_flag_t       hho_scheme_flag)
 {
   cs_timer_t t0 = cs_timer_time();
 
@@ -941,18 +949,13 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   _compute_max_ent(mesh, connect);
 
   /* Members to handle assembly process and parallel sync. */
-  connect->v_rs = NULL;
+  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++) {
+    connect->range_sets[i] = NULL;
+    connect->interfaces[i] = NULL;
+  }
 
-  connect->f_rs = NULL;
-  connect->f_ifs = NULL;
-
-  connect->hho1_rs = NULL;
-  connect->hho2_rs = NULL;
-  connect->hho1_ifs = NULL;
-  connect->hho2_ifs = NULL;
-
-  if ((scheme_flag & CS_SCHEME_FLAG_CDOVB) ||
-      (scheme_flag & CS_SCHEME_FLAG_CDOVCB)) {
+  if (vb_scheme_flag & CS_SCHEME_FLAG_SCALAR ||
+      vcb_scheme_flag & CS_SCHEME_FLAG_SCALAR) {
 
     /* Vertex range set */
     cs_range_set_t  *v_rs = cs_range_set_create(mesh->vtx_interfaces,
@@ -961,22 +964,35 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
                                                 false,   // TODO: Ask Yvan
                                                 0);      // g_id_base
     mesh->vtx_range_set = v_rs;
-    connect->v_rs = v_rs;
+
+    /* Shared structures */
+    connect->range_sets[CS_CDO_CONNECT_VTX_SCA] = v_rs;
+    connect->interfaces[CS_CDO_CONNECT_VTX_SCA] = mesh->vtx_interfaces;
 
   }
 
   /* CDO face-based schemes or HHO schemes with k=0 */
-  if (scheme_flag & CS_SCHEME_FLAG_CDOFB ||
-      cs_test_flag(scheme_flag, CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY0))
-    _assign_ifs_rs(mesh, n_faces, 1, &(connect->f_ifs), &(connect->f_rs));
+  if ((fb_scheme_flag & CS_SCHEME_FLAG_SCALAR) ||
+      cs_test_flag(hho_scheme_flag,
+                   CS_SCHEME_FLAG_SCALAR | CS_SCHEME_FLAG_POLY0))
+    _assign_ifs_rs(mesh, n_faces, 1,
+                   connect->interfaces + CS_CDO_CONNECT_FACE_SP0,
+                   connect->range_sets + CS_CDO_CONNECT_FACE_SP0);
 
-  /* HHO schemes with k=1 */
-  if (cs_test_flag(scheme_flag, CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY1))
-    _assign_ifs_rs(mesh, n_faces, 3, &(connect->hho1_ifs), &(connect->hho1_rs));
+  /* HHO schemes with k=1 or CDO-Fb schemes with vector-valued unknowns */
+  if ((fb_scheme_flag & CS_SCHEME_FLAG_VECTOR) ||
+      cs_test_flag(hho_scheme_flag,
+                   CS_SCHEME_FLAG_SCALAR | CS_SCHEME_FLAG_POLY1))
+    _assign_ifs_rs(mesh, n_faces, 3,
+                   connect->interfaces + CS_CDO_CONNECT_FACE_SP1,
+                   connect->range_sets + CS_CDO_CONNECT_FACE_SP1);
 
   /* HHO schemes with k=2 */
-  if (cs_test_flag(scheme_flag, CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY2))
-    _assign_ifs_rs(mesh, n_faces, 6, &(connect->hho2_ifs), &(connect->hho2_rs));
+  if (cs_test_flag(hho_scheme_flag,
+                   CS_SCHEME_FLAG_SCALAR | CS_SCHEME_FLAG_POLY2))
+    _assign_ifs_rs(mesh, n_faces, 6,
+                   connect->interfaces + CS_CDO_CONNECT_FACE_SP2,
+                   connect->range_sets + CS_CDO_CONNECT_FACE_SP2);
 
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();
@@ -1015,13 +1031,13 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   BFT_FREE(connect->cell_flag);
 
   /* Structures for parallelism */
-  cs_range_set_destroy(&(connect->f_rs));
-  cs_range_set_destroy(&(connect->hho1_rs));
-  cs_range_set_destroy(&(connect->hho2_rs));
+  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP0);
+  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP1);
+  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP2);
 
-  cs_interface_set_destroy(&(connect->f_ifs));
-  cs_interface_set_destroy(&(connect->hho1_ifs));
-  cs_interface_set_destroy(&(connect->hho2_ifs));
+  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP0);
+  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP1);
+  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP2);
 
   BFT_FREE(connect);
 

@@ -204,6 +204,76 @@ _check_vector_hodge(const cs_real_3_t       *vec,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Initialize the local builder structure used for building Hodge op.
+ *          cellwise
+ *
+ * \param[in]  space_scheme   discretization scheme
+ * \param[in]  connect        pointer to a cs_cdo_connect_t structure
+ *
+ * \return a pointer to a new allocated cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_cell_builder_t *
+_cell_builder_create(cs_space_scheme_t         space_scheme,
+                     const cs_cdo_connect_t   *connect)
+{
+  int  size;
+
+  const int  n_vc = connect->n_max_vbyc;
+  const int  n_ec = connect->n_max_ebyc;
+  const int  n_fc = connect->n_max_fbyc;
+
+  cs_cell_builder_t *cb = cs_cell_builder_create();
+
+  switch (space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    size = CS_MAX(4*n_ec + 3*n_vc, n_ec*(n_ec+1));
+    BFT_MALLOC(cb->values, size, double);
+    memset(cb->values, 0, size*sizeof(cs_real_t));
+
+    size = 2*n_ec;
+    BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+    memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+
+    cb->hdg = cs_sdm_square_create(n_ec);
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    size = 2*n_vc + 3*n_ec + n_fc;
+    BFT_MALLOC(cb->values, size, double);
+    memset(cb->values, 0, size*sizeof(cs_real_t));
+
+    size = 2*n_ec + n_vc;
+    BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+    memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+
+    cb->hdg = cs_sdm_square_create(n_vc + 1);
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    size = n_fc*(n_fc+1);
+    BFT_MALLOC(cb->values, size, double);
+    memset(cb->values, 0, size*sizeof(cs_real_t));
+
+    size = 2*n_fc;
+    BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+    memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+
+    cb->hdg = cs_sdm_square_create(n_fc);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _("Invalid space scheme."));
+
+  } // End of switch on space scheme
+
+  return cb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute quantities used for defining the entries of the discrete
  *          Hodge for COST algo. when the property is isotropic
  *          Initialize the local discrete Hodge op. with the consistency part
@@ -1807,7 +1877,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
     case CS_PARAM_HODGE_TYPE_VPCD:
 
       msh_flag |= CS_CDO_LOCAL_PVQ;
-      cb = cs_cell_builder_create(CS_SPACE_SCHEME_CDOVB, connect);
+      cb = _cell_builder_create(CS_SPACE_SCHEME_CDOVB, connect);
       BFT_MALLOC(_in, connect->n_max_vbyc, double);
 
 #     pragma omp for
@@ -1833,7 +1903,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
     case CS_PARAM_HODGE_TYPE_EPFD:
 
       msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
-      cb = cs_cell_builder_create(CS_SPACE_SCHEME_CDOVB, connect);
+      cb = _cell_builder_create(CS_SPACE_SCHEME_CDOVB, connect);
       BFT_MALLOC(_in, connect->n_max_ebyc, double);
 
 #     pragma omp for
@@ -1856,7 +1926,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
     case CS_PARAM_HODGE_TYPE_EDFP:
 
       msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ;
-      cb = cs_cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
+      cb = _cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
       BFT_MALLOC(_in, connect->n_max_fbyc, double);
 
 #     pragma omp for
@@ -1878,7 +1948,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
     case CS_PARAM_HODGE_TYPE_FPED:
 
       msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ;
-      cb = cs_cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
+      cb = _cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
       BFT_MALLOC(_in, connect->n_max_fbyc, double);
 
 #     pragma omp for
@@ -1901,7 +1971,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
       msh_flag |= CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ |
          CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ;
-      cb = cs_cell_builder_create(CS_SPACE_SCHEME_CDOVCB, connect);
+      cb = _cell_builder_create(CS_SPACE_SCHEME_CDOVCB, connect);
       BFT_MALLOC(_in, connect->n_max_vbyc + 1, double);
 
 #     pragma omp for

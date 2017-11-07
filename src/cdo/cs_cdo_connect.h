@@ -47,6 +47,16 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Main categories to consider for high-level structures
+   Remark: HHO-P1 and CDO-Fb vector-valued shares the same structures
+*/
+#define CS_CDO_CONNECT_VTX_SCA   0 /* Vb or VCb scalar-valued eq. */
+#define CS_CDO_CONNECT_FACE_SP0  1 /* Fb or HHO-P0 scalar-valued eq. */
+#define CS_CDO_CONNECT_FACE_SP1  2 /* HHO-P1 scalar-valued */
+#define CS_CDO_CONNECT_FACE_VP0  2 /* Fb vector-valued eq. */
+#define CS_CDO_CONNECT_FACE_SP2  3 /* HHO-P2 scalar-valued eq. */
+#define CS_CDO_CONNECT_N_CASES   4
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -67,11 +77,11 @@ typedef struct {
   cs_adjacency_t    *f2e;         // face --> edges connectivity
 
   /* Cell-related members */
-  fvm_element_t     *cell_type; // type of cell
-  cs_flag_t         *cell_flag; // Flag (Border)
-  cs_adjacency_t    *c2f;       // cell --> faces connectivity
-  cs_adjacency_t    *c2e;       // cell --> edges connectivity
-  cs_adjacency_t    *c2v;       // cell --> vertices connectivity
+  fvm_element_t     *cell_type;   // type of cell
+  cs_flag_t         *cell_flag;   // Flag (Border)
+  cs_adjacency_t    *c2f;         // cell --> faces connectivity
+  cs_adjacency_t    *c2e;         // cell --> edges connectivity
+  cs_adjacency_t    *c2v;         // cell --> vertices connectivity
 
   /* Delta of ids between the min./max. values of entities related to a cell
      Useful to store compactly the link between mesh ids and cell mesh ids
@@ -87,16 +97,9 @@ typedef struct {
   int  n_max_v2fc;   // max. number of faces connected to a vertex in a cell
   int  n_max_v2ec;   // max. number of edges connected to a vertex in a cell
 
-  /* Structures to handle parallelism */
-  const cs_range_set_t   *v_rs;     // range set related to vertices
-
-  cs_range_set_t         *f_rs;     // range set related to faces
-  cs_interface_set_t     *f_ifs;    // interface set for faces
-
-  cs_range_set_t         *hho1_rs;  // range for HHO k=1 schemes
-  cs_interface_set_t     *hho1_ifs; // interface set HHO k=1 schemes
-  cs_range_set_t         *hho2_rs;  // range for HHO k=2 schemes
-  cs_interface_set_t     *hho2_ifs; // interface set HHO k=2 schemes
+  /* Structures to handle parallelism/assembler */
+  cs_range_set_t      *range_sets[CS_CDO_CONNECT_N_CASES];
+  cs_interface_set_t   *interfaces[CS_CDO_CONNECT_N_CASES];
 
 } cs_cdo_connect_t;
 
@@ -111,11 +114,16 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Allocate and define a new cs_cdo_connect_t structure
- *        Range sets related to vertices and faces are computed inside and
- *        set as members of the cs_mesh_t structure
+ *        Range sets and interface sets are allocated and defined according to
+ *        the value of the different scheme flags.
+ *        cs_range_set_t structure related to vertices is shared the cs_mesh_t
+ *        structure (the global one)
  *
- * \param[in, out]  mesh          pointer to a cs_mesh_t structure
- * \param[in]       scheme_flag   flag storing requested space schemes
+ * \param[in, out]  mesh             pointer to a cs_mesh_t structure
+ * \param[in]       vb_scheme_flag   metadata for Vb schemes
+ * \param[in]       vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]       fb_scheme_flag   metadata for Fb schemes
+ * \param[in]       hho_scheme_flag  metadata for HHO schemes
  *
  * \return  a pointer to a cs_cdo_connect_t structure
  */
@@ -123,7 +131,10 @@ typedef struct {
 
 cs_cdo_connect_t *
 cs_cdo_connect_init(cs_mesh_t      *mesh,
-                    cs_flag_t       scheme_flag);
+                    cs_flag_t       vb_scheme_flag,
+                    cs_flag_t       vcb_scheme_flag,
+                    cs_flag_t       fb_scheme_flag,
+                    cs_flag_t       hho_scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

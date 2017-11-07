@@ -162,7 +162,7 @@ cs_cdo_initialize_setup(int  activation_mode)
   cs_user_cdo_numeric_settings();
 
   /* Set the scheme flag for the computational domain */
-  cs_domain_set_scheme_flag(cs_glob_domain);
+  cs_domain_set_scheme_flags(cs_glob_domain);
 
   /* Monitoring */
   cs_timer_stats_stop(cs_cdo_ts_id);

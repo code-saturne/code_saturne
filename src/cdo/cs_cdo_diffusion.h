@@ -97,7 +97,6 @@ typedef void
  *          technique (symmetrized or not) or penalization
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -108,7 +107,6 @@ typedef void
 
 typedef void
 (cs_cdo_diffusion_enforce_dir_t)(const cs_param_hodge_t          h_info,
-                                 const cs_cell_bc_t             *cbc,
                                  const cs_cell_mesh_t           *cm,
                                  cs_cdo_diffusion_flux_trace_t  *flux_op,
                                  cs_face_mesh_t                 *fm,
@@ -195,7 +193,6 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
  *          technique (symmetrized or not) or penalization
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -206,7 +203,6 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
 
 void
 cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
-                                const cs_cell_bc_t              *cbc,
                                 const cs_cell_mesh_t            *cm,
                                 cs_cdo_diffusion_flux_trace_t   *flux_op,
                                 cs_face_mesh_t                  *fm,
@@ -219,7 +215,6 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
  *          technique plus a symmetric treatment
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -230,7 +225,6 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
 
 void
 cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
-                                  const cs_cell_bc_t              *cbc,
                                   const cs_cell_mesh_t            *cm,
                                   cs_cdo_diffusion_flux_trace_t   *flux_op,
                                   cs_face_mesh_t                  *fm,
@@ -243,7 +237,6 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
  *          technique
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -254,7 +247,6 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
 
 void
 cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
-                                  const cs_cell_bc_t             *cbc,
                                   const cs_cell_mesh_t           *cm,
                                   cs_cdo_diffusion_flux_trace_t  *flux_op,
                                   cs_face_mesh_t                 *fm,

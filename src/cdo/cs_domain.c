@@ -347,7 +347,12 @@ cs_domain_create(void)
   domain->time_options.dtmax = default_time_step;
   domain->time_options.relxst = 0.7; // Not useful in CDO schemes
 
-  domain->scheme_flag = 0;
+  /* Metadata related to each family of schemes */
+  domain->vb_scheme_flag = 0;
+  domain->vcb_scheme_flag = 0;
+  domain->fb_scheme_flag = 0;
+  domain->hho_scheme_flag = 0;
+
   domain->only_steady = true;
   domain->force_advfield_update = false;
 
@@ -421,7 +426,10 @@ cs_domain_free(cs_domain_t   *domain)
   cs_gwf_destroy_all();
 
   /* Free common structures relatated to equations */
-  cs_equation_free_common_structures(domain->scheme_flag);
+  cs_equation_free_common_structures(domain->vb_scheme_flag,
+                                     domain->vcb_scheme_flag,
+                                     domain->fb_scheme_flag,
+                                     domain->hho_scheme_flag);
 
   /* Free CDO structures related to geometric quantities and connectivity */
   domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);
@@ -711,14 +719,14 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the scheme flag for the current computational domain
+ * \brief  Define the scheme flags for the current computational domain
  *
  * \param[in, out]  domain            pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_scheme_flag(cs_domain_t    *domain)
+cs_domain_set_scheme_flags(cs_domain_t    *domain)
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
@@ -730,33 +738,69 @@ cs_domain_set_scheme_flag(cs_domain_t    *domain)
     cs_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
     int  vardim = cs_equation_get_var_dim(eq);
 
-    if (vardim == 1)
-      domain->scheme_flag |= CS_SCHEME_FLAG_SCALAR;
-    else if (vardim == 3)
-      domain->scheme_flag |= CS_SCHEME_FLAG_VECTOR;
-
     switch (scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVB | CS_SCHEME_FLAG_POLY0;
+      domain->vb_scheme_flag |= CS_SCHEME_FLAG_POLY0;
+      if (vardim == 1)
+        domain->vb_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+      else if (vardim == 3)
+        domain->vb_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
+
     case CS_SPACE_SCHEME_CDOVCB:
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVCB | CS_SCHEME_FLAG_POLY0;
+      domain->vcb_scheme_flag |= CS_SCHEME_FLAG_POLY0;
+      if (vardim == 1)
+        domain->vcb_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+      else if (vardim == 3)
+        domain->vcb_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
+
     case CS_SPACE_SCHEME_CDOFB:
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOFB | CS_SCHEME_FLAG_POLY0;
+      domain->fb_scheme_flag |= CS_SCHEME_FLAG_POLY0;
+      if (vardim == 1)
+        domain->fb_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+      else if (vardim == 3)
+        domain->fb_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
+
     case CS_SPACE_SCHEME_HHO_P0:
-      domain->scheme_flag |= CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY0;
       assert(cs_equation_get_space_poly_degree(eq) == 0);
+      domain->hho_scheme_flag |= CS_SCHEME_FLAG_POLY0;
+      if (vardim == 1)
+        domain->hho_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+      else if (vardim == 3)
+        domain->hho_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
+
     case CS_SPACE_SCHEME_HHO_P1:
-      domain->scheme_flag |= CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY1;
+      domain->hho_scheme_flag |= CS_SCHEME_FLAG_POLY1;
       assert(cs_equation_get_space_poly_degree(eq) == 1);
+      if (vardim == 1)
+        domain->hho_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+      else if (vardim == 3)
+        domain->hho_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
+
     case CS_SPACE_SCHEME_HHO_P2:
-      domain->scheme_flag |= CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY2;
+      domain->hho_scheme_flag |= CS_SCHEME_FLAG_POLY2;
       assert(cs_equation_get_space_poly_degree(eq) == 2);
+      if (vardim == 1)
+        domain->hho_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+      else if (vardim == 3)
+        domain->hho_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
 
     default:
@@ -791,7 +835,11 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
 
   /* Build additional connectivity structures
      Update mesh structure with range set structures */
-  domain->connect = cs_cdo_connect_init(mesh, domain->scheme_flag);
+  domain->connect = cs_cdo_connect_init(mesh,
+                                        domain->vb_scheme_flag,
+                                        domain->vcb_scheme_flag,
+                                        domain->fb_scheme_flag,
+                                        domain->hho_scheme_flag);
 
   /* Default = CS_CDO_CC_SATURNE but can be modify by the user */
   cs_cdo_cell_center_algo_t  cc_algo =
@@ -843,7 +891,10 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
   cs_equation_allocate_common_structures(domain->connect,
                                          domain->cdo_quantities,
                                          domain->time_step,
-                                         domain->scheme_flag);
+                                         domain->vb_scheme_flag,
+                                         domain->vcb_scheme_flag,
+                                         domain->fb_scheme_flag,
+                                         domain->hho_scheme_flag);
 
   /* Set the definition of user-defined properties and/or advection
      fields (no more fields are created at this stage) */

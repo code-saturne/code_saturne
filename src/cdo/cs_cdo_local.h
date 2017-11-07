@@ -94,40 +94,35 @@ typedef struct {
 typedef struct {
 
   cs_lnum_t      c_id;     // cell id
+
   int            n_dofs;   // Number of Degrees of Freedom (DoFs) in this cell
   cs_lnum_t     *dof_ids;  // DoF ids
+  cs_flag_t     *dof_flag; // size = number of DoFs
+
   cs_sdm_t      *mat;      // cellwise view of the system matrix
   double        *rhs;      // cellwise view of the right-hand side
   double        *source;   // cellwise view of the source term array
   double        *val_n;    /* values of the unkown at the time t_n (the
                               last computed) */
 
-} cs_cell_sys_t;
-
-/* Structure used to store local information about the boundary conditions */
-typedef struct {
-
+  /* Boundary conditions for the local system */
   short int   n_bc_faces;    // Number of border faces associated to a cell
   short int  *bf_ids;        // List of face ids in the cell numbering
-  cs_flag_t  *face_flag;     // size n_bc_faces
-
-  short int   n_dofs;        // Number of Degrees of Freedom (DoFs) in this cell
-  cs_flag_t  *dof_flag;      // size = number of DoFs
+  cs_flag_t  *bf_flag;       // size n_bc_faces
 
   /* Dirichlet BCs */
-  short int   n_dirichlet;   // Number of DoFs attached to a Dirichlet BC
+  bool        has_dirichlet;
   double     *dir_values;    // Values of the Dirichlet BCs (size = n_dofs)
 
   /* Neumann BCs */
-  short int   n_nhmg_neuman; /* Number of DoFs related to a non-homogeneous
-                                Neumann boundary (BC) */
-  double     *neu_values;    // Values of the Neumnn BCs (size = n_dofs)
+  bool        has_nhmg_neumann; /* Non-homogeneous Neumann BCs */
+  double     *neu_values;       // Values of the Neumann BCs (size = n_dofs)
 
   /* Robin BCs */
-  short int   n_robin;       // Number of DoFs attached to a Robin BC
+  bool        has_robin;
   double     *rob_values;    // Values of the Robin BCs (size = 2*n_dofs)
 
-} cs_cell_bc_t;
+} cs_cell_sys_t;
 
 /* Structure used to get a better memory locality. Map existing structure
    into a more compact one dedicated to a cell.
@@ -260,18 +255,38 @@ cs_cdo_local_finalize(void);
 /*!
  * \brief  Allocate a cs_cell_sys_t structure
  *
- * \param[in]   n_max_ent    max number of entries
- * \param[in]   n_blocks     number of blocks in a row/column
- * \param[in]   block_sizes  size of each block or NULL if n_blocks = 1
+ * \param[in]   n_max_dofbyc    max number of entries
+ * \param[in]   n_max_fbyc      max number of faces in a cell
+ * \param[in]   n_blocks        number of blocks in a row/column
+ * \param[in]   block_sizes     size of each block or NULL if n_blocks = 1
  *
  * \return a pointer to a new allocated cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_sys_t *
-cs_cell_sys_create(int          n_max_ent,
+cs_cell_sys_create(int          n_max_dofbyc,
+                   int          n_max_fbyc,
                    short int    n_blocks,
                    short int   *block_sizes);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reset all members related to BC and some other ones in a
+ *         cs_cell_sys_t structure
+ *
+ * \param[in]      cell_flag  metadata about the cell to treat
+ * \param[in]      n_dofbyc   number of DoFs in a cell
+ * \param[in]      n_fbyc     number of faces in a cell
+ * \param[in, out] csys       pointer to the cs_cell_sys_t structure to reset
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_sys_reset(cs_flag_t        cell_flag,
+                  int              n_dofbyc,
+                  int              n_fbyc,
+                  cs_cell_sys_t   *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -301,45 +316,14 @@ cs_cell_sys_dump(const char              msg[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a cs_cell_bc_t structure
- *
- * \param[in]   n_max_dofbyc    max. number of entries in a cell
- * \param[in]   n_max_fbyc      max. number of faces in a cell
- *
- * \return a pointer to a new allocated cs_cell_bc_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cell_bc_t *
-cs_cell_bc_create(int    n_max_dofbyc,
-                  int    n_max_fbyc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a cs_cell_bc_t structure
- *
- * \param[in, out]  p_cbc   pointer of pointer to a cs_cell_bc_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cell_bc_free(cs_cell_bc_t     **p_cbc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize a cs_cell_builder_t structure according to
- *         to the type of discretization which is requested.
- *
- * \param[in]  scheme    type of discretization
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \brief  Allocate cs_cell_builder_t structure
  *
  * \return a pointer to the new allocated cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_builder_t *
-cs_cell_builder_create(cs_space_scheme_t         scheme,
-                       const cs_cdo_connect_t   *connect);
+cs_cell_builder_create(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -443,6 +427,43 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
                    const cs_cdo_connect_t      *connect,
                    const cs_cdo_quantities_t   *quant,
                    cs_cell_mesh_t              *cm);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Retrieve the list of vertices attached to a face
+ *
+ * \param[in]       f       face id in the cell numbering
+ * \param[in]       cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  n_vf    pointer of pointer to a cellwise view of the mesh
+ * \param[in, out]  v_ids   list of vertex ids in the cell numbering
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cell_mesh_get_f2v(short int                    f,
+                     const cs_cell_mesh_t        *cm,
+                     short int                   *n_vf,
+                     short int                   *v_ids)
+{
+  /* Reset */
+  *n_vf = 0;
+  for (short int v = 0; v < cm->n_vc; v++) v_ids[v] = -1;
+
+  /* Tag vertices belonging to the current face f */
+  for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+    const short int  shift_e = 2*cm->f2e_ids[i];
+    v_ids[cm->e2v_ids[shift_e]] = 1;
+    v_ids[cm->e2v_ids[shift_e+1]] = 1;
+
+  } // Loop on face edges
+
+  for (short int v = 0; v < cm->n_vc; v++) {
+    if (v_ids[v] > 0)
+      v_ids[*n_vf] = v, *n_vf += 1;
+  }
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

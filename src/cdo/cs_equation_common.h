@@ -30,7 +30,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_bc.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_cdo_time.h"
@@ -146,11 +145,13 @@ cs_equation_get_cell_mesh_flag(cs_flag_t                      cell_flag,
  *         numerical settings
  *         Set also shared pointers from the main domain members
  *
- * \param[in]  connect       pointer to a cs_cdo_connect_t structure
- * \param[in]  quant         pointer to additional mesh quantities struct.
- * \param[in]  time_step     pointer to a time step structure
- * \param[in]  scheme_flag   flag to identify which kind of numerical scheme is
- *                           requested to solve the computational domain
+ * \param[in]  connect          pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant            pointer to additional mesh quantities struct.
+ * \param[in]  time_step        pointer to a time step structure
+ * \param[in]  vb_scheme_flag   metadata for Vb schemes
+ * \param[in]  vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]  fb_scheme_flag   metadata for Fb schemes
+ * \param[in]  hho_scheme_flag  metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
@@ -158,7 +159,10 @@ void
 cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
                                        const cs_cdo_quantities_t  *quant,
                                        const cs_time_step_t       *time_step,
-                                       cs_flag_t                   scheme_flag);
+                                       cs_flag_t              vb_scheme_flag,
+                                       cs_flag_t              vcb_scheme_flag,
+                                       cs_flag_t              fb_scheme_flag,
+                                       cs_flag_t              hho_scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -169,13 +173,18 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings
  *
- * \param[in]  scheme_flag   flag to identify which kind of numerical scheme is
- *                           requested to solve the computational domain
+ * \param[in] vb_scheme_flag    metadata for Vb schemes
+ * \param[in] vcb_scheme_flag   metadata for V+C schemes
+ * \param[in] fb_scheme_flag    metadata for Fb schemes
+ * \param[in] hho_scheme_flag   metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_free_common_structures(cs_flag_t   scheme_flag);
+cs_equation_free_common_structures(cs_flag_t   vb_scheme_flag,
+                                   cs_flag_t   vcb_scheme_flag,
+                                   cs_flag_t   fb_scheme_flag,
+                                   cs_flag_t   hho_scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -276,102 +285,6 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Dirichlet BCs when DoFs are scalar-valued
- *          and attached to vertices
- *
- * \param[in]      mesh         pointer to a cs_mesh_t structure
- * \param[in]      eqp          pointer to a cs_equation_param_t
- * \param[in]      dir          pointer to a cs_cdo_bc_list_t structure
- * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a new allocated array storing the dirichlet values
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
-                                 const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_list_t     *dir,
-                                 cs_cell_builder_t          *cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the values of the Dirichlet BCs when DoFs are scalar-valued
- *          and attached to faces
- *
- * \param[in]      mesh      pointer to a cs_mesh_t structure
- * \param[in]      eqp       pointer to a cs_equation_param_t
- * \param[in]      dir       pointer to a cs_cdo_bc_list_t structure
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a new allocated array storing the dirichlet values
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_equation_compute_dirichlet_sf(const cs_mesh_t            *mesh,
-                                 const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_list_t     *dir,
-                                 cs_cell_builder_t          *cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Tag each face related to a Neumann BC with its definition id.
- *          Default tag is -1 (not a Neumann face)
- *
- * \param[in]      eqp        pointer to a cs_equation_param_t
-
- * \return an array with prescribed tags
- */
-/*----------------------------------------------------------------------------*/
-
-short int *
-cs_equation_tag_neumann_face(const cs_equation_param_t  *eqp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the values of the Neumann BCs when DoFs are scalar-valued
- *          and attached to vertices.
- *          Values in the cbc parameters are updated.
- *
- * \param[in]      def_id     id of the definition for setting the Neumann BC
- * \param[in]      f          local face number in the cs_cell_mesh_t
- * \param[in]      eqp        pointer to a cs_equation_param_t
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cbc        pointer to a cs_cell_bc_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_compute_neumann_sv(short int                   def_id,
-                               short int                   f,
-                               const cs_equation_param_t  *eqp,
-                               const cs_cell_mesh_t       *cm,
-                               cs_cell_bc_t               *cbc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the values of the Neumann BCs when DoFs are scalar-valued
- *          and attached to faces.
- *          Values in the cbc parameters are set.
- *
- * \param[in]      def_id     id of the definition for setting the Neumann BC
- * \param[in]      f          local face number in the cs_cell_mesh_t
- * \param[in]      eqp        pointer to a cs_equation_param_t
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cbc        pointer to a cs_cell_bc_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_compute_neumann_sf(short int                   def_id,
-                               short int                   f,
-                               const cs_equation_param_t  *eqp,
-                               const cs_cell_mesh_t       *cm,
-                               cs_cell_bc_t               *cbc);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Assemble a cellwise system related to cell vertices into the global
  *         algebraic system
  *
@@ -411,34 +324,6 @@ cs_equation_assemble_f(const cs_cell_sys_t            *csys,
                        const cs_equation_param_t      *eqp,
                        cs_real_t                      *rhs,
                        cs_matrix_assembler_values_t   *mav);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve a pointer to the associated cs_matrix_structure_t according
- *         to the space scheme
- *
- * \param[in]  scheme       enum on the discretization scheme used
- *
- * \return  a pointer on a cs_matrix_structure_t *
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_matrix_structure_t *
-cs_equation_get_matrix_structure(cs_space_scheme_t   scheme);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve a pointer to the associated cs_matrix_assembler_t according
- *         to the space scheme
- *
- * \param[in]  scheme       enum on the discretization scheme used
- *
- * \return  a pointer on a cs_matrix_assembler_t *
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_matrix_assembler_t *
-cs_equation_get_matrix_assembler(cs_space_scheme_t   scheme);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -95,7 +95,10 @@ typedef struct {
 
   /* Flag to know if scalar or vector equations are requested and which kind
      of numerical schemes is requested to solve these equations */
-  cs_flag_t                 scheme_flag;
+  cs_flag_t                 fb_scheme_flag;
+  cs_flag_t                 vb_scheme_flag;
+  cs_flag_t                 vcb_scheme_flag;
+  cs_flag_t                 hho_scheme_flag;
 
   /* Output options */
   int        output_nt;  /* Log information every nt iteration(s) */
@@ -291,14 +294,14 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the scheme flag for the current computational domain
+ * \brief  Define the scheme flags for the current computational domain
  *
  * \param[in, out]  domain            pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_scheme_flag(cs_domain_t    *domain);
+cs_domain_set_scheme_flags(cs_domain_t    *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

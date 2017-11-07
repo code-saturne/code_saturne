@@ -927,7 +927,7 @@ _pvsp_by_qov(const double       quantity_val,
 
   /* Handle parallelism */
   if (cs_glob_n_ranks > 1)
-    cs_interface_set_max(cs_cdo_connect->v_rs->ifs,
+    cs_interface_set_max(cs_cdo_connect->interfaces[CS_CDO_CONNECT_VTX_SCA],
                          n_vertices,
                          1,           // stride
                          true,        // interlace, not useful here
@@ -1198,7 +1198,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                           retval);
 
       if (cs_glob_n_ranks > 1)
-        cs_range_set_sync(connect->v_rs,
+        cs_range_set_sync(connect->range_sets[CS_CDO_CONNECT_VTX_SCA],
                           CS_DOUBLE,
                           1, // stride = 1 => scalar-valued equation
                           (void *)retval);
@@ -1230,7 +1230,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                           retval);
 
       if (cs_glob_n_ranks > 1)
-        cs_range_set_sync(connect->f_rs,
+        cs_range_set_sync(connect->range_sets[CS_CDO_CONNECT_FACE_SP0],
                           CS_DOUBLE,
                           1, // stride = 1 => scalar-valued equation
                           (void *)retval);

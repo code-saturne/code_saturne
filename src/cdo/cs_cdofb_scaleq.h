@@ -2,8 +2,8 @@
 #define __CS_CDOFB_SCALEQ_H__
 
 /*============================================================================
- * Build an algebraic CDO face-based system for convection/diffusion equation
- * with source terms
+ * Build an algebraic CDO face-based system for unsteady convection/diffusion
+ * reaction of scalar-valued equations with source terms
  *============================================================================*/
 
 /*
@@ -40,6 +40,7 @@
 
 #include "cs_base.h"
 #include "cs_cdo_connect.h"
+#include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
 #include "cs_equation_common.h"
 #include "cs_equation_param.h"
@@ -70,28 +71,37 @@ typedef struct _cs_cdofb_scaleq_t cs_cdofb_scaleq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers from the main domain members
+ * \brief  Allocate work buffer and general structures related to CDO
+ *         scalar-valued face-based schemes.
+ *         Set shared pointers from the main domain members
  *
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
+ * \param[in]  ma          pointer to a cs_matrix_assembler_t structure
+ * \param[in]  ms          pointer to a cs_matrix_structure_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                    const cs_cdo_connect_t       *connect,
-                                    const cs_time_step_t         *time_step);
+cs_cdofb_scaleq_initialize(const cs_cdo_quantities_t     *quant,
+                           const cs_cdo_connect_t        *connect,
+                           const cs_time_step_t          *time_step,
+                           const cs_matrix_assembler_t   *ma,
+                           const cs_matrix_structure_t   *ms);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate work buffer and general structures related to CDO
- *         face-based schemes
+ * \brief  Retrieve work buffers used for building a CDO system cellwise
+ *
+ * \param[out]  csys   pointer to a pointer on a cs_cell_sys_t structure
+ * \param[out]  cb     pointer to a pointer on a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_initialize(void);
+cs_cdofb_scaleq_get(cs_cell_sys_t       **csys,
+                    cs_cell_builder_t   **cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -116,8 +126,8 @@ cs_cdofb_scaleq_finalize(void);
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_scaleq_init_data(const cs_equation_param_t   *eqp,
-                          cs_equation_builder_t       *eqb);
+cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
+                             cs_equation_builder_t       *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -130,7 +140,7 @@ cs_cdofb_scaleq_init_data(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_scaleq_free_data(void   *data);
+cs_cdofb_scaleq_free_context(void   *data);
 
 /*----------------------------------------------------------------------------*/
 /*!

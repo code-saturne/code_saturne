@@ -201,16 +201,18 @@ cs_cdo_local_finalize(void)
 /*!
  * \brief  Allocate a cs_cell_sys_t structure
  *
- * \param[in]   n_max_ent    max number of entries
- * \param[in]   n_blocks     number of blocks in a row/column
- * \param[in]   block_sizes  size of each block or NULL if n_blocks = 1
+ * \param[in]   n_max_dofbyc    max number of entries
+ * \param[in]   n_max_fbyc      max number of faces in a cell
+ * \param[in]   n_blocks        number of blocks in a row/column
+ * \param[in]   block_sizes     size of each block or NULL if n_blocks = 1
  *
  * \return a pointer to a new allocated cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_sys_t *
-cs_cell_sys_create(int          n_max_ent,
+cs_cell_sys_create(int          n_max_dofbyc,
+                   int          n_max_fbyc,
                    short int    n_blocks,
                    short int   *block_sizes)
 {
@@ -218,36 +220,116 @@ cs_cell_sys_create(int          n_max_ent,
 
   BFT_MALLOC(csys, 1, cs_cell_sys_t);
 
+  /* Metadata about DoFs */
   csys->c_id = -1;
   csys->n_dofs = 0;
-  csys->mat = NULL;
   csys->dof_ids = NULL;
+  csys->dof_flag = NULL;
+
+  /* System and previous values */
+  csys->mat = NULL;
   csys->rhs = NULL;
   csys->source = NULL;
   csys->val_n = NULL;
 
-  if (n_max_ent > 0) {
+  /* Boundary conditions */
+  csys->n_bc_faces = 0;
+  csys->bf_ids = NULL;
+  csys->bf_flag = NULL;
+  csys->has_dirichlet = false;
+  csys->has_nhmg_neumann = false;
+  csys->has_robin = false;
+  csys->dir_values = NULL;
+  csys->neu_values = NULL;
+  csys->rob_values = NULL;
+
+  if (n_max_fbyc > 0) {
+
+    BFT_MALLOC(csys->bf_flag, n_max_fbyc, cs_flag_t);
+    memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_max_fbyc);
+
+    BFT_MALLOC(csys->bf_ids, n_max_fbyc, cs_lnum_t);
+    memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_max_fbyc);
+
+  }
+
+  if (n_max_dofbyc > 0) {
+
+    BFT_MALLOC(csys->dof_flag, n_max_dofbyc, cs_flag_t);
+    memset(csys->dof_flag, 0, sizeof(cs_flag_t)*n_max_dofbyc);
+
+    BFT_MALLOC(csys->dof_ids, n_max_dofbyc, cs_lnum_t);
+    memset(csys->dof_ids, 0, sizeof(cs_lnum_t)*n_max_dofbyc);
 
     if (n_blocks == 1)
-      csys->mat = cs_sdm_square_create(n_max_ent);
+      csys->mat = cs_sdm_square_create(n_max_dofbyc);
     else
       csys->mat = cs_sdm_block_create(n_blocks, n_blocks,
                                       block_sizes,
                                       block_sizes);
 
-    BFT_MALLOC(csys->dof_ids, n_max_ent, cs_lnum_t);
-    BFT_MALLOC(csys->rhs, n_max_ent, double);
-    BFT_MALLOC(csys->source, n_max_ent, double);
-    BFT_MALLOC(csys->val_n, n_max_ent, double);
+    BFT_MALLOC(csys->rhs, n_max_dofbyc, double);
+    BFT_MALLOC(csys->source, n_max_dofbyc, double);
+    BFT_MALLOC(csys->val_n, n_max_dofbyc, double);
+    BFT_MALLOC(csys->dir_values, n_max_dofbyc, double);
+    BFT_MALLOC(csys->neu_values, n_max_dofbyc, double);
+    BFT_MALLOC(csys->rob_values, 2*n_max_dofbyc, double);
 
-    const size_t  s = n_max_ent * sizeof(cs_real_t);
+    const size_t  s = n_max_dofbyc * sizeof(double);
+
     memset(csys->rhs, 0, s);
     memset(csys->source, 0, s);
     memset(csys->val_n, 0, s);
+    memset(csys->dir_values, 0, s);
+    memset(csys->neu_values, 0, s);
+    memset(csys->rob_values, 0, 2*s);
 
   }
 
   return csys;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reset all members related to BC and some other ones in a
+ *         cs_cell_sys_t structure
+ *
+ * \param[in]      cell_flag  metadata about the cell to treat
+ * \param[in]      n_dofbyc   number of DoFs in a cell
+ * \param[in]      n_fbyc     number of faces in a cell
+ * \param[in, out] csys       pointer to the cs_cell_sys_t structure to reset
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_sys_reset(cs_flag_t        cell_flag,
+                  int              n_dofbyc,
+                  int              n_fbyc,
+                  cs_cell_sys_t   *csys)
+{
+  if (n_fbyc == 0 || n_dofbyc == 0)
+    return;
+
+  const size_t  s = n_dofbyc * sizeof(double);
+
+  memset(csys->rhs, 0, s);
+  memset(csys->source, 0, s);
+
+  if (cell_flag & CS_FLAG_BOUNDARY) {
+
+    csys->n_bc_faces = 0;
+    csys->has_dirichlet = csys->has_nhmg_neumann = csys->has_robin = false;
+
+    memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_fbyc);
+    memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_fbyc);
+    memset(csys->dof_flag, 0, sizeof(cs_flag_t)*n_dofbyc);
+
+    memset(csys->dir_values, 0, s);
+    memset(csys->neu_values, 0, s);
+    memset(csys->rob_values, 0, 2*s);
+
+  } /* Boundary cell -> reset BC-related members */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -266,12 +348,20 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
   if (csys == NULL)
     return;
 
+  BFT_FREE(csys->dof_ids);
+  BFT_FREE(csys->dof_flag);
+
   csys->mat = cs_sdm_free(csys->mat);
 
-  BFT_FREE(csys->dof_ids);
   BFT_FREE(csys->rhs);
   BFT_FREE(csys->source);
   BFT_FREE(csys->val_n);
+
+  BFT_FREE(csys->bf_ids);
+  BFT_FREE(csys->bf_flag);
+  BFT_FREE(csys->dir_values);
+  BFT_FREE(csys->neu_values);
+  BFT_FREE(csys->rob_values);
 
   BFT_FREE(csys);
   *p_csys= NULL;
@@ -312,100 +402,15 @@ cs_cell_sys_dump(const char             msg[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a cs_cell_bc_t structure
- *
- * \param[in]   n_max_dofbyc    max. number of entries in a cell
- * \param[in]   n_max_fbyc      max. number of faces in a cell
- *
- * \return a pointer to a new allocated cs_cell_bc_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cell_bc_t *
-cs_cell_bc_create(int    n_max_dofbyc,
-                  int    n_max_fbyc)
-{
-  cs_cell_bc_t  *cbc = NULL;
-
-  BFT_MALLOC(cbc, 1, cs_cell_bc_t);
-
-  cbc->n_bc_faces = 0;
-  cbc->bf_ids = NULL;
-  cbc->face_flag = NULL;
-  if (n_max_fbyc > 0) {
-    BFT_MALLOC(cbc->bf_ids, n_max_fbyc, short int);
-    BFT_MALLOC(cbc->face_flag, n_max_fbyc, cs_flag_t);
-  }
-
-  cbc->n_dofs = 0;
-  cbc->n_dirichlet = 0;
-  cbc->n_nhmg_neuman = 0;
-  cbc->n_robin = 0;
-
-  if (n_max_dofbyc > 0) { // Max. number of DoFs in a cell
-
-    BFT_MALLOC(cbc->dof_flag, n_max_dofbyc, cs_flag_t);
-    BFT_MALLOC(cbc->dir_values, n_max_dofbyc, double);
-    BFT_MALLOC(cbc->neu_values, n_max_dofbyc, double);
-    BFT_MALLOC(cbc->rob_values, 2*n_max_dofbyc, double);
-
-    for (short int i = 0; i < n_max_dofbyc; i++) {
-      cbc->dof_flag[i] = 0;
-      cbc->dir_values[i] = 0;
-      cbc->neu_values[i] = 0;
-      cbc->rob_values[2*i] = cbc->rob_values[2*i+1] = 0;
-    }
-
-  }
-
-  return cbc;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a cs_cell_bc_t structure
- *
- * \param[in, out]  p_cbc   pointer of pointer to a cs_cell_bc_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cell_bc_free(cs_cell_bc_t     **p_cbc)
-{
-  cs_cell_bc_t  *cbc = *p_cbc;
-
-  if (cbc == NULL)
-    return;
-
-  BFT_FREE(cbc->bf_ids);
-  BFT_FREE(cbc->face_flag);
-  BFT_FREE(cbc->dof_flag);
-  BFT_FREE(cbc->dir_values);
-  BFT_FREE(cbc->neu_values);
-  BFT_FREE(cbc->rob_values);
-
-  BFT_FREE(cbc);
-  *p_cbc = NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize a cs_cell_builder_t structure according to
- *         to the type of discretization which is requested.
- *
- * \param[in]  scheme    type of discretization
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \brief  Allocate cs_cell_builder_t structure
  *
  * \return a pointer to the new allocated cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_builder_t *
-cs_cell_builder_create(cs_space_scheme_t         scheme,
-                       const cs_cdo_connect_t   *connect)
+cs_cell_builder_create(void)
 {
-  int  size = 0;
-
   cs_cell_builder_t  *cb = NULL;
 
   /* Common part to all discretization */
@@ -424,186 +429,6 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
   cb->vectors = NULL;
 
   cb->hdg = cb->loc = cb->aux = NULL;
-
-  /* Max number of entities in a cell */
-  const int  n_vc = connect->n_max_vbyc;
-  const int  n_ec = connect->n_max_ebyc;
-  const int  n_fc = connect->n_max_fbyc;
-
-  /* Temporary buffers used during the cellwise construction of operators.
-     The size of the allocation corresponds to the max. possible size
-     according to any numerical options. This means that one could optimize
-     the following allocation if one takes into account the numerical
-     settings */
-
-  switch (scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-    {
-      BFT_MALLOC(cb->ids, n_vc, short int);
-      memset(cb->ids, 0, n_vc*sizeof(short int));
-
-      size = n_ec*(n_ec+1);
-      size = CS_MAX(4*n_ec + 3*n_vc, size);
-      BFT_MALLOC(cb->values, size, double);
-      memset(cb->values, 0, size*sizeof(cs_real_t));
-
-      size = 2*n_ec;
-      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
-      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
-
-      /* Local square dense matrices used during the construction of
-         operators */
-      cb->hdg = cs_sdm_square_create(n_ec);
-      cb->loc = cs_sdm_square_create(n_vc);
-      cb->aux = cs_sdm_square_create(n_vc);
-    }
-    break;
-
-  case CS_SPACE_SCHEME_CDOVCB:
-    {
-      size = n_vc + 1;
-      BFT_MALLOC(cb->ids, size, short int);
-      memset(cb->ids, 0, size*sizeof(short int));
-
-      size = 2*n_vc + 3*n_ec + n_fc;
-      BFT_MALLOC(cb->values, size, double);
-      memset(cb->values, 0, size*sizeof(cs_real_t));
-
-      size = 2*n_ec + n_vc;
-      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
-      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
-
-      /* Local square dense matrices used during the construction of
-         operators */
-      cb->hdg = cs_sdm_square_create(n_vc + 1);
-      cb->loc = cs_sdm_square_create(n_vc + 1);
-      cb->aux = cs_sdm_square_create(n_vc + 1);
-
-    }
-    break;
-
-  case CS_SPACE_SCHEME_CDOFB:
-    {
-      BFT_MALLOC(cb->ids, n_fc, short int);
-      memset(cb->ids, 0, n_fc*sizeof(short int));
-
-      size = n_fc*(n_fc+1);
-      BFT_MALLOC(cb->values, size, double);
-      memset(cb->values, 0, size*sizeof(cs_real_t));
-
-      size = 2*n_fc;
-      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
-      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
-
-      /* Local square dense matrices used during the construction of
-         operators */
-      cb->hdg = cs_sdm_square_create(n_fc);
-      cb->loc = cs_sdm_square_create(n_fc + 1);
-      cb->aux = cs_sdm_square_create(n_fc + 1);
-    }
-    break;
-
-  case CS_SPACE_SCHEME_HHO_P0:  /* TODO */
-    {
-      BFT_MALLOC(cb->ids, n_fc, short int);
-      memset(cb->ids, 0, n_fc*sizeof(short int));
-
-      size = CS_MAX(32, n_fc*(n_fc+1));
-      BFT_MALLOC(cb->values, size, double);
-      memset(cb->values, 0, size*sizeof(cs_real_t));
-
-      size = CS_MAX(2*n_fc, 15);
-      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
-      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
-
-      /* Local square dense matrices used during the construction of
-         operators */
-      cb->hdg = cs_sdm_square_create(n_fc);
-      cb->loc = cs_sdm_square_create(n_fc + 1);
-      cb->aux = cs_sdm_square_create(n_fc + 1);
-    }
-    break;
-
-  case CS_SPACE_SCHEME_HHO_P1:
-    {
-      /* Store the block size description */
-      size = n_fc + 1;
-      BFT_MALLOC(cb->ids, size, short int);
-      memset(cb->ids, 0, size*sizeof(short int));
-
-      /* Store the face, cell and gradient basis function evaluations and
-         the Gauss point weights
-         --->  42 = 3 + 4 + 3*10 + 5
-         or the factorization of the stiffness matrix used for computing
-         the gradient reconstruction operator
-         --->  n = 9 (10 - 1) --> facto = n*(n+1)/2 = 45
-                              --> tmp buffer for facto = n = 9
-                              --> 45 + 9 = 54
-      */
-      size = 54;
-      BFT_MALLOC(cb->values, size, double);
-      memset(cb->values, 0, size*sizeof(cs_real_t));
-
-      /* Store Gauss points and tensor.n_f products */
-      size = CS_MAX(15, 5 + n_fc);
-      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
-      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
-
-      /* Local dense matrices used during the construction of operators */
-      const short int g_size = 9;                   /* basis (P_(k+1)) - 1 */
-      for (int i = 0; i < n_fc; i++) cb->ids[i] = 3;
-      cb->ids[n_fc] = 4;
-
-      short int  _sizes[3] = {1, 3, 6}; /* c0, cs-1, cs_kp1 - cs */
-      cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
-      cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
-      cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
-    }
-    break;
-
-  case CS_SPACE_SCHEME_HHO_P2:
-    {
-      /* Store the block size description */
-      size = n_fc + 1;
-      BFT_MALLOC(cb->ids, size, short int);
-      memset(cb->ids, 0, size*sizeof(short int));
-
-      /* Store the face, cell and gradient basis function evaluations and
-         the Gauss point weights */
-      /* Store the face, cell and gradient basis function evaluations and
-         the Gauss point weights
-         --->  91 = 6 (f) + 10 (c) + 3*20 (g) + 15 (gauss)
-         or the factorization of the stiffness matrix used for computing
-         the gradient reconstruction operator
-         --->  n = 19 (20 - 1) --> facto = n*(n+1)/2 = 190
-                               --> tmp buffer for facto = n = 19
-                              --> 190 + 19 = 209
-      */
-      size = 209;
-      BFT_MALLOC(cb->values, size, double);
-      memset(cb->values, 0, size*sizeof(cs_real_t));
-
-      size = 15 + n_fc;  /* Store Gauss points and tensor.n_f products */
-      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
-      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
-
-      /* Local dense matrices used during the construction of operators */
-      const short int g_size = 19; /* basis (P_(k+1)) - 1 */
-      for (int i = 0; i < n_fc; i++) cb->ids[i] = 6;
-      cb->ids[n_fc] = 10;
-
-      short int  _sizes[3] = {1, 9, 10}; /* c0, cs-1, cs_kp1 - cs */
-      cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
-      cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
-      cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
-    }
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _("Invalid space scheme."));
-
-  } // End of switch on space scheme
 
   return cb;
 }

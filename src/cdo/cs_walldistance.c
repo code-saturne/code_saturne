@@ -234,14 +234,14 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
 
   if (cs_glob_n_ranks > 1) {
 
-    cs_interface_set_sum(connect->v_rs->ifs,
+    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCA],
                          connect->n_vertices,
                          1,
                          true, // interlace
                          CS_REAL_TYPE,
                          dualcell_vol);
 
-    cs_interface_set_sum(connect->v_rs->ifs,
+    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCA],
                          connect->n_vertices,
                          3,
                          true, // interlace

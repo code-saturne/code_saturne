@@ -103,21 +103,21 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 typedef void *
-(cs_equation_init_data_t)(const cs_equation_param_t  *eqp,
-                          cs_equation_builder_t      *eqb);
+(cs_equation_init_context_t)(const cs_equation_param_t  *eqp,
+                             cs_equation_builder_t      *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Destroy a scheme data structure
  *
- * \param[in, out]  scheme_data   pointer to a builder structure
+ * \param[in, out]  scheme_context   pointer to a builder structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void *
-(cs_equation_free_data_t)(void  *scheme_data);
+(cs_equation_free_context_t)(void  *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -291,14 +291,14 @@ typedef void
  * \brief  Get the computed values at a different location than that of the
  *         field associated to this equation
  *
- * \param[in]  scheme_data  pointer to a data structure cast on-the-fly
+ * \param[in]  scheme_context  pointer to a data structure cast on-the-fly
  *
  * \return  a pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
 typedef double *
-(cs_equation_get_extra_values_t)(const void      *scheme_data);
+(cs_equation_get_extra_values_t)(const void      *scheme_context);
 
 /*============================================================================
  * Local variables
@@ -355,11 +355,11 @@ struct _cs_equation_t {
   cs_equation_builder_t   *builder;
 
   /* Data depending on the numerical scheme */
-  void                    *scheme_data;
+  void                    *scheme_context;
 
   /* Pointer to functions (see prototypes just above) */
-  cs_equation_init_data_t          *init_data;
-  cs_equation_free_data_t          *free_data;
+  cs_equation_init_context_t       *init_context;
+  cs_equation_free_context_t       *free_context;
   cs_equation_initialize_system_t  *initialize_system;
   cs_equation_build_system_t       *build_system;
   cs_equation_prepare_solve_t      *prepare_solving;
@@ -554,7 +554,7 @@ _initialize_field_from_ic(cs_equation_t  *eq)
     cs_flag_t  c_flag = dof_flag | cs_cdo_primal_cell;
     cs_real_t  *c_values = values;
     if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
-      c_values = eq->get_extra_values(eq->scheme_data);
+      c_values = eq->get_extra_values(eq->scheme_context);
     assert(c_values != NULL);
 
     for (int def_id = 0; def_id < eqp->n_ic_desc; def_id++) {
@@ -688,7 +688,7 @@ _prepare_fb_solving(void              *eq_to_cast,
 {
   cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
   const cs_field_t  *fld = cs_field_by_id(eq->field_id);
-  const cs_real_t  *f_values = eq->get_extra_values(eq->scheme_data);
+  const cs_real_t  *f_values = eq->get_extra_values(eq->scheme_context);
   const int  eq_dim = fld->dim;
 
   /* Sanity check */
@@ -915,11 +915,11 @@ cs_equation_add(const char            *eqname,
 
   /* Builder structure for this equation */
   eq->builder = NULL;
-  eq->scheme_data = NULL;
+  eq->scheme_context = NULL;
 
   /* Pointers of function */
-  eq->init_data = NULL;
-  eq->free_data = NULL;
+  eq->init_context = NULL;
+  eq->free_context = NULL;
   eq->initialize_system = NULL;
   eq->build_system = NULL;
   eq->update_field = NULL;
@@ -1001,7 +1001,7 @@ cs_equation_destroy_all(void)
 
     /* Free the associated builder structure */
     cs_equation_free_builder(&(eq->builder));
-    eq->scheme_data = eq->free_data(eq->scheme_data);
+    eq->scheme_context = eq->free_context(eq->scheme_context);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
@@ -1167,132 +1167,184 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
     switch(eqp->space_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
-      eq->init_data = cs_cdovb_scaleq_init_data;
-      eq->free_data = cs_cdovb_scaleq_free_data;
-      eq->initialize_system = cs_cdovb_scaleq_initialize_system;
-      eq->build_system = cs_cdovb_scaleq_build_system;
-      eq->prepare_solving = _prepare_vb_solving;
-      eq->update_field = cs_cdovb_scaleq_update_field;
-      eq->compute_source = cs_cdovb_scaleq_compute_source;
-      eq->compute_flux_across_plane = cs_cdovb_scaleq_compute_flux_across_plane;
-      eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
-      eq->postprocess = cs_cdovb_scaleq_extra_op;
-      eq->get_extra_values = NULL;
+      if (eqp->dim == 1) {
 
-      /* Set the cs_range_set_t structure */
-      eq->rset = connect->v_rs;
+        eq->init_context = cs_cdovb_scaleq_init_context;
+        eq->free_context = cs_cdovb_scaleq_free_context;
+        eq->initialize_system = cs_cdovb_scaleq_initialize_system;
+        eq->build_system = cs_cdovb_scaleq_build_system;
+        eq->prepare_solving = _prepare_vb_solving;
+        eq->update_field = cs_cdovb_scaleq_update_field;
+        eq->compute_source = cs_cdovb_scaleq_compute_source;
+        eq->compute_flux_across_plane =
+          cs_cdovb_scaleq_compute_flux_across_plane;
+        eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
+        eq->postprocess = cs_cdovb_scaleq_extra_op;
+        eq->get_extra_values = NULL;
 
-      /* Set the size of the algebraic system arising from the cellwise
-         process */
-      eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCA];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Only the scalar-valued case is handled for CDO"
+                  " vertex-based schemes.\n", __func__);
+
       break;
 
     case CS_SPACE_SCHEME_CDOVCB:
-      eq->init_data = cs_cdovcb_scaleq_init_data;
-      eq->free_data = cs_cdovcb_scaleq_free_data;
-      eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
-      eq->build_system = cs_cdovcb_scaleq_build_system;
-      eq->prepare_solving = _prepare_vb_solving;
-      eq->update_field = cs_cdovcb_scaleq_update_field;
-      eq->compute_source = cs_cdovcb_scaleq_compute_source;
-      eq->compute_flux_across_plane =
-        cs_cdovcb_scaleq_compute_flux_across_plane;
-      eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
-      eq->postprocess = cs_cdovcb_scaleq_extra_op;
-      eq->get_extra_values = cs_cdovcb_scaleq_get_cell_values;
+      if (eqp->dim == 1) {
 
-      /* Set the cs_range_set_t structure */
-      eq->rset = connect->v_rs;
+        eq->init_context = cs_cdovcb_scaleq_init_context;
+        eq->free_context = cs_cdovcb_scaleq_free_context;
+        eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
+        eq->build_system = cs_cdovcb_scaleq_build_system;
+        eq->prepare_solving = _prepare_vb_solving;
+        eq->update_field = cs_cdovcb_scaleq_update_field;
+        eq->compute_source = cs_cdovcb_scaleq_compute_source;
+        eq->compute_flux_across_plane =
+          cs_cdovcb_scaleq_compute_flux_across_plane;
+        eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
+        eq->postprocess = cs_cdovcb_scaleq_extra_op;
+        eq->get_extra_values = cs_cdovcb_scaleq_get_cell_values;
 
-      /* Set the size of the algebraic system arising from the cellwise
-         process */
-      eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCA];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Only the scalar-valued case is handled for CDO"
+                  " vertex+cell-based schemes.\n", __func__);
+
       break;
 
     case CS_SPACE_SCHEME_CDOFB:
-      eq->init_data = cs_cdofb_scaleq_init_data;
-      eq->free_data = cs_cdofb_scaleq_free_data;
-      eq->initialize_system = cs_cdofb_scaleq_initialize_system;
-      eq->build_system = cs_cdofb_scaleq_build_system;
-      eq->prepare_solving = _prepare_fb_solving;
-      eq->update_field = cs_cdofb_scaleq_update_field;
-      eq->compute_source = cs_cdofb_scaleq_compute_source;
-      eq->compute_flux_across_plane = NULL;
-      eq->compute_cellwise_diff_flux = NULL;
-      eq->postprocess = cs_cdofb_scaleq_extra_op;
-      eq->get_extra_values = cs_cdofb_scaleq_get_face_values;
+      if (eqp->dim == 1) {
 
-      /* Set the cs_range_set_t structure */
-      eq->rset = connect->f_rs;
+        eq->init_context = cs_cdofb_scaleq_init_context;
+        eq->free_context = cs_cdofb_scaleq_free_context;
+        eq->initialize_system = cs_cdofb_scaleq_initialize_system;
+        eq->build_system = cs_cdofb_scaleq_build_system;
+        eq->prepare_solving = _prepare_fb_solving;
+        eq->update_field = cs_cdofb_scaleq_update_field;
+        eq->compute_source = cs_cdofb_scaleq_compute_source;
+        eq->compute_flux_across_plane = NULL;
+        eq->compute_cellwise_diff_flux = NULL;
+        eq->postprocess = cs_cdofb_scaleq_extra_op;
+        eq->get_extra_values = cs_cdofb_scaleq_get_face_values;
 
-      /* Set the size of the algebraic system arising from the cellwise
-         process */
-      eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Only the scalar-valued and vector-valued cases are"
+                  "  handled for CDO face-based schemes.\n", __func__);
+
       break;
 
     case CS_SPACE_SCHEME_HHO_P0:
-      eq->init_data = cs_hho_scaleq_init_data;
-      eq->free_data = cs_hho_scaleq_free_data;
-      eq->initialize_system = cs_hho_scaleq_initialize_system;
-      eq->build_system = cs_hho_scaleq_build_system;
-      eq->prepare_solving = _prepare_fb_solving;
-      eq->update_field = cs_hho_scaleq_update_field;
-      eq->compute_source = cs_hho_scaleq_compute_source;
-      eq->compute_flux_across_plane = NULL;
-      eq->compute_cellwise_diff_flux = NULL;
-      eq->postprocess = cs_hho_scaleq_extra_op;
-      eq->get_extra_values = cs_hho_scaleq_get_face_values;
+      if (eqp->dim == 1) {
 
-      /* Set the cs_range_set_t structure */
-      eq->rset = connect->f_rs;
+        eq->init_context = cs_hho_scaleq_init_context;
+        eq->free_context = cs_hho_scaleq_free_context;
+        eq->initialize_system = cs_hho_scaleq_initialize_system;
+        eq->build_system = cs_hho_scaleq_build_system;
+        eq->prepare_solving = _prepare_fb_solving;
+        eq->update_field = cs_hho_scaleq_update_field;
+        eq->compute_source = cs_hho_scaleq_compute_source;
+        eq->compute_flux_across_plane = NULL;
+        eq->compute_cellwise_diff_flux = NULL;
+        eq->postprocess = cs_hho_scaleq_extra_op;
+        eq->get_extra_values = cs_hho_scaleq_get_face_values;
 
-      /* Set the size of the algebraic system arising from the cellwise
-         process */
-      eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Only the scalar-valued case is handled for CDO"
+                  " HHO schemes.\n", __func__);
       break;
 
     case CS_SPACE_SCHEME_HHO_P1:
-      eq->init_data = cs_hho_scaleq_init_data;
-      eq->free_data = cs_hho_scaleq_free_data;
-      eq->initialize_system = cs_hho_scaleq_initialize_system;
-      eq->build_system = cs_hho_scaleq_build_system;
-      eq->prepare_solving = _prepare_fb_solving;
-      eq->update_field = cs_hho_scaleq_update_field;
-      eq->compute_source = cs_hho_scaleq_compute_source;
-      eq->compute_flux_across_plane = NULL;
-      eq->compute_cellwise_diff_flux = NULL;
-      eq->postprocess = cs_hho_scaleq_extra_op;
-      eq->get_extra_values = cs_hho_scaleq_get_face_values;
+      if (eqp->dim == 1) {
 
-      /* Set the cs_range_set_t structure */
-      eq->rset = connect->hho1_rs;
+        eq->init_context = cs_hho_scaleq_init_context;
+        eq->free_context = cs_hho_scaleq_free_context;
+        eq->initialize_system = cs_hho_scaleq_initialize_system;
+        eq->build_system = cs_hho_scaleq_build_system;
+        eq->prepare_solving = _prepare_fb_solving;
+        eq->update_field = cs_hho_scaleq_update_field;
+        eq->compute_source = cs_hho_scaleq_compute_source;
+        eq->compute_flux_across_plane = NULL;
+        eq->compute_cellwise_diff_flux = NULL;
+        eq->postprocess = cs_hho_scaleq_extra_op;
+        eq->get_extra_values = cs_hho_scaleq_get_face_values;
 
-      /* Set the size of the algebraic system arising from the cellwise
-         process (OK for a sequential run) */
-      eq->n_sles_gather_elts = CS_N_FACE_DOFS_1ST * connect->n_faces[0];
-      eq->n_sles_scatter_elts = CS_N_FACE_DOFS_1ST * connect->n_faces[0];
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process (OK for a sequential run) */
+        eq->n_sles_gather_elts = CS_N_FACE_DOFS_1ST * connect->n_faces[0];
+        eq->n_sles_scatter_elts = CS_N_FACE_DOFS_1ST * connect->n_faces[0];
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Only the scalar-valued case is handled for CDO"
+                  " HHO schemes.\n", __func__);
       break;
 
     case CS_SPACE_SCHEME_HHO_P2:
-      eq->init_data = cs_hho_scaleq_init_data;
-      eq->free_data = cs_hho_scaleq_free_data;
-      eq->initialize_system = cs_hho_scaleq_initialize_system;
-      eq->build_system = cs_hho_scaleq_build_system;
-      eq->prepare_solving = _prepare_fb_solving;
-      eq->update_field = cs_hho_scaleq_update_field;
-      eq->compute_source = cs_hho_scaleq_compute_source;
-      eq->compute_flux_across_plane = NULL;
-      eq->compute_cellwise_diff_flux = NULL;
-      eq->postprocess = cs_hho_scaleq_extra_op;
-      eq->get_extra_values = cs_hho_scaleq_get_face_values;
+      if (eqp->dim == 1) {
 
-      /* Set the cs_range_set_t structure */
-      eq->rset = connect->hho2_rs;
+        eq->init_context = cs_hho_scaleq_init_context;
+        eq->free_context = cs_hho_scaleq_free_context;
+        eq->initialize_system = cs_hho_scaleq_initialize_system;
+        eq->build_system = cs_hho_scaleq_build_system;
+        eq->prepare_solving = _prepare_fb_solving;
+        eq->update_field = cs_hho_scaleq_update_field;
+        eq->compute_source = cs_hho_scaleq_compute_source;
+        eq->compute_flux_across_plane = NULL;
+        eq->compute_cellwise_diff_flux = NULL;
+        eq->postprocess = cs_hho_scaleq_extra_op;
+        eq->get_extra_values = cs_hho_scaleq_get_face_values;
 
-      /* Set the size of the algebraic system arising from the cellwise
-         process (OK for a sequential run) */
-      eq->n_sles_gather_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
-      eq->n_sles_scatter_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process (OK for a sequential run) */
+        eq->n_sles_gather_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
+        eq->n_sles_scatter_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Only the scalar-valued case is handled for CDO"
+                  " HHO schemes.\n", __func__);
       break;
 
     default:
@@ -2264,7 +2316,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
     /* Allocate and initialize a system builder */
     eq->builder = cs_equation_init_builder(eqp, mesh);
-    eq->scheme_data = eq->init_data(eqp, eq->builder);
+    eq->scheme_context = eq->init_context(eqp, eq->builder);
 
     // By default, 0 is set as initial condition
     if (eqp->n_ic_desc > 0 && ts->nt_cur < 1)
@@ -2272,7 +2324,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
     if (eqp->flag & CS_EQUATION_UNSTEADY)
       /* Compute the (initial) source term */
-      eq->compute_source(eqp, eq->builder, eq->scheme_data);
+      eq->compute_source(eqp, eq->builder, eq->scheme_context);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
@@ -2327,7 +2379,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
   /* Initialize the algebraic system to build */
   eq->initialize_system(eq->param,
                         eq->builder,
-                        eq->scheme_data,
+                        eq->scheme_context,
                         &(eq->matrix),
                         &(eq->rhs));
 
@@ -2335,7 +2387,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
   eq->build_system(mesh, fld->val, dt_cur,
                    eq->param,
                    eq->builder,
-                   eq->scheme_data,
+                   eq->scheme_context,
                    eq->rhs,
                    eq->matrix);
 
@@ -2453,7 +2505,7 @@ cs_equation_solve(cs_equation_t   *eq)
 
   /* Define the new field value for the current time */
   eq->update_field(x, eq->rhs, eq->param,
-                   eq->builder, eq->scheme_data, fld->val);
+                   eq->builder, eq->scheme_context, fld->val);
 
   if (eq->param->flag & CS_EQUATION_UNSTEADY)
     eq->do_build = true; /* Improvement: exhibit cases where a new build
@@ -2764,7 +2816,7 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
       eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P0 ||
       eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P1 ||
       eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P2)
-    return eq->get_extra_values(eq->scheme_data);
+    return eq->get_extra_values(eq->scheme_context);
   else
     return NULL; // Not implemented
 }
@@ -2805,7 +2857,7 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
     }
 
   case CS_SPACE_SCHEME_CDOVCB:
-    return eq->get_extra_values(eq->scheme_data);
+    return eq->get_extra_values(eq->scheme_context);
 
   default:
     return NULL; // Not implemented
@@ -2860,7 +2912,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
                                 ml_id,
                                 eq->param,
                                 eq->builder,
-                                eq->scheme_data,
+                                eq->scheme_context,
                                 diff_flux, conv_flux);
 }
 
@@ -2900,7 +2952,7 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
   eq->compute_cellwise_diff_flux(fld->val,
                                  eq->param,
                                  eq->builder,
-                                 eq->scheme_data,
+                                 eq->scheme_context,
                                  location,
                                  diff_flux);
 
@@ -2931,7 +2983,7 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
   switch (eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVCB:
-    cs_cdovcb_scaleq_vtx_gradient(fld->val, eq->builder, eq->scheme_data,
+    cs_cdovcb_scaleq_vtx_gradient(fld->val, eq->builder, eq->scheme_context,
                                   v_gradient);
     break;
 
@@ -3011,7 +3063,10 @@ cs_equation_extra_post_all(const cs_time_step_t    *ts,
     } // Peclet number
 
     /* Perform post-processing specific to a numerical scheme */
-    eq->postprocess(eq->name, field, eq->param, eq->builder, eq->scheme_data);
+    eq->postprocess(eq->name, field,
+                    eq->param,
+                    eq->builder,
+                    eq->scheme_context);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);

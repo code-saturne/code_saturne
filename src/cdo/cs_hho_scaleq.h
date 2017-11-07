@@ -35,8 +35,10 @@
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_cdo_connect.h"
+#include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
 #include "cs_equation_param.h"
+#include "cs_hho_builder.h"
 #include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
@@ -60,30 +62,49 @@ typedef struct _cs_hho_scaleq_t cs_hho_scaleq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers from the main domain members
+ * \brief  Allocate work buffer and general structures related to HHO schemes
+ *         Set shared pointers
  *
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a time step structure
- */
+ * \param[in]  scheme_flag  flag to identify which kind of numerical scheme is
+ *                          requested to solve the computational domain
+ * \param[in]  quant        additional mesh quantities struct.
+ * \param[in]  connect      pointer to a cs_cdo_connect_t struct.
+ * \param[in]  time_step    pointer to a time step structure
+ * \param[in]  ma0          pointer to a cs_matrix_assembler_t structure (P0)
+ * \param[in]  ma1          pointer to a cs_matrix_assembler_t structure (P1)
+ * \param[in]  ma2          pointer to a cs_matrix_assembler_t structure (P2)
+ * \param[in]  ms0          pointer to a cs_matrix_structure_t structure (P0)
+ * \param[in]  ms1          pointer to a cs_matrix_structure_t structure (P1)
+ * \param[in]  ms2          pointer to a cs_matrix_structure_t structure (P2)
+*/
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                  const cs_cdo_connect_t       *connect,
-                                  const cs_time_step_t         *time_step);
+cs_hho_scaleq_initialize(cs_flag_t                      scheme_flag,
+                         const cs_cdo_quantities_t     *quant,
+                         const cs_cdo_connect_t        *connect,
+                         const cs_time_step_t          *time_step,
+                         const cs_matrix_assembler_t   *ma0,
+                         const cs_matrix_assembler_t   *ma1,
+                         const cs_matrix_assembler_t   *ma2,
+                         const cs_matrix_structure_t   *ms0,
+                         const cs_matrix_structure_t   *ms1,
+                         const cs_matrix_structure_t   *ms2);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate work buffer and general structures related to HHO schemes
+ * \brief  Retrieve work buffers used for building a CDO system cellwise
  *
- * \param[in]  scheme_flag   flag to identify which kind of numerical scheme is
- *                           requested to solve the computational domain
+ * \param[out]  csys    pointer to a pointer on a cs_cell_sys_t structure
+ * \param[out]  cb      pointer to a pointer on a cs_cell_builder_t structure
+ * \param[out]  hhob    pointer to a pointer on a cs_hho_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_initialize(cs_flag_t   scheme_flag);
+cs_hho_scaleq_get(cs_cell_sys_t       **csys,
+                  cs_cell_builder_t   **cb,
+                  cs_hho_builder_t    **hhob);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -107,8 +128,8 @@ cs_hho_scaleq_finalize(void);
 /*----------------------------------------------------------------------------*/
 
 void  *
-cs_hho_scaleq_init_data(const cs_equation_param_t   *eqp,
-                        cs_equation_builder_t       *eqb);
+cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
+                           cs_equation_builder_t       *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -121,7 +142,7 @@ cs_hho_scaleq_init_data(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_hho_scaleq_free_data(void   *data);
+cs_hho_scaleq_free_context(void   *data);
 
 /*----------------------------------------------------------------------------*/
 /*!

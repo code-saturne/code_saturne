@@ -86,15 +86,11 @@ BEGIN_C_DECLS
    the different equations attached to the computational domain. If flag is
    activated, then at least one equation solved is discretized using thiq kind
    of numerical scheme. */
-#define CS_SCHEME_FLAG_CDOVB    (1 << 0) //  1: CDO vertex-based scheme
-#define CS_SCHEME_FLAG_CDOVCB   (1 << 1) //  2: CDO vertex+cell-based scheme
-#define CS_SCHEME_FLAG_CDOFB    (1 << 2) //  4: CDO face-based scheme
-#define CS_SCHEME_FLAG_HHO      (1 << 3) //  8: Hybrid-High Order scheme
-#define CS_SCHEME_FLAG_SCALAR   (1 << 4) // 16: scheme for scalar eq.
-#define CS_SCHEME_FLAG_VECTOR   (1 << 5) // 32: scheme for a vector eq.
-#define CS_SCHEME_FLAG_POLY0    (1 << 6) // 64: lowest-order scheme
-#define CS_SCHEME_FLAG_POLY1    (1 << 7) //128: approx. with linear polynomials
-#define CS_SCHEME_FLAG_POLY2    (1 << 8) //256: approx. with quadratic poly.
+#define CS_SCHEME_FLAG_SCALAR   (1 << 0) //  1: scheme for scalar eq.
+#define CS_SCHEME_FLAG_VECTOR   (1 << 1) //  2: scheme for a vector eq.
+#define CS_SCHEME_FLAG_POLY0    (1 << 2) //  4: lowest-order scheme
+#define CS_SCHEME_FLAG_POLY1    (1 << 3) //  8: approx. with linear polynomials
+#define CS_SCHEME_FLAG_POLY2    (1 << 4) // 16: approx. with quadratic poly.
 
 /* Size of the buffer used to collect global ids for rows and columns
    when assembling the values in the global matrix from the local cellwise
