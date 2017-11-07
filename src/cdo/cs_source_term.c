@@ -670,13 +670,20 @@ cs_source_term_compute_from_density(cs_flag_t                loc,
                                     const cs_xdef_t         *source,
                                     double                  *p_values[])
 {
-  const int  stride = 1; // Only this case is managed up to now
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
 
   double  *values = *p_values;
 
   if (source == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
+
+  int  stride = 0;
+  if (loc & CS_FLAG_SCALAR)
+    stride = 1;
+  else if (loc & CS_FLAG_VECTOR)
+    stride = 3;
+  else
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid case\n", __func__);
 
   cs_lnum_t n_ent = 0;
   if (cs_test_flag(loc, cs_cdo_dual_cell) ||
@@ -685,16 +692,12 @@ cs_source_term_compute_from_density(cs_flag_t                loc,
   else if (cs_test_flag(loc, cs_cdo_primal_cell))
     n_ent = quant->n_cells;
   else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid case. Not able to compute the source term.\n"));
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid case\n", __func__);
 
   /* Initialize values */
   if (values == NULL)
     BFT_MALLOC(values, n_ent*stride, double);
-
-# pragma omp parallel for if (n_ent > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_ent*stride; i++)
-    values[i] = 0.0;
+  memset(values, 0, n_ent*stride*sizeof(double));
 
   switch (source->type) {
 
