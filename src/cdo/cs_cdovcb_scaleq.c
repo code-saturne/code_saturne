@@ -351,6 +351,7 @@ _set_cip_coef(const cs_equation_param_t  *eqp)
 
   double  gamma = 10 * gseed * hc_max * hc_max * rho_fc;
 
+  /* If not pure convection */
   if (cs_equation_param_has_diffusion(eqp) ||
       cs_equation_param_has_reaction(eqp) ||
       cs_equation_param_has_time(eqp))

@@ -248,8 +248,8 @@ cs_cell_sys_create(int          n_max_dofbyc,
     BFT_MALLOC(csys->bf_flag, n_max_fbyc, cs_flag_t);
     memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_max_fbyc);
 
-    BFT_MALLOC(csys->bf_ids, n_max_fbyc, cs_lnum_t);
-    memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_max_fbyc);
+    BFT_MALLOC(csys->bf_ids, n_max_fbyc, short int);
+    memset(csys->bf_ids, 0, sizeof(short int)*n_max_fbyc);
 
   }
 

@@ -964,7 +964,7 @@ cs_adjacency_dump(const char           *name,
   fprintf(f, "  shared:            %6s\n", is_shared ? "true" : "false");
   fprintf(f, "  n_elts:            %6d\n", adj->n_elts);
   fprintf(f, "  stride:            %6d\n", adj->stride);
-  fprintf(f, "  ids_size:          %6d\n", adj->idx[adj->n_elts]);
+  fprintf(f, "  idx_size:          %6d\n", adj->idx[adj->n_elts]);
 
   if (adj->flag & CS_ADJACENCY_STRIDE) {
     if (adj->flag & CS_ADJACENCY_SIGNED) {

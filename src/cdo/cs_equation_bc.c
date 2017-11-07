@@ -109,6 +109,8 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
                            cs_cell_sys_t                *csys,
                            cs_cell_builder_t            *cb)
 {
+  CS_UNUSED(connect);
+
   /* Sanity check */
   assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
@@ -192,6 +194,9 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
                            cs_cell_sys_t                *csys,
                            cs_cell_builder_t            *cb)
 {
+  CS_UNUSED(connect);
+  CS_UNUSED(cb);
+
   csys->bf_flag[csys->n_bc_faces] = face_flag;
   csys->bf_ids[csys->n_bc_faces++] = f;
 

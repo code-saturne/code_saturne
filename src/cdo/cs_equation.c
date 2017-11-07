@@ -80,7 +80,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_EQUATION_DBG  1
+#define CS_EQUATION_DBG  0
 
 /*============================================================================
  * Type definitions
@@ -1358,7 +1358,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       eq->n_sles_gather_elts = eq->rset->n_elts[0];
 
     /* Initialize cs_sles_t structure */
-    cs_equation_param_init_sles(eq->name, eqp, eq->field_id);
+    cs_equation_param_set_sles(eq->name, eqp, eq->field_id);
 
     /* Flag this equation such that parametrization is not modifiable anymore */
     eqp->flag |= CS_EQUATION_LOCKED;

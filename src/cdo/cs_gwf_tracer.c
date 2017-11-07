@@ -655,7 +655,7 @@ cs_gwf_set_standard_tracer(cs_gwf_tracer_t   *tracer,
  * \brief  Add terms to the algebraic system related to a tracer equation
  *         according to the settings.
  *         Case of the standar tracer modelling
- *         Rely on the generic functinon: cs_gwf_tracer_add_terms_t
+ *         Rely on the generic function: cs_gwf_tracer_add_terms_t
  *
  * \param[in, out] tracer       pointer to a cs_gwf_tracer_t structure
  */

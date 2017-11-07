@@ -106,9 +106,9 @@ _build_c2f_connect(const cs_mesh_t   *mesh)
     cs_lnum_t  c1_id = mesh->i_face_cells[i][0];
     cs_lnum_t  c2_id = mesh->i_face_cells[i][1];
 
-    if (c1_id < n_cells) // cell owned by the local rank
+    if (c1_id < n_cells) // c1 is not a ghost cell
       c2f->idx[c1_id+1] += 1;
-    if (c2_id < n_cells) // cell owned by the local rank
+    if (c2_id < n_cells) // c2 is not a ghost cell
       c2f->idx[c2_id+1] += 1;
   }
 

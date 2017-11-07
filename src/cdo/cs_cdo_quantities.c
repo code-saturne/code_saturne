@@ -434,17 +434,19 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
       for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
         const cs_lnum_t  f_id = c2f->ids[i];
-        const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
 
         /* Compute xf -> xc */
         cs_real_3_t  xfxc;
-        if (bf_id > -1) {
-          for (int k = 0; k < 3; k++)
-            xfxc[k] = quant->b_face_center[3*bf_id+k] - xc[k];
-        }
-        else {
+
+        if (f_id < quant->n_i_faces) {
           for (int k = 0; k < 3; k++)
             xfxc[k] = quant->i_face_center[3*f_id+k] - xc[k];
+        }
+        else {
+          const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
+          assert(bf_id > -1);
+          for (int k = 0; k < 3; k++)
+            xfxc[k] = quant->b_face_center[3*bf_id+k] - xc[k];
         }
 
         for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {

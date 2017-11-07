@@ -206,8 +206,9 @@ cs_equation_param_summary(const char                 *eqname,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize SLES structure for the resolution of the linear system
- *        according to the settings related to this equation
+ * \brief Set parameters for initializing SLES structures used for the
+ *        resolution of the linear system.
+ *        Settings are related to this equation.
  *
  * \param[in]   eqname       pointer to an cs_equation_t structure
  * \param[in]   eqp          pointer to a cs_equation_param_t struct.
@@ -216,9 +217,9 @@ cs_equation_param_summary(const char                 *eqname,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_init_sles(const char                 *eqname,
-                            const cs_equation_param_t  *eqp,
-                            int                         field_id);
+cs_equation_param_set_sles(const char                 *eqname,
+                           const cs_equation_param_t  *eqp,
+                           int                         field_id);
 
 /*----------------------------------------------------------------------------*/
 /*!

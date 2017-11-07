@@ -265,7 +265,7 @@ _petsc_p_setup_hook_view(const void  *context,
  * an algebraic multigrid solver is available (and recommended).
  *
  * External solvers may also be setup using this function, the cs_sles_t
- * mechanism alowing such through user-define functions.
+ * mechanism allowing such through user-define functions.
  */
 /*----------------------------------------------------------------------------*/
 

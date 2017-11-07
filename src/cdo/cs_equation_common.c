@@ -452,6 +452,7 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
       if (fb_scheme_flag & CS_SCHEME_FLAG_SCALAR) {
 
+        assert(n_faces > n_cells);
         cwb_size = CS_MAX(cwb_size, (size_t)3*n_faces);
 
         /* Initialize additional structures */
