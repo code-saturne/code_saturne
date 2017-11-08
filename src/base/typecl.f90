@@ -185,7 +185,8 @@ do ifac = 1, nfabor
 enddo
 
 if (irangp.ge.0) call parcmx(iok)
-if(iok.ne.0) then
+
+if (iok.ne.0) then
   call boundary_conditions_error(itypfb)
 endif
 

@@ -484,7 +484,7 @@ cs_flag_check(const char   *err_elt_descr,
   int error_flag = 0;
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
-    if (elt_flag[i] < 0) {
+    if (elt_flag[i] < min_flag) {
       error_flag = 1;
       break;
     }
