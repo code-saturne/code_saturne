@@ -401,6 +401,7 @@ cs_source_term_init(cs_space_scheme_t             space_scheme,
 
     case CS_SPACE_SCHEME_CDOVB:
 
+      msh_flag |= CS_CDO_LOCAL_PV;
       if (st_def->meta & CS_FLAG_DUAL) {
 
         switch (st_def->type) {
