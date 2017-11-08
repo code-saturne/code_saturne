@@ -347,7 +347,7 @@ if (ivofmt.ge.0) then
 endif
 
 ! Calculation of dt/rho
-if (ivofmt.ge.0.or.idilat.eq.4.or.ilevst.ne.0) then
+if (ivofmt.ge.0.or.idilat.eq.4) then
 
   ! Allocate and initialize specific arrays
   allocate(xunsro(ncelet))
@@ -452,7 +452,7 @@ climgp = vcopt_u%climgr
 itypfl = 1
 ! VOF algorithm: the pressure step corresponds to the
 ! correction of the volumetric flux, not the mass flux
-if (idilat.ge.4.or.icavit.ge.0.or.ilevst.ne.0) itypfl = 0
+if (idilat.ge.4.or.ivofmt.ge.0) itypfl = 0
 
 call inimav &
 (f_id0  , itypfl ,                                              &
@@ -929,7 +929,7 @@ if (ivofmt.lt.0) then
   call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
                                 iccocg, iphydr,                     &
                                 frcxt, gradp)
-else if (ilevst.eq.0) then
+else
   ! VOF algo.: continuity of the diffusive flux across internal faces
 
   nswrgp = vcopt_p%nswrgr
@@ -944,12 +944,6 @@ else if (ilevst.eq.0) then
                            cvar_pr, xunsro, coefa_p , coefb_p,                &
                            gradp )
 
-else
-  do iel = 1, ncelet
-    do isou = 1, 3
-      gradp(isou,iel) = 0.d0
-    enddo
-  enddo
 endif
 
 do iel = 1, ncelet
@@ -1054,8 +1048,7 @@ iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_u%epsrgr
 climgp = vcopt_u%climgr
 itypfl = 1
-
-if (ivofmt.ge.0.or.idilat.eq.4.or.ilevst.ne.0) itypfl = 0
+if (ivofmt.ge.0.or.idilat.eq.4) itypfl = 0
 
 call inimav &
 !==========
@@ -2315,46 +2308,14 @@ endif
 ! 10. Update the pressure field
 !===============================================================================
 
-if (ilevst .eq. 0) then
-  if (idtvar.lt.0) then
-    do iel = 1, ncel
-      cvar_pr(iel) = cvara_pr(iel) + vcopt_p%relaxv*cvar_pr(iel)
-    enddo
-  else
-    do iel = 1, ncel
-      cvar_pr(iel) = cvara_pr(iel) + cvar_pr(iel)
-    enddo
-  endif
+if (idtvar.lt.0) then
+  do iel = 1, ncel
+    cvar_pr(iel) = cvara_pr(iel) + vcopt_p%relaxv*cvar_pr(iel)
+  enddo
 else
-  if (idtvar.lt.0) then
-    do iel = 1, ncel
-      cvar_pr(iel) =  vcopt_p%relaxv*cvar_pr(iel)
-    enddo
-  endif
-    ! FIXME: it is not conservative!
-
-  init   = 1
-  inc    = 1
-  iflmb0 = 1
-  if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
-  nswrgp = vcopt_u%nswrgr
-  imligp = vcopt_u%imligr
-  iwarnp = vcopt_u%iwarni
-  epsrgp = vcopt_u%epsrgr
-  climgp = vcopt_u%climgr
-  itypfl = 1
-
-  call inimav &
-  !==========
-   ( ivarfl(iu)      , itypfl ,                                     &
-     iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-     iwarnp ,                                                       &
-     epsrgp , climgp ,                                              &
-     crom, brom   ,                                                 &
-     vel    ,                                                       &
-     coefav , coefbv ,                                              &
-     imasfl , bmasfl )
-
+  do iel = 1, ncel
+    cvar_pr(iel) = cvara_pr(iel) + cvar_pr(iel)
+  enddo
 endif
 
 ! Transformation of volumic mass fluxes into massic mass fluxes

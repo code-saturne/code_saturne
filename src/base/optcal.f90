@@ -1110,21 +1110,6 @@ module optcal
   integer, save :: ivofmt
 
   !> \}
-  !----------------------------------------------------------------------------
-  ! Level set
-  !----------------------------------------------------------------------------
-
-  !> \defgroup level_set Level set
-
-  !> \addtogroup level_set
-  !> \{
-
-  !> Level set module
-  !>    -  0: deactivated
-  !>    -  1: activated
-  integer, save :: ilevst
-
-  !> \}
 
   !----------------------------------------------------------------------------
   ! Additional source terms

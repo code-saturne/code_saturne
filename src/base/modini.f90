@@ -908,12 +908,6 @@ if (iscalt.gt.0) then
   endif
 endif
 
-if (ilevst.eq.1) then
-  if (visls0(ivolf2).lt.-grand) then
-    visls0(ivolf2) = viscl0
-  endif
-endif
-
 if (nscaus.gt.0) then
   do jj = 1, nscaus
     if (iscavr(jj).le.0 .and. visls0(jj).lt.-grand) then

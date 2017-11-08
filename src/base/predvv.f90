@@ -467,13 +467,6 @@ if (iappel.eq.1) then
       trav(2,iel) = (frcxt(2 ,iel) - cpro_gradp(2,iel)) * cell_f_vol(iel)
       trav(3,iel) = (frcxt(3 ,iel) - cpro_gradp(3,iel)) * cell_f_vol(iel)
     enddo
-  else if (ilevst.ne.0) then
-    do iel = 1, ncel
-      drom = (crom(iel)-ro0)
-      trav(1,iel) = drom * gx * cell_f_vol(iel)
-      trav(2,iel) = drom * gy * cell_f_vol(iel)
-      trav(3,iel) = drom * gz * cell_f_vol(iel)
-    enddo
   else if (iphydr.eq.2) then
     do iel = 1, ncel
       rom = crom(iel)
