@@ -209,13 +209,6 @@ if (ivofmt.ge.0) then
   call field_set_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
 endif
 
-if (ilevst.eq.1) then
-  call add_variable_field('level_set', 'Level Set', 1, ivolf2)
-  call field_get_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
-  vcopt%idiff = 0
-  call field_set_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
-endif
-
 ! --- Turbulence
 
 if (itytur.eq.2) then
