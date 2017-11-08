@@ -13,6 +13,8 @@ User changes
 Bug fixes
 ---------
 
+- Fix in post-processing of wrong user boundary conditions.
+
 - Fix implicit part of the Coriolis source term in the momentum
   (turbomachinery module).
 
