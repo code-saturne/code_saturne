@@ -98,7 +98,7 @@ Double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto
 double precision xttkmg, xttdrb
-double precision trrij,rottke
+double precision trrij,rottke, width, xrtp
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
@@ -107,8 +107,9 @@ double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:,:), pointer :: visten, vistes, cpro_visma_v
 double precision, dimension(:), pointer :: viscl, visct, cpro_vis
-double precision, dimension(:), pointer :: cvar_voidf
+double precision, dimension(:), pointer :: cvar_voidf, cvar_scal
 double precision, dimension(:), pointer :: cpro_var, cpro_beta, cpro_visma_s
+double precision, dimension(:), pointer :: heavyside, dirac
 
 integer          ipass
 data             ipass /0/
@@ -747,6 +748,38 @@ if (varmn(ii).lt.0.d0) then
   write(nfecra,9011)chaine(1:16),varmn(ii)
   iok = iok + 1
 endif
+
+call field_get_val_s(icrom, crom)
+call field_get_val_s(iprpfl(iviscl), viscl)
+
+! HARD CODED I'm not proud of that !
+width = 1.5d0/64.d0
+
+call field_get_val_s_by_name("level_set", cvar_scal)
+call field_get_val_s_by_name("heavyside", heavyside)
+call field_get_val_s_by_name("dirac", dirac)
+
+do iel = 1, ncel
+
+  xrtp = cvar_scal(iel)
+
+  if (xrtp.lt.(-width)) then
+    heavyside(iel) = 0.d0
+    dirac(iel) = 0.d0
+  else if (xrtp.gt.width) then
+    heavyside(iel) = 1.d0
+    dirac(iel) = 0.d0
+  else
+    heavyside(iel) = 0.5d0*(1.d0+xrtp/width+sin(pi*xrtp/width)/pi)
+    dirac(iel) = 0.5d0/width*(1.d0+cos(pi*xrtp/width))
+  endif
+
+  ! rho1 is density of the liquid
+  ! rho2 is density of the vapor
+  viscl(iel) = viscl0 - (viscl0/rho2*rho1 - viscl0)*heavyside(iel)
+  crom(iel) = rho2 - (rho1 - rho2)*heavyside(iel)
+enddo
+
 
 ! Viscosite turbulente definie
 ! on ne clippe pas mu_t en modele LES dynamique, car on a fait

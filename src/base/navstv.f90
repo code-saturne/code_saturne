@@ -879,17 +879,33 @@ if (ippmod(icompf).lt.0) then
 
     ! GRADIENT DE L'INCREMENT TOTAL DE PRESSION
 
-    if (idtvar.lt.0) then
-      !$omp parallel do
-      do iel = 1, ncel
-        dpvar(iel) = (cvar_pr(iel) -cvara_pr(iel)) / vcopt_p%relaxv
-      enddo
+    if (ilevst .eq. 0) then
+      if (idtvar.lt.0) then
+        !$omp parallel do
+        do iel = 1, ncel
+          dpvar(iel) = (cvar_pr(iel) -cvara_pr(iel)) / vcopt_p%relaxv
+        enddo
+      else
+        !$omp parallel do
+        do iel = 1, ncel
+          dpvar(iel) = cvar_pr(iel) -cvara_pr(iel)
+        enddo
+      endif
     else
-      !$omp parallel do
-      do iel = 1, ncel
-        dpvar(iel) = cvar_pr(iel) -cvara_pr(iel)
-      enddo
-    endif
+
+      if (idtvar.lt.0) then
+        !$omp parallel do
+        do iel = 1, ncel
+          dpvar(iel) = cvar_pr(iel) / vcopt_p%relaxv
+        enddo
+     else
+        !$omp parallel do
+        do iel = 1, ncel
+          dpvar(iel) = cvar_pr(iel)
+        enddo
+      endif
+
+     endif
 
     ! --->    TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
