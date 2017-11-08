@@ -1,6 +1,6 @@
 /*============================================================================
  * Build an algebraic CDO vertex-based system for unsteady convection diffusion
- * reaction of scalar equations with source terms
+ * reaction of scalar-valued equations with source terms
  *============================================================================*/
 
 /*
@@ -1398,7 +1398,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
               " Stop computing a cellwise diffusive flux.");
 
   /* If no diffusion, return after resetting */
-  if (cs_equation_param_has_diffusion(eqp)) {
+  if (cs_equation_param_has_diffusion(eqp) == false) {
 
     size_t  size = 0;
     if (cs_test_flag(location, cs_cdo_primal_cell))
