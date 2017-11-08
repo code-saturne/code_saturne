@@ -420,7 +420,7 @@ cs_cdofb_vecteq_initialize(const cs_cdo_quantities_t     *quant,
   }
 
   const short int  n_blocks = connect->n_max_fbyc + 1;
-  const short int  max_size = 3*n_blocks;
+  const short int  n_max_dofs = 3*n_blocks;
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -433,8 +433,8 @@ cs_cdofb_vecteq_initialize(const cs_cdo_quantities_t     *quant,
     for (int i = 0; i < n_blocks; i++)
       block_sizes[i] = 3;
 
-    cs_cdofb_cell_sys[t_id] = cs_cell_sys_create(max_size,
-                                                 n_blocks,
+    cs_cdofb_cell_sys[t_id] = cs_cell_sys_create(n_max_dofs,
+                                                 n_blocks - 1,
                                                  n_blocks,
                                                  block_sizes);
     cs_cdofb_cell_bld[t_id] = cb;
@@ -447,8 +447,8 @@ cs_cdofb_vecteq_initialize(const cs_cdo_quantities_t     *quant,
   for (int i = 0; i < n_blocks; i++)
     block_sizes[i] = 3;
 
-  cs_cdofb_cell_sys[0] =  cs_cell_sys_create(max_size,
-                                             n_blocks,
+  cs_cdofb_cell_sys[0] =  cs_cell_sys_create(n_max_dofs,
+                                             n_blocks - 1,
                                              n_blocks,
                                              block_sizes);
   cs_cdofb_cell_bld[0] = cb;

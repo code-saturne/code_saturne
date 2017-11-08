@@ -372,6 +372,7 @@ cs_cdofb_scaleq_initialize(const cs_cdo_quantities_t     *quant,
 #else
   assert(cs_glob_n_threads == 1);
   cs_cdofb_cell_sys[0] = cs_cell_sys_create(connect->n_max_fbyc + 1,
+                                            connect->n_max_fbyc,
                                             1, NULL);
   cs_cdofb_cell_bld[0] = _cell_builder_create(connect);
 #endif /* openMP */
