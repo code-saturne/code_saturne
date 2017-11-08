@@ -3573,7 +3573,7 @@ double precision coefa, cofaf, coefb, cofbf, qimp, hint
 !===============================================================================
 
 ! Gradient BCs
-coefa = -qimp/hint
+coefa = -qimp/max(hint, 1.d-300)
 coefb = 1.d0
 
 ! Flux BCs
@@ -3625,7 +3625,7 @@ integer          isou  , jsou
 do isou = 1, 3
 
   ! Gradient BCs
-  coefa(isou) = -qimpv(isou)/hint
+  coefa(isou) = -qimpv(isou)/max(hint, 1.d-300)
   do jsou = 1, 3
     if (jsou.eq.isou) then
       coefb(isou,jsou) = 1.d0
@@ -3687,7 +3687,7 @@ integer          isou  , jsou
 do isou = 1, 6
 
   ! Gradient BCs
-  coefa(isou) = -qimpts(isou)/hint
+  coefa(isou) = -qimpts(isou)/max(hint, 1.d-300)
   do jsou = 1, 6
     if (jsou.eq.isou) then
       coefb(isou,jsou) = 1.d0
@@ -3838,9 +3838,9 @@ do isou = 1, 3
   ! Gradient BCs
   coefa(isou) = pimpv(isou)*normal(isou)                    &
     ! "[1 -n(x)n] Qimp / hint" is divided into two
-              - qimpv(isou)/hint
+              - qimpv(isou)/max(hint, 1.d-300)
   do jsou = 1, 3
-    coefa(isou) = coefa(isou) + normal(isou)*normal(jsou)*qimpv(jsou)/hint
+    coefa(isou) = coefa(isou) + normal(isou)*normal(jsou)*qimpv(jsou)/max(hint, 1.d-300)
     if (jsou.eq.isou) then
       coefb(isou,jsou) = 1.d0 - normal(isou)*normal(jsou)
     else
@@ -4013,7 +4013,7 @@ do isou = 1, 3
   ! Gradient BCs
   ! "[1 -n(x)n] Pimp" is divided into two
   coefa(isou) = pimpv(isou)                                    &
-              - normal(isou)*qimpv(isou)/hint
+              - normal(isou)*qimpv(isou)/max(hint, 1.d-300)
   do jsou = 1, 3
     coefa(isou) = coefa(isou) - normal(isou)*normal(jsou)*pimpv(jsou)
     coefb(isou,jsou) = normal(isou)*normal(jsou)

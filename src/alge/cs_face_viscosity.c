@@ -272,7 +272,8 @@ cs_face_viscosity(const cs_mesh_t               *m,
         double viscj = c_visc[jj];
         double pnd   = weight[face_id];
 
-        i_visc[face_id] = visci*viscj/(pnd*visci+(1.-pnd)*viscj)
+        i_visc[face_id] = visci*viscj/CS_MAX(pnd*visci+(1.-pnd)*viscj,
+                                             DBL_MIN)
                          *i_f_face_surf[face_id]/i_dist[face_id];
 
       }
@@ -314,7 +315,8 @@ cs_face_viscosity(const cs_mesh_t               *m,
         double viscj = c_visc[jj] * porosi[jj];
         double pnd   = weight[face_id];
 
-        i_visc[face_id] = visci*viscj/(pnd*visci+(1.-pnd)*viscj)
+        i_visc[face_id] = visci*viscj/CS_MAX(pnd*visci+(1.-pnd)*viscj,
+                                             DBL_MIN)
                          *i_f_face_surf[face_id]/i_dist[face_id];
 
       }
