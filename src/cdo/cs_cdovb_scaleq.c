@@ -1215,10 +1215,11 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
   const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
   const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
 
-  if (n_elts[0] > 0 && elt_ids == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Computing the flux across all interior or border faces is not"
-                " managed yet."));
+  if (cs_glob_n_ranks == 1)
+    if (n_elts[0] > 0 && elt_ids == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Computing the flux across all interior or border faces is"
+                  " not managed yet."));
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_adjacency_t  *f2c = connect->f2c;
