@@ -181,6 +181,10 @@ endif
 call add_property_field_1d('courant_number', 'CFL', icour)
 call add_property_field_1d('fourier_number', 'Fourier Number', ifour)
 
+call add_property_field_1d('heavyside', 'Heavyside', iflid)
+call add_property_field_1d('dirac', 'Dirac', iflid)
+
+
 ! Total pressure is stored in property field of index iprtot
 ! if the compressible module is not enabled (otherwise Ptot=P*).
 ! For groundwater flows, this field is the pressure head (h = H - z),
