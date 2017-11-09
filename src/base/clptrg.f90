@@ -1823,7 +1823,7 @@ do ifac = 1, nfabor
       endif
 
       ! Symmetric tensor diffusivity (GGDH or AFM)
-    elseif (vcopt%idften.eq.6) then
+    elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
         if (icp.ge.0) then
