@@ -123,8 +123,8 @@ cs_lagr_gradients(int            time_id,
   if (hyd_p_flag == 1)
     f_ext = (cs_real_3_t *)(cs_field_by_name("volume_forces")->val);
 
-  cs_real_t *solved_pres =
-    time_id ? extra->pressure->val_pre : extra->pressure->val;
+  cs_real_t *solved_pres
+    = time_id ? extra->pressure->val_pre : extra->pressure->val;
 
   /* retrieve 2/3 rho^{n} k^{n} from solved pressure field for EVM models */
   // FIXME if time_id = 1, we don't have k^{n-1}
@@ -143,9 +143,8 @@ cs_lagr_gradients(int            time_id,
     wpres = solved_pres;
   }
 
-  /* ====================================================================
-   * 0. Parameters for gradient computation
-   * ====================================================================   */
+  /* Parameters for gradient computation
+   * =================================== */
 
   int tr_dim = 0;
   cs_lnum_t inc = 1;
@@ -195,9 +194,8 @@ cs_lagr_gradients(int            time_id,
     }
   }
 
-  /* ====================================================================
-   * 1. Compute pressure gradient
-   * ====================================================================   */
+  /* Compute pressure gradient
+   * ========================= */
 
   cs_gradient_scalar("Work array",
                      gradient_type,
@@ -221,22 +219,18 @@ cs_lagr_gradients(int            time_id,
                      cpl,
                      gradpr);
 
-  if (   cs_glob_turb_model->itytur == 2
-      || cs_glob_turb_model->itytur == 5
-      || cs_glob_turb_model->itytur == 6) {
+  if (wpres != solved_pres)
     BFT_FREE(wpres);
-  }
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
-      for (int id = 0; id < 3; id++)
+      for (cs_lnum_t id = 0; id < 3; id++)
         gradpr[iel][id] += ro0 * grav[id];
     }
   }
 
-  /* ====================================================================   */
-  /* 2. Compute velocity gradient   */
-  /* ====================================================================   */
+  /* Compute velocity gradient
+     ========================= */
 
   if (   cs_glob_lagr_time_scheme->modcpl > 0
       && cs_glob_time_step->nt_cur >= cs_glob_lagr_time_scheme->modcpl) {
@@ -253,9 +247,6 @@ cs_lagr_gradients(int            time_id,
                              inc,
                              gradvf);
   }
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/
