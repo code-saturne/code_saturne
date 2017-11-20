@@ -117,7 +117,7 @@ typedef void
  * Options are:
  *   txt                 output txt (space-separated) files
  *   tex                 output TeX (TixZ) files
- *   png                 output PNG (TixZ) files
+ *   png                 output PNG files
  *   [n_sub]             number of subdivisions
  *
  * parameters:

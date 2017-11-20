@@ -122,6 +122,9 @@ User changes
 Architectural changes
 ---------------------
 
+- Add "histogram" type writers for easy output of variable histograms.
+  Options include text, TixZ, or PNG (when Catalyst support is available).
+
 - When coupling with Syrthes, source Syrthes library path changes only locally.
 
 - Improve Catalyst environment handling for better automation with SALOME.
