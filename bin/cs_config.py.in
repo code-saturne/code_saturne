@@ -90,7 +90,7 @@ class config:
                         'latex', 'doxygen', 'sphinx',   # docs
                         'eos', 'freesteam', 'coolprop', # Equations of state
                         'ccm', 'cgns', 'med', 'hdf5',   # Mesh filters
-                        'catalyst',                     # co-processing library
+                        'catalyst', 'melissa',          # co-processing libraries
                         'medcoupling', 'paramedmem',    # MED coupling
                         'petsc',                        # Linear algebra
                         'metis', 'scotch',              # Partionning libraries
@@ -267,6 +267,14 @@ class config:
                          flags = {'cppflags': "@CATALYST_CPPFLAGS@",
                                   'ldflags': "@CATALYST_LDFLAGS@",
                                   'libs': "@CATALYST_LIBS@"})
+
+        self.libs['melissa'] = \
+            prerequisite("MELISSA",
+                         have = "@cs_have_melissa@",
+                         dynamic_load = @cs_py_have_plugin_melissa@,
+                         flags = {'cppflags': "@MELISSA_CPPFLAGS@",
+                                  'ldflags': "@MELISSA_LDFLAGS@",
+                                  'libs': "@MELISSA_LIBS@"})
 
         self.libs['medcoupling'] = \
             prerequisite("MEDCOUPLING",

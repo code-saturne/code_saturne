@@ -42,6 +42,7 @@ SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po docs $(GUI) tests
 
 AUX_DIST = \
 build-aux/catalyst \
+build-aux/melissa \
 build-aux/cs_config_test.py \
 build-aux/cs_version.py \
 build-aux/petsc-petscvariables.makefile \
@@ -123,6 +124,7 @@ m4/cs_hdf5.m4 \
 m4/cs_libxml2.m4 \
 m4/cs_med.m4 \
 m4/cs_medcoupling.m4 \
+m4/cs_melissa.m4 \
 m4/cs_metis.m4 \
 m4/cs_modules.m4 \
 m4/cs_mpi.m4 \

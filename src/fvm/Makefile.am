@@ -83,8 +83,9 @@ fvm_to_catalyst.h \
 fvm_to_ensight.h \
 fvm_to_ensight_case.h \
 fvm_to_histogram.h \
-fvm_to_vtk_histogram.h \
 fvm_to_medcoupling.h \
+fvm_to_melissa.h \
+fvm_to_vtk_histogram.h \
 fvm_to_plot.h \
 fvm_to_time_plot.h \
 fvm_writer_helper.h \
@@ -93,7 +94,7 @@ fvm_writer_priv.h
 # Library source files
 
 lib_LTLIBRARIES =
-pkglib_LTLIBRARIES = 
+pkglib_LTLIBRARIES =
 noinst_LTLIBRARIES = libfvm.la libfvm_filters.la
 libfvm_la_LIBADD = $(LTLIBINTL)
 libfvm_filters_la_LIBADD =
@@ -211,6 +212,46 @@ libfvm_catalyst_la_SOURCES = fvm_to_catalyst.cxx \
                              fvm_to_vtk_histogram.cxx
 noinst_LTLIBRARIES += libfvm_catalyst.la
 libfvm_filters_la_LIBADD += libfvm_catalyst.la
+
+endif
+
+endif
+
+# Melissa (plugin or linked)
+
+if HAVE_MELISSA
+
+if HAVE_PLUGIN_MELISSA
+
+fvm_melissa_la_CPPFLAGS = \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+$(MELISSA_CPPFLAGS) $(MPI_CPPFLAGS)
+fvm_melissa_la_CXXFLAGS = \
+$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
+$(MELISSA_CXXFLAGS)
+fvm_melissa_la_LIBADD = \
+$(MELISSA_LDFLAGS) $(MELISSA_LIBS) \
+$(MELISSARUNPATH)
+fvm_melissa_la_SOURCES = fvm_to_melissa.c
+pkglib_LTLIBRARIES += fvm_melissa.la
+fvm_melissa_la_LDFLAGS = -module -avoid-version
+
+else
+
+libfvm_melissa_la_CPPFLAGS = \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+$(MELISSA_CPPFLAGS) $(MPI_CPPFLAGS)
+libfvm_melissa_la_CXXFLAGS = \
+$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
+$(MELISSA_CXXFLAGS)
+libfvm_melissa_la_LIBADD = \
+$(MELISSA_LDFLAGS) $(MELISSA_LIBS) \
+$(MELISSARUNPATH)
+libfvm_melissa_la_SOURCES = fvm_to_melissa.c
+noinst_LTLIBRARIES += libfvm_melissa.la
+libfvm_filters_la_LIBADD += libfvm_melissa.la
 
 endif
 

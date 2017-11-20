@@ -631,6 +631,7 @@ CS_AC_TEST_COOLPROP
 CS_AC_TEST_ZLIB
 CS_AC_TEST_MEDCOUPLING
 CS_AC_TEST_CATALYST
+CS_AC_TEST_MELISSA
 CS_AC_TEST_PETSC
 
 CS_AC_TEST_DOCS
@@ -1183,6 +1184,10 @@ fi
 echo " Catalyst (ParaView co-processing) support: "$cs_have_catalyst""
 if (test x$cs_have_catalyst = xyes) ; then
   echo "   Catalyst as plugin: "$cs_have_plugin_catalyst""
+fi
+echo " Melissa (in-situ statistics) support: "$cs_have_melissa""
+if (test x$cs_have_melissa = xyes) ; then
+  echo "   Melissa as plugin: "$cs_have_plugin_melissa""
 fi
 echo " EOS support: "$cs_have_eos""
 echo " freesteam support: "$cs_have_freesteam""

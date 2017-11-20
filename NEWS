@@ -18,6 +18,12 @@ Changes
 - Added boundary layer insertion at selected faces, using a mesh deformation
   (CDO vertex-based), followed by boundary layer extrusion.
 
+Architectural changes
+---------------------
+
+- Add "Melissa" type writers for coupling with in-situ statistics
+  Melissa server.
+
 Release 5.1.0 (October 10 2017)
 ===============================
 

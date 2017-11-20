@@ -204,8 +204,9 @@ class FormatWriterDelegate(QItemDelegate):
         editor.addItem("MED")
         editor.addItem("CGNS")
         editor.addItem("Catalyst")
-        editor.addItem("CCM-IO")
         editor.addItem("Histogram")
+        editor.addItem("Melissa")
+        editor.addItem("CCM-IO")
         editor.installEventFilter(self)
 
         import cs_config
@@ -216,14 +217,16 @@ class FormatWriterDelegate(QItemDelegate):
             editor.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
         if cfg.libs['catalyst'].have == "no":
             editor.setItemData(3, QColor(Qt.red), Qt.TextColorRole);
-        if cfg.libs['ccm'].have == "no":
+        if cfg.libs['melissa'].have == "no":
             editor.setItemData(4, QColor(Qt.red), Qt.TextColorRole);
+        if cfg.libs['ccm'].have == "no":
+            editor.setItemData(6, QColor(Qt.red), Qt.TextColorRole);
         return editor
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"ensight": 0, "med": 1, "cgns": 2, "catalyst": 3, "ccm": 4,
-                "histogram": 5}
+        dico = {"ensight": 0, "med": 1, "cgns": 2, "catalyst": 3,
+                "histogram": 4, "melissa": 5, "ccm": 6}
         row = index.row()
         string = index.model().dataWriter[row]['format']
         idx = dico[string]
@@ -764,14 +767,16 @@ class StandardItemModelWriter(QStandardItemModel):
                        "MED" : 'med',
                        "CGNS": 'cgns',
                        "Catalyst": 'catalyst',
-                       "CCM-IO": 'ccm',
-                       "Histogram": 'histogram'}
+                       "Histogram": 'histogram',
+                       "Melissa": 'melissa',
+                       "CCM-IO": 'ccm'}
         self.dicoM2V= {"ensight" : 'EnSight',
                        "med" : 'MED',
                        "cgns": 'CGNS',
                        "catalyst": 'Catalyst',
-                       "ccm": 'CCM-IO',
-                       "histogram": 'Histogram'}
+                       "histogram": 'Histogram',
+                       "melissa": 'Melissa',
+                       "ccm": 'CCM-IO'}
         for id in self.mdl.getWriterIdList():
             row = self.rowCount()
             self.setRowCount(row + 1)

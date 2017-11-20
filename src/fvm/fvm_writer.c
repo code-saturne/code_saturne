@@ -73,10 +73,12 @@
 #include "fvm_to_plot.h"
 #include "fvm_to_time_plot.h"
 
-#if defined(HAVE_CATALYST)
-#if !defined(HAVE_PLUGIN_CATALYST)
+#if defined(HAVE_CATALYST) && !defined(HAVE_PLUGIN_CATALYST)
 #include "fvm_to_catalyst.h"
 #endif
+
+#if defined(HAVE_MELISSA) && !defined(HAVE_PLUGIN_MELISSA)
+#include "fvm_to_melissa.h"
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -105,9 +107,9 @@ BEGIN_C_DECLS
 
 /* Number and status of defined formats */
 
-static const int _fvm_writer_n_formats = 9;
+static const int _fvm_writer_n_formats = 10;
 
-static fvm_writer_format_t _fvm_writer_format_list[9] = {
+static fvm_writer_format_t _fvm_writer_format_list[10] = {
 
   /* Built-in EnSight Gold writer */
   {
@@ -271,28 +273,48 @@ static fvm_writer_format_t _fvm_writer_format_list[9] = {
     NULL
   },
 
-  /* Built-in plot writer */
+  /* Built-in Melissa writer */
   {
-    "plot",
+    "Melissa",
     "",
-    (  FVM_WRITER_FORMAT_HAS_POLYGON
-     | FVM_WRITER_FORMAT_HAS_POLYHEDRON
-     | FVM_WRITER_FORMAT_SEPARATE_MESHES
-     | FVM_WRITER_FORMAT_NAME_IS_OPTIONAL),
+    (  FVM_WRITER_FORMAT_USE_EXTERNAL
+     | FVM_WRITER_FORMAT_HAS_POLYGON
+     | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
     FVM_WRITER_TRANSIENT_CONNECT,
+#if !defined(HAVE_MELISSA) || defined(HAVE_PLUGIN_MELISSA)
+    0,                                 /* dynamic library count */
+    NULL,                              /* dynamic library */
+#if defined(HAVE_MELISSA)
+    "fvm_melissa",                     /* dynamic library name */
+    "fvm_to_melissa_",                 /* dynamic library prefix */
+#else
+    NULL,
+    NULL,
+#endif
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+#else
     0,                                 /* dynamic library count */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */
     NULL,                              /* dynamic library prefix */
     NULL,                              /* n_version_strings_func */
     NULL,                              /* version_string_func */
-    fvm_to_plot_init_writer,           /* init_func */
-    fvm_to_plot_finalize_writer,       /* finalize_func */
-    fvm_to_plot_set_mesh_time,         /* set_mesh_time_func */
+    fvm_to_melissa_init_writer,        /* init_func */
+    fvm_to_melissa_finalize_writer,    /* finalize_func */
+    fvm_to_melissa_set_mesh_time,      /* set_mesh_time_func */
     NULL,                              /* needs_tesselation_func */
-    fvm_to_plot_export_nodal,          /* export_nodal_func */
-    fvm_to_plot_export_field,          /* export_field_func */
-    fvm_to_plot_flush                  /* flush_func */
+    fvm_to_melissa_export_nodal,       /* export_nodal_func */
+    fvm_to_melissa_export_field,       /* export_field_func */
+    NULL                               /* flush_func */
+#endif
   },
 
   /* Built-in histogram writer */
@@ -317,6 +339,30 @@ static fvm_writer_format_t _fvm_writer_format_list[9] = {
     NULL,                              /* export_nodal_func */
     fvm_to_histogram_export_field,     /* export_field_func */
     fvm_to_histogram_flush             /* flush_func */
+  },
+
+  /* Built-in plot writer */
+  {
+    "plot",
+    "",
+    (  FVM_WRITER_FORMAT_HAS_POLYGON
+     | FVM_WRITER_FORMAT_HAS_POLYHEDRON
+     | FVM_WRITER_FORMAT_SEPARATE_MESHES
+     | FVM_WRITER_FORMAT_NAME_IS_OPTIONAL),
+    FVM_WRITER_TRANSIENT_CONNECT,
+    0,                                 /* dynamic library count */
+    NULL,                              /* dynamic library */
+    NULL,                              /* dynamic library name */
+    NULL,                              /* dynamic library prefix */
+    NULL,                              /* n_version_strings_func */
+    NULL,                              /* version_string_func */
+    fvm_to_plot_init_writer,           /* init_func */
+    fvm_to_plot_finalize_writer,       /* finalize_func */
+    fvm_to_plot_set_mesh_time,         /* set_mesh_time_func */
+    NULL,                              /* needs_tesselation_func */
+    fvm_to_plot_export_nodal,          /* export_nodal_func */
+    fvm_to_plot_export_field,          /* export_field_func */
+    fvm_to_plot_flush                  /* flush_func */
   },
 
   /* Built-in time plot writer */
