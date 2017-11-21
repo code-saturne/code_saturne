@@ -673,10 +673,12 @@ cs_ctwr_h_humidair(const cs_real_t  cp_h,
   cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
   cs_real_t h_h;
 
+  cs_real_t tk_h = t_h + cs_physical_constants_celsius_to_kelvin;
+
   if (x <= x_s) {
-    h_h  = cp_h*t_h + x*ct_prop->hv0/(1.0+x);
+    h_h  = cp_h*tk_h + x*ct_prop->hv0/(1.0+x);
   } else {
-    h_h  = cp_h*t_h + x_s*ct_prop->hv0/(1.0+x);
+    h_h  = cp_h*tk_h + x_s*ct_prop->hv0/(1.0+x);
   }
 
   return  h_h;
