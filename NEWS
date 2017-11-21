@@ -5,6 +5,10 @@ Release 5.1.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix computation of pressure gradient in lagrangian equations for some cases:
+  * retrieve 2/3*rho*k from P if an EVM turbulence model is enabled
+  * retrieve rho0*g from grad(P) even if iphydr=1.
+
 - Fix in post-processing of wrong user boundary conditions.
 
 - Fix test in CDO Darcy flux computation.
