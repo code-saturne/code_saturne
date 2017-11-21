@@ -108,7 +108,7 @@ AC_ARG_ENABLE(melissa-as-plugin,
   [ cs_have_plugin_melissa=yes ]
 )
 
-if test x$cs_have_dlloader = xno ; then
+if test x$cs_have_dlloader = xno -o x$enable_shared = xno ; then
   cs_have_plugin_melissa=no
 fi
 

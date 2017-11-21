@@ -53,7 +53,7 @@ AC_ARG_ENABLE(catalyst-as-plugin,
   [ cs_have_plugin_catalyst=yes ]
 )
 
-if test x$cs_have_dlloader = xno ; then
+if test x$cs_have_dlloader = xno -o x$enable_shared = xno ; then
   cs_have_plugin_catalyst=no
 fi
 

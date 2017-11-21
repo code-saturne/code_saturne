@@ -169,8 +169,8 @@ pkglibexec_PROGRAMS += cs_check_syntax
 endif
 
 cs_solver$(EXEEXT): libsaturne.la
-	PYTHONPATH=$(top_builddir)/bin \
-	$(PYTHON) -B $(top_srcdir)/bin/cs_compile.py
+	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py
 
 # Code_Saturne IO utility (minimal dependencies)
 
@@ -206,9 +206,9 @@ endif
 all-local: cs_solver$(EXEEXT)
 
 install-exec-hook: libsaturne.la
-	PYTHONPATH=$(top_builddir)/bin \
-	$(PYTHON) -B $(top_srcdir)/bin/cs_compile.py --mode=install \
-	--dest "$(DESTDIR)"
+	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	 --mode=install --dest "$(DESTDIR)"
 
 uninstall-local:
 	rm $(libexecdir)/$(PACKAGE)/cs_solver

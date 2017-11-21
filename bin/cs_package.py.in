@@ -34,7 +34,7 @@ import cs_config
 
 class package:
 
-    def __init__(self):
+    def __init__(self, scriptdir=None):
 
         # System configuration (compilers, pre-requisites, ...)
 

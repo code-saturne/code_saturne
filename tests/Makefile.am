@@ -145,23 +145,10 @@ if HAVE_ESSL
 cs_blas_test_LDADD    += $(FCLIBS)
 endif
 
-cs_check_cdo_SOURCES  = cs_check_cdo.c
-cs_check_cdo_CPPFLAGS = $(AM_CPPFLAGS) $(PETSC_CPPFLAGS)
-cs_check_cdo_LDADD = $(top_builddir)/src/apps/libsaturne.la
-
-if HAVE_CATALYST
-if HAVE_PLUGIN_CATALYST
-else
-cs_check_cdo_LDADD += $(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
-$(CATALYSTRUNPATH)
-endif
-endif
-if HAVE_PETSC
-cs_check_cdo_LDADD += $(PETSC_LDFLAGS) $(PETSC_LIBS)
-else
-cs_check_cdo_LDADD += -lm
-endif
-cs_check_cdo_LDFLAGS = -no-undefined
+cs_check_cdo$(EXEEXT):
+	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	-o cs_check_cdo $(top_srcdir)/tests/cs_check_cdo.c
 
 cs_core_test_SOURCES  = cs_core_test.c
 cs_core_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
