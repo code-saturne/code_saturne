@@ -282,7 +282,7 @@ extern const double cs_turb_cv2fc2;
 extern const double cs_turb_cv2fct;
 extern const double cs_turb_cv2fcl;
 extern const double cs_turb_cv2fet;
-extern const double cs_turb_cwale;
+extern double cs_turb_cwale;
 extern const double cs_turb_xiafm;
 extern const double cs_turb_etaafm;
 extern const double cs_turb_c1trit;

@@ -903,7 +903,7 @@ const double cs_turb_cv2fet = 110.0;
 /*!
  * Constant of the WALE LES method.
  */
-const double cs_turb_cwale = 0.25;
+double cs_turb_cwale = 0.25;
 
 /*!
  * Coefficient of turbulent AFM flow model.
