@@ -65,6 +65,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
+#include "cs_mesh_boundary_layer.h"
 #include "cs_mesh_extrude.h"
 #include "cs_mesh_smoother.h"
 #include "cs_mesh_warping.h"
