@@ -3384,7 +3384,7 @@ cs_mesh_quantities_b_thickness_v(const cs_mesh_t             *m,
       const cs_real_t f_s = mq->b_face_surf[f_id];
       for (cs_lnum_t k = s_id; k < e_id; k++) {
         cs_lnum_t v_id = m->b_face_vtx_lst[k];
-        v_sum[v_id]     += f_s * f_b_thickness[f_id];
+        v_sum[v_id*2]   += f_s * f_b_thickness[f_id];
         v_sum[v_id*2+1] += f_s;
       }
     }
@@ -3412,6 +3412,11 @@ cs_mesh_quantities_b_thickness_v(const cs_mesh_t             *m,
           f_b_thickness[f_id] += v_sum[v_id*2];
           f_b_thickness[f_id + m->n_b_faces] += v_sum[v_id*2 + 1];
         }
+      }
+
+      for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
+        if (f_b_thickness[f_id + m->n_b_faces] > 0)
+          f_b_thickness[f_id] /= f_b_thickness[f_id + m->n_b_faces];
       }
 
     }
