@@ -206,7 +206,7 @@ class cs_compile(object):
         flags = []
 
         # Add CPPFLAGS and LDFLAGS information for the current package
-        if flag == 'cppflags' or flag == 'cxxflags':
+        if flag == 'cppflags':
             flags.insert(0, "-I" + self.pkg.get_dir("pkgincludedir"))
             if self.pkg.config.libs['ple'].variant == "internal":
                 flags.insert(0, "-I" + self.pkg.get_dir("includedir"))
@@ -306,7 +306,7 @@ class cs_compile(object):
     def compile_src(self, src_list=None,
                     opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
                     keep_going=False,
-                    stdout = sys.stdout, stderr = sys.stderr):
+                    stdout=sys.stdout, stderr=sys.stderr):
         """
         Compilation function.
         """
@@ -425,7 +425,7 @@ class cs_compile(object):
     #---------------------------------------------------------------------------
 
     def link_obj(self, exec_name, obj_files=None, opt_libs=None,
-                 stdout = sys.stdout, stderr = sys.stderr):
+                 stdout=sys.stdout, stderr=sys.stderr):
         """
         Link function.
         """
@@ -516,7 +516,7 @@ class cs_compile(object):
     def compile_and_link(self, srcdir, destdir=None, src_list=None,
                          opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
                          opt_libs=None, force_link=False, keep_going=False,
-                         stdout = sys.stdout, stderr = sys.stderr):
+                         stdout=sys.stdout, stderr=sys.stderr):
         """
         Compilation and link function.
         """
@@ -573,7 +573,7 @@ class cs_compile(object):
 def compile_and_link(pkg, srcdir, destdir=None,
                      opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
                      opt_libs=None, force_link=False, keep_going=False,
-                     stdout = sys.stdout, stderr = sys.stderr):
+                     stdout=sys.stdout, stderr=sys.stderr):
     """
     Compilation and link function.
     """
@@ -586,7 +586,9 @@ def compile_and_link(pkg, srcdir, destdir=None,
                                  opt_fcflags=opt_fcflags,
                                  opt_libs=opt_libs,
                                  force_link=force_link,
-                                 keep_going=keep_going)
+                                 keep_going=keep_going,
+                                 stdout=stdout,
+                                 stderr=stderr)
 
     return retcode
 
