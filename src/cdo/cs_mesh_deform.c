@@ -142,7 +142,7 @@ _define_displ_bcs(cs_real_t           time,
 
     for (cs_lnum_t p = 0; p < n_pts; p++) {
       const cs_lnum_t  id = pt_ids[p];
-      res[id] = - _vd[id][c_id];
+      res[id] = _vd[id][c_id];
     }
 
   }
@@ -150,7 +150,7 @@ _define_displ_bcs(cs_real_t           time,
 
     for (cs_lnum_t p = 0; p < n_pts; p++) {
       const cs_lnum_t  id = pt_ids[p];
-      res[p] = - _vd[id][c_id];
+      res[p] = _vd[id][c_id];
     }
 
   }
