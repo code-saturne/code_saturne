@@ -100,7 +100,7 @@ main (int argc, char *argv[])
 
 
   /* Free all the tree structure */
-  cs_tree_free(&root);
+  cs_tree_node_free(&root);
 
   exit(EXIT_SUCCESS);
 }

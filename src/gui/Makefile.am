@@ -65,7 +65,8 @@ cs_gui_particles.h \
 cs_gui_radiative_transfer.h \
 cs_gui_specific_physics.h \
 cs_gui_util.h \
-cs_gui_variables.h
+cs_gui_variables.h \
+cs_tree_xml.h
 
 # Library source files
 
@@ -83,4 +84,5 @@ cs_gui_output.c \
 cs_gui_particles.c \
 cs_gui_radiative_transfer.c \
 cs_gui_specific_physics.c \
-cs_gui_util.c
+cs_gui_util.c \
+cs_tree_xml.c

@@ -39,6 +39,7 @@
 
 #include "cs_defs.h"
 #include "cs_field.h"
+#include "cs_tree.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -210,6 +211,14 @@ extern const cs_space_disc_t  *cs_glob_space_disc;
 /* Pointer to PISO options structure */
 
 extern const cs_piso_t        *cs_glob_piso;
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
+/*! Global parameters tree structure */
+
+extern cs_tree_node_t  *cs_glob_tree;
 
 /*=============================================================================
  * Public function prototypes

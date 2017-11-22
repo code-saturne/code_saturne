@@ -2,7 +2,7 @@
 #define __CS_TREE_H__
 
 /*============================================================================
- * Routines to handle a tree structure used to store data and settings
+ * Tree structure used to store data and settings.
  *============================================================================*/
 
 /*
@@ -70,9 +70,9 @@ struct _cs_tree_node_t {
   /* Pointers to other nodes to allow an easy navigation among the tree */
 
   cs_tree_node_t  *parent;    /* Pointer to the parent node or NULL if root */
-  cs_tree_node_t  *children;  /* Pointer to the first children or NULL */
+  cs_tree_node_t  *children;  /* Pointer to the first child or NULL */
   cs_tree_node_t  *prev;      /* Pointer to a previous node sharing the same
-                                 parent or NULL if this is the first children */
+                                 parent or NULL if this is the first child */
   cs_tree_node_t  *next;      /* Pointer to a next node sharing the same parent
                                  or NULL if there is no next node */
 
@@ -84,11 +84,13 @@ struct _cs_tree_node_t {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create an empty node. Only the name is assigned if given
+ * \brief  Create an empty node.
  *
- * \param[in]  name    name of the node or NULL
+ * Only the name is assigned if given
  *
- * \return a pointer to a new allocated cs_tree_node_t structure
+ * \param[in]  name  name of the node, or NULL
+ *
+ * \return  pointer to a new allocated cs_tree_node_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -97,9 +99,11 @@ cs_tree_node_create(const char  *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_tree_node_t structure.
+ * \brief  Free a branch in a tree starting from a node.
  *
- * \param[in, out] pnode  pointer to a pointer to a cs_tree_node_t to free
+ *  If the node is the root of the tree, the whole tree is freed.
+ *
+ * \param[in, out]  pnode  pointer to a pointer to a cs_tree_node_t to free
  */
 /*----------------------------------------------------------------------------*/
 
@@ -108,23 +112,53 @@ cs_tree_node_free(cs_tree_node_t  **pnode);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the value member of a node and assign to it a string
+ * \brief  Name or rename a node.
  *
- * \param[in, out] node   pointer to a cs_tree_node_t to modify
- * \param[in]      val    value of the string
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_tree_node_set_string_val(cs_tree_node_t  *node,
+cs_tree_node_set_name(cs_tree_node_t  *node,
+                      const char      *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate the value member of a node and assign to it a string.
+ *
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       val   value of the string
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_tree_node_set_val_string(cs_tree_node_t  *node,
                             const char      *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the value member of a node and assign to it a boolean
+ * \brief  Allocate the value member of a node and assign to it a string.
  *
- * \param[in, out] node   pointer to a cs_tree_node_t to modify
- * \param[in]      val    boolean
+ * \deprecated Use cs_tree_node_set_val_string instead.
+ *
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       val   value of the string
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_tree_node_set_string_val(cs_tree_node_t  *node,
+                            const char      *val)
+{
+  cs_tree_node_set_val_string(node, val);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate the value member of a node and assign to it a boolean.
+ *
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       val   boolean
  */
 /*----------------------------------------------------------------------------*/
 
@@ -134,11 +168,11 @@ cs_tree_node_set_bool(cs_tree_node_t  *node,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the value member of a node and assign to it a boolean
+ * \brief  Allocate the value member of a node and assign to it a boolean.
  *
- * \param[in, out] node   pointer to a cs_tree_node_t to modify
- * \param[in]      size   number of elements in val
- * \param[in]      val    array of boolean
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       size  number of elements in val
+ * \param[in]       val   array of boolean
  */
 /*----------------------------------------------------------------------------*/
 
@@ -151,9 +185,9 @@ cs_tree_node_set_bool_val(cs_tree_node_t  *node,
 /*!
  * \brief  Allocate the value member of a node and assign to it an integer
  *
- * \param[in, out] node   pointer to a cs_tree_node_t to modify
- * \param[in]      size   number of integers in val
- * \param[in]      val    array of integers
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       size  number of integers in val
+ * \param[in]       val   array of integers
  */
 /*----------------------------------------------------------------------------*/
 
@@ -167,9 +201,9 @@ cs_tree_node_set_int_val(cs_tree_node_t  *node,
  * \brief  Allocate the value member of a node and assign to it an array of
  *         real values
  *
- * \param[in, out] node   pointer to a cs_tree_node_t to modify
- * \param[in]      size   number of elements in val
- * \param[in]      val    array of real values
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       size  number of elements in val
+ * \param[in]       val   array of real values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -182,9 +216,9 @@ cs_tree_node_set_real_val(cs_tree_node_t   *node,
 /*!
  * \brief  Dump a cs_tree_node_t structure.
  *
- * \param[in] log    indicate which log file to use
- * \param[in] depth  shift to apply when printing
- * \param[in] node   pointer to a cs_tree_node_t to dump
+ * \param[in]  log    indicate which log file to use
+ * \param[in]  depth  shift to apply when printing
+ * \param[in]  node   pointer to a cs_tree_node_t to dump
  */
 /*----------------------------------------------------------------------------*/
 
@@ -196,15 +230,18 @@ cs_tree_node_dump(cs_log_t                log,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve the pointer to the value member of the node.
- *         This node can be modified.
- *         This node is located at "path" from the given root node
- *         level switch is indicated by a "/" in path
- *         Exit on error if not found
  *
- * \param[in, out] root   pointer to the root node where we start searching
- * \param[in]      path   string describing the path access
+ * This node can be modified.
  *
- * \return a pointer to the node
+ * This node is located at "path" from the given root node
+ * level switch is indicated by a "/" in path
+ *
+ * Exits on error if not found.
+ *
+ * \param[in, out]  root  pointer to the root node where we start searching
+ * \param[in]       path  string describing the path access
+ *
+ * \return  pointer to the node
  */
 /*----------------------------------------------------------------------------*/
 
@@ -214,15 +251,17 @@ cs_tree_get_node_rw(cs_tree_node_t     *root,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to a node in read-only access.
- *         This node is located at "path" from the given root node
- *         level switch is indicated by a "/" in path
- *         Exit on error if not found
+ * \brief  Retrieve the pointer to a node with read-only access.
  *
- * \param[in] root   pointer to the root node where we start searching
- * \param[in] path   string describing the path access
+ * This node is located at "path" from the given root node
+ * level switch is indicated by a "/" in path.
  *
- * \return a pointer to the node
+ * Exits on error if not found.
+ *
+ * \param[in]  root  pointer to the root node where we start searching
+ * \param[in]  path  string describing the path access
+ *
+ * \return  pointer to the node
  */
 /*----------------------------------------------------------------------------*/
 
@@ -232,15 +271,16 @@ cs_tree_get_node(const cs_tree_node_t   *root,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to the value member of the node in case of a
- *         string. Read-only access is allowed.
- *         This node is located at "path" from the given root node
- *         level switch is indicated by a "/" in path
+ * \brief  Retrieve a read-only pointer to the value member of the node
+ *         in case of a string.
  *
- * \param[in, out] root   pointer to the root node where we start searching
- * \param[in]      path   string describing the path access
+ * This node is located at "path" from the given root node
+ * level switch is indicated by a "/" in path.
  *
- * \return a pointer to the string
+ * \param[in, out]  root  pointer to the root node where we start searching
+ * \param[in]       path  string describing the path access
+ *
+ * \return  pointer to the string
  */
 /*----------------------------------------------------------------------------*/
 
@@ -254,12 +294,12 @@ cs_tree_get_node_string_val(const cs_tree_node_t   *root,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a node in a tree below the given parent node
+ * \brief  Create and add a node in a tree below the given parent node.
  *
- * \param[in, out] parent    pointer to the parent node to handle
- * \param[in]      name      name of the node to add
+ * \param[in, out]  parent  pointer to the parent node to handle.
+ * \param[in]       name    name of the node to add
  *
- * \return a pointer to the node in the new tree structure
+ * \return  pointer to the new node in the tree structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -269,35 +309,64 @@ cs_tree_add_child(cs_tree_node_t  *parent,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a node in a tree below the given parent node
- *         This node has a string value set to val_name
+ * \brief  Create and add a node in a tree below the given parent node.
  *
- * \param[in, out] parent    pointer to the parent node to handle
- * \param[in]      name      name of the node to add
- * \param[in]      val_name  node value to set
+ * This node has a string value set to val_str.
  *
- * \return a pointer to the node in the new tree structure
+ * \param[in, out]  parent   pointer to the parent node to handle
+ * \param[in]       name     name of the node to add
+ * \param[in]       val_str  node value to set
+ *
+ * \return a pointer to the new node in the tree structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_tree_node_t *
+cs_tree_add_child_str(cs_tree_node_t  *parent,
+                      const char      *name,
+                      const char      *val_str)
+{
+  cs_tree_node_t  *child = cs_tree_add_child(parent, name);
+  cs_tree_node_set_string_val(child, val_str);
+
+  return child;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and add a node in a tree below the given parent node.
+ *
+ * This node has a string value set to val_str.
+ *
+ * \deprecated Use cs_tree_add_child_str instead.
+ *
+ * \param[in, out]  parent   pointer to the parent node to handle
+ * \param[in]       name     name of the node to add
+ * \param[in]       val_str  node value to set
+ *
+ * \return a pointer to the new node in the tree structure
  */
 /*----------------------------------------------------------------------------*/
 
 static inline cs_tree_node_t *
 cs_tree_add_string_child(cs_tree_node_t  *parent,
                          const char      *name,
-                         const char      *val_name)
+                         const char      *val_str)
 {
   cs_tree_node_t  *child = cs_tree_add_child(parent, name);
-  cs_tree_node_set_string_val(child, val_name);
+  cs_tree_node_set_string_val(child, val_str);
+
   return child;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a node in a tree at the right of the given  node
+ * \brief  Create and add a node in a tree at the right of the given  node.
  *
- * \param[in, out] sibling   pointer to the sibling node to handle
- * \param[in]      name      name of the node to add
+ * \param[in, out]  sibling  pointer to the sibling node to handle
+ * \param[in]       name     name of the node to add
  *
- * \return a pointer to the node in the new tree structure
+ * \return  pointer to the new node in the tree structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -307,14 +376,39 @@ cs_tree_add_sibling(cs_tree_node_t  *sibling,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a node in a tree below the given parent node
- *         This node has one boolean value set to val
+ * \brief  Create and add a boolean-valued node in a tree below
+ *         the given parent node.
  *
- * \param[in, out] parent    pointer to the parent node to handle
- * \param[in]      name      name of the node to add
- * \param[in]      val       node value to set
+ * \param[in, out]  parent  pointer to the parent node to handle
+ * \param[in]       name    name of the node to add
+ * \param[in]       val     node value to assign
  *
- * \return a pointer to the node in the new tree structure
+ * \return  pointer to the new node in the tree structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_tree_node_t *
+cs_tree_add_child_bool(cs_tree_node_t  *parent,
+                       const char      *name,
+                       bool             val)
+{
+  cs_tree_node_t  *child = cs_tree_add_child(parent, name);
+  cs_tree_node_set_bool_val(child, 1, &val);
+  return child;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and add a boolean-valued node in a tree below
+ *         the given parent node.
+ *
+ * \deprecated Use cs_tree_add_child_bool instead.
+ *
+ * \param[in, out]  parent  pointer to the parent node to handle
+ * \param[in]       name    name of the node to add
+ * \param[in]       val     node value to assign
+ *
+ * \return  pointer to the new node in the tree structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -330,14 +424,40 @@ cs_tree_add_bool_child(cs_tree_node_t  *parent,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a node in a tree below the given parent node
- *         This node has one integer value set to val
+ * \brief  Create and add an integer-valued node in a tree
+ *         below the given parent node.
  *
- * \param[in, out] parent    pointer to the parent node to handle
- * \param[in]      name      name of the node to add
- * \param[in]      val       node value to set
+ * \param[in, out]  parent  pointer to the parent node to handle
+ * \param[in]       name    name of the node to add
+ * \param[in]       val     node value to assign
  *
- * \return a pointer to the node in the new tree structure
+ * \return  pointer to the new node in the tree structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_tree_node_t *
+cs_tree_add_child_int(cs_tree_node_t  *parent,
+                      const char      *name,
+                      int              val)
+{
+  cs_tree_node_t  *child = cs_tree_add_child(parent, name);
+  cs_tree_node_set_int_val(child, 1, &val);
+
+  return child;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and add an integer-valued node in a tree
+ *         below the given parent node.
+ *
+ * \deprecated Use cs_tree_add_child_int instead.
+ *
+ * \param[in, out]  parent  pointer to the parent node to handle
+ * \param[in]       name    name of the node to add
+ * \param[in]       val     node value to assign
+ *
+ * \return  pointer to the new node in the tree structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -348,19 +468,46 @@ cs_tree_add_int_child(cs_tree_node_t  *parent,
 {
   cs_tree_node_t  *child = cs_tree_add_child(parent, name);
   cs_tree_node_set_int_val(child, 1, &val);
+
   return child;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a node in a tree below the given parent node
- *         This node has one real value set to val
+ * \brief  Create and add a real-valued node in a tree
+ *         below the given parent node.
  *
- * \param[in, out] parent    pointer to the parent node to handle
- * \param[in]      name      name of the node to add
- * \param[in]      val       node value to set
+ * \param[in, out]  parent  pointer to the parent node to handle
+ * \param[in]       name    name of the node to add
+ * \param[in]       val     node value to assign
  *
- * \return a pointer to the node in the new tree structure
+ * \return  pointer to the new node in the tree structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_tree_node_t *
+cs_tree_add_child_real(cs_tree_node_t  *parent,
+                       const char      *name,
+                       cs_real_t        val)
+{
+  cs_tree_node_t  *child = cs_tree_add_child(parent, name);
+  cs_tree_node_set_real_val(child, 1, &val);
+
+  return child;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and add a real-valued node in a tree
+ *         below the given parent node.
+ *
+ * \deprecated Use cs_tree_add_child_real instead.
+ *
+ * \param[in, out]  parent  pointer to the parent node to handle
+ * \param[in]       name    name of the node to add
+ * \param[in]       val     node value to assign
+ *
+ * \return  pointer to the new node in the tree structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -371,24 +518,13 @@ cs_tree_add_real_child(cs_tree_node_t  *parent,
 {
   cs_tree_node_t  *child = cs_tree_add_child(parent, name);
   cs_tree_node_set_real_val(child, 1, &val);
+
   return child;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a branch in a tree starting from root. If root is the real
- *         root of the tree, the whole tree is freed.
- *
- * \param[in, out] proot  pointer to a pointer to a cs_tree_node_t to free
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_tree_free(cs_tree_node_t  **proot);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Dump a cs_tree_node_t structure starting from the node "root"
+ * \brief  Dump a cs_tree_node_t structure starting from the node "root".
  *
  * \param[in] log    indicate which log file to use
  * \param[in] depth  starting depth in the tree

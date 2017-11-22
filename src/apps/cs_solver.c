@@ -70,6 +70,7 @@
 #include "cs_join.h"
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
+#include "cs_les_inflow.h"
 #include "cs_log.h"
 #include "cs_log_setup.h"
 #include "cs_log_iteration.h"
@@ -102,7 +103,7 @@
 #include "cs_time_moment.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
-#include "cs_les_inflow.h"
+#include "cs_tree.h"
 #include "cs_turbomachinery.h"
 #include "cs_volume_zone.h"
 
@@ -185,6 +186,8 @@ cs_run(void)
 
   cs_timer_stats_initialize();
   cs_timer_stats_define_defaults();
+
+  cs_glob_tree = cs_tree_node_create(NULL);
 
   cs_gui_parallel_io();
   cs_user_parallel_io();
@@ -522,6 +525,10 @@ cs_run(void)
   cs_mesh_location_finalize();
   cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
   cs_mesh_destroy(cs_glob_mesh);
+
+  /* Free parameters tree info */
+
+  cs_tree_node_free(&cs_glob_tree);
 
   /* CPU times and memory management finalization */
 

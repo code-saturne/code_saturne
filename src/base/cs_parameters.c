@@ -55,6 +55,7 @@
 #include "cs_restart.h"
 #include "cs_restart_default.h"
 #include "cs_mesh_location.h"
+#include "cs_tree.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -543,6 +544,14 @@ static cs_gas_mix_species_prop_t _gas_mix_species_prop =
   -1.,   /* Sutherland temperature for viscosity    */
   -1.,   /* Sutherland temperature for conductivity */
 };
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
+/*! Global parameters tree structure */
+
+cs_tree_node_t  *cs_glob_tree = NULL;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.

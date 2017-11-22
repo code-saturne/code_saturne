@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle a tree structure used to store data and settings
+ * Tree structure used to store data and settings.
  *============================================================================*/
 
 /*
@@ -30,13 +30,13 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
@@ -51,6 +51,17 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_tree.c
+        Tree structure used to store data and settings.
+*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -58,6 +69,13 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type and structure definitions
  *============================================================================*/
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+static const int _any_type
+  = (CS_TREE_NODE_INTEGER | CS_TREE_NODE_REAL | CS_TREE_NODE_BOOL);
 
 /*============================================================================
  * Private function prototypes
@@ -145,9 +163,9 @@ _find_or_create_node(cs_tree_node_t   *root,
 
 static cs_tree_node_t *
 _find_node(const cs_tree_node_t   *root,
-             const char             *path)
+           const char             *path)
 {
-  cs_tree_node_t  *nodes = root;
+  cs_tree_node_t  *nodes = (cs_tree_node_t *)root;
   cs_tree_node_t  *node = NULL;
 
   const size_t  path_len = strlen(path);
@@ -193,7 +211,7 @@ _find_node(const cs_tree_node_t   *root,
       BFT_FREE(name);
     if (nodes == NULL)
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Fail to reach the requested node located at %s\n",
+                " %s: failed to reach the requested node located at %s\n",
                 __func__, path);
 
     start += level_len + 1;
@@ -203,17 +221,49 @@ _find_node(const cs_tree_node_t   *root,
   return node;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_tree_node_t structure.
+ *
+ * \param[in, out]  pnode  pointer to a pointer to a cs_tree_node_t to free
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_node_free(cs_tree_node_t  **pnode)
+{
+  if (pnode == NULL)
+    return;
+
+  cs_tree_node_t  *node = *pnode;
+
+  if (node->name != NULL)
+    BFT_FREE(node->name);
+  if (node->desc != NULL)
+    BFT_FREE(node->desc);
+  if (node->value != NULL)
+    BFT_FREE(node->value);
+
+  BFT_FREE(node);
+  node = NULL;
+  pnode = NULL;
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create an empty node. Only the name is assigned if given
+ * \brief  Create an empty node.
  *
- * \param[in]  name    name of the node or NULL
+ * Only the name is assigned if given
  *
- * \return a pointer to a new allocated cs_tree_node_t structure
+ * \param[in]  name  name of the node, or NULL
+ *
+ * \return  pointer to a new allocated cs_tree_node_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -224,7 +274,7 @@ cs_tree_node_create(const char  *name)
 
   BFT_MALLOC(n, 1, cs_tree_node_t);
   if (name != NULL) {
-    int  len = strlen(name);
+    size_t  len = strlen(name);
     BFT_MALLOC(n->name, len + 1, char);
     strcpy(n->name, name);
   }
@@ -244,9 +294,11 @@ cs_tree_node_create(const char  *name)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_tree_node_t structure.
+ * \brief  Free a branch in a tree starting from a node.
  *
- * \param[in, out] pnode  pointer to a pointer to a cs_tree_node_t to free
+ *  If the node is the root of the tree, the whole tree is freed.
+ *
+ * \param[in, out]  pnode  pointer to a pointer to a cs_tree_node_t to free
  */
 /*----------------------------------------------------------------------------*/
 
@@ -256,49 +308,78 @@ cs_tree_node_free(cs_tree_node_t  **pnode)
   if (pnode == NULL)
     return;
 
-  cs_tree_node_t  *node = *pnode;
+  cs_tree_node_t  *root = *pnode;
+  if (root == NULL)
+    return;
 
-  if (node->name != NULL)
-    BFT_FREE(node->name);
-  if (node->desc != NULL)
-    BFT_FREE(node->desc);
-  if (node->value != NULL)
-    BFT_FREE(node->value);
+  if (root->children != NULL) { /* There is at least one child */
+    cs_tree_node_t  *next_child = root->children->next;
+    while (next_child != NULL) {
+      cs_tree_node_t  *tmp = next_child->next;
+      cs_tree_node_free(&next_child);
+      next_child = tmp;
+    }
+    cs_tree_node_free(&(root->children));
+  }
 
-  BFT_FREE(node);
-  node = NULL;
-  pnode = NULL;
+  _node_free(&root);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the value member of a node and assign to it a string
+ * \brief  Name or rename a node.
  *
- * \param[in, out] node   pointer to a cs_tree_node_t to modify
- * \param[in]      val    value of the string
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_tree_node_set_string_val(cs_tree_node_t  *node,
-                            const char      *val)
+cs_tree_node_set_name(cs_tree_node_t  *node,
+                      const char      *name)
 {
-  if (val == NULL)
-    return;
-  if (node == NULL)
-    node = cs_tree_node_create(NULL);
+  if (name == NULL)
+    BFT_FREE(node->name);
 
-  node->size = 1;
-  BFT_MALLOC(node->value, strlen(val) + 1, char);
-  sprintf((char *)node->value, val);
+  else {
+    BFT_REALLOC(node->name, strlen(name) + 1, char);
+    strcpy(node->name, name);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the value member of a node and assign to it a boolean
+ * \brief  Allocate the value member of a node and assign to it a string.
  *
- * \param[in, out] node   pointer to a cs_tree_node_t to modify
- * \param[in]      val    boolean
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       val   value of the string
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_tree_node_set_val_string(cs_tree_node_t  *node,
+                            const char      *val)
+{
+  node->flag = node->flag | _any_type;
+  node->flag -= _any_type;
+
+  if (val == NULL) {
+    BFT_FREE(node->value);
+    return;
+  }
+  if (node == NULL)
+    node = cs_tree_node_create(NULL);
+
+  node->size = 1;
+  BFT_REALLOC(node->value, strlen(val) + 1, char);
+  strcpy((char *)node->value, val);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate the value member of a node and assign to it a boolean.
+ *
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       val   boolean
  */
 /*----------------------------------------------------------------------------*/
 
@@ -311,17 +392,17 @@ cs_tree_node_set_bool(cs_tree_node_t  *node,
 
   node->size = 1;
   node->flag |= CS_TREE_NODE_BOOL;
-  BFT_MALLOC(node->value, 1, bool);
+  BFT_REALLOC(node->value, 1, bool);
   ((bool *)node->value)[0] = val;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the value member of a node and assign to it a boolean
+ * \brief  Allocate the value member of a node and assign to it a boolean.
  *
- * \param[in, out] node   pointer to a cs_tree_node_t to modify
- * \param[in]      size   number of elements in val
- * \param[in]      val    array of boolean
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       size  number of elements in val
+ * \param[in]       val   array of boolean
  */
 /*----------------------------------------------------------------------------*/
 
@@ -337,7 +418,7 @@ cs_tree_node_set_bool_val(cs_tree_node_t  *node,
 
   node->size = size;
   node->flag |= CS_TREE_NODE_BOOL;
-  BFT_MALLOC(node->value, size, bool);
+  BFT_REALLOC(node->value, size, bool);
   memcpy(node->value, val, size*sizeof(bool));
 }
 
@@ -345,9 +426,9 @@ cs_tree_node_set_bool_val(cs_tree_node_t  *node,
 /*!
  * \brief  Allocate the value member of a node and assign to it an integer
  *
- * \param[in, out] node   pointer to a cs_tree_node_t to modify
- * \param[in]      size   number of integers in val
- * \param[in]      val    array of integers
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       size  number of integers in val
+ * \param[in]       val   array of integers
  */
 /*----------------------------------------------------------------------------*/
 
@@ -372,9 +453,9 @@ cs_tree_node_set_int_val(cs_tree_node_t  *node,
  * \brief  Allocate the value member of a node and assign to it an array of
  *         real values
  *
- * \param[in, out] node   pointer to a cs_tree_node_t to modify
- * \param[in]      size   number of elements in val
- * \param[in]      val    array of real values
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       size  number of elements in val
+ * \param[in]       val   array of real values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -390,7 +471,7 @@ cs_tree_node_set_real_val(cs_tree_node_t   *node,
 
   node->size = size;
   node->flag |= CS_TREE_NODE_REAL;
-  BFT_MALLOC(node->value, size, cs_real_t);
+  BFT_REALLOC(node->value, size, cs_real_t);
   memcpy(node->value, val, size*sizeof(cs_real_t));
 }
 
@@ -410,21 +491,14 @@ cs_tree_node_dump(cs_log_t                log,
                   const cs_tree_node_t   *node)
 {
   const int  n_element_by_line = 9;
-  char  *shift = NULL;
   char  _shift[65] = "";
-  if (depth > 32) {
-    BFT_MALLOC(shift, depth*2+1, char);
-    for (int i = 0; i < 2*depth; i++)
-      shift[i] = ' ';
-  }
-  else {
-    int i = depth;
-    while (i > 0) {
-      strcat(_shift, "  ");
-      i--;
-    }
-    shift = _shift;
-  }
+  char  *shift = _shift;
+  if (depth > 31)
+    BFT_MALLOC(shift, (depth+1)*2+1, char);
+
+  for (int i = 0; i < 2*depth; i++)
+    shift[i] = ' ';
+  shift[2*depth] = '\0';
 
   cs_log_printf(log, "%snode_pointer: %p\n", shift, (const void *)node);
   if (node == NULL) {
@@ -432,6 +506,8 @@ cs_tree_node_dump(cs_log_t                log,
       BFT_FREE(shift);
     return;
   }
+
+  strcat(shift, "  ");
 
   if (node->name == NULL)
     cs_log_printf(log, "%sname: NULL\n", shift);
@@ -540,15 +616,19 @@ cs_tree_node_dump(cs_log_t                log,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to a node with read/write access.
- *         This node is located at "path" from the given root node
- *         level switch is indicated by a "/" in path
- *         Exit on error if not found
+ * \brief  Retrieve the pointer to the value member of the node.
  *
- * \param[in, out] root   pointer to the root node where we start searching
- * \param[in]      path   string describing the path access
+ * This node can be modified.
  *
- * \return a pointer to the node
+ * This node is located at "path" from the given root node
+ * level switch is indicated by a "/" in path
+ *
+ * Exits on error if not found.
+ *
+ * \param[in, out]  root  pointer to the root node where we start searching
+ * \param[in]       path  string describing the path access
+ *
+ * \return  pointer to the node
  */
 /*----------------------------------------------------------------------------*/
 
@@ -568,15 +648,17 @@ cs_tree_get_node_rw(cs_tree_node_t     *root,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to a node in read-only access.
- *         This node is located at "path" from the given root node
- *         level switch is indicated by a "/" in path
- *         Exit on error if not found
+ * \brief  Retrieve the pointer to a node with read-only access.
  *
- * \param[in] root   pointer to the root node where we start searching
- * \param[in] path   string describing the path access
+ * This node is located at "path" from the given root node
+ * level switch is indicated by a "/" in path.
  *
- * \return a pointer to the node
+ * Exits on error if not found.
+ *
+ * \param[in]  root  pointer to the root node where we start searching
+ * \param[in]  path  string describing the path access
+ *
+ * \return  pointer to the node
  */
 /*----------------------------------------------------------------------------*/
 
@@ -596,12 +678,12 @@ cs_tree_get_node(const cs_tree_node_t   *root,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a node in a tree below the given parent node
+ * \brief  Create and add a node in a tree below the given parent node.
  *
- * \param[in, out] parent    pointer to the parent node to handle
- * \param[in]      name      name of the node to add
+ * \param[in, out]  parent  pointer to the parent node to handle.
+ * \param[in]       name    name of the node to add
  *
- * \return a pointer to the node in the new tree structure
+ * \return  pointer to the new node in the tree structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -640,12 +722,12 @@ cs_tree_add_child(cs_tree_node_t  *parent,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and add a node in a tree at the right of the given  node
+ * \brief  Create and add a node in a tree at the right of the given  node.
  *
- * \param[in, out] sibling   pointer to the sibling node to handle
- * \param[in]      name      name of the node to add
+ * \param[in, out]  sibling  pointer to the sibling node to handle
+ * \param[in]       name     name of the node to add
  *
- * \return a pointer to the node in the new tree structure
+ * \return  pointer to the new node in the tree structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -673,43 +755,11 @@ cs_tree_add_sibling(cs_tree_node_t  *sibling,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a branch in a tree starting from root. If root is the real
- *         root of the tree, the whole tree is freed.
+ * \brief  Dump a cs_tree_node_t structure starting from the node "root".
  *
- * \param[in, out] proot  pointer to a pointer to a cs_tree_node_t to free
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_tree_free(cs_tree_node_t  **proot)
-{
-  if (proot == NULL)
-    return;
-
-  cs_tree_node_t  *root = *proot;
-  if (root == NULL)
-    return;
-
-  if (root->children != NULL) { /* There is at least one child */
-    cs_tree_node_t  *next_child = root->children->next;
-    while (next_child != NULL) {
-      cs_tree_node_t  *tmp = next_child->next;
-      cs_tree_free(&next_child);
-      next_child = tmp;
-    }
-    cs_tree_free(&(root->children));
-  }
-
-  cs_tree_node_free(&root);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Dump a cs_tree_node_t structure starting from the node "root"
- *
- * \param[in] log     indicate which log file to use
- * \param[in] depth   starting depth in the tree
- * \param[in] root    pointer to a cs_tree_node_t to dump
+ * \param[in] log    indicate which log file to use
+ * \param[in] depth  starting depth in the tree
+ * \param[in] root   pointer to a cs_tree_node_t to dump
  */
 /*----------------------------------------------------------------------------*/
 
