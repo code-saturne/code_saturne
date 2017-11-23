@@ -980,7 +980,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
       for (int cco2 = 0; cco2 < nconc; cco2++) {
         for (int ch2o = 0; ch2o < nconc; ch2o++) {
           for (int it = 0; it < nt; it++) {
-            for (int itrad = 1; itrad < nt; itrad++) {
+            for (int itrad = 0; itrad < nt; itrad++) {
               fgets(line, 256, radfile);
               fgets(line, 256, radfile);
               for (int ig = 0; ig < ng; ig++) {
