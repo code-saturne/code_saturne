@@ -289,7 +289,7 @@ cs_tree_get_node_string_val(const cs_tree_node_t   *root,
                             const char             *path)
 {
   const cs_tree_node_t  *node = cs_tree_get_node(root, path);
-  return node->value;
+  return (const char *)(node->value);
 }
 
 /*----------------------------------------------------------------------------*/
