@@ -30,7 +30,7 @@ AM_LDFLAGS = $(SALOME_KERNEL_LDFLAGS)
 
 # Public header files (to be installed)
 
-include_HEADERS = \
+noinst_HEADERS = \
 communication.h \
 donnees.h \
 runmilieu.h \
