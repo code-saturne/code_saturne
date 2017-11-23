@@ -5,6 +5,8 @@ Release 5.1.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix absorption coef. computation in FSCK model.
+
 - Fix computation of pressure gradient in lagrangian equations for some cases:
   * retrieve 2/3*rho*k from P if an EVM turbulence model is enabled
   * retrieve rho0*g from grad(P) even if iphydr=1.
@@ -13,7 +15,8 @@ Bug fixes
 
 - Fix test in CDO Darcy flux computation.
 
-- Fix bug in the implicitation of the Coriolis source terms (turbomachinery module).
+- Fix bug in the implicitation of the Coriolis source terms
+  (turbomachinery module).
 
 - Fix tensorial left diffusion of vector (used by tensorial porosity iporos=2).
 
