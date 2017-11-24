@@ -5,6 +5,8 @@ Release 5.1.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix issue #246 (crash in cs_selector_get_cells_boundary / getceb).
+
 - Fix absorption coef. computation in FSCK model.
 
 - Fix computation of pressure gradient in lagrangian equations for some cases:
