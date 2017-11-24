@@ -457,7 +457,7 @@ cs_selector_get_cells_boundary(const char  *criteria,
   /* Mark cells inside zone selection */
 
   BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
-  BFT_MALLOC(cell_flag, mesh->n_cells, cs_lnum_t);
+  BFT_MALLOC(cell_flag, mesh->n_cells_with_ghosts, cs_lnum_t);
 
   for (ii = 0; ii < mesh->n_cells; ii++)
     cell_flag[ii] = 0;
@@ -467,7 +467,7 @@ cs_selector_get_cells_boundary(const char  *criteria,
   cs_selector_get_cell_list(criteria, &n_cells, cell_list);
 
   for (ii = 0; ii < n_cells; ii++)
-    cell_flag[cell_list[ii] - 1] = 1;
+    cell_flag[cell_list[ii]] = 1;
 
   BFT_FREE(cell_list);
 
