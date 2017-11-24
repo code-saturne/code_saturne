@@ -97,7 +97,8 @@ typedef struct {
   char          s_char;         /*!< current starting character */
 
   int           depth;          /*!< depth */
-  int           have_attrs;     /*!< have attributes for tags */
+  bool          have_attrs;     /*!< have attributes for tags */
+  bool          first;          /*!< first node (descriptor) */
 
   cs_tree_node_t  *node;        /*!< current node */
   cs_tree_node_t  *parent;      /*!< parent node */
@@ -137,10 +138,16 @@ _handle_element(cs_xml_t    *doc,
     cs_tree_add_child_str(doc->node, name, value);
   }
   else {
-    if (doc->node == NULL)
+    if (doc->node == NULL) {
+      if (doc->first) {
+        if (doc->parent->parent != NULL)
+          doc->parent = doc->parent->parent;
+        doc->first = false;
+      }
       doc->node = cs_tree_add_child_str(doc->parent,
                                         name,
                                         value);
+    }
     else if (doc->parent == NULL) {
       /* We choose here to place the top (descriptor) and associated
          tags in a child node, to avoid renaming the root node;
@@ -467,7 +474,8 @@ _read_tag(cs_xml_t  *doc,
       }
     }
   }
-  if (doc->s_char != '>')
+  if (   doc->s_char != '>'
+      && (doc->depth > 0 || doc->byte < doc->size))
     bft_error(__FILE__, __LINE__, 0,
               _("In XML data (%s, line %d)\n"
                 "malformed tag: %s"),
@@ -512,12 +520,6 @@ _read_element(cs_xml_t  *doc)
         doc->node = doc->parent;
         doc->parent = doc->node->parent;
         doc->depth--;
-        if (doc->depth == 0 && doc->parent != NULL) {
-          /* Top (descriptor) node lowered by one level, so go back up so
-             as to insert depth 0 nodes in the root tree */
-          doc->node = doc->parent;
-          doc->parent = doc->node->parent;
-        }
       }
     }
     else {
@@ -640,6 +642,7 @@ cs_tree_xml_read(cs_tree_node_t  *r,
   doc->s_char = '\0';
   doc->depth = 0;
   doc->have_attrs = false;
+  doc->first = true;
   doc->node = r;
   doc->parent = NULL;
 
