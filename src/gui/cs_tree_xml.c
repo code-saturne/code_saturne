@@ -225,6 +225,49 @@ _next(cs_xml_t  *doc)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check for comment and find following entry if present.
+ *
+ * \param[in, out]  doc     XML parser structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_and_skip_comment(cs_xml_t  *doc)
+{
+  if (doc->byte < doc->size - 3) {
+
+    assert(doc->s_char == '<');
+
+    /* Skip comments */
+
+    size_t i = doc->byte;
+
+    if (doc->buf[i] == '!' && doc->buf[i+1] == '-' && doc->buf[i+2] == '-') {
+      printf("%c%c%c\n", doc->buf[i], doc->buf[i+1], doc->buf[i+2]);
+      bool closed = false;
+      while (i < doc->size && closed == false) {
+        while (i < doc->size && doc->buf[i] != '>')
+          i++;
+        if (i > 1) {
+          if (doc->buf[i-1] == '-' && doc->buf[i-2] == '-')
+            closed = true;
+          else
+            i++;
+        }
+      }
+      if (i < doc->size)
+        i++;
+      _next(doc);
+      if (doc->s_char != '<')
+        _next(doc);
+    }
+
+    doc->byte = i;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Read attribute string in XML parser.
  *
  * \param[in, out]  doc      XML parser structure
@@ -414,6 +457,8 @@ _read_tag(cs_xml_t  *doc,
 
   if (doc->s_char != '<')
     _next(doc);
+
+  _check_and_skip_comment(doc);
 
   size_t i = doc->byte;
 
