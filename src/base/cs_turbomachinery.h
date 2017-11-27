@@ -33,6 +33,12 @@
 
 #include "cs_defs.h"
 
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_restart.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -141,7 +147,7 @@ cs_turbomachinery_define(void);
 /*----------------------------------------------------------------------------
  * Initializations for turbomachinery computation
  *
- * Note: this function should be called before once the mesh is built,
+ * Note: this function should be called after the mesh is built,
  *       but before cs_post_init_meshes() so that postprocessing meshes are
  *       updated correctly in the transient case.
  *----------------------------------------------------------------------------*/
@@ -231,6 +237,37 @@ cs_turbomachinery_get_cell_rotor_num(void);
 double
 cs_turbomachinery_get_rotation_velocity(int  rotor_num);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set rotation velocity
+ *
+ * param[in]  rotor_num  rotor number (1 to n numbering)
+ * param[in]  omega      rotation velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_set_rotation_velocity(int     rotor_num,
+                                        double  omega);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set turbomachinery joining retry parameters.
+ *
+ * When a joing leads to a different number of boundary faces from the
+ * previous position, the rotor positions may be perturbed by a small
+ * quantity to try to obtain a better joining.
+ *
+ * param[in]  n_max_join_retries   maximum number of retries before considering
+ *                                 the joining has failed
+ * param[in]  dt_retry_multiplier  time step multiplier for new position retry
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_set_rotation_retry(int     n_max_join_retries,
+                                     double  dt_retry_multiplier);
+
 /*----------------------------------------------------------------------------
  * Rotation of vector and tensor fields.
  *
@@ -258,6 +295,32 @@ void
 cs_turbomachinery_relative_velocity(int              rotor_num,
                                     const cs_real_t  coords[3],
                                     cs_real_t        velocity[3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read turbomachinery metadata from restart file.
+ *
+ * The mesh is handled separately.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_restart_read(cs_restart_t  *r);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Write turbomachinery metadata to checkpoint file.
+ *
+ * The mesh is handled separately.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_restart_write(cs_restart_t  *r);
 
 /*----------------------------------------------------------------------------*/
 

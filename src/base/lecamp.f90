@@ -293,6 +293,8 @@ if (imobil.eq.1 .or. iturbo.eq.2) then
   if (nberro.eq.0)  write(nfecra,2412) ttpmob
 endif
 
+call turbomachinery_restart_read(rp)
+
 ! Fin de la lecture des options
 write(nfecra,1499)
 

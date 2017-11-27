@@ -98,20 +98,26 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_turbomachinery_model_t  model;             /* Turbomachinery model type */
+  cs_turbomachinery_model_t  model;             /* turbomachinery model type */
 
-  int                        n_rotors;          /* Number of rotors */
+  int                        n_rotors;          /* number of rotors */
 
-  int                        n_couplings;       /* Number of couplings */
+  int                        n_couplings;       /* number of couplings */
 
   cs_rotation_t             *rotation;          /* rotation structures */
-  char                     **rotor_cells_c;     /* Rotor cells selection
+  char                     **rotor_cells_c;     /* rotor cells selection
                                                    criteria (for each rotor) */
 
-  cs_mesh_t                 *reference_mesh;    /* Reference mesh (before
+  int                        n_max_join_tries;  /* maximum number of tries
+                                                   for joining differences */
+  double                     dt_retry;          /* time shift multiplier for
+                                                   retry position */
+  double                     t_cur;             /* current time for update */
+
+  cs_mesh_t                 *reference_mesh;    /* reference mesh (before
                                                    rotation and joining) */
 
-  cs_lnum_t                  n_b_faces_ref;     /* Reference number of
+  cs_lnum_t                  n_b_faces_ref;     /* reference number of
                                                    boundary faces */
 
   int                       *cell_rotor_num;    /* cell rotation axis number */
@@ -265,6 +271,10 @@ _turbomachinery_create(void)
     r->axis[i] = 0;
     r->invariant[i] = 0;
   }
+
+  tbm->n_max_join_tries = 5;
+  tbm->t_cur = 0;
+  tbm->dt_retry = 1e-2;
 
   tbm->reference_mesh = cs_mesh_create();
   tbm->n_b_faces_ref = -1;
@@ -585,13 +595,38 @@ _copy_mesh(const cs_mesh_t  *mesh,
  * Update mesh vertex positions
  *
  * parameters:
- *   mesh <-> mesh to update
  *   t    <-- associated time
  *----------------------------------------------------------------------------*/
 
 static void
+_update_angle(cs_real_t  t)
+{
+  cs_turbomachinery_t *tbm = _turbomachinery;
+
+  /* Now update coordinates */
+
+  double dt = t - tbm->t_cur;
+
+  if (dt > 0) {
+    for (int j = 0; j < tbm->n_rotors+1; j++) {
+      cs_rotation_t *r = tbm->rotation + j;
+      r->angle += r->omega * dt;
+    }
+    tbm->t_cur = t;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Update mesh vertex positions
+ *
+ * parameters:
+ *   mesh <-> mesh to update
+ *   dt   <-- associated time delta (0 for current, unmodified time)
+ *----------------------------------------------------------------------------*/
+
+static void
 _update_geometry(cs_mesh_t  *mesh,
-                 cs_real_t   t)
+                 cs_real_t   dt)
 {
   cs_turbomachinery_t *tbm = _turbomachinery;
 
@@ -647,8 +682,8 @@ _update_geometry(cs_mesh_t  *mesh,
 
   for (int j = 0; j < tbm->n_rotors+1; j++) {
     cs_rotation_t *r = tbm->rotation + j;
-    r->angle = r->omega * t;
-    cs_rotation_matrix(r->angle,
+
+    cs_rotation_matrix(r->angle + r->omega*dt,
                        r->axis,
                        r->invariant,
                        m[j]);
@@ -787,8 +822,10 @@ _update_mesh_coupling(double   t_cur_mob,
 
   /* Update geometry, if necessary */
 
+  _update_angle(t_cur_mob);
+
   if (tbm->n_rotors > 0)
-    _update_geometry(cs_glob_mesh, t_cur_mob);
+    _update_geometry(cs_glob_mesh, 0);
 
   /* Recompute geometric quantities related to the mesh */
 
@@ -865,80 +902,122 @@ _update_mesh(bool     restart_mode,
   cs_glob_mesh_builder = cs_mesh_builder_create();
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
 
+  _update_angle(t_cur_mob);
+
   if (restart_mode == false) {
 
-    _copy_mesh(tbm->reference_mesh, cs_glob_mesh);
+    int n_retry = CS_MIN(tbm->n_max_join_tries, 1);
+    cs_lnum_t boundary_changed = 0;
+    double eps_dt = 0.;
 
-    /* Update geometry, if necessary */
+    do {
 
-    if (tbm->n_rotors > 0)
-      _update_geometry(cs_glob_mesh, t_cur_mob);
+      n_retry -= 1;
 
-    /* Reset the interior faces -> cells connectivity */
-    /* (in order to properly build the halo of the joined mesh) */
+      _copy_mesh(tbm->reference_mesh, cs_glob_mesh);
 
-    cs_mesh_to_builder_perio_faces(cs_glob_mesh, cs_glob_mesh_builder);
+      /* Update geometry, if necessary */
 
-    {
-      int i;
-      cs_lnum_t f_id;
-      cs_lnum_2_t *i_face_cells = (cs_lnum_2_t *)cs_glob_mesh->i_face_cells;
-      const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-      for (f_id = 0; f_id < cs_glob_mesh->n_i_faces; f_id++) {
-        for (i = 0; i < 2; i++) {
-          if (i_face_cells[f_id][i] >= n_cells)
-            i_face_cells[f_id][i] = -1;
+      if (tbm->n_rotors > 0)
+        _update_geometry(cs_glob_mesh, eps_dt);
+
+      /* Reset the interior faces -> cells connectivity */
+      /* (in order to properly build the halo of the joined mesh) */
+
+      cs_mesh_to_builder_perio_faces(cs_glob_mesh, cs_glob_mesh_builder);
+
+      {
+        int i;
+        cs_lnum_t f_id;
+        cs_lnum_2_t *i_face_cells = (cs_lnum_2_t *)cs_glob_mesh->i_face_cells;
+        const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+        for (f_id = 0; f_id < cs_glob_mesh->n_i_faces; f_id++) {
+          for (i = 0; i < 2; i++) {
+            if (i_face_cells[f_id][i] >= n_cells)
+              i_face_cells[f_id][i] = -1;
+          }
         }
       }
-    }
 
-    /* Join meshes and build periodicity links */
+      /* Join meshes and build periodicity links */
 
-    cs_join_all(false);
+      cs_join_all(false);
 
-    cs_lnum_t boundary_changed = 0;
-    if (tbm->n_b_faces_ref > -1) {
-      if (cs_glob_mesh->n_b_faces != tbm->n_b_faces_ref)
-        boundary_changed = 1;
-    }
-    cs_parall_counter_max(&boundary_changed, 1);
+      boundary_changed = 0;
+      if (tbm->n_b_faces_ref > -1) {
+        if (cs_glob_mesh->n_b_faces != tbm->n_b_faces_ref)
+          boundary_changed = 1;
+      }
+      cs_parall_counter_max(&boundary_changed, 1);
 
-    /* Check that joining has not added or removed boundary faces.
-       Postprocess new faces appearing on boundary or inside of mesh:
-       this assumes that joining appends new faces at the end of the mesh */
+      /* Check that joining has not added or removed boundary faces.
+         Postprocess new faces appearing on boundary or inside of mesh
+         (which assumes that joining appends new faces at the end of the mesh)
+         or try again with slightly different rotation angle
+       */
 
-    if (boundary_changed) {
-      const int writer_id = -2;
-      const int writer_ids[] = {writer_id};
-      const int mesh_id = cs_post_get_free_mesh_id();
-      cs_lnum_t b_face_count[] = {tbm->n_b_faces_ref,
-                                  cs_glob_mesh->n_b_faces};
-      cs_gnum_t n_g_b_faces_ref = tbm->n_b_faces_ref;
-      cs_parall_counter(&n_g_b_faces_ref, 1);
-      cs_post_init_error_writer();
-      cs_post_define_surface_mesh_by_func(mesh_id,
-                                          _("Added boundary faces"),
-                                          NULL,
-                                          _post_error_faces_select,
-                                          NULL,
-                                          b_face_count,
-                                          false, /* time varying */
-                                          true,  /* add groups if present */
-                                          false, /* auto variables */
-                                          1,
-                                          writer_ids);
-      cs_post_activate_writer(writer_id, 1);
-      cs_post_write_meshes(NULL);
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error in turbomachinery mesh update:\n"
-                  "Number of boundary faces has changed from %llu to %llu.\n"
-                  "There are probably unjoined faces, "
-                  "due to an insufficiently regular mesh;\n"
-                  "adjusting mesh joining parameters might help."),
-                (unsigned long long)n_g_b_faces_ref,
-                (unsigned long long)cs_glob_mesh->n_g_b_faces);
-    }
+      if (boundary_changed) {
 
+        const char join_err_fmt[]
+          = N_("Error in turbomachinery mesh update:\n"
+               "Number of boundary faces has changed from %llu to %llu.\n"
+               "There are probably unjoined faces, "
+               "due to an insufficiently regular mesh;\n"
+               "adjusting mesh joining parameters might help.");
+
+        cs_gnum_t n_g_b_faces_ref = tbm->n_b_faces_ref;
+        cs_parall_counter(&n_g_b_faces_ref, 1);
+
+        if (n_retry < 1)  {
+          const int writer_id = -2;
+          const int writer_ids[] = {writer_id};
+          const int mesh_id = cs_post_get_free_mesh_id();
+          cs_lnum_t b_face_count[] = {tbm->n_b_faces_ref,
+                                      cs_glob_mesh->n_b_faces};
+          cs_post_init_error_writer();
+          cs_post_define_surface_mesh_by_func(mesh_id,
+                                              _("Added boundary faces"),
+                                              NULL,
+                                              _post_error_faces_select,
+                                              NULL,
+                                              b_face_count,
+                                              false, /* time varying */
+                                              true,  /* add groups if present */
+                                              false, /* auto variables */
+                                              1,
+                                              writer_ids);
+          cs_post_activate_writer(writer_id, 1);
+          cs_post_write_meshes(NULL);
+          bft_error(__FILE__, __LINE__, 0,
+                    _(join_err_fmt),
+                    (unsigned long long)n_g_b_faces_ref,
+                    (unsigned long long)cs_glob_mesh->n_g_b_faces);
+        }
+        else {
+          double dt = cs_glob_time_step->t_cur - cs_glob_time_step->t_prev;
+          eps_dt += tbm->dt_retry * dt;
+          bft_printf(_(join_err_fmt),
+                     (unsigned long long)n_g_b_faces_ref,
+                     (unsigned long long)cs_glob_mesh->n_g_b_faces);
+          bft_printf("\nTrying again with eps_dt = %lg\n", eps_dt);
+
+          /* Destroy previous global mesh and related entities */
+
+          cs_mesh_location_finalize();
+          cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
+
+          cs_mesh_destroy(cs_glob_mesh);
+
+          /* Create new global mesh and related entities */
+
+          cs_mesh_location_initialize();
+          cs_glob_mesh = cs_mesh_create();
+          cs_glob_mesh->verbosity = 0;
+          cs_glob_mesh_builder = cs_mesh_builder_create();
+          cs_glob_mesh_quantities = cs_mesh_quantities_create();
+        }
+      }
+    } while (boundary_changed && n_retry >= 0);
   }
   else {
 
@@ -1326,7 +1405,7 @@ cs_turbomachinery_define(void)
 /*!
  * \brief Initializations for turbomachinery computation.
  *
- * \note This function should be called before once the mesh is built,
+ * \note This function should be called after the mesh is built,
  *       but before cs_post_init_meshes() so that postprocessing meshes are
  *       updated correctly in the transient case.
  */
@@ -1542,11 +1621,53 @@ cs_turbomachinery_get_cell_rotor_num(void)
 /*----------------------------------------------------------------------------*/
 
 double
-cs_turbomachinery_get_rotation_velocity(int rotor_num)
+cs_turbomachinery_get_rotation_velocity(int  rotor_num)
 {
   cs_turbomachinery_t *tbm = _turbomachinery;
 
   return (tbm->rotation + rotor_num)->omega;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set rotation velocity
+ *
+ * param[in]  rotor_num  rotor number (1 to n numbering)
+ * param[in]  omega      rotation velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_set_rotation_velocity(int     rotor_num,
+                                        double  omega)
+{
+  cs_turbomachinery_t *tbm = _turbomachinery;
+
+  (tbm->rotation + rotor_num)->omega = omega;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set turbomachinery joining retry parameters.
+ *
+ * When a joing leads to a different number of boundary faces from the
+ * previous position, the rotor positions may be perturbed by a small
+ * quantity to try to obtain a better joining.
+ *
+ * param[in]  n_max_join_retries   maximum number of retries before considering
+ *                                 the joining has failed
+ * param[in]  dt_retry_multiplier  time step multiplier for new position retry
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_set_rotation_retry(int     n_max_join_retries,
+                                     double  dt_retry_multiplier)
+{
+  cs_turbomachinery_t *tbm = _turbomachinery;
+
+  tbm->n_max_join_tries = n_max_join_retries;
+  tbm->dt_retry = dt_retry_multiplier;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1663,6 +1784,88 @@ cs_turbomachinery_relative_velocity(int              rotor_num,
                      r->invariant,
                      coords,
                      velocity);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read turbomachinery metadata from restart file.
+ *
+ * The mesh is handled separately.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_restart_read(cs_restart_t  *r)
+{
+  cs_turbomachinery_t *tbm = _turbomachinery;
+
+  if (tbm == NULL)
+    return;
+
+  cs_real_t *t_angle;
+  BFT_MALLOC(t_angle, tbm->n_rotors+2, cs_real_t);
+
+  t_angle[0] = tbm->t_cur;
+  for (int i = 0; i < tbm->n_rotors+1; i++) {
+    cs_rotation_t *rot = tbm->rotation + i;
+    t_angle[i+1] = rot->angle;
+  }
+
+  int retcode = cs_restart_read_section(r,
+                                        "turbomachinery:rotor_time_and_angle",
+                                        CS_MESH_LOCATION_NONE,
+                                        tbm->n_rotors+2,
+                                        CS_TYPE_cs_real_t,
+                                        t_angle);
+
+  if (retcode == CS_RESTART_SUCCESS) {
+    tbm->t_cur = t_angle[0];
+    for (int i = 0; i < tbm->n_rotors+1; i++) {
+      cs_rotation_t *rot = tbm->rotation + i;
+      rot->angle = t_angle[i+1];
+    }
+  }
+
+  BFT_FREE(t_angle);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Write turbomachinery metadata to checkpoint file.
+ *
+ * The mesh is handled separately.
+ *
+ * \param[in, out]  r  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_restart_write(cs_restart_t  *r)
+{
+  const cs_turbomachinery_t *tbm = _turbomachinery;
+
+  if (tbm == NULL)
+    return;
+
+  cs_real_t *t_angle;
+  BFT_MALLOC(t_angle, tbm->n_rotors+2, cs_real_t);
+
+  t_angle[0] = tbm->t_cur;
+  for (int i = 0; i < tbm->n_rotors+1; i++) {
+    cs_rotation_t *rot = tbm->rotation + i;
+    t_angle[i+1] = rot->angle;
+  }
+
+  cs_restart_write_section(r,
+                           "turbomachinery:rotor_time_and_angle",
+                           CS_MESH_LOCATION_NONE,
+                           tbm->n_rotors+2,
+                           CS_TYPE_cs_real_t,
+                           t_angle);
+
+  BFT_FREE(t_angle);
 }
 
 /*----------------------------------------------------------------------------*/

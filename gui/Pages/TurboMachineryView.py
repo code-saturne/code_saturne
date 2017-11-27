@@ -130,10 +130,10 @@ class StandardItemModelRotor(QStandardItemModel):
 
         self.mdl = mdl
 
-        self.headers = [self.tr("Rotation velocity (rad)"),
+        self.headers = [self.tr("Rotation velocity (rad/s)"),
                         self.tr("Selection criteria")]
 
-        self.tooltip = [self.tr("Rotation velocity"),
+        self.tooltip = [self.tr("Rotation velocity (rad/s)"),
                         self.tr("Selection criteria string")]
 
         self.setColumnCount(len(self.headers))

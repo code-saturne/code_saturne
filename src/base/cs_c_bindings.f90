@@ -2169,6 +2169,32 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Read turbomachinery metadata from restart file.
+
+    !> \param[in, out]   r  restart structure pointer
+
+    subroutine turbomachinery_restart_read(r)  &
+      bind(C, name='cs_turbomachinery_restart_read')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+    end subroutine turbomachinery_restart_read
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Write turbomachinery metadata from restart file.
+
+    !> \param[in, out]   r  restart structure pointer
+
+    subroutine turbomachinery_restart_write(r)  &
+      bind(C, name='cs_turbomachinery_restart_write')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+    end subroutine turbomachinery_restart_write
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

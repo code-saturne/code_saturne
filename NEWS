@@ -5,6 +5,11 @@ Trunk (unreleased)
 Changes
 -------
 
+- Allow time-varying rotor velocity for turbomachinery.
+
+- Mesh-joing based turbomachinery model robustness is also improved by
+  allowing multiple joining retries using a slightly perturbed position.
+
 - Refactored extrusion handling to allow easier and finer control of extrusion
   vector generation.
   * a cs_mesh_extrude_face_info_t structure allows simple settings for each

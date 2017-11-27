@@ -244,6 +244,8 @@ nbval  = 1
 rval(1) = ttcmob
 call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
+call turbomachinery_restart_write(rp)
+
 if (ichemistry.gt.0.or.iaerosol.gt.0) then
   rubriq = 'atmospheric_chem'
   itysup = 0
