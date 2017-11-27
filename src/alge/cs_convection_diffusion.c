@@ -4853,7 +4853,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
   }
 
   /* ======================================================================
-     ---> Compute uncentred gradient grdpa for the slope test
+     ---> Compute uncentered gradient grdpa for the slope test
      ======================================================================*/
 
 # pragma omp parallel for

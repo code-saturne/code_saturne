@@ -1112,7 +1112,7 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
  *                               - 0 otherwise
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
+ *                               - thetap = 0.5: time-centered
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
@@ -1395,7 +1395,7 @@ cs_matrix_vector(const cs_mesh_t          *m,
  *                               - 0 otherwise
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
+ *                               - thetap = 0.5: time-centered
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme

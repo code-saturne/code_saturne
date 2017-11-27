@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-11-06 02:01+0100\n"
+"POT-Creation-Date: 2017-11-26 23:14+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6574,14 +6574,14 @@ msgstr ""
 
 #, c-format
 msgid ""
-"%s was built without XML support,\n"
-"so parameter file \"%s\" may not be loaded.\n"
+"%s was built without dynamic loader support,\n"
+"so module file \"%s\" may not be loaded.\n"
 msgstr ""
 
 #, c-format
 msgid ""
-"%s was built without dynamic loader support,\n"
-"so module file \"%s\" may not be loaded.\n"
+"%s was built without XML support,\n"
+"so parameter file \"%s\" may not be loaded.\n"
 msgstr ""
 
 #, c-format
@@ -6626,12 +6626,14 @@ msgstr ""
 "Type de diffusivité : scalaire (1), orthotropique (3) ou tenseur symmétrique "
 "(6)"
 
-#, fuzzy
 msgid ""
-"Type of convective scheme: 2nd order with centred-gradientupwind "
-"reconstruction (0), centered (1),2nd order with upwind-gradient upwind-"
+"Type of convective scheme: 2nd order with centered-gradient upwind "
+"reconstruction (0), centered (1), 2nd order with upwind-gradient upwind-"
 "reconstruction (SOLU) (2)"
-msgstr "Type de schéma convectif : Upwind 2ème ordre (0), centré (1), SOLU (2)"
+msgstr ""
+"Type de schéma convectif : 2nd ordre avec reconstruction-upwind gradient-"
+"centré (0), centré (1), 2nd ordre avec reconstruction-upwind gradient-upwind "
+"(SOLU) (2)"
 
 msgid ""
 "0 for slope test, 1 for no slope test, 2 for min/max limiter and 3 for NVD/"
@@ -9355,9 +9357,6 @@ msgstr ""
 "ne contient aucune cellule.\n"
 "Ce rotor devrait être supprimé ou le critère de sélection modifié."
 
-msgid "Added boundary faces"
-msgstr "Faces de bord ajoutées"
-
 #, c-format
 msgid ""
 "Error in turbomachinery mesh update:\n"
@@ -9370,6 +9369,9 @@ msgstr ""
 "Il y a probablement des faces non recollées, dues à un maillage trop "
 "irrégulier ;\n"
 "il peut être utile d'ajuster les paramètres de recollement."
+
+msgid "Added boundary faces"
+msgstr "Faces de bord ajoutées"
 
 #, c-format
 msgid ""
@@ -9465,9 +9467,6 @@ msgstr ""
 msgid " Unsteady terms are not handled yet.\n"
 msgstr ""
 
-msgid "Invalid space scheme."
-msgstr ""
-
 #, c-format
 msgid ""
 " Face %d not found.\n"
@@ -9518,6 +9517,16 @@ msgid ""
 msgstr ""
 
 msgid " Invalid idtvar value for the CDO module.\n"
+msgstr ""
+
+msgid ""
+" Invalid type of definition.\n"
+" Stop computing the Dirichlet value.\n"
+msgstr ""
+
+msgid ""
+" Invalid type of definition.\n"
+" Stop computing the Neumann value.\n"
 msgstr ""
 
 msgid ""
@@ -9678,16 +9687,6 @@ msgid ""
 " available for equation %s\n"
 msgstr ""
 
-msgid ""
-" Invalid type of definition.\n"
-" Stop computing the Dirichlet value.\n"
-msgstr ""
-
-msgid ""
-" Invalid type of definition.\n"
-" Stop computing the Neumann value.\n"
-msgstr ""
-
 #, c-format
 msgid ""
 " Undefined iterative solver for solving %s equation.\n"
@@ -9722,6 +9721,9 @@ msgstr ""
 
 msgid " Unknown cell-type.\n"
 msgstr "type de cellule inconnu.\n"
+
+msgid "Invalid space scheme."
+msgstr ""
 
 msgid "VpCd"
 msgstr ""
@@ -9830,10 +9832,10 @@ msgstr ""
 msgid " Invalid numerical scheme to set a source term."
 msgstr ""
 
-msgid " Invalid case. Not able to compute the source term.\n"
+msgid " Invalid type of definition.\n"
 msgstr ""
 
-msgid " Invalid type of definition.\n"
+msgid " Invalid case. Not able to compute the source term.\n"
 msgstr ""
 
 msgid " Invalid type of description."
@@ -11388,6 +11390,42 @@ msgstr ""
 
 #, c-format
 msgid "No markup found: %s \n"
+msgstr ""
+
+#, c-format
+msgid "In XML data \"%s\", line %dmalformed or unhandled key: %s ..."
+msgstr ""
+
+#, c-format
+msgid ""
+"In XML data (%s, line %d)\n"
+"malformed string: %s"
+msgstr ""
+
+#, c-format
+msgid ""
+"In XML data (%s, line %d)\n"
+"expected tag instead of: %s"
+msgstr ""
+
+#, c-format
+msgid ""
+"In XML data (%s, line %d)\n"
+"malformed tag: %s"
+msgstr ""
+
+#, c-format
+msgid ""
+"In XML data (%s, line %d)\n"
+"closing tag <%s> does not match opening tag <%s>"
+msgstr ""
+
+#, c-format
+msgid "XML (%s) %s %s unexpected\n"
+msgstr ""
+
+#, c-format
+msgid "File \"%s\" seems empty."
 msgstr ""
 
 msgid "Lagrangian boundary type"
