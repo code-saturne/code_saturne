@@ -5,6 +5,9 @@ Release 5.1.1 (unreleased)
 Bug fixes
 ---------
 
+- "separate_meshes" writer option should not propagate to EnSight
+  mesh groups output.
+
 - Fix issue #246 (crash in cs_selector_get_cells_boundary / getceb).
 
 - Fix absorption coef. computation in FSCK model.
