@@ -189,6 +189,21 @@ fvm_writer_version_string(int format_index,
                           int compile_time_version);
 
 /*----------------------------------------------------------------------------
+ * Remove a given option from a format options list if present.
+ *
+ * The possible separators are also transformed to whitespace and merged.
+ *
+ * parameters:
+ *   format_options  <-> options for the selected format (case-independent,
+ *                       whitespace or comma separated list)
+ *   exclude_option  <-- option to be excluded
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_writer_filter_option(char        *format_options,
+                         const char  *exclude_option);
+
+/*----------------------------------------------------------------------------
  * Initialize FVM mesh and field output writer.
  *
  * Allowed options depend on what is applicable to a given format. Those

@@ -13,6 +13,9 @@ User changes
 Bug fixes
 ---------
 
+- "separate_meshes" writer option should not propagate to EnSight
+  mesh groups output.
+
 - Fix issue #246 (crash in cs_selector_get_cells_boundary / getceb).
 
 - Fix computation of pressure gradient in lagrangian equations for some cases:
