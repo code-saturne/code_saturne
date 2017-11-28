@@ -56,7 +56,10 @@ typedef struct {
   cs_lnum_t   *n_layers;          /*!< number of layers for each boundary face;
                                    *   (0 for non-extruded faces) */
 
-  cs_real_t   *distance;          /*!< total distance for each boundary face */
+  cs_real_t   *distance;          /*!< total distance for each boundary face
+                                    (if < 0, absolute value used as
+                                    multiplier for boundary cell thickness) */
+
   float       *expansion_factor;  /*!< expansion factor for each boundary face */
 
   cs_real_t   *thickness_s;       /*!< optional start thickness for each boundary
@@ -171,6 +174,8 @@ cs_mesh_extrude_face_info_destroy(cs_mesh_extrude_face_info_t **efi);
  * \param[in, out]  efi               mesh extrusion face information
  * \param[in]       n_layers          number of layers for selected faces
  * \param[in]       distance          extrusion distance for selected faces
+ *                                    (if < 0, absolute value used as
+ *                                    multiplier for boundary cell thickness)
  * \param[in]       expansion_factor  expansion factor for selected faces
  * \param[in]       n_faces           number of selected faces
  * \param[in]       face_ids          ids of selected faces, or NULL

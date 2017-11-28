@@ -94,6 +94,48 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Determine angle between two face edges adjacent to a given vertex.
+ *
+ * \param[in]       v_ids          vertex ids (e0v0, e0v1, e1v1)
+ * \param[in]       f_n            face normal
+ * \param[in]       vertex_coords  vertex coordinates
+ *
+ * \return angle
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_angle(const cs_lnum_t  v_ids[3],
+       const cs_real_t  f_n[3],
+       const cs_real_t  vtx_coords[][3])
+{
+  const cs_real_t *c0 = vtx_coords[v_ids[0]];
+  const cs_real_t *c1 = vtx_coords[v_ids[1]];
+  const cs_real_t *c2 = vtx_coords[v_ids[2]];
+
+  const cs_real_t u[3] = {c1[0]-c0[0], c1[1]-c0[1], c1[2]-c0[2]};
+  const cs_real_t v[3] = {c2[0]-c0[0], c2[1]-c0[1], c2[2]-c0[2]};
+
+  const cs_real_t d    = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+  const cs_real_t lsq0 = u[0]*u[0] + u[1]*u[1] + u[2]*u[2];
+  const cs_real_t lsq1 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+
+  const cs_real_t uv[] = {u[1]*v[2] - u[2]*v[1],
+                          u[2]*v[0] - u[0]*v[2],
+                          u[0]*v[1] - u[1]*v[0]};
+
+  double theta = acos(d/sqrt(lsq0*lsq1));
+
+  const cs_real_t sgn = uv[0]*f_n[0] + uv[1]*f_n[1] + uv[2]*f_n[2];
+
+  if (sgn < 0)
+    theta = 2*cs_math_pi - theta;
+
+  return theta;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Generate a vertices selection from adjacent boundary faces.
  *
  * The calling code is responsible for freeing the allocated vertices
@@ -1469,7 +1511,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
 
   /* Determine vertices to extrude */
 
-  cs_real_t  *w = NULL;
+  cs_real_2_t *w = NULL;
   int        *c = NULL;
 
   BFT_MALLOC(_n_layers, n_vertices, cs_lnum_t);
@@ -1477,7 +1519,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
   BFT_MALLOC(_thickness_se, n_vertices, cs_real_2_t);
   BFT_MALLOC(_coord_shift, n_vertices, cs_coord_3_t);
 
-  BFT_MALLOC(w, n_vertices, cs_real_t);
+  BFT_MALLOC(w, n_vertices, cs_real_2_t);
   BFT_MALLOC(c, n_vertices, int);
 
   for (cs_lnum_t i = 0; i < n_vertices; i++) {
@@ -1488,7 +1530,8 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
     _coord_shift[i][0] = 0;
     _coord_shift[i][1] = 0;
     _coord_shift[i][2] = 0;
-    w[i] = 0;
+    w[i][0] = 0;
+    w[i][1] = 0;
     c[i] = 0;
   }
 
@@ -1516,7 +1559,9 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
     if (efi->n_layers[i] == 0)
       _distance[i] = 0;
-    else if (efi->distance[i] >= 0)
+    else if (efi->distance[i] < 0)
+      _distance[i] *= -efi->distance[i];
+    else
       _distance[i] = efi->distance[i];
   }
 
@@ -1563,13 +1608,20 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
 
     for (cs_lnum_t k = s_id; k < e_id; k++) {
       cs_lnum_t v_id = m->b_face_vtx_lst[k];
+      cs_lnum_t k_0 = (k < e_id-1) ? k+1 : s_id;
+      cs_lnum_t k_1 = (k > s_id) ? k-1 : e_id-1;
+      cs_lnum_t v_ids[3] = {v_id,
+                            m->b_face_vtx_lst[k_0],
+                            m->b_face_vtx_lst[k_1]};
+      cs_real_t a = _angle(v_ids, f_n, m->vtx_coord);
       _n_layers[v_id] += n_layers;
-      _expansion[v_id] += expansion_factor * f_s;
-      _thickness_se[v_id][0] += thickness_s * f_s;
-      _thickness_se[v_id][1] += thickness_e * f_s;
+      _expansion[v_id] += expansion_factor * a;
+      _thickness_se[v_id][0] += thickness_s * a;
+      _thickness_se[v_id][1] += thickness_e * a;
       for (cs_lnum_t l = 0; l < 3; l++)
-        _coord_shift[v_id][l] += distance * f_n[l];
-      w[v_id] += f_s;
+        _coord_shift[v_id][l] += a * f_n[l]/f_s;
+      w[v_id][0] += a;
+      w[v_id][1] += distance * a;
       c[v_id] += 1;
     }
   }
@@ -1605,7 +1657,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
                          _coord_shift);
     cs_interface_set_sum(m->vtx_interfaces,
                          m->n_vertices,
-                         1,
+                         2,
                          true,
                          CS_REAL_TYPE,
                          w);
@@ -1620,11 +1672,12 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
   for (cs_lnum_t i = 0; i < m->n_vertices; i++) {
     if (c[i] > 0) {
       _n_layers[i] /= c[i];
-      _expansion[i] /= w[i];
-      _thickness_se[i][0] /= w[i];
-      _thickness_se[i][1] /= w[i];
+      _expansion[i] /= w[i][0];
+      _thickness_se[i][0] /= w[i][0];
+      _thickness_se[i][1] /= w[i][0];
+      cs_real_t nn = cs_math_3_square_norm(_coord_shift[i]);
       for (cs_lnum_t l = 0; l < 3; l++)
-        _coord_shift[i][l] /= w[i];
+        _coord_shift[i][l] = _coord_shift[i][l] * (w[i][1] / (w[i][0]*nn));
     }
     else
       _n_layers[i] = 0;
@@ -2079,6 +2132,8 @@ cs_mesh_extrude_face_info_destroy(cs_mesh_extrude_face_info_t  **efi)
  * \param[in, out]  efi               mesh extrusion face information
  * \param[in]       n_layers          number of layers for selected faces
  * \param[in]       distance          extrusion distance for selected faces
+ *                                    (if < 0, absolute value used as
+ *                                    multiplier for boundary cell thickness)
  * \param[in]       expansion_factor  expansion factor for selected faces
  * \param[in]       n_faces           number of selected faces
  * \param[in]       face_ids          ids of selected faces, or NULL
