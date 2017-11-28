@@ -3548,7 +3548,11 @@ cs_post_define_writer(int                     writer_id,
     }
     else
       BFT_FREE(_cs_post_default_format_options);
+    /* Remove possible "separate_writers" option from default format */
+    fvm_writer_filter_option(_cs_post_default_format_options,
+                             "separate_meshes");
   }
+
 }
 
 /*----------------------------------------------------------------------------*/

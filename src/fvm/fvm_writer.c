@@ -985,6 +985,73 @@ fvm_writer_version_string(int format_index,
 }
 
 /*----------------------------------------------------------------------------
+ * Remove a given option from a format options list if present.
+ *
+ * The possible separators are also transformed to whitespace and merged.
+ *
+ * parameters:
+ *   format_options  <-> options for the selected format (case-independent,
+ *                       whitespace or comma separated list)
+ *   exclude_option  <-- option to be excluded
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_writer_filter_option(char        *format_options,
+                         const char  *exclude_option)
+{
+  int  i;
+  char  *tmp_options = NULL;
+
+  size_t l = strlen(exclude_option);
+
+  /* Find corresponding format and check coherency */
+
+  tmp_options = _fvm_writer_option_list(format_options);
+
+  /* Parse top-level options (consuming those handled here);
+     the options string now contains options separated by a single
+     whitespace. */
+
+  if (tmp_options != NULL) {
+
+    int i0 = 0, i1;
+
+    while (tmp_options[i0] != '\0') {
+
+      for (i1 = i0; tmp_options[i1] != '\0' && tmp_options[i1] != ' '; i1++);
+      int l_opt = i1 - i0;
+
+      if (   (l_opt == l)
+          && (strncmp(tmp_options + i0, exclude_option, l_opt) == 0)) {
+        if (tmp_options[i1] == ' ')
+          strcpy(tmp_options + i0, tmp_options + i1 + 1);
+        else {
+          if (i0 > 1) {
+            assert(tmp_options[i0-1] = ' ');
+            i0--;
+          }
+          tmp_options[i0] = '\0';
+        }
+      }
+      else {
+        i0 = i1;
+        if (tmp_options[i0] == ' ')
+          i0++;
+      }
+
+      i1 = strlen(tmp_options);
+      BFT_REALLOC(tmp_options, i1+1, char);
+
+    }
+
+  }
+
+  strcpy(format_options, tmp_options);
+
+  BFT_FREE(tmp_options);
+}
+
+/*----------------------------------------------------------------------------
  * Initialize FVM mesh and field output writer.
  *
  * Allowed options depend on what is applicable to a given format. Those
