@@ -212,11 +212,11 @@ _init_cell_structures(const cs_flag_t               cell_flag,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   /* Cell-wise view of the linear system to build */
-  const int  stride = cm->n_fc + 1;
-  const int  n_dofs = 3*stride;
+  const int  n_blocks = cm->n_fc + 1;
+  const int  n_dofs = 3*n_blocks;
 
   short int  *block_sizes = cb->ids;
-  for (int i = 0; i < stride; i++)
+  for (int i = 0; i < n_blocks; i++)
     block_sizes[i] = 3;
 
   /* Initialize the local system */
@@ -224,7 +224,7 @@ _init_cell_structures(const cs_flag_t               cell_flag,
 
   csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
-  cs_sdm_block_init(csys->mat, stride, stride, block_sizes, block_sizes);
+  cs_sdm_block_init(csys->mat, n_blocks, n_blocks, block_sizes, block_sizes);
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -682,7 +682,7 @@ cs_cdofb_vecteq_free_context(void   *data)
  *
  * \param[in]      eqp    pointer to a cs_equation_param_t structure
  * \param[in, out] eqb    pointer to a cs_equation_builder_t structure
- * \param[in, out] data     pointer to a cs_cdofb_vecteq_t structure
+ * \param[in, out] data   pointer to a cs_cdofb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -717,13 +717,14 @@ cs_cdofb_vecteq_compute_source(const cs_equation_param_t    *eqp,
     cs_source_term_compute_from_density(dof_loc, st, &contrib);
 
     /* Update source term array */
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < quant->n_cells; i++)
       eqc->source_terms[i] += contrib[i];
 
   } // Loop on source terms
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
-  cs_dump_array_to_listing("INIT_SOURCE_TERM",
+  cs_dbg_darray_to_listing("INIT_SOURCE_TERM",
                            quant->n_cells, eqc->source_terms, 8);
 #endif
 
@@ -1013,9 +1014,9 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_done(mav); // optional
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
-  cs_dump_array_to_listing("FINAL RHS_FACE", quant->n_faces, rhs, 9);
+  cs_dbg_darray_to_listing("FINAL RHS_FACE", quant->n_faces, rhs, 9);
   if (eqc->source_terms != NULL)
-    cs_dump_array_to_listing("FINAL RHS_CELL",
+    cs_dbg_darray_to_listing("FINAL RHS_CELL",
                              quant->n_cells, eqc->source_terms, 9);
 #endif
 

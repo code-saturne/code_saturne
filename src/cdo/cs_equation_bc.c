@@ -433,7 +433,7 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
   BFT_FREE(flag);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
-  cs_dump_array_to_listing("DIRICHLET_VALUES", quant->n_vertices, dir_val, 8);
+  cs_dbg_darray_to_listing("DIRICHLET_VALUES", quant->n_vertices, dir_val, 8);
 #endif
 
   return dir_val;
@@ -549,7 +549,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
-  cs_dump_array_to_listing("DIRICHLET_VALUES",
+  cs_dbg_darray_to_listing("DIRICHLET_VALUES",
                            eqp->dim*quant->n_b_faces, dir_val, 9);
 #endif
 

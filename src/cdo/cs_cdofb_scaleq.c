@@ -645,7 +645,7 @@ cs_cdofb_scaleq_compute_source(const cs_equation_param_t    *eqp,
   } // Loop on source terms
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
-  cs_dump_array_to_listing("INIT_SOURCE_TERM",
+  cs_dbg_darray_to_listing("INIT_SOURCE_TERM",
                            quant->n_cells, eqc->source_terms, 8);
 #endif
 
@@ -875,8 +875,8 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
           csys->rhs[f] += csys->neu_values[f];
       }
 
-      /* Static condensation of the local system matrix of size n_vc + 1 into
-         a matrix of size n_vc. Store information in the builder structure in
+      /* Static condensation of the local system matrix of size n_fc + 1 into
+         a matrix of size n_fc. Store information in the builder structure in
          order to be able to compute the values at cell centers. */
       _condense_and_store(connect->c2f, eqc, cb, csys);
 
@@ -914,9 +914,9 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_done(mav); // optional
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
-  cs_dump_array_to_listing("FINAL RHS_FACE", quant->n_faces, rhs, 8);
+  cs_dbg_darray_to_listing("FINAL RHS_FACE", quant->n_faces, rhs, 8);
   if (eqc->source_terms != NULL)
-    cs_dump_array_to_listing("FINAL RHS_CELL",
+    cs_dbg_darray_to_listing("FINAL RHS_CELL",
                              quant->n_cells, eqc->source_terms, 8);
 #endif
 

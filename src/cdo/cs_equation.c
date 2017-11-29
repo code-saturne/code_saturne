@@ -2495,13 +2495,13 @@ cs_equation_solve(cs_equation_t   *eq)
                   eq->name, code, n_iters, residual, nnz);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
-    cs_dump_array_to_listing("EQ.AFTER.SOLVE >> X", size, x, 9);
-    cs_dump_array_to_listing("EQ.SOLVE >> RHS", size, b, 9);
+    cs_dbg_darray_to_listing("EQ.AFTER.SOLVE >> X", size, x, 9);
+    cs_dbg_darray_to_listing("EQ.SOLVE >> RHS", size, b, 9);
 #if CS_EQUATION_DBG > 2
-    cs_dump_integer_to_listing("ROW_INDEX", size + 1, row_index, 9);
-    cs_dump_integer_to_listing("COLUMN_ID", nnz, col_id, 9);
-    cs_dump_array_to_listing("D_VAL", size, d_val, 9);
-    cs_dump_array_to_listing("X_VAL", nnz, x_val, 9);
+    cs_dbg_iarray_to_listing("ROW_INDEX", size + 1, row_index, 9);
+    cs_dbg_iarray_to_listing("COLUMN_ID", nnz, col_id, 9);
+    cs_dbg_darray_to_listing("D_VAL", size, d_val, 9);
+    cs_dbg_darray_to_listing("X_VAL", nnz, x_val, 9);
 #endif
 #endif
   }

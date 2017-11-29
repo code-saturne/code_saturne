@@ -579,7 +579,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   /* Check the symmetry */
-  if (!_is_tensor_symmetric(tens))
+  if (!_is_tensor_symmetric((const cs_real_t (*)[3])tens))
     bft_error(__FILE__, __LINE__, 0,
               _(" The definition of the tensor related to the"
                 " property %s is not symmetric.\n"

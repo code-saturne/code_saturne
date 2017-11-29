@@ -729,11 +729,11 @@ cs_cdovb_scaleq_compute_source(const cs_equation_param_t  *eqp,
 
     if (cs_equation_param_has_sourceterm(eqp)) {
       /* Reset source term array */
-#pragma omp for CS_CDO_OMP_SCHEDULE
+#     pragma omp for CS_CDO_OMP_SCHEDULE
       for (cs_lnum_t i = 0; i < eqc->n_dofs; i++) eqc->source_terms[i] = 0;
     }
 
-#pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */
@@ -771,7 +771,7 @@ cs_cdovb_scaleq_compute_source(const cs_equation_param_t  *eqp,
   } // OpenMP block
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-    cs_dump_array_to_listing("INIT_SOURCE_TERM_VTX", quant->n_vertices,
+    cs_dbg_darray_to_listing("INIT_SOURCE_TERM_VTX", quant->n_vertices,
                              eqc->source_terms, 8);
 #endif
 
@@ -1122,7 +1122,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
   if (eqc->source_terms != NULL)
-    cs_dump_array_to_listing("EQ.BUILD >> TS", eqc->n_dofs, eqc->source_terms,
+    cs_dbg_darray_to_listing("EQ.BUILD >> TS", eqc->n_dofs, eqc->source_terms,
                              8);
 #endif
 

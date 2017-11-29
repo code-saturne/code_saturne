@@ -303,7 +303,7 @@ cs_nvec3(const cs_real_3_t    v,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_dump_array_to_listing(const char        *header,
+cs_dbg_darray_to_listing(const char        *header,
                          const cs_lnum_t    size,
                          const cs_real_t    array[],
                          int                n_cols);
@@ -320,10 +320,10 @@ cs_dump_array_to_listing(const char        *header,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_dump_integer_to_listing(const char        *header,
-                           const cs_lnum_t    size,
-                           const cs_lnum_t    array[],
-                           int                n_cols);
+cs_dbg_iarray_to_listing(const char        *header,
+                         const cs_lnum_t    size,
+                         const cs_lnum_t    array[],
+                         int                n_cols);
 #endif
 
 /*----------------------------------------------------------------------------*/

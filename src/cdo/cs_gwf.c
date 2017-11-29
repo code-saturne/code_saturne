@@ -332,7 +332,7 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 2
       if (cs_test_flag(gw->flux_location, cs_cdo_dual_face_byc))
-        cs_dump_array_to_listing("DARCIAN_FLUX_DFbyC",
+        cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
                                  connect->c2e->idx[cdoq->n_cells],
                                  gw->darcian_flux, 8);
 #endif
@@ -359,7 +359,7 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
   } // End of switch
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
-  cs_dump_array_to_listing("DARCIAN_FLUX_CELL", 3*cdoq->n_cells, vel->val, 3);
+  cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL", 3*cdoq->n_cells, vel->val, 3);
 #endif
 }
 
@@ -1073,7 +1073,7 @@ cs_gwf_update(const cs_mesh_t             *mesh,
   } /* Not all saturated */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
-  cs_dump_array_to_listing("MOISTURE_CONTENT",
+  cs_dbg_darray_to_listing("MOISTURE_CONTENT",
                            quant->n_cells,
                            gw->moisture_field->val, 8);
 #endif

@@ -314,17 +314,17 @@ cs_sdm_free(cs_sdm_t  *mat)
  *          The matrix should have been allocated before calling this function
  *
  * \param[in, out] m
- * \param[in]      n_blocks_by_row    number of blocks in a row
- * \param[in]      n_blocks_by_col    number of blocks in a column
- * \param[in]      row_block_sizes    number of rows by block in a column
- * \param[in]      col_block_sizes    number of columns by block in a row
+ * \param[in]      n_row_blocks      number of blocks in a row
+ * \param[in]      n_col_blocks      number of blocks in a column
+ * \param[in]      row_block_sizes   number of rows by block in a column
+ * \param[in]      col_block_sizes   number of columns by block in a row
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_sdm_block_init(cs_sdm_t          *m,
-                  short int          n_blocks_by_row,
-                  short int          n_blocks_by_col,
+                  short int          n_row_blocks,
+                  short int          n_col_blocks,
                   const short int    row_block_sizes[],
                   const short int    col_block_sizes[])
 {
@@ -335,15 +335,15 @@ cs_sdm_block_init(cs_sdm_t          *m,
 
   cs_sdm_block_t  *bd = m->block_desc;
 
-  assert(n_blocks_by_row <= bd->n_max_blocks_by_row);
-  assert(n_blocks_by_col <= bd->n_max_blocks_by_col);
-  bd->n_row_blocks = n_blocks_by_row;
-  bd->n_col_blocks = n_blocks_by_col;
+  assert(n_row_blocks <= bd->n_max_blocks_by_row);
+  assert(n_col_blocks <= bd->n_max_blocks_by_col);
+  bd->n_row_blocks = n_row_blocks;
+  bd->n_col_blocks = n_col_blocks;
   m->n_rows = 0;
-  for (int i = 0; i < n_blocks_by_row; i++)
+  for (int i = 0; i < n_row_blocks; i++)
     m->n_rows += row_block_sizes[i];
   m->n_cols = 0;
-  for (int i = 0; i < n_blocks_by_col; i++)
+  for (int i = 0; i < n_col_blocks; i++)
     m->n_cols += col_block_sizes[i];
 
   memset(m->val, 0, m->n_rows*m->n_cols*sizeof(cs_real_t));

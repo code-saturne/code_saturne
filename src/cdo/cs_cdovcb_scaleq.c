@@ -768,9 +768,9 @@ cs_cdovcb_scaleq_compute_source(const cs_equation_param_t  *eqp,
   } // OpenMP block
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
-  cs_dump_array_to_listing("INIT_SOURCE_TERM_VTX", quant->n_vertices,
+  cs_dbg_darray_to_listing("INIT_SOURCE_TERM_VTX", quant->n_vertices,
                            eqc->source_terms, 8);
-  cs_dump_array_to_listing("INIT_SOURCE_TERM_CELL", quant->n_cells,
+  cs_dbg_darray_to_listing("INIT_SOURCE_TERM_CELL", quant->n_cells,
                            eqc->source_terms + quant->n_vertices, 8);
 #endif
 
@@ -1139,8 +1139,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_done(mav); // optional
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
-  cs_dump_array_to_listing("FINAL RHS_VTX", quant->n_vertices, rhs, 8);
-  cs_dump_array_to_listing("FINAL RHS_CELL",quant->n_cells, eqc->cell_rhs, 8);
+  cs_dbg_darray_to_listing("FINAL RHS_VTX", quant->n_vertices, rhs, 8);
+  cs_dbg_darray_to_listing("FINAL RHS_CELL",quant->n_cells, eqc->cell_rhs, 8);
 #endif
 
   /* Free temporary buffers and structures */

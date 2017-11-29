@@ -284,7 +284,7 @@ _proj3(cs_real_3_t           a_proj,
  * \param[in]      gw         list of weights related to each Gauss point
  * \param[in, out] bf         pointer to a cs_basis_func_t structure
  * \param[in]      first_row  start filling the values from first row
- * \param[in]      n_rows     numer of basis functions (n_rows in the matrix)
+ * \param[in]      n_rows     number of basis functions (n_rows in the matrix)
  * \param[in, out] phi_eval   array storing the evaluation of basis functions
  * \param[in, out] values     values related to the projection matrix
  */
@@ -842,7 +842,7 @@ _ck1_eval_all_at_point(const void           *pbf,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate aset of basis functions related to cell DoFs at a given
+ * \brief  Evaluate a set of basis functions related to cell DoFs at a given
  *         point. Case of a polynomial basis up to order 1
  *
  * \param[in]      pbf     pointer to be cast into a cs_basis_func_t structure

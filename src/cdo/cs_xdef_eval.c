@@ -1636,7 +1636,7 @@ cs_xdef_eval_cw_tensor_flux_by_val(const cs_cell_mesh_t     *cm,
   const cs_real_t  *flux = (cs_real_t *)input;
   const cs_quant_t  fq = cm->face[f];
 
-  cs_math_33_3_product(flux, fq.unitv, eval);
+  cs_math_33_3_product((const cs_real_t (*)[3])flux, fq.unitv, eval);
   for (int k = 0; k < 3; k++)
     eval[3*f+k] *= fq.meas;
 }
@@ -1798,7 +1798,7 @@ cs_xdef_eval_cw_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
       /* Evaluate the function for this time at the given coordinates */
       anai->func(ts->t_cur, 1, NULL, cm->xc, true, // compacted output ?
                  anai->input,
-                 flux_xc);
+                 (cs_real_t *)flux_xc);
 
       /* Plug into the evaluation by value now */
       cs_xdef_eval_cw_tensor_flux_by_val(cm, f, flux_xc, eval);
@@ -1832,7 +1832,7 @@ cs_xdef_eval_cw_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
                    anai->input,
                    (cs_real_t *)_eval);
 
-        cs_math_33_3_product(_eval, fq.unitv, _val);
+        cs_math_33_3_product((const cs_real_t (*)[3])_eval, fq.unitv, _val);
         for (int k = 0; k < 3; k++)
           eval[3*f+k] += cm->tef[i] * _val[k];
 
@@ -1871,7 +1871,8 @@ cs_xdef_eval_cw_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
         const cs_real_t coef = w * cm->tef[i];
         for (int p = 0; p < 3; p++) {
-          cs_math_33_3_product(_eval[p], fq.unitv, _val);
+          cs_math_33_3_product((const cs_real_t (*)[3])_eval[p], fq.unitv,
+                               _val);
           for (int k = 0; k < 3; k++)
             eval[3*f+k] += coef * _val[k];
         }

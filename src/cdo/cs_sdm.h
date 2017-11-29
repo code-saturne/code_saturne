@@ -300,17 +300,17 @@ cs_sdm_square_init(int         n_rows,
  *          The matrix should have been allocated before calling this function
  *
  * \param[in, out] m
- * \param[in]      n_blocks_by_row    number of blocks in a row
- * \param[in]      n_blocks_by_col    number of blocks in a column
- * \param[in]      row_block_sizes    number of rows by block in a column
- * \param[in]      col_block_sizes    number of columns by block in a row
+ * \param[in]      n_row_blocks      number of blocks in a row
+ * \param[in]      n_col_blocks      number of blocks in a column
+ * \param[in]      row_block_sizes   number of rows by block in a column
+ * \param[in]      col_block_sizes   number of columns by block in a row
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_sdm_block_init(cs_sdm_t          *m,
-                  short int          n_blocks_by_row,
-                  short int          n_blocks_by_col,
+                  short int          n_row_blocks,
+                  short int          n_col_blocks,
                   const short int    row_block_sizes[],
                   const short int    col_block_sizes[]);
 
