@@ -350,10 +350,10 @@ cs_xdef_timestep_create(cs_xdef_type_t             type,
 
   case  CS_XDEF_BY_TIME_FUNCTION:
     {
-      cs_xdef_timestep_input_t  *a = (cs_xdef_analytic_input_t *)input;
+      cs_xdef_timestep_input_t  *a = (cs_xdef_timestep_input_t *)input;
       cs_xdef_timestep_input_t  *b = NULL;
 
-      BFT_MALLOC(b, 1, cs_xdef_analytic_input_t);
+      BFT_MALLOC(b, 1, cs_xdef_timestep_input_t);
       b->func = a->func;
       b->input = a->input;
 
