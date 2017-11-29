@@ -351,11 +351,11 @@ struct _cs_equation_t {
   /* Range set to handle parallelism. Shared with cs_cdo_connect_t struct.*/
   const cs_range_set_t    *rset;
 
-  /* Common members between numerical scheme related to the building of an
-     equation */
+  /* Common members for building the algebraic system between the numerical
+     schemes  */
   cs_equation_builder_t   *builder;
 
-  /* Data depending on the numerical scheme */
+  /* Data depending on the numerical scheme (cast on-the-fly) */
   void                    *scheme_context;
 
   /* Pointer to functions (see prototypes just above) */
@@ -2523,6 +2523,11 @@ cs_equation_solve(cs_equation_t   *eq)
   if (eq->solve_ts_id > -1)
     cs_timer_stats_stop(eq->solve_ts_id);
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
+  cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, eq->n_sles_gather_elts, x, 6);
+  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, eq->n_sles_gather_elts, b, 6);
+#endif
+
   /* Copy current field values to previous values */
   cs_field_current_to_previous(fld);
 
@@ -2665,6 +2670,46 @@ cs_equation_get_param(const cs_equation_t    *eq)
     return NULL;
   else
     return eq->param;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the cs_equation_builder_t structure associated to a
+ *         cs_equation_t structure. Only for an advanced usage.
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a cs_equation_builder_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_builder_t *
+cs_equation_get_builder(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else
+    return eq->builder;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a pointer to a structure useful to handle low-level
+ *         operations for the given equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a structure to cast on-the-fly or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_equation_get_scheme_context(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else
+    return eq->scheme_context;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2828,20 +2873,33 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
 {
   if (eq == NULL)
     return NULL;
-  if (eq->get_extra_values == NULL) {
-    bft_error(__FILE__, __LINE__, 0,
-              _(" No function defined for getting the face values in eq. %s"),
-              eq->name);
-    return NULL; // Avoid a warning
+
+  if (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB)
+    return eq->get_extra_values(eq->scheme_context);
+
+  else if (eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P0 ||
+           eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P1 ||
+           eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P2) {
+
+    if (eq->param->dim == 1)    /* scalar-valued unknown */
+      return cs_hho_scaleq_get_face_values(eq->scheme_context);
+    else
+      return NULL;               /* TODO */
+
+  }
+  else {
+
+    if (eq->get_extra_values == NULL) {
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: No function defined for this operation in eq. %s"),
+                __func__, eq->name);
+      return NULL;                /* TODO */
+
+    }
+
   }
 
-  if (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB  ||
-      eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P0 ||
-      eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P1 ||
-      eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P2)
-    return eq->get_extra_values(eq->scheme_context);
-  else
-    return NULL; // Not implemented
+  return NULL; /* Avoid a warning */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2861,29 +2919,40 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
   if (eq == NULL)
     return NULL;
 
-  if (eq->get_extra_values == NULL) {
-    bft_error(__FILE__, __LINE__, 0,
-              _(" No function defined for getting the cell values in eq. %s"),
-              eq->name);
-    return NULL; // Avoid a warning
-  }
-
   switch (eq->param->space_scheme) {
   case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO_P0:
-  case CS_SPACE_SCHEME_HHO_P1:
-  case CS_SPACE_SCHEME_HHO_P2:
     {
       cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
       return fld->val;
     }
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P0:
+  case CS_SPACE_SCHEME_HHO_P1:
+  case CS_SPACE_SCHEME_HHO_P2:
+    {
+      if (eq->param->dim == 1)    /* scalar-valued unknown */
+        return cs_hho_scaleq_get_cell_values(eq->scheme_context);
+      else
+        return NULL;               /* TODO */
+    }
+    break;
 
   case CS_SPACE_SCHEME_CDOVCB:
     return eq->get_extra_values(eq->scheme_context);
+    break;
 
   default:
-    return NULL; // Not implemented
+    {
+      if (eq->get_extra_values == NULL)
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" %s: No function defined for this operation in eq. %s"),
+                  __func__, eq->name);
+      return NULL; // Avoid aa warning
+    }
+    break;
+
   }
 
 }

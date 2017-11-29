@@ -61,9 +61,12 @@ BEGIN_C_DECLS
 #define _dp3  cs_math_3_dot_product
 #define _mv3  cs_math_33_3_product
 
+
 /*============================================================================
  * Private variables
  *============================================================================*/
+
+static const double  cs_hho_builder_pena_coef = 1e13;
 
 /*============================================================================
  * Private function prototypes
@@ -213,40 +216,42 @@ _add_tetra_reduction(const cs_xdef_analytic_input_t  *anai,
  *         are contributions to the local stiffness matrix on the gradient
  *         basis and to the right-hand side
  *
- * \param[in]      f          face id in the cellwise numbering
  * \param[in]      xv1        first vertex
  * \param[in]      xv2        second vertex
  * \param[in]      xv3        third vertex
- * \param[in ]     surf       area of the triangle
+ * \param[in]      surf       area of the triangle
+ * \param[in]      fbf        pointer to the related set of face basis functions
+ * \param[in]      kappa_nfc  permeability tensor times the related face normal
+ * \param[in, out] gpts       coordinates of the Gauss points
  * \param[in, out] rc         right-hand side matrix to compute (cell part)
  * \param[in, out] rf         right-hand side matrix to compute (face part)
+ * \param[in, out] gpts       coordinates of the Gauss points
+ * \param[in, out] kappa_nfc  coordinates of the Gauss points
  * \param[in, out] cb         pointer to a cs_cell_builder_structure_t
  * \param[in, out] hhob       pointer to a cs_hho_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_add_tria_to_reco_op(short int                 f,
-                     const cs_real_3_t         xv1,
+_add_tria_to_reco_op(const cs_real_3_t         xv1,
                      const cs_real_3_t         xv2,
                      const cs_real_3_t         xv3,
                      const double              surf,
+                     const cs_basis_func_t    *fbf,
+                     const cs_real_t          *kappa_nfc,
+                     cs_real_3_t              *gpts,
                      cs_sdm_t                 *rc,
                      cs_sdm_t                 *rf,
                      cs_cell_builder_t        *cb,
                      cs_hho_builder_t         *hhob)
 {
-  const cs_basis_func_t  *fbf = hhob->face_basis[f];
   const cs_basis_func_t  *cbf = hhob->cell_basis;
   const cs_basis_func_t  *gbf = hhob->grad_basis;
 
   const short int  fsize = fbf->size;
   const short int  csize = cbf->size;
   const short int  gsize = gbf->size - 1;
-  /* already computed */
-  const cs_real_t  *kappa_nfc = (const cs_real_t *)(cb->vectors[f]);
 
-  cs_real_3_t  *gpts = cb->vectors + hhob->n_face_basis;
   cs_real_t  *gw = cb->values;
   cs_real_t  *f_phi = cb->values + fbf->n_gpts_tria;
   cs_real_t  *c_phi = cb->values + fbf->n_gpts_tria + fsize;
@@ -294,6 +299,7 @@ _add_tria_to_reco_op(short int                 f,
  * \param[in]      xv4         fourth vertex
  * \param[in ]     vol         volume of the terahedron
  * \param[in, out] stiffness   stiffness matrix to compute
+ * \param[in, out] gpts        coordinates of the Gauss points
  * \param[in, out] cb          pointer to a cs_cell_builder_structure_t
  * \param[in, out] hhob        pointer to a cs_hho_builder_t structure
  */
@@ -306,6 +312,7 @@ _add_tetra_to_reco_op(const cs_real_3_t         xv1,
                       const cs_real_3_t         xv4,
                       const double              vol,
                       cs_sdm_t                 *stiffness,
+                      cs_real_3_t              *gpts,
                       cs_cell_builder_t        *cb,
                       cs_hho_builder_t         *hhob)
 {
@@ -313,7 +320,6 @@ _add_tetra_to_reco_op(const cs_real_3_t         xv1,
   const short int gs = gbf->size - 1;
 
   cs_real_3_t Kgrad_phi_i;
-  cs_real_3_t  *gpts = cb->vectors + hhob->n_face_basis;
   cs_real_t  *gw = cb->values;
   cs_real_t  *g_phi = cb->values + gbf->n_gpts_tetra;
 
@@ -783,6 +789,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
 
   /* Pre-compute tensor x outward normal */
   cs_real_3_t  *kappa_nfc = cb->vectors;
+  cs_real_3_t  *gpts = cb->vectors + cm->n_fc;
   for (short int f = 0; f < cm->n_fc; f++) {
     _mv3((const cs_real_t (*)[3])cb->pty_mat, cm->face[f].unitv, kappa_nfc[f]);
     kappa_nfc[f][0] *= cm->f_sgn[f];
@@ -797,12 +804,14 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
     {
       assert(cm->n_fc == 4 && cm->n_vc == 4);
       _add_tetra_to_reco_op(cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
-                            stiffness, cb, hhob);
+                            stiffness, gpts, cb, hhob);
       _fill_vol_reco_op(stiffness, rc, hhob);
 
       short int  v0, v1, v2;
       for (short int f = 0; f < cm->n_fc; ++f) {
 
+        const cs_basis_func_t  *fbf = hhob->face_basis[f];
+        const cs_real_t  *knfc = (const cs_real_t *)(kappa_nfc[f]);
         const cs_quant_t  pfq = cm->face[f];
         const short int  *f2e_ids = cm->f2e_ids + cm->f2e_idx[f];
 
@@ -812,7 +821,8 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
 
         cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-        _add_tria_to_reco_op(f, cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
+        _add_tria_to_reco_op(cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
+                             fbf, knfc, gpts,
                              rc, rf, cb, hhob);
       }
     }
@@ -825,6 +835,8 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
   {
     for (short int f = 0; f < cm->n_fc; ++f) {
 
+      const cs_basis_func_t  *fbf = hhob->face_basis[f];
+      const cs_real_t  *knfc = (const cs_real_t *)(kappa_nfc[f]);
       const cs_quant_t  pfq = cm->face[f];
       const double  hf_coef = cs_math_onethird * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
@@ -848,9 +860,10 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
           const double  *xv1 = cm->xv + 3*v1;
           const double  *xv2 = cm->xv + 3*v2;
           _add_tetra_to_reco_op(xv0, xv1, xv2, cm->xc, hf_coef * pfq.meas,
-                                stiffness, cb, hhob);
+                                stiffness, gpts, cb, hhob);
 
-          _add_tria_to_reco_op(f, xv0, xv1, xv2, pfq.meas,
+          _add_tria_to_reco_op(xv0, xv1, xv2, pfq.meas,
+                               fbf, knfc, gpts,
                                rc, rf, cb, hhob);
 
         }
@@ -868,10 +881,12 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
             _add_tetra_to_reco_op(xv0, xv1, pfq.center, cm->xc, hf_coef*tef[e],
-                                  stiffness, cb, hhob);
+                                  stiffness, gpts, cb, hhob);
 
-            _add_tria_to_reco_op(f, xv0, xv1, pfq.center, tef[e],
+            _add_tria_to_reco_op(xv0, xv1, pfq.center, tef[e],
+                                 fbf, knfc, gpts,
                                  rc, rf, cb, hhob);
+
           }
         }
         break;
@@ -1007,6 +1022,19 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
   /* Compute the consistent part */
   cs_sdm_block_multiply_rowrow_sym(rhs_t, gop_t, cb->loc);
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_BUILDER_DBG > 0
+  if (cm->c_id == 0) {
+    printf(" Diffusion matrix: rhs_t\n");
+    cs_sdm_block_fprintf(NULL, NULL, 1e-16, rhs_t);
+
+    printf(" Diffusion matrix: grad_op_t\n");
+    cs_sdm_block_fprintf(NULL, NULL, 1e-16, gop_t);
+
+    printf(" Diffusion matrix: consistent part\n");
+    cs_sdm_block_fprintf(NULL, NULL, 1e-16, cb->loc);
+  }
+#endif
+
   /* Compute the stabilization part.
      Several steps are needed :
      1. Define a set of basis functions for P^(k+1)_c
@@ -1096,9 +1124,6 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 
   cs_sdm_t  *bf_t_mff = hhob->tmp;
 
-  /* Store the cumulated contribution over faces in jstab */
-  cs_sdm_block_init(hhob->jstab, cm->n_fc + 1, cm->n_fc + 1, cb->ids, cb->ids);
-
   assert(m_ccgg->block_desc->n_row_blocks == cm->n_fc + 1);
 
   for (short int f = 0; f < cm->n_fc; f++) {
@@ -1172,7 +1197,8 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 
         /* Extract column array (easy since we have stored the transposed) */
         const cs_real_t  *const mb_j = mb->val + j*cs;
-        const cs_real_t  *const gb_j = gb->val + j*gs;
+        const cs_real_t  *const gb_j1 = gb->val + j*gs;
+        const cs_real_t  *const gb_j2 = gb_j1 + m_sizes[1];
 
         /* Compute the "j"th column array of M_fg * GradOp
            Compute the "j"th column array of M_fc * M_ccgg */
@@ -1182,11 +1208,10 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
           array[i] = m0->val[i] * mb_j[0];
           const cs_real_t  *const mk_i = mk->val + i*m_sizes[1];
           for (short int k = 0; k < m_sizes[1]; k++)
-            array[i] += (gb_j[k] + mb_j[k+1]) * mk_i[k];
-          int shift = m_sizes[1];
+            array[i] += (gb_j1[k] + mb_j[k+1]) * mk_i[k];
           const cs_real_t  *const mkp1_i = mkp1->val + i*m_sizes[2];
-          for (short int k = 0; k < m_sizes[2]; k++, shift++)
-            array[i] += gb_j[shift] * mkp1_i[k];
+          for (short int k = 0; k < m_sizes[2]; k++)
+            array[i] += gb_j2[k] * mkp1_i[k];
 
         }
 
@@ -1207,44 +1232,44 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 
     } /* Loop on blocks (face or cell) for the current face */
 
+    /* Store the cumulated contribution over faces in jstab */
+    cs_sdm_block_init(hhob->jstab, cm->n_fc+1, cm->n_fc+1, cb->ids, cb->ids);
+
+    /* Update the upper right part of the matrix storing the stabilization
+       The lower left part is set by symmetry */
+    assert(bf_t_mff->block_desc->n_col_blocks == 1);
+    for (short int bi = 0; bi < cm->n_fc + 1; bi++) {
+      const cs_sdm_t  *bmff_i0 = cs_sdm_get_block(bf_t_mff, bi, 0);
+
+      for (short int bj = bi; bj < cm->n_fc + 1; bj++) {
+        const cs_sdm_t  *bf_j0 = cs_sdm_get_block(hhob->bf_t, bj, 0);
+
+        cs_sdm_t  *js_ij = cs_sdm_get_block(hhob->jstab, bi, bj);
+        cs_sdm_multiply_rowrow(bmff_i0, bf_j0, js_ij);
+
+        if (bj > bi) {  /* The stabilization part is symmetric */
+          cs_sdm_t  *js_ji = cs_sdm_get_block(hhob->jstab, bj, bi);
+          cs_sdm_transpose_and_update(js_ij, js_ji);
+        }
+
+      } /* Loop on col blocks */
+    } /* Loop on row blocks */
+
     /* Determine the stabilization coefficient for this face */
     cs_real_3_t  k_nf;
     _mv3((const cs_real_t (*)[3])cb->pty_mat, cm->face[f].unitv, k_nf);
     const cs_real_t  f_coef = _dp3(k_nf, cm->face[f].unitv) / cm->f_diam[f];
 
-    /* Update the upper right part of the matrix storing the stabilization */
-    assert(bf_t_mff->block_desc->n_col_blocks == 1);
-    for (short int bi = 0; bi < cm->n_fc + 1; bi++) {
-      const cs_sdm_t  *a_i0 = cs_sdm_get_block(bf_t_mff, bi, 0);
-
-      for (short int bj = bi; bj < cm->n_fc + 1; bj++) {
-        const cs_sdm_t  *b_j0 = cs_sdm_get_block(hhob->bf_t, bj, 0);
-
-        cs_sdm_t  *tmp = cb->hdg;
-        cs_sdm_init(a_i0->n_rows, b_j0->n_rows, tmp);
-        cs_sdm_multiply_rowrow_sym(a_i0, b_j0, tmp);
-
-        cs_sdm_t  *js_ij = cs_sdm_get_block(hhob->jstab, bi, bj);
-        cs_sdm_add_mult(js_ij, f_coef, tmp);
-
-      } /* Loop on col blocks */
-    } /* Loop on row blocks */
+    cs_sdm_block_add_mult(cb->loc, f_coef, hhob->jstab);
 
   } /* Loop on cell faces */
 
-  /* The stabilization part is symmetric */
-  for (short int bi = 0; bi < cm->n_fc + 1; bi++) {
-    for (short int bj = bi + 1; bj < cm->n_fc + 1; bj++) {
-
-      const cs_sdm_t  *js_ij = cs_sdm_get_block(hhob->jstab, bi, bj);
-      cs_sdm_t  *js_ji = cs_sdm_get_block(hhob->jstab, bj, bi);
-
-      cs_sdm_transpose_and_update(js_ij, js_ji);
-
-    } /* Loop on col blocks J > I */
-  } /* Loop on row blocks I */
-
-  cs_sdm_block_add(cb->loc, hhob->jstab);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_BUILDER_DBG > 0
+  if (cm->c_id == 0) {
+    printf(" Diffusion matrix: full version\n");
+    cs_sdm_block_fprintf(NULL, NULL, 1e-16, cb->loc);
+  }
+#endif
 
   /* Free temporary buffers and structures */
   cbf_kp1 = cs_basis_func_free(cbf_kp1);
@@ -1417,6 +1442,128 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
 
   /* Modified Cholesky decomposition to compute DoF */
   cbf->project(cbf, c_rhs, red + shift);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the projection of the Dirichlet boundary conditions onto
+ *         the polynomial spaces on faces
+ *
+ * \param[in]       def      pointer to a cs_xdef_t structure
+ * \param[in]       f        local face id in the cellwise view of the mesh
+ * \param[in]       cm       pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  cb       pointer to a cell builder_t structure
+ * \param[in, out]  hhob     pointer to a cs_hho_builder_t structure
+ * \param[in, out]  res      vector containing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
+                                 short int                f,
+                                 const cs_cell_mesh_t    *cm,
+                                 cs_cell_builder_t       *cb,
+                                 cs_hho_builder_t        *hhob,
+                                 cs_real_t                res[])
+{
+  /* Sanity checks */
+  if (hhob == NULL || def == NULL)
+    return;
+
+  assert(hhob->face_basis != NULL);
+
+  const cs_quant_t  pfq = cm->face[f];
+  const cs_basis_func_t  *fbf = hhob->face_basis[f];
+
+  /* See _add_tria_reduction to understand the following shift */
+  cs_real_t  *rhs = cb->values + 14 + fbf->size;
+
+  assert(fbf != NULL);
+  assert(fbf->facto != NULL);
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  memset(res, 0, fbf->size*sizeof(cs_real_t));
+  memset(rhs, 0, fbf->size*sizeof(cs_real_t));
+
+  switch(def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    {
+      const cs_real_t  *constant_val = (cs_real_t *)def->input;
+
+      /* The bc is constant thus its projection is a multiple of the
+         constant basis function */
+      cs_real_t  phi0;
+
+      fbf->eval_at_point(fbf, pfq.center, 0, 1, &phi0);
+
+      res[0] = constant_val[0] / phi0;
+      for (short int i = 1; i < fbf->size; i++)
+        res[i] = 0.;
+
+    }
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+
+      const int  start = cm->f2e_idx[f];
+      const int  end = cm->f2e_idx[f+1];
+      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int *f2e_ids = cm->f2e_ids + start;
+
+      assert(n_vf > 2);
+      switch(n_vf){
+
+      case 3: /* triangle (optimized version, no subdivision) */
+        {
+          short int  v0, v1, v2;
+          cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+
+          const double  *xv0 = cm->xv + 3*v0;
+          const double  *xv1 = cm->xv + 3*v1;
+          const double  *xv2 = cm->xv + 3*v2;
+
+          _add_tria_reduction(anai, fbf, xv0, xv1, xv2, pfq.meas, cb, rhs);
+        }
+        break;
+
+      default:
+        {
+          const double  *tef = cm->tef + start;
+
+          for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+            // Edge-related variables
+            const short int e0  = f2e_ids[e];
+            const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
+            const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+
+            _add_tria_reduction(anai, fbf, xv0, xv1, pfq.center, tef[e],
+                                cb, rhs);
+
+          }
+        }
+        break;
+
+      } /* End of switch */
+
+      /* Modified Cholesky decomposition to compute DoF */
+      fbf->project(fbf, rhs, res);
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Stop execution.\n"
+                " Invalid type of definition.\n"), __func__);
+
+  } // switch def_type
+
 }
 
 /*----------------------------------------------------------------------------*/

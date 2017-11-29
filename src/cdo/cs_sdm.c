@@ -232,8 +232,8 @@ cs_sdm_create_transpose(cs_sdm_t  *mat)
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_block_create(short int          n_max_blocks_by_row,
-                    short int          n_max_blocks_by_col,
+cs_sdm_block_create(int                n_max_blocks_by_row,
+                    int                n_max_blocks_by_col,
                     const short int    max_row_block_sizes[],
                     const short int    max_col_block_sizes[])
 {
@@ -323,8 +323,8 @@ cs_sdm_free(cs_sdm_t  *mat)
 
 void
 cs_sdm_block_init(cs_sdm_t          *m,
-                  short int          n_row_blocks,
-                  short int          n_col_blocks,
+                  int                n_row_blocks,
+                  int                n_col_blocks,
                   const short int    row_block_sizes[],
                   const short int    col_block_sizes[])
 {
@@ -603,15 +603,17 @@ cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t   *a,
         cs_sdm_t  *aIK = cs_sdm_get_block(a, i, k);
         cs_sdm_t  *bJK = cs_sdm_get_block(b, j, k);
 
-        cs_sdm_multiply_rowrow_sym(aIK, bJK, cIJ);
+        cs_sdm_multiply_rowrow(aIK, bJK, cIJ);
 
       } /* Loop on common blocks between a and b */
 
-      if (j > i)
-        cs_sdm_transpose_and_update(cIJ, cs_sdm_get_block(c, j, i));
-
     } /* Loop on b row blocks */
   } /* Loop on a row blocks */
+
+  for (short int i = 0; i < a_desc->n_row_blocks; i++)
+    for (short int j = i + 1; j < b_desc->n_row_blocks; j++)
+      cs_sdm_transpose_and_update(cs_sdm_get_block(c, i, j),
+                                  cs_sdm_get_block(c, j, i));
 
 }
 
@@ -694,6 +696,72 @@ cs_sdm_matvec(const cs_sdm_t    *mat,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute a dense matrix-vector product for a rectangular matrix
+ *          mv has been previously allocated and initialized
+ *          Thus mv is updated inside this function
+ *
+ * \param[in]      mat    local matrix to use
+ * \param[in]      vec    local vector to use (size = mat->n_cols)
+ * \param[in, out] mv     result of the operation (size = mat->n_rows)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_update_matvec(const cs_sdm_t    *mat,
+                     const cs_real_t   *vec,
+                     cs_real_t         *mv)
+{
+  /* Sanity checks */
+  assert(mat != NULL && vec != NULL && mv != NULL);
+
+  const short int  nr = mat->n_rows;
+  const short int  nc = mat->n_cols;
+
+  /* Update mv */
+  for (short int i = 0; i < nr; i++) {
+    cs_real_t *m_i = mat->val + i*nc;
+    for (short int j = 0; j < nc; j++)
+      mv[i] +=  m_i[j] * vec[j];
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute a dense matrix-vector product for a rectangular matrix
+ *          which is transposed.
+ *          mv has been previously allocated. mv is updated inside this
+ *          function. Don't forget to initialize mv if needed.
+ *
+ * \param[in]      mat    local matrix to use
+ * \param[in]      vec    local vector to use (size = mat->n_cols)
+ * \param[in, out] mv     result of the operation (size = mat->n_rows)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_matvec_transposed(const cs_sdm_t    *mat,
+                         const cs_real_t   *vec,
+                         cs_real_t         *mv)
+{
+  /* Sanity checks */
+  assert(mat != NULL && vec != NULL && mv != NULL);
+
+  const short int  nr = mat->n_rows;
+  const short int  nc = mat->n_cols;
+
+  /* Update mv */
+  for (short int i = 0; i < nr; i++) {
+    const cs_real_t *m_i = mat->val + i*nc;
+    const cs_real_t v = vec[i];
+    for (short int j = 0; j < nc; j++)
+      mv[j] +=  m_i[j] * v;
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Add two matrices defined by block: loc += add
  *
  * \param[in, out] mat   local matrix storing the result
@@ -725,6 +793,98 @@ cs_sdm_block_add(cs_sdm_t        *mat,
 
     } /* Loop on column blocks */
   } /* Loop on row blocks */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Add two matrices defined by block: loc += mult_coef * add
+ *
+ * \param[in, out] mat         local matrix storing the result
+ * \param[in]      mult_coef   multiplicative coefficient
+ * \param[in]      add         values to add to mat
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block_add_mult(cs_sdm_t        *mat,
+                      cs_real_t        mult_coef,
+                      const cs_sdm_t  *add)
+{
+  if (mat == NULL || add == NULL)
+    return;
+
+  const cs_sdm_block_t  *add_desc = add->block_desc;
+  const cs_sdm_block_t  *mat_desc = mat->block_desc;
+
+  assert(add_desc != NULL && mat_desc != NULL);
+  assert(add_desc->n_row_blocks == mat_desc->n_row_blocks);
+  assert(add_desc->n_col_blocks == mat_desc->n_col_blocks);
+
+  for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
+    for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
+
+      cs_sdm_t  *mat_ij = cs_sdm_get_block(mat, bi, bj);
+      const cs_sdm_t  *add_ij = cs_sdm_get_block(add, bi, bj);
+
+      cs_sdm_add_mult(mat_ij, mult_coef, add_ij);
+
+    } /* Loop on column blocks */
+  } /* Loop on row blocks */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute a dense matrix-vector product for a rectangular matrix
+ *          defined by block
+ *          mv has been previously allocated
+ *
+ * \param[in]      mat    local matrix to use
+ * \param[in]      vec    local vector to use (size = mat->n_cols)
+ * \param[in, out] mv     result of the operation (size = mat->n_rows)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block_matvec(const cs_sdm_t    *mat,
+                    const cs_real_t   *vec,
+                    cs_real_t         *mv)
+{
+  /* Sanity checks */
+  assert(mat != NULL && vec != NULL && mv != NULL);
+
+  if (mat == NULL)
+    return;
+
+  const cs_sdm_block_t  *mat_desc = mat->block_desc;
+
+  assert(mat_desc != NULL);
+  memset(mv, 0, mat->n_rows * sizeof(cs_real_t));
+
+  int  n_rows, c_shift, r_shift = 0;
+
+  for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
+
+    cs_real_t  *_mv = mv + r_shift;
+
+    c_shift = 0;
+    for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
+
+      cs_sdm_t  *mat_ij = cs_sdm_get_block(mat, bi, bj);
+
+      cs_sdm_update_matvec(mat_ij, vec + c_shift, _mv);
+      c_shift += mat_ij->n_cols;
+      n_rows = mat_ij->n_rows;;
+
+    } /* Loop on column blocks */
+
+    r_shift += n_rows;
+
+  } /* Loop on row blocks */
+
+  assert(r_shift == mat->n_rows);
+  assert(c_shift == mat->n_cols);
 
 }
 
@@ -1319,8 +1479,8 @@ cs_sdm_44_ldlt_solve(const cs_real_t    facto[10],
 
 void
 cs_sdm_66_ldlt_solve(const cs_real_t    f[21],
-                     const cs_real_t    b[3],
-                     cs_real_t          x[3])
+                     const cs_real_t    b[6],
+                     cs_real_t          x[6])
 {
   /* Sanity check */
   assert(f != NULL && b != NULL && x != NULL);
@@ -1536,6 +1696,75 @@ cs_sdm_block_dump(cs_lnum_t           parent_id,
     } /* Block j */
   } /* Block i */
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Print a cs_sdm_t structure which is defined by block
+ *          Print into the file f if given otherwise open a new file named
+ *          fname if given otherwise print into the standard output
+ *          The usage of threshold allows one to compare more easier matrices
+ *          without taking into account numerical roundoff.
+ *
+ * \param[in]  fp         pointer to a file structure or NULL
+ * \param[in]  fname      filename or NULL
+ * \param[in]  thd        threshold (below this value --> set 0)
+ * \param[in]  m          pointer to the cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block_fprintf(FILE             *fp,
+                     const char       *fname,
+                     cs_real_t         thd,
+                     const cs_sdm_t   *m)
+{
+  FILE  *fout = stdout;
+  if (fp != NULL)
+    fout = fp;
+  else if (fname != NULL) {
+    fout = fopen(fname, "w");
+  }
+
+  fprintf(fout, "cs_sdm_t %p\n", (const void *)m);
+
+  if (m == NULL)
+    return;
+
+  assert(m->block_desc != NULL);
+  const int  n_b_rows = m->block_desc->n_row_blocks;
+  const int  n_b_cols = m->block_desc->n_col_blocks;
+  const cs_sdm_t  *blocks = m->block_desc->blocks;
+
+  for (short int bi = 0; bi < n_b_rows; bi++) {
+
+    const cs_sdm_t  *bi0 = blocks + bi*n_b_cols;
+    const int n_rows = bi0->n_rows;
+
+    for (int i = 0; i < n_rows; i++) {
+
+      for (short int bj = 0; bj < n_b_cols; bj++) {
+
+        const cs_sdm_t  *bij = blocks + bi*n_b_cols + bj;
+        const int  n_cols = bij->n_cols;
+        const cs_real_t  *mval_i = bij->val + i*n_cols;
+
+        for (int j = 0; j < n_cols; j++) {
+          if (fabs(mval_i[j]) > thd)
+            fprintf(fout, " % -9.5e", mval_i[j]);
+          else
+            fprintf(fout, " % -9.5e", 0.);
+        }
+
+      } /* Block j */
+      fprintf(fout, "\n");
+
+    } /* Loop on rows */
+
+  } /* Block i */
+
+  if (fout != stdout && fout != fp)
+    fclose(fout);
 }
 
 /*----------------------------------------------------------------------------*/

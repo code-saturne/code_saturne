@@ -121,6 +121,32 @@ cs_hho_builder_cellwise_setup(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set-up the basis functions related to a cell only.
+ *
+ * \param[in]       cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]       cb         pointer to a cell builder_t structure
+ * \param[in, out]  hhob       pointer to a cs_hho_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_hho_builder_cellbasis_setup(const cs_cell_mesh_t    *cm,
+                               cs_cell_builder_t       *cb,
+                               cs_hho_builder_t        *hhob)
+{
+  if (hhob == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(cm != NULL);
+
+  /* Setup cell basis functions */
+  hhob->cell_basis->setup(hhob->cell_basis, cm, 0, cm->xc, cb);
+  hhob->n_face_basis = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the gradient operator stemming from the relation
  *            stiffness * grad_op = rhs
  *         where stiffness is a square matrix of size grd_size
@@ -175,6 +201,28 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
                                        cs_cell_builder_t       *cb,
                                        cs_hho_builder_t        *hhob,
                                        cs_real_t                red[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the projection of the Dirichlet boundary conditions onto
+ *         the polynomial spaces on faces
+ *
+ * \param[in]       def      pointer to a cs_xdef_t structure
+ * \param[in]       f        local face id in the cellwise view of the mesh
+ * \param[in]       cm       pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  cb       pointer to a cell builder_t structure
+ * \param[in, out]  hhob     pointer to a cs_hho_builder_t structure
+ * \param[in, out]  res      vector containing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
+                                 short int                f,
+                                 const cs_cell_mesh_t    *cm,
+                                 cs_cell_builder_t       *cb,
+                                 cs_hho_builder_t        *hhob,
+                                 cs_real_t                res[]);
 
 /*----------------------------------------------------------------------------*/
 

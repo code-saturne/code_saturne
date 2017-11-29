@@ -97,6 +97,70 @@ const cs_flag_t  cs_cdo_dual_face_byc =
 #if defined(DEBUG) && !defined(NDEBUG)
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Print a cs_sdm_t structure which is defined by block
+ *          Print into the file f if given otherwise open a new file named
+ *          fname if given otherwise print into the standard output
+ *          The usage of threshold allows one to compare more easier matrices
+ *          without taking into account numerical roundoff.
+ *
+ * \param[in]  fp         pointer to a file structure or NULL
+ * \param[in]  fname      filename or NULL
+ * \param[in]  thd        threshold (below this value --> set 0)
+ * \param[in]  n_elts     size of the array
+ * \param[in]  array      list of values to dump
+ * \param[in]  n_cols     print array with n_cols columns
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_array_fprintf(FILE             *fp,
+                     const char       *fname,
+                     cs_real_t         thd,
+                     cs_lnum_t         n_elts,
+                     const cs_real_t   array[],
+                     int               n_cols)
+{
+  FILE  *fout = stdout;
+  if (fp != NULL)
+    fout = fp;
+  else if (fname != NULL) {
+    fout = fopen(fname, "w");
+  }
+
+  fprintf(fout, "array %p\n", (const void *)array);
+
+  if (array == NULL)
+    return;
+
+  if (n_cols < 1) n_cols = 1;
+  int  n_rows = n_elts/n_cols;
+
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+    for (cs_lnum_t j = i*n_cols; j < (i+1)*n_cols; j++) {
+      if (fabs(array[j]) < thd)
+        fprintf(fout, "% -8.5e", 0.);
+      else
+        fprintf(fout, "% -8.5e", array[j]);
+    }
+    fprintf(fout, "\n");
+  }
+
+  if (n_rows*n_cols < n_elts) {
+    for (cs_lnum_t j = n_rows*n_cols; j < n_elts; j++) {
+      if (fabs(array[j]) < thd)
+        fprintf(fout, "% -8.5e", 0.);
+      else
+        fprintf(fout, "% -8.5e", array[j]);
+    }
+    fprintf(fout, "\n");
+  }
+
+  if (fout != stdout && fout != fp)
+    fclose(fout);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  In debug mode, dump an array of double into the listing
  *
  * \param[in] header     header message to write

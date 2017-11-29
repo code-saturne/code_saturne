@@ -508,7 +508,7 @@ _iner_cell_basis_setup(void                    *pbf,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+static void
 _mono_face_basis_setup(void                    *pbf,
                        const cs_cell_mesh_t    *cm,
                        const short int          f,
@@ -531,15 +531,15 @@ _mono_face_basis_setup(void                    *pbf,
   cs_real_3_t *xexf_vect = cb->vectors;
   cs_real_t  tmp_meas = 0.;
   short int idx = 0;
-  for (int j = cm->f2e_idx[f]; j < cm->f2e_idx[f+1]; j++, idx++)
+  for (int j = cm->f2e_idx[f]; j < cm->f2e_idx[f+1]; j++)
     cs_math_3_length_unitv(center, cm->edge[cm->f2e_ids[j]].center,
-                           &tmp_meas, xexf_vect[idx]);
+                           &tmp_meas, xexf_vect[idx++]);
 
   cs_real_t min = 1.;
   short int e1 = 0, e2 = 1; // First selected couple
   const short int n_e = cm->f2e_idx[f+1] - cm->f2e_idx[f];
-  for (short int i = 0; i < n_e; ++i) {
-    for (short int j = i+1; j < n_e; ++j) {
+  for (short int i = 0; i < n_e; i++) {
+    for (short int j = i+1; j < n_e; j++) {
       const cs_real_t  dp_ij = fabs(_dp3(xexf_vect[i], xexf_vect[j]));
       if (dp_ij < min)
         e1 = i, e2 = j, min = dp_ij;
@@ -581,7 +581,7 @@ _mono_face_basis_setup(void                    *pbf,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+static void
 _iner_face_basis_setup(void                    *pbf,
                        const cs_cell_mesh_t    *cm,
                        const short int          f,

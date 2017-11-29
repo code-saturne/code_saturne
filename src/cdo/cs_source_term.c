@@ -153,6 +153,52 @@ _set_mask(const cs_xdef_t     *st,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the reduction onto the cell polynomial space of a function
+ *         defined by a constant value
+ *
+ * \param[in]       const_val  constant value
+ * \param[in]       cbf        pointer to a structure for face basis functions
+ * \param[in]       xv1        first vertex
+ * \param[in]       xv2        second vertex
+ * \param[in]       xv3        third vertex
+ * \param[in]       xv4        third vertex
+ * \param[in]       vol        volume of the tetrahedron
+ * \param[in, out]  cb         pointer to a cs_cell_builder_structure_t
+ * \param[in, out]  array      array storing values to compute
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_hho_add_tetra_by_val(cs_real_t                        const_val,
+                      const cs_basis_func_t           *cbf,
+                      const cs_real_3_t                xv1,
+                      const cs_real_3_t                xv2,
+                      const cs_real_3_t                xv3,
+                      const cs_real_3_t                xv4,
+                      const double                     vol,
+                      cs_cell_builder_t               *cb,
+                      cs_real_t                        array[])
+{
+  cs_real_3_t  *gpts = cb->vectors;
+  cs_real_t  *gw = cb->values;
+  cs_real_t  *phi_eval = cb->values + 15;
+
+  /* Compute Gauss points and related weights */
+  cs_quadrature_tet_15pts(xv1, xv2, xv3, xv4, vol, gpts, gw);
+
+  for (short int gp = 0; gp < 15; gp++) {
+
+    cbf->eval_all_at_point(cbf, gpts[gp], phi_eval);
+
+    const cs_real_t  w = gw[gp] * const_val;
+    for (short int i = 0; i < cbf->size; i++)
+      array[i] += w * phi_eval[i];
+
+  }  /* End of loop on Gauss points */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the reduction onto the cell polynomial space of a function
  *         defined by an analytical expression depending on the location and
  *         the current time
  *
@@ -169,15 +215,15 @@ _set_mask(const cs_xdef_t     *st,
 /*----------------------------------------------------------------------------*/
 
 static void
-_hho_add_tetra(const cs_xdef_analytic_input_t  *anai,
-               const cs_basis_func_t           *cbf,
-               const cs_real_3_t                xv1,
-               const cs_real_3_t                xv2,
-               const cs_real_3_t                xv3,
-               const cs_real_3_t                xv4,
-               const double                     vol,
-               cs_cell_builder_t               *cb,
-               cs_real_t                        array[])
+_hho_add_tetra_by_ana(const cs_xdef_analytic_input_t  *anai,
+                   const cs_basis_func_t           *cbf,
+                   const cs_real_3_t                xv1,
+                   const cs_real_3_t                xv2,
+                   const cs_real_3_t                xv3,
+                   const cs_real_3_t                xv4,
+                   const double                     vol,
+                   cs_cell_builder_t               *cb,
+                   cs_real_t                        array[])
 {
   cs_real_3_t  *gpts = cb->vectors;
   cs_real_t  *gw = cb->values;
@@ -1691,8 +1737,98 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
   const cs_real_t  *const_val = (const cs_real_t *)source->input;
 
   cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
+  cs_real_t  *cell_values = values + cm->n_fc * hhob->face_basis[0]->size;
 
-  bft_error(__FILE__, __LINE__, 0, "TODO");
+  const cs_basis_func_t  *cbf = hhob->cell_basis;
+
+  switch (cbf->poly_order) {
+
+  case 0:
+  case 1:
+    cbf->eval_all_at_point(cbf, cm->xc, cell_values);
+    for (int i = 0; i < cbf->size; i++)
+      cell_values[i] *= cm->vol_c * const_val[0];
+    break;
+
+  default:
+
+    /* Reset cell values */
+    memset(cell_values, 0, sizeof(cs_real_t)*cbf->size);
+
+    /* Switch according to the cell type: optimised version for tetra */
+    switch (cm->type) {
+
+    case FVM_CELL_TETRA:
+      assert(cm->n_fc == 4 && cm->n_vc == 4);
+      _hho_add_tetra_by_val(const_val[0], cbf,
+                            cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
+                            cm->vol_c, cb, cell_values);
+      break;
+
+    case FVM_CELL_PYRAM:
+    case FVM_CELL_PRISM:
+    case FVM_CELL_HEXA:
+    case FVM_CELL_POLY:
+      {
+        for (short int f = 0; f < cm->n_fc; ++f) {
+
+          const cs_quant_t  pfq = cm->face[f];
+          const double  hf_coef = cs_math_onethird * cm->hfc[f];
+          const int  start = cm->f2e_idx[f];
+          const int  end = cm->f2e_idx[f+1];
+          const short int n_vf = end - start; // #vertices (=#edges)
+          const short int *f2e_ids = cm->f2e_ids + start;
+
+          assert(n_vf > 2);
+          switch(n_vf){
+
+          case 3: /* triangle (optimized version, no subdivision) */
+            {
+              short int  v0, v1, v2;
+              cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids,
+                                               &v0, &v1, &v2);
+
+              _hho_add_tetra_by_val(const_val[0], cbf,
+                                    cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2,
+                                    cm->xc,
+                                    hf_coef * pfq.meas, cb, cell_values);
+
+            }
+            break;
+
+          default:
+            {
+              const double  *tef = cm->tef + start;
+
+              for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+                // Edge-related variables
+                const short int e0  = f2e_ids[e];
+                const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
+                const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+
+                _hho_add_tetra_by_val(const_val[0], cbf,
+                                      xv0, xv1, pfq.center, cm->xc,
+                                      hf_coef*tef[e], cb, cell_values);
+              }
+            }
+            break;
+
+          } /* End of switch */
+
+        } /* End of loop on faces */
+
+      }
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,  _(" Unknown cell-type.\n"));
+      break;
+
+    } /* End of switch on the cell-type */
+    break;
+
+  } /* Switch on polynomial order */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1734,15 +1870,18 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
 
   const cs_basis_func_t  *cbf = hhob->cell_basis;
 
+  /* Reset cell values */
+  memset(cell_values, 0, sizeof(cs_real_t)*cbf->size);
+
   /* Switch according to the cell type: optimised version for tetra */
   switch (cm->type) {
 
   case FVM_CELL_TETRA:
     {
       assert(cm->n_fc == 4 && cm->n_vc == 4);
-      _hho_add_tetra(anai, cbf,
-                     cm->xv, cm->xv+3, cm->xv+6, cm->xv+9,
-                     cm->vol_c, cb, cell_values);
+      _hho_add_tetra_by_ana(anai, cbf,
+                            cm->xv, cm->xv+3, cm->xv+6, cm->xv+9,
+                            cm->vol_c, cb, cell_values);
     }
     break;
 
@@ -1768,9 +1907,9 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-          _hho_add_tetra(anai, cbf,
-                         cm->xv + 3*v0, cm->xv + 3*v1, cm->xv + 3*v2, cm->xc,
-                         hf_coef * pfq.meas, cb, cell_values);
+          _hho_add_tetra_by_ana(anai, cbf,
+                                cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, cm->xc,
+                                hf_coef * pfq.meas, cb, cell_values);
 
         }
         break;
@@ -1786,9 +1925,9 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
-            _hho_add_tetra(anai, cbf,
-                           xv0, xv1, pfq.center, cm->xc,
-                           hf_coef*tef[e], cb, cell_values);
+            _hho_add_tetra_by_ana(anai, cbf,
+                                  xv0, xv1, pfq.center, cm->xc,
+                                  hf_coef*tef[e], cb, cell_values);
           }
         }
         break;

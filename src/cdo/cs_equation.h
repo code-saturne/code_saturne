@@ -31,6 +31,7 @@
 
 #include "cs_cdo_quantities.h"
 #include "cs_equation_param.h"
+#include "cs_equation_common.h"
 #include "cs_field.h"
 #include "cs_param.h"
 #include "cs_mesh.h"
@@ -578,6 +579,34 @@ cs_equation_get_flag(const cs_equation_t    *eq);
 
 const cs_equation_param_t *
 cs_equation_get_param(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the cs_equation_builder_t structure associated to a
+ *         cs_equation_t structure. Only for an advanced usage.
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a cs_equation_builder_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_builder_t *
+cs_equation_get_builder(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a pointer to a structure useful to handle low-level
+ *         operations for the given equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a structure to cast on-the-fly or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_equation_get_scheme_context(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

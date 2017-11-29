@@ -57,10 +57,10 @@ typedef struct _cs_sdm_t cs_sdm_t;
 
 typedef struct {
 
-  short int    n_max_blocks_by_row;
-  short int    n_row_blocks;
-  short int    n_max_blocks_by_col;
-  short int    n_col_blocks;
+  int    n_max_blocks_by_row;
+  int    n_row_blocks;
+  int    n_max_blocks_by_col;
+  int    n_col_blocks;
 
   /* Allocated to n_max_blocks_by_row*n_max_blocks_by_col
      Cast in cs_sdm_t where values are shared with the master cs_sdm_t struct.
@@ -129,6 +129,36 @@ typedef void
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Basic dot product for a small vector
+ *         For very small array sizes (3, 4, 6) prefer functions in cs_math
+ *         For large array sizes ( from 10^3 to ..) prefer functions in cs_blas
+ *
+ * \param[in]  n      size of arrays x and y (small)
+ * \param[in]  x      first array
+ * \param[in]  y      second array
+ *
+ * \return  a new allocated cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_sdm_dot(int               n,
+           const cs_real_t   x[],
+           const cs_real_t   y[])
+{
+  cs_real_t  dp = 0;
+
+  if (x == NULL || y == NULL)
+    return dp;
+
+  for (int i = 0; i < n; i++)
+    dp += x[i]*y[i];
+
+  return dp;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -204,8 +234,8 @@ cs_sdm_create_transpose(cs_sdm_t  *mat);
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_block_create(short int          n_max_blocks_by_row,
-                    short int          n_max_blocks_by_col,
+cs_sdm_block_create(int                n_max_blocks_by_row,
+                    int                n_max_blocks_by_col,
                     const short int    max_row_block_sizes[],
                     const short int    max_col_block_sizes[]);
 
@@ -309,8 +339,8 @@ cs_sdm_square_init(int         n_rows,
 
 void
 cs_sdm_block_init(cs_sdm_t          *m,
-                  short int          n_row_blocks,
-                  short int          n_col_blocks,
+                  int                n_row_blocks,
+                  int                n_col_blocks,
                   const short int    row_block_sizes[],
                   const short int    col_block_sizes[]);
 
@@ -354,8 +384,8 @@ cs_sdm_copy(cs_sdm_t        *recv,
 
 static inline cs_sdm_t *
 cs_sdm_get_block(const cs_sdm_t    *m,
-                 short int          row_block_id,
-                 short int          col_block_id)
+                 int                row_block_id,
+                 int                col_block_id)
 {
   /* Sanity checks */
   assert(m != NULL);
@@ -609,6 +639,41 @@ cs_sdm_matvec(const cs_sdm_t    *mat,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute a dense matrix-vector product for a rectangular matrix
+ *          mv has been previously allocated and initialized
+ *          Thus mv is updated inside this function
+ *
+ * \param[in]      mat    local matrix to use
+ * \param[in]      vec    local vector to use (size = mat->n_cols)
+ * \param[in, out] mv     result of the operation (size = mat->n_rows)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_update_matvec(const cs_sdm_t    *mat,
+                     const cs_real_t   *vec,
+                     cs_real_t         *mv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute a dense matrix-vector product for a rectangular matrix
+ *          which is transposed.
+ *          mv has been previously allocated. mv is updated inside this
+ *          function. Don't forget to initialize mv if needed.
+ *
+ * \param[in]      mat    local matrix to use
+ * \param[in]      vec    local vector to use (size = mat->n_cols)
+ * \param[in, out] mv     result of the operation (size = mat->n_rows)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_matvec_transposed(const cs_sdm_t    *mat,
+                         const cs_real_t   *vec,
+                         cs_real_t         *mv);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Add two matrices defined by block: loc += add
  *
  * \param[in, out] mat   local matrix storing the result
@@ -619,6 +684,38 @@ cs_sdm_matvec(const cs_sdm_t    *mat,
 void
 cs_sdm_block_add(cs_sdm_t        *mat,
                  const cs_sdm_t  *add);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Add two matrices defined by block: loc += mult_coef * add
+ *
+ * \param[in, out] mat         local matrix storing the result
+ * \param[in]      mult_coef   multiplicative coefficient
+ * \param[in]      add         values to add to mat
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block_add_mult(cs_sdm_t        *mat,
+                      cs_real_t        mult_coef,
+                      const cs_sdm_t  *add);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute a dense matrix-vector product for a rectangular matrix
+ *          defined by block
+ *          mv has been previously allocated
+ *
+ * \param[in]      mat    local matrix to use
+ * \param[in]      vec    local vector to use (size = mat->n_cols)
+ * \param[in, out] mv     result of the operation (size = mat->n_rows)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block_matvec(const cs_sdm_t    *mat,
+                    const cs_real_t   *vec,
+                    cs_real_t         *mv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -827,8 +924,8 @@ cs_sdm_44_ldlt_solve(const cs_real_t    facto[10],
 
 void
 cs_sdm_66_ldlt_solve(const cs_real_t    f[21],
-                     const cs_real_t    b[3],
-                     cs_real_t          x[3]);
+                     const cs_real_t    b[6],
+                     cs_real_t          x[6]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -890,6 +987,27 @@ cs_sdm_dump(cs_lnum_t           parent_id,
 void
 cs_sdm_block_dump(cs_lnum_t           parent_id,
                   const cs_sdm_t     *mat);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Print a cs_sdm_t structure which is defined by block
+ *          Print into the file f if given otherwise open a new file named
+ *          fname if given otherwise print into the standard output
+ *          The usage of threshold allows one to compare more easier matrices
+ *          without taking into account numerical roundoff.
+ *
+ * \param[in]  fp         pointer to a file structure or NULL
+ * \param[in]  fname      filename or NULL
+ * \param[in]  thd        threshold (below this value --> set 0)
+ * \param[in]  m          pointer to the cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block_fprintf(FILE             *fp,
+                     const char       *fname,
+                     cs_real_t         thd,
+                     const cs_sdm_t   *m);
 
 /*----------------------------------------------------------------------------*/
 

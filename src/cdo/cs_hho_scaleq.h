@@ -37,8 +37,11 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
+#include "cs_equation_common.h"
 #include "cs_equation_param.h"
 #include "cs_hho_builder.h"
+#include "cs_matrix.h"
+#include "cs_matrix_assembler.h"
 #include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
@@ -242,6 +245,20 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
 
 double *
 cs_hho_scaleq_get_face_values(const void          *data);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the computed values at cells (DoF used in the linear system are
+ *         located at primal faces)
+ *
+ * \param[in]  data    pointer to a data structure
+ *
+ * \return  a pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+double *
+cs_hho_scaleq_get_cell_values(const void          *data);
 
 /*----------------------------------------------------------------------------*/
 /*!

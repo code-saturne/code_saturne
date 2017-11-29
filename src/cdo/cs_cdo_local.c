@@ -1121,24 +1121,24 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     double  *dbuf = cs_cdo_local_dbuf[t_id];
     short int  *vtag = cs_cdo_local_kbuf[t_id];
-    int  size = cm->n_vc*(cm->n_vc+1)/2;
+    int  size = cm->n_vc*(cm->n_vc-1)/2;
     int  shift = 0;
 
     /* Reset diam */
     cm->diam_c = -1;
-    for (int i = 0; i < size; i++) dbuf[i] = 0.;
+    memset(dbuf, 0, sizeof(cs_real_t)*size);
 
-    for (short int vi = 0; vi < cm->n_vc; ++vi) {
-      shift++; // diag entry not taken into account
+    for (short int vi = 0; vi < cm->n_vc; vi++) {
       const double *xvi = cm->xv + 3*vi;
-      for (short int vj = vi+1; vj < cm->n_vc; vj++, shift++) {
-        double  l = dbuf[shift] = cs_math_3_distance(xvi, cm->xv + 3*vj);
+      for (short int vj = vi+1; vj < cm->n_vc; vj++) {
+        double  l = cs_math_3_distance(xvi, cm->xv + 3*vj);
+        dbuf[shift++] = l;
         if (l > cm->diam_c) cm->diam_c = l;
 
       } /* Loop on vj > vi */
     }   /* Loop on vi */
 
-    for (short int f = 0; f < cm->n_fc; ++f) {
+    for (short int f = 0; f < cm->n_fc; f++) {
 
       /* Reset vtag */
       for (short int v = 0; v < cm->n_vc; v++) vtag[v] = -1;
@@ -1152,19 +1152,16 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       }
 
       cm->f_diam[f] = -1;
-      for (short int vi = 0; vi < cm->n_vc; ++vi) {
+      shift = 0;
+      for (short int vi = 0; vi < cm->n_vc; vi++) {
+        for (short int vj = vi+1; vj < cm->n_vc; vj++) {
 
-        if (vtag[vi] > 0) { /* belong to the current face */
-          for (short int vj = vi+1; vj < cm->n_vc; vj++) {
-            if (vtag[vj] > 0) { /* belong to the current face */
+          if (vtag[vi] > 0) /* belong to the current face */
+            if (vtag[vj] > 0) /* belong to the current face */
+              if (dbuf[shift] > cm->f_diam[f]) cm->f_diam[f] = dbuf[shift];
+          shift++;
 
-              shift = vj*(vj+1)/2 + vi;
-              const double  l = dbuf[shift];
-              if (l > cm->f_diam[f]) cm->f_diam[f] = l;
-
-            }
-          } /* Loop on vj > vi */
-        }
+        } /* Loop on vj > vi */
       }   /* Loop on vi */
 
     } /* Loop on cell faces */
