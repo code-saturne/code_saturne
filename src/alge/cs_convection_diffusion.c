@@ -433,6 +433,15 @@ _max_limiter_denom(const int              f_id,
         cs_real_t pif, pjf, pip, pjp;
         cs_real_t pifa, pjfa, pipa, pjpa;
 
+        cs_real_t hybrid_coef_ii, hybrid_coef_jj;
+        if (ischcp == 3) {
+          hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
+          hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+        } else {
+          hybrid_coef_ii = 0.;
+          hybrid_coef_jj = 0.;
+        }
+
         /* Value at time n */
         cs_i_cd_unsteady(ircflp,
                          ischcp,
@@ -441,6 +450,8 @@ _max_limiter_denom(const int              f_id,
                          cell_cen[ii],
                          cell_cen[jj],
                          i_face_cog[face_id],
+                         hybrid_coef_ii,
+                         hybrid_coef_jj,
                          dijpf[face_id],
                          grdpa[ii], /* Std gradient when needed */
                          grdpa[jj], /* Std gradient when needed */
@@ -461,6 +472,10 @@ _max_limiter_denom(const int              f_id,
                          cell_cen[ii],
                          cell_cen[jj],
                          i_face_cog[face_id],
+                         hybrid_coef_ii, /* FIXME use previous values
+                                            of blending function */
+                         hybrid_coef_jj, /* FIXME use previous values
+                                            of blending function */
                          dijpf[face_id],
                          grdpaa[ii], /* Std gradient when needed */
                          grdpaa[jj], /* Std gradient when needed */
@@ -2089,7 +2104,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
 
-  /* 1. Initialization */
+  /* Initialization */
 
   /* Allocate work arrays */
 
@@ -2177,22 +2192,24 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                        &faces_distant);
   }
 
-  /* 2. Compute the balance with reconstruction */
+  /* Compute the balance with reconstruction */
 
   /* Compute the gradient of the variable */
 
   /* The gradient (grad) is used in the flux reconstruction and the slope test.
      Thus we must compute it:
          - when we have diffusion and we reconstruct the fluxes,
-         - when the convection scheme is SOLU,
+         - when the convection scheme is the legacy SOLU,
          - when we have convection, we are not in pure upwind
            and we reconstruct the fluxes,
          - when we have convection, we are not in pure upwind
-           and we have not shunted the slope test. */
+           and we have not shunted the slope test,
+         - when we use NVD / TVD schemes.
+  */
 
   if (  (idiffp != 0 && ircflp == 1)
      || (  iconvp != 0 && iupwin == 0
-        && (ischcp == 0 || ircflp == 1 || isstpp == 0))) {
+        && (ischcp == 0 || ircflp == 1 || isstpp == 0 || isstpp == 3))) {
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
@@ -2242,55 +2259,57 @@ cs_convection_diffusion_scalar(int                       idtvar,
     }
   }
 
-  /* 2.1 Compute the gradient for convective scheme
-     (the slope test, limiter, SOLU, etc) */
+  /* Compute gradients used in convection schemes */
 
-  /* Slope test gradient */
-  if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
+  if (iconvp > 0 && iupwin == 0) {
 
-    BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
+    /* Compute cell gradient used in slope test */
+    if (isstpp == 0) {
 
-#   pragma omp parallel for
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      gradst[cell_id][0] = 0.;
-      gradst[cell_id][1] = 0.;
-      gradst[cell_id][2] = 0.;
+      BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
+
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+        gradst[cell_id][0] = 0.;
+        gradst[cell_id][1] = 0.;
+        gradst[cell_id][2] = 0.;
+      }
+
+      cs_slope_test_gradient(f_id,
+                             inc,
+                             halo_type,
+                             (const cs_real_3_t *)grad,
+                             gradst,
+                             _pvar,
+                             coefap,
+                             coefbp,
+                             i_massflux);
+
     }
 
-    cs_slope_test_gradient(f_id,
-                           inc,
-                           halo_type,
-                           (const cs_real_3_t *)grad,
-                           gradst,
-                           _pvar,
-                           coefap,
-                           coefbp,
-                           i_massflux);
+    /* Pure SOLU scheme */
+    if (ischcp == 2) {
 
-  }
+      BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
 
-  /* Pure SOLU scheme without using gradient_slope_test function
-     or NVD/TVD limiters */
-  if (iconvp > 0 && iupwin == 0 && (ischcp == 2 || isstpp == 3)) {
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+        gradup[cell_id][0] = 0.;
+        gradup[cell_id][1] = 0.;
+        gradup[cell_id][2] = 0.;
+      }
 
-    BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
+      cs_upwind_gradient(f_id,
+                         inc,
+                         halo_type,
+                         coefap,
+                         coefbp,
+                         i_massflux,
+                         b_massflux,
+                         _pvar,
+                         gradup);
 
-#   pragma omp parallel for
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      gradup[cell_id][0] = 0.;
-      gradup[cell_id][1] = 0.;
-      gradup[cell_id][2] = 0.;
     }
-
-    cs_upwind_gradient(f_id,
-                       inc,
-                       halo_type,
-                       coefap,
-                       coefbp,
-                       i_massflux,
-                       b_massflux,
-                       _pvar,
-                       gradup);
 
   }
 
@@ -2559,9 +2578,18 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_real_t pif, pjf;
             cs_real_t pip, pjp;
 
-            /*Beta blending coefficient assuring the positivity of the scalar*/
+            /* Beta blending coefficient ensuring positivity of the scalar */
             if (isstpp == 2) {
               beta = CS_MAX(CS_MIN(limiter[ii], limiter[jj]), 0.);
+            }
+
+            cs_real_t hybrid_coef_ii, hybrid_coef_jj;
+            if (ischcp == 3) {
+              hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
+              hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+            } else {
+              hybrid_coef_ii = 0.;
+              hybrid_coef_jj = 0.;
             }
 
             cs_real_2_t fluxij = {0.,0.};
@@ -2573,6 +2601,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                              cell_cen[ii],
                              cell_cen[jj],
                              i_face_cog[face_id],
+                             hybrid_coef_ii,
+                             hybrid_coef_jj,
                              dijpf[face_id],
                              grad[ii],
                              grad[jj],
@@ -2620,15 +2650,11 @@ cs_convection_diffusion_scalar(int                       idtvar,
   /* --> Flux with slope test or NVD/TVD limiter
     ============================================*/
 
-  } else {
+  } else { /* isstpp = 0 or isstpp = 3 */
 
     if (ischcp < 0 || ischcp > 2) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
-    }
-    if (isstpp != 0 && isstpp != 3) {
-      bft_error(__FILE__, __LINE__, 0,
-                _("invalid value of isstpc"));
     }
 
     /* Steady */
@@ -6157,9 +6183,18 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_real_t pif, pjf;
             cs_real_t pip, pjp;
 
-            /*Beta blending coefficient assuring the positivity of the scalar*/
+            /* Beta blending coefficient ensuring the positivity of the scalar */
             if (isstpp == 2) {
               beta = CS_MAX(CS_MIN(limiter[ii], limiter[jj]), 0.);
+            }
+
+            cs_real_t hybrid_coef_ii, hybrid_coef_jj;
+            if (ischcp == 3) {
+              hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
+              hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+            } else {
+              hybrid_coef_ii = 0.;
+              hybrid_coef_jj = 0.;
             }
 
             cs_real_2_t fluxij = {0.,0.};
@@ -6171,6 +6206,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                              cell_cen[ii],
                              cell_cen[jj],
                              i_face_cog[face_id],
+                             hybrid_coef_ii,
+                             hybrid_coef_jj,
                              dijpf[face_id],
                              grad[ii],
                              grad[jj],

@@ -235,44 +235,46 @@ _balance_boundary_faces(const int          icvflf,
  * an internal face.
  *
  * parameters:
- *   iupwin        -->  upwind scheme enabled (1: yes, 0: no)
- *   idtvar        -->  indicator of the temporal scheme
- *   iconvp        -->  convection flag
- *   idiffp        -->  diffusion flag
- *   ircflp        -->  recontruction flag
- *   ischcp        -->  second order convection scheme flag
- *   isstpp        -->  slope test flag
- *   relaxp        -->  relaxation coefficient
- *   blencp        -->  proportion of centered or SOLU scheme,
- *                      (1-blencp) is the proportion of upwind.
- *   blend_st      -->  proportion of centered or SOLU scheme,
- *                      after slope test
- *                      (1-blend_st) is the proportion of upwind.
- *   weight        -->  geometrical weight
- *   i_dist        -->  distance IJ.Nij
- *   i_face_surf   -->  face surface
- *   cell_ceni     -->  center of gravity coordinates of cell i
- *   cell_cenj     -->  center of gravity coordinates of cell j
- *   i_face_normal -->  face normal
- *   i_face_cog    -->  center of gravity coordinates of face ij
- *   dijpf         -->  distance I'J'
- *   gradi         -->  gradient at cell i
- *   gradj         -->  gradient at cell j
- *   gradupi       -->  upwind gradient at cell i
- *   gradupj       -->  upwind gradient at cell j
- *   gradsti       -->  slope test gradient at cell i
- *   gradstj       -->  slope test gradient at cell j
- *   pi            -->  value at cell i
- *   pj            -->  value at cell j
- *   pia           -->  old value at cell i
- *   pja           -->  old value at cell j
- *   i_visc        -->  diffusion coefficient (divided by IJ) at face ij
- *   i_mass_flux   -->  mass flux at face ij
- *   xcppi         -->  specific heat value if the scalar is the temperature,
- *                      1 otherwise at cell i
- *   xcppj         -->  specific heat value if the scalar is the temperature,
- *                      1 otherwise at cell j
- *   bi_bterms     <->  flux contribution
+ *   iupwin         -->  upwind scheme enabled (1: yes, 0: no)
+ *   idtvar         -->  indicator of the temporal scheme
+ *   iconvp         -->  convection flag
+ *   idiffp         -->  diffusion flag
+ *   ircflp         -->  recontruction flag
+ *   ischcp         -->  second order convection scheme flag
+ *   isstpp         -->  slope test flag
+ *   relaxp         -->  relaxation coefficient
+ *   blencp         -->  proportion of centered or SOLU scheme,
+ *                       (1-blencp) is the proportion of upwind.
+ *   blend_st       -->  proportion of centered or SOLU scheme,
+ *                       after slope test
+ *                       (1-blend_st) is the proportion of upwind.
+ *   weight         -->  geometrical weight
+ *   i_dist         -->  distance IJ.Nij
+ *   i_face_surf    -->  face surface
+ *   cell_ceni      -->  center of gravity coordinates of cell i
+ *   cell_cenj      -->  center of gravity coordinates of cell j
+ *   i_face_normal  -->  face normal
+ *   i_face_cog     -->  center of gravity coordinates of face ij
+ *   hybrid_blend_i -->  blending factor between SOLU and centered
+ *   hybrid_blend_j -->  blending factor between SOLU and centered
+ *   dijpf          -->  distance I'J'
+ *   gradi          -->  gradient at cell i
+ *   gradj          -->  gradient at cell j
+ *   gradupi        -->  upwind gradient at cell i
+ *   gradupj        -->  upwind gradient at cell j
+ *   gradsti        -->  slope test gradient at cell i
+ *   gradstj        -->  slope test gradient at cell j
+ *   pi             -->  value at cell i
+ *   pj             -->  value at cell j
+ *   pia            -->  old value at cell i
+ *   pja            -->  old value at cell j
+ *   i_visc         -->  diffusion coefficient (divided by IJ) at face ij
+ *   i_mass_flux    -->  mass flux at face ij
+ *   xcppi          -->  specific heat value if the scalar is the temperature,
+ *                       1 otherwise at cell i
+ *   xcppj          -->  specific heat value if the scalar is the temperature,
+ *                       1 otherwise at cell j
+ *   bi_bterms      <->  flux contribution
  *----------------------------------------------------------------------------*/
 
 inline static void
@@ -293,6 +295,8 @@ _balance_internal_faces(const int         iupwin,
                         const cs_real_3_t cell_cenj,
                         const cs_real_3_t i_face_normal,
                         const cs_real_3_t i_face_cog,
+                        const cs_real_t   hybrid_blend_i,
+                        const cs_real_t   hybrid_blend_j,
                         const cs_real_3_t dijpf,
                         const cs_real_3_t gradi,
                         const cs_real_3_t gradj,
@@ -412,10 +416,11 @@ _balance_internal_faces(const int         iupwin,
 
     }
 
-    /* Flux with no slope test or Min/Max Beta limiter
-       =============================================== */
+    /* Flux with no slope test
+       ======================= */
 
   } else if (isstpp == 1 || isstpp == 2) {
+    /* FIXME take into account Min/Max Beta limiter, isstpp = 2 */
 
     /* Steady */
     if (idtvar < 0) {
@@ -485,6 +490,8 @@ _balance_internal_faces(const int         iupwin,
                        cell_ceni,
                        cell_cenj,
                        i_face_cog,
+                       hybrid_blend_i,
+                       hybrid_blend_j,
                        dijpf,
                        gradi,
                        gradj,
@@ -522,10 +529,10 @@ _balance_internal_faces(const int         iupwin,
 
     }
 
-    /* --> Flux with slope test or Roe and Sweby limiter
-       ==================================================*/
+    /* --> Flux with slope test
+       ======================== */
 
-  } else {
+  } else { /* isstpp = 0 (FIXME take into account isstpp = 3) */
 
     /* Steady */
     if (idtvar < 0) {
@@ -1334,6 +1341,15 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
+    cs_real_t hybrid_coef_ii, hybrid_coef_jj;
+    if (ischcp == 3) {
+      hybrid_coef_ii = CS_F_(hybrid_blend)->val[c_id1];
+      hybrid_coef_jj = CS_F_(hybrid_blend)->val[c_id2];
+    } else {
+      hybrid_coef_ii = 0.;
+      hybrid_coef_jj = 0.;
+    }
+
     cs_real_2_t bi_bterms = {0., 0.};
 
     _balance_internal_faces(iupwin,
@@ -1353,6 +1369,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                             cell_cen[c_id2],
                             i_face_normal[f_id_sel],
                             i_face_cog[f_id_sel],
+                            hybrid_coef_ii,
+                            hybrid_coef_jj,
                             dijpf[f_id_sel],
                             grad[c_id1],
                             grad[c_id2],
@@ -2790,7 +2808,16 @@ cs_flux_through_surface(const char         *scalar_name,
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
-    cs_real_2_t bi_bterms = {0.,0.};
+    cs_real_t hybrid_coef_ii, hybrid_coef_jj;
+    if (ischcp == 3) {
+      hybrid_coef_ii = CS_F_(hybrid_blend)->val[c_id1];
+      hybrid_coef_jj = CS_F_(hybrid_blend)->val[c_id2];
+    } else {
+      hybrid_coef_ii = 0.;
+      hybrid_coef_jj = 0.;
+    }
+
+    cs_real_2_t bi_bterms = {0., 0.};
 
     _balance_internal_faces(iupwin,
                             idtvar,
@@ -2809,6 +2836,8 @@ cs_flux_through_surface(const char         *scalar_name,
                             cell_cen[c_id2],
                             i_face_normal[f_id_sel],
                             i_face_cog[f_id_sel],
+                            hybrid_coef_ii,
+                            hybrid_coef_jj,
                             dijpf[f_id_sel],
                             grad[c_id1],
                             grad[c_id2],

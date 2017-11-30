@@ -916,7 +916,7 @@ cs_parameters_check(void)
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
-                                    "var_cal_opt.isstpc (slope test)",
+                                    "var_cal_opt.isstpc (limiter type)",
                                     var_cal_opt.isstpc,
                                     -1, 4);
 
@@ -991,7 +991,7 @@ cs_parameters_check(void)
 
     cs_parameters_is_equal_int(CS_WARNING,
                                _(f_desc),
-                               "var_cal_opt.isstpc (slope test)",
+                               "var_cal_opt.isstpc (limiter type)",
                                var_cal_opt.isstpc,
                                1);
 
@@ -1033,7 +1033,7 @@ cs_parameters_check(void)
 
         cs_parameters_is_equal_int(CS_WARNING,
                                    _(f_desc),
-                                   "var_cal_opt.isstpc (slope test)",
+                                   "var_cal_opt.isstpc (limiter type)",
                                    var_cal_opt.isstpc,
                                    0);
 
@@ -1065,16 +1065,21 @@ cs_parameters_check(void)
       int ivar = cs_field_get_key_int(f, keyvar);
       if (ivar > 0) {
         cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-        f_desc = _field_section_desc(f, "With the steady algorithm "
-                                        "(SIMPLE), "
-                                        "while reading the relaxation "
-                                        "coefficient for variable");
+        f_desc = _field_section_desc(f, "With steady algorithm (SIMPLE), while "
+                                        "reading numerical parameters for "
+                                        "variable");
 
         cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                          _(f_desc),
                                          "var_cal_opt.relaxv (relax. coef.)",
                                          var_cal_opt.relaxv,
                                          0., 1.);
+
+        cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                      _(f_desc),
+                                      "var_cal_opt.isstpc (limiter type)",
+                                      var_cal_opt.relaxv,
+                                      -1, 2);
 
         BFT_FREE(f_desc);
       }
