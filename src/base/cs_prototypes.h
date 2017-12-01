@@ -662,6 +662,13 @@ cs_user_turbomachinery(void);
 void
 cs_user_turbomachinery_rotor(void);
 
+/*----------------------------------------------------------------------------
+ * Define rotation velocity of rotor.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_turbomachinery_set_rotation_velocity(void);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define volume and surface zones.
