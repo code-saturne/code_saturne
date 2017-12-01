@@ -853,7 +853,7 @@ _nvd_vof_scheme_scalar(const cs_nvd_type_t  scheme,
                        const cs_real_t      c_courant)
 {
   cs_real_t nvf_p_f;
-  cs_real_t denom, blend, high_order, low_order, ratio;
+  cs_real_t blend, high_order, low_order, ratio;
 
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
@@ -861,17 +861,10 @@ _nvd_vof_scheme_scalar(const cs_nvd_type_t  scheme,
     = (const cs_real_3_t *restrict)fvq->i_face_normal;
 
   /* Compute gradient angle indicator */
-  cs_real_t dotp = CS_ABS(grad[0]*i_face_normal[face_id][0] +
-                          grad[1]*i_face_normal[face_id][1] +
-                          grad[2]*i_face_normal[face_id][2]);
-
-  cs_real_t sgrad = sqrt(grad[0]*grad[0] + grad[1]*grad[1] + grad[2]*grad[2]);
-
-  cs_real_t snorm = sqrt(i_face_normal[face_id][0]*i_face_normal[face_id][0] +
-                         i_face_normal[face_id][1]*i_face_normal[face_id][1] +
-                         i_face_normal[face_id][2]*i_face_normal[face_id][2]);
-
-  denom = snorm*sgrad;
+  cs_real_t dotp = CS_ABS(cs_math_3_dot_product(grad, i_face_normal[face_id]));
+  cs_real_t sgrad = cs_math_3_norm(grad);
+  cs_real_t snorm = cs_math_3_norm(i_face_normal[face_id]);
+  cs_real_t denom = snorm*sgrad;
 
   if (scheme == CS_NVD_VOF_HRIC) {   /* M-HRIC scheme */
     /* High order scheme : Bounded Downwind */
