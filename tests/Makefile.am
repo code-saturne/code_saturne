@@ -132,7 +132,7 @@ LDADD_CS_TESTS = \
 
 cs_blas_test_SOURCES  = \
 cs_blas_test.c \
-$(top_srcdir)/src/alge/cs_blas.c
+../src/alge/cs_blas.c
 cs_blas_test_CPPFLAGS  = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
@@ -168,11 +168,11 @@ cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_matrix_test_SOURCES  = \
 cs_matrix_test.c \
-$(top_srcdir)/src/base/cs_halo.c \
-$(top_srcdir)/src/base/cs_range_set.c \
-$(top_srcdir)/src/base/cs_sort.c \
-$(top_srcdir)/src/alge/cs_matrix.c \
-$(top_srcdir)/src/alge/cs_matrix_assembler.c
+../src/base/cs_halo.c \
+../src/base/cs_range_set.c \
+../src/base/cs_sort.c \
+../src/alge/cs_matrix.c \
+../src/alge/cs_matrix_assembler.c
 cs_matrix_test_CPPFLAGS  = \
 -D_CS_UNIT_MATRIX_TEST \
 $(AM_CPPFLAGS)
@@ -185,7 +185,7 @@ cs_moment_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_random_test_SOURCES  = \
 cs_random_test.c \
-$(top_srcdir)/src/base/cs_random.c
+../src/base/cs_random.c
 cs_random_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_random_test_LDADD    = $(LDADD_CS_TESTS)
 

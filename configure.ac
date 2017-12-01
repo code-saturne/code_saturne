@@ -69,7 +69,7 @@ AM_GNU_GETTEXT_VERSION([0.18.1])
 # - foreign, so as to handle the absence of ChangeLog (automatically generated)
 # - tar-pax, so as to handle long lines (> 99 characters) in tar archives
 # Warnings can be activated at bootstrap with 'autoreconf -vi --warnings=all'
-AM_INIT_AUTOMAKE([foreign tar-pax])
+AM_INIT_AUTOMAKE([foreign tar-pax subdir-objects])
 
 # Enable maintainer mode by default for a developer checkout
 AS_IF([test -d ${srcdir}/.svn -o -d ${srcdir}/.git],

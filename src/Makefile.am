@@ -41,97 +41,109 @@ AM_LDFLAGS = -no-undefined
 noinst_LTLIBRARIES = libcsmodules.la
 
 libcsmodules_la_SOURCES = \
-$(top_srcdir)/src/base/paramx.f90 \
-$(top_srcdir)/src/base/mesh.f90 \
-$(top_srcdir)/src/base/field.f90 \
-$(top_srcdir)/src/base/field_operator.f90 \
-$(top_srcdir)/src/base/alaste.f90 \
-$(top_srcdir)/src/base/albase.f90 \
-$(top_srcdir)/src/base/alstru.f90 \
-$(top_srcdir)/src/base/cavitation.f90 \
-$(top_srcdir)/src/base/cplsat.f90 \
-$(top_srcdir)/src/base/cstphy.f90 \
-$(top_srcdir)/src/base/cstnum.f90 \
-$(top_srcdir)/src/base/dimens.f90 \
-$(top_srcdir)/src/base/entsor.f90 \
-$(top_srcdir)/src/base/ihmpre.f90 \
-$(top_srcdir)/src/base/cs_nz_condensation.f90 \
-$(top_srcdir)/src/base/cs_nz_tagmr.f90 \
-$(top_srcdir)/src/base/cs_tagmr.f90 \
-$(top_srcdir)/src/base/cs_tagms.f90 \
-$(top_srcdir)/src/base/numvar.f90 \
-$(top_srcdir)/src/base/optcal.f90 \
-$(top_srcdir)/src/base/parall.f90 \
-$(top_srcdir)/src/base/period.f90 \
-$(top_srcdir)/src/base/pointe.f90 \
-$(top_srcdir)/src/base/cs_c_bindings.f90 \
-$(top_srcdir)/src/base/cs_f_interfaces.f90 \
-$(top_srcdir)/src/base/post.f90 \
-$(top_srcdir)/src/base/rotation.f90 \
-$(top_srcdir)/src/atmo/atincl.f90 \
-$(top_srcdir)/src/atmo/atsoil.f90 \
-$(top_srcdir)/src/atmo/atchem.f90 \
-$(top_srcdir)/src/atmo/atimbr.f90 \
-$(top_srcdir)/src/atmo/siream.f90 \
-$(top_srcdir)/src/atmo/spefun.f90 \
-$(top_srcdir)/src/cfbl/cfpoin.f90 \
-$(top_srcdir)/src/cfbl/cs_cf_bindings.f90 \
-$(top_srcdir)/src/comb/cs_coal_incl.f90 \
-$(top_srcdir)/src/comb/cs_fuel_incl.f90 \
-$(top_srcdir)/src/comb/cpincl.f90 \
-$(top_srcdir)/src/ctwr/ctincl.f90 \
-$(top_srcdir)/src/lagr/lagran.f90 \
-$(top_srcdir)/src/pprt/ppcpfu.f90 \
-$(top_srcdir)/src/pprt/ppincl.f90 \
-$(top_srcdir)/src/pprt/ppppar.f90 \
-$(top_srcdir)/src/pprt/ppthch.f90 \
-$(top_srcdir)/src/cogz/coincl.f90 \
-$(top_srcdir)/src/rayt/radiat.f90 \
-$(top_srcdir)/src/base/vof.f90 \
-$(top_srcdir)/src/turb/vorinc.f90 \
-$(top_srcdir)/src/base/ptrglo.f90 \
-$(top_srcdir)/src/darc/darcy_module.f90 \
-$(top_srcdir)/src/base/turbomachinery.f90
+base/paramx.f90 \
+base/mesh.f90 \
+base/field.f90 \
+base/field_operator.f90 \
+base/alaste.f90 \
+base/albase.f90 \
+base/alstru.f90 \
+base/cavitation.f90 \
+base/cplsat.f90 \
+base/cstphy.f90 \
+base/cstnum.f90 \
+base/dimens.f90 \
+base/entsor.f90 \
+base/ihmpre.f90 \
+base/cs_nz_condensation.f90 \
+base/cs_nz_tagmr.f90 \
+base/cs_tagmr.f90 \
+base/cs_tagms.f90 \
+base/numvar.f90 \
+base/optcal.f90 \
+base/parall.f90 \
+base/period.f90 \
+base/pointe.f90 \
+base/cs_c_bindings.f90 \
+base/cs_f_interfaces.f90 \
+base/post.f90 \
+base/rotation.f90 \
+atmo/atincl.f90 \
+atmo/atsoil.f90 \
+atmo/atchem.f90 \
+atmo/atimbr.f90 \
+atmo/siream.f90 \
+atmo/spefun.f90 \
+cfbl/cfpoin.f90 \
+cfbl/cs_cf_bindings.f90 \
+comb/cs_coal_incl.f90 \
+comb/cs_fuel_incl.f90 \
+comb/cpincl.f90 \
+ctwr/ctincl.f90 \
+lagr/lagran.f90 \
+pprt/ppcpfu.f90 \
+pprt/ppincl.f90 \
+pprt/ppppar.f90 \
+pprt/ppthch.f90 \
+cogz/coincl.f90 \
+rayt/radiat.f90 \
+base/vof.f90 \
+turb/vorinc.f90 \
+base/ptrglo.f90 \
+darc/darcy_module.f90 \
+base/turbomachinery.f90
 
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
-$(top_srcdir)/src/base/albase.f90: cplsat.lo optcal.lo
-$(top_srcdir)/src/base/alstru.f90: paramx.lo
-$(top_srcdir)/src/base/cavitation.f90: cstphy.lo field.lo numvar.lo optcal.lo pointe.lo mesh.lo paramx.lo entsor.lo parall.lo rotation.lo turbomachinery.lo vof.lo
-$(top_srcdir)/src/base/vof.f90: cstphy.lo field.lo numvar.lo optcal.lo pointe.lo mesh.lo paramx.lo entsor.lo parall.lo rotation.lo turbomachinery.lo
-$(top_srcdir)/src/base/cplsat.f90: paramx.lo
-$(top_srcdir)/src/base/cstphy.f90: paramx.lo
-$(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo mesh.lo period.lo field.lo field_operator.lo
-$(top_srcdir)/src/base/cs_f_interfaces.f90: cs_c_bindings.lo paramx.lo dimens.lo mesh.lo optcal.lo field.lo lagran.lo
-$(top_srcdir)/src/base/cs_nz_condensation.f90: pointe.lo
-$(top_srcdir)/src/base/cs_nz_tagmr.f90: optcal.lo pointe.lo parall.lo cs_nz_condensation.lo cs_tagmr.lo
-$(top_srcdir)/src/base/cs_tagmr.f90: pointe.lo
-$(top_srcdir)/src/base/cs_tagms.f90: mesh.lo
-$(top_srcdir)/src/base/entsor.f90: paramx.lo field.lo
-$(top_srcdir)/src/base/field_operator.f90: paramx.lo dimens.lo mesh.lo optcal.lo field.lo
-$(top_srcdir)/src/base/numvar.f90: paramx.lo
-$(top_srcdir)/src/base/optcal.f90: paramx.lo field.lo numvar.lo cstphy.lo
-$(top_srcdir)/src/base/pointe.f90: paramx.lo numvar.lo mesh.lo parall.lo period.lo optcal.lo entsor.lo lagran.lo radiat.lo ppincl.lo ihmpre.lo albase.lo cstnum.lo cs_c_bindings.lo
-$(top_srcdir)/src/base/ptrglo.f90: paramx.lo dimens.lo mesh.lo numvar.lo optcal.lo parall.lo period.lo mesh.lo field.lo
-$(top_srcdir)/src/base/rotation.f90:  paramx.lo
-$(top_srcdir)/src/base/turbomachinery.f90:  mesh.lo cstphy.lo cplsat.lo
-$(top_srcdir)/src/atmo/atincl.f90: ppppar.lo ppincl.lo mesh.lo atsoil.lo
-$(top_srcdir)/src/atmo/atchem.f90: ppppar.lo mesh.lo entsor.lo numvar.lo
-$(top_srcdir)/src/atmo/atimbr.f90: cstphy.lo entsor.lo atincl.lo
-$(top_srcdir)/src/atmo/siream.f90: ppppar.lo
-$(top_srcdir)/src/atmo/spefun.f90: entsor.lo
-$(top_srcdir)/src/cogz/coincl.f90: paramx.lo ppppar.lo ppincl.lo
-$(top_srcdir)/src/comb/cpincl.f90: ppppar.lo ppthch.lo
-$(top_srcdir)/src/comb/cs_coal_incl.f90: ppppar.lo ppthch.lo
-$(top_srcdir)/src/comb/cs_fuel_incl.f90: ppppar.lo ppthch.lo
-$(top_srcdir)/src/ctwr/ctincl.f90: cstphy.lo
-$(top_srcdir)/src/lagr/lagran.f90: cstnum.lo optcal.lo ppincl.lo radiat.lo cpincl.lo ppppar.lo cstphy.lo
-$(top_srcdir)/src/pprt/ppcpfu.f90: ppthch.lo ppppar.lo
-$(top_srcdir)/src/pprt/ppincl.f90: ppppar.lo ppthch.lo
-$(top_srcdir)/src/pprt/ppthch.f90: cstphy.lo
-$(top_srcdir)/src/rayt/radiat.f90: ppppar.lo ppincl.lo optcal.lo ppcpfu.lo numvar.lo
-$(top_srcdir)/src/darc/darcy_module.f90: paramx.lo
+base/albase.lo: base/cplsat.lo base/optcal.lo
+base/alstru.lo: base/paramx.lo
+base/cavitation.lo: base/cstphy.lo base/field.lo base/numvar.lo base/optcal.lo\
+ base/pointe.lo base/mesh.lo base/paramx.lo base/entsor.lo base/parall.lo \
+ base/rotation.lo base/turbomachinery.lo base/vof.lo
+base/vof.lo: base/cstphy.lo base/field.lo base/numvar.lo base/optcal.lo \
+ base/pointe.lo base/mesh.lo base/paramx.lo base/entsor.lo base/parall.lo \
+ base/rotation.lo base/turbomachinery.lo
+base/cplsat.lo: base/paramx.lo
+base/cstphy.lo: base/paramx.lo
+base/cs_c_bindings.lo: base/paramx.lo base/mesh.lo base/period.lo \
+ base/field.lo base/field_operator.lo
+base/cs_f_interfaces.lo: base/cs_c_bindings.lo base/paramx.lo base/dimens.lo \
+ base/mesh.lo base/optcal.lo base/field.lo lagr/lagran.lo
+base/cs_nz_condensation.lo: base/pointe.lo
+base/cs_nz_tagmr.lo: base/optcal.lo base/pointe.lo base/parall.lo \
+ base/cs_nz_condensation.lo base/cs_tagmr.lo
+base/cs_tagmr.lo: base/pointe.lo
+base/cs_tagms.lo: base/mesh.lo
+base/entsor.lo: base/paramx.lo base/field.lo
+base/field_operator.lo: base/paramx.lo base/dimens.lo base/mesh.lo \
+ base/optcal.lo base/field.lo
+base/numvar.lo: base/paramx.lo
+base/optcal.lo: base/paramx.lo base/field.lo base/numvar.lo base/cstphy.lo
+base/pointe.lo: base/paramx.lo base/numvar.lo base/mesh.lo base/parall.lo \
+ base/period.lo base/optcal.lo base/entsor.lo lagr/lagran.lo rayt/radiat.lo \
+ pprt/ppincl.lo base/ihmpre.lo base/albase.lo base/cstnum.lo base/cs_c_bindings.lo
+base/ptrglo.lo: base/paramx.lo base/dimens.lo base/mesh.lo base/numvar.lo \
+ base/optcal.lo base/parall.lo base/period.lo base/mesh.lo base/field.lo
+base/rotation.lo: base/paramx.lo
+base/turbomachinery.lo:  base/mesh.lo base/cstphy.lo base/cplsat.lo
+atmo/atincl.lo: pprt/ppppar.lo pprt/ppincl.lo base/mesh.lo atmo/atsoil.lo
+atmo/atchem.lo: pprt/ppppar.lo base/mesh.lo base/entsor.lo base/numvar.lo
+atmo/atimbr.lo: base/cstphy.lo base/entsor.lo atmo/atincl.lo
+atmo/siream.lo: pprt/ppppar.lo
+atmo/spefun.lo: base/entsor.lo
+cogz/coincl.lo: base/paramx.lo pprt/ppppar.lo pprt/ppincl.lo
+comb/cpincl.lo: pprt/ppppar.lo pprt/ppthch.lo
+comb/cs_coal_incl.lo: pprt/ppppar.lo pprt/ppthch.lo
+comb/cs_fuel_incl.lo: pprt/ppppar.lo pprt/ppthch.lo
+ctwr/ctincl.lo: base/cstphy.lo
+lagr/lagran.lo: base/cstnum.lo base/optcal.lo pprt/ppincl.lo rayt/radiat.lo \
+ comb/cpincl.lo pprt/ppppar.lo base/cstphy.lo
+pprt/ppcpfu.lo: pprt/ppthch.lo pprt/ppppar.lo
+pprt/ppincl.lo: pprt/ppppar.lo pprt/ppthch.lo
+pprt/ppthch.lo: base/cstphy.lo
+rayt/radiat.lo: pprt/ppppar.lo pprt/ppincl.lo base/optcal.lo pprt/ppcpfu.lo base/numvar.lo
+darc/darcy_module.lo: base/paramx.lo
 
 # Additional local targets
 
