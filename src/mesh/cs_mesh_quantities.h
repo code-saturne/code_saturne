@@ -71,6 +71,9 @@ BEGIN_C_DECLS
 /*! Clip geometrical quantities used in flux reconstuction */
 #define CS_FACE_RECONSTRUCTION_CLIP (1 << 5)
 
+/*! Limit cells volumle ratio */
+#define CS_CELL_VOLUME_RATIO_CORRECTION (1 << 6)
+
 /*! @} */
 
 /*============================================================================
