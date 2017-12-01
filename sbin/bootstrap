@@ -68,7 +68,7 @@ else
   # To use an external gettext version, do not use --intl
   # To use a link instead of copy, do not use -c
 
-  if [ ! -f config/gettext.m4 ]; then
+  if [ ! -f m4/gettext.m4 ]; then
     echo "running gettextize"
     \rm -rf configure.ac~ Makefile.am~
     sed -e "s/read dummy/# read dummy/" `which gettextize` > ./tmp_gettextize
@@ -106,7 +106,7 @@ case $cs_gettext_version in
   0.17*)
     for d in . libple
     do
-      \mv configure.ac.tmp configure.ac
+      \mv $d/configure.ac.tmp $d/configure.ac
     done
     ;;
   *)
