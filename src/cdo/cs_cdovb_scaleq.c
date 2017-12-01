@@ -1246,7 +1246,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
       if (cs_equation_param_has_diffusion(eqp)) {
 
         /* Compute the local diffusive flux */
-        cs_reco_grd_cell_from_pv(c_id, connect, quant, pdi, gc);
+        cs_reco_grad_cell_from_pv(c_id, connect, quant, pdi, gc);
         cs_property_get_cell_tensor(c_id,
                                     eqp->diffusion_property,
                                     eqp->diffusion_hodge.inv_pty,
@@ -1291,7 +1291,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
           const double  coef = 0.5 * sgn * f.meas; // mean value at the face
 
           /* Compute the local diffusive flux */
-          cs_reco_grd_cell_from_pv(c_id, connect, quant, pdi, gc);
+          cs_reco_grad_cell_from_pv(c_id, connect, quant, pdi, gc);
           cs_property_get_cell_tensor(c_id,
                                       eqp->diffusion_property,
                                       eqp->diffusion_hodge.inv_pty,

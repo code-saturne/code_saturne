@@ -218,7 +218,7 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
   for (cs_lnum_t  c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
     cs_real_3_t  cell_gradient;
-    cs_reco_grd_cell_from_pv(c_id, connect, cdoq, var, cell_gradient);
+    cs_reco_grad_cell_from_pv(c_id, connect, cdoq, var, cell_gradient);
 
     for (cs_lnum_t i = c2v->idx[c_id]; i < c2v->idx[c_id+1]; i++) {
 

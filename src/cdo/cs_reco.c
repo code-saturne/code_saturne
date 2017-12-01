@@ -446,11 +446,11 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_grd_cell_from_pv(cs_lnum_t                    c_id,
-                         const cs_cdo_connect_t      *connect,
-                         const cs_cdo_quantities_t   *quant,
-                         const cs_real_t             *pdi,
-                         cs_real_t                    val_xc[])
+cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
+                          const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *quant,
+                          const cs_real_t             *pdi,
+                          cs_real_t                    val_xc[])
 {
   val_xc[0] = val_xc[1] = val_xc[2] = 0.;
 
