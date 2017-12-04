@@ -803,6 +803,35 @@ cs_math_sym_33_double_product(const cs_real_t  s1[6],
   sout[2][0] = s3[0]*_sout[2][0] + s3[3]*_sout[2][1] + s3[5]*_sout[2][2];
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_nvec3_t structure from a cs_real_3_t
+ *
+ * \param[in]  v     vector of size 3
+ * \param[out] qv    pointer to a cs_nvec3_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_nvec3(const cs_real_3_t    v,
+         cs_nvec3_t          *qv)
+{
+  cs_real_t  magnitude = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+
+  qv->meas = magnitude;
+  if (fabs(magnitude) > cs_math_zero_threshold) {
+
+    const cs_real_t  inv = 1/magnitude;
+    qv->unitv[0] = inv * v[0];
+    qv->unitv[1] = inv * v[1];
+    qv->unitv[2] = inv * v[2];
+
+  }
+  else
+    qv->unitv[0] = qv->unitv[1] = qv->unitv[2] = 0;
+
+}
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

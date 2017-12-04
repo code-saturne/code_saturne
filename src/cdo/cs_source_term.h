@@ -32,7 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_cdo.h"
 #include "cs_cdo_quantities.h"
 #include "cs_cdo_local.h"
 #include "cs_param.h"
@@ -106,7 +105,7 @@ cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 cs_flag_t
-cs_source_term_set_default_flag(cs_space_scheme_t  scheme);
+cs_source_term_set_default_flag(cs_param_space_scheme_t  scheme);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -152,7 +151,7 @@ cs_source_term_get_flag(const cs_xdef_t  *st);
 /*----------------------------------------------------------------------------*/
 
 cs_flag_t
-cs_source_term_init(cs_space_scheme_t            space_scheme,
+cs_source_term_init(cs_param_space_scheme_t      space_scheme,
                     const int                    n_source_terms,
                     const cs_xdef_t            **source_terms,
                     cs_source_term_cellwise_t   *compute_source[],

@@ -405,7 +405,7 @@ _iner_cell_basis_setup(void                    *pbf,
                        cs_cell_builder_t       *cb)
 {
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ |
                       CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ));
 
@@ -516,7 +516,7 @@ _mono_face_basis_setup(void                    *pbf,
                        cs_cell_builder_t       *cb)
 {
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
                        CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DIAM));
 
   for (int k = 0; k < 3; k++)
@@ -589,7 +589,7 @@ _iner_face_basis_setup(void                    *pbf,
                        cs_cell_builder_t       *cb)
 {
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
                       CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ));
 
   /* Initialization using the monomial basis */
@@ -896,7 +896,7 @@ _ck1_compute_projector(void                    *pbf,
 {
   CS_UNUSED(id);
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
@@ -1067,7 +1067,7 @@ _ck2_compute_projector(void                    *pbf,
 {
   CS_UNUSED(id);
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
@@ -1263,7 +1263,7 @@ _cka_compute_projector(void                    *pbf,
 {
   CS_UNUSED(id);
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
@@ -1813,7 +1813,7 @@ _fk1_compute_projector(void                    *pbf,
                        const short int          f)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_FEQ |
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
   /* First row (or first column since projector is symmetric) is easy.
@@ -1956,7 +1956,7 @@ _fk2_compute_projector(void                    *pbf,
                        const short int          f)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_FEQ |
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
   /* First row (or first column since projector is symmetric) is easy.
@@ -2170,7 +2170,7 @@ _fka_compute_projector(void                    *pbf,
                        const short int          f)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_FEQ |
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;

@@ -561,22 +561,20 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   if (cs_equation_param_has_convection(eqp)) {
 
-    const cs_param_advection_t  a_info = eqp->advection_info;
-
-    switch (a_info.scheme) {
+    switch (eqp->adv_scheme) {
     case CS_PARAM_ADVECTION_SCHEME_CIP:
 
       eqb->msh_flag |= CS_CDO_LOCAL_EF;
       _set_cip_coef(eqp);
 
-      if (cs_advection_field_is_cellwise(eqp->advection_field)) {
+      if (cs_advection_field_is_cellwise(eqp->adv_field)) {
         eqc->get_advection_matrix = cs_cdo_advection_get_vcb_cw;
         eqc->add_advection_bc = cs_cdo_advection_add_vcb_bc_cw;
       }
       else {
 
         eqc->get_advection_matrix = cs_cdo_advection_get_vcb;
-        if (cs_advection_field_get_deftype(eqp->advection_field)
+        if (cs_advection_field_get_deftype(eqp->adv_field)
             == CS_XDEF_BY_ANALYTIC_FUNCTION)
           eqc->add_advection_bc = cs_cdo_advection_add_vcb_bc_analytic;
         else
@@ -1342,7 +1340,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
         /* Compute the local advective flux */
         const double  coef = sgn * fm->face.meas * p_f;
 
-        cs_advection_field_get_cell_vector(c_id, eqp->advection_field, &adv_c);
+        cs_advection_field_get_cell_vector(c_id, eqp->adv_field, &adv_c);
         *c_flux += coef * adv_c.meas * _dp3(adv_c.unitv, fm->face.unitv);
 
       }
@@ -1392,7 +1390,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
 
           /* Compute the local advective flux seen from cell */
           cs_advection_field_get_cell_vector(c_id,
-                                             eqp->advection_field,
+                                             eqp->adv_field,
                                              &adv_c);
           flx = adv_c.meas * _dp3(adv_c.unitv, fm->face.unitv);
 
@@ -1441,8 +1439,8 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
   /* Sanity checks */
   assert(diff_flux != NULL);
   assert(eqp->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_WBS);
-  if (!cs_test_flag(location, cs_cdo_primal_cell) &&
-      !cs_test_flag(location, cs_cdo_dual_face_byc))
+  if (!cs_flag_test(location, cs_flag_primal_cell) &&
+      !cs_flag_test(location, cs_flag_dual_face_byc))
     bft_error(__FILE__, __LINE__, 0,
               "Incompatible location.\n"
               " Stop computing a cellwise diffusive flux.");
@@ -1450,9 +1448,9 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
   if (cs_equation_param_has_diffusion(eqp) == false) {
 
     size_t  size = 0;
-    if (cs_test_flag(location, cs_cdo_primal_cell))
+    if (cs_flag_test(location, cs_flag_primal_cell))
       size = 3*quant->n_cells;
-    else if (cs_test_flag(location, cs_cdo_dual_face_byc))
+    else if (cs_flag_test(location, cs_flag_dual_face_byc))
       size = connect->c2e->idx[quant->n_cells];
 
 #   pragma omp parallel for if (size > CS_THR_MIN)
@@ -1481,11 +1479,11 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
     cs_flag_t  msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
       CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV;
 
-    if (cs_test_flag(location, cs_cdo_primal_cell)) {
+    if (cs_flag_test(location, cs_flag_primal_cell)) {
       compute_flux = cs_cdo_diffusion_wbs_get_pc_flux;
       msh_flag |= CS_CDO_LOCAL_HFQ;
     }
-    else if (cs_test_flag(location, cs_cdo_dual_face_byc)) {
+    else if (cs_flag_test(location, cs_flag_dual_face_byc)) {
       compute_flux = cs_cdo_diffusion_wbs_get_dfbyc_flux;
       msh_flag |= CS_CDO_LOCAL_EFQ;
     }
@@ -1514,9 +1512,9 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
         pot[v] = values[cm->v_ids[v]];
       pot[cm->n_vc] = eqc->cell_values[c_id];
 
-      if (cs_test_flag(location, cs_cdo_primal_cell))
+      if (cs_flag_test(location, cs_flag_primal_cell))
         compute_flux(cm, pot, cb, diff_flux + 3*c_id);
-      else if (cs_test_flag(location, cs_cdo_dual_face_byc))
+      else if (cs_flag_test(location, cs_flag_dual_face_byc))
         compute_flux(cm, pot, cb, diff_flux + connect->c2e->idx[c_id]);
 
     } // Loop on cells

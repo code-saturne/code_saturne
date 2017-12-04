@@ -44,6 +44,7 @@
 
 #include "cs_log.h"
 #include "cs_math.h"
+#include "cs_param.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1110,7 +1111,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   if (flag & CS_CDO_LOCAL_DIAM) {
 
-    assert(cs_test_flag(flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
+    assert(cs_flag_test(flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int t_id = omp_get_thread_num();
@@ -1404,7 +1405,7 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
 
   /* Sanity checks */
   assert(f > -1 && f < cm->n_fc);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 

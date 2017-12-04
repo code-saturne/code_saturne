@@ -366,7 +366,7 @@ cs_domain_create(void)
 
   cs_property_def_iso_by_value(pty, "cells", 1.0);
 
-  /* Allocate domain builder */
+  /* Allocate the domain boundary structure */
   BFT_MALLOC(domain->boundary_def, 1, cs_domain_boundary_t);
   domain->boundary_def->default_type = CS_PARAM_BOUNDARY_WALL; // Set by default
   domain->boundary_def->n_zones = 0;
@@ -735,70 +735,70 @@ cs_domain_set_scheme_flags(cs_domain_t    *domain)
   for (int eq_id = 0; eq_id < n_equations; eq_id++) {
 
     cs_equation_t  *eq = cs_equation_by_id(eq_id);
-    cs_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
+    cs_param_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
     int  vardim = cs_equation_get_var_dim(eq);
 
     switch (scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
-      domain->vb_scheme_flag |= CS_SCHEME_FLAG_POLY0;
+      domain->vb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
       if (vardim == 1)
-        domain->vb_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+        domain->vb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
       else if (vardim == 3)
-        domain->vb_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+        domain->vb_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
       else
         bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
 
     case CS_SPACE_SCHEME_CDOVCB:
-      domain->vcb_scheme_flag |= CS_SCHEME_FLAG_POLY0;
+      domain->vcb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
       if (vardim == 1)
-        domain->vcb_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+        domain->vcb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
       else if (vardim == 3)
-        domain->vcb_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+        domain->vcb_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
       else
         bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
 
     case CS_SPACE_SCHEME_CDOFB:
-      domain->fb_scheme_flag |= CS_SCHEME_FLAG_POLY0;
+      domain->fb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
       if (vardim == 1)
-        domain->fb_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+        domain->fb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
       else if (vardim == 3)
-        domain->fb_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+        domain->fb_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
       else
         bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
 
     case CS_SPACE_SCHEME_HHO_P0:
       assert(cs_equation_get_space_poly_degree(eq) == 0);
-      domain->hho_scheme_flag |= CS_SCHEME_FLAG_POLY0;
+      domain->hho_scheme_flag |= CS_FLAG_SCHEME_POLY0;
       if (vardim == 1)
-        domain->hho_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+        domain->hho_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
       else if (vardim == 3)
-        domain->hho_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+        domain->hho_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
       else
         bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
 
     case CS_SPACE_SCHEME_HHO_P1:
-      domain->hho_scheme_flag |= CS_SCHEME_FLAG_POLY1;
+      domain->hho_scheme_flag |= CS_FLAG_SCHEME_POLY1;
       assert(cs_equation_get_space_poly_degree(eq) == 1);
       if (vardim == 1)
-        domain->hho_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+        domain->hho_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
       else if (vardim == 3)
-        domain->hho_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+        domain->hho_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
       else
         bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
 
     case CS_SPACE_SCHEME_HHO_P2:
-      domain->hho_scheme_flag |= CS_SCHEME_FLAG_POLY2;
+      domain->hho_scheme_flag |= CS_FLAG_SCHEME_POLY2;
       assert(cs_equation_get_space_poly_degree(eq) == 2);
       if (vardim == 1)
-        domain->hho_scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+        domain->hho_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
       else if (vardim == 3)
-        domain->hho_scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+        domain->hho_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
       else
         bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;

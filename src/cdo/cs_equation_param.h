@@ -29,8 +29,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_bc.h"
 #include "cs_param.h"
+#include "cs_param_cdo.h"
 #include "cs_property.h"
 #include "cs_advection_field.h"
 #include "cs_xdef.h"
@@ -82,7 +82,8 @@ typedef enum {
 
 } cs_equation_algo_type_t;
 
-/* Description of the algorithm used to solve an equation */
+/* Description of the algorithm used to solve an equation.
+   In case of non-linearity for instance */
 typedef struct {
 
   cs_equation_algo_type_t   type;
@@ -100,60 +101,64 @@ typedef struct {
    equation with term sources */
 typedef struct {
 
-  cs_equation_type_t     type;           /* predefined, user... */
-  int                    dim;            /* Dimension of the unknown */
-  int                    verbosity;      /* Level of detail for output */
-  int                    sles_verbosity; /* Level of detail for SLES output */
+  cs_equation_type_t   type;           /* predefined, user... */
+  int                  dim;            /* Dimension of the unknown */
+  int                  verbosity;      /* Level of detail for output */
+  int                  sles_verbosity; /* Level of detail for SLES output */
 
-  /* Unsteady-Diffusion-Convection-Source term activated or not */
-  cs_flag_t              flag;
+  /* Flag to know if unsteady or diffusion or convection or reaction
+     or source term are activated or not */
+  cs_flag_t                     flag;
 
-  /* Post-treatment */
-  cs_flag_t              process_flag;   /* Type of post-treatment to do */
+  /* Flag to known if predefined post-treatments such as Peclet,
+     Fourier, Courant numbers are requested */
+  cs_flag_t                     process_flag;
 
   /* Numerical settings */
-  cs_space_scheme_t      space_scheme;
+  cs_param_space_scheme_t       space_scheme;
+
   /* Max. degree of the polynomial basis */
-  int                    space_poly_degree;
+  int                           space_poly_degree;
 
   /* Boundary conditions */
-  cs_param_bc_type_t     default_bc;
-  cs_param_bc_enforce_t  enforcement;
-  int                    n_bc_desc;
-  cs_xdef_t            **bc_desc;
+  cs_param_bc_type_t            default_bc;
+  cs_param_bc_enforce_t         enforcement;
+  int                           n_bc_defs;
+  cs_xdef_t                   **bc_defs;
 
   /* High-level structure to manage/monitor the resolution of this equation */
-  cs_equation_algo_t     algo_info;
-  cs_param_itsol_t       itsol_info;
+  cs_equation_algo_t            algo_info;
+  cs_param_itsol_t              itsol_info;
 
   /* Time-dependent term parameters */
-  cs_param_hodge_t       time_hodge;
-  cs_property_t         *time_property;
-  cs_time_scheme_t       time_scheme;
-  cs_real_t              theta;
-  bool                   do_lumping;
+  cs_param_hodge_t              time_hodge;
+  cs_property_t                *time_property;
+  cs_param_time_scheme_t        time_scheme;
+  cs_real_t                     theta;
+  bool                          do_lumping;
 
-  int                    n_ic_desc;
-  cs_xdef_t            **ic_desc;
+  /* Initial conditions (if non trivial, i.e. not zero everywhere) */
+  int                           n_ic_defs;
+  cs_xdef_t                   **ic_defs;
 
   /* Diffusion term parameters */
-  cs_param_hodge_t       diffusion_hodge;
-  cs_property_t         *diffusion_property;
+  cs_param_hodge_t              diffusion_hodge;
+  cs_property_t                *diffusion_property;
 
   /* Advection term parameters */
-  cs_param_advection_t   advection_info;
-  cs_adv_field_t        *advection_field;
+  cs_param_advection_form_t     adv_formulation;
+  cs_param_advection_scheme_t   adv_scheme;
+  cs_adv_field_t               *adv_field;
 
-  /* Reaction term parameters
-     Belong to the left-hand and/or right-hand side according to the time scheme
-  */
-  cs_param_hodge_t       reaction_hodge;
-  int                    n_reaction_terms;
-  cs_property_t        **reaction_properties;
+  /* Reaction term parameters: Belong to the left-hand and/or
+     right-hand side according to the choice of time scheme */
+  cs_param_hodge_t              reaction_hodge;
+  int                           n_reaction_terms;
+  cs_property_t               **reaction_properties;
 
-  /* Parameters of source terms (Belong to the right-hand side) */
-  int                    n_source_terms;
-  cs_xdef_t            **source_terms;
+  /* Parameters of source terms (Always belong to the right-hand side) */
+  int                           n_source_terms;
+  cs_xdef_t                   **source_terms;
 
 } cs_equation_param_t;
 

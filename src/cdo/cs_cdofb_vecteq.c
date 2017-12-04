@@ -546,8 +546,8 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
   eqb->bd_msh_flag = 0;
-  for (int i = 0; i < eqp->n_bc_desc; i++) {
-    const cs_xdef_t  *def = eqp->bc_desc[i];
+  for (int i = 0; i < eqp->n_bc_defs; i++) {
+    const cs_xdef_t  *def = eqp->bc_defs[i];
     if (def->meta & CS_CDO_BC_NEUMANN)
       if (def->qtype == CS_QUADRATURE_BARY_SUBDIV ||
           def->qtype == CS_QUADRATURE_HIGHER ||
@@ -707,7 +707,7 @@ cs_cdofb_vecteq_compute_source(const cs_equation_param_t    *eqp,
 
   /* Compute the source term in each cell */
   double  *contrib = cs_equation_get_tmpbuf();
-  cs_flag_t  dof_loc = CS_FLAG_VECTOR | cs_cdo_primal_cell;
+  cs_flag_t  dof_loc = CS_FLAG_VECTOR | cs_flag_primal_cell;
 
   for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
 

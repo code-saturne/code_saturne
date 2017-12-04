@@ -34,7 +34,6 @@
 
 #include "cs_advection_field.h"
 #include "cs_base.h"
-#include "cs_cdo.h"
 #include "cs_equation.h"
 
 /*----------------------------------------------------------------------------*/

@@ -32,12 +32,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_advection_field.h"
-#include "cs_cdo.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
 #include "cs_equation_param.h"
-#include "cs_param.h"
 #include "cs_property.h"
 
 /*----------------------------------------------------------------------------*/
@@ -385,6 +383,7 @@ cs_cdo_advection_add_vcb_bc_analytic(const cs_cell_mesh_t        *cm,
  *          a related Peclet number
  *
  * \param[in]      cdoq      pointer to the cdo quantities structure
+ * \param[in]      scheme    type of scheme used for the advection term
  * \param[in, out] coefval   pointer to the pointer of real numbers to fill
  *                           in: Peclet number in each cell
  *                           out: value of the upwind coefficient
@@ -392,9 +391,9 @@ cs_cdo_advection_add_vcb_bc_analytic(const cs_cell_mesh_t        *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_upwind_coef_cell(const cs_cdo_quantities_t   *cdoq,
-                                      const cs_param_advection_t   a_info,
-                                      cs_real_t                    coefval[]);
+cs_cdo_advection_get_upwind_coef_cell(const cs_cdo_quantities_t    *cdoq,
+                                      cs_param_advection_scheme_t   scheme,
+                                      cs_real_t                     coefval[]);
 
 /*----------------------------------------------------------------------------*/
 

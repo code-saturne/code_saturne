@@ -112,7 +112,7 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
   CS_UNUSED(connect);
 
   /* Sanity check */
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
   /* Identify which face is a boundary face */
   short int  n_vf;
@@ -291,7 +291,7 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
     const cs_lnum_t  *f2v_lst = face_vtx_lst + f2v_idx[0];
 
     const short int  def_id = dir->def_ids[i];
-    const cs_xdef_t  *def = eqp->bc_desc[def_id];
+    const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
     switch(def->type) {
 
@@ -478,9 +478,9 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
   for (cs_lnum_t f_id = 0; f_id < array_size; f_id++) dir_val[f_id] = 0;
 
   /* Define array storing the Dirichlet values */
-  for (int def_id = 0; def_id < eqp->n_bc_desc; def_id++) {
+  for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
 
-    const cs_xdef_t  *def = eqp->bc_desc[def_id];
+    const cs_xdef_t  *def = eqp->bc_defs[def_id];
     assert(eqp->dim == def->dim);
 
     if (def->meta & CS_CDO_BC_DIRICHLET) {
@@ -512,10 +512,10 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
           cs_xdef_array_input_t  *array_input =
             (cs_xdef_array_input_t *)def->input;
 
-          assert(eqp->n_bc_desc == 1); // Only one definition allowed
+          assert(eqp->n_bc_defs == 1); // Only one definition allowed
           assert(bz->n_faces == quant->n_b_faces);
           assert(array_input->stride == eqp->dim);
-          assert(cs_test_flag(array_input->loc, cs_cdo_primal_face));
+          assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
 
           if (bz->n_faces > 0) // Not only interior
             memcpy(dir_val, array_input->values,
@@ -582,9 +582,9 @@ cs_equation_tag_neumann_face(const cs_cdo_quantities_t    *quant,
     face_tag[f_id] = -1;
 
   /* Tag faces with Neumann BCs */
-  for (int def_id = 0; def_id < eqp->n_bc_desc; def_id++) {
+  for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
 
-    const cs_xdef_t  *def = eqp->bc_desc[def_id];
+    const cs_xdef_t  *def = eqp->bc_defs[def_id];
     if (def->meta & CS_CDO_BC_NEUMANN) {
 
       const cs_boundary_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
@@ -625,9 +625,9 @@ cs_equation_compute_neumann_sv(short int                   def_id,
 {
   assert(neu_values != NULL && cm != NULL && eqp != NULL);
   assert(def_id > -1);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
-  const cs_xdef_t  *def = eqp->bc_desc[def_id];
+  const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
   assert(def->dim == 3);                 // flux is a vector in the scalar case
   assert(def->meta & CS_CDO_BC_NEUMANN); // Neuman BC
@@ -653,9 +653,9 @@ cs_equation_compute_neumann_sv(short int                   def_id,
       cs_xdef_array_input_t  *array_input =
         (cs_xdef_array_input_t *)def->input;
 
-      assert(eqp->n_bc_desc == 1); // Only one definition allowed
+      assert(eqp->n_bc_defs == 1); // Only one definition allowed
       assert(array_input->stride == 3);
-      assert(cs_test_flag(array_input->loc, cs_cdo_primal_face));
+      assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
       assert(bf_id > -1);
@@ -703,7 +703,7 @@ cs_equation_compute_neumann_fb(short int                    def_id,
   assert(def_id > -1);
   assert(eqp->dim == 1 || eqp->dim == 3);
 
-  const cs_xdef_t  *def = eqp->bc_desc[def_id];
+  const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
   /* Flux is a vector in the scalar-valued case and a tensor in the
      vector-valued case */
@@ -741,9 +741,9 @@ cs_equation_compute_neumann_fb(short int                    def_id,
       cs_xdef_array_input_t  *array_input =
         (cs_xdef_array_input_t *)def->input;
 
-      assert(eqp->n_bc_desc == 1); // Only one definition allowed
+      assert(eqp->n_bc_defs == 1); // Only one definition allowed
       assert(array_input->stride == 3);
-      assert(cs_test_flag(array_input->loc, cs_cdo_primal_face));
+      assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
       assert(bf_id > -1);

@@ -33,7 +33,6 @@
 
 #include "cs_base.h"
 #include "cs_basis_func.h"
-#include "cs_cdo.h"
 #include "cs_cdo_connect.h"
 #include "cs_sdm.h"
 #include "cs_xdef.h"

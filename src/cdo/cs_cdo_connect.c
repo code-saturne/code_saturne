@@ -43,10 +43,11 @@
 
 #include "fvm_io_num.h"
 
-#include "cs_cdo.h"
+#include "cs_flag.h"
 #include "cs_log.h"
 #include "cs_order.h"
 #include "cs_parall.h"
+#include "cs_param.h"
 #include "cs_sort.h"
 
 
@@ -957,8 +958,8 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
     connect->interfaces[i] = NULL;
   }
 
-  if (vb_scheme_flag & CS_SCHEME_FLAG_SCALAR ||
-      vcb_scheme_flag & CS_SCHEME_FLAG_SCALAR) {
+  if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
+      vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
     /* Vertex range set */
     cs_range_set_t  *v_rs = cs_range_set_create(mesh->vtx_interfaces,
@@ -975,24 +976,24 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   }
 
   /* CDO face-based schemes or HHO schemes with k=0 */
-  if ((fb_scheme_flag & CS_SCHEME_FLAG_SCALAR) ||
-      cs_test_flag(hho_scheme_flag,
-                   CS_SCHEME_FLAG_SCALAR | CS_SCHEME_FLAG_POLY0))
+  if ((fb_scheme_flag & CS_FLAG_SCHEME_SCALAR) ||
+      cs_flag_test(hho_scheme_flag,
+                   CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY0))
     _assign_ifs_rs(mesh, n_faces, 1,
                    connect->interfaces + CS_CDO_CONNECT_FACE_SP0,
                    connect->range_sets + CS_CDO_CONNECT_FACE_SP0);
 
   /* HHO schemes with k=1 or CDO-Fb schemes with vector-valued unknowns */
-  if ((fb_scheme_flag & CS_SCHEME_FLAG_VECTOR) ||
-      cs_test_flag(hho_scheme_flag,
-                   CS_SCHEME_FLAG_SCALAR | CS_SCHEME_FLAG_POLY1))
+  if ((fb_scheme_flag & CS_FLAG_SCHEME_VECTOR) ||
+      cs_flag_test(hho_scheme_flag,
+                   CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY1))
     _assign_ifs_rs(mesh, n_faces, 3,
                    connect->interfaces + CS_CDO_CONNECT_FACE_SP1,
                    connect->range_sets + CS_CDO_CONNECT_FACE_SP1);
 
   /* HHO schemes with k=2 */
-  if (cs_test_flag(hho_scheme_flag,
-                   CS_SCHEME_FLAG_SCALAR | CS_SCHEME_FLAG_POLY2))
+  if (cs_flag_test(hho_scheme_flag,
+                   CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY2))
     _assign_ifs_rs(mesh, n_faces, 6,
                    connect->interfaces + CS_CDO_CONNECT_FACE_SP2,
                    connect->range_sets + CS_CDO_CONNECT_FACE_SP2);

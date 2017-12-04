@@ -49,7 +49,6 @@
 #include "bft_printf.h"
 
 #include "cs_blas.h"
-#include "cs_cdo.h"
 #include "cs_equation.h"
 #include "cs_field.h"
 #include "cs_log.h"
@@ -550,7 +549,7 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
   for (cs_lnum_t i = 0; i < n_elts[0]; i++)
     dist[i] = 0;
 
-  cs_space_scheme_t  space_scheme = cs_equation_get_space_scheme(eq);
+  cs_param_space_scheme_t  space_scheme = cs_equation_get_space_scheme(eq);
   switch (space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:

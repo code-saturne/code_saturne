@@ -56,7 +56,6 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_field.h"
-#include "cs_cdo.h"
 #include "cs_sdm.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_equation.h"
@@ -349,7 +348,7 @@ cs_user_cdo_extra_op(const cs_domain_t          *domain)
   bft_printf("%s", msepline);
 
   /* Extra-operation depends on the numerical scheme */
-  cs_space_scheme_t  space_scheme = cs_equation_get_space_scheme(eq);
+  cs_param_space_scheme_t  space_scheme = cs_equation_get_space_scheme(eq);
 
   switch (space_scheme) {
   case CS_SPACE_SCHEME_CDOVB:

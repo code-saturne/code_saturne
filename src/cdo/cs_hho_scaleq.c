@@ -164,8 +164,8 @@ static const cs_matrix_structure_t  *cs_shared_ms2;
 /*----------------------------------------------------------------------------*/
 
 static cs_cell_builder_t *
-_cell_builder_create(cs_space_scheme_t         space_scheme,
-                     const cs_cdo_connect_t   *connect)
+_cell_builder_create(cs_param_space_scheme_t     space_scheme,
+                     const cs_cdo_connect_t     *connect)
 {
   int  size;
 
@@ -376,7 +376,7 @@ _init_cell_structures(const cs_flag_t               cell_flag,
           assert(def_id > -1);
 
           cs_real_t  *dir_reduction = csys->dir_values + f*eqc->n_face_dofs;
-          cs_hho_builder_compute_dirichlet(eqp->bc_desc[def_id],
+          cs_hho_builder_compute_dirichlet(eqp->bc_defs[def_id],
                                            f,
                                            cm,
                                            cb,
@@ -614,9 +614,9 @@ cs_hho_scaleq_initialize(cs_flag_t                      scheme_flag,
   const int n_fc = connect->n_max_fbyc;
 
   int  order = -1, fbs = 0, cbs = 0;
-  cs_space_scheme_t  space_scheme;
+  cs_param_space_scheme_t  space_scheme;
 
-  if (scheme_flag & CS_SCHEME_FLAG_POLY2) {
+  if (scheme_flag & CS_FLAG_SCHEME_POLY2) {
 
     space_scheme = CS_SPACE_SCHEME_HHO_P2;
     fbs = CS_N_FACE_DOFS_2ND; // DoF by face
@@ -625,7 +625,7 @@ cs_hho_scaleq_initialize(cs_flag_t                      scheme_flag,
     assert(ma2 != NULL && ms2 != NULL);
 
   }
-  else if (scheme_flag & CS_SCHEME_FLAG_POLY1) {
+  else if (scheme_flag & CS_FLAG_SCHEME_POLY1) {
 
     space_scheme = CS_SPACE_SCHEME_HHO_P1;
     fbs = CS_N_FACE_DOFS_1ST; // DoF by face
@@ -875,9 +875,9 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
   for (cs_lnum_t i = 0; i < n_b_faces; i++)
     eqc->bf2def_ids[i] = -1; /* Default BC has no definition --> -1 */
 
-  for (int def_id = 0; def_id < eqp->n_bc_desc; def_id++) {
+  for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
 
-    const cs_xdef_t  *def = eqp->bc_desc[def_id];
+    const cs_xdef_t  *def = eqp->bc_defs[def_id];
     const cs_boundary_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
 
 #   pragma omp parallel for if (bz->n_faces > CS_THR_MIN)

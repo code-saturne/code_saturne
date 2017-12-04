@@ -24,8 +24,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -42,10 +40,10 @@
 #include "bft_mem.h"
 
 #include "cs_boundary_zone.h"
-#include "cs_cdo.h"
+#include "cs_field.h"
+#include "cs_flag.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
-#include "cs_field.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
@@ -152,8 +150,8 @@ cs_xdef_volume_create(cs_xdef_type_t    type,
       b->index = a->index;
 
       /* Update state flag */
-      if (cs_test_flag(b->loc, cs_cdo_primal_cell) ||
-          cs_test_flag(b->loc, cs_cdo_dual_face_byc))
+      if (cs_flag_test(b->loc, cs_flag_primal_cell) ||
+          cs_flag_test(b->loc, cs_flag_dual_face_byc))
         d->state |= CS_FLAG_STATE_CELLWISE;
 
       d->input = b;
@@ -265,7 +263,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       d->input = b;
 
       /* Update state flag */
-      if (cs_test_flag(b->loc, cs_cdo_primal_face))
+      if (cs_flag_test(b->loc, cs_flag_primal_face))
         d->state |= CS_FLAG_STATE_FACEWISE;
     }
     break;

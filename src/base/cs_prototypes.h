@@ -704,15 +704,6 @@ cs_user_cdo_activated(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify additional mesh locations
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_add_mesh_locations(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Start setting up the computational domain:
  *         - which type of boundaries closed the computational domain
  *         - the settings for the time step

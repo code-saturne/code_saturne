@@ -31,9 +31,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_mesh.h"
-#include "cs_cdo.h"
-#include "cs_quadrature.h"
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -47,44 +45,69 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* DISCRETE HODGE OPERATORS */
-/* ======================== */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Generic function pointer for an analytic function
+ *         elt_ids is optional. If not NULL, it enables to access in coords
+ *         at the right location and the same thing to fill retval if compact
+ *         is set to false
+ *
+ * \param[in]      time     when ?
+ * \param[in]      n_elts   number of elements to consider
+ * \param[in]      elt_ids  list of elements ids (to access coords and fill)
+ * \param[in]      coords   where ?
+ * \param[in]      compact  true:no indirection, false:indirection for filling
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in, out] retval   result of the function
+ */
+/*----------------------------------------------------------------------------*/
 
+typedef void
+(cs_analytic_func_t) (cs_real_t            time,
+                      cs_lnum_t            n_elts,
+                      const cs_lnum_t     *elt_ids,
+                      const cs_real_t     *coords,
+                      bool                 compact,
+                      void                *input,
+                      cs_real_t           *retval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function which defines the time step according to the number of
+ *         iteration already done, the current time and any structure given as
+ *         a parameter
+ *
+ * \param[in]   time_iter   current number of iterations
+ * \param[in]   time        value of the time at the end of the last iteration
+ * \param[in]   input       pointer to a structure cast on-the-fly
+ *
+ * \return the value of the time step
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef cs_real_t
+(cs_timestep_func_t) (int       time_iter,
+                      double    time,
+                      void     *input);
+
+/* ================
+ * ENUM definitions
+ * ================ */
+
+/* Type of numerical scheme for the discretization in space */
 typedef enum {
 
-  CS_PARAM_HODGE_TYPE_VPCD, // from primal vertices to dual cells
-  CS_PARAM_HODGE_TYPE_EPFD, // from primal edges to dual faces
-  CS_PARAM_HODGE_TYPE_FPED, // from primal faces to dual edges
-  CS_PARAM_HODGE_TYPE_EDFP, // from dual edges to primal faces
-  CS_PARAM_HODGE_TYPE_CPVD, // from primal cells to dual vertices
-  CS_PARAM_HODGE_TYPE_VC,   // primal vertices + primal cells
-  CS_PARAM_N_HODGE_TYPES
+  CS_SPACE_SCHEME_LEGACY, /* Cell-centered Finite Volume Two-Point Flux */
+  CS_SPACE_SCHEME_CDOVB,  /* CDO scheme with vertex-based positionning */
+  CS_SPACE_SCHEME_CDOVCB, /* CDO scheme with vertex+cell-based positionning */
+  CS_SPACE_SCHEME_CDOFB,  /* CDO cell-based scheme with hybridization */
+  CS_SPACE_SCHEME_HHO_P0, /* Hybrid High Order scheme; P0 approx. of gradient */
+  CS_SPACE_SCHEME_HHO_P1, /* Hybrid High Order scheme; P1 approx. of gradient */
+  CS_SPACE_SCHEME_HHO_P2, /* Hybrid High Order scheme; P2 approx. of gradient */
 
-} cs_param_hodge_type_t;
+  CS_SPACE_N_SCHEMES
 
-typedef enum {
-
-  CS_PARAM_HODGE_ALGO_VORONOI, // Under othogonality condition gives a diag. op.
-  CS_PARAM_HODGE_ALGO_WBS,     // WBS: Whitney Barycentric Subdivision
-  CS_PARAM_HODGE_ALGO_COST,    // COST: COnsistency & STabilization splitting
-  CS_PARAM_HODGE_ALGO_AUTO,    /* Switch between the previous algo. according to
-                                  the type of cell and its property */
-  CS_PARAM_N_HODGE_ALGOS
-
-} cs_param_hodge_algo_t;
-
-typedef struct {
-
-  bool   is_unity; /* No associated property. Property is equalt to the unity */
-  bool   is_iso;   /* Associated property is isotroopic ? */
-  bool   inv_pty;  /* Definition based on the property or its inverse */
-
-  cs_param_hodge_type_t   type;  /* type of discrete Hodge operator */
-  cs_param_hodge_algo_t   algo;  /* type of algorithm used to build this op. */
-  double                  coef;  /* Value of the stabilization parameter
-                                    if the COST algo. is used, otherwise 0. */
-
-} cs_param_hodge_t;
+} cs_param_space_scheme_t;
 
 /* TIME SCHEME */
 /* =========== */
@@ -92,13 +115,18 @@ typedef struct {
 /* Type of numerical scheme for the discretization in time */
 typedef enum {
 
-  CS_TIME_SCHEME_IMPLICIT,  // fully implicit (forward Euler/theta-scheme = 1)
-  CS_TIME_SCHEME_EXPLICIT,  // fully explicit (backward Euler/theta-scheme = 0)
-  CS_TIME_SCHEME_CRANKNICO, // Crank-Nicolson (theta-scheme = 0.5)
-  CS_TIME_SCHEME_THETA,     // theta-scheme
+  /* fully implicit (forward Euler/theta-scheme = 1) */
+  CS_TIME_SCHEME_IMPLICIT,
+  /* fully explicit (backward Euler/theta-scheme = 0) */
+  CS_TIME_SCHEME_EXPLICIT,
+   /* Crank-Nicolson (theta-scheme = 0.5) */
+  CS_TIME_SCHEME_CRANKNICO,
+  /* theta-scheme */
+  CS_TIME_SCHEME_THETA,
+  /* Undefined */
   CS_TIME_N_SCHEMES
 
-} cs_time_scheme_t;
+} cs_param_time_scheme_t;
 
 /* ADVECTION OPERATOR PARAMETRIZATION */
 /* ================================== */
@@ -122,26 +150,6 @@ typedef enum {
   CS_PARAM_N_ADVECTION_SCHEMES
 
 } cs_param_advection_scheme_t;
-
-/* Choice on the type of algo. used to set the argument used in
-   the weight function */
-typedef enum {
-
-  CS_PARAM_ADVECTION_WEIGHT_FLUX,
-  CS_PARAM_ADVECTION_WEIGHT_XEXC,
-  CS_PARAM_N_ADVECTION_WEIGHTS
-
-} cs_param_advection_weight_t;
-
-/* Set of options for building a contraction operator (also called interior
-   product) which is closely related to the advection operator */
-typedef struct {
-
-  cs_param_advection_form_t     formulation; // conservative or not
-  cs_param_advection_scheme_t   scheme;
-  cs_param_advection_weight_t   weight_criterion;
-
-} cs_param_advection_t;
 
 /* BOUNDARY CONDITIONS */
 /* =================== */
@@ -217,16 +225,14 @@ typedef enum {
 /* Description of the algorithm used to solve an equation */
 typedef struct {
 
-  cs_param_precond_type_t  precond; // type of preconditioner
-  cs_param_itsol_type_t    solver;  // type of solver
+  cs_param_precond_type_t  precond; /* type of preconditioner */
+  cs_param_itsol_type_t    solver;  /* type of solver */
 
-  int          n_max_iter;          // max. number of iterations
-  double       eps;                 // stopping criterion on accuracy
-
-  int          output_freq;         // frequencdy of output into listing
+  int          n_max_iter;          /* max. number of iterations */
+  double       eps;                 /* stopping criterion on accuracy */
   bool         resid_normalized;    /* normalized or not the norm of the
-                                       residual used for the stopping criterion
-                                    */
+                                       residual used for the stopping
+                                       criterion */
 } cs_param_itsol_t;
 
 /*============================================================================
@@ -236,32 +242,6 @@ typedef struct {
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of algorithm related to a discrete Hdoge operator
- *
- * \param[in] h_info     cs_param_hodge_t structure
- *
- * \return the name of the algorithm
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_hodge_get_algo_name(const cs_param_hodge_t   h_info);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the type of discrete Hodge operator
- *
- * \param[in] h_info     cs_param_hodge_t structure
- *
- * \return the name of the type
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_hodge_get_type_name(const cs_param_hodge_t   h_info);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -304,6 +284,19 @@ cs_param_get_bc_name(cs_param_bc_type_t  bc);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Get the name of the type of enforcement of the boundary condition
+ *
+ * \param[in] type          type of enforcement of boundary conditions
+ *
+ * \return the associated name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Get the name of the domain boundary condition
  *          This name is also used as a name for zone definition
  *
@@ -315,19 +308,6 @@ cs_param_get_bc_name(cs_param_bc_type_t  bc);
 
 const char *
 cs_param_get_boundary_domain_name(cs_param_boundary_type_t  type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of the type of enforcement of the boundary condition
- *
- * \param[in] type          type of enforcement of boundary conditions
- *
- * \return the associated name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type);
 
 /*----------------------------------------------------------------------------*/
 

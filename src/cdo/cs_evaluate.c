@@ -1116,13 +1116,13 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
 
     cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
 
-    if (cs_test_flag(dof_flag, cs_cdo_primal_cell)) {
+    if (cs_flag_test(dof_flag, cs_flag_primal_cell)) {
 
       _pcsd_by_analytic(anai->func, anai->input,
                         z->n_cells, z->cell_ids, qfunc, retval);
 
     }
-    else if (cs_test_flag(dof_flag, cs_cdo_dual_cell)) {
+    else if (cs_flag_test(dof_flag, cs_flag_dual_cell)) {
 
       _dcsd_by_analytic(anai->func, anai->input,
                         z->n_cells, z->cell_ids, qfunc,
@@ -1168,9 +1168,9 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
 
     const cs_real_t  *constant_val = (const cs_real_t *)def->input;
 
-    if (cs_test_flag(dof_flag, cs_cdo_primal_cell))
+    if (cs_flag_test(dof_flag, cs_flag_primal_cell))
       _pcsd_by_value(constant_val[0], z->n_cells, z->cell_ids, retval);
-    else if (cs_test_flag(dof_flag, cs_cdo_dual_cell))
+    else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
       _dcsd_by_value(constant_val[0], z->n_cells, z->cell_ids, retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
@@ -1180,9 +1180,9 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
 
     const cs_real_t  *constant_vec = (const cs_real_t *)def->input;
 
-    if (cs_test_flag(dof_flag, cs_cdo_primal_cell))
+    if (cs_flag_test(dof_flag, cs_flag_primal_cell))
       _pcvd_by_value(constant_vec, z->n_cells, z->cell_ids, retval);
-    else if (cs_test_flag(dof_flag, cs_cdo_dual_cell))
+    else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
       _dcvd_by_value(constant_vec, z->n_cells, z->cell_ids, retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
@@ -1231,7 +1231,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
   const double  tcur = cs_time_step->t_cur;
 
   /* Perform the evaluation */
-  if (cs_test_flag(dof_flag, cs_cdo_primal_vtx)) {
+  if (cs_flag_test(dof_flag, cs_flag_primal_vtx)) {
 
     if (def->meta & CS_FLAG_FULL_LOC)
       anai->func(tcur,
@@ -1252,7 +1252,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
 
   } /* Located at primal vertices */
 
-  else if (cs_test_flag(dof_flag, cs_cdo_primal_face)) {
+  else if (cs_flag_test(dof_flag, cs_flag_primal_face)) {
 
     if (def->meta & CS_FLAG_FULL_LOC) {
 
@@ -1284,8 +1284,8 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
 
   } /* Located at primal faces */
 
-  else if (cs_test_flag(dof_flag, cs_cdo_primal_cell) ||
-           cs_test_flag(dof_flag, cs_cdo_dual_vtx)) {
+  else if (cs_flag_test(dof_flag, cs_flag_primal_cell) ||
+           cs_flag_test(dof_flag, cs_flag_dual_vtx)) {
 
     if (def->meta & CS_FLAG_FULL_LOC) /* All cells are selected */
       anai->func(tcur,
@@ -1340,7 +1340,7 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
 
     const cs_real_t  const_val = input[0];
 
-    if (cs_test_flag(dof_flag, cs_cdo_primal_vtx))
+    if (cs_flag_test(dof_flag, cs_flag_primal_vtx))
       _pvsp_by_qov(const_val, z->n_cells, z->cell_ids, retval);
     check = true;
 
@@ -1382,7 +1382,7 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
 
     const cs_real_t  const_val = input[0];
 
-    if (cs_test_flag(dof_flag, cs_cdo_primal_vtx)) {
+    if (cs_flag_test(dof_flag, cs_flag_primal_vtx)) {
 
       if (def->meta & CS_FLAG_FULL_LOC) {
 #       pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
@@ -1394,7 +1394,7 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
 
     } /* Located at primal vertices */
 
-    else if (cs_test_flag(dof_flag, cs_cdo_primal_face)) {
+    else if (cs_flag_test(dof_flag, cs_flag_primal_face)) {
 
       if (def->meta & CS_FLAG_FULL_LOC) {
 #       pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
@@ -1406,8 +1406,8 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
 
     } /* Located at primal faces */
 
-    else if (cs_test_flag(dof_flag, cs_cdo_primal_cell) ||
-             cs_test_flag(dof_flag, cs_cdo_dual_vtx)) {
+    else if (cs_flag_test(dof_flag, cs_flag_primal_cell) ||
+             cs_flag_test(dof_flag, cs_flag_dual_vtx)) {
 
       if (def->meta & CS_FLAG_FULL_LOC) {
 #       pragma omp parallel for if (quant->n_cells > CS_THR_MIN)

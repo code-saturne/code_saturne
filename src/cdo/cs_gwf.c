@@ -46,7 +46,6 @@
 
 #include <bft_mem.h>
 
-#include "cs_cdo.h"
 #include "cs_field.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -323,7 +322,7 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
   case CS_SPACE_SCHEME_CDOVCB:
 
     /* Update the array gw->darcian_flux associated to the advection field */
-    if (cs_test_flag(gw->flux_location, cs_cdo_dual_face_byc)) {
+    if (cs_flag_test(gw->flux_location, cs_flag_dual_face_byc)) {
 
       assert(gw->darcian_flux != NULL);
       cs_equation_compute_diff_flux_cellwise(richards,
@@ -331,7 +330,7 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
                                              gw->darcian_flux);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 2
-      if (cs_test_flag(gw->flux_location, cs_cdo_dual_face_byc))
+      if (cs_flag_test(gw->flux_location, cs_flag_dual_face_byc))
         cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
                                  connect->c2e->idx[cdoq->n_cells],
                                  gw->darcian_flux, 8);
@@ -341,7 +340,7 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
       cs_advection_field_at_cells(gw->adv_field, vel->val);
 
     }
-    else if (cs_test_flag(gw->flux_location, cs_cdo_primal_cell))
+    else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell))
       cs_equation_compute_diff_flux_cellwise(richards,
                                              gw->flux_location,
                                              vel->val);
@@ -401,7 +400,7 @@ _gwf_create(void)
   gw->permeability = NULL;
   gw->permea_field = NULL;
 
-  gw->flux_location = cs_cdo_primal_cell;
+  gw->flux_location = cs_flag_primal_cell;
   gw->darcian_flux = NULL;
   gw->adv_field = NULL;
 
@@ -582,8 +581,8 @@ cs_gwf_set_gravity_vector(const cs_real_3_t      gvec)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Advanced setting: indicate where the darcian flux is stored
- *         cs_cdo_primal_cell is the default setting
- *         cs_cdo_dual_face_byc is a valid choice for vertex-based schemes
+ *         cs_flag_primal_cell is the default setting
+ *         cs_flag_dual_face_byc is a valid choice for vertex-based schemes
  *
  * \param[in]       location_flag   where the flux is defined
  */
@@ -751,7 +750,7 @@ cs_gwf_init_setup(void)
   /* Handle gravity effects */
   if (gw->flag & CS_GWF_GRAVITATION) {
 
-    const cs_space_scheme_t  space_scheme =
+    const cs_param_space_scheme_t  space_scheme =
       cs_equation_get_space_scheme(gw->richards);
 
     switch (space_scheme) {
@@ -918,7 +917,7 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
   assert(cell_adv_field != NULL);
 
   /* Set the Darcian flux */
-  if (cs_test_flag(gw->flux_location, cs_cdo_dual_face_byc)) {
+  if (cs_flag_test(gw->flux_location, cs_flag_dual_face_byc)) {
 
     /* Darcian flux settings */
     const cs_adjacency_t  *c2e = connect->c2e;
@@ -938,7 +937,7 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
                                     c2e->idx);
 
   }
-  else if (cs_test_flag(gw->flux_location, cs_cdo_primal_cell)) {
+  else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell)) {
 
     cs_advection_field_def_by_field(gw->adv_field, cell_adv_field);
 
@@ -948,7 +947,7 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
               " Invalid location for defining the Darcian flux.");
 
   const cs_field_t  *hydraulic_head = cs_equation_get_field(gw->richards);
-  const cs_space_scheme_t  richards_scheme =
+  const cs_param_space_scheme_t  richards_scheme =
     cs_equation_get_space_scheme(gw->richards);
 
   if (richards_scheme == CS_SPACE_SCHEME_CDOFB ||

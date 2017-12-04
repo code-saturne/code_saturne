@@ -507,7 +507,7 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
 
   assert(array_input->stride == 1);
 
-  if ((array_input->loc & cs_cdo_primal_cell) == cs_cdo_primal_cell) {
+  if ((array_input->loc & cs_flag_primal_cell) == cs_flag_primal_cell) {
 
     if (elt_ids != NULL && !compact) {
 
@@ -531,7 +531,7 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
     }
 
   }
-  else if ((array_input->loc & cs_cdo_primal_vtx) == cs_cdo_primal_vtx) {
+  else if ((array_input->loc & cs_flag_primal_vtx) == cs_flag_primal_vtx) {
 
     if (elt_ids != NULL && !compact) {
 
@@ -610,7 +610,7 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
   const int  stride = array_input->stride;
   assert(stride > 1);
 
-  if (cs_test_flag(array_input->loc, cs_cdo_primal_cell)) {
+  if (cs_flag_test(array_input->loc, cs_flag_primal_cell)) {
 
     if (elt_ids != NULL && !compact) {
 
@@ -638,7 +638,7 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
     }
 
   }
-  else if (cs_test_flag(array_input->loc, cs_cdo_dual_face_byc)) {
+  else if (cs_flag_test(array_input->loc, cs_flag_dual_face_byc)) {
 
     assert(stride == 3);
     assert(array_input->index == connect->c2e->idx);
@@ -719,7 +719,7 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
 
   assert(array_input->stride == 1); // other cases not managed up to now
 
-  if (cs_test_flag(array_input->loc, cs_cdo_primal_vtx)) {
+  if (cs_flag_test(array_input->loc, cs_flag_primal_vtx)) {
 
     if (elt_ids != NULL && !compact) {
 
@@ -795,7 +795,7 @@ cs_xdef_eval_3_at_all_vertices_by_array(cs_lnum_t                   n_elts,
   for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
     dc_vol[i] = 0;
 
-  if (cs_test_flag(array_input->loc, cs_cdo_primal_cell)) {
+  if (cs_flag_test(array_input->loc, cs_flag_primal_cell)) {
 
     assert(stride == 3);
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -833,7 +833,7 @@ cs_xdef_eval_3_at_all_vertices_by_array(cs_lnum_t                   n_elts,
     } // Loop on vertices
 
   }
-  else if (cs_test_flag(array_input->loc, cs_cdo_dual_face_byc)) {
+  else if (cs_flag_test(array_input->loc, cs_flag_dual_face_byc)) {
 
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
@@ -907,16 +907,16 @@ cs_xdef_eval_cw_cell_by_array(const cs_cell_mesh_t      *cm,
   const int  stride = array_input->stride;
 
   /* array is assumed to be interlaced */
-  if (cs_test_flag(array_input->loc, cs_cdo_primal_cell)) {
+  if (cs_flag_test(array_input->loc, cs_flag_primal_cell)) {
 
     for (int k = 0; k < stride; k++)
       eval[k] = array_input->values[stride*cm->c_id + k];
 
   }
-  else if (cs_test_flag(array_input->loc, cs_cdo_primal_vtx)) {
+  else if (cs_flag_test(array_input->loc, cs_flag_primal_vtx)) {
 
     /* Sanity checks */
-    assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PVQ));
+    assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
 
     /* Reconstruct (or interpolate) value at the current cell center */
     for (short int v = 0; v < cm->n_vc; v++) {
@@ -925,7 +925,7 @@ cs_xdef_eval_cw_cell_by_array(const cs_cell_mesh_t      *cm,
     }
 
   }
-  else if (cs_test_flag(array_input->loc, cs_cdo_dual_face_byc)) {
+  else if (cs_flag_test(array_input->loc, cs_flag_dual_face_byc)) {
 
     assert(array_input->index != NULL);
 
@@ -1088,7 +1088,7 @@ cs_xdef_eval_cw_cell_by_field(const cs_cell_mesh_t        *cm,
 
     /* Sanity checks */
     assert(field->dim == 1);
-    assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PVQ));
+    assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
 
     /* Reconstruct (or interpolate) value at the current cell center */
     for (short int v = 0; v < cm->n_vc; v++)
@@ -1204,7 +1204,7 @@ cs_xdef_eval_cw_3_at_xyz_by_array(const cs_cell_mesh_t       *cm,
   const int  stride = array_input->stride;
 
   /* array is assumed to be interlaced */
-  if (cs_test_flag(array_input->loc, cs_cdo_primal_cell)) {
+  if (cs_flag_test(array_input->loc, cs_flag_primal_cell)) {
 
     assert(stride == 3);
     cs_real_3_t  cell_vector;
@@ -1217,10 +1217,10 @@ cs_xdef_eval_cw_3_at_xyz_by_array(const cs_cell_mesh_t       *cm,
     }
 
   }
-  else if (cs_test_flag(array_input->loc, cs_cdo_primal_vtx)) {
+  else if (cs_flag_test(array_input->loc, cs_flag_primal_vtx)) {
 
     /* Sanity checks */
-    assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PVQ));
+    assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
     assert(stride == 3);
 
     /* Reconstruct (or interpolate) value at the current cell center */
@@ -1234,7 +1234,7 @@ cs_xdef_eval_cw_3_at_xyz_by_array(const cs_cell_mesh_t       *cm,
     }
 
   }
-  else if (cs_test_flag(array_input->loc, cs_cdo_dual_face_byc)) {
+  else if (cs_flag_test(array_input->loc, cs_flag_dual_face_byc)) {
 
     assert(array_input->index != NULL);
 
@@ -1308,7 +1308,7 @@ cs_xdef_eval_cw_3_at_xyz_by_field(const cs_cell_mesh_t       *cm,
   else if (field->location_id == v_ml_id) {
 
     /* Sanity check */
-    assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PVQ));
+    assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
 
     /* Reconstruct (or interpolate) value at the current cell center */
     for (int k = 0; k < 3; k++) {
@@ -1346,11 +1346,11 @@ cs_xdef_eval_cw_at_vtx_flux_by_val(const cs_cell_mesh_t     *cm,
                                    void                     *input,
                                    cs_real_t                *eval)
 {
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
   const cs_real_t  *flux = (cs_real_t *)input;
 
-  if (cs_test_flag(cm->flag, CS_CDO_LOCAL_FEQ)) {
+  if (cs_flag_test(cm->flag, CS_CDO_LOCAL_FEQ)) {
 
     /* Loop on face edges */
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
@@ -1432,7 +1432,7 @@ cs_xdef_eval_cw_at_vtx_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
       cs_real_3_t  _val[2], _xyz[2];
 
-      if (cs_test_flag(cm->flag, CS_CDO_LOCAL_FEQ)) {
+      if (cs_flag_test(cm->flag, CS_CDO_LOCAL_FEQ)) {
 
         /* Loop on face edges */
         for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
@@ -1499,7 +1499,7 @@ cs_xdef_eval_cw_at_vtx_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
       const cs_quant_t  fq = cm->face[f];
 
-      if (cs_test_flag(cm->flag, CS_CDO_LOCAL_FEQ)) {
+      if (cs_flag_test(cm->flag, CS_CDO_LOCAL_FEQ)) {
 
         /* Loop on face edges */
         for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
@@ -1685,7 +1685,7 @@ cs_xdef_eval_cw_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
   case CS_QUADRATURE_BARY_SUBDIV:
     {
-      assert(cs_test_flag(cm->flag,
+      assert(cs_flag_test(cm->flag,
                           CS_CDO_LOCAL_EV|CS_CDO_LOCAL_FE|CS_CDO_LOCAL_FEQ));
 
       const cs_quant_t  fq = cm->face[f];
@@ -1807,7 +1807,7 @@ cs_xdef_eval_cw_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
   case CS_QUADRATURE_BARY_SUBDIV:
     {
-      assert(cs_test_flag(cm->flag,
+      assert(cs_flag_test(cm->flag,
                           CS_CDO_LOCAL_EV|CS_CDO_LOCAL_FE|CS_CDO_LOCAL_FEQ));
 
       const cs_quant_t  fq = cm->face[f];

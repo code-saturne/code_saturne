@@ -200,6 +200,48 @@ _add_tetra_to_inertia2(const cs_real_t    x1[3],
 /*!
  * \brief  Update the computation of the inertia tensor with the contribution
  *         of a tetrahedron
+ *
+ * \param[in]      x1       1st vertex coordinate
+ * \param[in]      x2       2nd vertex coordinate
+ * \param[in]      x3       3rd vertex coordinate
+ * \param[in]      x4       4th vertex coordinate
+ * \param[in]      center   center used for the computation
+ * \param[in]      vol      volume of the tetrahedron
+ * \param[in, out] tensor   inertia tensor to update
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_add_tetra_to_inertia3(const cs_real_t    x1[3],
+                       const cs_real_t    x2[3],
+                       const cs_real_t    x3[3],
+                       const cs_real_t    x4[3],
+                       const cs_real_t    center[3],
+                       cs_real_t          vol,
+                       cs_real_33_t       tensor)
+{
+  cs_real_3_t gpts[4], r;
+  cs_real_t   _gw[4];
+
+  cs_quadrature_tet_4pts(x1, x2, x3, x4, vol, gpts, _gw);
+
+  const cs_real_t gw = _gw[0];  /* same weight for all Gauss points */
+  for (short int gp = 0; gp < 4; gp++) {
+
+    for (int k = 0; k < 3; k++) r[k] = gpts[gp][k] - center[k];
+
+    tensor[0][0] += gw * r[0]*r[0], tensor[0][1] += gw * r[0]*r[1];
+    tensor[0][2] += gw * r[0]*r[2], tensor[1][1] += gw * r[1]*r[1];
+    tensor[1][2] += gw * r[1]*r[2], tensor[2][2] += gw * r[2]*r[2];
+
+  } /* Loop on gauss points */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the computation of the inertia tensor with the contribution
+ *         of a tetrahedron
  *         Ref.: F. Tonon "Explicit exact formulas for the 3D tetrahedron
  *         inertia tensor in terms of its vertex coordinates" (2004)
  *         J. of Mathematics and Statistics
@@ -362,9 +404,9 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
   switch (cm->type) {
 
   case FVM_CELL_TETRA:
-    _add_tetra_to_inertia(cm->xv, cm->xv+3, cm->xv+6, cm->xv+9,
-                          center, cm->vol_c,
-                          M);
+    _add_tetra_to_inertia3(cm->xv, cm->xv+3, cm->xv+6, cm->xv+9,
+                           center, cm->vol_c,
+                           M);
     break;
 
   case FVM_CELL_PYRAM:
@@ -389,9 +431,9 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-          _add_tetra_to_inertia(cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, cm->xc,
-                                center, hf_coef * pfq.meas,
-                                M);
+          _add_tetra_to_inertia3(cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, cm->xc,
+                                 center, hf_coef * pfq.meas,
+                                 M);
         }
         break;
 
@@ -406,9 +448,9 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
             const short int v0 = cm->e2v_ids[2*e0];
             const short int v1 = cm->e2v_ids[2*e0+1];
 
-            _add_tetra_to_inertia(cm->xv+3*v0, cm->xv+3*v1, pfq.center, cm->xc,
-                                  center, hf_coef * tef[e],
-                                  M);
+            _add_tetra_to_inertia3(cm->xv+3*v0, cm->xv+3*v1, pfq.center, cm->xc,
+                                   center, hf_coef * tef[e],
+                                   M);
 
           }
         }
@@ -508,7 +550,7 @@ cs_compute_fwbs_q1(short int                 f,
                    cs_real_t                *pefc_vol)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV));
 
@@ -546,7 +588,7 @@ cs_compute_fwbs_q2(short int                f,
                    cs_real_t               *pefc_vol)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV));
 
@@ -589,7 +631,7 @@ cs_compute_fwbs_q3(short int                 f,
                    cs_real_t                *pefc_vol)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV));
 

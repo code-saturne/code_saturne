@@ -136,8 +136,8 @@ cs_gwf_set_gravity_vector(const cs_real_3_t      gvec);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Advanced setting: indicate where the darcian flux is stored
- *         cs_cdo_primal_cell is the default setting
- *         cs_cdo_dual_face_byc is a valid choice for vertex-based schemes
+ *         cs_flag_primal_cell is the default setting
+ *         cs_flag_dual_face_byc is a valid choice for vertex-based schemes
  *
  * \param[in] location_flag   where the flux is defined
  */

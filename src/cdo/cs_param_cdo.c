@@ -1,8 +1,6 @@
 /*============================================================================
- * Set main parameters for the current simulation when the CDO kernel is used
+ * Routines to handle the definition and usage of material properties
  *============================================================================*/
-
-/* VERS */
 
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
@@ -26,14 +24,12 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
@@ -41,37 +37,60 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft_mem.h"
 
-#include "cs_domain.h"
+#include "cs_base.h"
+#include "cs_log.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_prototypes.h"
+#include "cs_param_cdo.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Additional doxygen documentation
+ * Local Macro definitions and structure definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_cdo.c
- *
- * \brief  Set main parameters for the current simulation when the CDO kernel
- *         is used
- */
-/*----------------------------------------------------------------------------*/
+#define CS_PARAM_CDO_DBG  0
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+/*============================================================================
+ * Global variables
+ *============================================================================*/
 
-/*! \endcond (end ignore by Doxygen) */
+/* Separation lines: long, medium, short */
+const char lsepline[80] =
+  "# =======================================================================\n";
+const char msepline[60] =
+  "# =========================================\n";
+const char ssepline[40] =
+  "# =================\n";
+
+/* Activation of the CDO/HHO module */
+int  cs_param_cdo_mode = CS_PARAM_CDO_MODE_OFF;
+
+/*============================================================================
+ * Global static variables
+ *============================================================================*/
+
+static const char
+cs_param_hodge_type_desc[CS_PARAM_N_HODGE_TYPES][CS_BASE_STRING_LEN] =
+  { N_("VpCd"),
+    N_("EpFd"),
+    N_("FpEd"),
+    N_("EdFp"),
+    N_("CpVd")  };
+
+static const char
+cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_BASE_STRING_LEN] =
+  { N_("Voronoi"),
+    N_("Whitney on the Barycentric Subdivision (WBS)"),
+    N_("COnsistency-STabilization splitting (COST)"),
+    N_("Automatic switch") };
 
 /*============================================================================
  * Private function prototypes
@@ -83,83 +102,79 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Activate or not the CDO module
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_user_cdo_activated(void)
-{
-  /* By default, the CDO module is not activated */
-  return  CS_PARAM_CDO_MODE_OFF;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify for the computational domain:
- *         -- which type of boundaries closed the computational domain
- *         -- the settings for the time step
- *         -- activate predefined equations or modules
- *         -- add user-defined properties and/or advection fields
- *         -- add user-defined equations
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * \brief   Set the global variable storing the mode of activation to apply
+ *          to CDO/HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_init_setup(cs_domain_t   *domain)
+cs_param_cdo_set_mode(int  mode)
 {
-  CS_UNUSED(domain);
+  cs_param_cdo_mode = mode;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify for each soil and tracer how is defined each term of the
- *         the tracer equation. Soils and tracer equations have to be added
- *         previously
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
-*/
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_setup_gwf(cs_domain_t   *domain)
-{
-  CS_UNUSED(domain);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  - Specify the elements such as properties, advection fields,
- *           user-defined equations and modules which have been previously
- *           added.
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
-*/
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_finalize_setup(cs_domain_t   *domain)
-{
-  CS_UNUSED(domain);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the bulk density related to a soil structure
- *
- * \param[in]  soil      pointer to a cs_gwf_soil_t structure
- * \param[out] density   return value for the density
+ * \brief   Print a welcome message indicating which mode of CDO is activated
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
-                             cs_real_t             *density)
+cs_param_cdo_log(void)
 {
-  CS_UNUSED(soil);
-  CS_UNUSED(density);
+  switch (cs_param_cdo_mode) {
+
+  case CS_PARAM_CDO_MODE_ONLY:
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "\n -msg- CDO/HHO module is activated *** Experimental ***"
+                  "\n -msg- CDO/HHO module is in a stand-alone mode\n");
+    break;
+
+  case CS_PARAM_CDO_MODE_WITH_FV:
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "\n -msg- CDO/HHO module is activated *** Experimental ***"
+                  "\n -msg- CDO/HHO module with FV schemes mode\n");
+    break;
+
+  default:
+  case CS_PARAM_CDO_MODE_OFF:
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "\n -msg- CDO/HHO module is not activated\n");
+    break;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of algorithm related to a discrete Hdoge operator
+ *
+ * \param[in] h_info     cs_param_hodge_t structure
+ *
+ * \return the name of the algorithm
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_hodge_get_algo_name(const cs_param_hodge_t   h_info)
+{
+  return cs_param_hodge_algo_desc[h_info.algo];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the type of discrete Hodge operator
+ *
+ * \param[in] h_info     cs_param_hodge_t structure
+ *
+ * \return the name of the type
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_hodge_get_type_name(const cs_param_hodge_t   h_info)
+{
+  return cs_param_hodge_type_desc[h_info.type];
 }
 
 /*----------------------------------------------------------------------------*/

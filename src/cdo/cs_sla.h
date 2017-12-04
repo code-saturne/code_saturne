@@ -38,7 +38,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_cdo.h"
 #include "cs_sdm.h"
 #include "cs_param.h"
 #include "cs_mesh_adjacencies.h"

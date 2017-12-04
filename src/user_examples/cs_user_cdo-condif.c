@@ -389,24 +389,13 @@ _define_source(cs_real_t           time,
 int
 cs_user_cdo_activated(void)
 {
-  /* CS_CDO_OFF     = -1 --> CDO schemes are not used (no activation)
-     CS_CDO_WITH_FV =  0 --> CDO schemes are used as well as finite volume
-     CS_CDO_ONLY    =  1 --> CDO schemes are exclusively used */
+  /* CS_PARAM_CDO_MODE_OFF = -1 --> CDO schemes are not used (no
+     activation)
+     CS_CDO_WITH_FV = 0 --> CDO schemes are used as well
+     as finite volume CS_CDO_ONLY = 1 --> CDO schemes are exclusively
+     used */
 
-  return  CS_CDO_ONLY;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify additional mesh locations
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_add_mesh_locations(void)
-{
-  cs_boundary_zone_define("in", "x < 1e-5", 0);
-  cs_boundary_zone_define("out", "x > 0.9999", 0);
+  return  CS_PARAM_CDO_MODE_ONLY;
 }
 
 /*----------------------------------------------------------------------------*/

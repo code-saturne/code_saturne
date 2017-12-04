@@ -31,7 +31,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"

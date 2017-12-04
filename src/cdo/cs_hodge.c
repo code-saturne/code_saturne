@@ -215,8 +215,8 @@ _check_vector_hodge(const cs_real_3_t       *vec,
 /*----------------------------------------------------------------------------*/
 
 static cs_cell_builder_t *
-_cell_builder_create(cs_space_scheme_t         space_scheme,
-                     const cs_cdo_connect_t   *connect)
+_cell_builder_create(cs_param_space_scheme_t     space_scheme,
+                     const cs_cdo_connect_t     *connect)
 {
   int  size;
 
@@ -479,7 +479,7 @@ cs_hodge_fb_cost_get_stiffness(const cs_param_hodge_t    h_info,
                                cs_cell_builder_t        *cb)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
 
   /* Initialize the local stiffness matrix */
@@ -544,7 +544,7 @@ cs_hodge_fb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   /* Sanity checks */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
 
   /* Compute the local discrete Hodge operator */
@@ -607,7 +607,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
   /* Sanity checks */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ |
                       CS_CDO_LOCAL_EV));
 
@@ -788,7 +788,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   /* Sanity checks */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ |
                       CS_CDO_LOCAL_EV));
 
@@ -882,7 +882,7 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
   /* Sanity checks */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
                       CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ));
 
@@ -1014,7 +1014,7 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
                            cs_cell_builder_t        *cb)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
                       CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ));
 
@@ -1162,7 +1162,7 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_VC);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
                       CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ));
 
@@ -1278,7 +1278,7 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PVQ |CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
                       CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ));
 
@@ -1388,7 +1388,7 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PVQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
 
   cs_sdm_t  *hdg = cb->hdg;
   cs_sdm_square_init(cm->n_vc, hdg);
@@ -1435,7 +1435,7 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
@@ -1496,7 +1496,7 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
@@ -1577,7 +1577,7 @@ cs_hodge_fped_voro_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_FPED);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
@@ -1631,7 +1631,7 @@ cs_hodge_fped_cost_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_FPED);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
@@ -1712,7 +1712,7 @@ cs_hodge_edfp_voro_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
@@ -1766,7 +1766,7 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;

@@ -24,8 +24,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -41,11 +39,7 @@
 
 #include "bft_mem.h"
 
-#include "cs_boundary_zone.h"
-#include "cs_mesh_location.h"
-#include "cs_field.h"
-#include "cs_cdo.h"
-#include "cs_volume_zone.h"
+#include "cs_base.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -64,23 +58,12 @@ BEGIN_C_DECLS
 #define CS_PARAM_DBG  0
 
 /*============================================================================
- * Global static variables
+ * Global variables
  *============================================================================*/
 
-static const char
-cs_param_hodge_type_desc[CS_PARAM_N_HODGE_TYPES][CS_BASE_STRING_LEN] =
-  { N_("VpCd"),
-    N_("EpFd"),
-    N_("FpEd"),
-    N_("EdFp"),
-    N_("CpVd")  };
-
-static const char
-cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_BASE_STRING_LEN] =
-  { N_("Voronoi"),
-    N_("Whitney on the Barycentric Subdivision (WBS)"),
-    N_("COnsistency-STabilization splitting (COST)"),
-    N_("Automatic switch") };
+/*============================================================================
+ * Global static variables
+ *============================================================================*/
 
 static const char
 cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_BASE_STRING_LEN] =
@@ -168,38 +151,6 @@ cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type)
     return NULL;
   else
     return cs_param_bc_enforcement_name[type];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of algorithm related to a discrete Hdoge operator
- *
- * \param[in] h_info     cs_param_hodge_t structure
- *
- * \return the name of the algorithm
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_hodge_get_algo_name(const cs_param_hodge_t   h_info)
-{
-  return cs_param_hodge_algo_desc[h_info.algo];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the type of discrete Hodge operator
- *
- * \param[in] h_info     cs_param_hodge_t structure
- *
- * \return the name of the type
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_hodge_get_type_name(const cs_param_hodge_t   h_info)
-{
-  return cs_param_hodge_type_desc[h_info.type];
 }
 
 /*----------------------------------------------------------------------------*/

@@ -113,6 +113,20 @@ cs_equation_by_name(const char    *eqname);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Find the cs_equation_param_t structure with name eqname
+ *         Return NULL if not find
+ *
+ * \param[in]  eqname    name of the equation to find
+ *
+ * \return a pointer to a cs_equation_param_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_equation_param_by_name(const char    *eqname);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Find the cs_equation_t structure with name eqname
  *         Return NULL if not find
  *
@@ -660,11 +674,11 @@ cs_equation_get_reaction_property(const cs_equation_t    *eq,
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
- * \return  a cs_space_scheme_t variable
+ * \return  a cs_param_space_scheme_t variable
  */
 /*----------------------------------------------------------------------------*/
 
-cs_space_scheme_t
+cs_param_space_scheme_t
 cs_equation_get_space_scheme(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/

@@ -31,7 +31,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo.h"
+#include "cs_flag.h"
 #include "cs_param.h"
 #include "cs_xdef.h"
 #include "cs_xdef_eval.h"
@@ -51,9 +51,10 @@ BEGIN_C_DECLS
 /* Type of property considered */
 typedef enum {
 
-  CS_PROPERTY_ISO,     // isotropic
-  CS_PROPERTY_ORTHO,   // orthotropic
-  CS_PROPERTY_ANISO,   // anisotropic
+  CS_PROPERTY_ISO,      /* isotropic */
+  CS_PROPERTY_ORTHO,    /* orthotropic */
+  CS_PROPERTY_ANISO,    /* anisotropic */
+
   CS_PROPERTY_N_TYPES
 
 } cs_property_type_t;
@@ -61,19 +62,21 @@ typedef enum {
 /* Set of parameters attached to a property */
 typedef struct {
 
-  char  *restrict  name;
-  int              id;
-  cs_flag_t        state_flag;
+  char  *restrict      name;
+  int                  id;
+  cs_flag_t            state_flag;
 
   /* The number of values to set depends on the type of property
       isotropic   = 1, orthotropic = 3, anisotropic = 9  */
   cs_property_type_t   type;
 
   /* Property is up to now only defined on the whole domain (volume) */
-  int                  n_definitions;  /* Current number of definions used */
+  int                  n_definitions;  /* Current number of definitions used */
   cs_xdef_t          **defs;           /* List of definitions */
-  short int           *def_ids;        /* Store the definition id for each cell,
-                                          NULL is only one definition is set */
+
+  /* Store the definition id for each cell, NULL is only one
+     definition is set */
+  short int           *def_ids;
 
   /* Function pointers to handle generic tasks related to a property. There
      is one function related to each definition. Some functions may not be

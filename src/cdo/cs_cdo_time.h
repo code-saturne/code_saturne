@@ -33,7 +33,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_cdo.h"
 #include "cs_cdo_local.h"
 #include "cs_equation_param.h"
 

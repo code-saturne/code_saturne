@@ -30,10 +30,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_cdo_bc.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_cdo_time.h"
 #include "cs_equation_param.h"
+#include "cs_flag.h"
 #include "cs_matrix.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"

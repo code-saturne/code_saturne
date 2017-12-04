@@ -24,8 +24,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -55,13 +53,12 @@
 #include "cs_volume_zone.h"
 
 /* CDO module */
-#include "cs_cdo.h"
 #include "cs_domain.h"
 #include "cs_equation.h"
 #include "cs_gwf.h"
 #include "cs_param.h"
+#include "cs_param_cdo.h"
 #include "cs_quadrature.h"
-#include "cs_sla.h"
 #include "cs_walldistance.h"
 
 /*----------------------------------------------------------------------------
@@ -78,7 +75,6 @@ BEGIN_C_DECLS
  * Local definitions
  *============================================================================*/
 
-static const char cs_cdoversion[] = "0.9.2";
 static int  cs_cdo_ts_id;
 
 /*============================================================================
@@ -93,17 +89,13 @@ static int  cs_cdo_ts_id;
 /*!
  * \brief  Initialize the computational domain when CDO/HHO schemes are
  *         activated
- *
- * \param[in]  activation_mode   integer for tagging a mode
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_initialize_setup(int  activation_mode)
+cs_cdo_initialize_setup(void)
 {
-  cs_cdo_activation_mode = activation_mode;
-
-  if (activation_mode == CS_CDO_OFF)
+  if (cs_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
     return;
 
   /* Timer statistics */
@@ -111,20 +103,13 @@ cs_cdo_initialize_setup(int  activation_mode)
   cs_timer_stats_start(cs_cdo_ts_id);
 
   /* Store the fact that the CDO/HHO module is activated */
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\n -msg- CDO/HHO module is activated *** Experimental ***");
-  cs_log_printf(CS_LOG_DEFAULT, "\n -msg- CDO.tag  %s\n", cs_cdoversion);
+  cs_param_cdo_log();
 
   cs_timer_t t0 = cs_timer_time();
 
   /* Initialization of several modules */
   cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
   cs_quadrature_setup();         /* Compute constant used in quadrature rules */
-
-  /* User-defined settings and default initializations
-     WARNING: Change the order of call to the following routines with care
-              This may incur bugs */
-  cs_user_cdo_add_mesh_locations();
 
   /* Create a new structure for the computational domain */
   cs_glob_domain = cs_domain_create();
@@ -186,7 +171,7 @@ void
 cs_cdo_initialize_structures(cs_mesh_t             *m,
                              cs_mesh_quantities_t  *mq)
 {
-  if (cs_cdo_activation_mode == CS_CDO_OFF)
+  if (cs_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
     return;
 
   cs_timer_t  t0 = cs_timer_time();
@@ -233,7 +218,7 @@ cs_cdo_initialize_structures(cs_mesh_t             *m,
 void
 cs_cdo_finalize(void)
 {
-  if (cs_cdo_activation_mode == CS_CDO_OFF)
+  if (cs_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
     return;
 
   cs_domain_t  *domain = cs_glob_domain;
@@ -252,10 +237,8 @@ cs_cdo_finalize(void)
   assert(domain == NULL);
   cs_glob_domain = NULL;
 
-  cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
-  cs_log_printf(CS_LOG_DEFAULT, "#\tExit CDO Module\n");
-  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
-  cs_log_printf_flush(CS_LOG_DEFAULT);
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\n  Finalize and free CDO-related structures.\n");
 
   cs_timer_stats_stop(cs_cdo_ts_id);
 }
@@ -269,7 +252,7 @@ cs_cdo_finalize(void)
 void
 cs_cdo_main(void)
 {
-  assert(cs_cdo_activation_mode != CS_CDO_OFF);
+  assert(cs_param_cdo_mode != CS_PARAM_CDO_MODE_OFF);
 
   cs_timer_t t0 = cs_timer_time();
 
@@ -318,9 +301,12 @@ cs_cdo_main(void)
                 "<CDO> Total runtime", time_count.wall_nsec*1e-9);
 
   cs_timer_stats_stop(cs_cdo_ts_id);
-  if (cs_glob_rank_id <= 0)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n  --> Exit CDO module: simulation completed.\n\n");
+  if (cs_glob_rank_id <= 0) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_DEFAULT, "#\tExit CDO core module\n");
+    cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
+    cs_log_printf_flush(CS_LOG_DEFAULT);
+  }
 
   return;
 }

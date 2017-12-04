@@ -1151,11 +1151,11 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
   CS_UNUSED(fm);
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_PEQ |
                       CS_CDO_LOCAL_DFQ));
 
-  const cs_param_advection_t  a_info = eqp->advection_info;
+  const cs_param_advection_scheme_t  adv_scheme = eqp->adv_scheme;
 
   /* Initialize the local matrix structure */
   cs_sdm_t  *adv = cb->loc;
@@ -1163,7 +1163,7 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->advection_field, fluxes);
+  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1187,7 +1187,7 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
   } // Loop on cell edges
 
   /* Set the function to compute the weight of upwinding */
-  _upwind_weight_t  *get_weight = _assign_weight_func(a_info.scheme);
+  _upwind_weight_t  *get_weight = _assign_weight_func(adv_scheme);
 
   /* Define the local operator for advection */
   _build_cell_vpfd_upw(cm, get_weight, fluxes, upwcoef, adv);
@@ -1224,10 +1224,10 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
 
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
 
-  const cs_param_advection_t  a_info = eqp->advection_info;
+  const cs_param_advection_scheme_t  adv_scheme = eqp->adv_scheme;
 
   /* Initialize the local matrix structure */
   cs_sdm_t  *adv = cb->loc;
@@ -1235,7 +1235,7 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->advection_field, fluxes);
+  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1244,7 +1244,7 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
     upwcoef[e] = fluxes[e]/cm->dface[e].meas;
 
   /* Set the function to compute the weight of upwinding */
-  _upwind_weight_t  *get_weight = _assign_weight_func(a_info.scheme);
+  _upwind_weight_t  *get_weight = _assign_weight_func(adv_scheme);
 
   /* Define the local operator for advection */
   _build_cell_vpfd_upw(cm, get_weight, fluxes, upwcoef, adv);
@@ -1281,7 +1281,7 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
 
   /* Sanity check */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB); // Sanity check
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_EV));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_EV));
 
 
   /* Initialize the local matrix structure */
@@ -1290,7 +1290,7 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->advection_field, fluxes);
+  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, fluxes);
 
   /* Define the local operator for advection */
   _build_cell_vpfd_cen(cm, fluxes, adv);
@@ -1327,10 +1327,10 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
 
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ));
 
-  const cs_param_advection_t  a_info = eqp->advection_info;
+  const cs_param_advection_scheme_t  adv_scheme = eqp->adv_scheme;
 
   /* Initialize the local matrix structure */
   cs_sdm_t  *adv = cb->loc;
@@ -1338,7 +1338,7 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->advection_field, fluxes);
+  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1362,7 +1362,7 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
   } // Loop on cell edges
 
   /* Set the function to compute the weight of upwinding */
-  _upwind_weight_t  *get_weight = _assign_weight_func(a_info.scheme);
+  _upwind_weight_t  *get_weight = _assign_weight_func(adv_scheme);
 
   /* Define the local operator for advection */
   _build_cell_epcd_upw(cm, get_weight, fluxes, upwcoef,        adv);
@@ -1398,10 +1398,10 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
   CS_UNUSED(fm);
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB); // Sanity check
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV));
 
-  const cs_param_advection_t  a_info = eqp->advection_info;
+  const cs_param_advection_scheme_t  adv_scheme = eqp->adv_scheme;
 
   /* Initialize the local matrix structure */
   cs_sdm_t  *adv = cb->loc;
@@ -1409,7 +1409,7 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->advection_field, fluxes);
+  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1418,7 +1418,7 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
     upwcoef[e] = fluxes[e]/cm->dface[e].meas;
 
   /* Set the function to compute the weight of upwinding */
-  _upwind_weight_t  *get_weight = _assign_weight_func(a_info.scheme);
+  _upwind_weight_t  *get_weight = _assign_weight_func(adv_scheme);
 
   /* Define the local operator for advection */
   _build_cell_epcd_upw(cm, get_weight, fluxes, upwcoef, adv);
@@ -1455,7 +1455,7 @@ cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
 
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_EV));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_EV));
 
   /* Initialize the local matrix structure */
   cs_sdm_t  *adv = cb->loc;
@@ -1463,7 +1463,7 @@ cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->advection_field, fluxes);
+  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, fluxes);
 
   /* Define the local operator for advection */
   _build_cell_epcd_cen(cm, fluxes, adv);
@@ -1497,10 +1497,10 @@ cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
 {
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB);
-  assert(eqp->advection_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
-  assert(eqp->advection_info.scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
-  assert(cs_advection_field_is_cellwise(eqp->advection_field));
-  assert(cs_test_flag(cm->flag,
+  assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
+  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
+  assert(cs_advection_field_is_cellwise(eqp->adv_field));
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ |
                       CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_EF  | CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_HFQ));
@@ -1513,7 +1513,7 @@ cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
 
   /* Use a cellwise constant approximation of the advection field */
   cs_nvec3_t  adv_cell;
-  cs_advection_field_in_cell(cm, eqp->advection_field, &adv_cell);
+  cs_advection_field_in_cell(cm, eqp->adv_field, &adv_cell);
 
   if (adv_cell.meas < cs_math_get_machine_epsilon())
     return;
@@ -1624,9 +1624,9 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
 {
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB);
-  assert(eqp->advection_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
-  assert(eqp->advection_info.scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
-  assert(cs_test_flag(cm->flag,
+  assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
+  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ |
                       CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_EF  | CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_HFQ));
@@ -1639,7 +1639,7 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
 
   /* Use a cellwise constant approximation of the advection field */
   cs_nvec3_t  adv_cell;
-  cs_advection_field_in_cell(cm, eqp->advection_field, &adv_cell);
+  cs_advection_field_in_cell(cm, eqp->adv_field, &adv_cell);
 
   if (adv_cell.meas < cs_math_get_machine_epsilon())
     return;
@@ -1680,7 +1680,7 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
     for (short int e = 0; e < fm->n_ef; e++) tef[e] = fm->tef[e];
 
     /* Initialize and update the face matrix inside (build bgvf inside) */
-    _vcb_consistent_part(eqp->advection_field, adv_cell, cm, fm, cb);
+    _vcb_consistent_part(eqp->adv_field, adv_cell, cm, fm, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 2
     _assemble_face(cm, fm, af, cons);
@@ -1745,18 +1745,17 @@ cs_cdo_advection_add_vb_bc_cw(const cs_cell_mesh_t       *cm,
   CS_UNUSED(fm);
 
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV));
 
   cs_real_t  *tmp_rhs = cb->values;
   cs_real_t  *mat_diag = cb->values + cm->n_vc;
 
-  const cs_adv_field_t  *adv_field = eqp->advection_field;
-  const cs_param_advection_t  a_info = eqp->advection_info;
+  const cs_adv_field_t  *adv_field = eqp->adv_field;
 
   _update_vb_system_with_bc_t  *update_bc = NULL;
-  if (a_info.formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
+  if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
     update_bc = _update_with_bc_vb_csv;
   else
     update_bc = _update_with_bc_vb_noc;
@@ -1822,18 +1821,17 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
   CS_UNUSED(fm);
 
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV));
 
   cs_real_t  *tmp_rhs = cb->values;
   cs_real_t  *mat_diag = cb->values + cm->n_vc;
 
-  const cs_adv_field_t  *adv_field = eqp->advection_field;
-  const cs_param_advection_t  a_info = eqp->advection_info;
+  const cs_adv_field_t  *adv_field = eqp->adv_field;
 
   _update_vb_system_with_bc_t  *update_bc = NULL;
-  if (a_info.formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
+  if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
     update_bc = _update_with_bc_vb_csv;
   else
     update_bc = _update_with_bc_vb_noc;
@@ -1895,13 +1893,13 @@ cs_cdo_advection_add_vcb_bc_cw(const cs_cell_mesh_t       *cm,
   /* Sanity checks */
   assert(csys != NULL && cm != NULL && eqp != NULL);
   assert(csys->mat->n_rows == cm->n_vc + 1);
-  assert(eqp->advection_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
-  assert(eqp->advection_info.scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
-  assert(cs_test_flag(cm->flag,
+  assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
+  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  const cs_adv_field_t  *adv_field = eqp->advection_field;
+  const cs_adv_field_t  *adv_field = eqp->adv_field;
 
   /* Retrieve the value of the advection field in the current cell */
   cs_nvec3_t  adv_vec;
@@ -1953,15 +1951,15 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
   /* Sanity checks */
   assert(csys != NULL && cm != NULL && eqp != NULL);
   assert(csys->mat->n_rows == cm->n_vc + 1);
-  assert(eqp->advection_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
-  assert(eqp->advection_info.scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
-  assert(cs_test_flag(cm->flag,
+  assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
+  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
   cs_nvec3_t  adv_vec;
 
-  const cs_adv_field_t  *adv_field = eqp->advection_field;
+  const cs_adv_field_t  *adv_field = eqp->adv_field;
 
   /* Loop on border faces */
   for (short int i = 0; i < csys->n_bc_faces; i++) {
@@ -2014,15 +2012,15 @@ cs_cdo_advection_add_vcb_bc_analytic(const cs_cell_mesh_t        *cm,
   cs_real_3_t  xg;
   cs_nvec3_t  adv_vec;
   cs_sdm_t  *mf = cb->aux;
-  const cs_adv_field_t  *adv_field = eqp->advection_field;
+  const cs_adv_field_t  *adv_field = eqp->adv_field;
 
   /* Sanity checks */
   assert(cs_advection_field_get_deftype(adv_field)
          == CS_XDEF_BY_ANALYTIC_FUNCTION);
   assert(csys->mat->n_rows == cm->n_vc + 1);
-  assert(eqp->advection_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
-  assert(eqp->advection_info.scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
-  assert(cs_test_flag(cm->flag,
+  assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
+  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
@@ -2106,27 +2104,26 @@ cs_cdo_advection_add_vcb_bc_analytic(const cs_cell_mesh_t        *cm,
  *          a related Peclet number
  *
  * \param[in]      cdoq      pointer to the cdo quantities structure
- * \param[in]      a_info    set of options for the advection term
- * \param[in, out] coefval   array of real numbers to fill
- *                           (in)  Peclet number in each cell
- *                           (out) value of the upwind coefficient
+ * \param[in]      scheme    type of scheme used for the advection term
+ * \param[in, out] coefval   pointer to the pointer of real numbers to fill
+ *                           in: Peclet number in each cell
+ *                           out: value of the upwind coefficient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_upwind_coef_cell(const cs_cdo_quantities_t   *cdoq,
-                                      const cs_param_advection_t   a_info,
-                                      cs_real_t                    coefval[])
+cs_cdo_advection_get_upwind_coef_cell(const cs_cdo_quantities_t    *cdoq,
+                                      cs_param_advection_scheme_t   scheme,
+                                      cs_real_t                     coefval[])
 {
   /* Sanity check */
   assert(coefval != NULL);
 
   /* Set the function to compute the weight of upwinding */
-  _upwind_weight_t  *get_weight = _assign_weight_func(a_info.scheme);
+  _upwind_weight_t  *get_weight = _assign_weight_func(scheme);
 
   for (cs_lnum_t  c_id = 0; c_id < cdoq->n_cells; c_id++)
     coefval[c_id] = get_weight(coefval[c_id]);
-
 }
 
 /*----------------------------------------------------------------------------*/

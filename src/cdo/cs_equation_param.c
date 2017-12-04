@@ -91,7 +91,6 @@ static cs_param_itsol_t _itsol_info_by_default = {
   CS_PARAM_ITSOL_BICG,      // iterative solver
   2500,                   // max. number of iterations
   1e-12,                  // stopping criterion on the accuracy
-  150,                    // output frequency
   false                   // normalization of the residual (true or false)
 };
 
@@ -355,8 +354,8 @@ cs_equation_param_create(cs_equation_type_t     type,
   eqp->do_lumping = false;
 
   /* Initial condition (zero value by default) */
-  eqp->n_ic_desc = 0;
-  eqp->ic_desc = NULL;
+  eqp->n_ic_defs = 0;
+  eqp->ic_defs = NULL;
 
   /* Diffusion term */
   eqp->diffusion_property = NULL;
@@ -368,10 +367,9 @@ cs_equation_param_create(cs_equation_type_t     type,
   eqp->diffusion_hodge.coef = 1./3.; // DGA algo.
 
   /* Advection term */
-  eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
-  eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
-  eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
-  eqp->advection_field = NULL;
+  eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
+  eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+  eqp->adv_field = NULL;
 
   /* No reaction term by default */
   eqp->reaction_hodge.is_unity = false;
@@ -391,8 +389,8 @@ cs_equation_param_create(cs_equation_type_t     type,
      One assigns a boundary condition by default */
   eqp->default_bc = default_bc;
   eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
-  eqp->n_bc_desc = 0;
-  eqp->bc_desc = NULL;
+  eqp->n_bc_defs = 0;
+  eqp->bc_defs = NULL;
 
   /* Settings for driving the linear algebra */
   eqp->algo_info = _algo_info_by_default;
@@ -418,11 +416,11 @@ cs_equation_param_free(cs_equation_param_t     *eqp)
     return NULL;
 
   /* Information related to the definition of the boundary conditions */
-  if (eqp->n_bc_desc > 0) {
+  if (eqp->n_bc_defs > 0) {
 
-    for (int i = 0; i < eqp->n_bc_desc; i++)
-      eqp->bc_desc[i] = cs_xdef_free(eqp->bc_desc[i]);
-    BFT_FREE(eqp->bc_desc);
+    for (int i = 0; i < eqp->n_bc_defs; i++)
+      eqp->bc_defs[i] = cs_xdef_free(eqp->bc_defs[i]);
+    BFT_FREE(eqp->bc_defs);
 
   }
 
@@ -445,11 +443,11 @@ cs_equation_param_free(cs_equation_param_t     *eqp)
   }
 
   /* Information related to the definition of initial conditions */
-  if (eqp->n_ic_desc > 0) {
+  if (eqp->n_ic_defs > 0) {
 
-    for (int i = 0; i < eqp->n_ic_desc; i++)
-      eqp->ic_desc[i] = cs_xdef_free(eqp->ic_desc[i]);
-    BFT_FREE(eqp->ic_desc);
+    for (int i = 0; i < eqp->n_ic_defs; i++)
+      eqp->ic_defs[i] = cs_xdef_free(eqp->ic_defs[i]);
+    BFT_FREE(eqp->ic_defs);
 
   }
 
@@ -546,10 +544,10 @@ cs_equation_param_summary(const char                  *eqname,
                   eqname, cs_param_get_bc_name(eqp->default_bc),
                   cs_param_get_bc_enforcement_name(eqp->enforcement));
     cs_log_printf(CS_LOG_SETUP, "    <%s/n_bc_definitions> %d\n",
-                  eqname, eqp->n_bc_desc);
+                  eqname, eqp->n_bc_defs);
     if (eqp->verbosity > 1) {
-      for (int id = 0; id < eqp->n_bc_desc; id++)
-        cs_xdef_log(eqp->bc_desc[id]);
+      for (int id = 0; id < eqp->n_bc_defs; id++)
+        cs_xdef_log(eqp->bc_defs[id]);
     }
   }
 
@@ -560,10 +558,10 @@ cs_equation_param_summary(const char                  *eqname,
     cs_log_printf(CS_LOG_SETUP, "\n  <%s/Unsteady term>\n", eqname);
     cs_log_printf(CS_LOG_SETUP,
                   "  <%s/Initial.Condition> number of definitions %d\n",
-                  eqname, eqp->n_ic_desc);
+                  eqname, eqp->n_ic_defs);
 
-    for (int i = 0; i < eqp->n_ic_desc; i++)
-      cs_xdef_log(eqp->ic_desc[i]);
+    for (int i = 0; i < eqp->n_ic_defs; i++)
+      cs_xdef_log(eqp->ic_defs[i]);
 
     cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Scheme> ", eqname);
     switch (eqp->time_scheme) {
@@ -628,15 +626,13 @@ cs_equation_param_summary(const char                  *eqname,
 
   if (convection) {
 
-    const cs_param_advection_t  a_info = eqp->advection_info;
-
     cs_log_printf(CS_LOG_SETUP, "\n  <%s/Advection term>\n", eqname);
     cs_log_printf(CS_LOG_SETUP, "  <Advection field>  %s\n",
-                  cs_advection_field_get_name(eqp->advection_field));
+                  cs_advection_field_get_name(eqp->adv_field));
 
     if (eqp->verbosity > 0) {
       cs_log_printf(CS_LOG_SETUP, "  <%s/Advection.Formulation>", eqname);
-      switch(a_info.formulation) {
+      switch(eqp->adv_formulation) {
       case CS_PARAM_ADVECTION_FORM_CONSERV:
         cs_log_printf(CS_LOG_SETUP, " Conservative\n");
         break;
@@ -649,7 +645,7 @@ cs_equation_param_summary(const char                  *eqname,
       }
 
       cs_log_printf(CS_LOG_SETUP, "  <%s/Advection.Scheme> ", eqname);
-      switch(a_info.scheme) {
+      switch(eqp->adv_scheme) {
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
         cs_log_printf(CS_LOG_SETUP, " centered\n");
         break;
@@ -911,7 +907,6 @@ cs_equation_param_set_sles(const char                 *eqname,
   if (eqp->sles_verbosity > 1) {
 
     cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
-    cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
 
     /* Set verbosity */
     cs_sles_set_verbosity(sles, eqp->sles_verbosity);

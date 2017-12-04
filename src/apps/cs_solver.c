@@ -84,6 +84,7 @@
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_smoother.h"
 #include "cs_opts.h"
+#include "cs_param_cdo.h"
 #include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_physical_properties.h"
@@ -232,7 +233,7 @@ cs_run(void)
   cs_user_zones();
 
   /* Activation of the CDO module */
-  opts.cdo = cs_user_cdo_activated();
+  cs_param_cdo_mode = cs_user_cdo_activated();
 
   /* Initialize Fortran API and calculation setup */
 
@@ -244,9 +245,10 @@ cs_run(void)
 
     cs_gui_init();
 
-    cs_cdo_initialize_setup(opts.cdo);
+    cs_cdo_initialize_setup();
 
-    if (opts.cdo == CS_CDO_OFF || opts.cdo == CS_CDO_WITH_FV) {
+    if (cs_param_cdo_mode == CS_PARAM_CDO_MODE_OFF ||
+        cs_param_cdo_mode == CS_PARAM_CDO_MODE_WITH_FV) {
 
       CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
 
@@ -377,7 +379,7 @@ cs_run(void)
 
       if (cs_user_solver_set() == 0) {
 
-        if (opts.cdo == CS_CDO_ONLY) {
+        if (cs_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY) {
 
           /* Only C language is called within CDO */
 

@@ -332,6 +332,14 @@ typedef struct {
 
 } cs_double_int_t;
 
+/* Vector-valued quantity stored using its measure (i.e. length) and
+   its direction given by a unitary vector */
+typedef struct {
+
+  double  meas;
+  double  unitv[3];
+
+} cs_nvec3_t;
 
 /* Mappings to MPI datatypes */
 /*---------------------------*/

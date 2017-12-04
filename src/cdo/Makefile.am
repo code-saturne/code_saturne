@@ -50,7 +50,6 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_advection_field.h \
 cs_basis_func.h \
-cs_cdo.h \
 cs_cdo_advection.h \
 cs_cdo_bc.h \
 cs_cdo_connect.h \
@@ -63,6 +62,7 @@ cs_cdofb_scaleq.h \
 cs_cdofb_vecteq.h \
 cs_cdovb_scaleq.h \
 cs_cdovcb_scaleq.h \
+cs_dbg.h \
 cs_domain.h \
 cs_domain_post.h \
 cs_equation.h \
@@ -70,6 +70,7 @@ cs_equation_bc.h \
 cs_equation_common.h \
 cs_equation_param.h \
 cs_evaluate.h \
+cs_flag.h \
 cs_gwf.h \
 cs_gwf_soil.h \
 cs_gwf_tracer.h \
@@ -78,6 +79,7 @@ cs_hho_scaleq.h \
 cs_hodge.h \
 cs_mesh_deform.h \
 cs_param.h \
+cs_param_cdo.h \
 cs_property.h \
 cs_quadrature.h \
 cs_reco.h \
@@ -95,7 +97,6 @@ noinst_LTLIBRARIES = libcscdo.la
 libcscdo_la_SOURCES = \
 cs_advection_field.c \
 cs_basis_func.c \
-cs_cdo.c \
 cs_cdo_advection.c \
 cs_cdo_bc.c \
 cs_cdo_connect.c \
@@ -108,6 +109,7 @@ cs_cdofb_scaleq.c \
 cs_cdofb_vecteq.c \
 cs_cdovb_scaleq.c \
 cs_cdovcb_scaleq.c \
+cs_dbg.c \
 cs_domain.c \
 cs_domain_post.c \
 cs_equation.c \
@@ -115,6 +117,7 @@ cs_equation_bc.c \
 cs_equation_common.c \
 cs_equation_param.c \
 cs_evaluate.c \
+cs_flag.c \
 cs_gwf.c \
 cs_gwf_soil.c \
 cs_gwf_tracer.c \
@@ -123,6 +126,7 @@ cs_hho_scaleq.c \
 cs_hodge.c \
 cs_mesh_deform.c \
 cs_param.c \
+cs_param_cdo.c \
 cs_property.c \
 cs_quadrature.c \
 cs_reco.c \

@@ -31,13 +31,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "fvm_defs.h"
+
 #include "cs_base.h"
-#include "cs_cdo.h"
+#include "cs_flag.h"
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
 #include "cs_range_set.h"
-
-#include "fvm_defs.h"
 
 /*----------------------------------------------------------------------------*/
 

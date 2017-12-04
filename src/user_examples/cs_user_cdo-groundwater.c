@@ -173,41 +173,11 @@ get_tracer_sol(cs_real_t          time,
 int
 cs_user_cdo_activated(void)
 {
-  /* CS_CDO_OFF     = -1 --> CDO schemes are not used (no activation)
-     CS_CDO_WITH_FV =  0 --> CDO schemes are used as well as finite volume
-     CS_CDO_ONLY    =  1 --> CDO schemes are exclusively used */
+  /* CS_PARAM_CDO_MODE_OFF     = -1 --> CDO schemes are not used (no activation)
+     CS_PARAM_CDO_MODE_WITH_FV =  0 --> Both CDO schemes and FV activated
+     CS_PARAM_CDO_MODE_ONLY    =  1 --> CDO schemes are exclusively used */
 
-  return  CS_CDO_ONLY;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify additional zones and/or mesh locations
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_add_mesh_locations(void)
-{
-  /* ===========================
-     Define mesh locations
-     ===========================
-
-     By default several mesh locations are predefined
-     >> "cells"
-     >> "interior_faces"
-     >> "boundary_faces"
-     >> "vertices"  */
-
-  /* For boundary conditions */
-  cs_boundary_zone_define("left", "1:arriere", 0);
-  cs_boundary_zone_define("right", "2:avant", 0);
-
-  /* For soil */
-  cs_volume_zone_define("soil1", "2:volume_arriere", CS_VOLUME_ZONE_GWF_SOIL);
-  cs_volume_zone_define("soil2", "1:volume_avant", CS_VOLUME_ZONE_GWF_SOIL);
-
-  return;
+  return  CS_PARAM_CDO_MODE_ONLY;
 }
 
 /*----------------------------------------------------------------------------*/

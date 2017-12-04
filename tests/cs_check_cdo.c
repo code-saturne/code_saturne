@@ -1166,7 +1166,7 @@ _test_cdovb_schemes(FILE                *out,
   /* Constant advection field */
   cs_real_3_t  vector_field = {1., 0., 0.};
   cs_advection_field_def_by_value(beta, vector_field);
-  eqp->advection_field = beta;
+  eqp->adv_field = beta;
 
   /* Free memory */
   cs_advection_field_destroy_all();
@@ -1916,9 +1916,9 @@ _main_hho_schemes(FILE             *out_hho,
   cs_hho_scaleq_get(&csys, &cb, &hhob);
 
   int order = 0;
-  if (flag & CS_SCHEME_FLAG_POLY2)
+  if (flag & CS_FLAG_SCHEME_POLY2)
     order = 2;
-  else if (flag & CS_SCHEME_FLAG_POLY1)
+  else if (flag & CS_FLAG_SCHEME_POLY1)
     order = 1;
 
   _test_basis_functions(out_basis, order, cm, cb);
@@ -2080,9 +2080,9 @@ main(int    argc,
           inertia[1][0], inertia[1][1], inertia[1][2],
           inertia[2][0], inertia[2][1], inertia[2][2]);
 
-  _main_hho_schemes(hho, hexa, CS_SCHEME_FLAG_POLY0, cm, fm);
-  _main_hho_schemes(hho, hexa, CS_SCHEME_FLAG_POLY1, cm, fm);
-  _main_hho_schemes(hho, hexa, CS_SCHEME_FLAG_POLY2, cm, fm);
+  _main_hho_schemes(hho, hexa, CS_FLAG_SCHEME_POLY0, cm, fm);
+  _main_hho_schemes(hho, hexa, CS_FLAG_SCHEME_POLY1, cm, fm);
+  _main_hho_schemes(hho, hexa, CS_FLAG_SCHEME_POLY2, cm, fm);
 
   /* ========== */
   /* TEST TETRA */
@@ -2105,9 +2105,9 @@ main(int    argc,
 
   _main_cdovb_schemes(tetra, 1, cm, fm);
 
-  _main_hho_schemes(hho, tetra, CS_SCHEME_FLAG_POLY0, cm, fm);
-  _main_hho_schemes(hho, tetra, CS_SCHEME_FLAG_POLY1, cm, fm);
-  _main_hho_schemes(hho, tetra, CS_SCHEME_FLAG_POLY2, cm, fm);
+  _main_hho_schemes(hho, tetra, CS_FLAG_SCHEME_POLY0, cm, fm);
+  _main_hho_schemes(hho, tetra, CS_FLAG_SCHEME_POLY1, cm, fm);
+  _main_hho_schemes(hho, tetra, CS_FLAG_SCHEME_POLY2, cm, fm);
 
   /* Free memory */
   cs_cell_mesh_free(&cm);

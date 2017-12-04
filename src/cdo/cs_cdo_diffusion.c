@@ -795,7 +795,7 @@ cs_cdo_diffusion_vcost_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
                                       double                    *flx)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_EV));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_EV));
 
   /* Cellwise DoFs related to the discrete gradient (size: n_ec) */
   double  *gec = cb->values;
@@ -833,7 +833,7 @@ cs_cdo_diffusion_vcost_get_pc_flux(const cs_cell_mesh_t      *cm,
                                    double                    *flx)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
 
   cs_real_t  grd[3] = {0., 0., 0.};
 
@@ -876,7 +876,7 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
                                     cs_real_t              *flx)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_EFQ));
 
@@ -978,7 +978,7 @@ cs_cdo_diffusion_wbs_get_pc_flux(const cs_cell_mesh_t   *cm,
                                  cs_real_t              *flx)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_HFQ));
 

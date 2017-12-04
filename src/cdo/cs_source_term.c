@@ -285,7 +285,7 @@ cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 cs_flag_t
-cs_source_term_set_default_flag(cs_space_scheme_t   scheme)
+cs_source_term_set_default_flag(cs_param_space_scheme_t   scheme)
 {
   cs_flag_t  meta_flag = 0;
 
@@ -405,7 +405,7 @@ cs_source_term_get_flag(const cs_xdef_t  *st)
 /*----------------------------------------------------------------------------*/
 
 cs_flag_t
-cs_source_term_init(cs_space_scheme_t             space_scheme,
+cs_source_term_init(cs_param_space_scheme_t       space_scheme,
                     const int                     n_source_terms,
                     const cs_xdef_t             **source_terms,
                     cs_source_term_cellwise_t    *compute_source[],
@@ -739,10 +739,10 @@ cs_source_term_compute_from_density(cs_flag_t                loc,
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case\n", __func__);
 
   cs_lnum_t n_ent = 0;
-  if (cs_test_flag(loc, cs_cdo_dual_cell) ||
-      cs_test_flag(loc, cs_cdo_primal_vtx))
+  if (cs_flag_test(loc, cs_flag_dual_cell) ||
+      cs_flag_test(loc, cs_flag_primal_vtx))
     n_ent = quant->n_vertices;
-  else if (cs_test_flag(loc, cs_cdo_primal_cell))
+  else if (cs_flag_test(loc, cs_flag_primal_cell))
     n_ent = quant->n_cells;
   else
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case\n", __func__);
@@ -796,10 +796,10 @@ cs_source_term_compute_from_potential(cs_flag_t                loc,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
 
   cs_lnum_t n_ent = 0;
-  if (cs_test_flag(loc, cs_cdo_dual_cell) ||
-      cs_test_flag(loc, cs_cdo_primal_vtx))
+  if (cs_flag_test(loc, cs_flag_dual_cell) ||
+      cs_flag_test(loc, cs_flag_primal_vtx))
     n_ent = quant->n_vertices;
-  else if (cs_test_flag(loc, cs_cdo_primal_cell))
+  else if (cs_flag_test(loc, cs_flag_primal_cell))
     n_ent = quant->n_cells;
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -861,7 +861,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL && cb->hdg != NULL);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV));
 
   const cs_real_t *s_input = (const cs_real_t *)source->input;
   const cs_real_t  pot_value = s_input[0];
@@ -910,7 +910,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL && cb->hdg != NULL);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV));
 
   const double  tcur = cs_time_step->t_cur;
 
@@ -959,7 +959,7 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PVQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
 
   const cs_real_t *s_input = (const cs_real_t *)source->input;
   const cs_real_t  density_value = s_input[0];
@@ -998,7 +998,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ |
                       CS_CDO_LOCAL_FE  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
@@ -1089,7 +1089,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
@@ -1168,7 +1168,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE  |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_PVQ |
                       CS_CDO_LOCAL_PEQ));
@@ -1371,7 +1371,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_EV));
 
@@ -1860,7 +1860,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL && input != NULL);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 

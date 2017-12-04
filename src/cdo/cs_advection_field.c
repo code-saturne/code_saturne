@@ -43,12 +43,13 @@
 
 #include <bft_mem.h>
 
-#include "cs_xdef.h"
-#include "cs_math.h"
-#include "cs_mesh_location.h"
 #include "cs_field.h"
 #include "cs_log.h"
+#include "cs_math.h"
+#include "cs_mesh_location.h"
+#include "cs_param_cdo.h"
 #include "cs_reco.h"
+#include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -933,7 +934,7 @@ cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
       cs_nvec3(cell_vector, &adv_vect);
 
       /* Sanity check */
-      assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
+      assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
 
       /* Loop on cell edges */
       for (short int e = 0; e < cm->n_ec; e++)
@@ -945,7 +946,7 @@ cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     {
-      assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_EFQ |
+      assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_EFQ |
                           CS_CDO_LOCAL_PFQ));
 
       cs_quadrature_type_t  qtype = cs_xdef_get_quadrature(def);
@@ -1040,10 +1041,10 @@ cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
       cs_xdef_array_input_t  *input = (cs_xdef_array_input_t *)def->input;
 
       /* Test if location has at least the pattern of the reference support */
-      if (cs_test_flag(input->loc, cs_cdo_dual_face_byc)) {
+      if (cs_flag_test(input->loc, cs_flag_dual_face_byc)) {
 
         /* Sanity check */
-        assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PE));
+        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PE));
 
         const cs_real_t  *flux_array =
           input->values + cs_cdo_connect->c2e->idx[cm->c_id];
@@ -1051,7 +1052,7 @@ cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
           fluxes[e] = flux_array[e];
 
       }
-      else if (cs_test_flag(input->loc, cs_cdo_primal_cell)) {
+      else if (cs_flag_test(input->loc, cs_flag_primal_cell)) {
 
         /* Retrieve the advection field:
            Switch to a cs_nvec3_t representation */
@@ -1059,7 +1060,7 @@ cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
         cs_nvec3(input->values + 3*cm->c_id, &adv_vect);
 
         /* Sanity check */
-        assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
+        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
 
         /* Loop on cell edges */
         for (short int e = 0; e < cm->n_ec; e++)
@@ -1086,7 +1087,7 @@ cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
         cs_nvec3(f->val + 3*cm->c_id, &adv_vect);
 
         /* Sanity check */
-        assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
+        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
 
         /* Loop on cell edges */
         for (short int e = 0; e < cm->n_ec; e++)
@@ -1141,7 +1142,7 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
     return adv_flx;
 
   /* Sanity check */
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ));
 
   cs_xdef_t  *def = adv->definition;
 
@@ -1230,7 +1231,7 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
         cs_xdef_array_input_t  *input = (cs_xdef_array_input_t *)def->input;
 
         /* Test if flag has at least the pattern of the reference support */
-        if (cs_test_flag(input->loc, cs_cdo_dual_face_byc)) {
+        if (cs_flag_test(input->loc, cs_flag_dual_face_byc)) {
 
           const cs_adjacency_t  *c2e = cs_cdo_connect->c2e;
           const cs_real_t  *cell_array = input->values + c2e->idx[cm->c_id];

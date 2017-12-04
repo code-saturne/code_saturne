@@ -1,8 +1,5 @@
-#ifndef __CS_CDO_MAIN_H__
-#define __CS_CDO_MAIN_H__
-
 /*============================================================================
- * Routines for solving equations with CDO discretizations
+ * Routines to handle the definition and usage of material properties
  *============================================================================*/
 
 /*
@@ -28,23 +25,42 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_flag.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-/*============================================================================
- * Macro definitions
+/*=============================================================================
+ * Local Macro definitions and structure definitions
  *============================================================================*/
 
 /*============================================================================
- * Type definitions
+ * Global variables
+ *============================================================================*/
+
+/* Default locations */
+const cs_flag_t  cs_flag_primal_vtx  = CS_FLAG_PRIMAL | CS_FLAG_VERTEX;
+const cs_flag_t  cs_flag_primal_face = CS_FLAG_PRIMAL | CS_FLAG_FACE;
+const cs_flag_t  cs_flag_primal_cell = CS_FLAG_PRIMAL | CS_FLAG_CELL;
+const cs_flag_t  cs_flag_dual_vtx  = CS_FLAG_DUAL | CS_FLAG_VERTEX;
+const cs_flag_t  cs_flag_dual_face = CS_FLAG_DUAL | CS_FLAG_FACE;
+const cs_flag_t  cs_flag_dual_cell = CS_FLAG_DUAL | CS_FLAG_CELL;
+const cs_flag_t  cs_flag_dual_face_byc =
+  CS_FLAG_DUAL | CS_FLAG_FACE | CS_FLAG_BY_CELL;
+
+/*============================================================================
+ * Private function prototypes
  *============================================================================*/
 
 /*============================================================================
@@ -52,50 +68,5 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize the computational domain when CDO/HHO schemes are
- *         activated
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_initialize_setup(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the structures related to the computational domain when
- *         CDO/HHO schemes are activated
- *
- * \param[in, out]  m     pointer to a cs_mesh_t struct.
- * \param[in]       mq    pointer to a cs_quantities_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_initialize_structures(cs_mesh_t             *m,
-                             cs_mesh_quantities_t  *mq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Free all structures allocated during the resolution of CDO/HHO
- *          schemes
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Main program for running a simulation with the CDO kernel
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_main(void);
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-
-#endif /* __CS_CDO_MAIN_H__ */

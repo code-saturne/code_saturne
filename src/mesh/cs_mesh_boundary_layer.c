@@ -202,18 +202,18 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                        *m,
   /* Local activation of CDO module if required */
 
   cs_domain_t  *domain = cs_glob_domain;
-  int cdo_activation_ini = cs_cdo_activation_mode;
+  int cdo_activation_ini = cs_param_cdo_mode;
 
-  if (cdo_activation_ini == CS_CDO_OFF) {
+  if (cdo_activation_ini == CS_PARAM_CDO_MODE_OFF) {
 
     cs_mesh_deform_define_dirichlet_bc_zones(1, z_id);
 
-    cs_cdo_activation_mode = CS_CDO_WITH_FV;
+    cs_param_cdo_mode = CS_PARAM_CDO_MODE_WITH_FV;
     assert(cs_glob_domain == NULL);
 
     cs_mesh_deform_activate();
 
-    cs_cdo_initialize_setup(cs_cdo_activation_mode);
+    cs_cdo_initialize_setup();
     domain = cs_glob_domain;
 
     cs_cdo_initialize_structures(m, mq);
@@ -267,12 +267,12 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                        *m,
 
   CS_TIMER_COUNTER_ADD(time_count, cs_glob_domain->tcs, time_count);
 
-  if (cdo_activation_ini == CS_CDO_OFF) {
+  if (cdo_activation_ini == CS_PARAM_CDO_MODE_OFF) {
     cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
                   "<CDO> Total runtime", time_count.wall_nsec*1e-9);
 
     cs_glob_domain = cs_domain_free(cs_glob_domain);
-    cs_cdo_activation_mode = CS_CDO_OFF;
+    cs_param_cdo_mode = CS_PARAM_CDO_MODE_OFF;
   }
 
   cs_mesh_extrude(m, e, interior_gc);

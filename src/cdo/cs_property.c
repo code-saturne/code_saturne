@@ -45,6 +45,7 @@
 
 #include "cs_defs.h"
 #include "cs_log.h"
+#include "cs_param_cdo.h"
 #include "cs_reco.h"
 #include "cs_volume_zone.h"
 #include "cs_xdef_eval.h"
@@ -761,9 +762,9 @@ cs_property_def_by_array(cs_property_t    *pty,
     pty->get_eval_at_cell[id] = cs_xdef_eval_nd_at_cells_by_array;
   pty->get_eval_at_cell_cw[id] = cs_xdef_eval_cw_cell_by_array;
 
-  if (cs_test_flag(loc, cs_cdo_primal_cell)   == false &&
-      cs_test_flag(loc, cs_cdo_primal_vtx)    == false &&
-      cs_test_flag(loc, cs_cdo_dual_face_byc) == false)
+  if (cs_flag_test(loc, cs_flag_primal_cell)   == false &&
+      cs_flag_test(loc, cs_flag_primal_vtx)    == false &&
+      cs_flag_test(loc, cs_flag_dual_face_byc) == false)
     bft_error(__FILE__, __LINE__, 0,
               " %s: case not available.\n", __func__);
 

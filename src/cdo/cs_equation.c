@@ -47,9 +47,7 @@
 
 #include <bft_mem.h>
 
-#include "cs_base.h"
 #include "cs_boundary_zone.h"
-#include "cs_cdo.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
@@ -479,12 +477,12 @@ _initialize_field_from_ic(cs_equation_t  *eq)
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB ||
       eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB) {
 
-    cs_flag_t  v_flag = dof_flag | cs_cdo_primal_vtx;
+    cs_flag_t  v_flag = dof_flag | cs_flag_primal_vtx;
 
-    for (int def_id = 0; def_id < eqp->n_ic_desc; def_id++) {
+    for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 
       /* Get and then set the definition of the initial condition */
-      const cs_xdef_t  *def = eqp->ic_desc[def_id];
+      const cs_xdef_t  *def = eqp->ic_defs[def_id];
 
       switch(def->type) {
 
@@ -514,14 +512,14 @@ _initialize_field_from_ic(cs_equation_t  *eq)
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB ||
       eqp->space_scheme == CS_SPACE_SCHEME_HHO_P0) {
 
-    cs_flag_t  f_flag = dof_flag | cs_cdo_primal_face;
+    cs_flag_t  f_flag = dof_flag | cs_flag_primal_face;
     cs_real_t  *f_values = eq->get_extra_values(eq->builder);
     assert(f_values != NULL);
 
-    for (int def_id = 0; def_id < eqp->n_ic_desc; def_id++) {
+    for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 
       /* Get and then set the definition of the initial condition */
-      const cs_xdef_t  *def = eqp->ic_desc[def_id];
+      const cs_xdef_t  *def = eqp->ic_defs[def_id];
 
       /* Initialize face-based array */
       switch(def->type) {
@@ -552,16 +550,16 @@ _initialize_field_from_ic(cs_equation_t  *eq)
     /* TODO: HHO */
 
     /* Initialize cell-based array */
-    cs_flag_t  c_flag = dof_flag | cs_cdo_primal_cell;
+    cs_flag_t  c_flag = dof_flag | cs_flag_primal_cell;
     cs_real_t  *c_values = values;
     if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
       c_values = eq->get_extra_values(eq->scheme_context);
     assert(c_values != NULL);
 
-    for (int def_id = 0; def_id < eqp->n_ic_desc; def_id++) {
+    for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 
       /* Get and then set the definition of the initial condition */
-      const cs_xdef_t  *def = eqp->ic_desc[def_id];
+      const cs_xdef_t  *def = eqp->ic_defs[def_id];
 
       /* Initialize cell-based array */
       switch(def->type) {
@@ -803,6 +801,28 @@ cs_equation_by_name(const char    *eqname)
   }
 
   return eq;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the cs_equation_param_t structure with name eqname
+ *         Return NULL if not find
+ *
+ * \param[in]  eqname    name of the equation to find
+ *
+ * \return a pointer to a cs_equation_param_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_equation_param_by_name(const char    *eqname)
+{
+  if (eqname == NULL)
+    return NULL;
+
+  cs_equation_t  *eq = cs_equation_by_name(eqname);
+
+  return eq->param;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1444,7 +1464,7 @@ cs_equation_set_param(cs_equation_t       *eq,
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_VC;
-      eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
     }
     else if (strcmp(val, "cdo_fb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
@@ -1663,8 +1683,8 @@ cs_equation_set_param(cs_equation_t       *eq,
                     " and \"highest\"."), _val);
       }
 
-      for (int i = 0; i < eqp->n_bc_desc; i++)
-        cs_xdef_set_quadrature(eqp->bc_desc[i], qtype);
+      for (int i = 0; i < eqp->n_bc_defs; i++)
+        cs_xdef_set_quadrature(eqp->bc_defs[i], qtype);
 
     }
     break;
@@ -1684,9 +1704,9 @@ cs_equation_set_param(cs_equation_t       *eq,
 
   case CS_EQKEY_ADV_FORMULATION:
     if (strcmp(val, "conservative") == 0)
-      eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
+      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
     else if (strcmp(val, "non_conservative") == 0)
-      eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
+      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -1698,15 +1718,15 @@ cs_equation_set_param(cs_equation_t       *eq,
 
   case CS_EQKEY_ADV_SCHEME:
     if (strcmp(val, "upwind") == 0)
-      eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
     else if (strcmp(val, "samarskii") == 0)
-      eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_SAMARSKII;
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SAMARSKII;
     else if (strcmp(val, "sg") == 0)
-      eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_SG;
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
     else if (strcmp(val, "centered") == 0)
-      eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
     else if (strcmp(val, "cip") == 0)
-      eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -1795,7 +1815,7 @@ cs_equation_link(cs_equation_t       *eq,
   else if (strcmp("advection", keyword) == 0) {
 
     eqp->flag |= CS_EQUATION_CONVECTION;
-    eqp->advection_field = (cs_adv_field_t *)pointer;
+    eqp->adv_field = (cs_adv_field_t *)pointer;
 
   }
   else
@@ -1844,10 +1864,10 @@ cs_equation_add_ic_by_value(cs_equation_t    *eq,
                                         meta_flag,
                                         val);
 
-  int  new_id = eqp->n_ic_desc;
-  eqp->n_ic_desc += 1;
-  BFT_REALLOC(eqp->ic_desc, eqp->n_ic_desc, cs_xdef_t *);
-  eqp->ic_desc[new_id] = d;
+  int  new_id = eqp->n_ic_defs;
+  eqp->n_ic_defs += 1;
+  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
+  eqp->ic_defs[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1888,10 +1908,10 @@ cs_equation_add_ic_by_qov(cs_equation_t    *eq,
                                         meta_flag,
                                         &quantity);
 
-  int  new_id = eqp->n_ic_desc;
-  eqp->n_ic_desc += 1;
-  BFT_REALLOC(eqp->ic_desc, eqp->n_ic_desc, cs_xdef_t *);
-  eqp->ic_desc[new_id] = d;
+  int  new_id = eqp->n_ic_defs;
+  eqp->n_ic_defs += 1;
+  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
+  eqp->ic_defs[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1935,10 +1955,10 @@ cs_equation_add_ic_by_analytic(cs_equation_t        *eq,
                                         meta_flag,
                                         &anai);
 
-  int  new_id = eqp->n_ic_desc;
-  eqp->n_ic_desc += 1;
-  BFT_REALLOC(eqp->ic_desc, eqp->n_ic_desc, cs_xdef_t *);
-  eqp->ic_desc[new_id] = d;
+  int  new_id = eqp->n_ic_defs;
+  eqp->n_ic_defs += 1;
+  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
+  eqp->ic_defs[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1980,10 +2000,10 @@ cs_equation_add_bc_by_value(cs_equation_t              *eq,
                                           cs_cdo_bc_get_flag(bc_type), // meta
                                           (void *)values);
 
-  int  new_id = eqp->n_bc_desc;
-  eqp->n_bc_desc += 1;
-  BFT_REALLOC(eqp->bc_desc, eqp->n_bc_desc, cs_xdef_t *);
-  eqp->bc_desc[new_id] = d;
+  int  new_id = eqp->n_bc_defs;
+  eqp->n_bc_defs += 1;
+  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  eqp->bc_defs[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2011,8 +2031,8 @@ cs_equation_add_bc_by_array(cs_equation_t              *eq,
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-  assert(cs_test_flag(loc, cs_cdo_primal_face) ||
-         cs_test_flag(loc, cs_cdo_primal_vtx));
+  assert(cs_flag_test(loc, cs_flag_primal_face) ||
+         cs_flag_test(loc, cs_flag_primal_vtx));
 
   /* Add a new cs_xdef_t structure */
   cs_equation_param_t  *eqp = eq->param;
@@ -2023,7 +2043,7 @@ cs_equation_add_bc_by_array(cs_equation_t              *eq,
                                   .index = index };
 
   cs_flag_t  state_flag = 0;
-  if (loc == cs_cdo_primal_face)
+  if (loc == cs_flag_primal_face)
     state_flag = CS_FLAG_STATE_FACEWISE;
 
   int dim = eqp->dim;
@@ -2040,10 +2060,10 @@ cs_equation_add_bc_by_array(cs_equation_t              *eq,
                                           cs_cdo_bc_get_flag(bc_type), // meta
                                           (void *)&input);
 
-  int  new_id = eqp->n_bc_desc;
-  eqp->n_bc_desc += 1;
-  BFT_REALLOC(eqp->bc_desc, eqp->n_bc_desc, cs_xdef_t *);
-  eqp->bc_desc[new_id] = d;
+  int  new_id = eqp->n_bc_defs;
+  eqp->n_bc_defs += 1;
+  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  eqp->bc_defs[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2090,10 +2110,10 @@ cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
                                           cs_cdo_bc_get_flag(bc_type), // meta
                                           &anai);
 
-  int  new_id = eqp->n_bc_desc;
-  eqp->n_bc_desc += 1;
-  BFT_REALLOC(eqp->bc_desc, eqp->n_bc_desc, cs_xdef_t *);
-  eqp->bc_desc[new_id] = d;
+  int  new_id = eqp->n_bc_defs;
+  eqp->n_bc_defs += 1;
+  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  eqp->bc_defs[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2343,7 +2363,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     eq->scheme_context = eq->init_context(eqp, eq->builder);
 
     // By default, 0 is set as initial condition
-    if (eqp->n_ic_desc > 0 && ts->nt_cur < 1)
+    if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
       _initialize_field_from_ic(eq);
 
     if (eqp->flag & CS_EQUATION_UNSTEADY)
@@ -2786,11 +2806,11 @@ cs_equation_get_reaction_property(const cs_equation_t    *eq,
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
- * \return  a cs_space_scheme_t variable
+ * \return  a cs_param_space_scheme_t variable
  */
 /*----------------------------------------------------------------------------*/
 
-cs_space_scheme_t
+cs_param_space_scheme_t
 cs_equation_get_space_scheme(const cs_equation_t    *eq)
 {
   if (eq == NULL)
@@ -3133,9 +3153,7 @@ cs_equation_extra_post_all(const cs_time_step_t    *ts,
 
       /* Compute the Peclet number in each cell */
       double  *peclet = cs_equation_get_tmpbuf();
-      cs_advection_get_peclet(eqp->advection_field,
-                              eqp->diffusion_property,
-                              peclet);
+      cs_advection_get_peclet(eqp->adv_field, eqp->diffusion_property, peclet);
 
       /* Post-process */
       cs_post_write_var(CS_POST_MESH_VOLUME,

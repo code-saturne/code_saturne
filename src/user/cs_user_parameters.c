@@ -73,6 +73,7 @@
 #include "cs_log.h"
 #include "cs_multigrid.h"
 #include "cs_parameters.h"
+#include "cs_param_cdo.h"
 #include "cs_physical_constants.h"
 #include "cs_post.h"
 #include "cs_post_util.h"

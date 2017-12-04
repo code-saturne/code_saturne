@@ -357,7 +357,7 @@ cs_reco_dfbyc_in_cell(const cs_cell_mesh_t        *cm,
     return;
 
   /* Sanity check */
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PEQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PEQ));
 
   const double  invvol = 1/cm->vol_c;
 
@@ -404,7 +404,7 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
     return;
 
   /* Sanity check */
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ));
 
   cs_real_3_t  val_c = {0., 0., 0.};
   /* Compute val_c */
@@ -504,7 +504,7 @@ cs_reco_cw_cell_grad_from_scalar_pv(const cs_cell_mesh_t    *cm,
 {
   /* Sanity checks */
   assert(cm != NULL && pdi != NULL);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
 
   /* Reconstruct a constant gradient inside the current cell */
@@ -630,7 +630,7 @@ cs_reco_cw_scalar_pv_inside_cell(const cs_cell_mesh_t    *cm,
 {
   /* Sanity checks */
   assert(cm != NULL && pdi != NULL && wbuf != NULL);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
 
   cs_real_t  *_pv = wbuf;  // Local value of the potential field
@@ -684,7 +684,7 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
                              cs_real_t              *vgrd)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_HFQ));
 
@@ -782,7 +782,7 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
                              cs_real_t              *cgrd)
 {
   /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_HFQ));
 

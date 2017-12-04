@@ -224,7 +224,7 @@ _init_cell_structures(const cs_flag_t               cell_flag,
   if (cell_flag & CS_FLAG_BOUNDARY) {
 
     /* Sanity check */
-    assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
+    assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
     /* Identify which face is a boundary face */
     for (short int f = 0; f < cm->n_fc; f++) {
@@ -500,9 +500,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   if (cs_equation_param_has_convection(eqp)) {
 
-    const cs_param_advection_t  a_info = eqp->advection_info;
     cs_xdef_type_t  adv_deftype =
-      cs_advection_field_get_deftype(eqp->advection_field);
+      cs_advection_field_get_deftype(eqp->adv_field);
 
     if (adv_deftype == CS_XDEF_BY_VALUE)
       eqb->msh_flag |= CS_CDO_LOCAL_DFQ;
@@ -511,11 +510,11 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     else if (adv_deftype == CS_XDEF_BY_ANALYTIC_FUNCTION)
       eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_PFQ;
 
-    switch (a_info.formulation) {
+    switch (eqp->adv_formulation) {
 
     case CS_PARAM_ADVECTION_FORM_CONSERV:
 
-      switch (a_info.scheme) {
+      switch (eqp->adv_scheme) {
 
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
         eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
@@ -543,7 +542,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_PARAM_ADVECTION_FORM_NONCONS:
 
-      switch (a_info.scheme) {
+      switch (eqp->adv_scheme) {
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
         eqc->get_advection_matrix = cs_cdo_advection_get_vb_cennoc;
         break;
@@ -573,9 +572,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     }
 
     /* Boundary conditions for advection */
-    const cs_adv_field_t  *adv_field = eqp->advection_field;
     eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ;
-    if (cs_advection_field_is_cellwise(adv_field))
+    if (cs_advection_field_is_cellwise(eqp->adv_field))
       eqc->add_advection_bc = cs_cdo_advection_add_vb_bc_cw;
     else
       eqc->add_advection_bc = cs_cdo_advection_add_vb_bc;
@@ -1074,7 +1072,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
         cs_sdm_t  *mass_mat = cb->hdg;
         if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
 
-          assert(cs_test_flag(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+          assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
           /* Switch to cb->loc. Used as a diagonal only */
           mass_mat = cb->loc;
 
@@ -1263,7 +1261,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
         cs_nvec3_t  adv_c;
 
         /* Compute the local advective flux */
-        cs_advection_field_get_cell_vector(c_id, eqp->advection_field, &adv_c);
+        cs_advection_field_get_cell_vector(c_id, eqp->adv_field, &adv_c);
         cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
 
         /* Update the convective flux */
@@ -1309,8 +1307,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
           cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
 
           /* Evaluate the advection field at the face */
-          cs_advection_field_get_cell_vector(c_id, eqp->advection_field,
-                                             &adv_c);
+          cs_advection_field_get_cell_vector(c_id, eqp->adv_field, &adv_c);
 
           /* Update the convective flux (upwinding according to adv_f) */
           const double  dpc = _dp3(adv_c.unitv, f.unitv);
@@ -1370,8 +1367,8 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
-  if (!cs_test_flag(location, cs_cdo_primal_cell) &&
-      !cs_test_flag(location, cs_cdo_dual_face_byc))
+  if (!cs_flag_test(location, cs_flag_primal_cell) &&
+      !cs_flag_test(location, cs_flag_dual_face_byc))
     bft_error(__FILE__, __LINE__, 0,
               " Incompatible location.\n"
               " Stop computing a cellwise diffusive flux.");
@@ -1380,9 +1377,9 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
   if (cs_equation_param_has_diffusion(eqp) == false) {
 
     size_t  size = 0;
-    if (cs_test_flag(location, cs_cdo_primal_cell))
+    if (cs_flag_test(location, cs_flag_primal_cell))
       size = 3*quant->n_cells;
-    else if (cs_test_flag(location, cs_cdo_dual_face_byc))
+    else if (cs_flag_test(location, cs_flag_dual_face_byc))
       size = connect->c2e->idx[quant->n_cells];
 
 #   pragma omp parallel for if (size > CS_THR_MIN)
@@ -1425,11 +1422,11 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
         CS_CDO_LOCAL_PVQ;
 
       /* Set function pointers */
-      if (cs_test_flag(location, cs_cdo_primal_cell)) {
+      if (cs_flag_test(location, cs_flag_primal_cell)) {
         msh_flag |= CS_CDO_LOCAL_EV;
         compute_flux = cs_cdo_diffusion_vcost_get_pc_flux;
       }
-      else if (cs_test_flag(location, cs_cdo_dual_face_byc)) {
+      else if (cs_flag_test(location, cs_flag_dual_face_byc)) {
         get_diffusion_hodge = cs_hodge_epfd_cost_get;
         compute_flux = cs_cdo_diffusion_vcost_get_dfbyc_flux;
       }
@@ -1441,9 +1438,9 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
 
       /* Set function pointers */
       get_diffusion_hodge = cs_hodge_epfd_voro_get;
-      if (cs_test_flag(location, cs_cdo_primal_cell))
+      if (cs_flag_test(location, cs_flag_primal_cell))
         compute_flux = cs_cdo_diffusion_vcost_get_pc_flux;
-      else if (cs_test_flag(location, cs_cdo_dual_face_byc))
+      else if (cs_flag_test(location, cs_flag_dual_face_byc))
         compute_flux = cs_cdo_diffusion_vcost_get_dfbyc_flux;
 
       msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
@@ -1458,11 +1455,11 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
         CS_CDO_LOCAL_EV;
 
       /* Set function pointers */
-      if (cs_test_flag(location, cs_cdo_primal_cell)) {
+      if (cs_flag_test(location, cs_flag_primal_cell)) {
         compute_flux = cs_cdo_diffusion_wbs_get_pc_flux;
         msh_flag |= CS_CDO_LOCAL_HFQ;
       }
-      else if (cs_test_flag(location, cs_cdo_dual_face_byc)) {
+      else if (cs_flag_test(location, cs_flag_dual_face_byc)) {
         compute_flux = cs_cdo_diffusion_wbs_get_dfbyc_flux;
         msh_flag |= CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EFQ;
       }
@@ -1504,7 +1501,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
       case CS_PARAM_HODGE_ALGO_COST:
       case CS_PARAM_HODGE_ALGO_VORONOI:
 
-        if (cs_test_flag(location, cs_cdo_dual_face_byc))
+        if (cs_flag_test(location, cs_flag_dual_face_byc))
           get_diffusion_hodge(eqp->diffusion_hodge, cm, cb);
 
         /* Define a local buffer keeping the value of the discrete potential
@@ -1530,9 +1527,9 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
 
       } // End of switch
 
-      if (cs_test_flag(location, cs_cdo_primal_cell))
+      if (cs_flag_test(location, cs_flag_primal_cell))
         compute_flux(cm, pot, cb, diff_flux + 3*c_id);
-      else if (cs_test_flag(location, cs_cdo_dual_face_byc))
+      else if (cs_flag_test(location, cs_flag_dual_face_byc))
         compute_flux(cm, pot, cb, diff_flux + connect->c2e->idx[c_id]);
 
     } // Loop on cells
@@ -1581,7 +1578,7 @@ cs_cdovb_scaleq_extra_op(const char                 *eqname,
 
       /* Compute in each cell an evaluation of upwind weight value */
       cs_cdo_advection_get_upwind_coef_cell(cs_shared_quant,
-                                            eqp->advection_info,
+                                            eqp->adv_scheme,
                                             work_c);
 
       cs_post_write_var(CS_POST_MESH_VOLUME,

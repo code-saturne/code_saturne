@@ -94,6 +94,25 @@ typedef void (cs_base_atexit_t) (void);
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a string "true" or "false" according to the boolean
+ *
+ * \param[in]  boolean  bool type
+ *
+ * \return a string "true" or "false"
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline const char *
+cs_base_strtf(bool  boolean)
+{
+  if (boolean)
+    return "true";
+  else
+    return "false";
+}
+
 /*----------------------------------------------------------------------------
  * First analysis of the command line to determine an application name.
  *

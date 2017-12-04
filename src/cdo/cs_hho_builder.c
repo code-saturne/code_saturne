@@ -760,7 +760,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
     return;
   assert(hhob->cell_basis != NULL && hhob->grad_basis != NULL &&
          hhob->face_basis != NULL);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
@@ -995,7 +995,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
     return;
   assert(hhob->cell_basis != NULL && hhob->grad_basis != NULL &&
          hhob->face_basis != NULL);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
@@ -1308,7 +1308,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
               " %s : array storing the reduction has to be allocated.\n",
               __func__);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
@@ -1480,7 +1480,7 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
 
   assert(fbf != NULL);
   assert(fbf->facto != NULL);
-  assert(cs_test_flag(cm->flag,
+  assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 

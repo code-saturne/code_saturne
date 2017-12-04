@@ -36,6 +36,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
+#include "cs_flag.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -381,7 +382,7 @@ cs_reco_cw_scalar_pv_at_cell_center(const cs_cell_mesh_t     *cm,
 {
   /* Sanity checks */
   assert(cm != NULL && array != NULL);
-  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ));
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ));
 
   /* Reconstruct the value at the cell center */
   cs_real_t  pc = 0.;
