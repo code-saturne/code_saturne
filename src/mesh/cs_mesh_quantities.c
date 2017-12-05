@@ -2040,7 +2040,6 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
  * Compute some distances relative to faces and associated weighting.
  *
  * parameters:
- *   dim            <--  dimension
  *   n_i_faces      <--  number of interior faces
  *   n_b_faces      <--  number of border  faces
  *   i_face_cells   <--  interior "faces -> cells" connectivity
@@ -2049,8 +2048,6 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
  *   b_face_norm    <--  surface normal of border faces
  *   i_face_cog     <--  center of gravity of interior faces
  *   b_face_cog     <--  center of gravity of border faces
- *   i_face_surf    <--  interior faces surface
- *   b_face_surf    <--  border faces surface
  *   cell_cen       <--  cell center
  *   i_dist         -->  distance IJ.Nij for interior faces
  *   b_dist         -->  likewise for border faces
@@ -2058,19 +2055,15 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_face_distances(int                dim,
-                        const cs_lnum_t    n_i_faces,
+_compute_face_distances(const cs_lnum_t    n_i_faces,
                         const cs_lnum_t    n_b_faces,
                         const cs_lnum_2_t  i_face_cells[],
                         const cs_lnum_t    b_face_cells[],
-                        const cs_real_3_t  i_face_normal[],
-                        const cs_real_3_t  b_face_normal[],
-                        const cs_real_3_t  i_face_cog[],
-                        const cs_real_3_t  b_face_cog[],
-                        const cs_real_t    i_face_surf[],
-                        const cs_real_t    b_face_surf[],
-                        const cs_real_3_t  cell_cen[],
-                        const cs_real_t    cell_vol[],
+                        const cs_real_t    i_face_normal[][3],
+                        const cs_real_t    b_face_normal[][3],
+                        const cs_real_t    i_face_cog[][3],
+                        const cs_real_t    b_face_cog[][3],
+                        const cs_real_t    cell_cen[][3],
                         cs_real_t          i_dist[],
                         cs_real_t          b_dist[],
                         cs_real_t          weight[])
@@ -2086,7 +2079,7 @@ _compute_face_distances(int                dim,
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 
-    cs_real_t *face_nomal = i_face_normal[face_id];
+    const cs_real_t *face_nomal = i_face_normal[face_id];
     cs_real_3_t normal;
     cs_math_3_normalise(face_nomal, normal);
 
@@ -2141,7 +2134,7 @@ _compute_face_distances(int                dim,
 
   for (face_id = 0; face_id < n_b_faces; face_id++) {
 
-    cs_real_t *face_nomal = b_face_normal[face_id];
+    const cs_real_t *face_nomal = b_face_normal[face_id];
     cs_real_3_t normal;
     cs_math_3_normalise(face_nomal, normal);
 
@@ -2356,17 +2349,16 @@ _compute_face_vectors(int                dim,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_face_sup_vectors(int                dim,
-                          const cs_lnum_t    n_i_faces,
+_compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
                           const cs_lnum_2_t  i_face_cells[],
-                          const cs_real_t    i_face_normal[],
-                          const cs_real_t    i_face_cog[],
+                          const cs_real_t    i_face_normal[][3],
+                          const cs_real_t    i_face_cog[][3],
                           const cs_real_t    i_face_surf[],
-                          const cs_real_t    cell_cen[],
+                          const cs_real_t    cell_cen[][3],
                           const cs_real_t    cell_vol[],
                           cs_real_t          dist[],
-                          cs_real_t          diipf[],
-                          cs_real_t          djjpf[])
+                          cs_real_t          diipf[][3],
+                          cs_real_t          djjpf[][3])
 {
   cs_lnum_t face_id;
   cs_lnum_t cell_id1, cell_id2;
@@ -2383,18 +2375,18 @@ _compute_face_sup_vectors(int                dim,
     cell_id2 = i_face_cells[face_id][1];
 
     /* Normalized normal */
-    surfnx = i_face_normal[face_id*dim]     / i_face_surf[face_id];
-    surfny = i_face_normal[face_id*dim + 1] / i_face_surf[face_id];
-    surfnz = i_face_normal[face_id*dim + 2] / i_face_surf[face_id];
+    surfnx = i_face_normal[face_id][0] / i_face_surf[face_id];
+    surfny = i_face_normal[face_id][1] / i_face_surf[face_id];
+    surfnz = i_face_normal[face_id][2] / i_face_surf[face_id];
 
     /* ---> IG and JG */
-    vecigx = i_face_cog[face_id*dim]     - cell_cen[cell_id1*dim];
-    vecigy = i_face_cog[face_id*dim + 1] - cell_cen[cell_id1*dim + 1];
-    vecigz = i_face_cog[face_id*dim + 2] - cell_cen[cell_id1*dim + 2];
+    vecigx = i_face_cog[face_id][0] - cell_cen[cell_id1][0];
+    vecigy = i_face_cog[face_id][1] - cell_cen[cell_id1][1];
+    vecigz = i_face_cog[face_id][2] - cell_cen[cell_id1][2];
 
-    vecjgx = i_face_cog[face_id*dim]     - cell_cen[cell_id2*dim];
-    vecjgy = i_face_cog[face_id*dim + 1] - cell_cen[cell_id2*dim + 1];
-    vecjgz = i_face_cog[face_id*dim + 2] - cell_cen[cell_id2*dim + 2];
+    vecjgx = i_face_cog[face_id][0] - cell_cen[cell_id2][0];
+    vecjgy = i_face_cog[face_id][1] - cell_cen[cell_id2][1];
+    vecjgz = i_face_cog[face_id][2] - cell_cen[cell_id2][2];
 
     /* ---> DIIPP = IG.Nij */
     diipp = vecigx*surfnx + vecigy*surfny + vecigz*surfnz;
@@ -2403,67 +2395,58 @@ _compute_face_sup_vectors(int                dim,
     djjpp = vecjgx*surfnx + vecjgy*surfny + vecjgz*surfnz;
 
     /* ---> DIIPF = IG - (IG.Nij)Nij */
-    diipf[face_id*dim]     = vecigx - diipp*surfnx;
-    diipf[face_id*dim + 1] = vecigy - diipp*surfny;
-    diipf[face_id*dim + 2] = vecigz - diipp*surfnz;
+    diipf[face_id][0] = vecigx - diipp*surfnx;
+    diipf[face_id][1] = vecigy - diipp*surfny;
+    diipf[face_id][2] = vecigz - diipp*surfnz;
 
     /* ---> DJJPF = JG - (JG.Nij)Nij */
-    djjpf[face_id*dim]     = vecjgx - djjpp*surfnx;
-    djjpf[face_id*dim + 1] = vecjgy - djjpp*surfny;
-    djjpf[face_id*dim + 2] = vecjgz - djjpp*surfnz;
+    djjpf[face_id][0] = vecjgx - djjpp*surfnx;
+    djjpf[face_id][1] = vecjgy - djjpp*surfny;
+    djjpf[face_id][2] = vecjgz - djjpp*surfnz;
 
     /* Limiter on interior face reconstruction */
     if (cs_glob_mesh_quantities_flag & CS_FACE_RECONSTRUCTION_CLIP) {
 
-      double surfn = sqrt(   i_face_normal[face_id*3  ] *  i_face_normal[face_id*3  ]
-                           + i_face_normal[face_id*3+1] *  i_face_normal[face_id*3+1]
-                           + i_face_normal[face_id*3+2] *  i_face_normal[face_id*3+2] );
+      cs_real_t surfn = cs_math_3_norm(i_face_normal[face_id]);
+      cs_real_t iip   = cs_math_3_norm(diipf[face_id]);
 
-      double iip = sqrt(   diipf[face_id*dim]     * diipf[face_id*dim]
-                         + diipf[face_id*dim + 1] * diipf[face_id*dim + 1]
-                         + diipf[face_id*dim + 2] * diipf[face_id*dim + 2]);
-
-      double corri = 0.5 * dist[face_id] / CS_MAX(iip, 1.e-20);
+      cs_real_t corri = 0.5 * dist[face_id] / CS_MAX(iip, 1.e-20);
       corri = CS_MIN(corri, 1.);
-      diipf[face_id*dim]    *= corri;
-      diipf[face_id*dim +1] *= corri;
-      diipf[face_id*dim +2] *= corri;
 
-      iip = sqrt(   diipf[face_id*dim]     * diipf[face_id*dim]
-                  + diipf[face_id*dim + 1] * diipf[face_id*dim + 1]
-                  + diipf[face_id*dim + 2] * diipf[face_id*dim + 2]);
+      diipf[face_id][0] *= corri;
+      diipf[face_id][1] *= corri;
+      diipf[face_id][2] *= corri;
+
+      iip = cs_math_3_norm(diipf[face_id]);
 
       if (0.9 * cell_vol[cell_id1] > surfn * iip)
         corri = 1.;
       else
         corri = 0.9 * cell_vol[cell_id1] / (surfn * iip);
 
-      diipf[face_id*dim   ] *= corri;
-      diipf[face_id*dim +1] *= corri;
-      diipf[face_id*dim +2] *= corri;
+      diipf[face_id][0] *= corri;
+      diipf[face_id][1] *= corri;
+      diipf[face_id][2] *= corri;
 
-      double jjp = sqrt(   djjpf[face_id*dim]     * djjpf[face_id*dim]
-                         + djjpf[face_id*dim + 1] * djjpf[face_id*dim + 1]
-                         + djjpf[face_id*dim + 2] * djjpf[face_id*dim + 2]);
+      cs_real_t jjp = cs_math_3_norm(djjpf[face_id]);
 
-      double corrj = 0.5 * dist[face_id] / CS_MAX(jjp, 1.e-20);
+      cs_real_t corrj = 0.5 * dist[face_id] / CS_MAX(jjp, 1.e-20);
       corrj = CS_MIN(corrj, 1.);
-      djjpf[face_id*dim   ] *= corrj;
-      djjpf[face_id*dim +1] *= corrj;
-      djjpf[face_id*dim +2] *= corrj;
 
-      jjp = sqrt(   djjpf[face_id*dim]     * djjpf[face_id*dim]
-                  + djjpf[face_id*dim + 1] * djjpf[face_id*dim + 1]
-                  + djjpf[face_id*dim + 2] * djjpf[face_id*dim + 2]);
+      djjpf[face_id][0] *= corrj;
+      djjpf[face_id][1] *= corrj;
+      djjpf[face_id][2] *= corrj;
+
+      jjp = cs_math_3_norm(djjpf[face_id]);
 
       if (0.9 * cell_vol[cell_id2] > surfn * jjp)
         corrj = 1.;
       else
         corrj = 0.9 * cell_vol[cell_id2] / (surfn * jjp);
 
-      djjpf[face_id*dim   ] *= corrj;
-      djjpf[face_id*dim +1] *= corrj;
-      djjpf[face_id*dim +2] *= corrj;
+      djjpf[face_id][0] *= corrj;
+      djjpf[face_id][1] *= corrj;
+      djjpf[face_id][2] *= corrj;
 
     }
   }
@@ -2805,7 +2788,6 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
   cs_lnum_t  n_i_faces = mesh->n_i_faces;
   cs_lnum_t  n_b_faces = mesh->n_b_faces;
   cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
-  cs_lnum_t  n_cells = mesh->n_cells;
 
   if (cs_glob_mesh_quantities_flag != 0)
     bft_printf
@@ -3086,8 +3068,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   /* Compute some distances relative to faces and associated weighting */
 
-  _compute_face_distances(dim,
-                          mesh->n_i_faces,
+  _compute_face_distances(mesh->n_i_faces,
                           mesh->n_b_faces,
                           (const cs_lnum_2_t *)(mesh->i_face_cells),
                           mesh->b_face_cells,
@@ -3095,10 +3076,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                           (const cs_real_3_t *)(mesh_quantities->b_face_normal),
                           (const cs_real_3_t *)(mesh_quantities->i_face_cog),
                           (const cs_real_3_t *)(mesh_quantities->b_face_cog),
-                          mesh_quantities->i_face_surf,
-                          mesh_quantities->b_face_surf,
                           (const cs_real_3_t *)(mesh_quantities->cell_cen),
-                          mesh_quantities->cell_vol,
                           mesh_quantities->i_dist,
                           mesh_quantities->b_dist,
                           mesh_quantities->weight);
@@ -3172,6 +3150,8 @@ void
 cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
                                  cs_mesh_quantities_t  *mesh_quantities)
 {
+  CS_UNUSED(mesh);
+  CS_UNUSED(mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------
@@ -3236,17 +3216,17 @@ cs_mesh_quantities_sup_vectors(const cs_mesh_t       *mesh,
   if (mesh_quantities->djjpf == NULL)
     BFT_MALLOC(mesh_quantities->djjpf, n_i_faces*dim, cs_real_t);
 
-  _compute_face_sup_vectors(dim,
-                            mesh->n_i_faces,
-                            (const cs_lnum_2_t *)(mesh->i_face_cells),
-                            mesh_quantities->i_face_normal,
-                            mesh_quantities->i_face_cog,
-                            mesh_quantities->i_face_surf,
-                            mesh_quantities->cell_cen,
-                            mesh_quantities->cell_vol,
-                            mesh_quantities->i_dist,
-                            mesh_quantities->diipf,
-                            mesh_quantities->djjpf);
+  _compute_face_sup_vectors
+    (mesh->n_i_faces,
+     (const cs_lnum_2_t *)(mesh->i_face_cells),
+     (const cs_real_3_t *)(mesh_quantities->i_face_normal),
+     (const cs_real_3_t *)(mesh_quantities->i_face_cog),
+     mesh_quantities->i_face_surf,
+     (const cs_real_3_t *)(mesh_quantities->cell_cen),
+     mesh_quantities->cell_vol,
+     mesh_quantities->i_dist,
+     (cs_real_3_t *)(mesh_quantities->diipf),
+     (cs_real_3_t *)(mesh_quantities->djjpf));
 }
 
 /*----------------------------------------------------------------------------
