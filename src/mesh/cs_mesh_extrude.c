@@ -1023,7 +1023,11 @@ _add_layer_faces(cs_mesh_t        *m,
           for (cs_lnum_t k = s_id; k < e_id; k++) {
             cs_lnum_t v_id = m->b_face_vtx_lst[k];
             cs_lnum_t l = v_s_id[v_id];
-            *vtx_lst_p = n_vtx_ini + n_v_shift[l] + j;
+            cs_lnum_t n_v_sub = n_v_shift[l+1] - n_v_shift[l];
+            if (j >= n_f_sub - n_v_sub)
+              *vtx_lst_p = n_vtx_ini + n_v_shift[l] + j + n_v_sub - n_f_sub;
+            else
+              *vtx_lst_p = m->b_face_vtx_lst[k];
             vtx_lst_p++;
           }
 
@@ -1034,7 +1038,9 @@ _add_layer_faces(cs_mesh_t        *m,
         for (cs_lnum_t k = s_id; k < e_id; k++) {
           cs_lnum_t v_id = m->b_face_vtx_lst[k];
           cs_lnum_t l = v_s_id[v_id];
-          m->b_face_vtx_lst[k] = n_vtx_ini + n_v_shift[l] + n_f_sub - 1;
+          cs_lnum_t n_v_sub = n_v_shift[l+1] - n_v_shift[l];
+          if (n_v_sub > 0)
+            m->b_face_vtx_lst[k] = n_vtx_ini + n_v_shift[l] + n_v_sub - 1;
         }
 
       }
@@ -1298,49 +1304,28 @@ _add_side_faces(cs_mesh_t           *m,
          of the mesh), then regular quadrangle faces last (near the
          boundary). */
 
-      /* First layer (with one base edge) */
-
-      cs_lnum_t n_f_v = 4;
-
-      p_face_vtx_lst[0] = vid0;
-      p_face_vtx_lst[1] = vid1;
-
-      if (n_v_diff == 0) {
-        p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid1];
-        p_face_vtx_lst[3] = n_vtx_ini + n_v_shift[vsid0];
-      }
-      else if (n_v_sub0 < n_v_sub1) {
-        p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid1];
-        n_f_v = 3;
-      }
-      else { /* n_v_sub0 > n_v_sub1 */
-        p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid0];
-        n_f_v = 3;
-      }
-
-      p_face_vtx_idx[1] = p_face_vtx_idx[0] + n_f_v;
-
-      p_face_vtx_idx += 1;
-      p_face_vtx_lst += n_f_v;
-
-      /* Successive layers */
-
-      cs_lnum_t l0 = 0, l1 = 0;
+      cs_lnum_t l0 = -1, l1 = -1;
 
       /* Triangles */
 
-      for (cs_lnum_t j = 1; j < n_v_diff; j++) {
+      for (cs_lnum_t j = 0; j < n_v_diff; j++) {
 
         p_face_vtx_idx[1] = p_face_vtx_idx[0] + 3;
 
         if (n_v_sub0 < n_v_sub1) {
           p_face_vtx_lst[0] = vid0;
-          p_face_vtx_lst[1] = n_vtx_ini + n_v_shift[vsid1] + l1;
+          if (l1 < 0)
+            p_face_vtx_lst[1] = vid1;
+          else
+            p_face_vtx_lst[1] = n_vtx_ini + n_v_shift[vsid1] + l1;
           p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid1] + l1 + 1;
           l1++;
         }
         else { /* n_v_sub0 > n_v_sub1 */
-          p_face_vtx_lst[0] = n_vtx_ini + n_v_shift[vsid0] + l0;
+          if (l0 < 0)
+            p_face_vtx_lst[0] = vid0;
+          else
+            p_face_vtx_lst[0] = n_vtx_ini + n_v_shift[vsid0] + l0;
           p_face_vtx_lst[1] = vid1;
           p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid0] + l0 + 1;
           l0++;
@@ -1353,15 +1338,21 @@ _add_side_faces(cs_mesh_t           *m,
 
       /* Quadrangles */
 
-      for (cs_lnum_t j = 1; j < n_f_sub; j++) {
+      for (cs_lnum_t j = 0; j < n_f_sub; j++) {
 
         if (j < n_v_diff)
           continue;
 
         p_face_vtx_idx[1] = p_face_vtx_idx[0] + 4;
 
-        p_face_vtx_lst[0] = n_vtx_ini + n_v_shift[vsid0] + l0;
-        p_face_vtx_lst[1] = n_vtx_ini + n_v_shift[vsid1] + l1;
+        if (l0 < 0)
+          p_face_vtx_lst[0] = vid0;
+        else
+          p_face_vtx_lst[0] = n_vtx_ini + n_v_shift[vsid0] + l0;
+        if (l1 < 0)
+          p_face_vtx_lst[1] = vid1;
+        else
+          p_face_vtx_lst[1] = n_vtx_ini + n_v_shift[vsid1] + l1;
         p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid1] + l1 + 1;
         p_face_vtx_lst[3] = n_vtx_ini + n_v_shift[vsid0] + l0 + 1;
         l0++;
