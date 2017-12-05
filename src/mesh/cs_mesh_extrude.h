@@ -54,7 +54,7 @@ BEGIN_C_DECLS
 typedef struct {
 
   cs_lnum_t   *n_layers;          /*!< number of layers for each boundary face;
-                                   *   (0 for non-extruded faces) */
+                                   *   (< 0 for non-extruded faces) */
 
   cs_real_t   *distance;          /*!< total distance for each boundary face
                                     (if < 0, absolute value used as

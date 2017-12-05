@@ -1066,7 +1066,11 @@ _add_layer_faces(cs_mesh_t        *m,
           for (cs_lnum_t k = s_id; k < e_id; k++) {
             cs_lnum_t v_id = m->b_face_vtx_lst[k];
             cs_lnum_t l = v_s_id[v_id];
-            *vtx_lst_p = n_vtx_ini + n_v_shift[l] + j;
+            cs_lnum_t n_v_sub = n_v_shift[l+1] - n_v_shift[l];
+            if (j >= n_f_sub - n_v_sub)
+              *vtx_lst_p = n_vtx_ini + n_v_shift[l] + j + n_v_sub - n_f_sub;
+            else
+              *vtx_lst_p = m->b_face_vtx_lst[k];
             vtx_lst_p++;
           }
 
@@ -1077,7 +1081,9 @@ _add_layer_faces(cs_mesh_t        *m,
         for (cs_lnum_t k = s_id; k < e_id; k++) {
           cs_lnum_t v_id = m->b_face_vtx_lst[k];
           cs_lnum_t l = v_s_id[v_id];
-          m->b_face_vtx_lst[k] = n_vtx_ini + n_v_shift[l] + n_f_sub - 1;
+          cs_lnum_t n_v_sub = n_v_shift[l+1] - n_v_shift[l];
+          if (n_v_sub > 0)
+            m->b_face_vtx_lst[k] = n_vtx_ini + n_v_shift[l] + n_v_sub - 1;
         }
 
       }
@@ -1341,49 +1347,28 @@ _add_side_faces(cs_mesh_t           *m,
          of the mesh), then regular quadrangle faces last (near the
          boundary). */
 
-      /* First layer (with one base edge) */
-
-      cs_lnum_t n_f_v = 4;
-
-      p_face_vtx_lst[0] = vid0;
-      p_face_vtx_lst[1] = vid1;
-
-      if (n_v_diff == 0) {
-        p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid1];
-        p_face_vtx_lst[3] = n_vtx_ini + n_v_shift[vsid0];
-      }
-      else if (n_v_sub0 < n_v_sub1) {
-        p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid1];
-        n_f_v = 3;
-      }
-      else { /* n_v_sub0 > n_v_sub1 */
-        p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid0];
-        n_f_v = 3;
-      }
-
-      p_face_vtx_idx[1] = p_face_vtx_idx[0] + n_f_v;
-
-      p_face_vtx_idx += 1;
-      p_face_vtx_lst += n_f_v;
-
-      /* Successive layers */
-
-      cs_lnum_t l0 = 0, l1 = 0;
+      cs_lnum_t l0 = -1, l1 = -1;
 
       /* Triangles */
 
-      for (cs_lnum_t j = 1; j < n_v_diff; j++) {
+      for (cs_lnum_t j = 0; j < n_v_diff; j++) {
 
         p_face_vtx_idx[1] = p_face_vtx_idx[0] + 3;
 
         if (n_v_sub0 < n_v_sub1) {
           p_face_vtx_lst[0] = vid0;
-          p_face_vtx_lst[1] = n_vtx_ini + n_v_shift[vsid1] + l1;
+          if (l1 < 0)
+            p_face_vtx_lst[1] = vid1;
+          else
+            p_face_vtx_lst[1] = n_vtx_ini + n_v_shift[vsid1] + l1;
           p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid1] + l1 + 1;
           l1++;
         }
         else { /* n_v_sub0 > n_v_sub1 */
-          p_face_vtx_lst[0] = n_vtx_ini + n_v_shift[vsid0] + l0;
+          if (l0 < 0)
+            p_face_vtx_lst[0] = vid0;
+          else
+            p_face_vtx_lst[0] = n_vtx_ini + n_v_shift[vsid0] + l0;
           p_face_vtx_lst[1] = vid1;
           p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid0] + l0 + 1;
           l0++;
@@ -1396,15 +1381,21 @@ _add_side_faces(cs_mesh_t           *m,
 
       /* Quadrangles */
 
-      for (cs_lnum_t j = 1; j < n_f_sub; j++) {
+      for (cs_lnum_t j = 0; j < n_f_sub; j++) {
 
         if (j < n_v_diff)
           continue;
 
         p_face_vtx_idx[1] = p_face_vtx_idx[0] + 4;
 
-        p_face_vtx_lst[0] = n_vtx_ini + n_v_shift[vsid0] + l0;
-        p_face_vtx_lst[1] = n_vtx_ini + n_v_shift[vsid1] + l1;
+        if (l0 < 0)
+          p_face_vtx_lst[0] = vid0;
+        else
+          p_face_vtx_lst[0] = n_vtx_ini + n_v_shift[vsid0] + l0;
+        if (l1 < 0)
+          p_face_vtx_lst[1] = vid1;
+        else
+          p_face_vtx_lst[1] = n_vtx_ini + n_v_shift[vsid1] + l1;
         p_face_vtx_lst[2] = n_vtx_ini + n_v_shift[vsid1] + l1 + 1;
         p_face_vtx_lst[3] = n_vtx_ini + n_v_shift[vsid0] + l0 + 1;
         l0++;
@@ -1512,7 +1503,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
   /* Determine vertices to extrude */
 
   cs_real_2_t *w = NULL;
-  int        *c = NULL;
+  int *c = NULL;
 
   BFT_MALLOC(_n_layers, n_vertices, cs_lnum_t);
   BFT_MALLOC(_expansion, n_vertices, float);
@@ -1571,7 +1562,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
     cs_lnum_t n_faces = 0;
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-      if (efi->n_layers[f_id] != 0)
+      if (efi->n_layers[f_id] > -1)
         n_faces++;
     }
 
@@ -1582,7 +1573,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
     n_faces = 0;
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-      if (efi->n_layers[f_id] != 0)
+      if (efi->n_layers[f_id] > -1)
         e->face_ids[n_faces++] = f_id;
     }
 
@@ -1795,6 +1786,12 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
 
       _d[n_l-1] = 1.0;
     }
+
+    else { /* n_l = 0 */
+      for (cs_lnum_t l = 0; l < 3; l++)
+        e->coord_shift[i][l] = 0.;
+    }
+
   }
 
   BFT_FREE(_expansion);
@@ -2091,7 +2088,7 @@ cs_mesh_extrude_face_info_create(const cs_mesh_t  *m)
   BFT_MALLOC(efi->thickness_e, n_faces, cs_real_t);
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
-    efi->n_layers[i] = 0;
+    efi->n_layers[i] = -1;
     efi->distance[i] = -1;
     efi->expansion_factor[i] = 0.8;
     efi->thickness_s[i] = 0;
