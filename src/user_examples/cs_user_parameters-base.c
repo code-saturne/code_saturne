@@ -206,6 +206,7 @@ cs_user_model(void)
   cs_glob_mesh_quantities_flag |= CS_CELL_CENTER_CORRECTION;
   cs_glob_mesh_quantities_flag |= CS_FACE_DISTANCE_CLIP;
   cs_glob_mesh_quantities_flag |= CS_FACE_RECONSTRUCTION_CLIP;
+  cs_glob_mesh_quantities_flag |= CS_CELL_VOLUME_RATIO_CORRECTION;
 
   /*! [mesh_tag_bad_cells_correction] */
 
