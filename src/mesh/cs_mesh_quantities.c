@@ -2422,11 +2422,16 @@ _compute_face_sup_vectors(int                dim,
       double iip = sqrt(   diipf[face_id*dim]     * diipf[face_id*dim]
                          + diipf[face_id*dim + 1] * diipf[face_id*dim + 1]
                          + diipf[face_id*dim + 2] * diipf[face_id*dim + 2]);
+
       double corri = 0.5 * dist[face_id] / CS_MAX(iip, 1.e-20);
       corri = CS_MIN(corri, 1.);
       diipf[face_id*dim]    *= corri;
       diipf[face_id*dim +1] *= corri;
       diipf[face_id*dim +2] *= corri;
+
+      iip = sqrt(   diipf[face_id*dim]     * diipf[face_id*dim]
+                  + diipf[face_id*dim + 1] * diipf[face_id*dim + 1]
+                  + diipf[face_id*dim + 2] * diipf[face_id*dim + 2]);
 
       if (0.9 * cell_vol[cell_id1] > surfn * iip)
         corri = 1.;
@@ -2440,11 +2445,16 @@ _compute_face_sup_vectors(int                dim,
       double jjp = sqrt(   djjpf[face_id*dim]     * djjpf[face_id*dim]
                          + djjpf[face_id*dim + 1] * djjpf[face_id*dim + 1]
                          + djjpf[face_id*dim + 2] * djjpf[face_id*dim + 2]);
+
       double corrj = 0.5 * dist[face_id] / CS_MAX(jjp, 1.e-20);
       corrj = CS_MIN(corrj, 1.);
       djjpf[face_id*dim   ] *= corrj;
       djjpf[face_id*dim +1] *= corrj;
       djjpf[face_id*dim +2] *= corrj;
+
+      jjp = sqrt(   djjpf[face_id*dim]     * djjpf[face_id*dim]
+                  + djjpf[face_id*dim + 1] * djjpf[face_id*dim + 1]
+                  + djjpf[face_id*dim + 2] * djjpf[face_id*dim + 2]);
 
       if (0.9 * cell_vol[cell_id2] > surfn * jjp)
         corrj = 1.;
