@@ -498,7 +498,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
  *      h    : Coefficient of thermal exchange
  *       e
  *
- *  he coefficient of thermal exchange is calculated from a Nusselt number,
+ *  The coefficient of thermal exchange is calculated from a Nusselt number,
  *  itself evaluated by a correlation (Ranz-Marshall by default)
  *
  *             h  d
