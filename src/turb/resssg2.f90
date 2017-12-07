@@ -577,7 +577,7 @@ do iel = 1, ncel
   ! Global variables needed for SSG and EBRSM
   ! -------------
   ! Computing the inverse matrix of R^n
-  ! Scaling by epsilon in order to dodge inversion errors
+  ! Scaling by tr(R) in order to dodge inversion errors
   do isou = 1, 6
     matrn(isou) = cvara_var(isou,iel)/trrij
     oo_matrn(isou) = 0.0d0
@@ -635,9 +635,13 @@ do iel = 1, ncel
     ! Phi3 constant
     cphi3impl = abs(cebmr2 - cebmr3*sqrt(aii))
 
-    ! PhiWall constant
-    cphiw_impl = 5.0d0*(1.0d0-alpha3)*cvara_ep(iel)/trrij
+    ! PhiWall + epsilon_wall constants for EBRSM
+    cphiw_impl = 6.0d0*(1.0d0-alpha3)*cvara_ep(iel)/trrij
 
+    ! -------------
+    ! The implicit components of Phi (pressure-velocity fluctuations)
+    ! are split into the linear part (A*R) and Id part (A*Id).
+    ! -------------
 
     ! Identity constant
     impl_id_cst = alpha3 * (                             &
@@ -648,11 +652,11 @@ do iel = 1, ncel
 
 
     ! Linear constant
-    impl_lin_cst = eigen_max * (                      &
-                   1.0d0                              &        ! Production
-                   + cebmr4 * alpha3                  &        ! Phi4 Linear part
-                   + cebmr5 * alpha3            )     &        ! Phi5 Linear part
-                   + d1s2*(1.0d0-alpha3)*cvara_ep(iel)/trrij   ! Epsilon wall
+    impl_lin_cst = eigen_max * (                  &
+                   1.0d0                          & ! Production
+                   + cebmr4 * alpha3              & ! Phi4 Linear part
+                   + cebmr5 * alpha3            ) & ! Phi5 Linear part
+                   + cphiw_impl                     ! Epsilon + Phi wall
 
 
     do jsou = 1, 3
@@ -661,8 +665,7 @@ do iel = 1, ncel
         implmat2add(isou,jsou) = xrotac(isou,jsou)                  &
                                + impl_lin_cst*deltij(iii)           &
                                + impl_id_cst*d1s2*oo_matrn(iii)     &
-                               + alpha3*ceps_impl*oo_matrn(iii)     &
-                               + cphiw_impl*xnal(isou)*xnal(jsou)
+                               + alpha3*ceps_impl*oo_matrn(iii)
       end do
     end do
 
