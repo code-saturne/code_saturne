@@ -5,6 +5,8 @@ Release 5.1.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix in Rij EBRSM time stepping (coupled solver).
+
 - Fix for mesh extrusion with varying number of layers.
 
 - "separate_meshes" writer option should not propagate to EnSight
