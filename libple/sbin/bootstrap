@@ -5,11 +5,6 @@ if [ ! -d sbin ]; then
   exit 1
 fi
 
-# update POTFILES.in
-
-echo "Generating po/POTFILES.in"
-ls src/*.c* | grep -v user_examples > po/POTFILES.in
-
 # Remove unversioned files added by previous bootstrap
 
 rm -rf build-aux/* m4/codeset.m4 m4/fcntl-o.m4 m4/gettext.m4 m4/glibc2.m4 \
