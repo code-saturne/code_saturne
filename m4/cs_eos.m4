@@ -80,12 +80,15 @@ if test "x$with_eos" != "xno" ; then
 
   if test "$eosversion" = "1.3.0"; then
     EOS_LIBS="-lCCLanguageAPI -lCCEOSAPI"
+    EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_6"
   fi
   if test "$eosversion" = "1.4.0"; then
     EOS_LIBS="-lshared_eos"
+    EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_6"
   fi
   if test "$eosversion" = "1.5.0"; then
     EOS_LIBS="-lshared_eos"
+    EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_6"
   fi
 
   CPPFLAGS="${CPPFLAGS} ${EOS_CPPFLAGS}"
