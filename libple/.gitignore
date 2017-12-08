@@ -82,6 +82,12 @@ Makefile.in
 # /doc/
 
 # /po/
+/po/Makefile.in.in
+/po/Makevars.template
+/po/Rules-quot
+/po/*.header
+/po/*.sed
+/po/*.sin
 /po/fr.gmo
 /po/ple.pot
 

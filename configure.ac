@@ -63,7 +63,7 @@ AC_CONFIG_MACRO_DIR(m4)
 AC_CANONICAL_TARGET
 AC_CONFIG_HEADERS([cs_config.h])
 
-AM_GNU_GETTEXT_VERSION([0.18.1])
+AM_GNU_GETTEXT_VERSION([0.19])
 
 # Initialize automake with the following options:
 # - foreign, so as to handle the absence of ChangeLog (automatically generated)

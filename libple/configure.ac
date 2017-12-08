@@ -49,7 +49,7 @@ m4_define([ple_licence_c_comment],
 
 m4_define([ple_major_version], [2])
 m4_define([ple_minor_version], [0])
-m4_define([ple_release_version], [2])
+m4_define([ple_release_version], [3])
 m4_define([ple_version_extra], [])
 m4_define([ple_version_string],
           [ple_major_version.ple_minor_version.ple_release_version@&t@ple_version_extra])
@@ -64,7 +64,7 @@ AC_CONFIG_MACRO_DIR(m4)
 AC_CANONICAL_TARGET
 AC_CONFIG_HEADERS([ple_config_priv.h:ple_config_priv.h.in])
 
-AM_GNU_GETTEXT_VERSION([0.18.1])
+AM_GNU_GETTEXT_VERSION([0.19])
 
 # Initialize automake with the following options:
 # - foreign, so as to handle the possible absence of ChangeLog

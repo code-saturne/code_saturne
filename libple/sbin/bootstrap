@@ -18,12 +18,12 @@ rm -rf build-aux/* m4/codeset.m4 m4/fcntl-o.m4 m4/gettext.m4 m4/glibc2.m4 \
 
 # Simply run autoreconf.
 
-# If only gettext 0.17 is available, allow it by modifying configure.ac temporarily,
-# but otherwise prefer 0.18.
+# If only gettext 0.17 or 0.18 is available, allow it by modifying configure.ac temporarily,
+# but otherwise prefer 0.19.
 
 cs_gettext_version=`gettext --version | head -1 | sed -e s/gettext.*0/0/`
 case $cs_gettext_version in
-  0.17*)
+  0.17* | 0.18*)
     cp -p configure.ac configure.ac.tmp
     sed -e s/AM_GNU_GETTEXT_VERSION.*/AM_GNU_GETTEXT_VERSION\(\[$cs_gettext_version\]\)/g ./configure.ac.tmp > configure.ac
     ;;
@@ -48,20 +48,18 @@ else
   # To use an external gettext version, do not use --intl
   # To use a link instead of copy, do not use -c
 
-  if [ ! -f m4/gettext.m4 ]; then
-    echo "running gettextize"
-    \rm -rf configure.ac~ Makefile.am~
-    sed -e "s/read dummy/# read dummy/" `which gettextize` > ./tmp_gettextize
-    chmod +x ./tmp_gettextize
-    ./tmp_gettextize -f -c --no-changelog
-    if [ -f configure.ac~ ]; then
-      mv configure.ac~ configure.ac
-    fi
-    if [ -f Makefile.am~ ]; then
-      mv Makefile.am~ Makefile.am
-    fi
-    rm -rf po/*~ tmp_gettextize
+  echo "running gettextize"
+  \rm -rf configure.ac~ Makefile.am~
+  sed -e "s/read dummy/# read dummy/" `which gettextize` > ./tmp_gettextize
+  chmod +x ./tmp_gettextize
+  ./tmp_gettextize -f -c --no-changelog
+  if [ -f configure.ac~ ]; then
+    mv configure.ac~ configure.ac
   fi
+  if [ -f Makefile.am~ ]; then
+    mv Makefile.am~ Makefile.am
+  fi
+  rm -rf po/*~ tmp_gettextize
 
   echo "running aclocal"
   aclocal -I config
@@ -83,7 +81,7 @@ else
 fi
 
 case $cs_gettext_version in
-  0.17*)
+  0.17* | 0.18*)
     \mv configure.ac.tmp configure.ac
     ;;
   *)
