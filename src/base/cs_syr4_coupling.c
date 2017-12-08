@@ -1222,6 +1222,59 @@ _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
                  " coupling with SYRTHES: %5.3e\n"), coef);
 }
 
+/*----------------------------------------------------------------------------
+ * Exchange location synchronization status
+ *
+ * parameters:
+ *   syr_coupling <-- SYRTHES coupling structure
+ *
+ * returns:
+ *   0 in case of success, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+int
+_sync_after_location(cs_syr4_coupling_t  *syr_coupling)
+{
+  int retval = 1;
+
+  char op_name_send[32 + 1];
+  char op_name_recv[32 + 1];
+
+  const cs_lnum_t verbosity = syr_coupling->verbosity;
+
+  /* Communication with SYRTHES */
+  /*----------------------------*/
+
+  /* Ready to start time iterations */
+
+  strcpy(op_name_send, "coupling:start");
+
+  _exchange_sync(syr_coupling, op_name_send, op_name_recv);
+
+  if (!strcmp(op_name_recv, "coupling:error:location")) {
+
+    cs_coupling_set_sync_flag(PLE_COUPLING_STOP);
+
+    cs_base_warn(__FILE__, __LINE__);
+
+    bft_printf(_(" Message received from SYRTHES: \"%s\"\n"
+                 " indicates meshes have not been matched correctly.\n\n"
+                 " The calculation will not run.\n\n"),
+               op_name_recv);
+
+  }
+  else if (strcmp(op_name_recv, "coupling:start"))
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Message received from SYRTHES: \"%s\"\n"
+                " indicates an error or is unexpected."),
+              op_name_recv);
+
+  else
+    retval = 0;
+
+  return retval;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1516,50 +1569,30 @@ cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling)
 
   assert(syr_coupling->dim == 3 || syr_coupling->dim == 2);
 
-  if (syr_coupling->face_sel != NULL)
+  int match_flag = 0;
+
+  if (syr_coupling->face_sel != NULL) {
     syr_coupling->faces = _create_coupled_ent(syr_coupling,
                                               syr_coupling->face_sel,
                                               syr_coupling->dim - 1);
+    match_flag += _sync_after_location(syr_coupling);
+  }
 
   if (syr_coupling->cell_sel != NULL) {
     syr_coupling->cells = _create_coupled_ent(syr_coupling,
                                               syr_coupling->cell_sel,
                                               syr_coupling->dim);
+    match_flag += _sync_after_location(syr_coupling);
   }
 
   /* Communication with SYRTHES */
   /*----------------------------*/
 
-  /* Ready to start time iterations */
-
-  strcpy(op_name_send, "coupling:start");
-
-  _exchange_sync(syr_coupling, op_name_send, op_name_recv);
-
-  if (!strcmp(op_name_recv, "coupling:error:location")) {
-
-    cs_coupling_set_sync_flag(PLE_COUPLING_STOP);
-
-    cs_base_warn(__FILE__, __LINE__);
-
-    bft_printf(_(" Message received from SYRTHES: \"%s\"\n"
-                 " indicates meshes have not been matched correctly.\n\n"
-                 " The calculation will not run.\n\n"),
-               op_name_recv);
-
-  }
-  else if (strcmp(op_name_recv, "coupling:start"))
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Message received from SYRTHES: \"%s\"\n"
-                " indicates an error or is unexpected."),
-              op_name_recv);
-
-  else if (verbosity > 0) {
+  if (match_flag == 0 && verbosity > 0) {
     bft_printf(_("\n ** Mesh located for SYRTHES coupling \"%s\".\n\n"),
                syr_coupling->syr_name);
     bft_printf_flush();
   }
-
 }
 
 /*----------------------------------------------------------------------------
