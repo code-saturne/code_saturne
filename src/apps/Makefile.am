@@ -106,8 +106,9 @@ AM_LDFLAGS = $(ORIGINRUNPATH) $(PLUGINRUNPATH)
 
 # Library source files
 
-lib_LTLIBRARIES = libsaturne.la
-libsaturne_la_SOURCES = cs_solver.c
+lib_LTLIBRARIES = libsaturne.la libcs_solver.la
+
+libsaturne_la_SOURCES =
 libsaturne_la_LIBADD = \
 $(top_builddir)/src/fvm/libfvm_filters.la \
 $(top_builddir)/src/base/libcsbase.la \
@@ -150,7 +151,28 @@ $(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
 $(LDADD_BLAS) \
 $(LTLIBINTL) \
 $(FCLIBS)
-libsaturne_la_LDFLAGS = -no-undefined -version-info 5:0:0
+libsaturne_la_LDFLAGS = -no-undefined -version-info 5:2:0
+
+libcs_solver_la_SOURCES = cs_solver.c
+libcs_solver_la_LIBADD = libsaturne.la \
+$(LIBPLE_LA) \
+$(LDFLAGS_PLE) $(LIBS_PLE) \
+$(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS) \
+$(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
+$(MED_LDFLAGS) $(MED_LIBS) $(MEDRUNPATH) \
+$(HDF5_LDFLAGS) $(HDF5_LIBS) $(HDF5RUNPATH) \
+$(METIS_LDFLAGS) $(METIS_LIBS) $(METISRUNPATH) \
+$(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) $(SCOTCHRUNPATH) \
+$(EOS_LDFLAGS) $(EOS_LIBS) $(EOSRUNPATH) \
+$(FREESTEAM_LDFLAGS) $(FREESTEAM_LIBS) $(FREESTEAMRUNPATH) \
+$(COOLPROP_LDFLAGS) $(COOLPROP_LIBS) $(COOLPROPRUNPATH) \
+$(LDADD_CATALYST) $(LDADD_MELISSA) $(LDADD_COOLPROP) \
+$(MPI_LDFLAGS) $(MPI_LIBS) \
+$(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
+$(LDADD_BLAS) \
+$(LTLIBINTL) \
+$(FCLIBS)
+libcs_solver_la_LDFLAGS = -no-undefined -version-info 5:2:0
 
 # Main program
 #pkglibexecdir = $(libexecdir)/$(PACKAGE)
@@ -168,7 +190,7 @@ if HAVE_FRONTEND
 pkglibexec_PROGRAMS += cs_check_syntax
 endif
 
-cs_solver$(EXEEXT): libsaturne.la
+cs_solver$(EXEEXT): libcs_solver.la
 	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py
 
@@ -205,10 +227,10 @@ endif
 
 all-local: cs_solver$(EXEEXT)
 
-install-exec-hook: libsaturne.la
+install-exec-hook: libcs_solver.la
 	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	 --mode=install --dest "$(DESTDIR)"
 
 uninstall-local:
-	rm $(libexecdir)/$(PACKAGE)/cs_solver
+	rm $(pkglibexecdir)/cs_solver$(EXEEXT)

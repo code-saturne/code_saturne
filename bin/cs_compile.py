@@ -30,7 +30,10 @@ import tempfile
 
 from optparse import OptionParser
 
-from cs_exec_environment import run_command, separate_args
+try:
+    from code_saturne.cs_exec_environment import run_command, separate_args
+except Exception:
+    from cs_exec_environment import run_command, separate_args
 
 #-------------------------------------------------------------------------------
 
@@ -207,9 +210,15 @@ class cs_compile(object):
 
         # Add CPPFLAGS and LDFLAGS information for the current package
         if flag == 'cppflags':
-            flags.insert(0, "-I" + self.pkg.get_dir("pkgincludedir"))
+            pkgincludedir = self.pkg.get_dir("pkgincludedir")
+            flags.insert(0, "-I" + pkgincludedir)
             if self.pkg.config.libs['ple'].variant == "internal":
                 flags.insert(0, "-I" + self.pkg.get_dir("includedir"))
+            if self.pkg.name != os.path.basename(pkgincludedir):
+                d = os.path.join(self.pkg.get_dir("includedir"),
+                                 self.pkg.name)
+                if os.path.isdir(d):
+                    flags.insert(0, "-I" + d)
 
         elif flag == 'ldflags':
             flags.insert(0, "-L" + self.pkg.get_dir("libdir"))
@@ -441,6 +450,7 @@ class cs_compile(object):
         temp_dir = None
 
         o_files = obj_files
+
         p_libs = self.get_flags('libs')
 
         # Special handling for some linkers (such as Mac OS X), for which
@@ -478,6 +488,9 @@ class cs_compile(object):
         cmd += ["-o", exec_name]
         if o_files:
             cmd += o_files
+
+        if os.path.basename(exec_name) in self.pkg.config.exec_libs:
+            cmd += [self.pkg.config.exec_libs[os.path.basename(exec_name)]]
 
         # If present, address sanitizer needs to come first
         if '-lasan' in p_libs:

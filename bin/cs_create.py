@@ -493,9 +493,6 @@ domains = [
 
         datadir = self.package.get_dir("pkgdatadir")
         data_distpath  = os.path.join(datadir, 'data')
-        user_distpath = os.path.join(datadir, 'user')
-        if self.package.name == 'code_saturne' :
-            user_examples_distpath = os.path.join(datadir, 'user_examples')
 
         if not self.import_only:
             try:
@@ -558,13 +555,35 @@ domains = [
 
         if self.use_ref:
 
+            user_distpath = os.path.join(datadir, 'user')
+            user_examples_distpath = os.path.join(datadir, 'user_examples')
+
             user = os.path.join(src, 'REFERENCE')
             user_examples = os.path.join(src, 'EXAMPLES')
             shutil.copytree(user_distpath, user)
+            shutil.copytree(user_examples_distpath, user_examples)
+
+            add_datadirs = []
+            if self.package.name == 'neptune_cfd' :
+                add_datadirs.append(os.path.join(self.package.get_dir("datadir"),
+                                                 self.package.name))
+
+            for d in add_datadirs:
+                user_distpath = os.path.join(d, 'user')
+                user_examples_distpath = os.path.join(d, 'user_examples')
+
+                if os.path.isdir(user_distpath):
+                    s_files = os.listdir(user_distpath)
+                    for f in s_files:
+                        shutil.copy(os.path.join(user_distpath, f), user)
+
+                if os.path.isdir(user_examples_distpath):
+                    s_files = os.listdir(user_examples_distpath)
+                    for f in s_files:
+                        shutil.copy(os.path.join(user_examples_distpath, f), user_examples)
+
             unset_executable(user)
-            if self.package.name == 'code_saturne' :
-                shutil.copytree(user_examples_distpath, user_examples)
-                unset_executable(user_examples)
+            unset_executable(user_examples)
 
         # Copy data and source files from another case
 

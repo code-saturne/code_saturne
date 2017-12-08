@@ -31,8 +31,12 @@ try:
 except Exception:
     import configparser  # Python3
 
-from cs_exec_environment import separate_args, assemble_args, enquote_arg, \
-    get_command_single_value, update_command_single_value
+try:
+    from code_saturne.cs_exec_environment import separate_args, assemble_args, \
+        enquote_arg, get_command_single_value, update_command_single_value
+except exception:
+    from cs_exec_environment import separate_args, assemble_args, \
+        enquote_arg, get_command_single_value, update_command_single_value
 
 #===============================================================================
 # Class used to manage runcase files

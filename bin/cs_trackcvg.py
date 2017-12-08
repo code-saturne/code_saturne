@@ -124,7 +124,7 @@ def main(argv, pkg):
     else:
         images_path = os.path.join(pkg.get_dir('pkgpythondir'), 'core', 'icons')
         sys.path.insert(1, os.path.join(pkg.get_dir('pkgpythondir'), 'core'))
-        sys.path.insert(1, pkg.get_dir('cspythondir'))
+        sys.path.insert(1, pkg.get_dir('pythondir'))
 
     case = process_cmd_line(argv)
 

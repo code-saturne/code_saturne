@@ -38,7 +38,7 @@ if HAVE_SALOME
 SALOME = salome
 endif
 
-SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po docs $(GUI) tests
+SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po docs $(GUI) tests $(NEPTUNE_CFD)
 
 AUX_DIST = \
 build-aux/catalyst \
@@ -217,6 +217,8 @@ bin/cs_package.py: Makefile
 bin/code_saturne: $(srcdir)/bin/code_saturne.in
 bin/cs_package.py: $(srcdir)/bin/cs_package.py.in
 
+BUILT_SOURCES = bin/cs_package.py
+
 CLEANFILES = $(edit_scripts)
 EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in \
               data/thch/dp_radiat_MFS.tar.xz
@@ -231,6 +233,8 @@ bin/code_saturne
 nodist_pkgpython_PYTHON = \
 bin/cs_config.py \
 bin/cs_package.py
+
+# Install Python library
 
 dist_pkgpython_PYTHON = \
 bin/__init__.py \
@@ -396,8 +400,6 @@ dist-hook: changelog
 	-rm -rf `find $(distdir)/patches -name .svn`
 	-rm -rf `find $(distdir)/salome -name .svn`
 	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --full > $(distdir)/build-aux/version
-
-all-local: bin/cs_package.py
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

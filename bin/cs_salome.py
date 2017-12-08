@@ -93,9 +93,7 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH
     path = pkg.get_dir('pkgpythondir')
     path = path+":"+pkg.get_dir('pythondir')
     if pkg.name == 'neptune_cfd':
-        cspath = os.path.join(pkg.get_dir('csdir'), "lib",
-                                                   "python" + sys.version[:3],
-                                                   "site-packages", "code_saturne")
+        cspath = os.path.join(pkg.get_dir('pythondir'), 'code_saturne')
         path = path+":"+cspath
 
         # Test if EOS modules could be imported
@@ -110,12 +108,8 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH
                 if os.path.isdir(eospath) and not eospath in sys.path:
                     path = path+":"+eospath
 
-    if pkg.name == 'neptune_cfd':
-        prefix = pkg.get_dir('csdir')
-        pythondir = pkg.get_dir('cspythondir')
-    else:
-        prefix = pkg.get_dir('prefix')
-        pythondir = pkg.get_dir('pythondir')
+    prefix = pkg.get_dir('prefix')
+    pythondir = pkg.get_dir('pythondir')
     cmd = template % {'salomeenv': pkg.config.salome_env,
                       'prefix': prefix,
                       'pythondir': pythondir,

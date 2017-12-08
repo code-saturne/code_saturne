@@ -5,6 +5,12 @@ if [ ! -d sbin ]; then
   exit 1
 fi
 
+for d in `\ls`; do
+  if test -f $d/sbin/bootstrap; then
+    (cd $d && ./sbin/bootstrap)
+  fi
+done
+
 # update POTFILES.in
 
 echo "Generating po/POTFILES.in"
@@ -19,19 +25,16 @@ for f in `ls ./build-aux` ; do
   esac
 done
 
-for d in . libple
-do
-  rm -rf $d/m4/codeset.m4 $d/m4/fcntl-o.m4 $d/m4/gettext.m4 \
-         $d/m4/glibc2.m4 $d/m4/glibc21.m4 $d/m4/iconv.m4 $d/m4/intdiv0.m4 \
-         $d/m4/intl.m4 $d/m4/intldir.m4 $d/m4/intlmacosx.m4 $d/m4/intmax.m4 \
-         $d/m4/inttypes-pri.m4 $d/m4/inttypes_h.m4 $d/m4/lcmessage.m4 \
-         $d/m4/lock.m4 $d/m4/longlong.m4 $d/m4/lib-ld.m4 $d/m4/lib-link.m4 \
-         $d/m4/lib-prefix.m4 $d/m4/libtool.m4 $d/m4/lt~obsolete.m4 \
-         $d/m4/ltoptions.m4 $d/m4/ltsugar.m4 $d/m4/ltversion.m4 $d/m4/nls.m4 \
-         $d/m4/printf-posix.m4 $d/m4/po.m4 $d/m4/progtest.m4 $d/m4/size_max.m4 \
-         $d/m4/stdint_h.m4 $d/m4/threadlib.m4 $d/m4/uintmax_t.m4 $d/m4/visibility.m4 \
-         $d/m4/wchar_t.m4 $d/m4/wint_t.m4 $d/m4/xsize.m4
-done
+rm -rf m4/codeset.m4 m4/fcntl-o.m4 m4/gettext.m4 \
+       m4/glibc2.m4 m4/glibc21.m4 m4/iconv.m4 m4/intdiv0.m4 \
+       m4/intl.m4 m4/intldir.m4 m4/intlmacosx.m4 m4/intmax.m4 \
+       m4/inttypes-pri.m4 m4/inttypes_h.m4 m4/lcmessage.m4 \
+       m4/lock.m4 m4/longlong.m4 m4/lib-ld.m4 m4/lib-link.m4 \
+       m4/lib-prefix.m4 m4/libtool.m4 m4/lt~obsolete.m4 \
+       m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 m4/nls.m4 \
+       m4/printf-posix.m4 m4/po.m4 m4/progtest.m4 m4/size_max.m4 \
+       m4/stdint_h.m4 m4/threadlib.m4 m4/uintmax_t.m4 m4/visibility.m4 \
+       m4/wchar_t.m4 m4/wint_t.m4 m4/xsize.m4
 
 # Simply run autoreconf.
 
@@ -41,11 +44,8 @@ done
 cs_gettext_version=`gettext --version | head -1 | sed -e s/gettext.*0/0/`
 case $cs_gettext_version in
   0.17*)
-    for d in . libple
-    do
-      cp -p $d/configure.ac $d/configure.ac.tmp
-      sed -e s/AM_GNU_GETTEXT_VERSION.*/AM_GNU_GETTEXT_VERSION\(\[$cs_gettext_version\]\)/g $d/configure.ac.tmp > $d/configure.ac
-    done
+    cp -p configure.ac configure.ac.tmp
+    sed -e s/AM_GNU_GETTEXT_VERSION.*/AM_GNU_GETTEXT_VERSION\(\[$cs_gettext_version\]\)/g ./configure.ac.tmp > configure.ac
     ;;
   *)
     ;;
@@ -104,10 +104,7 @@ fi
 
 case $cs_gettext_version in
   0.17*)
-    for d in . libple
-    do
-      \mv $d/configure.ac.tmp $d/configure.ac
-    done
+    \mv configure.ac.tmp configure.ac
     ;;
   *)
     ;;

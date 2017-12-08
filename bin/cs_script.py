@@ -52,8 +52,6 @@ class master_script:
 
         if package != None:
             sys.path.insert(1, package.get_dir('pythondir'))
-            if package.name == 'neptune_cfd':
-                sys.path.insert(1, package.get_dir('cspythondir'))
 
     def execute(self):
 

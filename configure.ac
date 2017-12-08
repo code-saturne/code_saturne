@@ -634,9 +634,16 @@ CS_AC_TEST_PETSC
 
 CS_AC_TEST_DOCS
 
+cs_have_neptune=cfd=no
+if test -f ${srcdir}/neptune_cfd/configure; then
+  cs_have_neptune_cfd=yes
+fi
+
 # Check if we need to force link with C++
 cs_have_link_cxx=no
-if test x$cs_have_med_link_cxx = xyes ; then
+if test x$cs_have_neptune_cfd = xyes ; then
+  cs_have_link_cxx=yes
+elif test x$cs_have_med_link_cxx = xyes ; then
   cs_have_link_cxx=yes
 elif test x$cs_have_medcoupling = xyes -o x$cs_have_paramedmem = xyes ; then
   cs_have_link_cxx=yes
@@ -1067,6 +1074,20 @@ AC_SUBST(LIBS)
 # Output
 #------------------------------------------------------------------------------
 
+NEPTUNE_CFD=
+if test x$cs_have_neptune_cfd = xyes; then
+  AC_CONFIG_SUBDIRS([neptune_cfd])
+  NEPTUNE_CFD=neptune_cfd
+  NEPTUNE_CFD_LIBS="-lneptune"
+fi
+
+AC_SUBST(HAVE_NEPTUNE_CFD)
+AC_SUBST(NEPTUNE_CFD)
+
+#------------------------------------------------------------------------------
+# Output
+#------------------------------------------------------------------------------
+
 # Main configuration
 
 AC_CONFIG_FILES([Makefile po/Makefile.in
@@ -1138,6 +1159,9 @@ fi
 
 echo
 echo "Configuration options:"
+if test x$cs_have_neptune_cfd = xyes ; then
+  echo " NEPTUNE_CFD module support"
+fi
 echo " use debugging code: "$debug""
 echo " use malloc hooks: "$cs_have_malloc_hooks""
 if test x$cs_have_frontend = xno ; then

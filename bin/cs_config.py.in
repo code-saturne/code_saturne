@@ -87,7 +87,6 @@ class config:
 
         self.deplibs = ['saturne',                      # Code_Saturne
                         'ple',                          # PLE
-                        'latex', 'doxygen', 'sphinx',   # docs
                         'eos', 'freesteam', 'coolprop', # Equations of state
                         'ccm', 'cgns', 'med', 'hdf5',   # Mesh filters
                         'catalyst', 'melissa',          # co-processing libraries
@@ -124,6 +123,11 @@ class config:
             self.cfgext = ".cfg"
             self.exeext = ""
             self.shext = ""
+
+        # Libraries to add for specific executable names
+
+        self.exec_libs = {'cs_solver' + self.exeext: "-lcs_solver",
+                          'nc_solver' + self.exeext: "-lneptune"}
 
         # Python-related information
 
@@ -183,29 +187,6 @@ class config:
                          flags = {'cppflags': "@PLE_CPPFLAGS@",
                                   'ldflags': "@PLE_LDFLAGS@",
                                   'libs': "@PLE_LIBS@"})
-
-        # Setup latex for docs
-
-        self.libs['latex'] = \
-            prerequisite("Latex",
-                         have = "@cs_have_latex@",
-                         flags = {'cppflags': "",
-                                  'ldflags': "",
-                                  'libs': ""})
-
-        self.libs['doxygen'] = \
-            prerequisite("Doxygen",
-                         have = "@cs_have_doxygen@",
-                         flags = {'cppflags': "",
-                                  'ldflags': "",
-                                  'libs': ""})
-
-        self.libs['sphinx'] = \
-            prerequisite("Sphinx",
-                         have = "@cs_have_sphinx@",
-                         flags = {'cppflags': "",
-                                  'ldflags': "",
-                                  'libs': ""})
 
         # Setup user and system libraries
 

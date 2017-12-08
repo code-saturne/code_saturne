@@ -31,7 +31,6 @@ case $cs_gettext_version in
   0.17*)
     cp -p configure.ac configure.ac.tmp
     sed -e s/AM_GNU_GETTEXT_VERSION.*/AM_GNU_GETTEXT_VERSION\(\[$cs_gettext_version\]\)/g ./configure.ac.tmp > configure.ac
-    autoreconf -vif $@
     ;;
   *)
     ;;
@@ -43,7 +42,7 @@ type autopoint > /dev/null 2>&1
 
 if test $? = 0 ; then
 
-    autoreconf -vif $@
+  autoreconf -vif $@
 
 else
 

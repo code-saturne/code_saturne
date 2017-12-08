@@ -144,7 +144,7 @@ class compile_build(cs_compile):
         flags = []
 
         top_builddir = os.getcwd()
-        while not os.path.isfile(os.path.join(top_builddir, "config.log")):
+        while not os.path.isfile(os.path.join(top_builddir, "cs_config.h")):
             ds = os.path.split(top_builddir)
             if ds[1]:
                 top_builddir = ds[0]
@@ -171,11 +171,12 @@ class compile_build(cs_compile):
                 p = os.path.join(tsd, f, '.libs')
                 if os.path.isdir(p):
                     flags.append('-L' + p)
-            if not os.path.isdir(os.path.join(tsd, 'apps')):
-                flags.append('-L' + os.path.join(tsd, '.libs'))
             if self.pkg.config.libs['ple'].variant == 'internal':
                 flags.append('-L' + os.path.join(top_builddir, 'libple',
                                                  'src', '.libs'))
+            l_cwd = '-L' + os.path.join(os.getcwd(), '.libs')
+            if not l_cwd in flags:
+                flags.append(l_cwd)
             # Add library paths which may be indirectly required
             re_lib_dirs = self.pkg.config.get_compile_dependency_paths()
             for d in re_lib_dirs:
@@ -255,6 +256,9 @@ class compile_install(cs_compile):
     #---------------------------------------------------------------------------
 
     def get_flags(self, flag):
+
+        if flag == 'libs':
+            return cs_compile.get_flags(self, flag)
 
         cmd_line = []
 
