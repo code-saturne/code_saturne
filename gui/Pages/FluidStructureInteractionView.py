@@ -281,17 +281,17 @@ class StandardItemModel(QStandardItemModel):
 
 class Coupling:
     """
-    Coupling is the base class to manage all widgets which value depend on the
+    Coupling is the base class to manage all widgets whose value depend on the
     boundary.
 
     It provides getBoundaryDefinedValue/setBoundaryDefinedValue methods which
-    get/set the value of a boundary attribute. Getter and setter are specified
-    int the constructor
+    gets/sets the value of a boundary attribute. Getter and setter are specified
+    in the constructor
 
-    It also automatically enable/disable the widget when boundary is present
+    It also automatically enables/disables the widget when boundary is present
     or not
 
-    Derived class can override onBoundarySet method to specify the initial
+    Derived classes can override onBoundarySet method to specify the initial
     value of the widget base on the boundary
     """
 
@@ -349,14 +349,13 @@ class Coupling:
         getattr(self.__boundary, self.__setterStr)(value)
 
 
-
 #-------------------------------------------------------------------------------
 # LineEdit Coupling class
 #-------------------------------------------------------------------------------
 
 class LineEditCoupling(Coupling):
     """
-    LineEdit that depend on a boundary
+    LineEdit that depends on a boundary
     """
 
     def __init__(self, lineEdit, getter, setter):
@@ -417,8 +416,8 @@ class FormulaCoupling(Coupling):
         self.getBoundaryDefinedValue()
 
 
-    @pyqtSlot(str)
-    def __slotFormula(self, text):
+    @pyqtSlot(bool)
+    def __slotFormula(self, checked):
         """
         Run formula editor.
         """
@@ -489,12 +488,16 @@ class CouplingManager:
     Manage and initialize coupling derived objects
     """
 
-    def __init__(self, mainView, case, internalTableModel, externalTableModel):
+    def __init__(self, mainView, case,
+                 internalTableView, internalTableModel,
+                 externalTableView, externalTableModel):
         """
         Constructor
         """
         self.case               = case
         self.case.undoStopGlobal()
+        self.__internalTableView = internalTableView
+        self.__externalTableView = externalTableView
         self.__internalTableModel = internalTableModel
         self.__externalTableModel = externalTableModel
         self.__internalCouplings = []
@@ -547,12 +550,12 @@ class CouplingManager:
         Initialize the creation of the checkbox coupling
         """
         couplings = []
-        couplings.append(CheckBoxCoupling( mainView.checkBoxDDLX, "getDDLX",
-                                           "setDDLX"))
-        couplings.append(CheckBoxCoupling( mainView.checkBoxDDLY, "getDDLY",
-                                           "setDDLY"))
-        couplings.append(CheckBoxCoupling( mainView.checkBoxDDLZ, "getDDLZ",
-                                           "setDDLZ"))
+        couplings.append(CheckBoxCoupling(mainView.checkBoxDDLX,
+                                          "getDDLX", "setDDLX"))
+        couplings.append(CheckBoxCoupling(mainView.checkBoxDDLY,
+                                          "getDDLY", "setDDLY"))
+        couplings.append(CheckBoxCoupling(mainView.checkBoxDDLZ,
+                                          "getDDLZ", "setDDLZ"))
         self.__externalCouplings.extend(couplings)
 
 
@@ -643,30 +646,33 @@ fx = fluid_fx;\nfy = 0;\nfz = fluid_fz;"""
 
 
 
-    @pyqtSlot("QModelIndex  const&, QModelIndex  const&")
+    @pyqtSlot(QItemSelection, QItemSelection)
     def slotInternalSelectionChanged(self, selected, deselected):
         """
         Called when internal tableView selection changed
         """
-        self.__selectionChanged(self.__internalTableModel,
-                               self.__internalCouplings, selected)
+        self.__selectionChanged(self.__internalTableView,
+                                self.__internalTableModel,
+                                self.__internalCouplings, selected)
 
 
-    @pyqtSlot("QModelIndex  const&, QModelIndex  const&")
+    @pyqtSlot(QItemSelection, QItemSelection)
     def slotExternalSelectionChanged(self, selected, deselected):
         """
         Called when external tableView selection changed
         """
-        self.__selectionChanged(self.__externalTableModel,
-                               self.__externalCouplings, selected)
+        self.__selectionChanged(self.__externalTableView,
+                                self.__externalTableModel,
+                                self.__externalCouplings, selected)
 
 
-    def __selectionChanged(self, tableModel, couplings, selected):
+    def __selectionChanged(self, tableView, tableModel, couplings, selected):
         """
         Called when a tableView selection changed
         """
         # Get Boundary
-        label = tableModel.getLabel(selected)
+        index = tableView.currentIndex()
+        label = tableModel.getLabel(index)
 
         boundary = Boundary("coupling_mobile_boundary", label, self.case)
 
@@ -713,19 +719,22 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
                                                                     'external_coupling')
 
         # Coupling Manager
-        couplingManager = CouplingManager(self, case, self.__internalTableModel
-                                         , self.__externalTableModel)
+        couplingManager = CouplingManager(self, case,
+                                          self.tableInternalCoupling,
+                                          self.__internalTableModel,
+                                          self.tableExternalCoupling,
+                                          self.__externalTableModel)
         # Avoid garbage collector to delete couplingManager
         self.__couplingManager = couplingManager
 
         # Initialize internal / external table view
         self.__initTableView(self.tableInternalCoupling,
-                            self.__internalTableModel,
-                            couplingManager.slotInternalSelectionChanged)
+                             self.__internalTableModel,
+                             couplingManager.slotInternalSelectionChanged)
 
         self.__initTableView(self.tableExternalCoupling,
-                            self.__externalTableModel,
-                            couplingManager.slotExternalSelectionChanged)
+                             self.__externalTableModel,
+                             couplingManager.slotExternalSelectionChanged)
         self.case.undoStartGlobal()
 
 
@@ -796,10 +805,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
         selectionModel = QItemSelectionModel(tableViewItemModel, tableView)
         tableView.setSelectionModel(selectionModel)
-
-        self.connect(selectionModel,
-                     SIGNAL( "currentChanged(const QModelIndex &, const QModelIndex &)"),
-                     slotSelectionChanged)
+        selectionModel.selectionChanged.connect(slotSelectionChanged)
 
 
     @pyqtSlot(str)
