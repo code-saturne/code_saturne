@@ -118,6 +118,7 @@ Makefile.in
 /build-aux/missing
 /build-aux/ylwrap
 /m4/codeset.m4
+/m4/extern-inline.m4
 /m4/fcntl-o.m4
 /m4/gettext.m4
 /m4/glibc2.m4
