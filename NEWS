@@ -5,6 +5,8 @@ Release 5.1.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix interlock in Syrthes coupling when combining surface and volume coupling.
+
 - Fix in Rij EBRSM time stepping (coupled solver).
 
 - Fix for mesh extrusion with varying number of layers.
