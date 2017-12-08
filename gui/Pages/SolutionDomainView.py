@@ -1123,11 +1123,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         # Connections
 
-        self.widgetFacesPerio.tableView.clicked[QModelIndex].connect(self.slotUpdatePeriodicity)
+        selectionModel = self.widgetFacesPerio.tableView.selectionModel()
+        selectionModel.selectionChanged.connect(self.slotUpdatePeriodicity)
 
         self.widgetFacesPerio.pushButtonDelete.clicked.connect(self.slotDeletePeriodicity)
-
-        # self.connect(self.modelPeriod, SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.slotUpdateByModel)
 
         self.comboBoxPeriodicity.activated[str].connect(self.slotPeriodicityMode)
 
@@ -1674,27 +1673,21 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.__setValuesMixed(perio)
 
 
-    @pyqtSlot("QModelIndex, QModelIndex")
-    def slotUpdateByModel(self, index1, index2):
-        """
-        This slot updates the display for the periodicity modified in the
-        in the table view.
-        """
-        log.debug("slotUpdateByModel index.row() = %i " % index1.row())
-        self.slotUpdatePeriodicity(index1)
-
-
-    @pyqtSlot("QModelIndex")
-    def slotUpdatePeriodicity(self, index):
+    @pyqtSlot("QItemSelection")
+    def slotUpdatePeriodicity(self, current):
         """
         This slot updates the display for the periodicity selected
         in the table view.
         """
+        index = self.widgetFacesPerio.tableView.currentIndex()
         log.debug("slotUpdatePeriodicity index.row() = %i " % index.row())
 
         self.groupBoxMode.show()
 
         perio_id = index.row()
+        if perio_id < 0:
+            return
+
         perio_mode = self.mdl.getPeriodicityMode(perio_id)
         self.perio_id = perio_id
         self.perio_mode = perio_mode
