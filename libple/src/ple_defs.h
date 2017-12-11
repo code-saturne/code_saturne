@@ -134,46 +134,14 @@ _ptr = ple_mem_free(_ptr, #_ptr, __FILE__, __LINE__)
 #endif
 
 /*----------------------------------------------------------------------------
- * Variable value type.
- *----------------------------------------------------------------------------*/
-
-typedef enum {
-
-  PLE_DATATYPE_NULL,      /* empty datatype */
-  PLE_CHAR,               /* character values */
-  PLE_FLOAT,              /* 4-byte floating point values */
-  PLE_DOUBLE,             /* 8-byte floating point values */
-  PLE_INT32,              /* 4-byte signed integer values */
-  PLE_INT64,              /* 8-byte signed integer values */
-  PLE_UINT32,             /* 4-byte unsigned integer values */
-  PLE_UINT64              /* 8-byte unsigned integer values */
-
-} ple_datatype_t;
-
-/*----------------------------------------------------------------------------
  * Basic types used by PLE.
  * They may be modified here to better map to a given library, with the
  * following constraints:
  *  - ple_lnum_t must be signed
  *----------------------------------------------------------------------------*/
 
-/* Other types */
-
 typedef int      ple_lnum_t;     /* Local integer index or number */
 typedef double   ple_coord_t;    /* Real number (coordinate value) */
-
-/* Mappings to PLE datatypes */
-/*---------------------------*/
-
-#define PLE_COORD  PLE_DOUBLE
-
-#if (PLE_SIZEOF_INT == 4)
-  #define PLE_LNUM  PLE_INT32
-#elif (PLE_SIZEOF_INT == 8)
-  #define PLE_LNUM  PLE_INT64
-#else
-  #error
-#endif
 
 /*----------------------------------------------------------------------------
  * MPI datatypes.
@@ -257,15 +225,6 @@ typedef void *
                  const char  *var_name,
                  const char  *file_name,
                  int          line_num);
-
-/*=============================================================================
- * Static global variables
- *============================================================================*/
-
-/* Sizes and names associated with datatypes */
-
-extern const size_t  ple_datatype_size[];
-extern const char   *ple_datatype_name[];
 
 /*============================================================================
  * Public function prototypes
