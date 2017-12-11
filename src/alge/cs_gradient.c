@@ -6778,7 +6778,7 @@ void CS_PROCF (cgdts, CGDTS)
  const cs_int_t         *const f_id,
  const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
  const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
- const cs_int_t         *const n_r_sweeps,    /* <-- >1: with reconstruction      */
+ const cs_int_t         *const n_r_sweeps,    /* <-- >1: with reconstruction  */
  const cs_int_t         *const iwarnp,    /* <-- verbosity level              */
  const cs_int_t         *const imligp,    /* <-- type of clipping             */
  const cs_real_t        *const epsrgp,    /* <-- precision for iterative

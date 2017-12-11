@@ -2912,8 +2912,8 @@ cs_matrix_assembler_get_options(const cs_matrix_assembler_t  *ma)
 void
 cs_matrix_assembler_add_g_ids(cs_matrix_assembler_t  *ma,
                               cs_lnum_t               n,
-                              cs_gnum_t               g_row_id[],
-                              cs_gnum_t               g_col_id[])
+                              const cs_gnum_t         g_row_id[],
+                              const cs_gnum_t         g_col_id[])
 {
   /* Reallocate if needed;
      note that we could use optimized structures to avoid
@@ -3396,9 +3396,9 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav)
 void
 cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
                                cs_lnum_t                      n,
-                               cs_lnum_t                      row_id[],
-                               cs_lnum_t                      col_id[],
-                               cs_real_t                      val[])
+                               const cs_lnum_t                row_id[],
+                               const cs_lnum_t                col_id[],
+                               const cs_real_t                val[])
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
 
@@ -3506,9 +3506,9 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
 void
 cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
                                  cs_lnum_t                      n,
-                                 cs_gnum_t                      g_row_id[],
-                                 cs_gnum_t                      g_col_id[],
-                                 cs_real_t                      val[])
+                                 const cs_gnum_t                g_row_id[],
+                                 const cs_gnum_t                g_col_id[],
+                                 const cs_real_t                val[])
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
 
@@ -3855,11 +3855,11 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
         else {
           assert(ma->coeff_recv_col_idx);
           _matrix_assembler_values_add_llx_g(mav,
-                                            ma->coeff_recv_size,
-                                            stride,
+                                             ma->coeff_recv_size,
+                                             stride,
                                              ma->coeff_recv_row_id,
                                              ma->coeff_recv_col_idx,
-                                            recv_coeffs);
+                                             recv_coeffs);
         }
       }
 

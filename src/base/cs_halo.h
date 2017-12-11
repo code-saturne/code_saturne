@@ -304,6 +304,7 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
  * parameters:
  *   halo      <-- pointer to halo structure
  *   sync_mode <-- synchronization mode (standard or extended)
+ *   size      <-- size of each element
  *   num       <-> pointer to local number value array
  *----------------------------------------------------------------------------*/
 

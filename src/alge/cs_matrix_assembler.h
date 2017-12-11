@@ -267,8 +267,8 @@ cs_matrix_assembler_destroy(cs_matrix_assembler_t  **ma);
 void
 cs_matrix_assembler_add_g_ids(cs_matrix_assembler_t  *ma,
                               cs_lnum_t               n,
-                              cs_gnum_t               g_row_id[],
-                              cs_gnum_t               g_col_id[]);
+                              const cs_gnum_t         g_row_id[],
+                              const cs_gnum_t         g_col_id[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -603,9 +603,9 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav);
 void
 cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
                                cs_lnum_t                      n,
-                               cs_lnum_t                      row_id[],
-                               cs_lnum_t                      col_id[],
-                               cs_real_t                      val[]);
+                               const cs_lnum_t                row_id[],
+                               const cs_lnum_t                col_id[],
+                               const cs_real_t                val[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -637,9 +637,9 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
 void
 cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
                                  cs_lnum_t                      n,
-                                 cs_gnum_t                      g_row_id[],
-                                 cs_gnum_t                      g_col_id[],
-                                 cs_real_t                      val[]);
+                                 const cs_gnum_t                g_row_id[],
+                                 const cs_gnum_t                g_col_id[],
+                                 const cs_real_t                val[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

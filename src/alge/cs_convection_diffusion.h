@@ -5043,11 +5043,11 @@ cs_b_cd_unsteady_tensor(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_b_diff_flux_coupling(const int        idiffp,
-                        const cs_real_t  pi,
-                        const cs_real_t  pj,
-                        const cs_real_t  b_visc,
-                        cs_real_t       *fluxi)
+cs_b_diff_flux_coupling(int         idiffp,
+                        cs_real_t   pi,
+                        cs_real_t   pj,
+                        cs_real_t   b_visc,
+                        cs_real_t  *fluxi)
 {
   *fluxi += idiffp*b_visc*(pi - pj);
 }
@@ -5066,11 +5066,11 @@ cs_b_diff_flux_coupling(const int        idiffp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_b_diff_flux_coupling_vector(const int          idiffp,
-                               const cs_real_3_t  pi,
-                               const cs_real_3_t  pj,
-                               const cs_real_t    b_visc,
-                               cs_real_t          fluxi[3])
+cs_b_diff_flux_coupling_vector(int              idiffp,
+                               const cs_real_t  pi[3],
+                               const cs_real_t  pj[3],
+                               cs_real_t        b_visc,
+                               cs_real_t        fluxi[3])
 {
   for (int k = 0; k < 3; k++)
     fluxi[k] += idiffp*b_visc*(pi[k] - pj[k]);

@@ -4390,8 +4390,8 @@ cs_convection_diffusion_vector(int                         idtvar,
         for (cs_lnum_t ii = 0; ii < n_local; ii++) {
           cs_lnum_t face_id = faces_local[ii];
           cs_lnum_t jj = b_face_cells[face_id];
-          cs_real_3_t pip, pjp;
-          cs_real_3_t fluxi = {0., 0., 0.};
+          cs_real_t pip[3], pjp[3];
+          cs_real_t fluxi[3] = {0., 0., 0.};
 
           cs_b_cd_unsteady_vector(ircflp,
                                   diipb[face_id],
