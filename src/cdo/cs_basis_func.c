@@ -167,17 +167,17 @@ _int_pow(cs_real_t    x,
 
 static inline bool
 _is_nearly_diag(const cs_real_t    M[3][3],
-                cs_real_t          tolerance)
+                const cs_real_t    tolerance)
 {
   assert(fabs(M[0][0]) > cs_math_zero_threshold &&
          fabs(M[1][1]) > cs_math_zero_threshold &&
          fabs(M[2][2]) > cs_math_zero_threshold);
 
-  if ((fabs(M[0][1]) + fabs(M[0][2]))/fabs(M[0][0]) > tolerance)
+  if (fabs(M[0][1]) + fabs(M[0][2]) > tolerance * fabs(M[0][0]))
     return false;
-  if ((fabs(M[1][0]) + fabs(M[1][2]))/fabs(M[1][1]) > tolerance)
+  if (fabs(M[1][0]) + fabs(M[1][2]) > tolerance * fabs(M[1][1]))
     return false;
-  if ((fabs(M[2][1]) + fabs(M[2][0]))/fabs(M[2][2]) > tolerance)
+  if (fabs(M[2][1]) + fabs(M[2][0]) > tolerance * fabs(M[2][2]))
     return false;
 
   return true;
@@ -411,7 +411,7 @@ _iner_cell_basis_setup(void                    *pbf,
 
   /* Advanced parameters for controlling the algorithm */
   const int  n_algo_iters = 20;
-  const double  tolerance = 1e-3;
+  const double  tolerance = 1e-12;
 
   /* Default initialization */
   _mono_cell_basis_setup(bf, cm, id, center, cb);
@@ -479,6 +479,10 @@ _iner_cell_basis_setup(void                    *pbf,
 
   for (int k = 0; k < 3; k++)
     cs_nvec3(a[k], bf->axis + k);
+
+  const cs_real_t  odiam = 1. / cm->diam_c;
+  for (int k = 0; k < 3; k++)
+    bf->axis[k].meas *= odiam;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_BASIS_FUNC_DBG > 0
   cs_log_printf(CS_LOG_DEFAULT, " %s : cell_id: %d\n", __func__, cm->c_id);
@@ -601,7 +605,7 @@ _iner_face_basis_setup(void                    *pbf,
                                     cov);
 
   /* Advanced parameters for controlling the algorithm */
-  const double  tolerance = 1e-3;
+  const double  tolerance = 1e-6;
   const cs_real_t cov_score = fabs(cov[1])/sqrt(cov[0]*cov[2]);
 
   if (cov_score < tolerance)
@@ -623,19 +627,20 @@ _iner_face_basis_setup(void                    *pbf,
   /* Assign axis */
   cs_real_3_t  c1a0_c0a1;
   for(int k = 0; k < 3; k++)
-    c1a0_c0a1[k] = -c1 * bf->axis[0].meas*bf->axis[0].unitv[k] +
-                    c0 * bf->axis[1].meas*bf->axis[1].unitv[k];
-  cs_nvec3(c1a0_c0a1, bf->axis);  // First axis
+    c1a0_c0a1[k] = -c1 * bf->axis[0].unitv[k] +
+                    c0 * bf->axis[1].unitv[k];
 
   cs_real_3_t  c0a0_c1a1;
   for(int k = 0; k < 3; k++)
-    c0a0_c1a1[k] =  c0 * bf->axis[0].meas*bf->axis[0].unitv[k] +
-                    c1 * bf->axis[1].meas*bf->axis[1].unitv[k];
+    c0a0_c1a1[k] =  c0 * bf->axis[0].unitv[k] +
+                    c1 * bf->axis[1].unitv[k];
+
+  cs_nvec3(c1a0_c0a1, bf->axis);  // First axis
   cs_nvec3(c0a0_c1a1, bf->axis + 1);  // Second axis
 
   const cs_real_t  odiam = 1. / cm->f_diam[f];
-  bf->axis[0].meas *= odiam;
-  bf->axis[1].meas *= odiam;
+  bf->axis[0].meas = odiam;
+  bf->axis[1].meas = odiam;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_BASIS_FUNC_DBG > 0
   cs_log_printf(CS_LOG_DEFAULT, " %s : cell_id: %d, face: %d\n",
@@ -1218,7 +1223,7 @@ _cka_eval_at_point(const void           *pbf,
   const cs_basis_func_t  *bf = (const cs_basis_func_t *)pbf;
 
   assert(coords != NULL && eval != NULL);
-  assert(start > -1 && end < 4 + bf->n_deg_elts);
+  assert(start > -1 && end < 4 + bf->n_deg_elts + 1);
 
   const cs_real_3_t  r = {coords[0] - bf->center[0],
                           coords[1] - bf->center[1],
@@ -1551,9 +1556,9 @@ _cgk1_eval_at_point(const void           *pbf,
     }
     else {
       /* Gradient of affine functions is a constant vector */
-      eval[shift  ] = bf->axis[i-1].unitv[0] * bf->axis[i].meas;
-      eval[shift+1] = bf->axis[i-1].unitv[1] * bf->axis[i].meas;
-      eval[shift+2] = bf->axis[i-1].unitv[2] * bf->axis[i].meas;
+      eval[shift  ] = bf->axis[i-1].unitv[0] * bf->axis[i-1].meas;
+      eval[shift+1] = bf->axis[i-1].unitv[1] * bf->axis[i-1].meas;
+      eval[shift+2] = bf->axis[i-1].unitv[2] * bf->axis[i-1].meas;
     }
 
   }
@@ -1688,15 +1693,17 @@ _cgka_eval_at_point(const void           *pbf,
     }
     else if (i < 4) {
       /* Gradient of affine functions is a constant vector */
-      eval[shift  ] = bf->axis[i-1].unitv[0] * bf->axis[i].meas;
-      eval[shift+1] = bf->axis[i-1].unitv[1] * bf->axis[i].meas;
-      eval[shift+2] = bf->axis[i-1].unitv[2] * bf->axis[i].meas;
+      eval[shift  ] = bf->axis[i-1].unitv[0] * bf->axis[i-1].meas;
+      eval[shift+1] = bf->axis[i-1].unitv[1] * bf->axis[i-1].meas;
+      eval[shift+2] = bf->axis[i-1].unitv[2] * bf->axis[i-1].meas;
     }
     else {
 
-      const short int  x_expo = bf->deg[3*i];
-      const short int  y_expo = bf->deg[3*i+1];
-      const short int  z_expo = bf->deg[3*i+2];
+      const int j = i -4; /* shift in n_deg_elts */
+      assert(j > -1);
+      const short int  x_expo = bf->deg[3*j];
+      const short int  y_expo = bf->deg[3*j+1];
+      const short int  z_expo = bf->deg[3*j+2];
 
       /* Set to zero before proceeding to an accumulation */
       eval[shift] = eval[shift+1] = eval[shift+2] = 0;
