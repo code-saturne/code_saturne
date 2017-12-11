@@ -47,10 +47,9 @@
 #include <EOS/API/EOS_Error_Field.hxx>
 
 #if defined(EOS_PRE_V1_6)
-  #include <EOS/API/EOS_enums.hxx>
-#else
 #include <EOS/API/EOS_enums.hxx>
-  #include <EOS/API/EOS_properties.hxx>
+#else
+#include <EOS/API/EOS_properties.hxx>
 #endif
 
 /*----------------------------------------------------------------------------
