@@ -289,17 +289,6 @@ cs_basis_func_free(cs_basis_func_t  *pbf);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Dump a cs_basis_func_t structure
- *
- * \param[in]  pbf   pointer to the cs_basis_func_t structure to dump
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_basis_func_dump(const cs_basis_func_t  *pbf);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set options for basis functions when using HHO schemes
  *
  * \param[in]  face_flag    options related to face basis functinos
@@ -323,6 +312,34 @@ cs_basis_func_set_hho_flag(cs_flag_t   face_flag,
 void
 cs_basis_func_get_hho_flag(cs_flag_t   *face_flag,
                            cs_flag_t   *cell_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Dump a cs_basis_func_t structure
+ *
+ * \param[in]  pbf   pointer to the cs_basis_func_t structure to dump
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_basis_func_dump(const cs_basis_func_t  *pbf);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print a cs_basis_func_t structure
+ *         Print into the file f if given otherwise open a new file named
+ *         fname if given otherwise print into the standard output
+ *
+ * \param[in]  fp      pointer to a file structure or NULL
+ * \param[in]  fname   filename or NULL
+ * \param[in]  pbf     pointer to the cs_basis_func_t structure to dump
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_basis_func_fprintf(FILE                   *fp,
+                      const char             *fname,
+                      const cs_basis_func_t  *pbf);
 
 /*----------------------------------------------------------------------------*/
 

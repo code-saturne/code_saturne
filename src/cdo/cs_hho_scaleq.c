@@ -623,7 +623,6 @@ cs_hho_scaleq_initialize(cs_flag_t                      scheme_flag,
     fbs = CS_N_FACE_DOFS_2ND; // DoF by face
     cbs = CS_N_CELL_DOFS_2ND; // DoF for the cell
     order = 2;
-    assert(ma2 != NULL && ms2 != NULL);
 
   }
   else if (scheme_flag & CS_FLAG_SCHEME_POLY1) {
@@ -632,7 +631,6 @@ cs_hho_scaleq_initialize(cs_flag_t                      scheme_flag,
     fbs = CS_N_FACE_DOFS_1ST; // DoF by face
     cbs = CS_N_CELL_DOFS_1ST;  // DoF for the cell
     order = 1;
-    assert(ma1 != NULL && ms1 != NULL);
 
   }
   else {
@@ -641,7 +639,6 @@ cs_hho_scaleq_initialize(cs_flag_t                      scheme_flag,
     fbs = CS_N_FACE_DOFS_0TH; // DoF by face
     cbs = CS_N_CELL_DOFS_0TH; // DoF for the cell
     order = 0;
-    assert(ma0 != NULL && ms0 != NULL);
 
   }
 

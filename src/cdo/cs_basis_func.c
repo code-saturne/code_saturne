@@ -2648,6 +2648,39 @@ cs_basis_func_free(cs_basis_func_t  *pbf)
   return NULL;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set options for basis functions when using HHO schemes
+ *
+ * \param[in]  face_flag    options related to face basis functinos
+ * \param[in]  cell_flag    options related to cell basis functinos
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_basis_func_set_hho_flag(cs_flag_t   face_flag,
+                           cs_flag_t   cell_flag)
+{
+  cs_basis_func_hho_face_flag = face_flag;
+  cs_basis_func_hho_cell_flag = cell_flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get options for basis functions when using HHO schemes
+ *
+ * \param[out] face_flag   pointer to options related to face basis functinos
+ * \param[out] cell_flag   pointer to options related to cell basis functinos
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_basis_func_get_hho_flag(cs_flag_t   *face_flag,
+                           cs_flag_t   *cell_flag)
+{
+  *face_flag = cs_basis_func_hho_face_flag;
+  *cell_flag = cs_basis_func_hho_cell_flag;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2689,36 +2722,60 @@ cs_basis_func_dump(const cs_basis_func_t  *pbf)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set options for basis functions when using HHO schemes
+ * \brief  Print a cs_basis_func_t structure
+ *         Print into the file f if given otherwise open a new file named
+ *         fname if given otherwise print into the standard output
  *
- * \param[in]  face_flag    options related to face basis functinos
- * \param[in]  cell_flag    options related to cell basis functinos
+ * \param[in]  fp      pointer to a file structure or NULL
+ * \param[in]  fname   filename or NULL
+ * \param[in]  pbf     pointer to the cs_basis_func_t structure to dump
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_basis_func_set_hho_flag(cs_flag_t   face_flag,
-                           cs_flag_t   cell_flag)
+cs_basis_func_fprintf(FILE                   *fp,
+                      const char             *fname,
+                      const cs_basis_func_t  *pbf)
 {
-  cs_basis_func_hho_face_flag = face_flag;
-  cs_basis_func_hho_cell_flag = cell_flag;
-}
+  FILE  *fout = stdout;
+  if (fp != NULL)
+    fout = fp;
+  else if (fname != NULL) {
+    fout = fopen(fname, "w");
+  }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get options for basis functions when using HHO schemes
- *
- * \param[out] face_flag   pointer to options related to face basis functinos
- * \param[out] cell_flag   pointer to options related to cell basis functinos
- */
-/*----------------------------------------------------------------------------*/
+  fprintf(fout, "\n basis function: %p\n", (const void *)pbf);
+  if (pbf == NULL)
+    return;
 
-void
-cs_basis_func_get_hho_flag(cs_flag_t   *face_flag,
-                           cs_flag_t   *cell_flag)
-{
-  *face_flag = cs_basis_func_hho_face_flag;
-  *cell_flag = cs_basis_func_hho_cell_flag;
+  fprintf(fout, " flag: %d; dim; %d; poly_order: %d; size: %d\n",
+          pbf->flag, pbf->dim, pbf->poly_order, pbf->size);
+  fprintf(fout, " phi0: % .4e; center: (% .4e, % .4e % .4e)\n",
+          pbf->phi0, pbf->center[0], pbf->center[1], pbf->center[2]);
+
+  for (int k = 0; k < pbf->dim; k++)
+    fprintf(fout, " axis(%d) [% .4e, % .4e % .4e] % .4e\n",
+            k, pbf->axis[k].unitv[0], pbf->axis[k].unitv[1],
+            pbf->axis[k].unitv[2], pbf->axis[k].meas);
+
+  if (pbf->deg != NULL) {
+    for (int k = 0; k < pbf->dim; k++) {
+      for (int i = 0; i < pbf->n_deg_elts; i++)
+        fprintf(fout, "%3d", pbf->deg[i*pbf->dim+k]);
+      fprintf(fout, "\n");
+    }
+  }
+
+  if (pbf->facto != NULL) {
+    const int facto_size = ((pbf->size + 1)*pbf->size)/2;
+    fprintf(fout, "Factorization:\n");
+    for (int i = 0; i < facto_size; i++)
+      fprintf(fout, " % -9.5e", pbf->facto[i]);
+    fprintf(fout, "\n");
+  }
+
+  if (fout != stdout && fout != fp)
+    fclose(fout);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1648,6 +1648,61 @@ cs_sdm_dump(cs_lnum_t           parent_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Print a cs_sdm_t structure not defined by block
+ *          Print into the file f if given otherwise open a new file named
+ *          fname if given otherwise print into the standard output
+ *          The usage of threshold allows one to compare more easier matrices
+ *          without taking into account numerical roundoff.
+ *
+ * \param[in]  fp         pointer to a file structure or NULL
+ * \param[in]  fname      filename or NULL
+ * \param[in]  thd        threshold (below this value --> set 0)
+ * \param[in]  m          pointer to the cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_fprintf(FILE             *fp,
+               const char       *fname,
+               cs_real_t         thd,
+               const cs_sdm_t   *m)
+{
+  FILE  *fout = stdout;
+  if (fp != NULL)
+    fout = fp;
+  else if (fname != NULL) {
+    fout = fopen(fname, "w");
+  }
+
+  fprintf(fout, "cs_sdm_t %p\n", (const void *)m);
+
+  if (m == NULL)
+    return;
+
+  if (m->n_rows < 1 || m->n_cols < 1) {
+    fprintf(fout, " No value.\n");
+    return;
+  }
+
+  for (int i = 0; i < m->n_rows; i++) {
+
+    const cs_real_t  *mval_i = m->val + i*m->n_cols;
+    for (int j = 0; j < m->n_cols; j++) {
+      if (fabs(mval_i[j]) > thd)
+        fprintf(fout, " % -9.5e", mval_i[j]);
+      else
+        fprintf(fout, " % -9.5e", 0.);
+    }
+    fprintf(fout, "\n");
+
+  }
+
+  if (fout != stdout && fout != fp)
+    fclose(fout);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Dump a small dense matrix defined by blocks
  *
  * \param[in]  parent_id   id of the related parent entity

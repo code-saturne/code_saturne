@@ -61,6 +61,7 @@ BEGIN_C_DECLS
 #define _dp3  cs_math_3_dot_product
 #define _mv3  cs_math_33_3_product
 
+#define CS_HHO_BUILDER_DBG  1
 
 /*============================================================================
  * Private variables

@@ -32,7 +32,6 @@
 #include "bft_printf.h"
 
 #include "cs_basis_func.h"
-#include "cs_cdo.h"
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_connect.h"
@@ -45,6 +44,8 @@
 #include "cs_hho_scaleq.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
+#include "cs_param.h"
+#include "cs_param_cdo.h"
 #include "cs_scheme_geometry.h"
 #include "cs_sdm.h"
 #include "cs_source_term.h"
@@ -67,7 +68,12 @@ BEGIN_C_DECLS
 
 static FILE  *hexa = NULL;
 static FILE  *tetra = NULL;
-static FILE  *hho = NULL;
+static FILE  *hexa_hho0 = NULL;
+static FILE  *hexa_hho1 = NULL;
+static FILE  *hexa_hho2 = NULL;
+static FILE  *tetra_hho0 = NULL;
+static FILE  *tetra_hho1 = NULL;
+static FILE  *tetra_hho2 = NULL;
 static FILE  *sdm = NULL;
 
 static cs_cdo_connect_t  *connect = NULL;
@@ -694,6 +700,8 @@ _define_cm_tetra_ref(double            a,
     for (short int vj = vi+1; vj < cm->n_vc; vj++, shift++) {
       double  l = dbuf[shift] = cs_math_3_distance(xvi, cm->xv + 3*vj);
       if (l > cm->diam_c) cm->diam_c = l;
+      fprintf(tetra_hho1, "(%d, %d) l = %.5e --> diam = %.5e\n",
+              vi, vj, l, cm->diam_c);
 
     } /* Loop on vj > vi */
   }   /* Loop on vi */
@@ -744,7 +752,7 @@ _define_cm_tetra_ref(double            a,
 /*----------------------------------------------------------------------------*/
 
 static void
-_test_sdm(void)
+_test_sdm(FILE  *out)
 {
   cs_real_33_t  mpty = {{1.0, 0.5, 0.0},
                         {0.5, 1.0, 0.5},
@@ -755,7 +763,7 @@ _test_sdm(void)
   cs_math_33_eigen((const cs_real_t (*)[3])mpty,
                    &eigen_ratio, &eigen_max);
 
-  fprintf(sdm, " Matrix property eig: ratio % .4e max. % .4e\n",
+  fprintf(out, " Matrix property eig: ratio % .4e max. % .4e\n",
           eigen_ratio, eigen_max);
 
   const int  max_size = 6;
@@ -775,13 +783,13 @@ _test_sdm(void)
   cs_sdm_33_ldlt_compute(m, facto);
   cs_sdm_33_ldlt_solve(facto, b, sol);
 
-  fprintf(sdm, " Solution l.d.l^T 33: % .4e % .4e % .4e\n",
+  fprintf(out, " Solution l.d.l^T 33: % .4e % .4e % .4e\n",
           sol[0], sol[1], sol[2]);
 
   cs_sdm_ldlt_compute(m, facto, tmp);
   cs_sdm_ldlt_solve(3, facto, b, sol);
 
-  fprintf(sdm, " Solution l.d.l^T:    % .4e % .4e % .4e\n",
+  fprintf(out, " Solution l.d.l^T:    % .4e % .4e % .4e\n",
           sol[0], sol[1], sol[2]);
 
   cs_sdm_square_init(4, m);
@@ -793,13 +801,13 @@ _test_sdm(void)
   cs_sdm_44_ldlt_compute(m, facto);
   cs_sdm_44_ldlt_solve(facto, b, sol);
 
-  fprintf(sdm, " Solution l.d.l^T 44: % .4e % .4e % .4e % .4e\n",
+  fprintf(out, " Solution l.d.l^T 44: % .4e % .4e % .4e % .4e\n",
           sol[0], sol[1], sol[2], sol[3]);
 
   cs_sdm_ldlt_compute(m, facto, tmp);
   cs_sdm_ldlt_solve(4, facto, b, sol);
 
-  fprintf(sdm, " Solution l.d.l^T   : % .4e % .4e % .4e % .4e\n",
+  fprintf(out, " Solution l.d.l^T   : % .4e % .4e % .4e % .4e\n",
           sol[0], sol[1], sol[2], sol[3]);
 
   cs_sdm_square_init(6, m);
@@ -814,13 +822,13 @@ _test_sdm(void)
   cs_sdm_66_ldlt_compute(m, facto);
   cs_sdm_66_ldlt_solve(facto, b, sol);
 
-  fprintf(sdm, " Solution l.d.l^T 66: % .4e % .4e % .4e % .4e % .4e % .4e\n",
+  fprintf(out, " Solution l.d.l^T 66: % .4e % .4e % .4e % .4e % .4e % .4e\n",
           sol[0], sol[1], sol[2], sol[3], sol[4], sol[5]);
 
   cs_sdm_ldlt_compute(m, facto, tmp);
   cs_sdm_ldlt_solve(6, facto, b, sol);
 
-  fprintf(sdm, " Solution l.d.l^T   : % .4e % .4e % .4e % .4e % .4e % .4e\n",
+  fprintf(out, " Solution l.d.l^T   : % .4e % .4e % .4e % .4e % .4e % .4e\n",
           sol[0], sol[1], sol[2], sol[3], sol[4], sol[5]);
 
   m = cs_sdm_free(m);
@@ -1159,9 +1167,8 @@ _test_cdovb_schemes(FILE                *out,
   eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
 
   /* Numerical settings for the advection scheme */
-  eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
-  eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
-  eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
+  eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
+  eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
 
   /* Constant advection field */
   cs_real_3_t  vector_field = {1., 0., 0.};
@@ -1394,9 +1401,6 @@ _test_cdovb_schemes(FILE                *out,
           tc0.wall_nsec*1e-9, tc1.wall_nsec*1e-9,
           tc2.wall_nsec*1e-9, tc3.wall_nsec*1e-9);
 
-  /* Free memory */
-  cs_cell_builder_free(&cb);
-  cs_cell_sys_free(&csys);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1445,14 +1449,14 @@ _test_basis_functions(FILE               *out,
   case 0:
     fprintf(out,
             "\n ************************************************************\n"
-            "                              Oth order\n"
+            "          TEST BASIS FUNCTION Oth order\n"
             " ************************************************************\n");
     break;
 
   case 1:
     fprintf(out,
             "\n ************************************************************\n"
-            "                              1st order\n"
+            "          TEST BASIS FUNCTION 1st order\n"
             " ************************************************************\n");
 
     break;
@@ -1460,7 +1464,7 @@ _test_basis_functions(FILE               *out,
   case 2:
     fprintf(out,
             "\n ************************************************************\n"
-            "                              2nd order\n"
+            "           TEST BASIS FUNCTION 2nd order\n"
             " ************************************************************\n");
     break;
 
@@ -1478,7 +1482,6 @@ _test_basis_functions(FILE               *out,
   /* Inertial basis */
   cs_basis_func_t  *cbf = cs_basis_func_create(0, scheme_order, 3);
   cbf->setup(cbf, cm, 0, cm->xc, cb);
-  cs_basis_func_dump(cbf);
   cbf->eval_all_at_point(cbf, cm->xc, c_eval);
   cbf->eval_all_at_point(cbf, cm->xv, c_eval + cbf->size);
   cbf->eval_all_at_point(cbf, cm->xv + 3, c_eval + 2*cbf->size);
@@ -1490,14 +1493,20 @@ _test_basis_functions(FILE               *out,
   if (scheme_order > 0) /* Case of a (x -xc)/diam function (1st basis func.) */
     cbf->project(cbf, cbf->projector->val + cbf->size, c_dof + cbf->size);
 
+  /* Output inertial basis functions */
   cbf->dump_projector(cbf);
+  fprintf(out, "\n >> Inertial cell basis functions\n");
+  cs_basis_func_fprintf(out, NULL, cbf);
+  cs_sdm_fprintf(out, NULL, 1e-15, cbf->projector);
 
   /* Define the related gradient basis */
   cs_basis_func_t  *gbf = cs_basis_func_grad_create(cbf);
   cs_basis_func_copy_setup(cbf, gbf);
   const int bsize = 3*gbf->size;
 
-  cs_basis_func_dump(gbf);
+  fprintf(out, "\n >> Inertial cell gradient basis functions\n");
+  cs_basis_func_fprintf(out, NULL, gbf);
+
   gbf->eval_all_at_point(gbf, cm->xc, g_eval);
   gbf->eval_all_at_point(gbf, cm->xv, g_eval + bsize);
   gbf->eval_all_at_point(gbf, cm->xv + 3, g_eval + 2*bsize);
@@ -1525,7 +1534,11 @@ _test_basis_functions(FILE               *out,
     cbf_mono->project(cbf_mono, cbf_mono->projector->val + cbf_mono->size,
                       c_dof_mono + cbf_mono->size);
 
+  /* Output inertial basis functions */
   cbf_mono->dump_projector(cbf_mono);
+  fprintf(out, "\n >> Monomial cell basis functions\n");
+  cs_basis_func_fprintf(out, NULL, cbf_mono);
+  cs_sdm_fprintf(out, NULL, 1e-15, cbf_mono->projector);
 
   /* Define the related gradient basis */
   cs_basis_func_t  *gbf_mono = cs_basis_func_grad_create(cbf_mono);
@@ -1536,12 +1549,15 @@ _test_basis_functions(FILE               *out,
   gbf_mono->eval_all_at_point(gbf_mono, cm->xv, g_eval_mono + bsize);
   gbf_mono->eval_all_at_point(gbf_mono, cm->xv + 3, g_eval_mono + 2*bsize);
 
+  fprintf(out, "\n >> Mononial cell gradient basis functions\n");
+  cs_basis_func_fprintf(out, NULL, gbf_mono);
+
   /* Free basis structures */
   gbf_mono = cs_basis_func_free(gbf_mono);
   cbf_mono = cs_basis_func_free(cbf_mono);
 
   /* Comparison between the two choices of building a basis function */
-  fprintf(out, "\n Evaluation points for cell: xc = (%5.3e, %5.3e, %5.3e)"
+  printf( "\n Evaluation points for cell:\n xc = (%5.3e, %5.3e, %5.3e)"
           " xv1 = (%5.3e, %5.3e, %5.3e) xv2 = (%5.3e, %5.3e, %5.3e)\n",
           cm->xc[0], cm->xc[1], cm->xc[2], cm->xv[0], cm->xv[1], cm->xv[2],
           cm->xv[3], cm->xv[4], cm->xv[5]);
@@ -1573,36 +1589,36 @@ _test_basis_functions(FILE               *out,
   switch (scheme_order) {
 
   case 0:
-    fprintf(out, " --> %s\n", cdof[0]);
-    _dump_eval_cmp(out, 1, c_tags, c_dof, c_dof_mono);
+    printf( " --> %s\n", cdof[0]);
+    _dump_eval_cmp(stdout, 1, c_tags, c_dof, c_dof_mono);
     for (int i = 0; i < 3; i++) {
-      fprintf(out, " --> %s\n", cvv[i]);
-      _dump_eval_cmp(out, 1, c_tags, c_eval + i, c_eval_mono + i);
-      _dump_eval_cmp(out, 12, g_tags, g_eval + i*bsize, g_eval_mono + i*bsize);
+      printf( " --> %s\n", cvv[i]);
+      _dump_eval_cmp(stdout, 1, c_tags, c_eval + i, c_eval_mono + i);
+      _dump_eval_cmp(stdout, 12, g_tags, g_eval + i*bsize, g_eval_mono + i*bsize);
     }
     break;
 
   case 1:
     for (int i = 0; i < 2; i++) {
-      fprintf(out, " --> %s\n", cdof[i]);
-      _dump_eval_cmp(out, 4, c_tags, c_dof + 4*i, c_dof_mono + 4*i);
+      printf( " --> %s\n", cdof[i]);
+      _dump_eval_cmp(stdout, 4, c_tags, c_dof + 4*i, c_dof_mono + 4*i);
     }
     for (int i = 0; i < 3; i++) {
-      fprintf(out, " --> %s\n", cvv[i]);
-      _dump_eval_cmp(out, 4, c_tags, c_eval + 4*i, c_eval_mono + 4*i);
-      _dump_eval_cmp(out, 30, g_tags, g_eval + i*bsize, g_eval_mono + i*bsize);
+      printf( " --> %s\n", cvv[i]);
+      _dump_eval_cmp(stdout, 4, c_tags, c_eval + 4*i, c_eval_mono + 4*i);
+      _dump_eval_cmp(stdout, 30, g_tags, g_eval + i*bsize, g_eval_mono + i*bsize);
     }
     break;
 
   case 2:
     for (int i = 0; i < 2; i++) {
-      fprintf(out, " --> %s\n", cdof[i]);
-      _dump_eval_cmp(out, 10, c_tags, c_dof + 10*i, c_dof_mono + 10*i);
+      printf( " --> %s\n", cdof[i]);
+      _dump_eval_cmp(stdout, 10, c_tags, c_dof + 10*i, c_dof_mono + 10*i);
     }
     for (int i = 0; i < 3; i++) {
-      fprintf(out, " --> %s\n", cvv[i]);
-      _dump_eval_cmp(out, 10, c_tags, c_eval + 10*i, c_eval_mono + 10*i);
-      _dump_eval_cmp(out, 60, g_tags, g_eval + i*bsize, g_eval_mono + i*bsize);
+      printf( " --> %s\n", cvv[i]);
+      _dump_eval_cmp(stdout, 10, c_tags, c_eval + 10*i, c_eval_mono + 10*i);
+      _dump_eval_cmp(stdout, 60, g_tags, g_eval + i*bsize, g_eval_mono + i*bsize);
     }
     break;
 
@@ -1655,7 +1671,7 @@ _test_basis_functions(FILE               *out,
 
     fbf_mono = cs_basis_func_free(fbf_mono);
 
-    fprintf(out, "\n Evaluation points for f=%d: xf = (%5.3e, %5.3e, %5.3e)"
+    printf( "\n Evaluation points for f=%d: xf = (%5.3e, %5.3e, %5.3e)"
             " xv = (%5.3e, %5.3e, %5.3e)\n", f,
             cm->face[f].center[0], cm->face[f].center[1], cm->face[f].center[2],
             cm->xv[3], cm->xv[4], cm->xv[5]);
@@ -1666,29 +1682,29 @@ _test_basis_functions(FILE               *out,
     switch (scheme_order) {
 
     case 0:
-      fprintf(out, " --> %s (f:%d)\n", cdof[0], f);
-      _dump_eval_cmp(out, 1, f_tags, f_dof, f_dof_mono);
+      printf( " --> %s (f:%d)\n", cdof[0], f);
+      _dump_eval_cmp(stdout, 1, f_tags, f_dof, f_dof_mono);
       for (int i = 0; i < 2; i++) {
-        fprintf(out, "\n --> %s (f:%d)\n", fv[i], f);
-        _dump_eval_cmp(out, 1, f_tags, f_eval + i, f_eval_mono + i);
+        printf( "\n --> %s (f:%d)\n", fv[i], f);
+        _dump_eval_cmp(stdout, 1, f_tags, f_eval + i, f_eval_mono + i);
       }
       break;
 
     case 1:
       for (int i = 0; i < 2; i++) {
-        fprintf(out, " --> %s (f:%d)\n", cdof[i], f);
-        _dump_eval_cmp(out, 3, f_tags, f_dof + 3*i, f_dof_mono + 3*i);
-        fprintf(out, " --> %s (f:%d)\n", fv[i], f);
-        _dump_eval_cmp(out, 3, f_tags, f_eval + 3*i, f_eval_mono + 3*i);
+        printf( " --> %s (f:%d)\n", cdof[i], f);
+        _dump_eval_cmp(stdout, 3, f_tags, f_dof + 3*i, f_dof_mono + 3*i);
+        printf( " --> %s (f:%d)\n", fv[i], f);
+        _dump_eval_cmp(stdout, 3, f_tags, f_eval + 3*i, f_eval_mono + 3*i);
       }
       break;
 
     case 2:
       for (int i = 0; i < 2; i++) {
-        fprintf(out, "\n --> %s (f:%d)\n", cdof[i], f);
-        _dump_eval_cmp(out, 6, f_tags, f_dof + 6*i, f_dof_mono + 6*i);
-        fprintf(out, "\n --> %s (f:%d)\n", fv[i], f);
-        _dump_eval_cmp(out, 6, f_tags, f_eval + 6*i, f_eval_mono + 6*i);
+        printf( "\n --> %s (f:%d)\n", cdof[i], f);
+        _dump_eval_cmp(stdout, 6, f_tags, f_dof + 6*i, f_dof_mono + 6*i);
+        printf( "\n --> %s (f:%d)\n", fv[i], f);
+        _dump_eval_cmp(stdout, 6, f_tags, f_eval + 6*i, f_eval_mono + 6*i);
       }
       break;
 
@@ -1741,28 +1757,38 @@ _test_hho_schemes(FILE                *out,
             "                              HHO_P1 scheme\n"
             " ************************************************************\n");
 
-    cs_basis_func_set_hho_flag(CS_BASIS_FUNC_MONOMIAL, CS_BASIS_FUNC_MONOMIAL);
+    cs_basis_func_set_hho_flag(0, 0); /* Inertial basis function */
     cs_hho_builder_cellwise_setup(cm, cb, hhob);
+
+    fprintf(out, "\n >> Inertial cell basis functions\n");
+    cs_basis_func_fprintf(out, NULL, hhob->cell_basis);
+    cs_sdm_fprintf(out, NULL, 1e-15, hhob->cell_basis->projector);
+    for (short int f = 0; f < cm->n_fc; f++) {
+      fprintf(out, "\n >> Inertial face basis functions (f = %d)\n", f);
+      cs_basis_func_fprintf(out, NULL, hhob->face_basis[f]);
+      cs_sdm_fprintf(out, NULL, 1e-15, hhob->face_basis[f]->projector);
+    }
+
     cs_hho_builder_compute_grad_reco(cm, cb, hhob);
 
-    cs_log_printf(CS_LOG_DEFAULT, "\n RHS matrix\n");
-    cs_sdm_block_dump(0, cb->aux);
+    fprintf(out,  "\n RHS matrix\n");
+    cs_sdm_block_fprintf(out, NULL, 1e-15, cb->aux);
 
-    cs_log_printf(CS_LOG_DEFAULT, "\n Stiffness matrix\n");
-    cs_sdm_simple_dump(cb->hdg);
+    fprintf(out, "\n Stiffness matrix\n");
+    cs_sdm_fprintf(out, NULL, 1e-15, cb->hdg);
 
-    cs_log_printf(CS_LOG_DEFAULT, "\n Gradient Reconstruction matrix\n");
-    cs_sdm_block_dump(0, hhob->grad_reco_op);
+    fprintf(out, "\n Gradient Reconstruction matrix\n");
+    cs_sdm_block_fprintf(out, NULL, 1e-15, hhob->grad_reco_op);
 
     cs_hho_builder_diffusion(cm, cb, hhob);
-    cs_log_printf(CS_LOG_DEFAULT, "\n Diffusion matrix\n");
-    cs_sdm_block_dump(0, cb->loc);
+    fprintf(out, "\n Diffusion matrix\n");
+    cs_sdm_block_fprintf(out, NULL, 1e-15, cb->loc);
 
-    cs_log_printf(CS_LOG_DEFAULT, "\n Diffusion matrix (Mccgg)\n");
-    cs_sdm_block_dump(0, cb->aux);
+    fprintf(out, "\n Diffusion matrix (Mccgg)\n");
+    cs_sdm_block_fprintf(out, NULL, 1e-15, cb->aux);
 
-    cs_log_printf(CS_LOG_DEFAULT, "\n Diffusion matrix (stabilization)\n");
-    cs_sdm_block_dump(0, hhob->jstab);
+    fprintf(out, "\n Diffusion matrix (stabilization)\n");
+    cs_sdm_block_fprintf(out, NULL, 1e-15, hhob->jstab);
 
     {
       cs_xdef_analytic_input_t  anai = {.func = _unity, .input = NULL };
@@ -1793,9 +1819,9 @@ _test_hho_schemes(FILE                *out,
       for (int i = 0; i < 3*cm->n_fc+4; i++)
         reduction_uni[i] = reduction_xyz[i] = reduction_x2[i] = 0.0;
 
-      cs_hho_builder_reduction_from_analytic(uni, cm, cb, hhob, reduction_uni);
+      /* cs_hho_builder_reduction_from_analytic(uni, cm, cb, hhob, reduction_uni); */
       cs_hho_builder_reduction_from_analytic(lin, cm, cb, hhob, reduction_xyz);
-      cs_hho_builder_reduction_from_analytic(x2 , cm, cb, hhob, reduction_x2);
+      /* cs_hho_builder_reduction_from_analytic(x2 , cm, cb, hhob, reduction_x2); */
 
       fprintf(out, "\n Reduction of polynomial functions.\n"
               "    const   |   linear   | quadratic\n");
@@ -1893,7 +1919,6 @@ _test_hho_schemes(FILE                *out,
  * \brief   Test CDO vertex-based schemes
  *
  * \param[in] out_hho      output file for HHO schemes
- * \param[in] out_basis    output file for basis functions
  * \param[in] flag         flag storing the order of the polynomial basis
  * \param[in] cm           pointer to a cs_cell_mesh_t structure
  * \param[in] fm           pointer to a cs_face_mesh_t structure
@@ -1902,7 +1927,6 @@ _test_hho_schemes(FILE                *out,
 
 static void
 _main_hho_schemes(FILE             *out_hho,
-                  FILE             *out_basis,
                   cs_flag_t         flag,
                   cs_cell_mesh_t   *cm,
                   cs_face_mesh_t   *fm)
@@ -1921,7 +1945,19 @@ _main_hho_schemes(FILE             *out_hho,
   else if (flag & CS_FLAG_SCHEME_POLY1)
     order = 1;
 
-  _test_basis_functions(out_basis, order, cm, cb);
+  /* Compute the cell tensor inertia */
+  cs_real_33_t  inertia;
+
+  cs_compute_inertia_tensor(cm, cm->xc, inertia);
+  fprintf(out_hho,
+          "                       % .4e % .4e % .4e\n"
+          " Cell Inertial tensor  % .4e % .4e % .4e\n"
+          "                       % .4e % .4e % .4e\n",
+          inertia[0][0], inertia[0][1], inertia[0][2],
+          inertia[1][0], inertia[1][1], inertia[1][2],
+          inertia[2][0], inertia[2][1], inertia[2][2]);
+
+  /* _test_basis_functions(out_hho, order, cm, cb); */
   _test_hho_schemes(out_hho, order, cm, fm, csys, cb, hhob);
 
   cs_hho_scaleq_finalize();
@@ -2015,11 +2051,28 @@ main(int    argc,
   CS_UNUSED(argc);
   CS_UNUSED(argv);
 
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+  {
+    int t_id;
+#pragma omp parallel private(t_id)
+    {
+      t_id = omp_get_thread_num();
+      if (t_id == 0)
+        cs_glob_n_threads = omp_get_max_threads();
+    }
+  }
+#endif
+
   cs_quadrature_setup();
 
   hexa = fopen("CDO_tests_Hexa.log", "w");
   tetra = fopen("CDO_tests_Tetra.log", "w");
-  hho = fopen("HHO_tests.log", "w");
+  hexa_hho0 = fopen("HHO0_Hexa_tests.log", "w");
+  hexa_hho1 = fopen("HHO1_Hexa_tests.log", "w");
+  hexa_hho2 = fopen("HHO2_Hexa_tests.log", "w");
+  tetra_hho0 = fopen("HHO0_Tetra_tests.log", "w");
+  tetra_hho1 = fopen("HHO1_Tetra_tests.log", "w");
+  tetra_hho2 = fopen("HHO2_Tetra_tests.log", "w");
   sdm = fopen("SDM_tests.log", "w");
 
   /* ==================================== */
@@ -2028,7 +2081,7 @@ main(int    argc,
    *  - Eigenvalues computations
    * ==================================== */
 
-  _test_sdm();
+  _test_sdm(sdm);
 
   /* =========================== */
   /* TEST DISCRETIZATION SCHEMES */
@@ -2069,20 +2122,9 @@ main(int    argc,
   /* Operate several basic tests on CDO-Vb schemes */
   _main_cdovb_schemes(hexa, 0, cm, fm);
 
-  /* Compute the cell tensor inertia */
-  cs_real_33_t  inertia;
-  cs_compute_inertia_tensor(cm, cm->xc, inertia);
-  fprintf(hexa,
-          "                       % .4e % .4e % .4e\n"
-          " Cell Inertial tensor  % .4e % .4e % .4e\n"
-          "                       % .4e % .4e % .4e\n",
-          inertia[0][0], inertia[0][1], inertia[0][2],
-          inertia[1][0], inertia[1][1], inertia[1][2],
-          inertia[2][0], inertia[2][1], inertia[2][2]);
-
-  _main_hho_schemes(hho, hexa, CS_FLAG_SCHEME_POLY0, cm, fm);
-  _main_hho_schemes(hho, hexa, CS_FLAG_SCHEME_POLY1, cm, fm);
-  _main_hho_schemes(hho, hexa, CS_FLAG_SCHEME_POLY2, cm, fm);
+  /* _main_hho_schemes(hexa_hho0, CS_FLAG_SCHEME_POLY0, cm, fm); */
+  /* _main_hho_schemes(hexa_hho1, CS_FLAG_SCHEME_POLY1, cm, fm); */
+  /* _main_hho_schemes(hexa_hho2, CS_FLAG_SCHEME_POLY2, cm, fm); */
 
   /* ========== */
   /* TEST TETRA */
@@ -2093,21 +2135,11 @@ main(int    argc,
   /* Compute the face mesh for the face id 2 */
   cs_face_mesh_build_from_cell_mesh(cm, 2, fm);
 
-  /* Compute the cell tensor inertia */
-  cs_compute_inertia_tensor(cm, cm->xc, inertia);
-  fprintf(tetra,
-          "                       % .4e % .4e % .4e\n"
-          " Cell Inertial tensor  % .4e % .4e % .4e\n"
-          "                       % .4e % .4e % .4e\n",
-          inertia[0][0], inertia[0][1], inertia[0][2],
-          inertia[1][0], inertia[1][1], inertia[1][2],
-          inertia[2][0], inertia[2][1], inertia[2][2]);
-
   _main_cdovb_schemes(tetra, 1, cm, fm);
 
-  _main_hho_schemes(hho, tetra, CS_FLAG_SCHEME_POLY0, cm, fm);
-  _main_hho_schemes(hho, tetra, CS_FLAG_SCHEME_POLY1, cm, fm);
-  _main_hho_schemes(hho, tetra, CS_FLAG_SCHEME_POLY2, cm, fm);
+  /* _main_hho_schemes(tetra_hho0, CS_FLAG_SCHEME_POLY0, cm, fm); */
+  _main_hho_schemes(tetra_hho1, CS_FLAG_SCHEME_POLY1, cm, fm);
+  /* _main_hho_schemes(tetra_hho2, CS_FLAG_SCHEME_POLY2, cm, fm); */
 
   /* Free memory */
   cs_cell_mesh_free(&cm);
@@ -2118,7 +2150,12 @@ main(int    argc,
 
   fclose(hexa);
   fclose(tetra);
-  fclose(hho);
+  fclose(hexa_hho0);
+  fclose(tetra_hho0);
+  fclose(hexa_hho1);
+  fclose(tetra_hho1);
+  fclose(hexa_hho2);
+  fclose(tetra_hho2);
   fclose(sdm);
 
   printf(" --> CDO Tests (Done)\n");
