@@ -360,6 +360,20 @@ cs_matrix_assembler_set_comm(cs_matrix_assembler_t  *ma,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return a pointer to local global row range associated with a
+ *        matrix assembler.
+ *
+ * \param[in]  ma   pointer to matrix assembler structure
+ *
+ * \return  pointer to local range
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_gnum_t *
+cs_matrix_assembler_get_l_range(const cs_matrix_assembler_t  *ma);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return a pointer to the halo structure associated with a
  *        matrix assembler.
  *
