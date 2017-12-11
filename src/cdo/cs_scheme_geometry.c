@@ -334,8 +334,8 @@ cs_compute_face_covariance_tensor(const cs_cell_mesh_t   *cm,
 
   const int  start = cm->f2e_idx[f];
   const int  end = cm->f2e_idx[f+1];
-  const short int n_ef = end - start; // #vertices (=#edges)
-  const short int *f2e_ids = cm->f2e_ids + start;
+  const short int  n_ef = end - start; // #vertices (=#edges)
+  const short int  *f2e_ids = cm->f2e_ids + start;
   const cs_quant_t  pfq = cm->face[f];
 
   /* Switching on face-type: optimized version for triangles */
@@ -359,7 +359,7 @@ cs_compute_face_covariance_tensor(const cs_cell_mesh_t   *cm,
       for (short int e = 0; e < n_ef; e++) { /* Loop on face edges */
 
         // Edge-related variables
-        const short int e0  = f2e_ids[e];
+        const short int e0 = f2e_ids[e];
         const short int v0 = cm->e2v_ids[2*e0];
         const short int v1 = cm->e2v_ids[2*e0+1];
 

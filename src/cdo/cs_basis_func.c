@@ -2754,7 +2754,7 @@ cs_basis_func_fprintf(FILE                   *fp,
           pbf->phi0, pbf->center[0], pbf->center[1], pbf->center[2]);
 
   for (int k = 0; k < pbf->dim; k++)
-    fprintf(fout, " axis(%d) [% .4e, % .4e % .4e] % .4e\n",
+    fprintf(fout, " axis(%d) [% .5e, % .5e % .5e] % .4e\n",
             k, pbf->axis[k].unitv[0], pbf->axis[k].unitv[1],
             pbf->axis[k].unitv[2], pbf->axis[k].meas);
 
