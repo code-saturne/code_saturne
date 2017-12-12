@@ -445,90 +445,69 @@ cs_sles_setup_native_conv_diff(int                  f_id,
          "If this is not an error, increase CS_SLES_DEFAULT_N_SETUPS\n"
          "  in file %s.", CS_SLES_DEFAULT_N_SETUPS, __FILE__);
 
-    if (a == NULL)
+    /* Set extended contribution for domain coupling */
+
+    if (f_id > -1) {
+
+      const cs_field_t *f = cs_field_by_id(f_id);
+      int coupling_id
+        = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+
+      if (coupling_id > -1) {
+        /* TODO base matrix type on solver type (for external libraries) */
+        a = cs_matrix_set_coefficients_coupled(f,
+                                               CS_MATRIX_MSR,
+                                               false, /* symmetric */
+                                               diag_block_size,
+                                               extra_diag_block_size,
+                                               da,
+                                               xa);
+      }
+
+    }
+
+    if (a == NULL) {
+
       a = cs_matrix_msr(false,
                         diag_block_size,
                         extra_diag_block_size);
 
-    cs_matrix_set_coefficients(a,
-                               false,
-                               diag_block_size,
-                               extra_diag_block_size,
-                               m->n_i_faces,
-                               (const cs_lnum_2_t *)(m->i_face_cells),
-                               da,
-                               xa);
+      cs_matrix_set_coefficients(a,
+                                 false,
+                                 diag_block_size,
+                                 extra_diag_block_size,
+                                 m->n_i_faces,
+                                 (const cs_lnum_2_t *)(m->i_face_cells),
+                                 da,
+                                 xa);
 
-    /* Set extended contribution for domain coupling */
-    if (f_id != -1) {
-      const cs_field_t* f = cs_field_by_id(f_id);
-      int coupling_id = cs_field_get_key_int(f,
-                                             cs_field_key_id("coupling_entity"));
+      cs_matrix_t *a_ref = cs_matrix_default(false,
+                                             diag_block_size,
+                                             extra_diag_block_size);
+      if (a_conv == NULL)
+        a_conv = cs_matrix_create_by_copy(a_ref);
 
-      if (coupling_id > -1) {
-        cs_matrix_set_extend
-          (a,
-           cs_internal_coupling_spmv_contribution,
-           cs_matrix_preconditionning_add_coupling_contribution,
-           cs_internal_coupling_by_id(coupling_id));
-      }
-    }
+      cs_matrix_set_coefficients(a_conv,
+                                 false,
+                                 diag_block_size,
+                                 extra_diag_block_size,
+                                 m->n_i_faces,
+                                 (const cs_lnum_2_t *)(m->i_face_cells),
+                                 da_conv,
+                                 xa_conv);
 
-    cs_matrix_t *a_ref = cs_matrix_default(false,
-                                           diag_block_size,
-                                           extra_diag_block_size);
-    if (a_conv == NULL)
-      a_conv = cs_matrix_create_by_copy(a_ref);
+      if (a_diff == NULL)
+        a_diff = cs_matrix_create_by_copy(a_ref);
 
-    cs_matrix_set_coefficients(a_conv,
-                               false,
-                               diag_block_size,
-                               extra_diag_block_size,
-                               m->n_i_faces,
-                               (const cs_lnum_2_t *)(m->i_face_cells),
-                               da_conv,
-                               xa_conv);
+      cs_matrix_set_coefficients(a_diff,
+                                 false,
+                                 diag_block_size,
+                                 extra_diag_block_size,
+                                 m->n_i_faces,
+                                 (const cs_lnum_2_t *)(m->i_face_cells),
+                                 da_diff,
+                                 xa_diff);
 
-    /* Set extended contribution for domain coupling */
-    if (f_id != -1) {
-      const cs_field_t* f = cs_field_by_id(f_id);
-      int coupling_id = cs_field_get_key_int(f,
-                                             cs_field_key_id("coupling_entity"));
-
-      if (coupling_id > -1) {
-        cs_matrix_set_extend
-          (a_conv,
-           cs_internal_coupling_spmv_contribution,
-           cs_matrix_preconditionning_add_coupling_contribution,
-           cs_internal_coupling_by_id(coupling_id));
-      }
-    }
-
-    if (a_diff == NULL)
-      a_diff = cs_matrix_create_by_copy(a_ref);
-
-    cs_matrix_set_coefficients(a_diff,
-                               false,
-                               diag_block_size,
-                               extra_diag_block_size,
-                               m->n_i_faces,
-                               (const cs_lnum_2_t *)(m->i_face_cells),
-                               da_diff,
-                               xa_diff);
-
-    /* Set extended contribution for domain coupling */
-    if (f_id != -1) {
-      const cs_field_t* f = cs_field_by_id(f_id);
-      int coupling_id = cs_field_get_key_int(f,
-                                             cs_field_key_id("coupling_entity"));
-
-      if (coupling_id > -1) {
-        cs_matrix_set_extend
-          (a_diff,
-           cs_internal_coupling_spmv_contribution,
-           cs_matrix_preconditionning_add_coupling_contribution,
-           cs_internal_coupling_by_id(coupling_id));
-      }
     }
 
     _sles_setup[setup_id] = sc;
@@ -554,6 +533,93 @@ cs_sles_setup_native_conv_diff(int                  f_id,
 
   cs_multigrid_t  *mg = cs_sles_get_context(sc);
   cs_multigrid_setup_conv_diff(mg, name, a, a_conv, a_diff, verbosity);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Call sparse linear equation solver setup for systems with internal
+ *        coupling.
+ *
+ * \param[in]  f_id                   associated field id, or < 0
+ * \param[in]  name                   associated name if f_id < 0, or NULL
+ * \param[in]  symmetric              indicates if matrix coefficients
+ *                                    are symmetric
+ * \param[in]  diag_block_size        block sizes for diagonal, or NULL
+ * \param[in]  extra_diag_block_size  block sizes for extra diagonal,
+ *                                    or NULL
+ * \param[in]  da                     diagonal values (NULL if zero)
+ * \param[in]  xa                     extradiagonal values (NULL if zero)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_setup_native_coupling(int               f_id,
+                              const char       *name,
+                              bool              symmetric,
+                              const int        *diag_block_size,
+                              const int        *extra_diag_block_size,
+                              const cs_real_t  *da,
+                              const cs_real_t  *xa)
+{
+  cs_matrix_t *a = NULL;
+
+  /* Check if this system has already been setup */
+
+  cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
+
+  int setup_id = 0;
+  while (setup_id < _n_setups) {
+    if (_sles_setup[setup_id] == sc)
+      break;
+    else
+      setup_id++;
+  }
+
+  if (setup_id >= _n_setups) {
+
+    _n_setups += 1;
+
+    if (_n_setups > CS_SLES_DEFAULT_N_SETUPS)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         "Too many linear systems solved without calling cs_sles_free_native\n"
+         "  maximum number of systems: %d\n"
+         "If this is not an error, increase CS_SLES_DEFAULT_N_SETUPS\n"
+         "  in file %s.", CS_SLES_DEFAULT_N_SETUPS, __FILE__);
+
+    /* Set extended contribution for domain coupling */
+
+    if (f_id > -1) {
+
+      const cs_field_t *f = cs_field_by_id(f_id);
+      int coupling_id
+        = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+
+      if (coupling_id > -1) {
+        /* TODO base matrix type on solver type (for external libraries) */
+        a = cs_matrix_set_coefficients_coupled(f,
+                                               CS_MATRIX_MSR,
+                                               symmetric,
+                                               diag_block_size,
+                                               extra_diag_block_size,
+                                               da,
+                                               xa);
+      }
+
+    }
+
+    _sles_setup[setup_id] = sc;
+    _matrix_setup[setup_id][0] = a;
+    _matrix_setup[setup_id][1] = a; /* so it is freed later */
+
+  }
+  else {
+    a = _matrix_setup[setup_id][0];
+  }
+
+  /* Setup system */
+
+  cs_sles_setup(sc, a);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -651,21 +717,6 @@ cs_sles_solve_native(int                  f_id,
                                  da,
                                  xa);
 
-      /* Set extended contribution for domain coupling */
-      if (f_id != -1) {
-        const cs_field_t* f = cs_field_by_id(f_id);
-        int coupling_id = cs_field_get_key_int(f,
-            cs_field_key_id("coupling_entity"));
-
-        if (coupling_id > -1) {
-          cs_matrix_set_extend
-            (a,
-             cs_internal_coupling_spmv_contribution,
-             cs_matrix_preconditionning_add_coupling_contribution,
-             cs_internal_coupling_by_id(coupling_id));
-        }
-      }
-
       cs_sles_define_t  *sles_default_func = cs_sles_get_default_define();
       sles_default_func(f_id, name, a);
       cs_matrix_release_coefficients(a);
@@ -724,22 +775,6 @@ cs_sles_solve_native(int                  f_id,
                                da,
                                xa);
 
-    /* Set extended contribution for domain coupling */
-    if (f_id != -1) {
-      cs_field_t* f = cs_field_by_id(f_id);
-      int coupling_id = cs_field_get_key_int(f,
-          cs_field_key_id("coupling_entity"));
-
-      if (coupling_id > -1) {
-        cs_matrix_set_extend
-          (a,
-           cs_internal_coupling_spmv_contribution,
-           cs_matrix_preconditionning_add_coupling_contribution,
-           f);
-      }
-    }
-
-
     _sles_setup[setup_id] = sc;
     _matrix_setup[setup_id][0] = a;
     _matrix_setup[setup_id][1] = NULL;
@@ -748,6 +783,32 @@ cs_sles_solve_native(int                  f_id,
   }
   else
     a = _matrix_setup[setup_id][0];
+
+  /* If system uses specific halo (i.e. when matrix contains more than
+     face->cell nonzeroes), allocate specific buffers. */
+
+  cs_real_t *_vx = vx, *_rhs = NULL;
+  const cs_real_t *rhs_p = rhs;
+
+  const cs_halo_t *halo = cs_matrix_get_halo(a);
+  if (halo != NULL && halo != m->halo) {
+
+    size_t stride = 1;
+    if (diag_block_size != NULL)
+      stride = diag_block_size[1];
+    cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+    cs_lnum_t n_cols_ext = cs_matrix_get_n_columns(a);
+    assert(n_rows == m->n_cells);
+    BFT_MALLOC(_rhs, n_cols_ext*stride, cs_real_t);
+    BFT_MALLOC(_vx, n_cols_ext*stride, cs_real_t);
+#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_rows; i++) {
+      _rhs[i] = rhs[i];
+      _vx[i] = vx[i];
+    }
+    cs_matrix_pre_vector_multiply_sync(rotation_mode, a, _rhs);
+    rhs_p = rhs;
+  }
 
   /* Solve system */
 
@@ -758,10 +819,17 @@ cs_sles_solve_native(int                  f_id,
                       r_norm,
                       n_iter,
                       residue,
-                      rhs,
-                      vx,
+                      rhs_p,
+                      _vx,
                       0,
                       NULL);
+
+  BFT_FREE(_rhs);
+  if (_vx != vx) {
+    for (cs_lnum_t i = 0; i < m->n_cells; i++)
+      vx[i] = _vx[i];
+    BFT_FREE(_vx);
+  }
 
   return cvg;
 }
@@ -792,12 +860,8 @@ cs_sles_free_native(int          f_id,
   if (setup_id < _n_setups) {
 
     cs_sles_free(sc);
-    for (int i = 0; i < 3; i++) {
-      if (_matrix_setup[setup_id][i] != NULL) {
-        cs_matrix_set_extend(_matrix_setup[setup_id][i], NULL, NULL, NULL);
-        cs_matrix_release_coefficients(_matrix_setup[setup_id][i]);
-      }
-    }
+    if (_matrix_setup[setup_id][0] != NULL)
+      cs_matrix_release_coefficients(_matrix_setup[setup_id][0]);
     for (int i = 1; i < 3; i++) { /* Remove "copied" matrixes */
       if (_matrix_setup[setup_id][i] != NULL)
         cs_matrix_destroy(&(_matrix_setup[setup_id][i]));

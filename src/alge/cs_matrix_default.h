@@ -33,6 +33,7 @@
 
 #include "cs_defs.h"
 
+#include "cs_field.h"
 #include "cs_halo.h"
 #include "cs_matrix.h"
 #include "cs_numbering.h"
@@ -74,8 +75,8 @@ BEGIN_C_DECLS
 
 void
 cs_matrix_vector_native_multiply(bool                symmetric,
-                                 int                 db_size[4],
-                                 int                 eb_size[4],
+                                 const int           db_size[4],
+                                 const int           eb_size[4],
                                  cs_halo_rotation_t  rotation_mode,
                                  int                 f_id,
                                  const cs_real_t    *dam,
@@ -244,6 +245,34 @@ cs_matrix_get_tuning_runs(int     *n_min_products,
 const cs_gnum_t *
 cs_matrix_get_block_row_g_id(cs_lnum_t         n_rows,
                              const cs_halo_t  *halo);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign coefficients to a matrix using a matrix assembler.
+ *
+ * \param[in]  f                      pointer to associated field
+ * \param[in]  type                   matrix type
+ * \param[in]  symmetric              is matrix symmetric ?
+ * \param[in]  diag_block_size        block sizes for diagonal, or NULL
+ * \param[in]  extra_diag_block_size  block sizes for extra diagonal, or NULL
+ * \param[in]  da                     diagonal values (NULL if zero)
+ * \param[in]  xa                     extradiagonal values (NULL if zero)
+ *                                    casts as:
+ *                                      xa[n_edges]    if symmetric,
+ *                                      xa[n_edges][2] if non symmetric
+ *
+ * \return  pointer to associated matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_set_coefficients_coupled(const cs_field_t  *f,
+                                   cs_matrix_type_t   type,
+                                   bool               symmetric,
+                                   const int         *diag_block_size,
+                                   const int         *extra_diag_block_size,
+                                   const cs_real_t   *da,
+                                   const cs_real_t   *xa);
 
 /*----------------------------------------------------------------------------*/
 

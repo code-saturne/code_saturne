@@ -110,6 +110,32 @@ cs_sles_default_get_verbosity(int          f_id,
 void
 cs_sles_default_finalize(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Call sparse linear equation solver setup for systems with internal
+ *        coupling.
+ *
+ * \param[in]  f_id                   associated field id, or < 0
+ * \param[in]  name                   associated name if f_id < 0, or NULL
+ * \param[in]  symmetric              indicates if matrix coefficients
+ *                                    are symmetric
+ * \param[in]  diag_block_size        block sizes for diagonal, or NULL
+ * \param[in]  extra_diag_block_size  block sizes for extra diagonal,
+ *                                    or NULL
+ * \param[in]  da                     diagonal values (NULL if zero)
+ * \param[in]  xa                     extradiagonal values (NULL if zero)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_setup_native_coupling(int               f_id,
+                              const char       *name,
+                              bool              symmetric,
+                              const int        *diag_block_size,
+                              const int        *extra_diag_block_size,
+                              const cs_real_t  *da,
+                              const cs_real_t  *xa);
+
 /*----------------------------------------------------------------------------
  * Call sparse linear equation solver setup for convection-diffusion
  * systems

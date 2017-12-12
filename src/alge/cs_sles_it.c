@@ -51,7 +51,6 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
-#include "cs_field.h"
 #include "cs_file.h"
 #include "cs_log.h"
 #include "cs_halo.h"
@@ -60,7 +59,6 @@
 #include "cs_matrix_default.h"
 #include "cs_matrix_util.h"
 #include "cs_parall.h"
-#include "cs_parameters.h"
 #include "cs_post.h"
 #include "cs_timer.h"
 #include "cs_time_plot.h"
@@ -836,18 +834,6 @@ _setup_sles_it(cs_sles_it_t       *c,
       //FIXME value for block ?
       if (diag_block_size < 3 || block_nn_inverse == false)
         cs_matrix_copy_diagonal(a, sd->_ad_inv);
-
-      /* Add extended contribution, if necessary */
-      cs_matrix_preconditioner_extend_t *a_preconditioner_extend;
-      void *a_input_extend;
-      cs_matrix_get_extend(a,
-                           NULL, /* vector_multiply_extend */
-                           &a_preconditioner_extend,
-                           &a_input_extend);
-
-      if (a_preconditioner_extend != NULL)
-        a_preconditioner_extend(a_input_extend,
-                                sd->_ad_inv);
 
       const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
       const cs_lnum_t  n_blocks = sd->n_rows / diag_block_size;

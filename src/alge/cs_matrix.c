@@ -79,8 +79,6 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
-#include "cs_field.h"
-#include "cs_parameters.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
@@ -88,7 +86,6 @@
 #include "cs_prototypes.h"
 #include "cs_sort.h"
 #include "cs_timer.h"
-#include "cs_convection_diffusion.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1928,6 +1925,7 @@ _create_struct_csr(bool                have_diag,
  *   have_diag  <-- indicates if the diagonal structure contains nonzeroes
  *   transfer   <-- transfer property of row_index and col_id
  *                  if true, map them otherwise
+ *   ordered    <-- indicates if row entries are already ordered
  *   n_rows     <-- local number of rows
  *   n_cols_ext <-- local number of columns + ghosts
  *   row_index  <-- pointer to index on rows
@@ -1940,6 +1938,7 @@ _create_struct_csr(bool                have_diag,
 static cs_matrix_struct_csr_t *
 _create_struct_csr_from_csr(bool         have_diag,
                             bool         transfer,
+                            bool         ordered,
                             cs_lnum_t    n_rows,
                             cs_lnum_t    n_cols_ext,
                             cs_lnum_t  **row_index,
@@ -1976,9 +1975,10 @@ _create_struct_csr_from_csr(bool         have_diag,
 
     /* Sort line elements by column id (for better access patterns) */
 
-    cs_sort_indexed(ms->n_rows,
-                    ms->_row_index,
-                    ms->_col_id);
+    if (! ordered)
+      cs_sort_indexed(ms->n_rows,
+                      ms->_row_index,
+                      ms->_col_id);
 
   }
 
@@ -5267,6 +5267,295 @@ _set_spmv_func(cs_matrix_type_t             m_type,
   return retcode;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create matrix structure internals using a matrix assembler.
+ *
+ * Only CSR and MSR formats are handled.
+ *
+ * \param[in]  type  type of matrix considered
+ * \param[in]  ma    pointer to matrix assembler structure
+ *
+ * \return  a pointer to created matrix structure internals
+ */
+/*----------------------------------------------------------------------------*/
+
+static void *
+_structure_from_assembler(cs_matrix_type_t        type,
+                          cs_lnum_t               n_rows,
+                          cs_lnum_t               n_cols_ext,
+                          cs_matrix_assembler_t  *ma)
+{
+  void *structure = NULL;
+
+  /* Get info on assembler structure */
+
+  bool             ma_sep_diag = cs_matrix_assembler_get_separate_diag(ma);
+  const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
+  const cs_lnum_t *col_id = cs_matrix_assembler_get_col_ids(ma);
+
+  /* Define structure */
+
+  switch(type) {
+
+  case CS_MATRIX_CSR:
+    /* Assume diagonal is present (should not be important
+       for assembly using matrix assembler) */
+    if (ma_sep_diag == false)
+      structure = _create_struct_csr_from_shared(true, /* have_diag */
+                                                 false, /* for safety */
+                                                 n_rows,
+                                                 n_cols_ext,
+                                                 row_index,
+                                                 col_id);
+    else {
+      cs_lnum_t *_row_index, *_col_id;
+      BFT_MALLOC(_row_index, n_rows + 1, cs_lnum_t);
+      BFT_MALLOC(_col_id, row_index[n_rows] + n_rows, cs_lnum_t);
+      _row_index[0] = 0;
+      for (cs_lnum_t i = 0; i < n_rows; i++) {
+        cs_lnum_t n_cols = row_index[i+1] - row_index[i];
+        cs_lnum_t j = 0, k = 0;
+        const cs_lnum_t *s_c_id = col_id + row_index[i];
+        cs_lnum_t *d_c_id = _col_id + row_index[i] + i;
+        while (j < n_cols && s_c_id[j] < i)
+          d_c_id[k++] = s_c_id[j++];
+        d_c_id[k++] = i;
+        while (j < n_cols)
+          d_c_id[k++] = s_c_id[j++];
+        _row_index[i+1] = row_index[i+1] + i + 1;
+      }
+      structure = _create_struct_csr_from_csr(true, /* have_idag */
+                                              true,
+                                              true,
+                                              n_rows,
+                                              n_cols_ext,
+                                              &_row_index,
+                                              &_col_id);
+    }
+    break;
+
+  case CS_MATRIX_MSR:
+    if (ma_sep_diag == true)
+      structure = _create_struct_csr_from_shared(false,
+                                                 false, /* for safety */
+                                                 n_rows,
+                                                 n_cols_ext,
+                                                 row_index,
+                                                 col_id);
+    else {
+      cs_lnum_t *_row_index, *_col_id;
+      BFT_MALLOC(_row_index, n_rows + 1, cs_lnum_t);
+      BFT_MALLOC(_col_id, row_index[n_rows], cs_lnum_t);
+      _row_index[0] = 0;
+      cs_lnum_t k = 0;
+      for (cs_lnum_t i = 0; i < n_rows; i++) {
+        cs_lnum_t n_cols = row_index[i+1] - row_index[i];
+        const cs_lnum_t *s_c_id = col_id + row_index[i];
+        for (cs_lnum_t j = 0; j < n_cols; j++) {
+          if (s_c_id[j] != i)
+            _col_id[k++] = s_c_id[j];
+        }
+        _row_index[i+1] = k;
+      }
+      BFT_REALLOC(_col_id, _row_index[n_rows], cs_lnum_t);
+      structure = _create_struct_csr_from_csr(false,
+                                              true,
+                                              true,
+                                              n_rows,
+                                              n_cols_ext,
+                                              &_row_index,
+                                              &_col_id);
+    }
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: handling of matrices in %s format\n"
+                "is not operational yet."),
+              __func__,
+              _(cs_matrix_type_name[type]));
+    break;
+  }
+
+  return structure;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy matrix structure internals.
+ *
+ * \param[in]       type       matrix structure type
+ * \param[in, out]  structure  pointer to matrix structure pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_structure_destroy(cs_matrix_type_t   type,
+                   void             **structure)
+{
+  switch(type) {
+  case CS_MATRIX_NATIVE:
+    {
+      cs_matrix_struct_native_t *_structure = *structure;
+      _destroy_struct_native(&_structure);
+      *structure = _structure;
+    }
+    break;
+  case CS_MATRIX_CSR:
+    {
+      cs_matrix_struct_csr_t *_structure = *structure;
+      _destroy_struct_csr(&_structure);
+      *structure = _structure;
+    }
+    break;
+  case CS_MATRIX_CSR_SYM:
+    {
+      cs_matrix_struct_csr_sym_t *_structure = *structure;
+      _destroy_struct_csr_sym(&_structure);
+      *structure = _structure;
+    }
+    break;
+  case CS_MATRIX_MSR:
+    {
+      cs_matrix_struct_csr_t *_structure = *structure;
+      _destroy_struct_csr(&_structure);
+      *structure = _structure;
+    }
+    break;
+  default:
+    assert(0);
+    break;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix container using a given type.
+ *
+ * \param[in]  type  chosen matrix type
+ *
+ * \return  pointer to created matrix structure;
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_matrix_t *
+_matrix_create(cs_matrix_type_t  type)
+{
+  int i;
+  cs_matrix_fill_type_t mft;
+  cs_matrix_t *m;
+
+  BFT_MALLOC(m, 1, cs_matrix_t);
+
+  m->type = type;
+
+  /* Map shared structure */
+
+  m->n_rows = 0;
+  m->n_cols_ext = 0;
+
+  if (m->type != CS_MATRIX_CSR_SYM)
+    m->symmetric = false;
+  else
+    m->symmetric = true;
+
+  for (i = 0; i < 4; i++) {
+    m->db_size[i] = 0;
+    m->eb_size[i] = 0;
+  }
+  m->fill_type = CS_MATRIX_N_FILL_TYPES;
+
+  m->structure = NULL;
+  m->_structure = NULL;
+
+  m->halo = NULL;
+  m->numbering = NULL;
+  m->assembler = NULL;
+
+  for (mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++) {
+    for (i = 0; i < 2; i++)
+      m->vector_multiply[mft][i] = NULL;
+  }
+
+  /* Define coefficients */
+
+  switch(m->type) {
+  case CS_MATRIX_NATIVE:
+    m->coeffs = _create_coeff_native();
+    break;
+  case CS_MATRIX_CSR:
+    m->coeffs = _create_coeff_csr();
+    break;
+  case CS_MATRIX_CSR_SYM:
+    m->coeffs = _create_coeff_csr_sym();
+    break;
+  case CS_MATRIX_MSR:
+    m->coeffs = _create_coeff_msr();
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("Handling of matrixes in %s format\n"
+                "is not operational yet."),
+              _(cs_matrix_type_name[m->type]));
+    break;
+  }
+
+  m->xa = NULL;
+
+  /* Set function pointers here */
+
+  m->set_coefficients = NULL;
+
+  for (mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++)
+    _set_spmv_func(m->type,
+                   m->numbering,
+                   mft,
+                   2,    /* ed_flag */
+                   NULL, /* func_name */
+                   m->vector_multiply);
+
+  switch(m->type) {
+
+  case CS_MATRIX_NATIVE:
+
+    m->set_coefficients = _set_coeffs_native;
+    m->release_coefficients = _release_coeffs_native;
+    m->copy_diagonal = _copy_diagonal_separate;
+    break;
+
+  case CS_MATRIX_CSR:
+    m->set_coefficients = _set_coeffs_csr;
+    m->release_coefficients = _release_coeffs_csr;
+    m->copy_diagonal = _copy_diagonal_csr;
+    break;
+
+  case CS_MATRIX_CSR_SYM:
+    m->set_coefficients = _set_coeffs_csr_sym;
+    m->release_coefficients = _release_coeffs_csr_sym;
+    m->copy_diagonal = _copy_diagonal_csr_sym;
+    m->vector_multiply[CS_MATRIX_SCALAR_SYM][0] = _mat_vec_p_l_csr_sym;
+    break;
+
+  case CS_MATRIX_MSR:
+    m->set_coefficients = _set_coeffs_msr;
+    m->release_coefficients = _release_coeffs_msr;
+    m->copy_diagonal = _copy_diagonal_separate;
+    break;
+
+  default:
+    assert(0);
+    break;
+
+  }
+
+  for (i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
+    if (m->vector_multiply[i][1] == NULL)
+      m->vector_multiply[i][1] = m->vector_multiply[i][0];
+  }
+
+  return m;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -5426,6 +5715,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
   case CS_MATRIX_CSR:
     ms->structure = _create_struct_csr_from_csr(have_diag,
                                                 transfer,
+                                                false,
                                                 n_rows,
                                                 n_cols_ext,
                                                 row_index,
@@ -5434,6 +5724,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
   case CS_MATRIX_MSR:
     ms->structure = _create_struct_csr_from_csr(false,
                                                 transfer,
+                                                false,
                                                 n_rows,
                                                 n_cols_ext,
                                                 row_index,
@@ -5546,92 +5837,12 @@ cs_matrix_structure_create_from_assembler(cs_matrix_type_t        type,
   ms->n_rows = cs_matrix_assembler_get_n_rows(ma);
   ms->n_cols_ext = cs_matrix_assembler_get_n_columns(ma);;
 
-  /* Get info on assembler structure */
+  /* Define internal structure */
 
-  bool             ma_sep_diag = cs_matrix_assembler_get_separate_diag(ma);
-  const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
-  const cs_lnum_t *col_id = cs_matrix_assembler_get_col_ids(ma);
-
-  /* Define structure */
-
-  switch(ms->type) {
-
-  case CS_MATRIX_CSR:
-    /* Assume diagonal is present (should not be important
-       for assembly using matrix assembler) */
-    if (ma_sep_diag == false)
-      ms->structure = _create_struct_csr_from_shared(true, /* have_diag */
-                                                     false, /* for safety */
-                                                     ms->n_rows,
-                                                     ms->n_cols_ext,
-                                                     row_index,
-                                                     col_id);
-    else {
-      cs_lnum_t *_row_index, *_col_id;
-      BFT_MALLOC(_row_index, ms->n_rows + 1, cs_lnum_t);
-      BFT_MALLOC(_col_id, row_index[ms->n_rows] + ms->n_rows, cs_lnum_t);
-      _row_index[0] = 0;
-      for (cs_lnum_t i = 0; i < ms->n_rows; i++) {
-        cs_lnum_t n_cols = row_index[i+1] - row_index[i];
-        cs_lnum_t j = 0, k = 0;
-        const cs_lnum_t *s_c_id = col_id + row_index[i];
-        cs_lnum_t *d_c_id = _col_id + row_index[i] + i;
-        while (j < n_cols && s_c_id[j] < i)
-          d_c_id[k++] = s_c_id[j++];
-        d_c_id[k++] = i;
-        while (j < n_cols)
-          d_c_id[k++] = s_c_id[j++];
-        _row_index[i+1] = row_index[i+1] + i + 1;
-      }
-      ms->structure = _create_struct_csr_from_csr(true, /* have_idag */
-                                                  true,
-                                                  ms->n_rows,
-                                                  ms->n_cols_ext,
-                                                  &_row_index,
-                                                  &_col_id);
-    }
-    break;
-
-  case CS_MATRIX_MSR:
-    if (ma_sep_diag == true)
-      ms->structure = _create_struct_csr_from_shared(false,
-                                                     false, /* for safety */
-                                                     ms->n_rows,
-                                                     ms->n_cols_ext,
-                                                     row_index,
-                                                     col_id);
-    else {
-      cs_lnum_t *_row_index, *_col_id;
-      BFT_MALLOC(_row_index, ms->n_rows + 1, cs_lnum_t);
-      BFT_MALLOC(_col_id, row_index[ms->n_rows], cs_lnum_t);
-      _row_index[0] = 0;
-      cs_lnum_t k = 0;
-      for (cs_lnum_t i = 0; i < ms->n_rows; i++) {
-        cs_lnum_t n_cols = row_index[i+1] - row_index[i];
-        const cs_lnum_t *s_c_id = col_id + row_index[i];
-        for (cs_lnum_t j = 0; j < n_cols; j++) {
-          if (s_c_id[j] != i)
-            _col_id[k++] = s_c_id[j];
-        }
-        _row_index[i+1] = k;
-      }
-      BFT_REALLOC(_col_id, _row_index[ms->n_rows], cs_lnum_t);
-      ms->structure = _create_struct_csr_from_csr(false,
-                                                  true,
-                                                  ms->n_rows,
-                                                  ms->n_cols_ext,
-                                                  &_row_index,
-                                                  &_col_id);
-    }
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: handling of matrices in %s format\n"
-                "is not operational yet."),
-              __func__,
-              _(cs_matrix_type_name[type]));
-    break;
-  }
+  ms->structure = _structure_from_assembler(ms->type,
+                                           ms->n_rows,
+                                           ms->n_cols_ext,
+                                           ma);
 
   /* Set pointers to structures shared from mesh here */
 
@@ -5659,36 +5870,7 @@ cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
 
     cs_matrix_structure_t *_ms = *ms;
 
-    switch(_ms->type) {
-    case CS_MATRIX_NATIVE:
-      {
-        cs_matrix_struct_native_t *structure = _ms->structure;
-        _destroy_struct_native(&structure);
-      }
-      break;
-    case CS_MATRIX_CSR:
-      {
-        cs_matrix_struct_csr_t *structure = _ms->structure;
-        _destroy_struct_csr(&structure);
-      }
-      break;
-    case CS_MATRIX_CSR_SYM:
-      {
-        cs_matrix_struct_csr_sym_t *structure = _ms->structure;
-        _destroy_struct_csr_sym(&structure);
-      }
-      break;
-    case CS_MATRIX_MSR:
-      {
-        cs_matrix_struct_csr_t *structure = _ms->structure;
-        _destroy_struct_csr(&structure);
-      }
-      break;
-    default:
-      assert(0);
-      break;
-    }
-    _ms->structure = NULL;
+    _structure_destroy(_ms->type, &(_ms->structure));
 
     /* Now free main structure */
 
@@ -5712,122 +5894,18 @@ cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
 cs_matrix_t *
 cs_matrix_create(const cs_matrix_structure_t  *ms)
 {
-  int i;
-  cs_matrix_fill_type_t mft;
-  cs_matrix_t *m;
-
-  BFT_MALLOC(m, 1, cs_matrix_t);
-
-  m->type = ms->type;
+  cs_matrix_t *m = _matrix_create(ms->type);
 
   /* Map shared structure */
 
   m->n_rows = ms->n_rows;
   m->n_cols_ext = ms->n_cols_ext;
 
-  if (ms->type != CS_MATRIX_CSR_SYM)
-    m->symmetric = false;
-  else
-    m->symmetric = true;
-
-  for (i = 0; i < 4; i++) {
-    m->db_size[i] = 0;
-    m->eb_size[i] = 0;
-  }
-  m->fill_type = CS_MATRIX_N_FILL_TYPES;
-
   m->structure = ms->structure;
 
   m->halo = ms->halo;
   m->numbering = ms->numbering;
   m->assembler = ms->assembler;
-
-  for (mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++) {
-    for (i = 0; i < 2; i++)
-      m->vector_multiply[mft][i] = NULL;
-  }
-
-  /* Define coefficients */
-
-  switch(m->type) {
-  case CS_MATRIX_NATIVE:
-    m->coeffs = _create_coeff_native();
-    break;
-  case CS_MATRIX_CSR:
-    m->coeffs = _create_coeff_csr();
-    break;
-  case CS_MATRIX_CSR_SYM:
-    m->coeffs = _create_coeff_csr_sym();
-    break;
-  case CS_MATRIX_MSR:
-    m->coeffs = _create_coeff_msr();
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("Handling of matrixes in %s format\n"
-                "is not operational yet."),
-              _(cs_matrix_type_name[m->type]));
-    break;
-  }
-
-  m->xa = NULL;
-
-  /* Set function pointers here */
-
-  m->set_coefficients = NULL;
-
-  for (mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++)
-    _set_spmv_func(m->type,
-                   m->numbering,
-                   mft,
-                   2,    /* ed_flag */
-                   NULL, /* func_name */
-                   m->vector_multiply);
-
-  switch(m->type) {
-
-  case CS_MATRIX_NATIVE:
-
-    m->set_coefficients = _set_coeffs_native;
-    m->release_coefficients = _release_coeffs_native;
-    m->copy_diagonal = _copy_diagonal_separate;
-    break;
-
-  case CS_MATRIX_CSR:
-    m->set_coefficients = _set_coeffs_csr;
-    m->release_coefficients = _release_coeffs_csr;
-    m->copy_diagonal = _copy_diagonal_csr;
-    break;
-
-  case CS_MATRIX_CSR_SYM:
-    m->set_coefficients = _set_coeffs_csr_sym;
-    m->release_coefficients = _release_coeffs_csr_sym;
-    m->copy_diagonal = _copy_diagonal_csr_sym;
-    m->vector_multiply[CS_MATRIX_SCALAR_SYM][0] = _mat_vec_p_l_csr_sym;
-    break;
-
-  case CS_MATRIX_MSR:
-    m->set_coefficients = _set_coeffs_msr;
-    m->release_coefficients = _release_coeffs_msr;
-    m->copy_diagonal = _copy_diagonal_separate;
-    break;
-
-  default:
-    assert(0);
-    break;
-
-  }
-
-  for (i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
-    if (m->vector_multiply[i][1] == NULL)
-      m->vector_multiply[i][1] = m->vector_multiply[i][0];
-  }
-
-  /* Extended structure */
-
-  m->vector_multiply_extend = NULL;
-  m->preconditioner_extend = NULL;
-  m->input_extend = NULL;
 
   return m;
 }
@@ -5864,6 +5942,51 @@ cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
       }
     }
   }
+
+  return m;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix directly from assembler.
+ *
+ * Only CSR and MSR formats are handled.
+ *
+ * \param[in]  type  type of matrix considered
+ * \param[in]  ma    pointer to matrix assembler structure
+ *
+ * \return  a pointer to a created matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_create_from_assembler(cs_matrix_type_t        type,
+                                cs_matrix_assembler_t  *ma)
+{
+  cs_matrix_t *m = _matrix_create(type);
+
+  m->assembler = ma;
+
+  m->type = type;
+
+  m->n_rows = cs_matrix_assembler_get_n_rows(ma);
+  m->n_cols_ext = cs_matrix_assembler_get_n_columns(ma);;
+
+  /* Define internal structure */
+
+  m->_structure = _structure_from_assembler(m->type,
+                                            m->n_rows,
+                                            m->n_cols_ext,
+                                            ma);
+  m->structure = m->_structure;
+
+  /* Set pointers to structures shared from mesh here */
+
+  m->halo = cs_matrix_assembler_get_halo(ma);
+
+  m->numbering = NULL;
+
+  m->assembler = ma;
 
   return m;
 }
@@ -5970,6 +6093,9 @@ cs_matrix_destroy(cs_matrix_t **matrix)
     }
 
     m->coeffs = NULL;
+
+    if (m->_structure != NULL)
+      _structure_destroy(m->type, &(m->_structure));
 
     /* Now free main structure */
 
@@ -6200,7 +6326,6 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
   cs_base_check_bool(&symmetric);
 
   /* Set fill type */
-
   _set_fill_info(matrix,
                  symmetric,
                  diag_block_size,
@@ -6993,17 +7118,9 @@ cs_matrix_vector_multiply(cs_halo_rotation_t   rotation_mode,
                               x,
                               y);
 
-  if (matrix->vector_multiply[matrix->fill_type][0] != NULL) {
+  if (matrix->vector_multiply[matrix->fill_type][0] != NULL)
     matrix->vector_multiply[matrix->fill_type][0](false, matrix, x, y);
 
-    /* Extended contribution */
-    if (matrix->vector_multiply_extend != NULL)
-      matrix->vector_multiply_extend(false, /* Exclude diag */
-                                     matrix->input_extend,
-                                     x,
-                                     y);
-
-  }
   else
     bft_error
       (__FILE__, __LINE__, 0,
@@ -7033,17 +7150,9 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
 {
   assert(matrix != NULL);
 
-  if (matrix->vector_multiply[matrix->fill_type][0] != NULL) {
+  if (matrix->vector_multiply[matrix->fill_type][0] != NULL)
     matrix->vector_multiply[matrix->fill_type][0](false, matrix, x, y);
 
-    /* Extended contribution */
-    if (matrix->vector_multiply_extend != NULL)
-      matrix->vector_multiply_extend(false, /* Exclude diag */
-                                     matrix->input_extend,
-                                     x,
-                                     y);
-
-  }
   else
     bft_error
       (__FILE__, __LINE__, 0,
@@ -7080,17 +7189,9 @@ cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
                               x,
                               y);
 
-  if (matrix->vector_multiply[matrix->fill_type][1] != NULL) {
+  if (matrix->vector_multiply[matrix->fill_type][1] != NULL)
     matrix->vector_multiply[matrix->fill_type][1](true, matrix, x, y);
 
-    /* Extended contribution */
-    if (matrix->vector_multiply_extend != NULL)
-      matrix->vector_multiply_extend(true, /* Exclude diag */
-                                     matrix->input_extend,
-                                     x,
-                                     y);
-
-  }
   else
     bft_error
       (__FILE__, __LINE__, 0,
@@ -7590,57 +7691,6 @@ cs_matrix_variant_test(cs_lnum_t              n_rows,
 
   n_variants = 0;
   BFT_FREE(m_variant);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get coupling entity associated to matrix, or NULL if no coupling
- *        entity has been set before.
- *
- * \param[in]      m                      pointer to matrix structure
- * \param[out]     vector_multiply_extend pointer to SpMV extension function
- * \param[out]     preconditioner_extend  pointer to preconditioner extension
- *                                        function
- * \param[out]     input_extend           pointer to associated data
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_matrix_get_extend(const cs_matrix_t                   *m,
-                     cs_matrix_vector_product_extend_t  **vector_multiply_extend,
-                     cs_matrix_preconditioner_extend_t  **preconditioner_extend,
-                     void                               **input_extend)
-{
-  if (vector_multiply_extend != NULL)
-    *vector_multiply_extend = m->vector_multiply_extend;
-  if (preconditioner_extend != NULL)
-    *preconditioner_extend = m->preconditioner_extend;
-  if (input_extend != NULL)
-    *input_extend = m->input_extend;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set coupling entity associated to matrix, or NULL if no coupling
- *        entity has been set before.
- *
- * \param[in]      m                      pointer to matrix structure
- * \param[in]      vector_multiply_extend pointer to SpMV extension function
- * \param[in]      preconditioner_extend  pointer to preconditioner
- *                                        extension function
- * \param[in, out] input_extend           pointer to associated data
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_matrix_set_extend(cs_matrix_t                        *m,
-                     cs_matrix_vector_product_extend_t  *vector_multiply_extend,
-                     cs_matrix_preconditioner_extend_t  *preconditioner_extend,
-                     void                               *input_extend)
-{
-  m->vector_multiply_extend = vector_multiply_extend;
-  m->preconditioner_extend = preconditioner_extend;
-  m->input_extend = input_extend;
 }
 
 /*----------------------------------------------------------------------------*/

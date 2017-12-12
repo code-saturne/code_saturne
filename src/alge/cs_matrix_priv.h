@@ -220,7 +220,8 @@ typedef struct _cs_matrix_coeff_csr_sym_t {
 typedef struct _cs_matrix_coeff_msr_t {
 
   int              max_db_size;       /* Current max allocated block size */
-  int              max_eb_size;       /* Current max allocated extradiag block size */
+  int              max_eb_size;       /* Current max allocated extradiag
+                                         block size */
 
   /* Pointers to possibly shared arrays */
 
@@ -286,7 +287,8 @@ struct _cs_matrix_t {
 
   /* Pointer to shared structure */
 
-  const void            *structure;    /* Matrix structure */
+  const void            *structure;    /* Possibly shared matrix structure */
+  void                  *_structure;   /* Private matrix structure */
 
   /* Pointers to arrays possibly shared from mesh structure
      (graph edges: face->cell connectivity for coefficient assignment,
@@ -296,6 +298,7 @@ struct _cs_matrix_t {
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
                                           numbering information */
+
   const cs_matrix_assembler_t  *assembler;   /* Associated matrix assembler */
 
   /* Pointer to shared arrays from coefficient assignment from
@@ -320,12 +323,6 @@ struct _cs_matrix_t {
 
   cs_matrix_vector_product_t        *vector_multiply[CS_MATRIX_N_FILL_TYPES][2];
 
-  /* Additional contributions */
-
-  cs_matrix_vector_product_extend_t *vector_multiply_extend;  /* SpMV add */
-  cs_matrix_preconditioner_extend_t *preconditioner_extend;   /* Diag add */
-  void                              *input_extend;            /* Associated
-                                                                  data */
 };
 
 /* Structure used for tuning variants */

@@ -37,7 +37,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 #include "cs_base.h"
+#include "cs_matrix_assembler.h"
 #include "cs_mesh.h"
 #include "cs_parameters.h"
 
@@ -96,6 +99,17 @@ typedef struct {
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of defined internal couplings.
+ *
+ * \return  number of internal couplings
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_internal_coupling_n_couplings(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -393,35 +407,52 @@ cs_internal_coupling_reconstruct_tensor_gradient(
     cs_real_63_t                   grad[]);
 
 /*----------------------------------------------------------------------------
- * Modify matrix-vector product in case of internal coupling
+ * Addition to matrix-vector product in case of internal coupling.
  *
  * parameters:
  *   exclude_diag <-- extra diagonal flag
- *   matrix       <-- matrix m in m * x = y
+ *   f            <-- associated field pointer
  *   x            <-- vector x in m * x = y
  *   y            <-> vector y in m * x = y
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_spmv_contribution(bool              exclude_diag,
-                                       void             *input,
-                                       const cs_real_t  *restrict x,
-                                       cs_real_t        *restrict y);
+cs_internal_coupling_spmv_contribution(bool               exclude_diag,
+                                       const cs_field_t  *f,
+                                       const cs_real_t   *restrict x,
+                                       cs_real_t         *restrict y);
 
 /*----------------------------------------------------------------------------
- * Add contribution from coupled faces (internal coupling) to polynomial
- * preconditionning.
- *
- * This function is common to most solvers
+ * Add coupling term coordinates to matrix assembler.
  *
  * parameters:
- *   input  <-- input
- *   ad     <-> diagonal part of linear equation matrix
+ *   coupling_id
+ *   r_g_id   <-- global row ids (per cell)
+ *   ma       <-> matrix assembler
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_preconditionning_add_coupling_contribution(void       *input,
-                                                     cs_real_t  *ad);
+cs_internal_coupling_matrix_add_ids(int                     coupling_id,
+                                    const cs_gnum_t        *r_g_id,
+                                    cs_matrix_assembler_t  *ma);
+
+/*----------------------------------------------------------------------------
+ * Add coupling terms to matrix values assembly.
+ *
+ * parameters:
+ *   f        <-- associated field
+ *   db_size  <-- diagonal block size
+ *   eb_size  <-- extra-diagonal block size
+ *   r_g_id   <-- global row ids (per cell)
+ *   mav      <-> matrix values assembler
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
+                                       cs_lnum_t                      db_size,
+                                       cs_lnum_t                      eb_size,
+                                       const cs_gnum_t                r_g_id[],
+                                       cs_matrix_assembler_values_t  *mav);
 
 /*----------------------------------------------------------------------------
  * Return pointers to coupling components

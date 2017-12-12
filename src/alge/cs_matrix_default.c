@@ -51,6 +51,7 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_field.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_internal_coupling.h"
@@ -133,8 +134,14 @@ static double _t_measure = 0.5;
 static int _n_min_products = 50;
 
 /* Pointer to global (block-based) numbering, if used */
+
 static cs_lnum_t  _row_num_size = 0;
 static cs_gnum_t  *_global_row_id = NULL;
+static cs_gnum_t  _l_range[2] = {0, 0};
+
+/* Pointer to internal coupling oriented matrix structures */
+
+static cs_matrix_assembler_t  **_matrix_assembler_coupled = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -176,8 +183,6 @@ _build_block_row_g_id(cs_lnum_t         n_rows,
 {
   cs_lnum_t _n_rows = n_rows;
 
-  cs_gnum_t l_range[2];
-
   _row_num_size = n_rows;
   if (halo != NULL) {
     assert(n_rows == halo->n_local_elts);
@@ -191,8 +196,94 @@ _build_block_row_g_id(cs_lnum_t         n_rows,
                       n_rows,
                       false,
                       0, /* g_id_base */
-                      l_range,
+                      _l_range,
                       _global_row_id);
+}
+
+/*----------------------------------------------------------------------------
+ * Create a matrix structure using a matrix assembler
+ *
+ * parameters:
+ *   coupling_id <-- internal coupling id, or -1
+ *
+ * returns:
+ *   pointer to created matrix assembler
+ *----------------------------------------------------------------------------*/
+
+static cs_matrix_assembler_t *
+_create_assembler(int  coupling_id)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  const cs_lnum_t     n_rows = m->n_cells;
+  const cs_lnum_t     n_edges = m->n_i_faces;
+  const cs_lnum_2_t  *edges = (const cs_lnum_2_t *)(m->i_face_cells);
+
+  /* Global cell ids, based on range/scan */
+
+  if (_global_row_id == NULL)
+    _build_block_row_g_id(n_rows, m->halo);
+
+  const cs_gnum_t *r_g_id = _global_row_id;
+  cs_gnum_t l_range[2] = {_l_range[0], _l_range[1]};
+
+  /* Build matrix assembler;
+     assemble by blocks to amortize overhead */
+
+  assert(edges != NULL || n_edges == 0);
+
+  cs_matrix_assembler_t  *ma
+    = cs_matrix_assembler_create(l_range, true);
+
+#if 0 /* TODO: test and check performance with this flag */
+  int ma_flags = CS_MATRIX_DISTANT_ROW_USE_COL_IDX;
+#else
+  int ma_flags = 0;
+#endif
+
+  cs_matrix_assembler_set_options(ma, ma_flags);
+
+  /* First, add diagonal terms */
+
+  cs_matrix_assembler_add_g_ids(ma, n_rows, r_g_id, r_g_id);
+
+  /* Then add standard local off-diagonal terms */
+
+  {
+    const cs_lnum_t block_size = 800;
+    cs_gnum_t g_row_id[800];
+    cs_gnum_t g_col_id[800];
+
+    cs_lnum_t jj = 0;
+    for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
+      cs_lnum_t i0 = edges[ii][0];
+      cs_lnum_t i1 = edges[ii][1];
+      if (i0 < n_rows) {
+        g_row_id[jj] = r_g_id[i0];
+        g_col_id[jj] = r_g_id[i1];
+        jj++;
+      }
+      if (i1 < n_rows) {
+        g_row_id[jj] = r_g_id[i1];
+        g_col_id[jj] = r_g_id[i0];
+        jj++;
+      }
+      if (jj >= block_size - 1) {
+        cs_matrix_assembler_add_g_ids(ma, jj, g_row_id, g_col_id);
+        jj = 0;
+      }
+    }
+    if (jj > 0)
+      cs_matrix_assembler_add_g_ids(ma, jj, g_row_id, g_col_id);
+  }
+
+  if (coupling_id > -1)
+    cs_internal_coupling_matrix_add_ids(coupling_id, r_g_id,  ma);
+
+  /* Now compute structure */
+  cs_matrix_assembler_compute(ma);
+
+  return ma;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -217,8 +308,8 @@ _build_block_row_g_id(cs_lnum_t         n_rows,
 
 void
 cs_matrix_vector_native_multiply(bool                symmetric,
-                                 int                 db_size[4],
-                                 int                 eb_size[4],
+                                 const int           db_size[4],
+                                 const int           eb_size[4],
                                  cs_halo_rotation_t  rotation_mode,
                                  int                 f_id,
                                  const cs_real_t    *dam,
@@ -229,9 +320,7 @@ cs_matrix_vector_native_multiply(bool                symmetric,
   const cs_mesh_t *m = cs_glob_mesh;
   cs_matrix_t *a;
 
-  a = cs_matrix_native(symmetric,
-                       db_size,
-                       eb_size);
+  a = cs_matrix_native(symmetric, db_size, eb_size);
 
   cs_matrix_set_coefficients(a,
                              symmetric,
@@ -242,25 +331,25 @@ cs_matrix_vector_native_multiply(bool                symmetric,
                              dam,
                              xam);
 
-  /* Set extended contribution for domain coupling */
+  cs_matrix_vector_multiply(rotation_mode,
+                            a,
+                            vx,
+                            vy);
+
+  /* Add extended contribution for domain coupling */
+
   if (f_id != -1) {
     const cs_field_t *f = cs_field_by_id(f_id);
     int coupling_id = cs_field_get_key_int(f,
                                            cs_field_key_id("coupling_entity"));
 
-    if (coupling_id > -1) {
-      cs_matrix_set_extend
-        (a,
-         cs_internal_coupling_spmv_contribution,
-         cs_matrix_preconditionning_add_coupling_contribution,
-         f);
-    }
+    if (coupling_id > -1)
+      cs_internal_coupling_spmv_contribution(false,
+                                             f,
+                                             vx,
+                                             vy);
   }
 
-  cs_matrix_vector_multiply(rotation_mode,
-                            a,
-                            vx,
-                            vy);
 }
 
 /*----------------------------------------------------------------------------
@@ -392,6 +481,19 @@ cs_matrix_initialize(void)
     cs_log_printf(CS_LOG_PERFORMANCE, "\n");
     cs_log_separator(CS_LOG_PERFORMANCE);
   }
+
+  /* Matrices for internal couplings */
+
+  int n_ic = cs_internal_coupling_n_couplings();
+
+  if (n_ic > 0) {
+
+    BFT_MALLOC(_matrix_assembler_coupled, n_ic, cs_matrix_assembler_t *);
+
+    for (int i = 0; i < n_ic; i++)
+      _matrix_assembler_coupled[i] = _create_assembler(i);
+
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -424,6 +526,16 @@ cs_matrix_finalize(void)
     cs_matrix_destroy(&(_matrix_native));
   if (_matrix_struct_native != NULL)
     cs_matrix_structure_destroy(&(_matrix_struct_native));
+
+  /* Matrices for internal couplings */
+
+  int n_ic = cs_internal_coupling_n_couplings();
+  for (int i = 0; i < n_ic; i++) {
+    cs_matrix_assembler_destroy(&(_matrix_assembler_coupled[i]));
+  }
+  BFT_FREE(_matrix_assembler_coupled);
+
+  /* Exit status */
 
   _initialized = false;
   _initialize_api();
@@ -537,6 +649,14 @@ cs_matrix_update_mesh(void)
 
   }
 
+  /* Matrices for internal couplings */
+
+  int n_ic = cs_internal_coupling_n_couplings();
+
+  for (int i = 0; i < n_ic; i++) {
+    cs_matrix_assembler_destroy(&(_matrix_assembler_coupled[i]));
+    _matrix_assembler_coupled[i] = _create_assembler(i);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -854,6 +974,139 @@ cs_matrix_get_block_row_g_id(cs_lnum_t         n_rows,
   }
 
   return g_row_num;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign coefficients to a matrix using a matrix assembler.
+ *
+ * \param[in]  f                      pointer to associated field
+ * \param[in]  type                   matrix type
+ * \param[in]  symmetric              is matrix symmetric ?
+ * \param[in]  diag_block_size        block sizes for diagonal, or NULL
+ * \param[in]  extra_diag_block_size  block sizes for extra diagonal, or NULL
+ * \param[in]  da                     diagonal values (NULL if zero)
+ * \param[in]  xa                     extradiagonal values (NULL if zero)
+ *                                    casts as:
+ *                                      xa[n_edges]    if symmetric,
+ *                                      xa[n_edges][2] if non symmetric
+ *
+ * \return  pointer to associated matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_set_coefficients_coupled(const cs_field_t  *f,
+                                   cs_matrix_type_t   type,
+                                   bool               symmetric,
+                                   const int         *diag_block_size,
+                                   const int         *extra_diag_block_size,
+                                   const cs_real_t   *da,
+                                   const cs_real_t   *xa)
+{
+  int coupling_id = cs_field_get_key_int(f,
+                                         cs_field_key_id("coupling_entity"));
+
+  assert(coupling_id > -1);  /* Only reason for this restriction is
+                                storage/access to assembler */
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+
+  const cs_lnum_t     n_rows = mesh->n_cells;
+  const cs_lnum_t     n_edges = mesh->n_i_faces;
+  const cs_lnum_2_t  *edges = (const cs_lnum_2_t *)(mesh->i_face_cells);
+
+  cs_lnum_t s0 = 2;
+  cs_lnum_t s1 = 1;
+
+  if (symmetric) {
+    s0 = 1;
+    s1 = 0;
+  }
+
+  cs_matrix_assembler_t  *ma = _matrix_assembler_coupled[coupling_id];
+
+  cs_matrix_t *m = cs_matrix_create_from_assembler(type, ma);
+
+  cs_matrix_assembler_values_t *mav
+    = cs_matrix_assembler_values_init(m,
+                                      diag_block_size,
+                                      extra_diag_block_size);
+
+  /* Range information already built for assembler */
+
+  assert(n_rows == cs_matrix_get_n_rows(m));
+
+  const cs_gnum_t *r_g_id = _global_row_id;
+
+  /* Set coefficients */
+
+  const cs_lnum_t block_size = 800;
+  cs_gnum_t g_row_id[800];
+  cs_gnum_t g_col_id[800];
+  cs_real_t val[1600];
+
+  /* Diagonal values */
+
+  cs_matrix_assembler_values_add_g(mav, n_rows, r_g_id, r_g_id, da);
+
+  /* Extradiagonal values based on internal faces */
+
+  cs_lnum_t db_size = 1;
+  if (diag_block_size != NULL)
+    db_size = diag_block_size[0];
+
+  cs_lnum_t eb_size = 1;
+  if (extra_diag_block_size != NULL)
+    eb_size = extra_diag_block_size[0];
+
+  cs_lnum_t jj = 0;
+
+  if (eb_size == 1) {
+    for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
+      cs_lnum_t i0 = edges[ii][0];
+      cs_lnum_t i1 = edges[ii][1];
+      g_row_id[jj] = r_g_id[i0];
+      g_col_id[jj] = r_g_id[i1];
+      if (i0 < n_rows && i1 < n_rows)
+        val[jj] = xa[ii*s0];
+      else
+        val[jj] = xa[ii*s0]*0.5; /* count half contribution twice */
+      jj++;
+      g_row_id[jj] = r_g_id[i1];
+      g_col_id[jj] = r_g_id[i0];
+      if (i0 < n_rows && i1 < n_rows)
+        val[jj] = xa[ii*s0+s1];
+      else
+        val[jj] = xa[ii*s0+s1]*0.5;
+      jj++;
+      if (jj >= block_size - 1) {
+        cs_matrix_assembler_values_add_g(mav, jj,
+                                         g_row_id, g_col_id, val);
+        jj = 0;
+      }
+    }
+    cs_matrix_assembler_values_add_g(mav, jj,
+                                     g_row_id, g_col_id, val);
+    jj = 0;
+  }
+  else {
+    assert(0); /* TODO handle extra-diagonal blocks of size > 1 */
+  }
+
+  /* Set extended contribution for domain coupling */
+
+  cs_internal_coupling_matrix_add_values(f,
+                                         db_size,
+                                         eb_size,
+                                         r_g_id,
+                                         mav);
+
+  /* Finalize assembly */
+
+  cs_matrix_assembler_values_finalize(&mav);
+
+  return m;
 }
 
 /*----------------------------------------------------------------------------*/

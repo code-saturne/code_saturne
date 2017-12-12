@@ -262,7 +262,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   cs_solving_info_t sinfo;
 
-  cs_field_t *f;
+  cs_field_t *f = NULL;
+  int coupling_id = -1;
 
   cs_real_t *dam, *xam, *smbini, *w1, *adxk, *adxkm1, *dpvarm1, *rhs0;
   cs_real_t *dam_conv, *xam_conv, *dam_diff, *xam_diff;
@@ -306,6 +307,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
+    coupling_id = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
   }
 
   /* Symmetric matrix, except if advection */
@@ -575,7 +577,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
      not "by increments" and is assumed initialized, including for ghost values:
      For Reynolds stresses components (iinvpe=2), the rotational periodicity
      ghost values should not be cancelled, but rather left unchanged.
-     For other variables, iinvpe=1 will also a standard exchange. */
+     For other variables, iinvpe=1 will also be a standard exchange. */
 
   /* Allocate a temporary array */
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
@@ -644,6 +646,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                      xam_conv,
                                      dam_diff,
                                      xam_diff);
+
+    else if (coupling_id > -1)
+      cs_sles_setup_native_coupling(f_id,
+                                    var_name,
+                                    symmetric,
+                                    db_size,
+                                    eb_size,
+                                    dam,
+                                    xam);
 
     cs_sles_solve_native(f_id,
                          var_name,

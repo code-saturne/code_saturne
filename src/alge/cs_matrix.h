@@ -106,42 +106,6 @@ typedef struct {
 
 } cs_matrix_row_info_t;
 
-/*! Function pointers */
-/* -------------------*/
-
-/*----------------------------------------------------------------------------
- * Matrix.vector product contribution y = A'.x with no prior halo update of x.
- *
- * This function does not include a halo update of x prior to multiplication
- * by A', so it should be called only when the halo of x is known to already
- * be up to date (in which case we avoid the performance penalty of a
- * redundant update by using this variant of the matrix.vector product).
- *
- * parameters:
- *   exclude_diag <-- if true, exclude diagonal from product
- *   input        <-- pointer to additional data
- *   x            <-- multipliying vector values
- *   y            <-> resulting vector
- *----------------------------------------------------------------------------*/
-
-typedef void
-(cs_matrix_vector_product_extend_t) (bool                exclude_diag,
-                                     void               *input,
-                                     const cs_real_t    *restrict x,
-                                     cs_real_t          *restrict y);
-
-/*----------------------------------------------------------------------------
- * Contribution to diagonal preconditionning associated with extended SpMV.
- *
- * parameters:
- *   input        <-- pointer to additional data
- *   ad           <-> diagonal part of linear equation matrix
- *----------------------------------------------------------------------------*/
-
-typedef void
-(cs_matrix_preconditioner_extend_t) (void               *input,
-                                      cs_real_t          *restrict ad);
-
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -335,6 +299,23 @@ cs_matrix_create(const cs_matrix_structure_t  *ms);
 cs_matrix_t *
 cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
                             const cs_matrix_variant_t    *mv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix directly from assembler.
+ *
+ * Only CSR and MSR formats are handled.
+ *
+ * \param[in]  type  type of matrix considered
+ * \param[in]  ma    pointer to matrix assembler structure
+ *
+ * \return  a pointer to a created matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_create_from_assembler(cs_matrix_type_t        type,
+                                cs_matrix_assembler_t  *ma);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -996,40 +977,6 @@ cs_matrix_variant_test(cs_lnum_t              n_rows,
                        const cs_lnum_2_t     *edges,
                        const cs_halo_t       *halo,
                        const cs_numbering_t  *numbering);
-
-/*----------------------------------------------------------------------------
- * Set coupling entity associated to matrix, or NULL if no coupling
- * entity has been set before.
- *
- * parameters:
- *   m                      <-- pointer to matrix structure
- *   vector_multiply_extend --> pointer to SpMV extension function
- *   preconditioner_extend  --> pointer to preconditioner extension function
- *   input_extend           --> pointer to associated data
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_get_extend(const cs_matrix_t                   *m,
-                     cs_matrix_vector_product_extend_t  **vector_multiply_extend,
-                     cs_matrix_preconditioner_extend_t  **preconditioner_extend,
-                     void                               **input_extend);
-
-/*----------------------------------------------------------------------------
- * Set coupling entity associated to matrix, or NULL if no coupling
- * entity has been set before.
- *
- * parameters:
- *   m                      <-- pointer to matrix structure
- *   vector_multiply_extend <-- pointer to SpMV extension function
- *   preconditioner_extend  <-- pointer to preconditioner extension function
- *   input_extend           <-> pointer to associated data
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_set_extend(cs_matrix_t                       *m,
-                     cs_matrix_vector_product_extend_t *vector_multiply_extend,
-                     cs_matrix_preconditioner_extend_t *preconditioner_extend,
-                     void                              *input_extend);
 
 /*----------------------------------------------------------------------------*/
 

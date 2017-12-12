@@ -399,18 +399,6 @@ _sles_pc_poly_setup(void               *context,
 
   cs_matrix_copy_diagonal(a, c->_ad_inv);
 
-  /* Add extended contribution, if necessary */
-  cs_matrix_preconditioner_extend_t *a_preconditioner_extend;
-  void *a_input_extend;
-  cs_matrix_get_extend(a,
-                       NULL, /* vector_multiply_extend */
-                       &a_preconditioner_extend,
-                       &a_input_extend);
-
-  if (a_preconditioner_extend != NULL)
-    a_preconditioner_extend(a_input_extend,
-                            c->_ad_inv);
-
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_rows; i++)
     c->_ad_inv[i] = 1.0 / c->_ad_inv[i];
