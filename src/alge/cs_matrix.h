@@ -846,6 +846,20 @@ cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
                                  cs_real_t           *restrict y);
 
 /*----------------------------------------------------------------------------
+ * Synchronize ghost values prior to matrix.vector product
+ *
+ * parameters:
+ *   rotation_mode <-- halo update option for rotational periodicity
+ *   matrix        <-- pointer to matrix structure
+ *   x             <-> multipliying vector values (ghost values updated)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
+                                   const cs_matrix_t   *matrix,
+                                   cs_real_t           *x);
+
+/*----------------------------------------------------------------------------
  * Build list of variants for tuning or testing.
  *
  * parameters:

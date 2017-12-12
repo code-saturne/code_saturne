@@ -3249,32 +3249,8 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 
     /* Synchronize ghost cells first */
 
-    if (halo != NULL) {
-
-      if (db_size[3] == 1)
-        cs_halo_sync_component(halo,
-                               CS_HALO_STANDARD,
-                               rotation_mode,
-                               vx);
-
-      else { /* if (matrix->db_size[3] > 1) */
-
-        cs_halo_sync_var_strided(halo,
-                                 CS_HALO_STANDARD,
-                                 vx,
-                                 db_size[1]);
-
-        /* Synchronize periodic values */
-
-        if (halo->n_transforms > 0 && db_size[0] == 3)
-          cs_halo_perio_sync_var_vect(halo,
-                                      CS_HALO_STANDARD,
-                                      vx,
-                                      db_size[1]);
-
-      }
-
-    }
+    if (halo != NULL)
+      cs_matrix_pre_vector_multiply_sync(rotation_mode, a, vx);
 
     /* Compute Vx <- Vx - (A-diag).Rk and residue. */
 
@@ -3430,32 +3406,8 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
     /* Synchronize ghost cells first */
 
-    if (halo != NULL) {
-
-      if (db_size[3] == 1)
-        cs_halo_sync_component(halo,
-                               CS_HALO_STANDARD,
-                               rotation_mode,
-                               vx);
-
-      else { /* if (matrix->db_size[3] > 1) */
-
-        cs_halo_sync_var_strided(halo,
-                                 CS_HALO_STANDARD,
-                                 vx,
-                                 db_size[1]);
-
-        /* Synchronize periodic values */
-
-        if (halo->n_transforms > 0 && db_size[0] == 3)
-          cs_halo_perio_sync_var_vect(halo,
-                                      CS_HALO_STANDARD,
-                                      vx,
-                                      db_size[1]);
-
-      }
-
-    }
+    if (halo != NULL)
+      cs_matrix_pre_vector_multiply_sync(rotation_mode, a, vx);
 
     /* Compute Vx <- Vx - (A-diag).Rk and residue. */
 
@@ -3617,32 +3569,8 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
     /* Synchronize ghost cells first */
 
-    if (halo != NULL) {
-
-      if (db_size[3] == 1)
-        cs_halo_sync_component(halo,
-                               CS_HALO_STANDARD,
-                               rotation_mode,
-                               vx);
-
-      else { /* if (matrix->db_size[3] > 1) */
-
-        cs_halo_sync_var_strided(halo,
-                                 CS_HALO_STANDARD,
-                                 vx,
-                                 db_size[1]);
-
-        /* Synchronize periodic values */
-
-        if (halo->n_transforms > 0 && db_size[0] == 3)
-          cs_halo_perio_sync_var_vect(halo,
-                                      CS_HALO_STANDARD,
-                                      vx,
-                                      db_size[1]);
-
-      }
-
-    }
+    if (halo != NULL)
+      cs_matrix_pre_vector_multiply_sync(rotation_mode, a, vx);
 
     /* Compute Vx <- Vx - (A-diag).Rk and residue: forward step */
 
@@ -3698,32 +3626,8 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
     /* Synchronize ghost cells again */
 
-    if (halo != NULL) {
-
-      if (db_size[3] == 1)
-        cs_halo_sync_component(halo,
-                               CS_HALO_STANDARD,
-                               rotation_mode,
-                               vx);
-
-      else { /* if (matrix->db_size[3] > 1) */
-
-        cs_halo_sync_var_strided(halo,
-                                 CS_HALO_STANDARD,
-                                 vx,
-                                 db_size[1]);
-
-        /* Synchronize periodic values */
-
-        if (halo->n_transforms > 0 && db_size[0] == 3)
-          cs_halo_perio_sync_var_vect(halo,
-                                      CS_HALO_STANDARD,
-                                      vx,
-                                      db_size[1]);
-
-      }
-
-    }
+    if (halo != NULL)
+      cs_matrix_pre_vector_multiply_sync(rotation_mode, a, vx);
 
     /* Compute Vx <- Vx - (A-diag).Rk and residue: backward step */
 
