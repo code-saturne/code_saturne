@@ -188,7 +188,8 @@ cs_run(void)
   cs_timer_stats_initialize();
   cs_timer_stats_define_defaults();
 
-  cs_glob_tree = cs_tree_node_create(NULL);
+  if (cs_glob_tree == NULL)
+    cs_glob_tree = cs_tree_node_create(NULL);
 
   cs_gui_parallel_io();
   cs_user_parallel_io();

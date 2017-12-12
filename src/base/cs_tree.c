@@ -244,9 +244,7 @@ _node_free(cs_tree_node_t  **pnode)
   if (node->value != NULL)
     BFT_FREE(node->value);
 
-  BFT_FREE(node);
-  node = NULL;
-  pnode = NULL;
+  BFT_FREE(*pnode);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
