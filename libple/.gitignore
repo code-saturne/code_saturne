@@ -84,6 +84,7 @@ Makefile.in
 # /po/
 /po/Makefile.in.in
 /po/Makevars.template
+/po/Rules-install
 /po/Rules-quot
 /po/*.header
 /po/*.sed
