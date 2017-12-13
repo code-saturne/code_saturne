@@ -1668,7 +1668,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
       _thickness_se[i][1] /= w[i][0];
       cs_real_t nn = cs_math_3_square_norm(_coord_shift[i]);
       for (cs_lnum_t l = 0; l < 3; l++)
-        _coord_shift[i][l] = _coord_shift[i][l] * (w[i][1] / (w[i][0]*nn));
+        _coord_shift[i][l] = _coord_shift[i][l] * (w[i][1] / nn);
     }
     else
       _n_layers[i] = 0;
