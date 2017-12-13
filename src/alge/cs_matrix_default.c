@@ -1066,20 +1066,18 @@ cs_matrix_set_coefficients_coupled(const cs_field_t  *f,
     for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
       cs_lnum_t i0 = edges[ii][0];
       cs_lnum_t i1 = edges[ii][1];
-      g_row_id[jj] = r_g_id[i0];
-      g_col_id[jj] = r_g_id[i1];
-      if (i0 < n_rows && i1 < n_rows)
+      if (i0 < n_rows) {
+        g_row_id[jj] = r_g_id[i0];
+        g_col_id[jj] = r_g_id[i1];
         val[jj] = xa[ii*s0];
-      else
-        val[jj] = xa[ii*s0]*0.5; /* count half contribution twice */
-      jj++;
-      g_row_id[jj] = r_g_id[i1];
-      g_col_id[jj] = r_g_id[i0];
-      if (i0 < n_rows && i1 < n_rows)
+        jj++;
+      }
+      if (i1 < n_rows) {
+        g_row_id[jj] = r_g_id[i1];
+        g_col_id[jj] = r_g_id[i0];
         val[jj] = xa[ii*s0+s1];
-      else
-        val[jj] = xa[ii*s0+s1]*0.5;
-      jj++;
+        jj++;
+      }
       if (jj >= block_size - 1) {
         cs_matrix_assembler_values_add_g(mav, jj,
                                          g_row_id, g_col_id, val);

@@ -2419,7 +2419,6 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
 
   const cs_lnum_t block_size = 514;
   cs_gnum_t d_g_row_id[514];
-  cs_gnum_t d_g_col_id[514];
   cs_real_t d_aij[514];
   cs_gnum_t e_g_row_id[514];
   cs_gnum_t e_g_col_id[514];
@@ -2438,8 +2437,8 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
     cs_real_t hext = hextp[face_id];
     cs_real_t c = thetap * idiffp * (hint * hext / (hint + hext));
 
-    d_g_col_id[jj] = g_id_l[ii]; d_g_row_id[jj] = g_id_l[ii];
-    e_g_row_id[jj] = g_id_l[ii]; e_g_col_id[jj] = g_id_d[ii];
+    d_g_row_id[jj] = g_id_l[ii];
+    e_g_row_id[kk] = g_id_l[ii]; e_g_col_id[kk] = g_id_d[ii];
 
     for (cs_lnum_t ib = 0; ib < db_stride; ib++)
       d_aij[db_fill + ib] = 0;
@@ -2457,21 +2456,19 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
     eb_fill += db_stride;
 
     if (db_fill >= block_size - 1) {
-      cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_col_id, d_aij);
-      cs_matrix_assembler_values_add_g(mav, jj, e_g_row_id, e_g_col_id, e_aij);
+      cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_row_id, d_aij);
       jj = 0;
       db_fill = 0;
     }
 
     if (eb_fill >= block_size - 1) {
-      cs_matrix_assembler_values_add_g(mav, kk, d_g_row_id, d_g_col_id, d_aij);
       cs_matrix_assembler_values_add_g(mav, kk, e_g_row_id, e_g_col_id, e_aij);
       kk = 0;
       eb_fill = 0;
     }
   }
 
-  cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_col_id, d_aij);
+  cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_row_id, d_aij);
   cs_matrix_assembler_values_add_g(mav, kk, e_g_row_id, e_g_col_id, e_aij);
 
   /* Free memory */
