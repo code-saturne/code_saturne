@@ -151,7 +151,7 @@ _angle(const cs_lnum_t  v_ids[3],
 /*----------------------------------------------------------------------------*/
 
 static void
-_select_vertices_from_adj_b_faces(cs_mesh_t         *m,
+_select_vertices_from_adj_b_faces(const cs_mesh_t   *m,
                                   cs_lnum_t          n_b_faces,
                                   const cs_lnum_t    b_faces[],
                                   cs_lnum_t         *n_vertices,
@@ -1604,7 +1604,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
       cs_lnum_t v_ids[3] = {v_id,
                             m->b_face_vtx_lst[k_0],
                             m->b_face_vtx_lst[k_1]};
-      cs_real_t a = _angle(v_ids, f_n, m->vtx_coord);
+      cs_real_t a = _angle(v_ids, f_n, (const cs_real_3_t *)(m->vtx_coord));
       _n_layers[v_id] += n_layers;
       _expansion[v_id] += expansion_factor * a;
       _thickness_se[v_id][0] += thickness_s * a;
@@ -2230,136 +2230,6 @@ cs_mesh_extrude_vectors_destroy(cs_mesh_extrude_vectors_t **e)
       BFT_FREE(*e);
     }
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set a given number of layers, a thickness, and a geometric
- *        expansion factor for extrusion vectors at selected faces.
- *
- * \param[in]       m                 mesh
- * \param[in, out]  e                 extrusion vectors definition
- * \param[in]       n_layers          number of layers
- * \param[in]       thickness         extrusion thickness
- * \param[in]       expansion_factor  geometric expansion factor for
- *                                    extrusion refinement
- * \param[in]       n_faces           number of selected boundary faces
- * \param[in]       faces             list of selected boundary faces (0 to n-1),
- *                                    or NULL if no indirection is needed
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_mesh_extrude_set_n_layers(const cs_mesh_t            *m,
-                             cs_mesh_extrude_vectors_t  *e,
-                             cs_lnum_t                   n_layers,
-                             double                      thickness,
-                             double                      expansion_factor,
-                             cs_lnum_t                   n_faces,
-                             const cs_lnum_t             faces[])
-{
-  cs_lnum_t n_sel_v = 0;
-  cs_lnum_t *sel_v;
-
-  /* Build selection list */
-
-  _select_vertices_from_adj_b_faces(m,
-                                    n_faces,
-                                    faces,
-                                    &n_sel_v,
-                                    &sel_v);
-
-  cs_lnum_t *sel_n_layers;
-  BFT_MALLOC(sel_n_layers, n_sel_v, cs_lnum_t);
-
-  for (cs_lnum_t i = 0; i < n_sel_v; i++)
-    sel_n_layers[i] = n_layers;
-
-  float *sel_distribution;
-  BFT_MALLOC(sel_distribution, n_sel_v*n_layers, float);
-
-  /* Compute distribution for first selected vertex */
-
-  if (n_sel_v > 0) {
-    sel_distribution[0] = 1;
-    for (cs_lnum_t l_id = 1; l_id < n_layers; l_id++)
-      sel_distribution[l_id] = sel_distribution[l_id-1]*expansion_factor;
-    double d_tot = 0;
-    for (cs_lnum_t i = 0; i < n_layers; i++)
-      d_tot += sel_distribution[i];
-    sel_distribution[0] = 1./d_tot;
-    for (cs_lnum_t l_id = 1; l_id < n_layers - 1; l_id++)
-      sel_distribution[l_id] =   sel_distribution[l_id-1]
-                               + sel_distribution[l_id]/d_tot;
-    sel_distribution[n_layers-1] = 1.0;
-  }
-
-  /* Copy distribution to other selected vertices */
-
-  for (cs_lnum_t i = 1; i < n_sel_v; i++) {
-    for (cs_lnum_t j = 0; j < n_layers; j++)
-      sel_distribution[i*n_layers + j] = sel_distribution[j];
-  }
-
-  /* Now compute coordinates shift; we use 4 values per vertex,
-     with 3 for coordinates, 1 for weight */
-
-  cs_coord_3_t *sel_coord_shift;
-  BFT_MALLOC(sel_coord_shift, n_sel_v, cs_coord_3_t);
-
-  cs_real_t *v_coo_tmp;
-  BFT_MALLOC(v_coo_tmp, m->n_vertices*4, cs_real_t);
-
-  #pragma omp parallel for if (m->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < m->n_vertices; i++) {
-    for (cs_lnum_t j = 0; j < 4; j++)
-      v_coo_tmp[4*i + j] = 0.;
-  }
-
-  cs_real_t *b_face_normal, *b_face_cog;
-  cs_mesh_quantities_b_faces(m, &b_face_cog, &b_face_normal);
-  BFT_FREE(b_face_cog);
-
-  for (cs_lnum_t i = 0; i < n_faces; i++) {
-    cs_lnum_t f_id = (faces != NULL) ? faces[i] : i;
-    cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
-    cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
-    const cs_real_t *f_norm = b_face_normal + f_id*3;
-    cs_real_t f_mult = thickness / _CS_MODULE(f_norm);
-    for (cs_lnum_t j = s_id; j < e_id; j++) {
-      cs_lnum_t v_id = m->b_face_vtx_lst[j];
-      for (cs_lnum_t k = 0; k < 3; k++)
-        v_coo_tmp[4*v_id + k] += f_mult * b_face_normal[f_id*3 + k];
-      v_coo_tmp[4*v_id + 3] += 1.0; /* choose same weight for each face */
-    }
-  }
-
-  BFT_FREE(b_face_normal);
-
-  if (m->vtx_interfaces != NULL)
-    cs_interface_set_sum(m->vtx_interfaces,
-                         m->n_vertices,
-                         4,
-                         true,
-                         CS_REAL_TYPE,
-                         v_coo_tmp);
-
-  for (cs_lnum_t i = 0; i < n_sel_v; i++) {
-    cs_lnum_t v_id = sel_v[i];
-    for (cs_lnum_t j = 0; j < 3; j++)
-      sel_coord_shift[i][j] = v_coo_tmp[4*v_id + j] / v_coo_tmp[4*v_id + 3];
-  }
-
-  BFT_FREE(v_coo_tmp);
-
-
-  /* Free work arrays */
-
-  BFT_FREE(sel_n_layers);
-  BFT_FREE(sel_coord_shift);
-  BFT_FREE(sel_distribution);
-
-  BFT_FREE(sel_v);
 }
 
 /*----------------------------------------------------------------------------*/
