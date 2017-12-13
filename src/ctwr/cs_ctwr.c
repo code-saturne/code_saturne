@@ -362,7 +362,7 @@ cs_ctwr_define(const char           zone_criteria[],
   int length;
   FILE *f;
 
-  /* Definition d'une nouvelle zone d'echange */
+  /* Define  a new exchange zone */
 
   BFT_MALLOC(ct, 1, cs_ctwr_zone_t);
 
@@ -734,7 +734,7 @@ cs_ctwr_log_balance(void)
         cs_lnum_t face_id = ct->outlet_faces_ids[i];
         cs_lnum_t cell_id_l, cell_id_h;
 
-        /* Convention: outlet is positiv mass flux
+        /* Convention: outlet is positive mass flux
          * Then upwind cell for liquid is i_face_cells[][0] */
         int sign = 1;
         if (liq_mass_flow[face_id] < 0) {
@@ -847,7 +847,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   /* liquid vertical velocity component */
   cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val;
 
-  cs_field_t *cfld_yp = cs_field_by_name_try("y_p");
+  cs_field_t *cfld_yp = cs_field_by_name_try("y_p");         /* Rain drops mass fraction */
   cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_y_p");
   cs_field_t *cfld_drift_vel = cs_field_by_name_try("drift_vel_y_p");
 
@@ -947,7 +947,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
       h_l[cell_id] = cs_ctwr_h_liqwater(t_l[cell_id]);
 
       /* Initialise the liquid vertical velocity component
-       * this is correct for dorplet and extended for other packing zones */
+       * this is correct for droplet and extended for other packing zones */
       vel_l[cell_id] = cpro_taup[cell_id] * cs_math_3_norm(gravity);
 
       /* Note that rho_h * Y_l * vel_l * Stot = q_l_bc */
@@ -1299,9 +1299,9 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
     cp_h[cell_id] = cs_ctwr_cp_humidair(x[cell_id], x_s[cell_id]);
 
-    h_h[cell_id] += (t_h[cell_id] - t_h_a[cell_id]) * cp_h[cell_id];
+    h_h[cell_id] += (t_h[cell_id] - t_h_a[cell_id]) * cp_h[cell_id];//FIXME strange formula, not coherent.
 
-    // Udate the umid air enthalpy diffusivity lambda_h if solve for T_h?
+    // Udate the humid air enthalpy diffusivity lambda_h if solve for T_h?
     // Need to update since a_0 is variable as a function of T and humidity
     therm_diff_h[cell_id] = lambda_h;
 
@@ -1345,7 +1345,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
         cs_lnum_t face_id = ct->outlet_faces_ids[i];
         cs_lnum_t cell_id_l, cell_id_h;
 
-        /* Convention: outlet is positiv mass flux
+        /* Convention: outlet is positive mass flux
          * Then upwind cell for liquid is i_face_cells[][0] */
         int sign = 1;
         if (liq_mass_flow[face_id] < 0) {
@@ -1509,6 +1509,9 @@ cs_ctwr_source_term(int              f_id,
 
     const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
 
+
+    // Phase change source terms //
+    // ========================= //
     if (evap_model != CS_CTWR_NONE) {
 
       for (cs_lnum_t j = 0; j < ct->n_cells; j++) {
@@ -1629,18 +1632,19 @@ cs_ctwr_source_term(int              f_id,
           mass_source = beta_x_a*(x_s_tl - x_s_th);
         }
         mass_source = CS_MAX(mass_source, 0.);
+
         cs_real_t vol_mass_source = mass_source * cell_f_vol[cell_id];
         cs_real_t vol_beta_x_a = beta_x_a * cell_f_vol[cell_id];
 
         /* Global mass source term for continuity (pressure) equation
          * Note that rain is already considered in the bulk, so inner
-         * mass transfer between liquid and vapor diseappear */
+         * mass transfer between liquid and vapor disappears */
         if (f_id == (CS_F_(p)->id) && ct->type != CS_CTWR_RAIN) {
           /* Warning: not multiplied by Cell volume! no addition neither */
           exp_st[cell_id] = mass_source;
         }
 
-        /* Water mass fraction equation  except rain */
+        /* Air mass fraction equation  except rain */
         else if (f_id == (CS_F_(ym_w)->id)) {
           exp_st[cell_id] += vol_mass_source*(1. - f_var[cell_id]); //TODO add mass_from_rain
           imp_st[cell_id] += vol_mass_source;
@@ -1719,19 +1723,24 @@ cs_ctwr_source_term(int              f_id,
 
     /* Impose rain zone injection */
     if (zone_type == CS_CTWR_RAIN) {
+
       cs_real_t *cpro_taup = cfld_taup->val;
+
       /* Global mass source term for continuity (pressure) equation
        * Sink term on the walls */
+
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
         cs_lnum_t cell_id =  b_face_cells[face_id];
         cs_real_t g_dot_normal =
           cs_math_3_dot_product(gravity, b_face_normal[face_id]);
         cs_real_t vol_mass_source = CS_MAX(rho_h[cell_id]
           * cpro_taup[cell_id] * g_dot_normal, 0.);
+
         if (f_id == (CS_F_(p)->id)) {
           /* Warning: not multiplied by Cell volume! */
 //          exp_st[cell_id] -= y_l[cell_id] * vol_mass_source / cell_f_vol[cell_id];//FIXME not yet taken into account
         }
+
         if (f_id == cfld_yp->id) {
           exp_st[cell_id] -= vol_mass_source * y_l[cell_id];
           imp_st[cell_id] += vol_mass_source;
