@@ -752,8 +752,6 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
                cs_interface_set_t   **p_ifs,
                cs_range_set_t       **p_rs)
 {
-  fvm_io_num_t  *i_face_io_num = NULL, *b_face_io_num = NULL;
-
   const cs_lnum_t  n_elts = n_faces * n_face_dofs;
 
   cs_gnum_t *face_gnum = NULL;
@@ -761,70 +759,24 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
 
   if (cs_glob_n_ranks > 1) {
 
-    const cs_gnum_t  *i_face_gnum;
-    const cs_gnum_t  *b_face_gnum;
+    const cs_lnum_t  i_lshift = mesh->n_i_faces * n_face_dofs;
+    const cs_gnum_t  i_gshift = mesh->n_g_i_faces * (cs_gnum_t)n_face_dofs;
 
-    if (n_face_dofs == 1) {
-
-      i_face_gnum = mesh->global_i_face_num;
-      b_face_gnum = mesh->global_b_face_num;
-
-    }
-    else {
-
-      cs_lnum_t  *order = NULL;
-      cs_gnum_t  *gnum_ordered = NULL;
-
-      BFT_MALLOC(order, CS_MAX(mesh->n_i_faces,
-                               mesh->n_b_faces), cs_lnum_t);
-      BFT_MALLOC(gnum_ordered, CS_MAX(mesh->n_i_faces,
-                                      mesh->n_b_faces), cs_gnum_t);
-
-      /* Handle interior faces */
-      cs_order_gnum_allocated(NULL,
-                              mesh->global_i_face_num,
-                              order,
-                              mesh->n_i_faces);
-
-      for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
-        gnum_ordered[i] = mesh->global_i_face_num[order[i]];
-
-      i_face_io_num = fvm_io_num_create_from_adj_s(NULL,
-                                                   gnum_ordered,
-                                                   mesh->n_i_faces,
-                                                   n_face_dofs);
-      i_face_gnum = fvm_io_num_get_global_num(i_face_io_num);
-
-      /* Handle border faces */
-      cs_order_gnum_allocated(NULL,
-                              mesh->global_b_face_num,
-                              order,
-                              mesh->n_b_faces);
-
-      for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
-        gnum_ordered[i] = mesh->global_b_face_num[order[i]];
-
-      b_face_io_num = fvm_io_num_create_from_adj_s(NULL,
-                                                   gnum_ordered,
-                                                   mesh->n_b_faces,
-                                                   n_face_dofs);
-      b_face_gnum = fvm_io_num_get_global_num(b_face_io_num);
-
-      BFT_FREE(order);
-      BFT_FREE(gnum_ordered);
+#   pragma omp parallel for if (mesh->n_i_faces > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++) {
+      const cs_gnum_t  o =  n_face_dofs * mesh->global_i_face_num[i];
+      cs_gnum_t  *_gnum = face_gnum + i*n_face_dofs;
+      for (int j = 0; j < n_face_dofs; j++)
+        _gnum[j] = o + (cs_gnum_t)j;
     }
 
-    cs_gnum_t  i_shift = (cs_gnum_t)mesh->n_i_faces * (cs_gnum_t)n_face_dofs;
-    cs_gnum_t  global_i_shift = mesh->n_g_i_faces * (cs_gnum_t)n_face_dofs;
-
-    assert(i_face_gnum != NULL);
-#   pragma omp parallel for if (i_shift > CS_THR_MIN)
-    for (cs_gnum_t i = 0; i < i_shift; i++)
-      face_gnum[i] = i_face_gnum[i];
-
-#   pragma omp parallel for if (mesh->n_b_faces*n_face_dofs > CS_THR_MIN)
-    for (cs_gnum_t i = 0; i < (cs_gnum_t)(mesh->n_b_faces*n_face_dofs); i++)
-      face_gnum[i + i_shift] = b_face_gnum[i] + global_i_shift;
+#   pragma omp parallel for if (mesh->n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
+      const cs_gnum_t  o = n_face_dofs * mesh->global_b_face_num[i] + i_gshift;
+       cs_gnum_t  *_gnum = face_gnum + i*n_face_dofs + i_lshift;
+      for (int j = 0; j < n_face_dofs; j++)
+        _gnum[j] = o + (cs_gnum_t)j;
+    }
 
   }
   else {
@@ -852,10 +804,6 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
 
   /* Free memory */
   BFT_FREE(face_gnum);
-  if (n_face_dofs > 1 && cs_glob_n_ranks > 1) {
-    i_face_io_num = fvm_io_num_destroy(i_face_io_num);
-    b_face_io_num = fvm_io_num_destroy(b_face_io_num);
-  }
 
   /* Return pointers */
   *p_ifs = ifs;

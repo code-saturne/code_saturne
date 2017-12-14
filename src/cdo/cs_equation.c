@@ -1347,7 +1347,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->get_extra_values = cs_hho_scaleq_get_face_values;
 
         /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
 
         /* Set the size of the algebraic system arising from the cellwise
            process (OK for a sequential run) */
