@@ -440,9 +440,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
           sxyzt[2] = kk * cs_glob_rad_transfer_params->sxyz[idir][2];
           domegat = cs_glob_rad_transfer_params->angsol[idir];
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-            aa =  sxyzt[0] * surfbo[face_id][0]
-                + sxyzt[1] * surfbo[face_id][1]
-                + sxyzt[2] * surfbo[face_id][2];
+            aa = cs_math_3_dot_product(sxyzt, surfbo[face_id]);
             aa /= surfbn[face_id];
             f_snplus->val[face_id] += 0.5 * ( -aa + CS_ABS(aa)) * domegat;
           }
@@ -528,7 +526,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
             viscb[face_id] = 0.0;
 
           for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-            radiance[cell_id]  = 0.0;
+            radiance[cell_id] = 0.0;
             radiance_prev[cell_id] = 0.0;
           }
 
@@ -639,9 +637,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
           /* Flux incident to wall */
 
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-            aa =  sxyzt[0] * surfbo[face_id][0]
-                + sxyzt[1] * surfbo[face_id][1]
-                + sxyzt[2] * surfbo[face_id][2];
+            aa = cs_math_3_dot_product(sxyzt, surfbo[face_id]);
             aa /= surfbn[face_id];
             aa = 0.5 * (aa + CS_ABS(aa)) * domegat;
             f_snplus->val[face_id] += aa;
@@ -805,8 +801,8 @@ cs_rad_transfer_solve(int               bc_type[],
   int nwsgg = rt_params->nwsgg;
 
   /* Physical constants */
-  cs_real_t tkelvi = 273.15;
-  cs_real_t c_stefan = 5.6703e-8;
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+  const cs_real_t c_stefan = cs_physical_constants_stephan;
 
   /* Mesh params */
   cs_lnum_t n_cells     = cs_glob_mesh->n_cells;

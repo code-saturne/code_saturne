@@ -1187,8 +1187,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
                           cs_real_t  abo[],
                           int        iband)
 {
-  cs_real_t stephn = 5.6703e-8;
-  cs_real_t unspi  = 1.0 / cs_math_pi;
+  cs_real_t stephn = cs_physical_constants_stephan;
+  cs_real_t onedpi  = 1.0 / cs_math_pi;
 
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
