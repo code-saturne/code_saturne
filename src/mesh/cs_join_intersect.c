@@ -51,6 +51,7 @@
 #include "fvm_neighborhood.h"
 #include "fvm_io_num.h"
 
+#include "cs_all_to_all.h"
 #include "cs_block_dist.h"
 #include "cs_join_mesh.h"
 #include "cs_join_set.h"
@@ -2880,16 +2881,15 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
                                   const cs_join_inter_edges_t  *part)
 {
   cs_lnum_t  i, j, rank, shift, sub_shift;
-  cs_lnum_t  send_list_size, recv_list_size;
   cs_lnum_t  send_inter_list_size, recv_inter_list_size;
   cs_block_dist_info_t  bi;
 
   cs_lnum_t  _max = 0, block_size = 0;
+  cs_lnum_t  *part_nsub = NULL;
   cs_lnum_t  *new_index = NULL, *shift_ref = NULL;
   cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
   cs_lnum_t  *send_count = NULL, *recv_count = NULL;
-  cs_lnum_t  *send_inter_count = NULL, *recv_inter_count = NULL;
-  cs_gnum_t  *send_glist = NULL, *recv_glist = NULL;
+  cs_gnum_t  *send_glist = NULL;
   exch_inter_t  *send_inter_list = NULL, *recv_inter_list = NULL;
   cs_join_inter_edges_t  *block = NULL;
 
@@ -2913,29 +2913,69 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
                                    0,
                                    edges->n_g_edges);
 
-  if (bi.gnum_range[1] > bi.gnum_range[0])
-    block_size = bi.gnum_range[1] - bi.gnum_range[0];
+  int flags = CS_ALL_TO_ALL_USE_SRC_RANK; /* as long as indexed portion is
+                                             not handled by cs_all_to_all */
 
-  /* Allocate parameters for MPI functions */
+  cs_all_to_all_t
+    *d = cs_all_to_all_create_from_block(n_edges,
+                                         flags,
+                                         part->edge_gnum,
+                                         bi,
+                                         mpi_comm);
+
+  /* Build send_list */
+
+  BFT_MALLOC(part_nsub, n_edges, cs_lnum_t);
+
+  for (i = 0; i < n_edges; i++)
+    part_nsub[i] = part->index[i+1] - part->index[i];
+
+  cs_gnum_t *orig_gnum = cs_all_to_all_copy_array(d,
+                                                  CS_GNUM_TYPE,
+                                                  1,
+                                                  false, /* reverse */
+                                                  part->edge_gnum,
+                                                  NULL);
+
+  cs_lnum_t *orig_nsub = cs_all_to_all_copy_array(d,
+                                                  CS_LNUM_TYPE,
+                                                  1,
+                                                  false, /* reverse */
+                                                  part_nsub,
+                                                  NULL);
+
+  BFT_FREE(send_glist);
+
+  cs_lnum_t recv_list_size = cs_all_to_all_n_elts_dest(d);
+
+  int *src_rank = cs_all_to_all_get_src_rank(d);
+
+  cs_all_to_all_destroy(&d);
+
+  /* Build send_inter_list and exchange information */
 
   BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
   BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
+  BFT_MALLOC(send_shift, n_ranks+1, cs_lnum_t);
+  BFT_MALLOC(recv_shift, n_ranks+1, cs_lnum_t);
 
-  for (i = 0; i < n_ranks; i++)
+  for (i = 0; i < n_ranks; i++) {
     send_count[i] = 0;
-
-  /* Count number of edges to send */
+    recv_count[i] = 0;
+  }
 
   for (i = 0; i < n_edges; i++) {
     rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)(bi.block_size);
     assert(rank >= 0 && rank < n_ranks);
-    send_count[rank] += 2;
+    send_count[rank] += part->index[i+1] - part->index[i];
   }
 
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
+  for (i = 0; i < recv_list_size; i++) {
+    rank = src_rank[i];
+    recv_count[rank] += orig_nsub[i];
+  }
 
-  BFT_MALLOC(send_shift, n_ranks + 1, cs_lnum_t);
-  BFT_MALLOC(recv_shift, n_ranks + 1, cs_lnum_t);
+  BFT_FREE(src_rank);
 
   send_shift[0] = 0;
   recv_shift[0] = 0;
@@ -2943,62 +2983,6 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   for (rank = 0; rank < n_ranks; rank++) {
     send_shift[rank + 1] = send_shift[rank] + send_count[rank];
     recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
-  }
-
-  assert(send_shift[n_ranks] == 2*edges->n_edges);
-
-  send_list_size = send_shift[n_ranks];
-  recv_list_size = recv_shift[n_ranks];
-
-  /* Build send_list */
-
-  BFT_MALLOC(send_glist, send_list_size, cs_gnum_t);
-  BFT_MALLOC(recv_glist, recv_list_size, cs_gnum_t);
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (i = 0; i < n_edges; i++) {
-
-    rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)(bi.block_size);
-    assert(rank >= 0 && rank < n_ranks);
-    shift = send_shift[rank] + send_count[rank];
-    send_glist[shift] = part->edge_gnum[i];
-    send_glist[shift+1] = part->index[i+1] - part->index[i];
-    send_count[rank] += 2;
-
-  }
-
-  MPI_Alltoallv(send_glist, send_count, send_shift, CS_MPI_GNUM,
-                recv_glist, recv_count, recv_shift, CS_MPI_GNUM,
-                mpi_comm);
-
-  /* Build send_inter_list and exchange information */
-
-  BFT_MALLOC(send_inter_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(recv_inter_count, n_ranks, cs_lnum_t);
-
-  for (i = 0; i < n_ranks; i++) {
-    send_inter_count[i] = 0;
-    recv_inter_count[i] = 0;
-  }
-
-  for (rank = 0; rank < n_ranks; rank++) {
-
-    for (i = send_shift[rank]; i < send_shift[rank+1]; i+= 2)
-      send_inter_count[rank] += send_glist[i+1];
-
-    for (i = recv_shift[rank]; i < recv_shift[rank+1]; i+= 2)
-      recv_inter_count[rank] += recv_glist[i+1];
-
-  }
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_inter_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_inter_count[rank];
   }
 
   assert(send_shift[n_ranks] == part->index[edges->n_edges]);
@@ -3012,7 +2996,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   /* Fill the send_inter_list buffer */
 
   for (i = 0; i < n_ranks; i++)
-    send_inter_count[i] = 0;
+    send_count[i] = 0;
 
   for (i = 0; i < n_edges; i++) {
 
@@ -3020,7 +3004,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
     cs_lnum_t  end = part->index[i+1];
 
     rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)(bi.block_size);
-    shift = send_shift[rank] + send_inter_count[rank];
+    shift = send_shift[rank] + send_count[rank];
 
     for (j = start; j < end; j++) {
 
@@ -3032,19 +3016,27 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
     }
 
-    send_inter_count[rank] += end - start;
+    send_count[rank] += end - start;
 
   }
 
   /* Exchange buffers */
 
-  MPI_Alltoallv(send_inter_list, send_inter_count, send_shift,
+  MPI_Alltoallv(send_inter_list, send_count, send_shift,
                 MPI_JOIN_EXCH_INTER,
-                recv_inter_list, recv_inter_count, recv_shift,
+                recv_inter_list, recv_count, recv_shift,
                 MPI_JOIN_EXCH_INTER, mpi_comm);
+
+  BFT_FREE(send_count);
+  BFT_FREE(recv_count);
+  BFT_FREE(send_shift);
+  BFT_FREE(recv_shift);
 
   /* Synchronize the definition of each edge.
      Define a new cs_join_inter_edges_t struct. */
+
+  if (bi.gnum_range[1] > bi.gnum_range[0])
+    block_size = bi.gnum_range[1] - bi.gnum_range[0];
 
   block = cs_join_inter_edges_create(block_size);
 
@@ -3055,10 +3047,10 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   /* First scan : fill index_ref */
 
-  for (i = 0; i < recv_list_size; i+= 2) {
+  for (i = 0; i < recv_list_size; i++) {
 
-    cs_gnum_t  num = recv_glist[i] - bi.gnum_range[0] + 1;
-    cs_lnum_t  n_sub_elts = recv_glist[i+1];
+    cs_gnum_t  num = orig_gnum[i] - bi.gnum_range[0] + 1;
+    cs_lnum_t  n_sub_elts = orig_nsub[i];
 
     assert(num <= (cs_gnum_t)block_size);
     block->index[num] += n_sub_elts;
@@ -3084,10 +3076,10 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   sub_shift = 0;
 
-  for (i = 0; i < recv_list_size; i+= 2) {
+  for (i = 0; i < recv_list_size; i++) {
 
-    cs_gnum_t  block_id = recv_glist[i] - bi.gnum_range[0];
-    cs_lnum_t  n_sub_elts = recv_glist[i+1];
+    cs_gnum_t  block_id = orig_gnum[i] - bi.gnum_range[0];
+    cs_lnum_t  n_sub_elts = orig_nsub[i];
 
     assert(block_id < (cs_gnum_t)block_size);
 
@@ -3131,12 +3123,16 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   }
 
+  BFT_FREE(orig_gnum);
+  BFT_FREE(orig_nsub);
+
   BFT_MALLOC(new_index, block_size + 1, cs_lnum_t);
 
   new_index[0] = 0;
   for (i = 0; i < block_size; i++)
     new_index[i+1] = new_index[i] + shift_ref[i] - block->index[i];
 
+  BFT_FREE(shift_ref);
   BFT_FREE(block->index);
 
   block->index = new_index;
@@ -3165,15 +3161,6 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   MPI_Type_free(&MPI_JOIN_EXCH_INTER);
 
-  BFT_FREE(shift_ref);
-  BFT_FREE(send_count);
-  BFT_FREE(recv_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(recv_shift);
-  BFT_FREE(send_glist);
-  BFT_FREE(recv_glist);
-  BFT_FREE(recv_inter_count);
-  BFT_FREE(send_inter_count);
   BFT_FREE(send_inter_list);
   BFT_FREE(recv_inter_list);
 
@@ -3199,16 +3186,13 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
                                   const cs_join_inter_edges_t  *block,
                                   cs_join_inter_edges_t        *part)
 {
-  cs_lnum_t  i, j, rank, shift;
-  cs_lnum_t  list_to_send_size, list_to_recv_size;
+  cs_lnum_t  i, j, rank;
   cs_lnum_t  send_inter_list_size, recv_inter_list_size;
 
   cs_lnum_t  _max = 0;
-  cs_lnum_t  *send_rank_index = NULL, *recv_rank_index = NULL;
   cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
   cs_lnum_t  *send_count = NULL, *recv_count = NULL;
-  cs_lnum_t  *nsubs_to_send = NULL, *nsubs_to_recv = NULL;
-  cs_gnum_t  *glist_to_send = NULL, *glist_to_recv = NULL;
+  cs_lnum_t  *block_nsub = NULL;
   exch_inter_t  *send_inter_list = NULL, *recv_inter_list = NULL;
 
   MPI_Datatype  MPI_JOIN_EXCH_INTER = _create_exch_inter_datatype();
@@ -3236,102 +3220,72 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   }
 #endif
 
+  int flags = CS_ALL_TO_ALL_USE_SRC_RANK;
+
+  cs_all_to_all_t
+    *d = cs_all_to_all_create_from_block(part->n_edges,
+                                         flags,
+                                         part->edge_gnum,
+                                         bi,
+                                         mpi_comm);
+
+  /* Exchange global numbers of edges which should be returned
+     from block to partition */
+
+  cs_gnum_t *orig_gnum = cs_all_to_all_copy_array(d,
+                                                  CS_GNUM_TYPE,
+                                                  1,
+                                                  false, /* reverse */
+                                                  part->edge_gnum,
+                                                  NULL);
+
+  cs_lnum_t send_list_size = cs_all_to_all_n_elts_dest(d);
+
+  /* Send the number of sub_elements for each requested edge */
+
+  BFT_MALLOC(block_nsub, send_list_size, cs_lnum_t);
+
+  for (i = 0; i < send_list_size; i++) {
+    cs_gnum_t  s_id = orig_gnum[i] - bi.gnum_range[0];
+    block_nsub[i] = block->index[s_id+1] - block->index[s_id];
+  }
+
+  cs_lnum_t *part_nsub = cs_all_to_all_copy_array(d,
+                                                  CS_LNUM_TYPE,
+                                                  1,
+                                                  true, /* reverse */
+                                                  block_nsub,
+                                                  NULL);
   /* Allocate parameters for MPI functions */
 
   BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
+  BFT_MALLOC(recv_count, n_ranks + 1, cs_lnum_t);
 
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
+  int *src_rank = cs_all_to_all_get_src_rank(d);
 
-  /* Count number of edges we want to receive */
-
-  for (i = 0; i < part->n_edges; i++) {
-    rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)(bi.block_size);
-    assert(rank >= 0 && rank < n_ranks);
-    send_count[rank] += 1;
-  }
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
-
-  BFT_MALLOC(recv_rank_index, n_ranks + 1, cs_lnum_t);
-  BFT_MALLOC(send_rank_index, n_ranks + 1, cs_lnum_t);
-
-  recv_rank_index[0] = 0;
-  send_rank_index[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++) {
-    recv_rank_index[rank + 1] = recv_rank_index[rank] + send_count[rank];
-    send_rank_index[rank + 1] = send_rank_index[rank] + recv_count[rank];
-  }
-
-  assert(recv_rank_index[n_ranks] == part->n_edges);
-
-  list_to_recv_size = recv_rank_index[n_ranks];
-  list_to_send_size = send_rank_index[n_ranks];
+  cs_all_to_all_destroy(&d);
 
   /* Build lists to exchange */
 
-  BFT_MALLOC(glist_to_recv, list_to_recv_size, cs_gnum_t);
-  BFT_MALLOC(glist_to_send, list_to_send_size, cs_gnum_t);
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (i = 0; i < part->n_edges; i++) {
-
-    rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)bi.block_size;
-    assert(rank >= 0 && rank < n_ranks);
-    shift = recv_rank_index[rank] + send_count[rank];
-    glist_to_recv[shift] = part->edge_gnum[i];
-    send_count[rank] += 1;
-
-  }
-
-  MPI_Alltoallv(glist_to_recv, send_count, recv_rank_index, CS_MPI_GNUM,
-                glist_to_send, recv_count, send_rank_index, CS_MPI_GNUM,
-                mpi_comm);
-
-  /* block send the requested global edges to all the part on
-     the distant ranks */
-
-  /* Send the number of sub_elements for each requested edges */
-
-  BFT_MALLOC(nsubs_to_send, list_to_send_size, cs_lnum_t);
-  BFT_MALLOC(nsubs_to_recv, list_to_recv_size, cs_lnum_t);
+  BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
+  BFT_MALLOC(send_shift, n_ranks + 1, cs_lnum_t);
+  BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
+  BFT_MALLOC(recv_shift, n_ranks + 1, cs_lnum_t);
 
   for (rank = 0; rank < n_ranks; rank++) {
+    send_count[rank] = 0;
+    recv_count[rank] = 0;
+  }
 
-    for (i = send_rank_index[rank]; i < send_rank_index[rank+1]; i++) {
+  for (i = 0; i < send_list_size; i++) {
+    rank = src_rank[i];
+    send_count[rank] += block_nsub[i];
+  }
 
-      cs_gnum_t  s_id = glist_to_send[i] - bi.gnum_range[0];
-
-      nsubs_to_send[i] = block->index[s_id+1] - block->index[s_id];
-
-    }
-
-  } /* End of loop on ranks */
-
-  MPI_Alltoallv(nsubs_to_send, recv_count, send_rank_index, MPI_INT,
-                nsubs_to_recv, send_count, recv_rank_index, MPI_INT,
-                mpi_comm);
-
-  /* block struct. send the requested global edges to all the part struct
-     on the distant ranks */
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++)
-    for (i = send_rank_index[rank]; i < send_rank_index[rank+1]; i++)
-      send_count[rank] += nsubs_to_send[i];
-
-  BFT_FREE(nsubs_to_send);
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
-
-  BFT_MALLOC(send_shift, n_ranks + 1, cs_lnum_t);
-  BFT_MALLOC(recv_shift, n_ranks + 1, cs_lnum_t);
+  for (i = 0; i < part->n_edges; i++) {
+    rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)bi.block_size;
+    recv_count[rank] += part_nsub[i];
+  }
 
   send_shift[0] = 0;
   recv_shift[0] = 0;
@@ -3340,6 +3294,11 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
     send_shift[rank + 1] = send_shift[rank] + send_count[rank];
     recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
   }
+
+  BFT_FREE(block_nsub);
+
+  /* block struct. send the requested global edges to all the part struct
+     on the distant ranks */
 
   send_inter_list_size = send_shift[n_ranks];
   recv_inter_list_size = recv_shift[n_ranks];
@@ -3350,29 +3309,29 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
 
-  for (rank = 0; rank < n_ranks; rank++) {
+  for (i = 0; i < send_list_size; i++) {
 
-    for (i = send_rank_index[rank]; i < send_rank_index[rank+1]; i++) {
+    rank = src_rank[i];
 
-      cs_gnum_t  s_id = glist_to_send[i] - bi.gnum_range[0];
-      cs_lnum_t  start = block->index[s_id];
-      cs_lnum_t  end = block->index[s_id+1];
+    cs_gnum_t  s_id = orig_gnum[i] - bi.gnum_range[0];
+    cs_lnum_t  start = block->index[s_id];
+    cs_lnum_t  end = block->index[s_id+1];
 
-      shift = send_shift[rank] + send_count[rank];
+    cs_lnum_t shift = send_shift[rank] + send_count[rank];
 
-      for (j = start; j < end; j++) {
+    for (j = start; j < end; j++) {
 
-        (send_inter_list[shift]).vtx_gnum = block->vtx_glst[j];
-        (send_inter_list[shift]).curv_abs = block->abs_lst[j];
-        shift++;
-
-      }
-
-      send_count[rank] += end - start;
+      (send_inter_list[shift]).vtx_gnum = block->vtx_glst[j];
+      (send_inter_list[shift]).curv_abs = block->abs_lst[j];
+      shift++;
 
     }
 
-  } /* End of loop on ranks */
+    send_count[rank] += end - start;
+
+  } /* End of loop on elements to send */
+
+  BFT_FREE(src_rank);
 
   /* Exchange buffers */
 
@@ -3384,23 +3343,59 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   /* Partial free memory */
 
   BFT_FREE(recv_count);
+  BFT_FREE(send_inter_list);
+  BFT_FREE(orig_gnum);
+
+  /* Update global numbers to match change on the block side
+     (TODO: check if renumbering on the block side is really necessary) */
+
+  {
+    cs_gnum_t *glist_to_recv;
+    BFT_MALLOC(glist_to_recv, part->n_edges, cs_gnum_t);
+
+    /* Reuse send shift and count here to match order of received values */
+
+    for (i = 0; i < n_ranks; i++)
+      send_count[i] = 0;
+
+    for (i = 0; i < part->n_edges; i++) {
+      rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)bi.block_size;
+      assert(rank >= 0 && rank < n_ranks);
+      send_count[rank] += 1;
+    }
+
+    send_shift[0] = 0;
+    for (rank = 0; rank < n_ranks; rank++)
+      send_shift[rank + 1] = send_shift[rank] + send_count[rank];
+
+    for (i = 0; i < n_ranks; i++)
+      send_count[i] = 0;
+
+    for (i = 0; i < part->n_edges; i++) {
+      rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)bi.block_size;
+      cs_lnum_t shift = send_shift[rank] + send_count[rank];
+      glist_to_recv[shift] = part->edge_gnum[i];
+      send_count[rank] += 1;
+    }
+
+    /* Apply update */
+
+    for (i = 0; i < part->n_edges; i++)
+      part->edge_gnum[i] = glist_to_recv[i];
+
+    BFT_FREE(glist_to_recv);
+  }
+
   BFT_FREE(send_count);
   BFT_FREE(send_shift);
-  BFT_FREE(send_inter_list);
-  BFT_FREE(recv_rank_index);
-  BFT_FREE(send_rank_index);
-  BFT_FREE(glist_to_send);
 
-  /* Update recv_inter_edges */
-
-  for (i = 0; i < part->n_edges; i++)
-    part->edge_gnum[i] = glist_to_recv[i];
+  /* Update part definitions */
 
   _max = 0;
   part->index[0] = 0;
   for (i = 0; i < part->n_edges; i++) {
-    _max = CS_MAX(_max, nsubs_to_recv[i]);
-    part->index[i+1] = nsubs_to_recv[i];
+    _max = CS_MAX(_max, part_nsub[i]);
+    part->index[i+1] = part_nsub[i];
   }
 
   part->max_sub_size = _max;
@@ -3425,11 +3420,10 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   MPI_Type_free(&MPI_JOIN_EXCH_INTER);
 
   BFT_FREE(recv_shift);
-  BFT_FREE(nsubs_to_recv);
-  BFT_FREE(glist_to_recv);
+  BFT_FREE(part_nsub);
   BFT_FREE(recv_inter_list);
-
 }
+
 #endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------

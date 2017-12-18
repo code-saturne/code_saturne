@@ -586,14 +586,14 @@ _intersect_edges(cs_join_t               *this_join,
                                         sync_block,
                                         inter_edges);
 
+      cs_join_inter_edges_destroy(&sync_block);
+
       /* Add new vertices to edge and mesh description if necessary */
 
       cs_join_intersect_update_struct(param.verbosity,
                                       work_join_edges,
                                       work_jmesh,
                                       &inter_edges);
-
-      cs_join_inter_edges_destroy(&sync_block);
 
       cs_join_mesh_sync_vertices(work_jmesh);
 
