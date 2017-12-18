@@ -120,7 +120,7 @@ _angle(const cs_lnum_t  v_ids[3],
   const cs_real_t lsq0 = cs_math_3_square_norm(u);
   const cs_real_t lsq1 = cs_math_3_square_norm(v);
 
-  const cs_real_t uv[3];
+  cs_real_t uv[3];
 
   cs_math_3_cross_product(u, v, uv);
 
