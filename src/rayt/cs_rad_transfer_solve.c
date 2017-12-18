@@ -487,6 +487,13 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
 
   cs_field_t  *f_up = NULL, *f_down = NULL;
 
+  /* Upwards/Downwards atmospheric integration */
+
+  if (cs_glob_rad_transfer_params->atmo_ir_absorption) {
+    f_up = cs_field_by_name_try("rad_flux_up");//TODO distinguish IR with solar?
+    f_down = cs_field_by_name_try("rad_flux_down");
+  }
+
   /* Angular discretization */
 
   int kdir = 0;
