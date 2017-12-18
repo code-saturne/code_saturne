@@ -44,7 +44,9 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_all_to_all.h"
 #include "cs_base.h"
+#include "cs_block_dist.h"
 #include "cs_order.h"
 
 #include "fvm_periodicity.h"
@@ -314,77 +316,77 @@ _cs_interface_dump(const cs_interface_t  *itf)
 }
 
 /*----------------------------------------------------------------------------
- * Sort and remove duplicates from periodic couple information.
+ * Sort and remove duplicates from periodic tuple information.
  *
  * parameters:
- *   n_block_couples  <-> number of couples in current block
- *   block_couples    <-> couple information for this rank: for each couple,
- *                        {global number of local element,
- *                         global number of periodic element,
- *                         transform id}
+ *   n_block_tuples  <-> number of tuples in current block
+ *   block_tuples    <-> tuple information for this rank: for each tuple,
+ *                       {global number of local element,
+ *                        global number of periodic element,
+ *                        transform id}
  *----------------------------------------------------------------------------*/
 
 static void
-_sort_periodic_couples(cs_lnum_t    *n_block_couples,
-                       cs_gnum_t   **block_couples)
+_sort_periodic_tuples(cs_lnum_t    *n_block_tuples,
+                      cs_gnum_t   **block_tuples)
 {
   cs_lnum_t   i, j, k;
 
-  cs_lnum_t    n_couples = *n_block_couples;
+  cs_lnum_t    n_tuples = *n_block_tuples;
   cs_lnum_t   *order = NULL;
-  cs_gnum_t   *couples = *block_couples;
-  cs_gnum_t   *couples_tmp = NULL;
+  cs_gnum_t   *tuples = *block_tuples;
+  cs_gnum_t   *tuples_tmp = NULL;
 
-  if (n_couples < 1)
+  if (n_tuples < 1)
     return;
 
-  /* Sort periodic couples by local correspondant */
+  /* Sort periodic tuples by local correspondant */
 
-  BFT_MALLOC(order, n_couples, cs_lnum_t);
-  BFT_MALLOC(couples_tmp, n_couples*3, cs_gnum_t);
+  BFT_MALLOC(order, n_tuples, cs_lnum_t);
+  BFT_MALLOC(tuples_tmp, n_tuples*3, cs_gnum_t);
 
   cs_order_gnum_allocated_s(NULL,
-                            couples,
+                            tuples,
                             3,
                             order,
-                            n_couples);
+                            n_tuples);
 
   /* Copy to temporary array, ignoring duplicates */
 
   k = order[0]*3;
-  couples_tmp[0] = couples[k];
-  couples_tmp[1] = couples[k + 1];
-  couples_tmp[2] = couples[k + 2];
+  tuples_tmp[0] = tuples[k];
+  tuples_tmp[1] = tuples[k + 1];
+  tuples_tmp[2] = tuples[k + 2];
   j = 3;
 
-  for (i = 1; i < n_couples; i++) {
+  for (i = 1; i < n_tuples; i++) {
     k = order[i] * 3;
-    if (   (couples[k]   != couples_tmp[j-3])
-        || (couples[k+1] != couples_tmp[j-2])
-        || (couples[k+2] != couples_tmp[j-1])) {
-      couples_tmp[j]     = couples[k];
-      couples_tmp[j + 1] = couples[k + 1];
-      couples_tmp[j + 2] = couples[k + 2];
+    if (   (tuples[k]   != tuples_tmp[j-3])
+        || (tuples[k+1] != tuples_tmp[j-2])
+        || (tuples[k+2] != tuples_tmp[j-1])) {
+      tuples_tmp[j]     = tuples[k];
+      tuples_tmp[j + 1] = tuples[k + 1];
+      tuples_tmp[j + 2] = tuples[k + 2];
       j += 3;
     }
   }
-  n_couples = j / 3;
+  n_tuples = j / 3;
 
   BFT_FREE(order);
 
   /* Resize input/outpout array if duplicates were removed */
 
-  if (n_couples <= *n_block_couples) {
-    BFT_REALLOC(couples, n_couples*3, cs_gnum_t);
-    *n_block_couples = n_couples;
-    *block_couples = couples;
+  if (n_tuples <= *n_block_tuples) {
+    BFT_REALLOC(tuples, n_tuples*3, cs_gnum_t);
+    *n_block_tuples = n_tuples;
+    *block_tuples = tuples;
   }
 
   /* Copy sorted data to input/output array and free temporary storage */
 
-  memcpy(couples, couples_tmp, sizeof(cs_gnum_t)*n_couples*3);
+  memcpy(tuples, tuples_tmp, sizeof(cs_gnum_t)*n_tuples*3);
 
-  BFT_FREE(couples_tmp);
+  BFT_FREE(tuples_tmp);
 }
 
 /*----------------------------------------------------------------------------
@@ -917,28 +919,25 @@ _interfaces_from_flat_equiv(cs_interface_set_t  *ifs,
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_interface_add_global_equiv(cs_interface_set_t  *ifs,
-                               cs_lnum_t            n_elts,
-                               cs_gnum_t            global_num[],
-                               MPI_Comm             comm)
+_add_global_equiv(cs_interface_set_t  *ifs,
+                  cs_lnum_t            n_elts,
+                  cs_gnum_t            global_num[],
+                  MPI_Comm             comm)
 {
   cs_gnum_t   global_max;
-  cs_lnum_t   i, j, n_elts_recv, n_elts_send;
-  size_t      block_size;
+  cs_lnum_t   i, j;
   int         size, rank;
-
-  _per_block_equiv_t  e;
 
   int         *send_count = NULL, *recv_count = NULL;
   int         *send_shift = NULL, *recv_shift = NULL;
   cs_lnum_t   *equiv_id = NULL;
   cs_lnum_t   *equiv_send, *equiv_recv = NULL;
-  cs_lnum_t   *recv_num = NULL, *send_num = NULL;
-  cs_gnum_t   *send_global_num = NULL, *recv_global_num = NULL;
+  int         local_rank;
 
   /* Initialization */
 
   MPI_Comm_size(comm, &size);
+  MPI_Comm_rank(comm, &local_rank);
 
   /* Get temporary maximum global number value */
 
@@ -948,76 +947,74 @@ _cs_interface_add_global_equiv(cs_interface_set_t  *ifs,
 
   /* block_size = ceil(global_max/size) */
 
-  block_size = global_max / size;
-  if (global_max % size > 0)
-    block_size += 1;
+  cs_block_dist_info_t
+    bi = cs_block_dist_compute_sizes(local_rank,
+                                     size,
+                                     1,
+                                     0,
+                                     global_max);
 
-  assert(sizeof(cs_gnum_t) >= sizeof(cs_lnum_t));
+  int flags = CS_ALL_TO_ALL_ORDER_BY_SRC_RANK;
 
-  BFT_MALLOC(send_count, size, int);
-  BFT_MALLOC(recv_count, size, int);
+  cs_all_to_all_t
+    *d = cs_all_to_all_create_from_block(n_elts,
+                                         flags,
+                                         global_num,
+                                         bi,
+                                         comm);
 
-  BFT_MALLOC(send_shift, size + 1, int);
-  BFT_MALLOC(recv_shift, size + 1, int);
+  cs_gnum_t *recv_global_num = cs_all_to_all_copy_array(d,
+                                                        CS_GNUM_TYPE,
+                                                        1,
+                                                        false, /* reverse */
+                                                        global_num,
+                                                        NULL);
 
-  /* Count number of values to send to each process */
+  cs_lnum_t n_elts_recv = cs_all_to_all_n_elts_dest(d);
 
-  for (rank = 0; rank < size; rank++)
-    send_count[rank] = 0;
-
+  cs_lnum_t  *send_num = NULL;
+  BFT_MALLOC(send_num, n_elts, cs_lnum_t);
   for (i = 0; i < n_elts; i++)
-    send_count[(global_num[i] - 1) / block_size] += 1;
+    send_num[i] = i+1;
 
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < size; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
-  }
-
-  n_elts_recv = recv_shift[size];
-  n_elts_send = send_shift[size];
-
-  BFT_MALLOC(recv_global_num, n_elts_recv, cs_gnum_t);
-  BFT_MALLOC(recv_num, n_elts_recv, cs_lnum_t);
-
-  BFT_MALLOC(send_num, n_elts_send, cs_lnum_t);
-  BFT_MALLOC(send_global_num, n_elts_send, cs_gnum_t);
-
-  for (rank = 0; rank < size; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < n_elts; i++) {
-    rank = (global_num[i] - 1) / block_size;
-    send_global_num[send_shift[rank] + send_count[rank]] = global_num[i];
-    send_num[send_shift[rank] + send_count[rank]] = i+1;
-    send_count[rank] += 1;
-  }
-
-  MPI_Alltoallv(send_global_num, send_count, send_shift, CS_MPI_GNUM,
-                recv_global_num, recv_count, recv_shift, CS_MPI_GNUM, comm);
-
-  BFT_FREE(send_global_num);
-
-  MPI_Alltoallv(send_num, send_count, send_shift, CS_MPI_LNUM,
-                recv_num, recv_count, recv_shift, CS_MPI_LNUM, comm);
+  cs_lnum_t *recv_num = cs_all_to_all_copy_array(d,
+                                                 CS_LNUM_TYPE,
+                                                 1,
+                                                 false, /* reverse */
+                                                 send_num,
+                                                 NULL);
 
   BFT_FREE(send_num);
+
+  int *src_rank = cs_all_to_all_get_src_rank(d);
+
+  cs_all_to_all_destroy(&d);
+
+  BFT_MALLOC(recv_count, size, int);
+  BFT_MALLOC(recv_shift, size + 1, int);
+
+  for (rank = 0; rank < size; rank++)
+    recv_count[rank] = 0;
+
+  for (i = 0; i < n_elts_recv; i++)
+    recv_count[src_rank[i]] += 1;
+
+  recv_shift[0] = 0;
+
+  for (rank = 0; rank < size; rank++)
+    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
 
   /* Build equivalence data */
 
   if (n_elts_recv > 0)
     BFT_MALLOC(equiv_id, n_elts_recv, cs_lnum_t);
 
-  e = _block_global_num_to_equiv(size,
-                                 n_elts_recv,
-                                 recv_shift,
-                                 recv_global_num,
-                                 recv_num,
-                                 equiv_id);
+  _per_block_equiv_t  e = _block_global_num_to_equiv(size,
+                                                     n_elts_recv,
+                                                     recv_shift,
+                                                     recv_global_num,
+                                                     recv_num,
+                                                     equiv_id);
 
   /* Now free Memory */
 
@@ -1031,22 +1028,30 @@ _cs_interface_add_global_equiv(cs_interface_set_t  *ifs,
      for a total of 1 + 1 + 2*(e.multiple[...] - 1)
      = 2*(e.multiple[...]) values. */
 
-  for (rank = 0; rank < size; rank++) {
+  BFT_MALLOC(send_count, size, int);
+  BFT_MALLOC(send_shift, size + 1, int);
+
+  for (rank = 0; rank < size; rank++)
     send_count[rank] = 0;
-    for (i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
-      if (equiv_id[i] > -1) {
-        size_t e_id = equiv_id[i];
-        send_count[rank] += 2*(e.shift[e_id+1] - e.shift[e_id]);
-      }
+
+  send_shift[0] = 0;
+
+  for (i = 0; i < n_elts_recv; i++) {
+    if (equiv_id[i] > -1) {
+      size_t e_id = equiv_id[i];
+      rank = src_rank[i];
+      send_count[rank] += 2*(e.shift[e_id+1] - e.shift[e_id]);
     }
   }
+
+  BFT_FREE(src_rank);
 
   for (rank = 0; rank < size; rank++)
     send_shift[rank + 1] = send_shift[rank] + send_count[rank];
 
   /* Now prepare new send buffer */
 
-  n_elts_send = send_shift[size];
+  cs_lnum_t n_elts_send = send_shift[size];
   BFT_MALLOC(equiv_send, n_elts_send, cs_lnum_t);
 
   for (rank = 0; rank < size; rank++) {
@@ -1062,8 +1067,8 @@ _cs_interface_add_global_equiv(cs_interface_set_t  *ifs,
 
         cs_lnum_t   e_id = equiv_id[i];
         cs_lnum_t   k = 2;
-        const int         multiple = e.shift[e_id+1] - e.shift[e_id];
-        const int        *rank_p = e.rank + e.shift[e_id];
+        const int        multiple = e.shift[e_id+1] - e.shift[e_id];
+        const int       *rank_p = e.rank + e.shift[e_id];
         const cs_lnum_t *num_p  = e.num  + e.shift[e_id];
 
         send_count[rank] += 2*multiple;
@@ -1134,199 +1139,50 @@ _cs_interface_add_global_equiv(cs_interface_set_t  *ifs,
 }
 
 /*----------------------------------------------------------------------------
- * Exchange communication counts.
- *
- * If n_counts > 1, counts are not interlaced, so count arrays are
- * contiguous: {c1[rank], rank = 0, size}{c2[rank], rank = 0, size}.
+ * Build eventual tuples belonging to combined periodicities.
  *
  * parameters:
- *   n_counts        <-- number of counts per processor (1 or 2)
- *   size            <-- communicator size
- *   send_count      <-- send element count for each rank [size*n_counts]
- *   recv_count      --> receive element count for each rank [size*n_counts]
- *   comm            <-- associated MPI communicator
+ *   block_size       <-- size of the block handled by each processor
+ *   periodicit       <-- periodicity information (NULL if none)
+ *   n_block_tuples   <-> number of tuples in current block
+ *   block_tuples     <-> tuple information for this rank: for each tuple,
+ *                        {global number of local element,
+ *                         global number of periodic element,
+ *                         transform id}
+ *   comm             <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
 
 static void
-_exchange_counts(int       n_counts,
-                 int       size,
-                 int       send_count[],
-                 int       recv_count[],
-                 MPI_Comm  comm)
+_combine_periodic_tuples(size_t                     block_size,
+                         const fvm_periodicity_t   *periodicity,
+                         cs_lnum_t                 *n_block_tuples,
+                         cs_gnum_t                **block_tuples,
+                         MPI_Comm                   comm)
 {
-  int i;
-  int *count_tmp = NULL;
-
-  /* Interlace parallel and periodic send counts */
-
-  if (n_counts == 2) {
-
-    BFT_MALLOC(count_tmp, size, int);
-
-    memcpy(count_tmp, send_count + size, size*sizeof(int));
-
-    for (i = size -1; i >= 0; i--)
-      send_count[i*2] = send_count[i];
-
-    for (i = 0; i < size; i++)
-      send_count[i*2+1] = count_tmp[i];
-
-  }
-
-  MPI_Alltoall(send_count, n_counts, MPI_INT,
-               recv_count, n_counts, MPI_INT, comm);
-
-
-  /* De-interlace parallel and periodic send counts */
-
-  if (n_counts == 2) {
-
-    for (i = 0; i < size; i++) {
-      count_tmp[i] = send_count[i*2+1];
-      send_count[i] = send_count[i*2];
-    }
-
-    memcpy(send_count + size, count_tmp, size*sizeof(int));
-
-    for (i = 0; i < size; i++) {
-      count_tmp[i] = recv_count[i*2+1];
-      recv_count[i] = recv_count[i*2];
-    }
-
-    memcpy(recv_count + size, count_tmp, size*sizeof(int));
-
-    BFT_FREE(count_tmp);
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Exchange periodic couple info between processors providing the data
- * and processors handling the related global numbering interval blocks.
- *
- * parameters:
- *   block_size          <-- size of the block handled by each processor
- *   periodicity         <-- periodicity information (NULL if none)
- *   n_periodic_lists    <-- number of periodic lists (may be local)
- *   n_periodic_couples  <-- number of periodic couples associated with
- *                           each periodic list
- *   periodic_couples    <-- array indicating periodic couples (using
- *                           global numberings) for each list
- *   recv_couples        <-- couple information received: for each couple,
- *                           {global number of local element,
- *                            global number of periodic element,
- *                            transform id}
- *   send_count          --> local number of values to send to each rank
- *   comm                <-- associated MPI communicator
- *----------------------------------------------------------------------------*/
-
-static void
-_count_periodic_couple_exchange(size_t                    block_size,
-                                const fvm_periodicity_t  *periodicity,
-                                int                       n_periodic_lists,
-                                const cs_lnum_t           n_periodic_couples[],
-                                const cs_gnum_t    *const periodic_couples[],
-                                int                       send_count[],
-                                MPI_Comm                  comm)
-{
-  int         list_id;
-  int         size, rank;
-
-  /* Initialization */
-
-  MPI_Comm_size(comm, &size);
-
-  for (rank = 0; rank < size; rank++)
-    send_count[rank] = 0;
-
-  if (periodicity == NULL)
-    return;
-
-  /* Compute list sizes to send to distant processors */
-
-  for (list_id = 0; list_id < n_periodic_lists; list_id++) {
-
-    cs_lnum_t couple_id;
-    cs_gnum_t num_1, num_2;
-    int rank_1, rank_2;
-
-    const cs_lnum_t   _n_periodic_couples = n_periodic_couples[list_id];
-    const cs_gnum_t   *_periodic_couples = periodic_couples[list_id];
-
-    for (couple_id = 0; couple_id < _n_periodic_couples; couple_id++) {
-      num_1 = _periodic_couples[couple_id*2];
-      num_2 = _periodic_couples[couple_id*2 + 1];
-      rank_1 = (num_1 - 1) / block_size;
-      rank_2 = (num_2 - 1) / block_size;
-      send_count[rank_1] += 3;
-      send_count[rank_2] += 3;
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Build eventual couples belonging to combined periodicities.
- *
- * parameters:
- *   block_size        <-- size of the block handled by each processor
- *   periodicity       <-- periodicity information (NULL if none)
- *   n_block_couples   <-> number of couples in current block
- *   block_couples     <-> couple information for this rank: for each couple,
- *                         {global number of local element,
- *                          global number of periodic element,
- *                          transform id}
- *   comm              <-- associated MPI communicator
- *----------------------------------------------------------------------------*/
-
-static void
-_combine_periodic_couples(size_t                     block_size,
-                          const fvm_periodicity_t   *periodicity,
-                          cs_lnum_t                 *n_block_couples,
-                          cs_gnum_t                **block_couples,
-                          MPI_Comm                   comm)
-{
-  int  size;
-  int  i, n_tr, level, n_recv;
-
-  cs_lnum_t   j, k, start_id, end_id;
-
-  int  *send_count = NULL, *recv_count = NULL;
-  int  *send_shift = NULL, *recv_shift = NULL;
   int  *tr_reverse_id = NULL;
 
-  cs_gnum_t   *send_couples = NULL;
+  int         *send_rank = NULL;
+  cs_gnum_t   *send_tuples = NULL;
 
-  cs_lnum_t   _n_block_couples = *n_block_couples;
-  cs_gnum_t   *_block_couples = *block_couples;
+  cs_lnum_t   _n_block_tuples = *n_block_tuples;
+  cs_gnum_t   *_block_tuples = *block_tuples;
 
   assert (periodicity != NULL);
 
   /* Initialization */
 
-  MPI_Comm_size(comm, &size);
-
   /* Build periodicity related arrays for quick access */
 
-  n_tr = fvm_periodicity_get_n_transforms(periodicity);
+  int n_tr = fvm_periodicity_get_n_transforms(periodicity);
 
   BFT_MALLOC(tr_reverse_id, n_tr, int);
 
-  for (i = 0; i < n_tr; i++)
+  for (int i = 0; i < n_tr; i++)
     tr_reverse_id[i] = fvm_periodicity_get_reverse_id(periodicity, i);
-
-  /* Arrays for MPI_AlltoAll */
-
-  BFT_MALLOC(send_count, size, int);
-  BFT_MALLOC(recv_count, size, int);
-  BFT_MALLOC(send_shift, size+1, int);
-  BFT_MALLOC(recv_shift, size+1, int);
 
   /* Loop on combination levels */
 
-  for (level = 1;
+  for (int level = 1;
        level < fvm_periodicity_get_n_levels(periodicity);
        level++) {
 
@@ -1340,37 +1196,30 @@ _combine_periodic_couples(size_t                     block_size,
 
     /* Count values to exchange */
 
-    for (i = 0; i < size; i++)
-      send_count[i] = 0;
+    size_t n_send = 0;
 
-    start_id = 0;
-    end_id = 1;
+    cs_lnum_t start_id = 0;
+    cs_lnum_t end_id = 1;
 
-    while (end_id < _n_block_couples) {
+    while (end_id < _n_block_tuples) {
 
-      if (_block_couples[start_id*3] == _block_couples[end_id*3]) {
+      if (_block_tuples[start_id*3] == _block_tuples[end_id*3]) {
 
         end_id++;
-        while (end_id < _n_block_couples) {
-          if (_block_couples[end_id*3] != _block_couples[start_id*3])
+        while (end_id < _n_block_tuples) {
+          if (_block_tuples[end_id*3] != _block_tuples[start_id*3])
             break;
           end_id++;
         }
 
-        for (j = start_id; j < end_id; j++) {
-          for (k = j+1; k < end_id; k++) {
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+          for (cs_lnum_t k = j+1; k < end_id; k++) {
 
-            cs_gnum_t num_1 = _block_couples[j*3 + 1];
-            cs_gnum_t num_2 = _block_couples[k*3 + 1];
-            int rank_1 = (num_1 - 1) / block_size;
-            int rank_2 = (num_2 - 1) / block_size;
-            int tr_1 = tr_reverse_id[_block_couples[j*3 + 2]];
-            int tr_2 = _block_couples[k*3 + 2];
+            int tr_1 = tr_reverse_id[_block_tuples[j*3 + 2]];
+            int tr_2 = _block_tuples[k*3 + 2];
 
-            if (tr_combine[tr_1 *n_rows + tr_2] > -1) {
-              send_count[rank_1] += 3;
-              send_count[rank_2] += 3;
-            }
+            if (tr_combine[tr_1 *n_rows + tr_2] > -1)
+              n_send += 2;
 
           }
         }
@@ -1381,67 +1230,51 @@ _combine_periodic_couples(size_t                     block_size,
       end_id += 1;
     }
 
-    MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
+    BFT_MALLOC(send_rank, n_send, int);
+    BFT_MALLOC(send_tuples, n_send*3, cs_gnum_t);
 
-    send_shift[0] = 0;
-    recv_shift[0] = _n_block_couples*3;
-
-    for (i = 0; i < size; i++) {
-      send_shift[i+1] = send_shift[i] + send_count[i];
-      recv_shift[i+1] = recv_shift[i] + recv_count[i];
-      send_count[i] = 0;
-    }
-
-    BFT_MALLOC(send_couples, send_shift[size], cs_gnum_t);
-
-    /* Now exchange combined couples */
+    /* Now exchange combined tuples */
 
     start_id = 0;
     end_id = 1;
 
-    while (end_id < _n_block_couples) {
+    cs_lnum_t l = 0;
 
-      if (_block_couples[start_id*3] == _block_couples[end_id*3]) {
+    while (end_id < _n_block_tuples) {
+
+      if (_block_tuples[start_id*3] == _block_tuples[end_id*3]) {
 
         end_id++;
-        while (end_id < _n_block_couples) {
-          if (_block_couples[end_id*3] != _block_couples[start_id*3])
+        while (end_id < _n_block_tuples) {
+          if (_block_tuples[end_id*3] != _block_tuples[start_id*3])
             break;
           end_id++;
         }
 
-        for (j = start_id; j < end_id; j++) {
-          for (k = j+1; k < end_id; k++) {
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+          for (cs_lnum_t k = j+1; k < end_id; k++) {
 
-            cs_gnum_t num_1 = _block_couples[j*3 + 1];
-            cs_gnum_t num_2 = _block_couples[k*3 + 1];
-            int rank_1 = (num_1 - 1) / block_size;
-            int rank_2 = (num_2 - 1) / block_size;
-            int tr_1 = tr_reverse_id[_block_couples[j*3 + 2]];
-            int tr_2 = _block_couples[k*3 + 2];
+            int tr_1 = tr_reverse_id[_block_tuples[j*3 + 2]];
+            int tr_2 = _block_tuples[k*3 + 2];
             int tr_c = tr_combine[tr_1 *n_rows + tr_2];
 
             if (tr_c > -1) {
 
-              cs_gnum_t *_send_couples;
+              cs_gnum_t num_1 = _block_tuples[j*3 + 1];
+              cs_gnum_t num_2 = _block_tuples[k*3 + 1];
 
-              _send_couples
-                = send_couples + send_shift[rank_1] + send_count[rank_1];
+              send_rank[l*2]   = (num_1 - 1) / block_size;
+              send_rank[l*2+1] = (num_2 - 1) / block_size;
 
-              _send_couples[0] = num_1;
-              _send_couples[1] = num_2;
-              _send_couples[2] = tr_c;
+              send_tuples[l*6]   = num_1;
+              send_tuples[l*6+1] = num_2;
+              send_tuples[l*6+2] = tr_c;
 
-              send_count[rank_1] += 3;
+              send_tuples[l*6+3] = num_2;
+              send_tuples[l*6+4] = num_1;
+              send_tuples[l*6+5] = tr_reverse_id[tr_c];
 
-              _send_couples
-                = send_couples + send_shift[rank_2] + send_count[rank_2];
-
-              _send_couples[0] = num_2;
-              _send_couples[1] = num_1;
-              _send_couples[2] = tr_reverse_id[tr_c];
-
-              send_count[rank_2] += 3;
+              l += 1;
 
             }
 
@@ -1454,42 +1287,59 @@ _combine_periodic_couples(size_t                     block_size,
       end_id += 1;
     }
 
+    assert((cs_gnum_t)(l*2) == n_send);
+
     BFT_FREE(tr_combine);
 
-    n_recv = recv_shift[size] - (_n_block_couples*3);
+    cs_all_to_all_t  *d = cs_all_to_all_create(n_send,
+                                               0,
+                                               NULL,
+                                               send_rank,
+                                               comm);
 
-    if (n_recv > 0)
-      BFT_REALLOC(_block_couples, recv_shift[size], cs_gnum_t);
+    cs_all_to_all_transfer_dest_rank(d, &send_rank);
 
-    MPI_Alltoallv(send_couples, send_count, send_shift, CS_MPI_GNUM,
-                  _block_couples, recv_count, recv_shift, CS_MPI_GNUM, comm);
+    cs_gnum_t *recv_tuples = cs_all_to_all_copy_array(d,
+                                                      CS_GNUM_TYPE,
+                                                      3,
+                                                      false, /* reverse */
+                                                      send_tuples,
+                                                      NULL);
 
-    BFT_FREE(send_couples);
+    BFT_FREE(send_tuples);
 
-    /* Finally, merge additional couples received for block with
+    cs_lnum_t n_recv = cs_all_to_all_n_elts_dest(d);
+
+    cs_all_to_all_destroy(&d);
+
+    if (n_recv > 0) {
+      BFT_REALLOC(_block_tuples, (_n_block_tuples + n_recv)*3, cs_gnum_t);
+      memcpy(_block_tuples + _n_block_tuples*3,
+             recv_tuples,
+             n_recv*3*sizeof(cs_gnum_t));
+    }
+
+    BFT_FREE(recv_tuples);
+
+    /* Finally, merge additional tuples received for block with
        existing periodicity information */
 
     if (n_recv > 0) {
 
       assert(n_recv % 3 == 0);
 
-      _n_block_couples += n_recv / 3;
+      _n_block_tuples += n_recv / 3;
 
-      /* Sort and remove dumplicates to update block periodicity info */
+      /* Sort and remove duplicates to update block periodicity info */
 
-      _sort_periodic_couples(&_n_block_couples, &_block_couples);
+      _sort_periodic_tuples(&_n_block_tuples, &_block_tuples);
 
-      *n_block_couples = _n_block_couples;
-      *block_couples = _block_couples;
+      *n_block_tuples = _n_block_tuples;
+      *block_tuples = _block_tuples;
 
     }
 
   }
-
-  BFT_FREE(send_shift);
-  BFT_FREE(recv_shift);
-  BFT_FREE(send_count);
-  BFT_FREE(recv_count);
 
   BFT_FREE(tr_reverse_id);
 }
@@ -1505,8 +1355,6 @@ _combine_periodic_couples(size_t                     block_size,
  *
  * parameters:
  *   block_size          <-- size of the block handled by each processor
- *   send_count          <-> local number of values to send to each rank
- *   recv_count          <-- local number of values to receive from each rank
  *   periodicity         <-- periodicity information (NULL if none)
  *   n_periodic_lists    <-- number of periodic lists (may be local)
  *   periodicity_num     <-- periodicity number (1 to n) associated with
@@ -1515,8 +1363,8 @@ _combine_periodic_couples(size_t                     block_size,
  *                           each periodic list
  *   periodic_couples    <-- array indicating periodic couples (using
  *                           global numberings) for each list
- *   n_block_couples     --> number of couples in current block
- *   block_couples       --> couple information for block: for each couple,
+ *   n_block_tuples      --> number of tuples in current block
+ *   block_tuples       --> tuple information for block: for each tuple,
  *                           {global number of local element,
  *                            global number of periodic element,
  *                            transform id}
@@ -1524,59 +1372,37 @@ _combine_periodic_couples(size_t                     block_size,
  *----------------------------------------------------------------------------*/
 
 static void
-_exchange_periodic_couples(size_t                    block_size,
-                           int                       send_count[],
-                           int                       recv_count[],
-                           const fvm_periodicity_t  *periodicity,
-                           int                       n_periodic_lists,
-                           const int                 periodicity_num[],
-                           const cs_lnum_t           n_periodic_couples[],
-                           const cs_gnum_t    *const periodic_couples[],
-                           cs_lnum_t                *n_block_couples,
-                           cs_gnum_t               **block_couples,
-                           MPI_Comm                  comm)
+_exchange_periodic_tuples(size_t                    block_size,
+                          const fvm_periodicity_t  *periodicity,
+                          int                       n_periodic_lists,
+                          const int                 periodicity_num[],
+                          const cs_lnum_t           n_periodic_couples[],
+                          const cs_gnum_t    *const periodic_couples[],
+                          cs_lnum_t                *n_block_tuples,
+                          cs_gnum_t               **block_tuples,
+                          MPI_Comm                  comm)
 {
-  cs_lnum_t   i, j;
-  int         list_id;
-  int         size, rank;
+  int        *periodic_block_rank = NULL;
+  cs_gnum_t  *send_tuples = NULL;
 
-  cs_lnum_t    _n_block_couples = 0;
-  int         *send_shift = NULL, *recv_shift = NULL;
-  cs_gnum_t   *send_couples = NULL, *recv_couples = NULL;
+  cs_gnum_t n_g_periodic_tuples = 0;
 
   /* Initialization */
 
-  *n_block_couples = 0;
-  *block_couples = NULL;
+  *n_block_tuples = 0;
+  *block_tuples = NULL;
 
-  MPI_Comm_size(comm, &size);
+  for (int list_id = 0; list_id < n_periodic_lists; list_id++)
+    n_g_periodic_tuples += 2 * n_periodic_couples[list_id];
 
-  BFT_MALLOC(send_shift, size + 1, int);
-  BFT_MALLOC(recv_shift, size + 1, int);
-
-  /* build shift arrays for MPI_Alltoallv and reset send_count */
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < size; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
-    send_count[rank] = 0;
-  }
-
-  BFT_MALLOC(send_couples, send_shift[size], cs_gnum_t);
-  BFT_MALLOC(recv_couples, recv_shift[size], cs_gnum_t);
-
-  _n_block_couples = recv_shift[size]/3;
+  BFT_MALLOC(periodic_block_rank, n_g_periodic_tuples, int);
+  BFT_MALLOC(send_tuples, n_g_periodic_tuples*3, cs_gnum_t);
 
   /* Prepare lists to send to distant processors */
 
-  for (list_id = 0; list_id < n_periodic_lists; list_id++) {
+  cs_lnum_t k = 0;
 
-    cs_lnum_t couple_id;
-    cs_gnum_t num_1, num_2;
-    int rank_1, rank_2;
+  for (int list_id = 0; list_id < n_periodic_lists; list_id++) {
 
     const int external_num = periodicity_num[list_id];
     const int direct_id = fvm_periodicity_get_transform_id(periodicity,
@@ -1591,59 +1417,63 @@ _exchange_periodic_couples(size_t                    block_size,
 
     assert(direct_id >= 0 && reverse_id >= 0);
 
-    for (couple_id = 0; couple_id < _n_periodic_couples; couple_id++) {
+    for (cs_lnum_t couple_id = 0; couple_id < _n_periodic_couples; couple_id++) {
 
-      num_1 = _periodic_couples[couple_id*2];
-      num_2 = _periodic_couples[couple_id*2 + 1];
+      cs_gnum_t num_1 = _periodic_couples[couple_id*2];
+      cs_gnum_t num_2 = _periodic_couples[couple_id*2 + 1];
 
-      rank_1 = (num_1 - 1) / block_size;
-      rank_2 = (num_2 - 1) / block_size;
+      periodic_block_rank[k*2]   = (num_1 - 1) / block_size;
+      periodic_block_rank[k*2+1] = (num_2 - 1) / block_size;
 
-      i = send_shift[rank_1] + send_count[rank_1];
+      send_tuples[k*6]   = num_1;
+      send_tuples[k*6+1] = num_2;
+      send_tuples[k*6+2] = direct_id;
 
-      send_couples[i] = num_1;
-      send_couples[i+1] = num_2;
-      send_couples[i+2] = direct_id;
+      send_tuples[k*6+3] = num_2;
+      send_tuples[k*6+4] = num_1;
+      send_tuples[k*6+5] = reverse_id;
 
-      send_count[rank_1] += 3;
-
-      j = send_shift[rank_2] + send_count[rank_2];
-
-      send_couples[j] = num_2;
-      send_couples[j+1] = num_1;
-      send_couples[j+2] = reverse_id;
-
-      send_count[rank_2] += 3;
+      k += 1;
 
     }
 
   }
 
-#if defined(DEBUG) && !defined(NDEBUG)
-  for (rank = 0; rank < size; rank++) {
-    assert(send_shift[rank + 1] - send_shift[rank] == send_count[rank]);
-  }
-#endif
+  assert((cs_gnum_t)(k*2) == n_g_periodic_tuples);
 
   /* Exchange data */
 
-  MPI_Alltoallv(send_couples, send_count, send_shift, CS_MPI_GNUM,
-                recv_couples, recv_count, recv_shift, CS_MPI_GNUM, comm);
+  cs_all_to_all_t
+    *d_periodic = cs_all_to_all_create(n_g_periodic_tuples,
+                                       0,
+                                       NULL,
+                                       periodic_block_rank,
+                                       comm);
 
-  BFT_FREE(recv_shift);
-  BFT_FREE(send_shift);
+  cs_gnum_t *recv_tuples = cs_all_to_all_copy_array(d_periodic,
+                                                    CS_GNUM_TYPE,
+                                                    3,
+                                                    false, /* reverse */
+                                                    send_tuples,
+                                                    NULL);
 
-  BFT_FREE(send_couples);
+  cs_lnum_t _n_block_tuples = cs_all_to_all_n_elts_dest(d_periodic);
+
+  BFT_FREE(send_tuples);
+
+  cs_all_to_all_destroy(&d_periodic);
+
+  BFT_FREE(periodic_block_rank);
 
   /* Sort periodic couples by local correspondant, remove duplicates */
 
-  _sort_periodic_couples(&_n_block_couples,
-                         &recv_couples);
+  _sort_periodic_tuples(&_n_block_tuples,
+                        &recv_tuples);
 
   /* Set return values */
 
-  *n_block_couples = _n_block_couples;
-  *block_couples = recv_couples;
+  *n_block_tuples = _n_block_tuples;
+  *block_tuples = recv_tuples;
 }
 
 /*----------------------------------------------------------------------------
@@ -2354,7 +2184,7 @@ _merge_periodic_equiv(int                   n_blocks,
  *----------------------------------------------------------------------------*/
 
 static void
-_add_global_equiv_periodic(cs_interface_set_t      *ifs,
+_add_global_equiv_periodic(cs_interface_set_t       *ifs,
                            cs_lnum_t                 n_elts,
                            cs_gnum_t                 global_num[],
                            const fvm_periodicity_t  *periodicity,
@@ -2367,24 +2197,24 @@ _add_global_equiv_periodic(cs_interface_set_t      *ifs,
   cs_gnum_t   global_max;
   cs_lnum_t   i, j, n_elts_recv, n_elts_send;
   size_t      block_size;
-  int         tr_index_size, size, rank;
+  int         tr_index_size, size, rank, local_rank;
 
   _per_block_equiv_t  e;
   _per_block_period_t pe;
 
-  int         n_counts = 2;
   cs_lnum_t   n_block_couples = 0;
   int         *send_count = NULL, *recv_count = NULL;
   int         *send_shift = NULL, *recv_shift = NULL;
   cs_lnum_t   *equiv_id = NULL, *couple_equiv_id = NULL;
   cs_lnum_t   *equiv_send = NULL, *equiv_recv = NULL;
-  cs_lnum_t   *recv_num = NULL, *send_num = NULL;
-  cs_gnum_t   *send_global_num = NULL, *recv_global_num = NULL;
+  cs_lnum_t   *send_num = NULL;
+  cs_gnum_t   *send_global_num = NULL;
   cs_gnum_t   *block_couples = NULL;
 
   /* Initialization */
 
   MPI_Comm_size(comm, &size);
+  MPI_Comm_rank(comm, &local_rank);
 
   tr_index_size = fvm_periodicity_get_n_transforms(periodicity) + 2;
 
@@ -2396,61 +2226,52 @@ _add_global_equiv_periodic(cs_interface_set_t      *ifs,
 
   /* block_size = ceil(global_max/size) */
 
-  block_size = global_max / size;
-  if (global_max % size > 0)
-    block_size += 1;
+  cs_block_dist_info_t
+    bi = cs_block_dist_compute_sizes(local_rank,
+                                     size,
+                                     1,
+                                     0,
+                                     global_max);
+
+  block_size = bi.block_size;
+
+  int flags = CS_ALL_TO_ALL_ORDER_BY_SRC_RANK;
+
+  cs_all_to_all_t
+    *d = cs_all_to_all_create_from_block(n_elts,
+                                         flags,
+                                         global_num,
+                                         bi,
+                                         comm);
 
   assert(sizeof(cs_gnum_t) >= sizeof(cs_lnum_t));
 
-  BFT_MALLOC(send_count, size*n_counts, int);
-  BFT_MALLOC(recv_count, size*n_counts, int);
+  BFT_MALLOC(send_count, size, int);
+  BFT_MALLOC(recv_count, size, int);
 
   BFT_MALLOC(send_shift, size + 1, int);
   BFT_MALLOC(recv_shift, size + 1, int);
 
   /* Count number of values to send to each process */
 
-  for (rank = 0; rank < size*n_counts; rank++)
+  for (rank = 0; rank < size; rank++)
     send_count[rank] = 0;
 
   for (i = 0; i < n_elts; i++)
     send_count[((global_num[i] - 1) / block_size)] += 1;
 
-  /* Add periodic send count */
-
-  _count_periodic_couple_exchange(block_size,
-                                  periodicity,
-                                  n_periodic_lists,
-                                  n_periodic_couples,
-                                  periodic_couples,
-                                  send_count + size,
-                                  comm);
-
-  _exchange_counts(n_counts,
-                   size,
-                   send_count,
-                   recv_count,
-                   comm);
-
-  /* build shift arrays for MPI_Alltoallv */
+  /* build shift arrays for cs_all_to_all_copy_array */
 
   send_shift[0] = 0;
-  recv_shift[0] = 0;
 
-  for (rank = 0; rank < size; rank++) {
+  for (rank = 0; rank < size; rank++)
     send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
-  }
 
   /* As data is sorted by increasing base global numbering, we do not
      need to build an extra array, but only to send the correct parts
      of the global_num[] array to the correct processors */
 
-  n_elts_recv = recv_shift[size];
   n_elts_send = send_shift[size];
-
-  BFT_MALLOC(recv_global_num, n_elts_recv, cs_gnum_t);
-  BFT_MALLOC(recv_num, n_elts_recv, cs_lnum_t);
 
   BFT_MALLOC(send_num, n_elts_send, cs_lnum_t);
   BFT_MALLOC(send_global_num, n_elts_send, cs_gnum_t);
@@ -2460,49 +2281,67 @@ _add_global_equiv_periodic(cs_interface_set_t      *ifs,
 
   for (i = 0; i < n_elts; i++) {
     rank = (global_num[i] - 1) / block_size;
-    send_global_num[send_shift[rank] + send_count[rank]] = global_num[i];
-    send_num[send_shift[rank] + send_count[rank]] = i+1;
+    send_num[i] = i+1;
     send_count[rank] += 1;
   }
 
-  MPI_Alltoallv(send_global_num, send_count, send_shift, CS_MPI_GNUM,
-                recv_global_num, recv_count, recv_shift, CS_MPI_GNUM, comm);
+  cs_gnum_t *recv_global_num = cs_all_to_all_copy_array(d,
+                                                        CS_GNUM_TYPE,
+                                                        1,
+                                                        false, /* reverse */
+                                                        global_num,
+                                                        NULL);
+
+  cs_lnum_t *recv_num = cs_all_to_all_copy_array(d,
+                                                 CS_LNUM_TYPE,
+                                                 1,
+                                                 false, /* reverse */
+                                                 send_num,
+                                                 NULL);
+
+  n_elts_recv = cs_all_to_all_n_elts_dest(d);
+
+  int *src_rank = cs_all_to_all_get_src_rank(d);
+
+  for (i = 0; i < size; i++)
+    recv_count[i] = 0;
+
+  for (i = 0; i < n_elts_recv; i++) {
+    j = src_rank[i];
+    recv_count[j] = recv_count[j] + 1 ;
+  }
+
+  recv_shift[0] = 0;
+
+  for (i = 0; i < size; i++)
+    recv_shift[i + 1] = recv_shift[i] + recv_count[i];
 
   BFT_FREE(send_global_num);
-
-  MPI_Alltoallv(send_num, send_count, send_shift, CS_MPI_LNUM,
-                recv_num, recv_count, recv_shift, CS_MPI_LNUM, comm);
-
   BFT_FREE(send_num);
+  BFT_FREE(src_rank);
+
+  cs_all_to_all_destroy(&d);
 
   /* Exchange periodicity information */
 
-  _exchange_periodic_couples(block_size,
-                             send_count + size,
-                             recv_count + size,
-                             periodicity,
-                             n_periodic_lists,
-                             periodicity_num,
-                             n_periodic_couples,
-                             periodic_couples,
-                             &n_block_couples,
-                             &block_couples,
-                             comm);
-
-  /* no grouped parallel and periodic exchanges possible from here,
-     so only the first block of "size" elements is necessary */
-
-  BFT_REALLOC(send_count, size, int);
-  BFT_REALLOC(recv_count, size, int);
+  _exchange_periodic_tuples(block_size,
+                            periodicity,
+                            n_periodic_lists,
+                            periodicity_num,
+                            n_periodic_couples,
+                            periodic_couples,
+                            &n_block_couples,
+                            &block_couples,
+                            comm);
 
   /* Combine periodic couples if necessary */
 
   if (fvm_periodicity_get_n_levels(periodicity) > 1)
-    _combine_periodic_couples(block_size,
-                              periodicity,
-                              &n_block_couples,
-                              &block_couples,
-                              comm);
+    _combine_periodic_tuples(block_size,
+                             periodicity,
+                             &n_block_couples,
+                             &block_couples,
+                             comm);
 
   /* Build purely parallel equivalence data first */
 
@@ -2754,8 +2593,7 @@ _define_periodic_couples_sp(const fvm_periodicity_t  *periodicity,
 
   /* Sort periodic couples by local match, remove duplicates */
 
-  _sort_periodic_couples(&_n_couples,
-                         &_couples);
+  _sort_periodic_tuples(&_n_couples, &_couples);
 
   /* Set return values */
 
@@ -2925,7 +2763,7 @@ _combine_periodic_couples_sp(const fvm_periodicity_t   *periodicity,
 
     /* Sort and remove duplicates to update periodicity info */
 
-    _sort_periodic_couples(&_n_couples, &_couples);
+    _sort_periodic_tuples(&_n_couples, &_couples);
 
     *n_couples = _n_couples;
     *couples = _couples;
@@ -3821,10 +3659,10 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
     /* Build interfaces */
 
     if (periodicity == NULL)
-      _cs_interface_add_global_equiv(ifs,
-                                     n_elts,
-                                     global_num,
-                                     cs_glob_mpi_comm);
+      _add_global_equiv(ifs,
+                        n_elts,
+                        global_num,
+                        cs_glob_mpi_comm);
 
     else
       _add_global_equiv_periodic(ifs,
