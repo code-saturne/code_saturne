@@ -306,20 +306,24 @@ _renumber_local_ordered_i(cs_lnum_t         n_elts,
  * parameters:
  *   o2n_hist        <-- old -> new global face numbering
  *   gnum_rank_index <-- index on ranks for the old global face numbering
- *   send_rank_index --> index on ranks for sending face
+ *   n_send          --> number of faces/rank couples to send
+ *   send_rank       --> ids of ranks for sending faces
  *   send_faces      --> list of face ids to send
  *---------------------------------------------------------------------------*/
 
 static void
 _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
                    const cs_gnum_t        gnum_rank_index[],
-                   cs_lnum_t             *send_rank_index[],
+                   cs_lnum_t             *n_send,
+                   cs_lnum_t             *send_rank[],
                    cs_lnum_t             *send_faces[])
 {
   cs_lnum_t  i, j, rank, start, end;
 
+  cs_lnum_t _n_send = 0;
   cs_lnum_t  reduce_size = 0;
-  cs_lnum_t  *_send_rank_index = NULL, *_send_faces = NULL, *reduce_ids = NULL;
+  int  *_send_rank = NULL;
+  cs_lnum_t  *_send_faces = NULL, *reduce_ids = NULL;
   cs_gnum_t  *reduce_index = NULL;
   cs_join_gset_t  *new_face_rank = NULL;
 
@@ -418,14 +422,18 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
 
   /* Define arrays to return */
 
-  BFT_MALLOC(_send_rank_index, n_ranks + 1, cs_lnum_t);
+  _n_send = new_face_rank->index[n_ranks];
 
-  for (i = 0; i < n_ranks + 1; i++)
-    _send_rank_index[i] = new_face_rank->index[i];
+  BFT_MALLOC(_send_rank, _n_send, int);
 
-  BFT_MALLOC(_send_faces, _send_rank_index[n_ranks], cs_lnum_t);
+  for (i = 0; i < n_ranks; i++) {
+    for (j = new_face_rank->index[i]; j < new_face_rank->index[i+1]; j++)
+      _send_rank[j] = i;
+  }
 
-  for (i = 0; i < _send_rank_index[n_ranks]; i++)
+  BFT_MALLOC(_send_faces, _n_send, cs_lnum_t);
+
+  for (i = 0; i < _n_send; i++)
     _send_faces[i] = new_face_rank->g_list[i];
 
   cs_join_gset_destroy(&new_face_rank);
@@ -434,21 +442,16 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
   if (cs_glob_join_log != NULL) {
     fprintf(cs_glob_join_log,
             "\n Exchange to do after the splitting operation:\n");
-    for (i = 0; i < n_ranks; i++) {
-      start = _send_rank_index[i];
-      end = _send_rank_index[i+1];
+    for (i = 0; i < _n_send; i++)
       fprintf(cs_glob_join_log,
-              " Send to rank %5d (n = %10d):", i, end - start);
-      for (j = start; j < end; j++)
-        fprintf(cs_glob_join_log, " %d ", _send_faces[j]);
-      fprintf(cs_glob_join_log, "\n");
-    }
+              " send %10d to rank %5d\n", _send_faces[i], _send_rank[i]);
   }
 #endif
 
   /* Return pointers */
 
-  *send_rank_index = _send_rank_index;
+  *n_send = _n_send;
+  *send_rank = _send_rank;
   *send_faces = _send_faces;
 }
 
@@ -2276,7 +2279,9 @@ cs_join_split_update_struct(const cs_join_param_t   param,
   if (n_ranks > 1) { /* Parallel mode */
 
     cs_lnum_t  j, subface_id;
-    cs_lnum_t  *send_rank_index = NULL, *send_faces = NULL;
+    cs_lnum_t   n_send = 0;
+    int        *send_rank = NULL;
+    cs_lnum_t  *send_faces = NULL;
     cs_gnum_t  *init_face_gnum = NULL;
     cs_join_gset_t  *distrib_sync_hist = NULL;
     cs_lnum_t  n_init_faces = _local_mesh->n_faces;
@@ -2317,20 +2322,21 @@ cs_join_split_update_struct(const cs_join_param_t   param,
 
     _get_faces_to_send(_o2n_hist, /* Local subface num is stored up to now */
                        gnum_rank_index,
-                       &send_rank_index,
+                       &n_send,
+                       &send_rank,
                        &send_faces);
 
     /* Get the new face connectivity from the distributed work_mesh */
 
-    cs_join_mesh_exchange(n_ranks,
-                          send_rank_index,
+    cs_join_mesh_exchange(n_send,
+                          send_rank,
                           send_faces,
                           work_mesh,
                           _local_mesh,
                           mpi_comm);
 
     BFT_FREE(send_faces);
-    BFT_FREE(send_rank_index);
+    BFT_FREE(send_rank);
 
     /* Order face by increasing global number */
 

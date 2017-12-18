@@ -2799,12 +2799,13 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
  * between mesh structures.
  *
  * parameters:
- *   n_faces           <-- number of faces to send
- *   n_g_faces         <-- global number of faces to be joined
- *   face_gnum         <-- global face number
- *   gnum_rank_index   <-- index on ranks for the init. global face numbering
- *   p_send_rank_index --> index on ranks for sending face
- *   p_send_faces      --> list of face ids to send
+ *   n_send          <-- number of faces to send
+ *   n_g_faces       <-- global number of faces to be joined
+ *   face_gnum       <-- global face number
+ *   gnum_rank_index <-- index on ranks for the init. global face numbering
+ *   p_n_send        --> number of face/rank couples to send
+ *   p_send_rank     --> rank ids to which to send
+ *   p_send_faces    --> list of face ids to send
  *---------------------------------------------------------------------------*/
 
 static void
@@ -2812,14 +2813,16 @@ _get_faces_to_send(cs_lnum_t         n_faces,
                    cs_gnum_t         n_g_faces,
                    const cs_gnum_t   face_gnum[],
                    const cs_gnum_t   gnum_rank_index[],
-                   cs_lnum_t        *p_send_rank_index[],
+                   cs_lnum_t        *p_n_send,
+                   int              *p_send_rank[],
                    cs_lnum_t        *p_send_faces[])
 {
-  cs_lnum_t  i, rank, shift, reduce_rank;
+  cs_lnum_t  i, rank, reduce_rank;
   cs_block_dist_info_t  bi;
 
-  cs_lnum_t  reduce_size = 0;
-  cs_lnum_t  *send_rank_index = NULL, *send_faces = NULL;
+  cs_lnum_t   reduce_size = 0, n_send = 0;
+  int        *send_rank = NULL;
+  cs_lnum_t  *send_faces = NULL;
   cs_lnum_t  *reduce_ids = NULL, *count = NULL;
   cs_gnum_t  *reduce_index = NULL;
 
@@ -2863,44 +2866,13 @@ _get_faces_to_send(cs_lnum_t         n_faces,
 
   }
 
-  BFT_MALLOC(send_rank_index, n_ranks + 1, cs_lnum_t);
-
-  for (i = 0; i < n_ranks + 1; i++)
-    send_rank_index[i] = 0;
-
-  /* Count number of ranks associated to each new face */
-
-  for (i = 0; i < n_faces; i++) {
-
-    if (face_gnum[i] >= bi.gnum_range[0] && face_gnum[i] < bi.gnum_range[1]) {
-
-      /* The current face is a "main" face for the local rank */
-
-      reduce_rank = cs_search_gindex_binary(reduce_size,
-                                            face_gnum[i],
-                                            reduce_index);
-
-      assert(reduce_rank > -1);
-      assert(reduce_rank < reduce_size);
-
-      rank = reduce_ids[reduce_rank];
-      send_rank_index[rank+1] += 1;
-
-    }
-
-  }
-
-  for (i = 0; i < n_ranks; i++)
-    send_rank_index[i+1] += send_rank_index[i];
-
-  BFT_MALLOC(send_faces, send_rank_index[n_ranks], cs_lnum_t);
-  BFT_MALLOC(count, n_ranks, cs_lnum_t);
-
-  for (i = 0; i < n_ranks; i++)
-    count[i] = 0;
+  BFT_MALLOC(send_rank, n_faces, int);
+  BFT_MALLOC(send_faces, n_faces, cs_lnum_t);
 
   /* Fill the list of ranks */
 
+  n_send = 0;
+
   for (i = 0; i < n_faces; i++) {
 
     if (face_gnum[i] >= bi.gnum_range[0] && face_gnum[i] < bi.gnum_range[1]) {
@@ -2915,27 +2887,27 @@ _get_faces_to_send(cs_lnum_t         n_faces,
       assert(reduce_rank < reduce_size);
 
       rank = reduce_ids[reduce_rank];
-      shift = send_rank_index[rank] + count[rank];
-      send_faces[shift] = i;
-      count[rank] += 1;
+      send_rank[n_send] = rank;
+      send_faces[n_send] = i;
+      n_send += 1;
 
     } /* End of loop on initial faces */
 
   }
+
+  BFT_REALLOC(send_rank, n_send, int);
+  BFT_REALLOC(send_faces, n_send, cs_lnum_t);
 
   /* Free memory */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (cs_glob_join_log != NULL) {
     FILE *logfile = cs_glob_join_log;
-    for (rank = 0; rank < n_ranks; rank++) {
-      fprintf(logfile, " rank %d: ", rank);
-      for (i = send_rank_index[rank]; i < send_rank_index[rank+1]; i++)
-        fprintf(logfile, " %d (%llu)",
-                send_faces[i], (unsigned long long)face_gnum[send_faces[i]]);
-      fprintf(logfile, "\n");
-      fflush(logfile);
-    }
+    for (i = 0; i < n_send; i++)
+      fprintf(logfile, " %d (%llu) to rank %d\n",
+              send_faces[i], (unsigned long long)face_gnum[send_faces[i]],
+              send_rank[i]);
+    fflush(logfile);
   }
 #endif
 
@@ -2945,7 +2917,8 @@ _get_faces_to_send(cs_lnum_t         n_faces,
 
   /* Set return pointers */
 
-  *p_send_rank_index = send_rank_index;
+  *p_n_send = n_send;
+  *p_send_rank = send_rank;
   *p_send_faces = send_faces;
 }
 
@@ -2981,7 +2954,9 @@ _redistribute_mesh(const cs_gnum_t         gnum_rank_index[],
 #if defined(HAVE_MPI)
   if (n_ranks > 1) { /* Parallel mode */
 
-    cs_lnum_t  *send_rank_index = NULL, *send_faces = NULL;
+    cs_lnum_t   n_send = 0;
+    int        *send_rank = NULL;
+    cs_lnum_t  *send_faces = NULL;
 
     MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
@@ -2993,22 +2968,23 @@ _redistribute_mesh(const cs_gnum_t         gnum_rank_index[],
                        send_mesh->n_g_faces,
                        send_mesh->face_gnum,
                        gnum_rank_index,
-                       &send_rank_index,
+                       &n_send,
+                       &send_rank,
                        &send_faces);
 
-    assert(send_rank_index[n_ranks] <= send_mesh->n_faces);
+    assert(n_send <= send_mesh->n_faces);
 
     /* Get the new face connectivity from the distributed send_mesh */
 
-    cs_join_mesh_exchange(n_ranks,
-                          send_rank_index,
+    cs_join_mesh_exchange(n_send,
+                          send_rank,
                           send_faces,
                           send_mesh,
                           recv_mesh,
                           mpi_comm);
 
     BFT_FREE(send_faces);
-    BFT_FREE(send_rank_index);
+    BFT_FREE(send_rank);
 
   }
 #endif

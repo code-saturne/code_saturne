@@ -741,19 +741,19 @@ _define_vertices(cs_join_param_t        param,
  *   an array of size n_elts
  *---------------------------------------------------------------------------*/
 
-static cs_lnum_t *
+static int *
 _get_rank_from_index(cs_lnum_t        n_elts,
                      const cs_gnum_t  glob_list[],
                      const cs_gnum_t  rank_index[])
 {
   cs_lnum_t  i, rank;
 
-  cs_lnum_t  *rank_list = NULL;
+  int  *rank_list = NULL;
 
   if (n_elts == 0)
     return NULL;
 
-  BFT_MALLOC(rank_list, n_elts, cs_lnum_t);
+  BFT_MALLOC(rank_list, n_elts, int);
 
   for (i = 0, rank = 0; i < n_elts; i++) {
 
@@ -768,32 +768,27 @@ _get_rank_from_index(cs_lnum_t        n_elts,
 }
 
 /*----------------------------------------------------------------------------
- * Get the index on ranks and th list of faces to send from a list of global
+ * Get the index on ranks and the list of faces to send from a list of global
  * faces to receive.
  *
  * parameters:
- *   n_ranks         <-- number of ranks
  *   gnum_rank_index <-- index on ranks for the global elements
  *   n_elts          <-- number of elements to get
  *   glob_list       <-- global number of faces to get (ordered)
- *   send_rank_index --> index on ranks for the faces to send
+ *   n_send          --> number of face/rank couples to send
+ *   send_rank       --> list of ranks for the faces to send
  *   send_faces      --> list of face ids to send
  *---------------------------------------------------------------------------*/
 
 static void
-_get_send_faces(int               n_ranks,
-                const cs_gnum_t   gnum_rank_index[],
+_get_send_faces(const cs_gnum_t   gnum_rank_index[],
                 cs_lnum_t         n_elts,
                 const cs_gnum_t   glob_list[],
-                cs_lnum_t        *send_rank_index[],
+                cs_lnum_t        *n_send,
+                int              *send_rank[],
                 cs_lnum_t        *send_faces[])
 {
-  int  i, rank, shift;
-  cs_gnum_t  first_gface_id;
-
-  cs_lnum_t  *gface_ranks = NULL, *_send_faces = NULL, *_send_rank_index = NULL;
-  cs_lnum_t  *send_count = NULL, *recv_count = NULL, *send_shift = NULL;
-  cs_gnum_t  *gfaces_to_send = NULL, *gfaces_to_recv = NULL;
+  cs_lnum_t  *_send_faces = NULL;
 
   MPI_Comm  comm = cs_glob_mpi_comm;
 
@@ -801,94 +796,55 @@ _get_send_faces(int               n_ranks,
 
   /* Sanity checks */
 
-  assert(n_ranks > 1);
   assert(gnum_rank_index != NULL);
 
   /* Find for each element of the list, the rank which owns the element */
 
-  gface_ranks = _get_rank_from_index(n_elts, glob_list, gnum_rank_index);
+  int *gface_ranks = _get_rank_from_index(n_elts, glob_list, gnum_rank_index);
 
-  first_gface_id = gnum_rank_index[local_rank];
+  cs_gnum_t first_gface_id = gnum_rank_index[local_rank];
 
-  /* Count the number of faces for which we want the connectivity */
+  int flags = CS_ALL_TO_ALL_USE_SRC_RANK;
 
-  BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
+  cs_all_to_all_t
+    *d = cs_all_to_all_create(n_elts,
+                              flags,
+                              NULL,  /* dest_id */
+                              gface_ranks,
+                              comm);
 
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (i = 0; i < n_elts; i++)
-    send_count[gface_ranks[i]] += 1;
-
-  /* Exchange number of elements for which we want a connectivity */
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  /* Build index arrays */
-
-  BFT_MALLOC(send_shift, n_ranks + 1, cs_lnum_t);
-  BFT_MALLOC(_send_rank_index, n_ranks + 1, cs_lnum_t);
-
-  send_shift[0] = 0;
-  _send_rank_index[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++) {
-
-    _send_rank_index[rank+1] = _send_rank_index[rank] + recv_count[rank];
-    send_shift[rank+1] = send_shift[rank] + send_count[rank];
-
-  }
-
-  /* Build gfaces_to_recv = glob_list but potentially in a different order.
-     List of face (global numbering) for which we want the connectivity */
-
-  BFT_MALLOC(gfaces_to_recv, send_shift[n_ranks], cs_gnum_t);
-  BFT_MALLOC(gfaces_to_send, _send_rank_index[n_ranks], cs_gnum_t);
-
-  assert(send_shift[n_ranks] == n_elts);
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (i = 0; i < n_elts; i++) {
-
-    rank = gface_ranks[i];
-    shift = send_count[rank] + send_shift[rank];
-    gfaces_to_recv[shift] = glob_list[i];
-    send_count[rank] += 1;
-
-  }
+  cs_all_to_all_transfer_dest_rank(d, &gface_ranks);
 
   /* Exchange list of global num. to exchange */
 
-  MPI_Alltoallv(gfaces_to_recv, send_count, send_shift, CS_MPI_GNUM,
-                gfaces_to_send, recv_count, _send_rank_index, CS_MPI_GNUM,
-                comm);
+  cs_gnum_t *gfaces_to_send = cs_all_to_all_copy_array(d,
+                                                       CS_GNUM_TYPE,
+                                                       1,
+                                                       false,  /* reverse */
+                                                       glob_list,
+                                                       NULL);
 
-  BFT_MALLOC(_send_faces, _send_rank_index[n_ranks], cs_lnum_t);
+  cs_lnum_t _n_send = cs_all_to_all_n_elts_dest(d);
+
+  int *_send_rank = cs_all_to_all_get_src_rank(d);
+
+  cs_all_to_all_destroy(&d);
+
+  BFT_MALLOC(_send_faces, _n_send, cs_lnum_t);
 
   /* Define face ids to send */
 
-  for (rank = 0; rank < n_ranks; rank++) {
-
-    for (i = _send_rank_index[rank]; i < _send_rank_index[rank + 1]; i++)
-      _send_faces[i] = gfaces_to_send[i] - 1 - first_gface_id;
-
-  } /* End of loop on ranks */
+  for (cs_lnum_t i = 0; i < _n_send; i++)
+    _send_faces[i] = gfaces_to_send[i] - 1 - first_gface_id;
 
   /* Free memory */
 
-  BFT_FREE(gface_ranks);
-  BFT_FREE(gfaces_to_recv);
-  BFT_FREE(send_shift);
-  BFT_FREE(send_count);
-  BFT_FREE(recv_count);
   BFT_FREE(gfaces_to_send);
 
   /* Set return pointers */
 
-  *send_rank_index = _send_rank_index;
+  *n_send = _n_send;
+  *send_rank = _send_rank;
   *send_faces = _send_faces;
 }
 
@@ -1587,31 +1543,33 @@ cs_join_mesh_create_from_glob_sel(const char            *mesh_name,
 
   else { /* Parallel mode */
 
-    cs_lnum_t  *send_rank_index = NULL, *send_faces = NULL;
+    int *send_rank = NULL;
+    cs_lnum_t   n_send_faces = 0;
+    cs_lnum_t  *send_faces = NULL;
 
     new_mesh = cs_join_mesh_create(mesh_name);
 
     /* Define a send list (face ids to send) from the global list of faces
        to receive. */
 
-    _get_send_faces(n_ranks,
-                    gnum_rank_index,
+    _get_send_faces(gnum_rank_index,
                     n_elts,
                     glob_sel,
-                    &send_rank_index,
+                    &n_send_faces,
+                    &send_rank,
                     &send_faces);
 
     /* Get useful connectivity on ranks for computing local intersections */
 
-    cs_join_mesh_exchange(n_ranks,
-                          send_rank_index,
+    cs_join_mesh_exchange(n_send_faces,
+                          send_rank,
                           send_faces,
                           local_mesh,
                           new_mesh,
                           cs_glob_mpi_comm);
 
     BFT_FREE(send_faces);
-    BFT_FREE(send_rank_index);
+    BFT_FREE(send_rank);
 
     cs_join_mesh_face_order(new_mesh);
   }
@@ -2106,17 +2064,17 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
  * ranks.
  *
  * parameters:
- *   n_ranks         <-- number of ranks in the MPI communicator
- *   send_rank_index <-- index on ranks for the face distribution
- *   send_faces      <-- list of face ids to send
- *   send_mesh       <-- pointer to the sending cs_join_mesh_t structure
- *   recv_mesh       <-> pointer to the receiving cs_join_mesh_t structure
- *   comm            <-- mpi communicator on which take places comm.
+ *   n_send     <-- number of face/rank couples to send
+ *   send_rank  <-- index on ranks for the face distribution
+ *   send_faces <-- list of face ids to send
+ *   send_mesh  <-- pointer to the sending cs_join_mesh_t structure
+ *   recv_mesh  <-> pointer to the receiving cs_join_mesh_t structure
+ *   comm       <-- mpi communicator on which take places comm.
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_mesh_exchange(int                    n_ranks,
-                      const cs_lnum_t        send_rank_index[],
+cs_join_mesh_exchange(cs_lnum_t              n_send,
+                      const cs_lnum_t        send_rank[],
                       const cs_lnum_t        send_faces[],
                       const cs_join_mesh_t  *send_mesh,
                       cs_join_mesh_t        *recv_mesh,
@@ -2125,8 +2083,8 @@ cs_join_mesh_exchange(int                    n_ranks,
   assert(send_mesh != NULL);
   assert(recv_mesh != NULL);
 
-  int  i, j, rank, shift, start, end, face_id, vtx_id, vtx_count;
-  int  local_rank;
+  int  i, j, rank, shift, start, end, face_id, vtx_id;
+  int  local_rank, n_ranks;
 
   cs_lnum_t  n_face_to_recv = 0, n_vertices = 0, vtx_tag_size = 0;
   cs_lnum_t  *vtx_shift = NULL, *vtx_tag = NULL;
@@ -2139,19 +2097,11 @@ cs_join_mesh_exchange(int                    n_ranks,
 
   /* Sanity checks */
 
-#if defined(DEBUG) && !defined(NDEBUG)
-  int  n_verif_ranks;
-
-  MPI_Comm_size(comm, &n_verif_ranks);
-
-  assert(n_ranks == n_verif_ranks);
-#endif
-
   assert(send_mesh != NULL);
   assert(recv_mesh != NULL);
-  assert(send_rank_index != NULL);
-  assert(n_ranks > 1);
+  assert(send_rank != NULL || n_send == 0);
 
+  MPI_Comm_size(comm, &n_ranks);
   MPI_Comm_rank(comm, &local_rank);
 
   /* Count the number of faces to recv */
@@ -2160,7 +2110,10 @@ cs_join_mesh_exchange(int                    n_ranks,
   BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
 
   for (i = 0; i < n_ranks; i++)
-    send_count[i] = send_rank_index[i+1] - send_rank_index[i];
+    send_count[i] = 0;
+
+  for (i = 0; i < n_send; i++)
+    send_count[send_rank[i]] += 1;
 
   /* Exchange number of elements to send */
 
@@ -2195,35 +2148,32 @@ cs_join_mesh_exchange(int                    n_ranks,
     send_count[i] = 0;
   }
 
-  for (rank = 0; rank < n_ranks; rank++) {
+  for (i = 0; i < send_mesh->n_vertices; i++)
+    vtx_tag[i] = -1;
 
-    for (i = 0; i < send_mesh->n_vertices; i++)
-      vtx_tag[i] = -1;
+  for (i = 0; i < n_send; i++) {
 
-    for (i = send_rank_index[rank]; i < send_rank_index[rank+1]; i++) {
+    rank = send_rank[i];
+    face_id = send_faces[i];
+    start = send_mesh->face_vtx_idx[face_id];
+    end = send_mesh->face_vtx_idx[face_id+1];
+    n_vertices = end - start;
 
-      face_id = send_faces[i];
-      start = send_mesh->face_vtx_idx[face_id];
-      end = send_mesh->face_vtx_idx[face_id+1];
-      n_vertices = end - start;
+    for (j = start; j < end; j++) {
 
-      for (j = start; j < end; j++) {
+      vtx_id = send_mesh->face_vtx_lst[j];
 
-        vtx_id = send_mesh->face_vtx_lst[j];
-
-        if (vtx_tag[vtx_id] < 0) {
-          vtx_tag[vtx_id] = 1;
-          vtx_shift[rank+1] += 1;
-        }
-
+      if (vtx_tag[vtx_id] < i) {
+        vtx_tag[vtx_id] = i;
+        vtx_shift[rank+1] += 1;
       }
-
-      send_count[rank] +=  2            /* face_gnum and n_vertices */
-                         + n_vertices;  /* face connect. */
 
     }
 
-  } /* End of loop on ranks */
+    send_count[rank] +=   2            /* face_gnum and n_vertices */
+                        + n_vertices;  /* face connect. */
+
+  } /* End of loop on elements to send */
 
   MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
 
@@ -2248,45 +2198,51 @@ cs_join_mesh_exchange(int                    n_ranks,
   BFT_MALLOC(send_gbuf, send_shift[n_ranks], cs_gnum_t);
   BFT_MALLOC(recv_gbuf, recv_shift[n_ranks], cs_gnum_t);
 
-  for (i = 0; i < n_ranks; i++)
+  cs_lnum_t *r_vtx_count;
+  BFT_MALLOC(r_vtx_count, n_ranks, cs_lnum_t);
+
+  for (i = 0; i < n_ranks; i++) {
     send_count[i] = 0;
+    r_vtx_count[i] = 0;
+  }
 
-  for (rank = 0; rank < n_ranks; rank++) {
+  for (i = 0; i < n_send; i++) {
 
-    vtx_count = 0;
+    rank = send_rank[i];
+    face_id = send_faces[i];
 
-    for (i = 0; i < send_mesh->n_vertices; i++)
-      vtx_tag[i] = -1;
+    start = send_mesh->face_vtx_idx[face_id];
+    end = send_mesh->face_vtx_idx[face_id+1];
+    n_vertices = end - start;
 
-    for (i = send_rank_index[rank]; i < send_rank_index[rank + 1]; i++) {
+    shift = send_shift[rank] + send_count[rank];
+    send_gbuf[shift++] = send_mesh->face_gnum[face_id];
+    send_gbuf[shift++] = n_vertices;
 
-      shift = send_shift[rank] + send_count[rank];
-      face_id = send_faces[i];
+    for (j = start; j < end; j++) {
+      vtx_id = send_mesh->face_vtx_lst[j];
+      vtx_tag[vtx_id] = -1;
+    }
 
-      start = send_mesh->face_vtx_idx[face_id];
-      end = send_mesh->face_vtx_idx[face_id+1];
-      n_vertices = end - start;
+    for (j = start; j < end; j++) {
 
-      send_gbuf[shift++] = send_mesh->face_gnum[face_id];
-      send_gbuf[shift++] = n_vertices;
+      vtx_id = send_mesh->face_vtx_lst[j];
 
-      for (j = start; j < end; j++) {
-
-        vtx_id = send_mesh->face_vtx_lst[j];
-
-        if (vtx_tag[vtx_id] < 0)
-          vtx_tag[vtx_id] = vtx_count++;
-
-        send_gbuf[shift++] = vtx_tag[vtx_id];
-
+      if (vtx_tag[vtx_id] < 0) {
+        vtx_tag[vtx_id] = r_vtx_count[rank];
+        r_vtx_count[rank] +=1;
       }
 
-      send_count[rank] +=  2            /* face_gnum and n_vertices */
-                         + n_vertices;  /* face connect. */
+      send_gbuf[shift++] = vtx_tag[vtx_id];
 
     }
 
-  } /* End of loop on ranks */
+    send_count[rank] +=   2            /* face_gnum and n_vertices */
+                        + n_vertices;  /* face connect. */
+
+  } /* End of loop on elements to send */
+
+  BFT_FREE(r_vtx_count);
 
   MPI_Alltoallv(send_gbuf, send_count, send_shift, CS_MPI_GNUM,
                 recv_gbuf, recv_count, recv_shift, CS_MPI_GNUM, comm);
@@ -2343,7 +2299,7 @@ cs_join_mesh_exchange(int                    n_ranks,
 
   for (rank = 0; rank < n_ranks; rank++) {
 
-    vtx_count = 0;
+    cs_lnum_t vtx_count = 0;
 
     for (i = 0; i < vtx_tag_size; i++)
       vtx_tag[i] = -1;
@@ -2397,37 +2353,40 @@ cs_join_mesh_exchange(int                    n_ranks,
 
   /* Exchange vertex buffers */
 
-  for (rank = 0; rank < n_ranks; rank++) {
+  for (i = 0; i < send_mesh->n_vertices; i++)
+    vtx_tag[i] = -1;
 
-    vtx_count = 0;
+  for (i = 0; i < n_ranks; i++)
+    send_count[i] = 0;
 
-    for (i = 0; i < vtx_tag_size; i++)
-      vtx_tag[i] = -1;
+  for (i = 0; i < n_send; i++) {
 
-    for (i = send_rank_index[rank]; i < send_rank_index[rank + 1]; i++) {
+    rank = send_rank[i];
+    face_id = send_faces[i];
 
-      face_id = send_faces[i];
-      start = send_mesh->face_vtx_idx[face_id];
-      end = send_mesh->face_vtx_idx[face_id+1];
-      n_vertices = end - start;
+    start = send_mesh->face_vtx_idx[face_id];
+    end = send_mesh->face_vtx_idx[face_id+1];
+    n_vertices = end - start;
 
-      for (j = start; j < end; j++) {
+    for (j = start; j < end; j++) {
 
-        vtx_id = send_mesh->face_vtx_lst[j];
+      vtx_id = send_mesh->face_vtx_lst[j];
 
-        if (vtx_tag[vtx_id] < 0) { /* add the vertex to send_vtx_buf */
+      if (vtx_tag[vtx_id] < i) { /* add the vertex to send_vtx_buf */
 
-          shift = send_shift[rank] + vtx_count;
-          vtx_tag[vtx_id] = vtx_count++;
-          send_vtx_buf[shift] = send_mesh->vertices[vtx_id];
+        shift = send_shift[rank] + send_count[rank];
+        send_count[rank] += 1;
+        send_vtx_buf[shift] = send_mesh->vertices[vtx_id];
+        vtx_tag[vtx_id] = i;
 
-        }
+      }
 
-      } /* End of loop on the face connectivity */
+    } /* End of loop on the face connectivity */
 
-    } /* End of loop on faces to send to the current rank */
+  }
 
-  } /* End of loop on ranks */
+  for (rank = 0; rank < n_ranks; rank++)
+    assert(send_shift[rank+1] == send_shift[rank] + send_count[rank]);
 
   MPI_Alltoallv(send_vtx_buf, send_count, send_shift, MPI_JOIN_VERTEX,
                 recv_vtx_buf, recv_count, recv_shift, MPI_JOIN_VERTEX,
@@ -2458,7 +2417,6 @@ cs_join_mesh_exchange(int                    n_ranks,
   BFT_FREE(recv_shift);
   BFT_FREE(send_vtx_buf);
   BFT_FREE(recv_vtx_buf);
-
 }
 
 #endif /* HAVE_MPI */

@@ -317,17 +317,17 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
  * ranks.
  *
  * parameters:
- *   n_ranks         <-- number of ranks in the MPI communicator
- *   send_rank_index <-- index on ranks for the face distribution
- *   send_faces      <-- list of face ids to send
- *   send_mesh       <-- pointer to the sending cs_join_mesh_t structure
- *   recv_mesh       <-> pointer to the receiving cs_join_mesh_t structure
- *   comm            <-- mpi communicator on which take places comm.
+ *   n_send     <-- number of face/rank couples to send
+ *   send_rank  <-- index on ranks for the face distribution
+ *   send_faces <-- list of face ids to send
+ *   send_mesh  <-- pointer to the sending cs_join_mesh_t structure
+ *   recv_mesh  <-> pointer to the receiving cs_join_mesh_t structure
+ *   comm       <-- mpi communicator on which take places comm.
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_mesh_exchange(int                    n_ranks,
-                      const cs_lnum_t        send_rank_index[],
+cs_join_mesh_exchange(cs_lnum_t              n_send,
+                      const cs_lnum_t        send_rank[],
                       const cs_lnum_t        send_faces[],
                       const cs_join_mesh_t  *send_mesh,
                       cs_join_mesh_t        *recv_mesh,
