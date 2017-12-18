@@ -373,8 +373,8 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
   const cs_real_t *cell_vol
     = (const cs_real_t *)cs_glob_mesh_quantities->cell_vol;
 
-  const cs_real_t stephn = 5.6703e-8;
-  const cs_real_t unspi  = 1.0 / cs_math_pi;
+  const cs_real_t stephn = cs_physical_constants_stephan;
+  const cs_real_t onedpi  = 1.0 / cs_math_pi;
 
   cs_field_t *f_qincid = cs_field_by_name("rad_incident_flux");
   cs_field_t *f_snplus = cs_field_by_name("rad_net_flux");
@@ -550,12 +550,12 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
                                         sxyzt) < 0.0) {
                 rovsdt[cell_id] =  ck_u[cell_id] * 3./5. * cell_vol[cell_id];
                 smbrs[cell_id] =   ck_u[cell_id] * 3./5. * cell_vol[cell_id]
-                                 * stephn * _pow4(tempk[cell_id]) * unspi;
+                                 * stephn * _pow4(tempk[cell_id]) * onedpi;
               }
               else {
                 rovsdt[cell_id] =  ck_d[cell_id] * 3./5. * cell_vol[cell_id];
                 smbrs[cell_id] =   ck_d[cell_id] * 3./5. * cell_vol[cell_id]
-                                 * stephn * _pow4(tempk[cell_id]) * unspi;
+                                 * stephn * _pow4(tempk[cell_id]) * onedpi;
               }
 
             }
@@ -610,7 +610,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
               aa = ru[cell_id] * domegat;
               rad_st_expl[cell_id]
                 +=   -rovsdt[cell_id] / cell_vol[cell_id] * domegat
-                    * (ru[cell_id] - stephn * unspi * _pow4(tempk[cell_id]));
+                    * (ru[cell_id] - stephn * onedpi * _pow4(tempk[cell_id]));
               q[cell_id][0] += aa * sxyzt[0];
               q[cell_id][1] += aa * sxyzt[1];
               q[cell_id][2] += aa * sxyzt[2];
@@ -710,7 +710,7 @@ _compute_net_flux(const int        itypfb[],
                   const cs_real_t  eps[],
                   cs_real_t        net_flux[])
 {
-  cs_real_t  stephn = 5.6703e-8;
+  const cs_real_t stephn = cs_physical_constants_stephan;
   cs_real_t  xmissing = -cs_math_big_r * 0.2;
 
   /* Initializations */
@@ -953,7 +953,7 @@ cs_rad_transfer_solve(int               bc_type[],
                   "      ----------------------------------------\n"));
 
   /* Constants initialization */
-  cs_real_t unspi  = 1.0 / cs_math_pi;
+  cs_real_t onedpi  = 1.0 / cs_math_pi;
 
   cs_real_t *cpro_cak0 = CS_FI_(rad_cak, 0)->val;
   cs_real_t *cpro_ri_st0 = CS_FI_(rad_ist, 0)->val;
@@ -1397,7 +1397,7 @@ cs_rad_transfer_solve(int               bc_type[],
                                      * (pow (tempk[cell_id], 4.0))
                                      * agi[cell_id + n_cells * ngg]
                                      * cell_vol[cell_id]
-                                     * unspi;
+                                     * onedpi;
       } else {
         cs_real_t *cpro_t4m = cs_field_by_name_try("temperature_4")->val;
 
@@ -1406,7 +1406,7 @@ cs_rad_transfer_solve(int               bc_type[],
                                      * cpro_t4m[cell_id]
                                      * agi[cell_id + n_cells * ngg]
                                      * cell_vol[cell_id]
-                                     * unspi;
+                                     * onedpi;
       }
 
       /* -> Solid phase: */
@@ -1427,7 +1427,7 @@ cs_rad_transfer_solve(int               bc_type[],
                               * cpro_cak[cell_id]
                               * (pow (tempk[cell_id + n_cells * ipcla], 4.0))
                               * cell_vol[cell_id]
-                              * unspi;
+                              * onedpi;
         }
 
       }
@@ -1448,7 +1448,7 @@ cs_rad_transfer_solve(int               bc_type[],
                               * cpro_cak[cell_id]
                               * (pow (tempk[cell_id + n_cells * ipcla], 4.0))
                               * cell_vol[cell_id]
-                              * unspi;
+                              * onedpi;
         }
 
       }

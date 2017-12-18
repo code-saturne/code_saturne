@@ -206,7 +206,7 @@ cs_user_radiative_transfer_bcs(int               nvar,
                                cs_real_t         tintp[])
 {
   /*< [loc_var]*/
-  cs_real_t tkelvi = 273.15;
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_boundary_zone_t *zone = NULL;
   int *izfrdp = cs_boundary_zone_face_class_id();

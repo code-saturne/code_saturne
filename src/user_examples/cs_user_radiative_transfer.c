@@ -180,6 +180,13 @@ cs_user_radiative_transfer_parameters(void)
 
   cs_glob_rad_transfer_params->imfsck = 1;
 
+  /* Activate Infra Red absoption for atmospheric flows
+     atmo_ir_absorption = true: activated
+     atmo_ir_absorption = false: not activated */
+
+  cs_glob_rad_transfer_params->atmo_ir_absorption = true;
+
+
   /*! [cs_user_radiative_transfer_parameters] */
 }
 
@@ -255,13 +262,13 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
         zray2[i] = t;
       }
       fclose(f);
-      f = fopen("kplus.dat", "r");
+      f = fopen("kup.dat", "r");
       for (int i = 0; i < n_v_segs; i++) {
         fscanf(f, "%g", &t);
         k_up[i] = t;
       }
       fclose(f);
-      f = fopen("kmoins.dat", "r");
+      f = fopen("kdown.dat", "r");
       for (int i = 0; i < n_v_segs; i++) {
         fscanf(f, "%g", &t);
         k_down[i] = t;
