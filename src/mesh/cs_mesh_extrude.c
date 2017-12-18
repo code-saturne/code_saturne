@@ -116,20 +116,19 @@ _angle(const cs_lnum_t  v_ids[3],
   const cs_real_t u[3] = {c1[0]-c0[0], c1[1]-c0[1], c1[2]-c0[2]};
   const cs_real_t v[3] = {c2[0]-c0[0], c2[1]-c0[1], c2[2]-c0[2]};
 
-  const cs_real_t d    = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
-  const cs_real_t lsq0 = u[0]*u[0] + u[1]*u[1] + u[2]*u[2];
-  const cs_real_t lsq1 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+  const cs_real_t d    = cs_math_3_dot_product(u, v);
+  const cs_real_t lsq0 = cs_math_3_square_norm(u);
+  const cs_real_t lsq1 = cs_math_3_square_norm(v);
 
-  const cs_real_t uv[] = {u[1]*v[2] - u[2]*v[1],
-                          u[2]*v[0] - u[0]*v[2],
-                          u[0]*v[1] - u[1]*v[0]};
+  const cs_real_t uv[3];
+
+  cs_math_3_cross_product(u, v, uv);
 
   double theta = acos(d/sqrt(lsq0*lsq1));
 
-  const cs_real_t sgn = uv[0]*f_n[0] + uv[1]*f_n[1] + uv[2]*f_n[2];
-
-  if (sgn < 0)
-    theta = 2*cs_math_pi - theta;
+  /* Check the sign */
+  if (cs_math_3_dot_product(uv, f_n) < 0)
+    theta = 2.*cs_math_pi - theta;
 
   return theta;
 }
