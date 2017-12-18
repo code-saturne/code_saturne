@@ -305,7 +305,7 @@ _order_by_direction(void)
  * 1/ Luminance data at domain boundaries
  *       (BC: reflection and isotropic emission)
  *                              ->  ->           ->
- * 2/ Compute luminance L(x, s) at point x
+ * 2/ Compute radiance L(x, s) at point x
  *                          d L
  *    by solving equation : --- = -TK.L +TS
  *                          d S
@@ -317,7 +317,7 @@ _order_by_direction(void)
  *                                 /   -> ->
  *        and absorption      Sa= /  L(X, S). domega
  *                               /4.pi
- *    by integration of luminances over solid angles.
+ *    by integration of radiances over solid angles.
  *    Note: it is useful to compute the heating rate
  *    -----
  *                                        /   -> ->  ->  ->
@@ -327,14 +327,14 @@ _order_by_direction(void)
  *       N fluid to wall normal
  *
  * \param[in]       tempk     temperature in Kelvin
- * \param[in, out]  coefap    boundary condition work array for the luminance
+ * \param[in, out]  coefap    boundary condition work array for the radiance
  *                             (explicit part)
- * \param[in, out]  coefbp    boundary condition work array for the luminance
+ * \param[in, out]  coefbp    boundary condition work array for the radiance
  *                             (implicit part)
  * \param[in, out]  cofafp    boundary condition work array for the diffusion
- *                             of the luminance (explicit part)
+ *                             of the radiance (explicit part)
  * \param[in, out]  cofbfp    boundary condition work array for the diffusion
- *                             of the luminance (implicit part)
+ *                             of the radiance (implicit part)
  * \param[in, out]  flurds    pseudo mass flux work array (interior faces)
  * \param[in, out]  flurdb    pseudo mass flux work array (boundary faces)
  * \param[in, out]  viscf     visc*surface/dist work array at interior faces
@@ -382,11 +382,11 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
 
   /* Allocate work arrays */
 
-  cs_real_t *rhs0, *dpvar, *ru, *rua;
+  cs_real_t *rhs0, *dpvar, *radiance, *radiance_prev;
   BFT_MALLOC(rhs0,  n_cells_ext, cs_real_t);
   BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
-  BFT_MALLOC(ru,    n_cells_ext, cs_real_t);
-  BFT_MALLOC(rua,   n_cells_ext, cs_real_t);
+  BFT_MALLOC(radiance,    n_cells_ext, cs_real_t);
+  BFT_MALLOC(radiance_prev,   n_cells_ext, cs_real_t);
 
   /* Initialization */
 
@@ -528,8 +528,8 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
             viscb[face_id] = 0.0;
 
           for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-            ru[cell_id]  = 0.0;
-            rua[cell_id] = 0.0;
+            radiance[cell_id]  = 0.0;
+            radiance_prev[cell_id] = 0.0;
           }
 
           for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
@@ -585,8 +585,8 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
                                              iescap,
                                              imucpp,
                                              &vcopt,
-                                             rua,
-                                             ru,
+                                             radiance_prev,
+                                             radiance,
                                              coefap,
                                              coefbp,
                                              cofafp,
@@ -604,7 +604,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
                                              NULL,
                                              rovsdt,
                                              smbrs,
-                                             ru,
+                                             radiance,
                                              dpvar,
                                              NULL,
                                              NULL);
@@ -614,10 +614,10 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
           if (cs_glob_rad_transfer_params->atmo_ir_absorption) {
 
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-              aa = ru[cell_id] * domegat;
+              aa = radiance[cell_id] * domegat;
               rad_st_expl[cell_id]
                 +=   -rovsdt[cell_id] / cell_vol[cell_id] * domegat
-                    * (ru[cell_id] - stephn * onedpi * _pow4(tempk[cell_id]));
+                    * (radiance[cell_id] - stephn * onedpi * _pow4(tempk[cell_id]));
               q[cell_id][0] += aa * sxyzt[0];
               q[cell_id][1] += aa * sxyzt[1];
               q[cell_id][2] += aa * sxyzt[2];
@@ -627,7 +627,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
           else {
 
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-              aa = ru[cell_id] * domegat;
+              aa = radiance[cell_id] * domegat;
               rad_st_expl[cell_id]  += aa;
               q[cell_id][0] += aa * sxyzt[0];
               q[cell_id][1] += aa * sxyzt[1];
@@ -647,23 +647,23 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
             f_snplus->val[face_id] += aa;
             if (cs_glob_rad_transfer_params->imoadf >= 1)
               f_qinspe->val[iband + face_id * cs_glob_rad_transfer_params->nwsgg]
-                += aa * ru[cs_glob_mesh->b_face_cells[face_id]];
+                += aa * radiance[cs_glob_mesh->b_face_cells[face_id]];
 
             else
               f_qincid->val[face_id]
-                += aa * ru[cs_glob_mesh->b_face_cells[face_id]];
+                += aa * radiance[cs_glob_mesh->b_face_cells[face_id]];
 
           }
 
           if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
                                     sxyzt) < 0.0 && f_up != NULL) {
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-              f_up->val[cell_id] += ru[cell_id] * domegat * sxyzt[2];
+              f_up->val[cell_id] += radiance[cell_id] * domegat * sxyzt[2];//FIXME S.g/||g||
           }
           else if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
                                          sxyzt) > 0.0 && f_down != NULL) {
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-              f_down->val[cell_id] += ru[cell_id] * domegat * sxyzt[2];
+              f_down->val[cell_id] += radiance[cell_id] * domegat * sxyzt[2];
           }
 
         }
@@ -685,8 +685,8 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
 
   BFT_FREE(rhs0);
   BFT_FREE(dpvar);
-  BFT_FREE(ru);
-  BFT_FREE(rua);
+  BFT_FREE(radiance);
+  BFT_FREE(radiance_prev);
 }
 
 /*-------------------------------------------------------------------------------*/
@@ -700,7 +700,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
  * and the radiative absorbing part.
  *
  * \param[in]   bc_type   boundary face types
- * \param[in]   coefap    boundary condition work array for the luminance
+ * \param[in]   coefap    boundary condition work array for the radiance
  *                        (explicit part)
  * \param[in]   twall     inside current wall temperature (K)
  * \param[in]   qincid    radiative incident flux  (W/m2)
