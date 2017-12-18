@@ -333,19 +333,6 @@ cs_join_mesh_exchange(int                    n_ranks,
                       cs_join_mesh_t        *recv_mesh,
                       MPI_Comm               comm);
 
-/*----------------------------------------------------------------------------
- * Synchronize vertices definition over the ranks.
- *
- * For vertices with the same global number but a different tolerance,
- * we keep the smallest tolerance.
- *
- * parameters:
- *  mesh <->  pointer to the cs_join_mesh_t structure to synchronize
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh);
-
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------

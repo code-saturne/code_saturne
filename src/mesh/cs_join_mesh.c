@@ -47,6 +47,7 @@
 #include "fvm_nodal_from_desc.h"
 #include "fvm_nodal_order.h"
 
+#include "cs_all_to_all.h"
 #include "cs_order.h"
 #include "cs_search.h"
 #include "cs_join_post.h"
@@ -463,138 +464,93 @@ _get_global_tolerance(cs_lnum_t            n_vertices,
                       const fvm_io_num_t  *select_vtx_io_num,
                       cs_join_vertex_t     vtx_data[])
 {
-  cs_lnum_t  i, rank, vtx_id, block_size, shift;
-  cs_gnum_t  first_vtx_gnum, _block_size;
-
-  double  *g_vtx_tolerance = NULL, *send_list = NULL, *recv_list = NULL;
-  cs_lnum_t  *send_count = NULL, *recv_count = NULL;
-  cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
-  cs_gnum_t  *send_glist = NULL, *recv_glist = NULL;
+  double  *g_vtx_tolerance = NULL, *part_tolerance = NULL;
   cs_gnum_t  n_g_vertices = fvm_io_num_get_global_count(select_vtx_io_num);
-  const cs_gnum_t  *io_gnum = fvm_io_num_get_global_num(select_vtx_io_num);
+  const cs_gnum_t  *part_gnum = fvm_io_num_get_global_num(select_vtx_io_num);
 
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
   const int  n_ranks = cs_glob_n_ranks;
 
-  /* Define a fvm_io_num_t structure on vertices */
+  cs_block_dist_info_t
+    bi = cs_block_dist_compute_sizes(local_rank,
+                                     n_ranks,
+                                     1,
+                                     0,
+                                     n_g_vertices);
 
-  block_size = n_g_vertices / n_ranks;
-  if (n_g_vertices % n_ranks > 0)
-    block_size += 1;
-  _block_size = block_size;
-
-  /* Count the number of vertices to send to each rank */
-  /* ------------------------------------------------- */
-
-  BFT_MALLOC(send_count, n_ranks, int);
-  BFT_MALLOC(recv_count, n_ranks, int);
-  BFT_MALLOC(send_shift, n_ranks + 1, int);
-  BFT_MALLOC(recv_shift, n_ranks + 1, int);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < n_vertices; i++) {
-    rank = (io_gnum[i] - 1)/_block_size;
-    send_count[rank] += 1;
-  }
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
-
-  for (rank = 0; rank < n_ranks; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
-  }
-
-  assert(send_shift[n_ranks] == n_vertices);
+  cs_all_to_all_t
+    *d = cs_all_to_all_create_from_block(n_vertices,
+                                         0, /* flags */
+                                         part_gnum,
+                                         bi,
+                                         mpi_comm);
 
   /* Send the global numbering for each vertex */
-  /* ----------------------------------------- */
 
-  BFT_MALLOC(send_glist, n_vertices, cs_gnum_t);
-  BFT_MALLOC(recv_glist, recv_shift[n_ranks], cs_gnum_t);
+  cs_gnum_t *block_gnum = cs_all_to_all_copy_array(d,
+                                                   CS_GNUM_TYPE,
+                                                   1,
+                                                   false, /* reverse */
+                                                   part_gnum,
+                                                   NULL);
 
-  for (rank = 0; rank < n_ranks; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < n_vertices; i++) {
-    rank = (io_gnum[i] - 1)/block_size;
-    shift = send_shift[rank] + send_count[rank];
-    send_count[rank] += 1;
-    send_glist[shift] = io_gnum[i];
-  }
-
-  MPI_Alltoallv(send_glist, send_count, send_shift, CS_MPI_GNUM,
-                recv_glist, recv_count, recv_shift, CS_MPI_GNUM, mpi_comm);
+  cs_lnum_t n_recv = cs_all_to_all_n_elts_dest(d);
 
   /* Send the vertex tolerance for each vertex */
-  /* ----------------------------------------- */
 
-  BFT_MALLOC(send_list, n_vertices, double);
-  BFT_MALLOC(recv_list, recv_shift[n_ranks], double);
+  BFT_MALLOC(part_tolerance, n_vertices, double);
 
-  for (rank = 0; rank < n_ranks; rank++)
-    send_count[rank] = 0;
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
+    part_tolerance[i] = vtx_data[i].tolerance;
 
-  for (i = 0; i < n_vertices; i++) {
-    rank = (io_gnum[i] - 1)/block_size;
-    shift = send_shift[rank] + send_count[rank];
-    send_count[rank] += 1;
-    send_list[shift] = vtx_data[i].tolerance;
-  }
-
-  MPI_Alltoallv(send_list, send_count, send_shift, MPI_DOUBLE,
-                recv_list, recv_count, recv_shift, MPI_DOUBLE, mpi_comm);
+  double *recv_tolerance = cs_all_to_all_copy_array(d,
+                                                    CS_REAL_TYPE,
+                                                    1,
+                                                    false, /* reverse */
+                                                    part_tolerance,
+                                                    NULL);
 
   /* Define the global tolerance array */
 
-  BFT_MALLOC(g_vtx_tolerance, block_size, double);
+  BFT_MALLOC(g_vtx_tolerance, bi.block_size, double);
 
-  for (i = 0; i < block_size; i++)
+  for (cs_lnum_t i = 0; i < bi.block_size; i++)
     g_vtx_tolerance[i] = DBL_MAX;
 
-  first_vtx_gnum = block_size * local_rank + 1;
+  const cs_gnum_t  first_vtx_gnum = bi.gnum_range[0];
 
-  for (i = 0; i < recv_shift[n_ranks]; i++) {
-    vtx_id = recv_glist[i] - first_vtx_gnum;
-    g_vtx_tolerance[vtx_id] = CS_MIN(g_vtx_tolerance[vtx_id], recv_list[i]);
+  for (cs_lnum_t i = 0; i < n_recv; i++) {
+    cs_lnum_t vtx_id = block_gnum[i] - first_vtx_gnum;
+    g_vtx_tolerance[vtx_id] = CS_MIN(g_vtx_tolerance[vtx_id], recv_tolerance[i]);
   }
 
   /* Replace local vertex tolerance by the new computed global tolerance */
 
-  for (i = 0; i < recv_shift[n_ranks]; i++) {
-    vtx_id = recv_glist[i] - first_vtx_gnum;
-    recv_list[i] = g_vtx_tolerance[vtx_id];
+  for (cs_lnum_t i = 0; i < n_recv; i++) {
+    cs_lnum_t vtx_id = block_gnum[i] - first_vtx_gnum;
+    recv_tolerance[i] = g_vtx_tolerance[vtx_id];
   }
 
-  MPI_Alltoallv(recv_list, recv_count, recv_shift, MPI_DOUBLE,
-                send_list, send_count, send_shift, MPI_DOUBLE, mpi_comm);
+  BFT_FREE(g_vtx_tolerance);
 
-  for (rank = 0; rank < n_ranks; rank++)
-    send_count[rank] = 0;
+  cs_all_to_all_copy_array(d,
+                           CS_DOUBLE,
+                           1,
+                           true, /* reverse */
+                           recv_tolerance,
+                           part_tolerance);
 
-  for (i = 0; i < n_vertices; i++) {
-    rank = (io_gnum[i] - 1)/_block_size;
-    shift = send_shift[rank] + send_count[rank];
-    send_count[rank] += 1;
-    vtx_data[i].tolerance = send_list[shift];
-  }
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
+    vtx_data[i].tolerance = part_tolerance[i];
 
   /* Free memory */
 
-  BFT_FREE(recv_glist);
-  BFT_FREE(send_glist);
-  BFT_FREE(send_list);
-  BFT_FREE(recv_list);
-  BFT_FREE(recv_count);
-  BFT_FREE(send_count);
-  BFT_FREE(recv_shift);
-  BFT_FREE(send_shift);
-  BFT_FREE(g_vtx_tolerance);
+  BFT_FREE(part_tolerance);
+  BFT_FREE(recv_tolerance);
+  BFT_FREE(block_gnum);
+
+  cs_all_to_all_destroy(&d);
 }
 #endif /* HAVE_MPI */
 
@@ -2650,18 +2606,9 @@ cs_join_mesh_face_order(cs_join_mesh_t  *mesh)
 void
 cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
 {
-  cs_lnum_t  i, rank, shift, start, end;
-  double  min_tol;
-  cs_gnum_t  ref_gnum, l_max_gnum, g_max_gnum;
-  cs_block_dist_info_t  bi;
-
-  int  *send_shift = NULL, *recv_shift = NULL;
-  int  *send_count = NULL, *recv_count = NULL;
   cs_lnum_t  *order = NULL;
   cs_gnum_t  *recv_gnum = NULL;
-  cs_join_vertex_t  *send_vertices = NULL, *recv_vertices = NULL;
 
-  MPI_Datatype  CS_MPI_JOIN_VERTEX = cs_join_mesh_create_vtx_datatype();
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
   const int  n_ranks = cs_glob_n_ranks;
@@ -2672,82 +2619,67 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
 
   /* Get the max global number */
 
-  l_max_gnum = 0;
-  for (i = 0; i < mesh->n_vertices; i++)
+  cs_gnum_t l_max_gnum = 0, g_max_gnum = 0;
+  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
     l_max_gnum = CS_MAX(l_max_gnum, mesh->vertices[i].gnum);
 
   MPI_Allreduce(&l_max_gnum, &g_max_gnum, 1, CS_MPI_GNUM, MPI_MAX, mpi_comm);
 
-  bi = cs_block_dist_compute_sizes(local_rank,
-                                   n_ranks,
-                                   1,
-                                   0,
-                                   g_max_gnum);
+  cs_block_dist_info_t bi = cs_block_dist_compute_sizes(local_rank,
+                                                        n_ranks,
+                                                        1,
+                                                        0,
+                                                        g_max_gnum);
 
-  BFT_MALLOC(send_count, n_ranks, int);
-  BFT_MALLOC(recv_count, n_ranks, int);
+  int  *dest_rank = NULL;
+  BFT_MALLOC(dest_rank, mesh->n_vertices, int);
 
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
+  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
+    dest_rank[i] = (mesh->vertices[i].gnum - 1)/bi.block_size;
 
-  for (i = 0; i < mesh->n_vertices; i++) {
-    rank = (mesh->vertices[i].gnum - 1)/(cs_gnum_t)(bi.block_size);
-    send_count[rank] += 1;
-  }
+  cs_all_to_all_t
+    *d = cs_all_to_all_create(mesh->n_vertices,
+                              0, /* flags */
+                              NULL,
+                              dest_rank,
+                              mpi_comm);
 
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
-
-  BFT_MALLOC(send_shift, n_ranks + 1, int);
-  BFT_MALLOC(recv_shift, n_ranks + 1, int);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
-  }
-
-  assert(send_shift[n_ranks] == mesh->n_vertices);
-
-  BFT_MALLOC(send_vertices, send_shift[n_ranks], cs_join_vertex_t);
-  BFT_MALLOC(recv_vertices, recv_shift[n_ranks], cs_join_vertex_t);
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (i = 0; i < mesh->n_vertices; i++) {
-    rank = (mesh->vertices[i].gnum - 1)/(cs_gnum_t)(bi.block_size);
-    shift = send_shift[rank] + send_count[rank];
-    send_vertices[shift] = mesh->vertices[i];
-    send_count[rank] += 1;
-  }
+  cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
   /* Send vertices to sync and receive its part of work */
 
-  MPI_Alltoallv(send_vertices, send_count, send_shift, CS_MPI_JOIN_VERTEX,
-                recv_vertices, recv_count, recv_shift, CS_MPI_JOIN_VERTEX,
-                mpi_comm);
+  int stride = sizeof(cs_join_vertex_t);
+
+  cs_join_vertex_t *recv_vertices = cs_all_to_all_copy_array(d,
+                                                             CS_CHAR,
+                                                             stride,
+                                                             false, /* reverse */
+                                                             mesh->vertices,
+                                                             NULL);
+
+  cs_lnum_t n_recv = cs_all_to_all_n_elts_dest(d);
 
   /* Order vertices by increasing global number */
 
-  BFT_MALLOC(recv_gnum, recv_shift[n_ranks], cs_gnum_t);
-  BFT_MALLOC(order, recv_shift[n_ranks], cs_lnum_t);
+  BFT_MALLOC(recv_gnum, n_recv, cs_gnum_t);
+  BFT_MALLOC(order, n_recv, cs_lnum_t);
 
-  for (i = 0; i < recv_shift[n_ranks]; i++)
+  for (cs_lnum_t i = 0; i < n_recv; i++)
     recv_gnum[i] = recv_vertices[i].gnum;
 
-  cs_order_gnum_allocated(NULL, recv_gnum, order, recv_shift[n_ranks]);
+  cs_order_gnum_allocated(NULL, recv_gnum, order, n_recv);
 
   /* Sync. vertices sharing the same global number */
 
-  start = 0;
-  while (start < recv_shift[n_ranks]) {
+  cs_lnum_t start = 0, end = 0;
 
-    min_tol = recv_vertices[order[start]].tolerance;
-    ref_gnum = recv_vertices[order[start]].gnum;
+  while (start < n_recv) {
+
+    cs_lnum_t i;
+    double  min_tol = recv_vertices[order[start]].tolerance;
+    cs_gnum_t ref_gnum = recv_vertices[order[start]].gnum;
     for (i = start;
-         i < recv_shift[n_ranks] && ref_gnum == recv_vertices[order[i]].gnum;
+         i < n_recv && ref_gnum == recv_vertices[order[i]].gnum;
          i++);
     end = i;
 
@@ -2764,35 +2696,20 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
 
   /* Send back vertices after synchronization */
 
-  MPI_Alltoallv(recv_vertices, recv_count, recv_shift, CS_MPI_JOIN_VERTEX,
-                send_vertices, send_count, send_shift, CS_MPI_JOIN_VERTEX,
-                mpi_comm);
-
-  /* Update mesh->vertices */
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (i = 0; i < mesh->n_vertices; i++) {
-    rank = (mesh->vertices[i].gnum - 1)/bi.block_size;
-    shift = send_shift[rank] + send_count[rank];
-    mesh->vertices[i] = send_vertices[shift];
-    send_count[rank] += 1;
-  }
+  cs_all_to_all_copy_array(d,
+                           CS_CHAR,
+                           stride,
+                           true, /* reverse */
+                           recv_vertices,
+                           mesh->vertices);
 
   /* Free buffers */
 
-  MPI_Type_free(&CS_MPI_JOIN_VERTEX);
-
   BFT_FREE(recv_gnum);
   BFT_FREE(order);
-  BFT_FREE(send_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(send_vertices);
-  BFT_FREE(recv_count);
-  BFT_FREE(recv_shift);
   BFT_FREE(recv_vertices);
 
+  cs_all_to_all_destroy(&d);
 }
 
 #endif /* HAVE_MPI */
