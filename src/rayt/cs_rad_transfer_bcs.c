@@ -1236,7 +1236,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
       /* Symmetry: reflecting boundary conditions (eps=0) */
       if (bc_type[ifac] == CS_SYMMETRY)
-        pimp  = qpatmp * unspi;
+        pimp  = qpatmp * onedpi;
 
       /* Inlet/Outlet face: entering intensity fixed to zero
        * (warning: the treatment is different from than of P-1 model) */
@@ -1252,8 +1252,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
         /* Remember: In case of the usage of the standard radiation
            models of code_saturne, abo=1  */
         pimp =    f_eps->val[ifac] * stephn * cs_math_pow4(tparoi[ifac])
-                * unspi * abo[ifac + iband * n_b_faces]
-                + (1.0 - f_eps->val[ifac]) * qpatmp * unspi;
+                * onedpi * abo[ifac + iband * n_b_faces]
+                + (1.0 - f_eps->val[ifac]) * qpatmp * onedpi;
 
       /* Error if there are forgotten faces */
       else
