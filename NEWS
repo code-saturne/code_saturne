@@ -13,6 +13,8 @@ User changes
 Bug fixes
 ---------
 
+- GUI: fix crash in fluid structure interaction page in builds using PyQt5.
+
 - Fix interlock in Syrthes coupling when combining surface and volume coupling.
 
 - Fix in Rij EBRSM coupled solver (improve robustness).
