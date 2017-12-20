@@ -192,10 +192,10 @@ class FluidStructureInteractionAdvancedOptionsView(QDialog,
         return text
 
 
-
 #-------------------------------------------------------------------------------
 # StandarItemModel class
 #-------------------------------------------------------------------------------
+
 class StandardItemModel(QStandardItemModel):
     """
     StandardItemModel for table view
@@ -281,17 +281,17 @@ class StandardItemModel(QStandardItemModel):
 
 class Coupling:
     """
-    Coupling is the base class to manage all widgets which value depend on the
+    Coupling is the base class to manage all widgets whose value depend on the
     boundary.
 
     It provides getBoundaryDefinedValue/setBoundaryDefinedValue methods which
-    get/set the value of a boundary attribute. Getter and setter are specified
-    int the constructor
+    gets/sets the value of a boundary attribute. Getter and setter are specified
+    in the constructor
 
-    It also automatically enable/disable the widget when boundary is present
+    It also automatically enables/disables the widget when boundary is present
     or not
 
-    Derived class can override onBoundarySet method to specify the initial
+    Derived classes can override onBoundarySet method to specify the initial
     value of the widget base on the boundary
     """
 
@@ -349,14 +349,13 @@ class Coupling:
         getattr(self.__boundary, self.__setterStr)(value)
 
 
-
 #-------------------------------------------------------------------------------
 # LineEdit Coupling class
 #-------------------------------------------------------------------------------
 
 class LineEditCoupling(Coupling):
     """
-    LineEdit that depend on a boundary
+    LineEdit that depends on a boundary
     """
 
     def __init__(self, lineEdit, getter, setter):
@@ -379,7 +378,11 @@ class LineEditCoupling(Coupling):
         self.getWidget().setText(str(value))
 
 
-    @pyqtSlot(str)
+    # NOTE: using a decorated slot to connect to a signal is usually recommended,
+    # as it is slightly faster and uses less memory, but is causes a crash
+    # with PyQt5 (not PyQt4) when connecting to a signal from another class.
+
+    # @pyqtSlot(str)
     def __slotTextChanged(self, text):
         """
         Update the model
@@ -417,8 +420,10 @@ class FormulaCoupling(Coupling):
         self.getBoundaryDefinedValue()
 
 
-    @pyqtSlot(str)
-    def __slotFormula(self, text):
+    # NOTE: as above, do not use decorator to avoid crash in PyQt5.
+
+    # @pyqtSlot(bool)
+    def __slotFormula(self, checked):
         """
         Run formula editor.
         """
@@ -469,8 +474,9 @@ class CheckBoxCoupling(Coupling):
             state = Qt.Unchecked
         self.getWidget().setCheckState(state)
 
+    # NOTE: as above, do not use decorator to avoid crash in PyQt5.
 
-    @pyqtSlot(int)
+    # @pyqtSlot(int)
     def __slotStateChanged(self, state):
         """
         Called when checkbox state changed
@@ -489,12 +495,16 @@ class CouplingManager:
     Manage and initialize coupling derived objects
     """
 
-    def __init__(self, mainView, case, internalTableModel, externalTableModel):
+    def __init__(self, mainView, case,
+                 internalTableView, internalTableModel,
+                 externalTableView, externalTableModel):
         """
         Constructor
         """
         self.case               = case
         self.case.undoStopGlobal()
+        self.__internalTableView = internalTableView
+        self.__externalTableView = externalTableView
         self.__internalTableModel = internalTableModel
         self.__externalTableModel = externalTableModel
         self.__internalCouplings = []
@@ -511,35 +521,38 @@ class CouplingManager:
         """
         Initialize the creation of LineEditCoupling
         """
-        coupings = []
-        coupings.append( LineEditCoupling( mainView.lineEditInitialDisplacementX
-                       , "getInitialDisplacementX", "setInitialDisplacementX"))
-        coupings.append( LineEditCoupling( mainView.lineEditInitialDisplacementY
-                       , "getInitialDisplacementY", "setInitialDisplacementY"))
-        coupings.append( LineEditCoupling( mainView.lineEditInitialDisplacementZ
-                       , "getInitialDisplacementZ", "setInitialDisplacementZ"))
+        couplings = []
+        couplings.append(LineEditCoupling(mainView.lineEditInitialDisplacementX,
+                                          "getInitialDisplacementX",
+                                          "setInitialDisplacementX"))
+        couplings.append(LineEditCoupling(mainView.lineEditInitialDisplacementY,
+                                          "getInitialDisplacementY",
+                                          "setInitialDisplacementY"))
+        couplings.append(LineEditCoupling(mainView.lineEditInitialDisplacementZ,
+                                          "getInitialDisplacementZ",
+                                          "setInitialDisplacementZ"))
 
-        coupings.append(
-            LineEditCoupling( mainView.lineEditEquilibriumDisplacementX,
-                              "getEquilibriumDisplacementX",
-                              "setEquilibriumDisplacementX"))
+        couplings.append(LineEditCoupling(mainView.lineEditEquilibriumDisplacementX,
+                                          "getEquilibriumDisplacementX",
+                                          "setEquilibriumDisplacementX"))
 
-        coupings.append(
-            LineEditCoupling( mainView.lineEditEquilibriumDisplacementY,
-                              "getEquilibriumDisplacementY",
-                              "setEquilibriumDisplacementY"))
-        coupings.append(
-            LineEditCoupling( mainView.lineEditEquilibriumDisplacementZ,
-                              "getEquilibriumDisplacementZ",
-                              "setEquilibriumDisplacementZ"))
+        couplings.append(LineEditCoupling(mainView.lineEditEquilibriumDisplacementY,
+                                          "getEquilibriumDisplacementY",
+                                          "setEquilibriumDisplacementY"))
+        couplings.append(LineEditCoupling(mainView.lineEditEquilibriumDisplacementZ,
+                                          "getEquilibriumDisplacementZ",
+                                          "setEquilibriumDisplacementZ"))
 
-        coupings.append( LineEditCoupling( mainView.lineEditInitialVelocityX
-                       , "getInitialVelocityX", "setInitialVelocityX"))
-        coupings.append( LineEditCoupling( mainView.lineEditInitialVelocityY
-                       , "getInitialVelocityY", "setInitialVelocityY"))
-        coupings.append( LineEditCoupling( mainView.lineEditInitialVelocityZ
-                       , "getInitialVelocityZ", "setInitialVelocityZ"))
-        self.__internalCouplings.extend(coupings)
+        couplings.append(LineEditCoupling(mainView.lineEditInitialVelocityX,
+                                          "getInitialVelocityX",
+                                          "setInitialVelocityX"))
+        couplings.append(LineEditCoupling(mainView.lineEditInitialVelocityY,
+                                          "getInitialVelocityY",
+                                          "setInitialVelocityY"))
+        couplings.append(LineEditCoupling(mainView.lineEditInitialVelocityZ,
+                                          "getInitialVelocityZ",
+                                          "setInitialVelocityZ"))
+        self.__internalCouplings.extend(couplings)
 
 
     def __initCheckBoxCouplings(self, mainView):
@@ -547,12 +560,12 @@ class CouplingManager:
         Initialize the creation of the checkbox coupling
         """
         couplings = []
-        couplings.append(CheckBoxCoupling( mainView.checkBoxDDLX, "getDDLX",
-                                           "setDDLX"))
-        couplings.append(CheckBoxCoupling( mainView.checkBoxDDLY, "getDDLY",
-                                           "setDDLY"))
-        couplings.append(CheckBoxCoupling( mainView.checkBoxDDLZ, "getDDLZ",
-                                           "setDDLZ"))
+        couplings.append(CheckBoxCoupling(mainView.checkBoxDDLX,
+                                          "getDDLX", "setDDLX"))
+        couplings.append(CheckBoxCoupling(mainView.checkBoxDDLY,
+                                          "getDDLY", "setDDLY"))
+        couplings.append(CheckBoxCoupling(mainView.checkBoxDDLZ,
+                                          "getDDLZ", "setDDLZ"))
         self.__externalCouplings.extend(couplings)
 
 
@@ -605,68 +618,73 @@ k11 = 2;\nk22 = 2;\nk33 = 2;\nk12 = 0;\nk13 = 0;\nk23 = 0;\nk21 = 0;\nk31 = 0;\n
 """
 
         couplings = []
-        couplings.append( FormulaCoupling( mainView.pushButtonMassMatrix,
-                                           "getMassMatrix", "setMassMatrix",
-                                           m_default, m_default_required,
-                                           symbols, m_examples))
+        couplings.append(FormulaCoupling(mainView.pushButtonMassMatrix,
+                                         "getMassMatrix", "setMassMatrix",
+                                         m_default, m_default_required,
+                                         symbols, m_examples))
 
-        couplings.append( FormulaCoupling( mainView.pushButtonDampingMatrix,
-                                           "getDampingMatrix", "setDampingMatrix",
-                                           c_default, c_default_required,
-                                           symbols, c_examples))
+        couplings.append(FormulaCoupling(mainView.pushButtonDampingMatrix,
+                                         "getDampingMatrix", "setDampingMatrix",
+                                         c_default, c_default_required,
+                                         symbols, c_examples))
 
-        couplings.append( FormulaCoupling( mainView.pushButtonStiffnessMatrix,
-                                           "getStiffnessMatrix", "setStiffnessMatrix",
-                                           k_default, k_default_required,
-                                           symbols, k_examples))
+        couplings.append(FormulaCoupling(mainView.pushButtonStiffnessMatrix,
+                                         "getStiffnessMatrix", "setStiffnessMatrix",
+                                         k_default, k_default_required,
+                                         symbols, k_examples))
 
         defaultFluidForce  = "fx = "
         requiredFluidForce = [('fx', 'force applied to the structure along X'),
                               ('fy', 'force applied to the structure along Y'),
                               ('fz', 'force applied to the structure along Z')]
         symbolsFluidForce = symbols[:];
-        symbolsFluidForce.append( ('fluid_fx', 'force of flow along X'))
-        symbolsFluidForce.append( ('fluid_fy', 'force of flow along Y'))
-        symbolsFluidForce.append( ('fluid_fz', 'force of flow along Z'))
+        symbolsFluidForce.append(('fluid_fx', 'force of flow along X'))
+        symbolsFluidForce.append(('fluid_fy', 'force of flow along Y'))
+        symbolsFluidForce.append(('fluid_fz', 'force of flow along Z'))
 
         examplesFluidForce = """# The fluid force is zero in the Y direction.
 #
 fx = fluid_fx;\nfy = 0;\nfz = fluid_fz;"""
-        couplings.append( FormulaCoupling( mainView.pushButtonFluidForce,
-                                           "getFluidForceMatrix",
-                                           "setFluidForceMatrix",
-                                           defaultFluidForce,
-                                           requiredFluidForce,
-                                           symbolsFluidForce,
-                                           examplesFluidForce))
+        couplings.append( FormulaCoupling(mainView.pushButtonFluidForce,
+                                          "getFluidForceMatrix",
+                                          "setFluidForceMatrix",
+                                          defaultFluidForce,
+                                          requiredFluidForce,
+                                          symbolsFluidForce,
+                                          examplesFluidForce))
         self.__internalCouplings.extend(couplings)
 
 
+    # NOTE: as above, do not use decorator to avoid crash in PyQt5.
 
-    @pyqtSlot("QModelIndex  const&, QModelIndex  const&")
+    # @pyqtSlot(QItemSelection, QItemSelection)
     def slotInternalSelectionChanged(self, selected, deselected):
         """
         Called when internal tableView selection changed
         """
-        self.__selectionChanged(self.__internalTableModel,
-                               self.__internalCouplings, selected)
+        self.__selectionChanged(self.__internalTableView,
+                                self.__internalTableModel,
+                                self.__internalCouplings, selected)
 
+    # NOTE: as above, do not use decorator to avoid crash in PyQt5.
 
-    @pyqtSlot("QModelIndex  const&, QModelIndex  const&")
+    # @pyqtSlot(QItemSelection, QItemSelection)
     def slotExternalSelectionChanged(self, selected, deselected):
         """
         Called when external tableView selection changed
         """
-        self.__selectionChanged(self.__externalTableModel,
-                               self.__externalCouplings, selected)
+        self.__selectionChanged(self.__externalTableView,
+                                self.__externalTableModel,
+                                self.__externalCouplings, selected)
 
 
-    def __selectionChanged(self, tableModel, couplings, selected):
+    def __selectionChanged(self, tableView, tableModel, couplings, selected):
         """
         Called when a tableView selection changed
         """
         # Get Boundary
-        label = tableModel.getLabel(selected)
+        index = tableView.currentIndex()
+        label = tableModel.getLabel(index)
 
         boundary = Boundary("coupling_mobile_boundary", label, self.case)
 
@@ -713,19 +731,22 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
                                                                     'external_coupling')
 
         # Coupling Manager
-        couplingManager = CouplingManager(self, case, self.__internalTableModel
-                                         , self.__externalTableModel)
+        couplingManager = CouplingManager(self, case,
+                                          self.tableInternalCoupling,
+                                          self.__internalTableModel,
+                                          self.tableExternalCoupling,
+                                          self.__externalTableModel)
         # Avoid garbage collector to delete couplingManager
         self.__couplingManager = couplingManager
 
         # Initialize internal / external table view
         self.__initTableView(self.tableInternalCoupling,
-                            self.__internalTableModel,
-                            couplingManager.slotInternalSelectionChanged)
+                             self.__internalTableModel,
+                             couplingManager.slotInternalSelectionChanged)
 
         self.__initTableView(self.tableExternalCoupling,
-                            self.__externalTableModel,
-                            couplingManager.slotExternalSelectionChanged)
+                             self.__externalTableModel,
+                             couplingManager.slotExternalSelectionChanged)
         self.case.undoStartGlobal()
 
 
@@ -796,10 +817,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
         selectionModel = QItemSelectionModel(tableViewItemModel, tableView)
         tableView.setSelectionModel(selectionModel)
-
-        self.connect(selectionModel,
-                     SIGNAL( "currentChanged(const QModelIndex &, const QModelIndex &)"),
-                     slotSelectionChanged)
+        selectionModel.selectionChanged.connect(slotSelectionChanged)
 
 
     @pyqtSlot(str)
