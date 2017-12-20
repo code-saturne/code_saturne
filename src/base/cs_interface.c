@@ -1326,9 +1326,7 @@ _combine_periodic_tuples(size_t                     block_size,
 
     if (n_recv > 0) {
 
-      assert(n_recv % 3 == 0);
-
-      _n_block_tuples += n_recv / 3;
+      _n_block_tuples += n_recv;
 
       /* Sort and remove duplicates to update block periodicity info */
 
