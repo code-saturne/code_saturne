@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-11-26 23:14+0100\n"
+"POT-Creation-Date: 2017-12-21 16:22+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3091,9 +3091,6 @@ msgstr " %s : Convection en blending d'ordre 2 avec %f pourcent d'upwind\n"
 msgid "invalid value of ischcv"
 msgstr "valeur invalide pour ischcv"
 
-msgid "invalid value of isstpc"
-msgstr "valeur invalide pour isstpc"
-
 #, c-format
 msgid " %s: %llu Faces with upwind on %llu interior faces \n"
 msgstr " %s : %llu Faces avec upwind sur %llu faces intérieures\n"
@@ -3103,6 +3100,9 @@ msgstr "valeur invalide pour icvflb et f_id"
 
 msgid "invalid value of ischcp"
 msgstr "valeur invalide pour ischcp"
+
+msgid "invalid value of isstpc"
+msgstr "valeur invalide pour isstpc"
 
 msgid "invalid value of init"
 msgstr "valeur invalide pour init"
@@ -3315,18 +3315,18 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Handling of matrixes in %s format\n"
-"is not operational yet."
-msgstr ""
-"La gestion des matrices au format %s \n"
-"n'est pas encore opérationnelle."
-
-#, c-format
-msgid ""
 "%s: handling of matrices in %s format\n"
 "is not operational yet."
 msgstr ""
 "%s: la gestion des matrices au format %s \n"
+"n'est pas encore opérationnelle."
+
+#, c-format
+msgid ""
+"Handling of matrixes in %s format\n"
+"is not operational yet."
+msgstr ""
+"La gestion des matrices au format %s \n"
 "n'est pas encore opérationnelle."
 
 msgid "The matrix is not defined."
@@ -6057,6 +6057,16 @@ msgstr ""
 msgid "Called cs_interface_set_max with unhandled datatype (%d)."
 msgstr ""
 
+#, fuzzy
+msgid "Extended neighborhood not implemented for internal coupling."
+msgstr " Définition des structures pour le voisinage étendu\n"
+
+#, c-format
+msgid ""
+"Gradient type %s is \n"
+"not implemented with internal coupling."
+msgstr ""
+
 #, c-format
 msgid "Function %s does not currently handle %s data type."
 msgstr ""
@@ -8669,6 +8679,28 @@ msgid ""
 "SYRTHES: %5.3e\n"
 msgstr ""
 
+#, c-format
+msgid ""
+" Message received from SYRTHES: \"%s\"\n"
+" indicates meshes have not been matched correctly.\n"
+"\n"
+" The calculation will not run.\n"
+"\n"
+msgstr ""
+" Le message reçu de SYRTHES: \"%s\"\n"
+" indique que les maillages ne correspondent pas correctement.\n"
+"\n"
+" Le calcul ne sera pas exécuté.\n"
+"\n"
+
+#, c-format
+msgid ""
+" Message received from SYRTHES: \"%s\"\n"
+" indicates an error or is unexpected."
+msgstr ""
+" Le message reçu de SYRTHES: \"%s\"\n"
+" indique une erreur ou est inattendu."
+
 msgid ""
 "Coupling with SYRTHES impossible.\n"
 "No selection criteria for faces or cells to couple."
@@ -8708,28 +8740,6 @@ msgstr ""
 "\n"
 " ** Traitement du maillage pour le couplage SYRTHES \"%s\"\n"
 "\n"
-
-#, c-format
-msgid ""
-" Message received from SYRTHES: \"%s\"\n"
-" indicates meshes have not been matched correctly.\n"
-"\n"
-" The calculation will not run.\n"
-"\n"
-msgstr ""
-" Le message reçu de SYRTHES: \"%s\"\n"
-" indique que les maillages ne correspondent pas correctement.\n"
-"\n"
-" Le calcul ne sera pas exécuté.\n"
-"\n"
-
-#, c-format
-msgid ""
-" Message received from SYRTHES: \"%s\"\n"
-" indicates an error or is unexpected."
-msgstr ""
-" Le message reçu de SYRTHES: \"%s\"\n"
-" indique une erreur ou est inattendu."
 
 #, c-format
 msgid ""
@@ -9662,11 +9672,7 @@ msgid " Invalid mesh location id (= -1) for the current field\n"
 msgstr ""
 
 #, c-format
-msgid " No function defined for getting the face values in eq. %s"
-msgstr ""
-
-#, c-format
-msgid " No function defined for getting the cell values in eq. %s"
+msgid " %s: No function defined for this operation in eq. %s"
 msgstr ""
 
 #, c-format
@@ -9722,34 +9728,13 @@ msgstr ""
 msgid " Unknown cell-type.\n"
 msgstr "type de cellule inconnu.\n"
 
+#, c-format
+msgid ""
+" %s: Stop execution.\n"
+" Invalid type of definition.\n"
+msgstr ""
+
 msgid "Invalid space scheme."
-msgstr ""
-
-msgid "VpCd"
-msgstr ""
-
-msgid "EpFd"
-msgstr ""
-
-msgid "FpEd"
-msgstr ""
-
-msgid "EdFp"
-msgstr ""
-
-msgid "CpVd"
-msgstr ""
-
-msgid "Voronoi"
-msgstr ""
-
-msgid "Whitney on the Barycentric Subdivision (WBS)"
-msgstr ""
-
-msgid "COnsistency-STabilization splitting (COST)"
-msgstr ""
-
-msgid "Automatic switch"
 msgstr ""
 
 msgid "Homogeneous Dirichlet"
@@ -9795,6 +9780,33 @@ msgid " Invalid solver. Stop execution."
 msgstr ""
 
 msgid " Invalid preconditioner. Stop execution."
+msgstr ""
+
+msgid "VpCd"
+msgstr ""
+
+msgid "EpFd"
+msgstr ""
+
+msgid "FpEd"
+msgstr ""
+
+msgid "EdFp"
+msgstr ""
+
+msgid "CpVd"
+msgstr ""
+
+msgid "Voronoi"
+msgstr ""
+
+msgid "Whitney on the Barycentric Subdivision (WBS)"
+msgstr ""
+
+msgid "COnsistency-STabilization splitting (COST)"
+msgstr ""
+
+msgid "Automatic switch"
 msgstr ""
 
 #, c-format
