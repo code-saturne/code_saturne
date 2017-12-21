@@ -218,7 +218,7 @@ class FormatWriterDelegate(QItemDelegate):
         if cfg.libs['catalyst'].have == "no":
             editor.setItemData(3, QColor(Qt.red), Qt.TextColorRole);
         if cfg.libs['melissa'].have == "no":
-            editor.setItemData(4, QColor(Qt.red), Qt.TextColorRole);
+            editor.setItemData(5, QColor(Qt.red), Qt.TextColorRole);
         if cfg.libs['ccm'].have == "no":
             editor.setItemData(6, QColor(Qt.red), Qt.TextColorRole);
         return editor
