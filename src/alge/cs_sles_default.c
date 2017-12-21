@@ -188,13 +188,26 @@ _sles_default_native(int                f_id,
   /* Final default */
 
   if (sles_it_type == CS_SLES_N_IT_TYPES) {
+
+    int coupling_id = -1;
+
+    if (f_id > -1) {
+      const cs_field_t *f = cs_field_by_id(f_id);
+      coupling_id
+        = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+    }
+
     if (symmetric) {
       sles_it_type = CS_SLES_PCG;
-      if (f_id > -1)
+      if (f_id > -1 && coupling_id < 0)
         multigrid = 1;
     }
-    else
-      sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
+    else {
+      if (coupling_id < 0)
+        sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
+      else
+        sles_it_type = CS_SLES_BICGSTAB;
+    }
   }
 
   if (multigrid == 1) {
