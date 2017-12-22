@@ -4596,11 +4596,17 @@ _pre_vector_multiply_sync_x(cs_halo_rotation_t   rotation_mode,
 
 #if !defined(_CS_UNIT_MATRIX_TEST) /* unit tests do not link with full library */
 
-      if (matrix->halo->n_transforms > 0 && db_size[0] == 3)
-        cs_halo_perio_sync_var_vect(matrix->halo,
-                                    CS_HALO_STANDARD,
-                                    x,
-                                    db_size[1]);
+      if (matrix->halo->n_transforms > 0) {
+        if (db_size[0] == 3)
+          cs_halo_perio_sync_var_vect(matrix->halo,
+                                      CS_HALO_STANDARD,
+                                      x,
+                                      db_size[1]);
+        else if (db_size[0] == 6)
+          cs_halo_perio_sync_var_sym_tens(matrix->halo,
+                                          CS_HALO_STANDARD,
+                                          x);
+      }
 
 #endif
 
