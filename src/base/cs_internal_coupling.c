@@ -141,7 +141,6 @@ _compute_ani_weighting_cocg(const cs_real_t  wi[],
                            ki_d);
 }
 
-
 /*----------------------------------------------------------------------------
  * Update R.H.S. for lsq gradient taking into account the weight coefficients.
  *
@@ -608,24 +607,17 @@ _cpl_initialize(cs_internal_coupling_t *cpl)
  *----------------------------------------------------------------------------*/
 
 static void
-_criteria_initialize(const char   criteria_cells[],
-                     const char   criteria_faces[],
+_criteria_initialize(const char               criteria_cells[],
+                     const char               criteria_faces[],
                      cs_internal_coupling_t  *cpl)
 {
-  BFT_MALLOC(cpl->cells_criteria,
-             strlen(criteria_cells)+1,
-             char);
-
+  BFT_MALLOC(cpl->cells_criteria, strlen(criteria_cells)+1, char);
   strcpy(cpl->cells_criteria, criteria_cells);
 
-  if (criteria_faces == NULL)
-    return;
-
-  BFT_MALLOC(cpl->faces_criteria,
-             strlen(criteria_faces)+1,
-             char);
-
-  strcpy(cpl->faces_criteria, criteria_faces);
+  if (criteria_faces != NULL) {
+    BFT_MALLOC(cpl->faces_criteria, strlen(criteria_faces)+1, char);
+    strcpy(cpl->faces_criteria, criteria_faces);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -701,7 +693,6 @@ _volume_face_initialize(cs_mesh_t               *m,
   cs_selector_get_cell_list(cpl->cells_criteria,
                             &n_selected_cells,
                             selected_cells);
-
 
   /* Initialization */
 
@@ -827,6 +818,69 @@ int
 cs_internal_coupling_n_couplings(void)
 {
   return _n_internal_couplings;
+}
+
+/*----------------------------------------------------------------------------
+ * Define coupling volume using given criteria.
+ *
+ * Then, this volume must be seperated from the rest of the domain with a wall.
+ *
+ * parameters:
+ *   mesh           <-> pointer to mesh structure to modify
+ *   criteria_cells <-- selection criteria for the first group of cells
+ *   criteria_faces <-- selection criteria for faces to be joined
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add(cs_mesh_t   *mesh,
+                         const char   criteria_cells[],
+                         const char   criteria_faces[])
+{
+  CS_UNUSED(mesh);
+
+  BFT_REALLOC(_internal_coupling,
+              _n_internal_couplings + 1,
+              cs_internal_coupling_t);
+
+  cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
+
+  _cpl_initialize(cpl);
+
+  _criteria_initialize(criteria_cells, criteria_faces, cpl);
+
+  _n_internal_couplings++;
+}
+
+/*----------------------------------------------------------------------------
+ * Define coupling volume using given criteria. Then, this volume will be
+ * seperated from the rest of the domain with thin walls.
+ *
+ * parameters:
+ *   mesh           <-> pointer to mesh structure to modify
+ *   criteria_cells <-- selection criteria for the first group of cells
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
+                                const char   criteria_cells[])
+{
+  CS_UNUSED(mesh);
+
+  if (_n_internal_couplings > 0)
+    bft_error(__FILE__, __LINE__, 0,
+              "Only one volume can be added in this version.");
+
+  BFT_REALLOC(_internal_coupling,
+              _n_internal_couplings + 1,
+              cs_internal_coupling_t);
+
+  cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
+
+  _cpl_initialize(cpl);
+
+  _criteria_initialize(criteria_cells, NULL, cpl);
+
+  _n_internal_couplings++;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2476,13 +2530,21 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   BFT_FREE(g_id_d);
 }
 
-/*----------------------------------------------------------------------------
- * Initialize internal coupling related structures.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup internal coupling related parameters.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_initialize(void)
+cs_internal_coupling_setup(void)
 {
+  /* Call deprecated functions first */
+  cs_user_internal_coupling_add_volumes(cs_glob_mesh);
+  cs_user_internal_coupling_from_disjoint_meshes(cs_glob_mesh);
+
+  /* Now do setup proper */
+
   if (_n_internal_couplings < 1)
     return;
 
@@ -2498,11 +2560,6 @@ cs_internal_coupling_initialize(void)
   cs_var_cal_opt_t var_cal_opt;
 
   const int n_fields = cs_field_n_fields();
-
-  for (int i = 0; i < _n_internal_couplings; i++) {
-    cs_internal_coupling_t *cpl = _internal_coupling + i;
-    _locator_initialize(cs_glob_mesh, cpl);
-  }
 
   /* Definition of coupling_ids as keys of variable fields */
 
@@ -2534,7 +2591,7 @@ cs_internal_coupling_initialize(void)
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       if (var_cal_opt.icoupl > 0) {
 
-        if (coupling_id==0) {
+        if (coupling_id == 0) {
           /* Definition of var_cal_opt options
            * (needed for matrix.vector multiply) */
           /* cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt); */
@@ -2543,8 +2600,57 @@ cs_internal_coupling_initialize(void)
           cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
           if (stokes->iphydr == 1)
             bft_error(__FILE__, __LINE__, 0,
-                      "Hydrostatic pressure \
-                      not implemented with internal coupling.");
+                      "Hydrostatic pressure "
+                      "not implemented with internal coupling.");
+
+          /* Update user information */
+          BFT_MALLOC(cpl->namesca, strlen(f->name) + 1, char);
+          // FIXME:= Leaves the name of the first coupled scalar
+          strcpy(cpl->namesca, f->name);
+        }
+        coupling_id++;
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize internal coupling related structures.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_initialize(void)
+{
+  if (_n_internal_couplings < 1)
+    return;
+
+  int field_id;
+  cs_field_t* f, *f_diff;
+  int coupling_id = 0;
+
+  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
+
+  const int n_fields = cs_field_n_fields();
+
+  for (int i = 0; i < _n_internal_couplings; i++) {
+    cs_internal_coupling_t *cpl = _internal_coupling + i;
+    _locator_initialize(cs_glob_mesh, cpl);
+  }
+
+  /* Initialization of coupling entities */
+
+  coupling_id = 0;
+  cs_internal_coupling_t *cpl = _internal_coupling;
+  for (field_id = 0; field_id < n_fields; field_id++) {
+    f = cs_field_by_id(field_id);
+    if (f->type & CS_FIELD_VARIABLE) {
+      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+      if (var_cal_opt.icoupl > 0) {
+
+        if (coupling_id == 0) {
 
           /* Initialize coupled_faces */
           _initialize_coupled_faces(cpl);
@@ -2589,10 +2695,6 @@ cs_internal_coupling_initialize(void)
             break;
           }
 
-          /* Update user information */
-          BFT_MALLOC(cpl->namesca, strlen(f->name) + 1, char);
-          // FIXME:= Leaves the name of the first coupled scalar
-          strcpy(cpl->namesca, f->name);
         }
         coupling_id++;
       }
@@ -2651,50 +2753,38 @@ cs_internal_coupling_dump(void)
 }
 
 /*----------------------------------------------------------------------------
- * Define coupling volume using given criterias. Then, this volume will be
- * seperated from the rest of the domain with thin walls.
+ * Add preprocessing operations required by coupling volume using given
+ * criteria.
+ *
+ * The volume is seperated from the rest of the domain with inserted
+ * boundaries.
  *
  * parameters:
  *   mesh           <-> pointer to mesh structure to modify
- *   criteria_cells <-- selection criteria for the first group of cells
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
-                                const char   criteria_cells[])
+cs_internal_coupling_preprocess(cs_mesh_t  *mesh)
 {
-  if (_n_internal_couplings > 0)
-    bft_error(__FILE__, __LINE__, 0,
-              "Only one volume can be added in this version."
-              " You can define one zone using the union: creterion1 or criterion2.");
-
-  BFT_REALLOC(_internal_coupling,
-              _n_internal_couplings + 1,
-              cs_internal_coupling_t);
-
-  cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
-
-  _cpl_initialize(cpl);
-
-  _criteria_initialize(criteria_cells, NULL, cpl);
-
-  /* Initialization and add wall boundaries,
-   * locators are initialized afterwards */
-  _volume_initialize_insert_boundary(mesh, cpl);
-
-  _n_internal_couplings++;
+  for (int i = 0; i < _n_internal_couplings; i++) {
+    cs_internal_coupling_t *cpl = _internal_coupling + i;
+    if (cpl->cells_criteria != NULL && cpl->faces_criteria == NULL) {
+      /* Insert wall boundaries,
+       * locators are initialized afterwards */
+      _volume_initialize_insert_boundary(mesh, cpl);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------
- * Define coupling volume using given criterias. Then, this volume has been
- * seperated from the rest of the domain with a thin wall.
+ * Define face to face mappings for internal couplings.
  *
  * parameters:
  *   mesh           <-> pointer to mesh structure to modify
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_add_volumes_finalize(cs_mesh_t   *mesh)
+cs_internal_coupling_map(cs_mesh_t   *mesh)
 {
   /* Initialization of locators  for all coupling entities */
 
@@ -2705,39 +2795,7 @@ cs_internal_coupling_add_volumes_finalize(cs_mesh_t   *mesh)
 }
 
 /*----------------------------------------------------------------------------
- * Define coupling volume using given criteria.
- *
- * Then, this volume must be seperated from the rest of the domain with a wall.
- *
- * parameters:
- *   mesh           <-> pointer to mesh structure to modify
- *   criteria_cells <-- selection criteria for the first group of cells
- *   criteria_faces <-- selection criteria for faces to be joined
- *----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_add(cs_mesh_t   *mesh,
-                         const char   criteria_cells[],
-                         const char   criteria_faces[])
-{
-  BFT_REALLOC(_internal_coupling,
-              _n_internal_couplings + 1,
-              cs_internal_coupling_t);
-
-  cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
-
-  _cpl_initialize(cpl);
-
-  _criteria_initialize(criteria_cells, criteria_faces, cpl);
-
-  /* Initialization of locators */
-  _volume_face_initialize(mesh, cpl);
-
-  _n_internal_couplings++;
-}
-
-/*----------------------------------------------------------------------------
- * Define coupling entity using given criterias
+ * Define coupling entity using given criteria.
  *
  * parameters:
  *   f_id       <-- id of the field
@@ -2820,6 +2878,43 @@ cs_ic_set_exchcoeff(const int         field_id,
   }
 
   BFT_FREE(hextloc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define volumes as internal coupling zones.
+ *
+ * These zones will be separated from the rest of the domain using automatically
+ * defined thin walls.
+ *
+ * \deprecated
+ * move contents to\ref cs_user_internal_coupling instead.
+ *
+ * \param[in, out] mesh  pointer to a cs_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh)
+{
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define volumes from separated meshes as internal coupling zones.
+ *
+ * These zones must be disjoint and the face selection criteria must be specified.
+ *
+ * \deprecated
+ * move contents to\ref cs_user_internal_coupling instead.
+ *
+ * \param[in, out]  mesh  pointer to a cs_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t  *mesh)
+{
 }
 
 /*----------------------------------------------------------------------------*/

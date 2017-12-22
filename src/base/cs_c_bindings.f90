@@ -1941,6 +1941,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief  Binding to cs_user_internal_coupling
+
+    subroutine cs_internal_coupling_setup()  &
+      bind(C, name='cs_internal_coupling_setup')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_internal_coupling_setup
+
+    !---------------------------------------------------------------------------
+
     !> \brief  Binding to cs_ic_set_exchcoeff
 
     subroutine cs_ic_set_exchcoeff(field_id,               &

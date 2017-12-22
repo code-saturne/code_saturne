@@ -65,7 +65,7 @@ typedef struct {
   ple_locator_t   *locator;
   int             *c_tag;
 
-  /* Selection criterias for coupled domains */
+  /* Selection criteria for coupled domains */
   char  *cells_criteria;
   char  *faces_criteria;
 
@@ -110,6 +110,35 @@ typedef struct {
 
 int
 cs_internal_coupling_n_couplings(void);
+
+/*----------------------------------------------------------------------------
+ * Define coupling volume using given criteria.
+ *
+ * Then, this volume must be seperated from the rest of the domain with a wall.
+ *
+ * parameters:
+ *   mesh           <-> pointer to mesh structure to modify
+ *   criteria_cells <-- selection criteria for the first group of cells
+ *   criteria_faces <-- selection criteria for faces to be joined
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add(cs_mesh_t   *mesh,
+                         const char   criteria_cells[],
+                         const char   criteria_faces[]);
+
+/*----------------------------------------------------------------------------
+ * Define coupling volume using given criteria. Then, this volume will be
+ * seperated from the rest of the domain with thin walls.
+ *
+ * parameters:
+ *   mesh           <->  pointer to mesh structure to modify
+ *   criteria_cells <-- string criteria for the first group of cells
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add_volume(cs_mesh_t  *mesh,
+                                const char criteria_cells[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -226,10 +255,20 @@ void
 cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
                                           cs_real_33_t                   cocg[]);
 
-/*----------------------------------------------------------------------------
- * Initialize internal coupling related structures.
- *
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup internal coupling related parameters.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize internal coupling related structures.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_initialize(void);
@@ -392,7 +431,7 @@ cs_internal_coupling_reconstruct_vector_gradient(
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Add internal coupling contribution for reconstruction of the
- * gradient of a symmetric tensor.
+ *         gradient of a symmetric tensor.
  *
  * \param[in]       cpl      pointer to coupling entity
  * \param[in]       r_grad   pointer to reconstruction gradient
@@ -506,47 +545,31 @@ cs_ic_set_exchcoeff(const int         field_id,
                     const cs_real_t  *hbord);
 
 /*----------------------------------------------------------------------------
- * Define coupling volume using given criterias. Then, this volume will be
- * seperated from the rest of the domain with thin walls.
+ * Add preprocessing operations required by coupling volume using given
+ * criteria.
  *
- * parameters:
- *   mesh           <->  pointer to mesh structure to modify
- *   criteria_cells <-- string criteria for the first group of cells
- *----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_add_volume(cs_mesh_t  *mesh,
-                                const char criteria_cells[]);
-
-/*----------------------------------------------------------------------------
- * Define coupling volume using given criterias. Then, this volume has been
- * seperated from the rest of the domain with a thin wall.
+ * The volume is seperated from the rest of the domain with inserted
+ * boundaries.
  *
  * parameters:
  *   mesh           <-> pointer to mesh structure to modify
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_add_volumes_finalize(cs_mesh_t   *mesh);
+cs_internal_coupling_preprocess(cs_mesh_t   *mesh);
 
 /*----------------------------------------------------------------------------
- * Define coupling volume using given criteria.
- *
- * Then, this volume must be seperated from the rest of the domain with a wall.
+ * Define face to face mappings for internal couplings.
  *
  * parameters:
  *   mesh           <-> pointer to mesh structure to modify
- *   criteria_cells <-- selection criteria for the first group of cells
- *   criteria_faces <-- selection criteria for faces to be joined
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_add(cs_mesh_t   *mesh,
-                         const char   criteria_cells[],
-                         const char   criteria_faces[]);
+cs_internal_coupling_map(cs_mesh_t   *mesh);
 
 /*----------------------------------------------------------------------------
- * Define coupling entity using given criterias
+ * Define coupling entity using given criteria.
  *
  * parameters:
  *   f_id       <-- id of the field

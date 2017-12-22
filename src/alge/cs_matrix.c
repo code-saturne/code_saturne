@@ -6765,7 +6765,7 @@ cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix)
     bft_error
       (__FILE__, __LINE__, 0,
        _("Matrix coefficients were not mapped from native face-based arrays,\n"
-         "so the extra-diagonla coefficients are not available in that form."));
+         "so the extra-diagonal coefficients are not available in that form."));
   else
     exdiag = matrix->xa;
 

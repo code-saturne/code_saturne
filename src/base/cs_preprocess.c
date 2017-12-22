@@ -245,7 +245,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_gui_mesh_boundary(cs_glob_mesh);
   cs_user_mesh_boundary(cs_glob_mesh);
 
-  cs_user_internal_coupling_add_volumes(cs_glob_mesh);
+  cs_internal_coupling_preprocess(cs_glob_mesh);
 
   /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
@@ -326,10 +326,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
 
   /* Second pass to define internal coupling locators */
-  cs_internal_coupling_add_volumes_finalize(cs_glob_mesh);
-
-  /* Second way of defining internal coupling */
-  cs_user_internal_coupling_from_disjoint_meshes(cs_glob_mesh);
+  cs_internal_coupling_map(cs_glob_mesh);
 
   /* Compute geometric quantities related to the mesh */
 

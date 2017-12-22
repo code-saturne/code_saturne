@@ -357,58 +357,6 @@ cs_user_parameters(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define volumes as internal coupling zones.
- *
- * These zones will be separated from the rest of the domain using automatically
- * defined thin walls.
- *
- * \param[in, out]  mesh  pointer to a cs_mesh_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_internal_coupling_add_volumes(cs_mesh_t *mesh)
-{
-  /* Example: Internal coupling */
-  /*--------------------------- */
-
-  /*! [param_internal_coupling] */
-
-  cs_internal_coupling_add_volume(mesh,
-                                  "x<.5"); /* Solid volume criterion */
-
-  /*! [param_internal_coupling] */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define volumesi from separated meshes as internal coupling zones.
- *
- * These zones must be disjoint and the face selection criterion must be
- * specified.
- *
- * \param[in, out]  mesh  pointer to a cs_mesh_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t *mesh)
-{
-  /* Example: Internal coupling */
-  /*--------------------------- */
-
-  /*! [param_internal_coupling] */
-
-  cs_internal_coupling_add(mesh,
-                           "solid_volume_criterion",
-                           "interface_criterion");
-
-  /*! [param_internal_coupling] */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Define internal coupling options.
  *
  * Options are usually defined using cs_internal_coupling_add_entity.
@@ -418,15 +366,37 @@ cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t *mesh)
 void
 cs_user_internal_coupling(void)
 {
-  /* Example: Internal coupling */
-  /*--------------------------- */
+  /* Example: define coupling between one volume zone and the rest of the
+     mesh; this will automatically transform the selection boundaries
+     to actual mesh boundaries.
+     --------------------------------------------------------------------*/
+
+  /*! [param_internal_coupling_add_volume] */
+
+  cs_internal_coupling_add_volume(NULL,
+                                  "x<.5"); /* Solid volume criterion */
+
+  /*! [param_internal_coupling_add_volume] */
+
+  /* Example: define coupling along an existing mesh boundary.
+     ---------------------------------------------------------*/
+
+  /*! [param_internal_coupling_add] */
+
+  cs_internal_coupling_add(NULL,
+                           "solid_volume_criterion",
+                           "interface_criterion");
+
+  /*! [param_internal_coupling_add] */
+
+  /* Example: couple field whose name is "scalar1"
+     ---------------------------------------------*/
 
   /*! [param_internal_coupling] */
 
   int f_id = cs_field_id_by_name("scalar1");
 
   cs_internal_coupling_add_entity(f_id);  /* Field to be coupled */
-
 
   /*! [param_internal_coupling] */
 }

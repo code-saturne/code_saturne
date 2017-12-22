@@ -361,6 +361,8 @@ call varpos
 ! --- Internal coupling
 call cs_user_internal_coupling
 
+call cs_internal_coupling_setup
+
 !----
 ! Formats
 !----
