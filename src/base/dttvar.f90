@@ -715,7 +715,7 @@ if (idtvar.ge.0) then
   if (vcopt_u%idiff.ge.1 .and. ifour.ge.1) then
 
     iconv0 = 0
-    CNOM   =' FOURIER'
+    cnom   =' FOURIER'
 
     !                              2
     ! CONSTRUCTION DE      +2.NU/DX  (       FOURIER) =W1
