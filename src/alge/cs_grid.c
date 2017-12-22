@@ -67,6 +67,7 @@
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
 #include "cs_matrix_tuning.h"
+#include "cs_matrix_util.h"
 #include "cs_order.h"
 #include "cs_prototypes.h"
 #include "cs_sles.h"
@@ -2969,6 +2970,53 @@ _compute_coarse_cell_quantities(const cs_grid_t  *fine_grid,
 }
 
 /*----------------------------------------------------------------------------
+ * Verification for matrix quantities.
+ *
+ * parameters:
+ *   g <-- pointer to grid structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_verify_matrix(const cs_grid_t  *g)
+{
+  const cs_lnum_t n_cols = cs_matrix_get_n_columns(g->matrix);
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(g->matrix);
+  const cs_lnum_t *db_size = g->diag_block_size;
+
+  cs_real_t *val;
+  BFT_MALLOC(val, n_cols*db_size[1], cs_real_t);
+
+  /* Evaluate fine and coarse grids diagonal dominance */
+
+  cs_matrix_diag_dominance(g->matrix, val);
+
+  cs_real_t vmin = HUGE_VAL, vmax = -HUGE_VAL;
+
+  const cs_lnum_t n_ents = n_rows*db_size[1];
+
+  for (cs_lnum_t i = 0; i < n_ents; i++) {
+    if (val[i] < vmin)
+      vmin = val[i];
+    else if (val[i] > vmax)
+      vmax = val[i];
+  }
+
+  BFT_FREE(val);
+
+#if defined(HAVE_MPI)
+  if (cs_glob_mpi_comm != MPI_COMM_NULL) {
+    cs_real_t _vmin = vmin, _vmax = vmax;
+    MPI_Allreduce(&_vmin, &vmin, 1, CS_MPI_REAL, MPI_MIN, cs_glob_mpi_comm);
+    MPI_Allreduce(&_vmax, &vmax, 1, CS_MPI_REAL, MPI_MAX, cs_glob_mpi_comm);
+  }
+#endif
+
+  bft_printf(_("       grid level %2d diag. dominance: min = %12.5e\n"
+               "                                      max = %12.5e\n\n"),
+             g->level, vmin, vmax);
+}
+
+/*----------------------------------------------------------------------------
  * Verification for coarse quantities computed from fine quantities.
  *
  * parameters:
@@ -2986,7 +3034,7 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
                           cs_gnum_t         n_clips_max,
                           int               interp)
 {
-  cs_lnum_t ic, jc, ii, jj, kk, c_face, face_id;
+  cs_lnum_t ic, jc, ii, jj, c_face, face_id;
 
   int isym = 2;
 
@@ -2999,7 +3047,6 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
   cs_lnum_t c_n_faces = coarse_grid->n_faces;
 
   const cs_real_t *c_xa0 = coarse_grid->_xa0;
-  const cs_real_t *c_da = coarse_grid->_da;
   const cs_real_t *c_xa = coarse_grid->_xa;
 
   cs_real_t *w1 = NULL;
@@ -3009,7 +3056,6 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
   const cs_lnum_2_t *f_face_cell = fine_grid->face_cell;
   const cs_lnum_2_t *c_face_cell = coarse_grid->face_cell;
 
-  const cs_real_t *f_da = fine_grid->da;
   const cs_real_t *f_xa = fine_grid->xa;
 
   BFT_MALLOC(w1, f_n_cells_ext*db_size[3], cs_real_t);
@@ -3135,94 +3181,8 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
 
   /* Evaluate fine and coarse grids diagonal dominance */
 
-  for (ii = 0; ii < f_n_cells; ii++) {
-    for (jj = 0; jj < db_size[0]; jj++) {
-      for (kk = 0; kk < db_size[0]; kk++)
-        w1[ii*db_size[3] + db_size[2]*jj + kk]
-          = fabs(f_da[ii*db_size[3] + db_size[2]*jj + kk]);
-    }
-  }
-  for (ii = f_n_cells; ii < f_n_cells_ext; ii++) {
-    for (jj = 0; jj < db_size[0]; jj++) {
-      for (kk = 0; kk < db_size[0]; kk++)
-        w1[ii*db_size[3] + db_size[2]*jj + kk] = 0.;
-    }
-  }
-
-  for (ic = 0; ic < c_n_cells; ic++) {
-    for (jj = 0; jj < db_size[0]; jj++) {
-      for (kk = 0; kk < db_size[0]; kk++)
-        w3[ic*db_size[3] + db_size[2]*jj + kk]
-          = fabs(c_da[ic*db_size[3] + db_size[2]*jj + kk]);
-    }
-  }
-  for (ic = c_n_cells; ic < c_n_cells_ext; ic++) {
-    for (jj = 0; jj < db_size[0]; jj++) {
-      for (kk = 0; kk < db_size[0]; kk++)
-        w3[ic*db_size[3] + db_size[2]*jj + kk] = 0.;
-    }
-  }
-
-  for (face_id = 0; face_id < f_n_faces; face_id++) {
-    ii = f_face_cell[face_id][0];
-    jj = f_face_cell[face_id][1];
-    for (kk = 0; kk < db_size[0]; kk++) {
-      w1[ii*db_size[3] + db_size[2]*kk + kk]
-        -= fabs(f_xa[face_id*isym]);
-      w1[jj*db_size[3] + db_size[2]*kk + kk]
-        -= fabs(f_xa[(face_id +1)*isym -1]);
-    }
-  }
-
-  for (c_face = 0; c_face < c_n_faces; c_face++) {
-    ic = c_face_cell[c_face][0];
-    jc = c_face_cell[c_face][1];
-    for (kk = 0; kk < db_size[0]; kk++) {
-      w3[ic*db_size[3] + db_size[2]*kk + kk]
-        -= fabs(c_xa[c_face*isym]);
-      w3[jc*db_size[3] + db_size[2]*kk + kk]
-        -= fabs(c_xa[(c_face +1)*isym -1]);
-    }
-  }
-
-  for (ii = 0; ii < f_n_cells; ii++)
-    w1[ii] /= fabs(f_da[ii]);
-
-  for (ic = 0; ic < c_n_cells; ic++)
-    w3[ic] /= fabs(c_da[ic]);
-
-  anmin[0] = HUGE_VAL; anmin[1] = HUGE_VAL;
-  anmax[0] = -HUGE_VAL; anmax[1] = -HUGE_VAL;
-
-  for (ii = 0; ii < f_n_cells; ii++) {
-    if (w1[ii] < anmin[0])
-      anmin[0] = w1[ii];
-    else if (w1[ii] > anmax[0])
-      anmax[0] = w1[ii];
-  }
-
-  for (ic = 0; ic < c_n_cells; ic++) {
-    if (w3[ic] < anmin[1])
-      anmin[1] = w3[ic];
-    else if (w3[ic] > anmax[1])
-      anmax[1] = w3[ic];
-  }
-
   BFT_FREE(w3);
   BFT_FREE(w1);
-
-#if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
-  if (comm != MPI_COMM_NULL) {
-    MPI_Allreduce(MPI_IN_PLACE, anmin, 2, MPI_DOUBLE, MPI_MIN, comm);
-    MPI_Allreduce(MPI_IN_PLACE, anmax, 2, MPI_DOUBLE, MPI_MAX, comm);
-  }
-#endif
-
-  bft_printf(_("       fine   grid diag. dominance: min = %12.5e\n"
-               "                                    max = %12.5e\n"
-               "       coarse grid diag. dominance: min = %12.5e\n"
-               "                                    max = %12.5e\n\n"),
-             anmin[0], anmax[0], anmin[1], anmax[1]);
 }
 
 /*----------------------------------------------------------------------------
@@ -3490,40 +3450,6 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
                               n_clips_max,
                               interp);
 
-#if 0
-  /* Experimental: force diagonal dominance on coarse grid */
-  {
-    cs_lnum_t c_n_cells = coarse_grid->n_cells;
-
-    BFT_MALLOC(w1, c_n_cells_ext, cs_real_t);
-
-#   pragma omp parallel for if(c_n_cells > CS_THR_MIN)
-    for (ic = 0; ic < c_n_cells; ic++)
-      w1[ic] = CS_ABS(c_da[ic]);
-
-#   pragma omp parallel for if(c_n_cells_ext - c_n_cells > CS_THR_MIN)
-    for (ic = c_n_cells; ic < c_n_cells_ext; ic++)
-      w1[ic] = 0.;
-
-    for (c_face = 0; c_face < c_n_faces; c_face++) {
-      ic = c_face_cell[c_face][0];
-      jc = c_face_cell[c_face][1];
-      w1[ic] -= fabs(c_xa[c_face*isym]);
-      w1[jc] -= fabs(c_xa[(c_face +1)*isym -1]);
-    }
-
-    for (ic = 0; ic < c_n_cells; ic++) {
-      if (w1[ic] < 0.) {
-        if (c_da[ic] <= 0.)
-          c_da[ic] += w1[ic];
-        else
-          c_da[ic] -= w1[ic];
-      }
-    }
-
-    BFT_FREE(w1);
-  }
-#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -4531,6 +4457,14 @@ cs_grid_coarsen(const cs_grid_t   *f,
                              c->xa);
 
   c->matrix = c->_matrix;
+
+  /* Optional verification */
+
+  if (verbosity > 3) {
+    if (f->level == 0)
+      _verify_matrix(f);
+    _verify_matrix(c);
+  }
 
   /* Return new (coarse) grid */
 
