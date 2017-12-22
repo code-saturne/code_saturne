@@ -182,11 +182,10 @@ cs_user_radiative_transfer_parameters(void)
   cs_glob_rad_transfer_params->imfsck = 1;
 
   /* Activate Infra Red absoption for atmospheric flows
-     atmo_ir_absorption = true: activated
-     atmo_ir_absorption = false: not activated */
+       atmo_ir_absorption = true: activated
+       atmo_ir_absorption = false: not activated */
 
   cs_glob_rad_transfer_params->atmo_ir_absorption = true;
-
 
   /*! [cs_user_radiative_transfer_parameters] */
 }
@@ -252,7 +251,7 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
       /* Read from file */
 
       int n_v_segs = 77;
-      cs_real_t zray2[78], k_up[77], k_down[77];
+      cs_real_t zray2[78], k_up[78], k_down[78];
 
       FILE *f;
       float t;
@@ -264,13 +263,13 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
       }
       fclose(f);
       f = fopen("kup.dat", "r");
-      for (int i = 0; i < n_v_segs; i++) {
+      for (int i = 0; i < n_v_segs+1; i++) {
         fscanf(f, "%g", &t);
         k_up[i] = t;
       }
       fclose(f);
       f = fopen("kdown.dat", "r");
-      for (int i = 0; i < n_v_segs; i++) {
+      for (int i = 0; i < n_v_segs+1; i++) {
         fscanf(f, "%g", &t);
         k_down[i] = t;
       }
@@ -285,7 +284,10 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
 
         /* Search for 1D cell */
         int iz = 0;
-        for (; iz < n_v_segs && z > zray2[iz+1]; iz++);
+
+        cs_real_t tol = 1.0;
+        /* Search loop */
+        for (; iz < n_v_segs && z > (zray2[iz+1]-tol); iz++);
 
         f_ck_u->val[cell_id] = fabs(k_up[iz+1]);
         f_ck_d->val[cell_id] = fabs(k_down[iz+1]);
@@ -343,7 +345,7 @@ cs_user_rad_transfer_net_flux(const int        bc_type[],
                               cs_real_t        net_flux[])
 {
   /*< [loc_var_dec_2]*/
-  const cs_real_t stephn = cs_physical_constants_stephan;
+  cs_real_t  stephn = 5.6703e-8;
   /*< [loc_var_dec_2]*/
 
   /*< [init]*/
