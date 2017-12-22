@@ -251,13 +251,14 @@ _order_by_direction(void)
   for (int ii = -1; ii < 2; ii+=2) {
     for (int jj = -1; jj < 2; jj+=2) {
       for (int kk = -1; kk < 2; kk+=2) {
-        for (int idir = 0; idir < cs_glob_rad_transfer_params->ndirs; idir++) {
+        for (int dir_id = 0; dir_id < cs_glob_rad_transfer_params->ndirs; dir_id++) {
 
-          cs_real_t v[3] = {ii*cs_glob_rad_transfer_params->sxyz[idir][0],
-                            jj*cs_glob_rad_transfer_params->sxyz[idir][1],
-                            kk*cs_glob_rad_transfer_params->sxyz[idir][2]};
+          cs_real_t v[3] = {ii*cs_glob_rad_transfer_params->vect_s[dir_id][0],
+                            jj*cs_glob_rad_transfer_params->vect_s[dir_id][1],
+                            kk*cs_glob_rad_transfer_params->vect_s[dir_id][2]};
 
-          kdir = kdir + 1;
+          /* Gloal direction id */
+          kdir++;
 
           char name[32];
           sprintf(name, "radiation_%03d", kdir);
@@ -327,6 +328,7 @@ _order_by_direction(void)
  *       N fluid to wall normal
  *
  * \param[in]       tempk     temperature in Kelvin
+ * \param[in]       bc_type   boundary face types
  * \param[in, out]  coefap    boundary condition work array for the radiance
  *                             (explicit part)
  * \param[in, out]  coefbp    boundary condition work array for the radiance
@@ -339,15 +341,17 @@ _order_by_direction(void)
  * \param[in, out]  flurdb    pseudo mass flux work array (boundary faces)
  * \param[in, out]  viscf     visc*surface/dist work array at interior faces
  * \param[in, out]  viscb     visc*surface/dist work array at boundary faces
- * \param[in, out]  smbrs     work array for RHS
+ * \param[in, out]  rhs       work array for RHS
  * \param[in, out]  rovsdt    work array for unsteady term
  * \param[out]      q         explicit flux density vector
- * \param[in]       iband     number of the i-th gray gas
+ * \param[in]       w_gg      Weights of the i-th gray gas at boundaries
+ * \param[in]       gg_id     number of the i-th gray gas
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
+                     int                        bc_type[],
                      cs_real_t        *restrict coefap,
                      cs_real_t        *restrict coefbp,
                      cs_real_t        *restrict cofafp,
@@ -356,19 +360,22 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
                      cs_real_t        *restrict flurdb,
                      cs_real_t        *restrict viscf,
                      cs_real_t        *restrict viscb,
-                     cs_real_t        *restrict smbrs,
+                     cs_real_t        *restrict rhs,
                      cs_real_t        *restrict rovsdt,
                      cs_real_3_t      *restrict q,
-                     int               iband)
+                     cs_real_t                  w_gg[],
+                     int                        gg_id)
 {
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   cs_lnum_t n_i_faces  = cs_glob_mesh->n_i_faces;
   cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells   = cs_glob_mesh->n_cells;
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)cs_glob_mesh->i_face_cells;
 
-  cs_real_3_t *surfbo = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
-  cs_real_3_t *surfac = (cs_real_3_t *)cs_glob_mesh_quantities->i_face_normal;
-  cs_real_t   *surfbn = cs_glob_mesh_quantities->b_face_surf;
+  cs_real_3_t *b_face_normal = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+  cs_real_3_t *i_face_normal = (cs_real_3_t *)cs_glob_mesh_quantities->i_face_normal;
+  cs_real_t   *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   const cs_real_t *cell_vol
     = (const cs_real_t *)cs_glob_mesh_quantities->cell_vol;
@@ -383,10 +390,14 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
   /* Allocate work arrays */
 
   cs_real_t *rhs0, *dpvar, *radiance, *radiance_prev;
+  cs_real_t *ck_u_d = NULL;
   BFT_MALLOC(rhs0,  n_cells_ext, cs_real_t);
   BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
   BFT_MALLOC(radiance,    n_cells_ext, cs_real_t);
   BFT_MALLOC(radiance_prev,   n_cells_ext, cs_real_t);
+
+  if (cs_glob_rad_transfer_params->atmo_ir_absorption)
+    BFT_MALLOC(ck_u_d,  n_cells_ext, cs_real_t);
 
   /* Initialization */
 
@@ -398,14 +409,14 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
   cs_var_cal_opt_t vcopt = cs_parameters_var_cal_opt_default();
 
   vcopt.iwarni =  cs_glob_rad_transfer_params->iimlum;
-  vcopt.iconv  =  1;
+  vcopt.iconv  =  1; /* Pure convection */
   vcopt.istat  = -1;
   vcopt.idiff  =  0; /* no face diffusion */
   vcopt.idifft = -1;
   vcopt.isstpc =  0;
-  vcopt.nswrsm =  2;//FIXME useless
+  vcopt.nswrsm =  1;/* One sweep is sufficient because of the upwind scheme */
   vcopt.imrgra =  cs_glob_space_disc->imrgra;
-  vcopt.blencv =  0;
+  vcopt.blencv =  0; /* Pure upwind...*/
   vcopt.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
 
   int iescap = 0;
@@ -413,9 +424,6 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
 
   /* There are Dirichlet BCs */
   int ndirc1 = 1;
-
-  /* Pure convection */
-  vcopt.iconv = 1;
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1)
     _order_by_direction();
@@ -428,20 +436,20 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
     f_snplus->val[face_id] = 0.0;
 
-  cs_real_3_t sxyzt;
+  cs_real_3_t vect_s;
   cs_real_t domegat, aa;
   for (int ii = -1; ii <= 1; ii+=2) {
     for (int jj = -1; jj <= 1; jj+=2) {
       for (int kk = -1; kk <= 1; kk+=2) {
 
-        for (int idir = 0; idir < cs_glob_rad_transfer_params->ndirs; idir++) {
-          sxyzt[0] = ii * cs_glob_rad_transfer_params->sxyz[idir][0];
-          sxyzt[1] = jj * cs_glob_rad_transfer_params->sxyz[idir][1];
-          sxyzt[2] = kk * cs_glob_rad_transfer_params->sxyz[idir][2];
-          domegat = cs_glob_rad_transfer_params->angsol[idir];
+        for (int dir_id = 0; dir_id < cs_glob_rad_transfer_params->ndirs; dir_id++) {
+          vect_s[0] = ii * cs_glob_rad_transfer_params->vect_s[dir_id][0];
+          vect_s[1] = jj * cs_glob_rad_transfer_params->vect_s[dir_id][1];
+          vect_s[2] = kk * cs_glob_rad_transfer_params->vect_s[dir_id][2];
+          domegat = cs_glob_rad_transfer_params->angsol[dir_id];
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-            aa = cs_math_3_dot_product(sxyzt, surfbo[face_id]);
-            aa /= surfbn[face_id];
+            aa = cs_math_3_dot_product(vect_s, b_face_normal[face_id]);
+            aa /= b_face_surf[face_id];
             f_snplus->val[face_id] += 0.5 * ( -aa + CS_ABS(aa)) * domegat;
           }
         }
@@ -461,7 +469,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
     f_qincid->val[face_id] = 0.0;
     f_snplus->val[face_id] = 0.0;
     if (cs_glob_rad_transfer_params->imoadf >= 1)
-      f_qinspe->val[iband + face_id * cs_glob_rad_transfer_params->nwsgg] = 0.0;
+      f_qinspe->val[gg_id + face_id * cs_glob_rad_transfer_params->nwsgg] = 0.0;
   }
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -471,10 +479,10 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
     q[cell_id][2] = 0.0;
   }
 
-  /* Save smbrs in buffer, reload at each change of direction */
+  /* Save rhs in buffer, reload at each change of direction */
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-    rhs0[cell_id] = smbrs[cell_id];
+    rhs0[cell_id] = rhs[cell_id];
 
   /* rovsdt loaded once only */
 
@@ -500,12 +508,24 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
     for (int jj = -1; jj <= 1; jj+=2) {
       for (int kk = -1; kk <= 1; kk+=2) {
 
-        for (int idir = 0; idir < cs_glob_rad_transfer_params->ndirs; idir++) {
-          sxyzt[0] = ii * cs_glob_rad_transfer_params->sxyz[idir][0];
-          sxyzt[1] = jj * cs_glob_rad_transfer_params->sxyz[idir][1];
-          sxyzt[2] = kk * cs_glob_rad_transfer_params->sxyz[idir][2];
-          domegat = cs_glob_rad_transfer_params->angsol[idir];
+        for (int dir_id = 0; dir_id < cs_glob_rad_transfer_params->ndirs; dir_id++) {
+          vect_s[0] = ii * cs_glob_rad_transfer_params->vect_s[dir_id][0];
+          vect_s[1] = jj * cs_glob_rad_transfer_params->vect_s[dir_id][1];
+          vect_s[2] = kk * cs_glob_rad_transfer_params->vect_s[dir_id][2];
+          domegat = cs_glob_rad_transfer_params->angsol[dir_id];
+          /* Gloal direction id */
           kdir++;
+
+          /* Update boundary condition coefficients */
+          if (cs_glob_rad_transfer_params->atmo_ir_absorption)
+            cs_rad_transfer_bc_coeffs(bc_type,
+                                      vect_s,
+                                      coefap, coefbp,
+                                      cofafp, cofbfp,
+                                      NULL, /* only usefull for P1 */
+                                      w_gg,
+                                      gg_id);
+
 
           char    cnom[80];
           snprintf(cnom, 80, "%s%03d", "radiation_", kdir);
@@ -515,7 +535,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
           /* Explicit source term */
 
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-            smbrs[cell_id] = rhs0[cell_id];
+            rhs[cell_id] = rhs0[cell_id];
 
           /* Implicit source term (rovsdt seen above) */
 
@@ -530,15 +550,19 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
             radiance_prev[cell_id] = 0.0;
           }
 
-          for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-            flurds[face_id] =  sxyzt[0] * surfac[face_id][0]
-                             + sxyzt[1] * surfac[face_id][1]
-                             + sxyzt[2] * surfac[face_id][2];
+          for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+            flurds[face_id] =  vect_s[0] * i_face_normal[face_id][0]
+                             + vect_s[1] * i_face_normal[face_id][1]
+                             + vect_s[2] * i_face_normal[face_id][2];
+            if (i_face_cells[face_id][0] > n_cells || i_face_cells[face_id][1] > n_cells)
+              flurds[face_id] = 0.;//HARD CODING
+
+          }
 
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-            flurdb[face_id] =  sxyzt[0] * surfbo[face_id][0]
-                             + sxyzt[1] * surfbo[face_id][1]
-                             + sxyzt[2] * surfbo[face_id][2];
+            flurdb[face_id] =  vect_s[0] * b_face_normal[face_id][0]
+                             + vect_s[1] * b_face_normal[face_id][1]
+                             + vect_s[2] * b_face_normal[face_id][2];
 
           /* Upwards/Downwards atmospheric integration */
 
@@ -552,16 +576,16 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
               if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
-                                        sxyzt) < 0.0) {
-                rovsdt[cell_id] =  ck_u[cell_id] * 3./5. * cell_vol[cell_id];
-                smbrs[cell_id] =   ck_u[cell_id] * 3./5. * cell_vol[cell_id]
-                                 * stephn * _pow4(tempk[cell_id]) * onedpi;
+                                        vect_s) < 0.0) {
+                ck_u_d[cell_id] =  ck_u[cell_id] * 3./5.;
               }
               else {
-                rovsdt[cell_id] =  ck_d[cell_id] * 3./5. * cell_vol[cell_id];
-                smbrs[cell_id] =   ck_d[cell_id] * 3./5. * cell_vol[cell_id]
-                                 * stephn * _pow4(tempk[cell_id]) * onedpi;
+                ck_u_d[cell_id] =  ck_d[cell_id] * 3./5.;
               }
+              rovsdt[cell_id] =  ck_u_d[cell_id] * cell_vol[cell_id];
+
+              rhs[cell_id]  =  ck_u_d[cell_id] * cell_vol[cell_id]
+                                 * stephn * _pow4(tempk[cell_id]) * onedpi;
 
             }
 
@@ -601,7 +625,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
                                              icvflb,
                                              NULL,
                                              rovsdt,
-                                             smbrs,
+                                             rhs,
                                              radiance,
                                              dpvar,
                                              NULL,
@@ -614,11 +638,11 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
               aa = radiance[cell_id] * domegat;
               rad_st_expl[cell_id]
-                +=   -rovsdt[cell_id] / cell_vol[cell_id] * domegat
+                +=   -ck_u_d[cell_id] * domegat
                     * (radiance[cell_id] - stephn * onedpi * _pow4(tempk[cell_id]));
-              q[cell_id][0] += aa * sxyzt[0];
-              q[cell_id][1] += aa * sxyzt[1];
-              q[cell_id][2] += aa * sxyzt[2];
+              q[cell_id][0] += aa * vect_s[0];
+              q[cell_id][1] += aa * vect_s[1];
+              q[cell_id][2] += aa * vect_s[2];
             }
 
           }
@@ -627,9 +651,9 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
               aa = radiance[cell_id] * domegat;
               rad_st_expl[cell_id]  += aa;
-              q[cell_id][0] += aa * sxyzt[0];
-              q[cell_id][1] += aa * sxyzt[1];
-              q[cell_id][2] += aa * sxyzt[2];
+              q[cell_id][0] += aa * vect_s[0];
+              q[cell_id][1] += aa * vect_s[1];
+              q[cell_id][2] += aa * vect_s[2];
             }
 
           }
@@ -637,29 +661,45 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
           /* Flux incident to wall */
 
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-            aa = cs_math_3_dot_product(sxyzt, surfbo[face_id]);
-            aa /= surfbn[face_id];
+            cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[face_id];
+            aa = cs_math_3_dot_product(vect_s, b_face_normal[face_id]);
+            aa /= b_face_surf[face_id];
             aa = 0.5 * (aa + CS_ABS(aa)) * domegat;
             f_snplus->val[face_id] += aa;
             if (cs_glob_rad_transfer_params->imoadf >= 1)
-              f_qinspe->val[iband + face_id * cs_glob_rad_transfer_params->nwsgg]
-                += aa * radiance[cs_glob_mesh->b_face_cells[face_id]];
+              f_qinspe->val[gg_id + face_id * cs_glob_rad_transfer_params->nwsgg]
+                += aa * radiance[cell_id];
 
             else
               f_qincid->val[face_id]
-                += aa * radiance[cs_glob_mesh->b_face_cells[face_id]];
+                += aa * radiance[cell_id];
 
           }
 
+            cs_field_t *f_ck_u = cs_field_by_name("rad_absorption_coeff_up");
+            cs_field_t *f_ck_d = cs_field_by_name("rad_absorption_coeff_down");
+            const cs_real_t *ck_u = f_ck_u->val;
+            const cs_real_t *ck_d = f_ck_d->val;
           if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
-                                    sxyzt) < 0.0 && f_up != NULL) {
+                                    vect_s) < 0.0 && f_up != NULL) {
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-              f_up->val[cell_id] += radiance[cell_id] * domegat * sxyzt[2];//FIXME S.g/||g||
+              f_up->val[cell_id] += radiance[cell_id] * domegat * vect_s[2];//FIXME S.g/||g||
           }
           else if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
-                                         sxyzt) > 0.0 && f_down != NULL) {
-            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-              f_down->val[cell_id] += radiance[cell_id] * domegat * sxyzt[2];
+                                         vect_s) > 0.0 && f_down != NULL) {
+            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+              f_down->val[cell_id] += radiance[cell_id] * domegat * vect_s[2];
+#if 0
+              bft_printf("L[%d,%d, %d, %d] = %f, Omega=%f, Sz=%f, vol=%f,rovsdt=%f, cku%g, ckd%g\n",
+                  cell_id,ii, jj, kk, radiance[cell_id], domegat, vect_s[2],
+                  cell_vol[cell_id],
+                  rovsdt[cell_id],
+                  ck_u[cell_id] ,
+                  ck_d[cell_id] );
+              bft_printf("f_down[%d] = %f\n",
+                  cell_id, f_down->val[cell_id]);
+#endif
+            }
           }
 
         }
@@ -672,13 +712,23 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
   /* TODO add clean generation and log of "per day source terms"
      for atmospheric radiative model */
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    bft_printf("srad K/j[%d] = %f\n",
-               cell_id, rad_st_expl[cell_id] *-86400.0 / rho / cp);
+    bft_printf("srad K/day[%d] = %f\n",
+               cell_id, rad_st_expl[cell_id] *-86400.0
+               / CS_F_(rho)->val[cell_id]
+               / cs_glob_fluid_properties->cp0);
+    if (f_up != NULL)
+      bft_printf("f_up[%d] = %f\n",
+                 cell_id, f_up->val[cell_id]);
+    if (f_down != NULL)
+      bft_printf("f_down[%d] = %f\n",
+                 cell_id, f_down->val[cell_id]);
   }
 #endif
 
   /* Free memory */
 
+  if (ck_u_d != NULL)
+    BFT_FREE(ck_u_d);
   BFT_FREE(rhs0);
   BFT_FREE(dpvar);
   BFT_FREE(radiance);
@@ -810,7 +860,7 @@ cs_rad_transfer_solve(int               bc_type[],
   cs_lnum_t n_b_faces   = cs_glob_mesh->n_b_faces;
   cs_lnum_t n_i_faces   = cs_glob_mesh->n_i_faces;
 
-  cs_real_3_t *surfbo = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+  cs_real_3_t *b_face_normal = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
   const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
@@ -820,10 +870,10 @@ cs_rad_transfer_solve(int               bc_type[],
   ipadom++;
 
   /* Allocate temporary arrays for the radiative equations resolution */
-  cs_real_t *viscf, *viscb, *smbrs, *rovsdt;
+  cs_real_t *viscf, *viscb, *rhs, *rovsdt;
   BFT_MALLOC(viscf,  n_i_faces, cs_real_t);
   BFT_MALLOC(viscb,  n_b_faces, cs_real_t);
-  BFT_MALLOC(smbrs,  n_cells_ext, cs_real_t);
+  BFT_MALLOC(rhs,  n_cells_ext, cs_real_t);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
   /* Allocate specific arrays for the radiative transfer module */
@@ -842,9 +892,9 @@ cs_rad_transfer_solve(int               bc_type[],
   BFT_MALLOC(ckmel, n_cells_ext, cs_real_t);
 
   /* Specific heat capacity of the bulk phase */
-  cs_real_t *dcp, *tparo;
+  cs_real_t *dcp, *twall;
   BFT_MALLOC(dcp, n_cells_ext, cs_real_t);
-  BFT_MALLOC(tparo, n_b_faces, cs_real_t);
+  BFT_MALLOC(twall, n_b_faces, cs_real_t);
 
   /* Map field arrays */
   cs_field_t *f_tempb = CS_F_(t_b);
@@ -911,8 +961,8 @@ cs_rad_transfer_solve(int               bc_type[],
   BFT_MALLOC(iqpato, n_b_faces, cs_real_t);
 
   /* Weight of the i-th grey gas at walls     */
-  cs_real_t *agbi;
-  BFT_MALLOC(agbi, n_b_faces * nwsgg, cs_real_t);
+  cs_real_t *w_gg;
+  BFT_MALLOC(w_gg, n_b_faces * nwsgg, cs_real_t);
 
   /* Wall temperature */
   cs_real_t xptk;
@@ -924,9 +974,9 @@ cs_rad_transfer_solve(int               bc_type[],
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     if (   bc_type[ifac] == CS_SMOOTHWALL
         || bc_type[ifac] == CS_ROUGHWALL)
-      tparo[ifac]  = f_tempb->val[ifac] + xptk;
+      twall[ifac]  = f_tempb->val[ifac] + xptk;
     else
-      tparo[ifac]  = 0.0;
+      twall[ifac]  = 0.0;
   }
 
   cs_real_t *wq = cs_glob_rad_transfer_params->wq;
@@ -1029,9 +1079,9 @@ cs_rad_transfer_solve(int               bc_type[],
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     iqpato[ifac] = 0.0;
     /* In case of grey gas radiation properties (kgi!=f(lambda))    */
-    /* agbi must be set to 1.    */
+    /* w_gg must be set to 1.    */
     for (int i = 0; i < nwsgg; i++) {
-      agbi[ifac + i * n_b_faces]     = 1.0;
+      w_gg[ifac + i * n_b_faces]     = 1.0;
     }
   }
 
@@ -1109,7 +1159,7 @@ cs_rad_transfer_solve(int               bc_type[],
      is required for boundary conditions. */
 
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 2)
-    cs_rad_transfer_absorption(tempk, kgi, agi, agbi);
+    cs_rad_transfer_absorption(tempk, kgi, agi, w_gg);
 
   else {
 
@@ -1167,8 +1217,8 @@ cs_rad_transfer_solve(int               bc_type[],
     }
     else {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        for (int ngg = 0; ngg < nwsgg; ngg++)
-          ckmin = CS_MIN(ckmin, kgi[cell_id + n_cells * ngg]);
+        for (int gg_id = 0; gg_id < nwsgg; gg_id++)
+          ckmin = CS_MIN(ckmin, kgi[cell_id + n_cells * gg_id]);
       }
 
     }
@@ -1196,13 +1246,13 @@ cs_rad_transfer_solve(int               bc_type[],
 
   cs_real_t *cpro_cak;
 
-  for (int ngg = 0; ngg < nwsgg; ngg++) {
+  for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 
     if (   rt_params->imoadf >= 1
         || rt_params->imfsck == 1) {
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        cpro_cak0[cell_id] = kgi[cell_id + n_cells * ngg];
+        cpro_cak0[cell_id] = kgi[cell_id + n_cells * gg_id];
 
     }
     else {
@@ -1230,9 +1280,9 @@ cs_rad_transfer_solve(int               bc_type[],
       /* Gas phase: Explicit source term in the transport of theta4 */
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        smbrs[cell_id] =  3.0 * cpro_cak0[cell_id]
+        rhs[cell_id] =  3.0 * cpro_cak0[cell_id]
                               * pow(tempk[cell_id], 4.0)
-                              * agi[cell_id + n_cells * ngg]
+                              * agi[cell_id + n_cells * gg_id]
                               * cell_vol[cell_id];
 
       /* Solid phase/coal particles:
@@ -1247,9 +1297,9 @@ cs_rad_transfer_solve(int               bc_type[],
           cs_field_t *f_x2 = cs_field_by_name(fname);
 
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-            smbrs[cell_id] +=  3.0 * f_x2->val[cell_id] * cpro_cak[cell_id]
+            rhs[cell_id] +=  3.0 * f_x2->val[cell_id] * cpro_cak[cell_id]
                                    * pow(tempk[cell_id + n_cells * ipcla], 4.0)
-                                   * agi[cell_id + n_cells * ngg]
+                                   * agi[cell_id + n_cells * gg_id]
                                    * cell_vol[cell_id];
 
         }
@@ -1266,9 +1316,9 @@ cs_rad_transfer_solve(int               bc_type[],
           cs_field_t *f_yfol = cs_field_by_name(fname);
 
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-            smbrs[cell_id] +=  3.0 * f_yfol->val[cell_id] * cpro_cak[cell_id]
+            rhs[cell_id] +=  3.0 * f_yfol->val[cell_id] * cpro_cak[cell_id]
                                    * pow (tempk[cell_id + n_cells * ipcla], 4.0)
-                                   * agi[cell_id + n_cells * ngg]
+                                   * agi[cell_id + n_cells * gg_id]
                                    * cell_vol[cell_id];
 
         }
@@ -1369,10 +1419,11 @@ cs_rad_transfer_solve(int               bc_type[],
 
       /* Update Boundary condition coefficients   */
       cs_rad_transfer_bc_coeffs(bc_type,
+                                NULL, /* No specific direction */
                                 coefap, coefbp,
                                 cofafp, cofbfp,
-                                tparo,  ckmel,
-                                agbi,   ngg);
+                                ckmel,
+                                w_gg,   gg_id);
 
       /* Solving    */
       cs_rad_transfer_pun(bc_type,
@@ -1380,10 +1431,10 @@ cs_rad_transfer_solve(int               bc_type[],
                           cofafp, cofbfp,
                           flurds, flurdb,
                           viscf, viscb,
-                          smbrs, rovsdt,
-                          tparo, ckmel,
+                          rhs, rovsdt,
+                          twall, ckmel,
                           iqpar,
-                          agbi, ngg);
+                          w_gg, gg_id);
     }
 
     /* Solving of the radiative transfer equation (DOM)
@@ -1396,18 +1447,18 @@ cs_rad_transfer_solve(int               bc_type[],
       if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == -1
           && cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == -1) {
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          smbrs[cell_id] =  c_stefan * cpro_cak0[cell_id]
+          rhs[cell_id] =  c_stefan * cpro_cak0[cell_id]
                                      * (pow (tempk[cell_id], 4.0))
-                                     * agi[cell_id + n_cells * ngg]
+                                     * agi[cell_id + n_cells * gg_id]
                                      * cell_vol[cell_id]
                                      * onedpi;
       } else {
         cs_real_t *cpro_t4m = cs_field_by_name_try("temperature_4")->val;
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          smbrs[cell_id] =  c_stefan * cpro_cak0[cell_id]
+          rhs[cell_id] =  c_stefan * cpro_cak0[cell_id]
                                      * cpro_t4m[cell_id]
-                                     * agi[cell_id + n_cells * ngg]
+                                     * agi[cell_id + n_cells * gg_id]
                                      * cell_vol[cell_id]
                                      * onedpi;
       }
@@ -1424,8 +1475,8 @@ cs_rad_transfer_solve(int               bc_type[],
           cs_field_t *f_x2 = cs_field_by_name(fname);
 
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-            smbrs[cell_id] +=   f_x2->val[cell_id]
-                              * agi[cell_id + n_cells * ngg]
+            rhs[cell_id] +=   f_x2->val[cell_id]
+                              * agi[cell_id + n_cells * gg_id]
                               * c_stefan
                               * cpro_cak[cell_id]
                               * (pow (tempk[cell_id + n_cells * ipcla], 4.0))
@@ -1445,8 +1496,8 @@ cs_rad_transfer_solve(int               bc_type[],
           cs_field_t *f_yfol = cs_field_by_name(fname);
 
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-            smbrs[cell_id] +=   f_yfol->val[cell_id]
-                              * agi[cell_id + n_cells * ngg]
+            rhs[cell_id] +=   f_yfol->val[cell_id]
+                              * agi[cell_id + n_cells * gg_id]
                               * c_stefan
                               * cpro_cak[cell_id]
                               * (pow (tempk[cell_id + n_cells * ipcla], 4.0))
@@ -1496,21 +1547,26 @@ cs_rad_transfer_solve(int               bc_type[],
 
       }
 
-      /* Update boundary condition coefficients */
+      /* Update boundary condition coefficients:
+       * default ones, identical for each directions, may be overwritten
+       * afterwards */
       cs_rad_transfer_bc_coeffs(bc_type,
+                                NULL, /*no specific direction */
                                 coefap, coefbp,
                                 cofafp, cofbfp,
-                                tparo , ckmel,
-                                agbi  , ngg);
+                                ckmel,
+                                w_gg  , gg_id);
 
       /* Solving    */
       _cs_rad_transfer_sol(tempk,
+                           bc_type,
                            coefap, coefbp,
                            cofafp, cofbfp,
                            flurds, flurdb,
                            viscf, viscb,
-                           smbrs, rovsdt,
-                           iqpar, ngg);
+                           rhs, rovsdt,
+                           iqpar,
+                           w_gg, gg_id);
 
     }
 
@@ -1518,7 +1574,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
     /* Absorption */
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-      iabgaz[cell_id] += cpro_cak0[cell_id] * cpro_re_st0[cell_id] * wq[ngg];
+      iabgaz[cell_id] += cpro_cak0[cell_id] * cpro_re_st0[cell_id] * wq[gg_id];
 
     if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
 
@@ -1530,9 +1586,9 @@ cs_rad_transfer_solve(int               bc_type[],
         cs_field_t *f_x2 = cs_field_by_name(fname);
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
           iabpar[cell_id] +=  f_x2->val[cell_id] * cpro_cak[cell_id]
-                        * cpro_re_st0[cell_id] * wq[ngg];
+                        * cpro_re_st0[cell_id] * wq[gg_id];
           iabparh2[cell_id + n_cells * icla]
-            +=  cpro_cak[cell_id] * cpro_re_st0[cell_id] * wq[ngg];
+            +=  cpro_cak[cell_id] * cpro_re_st0[cell_id] * wq[gg_id];
         }
       }
 
@@ -1548,10 +1604,10 @@ cs_rad_transfer_solve(int               bc_type[],
         cs_field_t *f_yfol = cs_field_by_name(fname);
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
           iabpar[cell_id] +=  f_yfol->val[cell_id] * cpro_cak[cell_id]
-                            * cpro_re_st0[cell_id] * wq[ngg];
+                            * cpro_re_st0[cell_id] * wq[gg_id];
           iabparh2[cell_id + n_cells * icla] +=   cpro_cak[cell_id]
                                                 * cpro_re_st0[cell_id]
-                                                * wq[ngg];
+                                                * wq[gg_id];
         }
       }
 
@@ -1562,28 +1618,28 @@ cs_rad_transfer_solve(int               bc_type[],
     if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == -1
         && cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == -1) {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        iemgex[cell_id] -=   cpro_cak0[cell_id] * agi[cell_id + n_cells * ngg]
+        iemgex[cell_id] -=   cpro_cak0[cell_id] * agi[cell_id + n_cells * gg_id]
                            * 4.0 * c_stefan
-                           * pow(tempk[cell_id + n_cells * 0], 4.0) * wq[ngg];
+                           * pow(tempk[cell_id + n_cells * 0], 4.0) * wq[gg_id];
 
         iemgim[cell_id] -=   16.0 * dcp[cell_id] * cpro_cak0[cell_id]
-                           * agi[cell_id + ngg * n_cells]
+                           * agi[cell_id + gg_id * n_cells]
                            * c_stefan * pow(tempk[cell_id + n_cells * 0], 3.0)
-                           * wq[ngg];
+                           * wq[gg_id];
       }
     } else {
       cs_real_t *cpro_t4m = cs_field_by_name_try("temperature_4")->val;
       cs_real_t *cpro_t3m = cs_field_by_name_try("temperature_3")->val;
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        iemgex[cell_id] -=   cpro_cak0[cell_id] * agi[cell_id + n_cells * ngg]
+        iemgex[cell_id] -=   cpro_cak0[cell_id] * agi[cell_id + n_cells * gg_id]
                            * 4.0 * c_stefan * cpro_t4m[cell_id]
-                           * wq[ngg];
+                           * wq[gg_id];
 
         iemgim[cell_id] -=   16.0 * dcp[cell_id] * cpro_cak0[cell_id]
-                           * agi[cell_id + ngg * n_cells]
+                           * agi[cell_id + gg_id * n_cells]
                            * c_stefan * cpro_t3m[cell_id]
-                           * wq[ngg];
+                           * wq[gg_id];
       }
     }
 
@@ -1603,32 +1659,32 @@ cs_rad_transfer_solve(int               bc_type[],
                           * c_stefan
                           * cpro_cak[cell_id]
                           * pow(tempk[cell_id + n_cells * ipcla], 4.0)
-                          * agi[cell_id + n_cells * ngg]
-                          * wq[ngg];
+                          * agi[cell_id + n_cells * gg_id]
+                          * wq[gg_id];
 
           iempexh2[cell_id + n_cells * icla]
             += -  4.0 * c_stefan
                       * cpro_cak[cell_id]
                       * pow(tempk[cell_id + n_cells * ipcla], 4.0)
-                      * agi[cell_id + n_cells * ngg]
-                      * wq[ngg];
+                      * agi[cell_id + n_cells * gg_id]
+                      * wq[gg_id];
 
           iempim[cell_id]
             += - 16.0 * c_stefan
                       * cpro_cak[cell_id]
                       * f_x2->val[cell_id]
                       * pow (tempk[cell_id + n_cells * ipcla], 3.0)
-                      * agi[cell_id + n_cells * ngg]
+                      * agi[cell_id + n_cells * gg_id]
                       / cp2ch[ichcor[icla]-1]
-                      * wq[ngg];
+                      * wq[gg_id];
 
           iempimh2[cell_id + n_cells * icla]
             += -  16.0 * c_stefan
                        * cpro_cak[cell_id]
                        * pow(tempk[cell_id + n_cells * ipcla], 3.0)
-                       * agi[cell_id + n_cells * ngg]
+                       * agi[cell_id + n_cells * gg_id]
                        / cp2ch[ichcor[icla]-1]
-                       * wq[ngg];
+                       * wq[gg_id];
 
         }
       }
@@ -1648,29 +1704,29 @@ cs_rad_transfer_solve(int               bc_type[],
                                     * f_yfol->val[cell_id]
                                     * cpro_cak[cell_id]
                                     * pow (tempk[cell_id + n_cells * ipcla], 4.0)
-                                    * agi[cell_id + n_cells * ngg]
-                                    * wq[ngg];
+                                    * agi[cell_id + n_cells * gg_id]
+                                    * wq[gg_id];
 
           iempexh2[cell_id + n_cells * icla]
             += -  4.0 * c_stefan * cpro_cak[cell_id]
                       * pow(tempk[cell_id + n_cells * ipcla], 4.0)
-                      * agi[cell_id + n_cells * ngg]
-                      * wq[ngg];
+                      * agi[cell_id + n_cells * gg_id]
+                      * wq[gg_id];
 
           iempim[cell_id] += -  16.0 * c_stefan
                                      * cpro_cak[cell_id]
                                      * f_yfol->val[cell_id]
                                      * pow(tempk[cell_id + n_cells * ipcla], 3.0)
-                                     * agi[cell_id + n_cells * ngg]
+                                     * agi[cell_id + n_cells * gg_id]
                                      / cp2fol
-                                     * wq[ngg];
+                                     * wq[gg_id];
 
           iempimh2[cell_id + n_cells * icla]
             += -  16.0  * c_stefan * cpro_cak[cell_id]
                         * pow(tempk[cell_id + n_cells * ipcla], 3.0)
-                        * agi[cell_id + n_cells * ngg]
+                        * agi[cell_id + n_cells * gg_id]
                         / cp2fol
-                        * wq[ngg];
+                        * wq[gg_id];
         }
       }
 
@@ -1678,12 +1734,12 @@ cs_rad_transfer_solve(int               bc_type[],
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       /* Emitted intensity    */
-      ilutot[cell_id]  = ilutot[cell_id] + (cpro_re_st0[cell_id] * wq[ngg]);
+      ilutot[cell_id]  = ilutot[cell_id] + (cpro_re_st0[cell_id] * wq[gg_id]);
 
       /* Flux vector components    */
-      cpro_q[cell_id][0] += iqpar[cell_id][0] * wq[ngg];
-      cpro_q[cell_id][1] += iqpar[cell_id][1] * wq[ngg];
-      cpro_q[cell_id][2] += iqpar[cell_id][2] * wq[ngg];
+      cpro_q[cell_id][0] += iqpar[cell_id][0] * wq[gg_id];
+      cpro_q[cell_id][1] += iqpar[cell_id][1] * wq[gg_id];
+      cpro_q[cell_id][2] += iqpar[cell_id][2] * wq[gg_id];
     }
 
     /* If the ADF model is activated we have to sum
@@ -1691,7 +1747,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
     if (rt_params->imoadf >= 1) {
       for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
-        iqpato[ifac] += f_qinsp->val[ngg + ifac * nwsgg] * wq[ngg];
+        iqpato[ifac] += f_qinsp->val[gg_id + ifac * nwsgg] * wq[gg_id];
     }
 
   } /* end loop on grey gas */
@@ -1723,7 +1779,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   _compute_net_flux(bc_type,
                     coefap,
-                    tparo,
+                    twall,
                     f_qinci->val,
                     f_eps->val,
                     f_fnet->val);
@@ -1746,7 +1802,7 @@ cs_rad_transfer_solve(int               bc_type[],
                                 coefbp,
                                 cofafp,
                                 cofbfp,
-                                tparo,
+                                twall,
                                 f_qinci->val,
                                 f_xlam->val,
                                 f_epa->val,
@@ -1916,9 +1972,9 @@ cs_rad_transfer_solve(int               bc_type[],
     BFT_MALLOC(coefbq, n_b_faces, cs_real_33_t);
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      coefaq[ifac][0] = f_fnet->val[ifac] * surfbo[ifac][0] / b_face_surf[ifac];
-      coefaq[ifac][1] = f_fnet->val[ifac] * surfbo[ifac][1] / b_face_surf[ifac];
-      coefaq[ifac][2] = f_fnet->val[ifac] * surfbo[ifac][2] / b_face_surf[ifac];
+      coefaq[ifac][0] = f_fnet->val[ifac] * b_face_normal[ifac][0] / b_face_surf[ifac];
+      coefaq[ifac][1] = f_fnet->val[ifac] * b_face_normal[ifac][1] / b_face_surf[ifac];
+      coefaq[ifac][2] = f_fnet->val[ifac] * b_face_normal[ifac][2] / b_face_surf[ifac];
     }
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
@@ -2035,7 +2091,7 @@ cs_rad_transfer_solve(int               bc_type[],
   BFT_FREE(iqpato);
   BFT_FREE(viscf);
   BFT_FREE(viscb);
-  BFT_FREE(smbrs);
+  BFT_FREE(rhs);
   BFT_FREE(rovsdt);
   BFT_FREE(tempk);
   BFT_FREE(coefap);
@@ -2046,10 +2102,10 @@ cs_rad_transfer_solve(int               bc_type[],
   BFT_FREE(flurdb);
   BFT_FREE(ckmel);
   BFT_FREE(dcp);
-  BFT_FREE(tparo);
+  BFT_FREE(twall);
   BFT_FREE(kgi);
   BFT_FREE(agi);
-  BFT_FREE(agbi);
+  BFT_FREE(w_gg);
   BFT_FREE(iqpar);
   BFT_FREE(iabgaz);
   BFT_FREE(iabpar);

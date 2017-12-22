@@ -210,14 +210,14 @@ cs_rad_transfer_bcs(int         nvar,
   /* Allocate temporary arrays */
 
   cs_int_t  *isothm, *lstfac;
-  cs_real_t *tempk, *thwall, *text, *tint, *tparo;
+  cs_real_t *tempk, *thwall, *text, *tint, *twall;
   BFT_MALLOC(isothm, n_b_faces, cs_int_t);
   BFT_MALLOC(lstfac, n_b_faces, cs_int_t);
   BFT_MALLOC(tempk, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(thwall, n_b_faces, cs_real_t);
   BFT_MALLOC(text, n_b_faces, cs_real_t);
   BFT_MALLOC(tint, n_b_faces, cs_real_t);
-  BFT_MALLOC(tparo, n_b_faces, cs_real_t);
+  BFT_MALLOC(twall, n_b_faces, cs_real_t);
 
   /* Map field arrays     */
   cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
@@ -258,22 +258,22 @@ cs_rad_transfer_bcs(int         nvar,
     xmtk = 0.0;
 
   /* Wall temperature */
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-    if (   bc_type[ifac] == CS_SMOOTHWALL
-        || bc_type[ifac] == CS_ROUGHWALL)
-      tparo[ifac] = f_b_temp->val[ifac] - xmtk;
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    if (   bc_type[face_id] == CS_SMOOTHWALL
+        || bc_type[face_id] == CS_ROUGHWALL)
+      twall[face_id] = f_b_temp->val[face_id] - xmtk;
     else
-      tparo[ifac] = 0.0;
+      twall[face_id] = 0.0;
   }
 
   /* Default initialization */
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-    isothm[ifac] = -1;
-    f_bxlam->val[ifac] = -cs_math_big_r;
-    f_bepa->val[ifac]  = -cs_math_big_r;
-    f_beps->val[ifac]  = -cs_math_big_r;
-    text[ifac] = -cs_math_big_r;
-    tint[ifac] = -cs_math_big_r;
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    isothm[face_id] = -1;
+    f_bxlam->val[face_id] = -cs_math_big_r;
+    f_bepa->val[face_id]  = -cs_math_big_r;
+    f_beps->val[face_id]  = -cs_math_big_r;
+    text[face_id] = -cs_math_big_r;
+    tint[face_id] = -cs_math_big_r;
   }
 
   /* Index of the thermal variable */
@@ -294,8 +294,8 @@ cs_rad_transfer_bcs(int         nvar,
   cs_field_t *f_bhconv = cs_field_by_name_try("rad_exchange_coefficient");
 
   /* If no restart info is available, then initialization at first pass,
-   * for tparoi and qincid:
-   *   tparoi <= tint
+   * for twall and qincid:
+   *   twall <= tint
    *   qincid <= stephn*tint**4
    * (if qincid is et to zero, there will be a deficit on the luminance
    *  BC at the first time step with DOM). */
@@ -314,9 +314,9 @@ cs_rad_transfer_bcs(int         nvar,
       rad_st_expl[iel] = 0.0;
     }
 
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      f_bhconv->val[ifac] = 0.0;
-      f_bfconv->val[ifac] = 0.0;
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      f_bhconv->val[face_id] = 0.0;
+      f_bfconv->val[face_id] = 0.0;
     }
 
     /*        On utilise TBORD comme auxiliaire pour l'appel a USRAY2
@@ -326,9 +326,9 @@ cs_rad_transfer_bcs(int         nvar,
      *          pour etre sur que QINCID ne sera pas modifie
      *          (puisqu'on a FLUNET libre) */
 
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      thwall[ifac]        = 0.0;
-      f_bfnet->val[ifac]  = 0.0;
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      thwall[face_id]        = 0.0;
+      f_bfnet->val[face_id]  = 0.0;
     }
 
     /* User definitions */
@@ -373,15 +373,15 @@ cs_rad_transfer_bcs(int         nvar,
 
     /* Tparoi en Kelvin et QINCID en W/m2  */
 
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      if (   bc_type[ifac] == CS_SMOOTHWALL
-          || bc_type[ifac] == CS_ROUGHWALL) {
-        tparo[ifac]         = tint[ifac];
-        f_bqinci->val[ifac] = stephn * cs_math_pow4(tint[ifac]);
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (   bc_type[face_id] == CS_SMOOTHWALL
+          || bc_type[face_id] == CS_ROUGHWALL) {
+        twall[face_id]         = tint[face_id];
+        f_bqinci->val[face_id] = stephn * cs_math_pow4(tint[face_id]);
       }
       else {
-        tparo[ifac]         = 0.0;
-        f_bqinci->val[ifac] = 0.0;
+        twall[face_id]         = 0.0;
+        f_bqinci->val[face_id] = 0.0;
       }
     }
 
@@ -393,9 +393,9 @@ cs_rad_transfer_bcs(int         nvar,
      cs_user_radiative_transfer_bcs to make sure qincid is not modified
      (as bfnet is free) */
 
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-    thwall[ifac]       = tparo[ifac];
-    f_bfnet->val[ifac] = f_bqinci->val[ifac];
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    thwall[face_id]       = twall[face_id];
+    f_bfnet->val[face_id] = f_bqinci->val[face_id];
   }
 
   cs_gui_radiative_transfer_bcs(bc_type,
@@ -441,164 +441,164 @@ cs_rad_transfer_bcs(int         nvar,
   {
     /* Error if isothm not defined on wall, or defined on non-wall */
 
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      if (  (   bc_type[ifac] == CS_SMOOTHWALL
-             || bc_type[ifac] == CS_ROUGHWALL)
-          && isothm[ifac] ==  -1) {
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (  (   bc_type[face_id] == CS_SMOOTHWALL
+             || bc_type[face_id] == CS_ROUGHWALL)
+          && isothm[face_id] ==  -1) {
         nrferr[2]++;
-        icoerr[2]    = face_zone_id[ifac];
-        bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+        icoerr[2]    = face_zone_id[face_id];
+        bc_type[face_id] = -CS_ABS(bc_type[face_id]);
       }
-      else if (   bc_type[ifac] != CS_SMOOTHWALL
-               && bc_type[ifac] != CS_ROUGHWALL
-               && isothm[ifac] != -1) {
+      else if (   bc_type[face_id] != CS_SMOOTHWALL
+               && bc_type[face_id] != CS_ROUGHWALL
+               && isothm[face_id] != -1) {
         nrferr[3]++;
-        icoerr[3]    =  face_zone_id[ifac];
-        bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+        icoerr[3]    =  face_zone_id[face_id];
+        bc_type[face_id] = -CS_ABS(bc_type[face_id]);
       }
     }
 
     /* If incorrect physical value given, error */
 
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-      if ( isothm[ifac] == cs_glob_rad_transfer_params->itpimp){
-        if (   f_beps->val[ifac] < 0.0
-            || f_beps->val[ifac] > 1.0
-            || tint[ifac] <= 0.0) {
+      if ( isothm[face_id] == cs_glob_rad_transfer_params->itpimp){
+        if (   f_beps->val[face_id] < 0.0
+            || f_beps->val[face_id] > 1.0
+            || tint[face_id] <= 0.0) {
           nrferr[4]++;
-          icoerr[4]    = face_zone_id[ifac];
-          rvferr[0]    = f_beps->val[ifac];
-          rvferr[1]    = tint[ifac];
-          bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+          icoerr[4]    = face_zone_id[face_id];
+          rvferr[0]    = f_beps->val[face_id];
+          rvferr[1]    = tint[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->ipgrno) {
-        if (   f_beps->val[ifac] < 0.0
-            || f_beps->val[ifac] > 1.0
-            || f_bxlam->val[ifac] <= 0.0
-            || f_bepa->val[ifac] <= 0.0
-            || text[ifac] <= 0.0
-            || tint[ifac] <= 0.0) {
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->ipgrno) {
+        if (   f_beps->val[face_id] < 0.0
+            || f_beps->val[face_id] > 1.0
+            || f_bxlam->val[face_id] <= 0.0
+            || f_bepa->val[face_id] <= 0.0
+            || text[face_id] <= 0.0
+            || tint[face_id] <= 0.0) {
           nrferr[5]++;
-          icoerr[5]    = face_zone_id[ifac];
-          rvferr[2]    = f_beps->val[ifac];
-          rvferr[3]    = f_bxlam->val[ifac];
-          rvferr[4]    = f_bepa->val[ifac];
-          rvferr[5]    = text[ifac];
-          rvferr[6]    = tint[ifac];
-          bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+          icoerr[5]    = face_zone_id[face_id];
+          rvferr[2]    = f_beps->val[face_id];
+          rvferr[3]    = f_bxlam->val[face_id];
+          rvferr[4]    = f_bepa->val[face_id];
+          rvferr[5]    = text[face_id];
+          rvferr[6]    = tint[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->iprefl) {
-        if (   f_bxlam->val[ifac] <= 0.0
-            || f_bepa->val[ifac] <= 0.0
-            || text[ifac] <= 0.0
-            || tint[ifac] <= 0.0) {
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->iprefl) {
+        if (   f_bxlam->val[face_id] <= 0.0
+            || f_bepa->val[face_id] <= 0.0
+            || text[face_id] <= 0.0
+            || tint[face_id] <= 0.0) {
           nrferr[6]++;
-          icoerr[6]    = face_zone_id[ifac];
-          rvferr[7]    = f_bxlam->val[ifac];
-          rvferr[8]    = f_bepa->val[ifac];
-          rvferr[9]    = text[ifac];
-          rvferr[10]   = tint[ifac];
-          bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+          icoerr[6]    = face_zone_id[face_id];
+          rvferr[7]    = f_bxlam->val[face_id];
+          rvferr[8]    = f_bepa->val[face_id];
+          rvferr[9]    = text[face_id];
+          rvferr[10]   = tint[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->ifgrno) {
-        if (   f_beps->val[ifac] < 0.0
-            || f_beps->val[ifac] > 1.0
-            || tint[ifac] <= 0.0) {
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifgrno) {
+        if (   f_beps->val[face_id] < 0.0
+            || f_beps->val[face_id] > 1.0
+            || tint[face_id] <= 0.0) {
           nrferr[7]++;
-          icoerr[7]    = face_zone_id[ifac];
-          rvferr[11]   = f_beps->val[ifac];
-          rvferr[12]   = tint[ifac];
-          bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+          icoerr[7]    = face_zone_id[face_id];
+          rvferr[11]   = f_beps->val[face_id];
+          rvferr[12]   = tint[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->ifrefl) {
-        if (tint[ifac] <= 0.0) {
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifrefl) {
+        if (tint[face_id] <= 0.0) {
           nrferr[8]++;
-          icoerr[8]    = face_zone_id[ifac];
-          rvferr[13]   = tint[ifac];
-          bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+          icoerr[8]    = face_zone_id[face_id];
+          rvferr[13]   = tint[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->itpt1d) {
-        if (   f_beps->val[ifac] < 0.0
-            || f_beps->val[ifac] > 1.0
-            || tint[ifac] <= 0.0) {
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->itpt1d) {
+        if (   f_beps->val[face_id] < 0.0
+            || f_beps->val[face_id] > 1.0
+            || tint[face_id] <= 0.0) {
           nrferr[14]++;
-          icoerr[15]   = face_zone_id[ifac];
-          rvferr[25]   = f_beps->val[ifac];
-          rvferr[26]   = tint[ifac];
-          bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+          icoerr[15]   = face_zone_id[face_id];
+          rvferr[25]   = f_beps->val[face_id];
+          rvferr[26]   = tint[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[ifac] !=  -1) {
+      else if (isothm[face_id] !=  -1) {
         nrferr[9]++;
-        icoerr[9]    = face_zone_id[ifac];
-        icoerr[10]   = isothm[ifac];
-        bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+        icoerr[9]    = face_zone_id[face_id];
+        icoerr[10]   = isothm[face_id];
+        bc_type[face_id] = -CS_ABS(bc_type[face_id]);
       }
     }
 
     /* If value defined for no reason, error */
 
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-      if (isothm[ifac] == cs_glob_rad_transfer_params->itpimp) {
-        if (   f_bxlam->val[ifac] > 0.0
-            || f_bepa->val[ifac] > 0.0
-            || text[ifac] > 0.0) {
+      if (isothm[face_id] == cs_glob_rad_transfer_params->itpimp) {
+        if (   f_bxlam->val[face_id] > 0.0
+            || f_bepa->val[face_id] > 0.0
+            || text[face_id] > 0.0) {
           nrferr[10]++;
-          icoerr[11]   = face_zone_id[ifac];
-          rvferr[14]   = f_bxlam->val[ifac];
-          rvferr[15]   = f_bepa->val[ifac];
-          rvferr[16]   = text[ifac];
-          bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+          icoerr[11]   = face_zone_id[face_id];
+          rvferr[14]   = f_bxlam->val[face_id];
+          rvferr[15]   = f_bepa->val[face_id];
+          rvferr[16]   = text[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->iprefl) {
-        if (f_beps->val[ifac] >= 0.0) {
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->iprefl) {
+        if (f_beps->val[face_id] >= 0.0) {
           nrferr[11]++;
-          icoerr[12]   = face_zone_id[ifac];
-          rvferr[17]   = f_beps->val[ifac];
-          bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+          icoerr[12]   = face_zone_id[face_id];
+          rvferr[17]   = f_beps->val[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->ifgrno) {
-        if (   f_bxlam->val[ifac] > 0.0
-            || f_bepa->val[ifac] > 0.0
-            || text[ifac] > 0.0) {
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifgrno) {
+        if (   f_bxlam->val[face_id] > 0.0
+            || f_bepa->val[face_id] > 0.0
+            || text[face_id] > 0.0) {
           nrferr[12]++;
-          icoerr[13]   = face_zone_id[ifac];
-          rvferr[18]   = f_bxlam->val[ifac];
-          rvferr[19]   = f_bepa->val[ifac];
-          rvferr[20]   = text[ifac];
-          bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+          icoerr[13]   = face_zone_id[face_id];
+          rvferr[18]   = f_bxlam->val[face_id];
+          rvferr[19]   = f_bepa->val[face_id];
+          rvferr[20]   = text[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->ifrefl) {
-        if (   f_beps->val[ifac] >= 0.0
-            || f_bxlam->val[ifac] > 0.0
-            || f_bepa->val[ifac] > 0.0
-            || text[ifac] > 0.0) {
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifrefl) {
+        if (   f_beps->val[face_id] >= 0.0
+            || f_bxlam->val[face_id] > 0.0
+            || f_bepa->val[face_id] > 0.0
+            || text[face_id] > 0.0) {
           nrferr[13]++;
-          icoerr[14]   = face_zone_id[ifac];
-          rvferr[21]   = f_beps->val[ifac];
-          rvferr[22]   = f_bxlam->val[ifac];
-          rvferr[23]   = f_bepa->val[ifac];
-          rvferr[24]   = text[ifac];
-          bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+          icoerr[14]   = face_zone_id[face_id];
+          rvferr[21]   = f_beps->val[face_id];
+          rvferr[22]   = f_bxlam->val[face_id];
+          rvferr[23]   = f_bepa->val[face_id];
+          rvferr[24]   = text[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
@@ -862,49 +862,49 @@ cs_rad_transfer_bcs(int         nvar,
 
   /* Complete user definitions: icodcl and EPS (when zero) */
 
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     int icodw;
-    if (bc_type[ifac] == CS_ROUGHWALL)
+    if (bc_type[face_id] == CS_ROUGHWALL)
       icodw = 6;
     else
       icodw = 5;
 
-    if (isothm[ifac] == cs_glob_rad_transfer_params->itpimp){
-      icodcl[ivart*n_b_faces + ifac]   = icodw;
+    if (isothm[face_id] == cs_glob_rad_transfer_params->itpimp){
+      icodcl[ivart*n_b_faces + face_id]   = icodw;
       if (ivahg >= 0)
-        icodcl[(ivahg - 1)*n_b_faces + ifac] = icodw;
+        icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
     }
 
-    else if (isothm[ifac] == cs_glob_rad_transfer_params->ipgrno){
-      icodcl[ivart*n_b_faces + ifac]   = icodw;
+    else if (isothm[face_id] == cs_glob_rad_transfer_params->ipgrno){
+      icodcl[ivart*n_b_faces + face_id]   = icodw;
       if (ivahg >= 0)
-        icodcl[(ivahg - 1)*n_b_faces + ifac] = icodw;
+        icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
     }
 
-    else if(isothm[ifac] == cs_glob_rad_transfer_params->iprefl){
-      icodcl[ivart*n_b_faces + ifac]   = icodw;
+    else if(isothm[face_id] == cs_glob_rad_transfer_params->iprefl){
+      icodcl[ivart*n_b_faces + face_id]   = icodw;
       if (ivahg >= 0)
-        icodcl[(ivahg - 1)*n_b_faces + ifac] = icodw;
-      f_beps->val[ifac]     = 0.0;
+        icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
+      f_beps->val[face_id]     = 0.0;
     }
 
-    else if(isothm[ifac] == cs_glob_rad_transfer_params->ifgrno){
-      icodcl[ivart*n_b_faces + ifac]   = icodw;
+    else if(isothm[face_id] == cs_glob_rad_transfer_params->ifgrno){
+      icodcl[ivart*n_b_faces + face_id]   = icodw;
       if (ivahg >= 0)
-        icodcl[(ivahg - 1)*n_b_faces + ifac] = icodw;
+        icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
     }
 
-    else if(isothm[ifac] == cs_glob_rad_transfer_params->ifrefl){
-      icodcl[ivart*n_b_faces + ifac]   = 3;
+    else if(isothm[face_id] == cs_glob_rad_transfer_params->ifrefl){
+      icodcl[ivart*n_b_faces + face_id]   = 3;
       if (ivahg >= 0)
-        icodcl[(ivahg - 1)*n_b_faces + ifac] = 3;
-      f_beps->val[ifac]     = 0.0;
+        icodcl[(ivahg - 1)*n_b_faces + face_id] = 3;
+      f_beps->val[face_id]     = 0.0;
     }
 
-    else if(isothm[ifac] == cs_glob_rad_transfer_params->itpt1d){
-      icodcl[ivart*n_b_faces + ifac]   = icodw;
+    else if(isothm[face_id] == cs_glob_rad_transfer_params->itpt1d){
+      icodcl[ivart*n_b_faces + face_id]   = icodw;
       if (ivahg >= 0)
-        icodcl[(ivahg - 1)*n_b_faces + ifac] = icodw;
+        icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
     }
   }
 
@@ -949,22 +949,22 @@ cs_rad_transfer_bcs(int         nvar,
    */
 
   if (ideb == 1) {
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      if (isothm[ifac] !=  -1)
-        f_bfconv->val[ifac] *= tempk[cs_glob_mesh->b_face_cells[ifac]] - tparo[ifac];
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (isothm[face_id] !=  -1)
+        f_bfconv->val[face_id] *= tempk[cs_glob_mesh->b_face_cells[face_id]] - twall[face_id];
     }
   }
 
-  /* The cases where tparoi must be computed first, are at first pass without
-     restart, cases with prescribed temperature tparoi = tint */
+  /* The cases where twall must be computed first, are at first pass without
+     restart, cases with prescribed temperature twall = tint */
 
   if (ideb == 1) {
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      if (   isothm[ifac] == cs_glob_rad_transfer_params->ipgrno
-          || isothm[ifac] == cs_glob_rad_transfer_params->iprefl
-          || isothm[ifac] == cs_glob_rad_transfer_params->ifgrno
-          || isothm[ifac] == cs_glob_rad_transfer_params->itpt1d)
-        isothm[ifac] = cs_glob_rad_transfer_params->itpimp;
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (   isothm[face_id] == cs_glob_rad_transfer_params->ipgrno
+          || isothm[face_id] == cs_glob_rad_transfer_params->iprefl
+          || isothm[face_id] == cs_glob_rad_transfer_params->ifgrno
+          || isothm[face_id] == cs_glob_rad_transfer_params->itpt1d)
+        isothm[face_id] = cs_glob_rad_transfer_params->itpimp;
     }
   }
 
@@ -976,7 +976,7 @@ cs_rad_transfer_bcs(int         nvar,
                               &tmax,
                               &tx,
                               rcodcl,
-                              tparo,
+                              twall,
                               f_bqinci->val,
                               text,
                               tint,
@@ -991,28 +991,28 @@ cs_rad_transfer_bcs(int         nvar,
 
   if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
 
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-      if (   isothm[ifac] == cs_glob_rad_transfer_params->itpimp
-          || isothm[ifac] == cs_glob_rad_transfer_params->ipgrno
-          || isothm[ifac] == cs_glob_rad_transfer_params->ifgrno) {
-        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac] = tparo[ifac] + xmtk;
-        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac] = cs_math_infinite_r;
-        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + ifac] = 0.0;
+      if (   isothm[face_id] == cs_glob_rad_transfer_params->itpimp
+          || isothm[face_id] == cs_glob_rad_transfer_params->ipgrno
+          || isothm[face_id] == cs_glob_rad_transfer_params->ifgrno) {
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id] = twall[face_id] + xmtk;
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id] = cs_math_infinite_r;
+        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + face_id] = 0.0;
       }
 
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->iprefl) {
-        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac]
-          = text[ifac] + xmtk;
-        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac]
-          = f_bxlam->val[ifac] / f_bepa->val[ifac];
-        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + ifac] = 0.0;
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->iprefl) {
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id]
+          = text[face_id] + xmtk;
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
+          = f_bxlam->val[face_id] / f_bepa->val[face_id];
+        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + face_id] = 0.0;
       }
 
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->ifrefl) {
-        icodcl[ivart*n_b_faces + ifac] = 3;
-        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac] = 0.0;
-        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac] = cs_math_infinite_r;
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifrefl) {
+        icodcl[ivart*n_b_faces + face_id] = 3;
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id] = 0.0;
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id] = cs_math_infinite_r;
       }
 
     }
@@ -1021,94 +1021,94 @@ cs_rad_transfer_bcs(int         nvar,
   else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
     /* Read user data;
-     * convert tparoi to enthalpy at boundary, saved in flunet,
+     * convert twall to enthalpy at boundary, saved in flunet,
      * which is used as an auxiliary */
 
     int mode = 0;
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      if (   isothm[ifac] == cs_glob_rad_transfer_params->itpimp
-          || isothm[ifac] == cs_glob_rad_transfer_params->ipgrno
-          || isothm[ifac] == cs_glob_rad_transfer_params->ifgrno)
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (   isothm[face_id] == cs_glob_rad_transfer_params->itpimp
+          || isothm[face_id] == cs_glob_rad_transfer_params->ipgrno
+          || isothm[face_id] == cs_glob_rad_transfer_params->ifgrno)
         mode  =  -1;
     }
 
     if (mode ==  -1) {
       cs_lnum_t nlst = 0;
-      for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-        if (   bc_type[ifac] == CS_SMOOTHWALL
-            || bc_type[ifac] == CS_ROUGHWALL) {
-          lstfac[nlst] = ifac + 1; // for compatibility purpose with b_t_to_h
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+        if (   bc_type[face_id] == CS_SMOOTHWALL
+            || bc_type[face_id] == CS_ROUGHWALL) {
+          lstfac[nlst] = face_id + 1; // for compatibility purpose with b_t_to_h
           nlst++;
         }
       }
-      CS_PROCF(b_t_to_h, B_T_TO_H)(&nlst, lstfac, tparo, f_bfnet->val);
+      CS_PROCF(b_t_to_h, B_T_TO_H)(&nlst, lstfac, twall, f_bfnet->val);
     }
 
     mode = 0;
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      if (isothm[ifac] == cs_glob_rad_transfer_params->iprefl) {
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (isothm[face_id] == cs_glob_rad_transfer_params->iprefl) {
         mode = -1;
       }
     }
 
     if (mode == -1) {
       cs_lnum_t nlst = 0;
-      for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-        if (   bc_type[ifac] == CS_SMOOTHWALL
-            || bc_type[ifac] == CS_ROUGHWALL) {
-          lstfac[nlst] = ifac + 1;// for compatibility purpose with b_t_to_h
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+        if (   bc_type[face_id] == CS_SMOOTHWALL
+            || bc_type[face_id] == CS_ROUGHWALL) {
+          lstfac[nlst] = face_id + 1;// for compatibility purpose with b_t_to_h
           nlst++;
         }
       }
       CS_PROCF(b_t_to_h, B_T_TO_H) (&nlst, lstfac, text, thwall);
     }
 
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      if (   isothm[ifac] == cs_glob_rad_transfer_params->itpimp
-          || isothm[ifac] == cs_glob_rad_transfer_params->ipgrno
-          || isothm[ifac] == cs_glob_rad_transfer_params->ifgrno) {
-        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac]
-          = f_bfnet->val[ifac];
-        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac]
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (   isothm[face_id] == cs_glob_rad_transfer_params->itpimp
+          || isothm[face_id] == cs_glob_rad_transfer_params->ipgrno
+          || isothm[face_id] == cs_glob_rad_transfer_params->ifgrno) {
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id]
+          = f_bfnet->val[face_id];
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = cs_math_infinite_r;
-        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + ifac]
+        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = 0.0;
         if (ivahg >= 0) {
-          rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
-            = f_bfnet->val[ifac];
-          rcodcl[1*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
+            = f_bfnet->val[face_id];
+          rcodcl[1*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
             = cs_math_infinite_r;
-          rcodcl[2*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[2*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
             = 0.0;
         }
       }
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->iprefl) {
-        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac]
-          = thwall[ifac];
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->iprefl) {
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id]
+          = thwall[face_id];
         /* hext  */
-        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac]
-          = f_bxlam->val[ifac] / f_bepa->val[ifac];
-        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + ifac] = 0.0;
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
+          = f_bxlam->val[face_id] / f_bepa->val[face_id];
+        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + face_id] = 0.0;
         if (ivahg >= 0) {
-          rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
-            = thwall[ifac];
-          rcodcl[1*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
-            = f_bxlam->val[ifac] / f_bepa->val[ifac];
-          rcodcl[2*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
+            = thwall[face_id];
+          rcodcl[1*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
+            = f_bxlam->val[face_id] / f_bepa->val[face_id];
+          rcodcl[2*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
             = 0.0;
         }
       }
-      else if (isothm[ifac] == cs_glob_rad_transfer_params->ifrefl) {
-        icodcl[ivart*n_b_faces + ifac] = 3;
-        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac]
+      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifrefl) {
+        icodcl[ivart*n_b_faces + face_id] = 3;
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = 0.0;
-        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac]
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = cs_math_infinite_r;
         if (ivahg >= 0) {
-          icodcl[(ivahg - 1)*n_b_faces + ifac] = 3;
-          rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
+          icodcl[(ivahg - 1)*n_b_faces + face_id] = 3;
+          rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
             = 0.0;
-          rcodcl[1*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[1*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
             = cs_math_infinite_r;
         }
       }
@@ -1116,15 +1116,15 @@ cs_rad_transfer_bcs(int         nvar,
   }
 
   /* Update boundary temperature field   */
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-    if (   bc_type[ifac] == CS_SMOOTHWALL
-        || bc_type[ifac] == CS_ROUGHWALL) {
+    if (   bc_type[face_id] == CS_SMOOTHWALL
+        || bc_type[face_id] == CS_ROUGHWALL) {
 
       if (cs_glob_thermal_model->itpscl == 2)
-        f_b_temp->val[ifac] = tparo[ifac] - tkelvi;
+        f_b_temp->val[face_id] = twall[face_id] - tkelvi;
       else
-        f_b_temp->val[ifac] = tparo[ifac];
+        f_b_temp->val[face_id] = twall[face_id];
 
     }
 
@@ -1137,7 +1137,7 @@ cs_rad_transfer_bcs(int         nvar,
   BFT_FREE(thwall);
   BFT_FREE(text);
   BFT_FREE(tint);
-  BFT_FREE(tparo);
+  BFT_FREE(twall);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1153,44 +1153,45 @@ cs_rad_transfer_bcs(int         nvar,
  *
  *   1/ Gray wall: isotropic radiation field.
  *                                   4
- *                     eps.sig.tparoi         (1-eps).qincid
+ *                     eps.sig.twall         (1-eps).qincid
  *       coefap   =    --------------    +    --------------
  *                           pi                     pi
  *   wall intensity     wall emission           reflecting flux.
  *      (eps=1: black wall; eps=0: reflecting wall)
- *   2/ Free boundary: entering intensity is fixed to zero
- *         coefap   =   0.d0
- *     (if the user has more information, he can do something better)
+ *   2/ Free boundary: condition to mimic infinite domain
  *
  * 2. Boundary conditions for the P-1 model
  * ----------------------------------------
  *
  * \param[in]  bc_type         boundary face types
- * \param[out] coefap, coefbp  boundary conditions for intensity or P-1 model
- *             cofafp, cofbfp
- * \param[in]  tparoi          inside current wall temperature (K)
+ * \param[in]  vect_s          direction vector or NULL
+ * \param[out] coefap          boundary conditions for intensity or P-1 model
+ * \param[out] coefbp          boundary conditions for intensity or P-1 model
+ * \param[out] cofafp          boundary conditions for intensity or P-1 model
+ * \param[out] cofbfp          boundary conditions for intensity or P-1 model
  * \param[in]  ckmel           coeff d'absorption du melange
  *                               gaz-particules de charbon
- * \param[in]  abo             Wnights of the i-th gray gas at boundaries
- * \param[in]  iband           number of the i-th grey gas
+ * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
+ * \param[in]  gg_id           number of the i-th grey gas
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_rad_transfer_bc_coeffs(int        bc_type[],
+                          cs_real_t  vect_s[3],
                           cs_real_t  coefap[],
                           cs_real_t  coefbp[],
                           cs_real_t  cofafp[],
                           cs_real_t  cofbfp[],
-                          cs_real_t  tparoi[],
                           cs_real_t  ckmel[],
-                          cs_real_t  abo[],
-                          int        iband)
+                          cs_real_t  w_gg[],
+                          int        gg_id)
 {
   cs_real_t stephn = cs_physical_constants_stephan;
   cs_real_t onedpi  = 1.0 / cs_math_pi;
 
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  cs_real_3_t *b_face_normal = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
 
   /* Initialization */
 
@@ -1206,10 +1207,18 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
   /* Pointer to the wall emissivity field */
   cs_field_t *f_eps = cs_field_by_name("emissivity");
 
+  /* Wall temperature */
+  cs_field_t *f_tempb = CS_F_(t_b);
+  cs_real_t xptk;
+  if (cs_glob_thermal_model->itpscl == 2)
+    xptk = cs_physical_constants_celsius_to_kelvin;
+  else
+    xptk = 0.0;
+
   /* -> Initialization to a non-admissible value for testing after raycll   */
 
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
-    coefap[ifac] = -cs_math_big_r;
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+    coefap[face_id] = -cs_math_big_r;
 
   /* Boundary conditions for DO model
    * coefap must be filled with the intensity */
@@ -1218,54 +1227,108 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
   if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM) {
 
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
       /* Copy the appropriate flux density to the local variable qpatmp*/
 
       /* Value of the flux density at the boundary face     */
       if (   cs_glob_rad_transfer_params->imoadf >= 1
           || cs_glob_rad_transfer_params->imfsck == 1)
-        qpatmp = f_qinspe->val[ifac * f_qinspe->dim + iband];
+        qpatmp = f_qinspe->val[face_id * f_qinspe->dim + gg_id];
       else
-        qpatmp = f_qincid->val[ifac];
+        qpatmp = f_qincid->val[face_id];
 
       /* Dirichlet Boundary Conditions  */
 
       cs_real_t hint = 0.0;
-      cs_real_t pimp = 0.0;
 
-      /* Symmetry: reflecting boundary conditions (eps=0) */
-      if (bc_type[ifac] == CS_SYMMETRY)
-        pimp  = qpatmp * onedpi;
+      if (vect_s != NULL) {
+        cs_real_3_t normal;
+        cs_math_3_normalise(b_face_normal[face_id], normal);
+        if ((bc_type[face_id] == CS_INLET
+          || bc_type[face_id] == CS_CONVECTIVE_INLET
+          || bc_type[face_id] == CS_OUTLET
+          || bc_type[face_id] == CS_FREE_INLET)
+            && (CS_ABS(cs_math_3_dot_product(vect_s,  normal)) <cs_math_epzero)) {
 
-      /* Inlet/Outlet face: entering intensity fixed to zero
-       * (warning: the treatment is different from than of P-1 model) */
-      else if (   bc_type[ifac] == CS_INLET
-               || bc_type[ifac] == CS_CONVECTIVE_INLET
-               || bc_type[ifac] == CS_OUTLET
-               || bc_type[ifac] == CS_FREE_INLET)
-        pimp  = cs_math_epzero;
+        }
+      }
+      /* Inlet/Outlet face: entering intensity fixed to zero flux
+       * which mimic an infinite extrusion
+       * (warning: the treatment is different from than of P-1 model)
+       * Symmetry: the reflecting boundary conditions (eps=0)
+       * is not feasible (because that would required to couple directions)
+       * So we impose an homogeneous Neumann that model an infinite extrusion */
+      if ( bc_type[face_id] == CS_INLET
+        || bc_type[face_id] == CS_CONVECTIVE_INLET
+        || bc_type[face_id] == CS_OUTLET
+        || bc_type[face_id] == CS_FREE_INLET
+        || bc_type[face_id] == CS_SYMMETRY) {
+
+
+        bool neumann = true;
+
+        /* Entering intensity fixed to zero
+         * if the normal to the face is colinear to the direction
+         * or if coupled to a 1D module (Atmospheric module)
+         * (warning: the treatment is different from than of P-1 model) */
+        if (vect_s != NULL) {
+          cs_real_3_t normal;
+          cs_math_3_normalise(b_face_normal[face_id], normal);
+          if (CS_ABS(cs_math_3_dot_product(vect_s,  normal)) <cs_math_epzero)
+            neumann = false;
+        }
+
+        if (neumann) {
+          cs_real_t qimp  = 0.;
+          hint = 1.;
+
+          cs_boundary_conditions_set_neumann_scalar(&coefap[face_id],
+                                                    &cofafp[face_id],
+                                                    &coefbp[face_id],
+                                                    &cofbfp[face_id],
+                                                    qimp,
+                                                    hint);
+        }
+        else {
+          //TODO imposed value at the top for atmospheric
+          cs_real_t pimp  = 0.;
+
+          cs_boundary_conditions_set_dirichlet_scalar(&coefap[face_id],
+                                                      &cofafp[face_id],
+                                                      &coefbp[face_id],
+                                                      &cofbfp[face_id],
+                                                      pimp,
+                                                      hint,
+                                                      cs_math_infinite_r);
+
+
+        }
+
+      }
 
       /* Wall boundary face: calculated intensity */
-      else if (   bc_type[ifac] == CS_SMOOTHWALL
-               || bc_type[ifac] == CS_ROUGHWALL)
+      else if (   bc_type[face_id] == CS_SMOOTHWALL
+               || bc_type[face_id] == CS_ROUGHWALL) {
+        cs_real_t twall = f_tempb->val[face_id] + xptk;
         /* Remember: In case of the usage of the standard radiation
-           models of code_saturne, abo=1  */
-        pimp =    f_eps->val[ifac] * stephn * cs_math_pow4(tparoi[ifac])
-                * onedpi * abo[ifac + iband * n_b_faces]
-                + (1.0 - f_eps->val[ifac]) * qpatmp * onedpi;
+           models of Code_Saturne, w_gg=1  */
+        cs_real_t pimp = f_eps->val[face_id] * stephn * cs_math_pow4(twall)
+                       * onedpi * w_gg[face_id + gg_id * n_b_faces]
+                       + (1.0 - f_eps->val[face_id]) * qpatmp * onedpi;
 
+        cs_boundary_conditions_set_dirichlet_scalar(&coefap[face_id],
+                                                    &cofafp[face_id],
+                                                    &coefbp[face_id],
+                                                    &cofbfp[face_id],
+                                                    pimp,
+                                                    hint,
+                                                    cs_math_infinite_r);
+
+      }
       /* Error if there are forgotten faces */
       else
-        bc_type[ifac] = -CS_ABS(bc_type[ifac]);
-
-      cs_boundary_conditions_set_dirichlet_scalar(&coefap[ifac],
-                                                  &cofafp[ifac],
-                                                  &coefbp[ifac],
-                                                  &cofbfp[ifac],
-                                                  pimp,
-                                                  hint,
-                                                  cs_math_infinite_r);
+        bc_type[face_id] = -CS_ABS(bc_type[face_id]);
 
     }
 
@@ -1275,52 +1338,53 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
    * coefap and coefbp must be filled */
 
   else if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_P1) {
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      cs_lnum_t iel = cs_glob_mesh->b_face_cells[ifac];
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      cs_lnum_t iel = cs_glob_mesh->b_face_cells[face_id];
 
-      cs_real_t hint = 1.0 / (ckmel[iel] * cs_glob_mesh_quantities->b_dist[ifac]);
+      cs_real_t hint = 1.0 / (ckmel[iel] * cs_glob_mesh_quantities->b_dist[face_id]);
 
       /* Symmetry or reflecting wall (EPS = 0) : zero flux */
-      if (   bc_type[ifac] == CS_SYMMETRY
-          || (   (   bc_type[ifac] == CS_SMOOTHWALL
-                  || bc_type[ifac] == CS_ROUGHWALL)
-              && f_eps->val[ifac] <= 0.0) ) {
-        cs_real_t qimp = 0.0;
-        cs_boundary_conditions_set_neumann_scalar(&coefap[ifac],
-                                                  &cofafp[ifac],
-                                                  &coefbp[ifac],
-                                                  &cofbfp[ifac],
+      if (   bc_type[face_id] == CS_SYMMETRY
+          || (   (   bc_type[face_id] == CS_SMOOTHWALL
+                  || bc_type[face_id] == CS_ROUGHWALL)
+              && f_eps->val[face_id] <= 0.0) ) {
+        cs_real_t qimp = 0.;
+        cs_boundary_conditions_set_neumann_scalar(&coefap[face_id],
+                                                  &cofafp[face_id],
+                                                  &coefbp[face_id],
+                                                  &cofbfp[face_id],
                                                   qimp,
                                                   hint);
       }
 
       /* Inlet/Outlet faces: zero flux
        * (warning: the treatment is different from than of DO model) */
-      else if (   bc_type[ifac] == CS_INLET
-               || bc_type[ifac] == CS_CONVECTIVE_INLET
-               || bc_type[ifac] == CS_OUTLET
-               || bc_type[ifac] == CS_FREE_INLET) {
-        cs_real_t qimp = 0.0;
-        cs_boundary_conditions_set_neumann_scalar(&coefap[ifac],
-                                                  &cofafp[ifac],
-                                                  &coefbp[ifac],
-                                                  &cofbfp[ifac],
+      else if (   bc_type[face_id] == CS_INLET
+               || bc_type[face_id] == CS_CONVECTIVE_INLET
+               || bc_type[face_id] == CS_OUTLET
+               || bc_type[face_id] == CS_FREE_INLET) {
+        cs_real_t qimp = 0.;
+        cs_boundary_conditions_set_neumann_scalar(&coefap[face_id],
+                                                  &cofafp[face_id],
+                                                  &coefbp[face_id],
+                                                  &cofbfp[face_id],
                                                   qimp,
                                                   hint);
       }
 
       /*  Wall boundary faces */
-      else if (   bc_type[ifac] == CS_SMOOTHWALL
-               || bc_type[ifac] == CS_ROUGHWALL) {
-        cs_real_t distbf  = cs_glob_mesh_quantities->b_dist[ifac];
+      else if (   bc_type[face_id] == CS_SMOOTHWALL
+               || bc_type[face_id] == CS_ROUGHWALL) {
+        cs_real_t twall = f_tempb->val[face_id] + xptk;
+        cs_real_t distbf  = cs_glob_mesh_quantities->b_dist[face_id];
         cs_real_t xit = 1.5 * distbf * ckmel[iel]
-                            * (2.0 / (2.0 - f_eps->val[ifac]) - 1.0);
+                            * (2.0 / (2.0 - f_eps->val[face_id]) - 1.0);
         cs_real_t cfl = 1.0 / xit;
-        cs_real_t pimp = cs_math_pow4(tparoi[ifac]) * abo[ifac + iband * n_b_faces];
-        cs_boundary_conditions_set_convective_outlet_scalar(&coefap[ifac],
-                                                            &cofafp[ifac],
-                                                            &coefbp[ifac],
-                                                            &cofbfp[ifac],
+        cs_real_t pimp = cs_math_pow4(twall) * w_gg[face_id + gg_id * n_b_faces];
+        cs_boundary_conditions_set_convective_outlet_scalar(&coefap[face_id],
+                                                            &cofafp[face_id],
+                                                            &coefbp[face_id],
+                                                            &cofbfp[face_id],
                                                             pimp,
                                                             cfl,
                                                             hint);
@@ -1329,7 +1393,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
       /* 2.4 - Stop if there are forgotten faces
        *       ---------------------------------  */
       else
-        bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+        bc_type[face_id] = -CS_ABS(bc_type[face_id]);
     }
   }
 
@@ -1337,13 +1401,13 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
   /* --> Check luminance boundary conditions arrays
    *     In the case of the P-1 approximation, the value of coefap can be
-   *     large (of the order of tparoi**4), hence the value of coefmn */
+   *     large (of the order of twall**4), hence the value of coefmn */
 
   cs_real_t xlimit = -cs_math_big_r * 0.1;
 
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-    if (coefap[ifac] <= xlimit)
-      bc_type[ifac] = -CS_ABS(bc_type[ifac]);
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    if (coefap[face_id] <= xlimit)
+      bc_type[face_id] = -CS_ABS(bc_type[face_id]);
   }
 
   cs_boundary_conditions_error(bc_type, "Luminance BC values");

@@ -1080,6 +1080,7 @@ do while (iterns.le.nterup)
   endif
 
 
+  !Radiative transfer: add contribution to enrgy BCs.
   if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
 
      call cs_rad_transfer_bcs(nvar, itypfb, icodcl,             &

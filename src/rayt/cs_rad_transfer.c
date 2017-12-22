@@ -148,8 +148,8 @@ BEGIN_C_DECLS
         Useful if and only if the radiation module is activated with the DOM method.
   \var  cs_rad_transfer_params_t::ndirs
         For the Tn quadrature, \ref ndirec squared
-  \var  cs_rad_transfer_params_t::sxyz
-        Directions of angular values of the quadrature sx, sy, sz.
+  \var  cs_rad_transfer_params_t::vect_s
+        Direction vectors of angular values of the quadrature sx, sy, sz.
   \var  cs_rad_transfer_params_t::angsol
         Weight of the solid angle.
   \var  cs_rad_transfer_params_t::restart
@@ -232,7 +232,7 @@ cs_rad_transfer_params_t _rt_params = {.type = CS_RAD_TRANSFER_NONE,
                                        .i_quadrature = 0,
                                        .ndirec = 0,
                                        .ndirs = 0,
-                                       .sxyz = NULL,
+                                       .vect_s = NULL,
                                        .angsol = NULL,
                                        .restart = 0,
                                        .nfreqr = 0,
@@ -292,7 +292,7 @@ cs_rad_transfer_get_pointers(int  **p_iirayo,
 void
 cs_rad_transfer_finalize(void)
 {
-  BFT_FREE(_rt_params.sxyz);
+  BFT_FREE(_rt_params.vect_s);
   BFT_FREE(_rt_params.angsol);
   BFT_FREE(_rt_params.wq);
 }

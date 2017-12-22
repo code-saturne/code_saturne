@@ -117,39 +117,39 @@ cs_rad_transfer_bcs(int         nvar,
  *
  *   1/ Gray wall: isotropic radiation field.
  *                                   4
- *                     eps.sig.tparoi         (1-eps).qincid
+ *                     eps.sig.twall         (1-eps).qincid
  *       coefap   =    --------------    +    --------------
  *                           pi                     pi
  *   wall intensity     wall emission           reflecting flux.
  *      (eps=1: black wall; eps=0: reflecting wall)
- *   2/ Free boundary: entering intensity is fixed to zero
- *         coefap   =   0.d0
- *     (if the user has more information, he can do something better)
+ *   2/ Free boundary: condition to mimic infinite domain
  *
  * 2. Boundary conditions for the P-1 model
  * ----------------------------------------
  *
  * \param[in]  bc_type         boundary face types
- * \param[out] coefap, coefbp  boundary conditions for intensity or P-1 model
- *             cofafp, cofbfp
- * \param[in]  tparoi          inside current wall temperature (K)
+ * \param[in]  vect_s          direction vector or NULL
+ * \param[out] coefap          boundary conditions for intensity or P-1 model
+ * \param[out] coefbp          boundary conditions for intensity or P-1 model
+ * \param[out] cofafp          boundary conditions for intensity or P-1 model
+ * \param[out] cofbfp          boundary conditions for intensity or P-1 model
  * \param[in]  ckmel           coeff d'absorption du melange
  *                               gaz-particules de charbon
- * \param[in]  abo             Wnights of the i-th gray gas at boundaries
- * \param[in]  iband           number of the i-th grey gas
+ * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
+ * \param[in]  gg_id           number of the i-th grey gas
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_rad_transfer_bc_coeffs(int        bc_type[],
+                          cs_real_t  vect_s[3],
                           cs_real_t  coefap[],
                           cs_real_t  coefbp[],
                           cs_real_t  cofafp[],
                           cs_real_t  cofbfp[],
-                          cs_real_t  tparoi[],
                           cs_real_t  ckmel[],
-                          cs_real_t  abo[],
-                          int        iband);
+                          cs_real_t  w_gg[],
+                          int        gg_id);
 
 /*----------------------------------------------------------------------------*/
 

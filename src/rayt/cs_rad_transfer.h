@@ -96,7 +96,7 @@ typedef struct {
   int           i_quadrature;
   int           ndirec;
   int           ndirs;
-  cs_real_3_t  *sxyz;
+  cs_real_3_t  *vect_s;
   cs_real_t    *angsol;
   int           restart;
   int           nfreqr;

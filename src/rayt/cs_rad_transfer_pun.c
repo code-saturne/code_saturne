@@ -54,6 +54,7 @@
 #include "cs_mesh.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
+#include "cs_physical_constants.h"
 #include "cs_thermal_model.h"
 #include "cs_prototypes.h"
 #include "cs_face_viscosity.h"
@@ -150,7 +151,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                     const cs_real_t  abo[],
                     int              iband)
 {
-  cs_real_t    stephn = 5.6703e-8;
+  cs_real_t stephn = cs_physical_constants_stephan;
 
   /* Pointer to the spectral flux density field */
   cs_field_t *f_qinspe = NULL;
