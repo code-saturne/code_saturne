@@ -676,10 +676,6 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
 
           }
 
-            cs_field_t *f_ck_u = cs_field_by_name("rad_absorption_coeff_up");
-            cs_field_t *f_ck_d = cs_field_by_name("rad_absorption_coeff_down");
-            const cs_real_t *ck_u = f_ck_u->val;
-            const cs_real_t *ck_d = f_ck_d->val;
           if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
                                     vect_s) < 0.0 && f_up != NULL) {
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -687,23 +683,10 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
           }
           else if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
                                          vect_s) > 0.0 && f_down != NULL) {
-            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
               f_down->val[cell_id] += radiance[cell_id] * domegat * vect_s[2];
-#if 0
-              bft_printf("L[%d,%d, %d, %d] = %f, Omega=%f, Sz=%f, vol=%f,rovsdt=%f, cku%g, ckd%g\n",
-                  cell_id,ii, jj, kk, radiance[cell_id], domegat, vect_s[2],
-                  cell_vol[cell_id],
-                  rovsdt[cell_id],
-                  ck_u[cell_id] ,
-                  ck_d[cell_id] );
-              bft_printf("f_down[%d] = %f\n",
-                  cell_id, f_down->val[cell_id]);
-#endif
-            }
           }
-
         }
-
       }
     }
   }
