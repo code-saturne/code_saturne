@@ -345,7 +345,7 @@ cs_user_rad_transfer_net_flux(const int        bc_type[],
                               cs_real_t        net_flux[])
 {
   /*< [loc_var_dec_2]*/
-  cs_real_t  stephn = 5.6703e-8;
+  const cs_real_t stephn = cs_physical_constants_stephan;
   /*< [loc_var_dec_2]*/
 
   /*< [init]*/
