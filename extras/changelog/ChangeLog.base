@@ -1,3 +1,3133 @@
+2017-12-20 15:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10814] NEWS, po/fr.po: Prepare tag of 5.0.5.
+
+2017-12-20 15:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10813] ., NEWS, gui/Pages/FluidStructureInteractionView.py:
+	  Merge rev. 10809 from trunk (GUI fix for FSI page using PyQt5).
+
+2017-12-08 18:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10778] ., NEWS, src/base/cs_syr4_coupling.c: Merge rev. 10769
+	  from trunk (fix interlock in Syrthes combined surface/volume
+	  coupling).
+
+2017-12-07 10:23  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10767] NEWS, src/turb/resssg2.f90: Merge rev . 10765 from trunk
+	  (fix in EBRSM and irijco=1).
+
+2017-11-28 17:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10746] ., NEWS, src/base/cs_post.c, src/fvm/fvm_writer.c,
+	  src/fvm/fvm_writer.h: Merge rev. 10744 from trunk (discard
+	  separate_meshes writer option for groups output).
+
+2017-11-24 13:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10739] ., NEWS, src/base/cs_selector.c: Merge rev. 10736 from
+	  trunk (fix issue #246).
+
+2017-11-23 11:37  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10732] src/rayt/cs_rad_transfer_fsck.c: Merge rev. 10731 from
+	  trunk (fix absorption coef. computation for model FSCK).
+
+2017-11-21 10:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10722] ., NEWS, src/lagr/cs_lagr_gradients.c: Merge rev. 10717
+	  from trunk (fix pressure gradient in some Lagrangian cases).
+
+2017-11-08 22:03  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10711] NEWS, src/base/cs_flag_check.c, src/base/typecl.f90:
+	  Merge rev. 10709 from trunk (BC errors post-processing).
+
+2017-11-06 16:24  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10698] NEWS, src/base/cs_rotation.h: Merge rev. 10696 from
+	  trunk (turbomachinery module).
+
+2017-10-31 15:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10685] ., NEWS,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.py:
+	  Merge rev. 10683 from trunk (Salome_CFD launch where CS_ROOT_DIR
+	  is not defined).
+
+2017-10-31 14:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10682] ., NEWS, bin/cs_compile.py, bin/cs_config.py.in: Merge
+	  rev. 10679 from trunk (fix for movable builds linking with
+	  Catalyst).
+
+2017-10-30 11:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10675] ., NEWS, src/gui/cs_gui_boundary_conditions.c: Merge
+	  rev. 10672 from trunk (GUI reader fix for exchange coefficient
+	  BCs).
+
+2017-10-28 01:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10670] ., NEWS, install_saturne.py: Merge rev. 10665 from trunk
+	  (fix for installer).
+
+2017-10-27 11:58  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10661] src/alge/cs_convection_diffusion.c: Merge rev. 10660
+	  from trunk (fix in upwind gradient).
+
+2017-10-20 14:03  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10657] src/rayt/cs_rad_transfer_solve.c: Merge rev. 10645,
+	  10648, 10656 from trunk (weights allocation in rad. transfer).
+
+2017-10-06 13:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10624] ., NEWS, src/rayt/cs_rad_transfer_fsck.c: Merge rev.
+	  10623 from trunk (fix in radiative FSCK model).
+
+2017-10-04 12:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10618] ., NEWS, bin/cs_case_domain.py: Merge rev. 10616 from
+	  trunk (fix "code_saturne submit" with mesh import only).
+
+2017-10-04 12:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10617] ., NEWS, salome/cfd_study/idl/Makefile.am,
+	  salome/fsi_coupling/idl/Makefile.am: Merge rev. 10615 from trunk
+	  (Salome_CFD build robustness fix).
+
+2017-10-02 17:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10606] ., install_saturne.py: Merge rev. 10605 from trunk
+	  (update Scotch download path in installer).
+
+2017-09-28 16:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10597] ., NEWS, src/alge/cs_balance_by_zone.c: Merge rev. 10596
+	  from trunk (fix isue #243).
+
+2017-09-20 22:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10574] ., NEWS, src/turb/resssg2.f90: Merge rev. 10573 from
+	  trunk (fix for EBRSM with irijco=1 in some cases).
+
+2017-09-06 10:21  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10553] NEWS,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py:
+	  Merge rev. 10552 from trunk (fix in Salome_CFD).
+
+2017-09-04 15:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10551] .,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_en.ts,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_fr.ts,
+	  salome/cfd_study/src/CFDSTUDYGUI/SetTreeLocationDialog.ui: Merge
+	  rev. 10550 from trunk (fix Salome_CFD French translation issue).
+
+2017-09-04 15:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10549] ., NEWS, gui/Pages/OutputControlForm.ui,
+	  gui/Pages/OutputControlModel.py, gui/Pages/OutputControlView.py:
+	  Merge rev. 10544 from trunk (allow handling of separate_meshes
+	  writer option by GUI.)
+
+2017-09-04 12:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10548] ., NEWS, gui/trackcvg/MainView.py: Merge rev. 10545 from
+	  trunk (fix launch of convergence tracking tool with Qt5).
+
+2017-09-04 12:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10547] ., NEWS, src/ctwr/cs_ctwr.c: Merge rev. 10541 from trunk
+	  (fix for issue #239).
+
+2017-09-04 12:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10546] ., NEWS, po/fr.po, preprocessor/pre-post/ecs_pre_cgns.c:
+	  "Merge rev. 10540 from trunk (fix for CGNS import with
+	  vertex-based BCs and groups by section."
+
+2017-08-31 15:43  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10539] NEWS, salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.py:
+	  Merge rev. 10538 from trunk (Salome_CFD: symbolic link files bug
+	  fixed.)
+
+2017-08-24 16:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10530] NEWS: Prepare tag of 5.0.4.
+
+2017-08-24 16:13  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10529] ., NEWS,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_en.ts,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_fr.ts: Merge rev.
+	  10526 from trunk (more Salome_CFD fixes).
+
+2017-08-24 14:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10527] .,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py: Merge
+	  rev. 10526 from trunk (CFD_Study minor fix).
+
+2017-08-23 16:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10525] .,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_en.ts,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_fr.ts: Merge rev.
+	  10524 from trunk (Salome_CFD, add .syr files in object browser).
+
+2017-08-22 11:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10517] ., salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_images.ts,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_en.ts,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_fr.ts: Merge rev.
+	  10516 from trunk (CFD_Study addition and fix).
+
+2017-08-21 16:39  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10509] NEWS, bin/studymanager/cs_studymanager_study.py: Merge
+	  rev. 10507 from trunk (Fix broken path in update feature of
+	  smgr).
+
+2017-08-21 16:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10505] ., NEWS, src/base/distyp.f90: Merge rev. 10503 from
+	  trunk (fix for possible wall distance error on 2D meshes).
+
+2017-08-21 15:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10502] .,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py: Merge
+	  rev. 501 from trunk (CFD_Study object browser now handles .py
+	  files in DATA).
+
+2017-08-21 12:06  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10500] NEWS, src/base/predvv.f90: Merge rev. 10498 from trunk
+	  (Fix bug in the implicit part of the user momentum source terms
+	  when this matrix is not symmetric).
+
+2017-08-21 12:04  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10499] NEWS, src/base/clptrg.f90: Merge rev. 10494 from trunk
+	  (bug with rough wall function and DRSM model and iwallf != 2).
+
+2017-08-21 09:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10493] ., NEWS, src/base/cs_boundary_zone.c: Merge rev. 10487
+	  from trunk (fix spurious extra boundary zone in log for radiation
+	  module).
+
+2017-08-21 09:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10492] ., gui/Pages/ReferenceValuesView.py: Merge rev. 10485
+	  from trunk (GUI, hide reference length when unused).
+
+2017-08-21 09:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10491] ., gui/Base/QtPage.py: Merge rev. 10484 from trunk
+	  (avoid GUI crashes when entering flags with different locales
+	  with Qt5).
+
+2017-08-21 09:37  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10490] .,
+	  examples/3-stratified_junction/case1/cs_user_postprocess.c: Merge
+	  rev. 10483 from trunk (fix for field output name in tutorial).
+
+2017-08-21 09:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10489] ., NEWS, src/alge/cs_matrix_assembler.c: Merge rev.
+	  10481 from trunk (fix for matrix assembler with no local rows).
+
+2017-08-17 14:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10476] ., NEWS, src/fvm/fvm_to_catalyst.cxx: Merge rev. 10475
+	  from trunk (fix Catalyst crash for tensor element data).
+
+2017-08-17 12:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10474] ., NEWS, src/base/cs_post.c: Merge rev. 10473 from trunk
+	  (fix volume zone id name in postprocessing output).
+
+2017-08-17 09:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10470] ., src/base/cscpfb.f90: Merge rev. 10469 from trunk
+	  (update code-code coupling for coupled RSM).
+
+2017-08-16 13:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10468] ., NEWS, src/base/cs_post.c: Merge rev. 10467 from trunk
+	  (fix for quality criteria with Lagrangian module).
+
+2017-08-15 19:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10462] NEWS, src/gui/cs_gui_particles.c: GUI/Lagrangian module
+	  fix for reading of inlet particle prescribed velocity.
+
+2017-08-11 13:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10460] ., NEWS, bin/cs_case.py, bin/cs_config.py.in: Merge rev.
+	  10459 from trunk (improve Catalyst handling for better automation
+	  with SALOME).
+
+2017-08-10 17:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10457] ., src/alge/cs_divergence.c: Merge rev. 10439 from trunk
+	  (fix for incorrect array usage from rev. 10431).
+
+2017-08-10 17:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10456]
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  src/gui/cs_gui_boundary_conditions.c, src/gui/cs_gui_output.c:
+	  Minor style fixes.
+
+2017-08-10 17:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10455] NEWS, src/gui/cs_gui.c: Merge rev. 10449 from trunk
+	  (fixes for irijco=1 with GUI).
+
+2017-08-10 15:11  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10447] ., NEWS, po/fr.po, src/base/cs_parameters_check.c,
+	  src/base/verini.f90: Merge rev. 10446 from trunk (fix spurious
+	  warning messages in LES).
+
+2017-08-07 16:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10438] ., NEWS, src/lagr/cs_lagr_car.c: Merge rev. 10437 from
+	  trunk (Lagrangian characteristic time fix for temperature).
+
+2017-08-07 16:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10436] ., NEWS, src/base/cs_restart_default.c: Merge rev. 10436
+	  from trunk (fix issue #236, crash on restart with periodicity).
+
+2017-08-07 13:20  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10433] NEWS, src/alge/cs_divergence.c,
+	  src/alge/cs_divergence.h, src/base/clptrg.f90,
+	  src/base/clptur.f90, src/base/clsyvt.f90, src/base/cs_math.h,
+	  src/base/predvv.f90: Merge rev. 10431 and 10432 from trunk (fix
+	  in irjico=1, for the sake of safety, only when irijco=1 the new
+	  brick is called).
+
+2017-08-04 17:29  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10427] NEWS, bin/cs_create.py: Merge rev. 10426 from trunk
+	  (Ensure cases basenames are used in coupling script).
+
+2017-08-04 12:26  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10424] NEWS, src/base/driflu.f90: Merge rev. 10423 from trunk
+	  (fix turbophoresis drift flux for irijco=1).
+
+2017-08-04 10:04  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10422] NEWS, src/atmo/atimbr.f90: Merge rev. 10421 from trunk
+	  (Fix bounds in imbrication in atmo. module).
+
+2017-07-26 17:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10413] ., NEWS, src/turb/resrit.f90: Merge rev. 10409 from
+	  trunk (fix resrit for cases with rijco=1).
+
+2017-07-26 17:37  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10412] ., src/base/cs_restart_default.c: Merge rev. 10408 from
+	  trunk (fix incorrect argument for restart when reading RSM BC
+	  coefficients).
+
+2017-07-26 17:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10411] ., NEWS, src/lagr/cs_lagr.c, src/lagr/cs_lagr.h,
+	  src/lagr/cs_lagr_car.c, src/lagr/cs_lagr_new.c,
+	  src/lagr/cs_lagr_sde.c, src/lagr/cs_lagr_sde_model.c,
+	  src/turb/resrij2.f90, src/turb/resssg2.f90, src/turb/turrij.f90:
+	  Merge rev. 10407 from trunk (Lagrangian module return coupling
+	  fixes for irijco=1).
+
+2017-07-26 17:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10410] ., NEWS, gui/Pages/SolutionDomainView.py: Merge rev.
+	  10399 from trunk (GUI Qt5 compatibility fix for mesh name
+	  filter).
+
+2017-07-24 11:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10404] ., NEWS, src/base/cs_math.c: Merge rev. 10403 from trunk
+	  (fix extra pointer indirection in local eigenvalue computation).
+
+2017-07-21 07:22  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10398] NEWS, src/base/covofi.f90: Merge rev 10397 from trunk
+	  (fix bug in double backward Euler for scalars).
+
+2017-07-20 16:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10396] .,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_SolverGUI.py: Merge
+	  rev. 10395 from trunk (Salome_CFD file save now suggests default
+	  setup.xml name).
+
+2017-07-19 16:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10385] .,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_SolverGUI.py: Merge
+	  rev. 10384 from trunk (Salome_CFD fix for Filesave).
+
+2017-07-19 16:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10383] ., salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py:
+	  Merge rev. 10381 from trunk (Salome_CFD remove action addition
+	  for RESU_COUPLING directory).
+
+2017-07-19 16:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10382] .,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_en.ts,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_fr.ts: Merge rev.
+	  10380 from trunk (Salome_CFD bug fix for remove action on RESU
+	  sub directory).
+
+2017-07-13 01:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10372] ., NEWS, src/alge/cs_matrix.c: Merge rev. 10370 from
+	  trunk (fix coefficient assigment for MSR matrix with non-direct
+	  assembly).
+
+2017-07-13 00:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10371] ., NEWS, src/alge/cs_matrix_default.c: Merge rev. 10369
+	  from trunk (fix matrix type mismatch is some forced type cases).
+
+2017-07-11 12:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10368] .,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py: Merge
+	  rev. 10366 from trunk (Salome_CFD, update runcase when loading
+	  study).
+
+2017-07-11 12:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10367] ., NEWS,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_CommandMgr.py: Merge
+	  rev. 10365 from trunk (Salome_CFD working directory-related
+	  fixes).
+
+2017-07-11 11:25  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10364] NEWS, docs/theory/graphics/Makefile.am: Merge rev. 10632
+	  from trunk (Fix missing file in theory graphics Makefile).
+
+2017-07-06 16:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10350] .,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_en.ts,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_fr.ts: Merge rev.
+	  10349 from trunk (Salome_CFD, add update case path menu).
+
+2017-07-05 17:37  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10348] .,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py: Merge
+	  rev. 10347 from trunk (Salome_CFD, add open syd_SYRTHES
+	  interface).
+
+2017-06-29 13:56  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10344] NEWS: Prepare tag of 5.0.3.
+
+2017-06-28 13:49  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10339] NEWS, src/turb/clprij.f90, src/turb/resssg2.f90: Fix
+	  rev. 10321 (complete merge of rev. 10304 from trunk).
+
+2017-06-26 16:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10333] ., src/fvm/fvm_triangulate.c,
+	  src/mesh/cs_mesh_warping.c: Merge rev. 10332 from trunk (fix for
+	  parallel warped face triangulation).
+
+2017-06-26 13:04  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10330] ., NEWS, libple/po/fr.po, po/fr.po,
+	  src/fvm/fvm_triangulate.c, src/fvm/fvm_triangulate.h: Merge rev.
+	  10329 from trunk (fix for warped polygonal faces triangulation).
+
+2017-06-23 15:02  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10326] NEWS: Prepare tag of 5.0.2.
+
+2017-06-23 14:40  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10323] NEWS: Complete NEWS file.
+
+2017-06-23 14:40  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10322] NEWS, src/turb/turbke.f90: Merge rev. 10312 and 10320
+	  from trunk (reinit_turb for Bl-v2-k model).
+
+2017-06-23 14:40  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10321] src/base/cs_c_bindings.f90, src/base/cs_math.c,
+	  src/base/cs_math.h: Merge rev. 10304, 10305, 10319 from trunk
+	  (symplify and improve robustness of eigen values comput. for sym.
+	  tensors).
+
+2017-06-22 07:40  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10313] NEWS, gui/Pages/InitializationModel.py: Merge rev. 10311
+	  from trunk (Example of turbulence init for Bl-v2/k).
+
+2017-06-20 14:36  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10309] NEWS, gui/Pages/TimeAveragesView.py: Merge rev. 10308
+	  from trunk (fix for time averages in GUI with start time).
+
+2017-06-20 11:15  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10307] NEWS, src/user_examples/cs_user_1d_wall_thermal.c: Merge
+	  rev. 10306 from trunk (fix user example for wall 1d thermal
+	  model).
+
+2017-06-14 16:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10301] ., NEWS, po/fr.po, src/base/clptrg.f90,
+	  src/base/clptur.f90, src/base/clsyvt.f90,
+	  src/base/cs_equation_iterative_solve.c: Merge revs. 10284 and
+	  10285 from trunk (fixes for coupled RSM model).
+
+2017-06-13 15:53  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10299] NEWS, src/gui/cs_gui_boundary_conditions.c: Merge rev.
+	  10291 from trunk (fix imposed pressure outlet in the GUI.)
+
+2017-06-13 15:51  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10298] NEWS, libple/po/fr.po, src/base/tridim.f90: Merge rev.
+	  10291 from trunk (iphydr+head losses+ parallel).
+
+2017-06-11 13:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10293] ., NEWS, gui/Pages/TurbulenceModel.py: Merge rev. 10292
+	  from trunk (GUI fix for advanced turbulence model options
+	  access).
+
+2017-06-09 17:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10283] NEWS, tests/cs_blas_test.c: Revert merge of rev. 10199
+	  from trunk (broke compilation of BLAS check).
+
+2017-06-09 16:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10282] ., NEWS, src/lagr/cs_lagr_post.c: Merge rev. 10281 from
+	  trunk (fix Lagrangian boundary statistics postprocessing issue).
+
+2017-06-07 08:35  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10276] NEWS, src/alge/cs_convection_diffusion.c,
+	  src/base/diffst.f90: Merge rev. 10274 from trunk (fix for
+	  idilat>3 algo. and isstpp>1 compatibility).
+
+2017-06-06 09:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10271] ., install_saturne.py: Merge rev. 10269 from trunk
+	  (update installer).
+
+2017-06-06 09:04  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10270] ., NEWS, po/fr.po, src/fvm/fvm_hilbert.c,
+	  src/fvm/fvm_morton.c: Merge rev. 10268 from trunk (fix SFC
+	  partitioning in some cases).
+
+2017-06-02 10:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10265] ., NEWS, bin/cs_case.py, bin/cs_config.py.in,
+	  bin/cs_exec_environment.py: Merge rev. 10264 from trunk (fix for
+	  Catalyst in Salome environment).
+
+2017-06-01 09:45  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10263] ., NEWS, src/base/cs_post.c, src/gui/cs_gui.c: Merge
+	  rev. 10260 from trunk (fix issues for transient mesh
+	  visualization).
+
+2017-06-01 09:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10262] ., src/fvm/fvm_to_med.c: Merge rev. 10259 from trunk
+	  (possible fix for parallel MED output).
+
+2017-05-31 15:37  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r10258] src/cdo/cs_cdo_connect.c, src/cdo/cs_cdo_diffusion.c,
+	  src/cdo/cs_cdovb_scaleq.c, src/cdo/cs_equation.c,
+	  src/cdo/cs_gwf.c: Merge rev. 10253 from trunk (CDO) Several bug
+	  fixes
+	  
+	  - Fix for computing the Darcian flux - Fix after renaming in
+	  cs_equation_param_t
+
+2017-05-31 15:37  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r10257] src/cdo/cs_cdo_main.c, src/cdo/cs_cdovb_scaleq.c,
+	  src/cdo/cs_cdovcb_scaleq.c, src/cdo/cs_equation_param.h,
+	  src/cdo/cs_gwf.c, src/mesh/cs_mesh_warping.c,
+	  tests/cs_matrix_test.c: Merge rev. 10252 from trunk: Minor (fix
+	  typos, update comments)
+
+2017-05-31 15:37  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r10256] src/cdo/cs_cdo_local.c: Merge rev. 10251 from trunk
+	  (CDO) Preparation for CDO-FB schemes integration
+
+2017-05-31 15:37  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r10255] src/cdo/cs_cdo.h, src/cdo/cs_cdo_connect.c,
+	  src/cdo/cs_cdo_connect.h, src/cdo/cs_cdo_main.c,
+	  src/cdo/cs_domain.c, src/cdo/cs_domain.h, src/cdo/cs_equation.c,
+	  src/cdo/cs_equation.h, src/cdo/cs_equation_param.c,
+	  src/cdo/cs_equation_param.h: Merge rev. 10250 from trunk (CDO)
+	  Add a scheme flag to select which connectivity to build
+
+2017-05-31 15:37  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r10254] src/cdo/cs_advection_field.c,
+	  src/cdo/cs_advection_field.h, src/cdo/cs_cdo_diffusion.c,
+	  src/cdo/cs_cdo_diffusion.h, src/cdo/cs_cdofb_scaleq.c,
+	  src/cdo/cs_cdovb_scaleq.c, src/cdo/cs_cdovb_scaleq.h,
+	  src/cdo/cs_cdovcb_scaleq.c, src/cdo/cs_cdovcb_scaleq.h,
+	  src/cdo/cs_domain.c, src/cdo/cs_domain.h,
+	  src/cdo/cs_domain_post.c, src/cdo/cs_equation.c,
+	  src/cdo/cs_equation.h, src/cdo/cs_gwf.c, src/cdo/cs_gwf.h,
+	  src/user_examples/cs_user_cdo-groundwater.c: Merge rev. 10030
+	  from trunk (CDO) Several updates in the GWF module
+	  
+	  * Modify the way the diffusive flux is generated from a potential
+	  field * Add the possibility to choose where the darcian flux is
+	  computed * Add the possibility to choose a CDO-VCB scheme for the
+	  Richards eq. * Add new options to GWF module (gravity, flux
+	  location)
+
+2017-05-31 08:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10249] ., NEWS, src/fvm/fvm_writer.c: Merge rev. 10248 from
+	  trunk (fix library load error message handling).
+
+2017-05-30 12:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10247] ., NEWS, gui/Pages/SteadyManagementView.py: Merge rev.
+	  10246 from trunk (fix some GUI issues).
+
+2017-05-29 01:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10245] src/lagr/cs_lagr_sde_model.c: Fix compilation issue due
+	  to rev. 10241 (merge of 10234).
+
+2017-05-29 01:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10243] po/fr.po: Translation file generation update.
+
+2017-05-29 01:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10241] ., src/gui/cs_gui_particles.c, src/lagr/cs_lagr.c,
+	  src/lagr/cs_lagr_injection.c, src/lagr/cs_lagr_restart.c,
+	  src/lagr/cs_lagr_sde_model.c: Merge rev. 10234 from trunk
+	  (multiple fixes for Lagrangian coal combustion).
+
+2017-05-29 01:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10240] ., src/gui/cs_gui_boundary_conditions.c,
+	  src/gui/cs_gui_output.c, src/gui/cs_gui_util.c: Merge rev. 10232
+	  from trunk (fix verified and possible memory leaks).
+
+2017-05-29 01:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10239] ., gui/Pages/CoalCombustionModel.py,
+	  gui/Pages/LagrangianView.py: Merge rev. 10232 from trunk (GUI
+	  fixes for issues with Lagrangian coal combustion).
+
+2017-05-29 01:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10238] ., src/fvm/fvm_to_ensight_case.c: Merge rev. 10231 from
+	  trunk (fix EnSight output with variable names differing ony by
+	  case).
+
+2017-05-29 01:04  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10237] ., gui/trackcvg/MainView.py: Merge rev. 10230 from trunk
+	  (handle incomplete lines due to write buffering read in
+	  Trackcvg).
+
+2017-05-29 01:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10236] ., bin/cs_batch.py,
+	  gui/Pages/PreProcessingInformationsView.py: Merge rev. 10228 from
+	  trunk (a few python3 fixes).
+
+2017-05-26 16:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10227] ., QUALITY_ASSURANCE, docs/user/saturne1.tex: Set
+	  QUALITY_ASSURANCE to validated version and merge minor
+	  documentation update.
+
+2017-05-26 13:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10224] NEWS: Ensure version will appear as 5.0-rc1.
+
+2017-05-26 12:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10223] ., docs/user/graphics/gui_ale_external.png,
+	  docs/user/graphics/gui_ale_mei.png,
+	  docs/user/graphics/gui_bc_parameters.png,
+	  docs/user/graphics/gui_bc_regions.png,
+	  docs/user/graphics/gui_calculation_features.png,
+	  docs/user/graphics/gui_lagr_global_settings.png,
+	  docs/user/graphics/gui_lagr_global_settings_coal.png,
+	  docs/user/graphics/gui_numerical_parameters.png,
+	  docs/user/graphics/gui_prepare_execution.png: Merge rev. 220 from
+	  trunk (some screenshot updates).
+
+2017-05-26 12:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10222] ., docs/user/saturne1.tex, docs/user/saturne2.tex: Merge
+	  rev. 219 from trunk (user documentation fixes, removed old
+	  Lagrangian material now in Doxygen).
+
+2017-05-26 12:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10221] ., po/fr.po, src/base/verini.f90,
+	  src/lagr/cs_lagr_lec.c, src/lagr/cs_lagr_options.c,
+	  src/lagr/cs_lagr_sde_model.c,
+	  src/user_examples/cs_user_lagr_model.c: Merge rev. 218 from trunk
+	  (do not gettextize obsolete messages, fix some old references).
+
+2017-05-26 08:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10215] ., bin/cs_exec_environment.py: Merge rev. 214 from trunk
+	  (fix incorrect but rarely used) generation of hostslist with
+	  SLURM.
+
+2017-05-25 15:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10213] ., config/cs_auto_flags.sh, configure.ac,
+	  preprocessor/pre-post/Makefile.am, src/base/Makefile.am,
+	  src/fvm/Makefile.am, src/pprt/Makefile.am: Merge rev. 10212 from
+	  trunk (use separate C++ flags for Catalyst).
+
+2017-05-24 12:45  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10209] gui/Pages/BatchRunningView.py: Remove extra whitespace.
+
+2017-05-24 12:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10208] ., src/base/cs_halo.c, src/mesh/cs_mesh_extrude.c: Merge
+	  rev. 10201 from trunk (fix crash whith extrusion and extended
+	  neighbors on single rank).
+
+2017-05-24 12:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10207] ., tests/cs_blas_test.c: Merge rev. 10199 from trunk
+	  (fix BLAS test compilation).
+
+2017-05-24 12:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10206] ., libple/src/Makefile.am, src/apps/Makefile.am: Merge
+	  rev. 10198 from trunk (build system: update library info).
+
+2017-05-24 12:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10205] ., src/gui/cs_gui_boundary_conditions.c,
+	  src/mei/mei_evaluate.c: Merge rev. 10197 from trunk (add some
+	  check for MEI expressions presence).
+
+2017-05-24 12:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10204] ., bin/cs_studymanager_gui.py, bin/cs_trackcvg.py,
+	  gui/Pages/BatchRunningView.py: Merge rev. 10196 from trunk
+	  (simplify launch of convergence tracking from GUI).
+
+2017-05-22 16:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10195] ., bin/cs_case.py, bin/cs_case_domain.py: Merge rev.
+	  10194 from trunk (fix Syrthes coupling using submit command).
+
+2017-05-19 18:52  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10193] NEWS,
+	  src/user_examples/cs_user_parameters-cavitation.f90: Merge rev.
+	  10192 from trunk (complete user example for cavit.) and delete
+	  unuseful previous insertion in NEWS.
+
+2017-05-19 18:42  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10191] NEWS, docs/theory/cavitation.tex: Merge rev. 10190 from
+	  trunk (Fix a constant in cavitation theory doc).
+
+2017-05-19 18:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10189] ., gui/Pages/BatchRunningForm.ui,
+	  gui/Pages/BatchRunningView.py, gui/Pages/SolutionDomainModel.py,
+	  gui/Pages/SolutionDomainView.py: Merge rev. 10185 from trunk (GUI
+	  improve user info on batch MPI and thread totals).
+
+2017-05-19 18:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10188] ., gui/Pages/BatchRunningView.py: Merge rev. 10185 from
+	  trunk (GUI fix display of thread count).
+
+2017-05-19 18:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10187] ., gui/Base/XMLinitialize.py: Merge rev. 10184 from
+	  trunk (fix for previous commit).
+
+2017-05-19 09:22  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10181] gui/Base/XMLinitialize.py,
+	  gui/Pages/ThermalRadiationModel.py: Merge rev. 10180 from trunk
+	  (Fix name of wall therm. cond. in radiative transfer node).
+
+2017-05-18 17:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10177] ., src/base/coupbo.f90: Merge rev. 10175 from trunk (fix
+	  for issue 183).
+
+2017-05-18 17:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10176] ., NEWS, src/apps/cs_solver.c, src/gui/cs_gui_output.c:
+	  Merge rev. 10174 from trunk (fix for issue 183).
+
+2017-05-17 14:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10173] ., gui/Base/MainView.py, gui/Pages/BatchRunningForm.ui,
+	  gui/Pages/BatchRunningView.py, gui/Pages/ScriptRunningModel.py:
+	  Merge rev. 10172 from trunk (improve GUI handling of
+	  preprocessing/computation view and run type)
+
+2017-05-17 09:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10171] src/cfbl/cfdttv.f90: Merge rev. 10169 from trunk (fix in
+	  variable time step in the compressible algo for positive density
+	  constraint fo Stiffened Gas EOS).
+
+2017-05-12 22:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10161] ., bin/cs_case.py, src/base/cs_opts.c: Merge rev. 10160
+	  from trunk (fix more issues with MPMD using SLURM' srun).
+
+2017-05-11 15:23  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10157] src/base/cs_parameters.c,
+	  src/user_examples/cs_user_parameters.f90: Merge rev. 10154 from
+	  trunk (update user example and comments).
+
+2017-05-10 21:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10153] ., tests/cs_blas_test.c: Merge rev. 10151 from trunk
+	  (fix test compilation with XL compiler).
+
+2017-05-10 15:04  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10150] ., src/apps/Makefile.am, src/apps/cs_check_cdo.c[DEL],
+	  tests/Makefile.am, tests/cs_check_cdo.c[CPY]: Merge rev. 9906
+	  from trunk (move CDO checks to tests).
+
+2017-05-10 08:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10149] ., gui/Base/XMLinitialize.py: Merge rev. 10148 from
+	  trunk (cleaner GUI handling of beta and alpha version history).
+
+2017-05-08 21:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10145]
+	  src/user_examples/cs_user_boundary_conditions-electric_arcs.f90,
+	  src/user_examples/cs_user_initialization-electric_arcs.f90: Merge
+	  rev. 10143 from trunk (example in electric arcs module).
+
+2017-05-08 21:38  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10144] src/base/fldprp.f90, src/base/modini.f90: Merge rev
+	  10139 from trunk (allow user to deactivate postprocessing of
+	  density in the GUI)
+
+2017-05-05 10:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10137] ., preprocessor/base/ecs_maillage.c: Merge rev. 10136
+	  from trunk (fix visualization output of connectivity errors in
+	  preprocessor).
+
+2017-05-04 12:04  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10135]
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.py:
+	  Merge rev. 10134 from trunk (Hide Neptune_CFD button if not
+	  present).
+
+2017-05-03 17:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10133] ., gui/Pages/TimeAveragesForm.ui,
+	  gui/Pages/TimeAveragesModel.py, gui/Pages/TimeAveragesView.py:
+	  Merge rev. 10131 from trunk (GUI: improve handling of time
+	  averages).
+
+2017-05-03 16:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10132] ., gui/Pages/SolutionDomainForm.ui: Merge rev. 10130
+	  from trunk (cleanup some tooltips).
+
+2017-05-02 16:51  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10129] src/atmo/rayir.f90: Merge rev. 10128 from trunk (bug in
+	  atmospheric module)
+
+2017-04-28 16:41  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10127] src/base/iniini.f90, src/base/modini.f90,
+	  src/base/resvoi.f90, src/base/varpos.f90, src/base/vof.f90: Merge
+	  rev. 10126 from trunk (Fix missing default VOF init. and
+	  clippings).
+
+2017-04-26 15:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10125] gui/Pages/FluidStructureInteractionView.py: Merge rev.
+	  10124 from trunk (bug in GUI in IFS).
+
+2017-04-26 12:31  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10121] src/rayt/cs_rad_transfer_pun.c: Merge rev. 10120 from
+	  trunk (Fix incident flux formula for P1 radiative tr. model).
+
+2017-04-26 09:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10119] ., src/gui/cs_gui_output.c: Merge rev. 10118 from trunk
+	  (fix issue #229).
+
+2017-04-25 12:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10117] ., gui/Pages/BatchRunningModel.py,
+	  gui/Pages/BatchRunningView.py: Merge rev. 10116 from trunk (hide
+	  some ranks and thread spin boxes with resource manager).
+
+2017-04-21 00:11  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10113] ., bin/cs_case.py: Merge rev. 10112 from trunk (fix for
+	  Syrthes coupling using srun.
+
+2017-04-20 08:14  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10111] src/turb/turbkw.f90, src/turb/turrij.f90: Merge rev.
+	  10110 from trunk (fix auto. init. of velocity with k-w and EBRSM
+	  models).
+
+2017-04-19 13:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10109] ., src/base/cstphy.f90, src/turb/cs_turbulence_model.c,
+	  src/turb/cs_turbulence_model.h: Merge rev. 10107 from trunk
+	  (ensure turbulence constants are initialized).
+
+2017-04-19 13:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10108] NEWS: Mention rename of AutoVnv to studymanager in NEWS.
+
+2017-04-19 07:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10105] ., examples/1-simple_junction/case1/case1.xml,
+	  examples/2-full_domain/case1/case1.xml,
+	  examples/2-full_domain/case2/case2.xml,
+	  examples/2-full_domain/case2/cs_user_boundary_conditions.f90,
+	  examples/2-full_domain/case3/case3.xml,
+	  examples/2-full_domain/case3/cs_user_boundary_conditions.f90,
+	  examples/3-stratified_junction/case1/case1.xml,
+	  examples/3-stratified_junction/case1/cs_user_postprocess.c,
+	  examples/3-stratified_junction/case1/cs_user_postprocess_var.f90[DEL],
+	  examples/4-2Ddisks/case1/fluid/fluid-3rond2D-coupling.xml,
+	  examples/4-2Ddisks/case1/fluid/fluid-3rond2D-coupling_restart.xml,
+	  examples/4-2Ddisks/case1/fluid/fluid_3disks_alone.xml: Merge rev.
+	  10104 from trunk (update tutorials setup).
+
+2017-04-18 17:17  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10103] src/base/tridim.f90: Merge rev. 10101 from trunk
+	  (missing arguments cleaning in 2nd call to uiclim for GWF only).
+
+2017-04-18 07:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10100] ., src/base/clptur.f90: Merge rev. 10098 from trunk (fix
+	  k-omega wall BC when yplus is zero).
+
+2017-04-18 07:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10099] src/mesh/cs_join_set.c: Merge rev. 10098 from trunk
+	  (improve initialization for some structures).
+
+2017-04-15 15:11  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10097] src/base/iniusi.f90, src/gui/cs_gui.c, src/gui/cs_gui.h:
+	  Merge rev. 9956 from trunk (fix in the GUI when specific physics
+	  is on).
+
+2017-04-15 15:08  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10096] src/user/cs_user_boundary_conditions_ale.f90: Merge rev.
+	  9800 from trunk (update comments).
+
+2017-04-15 13:40  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10095] src/ctwr/cs_ctwr.c: Complete a merge (some lines were
+	  missing) for cooling towers.
+
+2017-04-15 13:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10094] src/ctwr/cs_ctwr.c: Merge rev. 9705 from trunk (Cooling
+	  tower module).
+
+2017-04-15 13:26  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10093] src/base/clptrg.f90, src/base/clptur.f90: Merge rev.
+	  9773 from trunk (fix in irijco and rough BCs)
+
+2017-04-15 00:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10092] ., src/lagr/cs_lagr_tracking.c: Merge rev. 10091 from
+	  trunk (fix for Lagrangian module with no deposition).
+
+2017-04-15 00:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10090] ., po/fr.po, src/alge/cs_balance_by_zone.c,
+	  src/alge/cs_convection_diffusion.c, src/alge/cs_matrix_default.c,
+	  src/alge/cs_sles_default.c, src/base/cs_field.c,
+	  src/base/cs_field.h, src/base/cs_internal_coupling.c,
+	  src/base/cs_internal_coupling.h: Merge rev. 10057 from trunk
+	  (internal coupling fix for multiple scalars).
+
+2017-04-13 06:35  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10087] gui/Pages/SourceTermsView.py, src/gui/cs_gui.c: Merge
+	  rev. 10086 from trunk (Momemntum source term in the GUI).
+
+2017-04-12 21:29  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10085] docs/refcard/refcard.tex: Merge rev. 10084 from trunk
+	  (refcard).
+
+2017-04-10 18:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10083] ., NEWS, src/fvm/fvm_to_ensight_case.c: Merge revs.
+	  10078 and 10082 from trunk (workaround ParaView time reading bug
+	  for small time steps).
+
+2017-04-10 17:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10081] ., po/fr.po: Merge rev. 10077 from trunk (minor
+	  translation fix).
+
+2017-04-06 17:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10076] ., src/base/cs_renumber.c, src/mesh/cs_mesh.c,
+	  src/mesh/cs_mesh.h: Merge rev. 10070 from trunk (missing update
+	  to boundary cells list when renumbering cells).
+
+2017-04-06 17:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10075] ., src/base/impini.f90: Merge rev. 10069 from trunk
+	  (minor logging fixes).
+
+2017-04-06 17:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10074] ., bin/cs_exec_environment.py: Merge rev. 10068 from
+	  trunk (fix for SGE batch scheduler, issue #230).
+
+2017-04-06 17:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10073] ., salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_Commons.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_en.ts,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_fr.ts,
+	  salome/cfd_study/src/CFDSTUDYGUI/SetTreeLocationDialog.ui: Merge
+	  rev. 1067 from trunk (Salome-CFD: improve handling of Syrthes
+	  coupling setup).
+
+2017-04-04 14:43  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10064] src/turb/cs_turbulence_model.c,
+	  src/turb/cs_turbulence_model.h: Merge rev. 10063 from trunk (make
+	  LRR constants crij1 and crij2 non const).
+
+2017-04-04 13:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10062] ., src/alge/cs_convection_diffusion.c,
+	  src/base/navstv.f90: Merge rev. 10061 from trunk (fix OpenMP data
+	  races).
+
+2017-04-04 11:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10060] src/base/cs_stokes_model.c: Merge rev. 10059 from trunk
+	  (update setup file).
+
+2017-04-03 11:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10056] ., gui/Pages/LagrangianBoundariesForm.ui,
+	  gui/Pages/LagrangianBoundariesView.py, src/lagr/cs_lagr_car.c,
+	  src/lagr/cs_lagr_sde_model.c, src/user/cs_user_lagr_particle.c,
+	  src/user_examples/cs_user_lagr_particle.c: Merge rev. 10053 from
+	  trunk (minor Lagrangian module cleanup).
+
+2017-04-03 11:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10055] ., src/lagr/cs_lagr_car.c, src/lagr/cs_lagr_injection.c:
+	  Merge rev. 10052 from trunk (Lagrangian fixes with thermal
+	  model).
+
+2017-04-03 11:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10054] ., src/mesh/cs_mesh_extrude.c,
+	  src/mesh/cs_mesh_extrude.h: Merge rev. 10051 from trunk (rename
+	  extrusion reason to expansion factor).
+
+2017-04-03 08:04  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10050] src/alge/cs_convection_diffusion.c: Merge rev. 10048
+	  from trunk (fix in upwind log for vectors and tensors).
+
+2017-04-03 08:03  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10049] src/user_examples/cs_user_lagr_particle.c: Add a user
+	  example.
+
+2017-04-03 07:31  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10046] src/lagr/cs_lagr_injection.c, src/lagr/cs_lagr_sde.c:
+	  Merge rev. 10045 from trunk (fix in user particle deletion and
+	  particle user initialization)
+
+2017-04-02 21:59  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10044] src/lagr/cs_lagr.h, src/lagr/cs_lagr_car.c,
+	  src/lagr/cs_lagr_resuspension.c, src/lagr/cs_lagr_tracking.c,
+	  src/user_examples/cs_user_lagr_model.c,
+	  src/user_examples/cs_user_lagr_particle.c: Merge rev. 10042 and
+	  10043 from trunK.
+
+2017-03-31 18:35  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10041] src/rayt/cs_rad_transfer_solve.c: Merge rev. 10040 from
+	  trunk (Fix radiative source term for EBU and fast chemistry flame
+	  models).
+
+2017-03-31 16:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10039] gui/Pages/SolutionDomainView.py, src/ctwr/cs_ctwr.c,
+	  src/mesh/cs_mesh_extrude.h, src/user_examples/Makefile.am,
+	  src/user_examples/cs_user_mesh-modify.c: Merge revs. 10036,
+	  10037, 10038 from trunk (Typo, missing files, English).
+
+2017-03-31 07:10  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10035] gui/Pages/SourceTermsView.py: Merge rev. 10034 from
+	  trunk (empty combobox in species source term view for GWF).
+
+2017-03-30 16:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10033] ., src/base/cs_post.c: Merge rev. 10024 from trunk (fix
+	  probes location when output on default meshes is deactivated).
+
+2017-03-30 16:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10032] ., po/fr.po, src/base/cs_array_reduce.c: Merge rev.
+	  10031 from trunk (fix for array reduction stats).
+
+2017-03-29 18:46  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10029] src/gui/cs_gui.c: Merge rev. 10028 from trunk (fix in
+	  the GUI).
+
+2017-03-28 17:47  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10027] src/turb/resssg2.f90: Merge rev. 10026 from trunk (fix
+	  in coupled solver for RSM models in inversion of local Reynolds
+	  stress tensor).
+
+2017-03-28 13:11  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10023] src/base/resopv.f90: Merge rev. 10022 from trunk (fix
+	  spurious free in case VOF and head losses are enabled together).
+
+2017-03-28 06:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10021] src/apps/cs_solver.c: Missing pieces of CDO merges (rev.
+	  10017 merging revs. 9974-9981).
+
+2017-03-28 06:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10020] gui/studymanager_gui/ManageCasesModel.py,
+	  gui/studymanager_gui/ManagePlotterModel.py,
+	  gui/studymanager_gui/XMLinitialize.py: Merge rev. 9989 from trunk
+	  (minor clean-up in smgrgui).
+
+2017-03-27 14:43  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r10018] ., src/base/cs_post.c: Merge rev. 9982 from trunk (Fix
+	  when intepolating a field and using probes)
+
+2017-03-27 14:41  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r10017] ., src/alge/cs_matrix_assembler.c,
+	  src/cdo/cs_advection_field.c, src/cdo/cs_advection_field.h,
+	  src/cdo/cs_cdo.c, src/cdo/cs_cdo.h, src/cdo/cs_cdo_advection.c,
+	  src/cdo/cs_cdo_diffusion.c, src/cdo/cs_cdo_local.c,
+	  src/cdo/cs_cdo_main.c, src/cdo/cs_cdo_main.h,
+	  src/cdo/cs_cdo_quantities.c, src/cdo/cs_cdo_time.c,
+	  src/cdo/cs_cdovb_scaleq.c, src/cdo/cs_domain.c,
+	  src/cdo/cs_domain.h, src/cdo/cs_domain_post.c,
+	  src/cdo/cs_equation.c, src/cdo/cs_equation_common.c,
+	  src/cdo/cs_evaluate.c, src/cdo/cs_gwf.c, src/cdo/cs_gwf.h,
+	  src/cdo/cs_hodge.c, src/cdo/cs_property.c, src/cdo/cs_property.h,
+	  src/cdo/cs_reco.c, src/user_examples/cs_user_cdo-condif.c,
+	  src/user_examples/cs_user_cdo-groundwater.c: Marge rev.
+	  9974--9981 from trunk (Several fixes for CDO, split
+	  initialization)
+
+2017-03-27 14:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10016] ., src/apps/cs_solver.c, src/base/Makefile.am,
+	  src/base/cs_preprocess.c, src/base/cs_prototypes.h,
+	  src/base/csinit.f90, src/base/majgeo.f90,
+	  src/base/memfin.f90[DEL], src/base/parall.f90: Merge rev. 9892
+	  from trunk (cleanup some Fortran OpenMP-related structures which
+	  are not used anymore).
+
+2017-03-27 13:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10015] ., src/alge/cs_matrix_assembler.c: Merge rev. 10014 from
+	  trunk (fix matrix assembler parallel crash when rank local row is
+	  initially empty).
+
+2017-03-27 10:12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10013] ., bin/cs_case.py, bin/cs_submit.py,
+	  bin/cs_user_scripts.py, po/fr.po: Merge 100012 from trunk (fix
+	  for "code_saturne submit" when scratch directory is configured).
+
+2017-03-26 18:58  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10011] src/lagr/cs_lagr_tracking.c: Merge rev. 10010 from trunk
+	  (memory leak in Lagrangian module with internal deposition).
+
+2017-03-25 15:57  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10009] src/lagr/cs_lagr_tracking.c: Merge rev. 10007 from trunk
+	  (Lagrangian internal deposition and porous approach in parallel).
+
+2017-03-25 15:56  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10008] src/alge/cs_gradient.c: Merge rev. 10006 from trunk (fix
+	  in parallel computation and porous approaches).
+
+2017-03-24 09:52  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10005] src/turb/divrit.f90: Merge rev. 10004 from trunk (fixes
+	  for AFM turbulent flux model).
+
+2017-03-24 09:27  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10003] src/turb/resssg2.f90: Merge rev. 9994 from trunk (Fix
+	  implicit part of source terms for coupled EBRSM).
+
+2017-03-24 09:27  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10002] src/base/cs_defs.h, src/base/cs_math.h,
+	  src/turb/resssg2.f90, src/turb/rijthe2.f90: Merge rev. 9993 from
+	  trunk (minor fix of types and style).
+
+2017-03-24 09:18  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10001] gui/trackcvg/MainView.py: Merge rev. 9991 from trunk
+	  (increase legend default fontsize for CV tracking tool).
+
+2017-03-24 09:18  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10000] bin/studymanager/cs_studymanager_drawing.py: Merge rev.
+	  9990 from trunk (fix smgr postpro by ignoring plot id
+	  attributes).
+
+2017-03-24 09:18  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9999] extras/bash_completion/code_saturne: Merge rev. 9988 from
+	  trunk (add studymanagergui/smgrgui entries in bash completion).
+
+2017-03-24 09:18  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9998] extras/bash_completion/code_saturne: Merge rev. 9987 from
+	  trunk (fix bash completion for code_saturne gui).
+
+2017-03-24 09:09  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9997] bin/studymanager/cs_studymanager_drawing.py: Merge rev.
+	  9859 from trunk (clean figure management in smgr).
+
+2017-03-24 09:09  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9996] src/gui/cs_gui_boundary_conditions.c: Merge rev. 9986
+	  from trunk (Fix turbulent mapped inlet set through the GUI).
+
+2017-03-24 09:09  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9995] src/base/cs_log_iteration.c: Merge rev. 9961 from trunk
+	  (do not log field defined on empty location).
+
+2017-03-23 16:58  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9985] ., src/base/cs_probe.c, src/base/cs_probe.h: Merge rev.
+	  9973 from trunk (auto_var for probe setting)
+
+2017-03-23 16:56  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9984] ., src/base/cs_post.c, src/base/cs_post.h,
+	  src/cdo/cs_domain.c, src/cdo/cs_domain_post.c,
+	  src/cdo/cs_domain_post.h: Merge rev. 9972 from trunk (split
+	  post-processing operations)
+
+2017-03-23 16:53  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9983] ., src/cdo/cs_cdo_bc.c, src/cdo/cs_equation.c: Merge rev.
+	  9971 from trunk (CDO fixes)
+
+2017-03-23 10:04  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9967] ., bin/cs_case.py, bin/cs_case_coupling.py,
+	  bin/cs_case_domain.py: Merge rev. 9963 from trunk (script fixes
+	  for coupled cases).
+
+2017-03-23 10:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9966] ., src/base/cs_ast_coupling.c, src/base/cs_opts.c: Merge
+	  rev. 9962 from trunk (fixes for Code_Aster coupling with parallel
+	  Code_Saturne run).
+
+2017-03-22 18:52  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9965] src/base/cs_post.c: Merge rev. 9964 from trunk (fix bug
+	  when post-processing on internal faces only).
+
+2017-03-20 17:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9960] ., src/base/cs_base.c: Merge rev. 9959 from trunk (to
+	  initialize MPI with srun, use environment variable with stricter
+	  scope).
+
+2017-03-20 09:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9958] ., gui/trackcvg/MainView.py: Merge revs. 9845, 9873, and
+	  9957 from trunk (GUI trackcvg improvements).
+
+2017-03-17 13:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9955] ., gui/Base/XMLinitialize.py,
+	  gui/Pages/ThermalRadiationModel.py,
+	  gui/Pages/ThermalScalarModel.py, src/apps/cs_solver.c,
+	  src/base/caltri.f90, src/base/iniini.f90, src/gui/cs_gui.c,
+	  src/gui/cs_gui_output.c, src/gui/cs_gui_radiative_transfer.c,
+	  src/gui/cs_gui_radiative_transfer.h: Merge rev. 9953 from trunk
+	  (cleanup in radiative model and other boundary postprocessing
+	  options).
+
+2017-03-17 13:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9951] ., NEWS, src/rayt/cs_rad_transfer_property_fields.c:
+	  Merge rev. 9948 from trunk (fix dependency of radiative model to
+	  postprocessing of wall temperature in some cases).
+
+2017-03-17 13:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9950] ., src/base/cs_halo_perio.c, src/base/cs_halo_perio.h,
+	  src/base/cs_restart_default.c: Merge rev. 9947 from trunk
+	  (Synchronize ghost cells when reading fields for restart).
+
+2017-03-17 08:48  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9945] src/alge/cs_grid.c: Merge rev. 9940 from trunk (fix bug
+	  in MGCD solver).
+
+2017-03-17 08:47  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9944] src/turb/turbke.f90: Merge rev. 9939 from trunk (clean up
+	  in turbke).
+
+2017-03-17 08:46  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9943] src/turb/turbke.f90: Merge rev. 9938 from trunk (improve
+	  Bl v2/k robustness).
+
+2017-03-17 08:45  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9942] src/turb/resv2f.f90: Merge rev. 9937 from trunk (minor
+	  fix n Bl v2/k).
+
+2017-03-17 08:43  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9941] src/turb/resalp.f90, src/turb/resv2f.f90: Merge rev. 9935
+	  from trunk.
+
+2017-03-15 18:56  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9936] src/turb/clipke.f90, src/turb/clipsa.f90,
+	  src/turb/clpalp.f90, src/turb/clpv2f.f90: Merge rev. 9934 from
+	  trunk (allow clipping visualization).
+
+2017-03-15 18:02  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9933] src/alge/cs_gradient.c, src/base/cs_internal_coupling.c,
+	  src/base/cs_internal_coupling.h, src/mesh/cs_mesh_quantities.c,
+	  src/mesh/cs_mesh_quantities.h: Merge rev. 9932 from trunk
+	  (Internal coupling).
+
+2017-03-14 18:49  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9930] bin/studymanager/cs_studymanager_study.py: Merge rev.
+	  9929 from trunk (fix overwrite in studymanager).
+
+2017-03-14 18:44  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9928] src/base/cs_physical_constants.c: Merge rev. 9927 from
+	  trunk (Pressure reference coord. init. consistancy with test in
+	  modini).
+
+2017-03-14 15:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9926] ., src/base/cs_base.c: Merge rev. 9924 from trunk (update
+	  automatic detection of MPI run).
+
+2017-03-14 15:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9925] src/lagr/cs_lagr_sde.c: Merge rev. 9923 from trunk (fixes
+	  for user attributes in Lagrangian model).
+
+2017-03-14 11:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9922] ., bin/cs_compile.py, gui/Base/MainView.py,
+	  gui/Base/XMLengine.py, po/fr.po: Merge rev. 9921 from trunk
+	  (missing pieces from rev. 9916/9920).
+
+2017-03-13 18:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9920] ., NEWS, gui/Base/MainView.py, gui/Base/Makefile.am,
+	  gui/Base/QtCase.py[CPY], gui/Base/XMLengine.py: Merge rev. 9916
+	  from trunk (remove dependency of GUI's XMLengien.Case to PyQt).
+
+2017-03-13 18:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9919] ., docs/install/install.tex: Merge rev. 9915 from trunk
+	  (update installation documentation).
+
+2017-03-13 18:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9918] ., bin/cs_compile.py, bin/cs_config.py.in, configure.ac,
+	  m4/cs_catalyst.m4, src/apps/Makefile.am, src/fvm/Makefile.am,
+	  src/fvm/fvm_writer.c: Merge rev. 9914 from trunk (allow Catalyst
+	  to be used as a plugin or linked).
+
+2017-03-13 18:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9917] ., po/fr.po, src/base/cs_parameters.c: Merge rev. 9913
+	  from trunk (style fixes).
+
+2017-03-13 08:53  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9912] src/base/cs_internal_coupling.c: Merge rev. 9909 from
+	  trunk (internal coupling).
+
+2017-03-13 08:53  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9911] src/base/cs_defs.h, src/base/cs_math.h,
+	  src/turb/resssg2.f90, src/turb/rijthe2.f90, src/turb/turrij.f90:
+	  Merge rev. 9908 from trunk (DRSM coupled solver).
+
+2017-03-13 08:51  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9910] docs/doxygen/examples/cs_user_parameters.h,
+	  src/user_examples/cs_user_parameters-base.c: Merge rev. 9907 from
+	  trunk (doc).
+
+2017-03-10 08:46  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9905] src/alge/cs_sles_default.c: Merge rev. 9904 from trunk
+	  (bug in internal coupling).
+
+2017-03-09 17:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9899] ., src/base/cs_time_moment.c: Merge rev. 9896 from trunk
+	  (avoid spurious logging for legacy time moments).
+
+2017-03-09 17:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9898] ., NEWS, src/base/cs_restart_default.c: Merge rev. 9895
+	  from trunk (fix restart handling of mass fluxes).
+
+2017-03-09 17:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9897] ., src/alge/cs_balance.c, src/alge/cs_balance.h,
+	  src/alge/cs_convection_diffusion.c,
+	  src/alge/cs_convection_diffusion.h, src/alge/cs_gradient.c,
+	  src/alge/cs_gradient.h, src/alge/cs_matrix_building.c,
+	  src/alge/cs_matrix_building.h, src/base/cs_boundary_conditions.c,
+	  src/base/cs_equation_iterative_solve.c,
+	  src/base/cs_field_operator.c, src/base/cs_field_operator.h,
+	  src/base/cs_log.c, src/fvm/fvm_to_medcoupling.cxx,
+	  src/fvm/fvm_to_plot.c, src/fvm/fvm_to_time_plot.c: Merge rev.
+	  9775 from trunk (fix most constedness warning issues).
+
+2017-03-08 18:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9894] .,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_en.ts,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_fr.ts: Merge rev.
+	  9891 from trunk (SALOME_CFD: load coupled Syrthes-Code_Saturne
+	  case).
+
+2017-03-08 18:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9893] ., src/alge/cs_balance_by_zone.c: Merge rev. 9890 from
+	  trunk (fix spurious memory free from rev. 9848/9855).
+
+2017-03-07 17:24  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9889] src/turb/tsepls.f90: Merge rev. 9888 from trunk (Major
+	  fix for E-term of Bl-v2-k model for mesh not aligned with axes).
+
+2017-03-03 11:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9884] ., src/fvm/fvm_point_location.c: Merge rev. 9883 from
+	  trunk (fix for 1D point location).
+
+2017-03-01 15:57  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9882] src/turb/tsepls.f90: Merge rev. 9881 from trunk (Fix bug
+	  in E term of k eq. of Bl-v2-k).
+
+2017-03-01 15:11  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9880] bin/studymanager/cs_studymanager_drawing.py: Merge rev.
+	  9879 (do not crop pdf figure with studymanager).
+
+2017-03-01 09:31  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9878] src/atmo/atiniv.f90, src/turb/turrij.f90: Merge rev. 9874
+	  and rev. 9877 from trunk (fixes in atmospheric modules for DRSM
+	  turbulence models).
+
+2017-02-27 16:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9872] bin/cs_case_domain.py: Merge rev. 9836 from trunk (fix
+	  for preprocessing staged computation).
+
+2017-02-27 11:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9868] ., src/lagr/cs_lagr_sde.c, src/lagr/cs_lagr_tracking.c:
+	  Merge rev. 9864 from trunk (Lagrangian module: fixes for
+	  deposition model).
+
+2017-02-27 11:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9867] ., src/lagr/cs_lagr_sde.c: Merge rev. 9863 from trunk
+	  (Lagrangian module: align usage of random values to pre-C rewrite
+	  scheme).
+
+2017-02-27 11:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9866] ., src/base/cs_post.c: Merge rev. 9862 from trunk (fix
+	  particle trajectory output, broken by rev. 9556).
+
+2017-02-27 11:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9865] ., src/base/tridim.f90, src/lagr/cs_lagr_sde.c: Merge
+	  rev. 9860 from trunk (fix issues preventing use of Lagrangian
+	  model in some cases).
+
+2017-02-23 11:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9858] ., src/base/cs_field.c, src/base/cs_field.h,
+	  src/base/cs_log.c, src/base/cs_log.h,
+	  src/base/cs_log_iteration.c: Merge rev. 9853 from trunk (use time
+	  plot rather than log API for residuals).
+
+2017-02-23 11:04  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9857] ., gui/Pages/AnalysisFeaturesForm.ui,
+	  gui/Pages/LagrangianForm.ui: Merge rev. 9850 from trunk (remove
+	  inactive combobox fro Lagrangian model).
+
+2017-02-23 11:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9856] ., docs/doxygen/examples/cs_user_parameters.h,
+	  docs/doxygen/examples/cs_user_tabs.h,
+	  src/user/cs_user_parameters.c,
+	  src/user_examples/cs_user_parameters-base.c,
+	  src/user_examples/cs_user_parameters-time_moments.c: Merge rev.
+	  9849 from trunk (add boundary thermal flux example to time
+	  moments).
+
+2017-02-23 11:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9855] ., src/alge/cs_balance_by_zone.c: Merge rev. 9848 from
+	  trunk (some fixes for balance by zone).
+
+2017-02-23 11:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9854] ., gui/trackcvg/MainForm.ui, gui/trackcvg/MainView.py:
+	  Merge rev. 9845 from trunk (use log scale for variables in
+	  trackcvg).
+
+2017-02-23 09:11  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9852] src/base/cs_log.c: Merge rev. 9851 from trunk.
+
+2017-02-22 08:25  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9847] src/base/caltri.f90, src/base/cs_c_bindings.f90,
+	  src/base/cs_log.c, src/base/cs_log.h,
+	  src/base/cs_log_iteration.c, src/base/cs_log_iteration.h: Merge
+	  rev. 9846 from trunk (log L2 time residual in a separate csv
+	  file).
+
+2017-02-20 09:21  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9844] src/base/condli.f90, src/base/fldini.f90,
+	  src/base/fldtri.f90, src/base/fldvar.f90, src/base/iniva0.f90,
+	  src/base/lecamx.f90, src/base/modini.f90, src/base/navstv.f90,
+	  src/base/numvar.f90, src/base/phyvar.f90, src/base/resopv.f90,
+	  src/base/resvoi.f90, src/base/varpos.f90: Merge rev. 9843 from
+	  trunk (rename void fraction index).
+
+2017-02-17 15:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9842] ., bin/cs_exec_environment.py: Merge revs. 9837 and 9836
+	  from trunk (fix for cases where forced number of MPI ranks does
+	  not match allocation).
+
+2017-02-17 15:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9841] ., bin/cs_case.py: Merge rev. 9836 from trunk (fix for
+	  preprocessing staged computations).
+
+2017-02-17 15:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9840] ., src/user_examples/Makefile.am,
+	  src/user_examples/cs_user_postprocess-profiles.c[CPY]: Merge rev.
+	  9835 from trunk (add profile postprocessing examples).
+
+2017-02-17 15:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9839] ., po/fr.po, src/alge/cs_balance_by_zone.c,
+	  src/alge/cs_balance_by_zone.h, src/base/cs_post_util.c,
+	  src/base/cs_post_util.h: Merge rev. 9834 from trunk (add C
+	  function to determine boundary thermal flux and fixes in balance
+	  by zone).
+
+2017-02-15 18:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9832] ., po/fr.po,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py,
+	  salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.py,
+	  src/alge/cs_balance_by_zone.c, src/alge/cs_balance_by_zone.h:
+	  Merge rev. 9831 from trunk (moved a SALOME_CFD dialog).
+
+2017-02-15 18:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9830] ., src/lagr/cs_lagr_injection.c: Merge rev. 9827 from
+	  trunk (fix for inverse particle weigting from rev. 9824).
+
+2017-02-14 15:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9825] ., po/fr.po: Merge revs. 9822 from trunk (update
+	  translations).
+
+2017-02-14 15:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9824] ., src/lagr/cs_lagr_injection.c: Merge revs. 9821 from
+	  trunk (fix for issue 212).
+
+2017-02-14 15:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9823] ., src/base/cs_log_iteration.c: Merge revs. 9820 from
+	  trunk (add clearer error message and fix compilation warning).
+
+2017-02-14 14:51  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9819] src/lagr/cs_lagr_gradients.c: Merge rev. 9818 from trunk
+	  (Lagrangian + iphydr = 1).
+
+2017-02-14 11:32  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9817] src/alge/cs_balance_by_zone.c,
+	  src/alge/cs_balance_by_zone.h: Merge rev. 9816 from trunk.
+
+2017-02-14 10:53  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9815] src/alge/cs_balance_by_zone.c: Merge rev. 9814 from trunk
+	  (balance by zone through a surface and internal coupling).
+
+2017-02-14 10:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9812] ., src/base/cs_post.c: Merge revs. 9810 and 9811 from
+	  trunk (fix progressive memory overallocation in some
+	  postprocessing cases).
+
+2017-02-14 10:06  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9809] src/alge/cs_balance_by_zone.c: Merge rev. 9808 from
+	  trunk.
+
+2017-02-14 08:28  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9807] bin/cs_studymanager.py,
+	  bin/studymanager/cs_studymanager_study.py: Merge rev. 9802 from
+	  trunk.
+
+2017-02-13 19:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9806] ., src/base/cs_boundary_zone.c, src/base/cs_sort.c,
+	  src/base/cs_sort.h, src/mesh/cs_mesh_location.c: Merge rev. 9804
+	  from trunk (sort mesh location element ids as a precaution).
+
+2017-02-13 19:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9805] ., src/base/cs_post.c: Merge rev. 9803 from trunk (fix
+	  indirection for postprocessing of zone ids).
+
+2017-02-13 15:37  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9801] bin/cs_studymanager.py,
+	  bin/studymanager/cs_studymanager_parser.py,
+	  bin/studymanager/cs_studymanager_study.py,
+	  src/apps/cs_check_cdo.c, src/base/cs_array_reduce.c,
+	  src/base/cs_array_reduce.h, src/base/cs_log_iteration.c,
+	  src/base/cs_range_set.c, src/cdo/cs_advection_field.c,
+	  src/cdo/cs_advection_field.h, src/cdo/cs_cdo.h,
+	  src/cdo/cs_cdo_advection.c, src/cdo/cs_cdo_connect.c,
+	  src/cdo/cs_cdo_connect.h, src/cdo/cs_cdo_diffusion.c,
+	  src/cdo/cs_cdo_diffusion.h, src/cdo/cs_cdo_local.c,
+	  src/cdo/cs_cdo_local.h, src/cdo/cs_cdo_main.c,
+	  src/cdo/cs_cdo_quantities.c, src/cdo/cs_cdo_quantities.h,
+	  src/cdo/cs_cdo_scheme_geometry.c, src/cdo/cs_cdo_time.c,
+	  src/cdo/cs_cdo_toolbox.c, src/cdo/cs_cdo_toolbox.h,
+	  src/cdo/cs_cdofb_scaleq.c, src/cdo/cs_cdovb_scaleq.c,
+	  src/cdo/cs_cdovcb_scaleq.c, src/cdo/cs_domain.c,
+	  src/cdo/cs_domain.h, src/cdo/cs_equation.c,
+	  src/cdo/cs_equation.h, src/cdo/cs_equation_common.c,
+	  src/cdo/cs_equation_param.c, src/cdo/cs_evaluate.c,
+	  src/cdo/cs_gwf.c, src/cdo/cs_hho_scaleq.c, src/cdo/cs_hodge.c,
+	  src/cdo/cs_hodge.h, src/cdo/cs_property.c, src/cdo/cs_property.h,
+	  src/cdo/cs_reco.c, src/cdo/cs_reco.h, src/cdo/cs_sla.c,
+	  src/cdo/cs_sla.h, src/cdo/cs_source_term.c,
+	  src/cdo/cs_source_term.h, src/mesh/cs_mesh.c, src/mesh/cs_mesh.h,
+	  src/user_examples/cs_user_cdo_extra_op-verif-diffusion.c,
+	  src/user_examples/cs_user_cdo_numerics-examples.c: Merge rev.
+	  9778-9788 and 9799 from trunk (CDO).
+
+2017-02-13 12:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9798] src/base/altycl.f90, src/base/tridim.f90,
+	  src/gui/cs_gui_boundary_conditions.c: Merge rev. 9797 from trunk.
+
+2017-02-11 16:01  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9796] gui/Pages/FluidStructureInteractionView.py,
+	  src/base/varpos.f90,
+	  src/user_examples/cs_user_boundary_conditions_ale-base.f90: Merge
+	  rev. 9793, 9794 and 9795 from trunk (minor fixes).
+
+2017-02-10 17:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9792] ., po/fr.po, src/base/cs_post.c: Merge rev. 9791 from
+	  trunk (postprocessing MPI rank instead of rank+1).
+
+2017-02-10 17:34  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9790] docs/style/csbiblio.bib, docs/theory/atmo.tex[CPY],
+	  docs/theory/theory.tex: Merge rev. 9789 from trunk (atmospheric
+	  module documentation).
+
+2017-02-10 16:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9777] ., src/base/cs_post.c: Merge rev. 9776 from trunk (fix
+	  for postprocessing mesh overwrite adding optional reserved
+	  meshes.
+
+2017-02-10 09:23  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9771] src/alge/cs_convection_diffusion.c,
+	  src/alge/cs_gradient.c, src/base/cs_internal_coupling.c: Merge
+	  rev. 9770 from trunk (internal coupling).
+
+2017-02-09 18:09  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9767] src/atmo/cs_at_opt_interp.c: Merge rev. 9766 from trunk
+	  (fixes for data assimilation).
+
+2017-02-09 17:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9765] ., src/alge/cs_gradient.c,
+	  src/base/cs_boundary_conditions.c,
+	  src/base/cs_internal_coupling.c, src/base/cs_internal_coupling.h:
+	  Merge rev. 9760 from trunk (some constedness and style fixes).
+
+2017-02-09 17:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9764] ., src/alge/cs_gradient.c: Merge rev. 9759 from trunk
+	  (fix ghost cell synchronization for gradients with anisotropic
+	  weighting).
+
+2017-02-09 17:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9763] ., po/fr.po, src/base/ecrlis.f90, src/base/lecamx.f90:
+	  Merge rev. 9758 from trunk (remove a few warnings).
+
+2017-02-09 17:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9762] ., src/base/cs_post.c, src/base/cs_post.h: Merge rev.
+	  9757 from trunk (add finer-grained control for attaching and
+	  detaching postprocessing writers to meshes).
+
+2017-02-09 17:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9761] ., src/base/cs_array_reduce.c: Merge rev. 9756 from trunk
+	  (fix tensor min/max in array reduction for logs).
+
+2017-02-09 16:17  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9755] po/fr.po, src/alge/cs_gradient.c,
+	  src/base/cs_array_reduce.c, src/base/cs_parameters.c,
+	  src/gui/cs_gui.c, src/turb/clipke.f90, src/turb/clprij.f90,
+	  src/turb/reseps.f90: Merge rev. 9749 to 9754 from trunk (fix bug
+	  in anisotropic heterogeneous diff, ...).
+
+2017-02-08 16:02  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9748] bin/cs_studymanager.py: Merge rev. 9747 from trunk (fix
+	  send_mail of studymanager).
+
+2017-02-08 15:19  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9746] src/user/cs_user_parameters.c,
+	  src/user_examples/cs_user_parameters-base.c: Merge rev. 9745 from
+	  trunk (Add example for limiter choice).
+
+2017-02-08 14:06  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9744] src/alge/cs_sles_it.c, src/base/cs_math.c,
+	  src/base/cs_math.h: Merge rev. 9742, 9743 from trunk (use fixed
+	  size array in block Jacobi LU utilities).
+
+2017-02-08 11:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9739] ., src/fvm/fvm_writer.c: Merge rev. 9738 from trunk (fix
+	  detection of writer format availability for plugins).
+
+2017-02-07 15:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9735] ., bin/studymanager/cs_studymanager_drawing.py,
+	  bin/studymanager/cs_studymanager_parser.py,
+	  bin/studymanager/cs_studymanager_plotvtk.py,
+	  bin/studymanager/cs_studymanager_study.py,
+	  docs/studymanager/studymanager.tex: Merge rev. 9730 from trunk
+	  (studymanager addition of graphical file input options).
+
+2017-02-07 15:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9734] ., bin/studymanager/cs_studymanager_plotvtk.py: Merge
+	  rev. 9729 from trunk (studymanager fix for older VTK version
+	  compatibility).
+
+2017-02-07 15:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9733] ., gui/Pages/OutputControlView.py: Merge rev. 9728 from
+	  trunk (GUI fix for check on output writer frequency).
+
+2017-02-07 15:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9732] ., src/base/cs_post.c: Merge rev. 9727 from trunk
+	  (improve and fix handling of zone information output).
+
+2017-02-07 15:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9731] po/fr.po: Fix fuzzy translations.
+
+2017-02-07 14:44  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9723] src/atmo/cs_at_data_assim.c, src/atmo/cs_at_opt_interp.c,
+	  src/base/haltyp.f90: Merge rev. 7522 from trunk (Fixes for
+	  assimilation algorithm).
+
+2017-02-07 11:44  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9721] bin/cs_studymanager.py,
+	  bin/studymanager/cs_studymanager_parser.py,
+	  bin/studymanager/cs_studymanager_study.py: Merge rev. 9708, 9717,
+	  9718 and 9719 from trunk (handle wrong --file command, add option
+	  --fow).
+
+2017-02-06 19:14  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9718] docs/theory/cavitation.tex,
+	  src/alge/cs_balance_by_zone.c, src/base/cs_field_pointer.h,
+	  src/ctwr/cs_ctwr.c, src/gui/cs_gui_boundary_conditions.c,
+	  src/user_examples/cs_user_parameters.f90: Merge rev. 9712, 9713,
+	  9714, 9715 and 9716 from trunk (some minor fixes).
+
+2017-02-03 16:11  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9711] bin/cs_studymanager.py,
+	  bin/studymanager/cs_studymanager_study.py: Merge rev. 9708
+	  (Improve studymanager with empty options list or no specified
+	  xml).
+
+2017-02-03 16:09  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9710] src/base/typecl.f90: Merge rev. 9707 (fix rev. 9647: sym.
+	  BCs for Rij with irijco=1).
+
+2017-02-03 16:07  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9709] src/atmo/atincl.f90: Merge rev. 9706 (minor Doxygen
+	  improvement).
+
+2017-02-03 13:47  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9704] NEWS, src/base/modini.f90, src/turb/resv2f.f90,
+	  src/turb/tsepls.f90, src/turb/turbke.f90: Merge rev. 9703 from
+	  trunk (default version of relaxation).
+
+2017-02-03 11:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9702] ., src/base/cs_internal_coupling.c: Merge rev. 9701 from
+	  trunk (fix for internal coupling in some face selection cases).
+
+2017-02-03 09:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9700] ., NEWS, bin/cs_case.py, bin/cs_compile.py,
+	  bin/cs_config.py.in, bin/cs_package.py.in,
+	  docs/install/install.tex: Merge rev. 9699 from trunk (automate
+	  Catalyst path setting by script).
+
+2017-02-02 17:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9698] ., src/apps/cs_solver.c, src/base/cs_timer_stats.c,
+	  src/base/cs_timer_stats.h: Merge rev. 9696 from trunk (time stats
+	  now numbered by absolute time step).
+
+2017-02-02 17:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9697] ., src/base/cs_turbomachinery.c: Merge rev. 9695 from
+	  trunk (fix fro rev. 9693/9694).
+
+2017-02-02 16:12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9694] ., src/apps/cs_solver.c, src/base/Makefile.am,
+	  src/base/caltri.f90, src/base/cregeo.f90[DEL],
+	  src/base/cs_post_default.c, src/base/cs_post_default.h,
+	  src/base/cs_syr_coupling.c, src/base/cs_syr_coupling.h,
+	  src/base/cs_turbomachinery.c, src/base/cs_turbomachinery.h,
+	  src/base/initi1.f90: Merge rev. 9693 from trunk (postprocess
+	  fixed meshes output before transient rotor restart).
+
+2017-02-01 19:00  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9692] src/apps/cs_solver.c, src/base/cs_boundary_zone.c,
+	  src/base/cs_boundary_zone.h, src/base/cs_volume_zone.c,
+	  src/base/cs_volume_zone.h, src/ctwr/cs_ctwr.c,
+	  src/ctwr/cs_ctwr.h, src/mesh/cs_mesh_location.c,
+	  src/mesh/cs_mesh_location.h: Merge rev. 9689-9690-9691 from trunk
+	  (relative to cooling towers).
+
+2017-02-01 18:14  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9688] gui/Pages/GroundwaterLawForm.ui,
+	  gui/Pages/SourceTermsView.py, src/gui/cs_gui.c: Merge rev. 9681
+	  and 9686 from trunk (several fixes for GWF with GUI).
+
+2017-02-01 18:11  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9687] src/base/typecl.f90: Merge rev. 9680 from trunk (Fix in
+	  DFM BCs at walls with wall functions).
+
+2017-02-01 16:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9685] ., src/base/cs_parall.c, src/base/cs_parall.h: Merge rev.
+	  9683 from trunk (ensure all cs_parall operations have default
+	  behavior on single rank).
+
+2017-02-01 16:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9684] ., src/user/cs_user_postprocess.c,
+	  src/user_examples/cs_user_postprocess.c: Merge rev. 9682 from
+	  trunk (add includes to user postprocessing template).
+
+2017-02-01 15:49  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9679] src/alge/cs_convection_diffusion.c,
+	  src/alge/cs_convection_diffusion.h,
+	  src/base/cs_parameters_check.c, src/base/resopv.f90: Merge rev.
+	  9678 from trunk (major fixes for VOF algo.).
+
+2017-02-01 11:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9677] ., bin/studymanager/cs_studymanager_drawing.py: Merge
+	  rev. 9676 from trunk (handle profiles subdirectory for
+	  studymanager plot).
+
+2017-02-01 10:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9675] ., src/base/clsyvt.f90, src/base/condli.f90,
+	  src/base/typecl.f90, src/base/vericl.f90: Merge rev. 9665 from
+	  trunk (fix for rev. 9647/9648).
+
+2017-02-01 10:11  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9674] ., src/base/cavitation.f90, src/base/resvoi.f90: Merge
+	  rev. 9663 from trunk (fix name of VOF global indicator in log).
+
+2017-02-01 10:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9673] ., src/base/impini.f90, src/base/lecamp.f90,
+	  src/base/lecamx.f90: Merge rev. 9661 from trunk (fix name of VOF
+	  global indicator in log).
+
+2017-02-01 10:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9672] ., src/base/condli.f90, src/base/typecl.f90,
+	  src/gui/cs_gui.c: Merge revs. 9659, 9660, and 9662 from trunk
+	  (minor fixes).
+
+2017-02-01 09:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9671] ., src/cdo/cs_gwf.c: Merge rev. 9664 from trunk (CDO
+	  parallelism for groundwater flows).
+
+2017-02-01 09:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9670] ., src/alge/cs_matrix_assembler.c: Merge rev. 9668 from
+	  trunk (fix in matrix assembler).
+
+2017-02-01 09:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9669] ., src/base/cs_math.h, src/base/cs_post_util.c,
+	  src/base/cs_post_util.h, src/fvm/fvm_to_plot.c,
+	  src/fvm/fvm_writer.c, src/fvm/fvm_writer_priv.h,
+	  src/mesh/cs_geom.c, src/mesh/cs_geom.h: Merge revs. 9666 and 9667
+	  from trunk (minor postprocessing additions).
+
+2017-01-31 09:48  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9656] src/base/clsyvt.f90: Merge rev. 9655 from trunk (DFM
+	  symmetry BCs).
+
+2017-01-31 09:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9654] ., src/alge/cs_matrix_assembler.c,
+	  src/base/cs_rank_neighbors.c, src/base/cs_rank_neighbors.h: Merge
+	  rev. 9652 from trunk (matrix assembler fixes).
+
+2017-01-31 09:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9653] ., libple/po/fr.po, po/fr.po, src/mesh/cs_geom.c,
+	  src/mesh/cs_geom.h: Merge rev. 9651 from trunk (Doxygen fixes).
+
+2017-01-31 09:01  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9650] src/base/typecl.f90: Complete previous commit.
+
+2017-01-30 22:43  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9648] src/base/typecl.f90: Merge rev. 9647 from trunk (Symmetry
+	  BCs on some vectors).
+
+2017-01-27 18:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9643] ., src/base/cs_math.h: Merge rev. 9642 from trunk
+	  (cleanup in math operator).
+
+2017-01-27 17:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9641] ., src/alge/cs_matrix_assembler.c,
+	  src/alge/cs_matrix_assembler.h: Merge rev. 9637 from trunk
+	  (unhandled case in matrix assembler).
+
+2017-01-27 17:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9640] ., src/base/cs_range_set.c: Merge rev. 9636 from trunk
+	  (Valgridn warning).
+
+2017-01-27 17:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9639] ., src/base/caltri.f90: Merge rev. 9635 from trunk (do
+	  not recompute number of cells with source terms).
+
+2017-01-27 17:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9638] ., src/base/cs_interface.c, src/cdo/cs_equation_common.c:
+	  Merge rev. 9634 from trunk (fix for handling parallelism with CDO
+	  schemes).
+
+2017-01-27 14:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9633] NEWS, build-aux/cs_version.py: Merge rev. 9632 from trunk
+	  (cs_version.py robustness improvements).
+
+2017-01-27 14:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9630] ., bin/autovnv[DEL], gui/Autovnv[DEL]: Merge rev. 9629
+	  from trunk (remove empty directories following git-svn rename).
+
+2017-01-27 13:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9628] docs/studymanager, docs/studymanager/graphics,
+	  gui/studymanager_gui: Merge rev. 9626 from trunk (update
+	  svn:ignore properties).
+
+2017-01-27 13:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9627] NEWS: Update NEWS after branching 5.0.
+
+2017-01-27 13:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9625] .[CPY]: Branch version 5.0.
+
+2017-01-27 13:08  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9624] Rename CS_FLAG in CS_UINT16. Add a treatment for this
+	  type in cs_interface.c
+	  
+	  Minor (set always default, code readibility)
+
+2017-01-27 13:08  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9623] Python 3 fixes
+
+2017-01-27 12:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9622] Minor cleanup.
+
+2017-01-27 10:37  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9621] Fixes for data assimilation.
+
+2017-01-27 00:37  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9620] Fix a bug for DFM models on scalar on symmetry BCs.
+
+2017-01-27 00:37  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9619] Improve style.
+
+2017-01-26 23:17  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9618] Fix bug introduced in rev. 9545 (fortran pointers was
+	  overwritten).
+
+2017-01-26 18:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9617] Fix "make dist".
+
+2017-01-26 18:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9616] Update translations.
+
+2017-01-26 18:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9615] Some postprocessing utility additions and fixes. - add
+	  utility selection function for cells traversed by a line segment.
+	  - refactored the face instersection from the Lagrangian module
+	  for this, with possible robustness enhancements. - probe sets
+	  based on local user-function-defined definitions are now working.
+	  
+	  progress
+
+2017-01-26 18:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9614] Build: add test for port on MacOS.
+
+2017-01-26 17:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9613] Add an author and update NEWS file.
+
+2017-01-26 17:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9612] Major commit: improve time stepping of the coupled solver
+	  for the components of Reynolds stress tensor (irijco = 1).
+	  (Provided by Chai Koren). * No clipping on Rij should appear when
+	  no flux rectonstruction is needed and a upwind scheme is used
+	  (except those due to boundary conditions on R12). * Add eigen_max
+	  function to cs_math.c * EBRSM and SSG models are treated. * Add a
+	  clipping indicator which can be activated to check where clipping
+	  occurs in the output files
+
+2017-01-26 13:58  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9610] Display additional debug information when using study
+	  manager
+
+2017-01-26 13:58  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9609] Fix compilation warnings
+
+2017-01-26 10:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9608] Add utility selection function for cells traversed by a
+	  line segment. refactored the face instersection from the
+	  Lagrangian module for this, with possible robustness
+	  enhancements.
+
+2017-01-26 10:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9607] Add missing include.
+
+2017-01-26 10:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9606] Python 3 fixes.
+
+2017-01-25 14:13  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9605] Simplify source terms computation in cooling tower module
+	  and continue raine zone modelling (injection is and deposition on
+	  walls are OK)
+
+2017-01-25 14:13  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9604] Remove unused variables.
+
+2017-01-25 14:13  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9603] Check if Nan values are present and exit in log.
+
+2017-01-24 17:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9602] Add functions to access field key-associated structures
+	  by pointer.
+
+2017-01-24 13:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9601] Improve zone post-processing to include volume, and
+	  ignore cases with n_zones < 2.
+
+2017-01-24 13:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9600] Fix duplicate merge in previous commit.
+
+2017-01-24 13:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9599] Fix compilation broke by rev. 9586 and fix some Doxygne
+	  entries.
+
+2017-01-24 13:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9598] Fix missing Copyright updates. Provided by E. Le
+	  Coupanec.
+
+2017-01-24 13:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9597] Add and reorganize convection schemes (especially for VOF
+	  method). - reorganize Roe-Sweby limiters. - add Compressive
+	  convection schemes for accurate modeling of free surface with VOF
+	  method. Provided by E. Le Coupanec.
+
+2017-01-24 13:07  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9596] Add a Doxygen example to perform head balance by zone.
+
+2017-01-24 11:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9595] Remove references to ushist.
+
+2017-01-24 11:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9594] Style and spelling fixes.
+
+2017-01-24 11:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9593] Update translations file.
+
+2017-01-24 11:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9592] Use fixed dp_ELE file name for electric arcs.
+
+2017-01-24 09:55  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9591] Remove a fortran example.
+
+2017-01-24 09:31  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9590] Add a Doxygen example to perform scalar balance by zone.
+
+2017-01-23 18:55  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9586] Add a Volume of Fluid algorithm: * partly merge
+	  cavitation algorithm with VoF algorithm. Developed in
+	  collaboration with RENUDA, integrated by E. Le Coupanec.
+
+2017-01-23 18:44  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9585] Add data assimilation feature to atmo module (optimal
+	  interpolation and nudging): * copy LU utilities to cs_math and
+	  keep static inline version of them in cs_sles_it * an optimal
+	  interpolation structure is created * interpol grid and measures
+	  set structures are used as well * multidimensional analysis are
+	  computed for multidimensional variables.
+
+2017-01-23 18:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9584] Add more robust (brute force) detection of whether XML
+	  was modified. This is a partial fix to issue #24, where switching
+	  between tabs marks the file as modified, and asks to save it
+	  again. A more complete fix would require recursively removing
+	  nodes matching default values, so simply visiting the pages and
+	  doing nothing does not modify the tree.
+
+2017-01-23 17:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9583] GUI: cleanup and fix issue with output page for time
+	  averages from old files.
+
+2017-01-23 15:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9582] Fix crash for mesh quality mode using writers with
+	  transient connectivity.
+
+2017-01-23 14:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9581] Fix use of convective inlet BC through the GUI.
+
+2017-01-23 13:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9580] Fix crash due to optional boundary zone face output class
+	  id handling.
+
+2017-01-23 12:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9579] Simplify and automate handling of radiative boundary
+	  condition zones.
+
+2017-01-23 12:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9578] Fix comment.
+
+2017-01-23 12:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9577] Minor comment updates.
+
+2017-01-23 12:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9576] Fix wrong sign in user example.
+
+2017-01-23 12:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9575] GUI: fix further issues when loading some old case files
+	  due to zones renumbering.
+
+2017-01-23 12:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9574] GUI: add convective inlet option and fix issues with
+	  mapped inlet. Also mask mapped inlet for compressible model.
+
+2017-01-23 00:30  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9573] Fix bug introduced in rev. 9529.
+
+2017-01-20 17:40  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9572] Use volume zones in cooling towers module.
+
+2017-01-20 10:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9567] Rename cell_id/face_id to cell_ids/face_ids in zone
+	  structures.
+
+2017-01-20 09:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9565] GUI: default name "setup.xml" suggested when saving new
+	  file.
+
+2017-01-20 09:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9564] GUI: remove incorrect tooltips.
+
+2017-01-20 09:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9563] One more cleanup and Doxygen fixes iteration.
+
+2017-01-20 09:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9562] Allow definition of head losses by zones.
+
+2017-01-20 09:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9561] Rename cs_user_thinwall to cs_user_boundary, fix missing
+	  reload issue in GUI.
+
+2017-01-20 09:29  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9560] Refix rev. 9548.
+
+2017-01-20 09:21  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9559] RMB.
+
+2017-01-20 09:02  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9558] Fix for rev. 9548 (renaming of studymanager files) and
+	  add bash_completion for smgr.
+
+2017-01-19 13:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9557] Allow backup build system bootstrap on systems without
+	  autopoint.
+
+2017-01-19 13:12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9556] Simplification in post-processing mesh definitions.
+
+2017-01-19 12:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9552] GUI: improve readability of source terms dialog.
+
+2017-01-19 10:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9549] Avoid crash with automatic output on postprocessing
+	  meshes with interior faces.
+
+2017-01-19 10:42  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9548] Rename studymanager source files to be consistant with
+	  naming rules.
+
+2017-01-19 10:42  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9547] Fix rev. 9545 (calling free on pointer to non dynamically
+	  allocated memory).
+
+2017-01-19 09:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9546] Make retun more consistent in studymanager.
+
+2017-01-18 18:52  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9545] Major commit in Cooling Tower module : * Add rain zones
+	  modelling, air has therefore a drag; * Change transported
+	  variable from dry air mass fraction to water mass fraction * map
+	  common variables to C.
+
+2017-01-18 16:44  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9544] Add "dgedf" as a predefined color for plotting within the
+	  studymanager
+
+2017-01-18 16:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9543] Improve handling of library physical property
+	  computations.
+
+2017-01-18 16:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9542] Fix user zone example logging.
+
+2017-01-18 14:59  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9541] CDO: Remove the multiple definition of
+	  cs_reco_pv_inside_cell()
+
+2017-01-18 14:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9540] Fix issues with specific handling of mass source terms
+	  with volume zones.
+
+2017-01-18 13:49  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9539] Add options to the studymanager script
+	  
+	  * Add a debugging mode * Add the possibility to force the
+	  destination path * Add the possibility to force the repository
+	  path * Add the possibility to set the default output format for
+	  plotting * Add new colors * Code cleaning
+
+2017-01-18 13:49  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9538] CDO: Add a function to reconstruct a scalar potentiel
+
+2017-01-18 13:49  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9537] CDO: Add a function to reconstruct a scalar potentiel
+
+2017-01-18 10:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9536] Fix locator explicit id issues related to rev. 9533.
+
+2017-01-18 10:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9535] GUI: fix multiple issues with volume zone renumbering,
+	  deletion and merging.
+
+2017-01-17 18:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9534] Fix boundary zone indexing and merging.
+
+2017-01-17 11:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9533] Robustness improvements for handling of zones.
+
+2017-01-17 09:53  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9532] Add options to study manger * Option to skip the
+	  generation of detailed report in study manager * Option to force
+	  removing existing cases in the destination repository * Simplify
+	  the way of handling options
+
+2017-01-17 09:53  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9531] Fix a bug in probes when setting the "snap mode"
+
+2017-01-17 09:53  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9530] Minor updates (comments)
+
+2017-01-16 16:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9529] Add basic handling of boundary zones. At this stage,
+	  minimal mapping from the GUI reader structures to the general
+	  zones is done.
+	  
+	  toto
+
+2017-01-16 16:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9528] Add some Fortran bindings to Volume zone handling, for
+	  cleaner handling of head losses.
+
+2017-01-16 16:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9527] Added general structures to handle boundary and volume
+	  zones (stage 1). This stage adds volume zones. The GUI and XML
+	  are not modified at this stage, neither are the user subroutines
+	  using zones. A default zone with id 0 for all cells or boundary
+	  faces is always defined, avoiding issues with the 1-based ids
+	  from the GUI.
+
+2017-01-16 16:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9526] Cleanup and warning fixes.
+
+2017-01-16 09:53  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9525] Adapt internal coupling to rev 9390.
+
+2017-01-13 17:54  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9524] Adapt internal_coupling for anisotropic diffusion (GGDH).
+	  Provided by C. Flageul.
+
+2017-01-13 17:36  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9523] Adapt cocg settings to removal of
+	  CS_GRADIENT_LSQ_ITER_OLD.
+
+2017-01-13 17:32  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9522] RMB.
+
+2017-01-13 17:32  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9521] Improve Kw SST wall functions on Omega (between log and
+	  viscous sublayer zone). Provided by J.F. Wald.
+
+2017-01-13 17:28  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9520] Fix in cooling towers source terms.
+
+2017-01-13 09:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9519] Salome_CFD: "Save as XML file" bug fixed. Provided by
+	  M.Paolillo.
+
+2017-01-13 09:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9518] Salome_CFD: Add "Update Object Browser" popup menu on all
+	  Object Folders to update subtrees from the GUI. Provided by
+	  M.Paolillo.
+
+2017-01-13 09:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9517] Salome_CFD: Replace "Open an existing case" button. One
+	  bug fixed during the removing of a case. Provided by M.Paolillo.
+
+2017-01-13 08:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9516] Missing parts of cleanup from rev. 9508.
+
+2017-01-12 19:56  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9515] Rename autovnv also in some log and mail messages.
+
+2017-01-12 19:01  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9514] Fix bad intentations.
+
+2017-01-12 18:54  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9513] Fix rev. 9506 (molecular diff in GUI reader in GWF and
+	  some renamings).
+
+2017-01-12 18:54  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9512] Fix rev. 9508 (Missing cs_user_lagr_model.c and
+	  cs_user_lagr_boundary_conditions.c in user_examples).
+
+2017-01-12 18:54  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9511] Add bash completion for trackcvg tool.
+
+2017-01-12 18:54  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9510] Rename autovnv in studymanager and autovnvgui in
+	  studymanagergui: * Short commands are also added: smgr and
+	  smgrgui. * Python module autovnv is renamed in studymanager. *
+	  Python module Autovnv (autovnvgui) is renamed in
+	  studymanager_gui.
+
+2017-01-12 17:43  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9509] Fix turbulent Schmidt in scalar balance by replacing the
+	  sigmas array by the "turbulent_schmidt" double key.
+
+2017-01-12 17:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9508] Cleanup and consistency improvements in user functions.
+
+2017-01-12 16:13  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9507] Add a function to get pointer to thermal field and use
+	  thermal model and thermal scale enums instead of integer values.
+
+2017-01-12 12:42  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9506] Fix default value of recently added unsaturated
+	  parameter.
+
+2017-01-12 12:42  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9505] Fix Kd symbol in theory doc.
+
+2017-01-10 17:50  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9504] Take into account unsaturatedZone xml markup for GWF
+	  (allowing to avoid some tests in fully saturated cases in xml
+	  reader).
+
+2017-01-10 16:39  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9499] FIx bug in the GUI (Ground water flow BCs) and clean up
+	  some unneeded parallel communications.
+
+2017-01-10 16:25  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9498] Get cells with cs_selector function instead of lower
+	  level fvm_selector one in GUI reader.
+
+2017-01-10 14:50  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9497] Fix sign of decay source term for scalars in GWF (and
+	  remove irrelevant Q source term).
+
+2017-01-10 14:21  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9496] Fix missing xml backward compat. for groundwater and Free
+	  I/O BC (field_id) (fix rev. 8825).
+
+2017-01-10 12:43  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9495] Simplify automatisation of default values for theta
+	  scheme value.
+
+2017-01-10 12:43  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9494] Allow use weighted gradient option for pressure and
+	  tensorial diffuion (imposed by head losses).
+
+2017-01-10 10:32  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9493] Fix a problem when compiling cs_cdo_check with option
+	  "make -j"
+
+2017-01-10 09:39  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9492] Fix some compilation warnings.
+
+2017-01-10 09:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9491] Fix for some environment module variants.
+
+2017-01-09 18:39  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9490] Revert "Move automatic tensorial diffusion for pressure
+	  before so that it is now"
+	  
+	  This reverts commit d7153e407f1249586b88dcfbd1c2aa37cadb461d.
+
+2017-01-09 18:19  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9489] Fix compilation without PETSc.
+
+2017-01-09 18:19  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9488] Move automatic tensorial diffusion for pressure before so
+	  that it is now compatible with weighted gradient option.
+
+2017-01-09 18:19  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9487] Improve cohenrency in pressure correction step.
+
+2017-01-09 18:19  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9486] Remove unused variables.
+
+2017-01-09 18:19  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9485] Fix in the previous commit.
+
+2017-01-09 17:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9484] OpenMP portability and minor style fixes.
+
+2017-01-09 16:47  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9483] Fix in user example (head losses declaration)
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9482] Better robustness when computing the ratio of eigenvalues
+	  of a 3x3 tensor
+	  
+	  This is used for instance when applying a weak enforcement of
+	  Dirichlet boundary conditions with a Nitsche algorithm.
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9481] CDO: Fix bugs (Voronoi Hodge, Flux computation with WBS
+	  algo) * Remove also compilation warnings
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9480] Fix a compilation warning
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9479] CDO: (Major) Simplify and extend definitions based on
+	  laws
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9478] CDO: Fix bugs and update the way monitoring of equations
+	  is done * Fix a bug in advection field * Avoid negative values in
+	  singular cases for the permeability tensor A specific case is
+	  when the GWF is activated and a related tracer eq. needs to build
+	  a permeability tensor * Modify setup output * Code cleaning
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9477] CDO: Factorize rhs update with source terms
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9476] CDO: Several bug fixes * Bugs when weakly enforced
+	  Dirichlet BCs * Bug when building face mesh from cell mesh *
+	  Improve debugging process
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9475] CDO: Modify the default setting for the computation of
+	  source terms
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9474] CDO: (major) Add an new executable to perform elemntary
+	  tests with CDO operators * Test on a hexahedral and tetrahedral
+	  cell
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9473] CDO: Updates in monitoring, geometrical comp., cleaning,
+	  post * Add the height of the pyramid of base f and apex c in the
+	  cell mesh * Rename enum related to the computation of cell
+	  centers and move the call to the user function from
+	  cs_cdo_quantities.c to * Unify the output related to the
+	  performance monitoring * Add monitoring for the connectivity and
+	  assembling initialization * Extract post-processing routines from
+	  cs_domain, cs_advection_field and cs_property. Move into
+	  cs_domain_post * Avoid compilation warnings * Update print *
+	  Output dt in listing cs_domain.c * Remove timer statistic *
+	  Remove useless code
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9472] CDO: (major) Update the groundwater flow module * Rename
+	  cs_groundwater* in cs_gwf * Add the bulk density to the soil
+	  structure (not anymore in a tracer structure) * Update the
+	  settings related to groundwater flow module * Remove blanks
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9471] CDO: Switch from critical directive to atomic directive
+	  for optimizing OpenMP
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9470] CDO: Add the pre-computation of the area of the triangle
+	  tef
+	  
+	  - Optimize acces to geometrical quantities
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9469] CDO: (Major) Change the prototype of analytical functions
+	  
+	  - Impact on quadratures, evaluations, properties, advection
+	  fields and source terms. - Modify also the way boundary
+	  conditions are handled when they are defined thanks to an
+	  analytical function.
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9468] CDO: Compute additional information related to the max.
+	  number of entities
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9467] CDO: Use openMP for improving the building of
+	  cell-related quantities CDO: Use openMP for improving the sort of
+	  connectivity list
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9466] CDO: Several evolutions (bugs, properties, openMP,
+	  quadrature, source terms...) * Fix bugs introduced during the
+	  last major modification * Fix a bug with openMP (critical
+	  section) * Change the prototype for adding a new property * Add a
+	  new (cheaper) way to compute source term in vertex-based schemes
+	  * Add a new category of quadrature * Add Jacobi as solver and the
+	  choice of not using a preconditioner * Enable a global scheduling
+	  for OpenMP in CDO main loops * Add generic debugging functions
+	  and modify the level of display * Remove the possibility to set
+	  convergence verbosity of linear system * Minor (blanks, comment,
+	  typos)
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9465] CDO: Simplify example of extra-operations with CDO
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9464] CDO: Add new functions to set domain parameters
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9463] CDO: Remove functions for computing geometrical
+	  quantities
+	  
+	  These functions are now considered as extra-operations.
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9462] CDO: Change the way of defining an advection field
+
+2017-01-09 16:24  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9461] CDO: (Major) Prepare parallelism - Apply a cellwise algo
+	  * Improve performance * Add a new builder common to all equations
+	  (act as a cell cache) for handling open MP * Important
+	  modifications related to the discrete Hodge building * Use of
+	  function pointers for diffusion, advection, time and source terms
+	  * Clean the builder structure related to each equation * Add
+	  embedded monitoring for each equation * Add new masks and rename
+	  old ones * Fix some bugs
+
+2017-01-09 16:23  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9460] CDO: Prepare the integration of HHO schemes + several
+	  minor updates and bug fixes * Update the way setup is summarized
+	  * Add f2f connectivity (useful for CDO-FB schemes) * Fix bugs
+	  related to the evaluation of source terms * Fix a bug related to
+	  the cell type in a cell mesh * Add mixed formulation for
+	  convection operator (experimental) * Add an automatic switch
+	  between COST or VORONOI algo. for Hodge operators * Minor updates
+	  (blanks, comments, compilation warnings...)
+
+2017-01-09 16:23  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9459] Add a new type dealing with flag
+
+2017-01-09 16:23  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r9458] Fix avoinding a crash when structure is NULL
+
+2017-01-09 11:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9457] GUI: fix issue in preprocessing mode introduced by rev.
+	  9381.
+
+2017-01-09 10:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9456] Allow postprocessing output at start of calculation.
+
+2017-01-09 10:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9455] Lagrangian module: fix incorrect use and initialization
+	  of displacement truncation indicator.
+
+2017-01-09 08:47  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9452] Update AUTHORS file.
+
+2017-01-09 08:47  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9451] Add precipitation model to ground water flow module
+	  (prov. by V. Loizeau). Doxygen and theory guide are updated.
+
+2017-01-09 08:47  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9450] Fix some Doxygen warnings.
+
+2017-01-09 08:47  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9449] Use deviatoric part of S for Q-criterion computation to
+	  allow to use it for variable-density flows. Improve doxygen
+	  description.
+
+2017-01-09 08:23  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9448] Update comments and improve style.
+
+2017-01-09 08:23  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9447] Improve check of coherency when defining compatible
+	  specific physics modules.
+
+2017-01-09 08:23  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9446] Doxygen cooling towers examples.
+
+2017-01-06 13:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9441] Fix local structure name.
+
+2017-01-06 13:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9440] Radiative transfer: fix memory leak.
+
+2017-01-06 13:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9439] Improve consistency of GUI-defined specific model
+	  handling.
+
+2017-01-06 11:07  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9437] Remove deprecated keenin function and use the Fortran C
+	  wrapper when needed.
+
+2017-01-06 10:08  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9436] Fix bug introduced in rev. 9423 (radiative transfert
+	  without xml parameters but dp_FCP parameters).
+
+2017-01-06 09:48  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9435] Fix wrong cell index in example of auto-inlet (first cell
+	  recycling).
+
+2017-01-05 18:53  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9434] Fix bug introduced in rev. 9360 (displacement of update
+	  of variable after physical properties).
+
+2017-01-05 18:53  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9433] The user can now change theta (for the time stepping) for
+	  any variable.
+
+2017-01-05 18:26  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9432] Fix bug introduced in rev. 9360 (Cooling Towers): density
+	  was wrongly updated.
+
+2017-01-05 14:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9428] Missing piece of rev. 9427.
+
+2017-01-05 13:28  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9427] Salome_CFD: Portability Qt4/Qt5 for English/French
+	  translator. Tested on SALOMECFD 7.8, 8.2 and trunk/trunk.
+	  Provided by M. Paolillo.
+
+2017-01-05 12:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9423] fix in radiative transfer: GUI-defined imodak should not
+	  overwrite user function definition.
+
+2017-01-04 18:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9422] Fix bug in the GUI when adding variances for thermal
+	  scalars.
+
+2017-01-04 18:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9421] Prepare code for Elliptic Blending Diffusive Flux Models
+	  (EB-DFM) for scalar turbulent fluxes. Switch on with iturt(iscal)
+	  = 31. * The code is also prepared for EB-GGDH and EB-AFM, but the
+	  relative terms are not coded yet. The Diffusive part of the DFM
+	  model, that is the diffusivity, must be checked. * Remove
+	  "nvarcl" which is now equal to nvar as turbulent fluxes are
+	  stored with the other variables.
+
+2017-01-04 17:14  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9414] Fix wrong index introduced in rev. 7945 in LU
+	  factorisation for diagonal blocks. (last diagonal element of each
+	  block LU factorisation was wrong).
+
+2017-01-04 14:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9394] Postprocessing cleanup: use 0-based indexing for function
+	  pointers; also use function pointer in cooling towers fro
+	  specific output.
+
+2017-01-04 14:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9393] Update internal coupling for thermal + imrgra7 + iwgrec0.
+	  (Provided by C. Flageul).
+
+2017-01-04 14:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9392] Catalyst output: replace use of deprecated function in
+	  ParaView 5.1.
+
+2017-01-04 11:09  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9391] Fix two compilation warnings (uninitialized field
+	  pointers).
+
+2017-01-04 11:09  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9390] Remove unused iterative gradient initialized by LSQ
+	  gradient for vectors and scalars and reassign imrgra=4,5,6 to
+	  conservative gradient reconstructed with LSQ gradient (previously
+	  imrgra=7,8,9).
+
+2017-01-04 10:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9389] GUI: fix handling of mapped inlet.
+
+2017-01-04 10:44  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9388] Fix some compilation warnings (unitialized var.).
+
+2017-01-04 08:02  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9387] Fix bug introd. in rev. 9360 in turbulent viscosity
+	  update for dyn. Smag. model.
+
+2017-01-03 17:02  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9386] Use current (and not previous) values in the update of
+	  physical properties (phyvar) for k-omega SST model.
+
+2017-01-03 17:02  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9385] Update log file (listing) so that convergence arrays are
+	  well dimensionned.
+
+2017-01-03 12:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9384] GUI: fix BC settings error introduced by rev. 9381.
+
+2017-01-03 10:31  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9383] Fix previous commit.
+
+2017-01-03 09:18  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9382] Fix bug introduced in rev. 9360 (precaution was not taken
+	  to initialize previous field values).
+
+2017-01-03 09:11  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r9381] Generalize use of notebook for each formula
+
+2017-01-03 09:10  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r9380] Fix bad type argument for PISO in GUI
+
+2017-01-03 09:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9379] List unlocated probes.
+
+2017-01-03 09:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9378] Style fixes.
+
+2017-01-03 09:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9377] Cleanup uneeded additions.
+
+2017-01-03 09:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9376] Ensure k-omega turbulence viscosity is defined and
+	  nonzero to avoid division by zero.
+
+2017-01-03 09:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9375] Update PLE copyright to 2017.
+
+2017-01-03 09:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9374] Update ChangeLog and Copyright notices to 2017.
+
+2017-01-03 07:47  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9373] Add a post util flags array and a Q-criterion
+	  post-processing.
+
+2017-01-03 07:47  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9372] Add a key "restart_file" to allow to specify checkpoint
+	  restart file (or no checkpoint) field by field.
+
 2016-12-31 16:42  Martin Ferrand <martin.ferrand@edf.fr>
 
 	* [r9371] src/ctwr/cs_ctwr.c: Fix bad indentation.
