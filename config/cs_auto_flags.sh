@@ -32,12 +32,14 @@
 # cflags_default_dbg     # Added to $CFLAGS for debugging    (default: "-g")
 # cflags_default_opt     # Added to $CFLAGS for optimization (default: "-O")
 # cflags_default_hot     # Optimization for specific files   (default: "-O")
+# cflags_default_prf     # Added to $CFLAGS for profiling    (default: "-g")
 # cflags_default_omp     # Added to $CFLAGS for OpenMP       (default: "")
 
 # cxxflags_default       # Base CXXFLAGS                       (default: "")
 # cxxflags_default_dbg   # Added to $CXXFLAGS for debugging    (default: "-g")
 # cxxflags_default_opt   # Added to $CXXFLAGS for optimization (default: "-O")
 # cxxflags_default_hot   # Optimization for specific files     (default: "-O")
+# cxxflags_default_prf   # Added to $CXXFLAGS for profiling    (default: "-g")
 # cxxflags_default_omp   # Added to $CXXFLAGS for OpenMP       (default: "")
 # cxxflags_default_std   # C++ standard variant                (default: "")
 
@@ -45,16 +47,19 @@
 # fcflags_default_dbg    # Added to $FCFLAGS for debugging    (default: "-g")
 # fcflags_default_opt    # Added to $FCFLAGS for optimization (default: "-O")
 # fcflags_default_hot    # Optimization for specific files    (default: "-O")
+# fcflags_default_prf    # Added to $FCFLAGS for profiling    (default: "-g")
 # fcflags_default_omp    # Added to $FCFLAGS for OpenMP       (default: "")
 #
 # ldflags_default        # Base LDFLAGS                       (default: "")
 # ldflags_default_dbg    # Added to $LDFLAGS for debugging    (default: "-g")
 # ldflags_default_opt    # Added to $LDFLAGS for optimization (default: "-O")
+# ldflags_default_prf    # Added to $LDFLAGS for profiling    (default: "-g")
 # ldflags_rpath          # Added to $LDFLAGS for shared libs  (default: "")
 
 # libs_default           # Base LIBS                          (default: "")
-# libs_default_dbg       # Added to $LDFLAGS for debugging    (default: "")
-# libs_default_opt       # Added to $LDFLAGS for optimization (default: "")
+# libs_default_dbg       # Added to $LIBS for debugging       (default: "")
+# libs_default_opt       # Added to $LIBS for optimization    (default: "")
+# libs_default_prf       # Added to $LIBS for profiling       (default: "")
 
 # Two other environment variable strings are defined, containing possibly
 # more detailed compiler information:
@@ -96,6 +101,7 @@ unset LANG;
 libs_default=""
 libs_default_dbg=""
 libs_default_opt=""
+libs_default_prf=""
 
 ##################
 #                #
@@ -122,6 +128,8 @@ esac
 
 cs_ac_cc_version=unknown
 cs_cc_compiler_known=no
+
+cflags_default_prf="-g"
 
 # Are we using gcc ?
 #-------------------
@@ -464,6 +472,8 @@ fi
 cs_ac_cxx_version=unknown
 cs_cxx_compiler_known=no
 
+cxxflags_default_prf="-g"
+
 # Are we using g++ ?
 #-------------------
 
@@ -780,6 +790,8 @@ fi
 cs_ac_fc_version=unknown
 cs_fc_compiler_known=no
 
+fcflags_default_prf="-g"
+
 # Are we using gfortran ?
 #------------------------
 
@@ -1040,6 +1052,8 @@ fi
 
 # Default linker flags
 #---------------------
+
+ldflags_default_prf="-g"
 
 if test "x$cs_linker_set" != "xyes" ; then
 

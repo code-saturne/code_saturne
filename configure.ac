@@ -137,6 +137,19 @@ AC_ARG_ENABLE(debug,
 )
 AC_SUBST(debug)
 
+AC_ARG_ENABLE(profile,
+  [AS_HELP_STRING([--enable-profile], [enable profiling])],
+  [
+    case "${enableval}" in
+      yes) profile=yes ;;
+      no)  profile=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-profile]) ;;
+    esac
+  ],
+  [ profile=no ]
+)
+AC_SUBST(profile)
+
 # Optionally deactivate automatic determination of flags on known systems
 
 AC_ARG_ENABLE(auto-flags,
@@ -227,6 +240,14 @@ if test "x$auto_flags" = "xyes" ; then
     FCFLAGS_HOT="$fcflags_default_hot $user_FCFLAGS_HOT"
     # Add optimization flags for linker
     LDFLAGS="$LDFLAGS $ldflags_default_opt"
+    if test "x$profile" = xyes; then
+      # Profiling flags
+      CFLAGS_DBG="$cflags_default_prf"
+      CXXFLAGS_DBG="$cxxflags_default_prf"
+      FCFLAGS_DBG="$fcflags_default_prf"
+      # Add profiling flags for linker
+      LDFLAGS="$LDFLAGS $ldflags_default_prf"
+    fi
   fi
 
   AC_SUBST(CFLAGS_DBG)

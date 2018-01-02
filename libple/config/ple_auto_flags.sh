@@ -15,11 +15,13 @@
 # cflags_default         # Base CFLAGS                       (default: "")
 # cflags_default_dbg     # Added to $CFLAGS for debugging    (default: "-g")
 # cflags_default_opt     # Added to $CFLAGS for optimization (default: "-O")
+# cflags_default_prf     # Added to $CFLAGS for profiling    (default: "-g")
 # cflags_default_omp     # Added to $CFLAGS for OpenMP       (default: "")
 #
 # ldflags_default        # Base LDFLAGS                       (default: "")
 # ldflags_default_dbg    # Added to $LDFLAGS for debugging    (default: "-g")
 # ldflags_default_opt    # Added to $LDFLAGS for optimization (default: "-O")
+# ldflags_default_prf    # Added to $LDFLAGS for profiling    (default: "-g")
 # ldflags_rpath          # Added to $LDFLAGS for shared libs  (default: "")
 
 # Two other environment variable strings are defined, containing possibly
@@ -65,6 +67,8 @@ case "$host_os" in
     ;;
 esac
 
+cflags_default_prf="-g"
+ldflags_default_prf="-g"
 
 ple_ac_cc_version=unknown
 ple_cc_compiler_known=no
