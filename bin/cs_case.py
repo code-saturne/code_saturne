@@ -1159,10 +1159,11 @@ export SALOME_INSTANCE=$3
 %(salomeenv)s;
 export PATH=%(exec_dir)s/bin:$PATH
 appli=%(exec_dir)s/appli
-$appli/runSession killSalome.py
 unset PYTHONHOME
-$appli/runAppli -t
-$appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
+port_log=`pwd`/.salome_port.log
+$appli/salome start -t --ns-port-log=$port_log
+$appli/salome shell -- driver -e fsi_yacs_scheme.xml
+$appli/salome kill `cat $port_log`
 
 """
         s.write(template % {'salomeenv': self.package.config.salome_env,

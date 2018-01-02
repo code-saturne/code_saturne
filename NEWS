@@ -8,6 +8,12 @@ Bug fixes
 - Fix crash in restart using coupled RSM model from non-RSM computation
   (issue #252).
 
+Architectural changes
+---------------------
+
+- Fluid-structure interaction: update script generation for coupling
+  with current versions of Salome-Meca.
+
 Release 5.0.8 (Mar 30 2018)
 ===========================
 
