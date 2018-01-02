@@ -75,7 +75,6 @@
 !______________________________________________________________________________!
 
 subroutine usstr1 &
-!================
  ( idfstr ,                                                       &
    aexxst , bexxst , cfopre ,                                     &
    xstr0  , vstr0  , xstreq )
@@ -134,7 +133,6 @@ allocate(lstelt(nfabor))
 !===============================================================================
 
 call getfbr('4', nlelt, lstelt)
-!==========
 
 do ilelt = 1, nlelt
 
@@ -145,7 +143,6 @@ do ilelt = 1, nlelt
 enddo
 
 call getfbr('6', nlelt, lstelt)
-!==========
 
 do ilelt = 1, nlelt
 
@@ -216,8 +213,6 @@ end subroutine usstr1
 !______________________________________________________________________________!
 
 subroutine usstr2 &
-!================
-
  ( nbstru ,                                                       &
    idfstr ,                                                       &
    dtcel  ,                                                       &
@@ -396,7 +391,6 @@ end subroutine usstr2
 !______________________________________________________________________________!
 
 subroutine usaste &
-!================
 
  ( idfstr )
 
@@ -453,7 +447,6 @@ allocate(lstelt(nfabor))
 !===============================================================================
 
 call getfbr('2 and X < 2.0', nlelt, lstelt)
-!==========
 
 do ilelt = 1, nlelt
 
@@ -465,7 +458,6 @@ enddo
 
 
 call getfbr('2 and X > 2.0', nlelt, lstelt)
-!==========
 
 do ilelt = 1, nlelt
 
