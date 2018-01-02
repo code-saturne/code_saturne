@@ -5,7 +5,7 @@
 
 ; This file is part of Code_Saturne, a general-purpose CFD tool.
 ;
-; Copyright (C) 1998-2017 EDF S.A.
+; Copyright (C) 1998-2018 EDF S.A.
 ;
 ; This program is free software; you can redistribute it and/or modify it under
 ; the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,7 @@
 #define MyAppVersionFull "@cs_version_full@"
 #define MyAppVersionShort "@cs_version_short@"
 #define MyAppPublisher "EDF"
-#define MyAppCopyright "Copyright (C) 1998-2017 EDF S.A."
+#define MyAppCopyright "Copyright (C) 1998-2018 EDF S.A."
 #define MyAppURL "http://www.code-saturne.org/"
 #define MyAppExeName "code_saturne.exe"
 

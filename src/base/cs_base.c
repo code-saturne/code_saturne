@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2017 EDF S.A.
+  Copyright (C) 1998-2018 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1085,7 +1085,7 @@ cs_base_logfile_head(int    argc,
              "                      Version %s\n\n",
              CS_APP_VERSION);
 
-  bft_printf("\n  Copyright (C) 1998-2017 EDF S.A., France\n\n");
+  bft_printf("\n  Copyright (C) 1998-2018 EDF S.A., France\n\n");
 
 #if defined(CS_REVISION)
   if (strlen(CS_REVISION) > 0)
