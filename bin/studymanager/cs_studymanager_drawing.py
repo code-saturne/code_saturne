@@ -36,7 +36,7 @@ from string import *
 try:
     import matplotlib
 except ImportError:
-    print "Warning: import matplotlib failed.\n"
+    print("Warning: import matplotlib failed.")
     pass
 
 matplotlib.use("Agg")
