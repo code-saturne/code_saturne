@@ -1,3 +1,176 @@
+2017-12-08 18:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10779] ., NEWS, src/base/cs_syr4_coupling.c: Merge rev. 10769
+	  from trunk (fix interlock in Syrthes combined surface/volume
+	  coupling).
+
+2017-10-30 18:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10677] ., NEWS, src/gui/cs_gui_boundary_conditions.c: Merge
+	  rev. 10672 from trunk (GUI reader fix for exchange coefficient
+	  BCs).
+
+2017-10-28 01:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10671] install_saturne.py: Merge rev. 10665 from trunk (fix for
+	  installer).
+
+2017-10-24 12:38  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r10658] NEWS, src/base/tridim.f90: Merge rev. 10291 from trunk
+	  ((iphydr+head losses+ parallel).
+
+2017-10-02 17:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10607] ., install_saturne.py: Merge rev. 10605 from trunk
+	  (update Scotch download path in installer).
+
+2017-08-21 16:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10508] ., NEWS, po/fr.po, src/base/distyp.f90: Merge rev. 10503
+	  from trunk (fix for possible wall distance error on 2D meshes).
+
+2017-07-20 14:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10392] NEWS: Prepare for version 4.0.8 release.
+
+2017-06-26 16:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10334] ., src/fvm/fvm_triangulate.c,
+	  src/mesh/cs_mesh_warping.c: Merge rev. 10332 from trunk (fix for
+	  parallel warped face triangulation).
+
+2017-06-26 13:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10331] ., NEWS, src/fvm/fvm_triangulate.c,
+	  src/fvm/fvm_triangulate.h: Merge rev. 10329 from trunk (fix for
+	  warped polygonal faces triangulation).
+
+2017-06-06 09:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10272] install_saturne.py: Merge rev. 10269 from trunk (update
+	  installer).
+
+2017-05-29 01:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10244] NEWS, src/gui/cs_gui_specific_physics.c: Fix crash using
+	  GUI-defined setup when some property labels re not defined.
+
+2017-05-26 08:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10216] ., NEWS, bin/cs_exec_environment.py: Merge rev. 214 from
+	  trunk (fix incorrect but rarely used) generation of hostslist
+	  with SLURM.
+
+2017-05-19 09:31  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r10183] NEWS, gui/Base/XMLinitialize.py,
+	  gui/Pages/ThermalRadiationModel.py: Merge rev. 10180 from trunk
+	  (Fix name of wall therm. cond. in radiative transfer node).
+
+2017-05-18 17:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10179] NEWS, po/fr.po, src/base/coupbo.f90: Merge rev. 10175
+	  from trunk (fix for issue 183).
+
+2017-05-12 22:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10163] ., NEWS, bin/cs_case.py, src/base/cs_opts.c: Merge rev.
+	  10160 from trunk (fix more issues with MPMD using SLURM' srun).
+
+2017-04-21 00:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10115] NEWS, bin/cs_case.py: Merge rev. 10112 from trunk (fix
+	  for Syrthes coupling using srun.
+
+2017-04-13 11:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10089] NEWS, src/fvm/fvm_to_ensight_case.c: Merge revs. 10078
+	  and 10082 from trunk (workaround ParaView time reading bug for
+	  small time steps).
+
+2017-04-13 11:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r10088] NEWS, bin/cs_exec_environment.py: Merge rev. 10068 from
+	  trunk (fix issue with SGE batch scheduler).
+
+2017-03-23 10:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9970] NEWS, src/base/cs_ast_coupling.c, src/base/cs_opts.c:
+	  Merge rev. 9962 from trunk (fixes for Code_Aster coupling with
+	  parallel Code_Saturne run).
+
+2017-03-09 17:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9902] NEWS, src/base/cs_restart_default.c,
+	  src/base/cs_time_moment.c: Merge rev. 9895 from trunk (fix
+	  restart handling of mass fluxes).
+
+2017-03-03 11:04  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9886] ., NEWS, src/fvm/fvm_point_location.c: Merge rev. 9883
+	  from trunk (fix for 1D point location).
+
+2017-02-08 11:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9741] NEWS, src/fvm/fvm_writer.c: Merge rev. 9738 from trunk
+	  (fix detection of writer format availability for plugins).
+
+2017-01-23 19:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9588] NEWS, gui/Pages/LocalizationModel.py, po/fr.po: Merge
+	  rev. 9575 from trunk (fix further GUI issues on old files when
+	  renumbering zones).
+
+2017-01-20 11:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9570] NEWS: Prepare for version 4.0.7 release.
+
+2017-01-20 11:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9569] NEWS, gui/Base/XMLengine.py,
+	  gui/Pages/LocalizationModel.py, gui/Pages/LocalizationView.py:
+	  Merge rev. 9535 from trunk (fix GUI issues with volume zone
+	  renumbering).
+
+2017-01-20 11:13  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9568] gui/Pages/SourceTermsForm.ui: Merge rev. 9552 from trunk
+	  (GUI readability for scalar source terms).
+
+2017-01-10 16:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9500] m4/cs_modules.m4: Merge rev. 9491 from trunk (fix for
+	  some environment module variants).
+
+2017-01-06 13:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9445] src/gui/cs_gui_specific_physics.c: Merge rev. 9436 from
+	  trunk (fix in radiative model fix).
+
+2017-01-05 15:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9430] NEWS, src/base/iniusi.f90,
+	  src/gui/cs_gui_radiative_transfer.c,
+	  src/gui/cs_gui_radiative_transfer.h, src/rayt/raydom.f90,
+	  src/rayt/rayopt.f90: Merge rev. 9423 from trunk (GUI-defined
+	  imodak should not overwrite user function).
+
+2017-01-04 15:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9403] Makefile.am, extras/changelog/ChangeLog.base: Update
+	  pre-generated ChangeLog portion to 2017.
+
+2017-01-04 15:45  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9400] NEWS, src/fvm/fvm_to_catalyst.cxx: Merge rev. 9392 from
+	  trunk (Catalyst update for ParaView 5.1).
+
+2017-01-04 15:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9397] po/fr.po, src/mesh/cs_join.c: Merge rev. 9367 from trunk
+	  (missing part of fix for joinings with shared vertices).
+
 2016-12-23 12:25  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* [r9340] NEWS, po/fr.po, src/mesh/cs_join.c,
