@@ -1,5 +1,13 @@
 
-Version 5.0.5 (Dec 20 2017)
+Release 5.0.6 (unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Fix deadlock in mesh extrusion when some ranks have no boundary faces.
+
+Release 5.0.5 (Dec 20 2017)
 ===========================
 
 User changes
