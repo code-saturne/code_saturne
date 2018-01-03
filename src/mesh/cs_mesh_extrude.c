@@ -454,7 +454,7 @@ _build_face_edges(cs_mesh_t         *m,
 
   cs_gnum_t *e_gnum = NULL;
 
-  if (m->global_vtx_num != NULL) {
+  if (m->global_vtx_num != NULL || cs_glob_n_ranks > 1) {
 
     const cs_gnum_t  *global_vtx_num = m->global_vtx_num;
     cs_gnum_t *g_e2v;
@@ -589,7 +589,7 @@ _build_face_edges(cs_mesh_t         *m,
 
   /* Compact global numberings if required */
 
-  if (m->global_vtx_num != NULL) {
+  if (m->global_vtx_num != NULL || cs_glob_n_ranks > 1) {
 
     cs_lnum_t ki = 0, kb = 0;
     cs_lnum_t *i_edges, *b_edges;
@@ -718,7 +718,7 @@ _add_extruded_vertices(cs_mesh_t          *m,
 
   /* Update global numbering */
 
-  if (m->global_vtx_num != NULL) {
+  if (m->global_vtx_num != NULL || cs_glob_n_ranks > 1) {
 
     fvm_io_num_t *v_io_num
       = fvm_io_num_create_from_select(vertices,
@@ -818,7 +818,7 @@ _add_extruded_cells(cs_mesh_t          *m,
 
   /* Update global numbering */
 
-  if (m->global_b_face_num != NULL) {
+  if (m->global_b_face_num != NULL || cs_glob_n_ranks > 1) {
 
     if (m->global_cell_num == NULL) {
       BFT_MALLOC(m->global_cell_num, n_cells_ini + n_cells_add, cs_gnum_t);
@@ -1190,7 +1190,7 @@ _add_side_faces(cs_mesh_t           *m,
 
   cs_gnum_t *f_add_gnum = NULL;
 
-  if (e_io_num != NULL) {
+  if (e_io_num != NULL || cs_glob_n_ranks > 1) {
 
     cs_lnum_t *n_f_sub;
     BFT_MALLOC(n_f_sub, n_edges, cs_lnum_t);
