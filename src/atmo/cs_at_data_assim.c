@@ -209,11 +209,11 @@ cs_at_data_assim_initialize(void)
     BFT_FREE(name_buf);
     cs_field_set_key_int(f, key_oia, oia_f->id);
 
-    cs_field_set_key_int(f, key_vis, CS_POST_ON_LOCATION);
-    cs_field_set_key_int(f, key_log, 1);
+    cs_field_set_key_int(oia_f, key_vis, CS_POST_ON_LOCATION);
+    cs_field_set_key_int(oia_f, key_log, 1);
 
     /* back up analysis in auxiliary restart file */
-    cs_field_set_key_int(f, key_rst, CS_RESTART_AUXILIARY);
+    cs_field_set_key_int(oia_f, key_rst, CS_RESTART_AUXILIARY);
   }
 }
 
