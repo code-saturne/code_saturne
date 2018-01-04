@@ -1346,13 +1346,13 @@ cs_at_opt_interp_obs_operator(cs_measures_set_t  *ms,
 {
   switch(oi->interp_type) {
   case CS_AT_OPT_INTERP_P0:
-#if _DA_DEBUG_
+#if _OI_DEBUG_
     bft_printf("   *Computing P0 interpolator\n");
 #endif
     _p0_projection(ms, oi, ig);
     break;
   case CS_AT_OPT_INTERP_P1:
-#if _DA_DEBUG_
+#if _OI_DEBUG_
     bft_printf("   *Computing P1 interpolator\n");
 #endif
     _p1_projection(ms, oi, ig);
