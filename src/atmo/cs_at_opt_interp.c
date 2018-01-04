@@ -154,8 +154,10 @@ _p0_projection(cs_measures_set_t  *ms,
   cs_lnum_t *proj_c_ids = oi->model_to_obs_proj_c_ids;
 
   for (cs_lnum_t ii = 0; ii < n_obs; ii++) {
-    int r_id0 = ig->rank_connect[ii];
     cs_lnum_t c_id0 = ig->cell_connect[ii];
+
+    int r_id0 = 0;
+    if (cs_glob_rank_id > -1) r_id0 = ig->rank_connect[ii];
 
     if (cs_glob_rank_id < 0 || cs_glob_rank_id == r_id0) {
       proj_idx[ii+1] += 1;
@@ -244,7 +246,9 @@ _p1_projection(cs_measures_set_t  *ms,
   /* count size of neighborhood of each observation */
 
   for (cs_lnum_t ii = 0; ii < n_obs; ii++) {
-    int r_id0 = ig->rank_connect[ii];
+    int r_id0 = 0;
+    if (cs_glob_rank_id > -1) r_id0 = ig->rank_connect[ii];
+
     if (cs_glob_rank_id < 0 || cs_glob_rank_id == r_id0) {
       proj_idx[ii+1] += 1;
       cs_lnum_t c_id0 = ig->cell_connect[ii];
@@ -299,7 +303,9 @@ _p1_projection(cs_measures_set_t  *ms,
   BFT_MALLOC(dist, n_max_size, cs_real_t);
 
   for (cs_lnum_t ii = 0; ii < n_obs; ii++) {
-    int r_id0 = ig->rank_connect[ii];
+    int r_id0 = 0;
+    if (cs_glob_rank_id > -1) r_id0 = ig->rank_connect[ii];
+
     if (cs_glob_rank_id < 0 || cs_glob_rank_id == r_id0) {
       cs_lnum_t c_id0 = ig->cell_connect[ii];
 
@@ -915,7 +921,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
     }
 
     /* Reading the number of obs/times to print in the listing */
-    if (strncmp(line, "_n_log_data_", 15) == 0) {
+    if (strncmp(line, "_n_log_data_", 12) == 0) {
       fscanf(fichier, "%i", &(oi->n_log_data));
       if (oi->n_log_data < 0)
         oi->n_log_data = 0;
@@ -1009,7 +1015,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
     }
 
     /* reading measures */
-    if (strncmp(line, "_measures_", 9) == 0) {
+    if (strncmp(line, "_measures_", 10) == 0) {
 
       BFT_MALLOC(oi->measures_idx, ms->dim*(n_obs + 1), int);
       BFT_MALLOC(ms->measures, _tot_n_readable_measures, cs_real_t);
@@ -1340,13 +1346,13 @@ cs_at_opt_interp_obs_operator(cs_measures_set_t  *ms,
 {
   switch(oi->interp_type) {
   case CS_AT_OPT_INTERP_P0:
-#if _DA_DEBUG_
+#if _OI_DEBUG_
     bft_printf("   *Computing P0 interpolator\n");
 #endif
     _p0_projection(ms, oi, ig);
     break;
   case CS_AT_OPT_INTERP_P1:
-#if _DA_DEBUG_
+#if _OI_DEBUG_
     bft_printf("   *Computing P1 interpolator\n");
 #endif
     _p1_projection(ms, oi, ig);
@@ -1640,7 +1646,9 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
 
   for (int ii = 0; ii < n_active_obs; ii++) {
     int obs_id = ao_idx[ii]; /* retrieve obs id */
-    int r_id0 = ig->rank_connect[obs_id];
+
+    int r_id0 = 0;
+    if (cs_glob_rank_id > -1) r_id0 = ig->rank_connect[obs_id];
 
     if (cs_glob_rank_id < 0 || cs_glob_rank_id == r_id0) {
       inc[ii] = ms->measures[oi->active_time[m_dim*obs_id+mc_id]];
