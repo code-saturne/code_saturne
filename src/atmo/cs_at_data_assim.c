@@ -589,7 +589,7 @@ cs_at_data_assim_source_term(int        f_id,
           exp_st[dim*c_id+ii] += rovol*oi->relax[ii]*f_oia->val[dim*c_id+ii];
 
           /* Diagonal term */
-          imp_st[dim*dim*c_id+(dim+1)*ii] -= rovol*oi->relax[ii]*f->val[3*c_id+ii];
+          imp_st[dim*dim*c_id+(dim+1)*ii] -= rovol*oi->relax[ii];
         }
       }
     }
