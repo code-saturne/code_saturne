@@ -470,9 +470,12 @@ cs_at_data_assim_log(cs_measures_set_t     *ms,
   }
 
   if (oi->steady <= 0)
-    bft_printf("  Frequency of analysis calculation : each %i iteration(s)\n",oi->frequency);
+    bft_printf("  Frequency of analysis calculation : each %i iteration(s)\n",
+               oi->frequency);
 
-  bft_printf("  Influence radii of observations (m, used for Model covariance error matrix) : %.2f %.2f\n", oi->ir[0], oi->ir[1]);
+  bft_printf("  Influence radii of observations (m, used for Model covariance "
+             "error matrix) : %.2f %.2f\n",
+             oi->ir[0], oi->ir[1]);
   for (int kk = 0; kk < f->dim; kk++) {
     bft_printf("  Relaxation factor (1/s) for comp. %i: %.1e\n",
                kk, oi->relax[kk]);
