@@ -915,7 +915,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
     }
 
     /* Reading the number of obs/times to print in the listing */
-    if (strncmp(line, "_n_log_data_", 15) == 0) {
+    if (strncmp(line, "_n_log_data_", 12) == 0) {
       fscanf(fichier, "%i", &(oi->n_log_data));
       if (oi->n_log_data < 0)
         oi->n_log_data = 0;
@@ -1009,7 +1009,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
     }
 
     /* reading measures */
-    if (strncmp(line, "_measures_", 9) == 0) {
+    if (strncmp(line, "_measures_", 10) == 0) {
 
       BFT_MALLOC(oi->measures_idx, ms->dim*(n_obs + 1), int);
       BFT_MALLOC(ms->measures, _tot_n_readable_measures, cs_real_t);
