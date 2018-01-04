@@ -5,6 +5,14 @@ Release 5.0.6 (unreleased)
 Bug fixes
 ---------
 
+- Fixes for data assimilation of module atmo:
+  * implicit part of nudging term
+  * reader of optimal interpolation file
+  * optimal interpolation for sequential runs
+  * output settings (log, vis, restart) of analysis field
+  * missing loop over dimension in debug and log
+  * a debugging switch.
+
 - Fix deadlock in mesh extrusion when some ranks have no boundary faces.
 
 Release 5.0.5 (Dec 20 2017)

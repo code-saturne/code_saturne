@@ -209,11 +209,11 @@ cs_at_data_assim_initialize(void)
     BFT_FREE(name_buf);
     cs_field_set_key_int(f, key_oia, oia_f->id);
 
-    cs_field_set_key_int(f, key_vis, CS_POST_ON_LOCATION);
-    cs_field_set_key_int(f, key_log, 1);
+    cs_field_set_key_int(oia_f, key_vis, CS_POST_ON_LOCATION);
+    cs_field_set_key_int(oia_f, key_log, 1);
 
     /* back up analysis in auxiliary restart file */
-    cs_field_set_key_int(f, key_rst, CS_RESTART_AUXILIARY);
+    cs_field_set_key_int(oia_f, key_rst, CS_RESTART_AUXILIARY);
   }
 }
 
@@ -305,18 +305,21 @@ cs_at_data_assim_build_ops(void)
       bft_printf("\n");
 
       bft_printf("   *Building R\n");
-      for (int ii = 0; ii < ms->nb_measures; ii++) {
-        bft_printf("    ");
-        for (int jj = 0; jj < ms->nb_measures; jj++)
-          if (!oi->obs_cov_is_diag)
-            bft_printf("%.2f ", oi->obs_cov[ii*ms->nb_measures + jj]);
-          else if (oi->obs_cov_is_diag && ii == jj)
-            bft_printf("%.2f ", oi->obs_cov[ii]);
-          else if (oi->obs_cov_is_diag && ii != jj)
-            bft_printf("%.2f ",0.);
+      for (int kk = 0; kk < ms->dim; kk++) {
+        bft_printf("   Comp. %i\n", kk);
+        for (int ii = 0; ii < n_obs; ii++) {
+          bft_printf("    ");
+          for (int jj = 0; jj < n_obs; jj++)
+            if (!oi->obs_cov_is_diag)
+              bft_printf("%.2f ", oi->obs_cov[ms->dim*(ii*n_obs + jj) + kk]);
+            else if (oi->obs_cov_is_diag && ii == jj)
+              bft_printf("%.2f ", oi->obs_cov[ms->dim*ii + kk]);
+            else if (oi->obs_cov_is_diag && ii != jj)
+              bft_printf("%.2f ",0.);
+          bft_printf("\n");
+        }
         bft_printf("\n");
       }
-      bft_printf("\n");
 
       bft_printf(" *End of processing variable %s\n\n\n", f->name);
     }
@@ -422,33 +425,36 @@ cs_at_data_assim_log(cs_measures_set_t     *ms,
   }
 
   bft_printf("\n  Observation covariance error matrix :\n");
-  for (int ii = 0; ii < n_obs; ii++) {
-    bft_printf("   ");
+  for (int kk = 0; kk < ms->dim; kk++) {
+    bft_printf("   Comp. %i\n", kk);
+    for (int ii = 0; ii < n_obs; ii++) {
+      bft_printf("    ");
 
-    if (ii == n_log_data) {
-      for (int jj = 0; jj < n_obs; jj++) {
-        bft_printf("... ");
-        if (jj == n_log_data)
-          break;
-      }
-      bft_printf("\n");
-      break;
-    }
-
-    for (int jj = 0; jj < n_obs; jj++) {
-      if (jj == n_log_data) {
-        bft_printf("...");
+      if (ii == n_log_data) {
+        for (int jj = 0; jj < n_obs; jj++) {
+          bft_printf("... ");
+          if (jj == n_log_data)
+            break;
+        }
+        bft_printf("\n");
         break;
       }
 
-      if (!oi->obs_cov_is_diag)
-        bft_printf("%.2f ", oi->obs_cov[ii*n_obs + jj]);
-      else if (ii == jj)
-        bft_printf("%.2f ", oi->obs_cov[ii]);
-      else
-        bft_printf("%.2f ", 0.);
+      for (int jj = 0; jj < n_obs; jj++) {
+        if (jj == n_log_data) {
+          bft_printf("...");
+          break;
+        }
+
+        if (!oi->obs_cov_is_diag)
+          bft_printf("%.2f ", oi->obs_cov[ms->dim*(ii*n_obs + jj) + kk]);
+        else if (ii == jj)
+          bft_printf("%.2f ", oi->obs_cov[ms->dim*ii + kk]);
+        else
+          bft_printf("%.2f ", 0.);
+      }
+      bft_printf("\n");
     }
-    bft_printf("\n");
   }
 
   bft_printf("  Interpolation type for Observation Operator : ");
@@ -582,7 +588,7 @@ cs_at_data_assim_source_term(int        f_id,
                               + rovol*oi->relax[ii]*f_oia->val[dim*c_id+ii];
 
           imp_st[dim*dim*c_id+(dim+1)*ii] = imp_st[dim*dim*c_id+(dim+1)*ii]
-                                          - rovol*oi->relax[ii]*f->val[3*c_id+ii];
+                                          - rovol*oi->relax[ii];
         }
       }
     }
