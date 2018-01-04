@@ -154,8 +154,10 @@ _p0_projection(cs_measures_set_t  *ms,
   cs_lnum_t *proj_c_ids = oi->model_to_obs_proj_c_ids;
 
   for (cs_lnum_t ii = 0; ii < n_obs; ii++) {
-    int r_id0 = ig->rank_connect[ii];
     cs_lnum_t c_id0 = ig->cell_connect[ii];
+
+    int r_id0 = 0;
+    if (cs_glob_rank_id > -1) r_id0 = ig->rank_connect[ii];
 
     if (cs_glob_rank_id < 0 || cs_glob_rank_id == r_id0) {
       proj_idx[ii+1] += 1;
@@ -244,7 +246,9 @@ _p1_projection(cs_measures_set_t  *ms,
   /* count size of neighborhood of each observation */
 
   for (cs_lnum_t ii = 0; ii < n_obs; ii++) {
-    int r_id0 = ig->rank_connect[ii];
+    int r_id0 = 0;
+    if (cs_glob_rank_id > -1) r_id0 = ig->rank_connect[ii];
+
     if (cs_glob_rank_id < 0 || cs_glob_rank_id == r_id0) {
       proj_idx[ii+1] += 1;
       cs_lnum_t c_id0 = ig->cell_connect[ii];
@@ -299,7 +303,9 @@ _p1_projection(cs_measures_set_t  *ms,
   BFT_MALLOC(dist, n_max_size, cs_real_t);
 
   for (cs_lnum_t ii = 0; ii < n_obs; ii++) {
-    int r_id0 = ig->rank_connect[ii];
+    int r_id0 = 0;
+    if (cs_glob_rank_id > -1) r_id0 = ig->rank_connect[ii];
+
     if (cs_glob_rank_id < 0 || cs_glob_rank_id == r_id0) {
       cs_lnum_t c_id0 = ig->cell_connect[ii];
 
@@ -1640,7 +1646,9 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
 
   for (int ii = 0; ii < n_active_obs; ii++) {
     int obs_id = ao_idx[ii]; /* retrieve obs id */
-    int r_id0 = ig->rank_connect[obs_id];
+
+    int r_id0 = 0;
+    if (cs_glob_rank_id > -1) r_id0 = ig->rank_connect[obs_id];
 
     if (cs_glob_rank_id < 0 || cs_glob_rank_id == r_id0) {
       inc[ii] = ms->measures[oi->active_time[m_dim*obs_id+mc_id]];
