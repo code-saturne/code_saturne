@@ -407,8 +407,8 @@ cs_interpol_grid_init(cs_interpol_grid_t    *ig,
   cs_lnum_t ii;
   BFT_MALLOC(ig->cell_connect, nb_points, cs_lnum_t);
 #if defined(HAVE_MPI)
-      if (cs_glob_n_ranks > 1)
-        BFT_MALLOC(ig->rank_connect, nb_points, int);
+  if (cs_glob_n_ranks > 1)
+    BFT_MALLOC(ig->rank_connect, nb_points, int);
 #endif
   BFT_MALLOC(ig->coords, 3*nb_points, cs_real_t);
 
