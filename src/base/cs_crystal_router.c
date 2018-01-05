@@ -47,7 +47,6 @@
 #include "cs_assert.h"
 #include "cs_block_dist.h"
 #include "cs_log.h"
-#include "cs_order.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -90,6 +89,8 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+#define _CR_DEBUG_DUMP 0
+
 /* Data elements in crystal router */
 
 typedef enum {
@@ -117,13 +118,16 @@ struct  _cs_crystal_router_t { /* Crystal router information */
 
   size_t          dest_id_shift;     /* starting byte for destination id */
   size_t          src_id_shift;      /* starting byte for source id */
+  size_t          n_vals_shift;      /* starting byte for element count
+                                        (for indexed cases) */
   size_t          elt_shift;         /* starting byte for element data */
 
   size_t          elt_size;          /* element size */
   size_t          comp_size;         /* composite metadata + element size if
-                                        strided, 0 otherwise */
-  size_t          n_elts[2];
-  size_t          buffer_size[2];
+                                        strided, metadata size otherwise */
+  size_t          n_elts[2];         /* number of elements in partition */
+  size_t          n_vals[2];         /* number of data values in partition */
+  size_t          buffer_size[2];    /* buffer size values */
   unsigned char  *buffer[2];
 
   MPI_Comm        comm;              /* associated MPI communicator */
@@ -151,7 +155,66 @@ static cs_timer_counter_t  _cr_timers[2];
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * First stage of creation for a crystal router for strided data.
+ * Return Crystal Router datatype count matching a given number of values.
+ *
+ * parameters:
+ *   cr      <-- associated crystal router structure
+ *   n_elts  <-- number of elements
+ *   n_vals  <-- number of associated values (used only for indexed cases)
+ *
+ * returns:
+ *   count of associated datatype elements for matching buffer size
+ *---------------------------------------------------------------------------*/
+
+static  size_t
+_comm_type_count(cs_crystal_router_t  *cr,
+                 cs_lnum_t             n_elts,
+                 cs_lnum_t             n_vals)
+{
+  size_t retval;
+
+  if (cr->n_vals_shift == 0) { /* strided */
+    retval = n_elts;
+  }
+  else { /* indexed */
+    size_t n = n_elts*cr->comp_size + n_vals*cr->elt_size;
+    retval = n / cr->elt_size;
+    if (n % cr->elt_size)
+      retval += 1;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Return Crystal Router datatype count matching a given number of values.
+ *
+ * parameters:
+ *   cr      <-- associated crystal router structure
+ *   n_elts  <-- number of elements
+ *   n_vals  <-- number of associated values (used only for indexed cases)
+ *
+ * returns:
+ *   count of associated datatype elements for matching buffer size
+ *---------------------------------------------------------------------------*/
+
+static inline size_t
+_data_size(cs_crystal_router_t  *cr,
+           cs_lnum_t             n_elts,
+           cs_lnum_t             n_vals)
+{
+  size_t retval;
+
+  if (cr->n_vals_shift == 0) /* strided */
+    retval = n_elts * cr->comp_size;
+  else /* indexed */
+    retval = n_elts*cr->comp_size + n_vals*cr->elt_size;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Allocation and base settings for a crystal router.
  *
  * parameters:
  *   n_elts           <-- number of elements
@@ -162,23 +225,14 @@ static cs_timer_counter_t  _cr_timers[2];
  *---------------------------------------------------------------------------*/
 
 static cs_crystal_router_t *
-_crystal_create_meta_s(size_t         n_elts,
-                       int            stride,
-                       cs_datatype_t  datatype,
-                       int            flags,
-                       MPI_Comm       comm)
+_crystal_create(size_t         n_elts,
+                int            flags,
+                MPI_Comm       comm)
 {
   int rank_id, n_ranks;
   cs_crystal_router_t *cr = NULL;
 
-  size_t comp_size = 0;
-  size_t elt_size = cs_datatype_size[datatype]*stride;
-  size_t align_size = sizeof(cs_lnum_t);
-
-  /* Ensure alignement on integer size at least */
-
-  if (elt_size % sizeof(int) > 0)
-    comp_size += sizeof(int) - elt_size % sizeof(int);
+  const size_t align_size = sizeof(cs_lnum_t);
 
   /* Communicator info */
 
@@ -189,13 +243,11 @@ _crystal_create_meta_s(size_t         n_elts,
 
   BFT_MALLOC(cr, 1, cs_crystal_router_t);
 
-  cr->datatype = (stride > 0) ? datatype : CS_DATATYPE_NULL;
-
   cr->flags = flags;
 
-  cr->stride = (stride > 0) ? stride : 1;
-  cr->elt_size = elt_size;
-  cr->comp_size = comp_size;
+  cr->stride = 0;
+  cr->elt_size = 0;
+  cr->comp_size = 0;
   cr->n_elts[0] = n_elts;
   cr->n_elts[1] = 0;
 
@@ -223,6 +275,56 @@ _crystal_create_meta_s(size_t         n_elts,
   if (cr->elt_shift % align_size)
     cr->elt_shift += align_size - (cr->elt_shift % align_size);
 
+  cr->n_vals_shift = 0;
+
+  for (int i = 0; i < 2; i++) {
+    cr->n_vals[i] = 0;
+    cr->buffer_size[i] = 0;
+    cr->buffer[i] = NULL;
+  }
+
+  return cr;
+}
+
+/*----------------------------------------------------------------------------
+ * First stage of creation for a crystal router for strided data.
+ *
+ * parameters:
+ *   n_elts           <-- number of elements
+ *   stride           <-- number of values per entity (interlaced)
+ *   datatype         <-- type of data considered
+ *   flags            <-- ordering and metadata flags
+ *   comm             <-- associated MPI communicator
+ *---------------------------------------------------------------------------*/
+
+static cs_crystal_router_t *
+_crystal_create_meta_s(size_t         n_elts,
+                       int            stride,
+                       cs_datatype_t  datatype,
+                       int            flags,
+                       MPI_Comm       comm)
+{
+  /* Allocate structure */
+
+  cs_crystal_router_t *cr = _crystal_create(n_elts, flags, comm);
+
+  size_t comp_size = 0;
+  size_t elt_size = cs_datatype_size[datatype]*stride;
+  size_t align_size = sizeof(cs_lnum_t);
+
+  /* Ensure alignement on integer size at least */
+
+  if (elt_size % sizeof(int) > 0)
+    comp_size += sizeof(int) - elt_size % sizeof(int);
+
+  cr->datatype = (stride > 0) ? datatype : CS_DATATYPE_NULL;
+
+  cr->stride = (stride > 0) ? stride : 1;
+  cr->elt_size = elt_size;
+  cr->comp_size = comp_size;
+
+  /* Compute data size and alignment */
+
   cr->comp_size = cr->elt_shift + elt_size;
 
   if (elt_size % align_size)
@@ -237,12 +339,251 @@ _crystal_create_meta_s(size_t         n_elts,
 
   cr->buffer_size[0] = n_elts*cr->comp_size;
   cr->buffer_size[1] = 0;
+  cr->buffer_size[1] = 0;
   BFT_MALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
   memset(cr->buffer[0], 0, cr->buffer_size[0]);
   cr->buffer[1] = NULL;
 
   return cr;
 }
+
+/*----------------------------------------------------------------------------
+ * First stage of creation for a crystal router for indexed data.
+ *
+ * parameters:
+ *   n_elts     <-- number of elements
+ *   datatype   <-- type of data considered
+ *   elt_idx    <-- element values start and past-the-last index
+ *   flags      <-- ordering and metadata flags
+ *   comm       <-- associated MPI communicator
+ *---------------------------------------------------------------------------*/
+
+static cs_crystal_router_t *
+_crystal_create_meta_i(size_t            n_elts,
+                       cs_datatype_t     datatype,
+                       const cs_lnum_t  *elt_idx,
+                       int               flags,
+                       MPI_Comm          comm)
+{
+  assert(datatype != CS_DATATYPE_NULL);
+
+  /* Allocate structure */
+
+  cs_crystal_router_t *cr = _crystal_create(n_elts, flags, comm);
+
+  size_t comp_size = 0;
+  size_t elt_size = cs_datatype_size[datatype];
+  size_t align_size = sizeof(cs_lnum_t);
+
+  /* Ensure alignement on integer size at least */
+
+  if (elt_size % sizeof(int) > 0)
+    comp_size += sizeof(int) - elt_size % sizeof(int);
+
+  cr->datatype = datatype;
+
+  cr->elt_size = elt_size;
+
+  /* Compute data size and alignment */
+
+  cr->n_vals_shift = cr->elt_shift;
+  cr->elt_shift = cr->n_vals_shift + cs_datatype_size[CS_LNUM_TYPE];
+
+  if (cr->elt_shift % align_size)
+    cr->elt_shift += align_size - (cr->elt_shift % align_size);
+
+  cr->comp_size = cr->elt_shift;
+
+  /* Create associated MPI datatype */
+
+  MPI_Type_contiguous(cr->elt_size, MPI_BYTE, &(cr->comp_type));
+  MPI_Type_commit(&(cr->comp_type));
+
+  /* Allocate buffers */
+
+  cr->buffer_size[0] = n_elts*cr->comp_size + elt_idx[n_elts]*elt_size;
+  cr->buffer_size[1] = 0;
+  cr->n_vals[0] = elt_idx[n_elts];
+  cr->n_vals[1] = 0;
+  BFT_MALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
+  memset(cr->buffer[0], 0, cr->buffer_size[0]);
+  cr->buffer[1] = NULL;
+
+  return cr;
+}
+
+#if _CR_DEBUG_DUMP /* _dump functions for debugging */
+
+/*----------------------------------------------------------------------------
+ * Dump data elements associated with a strided Crystal Router.
+ *
+ * parameters:
+ *   <-- cr       pointer to associated Crystal Router
+ *   <-- comment  associated comment
+ *----------------------------------------------------------------------------*/
+
+static void
+_dump_s(const cs_crystal_router_t  *cr,
+        const char                 *comment)
+{
+  if (comment != NULL)
+    bft_printf("\n%s\n", comment);
+
+  for (int ip = 0; ip < 2; ip++) {
+
+    const size_t n_elts = cr->n_elts[ip];
+
+    if (n_elts > 0)
+      bft_printf("crystal router partition %d: %d elements\n",
+                 ip, (int)n_elts);
+
+    /* Extract data */
+
+    for (size_t i = 0; i < n_elts; i++) {
+
+      unsigned const char *p_s = cr->buffer[ip] + i*cr->comp_size;
+
+      const int *cr_dest_rank = (const int *)(p_s);
+
+      bft_printf("  %d\n"
+                 "    dest_rank:  %d\n", (int)i, *cr_dest_rank);
+
+      if (cr->flags & CS_CRYSTAL_ROUTER_ADD_SRC_RANK) {
+        const int *cr_src_rank = (const int *)(p_s + sizeof(int));
+        bft_printf("    src_rank:   %d\n", (int)(*cr_src_rank));
+      }
+
+      if (cr->flags & CS_CRYSTAL_ROUTER_USE_DEST_ID) {
+        const cs_lnum_t *cr_dest_id
+          = (const cs_lnum_t *)(p_s + cr->dest_id_shift);
+        bft_printf("    dest_id:    %d\n", (int)(*cr_dest_id));
+      }
+
+      if (cr->flags & CS_CRYSTAL_ROUTER_ADD_SRC_ID) {
+        const cs_lnum_t *cr_src_id
+          = (const cs_lnum_t *)(p_s + cr->src_id_shift);
+        bft_printf("    src_id:     %d\n", (int)(*cr_src_id));
+      }
+
+      /* Data */
+
+      if (cr->stride > 0 && cr->elt_size > 0) {
+        unsigned const char *pe = p_s + cr->elt_shift;
+        bft_printf("    data      :");
+        for (size_t j = 0; j < cr->stride; j++) {
+          if (cr->elt_size > 0)
+            bft_printf(" %x", (int)pe[j*cr->elt_size]);
+          for (size_t k = 1; k < cr->elt_size; k++)
+            bft_printf(":%x", (int)pe[j*cr->elt_size + k]);
+        }
+      }
+      bft_printf("\n");
+      bft_printf_flush();
+
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Dump data elements associated with an indexed Crystal Router.
+ *
+ * parameters:
+ *   <-- cr       pointer to associated Crystal Router
+ *   <-- comment  associated comment
+ *----------------------------------------------------------------------------*/
+
+static void
+_dump_i(const cs_crystal_router_t  *cr,
+        const char                 *comment)
+{
+  if (comment != NULL)
+    bft_printf("\n%s\n", comment);
+
+  for (int ip = 0; ip < 2; ip++) {
+
+    const size_t n_elts = cr->n_elts[ip];
+
+    if (n_elts > 0)
+      bft_printf("crystal router partition %d: %d elements\n",
+                 ip, (int)n_elts);
+
+    unsigned const char *p_s = cr->buffer[ip];
+
+    /* Extract data */
+
+    cs_lnum_t  s_idx = 0;
+
+    for (size_t i = 0; i < n_elts; i++) {
+
+      const int *cr_dest_rank = (const int *)(p_s);
+
+      bft_printf("  %d\n"
+                 "    dest_rank:  %d\n", (int)i, *cr_dest_rank);
+
+      if (cr->flags & CS_CRYSTAL_ROUTER_ADD_SRC_RANK) {
+        const int *cr_src_rank = (const int *)(p_s + sizeof(int));
+        bft_printf("    src_rank:   %d\n", (int)(*cr_src_rank));
+      }
+
+      if (cr->flags & CS_CRYSTAL_ROUTER_USE_DEST_ID) {
+        const cs_lnum_t *cr_dest_id
+          = (const cs_lnum_t *)(p_s + cr->dest_id_shift);
+        bft_printf("    dest_id:    %d\n", (int)(*cr_dest_id));
+      }
+
+      if (cr->flags & CS_CRYSTAL_ROUTER_ADD_SRC_ID) {
+        const cs_lnum_t *cr_src_id
+          = (const cs_lnum_t *)(p_s + cr->src_id_shift);
+        bft_printf("    src_id:     %d\n", (int)(*cr_src_id));
+      }
+
+      /* Number of elements and optional data index */
+
+      const cs_lnum_t *pn = (const cs_lnum_t *)(p_s + cr->n_vals_shift);
+      const cs_lnum_t n_sub = *pn;
+      const size_t _sub_size = cr->elt_size*n_sub;
+
+      bft_printf("    data index: %d %d\n"
+                 "    data      : ", (int)s_idx, (int)(s_idx+n_sub));
+
+      /* Data */
+
+      unsigned const char *pe = p_s + cr->elt_shift;
+      for (cs_lnum_t j = 0; j < n_sub; j++) {
+        if (cr->elt_size > 0)
+          bft_printf(" %x", (int)pe[j*cr->elt_size]);
+        for (size_t k = 1; k < cr->elt_size; k++)
+        bft_printf(":%x", (int)pe[cr->elt_size + k]);
+      }
+      bft_printf("\n");
+      bft_printf_flush();
+
+      s_idx += n_sub;
+      p_s += cr->comp_size + _sub_size;
+
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Dump data elements associated with a Crystal Router.
+ *
+ * parameters:
+ *   <-- cr       pointer to associated Crystal Router
+ *   <-- comment  associated comment
+ *----------------------------------------------------------------------------*/
+
+static void
+_dump(const cs_crystal_router_t  *cr,
+      const char                 *comment)
+{
+  if (cr->n_vals_shift == 0)
+    _dump_s(cr, comment);
+  else
+    _dump_i(cr, comment);
+}
+
+#endif /* _dump functions for debugging */
 
 /*----------------------------------------------------------------------------
  * Partition strided data for exchange with a crystal router.
@@ -313,10 +654,104 @@ _crystal_partition_strided(cs_crystal_router_t  *cr,
 
   cr->n_elts[id0] = n0;
   cr->n_elts[id1] = n1;
+
+  cr->n_vals[id0] = n0*cr->stride;
+  cr->n_vals[id1] = n1*cr->stride;
 }
 
 /*----------------------------------------------------------------------------
- * Send and receive strided data with a crystal router for one stage.
+ * Partition indexed data for exchange with a crystal router.
+ *
+ * parameters:
+ *   cr      <-> associated crystal router structure
+ *   send_id <-> id of "send" buffer" (1 if low = buf0, 0 if low = buf1)
+ *   cutoff  <-- cutoff rank
+ *---------------------------------------------------------------------------*/
+
+static void
+_crystal_partition_indexed(cs_crystal_router_t  *cr,
+                           int                   send_id,
+                           int                   cutoff)
+{
+  cs_lnum_t i;
+
+  cs_lnum_t n0 = 0, n1 = 0;
+
+  const cs_lnum_t n = cr->n_elts[0];
+  const int id0 = (send_id + 1) % 2;
+  const int id1 = send_id;
+  const size_t comp_size = cr->comp_size;
+  const size_t elt_size = cr->elt_size;
+  const size_t n_vals_shift = cr->n_vals_shift;
+
+  assert(send_id == 0 || send_id == 1);
+
+  if (cr->buffer_size[1] < cr->buffer_size[0]) {
+    cr->buffer_size[1] = cr->buffer_size[0];
+    BFT_REALLOC(cr->buffer[1], cr->buffer_size[1], unsigned char);
+  }
+
+  unsigned char *src = cr->buffer[0];
+
+  size_t r0_shift = 0;
+  size_t r1_shift = 0;
+
+  if (id0 == 0) {
+    for (i = 0; i < n; i++) {
+      int *r = (int *)src;
+      cs_lnum_t *n_sub = (cs_lnum_t *)(src + n_vals_shift);
+      size_t sub_size = comp_size + n_sub[0]*elt_size;
+      if (r[0] >= cutoff)
+        break;
+      r0_shift += sub_size;
+      src += sub_size;
+    }
+    n0 = i;
+  }
+  else {
+    for (i = 0; i < n; i++) {
+      int *r = (int *)src;
+      cs_lnum_t *n_sub = (cs_lnum_t *)(src + n_vals_shift);
+      size_t sub_size = comp_size + n_sub[0]*elt_size;
+      if (r[0] < cutoff)
+        break;
+      r1_shift += sub_size;
+      src += sub_size;
+    }
+    n1 = i;
+  }
+
+  while (i < n) {
+    int *r = (int *)src;
+    cs_lnum_t *n_sub = (cs_lnum_t *)(src + n_vals_shift);
+    size_t sub_size = comp_size + n_sub[0]*elt_size;
+    if (r[0] < cutoff) {
+      unsigned char *dest = cr->buffer[id0] + r0_shift;
+      memcpy(dest, src, sub_size);
+      r0_shift += sub_size;
+      n0++;
+    }
+    else {
+      unsigned char *dest = cr->buffer[id1] + r1_shift;
+      memcpy(dest, src, sub_size);
+      r1_shift += sub_size;
+      n1++;
+    }
+    i++;
+    src += sub_size;
+  }
+
+  assert(n0 + n1 == n);
+
+  cr->n_elts[id0] = n0;
+  cr->n_elts[id1] = n1;
+
+  cr->n_vals[id0] = (r0_shift - n0*comp_size)/elt_size;
+  cr->n_vals[id1] = (r1_shift - n1*comp_size)/elt_size;
+}
+
+/*----------------------------------------------------------------------------
+ * Send and receive data with a crystal router for one stage.
  *
  * parameters:
  *   cr        <-> associated crystal router structure
@@ -325,76 +760,68 @@ _crystal_partition_strided(cs_crystal_router_t  *cr,
  *---------------------------------------------------------------------------*/
 
 static  void
-_crystal_sendrecv_strided(cs_crystal_router_t  *cr,
-                          int                   target,
-                          int                   n_recv)
+_crystal_sendrecv(cs_crystal_router_t  *cr,
+                  int                   target,
+                  int                   n_recv)
 {
   cs_timer_t t0 = cs_timer_time();
 
-  int send_size;
-  cs_lnum_t i;
-  size_t loc_size;
+  assert(n_recv <= 2);
+
+  cs_lnum_t send_size[2];
   uint64_t test_size;
 
   MPI_Status status[3];
   MPI_Request request[3] = {MPI_REQUEST_NULL,
                             MPI_REQUEST_NULL,
                             MPI_REQUEST_NULL};
-  int recv_size[2] = {0, 0};
+  cs_lnum_t recv_size[4] = {0, 0, 0, 0};
 
   /* Send message to target process */
 
-  send_size = cr->n_elts[1];
+  test_size = _comm_type_count(cr, cr->n_elts[1], cr->n_vals[1]);
 
-  test_size = (uint64_t)cr->n_elts[1];
-  if ((uint64_t)send_size != test_size)
+  send_size[0] = cr->n_elts[1];
+  send_size[1] = test_size;
+
+  if ((uint64_t)send_size[1] != test_size)
     bft_error(__FILE__, __LINE__, 0,
               "Crystal router:"
               "  Message to send would have size too large for C int: %llu",
               (unsigned long long)test_size);
 
-  MPI_Isend(&send_size, 1, MPI_INT, target, cr->rank_id,
+  MPI_Isend(&send_size, 2, CS_MPI_LNUM, target, cr->rank_id,
             cr->comm, &request[0]);
 
-  for (i = 0; i < n_recv; i++)
-    MPI_Irecv(recv_size+i, 1, MPI_INT, target+i, target+i,
+  for (int i = 0; i < n_recv; i++)
+    MPI_Irecv(recv_size+i*2, 2, CS_MPI_LNUM, target+i, target+i,
               cr->comm, request+i+1);
 
   MPI_Waitall(n_recv + 1, request, status);
 
-  loc_size = cr->n_elts[0]*cr->comp_size;
-  for (i=0; i < n_recv; i++)
-    loc_size += recv_size[i]*cr->comp_size;
-
+  size_t loc_size = _data_size(cr, cr->n_elts[0], cr->n_vals[0]);
+  for (int i = 0; i < n_recv; i++)
+    loc_size += _data_size(cr, recv_size[i*2], recv_size[i*2+1]);
   if (loc_size > cr->buffer_size[0]) {
     cr->buffer_size[0] = loc_size;
     BFT_REALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
   }
 
-  MPI_Isend(cr->buffer[1], cr->n_elts[1], cr->comp_type,
+  MPI_Isend(cr->buffer[1], send_size[1], cr->comp_type,
             target, cr->rank_id, cr->comm, request);
 
   cr->n_elts[1] = 0;
 
-  if (n_recv) {
+  for (int i = 0; i < n_recv; i++) {
 
-    unsigned char *r_ptr = cr->buffer[0] + (cr->n_elts[0]*cr->comp_size);
+    unsigned char *r_ptr =   cr->buffer[0]
+                           + _data_size(cr, cr->n_elts[0], cr->n_vals[0]);
 
-    MPI_Irecv(r_ptr, recv_size[0], cr->comp_type,
-              target, target, cr->comm, request+1);
+    MPI_Irecv(r_ptr, recv_size[i*2 + 1], cr->comp_type,
+              target+i, target+i, cr->comm, request+1+i);
 
-    cr->n_elts[0] += recv_size[0];
-
-    if (n_recv == 2) {
-
-      r_ptr += recv_size[0]*cr->comp_size;
-
-      MPI_Irecv(r_ptr, recv_size[1], cr->comp_type,
-                target+1, target+1, cr->comm, request+2);
-
-      cr->n_elts[0] += recv_size[1];
-
-    }
+    cr->n_elts[0] += recv_size[i*2];
+    cr->n_vals[0] += recv_size[i*2 + 1];
 
   }
 
@@ -405,116 +832,65 @@ _crystal_sendrecv_strided(cs_crystal_router_t  *cr,
 }
 
 /*----------------------------------------------------------------------------
- * Exchange strided data with a crystal router.
+ * Get destination id and associated data index for an indexed Crystal Router.
  *
- * Order of data from a same source rank is preserved.
- *
- * parameters:
- *   cr <-> associated crystal router structure
- *---------------------------------------------------------------------------*/
-
-static  void
-_crystal_exchange_strided(cs_crystal_router_t  *cr)
-{
-  int target = -1;
-  int send_part = 0;
-  int b_low = 0;
-  int n_sub_ranks = cr->n_ranks;
-
-  while (n_sub_ranks > 1) {
-
-    int n_recv = 1;
-    int n_low = n_sub_ranks / 2;
-    int b_high = b_low + n_low;
-
-    if (cr->rank_id < b_high) {
-      target = cr->rank_id + n_low;
-      if ((n_sub_ranks & 1) && (cr->rank_id == b_high - 1))
-        n_recv = 2;
-      send_part = 1;
-    }
-    else {
-      target = cr->rank_id - n_low;
-      if (target == b_high) {
-        target--;
-        n_recv = 0;
-      }
-      send_part = 0;
-    }
-
-    /* Partition data */
-
-    _crystal_partition_strided(cr, send_part, b_high);
-
-    /* Send message to target process */
-
-    _crystal_sendrecv_strided(cr, target, n_recv);
-
-    /* Ready for next exchange */
-
-    if (cr->rank_id < b_high)
-      n_sub_ranks = n_low;
-    else {
-      n_sub_ranks -= n_low;
-      b_low = b_high;
-    }
-
-  }
-
-  cr->n_elts[1] = 0;
-  cr->buffer_size[1] = 0;
-  BFT_FREE(cr->buffer[1]);
-}
-
-/*----------------------------------------------------------------------------
- * Compare strided elements from crystal router (qsort function).
+ * If the destination id info is not provided in the Crystal Router,
+ * it is assumed the given array is already valid, so only the index is
+ * computed. If it is provided, the dest_id array is optional.
  *
  * parameters:
- *   x <-> pointer to first element
- *   y <-> pointer to second element
- *
- * returns:
- *   -1 if x < y, 0 if x = y, or 1 if x > y
+ *   <-- cr        pointer to associated Crystal Router
+ *   <-> dest_id   pointer to destination id array, or NULL
+ *   --> data_idx  pointer to data index
  *----------------------------------------------------------------------------*/
 
-static int _compare_strided(const void *x, const void *y)
+static void
+_get_data_index_with_dest_id(cs_crystal_router_t  *cr,
+                             cs_lnum_t             dest_id[],
+                             cs_lnum_t             data_idx[])
 {
-  int retval = 1;
+  const size_t n_elts = cr->n_elts[0];
 
-  const int *c0 = x;
-  const int *c1 = y;
+  const unsigned char *p_s = cr->buffer[0];
 
-  if (c0[1] < c1[1])
-    retval = -1;
+  if (cr->flags & CS_CRYSTAL_ROUTER_USE_DEST_ID) {
 
-  /* For same rank, preserve relative positions, so compare pointer */
+    if (dest_id != NULL) {
+      for (size_t i = 0; i < n_elts; i++) {
+        const cs_lnum_t *cr_dest_id_p
+          = (const cs_lnum_t *)(p_s + cr->dest_id_shift);
+        dest_id[i] = *cr_dest_id_p;
+        const cs_lnum_t *pn = (const cs_lnum_t *)(p_s + cr->n_vals_shift);
+        data_idx[*cr_dest_id_p + 1] = *pn;
+        p_s += cr->comp_size + cr->elt_size*(*pn);
+      }
+    }
+    else {
+      for (size_t i = 0; i < n_elts; i++) {
+        const cs_lnum_t *cr_dest_id_p
+          = (const cs_lnum_t *)(p_s + cr->dest_id_shift);
+        const cs_lnum_t *pn = (const cs_lnum_t *)(p_s + cr->n_vals_shift);
+        data_idx[*cr_dest_id_p + 1] = *pn;
+        p_s += cr->comp_size + cr->elt_size*(*pn);
+      }
+    }
 
-  else if (c0[1] == c1[1]) {
-    if (c0 < c1)
-      retval = -1;
-    else if (c0 == c1)
-      retval = 0;
+  }
+  else {
+
+    for (size_t i = 0; i < n_elts; i++) {
+      const cs_lnum_t *pn = (const cs_lnum_t *)(p_s + cr->n_vals_shift);
+      data_idx[dest_id[i] + 1] = *pn;
+      p_s += cr->comp_size + cr->elt_size*(*pn);
+    }
+
   }
 
-  return retval;
-}
+  /* Transform count to index */
 
-/*----------------------------------------------------------------------------
- * Sort strided crystal router data by source rank.
- *
- * parameters:
- *   cr      <-> associated crystal router structure
- *   send_id <-> id of "send" buffer" (1 if low = buf0, 0 if low = buf1)
- *   cutoff  <-- cutoff rank
- *---------------------------------------------------------------------------*/
-
-static void
-_crystal_sort_by_source_rank_strided(cs_crystal_router_t  *cr)
-{
-  const cs_lnum_t n = cr->n_elts[0];
-
-  if (n > 0)
-    qsort(cr->buffer[0], n, cr->comp_size, &_compare_strided);
+  data_idx[0] = 0;
+  for (size_t i = 0; i < n_elts; i++)
+    data_idx[i+1] += data_idx[i];
 }
 
 /*----------------------------------------------------------------------------
@@ -602,16 +978,16 @@ _get_data_s(cs_crystal_router_t   *cr,
  *
  * parameters:
  *   <-- cr         pointer to associated Crystal Router
+ *   <-> dest_id    pointer to destination id array, or NULL
  *   --> src_rank   pointer to source rank array, or NULL
- *   --> dest_id    pointer to destination id array, or NULL
  *   --> src_id     pointer to source id array, or NULL
  *   --> data  pointer to (pointer to) destination data, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
 _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
-                         int                   *src_rank,
                          cs_lnum_t             *dest_id,
+                         int                   *src_rank,
                          cs_lnum_t             *src_id,
                          void                  *data)
 {
@@ -626,10 +1002,8 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
   const size_t n_chunks
     = (n_elts % chunk_size) ? n_elts/chunk_size + 1 : n_elts/chunk_size;
 
-  unsigned char *cr_src_rank_p = cr->buffer[0] + sizeof(int);
-  unsigned char *cr_dest_id_p = cr->buffer[0] + cr->dest_id_shift;
-  unsigned char *cr_src_id_p = cr->buffer[0] + cr->src_id_shift;
-  unsigned char *cr_data_p = cr->buffer[0] + cr->elt_shift;
+  const unsigned char *cr_data_p = cr->buffer[0] + cr->elt_shift;
+  unsigned char *data_p = (unsigned char *)data;
 
   /* If we do not have a dest_id buffer, use a local one */
 
@@ -638,11 +1012,6 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
     cs_assert(cr->flags & CS_CRYSTAL_ROUTER_USE_DEST_ID);
   }
 
-  unsigned char *dest_id_p = (unsigned char *)_dest_id;
-  unsigned char *src_rank_p = (unsigned char *)src_rank;
-  unsigned char *src_id_p = (unsigned char *)src_id;
-  unsigned char *data_p = (unsigned char *)data;
-
   for (size_t c_id = 0; c_id < n_chunks; c_id++) {
 
     size_t i0 = c_id*chunk_size;
@@ -650,13 +1019,14 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
     if (i1 > n_elts)
       i1 = n_elts;
 
-    /* Extract _dest_id first, to use if in other loops */
+    /* Extract _dest_id first, to use in other loops */
 
     if (cr->flags & CS_CRYSTAL_ROUTER_USE_DEST_ID) {
       for (size_t i = i0; i < i1; i++) {
-        for (size_t j = 0; j < sizeof(cs_lnum_t); j++)
-          dest_id_p[i*sizeof(cs_lnum_t) + j]
-            = cr_dest_id_p[i*cr->comp_size + j];
+        const cs_lnum_t *cr_dest_id_p
+          = (const cs_lnum_t *)(  cr->buffer[0] + i*cr->comp_size
+                                + cr->dest_id_shift);
+        _dest_id[i] = *cr_dest_id_p;
       }
     }
 
@@ -664,10 +1034,10 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
 
     if (src_rank != NULL) {
       for (size_t i = i0; i < i1; i++) {
-        cs_lnum_t e_id = _dest_id[i];
-        for (size_t j = 0; j < sizeof(int); j++)
-          src_rank_p[e_id*sizeof(int) + j]
-            = cr_src_rank_p[i*cr->comp_size + j];
+        const int *cr_src_rank_p
+          = (const cs_lnum_t *)(  cr->buffer[0] + i*cr->comp_size
+                                + sizeof(int));
+        src_rank[_dest_id[i]] = *cr_src_rank_p;
       }
     }
 
@@ -675,10 +1045,10 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
 
     if (src_id != NULL) {
       for (size_t i = i0; i < i1; i++) {
-        cs_lnum_t e_id = _dest_id[i];
-        for (size_t j = 0; j < sizeof(cs_lnum_t); j++)
-          src_id_p[e_id*sizeof(cs_lnum_t) + j]
-            = cr_src_id_p[i*cr->comp_size + j];
+        const cs_lnum_t *cr_src_id_p
+          = (const cs_lnum_t *)(  cr->buffer[0] + i*cr->comp_size
+                                + cr->src_id_shift);
+        src_id[_dest_id[i]] = *cr_src_id_p;
       }
     }
 
@@ -697,6 +1067,154 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
 
   if (dest_id == NULL)
     BFT_FREE(_dest_id);
+}
+
+/*----------------------------------------------------------------------------
+ * Get data elements associated with an indexed Crystal Router.
+ *
+ * This variant assumes no destination id is provided, so data is
+ * copied in Crystal Router buffer order.
+ *
+ * parameters:
+ *   <-- cr        pointer to associated Crystal Router
+ *   --> src_rank  pointer to source rank array, or NULL
+ *   --> src_id    pointer to source id array, or NULL
+ *   --> data_idx  pointer to data index, or NULL
+ *   --> data      pointer to destination data, or NULL
+ *----------------------------------------------------------------------------*/
+
+static void
+_get_data_i(cs_crystal_router_t   *cr,
+            int                   *src_rank,
+            cs_lnum_t             *src_id,
+            cs_lnum_t             *data_idx,
+            void                  *data)
+{
+  const size_t n_elts = cr->n_elts[0];
+
+  if (data_idx != NULL)
+    data_idx[0] = 0;
+
+  cs_lnum_t      s_idx = 0;
+  unsigned char *data_p = (unsigned char *)data;
+  unsigned const char *p_s = cr->buffer[0];
+
+  /* Extract data */
+
+  for (size_t i = 0; i < n_elts; i++) {
+
+    /* Optional source rank */
+
+    if (src_rank != NULL) {
+      const int *cr_src_rank = (const int *)(p_s + sizeof(int));
+      src_rank[i] = *cr_src_rank;
+    }
+
+    /* Optional source id */
+
+    if (src_id != NULL) {
+      const cs_lnum_t *cr_src_id = (const cs_lnum_t *)(p_s + cr->src_id_shift);
+      src_id[i] = *cr_src_id;
+    }
+
+    /* Number of elements and optional data index */
+
+    const cs_lnum_t *pn = (const cs_lnum_t *)(p_s + cr->n_vals_shift);
+    const cs_lnum_t n_sub = *pn;
+    const size_t _sub_size = cr->elt_size*n_sub;
+
+    if (data_idx != NULL)
+      data_idx[i+1] = data_idx[i] + n_sub;
+
+    /* Data */
+
+    if (data_p != NULL) {
+      unsigned const char *pe = p_s + cr->elt_shift;
+      unsigned char *_data_p = data_p + s_idx*cr->elt_size;
+      for (size_t j = 0; j < _sub_size; j++)
+        _data_p[j] = pe[j];
+    }
+
+    s_idx += n_sub;
+    p_s += cr->comp_size + _sub_size;
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Get data elements associated with an indexed Crystal Router.
+ *
+ * This variant assumes a destination id is provided, along with a matching
+ * index. The destination id may either be provided or extracted from the
+ * data if present; but the data index should always be provided (i.e.
+ * precomputed), as it is required for indirect writes. If the destination
+ * ids are both provided and present in the Crystal Router, they are assumed
+ * to agree.
+ *
+ * parameters:
+ *   <-- cr        pointer to associated Crystal Router
+ *   <-- dest_id   pointer to destination id array, or NULL
+ *   <-- data_idx  pointer to data index
+ *   --> src_rank  pointer to source rank array, or NULL
+ *   --> src_id    pointer to source id array, or NULL
+ *   --> data      pointer to destination data, or NULL
+ *----------------------------------------------------------------------------*/
+
+static void
+_get_data_i_with_dest_id(cs_crystal_router_t   *cr,
+                         const cs_lnum_t        dest_id[],
+                         const cs_lnum_t        data_idx[],
+                         int                   *src_rank,
+                         cs_lnum_t             *src_id,
+                         void                  *data)
+{
+  const size_t n_elts = cr->n_elts[0];
+
+  unsigned char *data_p = (unsigned char *)data;
+  unsigned const char *p_s = cr->buffer[0];
+
+  /* Extract data */
+
+  for (size_t i = 0; i < n_elts; i++) {
+
+    cs_lnum_t id;
+    if (dest_id != NULL)
+      id = dest_id[i];
+    else {
+      const cs_lnum_t *cr_dest_id
+        = (const cs_lnum_t *)(p_s + cr->dest_id_shift);
+      id = *cr_dest_id;
+    }
+
+    /* Optional source rank */
+    if (src_rank != NULL) {
+      const int *cr_src_rank = (const int *)(p_s + sizeof(int));
+      src_rank[id] = *cr_src_rank;
+    }
+
+    /* Optional source id */
+    if (src_id != NULL) {
+      const cs_lnum_t *cr_src_id = (const cs_lnum_t *)(p_s + cr->src_id_shift);
+      src_id[id] = *cr_src_id;
+    }
+
+    /* Number of elements and optional data index */
+    const cs_lnum_t *pn = (const cs_lnum_t *)(p_s + cr->n_vals_shift);
+    const cs_lnum_t n_sub = *pn;
+    const size_t _sub_size = cr->elt_size*n_sub;
+    assert(n_sub == data_idx[id+1] - data_idx[id]);
+
+    /* Data */
+    if (data_p != NULL) {
+      unsigned const char *pe = p_s + cr->elt_shift;
+      unsigned char *_data_p = data_p + data_idx[id]*cr->elt_size;
+      for (size_t j = 0; j < _sub_size; j++)
+        _data_p[j] = pe[j];
+    }
+
+    p_s += cr->comp_size + _sub_size;
+
+  }
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -779,28 +1297,24 @@ cs_crystal_router_create_s(size_t            n_elts,
 
   for (size_t i = 0; i < n_elts; i++) {
 
-    int *pr = (int *)(cr->buffer[0] + i*cr->comp_size);
-    unsigned char *pe = cr->buffer[0] + i*cr->comp_size + cr->elt_shift;
+    unsigned char *p_s = cr->buffer[0] + i*cr->comp_size;
+    unsigned char *pe = p_s + cr->elt_shift;
     unsigned const char *_psrc = _elt + i*cr->elt_size;
 
+    int *pr = (int *)p_s;
     pr[0] = dest_rank[i];
-
-    if (add_src_rank)
+    if (add_src_rank) {
       pr[1] = cr->rank_id;
+    }
 
     if (add_dest_id) {
-      unsigned char *pi = cr->buffer[0] + i*cr->comp_size + cr->dest_id_shift;
-      unsigned const char *_p_dest_id = (unsigned const char *)(dest_id + i);
-      for (size_t j = 0; j < sizeof(cs_lnum_t); j++)
-        pi[j] = _p_dest_id[j];
+      cs_lnum_t *_cr_dest_id = (cs_lnum_t *)(p_s + cr->dest_id_shift);
+      *_cr_dest_id = dest_id[i];
     }
 
     if (add_src_id) {
-      cs_lnum_t src_id = i;
-      unsigned char *_src_id = (unsigned char *)(&src_id);
-      unsigned char *pi = cr->buffer[0] + i*cr->comp_size + cr->src_id_shift;
-      for (size_t j = 0; j < sizeof(cs_lnum_t); j++)
-        pi[j] = _src_id[j];
+      cs_lnum_t *_cr_src_id = (cs_lnum_t *)(p_s + cr->src_id_shift);
+      *_cr_src_id = (cs_lnum_t)i;
     }
 
     for (size_t j = 0; j < cr->elt_size; j++)
@@ -809,6 +1323,127 @@ cs_crystal_router_create_s(size_t            n_elts,
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(_cr_timers, &t0, &t1);
+
+#if _CR_DEBUG_DUMP
+  _dump(cr, "Crystal Router after creation.");
+#endif
+
+  return cr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a Crystal Router for indexed data.
+ *
+ * If the flags constant contains \ref CS_CRYSTAL_ROUTER_USE_DEST_ID,
+ * data exchanged will be ordered by the array passed to the
+ * \c dest_id argument. For \c n total values received on a rank
+ * (as given by \ref cs_crystal_router_n_elts), those destination ids
+ * must be in the range [0, \c n[.
+ *
+ * If the flags bit mask matches \ref CS_CRYSTAL_ROUTER_ADD_SRC_ID,
+ * source ids are added. If it matches \ref CS_CRYSTAL_ROUTER_ADD_SRC_RANK,
+ * source rank metadata is added.
+ *
+ * \param[in]  n_elts            number of elements
+ * \param[in]  stride            number of values per entity (interlaced)
+ * \param[in]  datatype          type of data considered
+ * \param[in]  flags             add destination id ?
+ * \param[in]  elt_idx           element values start and past-the-last index
+ * \param[in]  elt               element values
+ * \param[in]  dest_id           element destination id, or NULL
+ * \param[in]  dest_rank         destination rank for each element
+ * \param[in]  comm              associated MPI communicator
+ *
+ * \return  pointer to new Crystal Router structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_crystal_router_t *
+cs_crystal_router_create_i(size_t            n_elts,
+                           cs_datatype_t     datatype,
+                           int               flags,
+                           const cs_lnum_t  *elt_idx,
+                           const void       *elt,
+                           const cs_lnum_t  *dest_id,
+                           const int         dest_rank[],
+                           MPI_Comm          comm)
+{
+  cs_timer_t t0 = cs_timer_time();
+
+  /* Initialize timers if required */
+
+  if (_cr_calls == 0) {
+    for (int i = 0; i < 2; i++)
+      CS_TIMER_COUNTER_INIT(_cr_timers[i]);
+  }
+  _cr_calls += 1;
+
+  unsigned const char *_elt = elt;
+
+  /* Allocate structure */
+
+  cs_crystal_router_t *cr = _crystal_create_meta_i(n_elts,
+                                                   datatype,
+                                                   elt_idx,
+                                                   flags,
+                                                   comm);
+
+  /* Copy data and some metadata */
+
+  const bool add_src_rank
+    = (cr->flags & CS_CRYSTAL_ROUTER_ADD_SRC_RANK) ? true : false;
+  const bool add_dest_id
+    = (cr->flags & CS_CRYSTAL_ROUTER_USE_DEST_ID) ? true : false;
+  const bool add_src_id
+    = (cr->flags & CS_CRYSTAL_ROUTER_ADD_SRC_ID) ? true : false;
+
+  if (add_dest_id)
+    cs_assert(dest_id != NULL || n_elts == 0);
+
+  for (size_t i = 0; i < n_elts; i++) {
+
+    unsigned char *p_s =   cr->buffer[0] + i*cr->comp_size
+                         + elt_idx[i]*cr->elt_size;
+    int *pr = (int *)p_s;
+    cs_lnum_t *pn = (cs_lnum_t *)(p_s + cr->n_vals_shift);
+    unsigned char *pe = p_s + cr->elt_shift;
+    unsigned const char *_psrc = _elt + elt_idx[i]*cr->elt_size;
+
+    pr[0] = dest_rank[i];
+
+    if (add_src_rank)
+      pr[1] = cr->rank_id;
+
+    if (add_dest_id) {
+      unsigned char *pi = p_s + cr->dest_id_shift;
+      unsigned const char *_p_dest_id = (const unsigned char *)(dest_id + i);
+      for (size_t j = 0; j < sizeof(cs_lnum_t); j++)
+        pi[j] = _p_dest_id[j];
+    }
+
+    if (add_src_id) {
+      const cs_lnum_t src_id = i;
+      const unsigned char *_src_id = (const unsigned char *)(&src_id);
+      unsigned char *pi = p_s + cr->src_id_shift;
+      for (size_t j = 0; j < sizeof(cs_lnum_t); j++)
+        pi[j] = _src_id[j];
+    }
+
+    cs_lnum_t n_sub = elt_idx[i+1] - elt_idx[i];
+    pn[0] = n_sub;
+
+    size_t sub_size = n_sub * cr->elt_size;
+    for (size_t j = 0; j < sub_size; j++)
+      pe[j] = _psrc[j];
+  }
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(_cr_timers, &t0, &t1);
+
+#if _CR_DEBUG_DUMP
+  _dump(cr, "Crystal Router after creation.");
+#endif
 
   return cr;
 }
@@ -859,32 +1494,80 @@ cs_crystal_router_exchange(cs_crystal_router_t  *cr)
 
   cs_timer_t t0 = cs_timer_time();
 
-  /* Only strided version implemented so far */
+  int target = -1;
+  int send_part = 0;
+  int b_low = 0;
+  int n_sub_ranks = cr->n_ranks;
 
-  _crystal_exchange_strided(cr);
+  while (n_sub_ranks > 1) {
 
-  cs_timer_t t1 = cs_timer_time();
-  cs_timer_counter_add_diff(_cr_timers, &t0, &t1);
-}
+    int n_recv = 1;
+    int n_low = n_sub_ranks / 2;
+    int b_high = b_low + n_low;
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Sort stride crystal router data by source rank.
- *
- * \param[in, out]  cr  pointer to associated Crystal Router
- */
-/*----------------------------------------------------------------------------*/
+    if (cr->rank_id < b_high) {
+      target = cr->rank_id + n_low;
+      if ((n_sub_ranks & 1) && (cr->rank_id == b_high - 1))
+        n_recv = 2;
+      send_part = 1;
+    }
+    else {
+      target = cr->rank_id - n_low;
+      if (target == b_high) {
+        target--;
+        n_recv = 0;
+      }
+      send_part = 0;
+    }
 
-void
-cs_crystal_router_sort_by_source_rank(cs_crystal_router_t  *cr)
-{
-  cs_assert(cr != NULL);
+    /* Partition data */
 
-  cs_timer_t t0 = cs_timer_time();
+    if (cr->n_vals_shift == 0)
+      _crystal_partition_strided(cr, send_part, b_high);
+    else
+      _crystal_partition_indexed(cr, send_part, b_high);
 
-  /* Only strided version implemented so far */
+#if _CR_DEBUG_DUMP
+    {
+      char comment[80];
+      snprintf(comment, 79, "Crystal Router after partition, n_sub = %d",
+               n_sub_ranks);
+      _dump(cr, comment);
+    }
+#endif
 
-  _crystal_sort_by_source_rank_strided(cr);
+    /* Send message to target process */
+
+    _crystal_sendrecv(cr, target, n_recv);
+
+    /* Ready for next exchange */
+
+    if (cr->rank_id < b_high)
+      n_sub_ranks = n_low;
+    else {
+      n_sub_ranks -= n_low;
+      b_low = b_high;
+    }
+
+#if _CR_DEBUG_DUMP
+    {
+      char comment[80];
+      if (n_sub_ranks > 1) {
+        snprintf(comment, 79, "Crystal Router after sendrecv, n_sub = %d",
+                 n_sub_ranks);
+      }
+      else {
+        snprintf(comment, 79, "Crystal Router after exchange");
+      }
+      _dump(cr, comment);
+    }
+#endif
+
+  }
+
+  cr->n_elts[1] = 0;
+  cr->buffer_size[1] = 0;
+  BFT_FREE(cr->buffer[1]);
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(_cr_timers, &t0, &t1);
@@ -935,13 +1618,16 @@ cs_crystal_router_n_elts(const cs_crystal_router_t  *cr)
  * side, and not re-sending it (saving bandwidth) for subsequent calls
  * with a similar Crystal Router.
  *
- * \param[in]   cr          pointer to associated Crystal Router
- * \param[out]  src_rank    pointer to (pointer to) source rank array, or NULL
- * \param[out]  dest_id     pointer to (pointer to) destination id array,
- *                          or NULL
- * \param[out]  src_id      pointer to (pointer to) source id array, or NULL
- * \param[out]  dest_index  pointer to (pointer to) destination index, or NULL
- * \param[out]  dest_data   pointer to (pointer to) destination data, or NULL
+ * \param[in]       cr          pointer to associated Crystal Router
+ * \param[out]      src_rank    pointer to (pointer to) source rank array,
+ *                              or NULL
+ * \param[in, out]  dest_id     pointer to (pointer to) destination id array,
+ *                              or NULL
+ * \param[out]      src_id      pointer to (pointer to) source id array, or NULL
+ * \param[out]      data_index  pointer to (pointer to) destination index,
+ *                              or NULL
+ * \param[out]      data        pointer to (pointer to) destination data,
+ *                              or NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -950,16 +1636,16 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
                            int                  **src_rank,
                            cs_lnum_t            **dest_id,
                            cs_lnum_t            **src_id,
-                           cs_lnum_t            **dest_index,
-                           void                 **dest_data)
+                           cs_lnum_t            **data_index,
+                           void                 **data)
 {
   cs_timer_t t0 = cs_timer_time();
 
   int *_src_rank = NULL;
   cs_lnum_t *_dest_id = NULL;
   cs_lnum_t *_src_id = NULL;
-  cs_lnum_t *_dest_index = NULL;
-  unsigned char *_dest_data = NULL;
+  cs_lnum_t *_data_index = NULL;
+  unsigned char *_data = NULL;
 
   size_t n_elts = cr->n_elts[0];
 
@@ -989,38 +1675,72 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
     }
   }
 
-  if (dest_index != NULL && cr->stride == 0) {
-    _dest_index = *dest_index;
-    if (_dest_index == NULL) {
-      BFT_MALLOC(_dest_index, n_elts + 1, cs_lnum_t);
-      _dest_index[0] = 0;
-      *dest_index = _dest_index;
+  if (data_index != NULL && cr->n_vals_shift > 0) {
+    _data_index = *data_index;
+    if (_data_index == NULL) {
+      BFT_MALLOC(_data_index, n_elts + 1, cs_lnum_t);
+      *data_index = _data_index;
     }
   }
 
-  if (dest_data != NULL && cr->stride > 0) {
-    _dest_data = *dest_data;
-    if (_dest_data == NULL) {
-      BFT_MALLOC(_dest_data, n_elts*cr->elt_size, unsigned char);
-      *dest_data = _dest_data;
+  if (data != NULL) {
+    _data = *data;
+    if (_data == NULL) {
+      size_t data_size;
+      if (cr->stride > 0)
+        data_size = n_elts*cr->elt_size;
+      else
+        data_size = cr->n_vals[0]*cr->elt_size;
+      BFT_MALLOC(_data, data_size, unsigned char);
+      *data = _data;
+    }
+  }
+
+  if (data != NULL && cr->stride > 0) {
+    _data = *data;
+    if (_data == NULL) {
+      BFT_MALLOC(_data, n_elts*cr->elt_size, unsigned char);
+      *data = _data;
     }
   }
 
   /* Now extract data */
 
-  if (cr->stride > 0) {
-
-    if (_dest_id != NULL || cr->flags & CS_CRYSTAL_ROUTER_USE_DEST_ID)
+  if (_dest_id != NULL || cr->flags & CS_CRYSTAL_ROUTER_USE_DEST_ID) {
+    if (cr->n_vals_shift == 0)
       _get_data_s_with_dest_id(cr,
-                               _src_rank,
                                _dest_id,
+                               _src_rank,
                                _src_id,
-                               _dest_data);
+                               _data);
+    else {
+      if (cr->n_vals_shift > 0 && _data_index == NULL)
+        BFT_MALLOC(_data_index, n_elts + 1, cs_lnum_t);
 
+      _get_data_index_with_dest_id(cr, _dest_id, _data_index);
+
+      _get_data_i_with_dest_id(cr,
+                               _dest_id,
+                               _data_index,
+                               _src_rank,
+                               _src_id,
+                               _data);
+    }
+  }
+
+  else {
+
+    if (cr->n_vals_shift == 0)
+      _get_data_s(cr, _src_rank, _src_id, _data);
     else
-      _get_data_s(cr, _src_rank, _src_id, _dest_data);
+      _get_data_i(cr, _src_rank, _src_id, _data_index, _data);
 
   }
+
+  if (dest_id == NULL && _dest_id != NULL)
+    BFT_FREE(_dest_id);
+  if (data_index == NULL && _data_index != NULL)
+    BFT_FREE(_data_index);
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(_cr_timers, &t0, &t1);

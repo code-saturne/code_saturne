@@ -50,9 +50,10 @@ BEGIN_C_DECLS
  * Crystal router ordering and metadata flags.
  */
 
-#define CS_CRYSTAL_ROUTER_USE_DEST_ID        (1 << 0)
-#define CS_CRYSTAL_ROUTER_ADD_SRC_ID         (1 << 1)
-#define CS_CRYSTAL_ROUTER_ADD_SRC_RANK       (1 << 2)
+#define CS_CRYSTAL_ROUTER_USE_DEST_ID         (1 << 0)
+
+#define CS_CRYSTAL_ROUTER_ADD_SRC_ID          (1 << 1)
+#define CS_CRYSTAL_ROUTER_ADD_SRC_RANK        (1 << 2)
 
 /*============================================================================
  * Type definitions
@@ -111,6 +112,44 @@ cs_crystal_router_create_s(size_t            n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create a Crystal Router for indexed data.
+ *
+ * If the flags constant contains \ref CS_CRYSTAL_ROUTER_USE_DEST_ID,
+ * data exchanged will be ordered by the array passed to the
+ * \c dest_id argument. For \c n total values received on a rank
+ * (as given by \ref cs_crystal_router_n_elts), those destination ids
+ * must be in the range [0, \c n[.
+ *
+ * If the flags bit mask matches \ref CS_CRYSTAL_ROUTER_ADD_SRC_ID,
+ * source ids are added. If it matches \ref CS_CRYSTAL_ROUTER_ADD_SRC_RANK,
+ * source rank metadata is added.
+ *
+ * \param[in]  n_elts            number of elements
+ * \param[in]  stride            number of values per entity (interlaced)
+ * \param[in]  datatype          type of data considered
+ * \param[in]  flags             add destination id ?
+ * \param[in]  elt_idx           element values start and past-the-last index
+ * \param[in]  elt               element values
+ * \param[in]  dest_id           element destination id, or NULL
+ * \param[in]  dest_rank         destination rank for each element
+ * \param[in]  comm              associated MPI communicator
+ *
+ * \return  pointer to new Crystal Router structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_crystal_router_t *
+cs_crystal_router_create_i(size_t            n_elts,
+                           cs_datatype_t     datatype,
+                           int               flags,
+                           const cs_lnum_t  *eld_idx,
+                           const void       *elt,
+                           const cs_lnum_t  *dest_id,
+                           const int         dest_rank[],
+                           MPI_Comm          comm);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Destroy a Crystal Router.
  *
  * \param[in, out]  cr   pointer to associated Crystal Router
@@ -132,17 +171,6 @@ cs_crystal_router_destroy(cs_crystal_router_t  **cr);
 
 void
 cs_crystal_router_exchange(cs_crystal_router_t  *cr);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Sort stride crystal router data by source rank.
- *
- * \param[in, out]  cr  pointer to associated Crystal Router
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_crystal_router_sort_by_source_rank(cs_crystal_router_t  *cr);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -181,13 +209,16 @@ cs_crystal_router_n_elts(const cs_crystal_router_t  *cr);
  * side, and not re-sending it (saving bandwidth) for subsequent calls
  * with a similar Crystal Router.
  *
- * \param[in]   cr          pointer to associated Crystal Router
- * \param[out]  src_rank    pointer to (pointer to) source rank array, or NULL
- * \param[out]  dest_id     pointer to (pointer to) destination id array,
- *                          or NULL
- * \param[out]  src_id      pointer to (pointer to) source id array, or NULL
- * \param[out]  dest_index  pointer to (pointer to) destination index, or NULL
- * \param[out]  dest_data   pointer to (pointer to) destination data, or NULL
+ * \param[in]       cr          pointer to associated Crystal Router
+ * \param[out]      src_rank    pointer to (pointer to) source rank array,
+ *                              or NULL
+ * \param[in, out]  dest_id     pointer to (pointer to) destination id array,
+ *                              or NULL
+ * \param[out]      src_id      pointer to (pointer to) source id array, or NULL
+ * \param[out]      data_index  pointer to (pointer to) destination index,
+ *                              or NULL
+ * \param[out]      data        pointer to (pointer to) destination data,
+ *                              or NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -196,8 +227,8 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
                            int                  **src_rank,
                            cs_lnum_t            **dest_id,
                            cs_lnum_t            **src_id,
-                           cs_lnum_t            **dest_index,
-                           void                 **dest_data);
+                           cs_lnum_t            **data_index,
+                           void                 **data);
 
 #endif /* defined(HAVE_MPI) */
 

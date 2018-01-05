@@ -108,6 +108,7 @@ mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
 # Code_Saturne tests
 
 check_PROGRAMS += \
+cs_all_to_all_test \
 cs_blas_test \
 cs_check_cdo \
 cs_core_test \
@@ -129,6 +130,10 @@ LDADD_CS_TESTS = \
 	$(top_builddir)/src/base/libcscore.la \
 	$(top_builddir)/src/bft/libbft.la \
 	$(LIBPLE_LA) $(PLE_LIBS) $(MPI_LIBS) -lm
+
+cs_all_to_all_test_SOURCES  = cs_all_to_all_test.c
+cs_all_to_all_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+cs_all_to_all_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_blas_test_SOURCES  = \
 cs_blas_test.c \

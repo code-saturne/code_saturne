@@ -86,8 +86,8 @@ BEGIN_C_DECLS
   \parblock
 
   Flags are defined as a sum (bitwise or) of constants, which may include
-  \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID, \ref CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
-  \ref CS_ALL_TO_ALL_NO_REVERSE, and \ref CS_ALL_TO_ALL_USE_SRC_RANK.
+  \ref CS_ALL_TO_ALL_USE_DEST_ID, \ref CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
+  \ref CS_ALL_TO_ALL_NO_REVERSE, and \ref CS_ALL_TO_ALL_NEED_SRC_RANK.
 
   \endparblock
 */
@@ -133,6 +133,9 @@ typedef struct {
   int            *recv_count;        /* Receive counts for MPI_Alltoall */
   int            *send_displ;        /* Send displs for MPI_Alltoall */
   int            *recv_displ;        /* Receive displs for MPI_Alltoall */
+
+  int            *recv_count_save;   /* Saved (strided) receive counts for
+                                        MPI_Alltoall for indexed exchanges */
 
   MPI_Comm        comm;              /* Associated MPI communicator */
   MPI_Datatype    comp_type;         /* Associated MPI datatype */
@@ -247,11 +250,11 @@ _all_to_all_create_base(size_t    n_elts,
 
   /* Check flags */
 
-  if (   (flags & CS_ALL_TO_ALL_ORDER_BY_DEST_ID)
+  if (   (flags & CS_ALL_TO_ALL_USE_DEST_ID)
       && (flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK))
     bft_error(__FILE__, __LINE__, 0,
               "%s: flags may not match both\n"
-              "CS_ALL_TO_ALL_ORDER_BY_DEST_ID and\n"
+              "CS_ALL_TO_ALL_USE_DEST_ID and\n"
               "CS_ALL_TO_ALL_ORDER_BY_SRC_RANK.",
               __func__);
 
@@ -340,7 +343,7 @@ _alltoall_caller_create_meta(int        flags,
 
   dc->dest_id_datatype = CS_DATATYPE_NULL;
 
-  if (flags & CS_ALL_TO_ALL_ORDER_BY_DEST_ID)
+  if (flags & CS_ALL_TO_ALL_USE_DEST_ID)
     dc->dest_id_datatype = CS_LNUM_TYPE;
 
   dc->stride = 0;
@@ -360,6 +363,7 @@ _alltoall_caller_create_meta(int        flags,
   BFT_MALLOC(dc->recv_count, dc->n_ranks, int);
   BFT_MALLOC(dc->send_displ, dc->n_ranks + 1, int);
   BFT_MALLOC(dc->recv_displ, dc->n_ranks + 1, int);
+  dc->recv_count_save = NULL;
 
   /* Compute data size and alignment */
 
@@ -383,18 +387,42 @@ _alltoall_caller_create_meta(int        flags,
 }
 
 /*----------------------------------------------------------------------------
- * Update all MPI_Alltoall(v) caller metadata for strided data.
+ * Destroy a MPI_Alltoall(v) caller.
+ *
+ * parameters:
+ *   dc <-> pointer to pointer to MPI_Alltoall(v) caller structure
+ *---------------------------------------------------------------------------*/
+
+static void
+_alltoall_caller_destroy(_mpi_all_to_all_caller_t **dc)
+{
+  if (dc != NULL) {
+    _mpi_all_to_all_caller_t *_dc = *dc;
+    if (_dc->comp_type != MPI_BYTE)
+      MPI_Type_free(&(_dc->comp_type));
+    BFT_FREE(_dc->_send_buffer);
+    BFT_FREE(_dc->recv_count_save);
+    BFT_FREE(_dc->recv_displ);
+    BFT_FREE(_dc->send_displ);
+    BFT_FREE(_dc->recv_count);
+    BFT_FREE(_dc->send_count);
+    BFT_FREE(*dc);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Update all MPI_Alltoall(v) caller metadata.
  *
  * parameters:
  *   dc        <-> distributor caller
  *   datatype  <-- associated datatype
- *   stride    <-- associated stride
+ *   stride    <-- associated stride (0 if indexed)
  *---------------------------------------------------------------------------*/
 
 static void
-_alltoall_caller_update_meta_s(_mpi_all_to_all_caller_t  *dc,
-                               cs_datatype_t              datatype,
-                               int                        stride)
+_alltoall_caller_update_meta(_mpi_all_to_all_caller_t  *dc,
+                             cs_datatype_t              datatype,
+                             int                        stride)
 {
   size_t elt_size = cs_datatype_size[datatype]*stride;
 
@@ -410,27 +438,86 @@ _alltoall_caller_update_meta_s(_mpi_all_to_all_caller_t  *dc,
 
   /* Recompute data size and alignment */
 
-  size_t align_size = sizeof(cs_lnum_t);
-  if (cs_datatype_size[datatype] > align_size)
-    align_size = cs_datatype_size[datatype];
+  if (stride > 0) {
 
-  if (dc->dest_id_datatype == CS_LNUM_TYPE)
-    dc->elt_shift = sizeof(cs_lnum_t);
-  else
+    size_t align_size = sizeof(cs_lnum_t);
+    if (cs_datatype_size[datatype] > align_size)
+      align_size = cs_datatype_size[datatype];
+
+    if (dc->dest_id_datatype == CS_LNUM_TYPE)
+      dc->elt_shift = sizeof(cs_lnum_t);
+    else
+      dc->elt_shift = 0;
+
+    if (dc->elt_shift % align_size)
+      dc->elt_shift += align_size - (dc->elt_shift % align_size);
+
+    dc->comp_size = dc->elt_shift + elt_size;
+
+    if (elt_size % align_size)
+      dc->comp_size += align_size - (elt_size % align_size);
+
+  }
+  else {
     dc->elt_shift = 0;
-
-  if (dc->elt_shift % align_size)
-    dc->elt_shift += align_size - (dc->elt_shift % align_size);
-
-  dc->comp_size = dc->elt_shift + elt_size;
-
-  if (elt_size % align_size)
-    dc->comp_size += align_size - (elt_size % align_size);;
+    dc->comp_size = cs_datatype_size[datatype];
+  }
 
   /* Update associated MPI datatype */
 
   MPI_Type_contiguous(dc->comp_size, MPI_BYTE, &(dc->comp_type));
   MPI_Type_commit(&(dc->comp_type));
+}
+
+/*----------------------------------------------------------------------------
+ * Save partial metadata before indexed MPI_Alltoall(v) call.
+ *
+ * parameters:
+ *   d         <-> pointer to associated all-to-all distributor
+ *   dc        <-> associated MPI_Alltoall(v) caller structure
+ *   reverse   <-- true if reverse mode
+ *   dest_rank <-- destination rank (in direct mode), used here to reorder
+ *                 data in reverse mode.
+ *---------------------------------------------------------------------------*/
+
+static  void
+_alltoall_caller_save_meta_i(_mpi_all_to_all_caller_t  *dc)
+{
+  if (dc->recv_count_save == NULL) {
+    BFT_MALLOC(dc->recv_count_save, dc->n_ranks, int);
+    memcpy(dc->recv_count_save, dc->recv_count, sizeof(int)*(dc->n_ranks));
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Reset metadate to that used for strided exchanges after indexed
+ * MPI_Alltoall(v) call.
+ *
+ * parameters:
+ *   dc        <-> associated MPI_Alltoall(v) caller structure
+ *   dest_rank <-- destination rank (in direct mode), used here to reorder
+ *                 data in reverse mode.
+ *---------------------------------------------------------------------------*/
+
+static  void
+_alltoall_caller_reset_meta_i(_mpi_all_to_all_caller_t  *dc,
+                              const int                  dest_rank[])
+{
+  /* Re-count values to send */
+  for (int i = 0; i < dc->n_ranks; i++)
+    dc->send_count[i] = 0;
+  for (size_t j = 0; j < dc->send_size; j++)
+    dc->send_count[dest_rank[j]] += 1;
+
+  /* Revert to saved values for receive */
+  if (dc->recv_count_save != NULL) {
+    memcpy(dc->recv_count, dc->recv_count_save, sizeof(int)*(dc->n_ranks));
+    BFT_FREE(dc->recv_count_save);
+  }
+
+  /* Recompute associated displacements */
+  _compute_displ(dc->n_ranks, dc->send_count, dc->send_displ);
+  _compute_displ(dc->n_ranks, dc->recv_count, dc->recv_displ);
 }
 
 /*----------------------------------------------------------------------------
@@ -465,7 +552,7 @@ _alltoall_caller_swap_src_dest(_mpi_all_to_all_caller_t  *dc)
  *   stride           <-- number of values per entity (interlaced)
  *   datatype         <-- type of data considered
  *   reverse          <-- true if reverse mode
- *   elt              <-- element values
+ *   data             <-- element values
  *   dest_id          <-- element destination id, or NULL
  *   recv_id          <-- element receive id (for reverse mode), or NULL
  *   dest_rank        <-- destination rank for each element
@@ -490,7 +577,7 @@ _alltoall_caller_prepare_s(_mpi_all_to_all_caller_t  *dc,
 
   assert(data != NULL || (n_elts == 0 || stride == 0));
 
-  _alltoall_caller_update_meta_s(dc, datatype, stride);
+  _alltoall_caller_update_meta(dc, datatype, stride);
 
   /* Allocate send buffer */
 
@@ -550,25 +637,148 @@ _alltoall_caller_prepare_s(_mpi_all_to_all_caller_t  *dc,
 }
 
 /*----------------------------------------------------------------------------
- * Destroy a MPI_Alltoall(v) caller.
+ * Prepare a MPI_Alltoall(v) caller for indexed data.
  *
  * parameters:
- *   dc <-> pointer to pointer to MPI_Alltoall(v) caller structure
+ *   n_elts           <-- number of elements
+ *   datatype         <-- type of data considered
+ *   reverse          <-- true if reverse mode
+ *   src_index        <-- source index
+ *   dest_index       <-- destination index
+ *   data             <-- element values
+ *   recv_id          <-- element receive id (for reverse mode), or NULL
+ *   dest_rank        <-- destination rank for each element
  *---------------------------------------------------------------------------*/
 
 static void
-_alltoall_caller_destroy(_mpi_all_to_all_caller_t **dc)
+_alltoall_caller_prepare_i(_mpi_all_to_all_caller_t  *dc,
+                           size_t                     n_elts,
+                           cs_datatype_t              datatype,
+                           bool                       reverse,
+                           const cs_lnum_t            src_index[],
+                           const cs_lnum_t            dest_index[],
+                           const void                *data,
+                           const cs_lnum_t           *recv_id,
+                           const int                  dest_rank[])
 {
-  if (dc != NULL) {
-    _mpi_all_to_all_caller_t *_dc = *dc;
-    if (_dc->comp_type != MPI_BYTE)
-      MPI_Type_free(&(_dc->comp_type));
-    BFT_FREE(_dc->_send_buffer);
-    BFT_FREE(_dc->recv_displ);
-    BFT_FREE(_dc->send_displ);
-    BFT_FREE(_dc->recv_count);
-    BFT_FREE(_dc->send_count);
-    BFT_FREE(*dc);
+  int i;
+
+  size_t elt_size = cs_datatype_size[datatype];
+
+  unsigned const char *_data = data;
+
+  _alltoall_caller_update_meta(dc, datatype, 0);
+
+  /* Allocate send buffer */
+
+  if (reverse) {
+    BFT_FREE(dc->_send_buffer);
+    dc->send_buffer = data;
+  }
+  else {
+    size_t n_sub_elts = src_index[n_elts];
+    BFT_REALLOC(dc->_send_buffer, n_sub_elts*dc->comp_size, unsigned char);
+    dc->send_buffer = dc->_send_buffer;
+  }
+
+  /* Update send and receive counts and displacements
+     (avoiding additional communication) */
+
+  for (i = 0; i < dc->n_ranks; i++) {
+    dc->send_count[i] = 0;
+    dc->recv_count[i] = 0;
+  }
+
+  if (reverse) {
+    if (recv_id != NULL) {
+      for (i = 0; i < dc->n_ranks; i++) {
+        size_t i_s = dc->send_displ[i];
+        size_t i_e = dc->send_displ[i+1];
+        for (size_t j = i_s; j < i_e; j++) {
+          cs_lnum_t k = recv_id[j];
+          cs_lnum_t n_sub_send = src_index[k+1] - src_index[k];
+          dc->send_count[i] += n_sub_send;
+        }
+      }
+    }
+    else {
+      for (i = 0; i < dc->n_ranks; i++) {
+        size_t i_s = dc->send_displ[i];
+        size_t i_e = dc->send_displ[i+1];
+        for (size_t j = i_s; j < i_e; j++) {
+          cs_lnum_t n_sub_send = src_index[j+1] - src_index[j];
+          dc->send_count[i] += n_sub_send;
+        }
+      }
+    }
+  }
+  else { /* !reverse */
+    for (size_t j = 0; j < dc->send_size; j++) {
+      cs_lnum_t n_sub_send = src_index[j+1] - src_index[j];
+      dc->send_count[dest_rank[j]] += n_sub_send;
+    }
+  }
+
+  if (!reverse && recv_id != NULL) {
+    for (i = 0; i < dc->n_ranks; i++) {
+      size_t i_s = dc->recv_displ[i];
+      size_t i_e = dc->recv_displ[i+1];
+      for (size_t j = i_s; j < i_e; j++) {
+        cs_lnum_t k = recv_id[j];
+        cs_lnum_t n_sub_recv = dest_index[k+1] - dest_index[k];
+        dc->recv_count[i] += n_sub_recv;
+      }
+    }
+  }
+  else { /* reverse || recv_id == NULL */
+    for (i = 0; i < dc->n_ranks; i++) {
+      size_t i_s = dc->recv_displ[i];
+      size_t i_e = dc->recv_displ[i+1];
+      for (size_t j = i_s; j < i_e; j++) {
+        cs_lnum_t n_sub_recv = dest_index[j+1] - dest_index[j];
+        dc->recv_count[i] += n_sub_recv;
+      }
+    }
+  }
+
+  _compute_displ(dc->n_ranks, dc->send_count, dc->send_displ);
+  _compute_displ(dc->n_ranks, dc->recv_count, dc->recv_displ);
+
+  /* Copy data; in case of reverse send with destination ids, the
+     matching indirection must be applied here. */
+
+  if (!reverse) {
+    for (size_t j = 0; j < n_elts; j++) {
+      cs_lnum_t n_sub_send = src_index[j+1] - src_index[j];
+      size_t w_displ = dc->send_displ[dest_rank[j]]*elt_size;
+      size_t r_displ = src_index[j]*elt_size;
+      size_t sub_size = elt_size*n_sub_send;
+      dc->send_displ[dest_rank[j]] += n_sub_send;
+      for (size_t l = 0; l < sub_size; l++)
+        dc->_send_buffer[w_displ + l] = _data[r_displ + l];
+    }
+    /* Reset send_displ */
+    for (i = 0; i < dc->n_ranks; i++)
+      dc->send_displ[i] -= dc->send_count[i];
+  }
+  else if (recv_id != NULL) { /* reverse here */
+    for (i = 0; i < dc->n_ranks; i++) {
+      size_t i_s = dc->recv_displ[i];
+      size_t i_e = dc->recv_displ[i+1];
+      size_t w_displ = dc->send_displ[i]*elt_size;
+      for (size_t j = i_s; j < i_e; j++) {
+        cs_lnum_t k = recv_id[j];
+        cs_lnum_t n_sub_send = src_index[k+1] - src_index[k];
+        size_t r_displ = src_index[k]*elt_size;
+        size_t sub_size = elt_size*n_sub_send;
+        for (size_t l = 0; l < sub_size; l++)
+          dc->_send_buffer[w_displ + l] = _data[r_displ + l];
+        w_displ += sub_size;
+      }
+    }
+  }
+  else { /* If revert and no recv_id */
+    assert(dc->send_buffer == data);
   }
 }
 
@@ -714,6 +924,291 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
   return _dest_data;
 }
 
+/*----------------------------------------------------------------------------
+ * Exchange indexed data with a MPI_Alltoall(v) caller.
+ *
+ * parameters:
+ *   d          <-> pointer to associated all-to-all distributor
+ *   dc         <-> associated MPI_Alltoall(v) caller structure
+ *   reverse    <-- true if reverse mode
+ *   dest_index <-- destination index
+ *   dest_rank  <-- destination rank (in direct mode), used here to reorder
+ *                  data in reverse mode.
+ *   dest_data  <-> destination data buffer, or NULL
+ *
+ * returns:
+ *   pointer to dest_data, or newly allocated buffer
+ *---------------------------------------------------------------------------*/
+
+static  void *
+_alltoall_caller_exchange_i(cs_all_to_all_t           *d,
+                            _mpi_all_to_all_caller_t  *dc,
+                            bool                       reverse,
+                            const cs_lnum_t            dest_index[],
+                            const int                  dest_rank[],
+                            void                      *dest_data)
+{
+  size_t elt_size = cs_datatype_size[dc->datatype];
+  unsigned char *_dest_data = dest_data, *_recv_data = dest_data;
+
+  /* Final data buffer */
+
+  size_t _n_dest_sub = dest_index[dc->recv_size];
+  if (_dest_data == NULL && _n_dest_sub*elt_size > 0)
+    BFT_MALLOC(_dest_data, _n_dest_sub*elt_size, unsigned char);
+
+  /* Data buffer for MPI exchange (may merge data and metadata) */
+  if (d->dest_id != NULL || reverse)
+    BFT_MALLOC(_recv_data, _n_dest_sub*elt_size, unsigned char);
+  else
+    _recv_data = _dest_data;
+
+  cs_timer_t t0 = cs_timer_time();
+
+  MPI_Alltoallv(dc->send_buffer, dc->send_count, dc->send_displ, dc->comp_type,
+                _recv_data, dc->recv_count, dc->recv_displ, dc->comp_type,
+                dc->comm);
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_EXCHANGE,
+                            &t0, &t1);
+  _all_to_all_calls[CS_ALL_TO_ALL_TIME_EXCHANGE] += 1;
+
+  /* Handle main data buffer (reverse implies reordering data) */
+
+  if (_dest_data != _recv_data) {
+    const unsigned char *sp = _recv_data;
+    if (d->recv_id != NULL && !reverse) {
+      for (int i = 0; i < dc->n_ranks; i++) {
+        size_t i_s = dc->recv_displ[i];
+        size_t i_e = dc->recv_displ[i+1];
+        size_t r_displ = dc->recv_displ[i]*elt_size;
+        for (size_t j = i_s; j < i_e; j++) {
+          cs_lnum_t k = d->recv_id[j];
+          cs_lnum_t n_sub_recv = dest_index[k+1] - dest_index[k];
+          size_t w_displ = dest_index[k]*elt_size;
+          size_t sub_size = n_sub_recv*elt_size;
+          for (size_t l = 0; l < sub_size; l++)
+            _dest_data[w_displ + l] = sp[r_displ + l];
+          r_displ += sub_size;
+        }
+      }
+    }
+    else if (reverse) {
+      for (int i = 0; i < dc->n_ranks; i++)
+        dc->recv_count[i] = 0;
+      for (size_t i = 0; i < d->dc->recv_size; i++) {
+        int rank_id = dest_rank[i];
+        size_t w_displ = dest_index[i]*elt_size;
+        size_t r_displ = (  dc->recv_displ[rank_id]
+                          + dc->recv_count[rank_id])*elt_size;
+        cs_lnum_t n_sub_recv = dest_index[i+1] - dest_index[i];
+        size_t sub_size = n_sub_recv*elt_size;
+        for (size_t l = 0; l < sub_size; l++)
+          _dest_data[w_displ + l] = sp[r_displ + l];
+        dc->recv_count[rank_id] += n_sub_recv;
+      }
+    }
+    else {
+      assert(_dest_data == _recv_data);
+    }
+    BFT_FREE(_recv_data);
+  }
+
+  return _dest_data;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute receive id by ordering based on source rank.
+ *
+ * The caller is responsible for freeing the returned array.
+ *
+ * As communication schemes (such as Crystal Router) should lead to
+ * elements being grouped by rank, this is used here to optimize sorting.
+ * Sorting should also be stable as a result.
+ *
+ * \param[in]  d         pointer to all-to-all distributor
+ * \param[in]  src_rank  associated source rank (size: d->n_elts_dest)
+ *
+ * \return associated destination id array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_recv_id_by_src_rank_order(cs_all_to_all_t  *d,
+                           const int         src_rank[])
+{
+  assert(d->recv_id == NULL);
+
+  const cs_lnum_t n_elts = d->n_elts_dest;
+
+  BFT_MALLOC(d->recv_id, n_elts, cs_lnum_t);
+
+  cs_lnum_t n_rs = 0;
+  cs_lnum_2_t *rs;
+
+  BFT_MALLOC(rs, n_elts+1, cs_lnum_2_t);
+
+  /* Extract source rank and build rank ranges. */
+
+  int prev_rank = -1;
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    if (src_rank[i] != prev_rank) {
+      prev_rank = src_rank[i];
+      rs[n_rs][0] = src_rank[i];
+      rs[n_rs][1] = i;
+      n_rs++;
+    }
+  }
+
+  /* Extend array for future range tests. */
+
+  rs[n_rs][0] = -1;
+  rs[n_rs][1] = n_elts;
+
+  /* Order ranges. */
+
+  cs_lnum_t *rs_order;
+  BFT_MALLOC(rs_order, n_rs, cs_lnum_t);
+
+  cs_order_lnum_allocated_s(NULL,
+                            (const cs_lnum_t  *)rs,
+                            2,
+                            rs_order,
+                            n_rs);
+
+  cs_lnum_t k = 0;
+  for (cs_lnum_t i = 0; i < n_rs; i++) {
+    cs_lnum_t j = rs_order[i];
+    cs_lnum_t s_id = rs[j][1];
+    cs_lnum_t e_id = rs[j+1][1];
+    for (cs_lnum_t l = s_id; l < e_id; l++) {
+      d->recv_id[l] = k;
+      k++;
+    }
+  }
+  assert(k == n_elts);
+
+  BFT_FREE(rs_order);
+  BFT_FREE(rs);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine Crystal Router flags for a distributor.
+ *
+ * Some flags are only required for the first exchange.
+ *
+ * \param[in]  d        pointer to associated all-to-all distributor
+ * \param[in]  reverse  if true, communicate in reverse direction
+ *
+ * \return flags required for first Crystal Router call
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_cr_flags(cs_all_to_all_t  *d,
+          bool              reverse)
+{
+  cs_assert(d != NULL);
+
+  int cr_flags = 0;
+
+  if (!reverse) {
+    if (d->n_elts_dest < 0) {
+      if (d->flags & CS_ALL_TO_ALL_USE_DEST_ID)
+        cr_flags = cr_flags | CS_CRYSTAL_ROUTER_USE_DEST_ID;
+      if (! (d->flags & CS_ALL_TO_ALL_NO_REVERSE)) {
+        cr_flags = cr_flags | CS_CRYSTAL_ROUTER_ADD_SRC_ID;
+        cr_flags = cr_flags | CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
+      }
+      if (   d->flags & CS_ALL_TO_ALL_NEED_SRC_RANK
+          || d->flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK)
+        cr_flags = cr_flags | CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
+    }
+  }
+  else
+    cr_flags = cr_flags | CS_CRYSTAL_ROUTER_USE_DEST_ID;
+
+  return cr_flags;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute destination id by ordering based on source rank after
+ *        the first exchange with a Crystal Router.
+ *
+ * \param[in]  d   pointer to associated all-to-all distributor
+ * \param[in]  cr  pointer to associated Crystal Router
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cr_recv_id_by_src_rank(cs_all_to_all_t      *d,
+                        cs_crystal_router_t  *cr)
+{
+  cs_assert(d != NULL);
+
+  assert(d->recv_id == NULL);
+
+  int *src_rank;
+  BFT_MALLOC(src_rank, d->n_elts_dest, int);
+
+  cs_crystal_router_get_data(cr,
+                             &src_rank,
+                             NULL,
+                             NULL,
+                             NULL, /* dest_index */
+                             NULL);
+
+  _recv_id_by_src_rank_order(d, src_rank);
+
+  BFT_FREE(src_rank);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Indicate if source rank info must be maintained.
+ *
+ * The source rank is needed if either the CS_CRYSTAL_ROUTER_ADD_SRC_RANK
+ * flag is set, or CS_ALL_TO_ALL_NO_REVERSE is not set.
+ *
+ * It is recommended that if the CS_ALL_TO_ALL_ORDER_BY_SRC_RANK flag is set,
+ * for a communication scheme which does not ensure this by default
+ * (such as for a Crystal Router), the source rank has been converted
+ * to a recv_id, using \ref _recv_id_by_src_rank_order, so if this array
+ * is available, the CS_ALL_TO_ALL_ORDER_BY_SRC_RANK flag does imply
+ * by itself that source rank info is needed anymore.
+ *
+ * \param[in]  d   pointer to associated all-to-all distributor
+ *
+ * \return true if source rank info is needed, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_is_src_rank_info_needed(cs_all_to_all_t  *d)
+{
+  cs_assert(d != NULL);
+
+  bool retval = false;
+
+  if (d->flags & CS_ALL_TO_ALL_NO_REVERSE) {
+    if (d->flags & CS_ALL_TO_ALL_NEED_SRC_RANK)
+      retval = true;
+    else if (d->flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK) {
+      if (d->recv_id == NULL && d->n_elts_dest > 0)
+        retval = true;
+    }
+  }
+  else
+    retval = true;
+
+  return retval;
+}
+
 #endif /* defined(HAVE_MPI) */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -730,7 +1225,7 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
  *
  * This is a collective operation on communicator comm.
  *
- * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID,
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_USE_DEST_ID,
  * data exchanged will be ordered by the array passed to the
  * \c dest_id argument. For \c n total values received on a rank
  * (as given by \ref cs_all_to_all_n_elts_dest), those destination ids
@@ -738,7 +1233,7 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
  *
  * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
  * data exchanged will be ordered by source rank (this is incompatible
- * with \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID.
+ * with \ref CS_ALL_TO_ALL_USE_DEST_ID.
  *
  * \attention
  * The \c dest_rank and \c dest_id arrays are only referenced by
@@ -751,7 +1246,7 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
  * \param[in]  n_elts       number of elements
  * \param[in]  flags        sum of ordering and metadata flag constants
  * \param[in]  dest_id      element destination id (required if flags
- *                          contain \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID),
+ *                          contain \ref CS_ALL_TO_ALL_USE_DEST_ID),
  *                          or NULL
  * \param[in]  dest_rank    destination rank for each element
  * \param[in]  comm         associated MPI communicator
@@ -799,12 +1294,12 @@ cs_all_to_all_create(size_t            n_elts,
  *
  * This is a collective operation on communicator comm.
  *
- * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID,
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_USE_DEST_ID,
  * data exchanged will be ordered by global element number.
  *
  * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
  * data exchanged will be ordered by source rank (this is incompatible
- * with \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID.
+ * with \ref CS_ALL_TO_ALL_USE_DEST_ID.
  *
  * \param[in]  n_elts       number of elements
  * \param[in]  flags        sum of ordering and metadata flag constants
@@ -841,7 +1336,7 @@ cs_all_to_all_create_from_block(size_t                 n_elts,
   BFT_MALLOC(d->_dest_rank, n_elts, int);
   d->dest_rank = d->_dest_rank;
 
-  if (flags & CS_ALL_TO_ALL_ORDER_BY_DEST_ID) {
+  if (flags & CS_ALL_TO_ALL_USE_DEST_ID) {
     BFT_MALLOC(d->_dest_id, n_elts, cs_lnum_t);
     d->dest_id = d->_dest_id;
   }
@@ -855,7 +1350,7 @@ cs_all_to_all_create_from_block(size_t                 n_elts,
       cs_gnum_t g_elt_id = src_gnum[i] -1;
       cs_gnum_t _dest_rank = g_elt_id / block_size;
       d->_dest_rank[i] = _dest_rank*rank_step;
-      d->_dest_id[i]   = g_elt_id % block_size;;
+      d->_dest_id[i]   = g_elt_id % block_size;
     }
   }
   else {
@@ -910,6 +1405,11 @@ cs_all_to_all_destroy(cs_all_to_all_t **d)
 
     BFT_FREE(_d->_dest_id);
     BFT_FREE(_d->_dest_rank);
+
+    BFT_FREE(_d->recv_id);
+    BFT_FREE(_d->src_id);
+    BFT_FREE(_d->src_rank);
+
     BFT_FREE(_d);
 
     t1 = cs_timer_time();
@@ -1025,7 +1525,7 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
           = cs_crystal_router_create_s(d->n_elts_src,
                                        0,
                                        CS_DATATYPE_NULL,
-                                       0,
+                                        _cr_flags(d, false),
                                        NULL,
                                        NULL,
                                        d->dest_rank,
@@ -1041,7 +1541,20 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
         _all_to_all_calls[CS_ALL_TO_ALL_TIME_METADATA] += 1;
 
         d->n_elts_dest = cs_crystal_router_n_elts(cr);
+
+        if (d->flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK)
+          _cr_recv_id_by_src_rank(d, cr);
+
+        int **p_src_rank = _is_src_rank_info_needed(d) ? &(d->src_rank) : NULL;
+        cs_crystal_router_get_data(cr,
+                                   p_src_rank,
+                                   &(d->recv_id),
+                                   &(d->src_id),
+                                   NULL, /* dest_index */
+                                   NULL);
+
         cs_crystal_router_destroy(&cr);
+
       }
       break;
 
@@ -1129,9 +1642,6 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
       size_t n_elts = (reverse) ? d->n_elts_dest : d->n_elts_src;
       if (reverse)
         _alltoall_caller_swap_src_dest(d->dc);
-      _alltoall_caller_update_meta_s(d->dc,
-                                     d->dc->datatype,
-                                     stride);
       _alltoall_caller_prepare_s(d->dc,
                                  n_elts,
                                  stride,
@@ -1156,28 +1666,14 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
 
   case CS_ALL_TO_ALL_CRYSTAL_ROUTER:
     {
-      int cr_flags = 0;
       _dest_data = dest_data;
       cs_timer_t tcr0, tcr1;
       cs_crystal_router_t *cr;
       if (!reverse) {
-        /* Additional flags for metadata (some on first exchange only) */
-        if (d->n_elts_dest < 0) {
-          if (d->flags & CS_ALL_TO_ALL_ORDER_BY_DEST_ID)
-            cr_flags = cr_flags | CS_CRYSTAL_ROUTER_USE_DEST_ID;
-          if (! (d->flags & CS_ALL_TO_ALL_NO_REVERSE)) {
-            cr_flags = cr_flags | CS_CRYSTAL_ROUTER_ADD_SRC_ID;
-            cr_flags = cr_flags | CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
-          }
-          if (d->flags & CS_ALL_TO_ALL_USE_SRC_RANK)
-            cr_flags = cr_flags | CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
-        }
-        if (d->flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK)
-          cr_flags = cr_flags | CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
         cr = cs_crystal_router_create_s(d->n_elts_src,
                                         stride,
                                         datatype,
-                                        cr_flags,
+                                        _cr_flags(d, reverse),
                                         src_data,
                                         d->dest_id,
                                         d->dest_rank,
@@ -1185,9 +1681,12 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
         tcr0 = cs_timer_time();
         cs_crystal_router_exchange(cr);
         tcr1 = cs_timer_time();
-        if (d->n_elts_dest < 0)
+        if (d->n_elts_dest < 0) {
           d->n_elts_dest = cs_crystal_router_n_elts(cr);
-        int **p_src_rank = (d->src_rank == NULL) ? &(d->src_rank) : NULL;
+          if (d->flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK)
+            _cr_recv_id_by_src_rank(d, cr);
+        }
+        int **p_src_rank = _is_src_rank_info_needed(d) ? &(d->src_rank) : NULL;
         cs_crystal_router_get_data(cr,
                                    p_src_rank,
                                    &(d->recv_id),
@@ -1196,11 +1695,10 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
                                    &_dest_data);
       }
       else {
-        cr_flags = cr_flags | CS_CRYSTAL_ROUTER_USE_DEST_ID;
         cr = cs_crystal_router_create_s(d->n_elts_dest,
                                         stride,
                                         datatype,
-                                        cr_flags,
+                                        _cr_flags(d, reverse),
                                         src_data,
                                         d->src_id,
                                         d->src_rank,
@@ -1271,7 +1769,10 @@ cs_all_to_all_copy_index(cs_all_to_all_t  *d,
   cs_lnum_t *src_count = NULL;
   cs_lnum_t *_dest_index = dest_index;
 
+  cs_lnum_t n_src = (reverse) ? d->n_elts_dest : d->n_elts_src;
   cs_lnum_t n_dest = cs_all_to_all_n_elts_dest(d);
+  if (reverse)
+    n_dest = d->n_elts_src;
 
   t0 = cs_timer_time();
 
@@ -1280,9 +1781,9 @@ cs_all_to_all_copy_index(cs_all_to_all_t  *d,
 
   /* Convert send index to count, then exchange */
 
-  BFT_MALLOC(src_count, d->n_elts_src, cs_lnum_t);
+  BFT_MALLOC(src_count, n_src, cs_lnum_t);
 
-  for (cs_lnum_t i = 0; i < d->n_elts_src; i++)
+  for (cs_lnum_t i = 0; i < n_src; i++)
     src_count[i] = src_index[i+1] - src_index[i];
 
   t1 = cs_timer_time();
@@ -1353,9 +1854,125 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
 {
   cs_assert(d != NULL);
 
-  cs_assert(false);
+  void  *_dest_data = NULL;
 
-  return NULL;
+  cs_timer_t t0, t1;
+
+  t0 = cs_timer_time();
+
+  /* Reverse can only be called after direct exchange in most cases
+     (this case should be rare, and requires additional echanges,
+     but let's play it safe and make sure it works if needed) */
+
+  if (d->n_elts_dest < 0 && reverse)
+    cs_all_to_all_copy_array(d,
+                             CS_DATATYPE_NULL,
+                             0,
+                             false,
+                             NULL,
+                             NULL);
+
+  /* Now do regular exchange */
+
+  switch(d->type) {
+
+  case CS_ALL_TO_ALL_MPI_DEFAULT:
+    {
+      if (d->n_elts_dest < 0) { /* Exchange metadata if not done yet */
+        _alltoall_caller_exchange_meta(d->dc,
+                                       d->n_elts_src,
+                                       d->dest_rank);
+        d->n_elts_dest = d->dc->recv_size;
+      }
+      size_t n_elts = (reverse) ? d->n_elts_dest : d->n_elts_src;
+      _alltoall_caller_save_meta_i(d->dc);
+      if (reverse)
+        _alltoall_caller_swap_src_dest(d->dc);
+      _alltoall_caller_prepare_i(d->dc,
+                                 n_elts,
+                                 datatype,
+                                 reverse,
+                                 src_index,
+                                 dest_index,
+                                 src_data,
+                                 d->recv_id,
+                                 d->dest_rank);
+      _dest_data = _alltoall_caller_exchange_i(d,
+                                               d->dc,
+                                               reverse,
+                                               dest_index,
+                                               d->dest_rank,
+                                               dest_data);
+      if (reverse) {
+        _alltoall_caller_swap_src_dest(d->dc);
+        if (d->dc->send_buffer == src_data)
+          d->dc->send_buffer = NULL;
+      }
+      _alltoall_caller_reset_meta_i(d->dc, d->dest_rank);
+    }
+    break;
+
+  case CS_ALL_TO_ALL_CRYSTAL_ROUTER:
+    {
+      _dest_data = dest_data;
+      cs_timer_t tcr0, tcr1;
+      cs_crystal_router_t *cr;
+      if (!reverse) {
+        cr = cs_crystal_router_create_i(d->n_elts_src,
+                                        datatype,
+                                        _cr_flags(d, reverse),
+                                        src_index,
+                                        src_data,
+                                        d->dest_id,
+                                        d->dest_rank,
+                                        d->comm);
+        tcr0 = cs_timer_time();
+        cs_crystal_router_exchange(cr);
+        tcr1 = cs_timer_time();
+        if (d->n_elts_dest < 0)
+          d->n_elts_dest = cs_crystal_router_n_elts(cr);
+        int **p_src_rank = (d->src_rank == NULL) ? &(d->src_rank) : NULL;
+        cs_crystal_router_get_data(cr,
+                                   p_src_rank,
+                                   &(d->recv_id),
+                                   &(d->src_id),
+                                   NULL, /* dest_index */
+                                   &_dest_data);
+      }
+      else {
+        cr = cs_crystal_router_create_i(d->n_elts_dest,
+                                        datatype,
+                                        _cr_flags(d, reverse),
+                                        src_index,
+                                        src_data,
+                                        d->src_id,
+                                        d->src_rank,
+                                        d->comm);
+        tcr0 = cs_timer_time();
+        cs_crystal_router_exchange(cr);
+        tcr1 = cs_timer_time();
+        cs_crystal_router_get_data(cr,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   NULL, /* dest_index */
+                                   &_dest_data);
+      }
+      cs_crystal_router_destroy(&cr);
+      cs_timer_counter_add_diff
+        (_all_to_all_timers + CS_ALL_TO_ALL_TIME_EXCHANGE, &tcr0, &tcr1);
+      _all_to_all_calls[CS_ALL_TO_ALL_TIME_EXCHANGE] += 1;
+    }
+    break;
+
+  }
+
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
+                            &t0, &t1);
+  _all_to_all_calls[CS_ALL_TO_ALL_TIME_TOTAL] += 1;
+
+  return _dest_data;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1368,7 +1985,7 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
  * exchanged data elements.
  *
  * It should also be called only if the distributor creation flags match
- * CS_ALL_TO_ALL_USE_SRC_RANK or CS_ALL_TO_ALL_ORDER_BY_SRC_RANK.
+ * CS_ALL_TO_ALL_NEED_SRC_RANK or CS_ALL_TO_ALL_ORDER_BY_SRC_RANK.
  *
  * The returned data is owned by the caller, who is responsible for freeing
  * it when no longer needed.
@@ -1392,14 +2009,14 @@ cs_all_to_all_get_src_rank(cs_all_to_all_t  *d)
 
   cs_assert(d != NULL);
 
-  if (! (   d->flags & CS_ALL_TO_ALL_USE_SRC_RANK
+  if (! (   d->flags & CS_ALL_TO_ALL_NEED_SRC_RANK
          || d->flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK))
     bft_error(__FILE__, __LINE__, 0,
               "%s: is called for a distributor with flags %d, which does not\n"
-              "match masks CS_ALL_TO_ALL_USE_SRC_RANK (%d) or "
+              "match masks CS_ALL_TO_ALL_NEED_SRC_RANK (%d) or "
               "CS_ALL_TO_ALL_ORDER_BY_SRC_RANK (%d).",
               __func__, d->flags,
-              CS_ALL_TO_ALL_USE_SRC_RANK,
+              CS_ALL_TO_ALL_NEED_SRC_RANK,
               CS_ALL_TO_ALL_ORDER_BY_SRC_RANK);
 
   BFT_MALLOC(src_rank, d->n_elts_dest, int);

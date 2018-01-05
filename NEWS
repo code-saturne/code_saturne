@@ -26,6 +26,8 @@ Changes
 Architectural changes
 ---------------------
 
+- Complete cs_all_to_all API to handle indexed cases.
+
 - Use matrix assembler instead of matrix extension function for
   internal coupling, to allow for a broader range of linear system
   solvers and preconditionners.

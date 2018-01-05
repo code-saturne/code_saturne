@@ -2913,8 +2913,8 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
                                    0,
                                    edges->n_g_edges);
 
-  int flags = CS_ALL_TO_ALL_USE_SRC_RANK; /* as long as indexed portion is
-                                             not handled by cs_all_to_all */
+  int flags = CS_ALL_TO_ALL_ORDER_BY_SRC_RANK; /* as long as indexed portion is
+                                                  not handled by cs_all_to_all */
 
   cs_all_to_all_t
     *d = cs_all_to_all_create_from_block(n_edges,
@@ -3220,7 +3220,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   }
 #endif
 
-  int flags = CS_ALL_TO_ALL_USE_SRC_RANK;
+  int flags = CS_ALL_TO_ALL_NEED_SRC_RANK;
 
   cs_all_to_all_t
     *d = cs_all_to_all_create_from_block(part->n_edges,

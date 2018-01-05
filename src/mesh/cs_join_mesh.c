@@ -804,7 +804,7 @@ _get_send_faces(const cs_gnum_t   gnum_rank_index[],
 
   cs_gnum_t first_gface_id = gnum_rank_index[local_rank];
 
-  int flags = CS_ALL_TO_ALL_USE_SRC_RANK;
+  int flags = CS_ALL_TO_ALL_NEED_SRC_RANK;
 
   cs_all_to_all_t
     *d = cs_all_to_all_create(n_elts,

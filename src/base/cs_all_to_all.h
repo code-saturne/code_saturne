@@ -50,11 +50,11 @@ BEGIN_C_DECLS
  * All-to-all distributor ordering and metadata flags.
  */
 
-#define CS_ALL_TO_ALL_ORDER_BY_DEST_ID        (1 << 0)
+#define CS_ALL_TO_ALL_USE_DEST_ID             (1 << 0)
 #define CS_ALL_TO_ALL_ORDER_BY_SRC_RANK       (1 << 1)
 
 #define CS_ALL_TO_ALL_NO_REVERSE              (1 << 2)
-#define CS_ALL_TO_ALL_USE_SRC_RANK            (1 << 3)
+#define CS_ALL_TO_ALL_NEED_SRC_RANK           (1 << 3)
 
 /*============================================================================
  * Type definitions
@@ -89,7 +89,7 @@ typedef struct _cs_all_to_all_t  cs_all_to_all_t;
  *
  * This is a collective operation on communicator comm.
  *
- * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID,
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_USE_DEST_ID,
  * data exchanged will be ordered by the array passed to the
  * \c dest_id argument. For \c n total values received on a rank
  * (as given by \ref cs_all_to_all_n_elts_dest), those destination ids
@@ -97,7 +97,7 @@ typedef struct _cs_all_to_all_t  cs_all_to_all_t;
  *
  * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
  * data exchanged will be ordered by source rank (this is incompatible
- * with \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID.
+ * with \ref CS_ALL_TO_ALL_USE_DEST_ID.
  *
  * \attention
  * The \c dest_rank and \c dest_id arrays are only referenced by
@@ -110,7 +110,7 @@ typedef struct _cs_all_to_all_t  cs_all_to_all_t;
  * \param[in]  n_elts       number of elements
  * \param[in]  flags        sum of ordering and metadata flag constants
  * \param[in]  dest_id      element destination id (required if flags
- *                          contain \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID),
+ *                          contain \ref CS_ALL_TO_ALL_USE_DEST_ID),
  *                          or NULL
  * \param[in]  dest_rank    destination rank for each element
  * \param[in]  comm         associated MPI communicator
@@ -133,12 +133,12 @@ cs_all_to_all_create(size_t            n_elts,
  *
  * This is a collective operation on communicator comm.
  *
- * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID,
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_USE_DEST_ID,
  * data exchanged will be ordered by global element number.
  *
  * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
  * data exchanged will be ordered by source rank (this is incompatible
- * with \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID.
+ * with \ref CS_ALL_TO_ALL_USE_DEST_ID.
  *
  * \param[in]  n_elts       number of elements
  * \param[in]  flags        sum of ordering and metadata flag constants
@@ -337,7 +337,7 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
  * exchanged data elements.
  *
  * It should also be called only if the distributor creation flags match
- * CS_ALL_TO_ALL_USE_SRC_RANK or CS_ALL_TO_ALL_ORDER_BY_SRC_RANK.
+ * CS_ALL_TO_ALL_NEED_SRC_RANK or CS_ALL_TO_ALL_ORDER_BY_SRC_RANK.
  *
  * The returned data is owned by the caller, who is responsible for freeing
  * it when no longer needed.
