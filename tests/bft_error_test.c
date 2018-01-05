@@ -64,7 +64,7 @@ main (int argc, char *argv[])
   bft_error_handler_set(errhandler_save);
 
   bft_error(__FILE__, __LINE__, 1, "fake error, handler = %p",
-            bft_error_handler_get());
+            (void *)bft_error_handler_get());
 
   exit (EXIT_SUCCESS);
 }

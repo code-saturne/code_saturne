@@ -1062,7 +1062,6 @@ fvm_to_medcoupling_export_nodal(void               *this_writer_p,
   cs_lnum_t  n_g_elts = 0;
   fvm_to_medcoupling_t  *this_writer = (fvm_to_medcoupling_t *)this_writer_p;
 
-  const int  n_ranks = this_writer->n_ranks;
   const int  elt_dim = fvm_nodal_get_max_entity_dim(mesh);
 
   /* Initialization */
@@ -1259,8 +1258,6 @@ fvm_to_medcoupling_export_field(void                  *this_writer_p,
 
 /*----------------------------------------------------------------------------
  * Flush files associated with a given writer.
- *
- * In this case, the effective call to coprocessing is done.
  *
  * parameters:
  *   this_writer_p    <-- pointer to associated writer

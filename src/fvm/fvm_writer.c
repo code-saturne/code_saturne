@@ -999,7 +999,6 @@ void
 fvm_writer_filter_option(char        *format_options,
                          const char  *exclude_option)
 {
-  int  i;
   char  *tmp_options = NULL;
 
   size_t l = strlen(exclude_option);
@@ -1019,7 +1018,7 @@ fvm_writer_filter_option(char        *format_options,
     while (tmp_options[i0] != '\0') {
 
       for (i1 = i0; tmp_options[i1] != '\0' && tmp_options[i1] != ' '; i1++);
-      int l_opt = i1 - i0;
+      size_t l_opt = i1 - i0;
 
       if (   (l_opt == l)
           && (strncmp(tmp_options + i0, exclude_option, l_opt) == 0)) {
