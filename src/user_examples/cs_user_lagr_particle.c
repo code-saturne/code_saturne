@@ -360,7 +360,7 @@ cs_user_lagr_in(int                         time_id,
  * This function is called at different points, at which different attributes
  * may be modified.
  *
- * \param[inout]  particle  particle structure
+ * \param[in,out] particle  particle structure
  * \param[in]     p_am      particle attributes map
  * \param[in]     face_id   id of particle injection face
  * \param[in]     attr_id   id of variable modifiable by this call. called for
