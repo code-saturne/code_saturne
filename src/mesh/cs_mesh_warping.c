@@ -750,8 +750,10 @@ _cut_warped_faces(cs_mesh_t      *mesh,
 
   *p_n_sub_elt_lst = n_sub_elt_lst;
 
-  if (n_cut_faces == 0)
+  if (n_cut_faces == 0) {
+    BFT_FREE(cut_flag);
     return;
+  }
 
   BFT_MALLOC(new_face_vtx_idx, n_new_faces + 1, cs_lnum_t);
   BFT_MALLOC(new_face_vtx_lst, connect_size, cs_lnum_t);
