@@ -94,6 +94,15 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
+/* Note for future optimization:
+   for cases where data to be sent is sorted by increasing destination rank,
+   using communication schemes requiring ordering by ranks (such as
+   CS_ALL_TO_ALL_MPI_DEFAULT, we should not need to build an extra array,
+   but only to send the correct parts of the indexed list to the correct
+   ranks, so cs_all_to_all_copy_indexed may internally use an extra array;
+   this could be avoided by adding an additional send option or flag,
+   or adding cs_all_to_copy_... variants for cases ordered by rank */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/

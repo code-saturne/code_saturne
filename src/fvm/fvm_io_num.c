@@ -1041,7 +1041,7 @@ _indexed_is_greater(size_t            i1,
  * parameters:
  *   this_io_num    <-> pointer to structure that should be ordered
  *   index          <-- index on entities for global_num[]
- *   global_num     <--
+ *   global_num     <-- global number associated with each entity
  *   comm           <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
 
@@ -1051,16 +1051,12 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
                                cs_gnum_t           global_num[],
                                MPI_Comm            comm)
 {
-  int  rank, local_rank, size;
-  size_t  i, shift, block_size;
+  int  local_rank, size;
 
-  cs_gnum_t   n_ent_recv = 0, n_ent_send = 0;
   cs_gnum_t   current_global_num = 0, global_num_shift = 0;
-  int  *send_count = NULL, *recv_count = NULL;
-  int  *send_shift = NULL, *recv_shift = NULL;
-  cs_lnum_t   *recv_order = NULL, *recv_sub_index = NULL;
-  cs_lnum_t   *recv_sub_count = NULL, *send_sub_count = NULL;
   cs_gnum_t   *block_global_num = NULL, *recv_global_num = NULL;
+
+  size_t      n_ent = this_io_num->global_num_size;
 
   /* Initialization */
 
@@ -1072,7 +1068,6 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
 
   {
     cs_gnum_t   local_max = 0, global_max = 0;
-    size_t      n_ent = this_io_num->global_num_size;
 
     if (n_ent > 0)
       local_max = global_num[index[n_ent-1]];
@@ -1082,112 +1077,64 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
 
   /* block_size = ceil(this_io_num->global_count/size) */
 
-  block_size = this_io_num->global_count / size;
-  if (this_io_num->global_count % size > 0)
-    block_size += 1;
+  cs_block_dist_info_t
+    bi = cs_block_dist_compute_sizes(local_rank,
+                                     size,
+                                     1,
+                                     0,
+                                     this_io_num->global_count);
+
+  cs_gnum_t _block_size = bi.block_size;
 
   /* Build for each block, a new ordered indexed list from the received
      elements */
 
-  assert(sizeof(cs_gnum_t) >= sizeof(cs_lnum_t));
+  int *dest_rank;
+  BFT_MALLOC(dest_rank, this_io_num->global_num_size, int);
+  for (size_t i = 0; i < n_ent; i++)
+    dest_rank[i] = (global_num[index[i]] - 1) / _block_size;
 
-  BFT_MALLOC(send_count, size, int);
-  BFT_MALLOC(recv_count, size, int);
-  BFT_MALLOC(send_shift, size + 1, int);
-  BFT_MALLOC(recv_shift, size + 1, int);
-
-  /* Count number of values to send to each process */
-
-  for (rank = 0; rank < size; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < (size_t)(this_io_num->global_num_size); i++) {
-    rank = (global_num[index[i]] - 1) / block_size;
-    send_count[rank] += 1;
-  }
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < size; rank++) {
-    send_shift[rank+1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank+1] = recv_shift[rank] + recv_count[rank];
-  }
+  cs_all_to_all_t *d =cs_all_to_all_create(n_ent,
+                                           0, /* flags */
+                                           NULL,
+                                           dest_rank,
+                                           comm);
+  cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
   /* Get recv_index */
 
-  n_ent_recv = recv_shift[size];
-  n_ent_send = send_shift[size];
+  cs_lnum_t *recv_index
+    = cs_all_to_all_copy_index(d,
+                               false, /* reverse */
+                               index,
+                               NULL);
 
-  BFT_MALLOC(recv_sub_count, n_ent_recv, cs_lnum_t);
-  BFT_MALLOC(send_sub_count, n_ent_send, cs_lnum_t);
+  cs_lnum_t n_ent_recv = cs_all_to_all_n_elts_dest(d);
 
-  assert(n_ent_send == (cs_gnum_t)this_io_num->global_num_size);
+  /* Send indexed list to the destination ranks;
+     TODO future optimization: when data is sorted by increasing base global
+     numbering, such as here, indicating it to the cs_all_to_all distributor
+     for possible optimisation (using a flag or a varianf function) could
+     avoid an extra copy to an internal buffer. */
 
-  for (rank = 0; rank < size; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < (size_t)this_io_num->global_num_size; i++) {
-    rank = (global_num[index[i]] - 1) / block_size;
-    shift = send_shift[rank] + send_count[rank];
-    send_sub_count[shift] = index[i+1] - index[i];
-    send_count[rank] +=  1;
-  }
-
-  MPI_Alltoallv(send_sub_count, send_count, send_shift, CS_MPI_LNUM,
-                recv_sub_count, recv_count, recv_shift, CS_MPI_LNUM, comm);
-
-  BFT_MALLOC(recv_sub_index, n_ent_recv + 1, cs_lnum_t);
-
-  recv_sub_index[0] = 0;
-  for (i = 0; i < n_ent_recv; i++)
-      recv_sub_index[i+1] = recv_sub_index[i] + recv_sub_count[i];
-
-  BFT_FREE(send_sub_count);
-  BFT_FREE(recv_sub_count);
-
-  /* Get recv_global_num */
-
-  /* Count number of values to send to each process */
-
-  for (rank = 0; rank < size; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < (size_t)(this_io_num->global_num_size); i++) {
-    rank = (global_num[index[i]] - 1) / block_size;
-    send_count[rank] += index[i+1] - index[i];
-  }
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < size; rank++) {
-    send_shift[rank+1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank+1] = recv_shift[rank] + recv_count[rank];
-  }
-
-  BFT_MALLOC(recv_global_num, recv_sub_index[n_ent_recv], cs_gnum_t);
-
-  /* As data is sorted by increasing base global numbering, we do not
-     need to build an extra array, but only to send the correct parts
-     of the indexed list to the correct processors */
-
-  MPI_Alltoallv(global_num, send_count, send_shift, CS_MPI_GNUM,
-                recv_global_num, recv_count, recv_shift, CS_MPI_GNUM, comm);
+  recv_global_num = cs_all_to_all_copy_indexed(d,
+                                               CS_GNUM_TYPE,
+                                               false, /* reverse */
+                                               index,
+                                               global_num,
+                                               recv_index,
+                                               NULL);
 
   if (n_ent_recv > 0) { /* Order received elements of the indexed list */
 
     size_t prev_id, cur_id;
 
+    cs_lnum_t  *recv_order = NULL;
     BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
     cs_order_gnum_allocated_i(NULL,
                               recv_global_num,
-                              recv_sub_index,
+                              recv_index,
                               recv_order,
                               n_ent_recv);
 
@@ -1204,11 +1151,11 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
     prev_id = recv_order[0];
     block_global_num[recv_order[0]] = current_global_num;
 
-    for (i = 1; i < n_ent_recv; i++) {
+    for (cs_lnum_t i = 1; i < n_ent_recv; i++) {
 
       cur_id = recv_order[i];
 
-      if (_indexed_is_greater(cur_id, prev_id, recv_sub_index, recv_global_num))
+      if (_indexed_is_greater(cur_id, prev_id, recv_index, recv_global_num))
         current_global_num += 1;
 
       block_global_num[recv_order[i]] = current_global_num;
@@ -1216,60 +1163,42 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
 
     }
 
+    BFT_FREE(recv_order);
+
   } /* End if n_ent_recv > 0 */
 
   /* Partial clean-up */
 
-  BFT_FREE(recv_order);
-  BFT_FREE(recv_sub_index);
+  BFT_FREE(recv_index);
   BFT_FREE(recv_global_num);
 
-  /* At this stage, block_global_num[] is valid for this process, and
+  /* At this stage, block_global_num[] is valid for this rank, and
      current_global_num indicates the total number of entities handled
-     by this process; we must now shift global numberings on different
-     processes by the cumulative total number of entities handled by
-     each process */
+     by this rank; we must now shift global numberings on different
+     ranks by the cumulative total number of entities handled by
+     each rank */
 
   MPI_Scan(&current_global_num, &global_num_shift, 1, CS_MPI_GNUM,
            MPI_SUM, comm);
   global_num_shift -= current_global_num;
 
-  for (i = 0; i < n_ent_recv; i++)
+  for (cs_lnum_t i = 0; i < n_ent_recv; i++)
     block_global_num[i] += global_num_shift;
 
-  /* Return global order to all processors */
+  /* Return global order to all ranks */
 
-  /* Count number of values to send to each process */
-
-  for (rank = 0; rank < size; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < (size_t)(this_io_num->global_num_size); i++) {
-    rank = (global_num[index[i]] - 1) / block_size;
-    send_count[rank] += 1;
-  }
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < size; rank++) {
-    send_shift[rank+1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank+1] = recv_shift[rank] + recv_count[rank];
-  }
-
-  MPI_Alltoallv(block_global_num, recv_count, recv_shift, CS_MPI_GNUM,
-                this_io_num->_global_num, send_count, send_shift, CS_MPI_GNUM,
-                comm);
+  cs_all_to_all_copy_array(d,
+                           CS_GNUM_TYPE,
+                           1,
+                           true, /* reverse */
+                           block_global_num,
+                           this_io_num->_global_num);
 
   /* Free memory */
 
   BFT_FREE(block_global_num);
-  BFT_FREE(send_count);
-  BFT_FREE(recv_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(recv_shift);
+
+  cs_all_to_all_destroy(&d);
 
   /* Get final maximum global number value */
 
@@ -1295,19 +1224,13 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
                             const cs_lnum_t      n_sub_entities[],
                             MPI_Comm             comm)
 {
+  cs_gnum_t   global_count, num_prev, num_cur;
 
-  cs_gnum_t   global_count, n_ent_recv, num_prev, num_cur;
-  size_t      i, block_size;
-  int         rank;
-
-  cs_gnum_t   *recv_global_num = NULL;
   cs_gnum_t   *send_global_num = NULL;
   cs_lnum_t   *recv_n_sub = NULL, *recv_order = NULL;
-  int         *send_count = NULL, *recv_count = NULL;
-  int         *send_shift = NULL, *recv_shift = NULL;
   int         have_sub_loc = 0, have_sub_glob = 0;
 
-  int         size;
+  int         size, local_rank;
 
   cs_gnum_t   current_global_num = 0;
   cs_gnum_t   retval = 0;
@@ -1315,6 +1238,7 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
   /* Initialization */
 
   MPI_Comm_size(comm, &size);
+  MPI_Comm_rank(comm, &local_rank);
 
   num_prev = 0;    /* true initialization later for block 0, */
 
@@ -1324,44 +1248,23 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 
   /* block_size = ceil(this_io_num->global_count/size) */
 
-  block_size = global_count / size;
-  if (global_count % size > 0)
-    block_size += 1;
+  cs_block_dist_info_t
+    bi = cs_block_dist_compute_sizes(local_rank,
+                                     size,
+                                     1,
+                                     0,
+                                     global_count);
 
-  assert(sizeof(cs_gnum_t) >= sizeof(cs_lnum_t));
-
-  BFT_MALLOC(send_count, size, int);
-  BFT_MALLOC(recv_count, size, int);
-
-  BFT_MALLOC(send_shift, size, int);
-  BFT_MALLOC(recv_shift, size, int);
-
-  /* Count number of values to send to each process */
-
-  for (rank = 0; rank < size; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < (size_t)(this_io_num->global_num_size); i++)
-    send_count[(this_io_num->global_num[i] - 1) / block_size] += 1;
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 1; rank < size; rank++) {
-    send_shift[rank] = send_shift[rank - 1] + send_count[rank -1];
-    recv_shift[rank] = recv_shift[rank - 1] + recv_count[rank -1];
-  }
+  cs_all_to_all_t
+    *d = cs_all_to_all_create_from_block(this_io_num->global_num_size,
+                                         0, /* flags */
+                                         this_io_num->global_num,
+                                         bi,
+                                         comm);
 
   /* As data is sorted by increasing base global numbering, we do not
      need to build an extra array, but only to send the correct parts
      of the n_sub_entities[] array to the correct processors */
-
-  n_ent_recv = recv_shift[size - 1] + recv_count[size - 1];
-
-  BFT_MALLOC(recv_global_num, n_ent_recv, cs_gnum_t);
-  BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
   if (this_io_num->_global_num != NULL)
     send_global_num = this_io_num->_global_num;
@@ -1374,8 +1277,16 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
            this_io_num->global_num_size * sizeof(cs_gnum_t));
   }
 
-  MPI_Alltoallv(send_global_num, send_count, send_shift, CS_MPI_GNUM,
-                recv_global_num, recv_count, recv_shift, CS_MPI_GNUM, comm);
+  cs_gnum_t *recv_global_num = cs_all_to_all_copy_array(d,
+                                                        CS_GNUM_TYPE,
+                                                        1,
+                                                        false, /* reverse */
+                                                        send_global_num,
+                                                        NULL);
+
+  cs_lnum_t n_ent_recv = cs_all_to_all_n_elts_dest(d);
+
+  BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
   if (send_global_num != this_io_num->_global_num)
     BFT_FREE(send_global_num);
@@ -1390,21 +1301,23 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
   if (have_sub_glob > 0) {
 
     cs_lnum_t   *send_n_sub;
-
     BFT_MALLOC(send_n_sub, this_io_num->global_num_size, cs_lnum_t);
-    BFT_MALLOC(recv_n_sub, n_ent_recv, cs_lnum_t);
 
     if (n_sub_entities != NULL) {
-      for (i = 0; i < (size_t)(this_io_num->global_num_size); i++)
+      for (cs_lnum_t i = 0; i < this_io_num->global_num_size; i++)
         send_n_sub[i] = n_sub_entities[i];
     }
     else {
-      for (i = 0; i < (size_t)(this_io_num->global_num_size); i++)
+      for (cs_lnum_t i = 0; i < this_io_num->global_num_size; i++)
         send_n_sub[i] = 1;
     }
 
-    MPI_Alltoallv(send_n_sub, send_count, send_shift, CS_MPI_LNUM,
-                  recv_n_sub, recv_count, recv_shift, CS_MPI_LNUM, comm);
+    recv_n_sub = cs_all_to_all_copy_array(d,
+                                          CS_LNUM_TYPE,
+                                          1,
+                                          false, /* reverse */
+                                          send_n_sub,
+                                          NULL);
 
     BFT_FREE(send_n_sub);
   }
@@ -1427,7 +1340,7 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
     num_prev = recv_global_num[recv_order[0]];
     recv_global_num[recv_order[0]] = current_global_num;
 
-    for (i = 1; i < n_ent_recv; i++) {
+    for (cs_lnum_t i = 1; i < n_ent_recv; i++) {
       num_cur = recv_global_num[recv_order[i]];
       if (num_cur > num_prev)
         current_global_num += recv_n_sub[recv_order[i]];
@@ -1442,10 +1355,7 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
   BFT_FREE(recv_order);
   BFT_FREE(recv_global_num);
 
-  BFT_FREE(send_count);
-  BFT_FREE(recv_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(recv_shift);
+  cs_all_to_all_destroy(&d);
 
   /* At this stage, current_global_num indicates the total number of
      entities handled by this process; we must now shift global
