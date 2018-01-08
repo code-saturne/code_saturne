@@ -2889,7 +2889,6 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   cs_lnum_t  *new_index = NULL, *shift_ref = NULL;
   cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
   cs_lnum_t  *send_count = NULL, *recv_count = NULL;
-  cs_gnum_t  *send_glist = NULL;
   exch_inter_t  *send_inter_list = NULL, *recv_inter_list = NULL;
   cs_join_inter_edges_t  *block = NULL;
 
@@ -2944,7 +2943,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
                                                   part_nsub,
                                                   NULL);
 
-  BFT_FREE(send_glist);
+  BFT_FREE(part_nsub);
 
   cs_lnum_t recv_list_size = cs_all_to_all_n_elts_dest(d);
 
@@ -3257,9 +3256,6 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
                                                   block_nsub,
                                                   NULL);
   /* Allocate parameters for MPI functions */
-
-  BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(recv_count, n_ranks + 1, cs_lnum_t);
 
   int *src_rank = cs_all_to_all_get_src_rank(d);
 
