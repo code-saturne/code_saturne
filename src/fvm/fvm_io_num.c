@@ -2883,10 +2883,8 @@ fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
   if (this_io_num == NULL)
     return retval;
 
-  assert(cs_glob_n_ranks > 1); /* Otherwise, base_io_num should be NULL */
-
 #if defined(HAVE_MPI)
- {
+ if (cs_glob_n_ranks > 1) {
    int  have_sub_loc = 0, have_sub_glob = 0;
 
    /* Caution: we may have sub-entities on some ranks and not on others */
@@ -2903,6 +2901,11 @@ fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
                                           cs_glob_mpi_comm);
  }
 #endif
+
+ if (cs_glob_n_ranks == 1 && n_sub_entities != NULL) {
+   for (size_t i = 0; i < (size_t)(this_io_num->global_num_size); i++)
+     retval += n_sub_entities[i];
+ }
 
   return retval;
 }

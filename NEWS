@@ -5,6 +5,9 @@ Release 5.1.2 (Unreleased)
 Bug fixes
 ---------
 
+- Fix crash and errors in MED output with subdivided polyhedral
+  or polygonal elements when running in parallel.
+
 - Fixes for data assimilation of module atmo:
   * implicit part of nudging term
   * reader of optimal interpolation file

@@ -1159,7 +1159,8 @@ _count_and_index_sub_polygons(fvm_tesselation_t  *this_tesselation,
   for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++)
     ts->n_sub_glob[sub_type_id] = ts->n_sub[sub_type_id];
 
-  if (global_count == true && ts->global_element_num != NULL) {
+  if (   global_count == true && ts->global_element_num != NULL
+      && cs_glob_n_ranks > 1) {
 
     for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++) {
       if (ts->_sub_elt_index[sub_type_id] != NULL) {
@@ -1353,7 +1354,8 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
   for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++)
     ts->n_sub_glob[sub_type_id] = ts->n_sub[sub_type_id];
 
-  if (global_count == true && ts->global_element_num != NULL) {
+  if (   global_count == true && ts->global_element_num != NULL
+      && cs_glob_n_ranks > 1) {
 
     for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++) {
       if (ts->_sub_elt_index[sub_type_id] != NULL) {
