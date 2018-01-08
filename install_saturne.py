@@ -176,7 +176,10 @@ class Package:
         self.version = version
         self.archive = archive
         if self.archive:
-            self.url = url % self.archive
+            try:
+                self.url = url % self.archive
+            except Exception:
+                self.url = url
         else:
             self.url = None
 
@@ -619,10 +622,10 @@ class Setup:
         self.packages['cgns'] = \
             Package(name="CGNS",
                     description="CFD General Notation System",
-                    package="cgnslib",
-                    version="3.2.1",
-                    archive="cgnslib_3.2.1.tar.gz",
-                    url="http://sourceforge.net/projects/cgns/files/cgnslib_3.2/%s/download")
+                    package="cgns",
+                    version="3.3.1",
+                    archive="CGNS-3.3.1.tar.gz",
+                    url="https://github.com/CGNS/CGNS/archive/v3.3.1.tar.gz")
 
         p = self.packages['cgns']
         p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
@@ -1069,7 +1072,8 @@ Check the setup file and some utilities presence.
             if hdf5.install_dir:
                 config_opts = config_opts + " --with-hdf5=" + hdf5.install_dir
                 med.config_opts += " --with-hdf5=" + hdf5.install_dir
-                cgns.config_opts += " -DHDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include" \
+                cgns.config_opts += "-DCMAKE_PREFIX_PATH=" + hdf5.install_dir \
+                    + " -DHDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include" \
                     + " -DHDF5_LIBRARY=" + hdf5.install_dir + "/lib/libhdf5.so"
 
         # CGNS
