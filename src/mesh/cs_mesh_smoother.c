@@ -53,6 +53,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_mesh_quality.h"
+#include "cs_all_to_all.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -441,14 +442,12 @@ static void
 _get_global_tolerance(cs_mesh_t            *mesh,
                       cs_real_t            *vtx_tolerance)
 {
-  cs_int_t  i, rank, vtx_id, block_size, shift;
+  cs_lnum_t  i, vtx_id;
   cs_gnum_t  first_vtx_gnum;
 
   cs_lnum_t n_vertices = mesh->n_vertices;
-  double  *g_vtx_tolerance = NULL, *send_list = NULL, *recv_list = NULL;
-  cs_int_t  *send_count = NULL, *recv_count = NULL;
-  cs_int_t  *send_shift = NULL, *recv_shift = NULL;
-  cs_gnum_t  *send_glist = NULL, *recv_glist = NULL;
+  double  *g_vtx_tolerance = NULL, *send_list = NULL;
+  cs_gnum_t  *send_glist = NULL;
   cs_gnum_t  n_g_vertices = mesh->n_g_vertices;
   const cs_gnum_t  *io_gnum = mesh->global_vtx_num;
 
@@ -458,75 +457,41 @@ _get_global_tolerance(cs_mesh_t            *mesh,
 
   /* Define a fvm_io_num_t structure on vertices */
 
-  block_size = n_g_vertices / n_ranks;
-  if (n_g_vertices % n_ranks > 0)
-    block_size += 1;
+  cs_block_dist_info_t
+    bi = cs_block_dist_compute_sizes(local_rank,
+                                     n_ranks,
+                                     1,
+                                     0,
+                                     n_g_vertices);
 
-  /* Count the number of vertices to send to each rank */
-  /* ------------------------------------------------- */
+  cs_int_t block_size = bi.block_size;
 
-  BFT_MALLOC(send_count, n_ranks, int);
-  BFT_MALLOC(recv_count, n_ranks, int);
-  BFT_MALLOC(send_shift, n_ranks + 1, int);
-  BFT_MALLOC(recv_shift, n_ranks + 1, int);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < n_vertices; i++) {
-    rank = (io_gnum[i] - 1)/block_size;
-    send_count[rank] += 1;
-  }
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
-
-  for (rank = 0; rank < n_ranks; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
-  }
-
-  assert(send_shift[n_ranks] == n_vertices);
+  cs_all_to_all_t
+    *d = cs_all_to_all_create_from_block(n_vertices,
+                                         0, /* flags */
+                                         io_gnum,
+                                         bi,
+                                         mpi_comm);
 
   /* Send the global numbering for each vertex */
-  /* ----------------------------------------- */
 
-  BFT_MALLOC(send_glist, n_vertices, cs_gnum_t);
-  BFT_MALLOC(recv_glist, recv_shift[n_ranks], cs_gnum_t);
-
-  for (rank = 0; rank < n_ranks; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < n_vertices; i++) {
-    rank = (io_gnum[i] - 1)/block_size;
-    shift = send_shift[rank] + send_count[rank];
-    send_count[rank] += 1;
-    send_glist[shift] = io_gnum[i];
-  }
-
-  MPI_Alltoallv(send_glist, send_count, send_shift, CS_MPI_GNUM,
-                recv_glist, recv_count, recv_shift, CS_MPI_GNUM, mpi_comm);
+  cs_gnum_t *recv_glist = cs_all_to_all_copy_array(d,
+                                                   CS_GNUM_TYPE,
+                                                   1,
+                                                   false, /* reverse */
+                                                   io_gnum,
+                                                   NULL);
 
   /* Send the vertex tolerance for each vertex */
-  /* ----------------------------------------- */
 
-  BFT_MALLOC(send_list, n_vertices, double);
-  BFT_MALLOC(recv_list, recv_shift[n_ranks], double);
+  double *recv_list = cs_all_to_all_copy_array(d,
+                                               CS_REAL_TYPE,
+                                               1,
+                                               false, /* reverse */
+                                               vtx_tolerance,
+                                               NULL);
 
-  for (rank = 0; rank < n_ranks; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < n_vertices; i++) {
-    rank = (io_gnum[i] - 1)/block_size;
-    shift = send_shift[rank] + send_count[rank];
-    send_count[rank] += 1;
-    send_list[shift] = vtx_tolerance[i];
-  }
-
-  MPI_Alltoallv(send_list, send_count, send_shift, MPI_DOUBLE,
-                recv_list, recv_count, recv_shift, MPI_DOUBLE, mpi_comm);
+  cs_lnum_t n_recv = cs_all_to_all_n_elts_dest(d);
 
   /* Define the global tolerance array */
 
@@ -537,41 +502,33 @@ _get_global_tolerance(cs_mesh_t            *mesh,
 
   first_vtx_gnum = block_size * local_rank + 1;
 
-  for (i = 0; i < recv_shift[n_ranks]; i++) {
+  for (i = 0; i < n_recv; i++) {
     vtx_id = recv_glist[i] - first_vtx_gnum;
     g_vtx_tolerance[vtx_id] = CS_MIN(g_vtx_tolerance[vtx_id], recv_list[i]);
   }
 
   /* Replace local vertex tolerance by the new computed global tolerance */
 
-  for (i = 0; i < recv_shift[n_ranks]; i++) {
+  for (i = 0; i < n_recv; i++) {
     vtx_id = recv_glist[i] - first_vtx_gnum;
     recv_list[i] = g_vtx_tolerance[vtx_id];
   }
 
-  MPI_Alltoallv(recv_list, recv_count, recv_shift, MPI_DOUBLE,
-                send_list, send_count, send_shift, MPI_DOUBLE, mpi_comm);
-
-  for (rank = 0; rank < n_ranks; rank++)
-    send_count[rank] = 0;
-
-  for (i = 0; i < n_vertices; i++) {
-    rank = (io_gnum[i] - 1)/block_size;
-    shift = send_shift[rank] + send_count[rank];
-    send_count[rank] += 1;
-    vtx_tolerance[i] = send_list[shift];
-  }
+  cs_all_to_all_copy_array(d,
+                           CS_REAL_TYPE,
+                           1,
+                           true, /* reverse */
+                           recv_list,
+                           vtx_tolerance);
 
   /* Free memory */
+
+  cs_all_to_all_destroy(&d);
 
   BFT_FREE(recv_glist);
   BFT_FREE(send_glist);
   BFT_FREE(send_list);
   BFT_FREE(recv_list);
-  BFT_FREE(recv_count);
-  BFT_FREE(send_count);
-  BFT_FREE(recv_shift);
-  BFT_FREE(send_shift);
   BFT_FREE(g_vtx_tolerance);
 }
 
