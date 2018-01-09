@@ -26,7 +26,7 @@
 ! Purpose:
 ! -------
 
-!> \file cs_user_source_terms-richards_decay.f90
+!> \file cs_user_source_terms-richards.f90
 !>
 !> \brief User source terms example.
 !>
@@ -130,9 +130,6 @@ type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
-! In groundwater module flow, the radioactive decay of solute is treated as a
-! source term in the transport equation
-
 allocate(lstcel(ncel))
 
 call field_get_label(ivarfl(isca(iscal)), chaine)
@@ -144,22 +141,6 @@ call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
 if (vcopt%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
-
-!===================
-! Radioactive decay
-!===================
-
-!< [richards_decay]
-! Set the first order decay coefficient
-lambda = 1.d-2
-
-! Set radioactive decay for the first solute
-if (isca(iscal).eq.1) then
-  do iel = 1, ncel
-    crvimp(iel) = -volume(iel)*lambda
-  enddo
-endif
-!< [richards_decay]
 
 !======================
 ! Leaching
@@ -182,7 +163,6 @@ enddo
 if (irangp.ge.0) then
   call parsom(leaching_volume)
 endif
-
 
 ! Compute the source term
 do icelt = 1, ncelt

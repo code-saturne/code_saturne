@@ -108,6 +108,11 @@
 
   \snippet cs_user_parameters-richards.f90 richards_partition
 
+  The radioactive decay is treated as a source term in the transport equation
+  (in \ref covofi.f90). It is set in \ref cs_user_parameters.f90 as follows:
+
+  \snippet cs_user_parameters-richards.f90 richards_decay
+
   \section richards_numerics Numerical parameters
 
   Specific numerical parameters can be set in \ref usipsu routine of \ref
@@ -136,7 +141,7 @@
   diffusion), the resolution of the transport equation requires a weighted
   gradient computation for tetrahedral meshes. This option is only available for
   soils with isotropic dispersion (\ref darcy_anisotropic_diffusion = 0) for
-  now. It as to be coupled with the standard least squares gradient recontruction.
+  now. It has to be coupled with the standard least squares gradient recontruction.
 
   \snippet cs_user_parameters-richards.f90 richards_num_trpt
 
@@ -162,7 +167,7 @@
 
   Note that, in the flow part, depending on the variable \ref
   darcy_anisotropic_permeability, the permeability storage table is \ref
-  permeability (iostropic case) or \ref tensor_permeability (aniotropic case).
+  permeability (isotropic case) or \ref tensor_permeability (anisotropic case).
   For the transport part, the isotropic part of the diffusion (molecular
   diffusion and isotropic dispersion) is always stored in \ref cpro_vscalt.
   Only anisotropic dispersion (i.e. \ref darcy_anisotropic_diffusion = 1)
@@ -180,8 +185,8 @@
 
   \subsubsection richards_phys_prop_sat_trpt Transport part
 
-  For every solute, the isotropic permeability and the delay should be set
-  in all soils. For instance:
+  For every solute, the isotropic dispersion should be set in all soils.
+  For instance:
 
   \snippet cs_user_physical_properties-richards_sat.f90 richards_flow_solut
 
@@ -235,9 +240,9 @@
 
   \snippet cs_user_physical_properties-richards_unsat.f90 richards_unsat_aniso_disp
 
-  Sorption parameters: Kd, kplus/kminus in case of EK model, soil density can
-  be set as follows. If precipitation is taken into account,
-  the solubility index needs to be set as well.
+  Sorption parameters like Kd, kplus or kminus (in case of EK model) can be set
+  as follows. Soil density is also needed to compute the transport delay.
+  If precipitation is taken into account, the solubility index needs to be set as well.
 
   \snippet cs_user_physical_properties-richards_unsat.f90 richards_unsat_soilwater_partition
 
@@ -246,18 +251,11 @@
   Source terms can be added to scalar transport equation in \ref ustsns routine
   of \ref cs_user_source_terms.f90 file.
 
-  \subsection richards_phys_prop_radio_decay Radioactive decay
-
-  The radioactive decay is treated as a source term in the transport equation.
-  An example can be found in \ref cs_user_source_terms-richards_decay.f90:
-
-  \snippet cs_user_source_terms-richards_decay.f90 richards_decay
-
   \subsection richards_phys_prop_chem_rel Chemicals release
 
   Substances can be gradually released within the soil.
 
-  \snippet cs_user_source_terms-richards_decay.f90 richards_leaching
+  \snippet cs_user_source_terms-richards.f90 richards_leaching
 
   \section richards_init Initialisation
 

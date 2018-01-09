@@ -76,7 +76,7 @@ integer          ncelt, icelt, ifcvsl
 character*80     fname
 
 integer, allocatable, dimension(:) :: lstcel
-double precision, dimension(:), pointer :: kd, capacity, permeability
+double precision, dimension(:), pointer :: capacity, permeability
 double precision, dimension(:,:), pointer :: tensor_permeability
 double precision, dimension(:), pointer :: cpro_vscalt, saturation
 double precision, dimension(:,:), pointer :: vel
@@ -184,8 +184,6 @@ do ii = 1, nscal
   ! Index field for soilwater_partition structure
   call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(ii)), &
                                                   sorption_scal)
-  ! Index field for kd
-  call field_get_val_s(sorption_scal%ikd, kd)
 
   !< [richards_flow_solut]
   ! Definition of the isotropic diffusion (dispersion and moleculer diffusion)
@@ -214,10 +212,6 @@ do ii = 1, nscal
     endif
   enddo
 
-  ! No delay for both soils
-  do iel = 1, ncel
-    kd(iel) = 0.d0
-  enddo
   !< [richards_flow_solut]
 
 enddo

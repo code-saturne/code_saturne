@@ -209,6 +209,8 @@ integer nmodpp
 integer       iscal, ifcvsl, ii
 
 type(var_cal_opt) :: vcopt
+integer          key_decay
+double precision decay_rate
 
 !----------
 ! Flow part
@@ -262,6 +264,21 @@ if (darcy_anisotropic_dispersion.eq.0) then
   enddo
 endif
 !< [richards_num_trpt]
+
+! In groundwater module flow, the radioactive decay of solute is treated as a
+! source term in the transport equation
+
+!< [richards_decay]
+! Get radioactive decay rate key
+call field_get_key_id("fo_decay_rate", key_decay)
+do ii = 1, nscal
+  ! Get radioactive decay rate
+  call field_get_key_double(ivarfl(isca(ii)), key_decay, decay_rate)
+  decay_rate = 3.d-1
+  ! Set radioactive decay rate
+  call field_set_key_double(ivarfl(isca(ii)), key_decay, decay_rate)
+enddo
+!< [richards_decay]
 
 !---------------
 
@@ -357,20 +374,17 @@ darcy_unsteady = 0
 
 !< [richards_partition]
 ! Get soil-water partition structure.
-call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
-                                                  sorption_sca1)
+call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), sorption_sca1)
 
 ! Set the sorption model to Kd approach (0) or EK model (1),
 ! Kd approach is set by default.
 sorption_sca1%kinetic = 1
 
-! Enable precipitation model,
-! by default, there is no precipitation.
+! Enable precipitation model, by default, there is no precipitation.
 sorption_sca1%imxsol = 0 ! imxsol will hold the solubility index field id
 
 ! Set the modifications in the soil-water partition structure.
-call field_set_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
-                                                  sorption_sca1)
+call field_set_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), sorption_sca1)
 !< [richards_partition]
 
 return
