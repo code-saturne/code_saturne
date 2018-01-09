@@ -117,14 +117,40 @@ void cs_gwf_delay_update(void)
 }
 /*----------------------------------------------------------------------------*/
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add first-order decay in left-hand member (implicit)
+ *
+ * dc/dt = -decay_rate * c
+ */
+ /*---------------------------------------------------------------------------*/
+void cs_gwf_decay_rate(int        f_id,
+                       cs_real_t *ts_imp)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
+  const cs_real_t *vol = mesh_quantities->cell_vol;
+  cs_real_t decay_rate = 0.;
+  cs_field_t *sca;
+
+  sca = cs_field_by_id(f_id);
+  decay_rate = cs_field_get_key_double(sca, cs_field_key_id("fo_decay_rate"));
+  /* First-order decay_rate in implict term */
+  for (int c_id = 0; c_id < n_cells; c_id++)
+    ts_imp[c_id] -= decay_rate * vol[c_id];
+}
+/*----------------------------------------------------------------------------*/
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update sorbed concentration for scalars with kinetic sorption.
  *
  * It is estimated by the following analytical expression :
  * \f[
- * S^{n+1} = S^n \exp(- k^{-} \Delta t) - C^n \dfrac{k^{+}}{k^{-}}
- * \left(\exp(- k^{-} \Delta t) - 1 \right)
+ * S^{n+1} = S^n \exp(- (k^{-} + decay_rate) * \Delta t) - C^n \dfrac{k^{+}}{k^{-}}
+ * \left(\exp(- (k^{-} + decay_rate) * \Delta t) - 1 \right)
  * \f]
  *
  * \param[in]   f_id      scalar index
@@ -134,14 +160,16 @@ void cs_gwf_sorbed_concentration_update(int f_id)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   cs_real_t *dt = CS_F_(dt)->val;
+  cs_real_t decay_rate = 0.;
   cs_field_t *sca, *kd, *kp, *km, *sorb;
   cs_gwf_soilwater_partition_t sorption_scal;
   int key_part = cs_field_key_id("gwf_soilwater_partition");
   int key_sorb = cs_field_key_id("gwf_sorbed_concentration_id");
 
-  /* Get scalar and sorbed concentration */
+  /* Get scalar and sorbed concentration fields, and first-order decay rate */
   sca = cs_field_by_id(f_id);
   sorb = cs_field_by_id(cs_field_get_key_int(sca, key_sorb));
+  decay_rate = cs_field_get_key_double(sca, cs_field_key_id("fo_decay_rate"));
 
   /* Soil-water partition structure */
   cs_field_get_key_struct(sca, key_part, &sorption_scal);
@@ -150,14 +178,14 @@ void cs_gwf_sorbed_concentration_update(int f_id)
 
   /* Update sorbed concentration */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    /* Case of reversible sorption */
-    if (km->val[c_id] > cs_math_epzero) {
-      cs_real_t expkdt = exp(- km->val[c_id] * dt[c_id]);
-      cs_real_t kpskm = kp->val[c_id] / km->val[c_id];
+    /* Case of reversible sorption or decay rate term */
+    if (km->val[c_id] + decay_rate > cs_math_epzero) {
+      cs_real_t expkdt = exp(-(km->val[c_id] + decay_rate) * dt[c_id]);
+      cs_real_t kpskm = kp->val[c_id] / (km->val[c_id] + decay_rate);
       sorb->val[c_id] =  expkdt * sorb->val[c_id]
         - (expkdt-1.) * kpskm * sca->val[c_id];
     }
-    else /* Irreversible sorption */
+    else /* Irreversible sorption and no decay rate */
       sorb->val[c_id] =  sorb->val[c_id]
         + dt[c_id]*kp->val[c_id]*sca->val[c_id];
 }
@@ -206,8 +234,8 @@ void cs_gwf_precipitation(int f_id)
  *        of total concentration.
  *
  *
- * S^{n+1} = S^n \exp(- k^{-} * \Delta t) - C^n \dfrac{k^{+}}{k^{-}}
- * \left(\exp(- k^{-} * \Delta t) - 1 \right)
+ * S^{n+1} = S^n \exp(- (k^{-} + decay_rate) * \Delta t) - C^n \dfrac{k^{+}}{k^{-}}
+ * \left(\exp(- (k^{-} + decay_rate) * \Delta t) - 1 \right)
  * \f]
  *
  * \param[in]   f_id      scalar index
@@ -219,6 +247,7 @@ void cs_gwf_kinetic_reaction(int f_id, cs_real_t *ts_imp, cs_real_t *ts_exp)
   const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
   const cs_real_t *vol = mesh_quantities->cell_vol;
   cs_real_t *dt = CS_F_(dt)->val;
+  cs_real_t decay_rate = 0.;
   cs_real_t expkdt, kplskm, rokpl;
   cs_field_t *sca, *kd, *kp, *km, *sorb, *rosoil;
   cs_gwf_soilwater_partition_t sorption_scal;
@@ -228,9 +257,10 @@ void cs_gwf_kinetic_reaction(int f_id, cs_real_t *ts_imp, cs_real_t *ts_exp)
   /* Get soil density */
   rosoil = cs_field_by_name("soil_density");
 
-  /* Get scalar and sorbed concentration fields */
+  /* Get scalar and sorbed concentration fields, and first-order decay rate */
   sca = cs_field_by_id(f_id);
   sorb = cs_field_by_id(cs_field_get_key_int(sca, key_sorb));
+  decay_rate = cs_field_get_key_double(sca, cs_field_key_id("fo_decay_rate"));
 
   /* Soil-water partition structure */
   cs_field_get_key_struct(sca, key_part, &sorption_scal);
@@ -240,15 +270,16 @@ void cs_gwf_kinetic_reaction(int f_id, cs_real_t *ts_imp, cs_real_t *ts_exp)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
   /* General case (reversible sorption) */
     if (km->val[c_id] > cs_math_epzero) {
-      cs_real_t expkdt = exp(- km->val[c_id] * dt[c_id]);
-      cs_real_t kpskm = kp->val[c_id] / km->val[c_id];
+      cs_real_t expkdt = exp(-(km->val[c_id] + decay_rate) * dt[c_id]);
+      cs_real_t kpskm = kp->val[c_id] / (km->val[c_id] + decay_rate);
       ts_exp[c_id] += - vol[c_id] *
-        (rosoil->val[c_id]/dt[c_id] * (1-expkdt)
+        (decay_rate * rosoil->val[c_id] * sorb->val[c_id]
+          + rosoil->val[c_id]/dt[c_id] * (1-expkdt)
          *(kpskm*sca->val[c_id] - sorb->val[c_id]));
       ts_imp[c_id] += vol[c_id] * rosoil->val[c_id] / dt[c_id]
          * (1-expkdt)*kpskm;
     }
-    else { /* Case of irreversible sorption */
+    else { /* Case of irreversible sorption without decay rate */
       rokpl = rosoil->val[c_id] * kp->val[c_id];
       ts_exp[c_id] += - vol[c_id] * rokpl * sca->val[c_id];
       ts_imp[c_id] += + vol[c_id] * rokpl;

@@ -388,6 +388,11 @@ call ustssc &
   dt     ,                                                       &
   ckupdc , smacel , smbrs  , rovsdt )
 
+! Take into account radioactive decay rate (implicit source term)
+if (ippmod(idarcy).eq.1) then
+  call cs_gwf_decay_rate(ivarfl(ivar), rovsdt)
+endif
+
 ! Store the source terms for convective limiter
 call field_get_key_int(iflid, kst, st_id)
 if (st_id .ge.0) then

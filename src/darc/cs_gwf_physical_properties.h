@@ -63,12 +63,26 @@ void
 cs_gwf_delay_update(void);
 
 
+/*----------------------------------------------------------------------------*/
+/* Add first-order decay in left-hand member (implicit)
+ *
+ * dc/dt = -decay_rate * c
+ *
+ * parameters:
+ * f_id    --> index of scalar
+ * ts_imp  <-> left-hand member (rovsdt in covofi)
+ /*---------------------------------------------------------------------------*/
+void
+cs_gwf_decay_rate(int        f_id,
+                  cs_real_t *ts_imp);
+
+
 /*----------------------------------------------------------------------------
  * Update sorbed concentration for scalars with kinetic sorption.
  *
  * It is estimated by the following analytical expression :
- * S^{n+1} = S^n exp(- k^{-} dt) - C^n * k^{+}/k^{-}
- * (exp(- k^{-} dt) - 1)
+ * S^{n+1} = S^n exp(- (k^{-} + decay_rate) * dt) - C^n * k^{+}/(k^{-} + decay_rate)
+ * (exp(- (k^{-} + decay_rate) * dt) - 1)
  *
  * parameters:
  * f_id    --> scalar index

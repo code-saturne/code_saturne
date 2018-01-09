@@ -2223,6 +2223,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function for decay treatment.
+
+    subroutine cs_gwf_decay_rate(f_id, ts_imp)   &
+      bind(C, name='cs_gwf_decay_rate')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      real(kind=c_double), dimension(*), intent(inout) :: ts_imp
+    end subroutine cs_gwf_decay_rate
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function for kinetic reaction.
 
     subroutine cs_gwf_kinetic_reaction(f_id, ts_imp, ts_exp)   &
