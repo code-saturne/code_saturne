@@ -137,14 +137,6 @@ darcy_unsaturated = 1
 ! Definition of sorption parameters
 call cs_gwf_parameters_define_field_keys
 
-! Set first-order decay rate to zero by default
-do iscal = 1, nscal
-  call field_get_key_id("fo_decay_rate", key_decay)
-  call field_get_key_double(ivarfl(isca(iscal)), key_decay, decay_rate)
-  decay_rate = 0.d0
-  call field_set_key_double(ivarfl(isca(iscal)), key_decay, decay_rate)
-enddo
-
 if (iihmpr.eq.1) then
   call uidai1(darcy_anisotropic_permeability,     &
               darcy_anisotropic_dispersion,       &

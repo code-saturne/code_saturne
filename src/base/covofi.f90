@@ -370,7 +370,6 @@ do iel = 1, ncel
 enddo
 
 if (iihmpr.eq.1) then
-
   if (iscal.ne.iscalt) then
     call uitssc &
     ( ippmod(idarcy), iflid  , cvar_var , smbrs  , rovsdt )
@@ -410,7 +409,7 @@ end if
 
 if (vcopt%ibdtso.gt.1.and.ntcabs.gt.ntinit &
     .and.(idtvar.eq.0.or.idtvar.eq.1)) then
-  ! TODO: remove test on ntcabs and implemente a "proper" condition for
+  ! TODO: remove test on ntcabs and implement a "proper" condition for
   ! initialization.
   f_id = ivarfl(ivar)
   call cs_backward_differentiation_in_time(f_id, smbrs, rovsdt)

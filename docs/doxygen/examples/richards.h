@@ -139,9 +139,7 @@
 
   In the case of soils of very different diffusion (dispersion or molecular
   diffusion), the resolution of the transport equation requires a weighted
-  gradient computation for tetrahedral meshes. This option is only available for
-  soils with isotropic dispersion (\ref darcy_anisotropic_diffusion = 0) for
-  now. It has to be coupled with the standard least squares gradient recontruction.
+  gradient computation for tetrahedral meshes.
 
   \snippet cs_user_parameters-richards.f90 richards_num_trpt
 

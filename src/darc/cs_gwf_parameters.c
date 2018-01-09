@@ -166,7 +166,7 @@ cs_gwf_parameters_define_field_keys(void)
                              sizeof(cs_gwf_soilwater_partition_t),
                              0);
 
-  cs_field_define_key_double("fo_decay_rate", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_double("fo_decay_rate", 0., CS_FIELD_VARIABLE);
  }
 
 /*----------------------------------------------------------------------------*/

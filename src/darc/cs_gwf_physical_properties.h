@@ -49,71 +49,75 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Update delay for the Ground Water Flow module.
+ * Update delay of all transported species (user scalars)
  *
- * Species transport is delayed by retention in solid phase.
- * This delay is computed as follows:
- * R = 1 + rho K_d/theta ;
- * where R is the delay factor, rho the soil density,
- * K_d the contaminant distribution coefficient and theta
- * the moisture content (saturation).
- *
+ * Species transport is delayed by retention in solid phase. This delay is
+ * computed as follows:
+ *  R = 1 + rho K_d/theta
+ *  where R is the delay factor, rho the soil density,
+ * K_d the contaminant distribution coefficient and theta the moisture content
+ * (saturation).
  *---------------------------------------------------------------------------*/
+
 void
 cs_gwf_delay_update(void);
 
-
-/*----------------------------------------------------------------------------*/
-/* Add first-order decay in left-hand member (implicit)
+/*----------------------------------------------------------------------------
+ * Add first-order decay to implicit part of source term array
  *
+ * Corresponding EDO for decay phenomenon is:
  * dc/dt = -decay_rate * c
  *
  * parameters:
- * f_id    --> index of scalar
- * ts_imp  <-> left-hand member (rovsdt in covofi)
- /*---------------------------------------------------------------------------*/
-void
-cs_gwf_decay_rate(int        f_id,
-                  cs_real_t *ts_imp);
+ * f_id    --> field index of scalar on which decay is set
+ * ts_imp  <-> implicit part of the source term
+ *----------------------------------------------------------------------------*/
 
+void
+cs_gwf_decay_rate(const int        f_id,
+                  cs_real_t       *ts_imp);
 
 /*----------------------------------------------------------------------------
  * Update sorbed concentration for scalars with kinetic sorption.
  *
  * It is estimated by the following analytical expression :
- * S^{n+1} = S^n exp(- (k^{-} + decay_rate) * dt) - C^n * k^{+}/(k^{-} + decay_rate)
- * (exp(- (k^{-} + decay_rate) * dt) - 1)
+ * S^{n+1} = S^n exp(- (k^{-} + decay_rate) * dt)
+ *          - C^n * k^{+}/(k^{-} + decay_rate)
+ *            (exp(- (k^{-} + decay_rate) * dt) - 1)
  *
  * parameters:
- * f_id    --> scalar index
+ * f_id    --> field index of scalar which properties are updated
  *----------------------------------------------------------------------------*/
-void
-cs_gwf_sorbed_concentration_update(int f_id);
 
+void
+cs_gwf_sorbed_concentration_update(const int f_id);
 
 /*----------------------------------------------------------------------------
  * Clip liquid concentration to solubility index.
  *
  * parameters:
- * f_id    --> scalar index
+ * f_id    --> field index of scalar which properties are updated
  *----------------------------------------------------------------------------*/
-void
-cs_gwf_precipitation(int f_id);
 
+void
+cs_gwf_precipitation(const int f_id);
 
 /*----------------------------------------------------------------------------
- * Take into account influence of kinetic reaction on liquid concentration.
+ * Take into account kinetic chemical reaction in evolution equation
+ * of total liquid concentration.
  *
  * parameters:
- * f_id    --> scalar index
- * ts_imp  <-> left-hand member (rovsdt in covofi)
- * ts_exp  <-> right-hand member (smbrs in covofi)
+ * f_id    --> field index of scalar which properties are updated
+ * ts_imp  <-> implicit part of the source term
+ * ts_exp  <-> explicit part of the source term
  *----------------------------------------------------------------------------*/
-void cs_gwf_kinetic_reaction(int        f_id,
-                             cs_real_t *ts_imp,
-                             cs_real_t *ts_exp);
 
+void
+cs_gwf_kinetic_reaction(const int   f_id,
+                        cs_real_t  *ts_imp,
+                        cs_real_t  *ts_exp);
 
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
