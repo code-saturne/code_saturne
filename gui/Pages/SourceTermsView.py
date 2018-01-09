@@ -369,10 +369,9 @@ dSudu = - rho / tau; # Jacobian of the source term"""
         """
         exp = self.mdl.getGroundWaterSpeciesFormula(self.zone, self.scalar)
         if not exp:
-            exp = """Q = 0;\nlambda = 0;\n"""
+            exp = """Q = 0;"""
         exa = """#example: """
-        req = [('Q', 'species source term'),
-               ('lambda', 'radioactive decay')]
+        req = [('Q', 'species source term')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),

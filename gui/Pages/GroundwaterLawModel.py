@@ -96,9 +96,11 @@ class GroundwaterLawModel(Variables, Model):
         default['transverse']            = 0.0
         default['isotropic']             = 0.0
         default['diffusion_choice']      = 'variable'
-        default['soil_density']          = 1.5
+        default['soil_density']          = 1.0
         default['diffusivity']           = 0.0
         default['kd']                    = 0.0
+        default['kplus']                 = 0.0
+        default['kminus']                = 0.0
         return default
 
 
@@ -323,7 +325,7 @@ permeability=1.;"""
         self.isInt(int(zoneid))
         self.isNotInList(scalar_name, self.sca_mo.getScalarsVarianceList())
         self.isInList(scalar_name, self.sca_mo.getUserScalarNameList())
-        self.isInList(prop, ['diffusivity','kd'])
+        self.isInList(prop, ['diffusivity','kd', 'kplus', 'kminus'])
 
         nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
         nodeScalar = nodeZone.xmlInitChildNode('scalar', name=scalar_name)
@@ -343,7 +345,7 @@ permeability=1.;"""
         self.isInt(int(zoneid))
         self.isNotInList(scalar_name, self.sca_mo.getScalarsVarianceList())
         self.isInList(scalar_name, self.sca_mo.getUserScalarNameList())
-        self.isInList(prop, ['diffusivity','kd'])
+        self.isInList(prop, ['diffusivity','kd', 'kplus', 'kminus'])
 
         nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
         nodeScalar = nodeZone.xmlInitChildNode('scalar', name=scalar_name)

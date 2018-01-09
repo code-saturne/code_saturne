@@ -100,6 +100,7 @@
 #include "cs_balance_by_zone.h"
 #include "cs_fan.h"
 #include "cs_volume_zone.h"
+#include "cs_gwf_physical_properties.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -3661,42 +3662,6 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
             tsexp[iel] *= cell_f_vol[iel];
           }
         }
-        else {  /* groundwater flow */
-          /* only radioactive decay can be set with the GUI source terms view */
-          /* TODO: handle it by zone in the ground water law view
-             as done for diffusivity */
-          ev_formula = mei_tree_new(formula);
-          mei_tree_insert(ev_formula,"x",0.);
-          mei_tree_insert(ev_formula,"y",0.);
-          mei_tree_insert(ev_formula,"z",0.);
-          mei_tree_insert(ev_formula,"t",0.);
-
-          /* add variable from notebook */
-          _add_notebook_variables(ev_formula);
-
-          /* try to build the interpreter */
-          if (mei_tree_builder(ev_formula))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interpret expression: %s\n %i"),
-                      ev_formula->string, mei_tree_builder(ev_formula));
-
-          const char *symbols[] = {"lambda"};
-          if (mei_tree_find_symbols(ev_formula, 1, symbols))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n"), "lambda");
-
-          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-            cs_lnum_t iel = cell_ids[icel];
-            mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
-            mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
-            mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-            mei_tree_insert(ev_formula, "t", cs_glob_time_step->t_cur);
-            mei_evaluate(ev_formula);
-            /* first order decay coefficient - lambda [kg.m3.s-1] positive */
-            cs_real_t lambda = mei_tree_lookup(ev_formula,"lambda");
-            tsimp[iel] = -cell_f_vol[iel]*lambda;
-          }
-        }
         mei_tree_destroy(ev_formula);
       }
     }
@@ -5329,12 +5294,13 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
       const int kivisl = cs_field_key_id("scalar_diffusivity_id");
       int n_fields = cs_field_n_fields();
 
-      /* get diffusivity and Kd for each scalar
-         defined by the user on current zone */
+      /* get diffusivity and Kd for each scalar defined by the user on current zone
+         (and kplus and kminus only for scalars with kinetic model) */
       for (int f_id = 0; f_id < n_fields; f_id++) {
         cs_field_t *f = cs_field_by_id(f_id);
         if (   (f->type & CS_FIELD_VARIABLE)
             && (f->type & CS_FIELD_USER)) {
+
           /* get kd for current scalar and current zone */
           char *kdname = NULL;
           int len = strlen(f->name) + 4;
@@ -5384,6 +5350,50 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
           for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
             cs_lnum_t iel = cell_ids[icel];
             fdiff->val[iel] = saturation_field[iel]*diff_val;
+          }
+
+          /* get kplus and kminus for current scalar and current zone (if EK model is chosen) */
+          cs_gwf_soilwater_partition_t sorption_scal;
+          int key_part = cs_field_key_id("gwf_soilwater_partition");
+          cs_field_t *kp, *km;
+          cs_field_get_key_struct(f, key_part, &sorption_scal);
+          if (sorption_scal.kinetic == 1) {
+            kp = cs_field_by_id(sorption_scal.ikp);
+            km = cs_field_by_id(sorption_scal.ikm);
+
+            cs_real_t kp_val = 0.;
+            path = cs_xpath_init_path();
+            cs_xpath_add_elements(&path, 3,
+                                  "thermophysical_models",
+                                  "groundwater",
+                                  "groundwater_law");
+            _add_zone_id_test_attribute(&path, z->id);
+            cs_xpath_add_element(&path, "scalar");
+            cs_xpath_add_test_attribute(&path, "name", f->name);
+            cs_xpath_add_element(&path, "kplus");
+            cs_xpath_add_function_text(&path);
+            cs_gui_get_double(path, &kp_val);
+            BFT_FREE(path);
+
+            cs_real_t km_val = 0.;
+            path = cs_xpath_init_path();
+            cs_xpath_add_elements(&path, 3,
+                                  "thermophysical_models",
+                                  "groundwater",
+                                  "groundwater_law");
+            _add_zone_id_test_attribute(&path, z->id);
+            cs_xpath_add_element(&path, "scalar");
+            cs_xpath_add_test_attribute(&path, "name", f->name);
+            cs_xpath_add_element(&path, "kminus");
+            cs_xpath_add_function_text(&path);
+            cs_gui_get_double(path, &km_val);
+            BFT_FREE(path);
+
+            for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+              cs_lnum_t iel = cell_ids[icel];
+              kp->val[iel] = kp_val;
+              km->val[iel] = km_val;
+            }
           }
         }
       }

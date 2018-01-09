@@ -182,6 +182,8 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditSoilDensity.setValidator(DoubleValidator(self.lineEditSoilDensity))
         self.lineEditDiffusivity.setValidator(DoubleValidator(self.lineEditDiffusivity))
         self.lineEditKd.setValidator(DoubleValidator(self.lineEditKd))
+        self.lineEditkplus.setValidator(DoubleValidator(self.lineEditkplus))
+        self.lineEditkminus.setValidator(DoubleValidator(self.lineEditkminus))
 
         self.scalar = ""
         scalar_list = self.m_sca.getUserScalarNameList()
@@ -224,6 +226,8 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
         self.lineEditDiffusivity.textChanged[str].connect(self.slotDiffusivity)
         self.lineEditKd.textChanged[str].connect(self.slotKd)
+        self.lineEditkplus.textChanged[str].connect(self.slotkplus)
+        self.lineEditkminus.textChanged[str].connect(self.slotkminus)
 
         # Initialize Widgets
 
@@ -324,6 +328,21 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.lineEditDiffusivity.setText(str(value))
             value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'kd')
             self.lineEditKd.setText(str(value))
+            # chemistry model
+            if GroundwaterModel(self.case).getChemistryModel(scal) == "EK":
+                self.lineEditkplus.show()
+                self.label_kplus.show()
+                self.lineEditkminus.show()
+                self.label_kminus.show()
+                value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'kplus')
+                self.lineEditkplus.setText(str(value))
+                value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'kminus')
+                self.lineEditkminus.setText(str(value))
+            else:
+                self.lineEditkplus.hide()
+                self.label_kplus.hide()
+                self.lineEditkminus.hide()
+                self.label_kminus.hide()
 
         if GroundwaterModel(self.case).getDispersionType() == 'anisotropic':
             self.groupBoxIsotropicDispersion.hide()
@@ -720,6 +739,20 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditDiffusivity.setText(str(value))
         value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'kd')
         self.lineEditKd.setText(str(value))
+        if GroundwaterModel(self.case).getChemistryModel(scal) == "EK":
+            self.lineEditkplus.show()
+            self.label_kplus.show()
+            self.lineEditkminus.show()
+            self.label_kminus.show()
+            value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'kplus')
+            self.lineEditkplus.setText(str(value))
+            value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'kminus')
+            self.lineEditkminus.setText(str(value))
+        else:
+            self.lineEditkplus.hide()
+            self.label_kplus.hide()
+            self.lineEditkminus.hide()
+            self.label_kminus.hide()
 
     @pyqtSlot(str)
     def slotDiffusivity(self, text):
@@ -740,6 +773,26 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             val = float(text)
             scal = self.scalar
             self.mdl.setGroundWaterScalarPropertyByZone(scal, name, 'kd', val)
+
+    @pyqtSlot(str)
+    def slotkplus(self, text):
+        """
+        """
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditkplus.validator().state == QValidator.Acceptable:
+            val = float(text)
+            scal = self.scalar
+            self.mdl.setGroundWaterScalarPropertyByZone(scal, name, 'kplus', val)
+
+    @pyqtSlot(str)
+    def slotkminus(self, text):
+        """
+        """
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditkminus.validator().state == QValidator.Acceptable:
+            val = float(text)
+            scal = self.scalar
+            self.mdl.setGroundWaterScalarPropertyByZone(scal, name, 'kminus', val)
 
     def tr(self, text):
         """

@@ -45,6 +45,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/turb \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/rayt \
+-I$(top_srcdir)/src/darc \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS)
 

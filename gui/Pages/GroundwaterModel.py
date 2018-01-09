@@ -45,6 +45,7 @@ from code_saturne.Base.XMLvariables               import Variables, Model
 from code_saturne.Base.XMLmodel                   import ModelTest
 from code_saturne.Pages.TurbulenceModel           import TurbulenceModel
 from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 
 #-------------------------------------------------------------------------------
 # Mobil Mesh model class
@@ -63,6 +64,8 @@ class GroundwaterModel(Variables, Model):
         self.node_models  = self.case.xmlGetNode('thermophysical_models')
         self.node_darcy = self.node_models.xmlInitChildNode('groundwater_model', 'model')
 
+        self.sca_mo       = DefineUserScalarsModel(self.case)
+
 
     def __defaultValues(self):
         """
@@ -75,7 +78,8 @@ class GroundwaterModel(Variables, Model):
         default['groundwater_model'] = 'off'
         default['gravity']           = 'off'
         default['unsaturated']       = 'true'
-
+        default['chemistry_model']   = 'Kd'
+        default['fo_decay_rate']     = 0.0
         return default
 
 
@@ -295,3 +299,68 @@ class GroundwaterModel(Variables, Model):
         self.isOnOff(v)
         node = self.node_darcy.xmlInitChildNode('gravity', 'status')
         node['status'] = v
+
+
+    @Variables.noUndo
+    def getDecayRate(self, scalar_name):
+        """
+        Get value for the first-order decay rate of one scalar
+        """
+        prop = 'fo_decay_rate'
+
+        self.isNotInList(scalar_name, self.sca_mo.getScalarsVarianceList())
+        self.isInList(scalar_name, self.sca_mo.getUserScalarNameList())
+
+        nodeScalar = self.node_darcy.xmlInitChildNode('scalar', name=scalar_name)
+        value = nodeScalar.xmlGetDouble(prop)
+
+        if value == None:
+            value = self.__defaultValues()[prop]
+            self.setDecayRate(scalar_name, value)
+
+        return value
+
+
+    @Variables.undoLocal
+    def setDecayRate(self, scalar_name, value):
+        """
+        Set value for the first-order decay rate of one scalar
+        """
+        self.isNotInList(scalar_name, self.sca_mo.getScalarsVarianceList())
+        self.isInList(scalar_name, self.sca_mo.getUserScalarNameList())
+
+        nodeScalar = self.node_darcy.xmlInitChildNode('scalar', name=scalar_name)
+        nodeScalar.xmlSetData('fo_decay_rate', value)
+
+
+    @Variables.noUndo
+    def getChemistryModel(self, scalar_name):
+        """
+        Get choice of the chemistry model (representing soil-water partition) of one scalar
+        """
+        prop = 'chemistry_model'
+
+        self.isNotInList(scalar_name, self.sca_mo.getScalarsVarianceList())
+        self.isInList(scalar_name, self.sca_mo.getUserScalarNameList())
+
+        nodeScalar = self.node_darcy.xmlInitChildNode('scalar', name=scalar_name)
+        choice = nodeScalar['chemistry_model']
+
+        if choice == None:
+            choice = self.__defaultValues()[prop]
+            self.setChemistryModel(scalar_name, choice)
+
+        return choice
+
+
+    @Variables.undoLocal
+    def setChemistryModel(self, scalar_name, choice):
+        """
+        Set choice of the chemistry model of one scalar: Kd or EK
+        """
+        self.isNotInList(scalar_name, self.sca_mo.getScalarsVarianceList())
+        self.isInList(scalar_name, self.sca_mo.getUserScalarNameList())
+        self.isInList(choice, ['Kd', 'EK'])
+
+        nodeScalar = self.node_darcy.xmlInitChildNode('scalar', name=scalar_name)
+        nodeScalar['chemistry_model'] = choice

@@ -51,6 +51,7 @@ from code_saturne.Base.Toolbox           import GuiParam
 from code_saturne.Base.QtPage            import ComboModel, from_qvariant, DoubleValidator
 from code_saturne.Pages.GroundwaterForm  import Ui_GroundwaterForm
 from code_saturne.Pages.GroundwaterModel import GroundwaterModel
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 
 from code_saturne.Pages.QMeiEditorView   import QMeiEditorView
 
@@ -83,11 +84,18 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.case.undoStopGlobal()
         self.mdl = GroundwaterModel(self.case)
 
+        self.list_scalars = []
+        self.m_sca = DefineUserScalarsModel(self.case)
+        for s in self.m_sca.getUserScalarNameList():
+            self.list_scalars.append((s, self.tr("Additional scalar")))
+
         # ComboBox
         self.modelPermeability = ComboModel(self.comboBoxPermeability,2,1)
         self.modelDispersion = ComboModel(self.comboBoxDispersion,2,1)
         self.modelFlowType = ComboModel(self.comboBoxFlowType,2,1)
         self.modelUnsaturated = ComboModel(self.comboBoxUnsaturated,2,1)
+        self.modelChemistryModel = ComboModel(self.comboBoxChemistryModel,2,1)
+        self.modelSpeciesName = ComboModel(self.comboBoxSpeciesName,1,1)
 
         self.modelPermeability.addItem(self.tr("isotropic"), 'isotropic')
         self.modelPermeability.addItem(self.tr("anisotropic"), 'anisotropic')
@@ -97,6 +105,23 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.modelFlowType.addItem(self.tr("unsteady"), 'unsteady')
         self.modelUnsaturated.addItem(self.tr("True"), 'true')
         self.modelUnsaturated.addItem(self.tr("False"), 'false')
+        self.modelChemistryModel.addItem(self.tr("Kd"), 'Kd')
+        self.modelChemistryModel.addItem(self.tr("EK"), 'EK')
+
+        self.scalar = ""
+        scalar_list = self.m_sca.getUserScalarNameList()
+        for s in self.m_sca.getScalarsVarianceList():
+            if s in scalar_list: scalar_list.remove(s)
+
+        if scalar_list != []:
+            self.scalar = scalar_list[0]
+            for scalar in scalar_list:
+                self.modelSpeciesName.addItem(scalar)
+        else:
+            self.groupBoxTransport.hide()
+
+        # Set up validators
+        self.lineEditDecayRate.setValidator(DoubleValidator(self.lineEditDecayRate))
 
         # Connections
         self.comboBoxPermeability.activated[str].connect(self.slotPermeabilityType)
@@ -104,14 +129,17 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.comboBoxFlowType.activated[str].connect(self.slotFlowType)
         self.comboBoxUnsaturated.activated[str].connect(self.slotUnsaturated)
         self.checkBoxGravity.clicked.connect(self.slotGravity)
+        self.comboBoxChemistryModel.activated[str].connect(self.slotChemistryModel)
+        self.comboBoxSpeciesName.activated[str].connect(self.slotSpeciesName)
+        self.lineEditDecayRate.textChanged[str].connect(self.slotDecayRate)
 
-        self.initializeWidget()
+        self.initializeWidget(scalar_list)
 
         self.case.undoStartGlobal()
 
 
     @pyqtSlot()
-    def initializeWidget(self):
+    def initializeWidget(self, scalar_list):
         """
         """
         value = self.mdl.getPermeabilityType()
@@ -130,6 +158,12 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
             self.checkBoxGravity.setChecked(True)
         else:
             self.checkBoxGravity.setChecked(False)
+
+        if scalar_list != []:
+            value = self.mdl.getDecayRate(self.scalar)
+            self.lineEditDecayRate.setText(str(value))
+            value = self.mdl.getChemistryModel(self.scalar)
+            self.modelChemistryModel.setItem(str_model=value)
 
 
     @pyqtSlot(str)
@@ -184,6 +218,41 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         Translation
         """
         return text
+
+
+    @pyqtSlot(str)
+    def slotSpeciesName(self, text):
+        """
+        Method to choose the scalar which properties shall be changed
+        """
+        mdl = self.modelSpeciesName.dicoV2M[str(text)]
+        self.scalar = str(text)
+        scal = self.scalar
+        value = self.mdl.getDecayRate(scal)
+        self.lineEditDecayRate.setText(str(value))
+        value = self.mdl.getChemistryModel(scal)
+        self.modelChemistryModel.setItem(str_model=value)
+
+
+    @pyqtSlot(str)
+    def slotChemistryModel(self, text):
+        """
+        Input chemistry model for soil-water partition : Kd or EK.
+        """
+        choice = self.modelChemistryModel.dicoV2M[str(text)]
+        scal = self.scalar
+        self.mdl.setChemistryModel(scal, choice)
+
+
+    @pyqtSlot(str)
+    def slotDecayRate(self, text):
+        """
+        """
+        if self.lineEditDecayRate.validator().state == QValidator.Acceptable:
+            val = float(text)
+            scal = self.scalar
+            self.mdl.setDecayRate(scal, val)
+
 
 #-------------------------------------------------------------------------------
 # End

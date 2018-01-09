@@ -61,6 +61,7 @@
 #include "cs_prototypes.h"
 #include "cs_selector.h"
 #include "cs_elec_model.h"
+#include "cs_gwf_physical_properties.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -2110,54 +2111,52 @@ void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
   char *mdl    = NULL;
   int   result;
 
+  /* Get dispersion type */
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "thermophysical_models",
                                   "groundwater_model",
                                   "dispersion");
-
   cs_xpath_add_attribute(&path, "model");
   mdl = cs_gui_get_attribute_value(path);
   BFT_FREE(path);
+
   if (cs_gui_strcmp(mdl, "anisotropic"))
     *dispersion = 1;
   else
     *dispersion = 0;
-
   BFT_FREE(mdl);
-  BFT_FREE(path);
 
+  /* Get flow type */
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "thermophysical_models",
                                   "groundwater_model",
                                   "flowType");
-
   cs_xpath_add_attribute(&path, "model");
   mdl = cs_gui_get_attribute_value(path);
   BFT_FREE(path);
+
   if (cs_gui_strcmp(mdl, "steady"))
     *unsteady = 0;
   else
     *unsteady = 1;
-
   BFT_FREE(mdl);
-  BFT_FREE(path);
 
+  /* Get permeability type */
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "thermophysical_models",
                                   "groundwater_model",
                                   "permeability");
-
   cs_xpath_add_attribute(&path, "model");
   mdl = cs_gui_get_attribute_value(path);
   BFT_FREE(path);
+
   if (cs_gui_strcmp(mdl, "anisotropic"))
     *permeability = 1;
   else
     *permeability = 0;
-
   BFT_FREE(mdl);
-  BFT_FREE(path);
 
+  /* Get gravity */
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "thermophysical_models",
                                   "groundwater_model",
@@ -2166,24 +2165,66 @@ void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
 
   if (cs_gui_get_status(path, &result))
     *gravity = result;
-
   BFT_FREE(path);
 
+  /* Get the possible presence of unsaturated zone */
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "thermophysical_models",
                                   "groundwater_model",
                                   "unsaturatedZone");
-
   cs_xpath_add_attribute(&path, "model");
   mdl = cs_gui_get_attribute_value(path);
   BFT_FREE(path);
+
   if (cs_gui_strcmp(mdl, "true"))
     *unsaturated = 1;
   else
     *unsaturated = 0;
-
   BFT_FREE(mdl);
-  BFT_FREE(path);
+
+  /* Get first-order decay rate and chemistry model */
+  int n_fields = cs_field_n_fields();
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (   (f->type & CS_FIELD_VARIABLE)
+           && (f->type & CS_FIELD_USER)) {
+
+      /* get first-order decay rate */
+      cs_real_t decay = 0.;
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 2, "thermophysical_models",
+                                      "groundwater_model");
+      cs_xpath_add_element(&path, "scalar");
+      cs_xpath_add_test_attribute(&path, "name", f->name);
+      cs_xpath_add_element(&path, "fo_decay_rate");
+      cs_xpath_add_function_text(&path);
+      cs_gui_get_double(path, &decay);
+      BFT_FREE(path);
+
+      int key_decay = cs_field_key_id("fo_decay_rate");
+      cs_field_set_key_double(f, key_decay, decay);
+
+      /* get chemistry model */
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 2, "thermophysical_models",
+                                      "groundwater_model");
+      cs_xpath_add_element(&path, "scalar");
+      cs_xpath_add_test_attribute(&path, "name", f->name);
+      cs_xpath_add_attribute(&path, "chemistry_model");
+      mdl = cs_gui_get_attribute_value(path);
+      BFT_FREE(path);
+
+      cs_gwf_soilwater_partition_t sorption_scal;
+      int key_part = cs_field_key_id("gwf_soilwater_partition");
+      cs_field_get_key_struct(f, key_part, &sorption_scal);
+      if (cs_gui_strcmp(mdl, "EK"))
+        sorption_scal.kinetic = 1;
+      else
+        sorption_scal.kinetic = 0;
+      cs_field_set_key_struct(f, key_part, &sorption_scal);
+      BFT_FREE(mdl);
+    }
+  }
 
 #if _XML_DEBUG_
   bft_printf("==>UIDAI1\n");
