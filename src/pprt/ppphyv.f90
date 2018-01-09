@@ -222,11 +222,11 @@ interface
 
   ! Interface to C function defining groundwater flow physical properties.
 
-  subroutine cs_gwf_physical_properties()  &
-    bind(C, name='cs_gwf_physical_properties')
+  subroutine cs_gwf_delay_update()  &
+    bind(C, name='cs_gwf_delay_update')
     use, intrinsic :: iso_c_binding
     implicit none
-  end subroutine cs_gwf_physical_properties
+  end subroutine cs_gwf_delay_update
 
   !---------------------------------------------------------------------------
 
@@ -254,12 +254,12 @@ if (ippmod(icompf).ge.0) then
   call cfphyv
 endif
 
-! Ground water flows
+! Groundwater flows
 ! Has to be called after the definition of saturation and soil density in order
 ! to update the sorbed concentration (in case the kinetic sorption model is
 ! enabled) and delay.
 if (ippmod(idarcy).ge.1) then
-  call cs_gwf_physical_properties
+  call cs_gwf_delay_update
 endif
 
 

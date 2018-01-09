@@ -49,7 +49,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Update physical properties of the Ground Water Flow module.
+ * Update delay for the Ground Water Flow module.
  *
  * Species transport is delayed by retention in solid phase.
  * This delay is computed as follows:
@@ -59,9 +59,9 @@ BEGIN_C_DECLS
  * the moisture content (saturation).
  *
  *---------------------------------------------------------------------------*/
-
 void
-cs_gwf_physical_properties(void);
+cs_gwf_delay_update(void);
+
 
 /*----------------------------------------------------------------------------
  * Update sorbed concentration for scalars with kinetic sorption.
@@ -71,19 +71,35 @@ cs_gwf_physical_properties(void);
  * (exp(- k^{-} dt) - 1)
  *
  * parameters:
- * c_scal -->   concentration field
- * kp     -->   kplus field
- * km     -->   kminus field
- * sorb   <--   sorbed concentration field
+ * f_id    --> scalar index
  *----------------------------------------------------------------------------*/
-
 void
-cs_gwf_sorbed_concentration_update(cs_real_t *c_scal,
-                                   cs_real_t *kp,
-                                   cs_real_t *km,
-                                   cs_real_t *sorb);
+cs_gwf_sorbed_concentration_update(int f_id);
 
-/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * Clip liquid concentration to solubility index.
+ *
+ * parameters:
+ * f_id    --> scalar index
+ *----------------------------------------------------------------------------*/
+void
+cs_gwf_precipitation(int f_id);
+
+
+/*----------------------------------------------------------------------------
+ * Take into account influence of kinetic reaction on liquid concentration.
+ *
+ * parameters:
+ * f_id    --> scalar index
+ * ts_imp  <-> left-hand member (rovsdt in covofi)
+ * ts_exp  <-> right-hand member (smbrs in covofi)
+ *----------------------------------------------------------------------------*/
+void cs_gwf_kinetic_reaction(int        f_id,
+                             cs_real_t *ts_imp,
+                             cs_real_t *ts_exp);
+
+
 
 END_C_DECLS
 

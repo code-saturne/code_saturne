@@ -53,7 +53,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_mesh.h"
-
+#include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -71,7 +71,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update physical properties of the Ground Water Flow module.
+ * \brief  Update delay of the Groundwater Flow module.
  *
  * Species transport is delayed by retention in solid phase.
  * This delay is computed as follows:
@@ -88,49 +88,34 @@ BEGIN_C_DECLS
  *
  */
  /*---------------------------------------------------------------------------*/
-
-void cs_gwf_physical_properties(void)
+void cs_gwf_delay_update(void)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   cs_field_t *sca, *delay, *sat, *rosoil, *kd;
   cs_gwf_soilwater_partition_t sorption_scal;
+  int key_part = cs_field_key_id("gwf_soilwater_partition");
 
+  /* Get soil property fields */
   sat = cs_field_by_name("saturation");
   rosoil = cs_field_by_name("soil_density");
 
-  int key_sorbed_c_id = cs_field_key_id("gwf_sorbed_concentration_id");
-  int key_kinet_soilwater_partition_id =
-    cs_field_key_id("gwf_soilwater_partition");
-
   /* Loop on user scalars */
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-     sca = cs_field_by_id(f_id);
-     if ((sca->type & CS_FIELD_VARIABLE) && (sca->type & CS_FIELD_USER)) {
+    sca = cs_field_by_id(f_id);
+    if ((sca->type & CS_FIELD_VARIABLE) && (sca->type & CS_FIELD_USER)) {
       /* Sorption properties are needed to update delay */
-      cs_field_get_key_struct(sca,
-                              key_kinet_soilwater_partition_id,
-                              &sorption_scal);
+      cs_field_get_key_struct(sca, key_part, &sorption_scal);
 
       /* Update of delay */
       kd = cs_field_by_id(sorption_scal.ikd);
       delay = cs_field_by_id(sorption_scal.idel);
-      for (int iel = 0; iel < n_cells; iel++) {
-        delay->val[iel] = 1. + rosoil->val[iel] * kd->val[iel] / sat->val[iel];
-      }
-
-      /* Update of sorbed concentration
-         only if kinetic model is enabled for the scalar */
-      if (sorption_scal.kinetic == 1) {
-        int sorbed_c_id = cs_field_get_key_int(sca, key_sorbed_c_id);
-        cs_real_t *sorb = cs_field_by_id(sorbed_c_id)->val;
-        cs_real_t *kp = cs_field_by_id(sorption_scal.ikp)->val;
-        cs_real_t *km = cs_field_by_id(sorption_scal.ikm)->val;
-
-        cs_gwf_sorbed_concentration_update(sca->val, kp, km, sorb);
+      for (int c_id = 0; c_id < n_cells; c_id++) {
+        delay->val[c_id] = 1. + rosoil->val[c_id] * kd->val[c_id] / sat->val[c_id];
       }
     }
   }
 }
+/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -142,32 +127,132 @@ void cs_gwf_physical_properties(void)
  * \left(\exp(- k^{-} \Delta t) - 1 \right)
  * \f]
  *
- * \param[in]   c_scal      concentration field
- * \param[in]   kp          kplus field
- * \param[in]   km          kminus field
- * \param[in]   sorb        sorbed concentration field
+ * \param[in]   f_id      scalar index
  */
- /*----------------------------------------------------------------------------*/
-
-void cs_gwf_sorbed_concentration_update(cs_real_t *c_scal,
-                                        cs_real_t *kp,
-                                        cs_real_t *km,
-                                        cs_real_t *sorb)
+ /*---------------------------------------------------------------------------*/
+void cs_gwf_sorbed_concentration_update(int f_id)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   cs_real_t *dt = CS_F_(dt)->val;
+  cs_field_t *sca, *kd, *kp, *km, *sorb;
+  cs_gwf_soilwater_partition_t sorption_scal;
+  int key_part = cs_field_key_id("gwf_soilwater_partition");
+  int key_sorb = cs_field_key_id("gwf_sorbed_concentration_id");
 
+  /* Get scalar and sorbed concentration */
+  sca = cs_field_by_id(f_id);
+  sorb = cs_field_by_id(cs_field_get_key_int(sca, key_sorb));
+
+  /* Soil-water partition structure */
+  cs_field_get_key_struct(sca, key_part, &sorption_scal);
+  kp = cs_field_by_id(sorption_scal.ikp);
+  km = cs_field_by_id(sorption_scal.ikm);
+
+  /* Update sorbed concentration */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    if (km[c_id] > cs_math_epzero) {
-      cs_real_t expkdt = exp(-km[c_id] * dt[c_id]);
-      cs_real_t kpskm = kp[c_id] / km[c_id];
-      sorb[c_id] =  expkdt * sorb[c_id]
-                  - (expkdt-1.) * kpskm * c_scal[c_id];
+    /* Case of reversible sorption */
+    if (km->val[c_id] > cs_math_epzero) {
+      cs_real_t expkdt = exp(- km->val[c_id] * dt[c_id]);
+      cs_real_t kpskm = kp->val[c_id] / km->val[c_id];
+      sorb->val[c_id] =  expkdt * sorb->val[c_id]
+        - (expkdt-1.) * kpskm * sca->val[c_id];
     }
-    else
-      sorb[c_id] =  sorb[c_id] + dt[c_id]*kp[c_id]*c_scal[c_id];
+    else /* Irreversible sorption */
+      sorb->val[c_id] =  sorb->val[c_id]
+        + dt[c_id]*kp->val[c_id]*sca->val[c_id];
 }
+/*---------------------------------------------------------------------------*/
+
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update liquid concentration according to precipitation phenomenon.
+ *
+ * If liquid concentration exceeds solubility index, then it is clipped and
+ * transferred in precipitated concentration
+ *
+ * \param[in]   f_id      scalar index
+ */
+ /*---------------------------------------------------------------------------*/
+void cs_gwf_precipitation(int f_id)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  cs_real_t ctot_tmp = 0.;
+  cs_field_t *sca, *precip, *solub;
+  cs_gwf_soilwater_partition_t sorption_scal;
+  int key_part = cs_field_key_id("gwf_soilwater_partition");
+  int key_pre = cs_field_key_id("gwf_precip_concentration_id");
+
+  /* Get scalar, precipitation and solubility index fields */
+  sca = cs_field_by_id(f_id);
+  cs_field_get_key_struct(sca, key_part, &sorption_scal);
+  precip = cs_field_by_id(cs_field_get_key_int(sca, key_pre));
+  solub = cs_field_by_id(sorption_scal.imxsol);
+
+  /* Clipping of solute concentration, update of precipitation concentration */
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    {
+      ctot_tmp = sca->val[c_id] + precip->val[c_id];
+      sca->val[c_id] = CS_MIN(ctot_tmp, solub->val[c_id]);
+      precip->val[c_id] = CS_MAX(0., ctot_tmp - solub->val[c_id]);
+    }
+}
+/*----------------------------------------------------------------------------*/
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Impact of kinetic chemical reaction on evolution equation
+ *        of total concentration.
+ *
+ *
+ * S^{n+1} = S^n \exp(- k^{-} * \Delta t) - C^n \dfrac{k^{+}}{k^{-}}
+ * \left(\exp(- k^{-} * \Delta t) - 1 \right)
+ * \f]
+ *
+ * \param[in]   f_id      scalar index
+ */
+ /*---------------------------------------------------------------------------*/
+void cs_gwf_kinetic_reaction(int f_id, cs_real_t *ts_imp, cs_real_t *ts_exp)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
+  const cs_real_t *vol = mesh_quantities->cell_vol;
+  cs_real_t *dt = CS_F_(dt)->val;
+  cs_real_t expkdt, kplskm, rokpl;
+  cs_field_t *sca, *kd, *kp, *km, *sorb, *rosoil;
+  cs_gwf_soilwater_partition_t sorption_scal;
+  int key_part = cs_field_key_id("gwf_soilwater_partition");
+  int key_sorb = cs_field_key_id("gwf_sorbed_concentration_id");
+
+  /* Get soil density */
+  rosoil = cs_field_by_name("soil_density");
+
+  /* Get scalar and sorbed concentration fields */
+  sca = cs_field_by_id(f_id);
+  sorb = cs_field_by_id(cs_field_get_key_int(sca, key_sorb));
+
+  /* Soil-water partition structure */
+  cs_field_get_key_struct(sca, key_part, &sorption_scal);
+  kp = cs_field_by_id(sorption_scal.ikp);
+  km = cs_field_by_id(sorption_scal.ikm);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+  /* General case (reversible sorption) */
+    if (km->val[c_id] > cs_math_epzero) {
+      cs_real_t expkdt = exp(- km->val[c_id] * dt[c_id]);
+      cs_real_t kpskm = kp->val[c_id] / km->val[c_id];
+      ts_exp[c_id] += - vol[c_id] *
+        (rosoil->val[c_id]/dt[c_id] * (1-expkdt)
+         *(kpskm*sca->val[c_id] - sorb->val[c_id]));
+      ts_imp[c_id] += vol[c_id] * rosoil->val[c_id] / dt[c_id]
+         * (1-expkdt)*kpskm;
+    }
+    else { /* Case of irreversible sorption */
+      rokpl = rosoil->val[c_id] * kp->val[c_id];
+      ts_exp[c_id] += - vol[c_id] * rokpl * sca->val[c_id];
+      ts_imp[c_id] += + vol[c_id] * rokpl;
+    }
+}
 
 END_C_DECLS

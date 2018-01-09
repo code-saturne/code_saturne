@@ -2166,7 +2166,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for data assimilation (atmospheric module)
+    ! Interface to C function for data assimilation (atmospheric module).
 
     subroutine cs_at_data_assim_source_term(f_id, exp_st, imp_st)   &
       bind(C, name='cs_at_data_assim_source_term')
@@ -2179,9 +2179,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Read turbomachinery metadata from restart file.
-
-    !> \param[in, out]   r  restart structure pointer
+    ! Read turbomachinery metadata from restart file.
 
     subroutine turbomachinery_restart_read(r)  &
       bind(C, name='cs_turbomachinery_restart_read')
@@ -2192,9 +2190,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Write turbomachinery metadata from restart file.
-
-    !> \param[in, out]   r  restart structure pointer
+    ! Write turbomachinery metadata from restart file.
 
     subroutine turbomachinery_restart_write(r)  &
       bind(C, name='cs_turbomachinery_restart_write')
@@ -2202,6 +2198,41 @@ module cs_c_bindings
       implicit none
       type(c_ptr), value :: r
     end subroutine turbomachinery_restart_write
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for sorbed concentration update.
+
+    subroutine cs_gwf_sorbed_concentration_update(f_id)  &
+      bind(C, name='cs_gwf_sorbed_concentration_update')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+    end subroutine cs_gwf_sorbed_concentration_update
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for precipitation treatment.
+
+    subroutine cs_gwf_precipitation(f_id)   &
+      bind(C, name='cs_gwf_precipitation')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+    end subroutine cs_gwf_precipitation
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for kinetic reaction.
+
+    subroutine cs_gwf_kinetic_reaction(f_id, ts_imp, ts_exp)   &
+      bind(C, name='cs_gwf_kinetic_reaction')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      real(kind=c_double), dimension(*), intent(inout) :: ts_imp
+      real(kind=c_double), dimension(*), intent(inout) :: ts_exp
+    end subroutine cs_gwf_kinetic_reaction
 
     !---------------------------------------------------------------------------
 

@@ -158,7 +158,7 @@ integer          imucpp, idftnp, iswdyp
 integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
 integer          icla
-integer          icrom_scal, isorb, keysrb, igwfpr, keypre
+integer          icrom_scal
 
 integer          ivoid(1)
 
@@ -199,13 +199,12 @@ double precision, dimension(:), pointer :: cpro_scal_st
 double precision, dimension(:), pointer :: cpro_viscls, cpro_visct
 double precision, dimension(:), pointer :: cpro_tsscal
 double precision, dimension(:), pointer :: cpro_x2icla
+double precision, dimension(:), pointer :: cvar_var, cvara_var, cvara_varsca
+double precision, allocatable, dimension(:) :: divflu
 ! Darcy arrays
-double precision, allocatable, dimension(:) :: diverg, divflu
+double precision, allocatable, dimension(:) :: diverg
 double precision, dimension(:), pointer :: cpro_delay, cpro_sat
 double precision, dimension(:), pointer :: cproa_delay, cproa_sat
-double precision, dimension(:), pointer :: cvar_var, cvara_var, cvara_varsca
-double precision, dimension(:), pointer :: cpro_rosoil, cpro_sorb, cpro_precip
-double precision, dimension(:), pointer :: cpro_kplus, cpro_kminus, cpro_mxsol
 ! Radiat arrays
 double precision, dimension(:), pointer :: cpro_tsre1, cpro_tsre, cpro_tsri1
 character(len=80) :: f_name
@@ -1099,25 +1098,6 @@ else
 
 endif
 
-! Retrieve sorption options for current scalar for ground water flow module
-if (ippmod(idarcy).eq.1) then
-  call field_get_key_struct_gwf_soilwater_partition(ivarfl(ivar), sorption_scal)
-  call field_get_val_s(sorption_scal%idel, cpro_delay)
-  call field_get_val_prev_s(sorption_scal%idel, cproa_delay)
-  call field_get_val_prev_s_by_name('saturation', cproa_sat)
-  call field_get_val_s_by_name('saturation', cpro_sat)
-
-  ! Retrieve fields for EK model
-  if (sorption_scal%kinetic.eq.1) then
-    call field_get_val_s_by_name('soil_density', cpro_rosoil)
-    call field_get_val_s(sorption_scal%ikp, cpro_kplus)
-    call field_get_val_s(sorption_scal%ikm, cpro_kminus)
-    call field_get_key_id("gwf_sorbed_concentration_id", keysrb)
-    call field_get_key_int(ivarfl(ivar), keysrb, isorb)
-    call field_get_val_s(isorb, cpro_sorb)
-  endif
-endif
-
 ! Not Darcy
 if (ippmod(idarcy).eq.-1) then
 
@@ -1126,34 +1106,26 @@ if (ippmod(idarcy).eq.-1) then
     rovsdt(iel) = rovsdt(iel)                                                 &
                 + vcopt%istat*xcpp(iel)*pcrom(iel)*cell_f_vol(iel)/dt(iel)
   enddo
+
 ! Darcy : we take into account the porosity and delay for underground transport
 else
+  ! Retrieve sorption options for current scalar for ground water flow module
+  call field_get_key_struct_gwf_soilwater_partition(ivarfl(ivar), sorption_scal)
+  call field_get_val_s(sorption_scal%idel, cpro_delay)
+  call field_get_val_prev_s(sorption_scal%idel, cproa_delay)
+  call field_get_val_prev_s_by_name('saturation', cproa_sat)
+  call field_get_val_s_by_name('saturation', cpro_sat)
+
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)*cpro_delay(iel)*cpro_sat(iel)
     rovsdt(iel) = (rovsdt(iel) + vcopt%istat*xcpp(iel)*pcrom(iel) &
                                 *volume(iel)/dt(iel))             &
-                 *cpro_delay(iel)*cpro_sat(iel)
+                                *cpro_delay(iel)*cpro_sat(iel)
   enddo
 
   ! treatment of kinetic sorption
   if (sorption_scal%kinetic.eq.1) then
-    do iel = 1,ncel
-      ! case of irreversible sorption
-      if (cpro_kminus(iel).gt.epzero) then
-        expkdt = exp(-cpro_kminus(iel)*dt(iel))
-        kplskm = cpro_kplus(iel)/cpro_kminus(iel)
-        smbrs(iel) = smbrs(iel)   - volume(iel)/dt(iel)*cpro_rosoil(iel)   &
-                                   *(1-expkdt)                             &
-                                   *(kplskm *cvar_var(iel)-cpro_sorb(iel))
-        rovsdt(iel) = rovsdt(iel) + volume(iel)/dt(iel)*cpro_rosoil(iel)   &
-                                   *(1-expkdt)*kplskm
-      ! general case (reversible sorption)
-      else
-        roskpl = cpro_rosoil(iel)*cpro_kplus(iel)
-        smbrs(iel) = smbrs(iel) - volume(iel)/dt(iel)*roskpl*cvar_var(iel)
-        rovsdt(iel) = rovsdt(iel) + volume(iel)/dt(iel)*roskpl*cvar_var(iel)
-      endif
-    enddo
+    call cs_gwf_kinetic_reaction(ivarfl(ivar), rovsdt, smbrs)
   endif
 
 endif
@@ -1271,20 +1243,15 @@ call codits &
 
 call clpsca(iscal)
 
-! Treatment of precipitation for groundwater flow module.
+! Update solid phase concentration for kinetic or precipitation models
 if (ippmod(idarcy).eq.1) then
+  ! Update of sorbed concentration
+  if (sorption_scal%kinetic.eq.1) then
+    call cs_gwf_sorbed_concentration_update(ivarfl(ivar))
+  endif
+  ! Treatment of precipitation for groundwater flow module.
   if (sorption_scal%imxsol.ge.0) then
-    call field_get_key_id("gwf_precip_concentration_id", keypre)
-    call field_get_key_int(ivarfl(ivar), keypre, igwfpr)
-    call field_get_val_s(igwfpr, cpro_precip)
-    call field_get_val_s(sorption_scal%imxsol, cpro_mxsol)
-
-    ! Clipping of solute concentration, update of precipitation concentration
-    do iel = 1,ncel
-      ctot_tmp = cvar_var(iel) + cpro_precip(iel)
-      cvar_var(iel) = min(ctot_tmp, cpro_mxsol(iel))
-      cpro_precip(iel) = max(0.d0, ctot_tmp - cpro_mxsol(iel))
-    enddo
+    call cs_gwf_precipitation(ivarfl(ivar))
   endif
 endif
 
