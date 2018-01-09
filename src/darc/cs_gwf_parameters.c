@@ -93,6 +93,7 @@ _gwf_soilwater_partition =
   .ikp           = -1,
   .ikm           = -1,
   .imxsol        = -1,
+  .resol_method  =  0, /* 0: analytic, 1: direct */
 };
 
 /*============================================================================
@@ -112,6 +113,7 @@ _log_func_gwf_soilwater_partition(const void *t)
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikp           ", _t->ikp);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikm           ", _t->ikm);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imxsol        ", _t->imxsol);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "resol_method  ", _t->resol_method);
 }
 
 /* Log default values of the structure */
@@ -134,6 +136,8 @@ _log_func_default_gwf_soilwater_partition(const void *t)
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imxsol    ", _t->imxsol,
                 _("Field id of solubility index (-1 if precipitation "
                   "disabled)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "resol_method  ", _t->resol_method,
+                _("Resolution method (0: analytical, 1: direct)"));
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

@@ -177,17 +177,27 @@ void cs_gwf_sorbed_concentration_update(int f_id)
   km = cs_field_by_id(sorption_scal.ikm);
 
   /* Update sorbed concentration */
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    /* Case of reversible sorption or decay rate term */
-    if (km->val[c_id] + decay_rate > cs_math_epzero) {
-      cs_real_t expkdt = exp(-(km->val[c_id] + decay_rate) * dt[c_id]);
-      cs_real_t kpskm = kp->val[c_id] / (km->val[c_id] + decay_rate);
-      sorb->val[c_id] =  expkdt * sorb->val[c_id]
-        - (expkdt-1.) * kpskm * sca->val[c_id];
-    }
-    else /* Irreversible sorption and no decay rate */
-      sorb->val[c_id] =  sorb->val[c_id]
-        + dt[c_id]*kp->val[c_id]*sca->val[c_id];
+
+  /* First choice : analytical resolution */
+  if (sorption_scal.resol_method == 0){
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      /* Case of reversible sorption or decay rate term */
+      if (km->val[c_id] + decay_rate > cs_math_epzero) {
+        cs_real_t expkdt = exp(-(km->val[c_id] + decay_rate) * dt[c_id]);
+        cs_real_t kpskm = kp->val[c_id] / (km->val[c_id] + decay_rate);
+        sorb->val[c_id] =  expkdt * sorb->val[c_id]
+          - (expkdt-1.) * kpskm * sca->val[c_id];
+      }
+      else /* Irreversible sorption and no decay rate */
+        sorb->val[c_id] =  sorb->val[c_id]
+          + dt[c_id]*kp->val[c_id]*sca->val[c_id];
+  }
+  else /* Second choice : direct resolution */ {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      sorb->val[c_id] += dt[c_id] *
+        (kp->val[c_id] * sca->val[c_id]
+         - (km->val[c_id] + decay_rate) * sorb->val[c_id]);
+  }
 }
 /*---------------------------------------------------------------------------*/
 
@@ -267,22 +277,32 @@ void cs_gwf_kinetic_reaction(int f_id, cs_real_t *ts_imp, cs_real_t *ts_exp)
   kp = cs_field_by_id(sorption_scal.ikp);
   km = cs_field_by_id(sorption_scal.ikm);
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-  /* General case (reversible sorption) */
-    if (km->val[c_id] > cs_math_epzero) {
-      cs_real_t expkdt = exp(-(km->val[c_id] + decay_rate) * dt[c_id]);
-      cs_real_t kpskm = kp->val[c_id] / (km->val[c_id] + decay_rate);
-      ts_exp[c_id] += - vol[c_id] *
-        (decay_rate * rosoil->val[c_id] * sorb->val[c_id]
-          + rosoil->val[c_id]/dt[c_id] * (1-expkdt)
-         *(kpskm*sca->val[c_id] - sorb->val[c_id]));
-      ts_imp[c_id] += vol[c_id] * rosoil->val[c_id] / dt[c_id]
-         * (1-expkdt)*kpskm;
+  /* First choice : analytical resolution */
+    if (sorption_scal.resol_method == 0) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        /* General case (reversible sorption or presence of decay rate) */
+        if (km->val[c_id] + decay_rate > cs_math_epzero) {
+          cs_real_t expkdt = exp(-(km->val[c_id]+decay_rate) * dt[c_id]);
+          cs_real_t kpskm = kp->val[c_id] / (km->val[c_id] + decay_rate);
+          ts_exp[c_id] += - vol[c_id] *
+            (decay_rate * rosoil->val[c_id] * sorb->val[c_id]
+             + rosoil->val[c_id]/dt[c_id] * (1-expkdt)
+             *(kpskm*sca->val[c_id] - sorb->val[c_id]));
+          ts_imp[c_id] += vol[c_id] * rosoil->val[c_id] / dt[c_id]
+            * (1-expkdt)*kpskm;
+        }
+        else { /* Case of irreversible sorption without decay rate */
+          rokpl = rosoil->val[c_id] * kp->val[c_id];
+          ts_exp[c_id] += - vol[c_id] * rokpl * sca->val[c_id];
+          ts_imp[c_id] += + vol[c_id] * rokpl;
+        }
     }
-    else { /* Case of irreversible sorption without decay rate */
-      rokpl = rosoil->val[c_id] * kp->val[c_id];
-      ts_exp[c_id] += - vol[c_id] * rokpl * sca->val[c_id];
-      ts_imp[c_id] += + vol[c_id] * rokpl;
+    else /* Second choice : direct resolution */{
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        ts_exp[c_id] += vol[c_id] * rosoil->val[c_id]
+          * (km->val[c_id] * sorb->val[c_id] - kp->val[c_id] * sca->val[c_id]);
+        ts_imp[c_id] += vol[c_id] * rosoil->val[c_id] * kp->val[c_id];
+      }
     }
 }
 

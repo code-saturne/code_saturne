@@ -126,6 +126,7 @@ module cs_c_bindings
     integer(c_int) :: ikp
     integer(c_int) :: ikm
     integer(c_int) :: imxsol
+    integer(c_int) :: resol_method
   end type gwf_soilwater_partition
 
   !---------------------------------------------------------------------------
