@@ -59,6 +59,7 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 typedef struct {
+
   int     kinetic;       /* 0 : sorption at equilibirum
                             1 : sorption with kinetic   */
   int     ikd;           /* id for kd */
@@ -66,8 +67,9 @@ typedef struct {
   int     ikp;           /* id for kplus */
   int     ikm;           /* id for kminus */
   int     imxsol;        /* id for solubility index */
-  int     resol_method;  /* 0: use of analytical solution for EK model
-                            1: solve EK model without analytical solution */
+  int     anai;          /* 0: solve EK model in an explicit way
+                            1: use analytical solution for EK model */
+
 } cs_gwf_soilwater_partition_t;
 
 /*============================================================================

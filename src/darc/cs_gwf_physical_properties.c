@@ -192,7 +192,7 @@ void cs_gwf_sorbed_concentration_update(const int f_id)
   /* Update sorbed concentration */
 
   /* First choice : analytical resolution */
-  if (sorption_scal.resol_method == 0){
+  if (sorption_scal.anai){
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       /* Case of reversible sorption or decay rate term */
       if (km->val[c_id] + decay_rate > cs_math_epzero) {
@@ -206,7 +206,7 @@ void cs_gwf_sorbed_concentration_update(const int f_id)
                          + dt[c_id]*kp->val[c_id]*sca->val[c_id];
       }
   }
-  else { /* Second choice : direct resolution */
+  else { /* Second choice : explicit */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       sorb->val[c_id] +=  dt[c_id] * (kp->val[c_id] * sca->val[c_id]
                         - (km->val[c_id] + decay_rate) * sorb->val[c_id]);
@@ -297,7 +297,7 @@ void cs_gwf_kinetic_reaction(const int  f_id,
   cs_field_t *km = cs_field_by_id(sorption_scal.ikm);
 
   /* First choice : analytical resolution */
-  if (sorption_scal.resol_method == 0) {
+  if (sorption_scal.anai) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       /* General case (reversible sorption or presence of decay rate) */
       if (km->val[c_id] + decay_rate > cs_math_epzero) {
@@ -316,7 +316,7 @@ void cs_gwf_kinetic_reaction(const int  f_id,
         ts_imp[c_id] += + vol[c_id] * rokpl;
       }
   }
-  else { /* Second choice : direct resolution */
+  else { /* Second choice : explicit */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       ts_exp[c_id] += vol[c_id] * rosoil->val[c_id]
                      *(  km->val[c_id] * sorb->val[c_id]
