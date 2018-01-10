@@ -407,8 +407,8 @@ cs_sles_it_assign_order(cs_sles_it_t   *context,
  * default threshold is \ref CS_SLES_BREAKDOWN, meaning that divergence
  * (but not breakdown) will lead to the use of the fallback mechanism.
  *
- * \param[in, out]  context   pointer to iterative solver info and context
- * \param[in]       thresold  convergence level under which fallback is used
+ * \param[in, out]  context    pointer to iterative solver info and context
+ * \param[in]       threshold  convergence level under which fallback is used
  */
 /*----------------------------------------------------------------------------*/
 

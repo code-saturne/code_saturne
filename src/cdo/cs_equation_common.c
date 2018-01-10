@@ -100,6 +100,8 @@ static const cs_time_step_t  *cs_shared_time_step;
 static cs_timer_counter_t  tca; // assembling process
 static cs_timer_counter_t  tcc; // connectivity building
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -310,6 +312,8 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
   return ma;
 }
 
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -332,10 +336,10 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_common_allocate(const cs_cdo_connect_t     *connect,
-                            const cs_cdo_quantities_t  *quant,
-                            const cs_time_step_t          *time_step,
-                            const cs_domain_cdo_context_t *cc)
+cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
+                            const cs_cdo_quantities_t      *quant,
+                            const cs_time_step_t           *time_step,
+                            const cs_domain_cdo_context_t  *cc)
 {
   assert(connect != NULL); // Sanity check
 

@@ -305,7 +305,7 @@ cs_quadrature_tria_7pts(const cs_real_3_t   v1,
  * \param[in]       v4       fourth vertex
  * \param[in]       vol      volume of tetrahedron
  * \param[in, out]  gpts     1 Gauss point
- * \param[in, out]  weights  weight related to this point (= volume)
+ * \param[in, out]  weight   weight related to this point (= volume)
  */
 /*----------------------------------------------------------------------------*/
 

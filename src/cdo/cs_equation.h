@@ -356,7 +356,7 @@ cs_equation_needs_build(const cs_equation_t    *eq);
 /*!
  * \brief  Build the linear system for this equation
  *
- * \param[in]       m           pointer to a cs_mesh_t structure
+ * \param[in]       mesh        pointer to a cs_mesh_t structure
  * \param[in]       time_step   pointer to a time step structure
  * \param[in]       dt_cur      value of the current time step
  * \param[in, out]  eq          pointer to a cs_equation_t structure

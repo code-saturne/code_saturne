@@ -489,6 +489,7 @@ cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      input      NULL or pointer to a structure cast on-the-fly
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -513,6 +514,7 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      input      NULL or pointer to a structure cast on-the-fly
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/

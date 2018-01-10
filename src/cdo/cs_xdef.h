@@ -174,8 +174,6 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
  *         time step
  *
  * \param[in]  type       type of definition
- * \param[in]  dim        dimension of the values to define
- * \param[in]  z_id       volume zone id
  * \param[in]  state      flag to know if this uniform, cellwise, steady...
  * \param[in]  meta       metadata associated to this description
  * \param[in]  input      pointer to a structure storing the parameters (cast

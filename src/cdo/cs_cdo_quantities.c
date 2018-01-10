@@ -58,6 +58,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -108,12 +110,16 @@ typedef struct { /* These quantities are the integral of q on the plane
 
 } _cdo_projq_t;
 
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
 cs_cdo_quantities_algo_ccenter_t  cs_cdo_quantities_cc_algo =
   CS_CDO_QUANTITIES_SATURNE_CENTER;
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Private function prototypes
@@ -843,6 +849,8 @@ _define_cell_flag(const cs_cdo_connect_t  *topo,
 
 }
 
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -1152,8 +1160,7 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *q)
 /*!
  * \brief Summarize generic information about the cdo mesh quantities
  *
- * \param[in]  cdoq     pointer to cs_cdo_quantities_t structure
- *
+ * \param[in]  quant     pointer to cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 

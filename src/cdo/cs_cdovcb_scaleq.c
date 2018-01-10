@@ -75,6 +75,16 @@
 
 BEGIN_C_DECLS
 
+/*!
+  \file cs_cdovcb_scaleq.c
+
+  \brief Build an algebraic CDO vertex+cell-based system for unsteady
+         convection diffusion reaction of scalar-valued equations with source
+         terms
+*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions and structure definitions
  *============================================================================*/
@@ -124,6 +134,8 @@ struct _cs_cdovcb_scaleq_t {
 
 };
 
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -138,6 +150,8 @@ static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
 static const cs_matrix_assembler_t  *cs_shared_ma;
 static const cs_matrix_structure_t  *cs_shared_ms;
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Private function prototypes
@@ -276,7 +290,7 @@ _init_cell_structures(const cs_flag_t               cell_flag,
  *          at cell centers
  *
  * \param[in]      c2v         pointer to a cs_adjacency_t structure
- * \param[in, out] builder     pointer to a cs_cdovcb_scaleq_t structure
+ * \param[in, out] eqc         pointer to a cs_cdovcb_scaleq_t structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
  */
@@ -359,6 +373,8 @@ _set_cip_coef(const cs_equation_param_t  *eqp)
 
   cs_cdo_advection_set_cip_coef(gamma);
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes

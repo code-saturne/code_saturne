@@ -224,14 +224,14 @@ cs_cdovcb_scaleq_update_field(const cs_real_t            *solu,
  *         system are located at primal vertices and field related to the
  *         structure equation is also attached to primal vertices
  *
- * \param[in]  builder    pointer to a builder structure
+ * \param[in]  data    pointer to a data structure
  *
  * \return  a pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
 double *
-cs_cdovcb_scaleq_get_cell_values(const void          *builder);
+cs_cdovcb_scaleq_get_cell_values(const void          *data);
 
 /*----------------------------------------------------------------------------*/
 /*!

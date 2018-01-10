@@ -140,7 +140,6 @@ cs_property_get_n_properties(void);
  *
  * \param[in]  name          name of the property
  * \param[in]  type          type of property
- * \param[in]  n_subdomains  piecewise definition on n_subdomains
  *
  * \return a pointer to a new allocated cs_property_t structure
  */

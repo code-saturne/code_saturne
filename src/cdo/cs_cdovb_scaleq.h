@@ -98,9 +98,8 @@ cs_cdovb_scaleq_initialize(const cs_cdo_quantities_t    *quant,
 /*!
  * \brief  Retrieve work buffers used for building a CDO system cellwise
  *
- * \param[out]  p_csys   pointer to a pointer on a cs_cell_sys_t structure
- * \param[out]  p_cbc    pointer to a pointer on a cs_cell_cbc_t structure
- * \param[out]  p_cb     pointer to a pointer on a cs_cell_builder_t structure
+ * \param[out]  csys   pointer to a pointer on a cs_cell_sys_t structure
+ * \param[out]  cb     pointer to a pointer on a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 

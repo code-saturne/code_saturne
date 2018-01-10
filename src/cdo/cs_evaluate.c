@@ -57,6 +57,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions and structure definitions
  *============================================================================*/
@@ -278,7 +280,7 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t           *cm,
  *
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
- * \param[in]      n_loc_elts        number of elements to consider
+ * \param[in]      n_elts            number of elements to consider
  * \param[in]      elt_ids           pointer to the list od selected ids
  * \param[in]      compute_integral  function pointer
  * \param[in, out] values            pointer to the computed values
@@ -410,7 +412,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t          *cm,
  *
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
- * \param[in]      n_loc_elts        number of elements to consider
+ * \param[in]      n_elts            number of elements to consider
  * \param[in]      elt_ids           pointer to the list od selected ids
  * \param[in]      compute_integral  function pointer
  * \param[in, out] values            pointer to the computed values
@@ -481,7 +483,7 @@ _pcsd_by_analytic(cs_analytic_func_t            *ana,
  *         defined on a selection of (primal) cells
  *
  * \param[in]      const_val   constant value
- * \param[in]      n_loc_elts  number of elements to consider
+ * \param[in]      n_elts      number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in, out] values      pointer to the computed values
  */
@@ -523,7 +525,7 @@ _dcsd_by_value(const double       const_val,
  *         vector-valued density field defined on a selection of (primal) cells
  *
  * \param[in]      const_vec   constant vector
- * \param[in]      n_loc_elts  number of elements to consider
+ * \param[in]      n_elts      number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in, out] values      pointer to the computed values
  */
@@ -577,7 +579,7 @@ _dcvd_by_value(const double       const_vec[3],
  *         scalar density field
  *
  * \param[in]      const_val   constant value
- * \param[in]      n_loc_elts  number of elements to consider
+ * \param[in]      n_elts      number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in, out] values      pointer to the computed values
  */
@@ -613,7 +615,7 @@ _pcsd_by_value(const double       const_val,
  *         density field
  *
  * \param[in]      const_vec   constant values
- * \param[in]      n_loc_elts  number of elements to consider
+ * \param[in]      n_elts      number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in, out] values      pointer to the computed values
  */
@@ -657,7 +659,7 @@ _pcvd_by_value(const double        const_vec[3],
  *
  * \param[in]      ana         pointer to the analytic function
  * \param[in]      input       NULL or pointer to a structure cast on-the-fly
- * \param[in]      n_loc_elts  number of elements to consider
+ * \param[in]      n_elts      number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in, out] values      pointer to the computed values
  */
@@ -1039,6 +1041,8 @@ _pvsp_by_value(cs_real_t          const_val,
 
   BFT_FREE(todo);
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes

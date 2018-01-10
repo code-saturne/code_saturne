@@ -327,7 +327,8 @@ cs_tree_node_free(cs_tree_node_t  **pnode)
 /*!
  * \brief  Name or rename a node.
  *
- * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in, out]  node    pointer to a cs_tree_node_t to modify
+ * \param[in]       name    name to set
  */
 /*----------------------------------------------------------------------------*/
 

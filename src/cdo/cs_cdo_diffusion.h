@@ -365,7 +365,7 @@ cs_cdo_diffusion_wbs_get_pc_flux(const cs_cell_mesh_t   *cm,
  * \param[in]       p_v       array of values attached to face vertices
  * \param[in]       p_f       value attached to the face
  * \param[in]       p_c       value attached to the cell
- * \param[in, out]  diff      auxiliary structure dedicated to diffusion
+ * \param[in, out]  cb        auxiliary structure dedicated to diffusion
  *
  * \return the value of the diffusive flux across the current face
  */

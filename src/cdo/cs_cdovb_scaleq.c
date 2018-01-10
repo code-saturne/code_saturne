@@ -74,6 +74,17 @@
 
 BEGIN_C_DECLS
 
+/*!
+  \file cs_cdovb_scaleq.c
+
+  \brief Build an algebraic CDO vertex-based system for unsteady
+         convection-diffusion-reaction of scalar-valued equations with
+         source terms
+
+*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions and structure definitions
  *============================================================================*/
@@ -117,6 +128,8 @@ struct _cs_cdovb_scaleq_t {
 
 };
 
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -131,6 +144,8 @@ static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
 static const cs_matrix_assembler_t  *cs_shared_ma;
 static const cs_matrix_structure_t  *cs_shared_ms;
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Private function prototypes
@@ -256,6 +271,8 @@ _init_cell_structures(const cs_flag_t               cell_flag,
   } /* Border cell */
 
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes

@@ -151,15 +151,15 @@ cs_equation_get_cell_mesh_flag(cs_flag_t                      cell_flag,
  * \param[in]  connect          pointer to a cs_cdo_connect_t structure
  * \param[in]  quant            pointer to additional mesh quantities struct.
  * \param[in]  time_step        pointer to a time step structure
- * \param[in]  cdo_context      pointer to a cs_domain_cdo_context_t struct.
+ * \param[in]  cc            pointer to a cs_domain_cdo_context_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
-                            const cs_cdo_quantities_t      *quant,
-                            const cs_time_step_t           *time_step,
-                            const cs_domain_cdo_context_t  *cdo_context);
+cs_equation_common_allocate(const cs_cdo_connect_t          *connect,
+                            const cs_cdo_quantities_t       *quant,
+                            const cs_time_step_t            *time_step,
+                            const cs_domain_cdo_context_t   *cc);
 
 /*----------------------------------------------------------------------------*/
 /*!

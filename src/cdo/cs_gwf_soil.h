@@ -354,8 +354,8 @@ cs_gwf_set_user_soil(cs_gwf_soil_t              *soil,
  *         considered as saturated.
  *
  * \param[in, out]  permeability      pointer to a cs_property_t structure
- * \param[in, out]  moisture content  pointer to a cs_property_t structure
- * \param[in, out]  moisture field    pointer to a cs_field_t structure
+ * \param[in, out]  moisture_content  pointer to a cs_property_t structure
+ * \param[in, out]  moisture_field    pointer to a cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -394,8 +394,8 @@ cs_gwf_get_cell2soil(void);
  *
  * \param[in, out]  permeability      pointer to a cs_property_t structure
  * \param[in]       permea_field      pointer to a cs_field_t structure
- * \param[in, out]  moisture content  pointer to a cs_property_t structure
- * \param[in]       moisture field    pointer to a cs_field_t structure
+ * \param[in, out]  moisture_content  pointer to a cs_property_t structure
+ * \param[in]       moisture_field    pointer to a cs_field_t structure
  * \param[in, out]  soil_capacity     pointer to a cs_property_t structure
  * \param[in]       capacity_field    pointer to a cs_field_t structure
  */

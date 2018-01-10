@@ -1024,13 +1024,12 @@ cs_sdm_square_asymm(cs_sdm_t   *mat)
  * \param[in, out] Qt     transposed of matrix Q
  * \param[in, out] R      vector of the coefficient of the decomposition
  *
- * \Note: R is an upper triangular matrix. Stored in a compact way.
+ * \note: R is an upper triangular matrix. Stored in a compact way.
  *
  *    j= 0, 1, 2
  *  i=0| 0| 1| 2|
  *  i=1   | 4| 5|
  *  i=2        6|
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1092,7 +1091,7 @@ cs_sdm_33_sym_qr_compute(const cs_real_t   m[9],
  * \param[in]      m        pointer to a cs_sdm_t structure
  * \param[in, out] facto    vector of the coefficient of the decomposition
  *
- * \Note: facto is a lower triangular matrix. The first value of the
+ * \note: facto is a lower triangular matrix. The first value of the
  *        j-th (zero-based) row is easily accessed: its index is j*(j+1)/2
  *        (cf sum of the first j natural numbers). Instead of 1 on the diagonal
  *        we store the inverse of D mat in the L.D.L^T decomposition
@@ -1139,7 +1138,7 @@ cs_sdm_33_ldlt_compute(const cs_sdm_t   *m,
  * \param[in]      m        pointer to a cs_sdm_t structure
  * \param[in, out] facto    vector of the coefficient of the decomposition
  *
- * \Note: facto is a lower triangular matrix. The first value of the
+ * \note: facto is a lower triangular matrix. The first value of the
  *        j-th (zero-based) row is easily accessed: its index is j*(j+1)/2
  *        (cf sum of the first j natural numbers). Instead of 1 on the diagonal
  *        we store the inverse of D mat in the L.D.L^T decomposition
@@ -1196,7 +1195,7 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t   *m,
  * \param[in]      m        pointer to a cs_sdm_t structure
  * \param[in, out] facto    vector of the coefficient of the decomposition
  *
- * \Note: facto is a lower triangular matrix. The first value of the
+ * \note: facto is a lower triangular matrix. The first value of the
  *        j-th (zero-based) row is easily accessed: its index is j*(j+1)/2
  *        (cf sum of the first j natural numbers). Instead of 1 on the diagonal
  *        we store the inverse of D mat in the L.D.L^T decomposition
@@ -1286,7 +1285,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
  * \param[in, out] facto    vector of the coefficient of the decomposition
  * \param[in, out] dkk      store temporary the diagonal (size = n_rows)
  *
- * \Note: facto is a lower triangular matrix. The first value of the
+ * \note: facto is a lower triangular matrix. The first value of the
  *        j-th (zero-based) row is easily accessed: its index is j*(j+1)/2
  *        (cf sum of the first j natural numbers). Instead of 1 on the diagonal
  *        we store the inverse of D mat in the L.D.L^T decomposition

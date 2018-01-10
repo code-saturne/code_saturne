@@ -569,7 +569,7 @@ cs_equation_param_set_sles(const char              *eqname,
  * \brief  Summary of a cs_equation_param_t structure
  *
  * \param[in]  eqname   name of the related equation
- * \param[in]  eq       pointer to a cs_equation_param_t structure
+ * \param[in]  eqp      pointer to a cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 

@@ -138,7 +138,7 @@ _check_stiffness(const cs_sdm_t       *sloc)
  * \brief   Check the coherency of the values of a discrete Hodge operator
  *
  * \param[in]      vec     vectors of quantities to test against a hodge
- * \paran[in]      res     vectors of quantities to compare with
+ * \param[in]      res     vectors of quantities to compare with
  * \param[in]      hdg     pointer to a cs_sdm_t structure
  * \param[in]      h_info  parametrization of the discrete Hodge operator
  * \param[in, out] cb      pointer to a cell builder structure
@@ -402,14 +402,14 @@ _compute_cost_quant(const int               n_ent,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local discrete Hodge operator using the generic COST algo.
- *          and cellwise view of the mesh
- *          Specific for EpFd Hodge operator
+ *          and a cellwise view of the mesh. Specific for EpFd Hodge operator.
  *          COST means COnsistency + STabilization
  *
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in]      h_info     pointer to a cs_param_hodge_t structure
- * \param[in, out] hloc       pointer to a cs_sdm_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      n_ent    number of local entities
+ * \param[in]      beta2    squared value of the stabilization coefficient
+ * \param[in]      alpha    precomputed quantities
+ * \param[in]      kappa    precomputed quantities
+ * \param[in, out] hval     values of the coefficient of the Hodge matrix
  */
 /*----------------------------------------------------------------------------*/
 
@@ -456,6 +456,8 @@ _compute_hodge_cost(const int       n_ent,
   } /* End of loop on I entities */
 
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes

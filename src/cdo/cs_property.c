@@ -83,6 +83,8 @@ static int  _n_properties = 0;
 static int  _n_max_properties = 0;
 static cs_property_t  **_properties = NULL;
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -202,9 +204,9 @@ _add_new_def(cs_property_t     *pty)
 /*!
  * \brief  Create and initialize a new property structure
  *
- * \param[in]  name          name of the property
- * \param[in]  key_type      keyname of the type of property
- * \param[in]  n_subdomains  piecewise definition on n_subdomains
+ * \param[in]  name       name of the property
+ * \param[in]  id         id of the property to create
+ * \param[in]  type       type of property
  *
  * \return a pointer to a new allocated cs_property_t structure
  */
@@ -237,6 +239,8 @@ _create_property(const char           *name,
 
   return pty;
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes
@@ -283,7 +287,6 @@ cs_property_get_n_properties(void)
  *
  * \param[in]  name          name of the property
  * \param[in]  type          type of property
- * \param[in]  n_subdomains  piecewise definition on n_subdomains
  *
  * \return a pointer to a new allocated cs_property_t structure
  */

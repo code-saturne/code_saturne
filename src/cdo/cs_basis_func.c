@@ -2308,6 +2308,8 @@ _fka_dump_projector(const void      *pbf)
   cs_log_printf(CS_LOG_DEFAULT, "\n");
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

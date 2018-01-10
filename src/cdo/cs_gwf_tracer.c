@@ -456,8 +456,9 @@ _free_std_tracer(void      *input)
  *         Diffusion/reaction parameters result from a physical modelling.
  *
  * \param[in]   tracer_id   id number of the soil
- * \param[in]   eqname      name of the tracer equation
- * \param[in]   varname     name of the related variable
+ * \param[in]   eq_name     name of the tracer equation
+ * \param[in]   var_name    name of the related variable
+ * \param[in]   adv_field   pointer to a cs_adv_field_t structure
  * \param[in]   model       model related to this tracer
  *
  * \return a pointer to the new allocated structure

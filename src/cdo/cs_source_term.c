@@ -76,6 +76,8 @@ static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
 static const cs_time_step_t  *cs_time_step;
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -84,9 +86,9 @@ static const cs_time_step_t  *cs_time_step;
 /*!
  * \brief  Allocate and initialize a name (copy or generic name)
  *
- * \param[in] name       input name
- * \param[in] basename   generic name by default if input name is NULL
- * \param[in] id         id related to this name
+ * \param[in] name        input name
+ * \param[in] base_name   generic name by default if input name is NULL
+ * \param[in] id          id related to this name
  *
  * \return a pointer to a new allocated string
  */
@@ -120,7 +122,7 @@ _get_name(const char   *name,
  *         the given source term structure
  *
  * \param[in]      st          pointer to a cs_xdef_t structure
- * \param[in]      st_mask     id related to this source term
+ * \param[in]      st_id       id related to this source term
  * \param[in, out] cell_mask   mask related to each cell to be updated
  */
 /*----------------------------------------------------------------------------*/
@@ -247,6 +249,8 @@ _hho_add_tetra_by_ana(const cs_xdef_analytic_input_t  *anai,
 
   }  /* End of loop on Gauss points */
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes
@@ -1623,6 +1627,7 @@ cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      input      NULL or pointer to a structure cast on-the-fly
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -1669,6 +1674,7 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      input      NULL or pointer to a structure cast on-the-fly
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/

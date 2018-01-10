@@ -75,6 +75,8 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local static variables
  *============================================================================*/
@@ -102,10 +104,11 @@ static const char _err_empty_cdo_context[] =
  * (using BFT_MALLOC) and defined by this function when called.
  * This list's lifecycle is then managed by the mesh location object.
  *
- * \param [in]   m            pointer to associated mesh structure.
- * \param [in]   location_id  id of associated location.
- * \param [out]  n_elts       number of selected elements
- * \param [out]  elt_list     list of selected elements.
+ * \param[in]   input        pointer to a structure cast on-the-fly
+ * \param[in]   m            pointer to associated mesh structure.
+ * \param[in]   location_id  id of associated location.
+ * \param[out]  n_elts       number of selected elements
+ * \param[out]  elt_list     list of selected elements.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -202,6 +205,8 @@ _wall_boundary_selection(void              *input,
   *n_elts = n_wall_elts;
   *elt_ids = wall_elts;
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes

@@ -69,6 +69,15 @@
 
 BEGIN_C_DECLS
 
+/*!
+  \file cs_domain.c
+
+  \brief  Manage a computational domain within the CDO framework
+    - Physical boundary conditions attached to a domain
+    - Properties and advection fields attached to this domain
+    - Equations to solve on this domain
+*/
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -79,7 +88,6 @@ cs_domain_t  *cs_glob_domain = NULL; /* Pointer to the main computational
 /*============================================================================
  * Local structure definitions
  *============================================================================*/
-
 
 /*============================================================================
  * Local variables
@@ -99,6 +107,8 @@ cs_domain_boundary_name[CS_DOMAIN_N_BOUNDARY_TYPES][CS_BASE_STRING_LEN] =
     N_("symmetry")
   };
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -107,7 +117,7 @@ cs_domain_boundary_name[CS_DOMAIN_N_BOUNDARY_TYPES][CS_BASE_STRING_LEN] =
 /*!
  * \brief  Create the context for CDO/HHO schemes
  *
- * \param[in]        mode      type of activation for the CDO/HHO module
+ * \param[in]  cdo_mode         type of activation for the CDO/HHO module
  *
  * \return a pointer to a new allocated cs_domain_cdo_context_t structure
  */
@@ -132,6 +142,8 @@ _create_cdo_context(int     cdo_mode)
 
   return cc;
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes

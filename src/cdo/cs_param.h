@@ -262,7 +262,7 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond);
 /*!
  * \brief   Get the name of the type of boundary condition
  *
- * \param[in] bc          type of boundary condition
+ * \param[in] type     type of boundary condition
  *
  * \return the associated bc name
  */

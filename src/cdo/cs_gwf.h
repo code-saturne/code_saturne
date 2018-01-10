@@ -155,8 +155,8 @@ cs_gwf_set_darcian_flux_location(cs_flag_t      location_flag);
  *         diffusion/reaction parameters result from a physical modelling.
  *         Terms are activated according to the settings.
  *
- * \param[in]      eqname    name of the tracer equation
- * \param[in]      varname   name of the related variable
+ * \param[in]  eq_name    name of the tracer equation
+ * \param[in]  var_name   name of the related variable
  */
 /*----------------------------------------------------------------------------*/
 
@@ -174,10 +174,10 @@ cs_gwf_add_tracer(const char               *eq_name,
  *         Terms are activated according to the settings.
  *         Modelling of the tracer parameters are left to the user
  *
- * \param[in]   eqname     name of the tracer equation
- * \param[in]   varname    name of the related variable
- * \param[in]   setup      function pointer (predefined prototype)
- * \param[in]   add_terms  function pointer (predefined prototype)
+ * \param[in]   eq_name     name of the tracer equation
+ * \param[in]   var_name    name of the related variable
+ * \param[in]   setup       function pointer (predefined prototype)
+ * \param[in]   add_terms   function pointer (predefined prototype)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -192,14 +192,14 @@ cs_gwf_add_tracer_user(const char                  *eq_name,
  * \brief  Retrieve the pointer to the cs_gwf_tracer_t structure associated to
  *         the name given as parameter
  *
- * \param[in]      eqname    name of the tracer equation
+ * \param[in]  eq_name    name of the tracer equation
  *
  * \return the pointer to a cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tracer_t *
-cs_gwf_tracer_by_name(const char               *eq_name);
+cs_gwf_tracer_by_name(const char   *eq_name);
 
 /*----------------------------------------------------------------------------*/
 /*!

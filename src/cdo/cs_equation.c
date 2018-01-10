@@ -375,6 +375,8 @@ struct _cs_equation_t {
 
 };
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -539,9 +541,9 @@ _initialize_field_from_ic(cs_equation_t  *eq)
  *         array and the right hand side of the linear system to solve.
  *         Handle parallelism thanks to cs_range_set_t structure.
  *
- * \param[in, out] eq_cast    pointer to generic builder structure
- * \param[in, out] p_x        pointer of pointer to the solution array
- * \param[in, out] p_rhs      pointer of pointer to the RHS array
+ * \param[in, out] eq_to_cast   pointer to generic builder structure
+ * \param[in, out] p_x          pointer of pointer to the solution array
+ * \param[in, out] p_rhs        pointer of pointer to the RHS array
  */
 /*----------------------------------------------------------------------------*/
 
@@ -622,9 +624,9 @@ _prepare_vb_solving(void              *eq_to_cast,
  *         array and the right hand side of the linear system to solve.
  *         Handle parallelism thanks to cs_range_set_t structure.
  *
- * \param[in, out] eq_cast    pointer to generic builder structure
- * \param[in, out] p_x        pointer of pointer to the solution array
- * \param[in, out] p_rhs      pointer of pointer to the RHS array
+ * \param[in, out] eq_to_cast   pointer to generic builder structure
+ * \param[in, out] p_x          pointer of pointer to the solution array
+ * \param[in, out] p_rhs        pointer of pointer to the RHS array
  */
 /*----------------------------------------------------------------------------*/
 
@@ -701,6 +703,8 @@ _prepare_fb_solving(void              *eq_to_cast,
   *p_x = x;
   *p_rhs = b;
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes
@@ -1838,7 +1842,7 @@ cs_equation_needs_build(const cs_equation_t    *eq)
 /*!
  * \brief  Build the linear system for this equation
  *
- * \param[in]       m           pointer to a cs_mesh_t structure
+ * \param[in]       mesh        pointer to a cs_mesh_t structure
  * \param[in]       time_step   pointer to a time step structure
  * \param[in]       dt_cur      value of the current time step
  * \param[in, out]  eq          pointer to a cs_equation_t structure

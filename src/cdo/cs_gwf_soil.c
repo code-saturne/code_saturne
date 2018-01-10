@@ -65,6 +65,14 @@
 
 BEGIN_C_DECLS
 
+/*!
+  \file cs_gwf_soil.c
+
+  \brief Main functions dedicated to soil management in groundwater flows when
+         using CDO schemes
+
+*/
+
 /*============================================================================
  * Local macro definitions
  *============================================================================*/
@@ -74,6 +82,8 @@ BEGIN_C_DECLS
 /*============================================================================
  * Structure definitions
  *============================================================================*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Static global variables
@@ -346,6 +356,8 @@ _update_genuchten_iso_soil(const cs_mesh_t             *mesh,
   } // Loop on selected cells
 
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes
@@ -784,8 +796,8 @@ cs_gwf_set_user_soil(cs_gwf_soil_t              *soil,
  *         considered as saturated.
  *
  * \param[in, out]  permeability      pointer to a cs_property_t structure
- * \param[in, out]  moisture content  pointer to a cs_property_t structure
- * \param[in, out]  moisture field    pointer to a cs_field_t structure
+ * \param[in, out]  moisture_content  pointer to a cs_property_t structure
+ * \param[in, out]  moisture_field    pointer to a cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -917,8 +929,8 @@ cs_gwf_get_cell2soil(void)
  *
  * \param[in, out]  permeability      pointer to a cs_property_t structure
  * \param[in]       permea_field      pointer to a cs_field_t structure
- * \param[in, out]  moisture content  pointer to a cs_property_t structure
- * \param[in]       moisture field    pointer to a cs_field_t structure
+ * \param[in, out]  moisture_content  pointer to a cs_property_t structure
+ * \param[in]       moisture_field    pointer to a cs_field_t structure
  * \param[in, out]  soil_capacity     pointer to a cs_property_t structure
  * \param[in]       capacity_field    pointer to a cs_field_t structure
  */

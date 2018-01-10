@@ -349,7 +349,7 @@ cs_at_data_assim_finalize(void)
  *
  * \param[in]  ms         pointer to measures set structure
  * \param[in]  oi         pointer to optimal interpolation structure
- * \param[in]  fname      field name
+ * \param[in]  f          pointer to a field structure
  */
 /*----------------------------------------------------------------------------*/
 

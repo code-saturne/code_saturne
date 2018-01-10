@@ -207,14 +207,14 @@ cs_sla_matrix_copy(const cs_sla_matrix_t  *a,
 /*!
  * \brief   Transpose a cs_sla_matrix_t structure
  *
- * \param[in]  mat     matrix to transpose
+ * \param[in]  a     matrix to transpose
  *
  * \return  a pointer to new allocated matrix which is transposed to mat
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sla_matrix_t *
-cs_sla_matrix_transpose(const cs_sla_matrix_t  *mat);
+cs_sla_matrix_transpose(const cs_sla_matrix_t  *a);
 
 /*----------------------------------------------------------------------------*/
 /*!

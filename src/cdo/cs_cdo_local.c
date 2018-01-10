@@ -56,6 +56,15 @@
 
 BEGIN_C_DECLS
 
+/*!
+  \file cs_cdo_local.c
+
+  \brief  Routines to handle low-level actions related to CDO local quantities:
+  - local mesh structure related to a cell or to a couple cell/face
+  - local systems
+
+*/
+
 /*=============================================================================
  * Local type definitions
  *============================================================================*/
@@ -97,9 +106,13 @@ static const cs_flag_t  cs_cdo_local_flag_ef =
 static double     **cs_cdo_local_dbuf = NULL;
 static short int  **cs_cdo_local_kbuf = NULL;
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes
@@ -1389,9 +1402,9 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
  * \brief  Define a cs_face_mesh_t structure for a given cell from a
  *         cs_cell_mesh_t structure
  *
- * \param[in]       cm        pointer to the reference cs_cell_mesh_t structure
- * \param[in]       f_id      face id in the cs_cell_mesh_t structure
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure to set
+ * \param[in]       cm     pointer to the reference cs_cell_mesh_t structure
+ * \param[in]       f      face id in the cs_cell_mesh_t structure
+ * \param[in, out]  fm     pointer to a cs_face_mesh_t structure to set
  */
 /*----------------------------------------------------------------------------*/
 

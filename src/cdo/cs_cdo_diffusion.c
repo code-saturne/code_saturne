@@ -86,6 +86,8 @@ BEGIN_C_DECLS
  * Local structure definitions
  *============================================================================*/
 
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Local variables
  *============================================================================*/
@@ -94,11 +96,11 @@ BEGIN_C_DECLS
 static const double  cs_nitsche_pena_coef = 500;
 static const double  cs_big_pena_coef = 1e13;
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private constant variables
  *============================================================================*/
-
-/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Private function prototypes
@@ -198,6 +200,8 @@ _enforce_nitsche(const double              pcoef,
   cs_sdm_add(csys->mat, ntrgrd);
 
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes

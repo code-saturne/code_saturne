@@ -50,7 +50,6 @@
 #include "cs_param.h"
 #include "cs_sort.h"
 
-
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -60,6 +59,16 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*!
+  \file cs_cdo_connect.c
+
+  \brief Build additional connectivities (or adjacencies) useful for building
+  CDO or HHO schemes.
+
+*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
  * Local macro and structure definitions
@@ -741,7 +750,7 @@ _get_cell_type(cs_lnum_t                 c_id,
  * \param[in]       n_faces       number of faces (interior + border)
  * \param[in]       n_face_dofs   number of DoFs per face
  * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
- * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
+ * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
  */
 /*----------------------------------------------------------------------------*/
 
@@ -809,6 +818,8 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
   *p_ifs = ifs;
   *p_rs = rs;
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes

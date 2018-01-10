@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle the definition and usage of material properties
+ * Routines to handle basic parameter settings
  *============================================================================*/
 
 /*
@@ -80,9 +80,13 @@ cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
     N_("weak using the Nitsche method"),
     N_("weak using the symmetrized Nitsche method") };
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes
@@ -99,7 +103,7 @@ cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_param_get_bc_name(cs_param_bc_type_t  type)
+cs_param_get_bc_name(cs_param_bc_type_t    type)
 {
   if (type == CS_PARAM_N_BC_TYPES)
     return NULL;

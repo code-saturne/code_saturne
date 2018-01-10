@@ -1096,6 +1096,8 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
 
 }
 
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

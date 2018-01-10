@@ -66,6 +66,13 @@
 
 BEGIN_C_DECLS
 
+/*!
+  \file cs_gwf.c
+
+  \brief Main functions dedicated to groundwater flows when using CDO schemes
+
+*/
+
 /*============================================================================
  * Local macro definitions
  *============================================================================*/
@@ -127,6 +134,8 @@ struct _gwf_t {
 
 };
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -148,7 +157,6 @@ static cs_gwf_t  *cs_gwf_main_structure = NULL;
  * \param[in, out] gw          pointer to a cs_gwf_t structure
  * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
- * \param[in]      richards    pointer to the Richards equation structure
  * \param[in]      cur2prev    true or false
  */
 /*----------------------------------------------------------------------------*/
@@ -291,7 +299,6 @@ _update_head(cs_gwf_t                    *gw,
  * \param[in, out] gw          pointer to a cs_gwf_t structure
  * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
- * \param[in]      richards    pointer to the Richards equation structure
  * \param[in]      cur2prev    true or false
  */
 /*----------------------------------------------------------------------------*/
@@ -406,6 +413,8 @@ _gwf_create(void)
 
   return gw;
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes
@@ -609,8 +618,8 @@ cs_gwf_set_darcian_flux_location(cs_flag_t      location_flag)
  *         diffusion/reaction parameters result from a physical modelling.
  *         Terms are activated according to the settings.
  *
- * \param[in]      eqname    name of the tracer equation
- * \param[in]      varname   name of the related variable
+ * \param[in]  eq_name    name of the tracer equation
+ * \param[in]  var_name   name of the related variable
  */
 /*----------------------------------------------------------------------------*/
 
@@ -653,10 +662,10 @@ cs_gwf_add_tracer(const char               *eq_name,
  *         Terms are activated according to the settings.
  *         Modelling of the tracer parameters are left to the user
  *
- * \param[in]   eqname     name of the tracer equation
- * \param[in]   varname    name of the related variable
- * \param[in]   setup      function pointer (predefined prototype)
- * \param[in]   add_terms  function pointer (predefined prototype)
+ * \param[in]   eq_name     name of the tracer equation
+ * \param[in]   var_name    name of the related variable
+ * \param[in]   setup       function pointer (predefined prototype)
+ * \param[in]   add_terms   function pointer (predefined prototype)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -691,19 +700,20 @@ cs_gwf_add_tracer_user(const char                  *eq_name,
   return tracer;
 }
 
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve the pointer to the cs_gwf_tracer_t structure associated to
  *         the name given as parameter
  *
- * \param[in]      eqname    name of the tracer equation
+ * \param[in]  eq_name    name of the tracer equation
  *
  * \return the pointer to a cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tracer_t *
-cs_gwf_tracer_by_name(const char               *eq_name)
+cs_gwf_tracer_by_name(const char   *eq_name)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 

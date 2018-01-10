@@ -1360,12 +1360,12 @@ cs_sles_get_verbosity(cs_sles_t  *sles)
 /*!
  * \brief Activate postprocessing output for a given linear equation solver.
  *
- * This allows the output of the residualt at the end of each solution
+ * This allows the output of the residual at the end of each solution
  * series, using a single postprocessing writer.
  * By default, no output is activated.
  *
  * \param[in, out]  sles       pointer to solver object
- * \param[in]       verbosity  verbosity level
+ * \param[in]       writer_id  id of the writer
  */
 /*----------------------------------------------------------------------------*/
 
