@@ -82,7 +82,7 @@ integer          imucpp, idftnp
 integer          nswrgp
 integer          icvflb, iescap, imligp, ircflp, iswdyp, isstpp, ischcp, iwarnp
 integer          ivoid(1)
-integer          init
+integer          init, counter
 
 double precision relaxp, blencp, climgp, epsilp, epsrgp, epsrsp, extrap
 double precision dismax, dismin, hint, pimp, qimp, norm_grad, thetap
@@ -280,7 +280,7 @@ dismin =  grand
 do iel = 1, ncel
   if (cvar_var(iel).lt.0.d0) then
     mmprpl = mmprpl + 1
-    dismin = min(cvar_var(iel),dismin)
+    dismin = min(cvar_var(iel), dismin)
     cvar_var(iel) = epzero*(cell_f_vol(iel))**(1.d0/3.d0)
   endif
 enddo
@@ -315,7 +315,7 @@ if (mmprpl.ge.1) then
   endif
 endif
 
-do iel=1,ncel
+do iel = 1, ncel
   dpvar(iel) = max(cvar_var(iel), 0.d0)
 enddo
 
@@ -333,14 +333,23 @@ iccocg = 1
 
 call field_gradient_scalar(f_id, 0, imrgra, inc, iccocg, grad)
 
+counter = 0
 do iel = 1, ncel
   norm_grad = grad(1,iel)**2.d0+grad(2,iel)**2.d0+grad(3,iel)**2.d0
-  if (norm_grad+2.d0*dpvar(iel).gt.0.d0) then
+  if (norm_grad+2.d0*dpvar(iel).ge.0.d0) then
     cvar_var(iel) = sqrt(norm_grad + 2.d0*dpvar(iel)) - sqrt(norm_grad)
   else
-    write(nfecra,8000)iel, xyzcen(1,iel),xyzcen(2,iel),xyzcen(3,iel)
+    counter = counter + 1
   endif
 enddo
+
+if (irangp.ge.0) then
+  call parcpt(counter)
+endif
+
+if (counter.gt.0) then
+  write(nfecra,8000) counter
+endif
 
 ! Free memory
 deallocate(grad)
@@ -387,9 +396,7 @@ deallocate(w1)
 '@                                                            ',/,&
 '@ @@ ATTENTION : Calcul de la distance a la paroi            ',/,&
 '@    =========                                               ',/,&
-'@  La variable associee ne converge pas a la cellule ',I10    ,/,&
-'@       Coord X      Coord Y      Coord Z                    ',/,&
-'@ ',3E13.5                                                    ,/)
+'@  La variable associee ne converge dans ',I10    ,' cellules',/)
 
  9000   format(                                                         &
 '@'                                                            ,/,&
@@ -420,9 +427,7 @@ deallocate(w1)
 '@                                                            ',/,&
 '@ @@ WARNING: Wall distance calculation                      ',/,&
 '@    ========                                                ',/,&
-'@  The associated variable does not converge in cell ',I10    ,/,&
-'@       Coord X      Coord Y      Coord Z                    ',/,&
-'@ ',3E13.5                                                    ,/)
+'@  The associated variable does not converge in ',I10,' cells.'/)
 
  9000   format(                                                         &
 '@'                                                            ,/,&
