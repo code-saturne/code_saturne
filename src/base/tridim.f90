@@ -456,6 +456,7 @@ if (icalhy.eq.1.or.idilat.gt.1.or.ivofmt.ge.0.or.ipthrm.eq.1) then
   do iel = 1, ncelet
     crom_prev(iel) = crom(iel)
   enddo
+  call field_current_to_previous(ibrom)
 endif
 
 
@@ -512,7 +513,8 @@ if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1010)
 endif
 
-call phyvar(nvar, nscal, dt)
+iterns = 1
+call phyvar(nvar, nscal, iterns, dt)
 
 if (itrale.gt.0) then
   iappel = 2
@@ -892,7 +894,6 @@ endif
 
 icvrge = 0
 inslst = 0
-iterns = 1
 
 ! Darcy : in case of a steady flow, we resolve Richards only once,
 ! at the first time step.
@@ -1281,7 +1282,7 @@ do while (iterns.le.nterup)
     ! otherwise it is done in navstv.f90
     if (itrale.eq.0) then
 
-      call alelav
+      call alelav(iterns)
       must_return = .true.
 
     endif
@@ -1322,11 +1323,11 @@ do while (iterns.le.nterup)
   if (iccvfg.eq.0) then
 
 !===============================================================================
-! 12. RESOLUTION QUANTITE DE MOUVEMENT ET MASSE
+! 12. Solve momentum and mass equation
 !===============================================================================
 
     if (vcopt_u%iwarni.ge.1) then
-      write(nfecra,1040)
+      write(nfecra,1040) iterns
     endif
 
     ! Coupled solving of the velocity components
@@ -1391,6 +1392,26 @@ do while (iterns.le.nterup)
       do iel = 1, ncel
         cvara_pr(iel) = cvar_pr(iel)
       enddo
+    endif
+
+    ! In case of buoyancy, scalars and momentum are coupled
+    if (nscal.ge.1) then
+
+      if(vcopt_u%iwarni.ge.1) then
+        write(nfecra,1060)
+      endif
+
+      ! Update buoyant scalar(s)
+      call scalai(nvar, nscal , iterns , dt)
+
+      ! Diffusion terms for weakly compressible algorithm
+      if (idilat.ge.4) then
+        call diffst(nscal, iterns)
+      endif
+
+      ! Update the density
+      call phyvar(nvar, nscal, iterns, dt)
+
     endif
 
     !     Si c'est la derniere iteration : INSLST = 1
@@ -1706,13 +1727,13 @@ if (nscal.ge.1) then
     write(nfecra,1060)
   endif
 
-  call scalai                                                     &
- ( nvar   , nscal  ,                                              &
-   dt     )
+  ! Update non-buoyant scalar(s)
+  iterns = -1
+  call scalai(nvar, nscal, iterns, dt)
 
   ! Diffusion terms for weakly compressible algorithm
   if (idilat.ge.4) then
-    call diffst(nscal)
+    call diffst(nscal, iterns)
   endif
 
 endif
@@ -1778,7 +1799,7 @@ endif
  1040 format(/,                                                   &
 ' ------------------------------------------------------------',/,&
                                                               /,/,&
-'  RESOLUTION DES EQUATIONS DE NAVIER-STOKES                  ',/,&
+'  RESOLUTION DES EQUATIONS DE NAVIER-STOKES (sub iter: ',i3,')',/,&
 '  =========================================                  ',/)
  1050 format(/,                                                   &
 ' ------------------------------------------------------------',/,&
@@ -1821,8 +1842,8 @@ endif
  1040 format(/,                                                   &
 ' ------------------------------------------------------------',/,&
                                                               /,/,&
-'  SOLVING NAVIER-STOKES EQUATIONS                            ',/,&
-'  ===============================                            ',/)
+'  SOLVING NAVIER-STOKES EQUATIONS (sub iter: ',i3,')'         ,/,&
+'  ===============================                             ',/)
  1050 format(/,                                                   &
 ' ------------------------------------------------------------',/,&
                                                               /,/,&

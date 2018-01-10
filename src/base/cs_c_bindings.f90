@@ -1583,7 +1583,8 @@ module cs_c_bindings
 
     ! Interface to C function cs_equation_iterative_solve_scalar
 
-    subroutine cs_equation_iterative_solve_scalar(idtvar, f_id, name, ndircp, &
+    subroutine cs_equation_iterative_solve_scalar(idtvar, iterns,             &
+                                                  f_id, name, ndircp,         &
                                                   iescap, imucpp,             &
                                                   vcopt, pvara, pvark,        &
                                                   coefap, coefbp, cofafp,     &
@@ -1597,7 +1598,7 @@ module cs_c_bindings
       bind(C, name='cs_equation_iterative_solve_scalar')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: idtvar, f_id, ndircp, iescap, imucpp
+      integer(c_int), value :: idtvar, iterns, f_id, ndircp, iescap, imucpp
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefap
@@ -1617,7 +1618,8 @@ module cs_c_bindings
 
     ! Interface to C function cs_equation_iterative_solve_vector
 
-    subroutine cs_equation_iterative_solve_vector(idtvar, f_id, name, ndircp, &
+    subroutine cs_equation_iterative_solve_vector(idtvar, iterns,             &
+                                                  f_id, name, ndircp,         &
                                                   ivisep, iescap,             &
                                                   vcopt, pvara, pvark,        &
                                                   coefav, coefbv, cofafv,     &
@@ -1631,7 +1633,7 @@ module cs_c_bindings
       bind(C, name='cs_equation_iterative_solve_vector')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: idtvar, f_id, ndircp, iescap, ivisep
+      integer(c_int), value :: idtvar, iterns, f_id, ndircp, iescap, ivisep
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefav
@@ -4135,7 +4137,8 @@ contains
 
   !> Be careful, it is forbidden to modify \f$ f_s^{imp} \f$ here!
 
-  !> \param[in]     idtvar        indicateur du schema temporel
+  !> \param[in]     idtvar        indicator of the temporal scheme
+  !> \param[in]     iterns        external sub-iteration number
   !> \param[in]     f_id          field id (or -1)
   !> \param[in]     iconvp        indicator
   !>                               - 1 convection,
@@ -4238,7 +4241,8 @@ contains
   !> \param[out]    eswork        prediction-stage error estimator
   !>                              (if iescap > 0)
 
-  subroutine codits (idtvar, f_id, iconvp, idiffp, ndircp, imrgra, nswrsp,     &
+  subroutine codits (idtvar, iterns,                                           &
+                     f_id  , iconvp, idiffp, ndircp, imrgra, nswrsp,           &
                      nswrgp, imligp, ircflp, ischcp, isstpp, iescap, imucpp,   &
                      idftnp, iswdyp, iwarnp, blencp, epsilp, epsrsp, epsrgp,   &
                      climgp, extrap, relaxp, thetap, pvara, pvark, coefap,     &
@@ -4255,7 +4259,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in) :: idtvar, f_id, iconvp, idiffp, ndircp, imrgra
+    integer, intent(in) :: idtvar, iterns, f_id, iconvp, idiffp, ndircp, imrgra
     integer, intent(in) :: nswrsp, nswrgp, imligp, ircflp, ischcp, isstpp
     integer, intent(in) :: iescap, imucpp, idftnp, iswdyp, iwarnp
     double precision, intent(in) :: blencp, epsilp, epsrsp, epsrgp, climgp
@@ -4308,7 +4312,8 @@ contains
     vcopt%extrag = extrap
     vcopt%relaxv = relaxp
 
-    call cs_equation_iterative_solve_scalar(idtvar, f_id, c_name, ndircp,      &
+    call cs_equation_iterative_solve_scalar(idtvar, iterns,                    &
+                                            f_id, c_name, ndircp,              &
                                             iescap, imucpp, c_k_value,         &
                                             pvara, pvark,                      &
                                             coefap, coefbp, cofafp, cofbfp,    &
@@ -4367,6 +4372,7 @@ contains
   !> Be careful, it is forbidden to modify \f$ \tens{f_s}^{imp} \f$ here!
 
   !> \param[in]     idtvar        indicator of the temporal scheme
+  !> \param[in]     iterns        external sub-iteration number
   !> \param[in]     f_id          field id (or -1)
   !> \param[in]     iconvp        indicator
   !>                               - 1 convection,
@@ -4470,7 +4476,8 @@ contains
   !> \param[out]    eswork        prediction-stage error estimator
   !>                              (if iescap > 0)
 
-  subroutine coditv (idtvar, f_id  , iconvp, idiffp, ndircp, imrgra, nswrsp,   &
+  subroutine coditv (idtvar, iterns,                                           &
+                     f_id  , iconvp, idiffp, ndircp, imrgra, nswrsp,           &
                      nswrgp, imligp, ircflp, ivisep, ischcp, isstpp, iescap,   &
                      idftnp, iswdyp, iwarnp, blencp, epsilp, epsrsp, epsrgp,   &
                      climgp, relaxp, thetap, pvara , pvark , coefav, coefbv,   &
@@ -4488,7 +4495,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in) :: idtvar, f_id, iconvp, idiffp, ndircp, imrgra
+    integer, intent(in) :: idtvar, iterns, f_id, iconvp, idiffp, ndircp, imrgra
     integer, intent(in) :: nswrsp, nswrgp, imligp, ircflp, ischcp, isstpp
     integer, intent(in) :: iescap, ivisep, idftnp, iswdyp, iwarnp
     double precision, intent(in) :: blencp, epsilp, epsrsp, epsrgp, climgp
@@ -4542,7 +4549,8 @@ contains
     vcopt%extrag = 0
     vcopt%relaxv = relaxp
 
-    call cs_equation_iterative_solve_vector(idtvar, f_id, c_name, ndircp,      &
+    call cs_equation_iterative_solve_vector(idtvar, iterns,                    &
+                                            f_id, c_name, ndircp,              &
                                             ivisep, iescap, c_k_value,         &
                                             pvara, pvark,                      &
                                             coefav, coefbv, cofafv, cofbfv,    &

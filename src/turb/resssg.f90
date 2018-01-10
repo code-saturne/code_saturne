@@ -137,6 +137,7 @@ integer          iprev , inc, iccocg, ll
 integer          imucpp, idftnp, iswdyp
 integer          ivar_r(3,3)
 integer          icvflb
+integer          init
 integer          ivoid(1)
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
@@ -798,6 +799,7 @@ extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
+init   = 1
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -805,7 +807,7 @@ call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call codits &
- ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
+ ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

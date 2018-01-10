@@ -98,6 +98,7 @@ integer          itt
 integer          idftnp, iswdyp, icvflb
 integer          f_id
 integer          keyvar, iut
+integer          init
 
 integer          ivoid(1)
 
@@ -550,9 +551,10 @@ ivisep = 0
 
 ! all boundary convective flux with upwind
 icvflb = 0
+init   = 1
 
 call coditv &
-(idtvar , f_id   , iconvp , idiffp , ndircp ,                   &
+(idtvar , init   , f_id   , iconvp , idiffp , ndircp ,          &
  imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
  ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
  iwarnp ,                                                       &

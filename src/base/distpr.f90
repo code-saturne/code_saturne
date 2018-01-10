@@ -82,6 +82,7 @@ integer          imucpp, idftnp
 integer          nswrgp
 integer          icvflb, iescap, imligp, ircflp, iswdyp, isstpp, ischcp, iwarnp
 integer          ivoid(1)
+integer          init
 
 double precision relaxp, blencp, climgp, epsilp, epsrgp, epsrsp, extrap
 double precision dismax, dismin, hint, pimp, qimp, norm_grad, thetap
@@ -242,6 +243,7 @@ relaxp = vcopt%relaxv
 thetap = vcopt%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+init   = 1
 
 110 continue
 
@@ -257,7 +259,7 @@ do iel = 1, ncel
 enddo
 
 call codits &
- ( idtvar , f_id   , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , init, f_id   , iconvp , idiffp , ndircp ,             &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

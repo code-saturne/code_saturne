@@ -23,7 +23,7 @@
 subroutine diffst &
 !================
 
- ( nscal  )
+ ( nscal, iterns )
 
 !===============================================================================
 ! Function :
@@ -37,6 +37,7 @@ subroutine diffst &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nscal            ! i  ! <-- ! total number of scalars                        !
+! iterns           ! i  ! <-- ! Navier-Stokes iteration number                 !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -72,7 +73,7 @@ implicit none
 
 ! Arguments
 
-integer          nscal
+integer          nscal , iterns
 
 ! Local variables
 
@@ -83,6 +84,7 @@ integer          iconvp, idiffp, ircflp
 integer          ischcp, isstpp
 integer          ifcvsl, iflmas, iflmab
 integer          imucpp, idftnp, imasac
+integer          key_buoyant_id, is_buoyant_fld
 double precision epsrgp, climgp, extrap
 double precision blencp, relaxp, thetex
 double precision turb_schmidt
@@ -117,6 +119,15 @@ do iscal = 1, nscal
   ivar = isca(iscal)
 
   call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
+
+  ! Key id for buoyant field (inside the Navier Stokes loop)
+  call field_get_key_id("is_buoyant", key_buoyant_id)
+  call field_get_key_int(ivarfl(isca(iscal)), key_buoyant_id, is_buoyant_fld)
+
+  ! If the scalar is buoyant, it is inside the Navier Stokes loop, and so iterns >=1
+  ! otherwise it is outside of the loop and iterns = -1.
+  if (  (is_buoyant_fld.eq. 1 .and. iterns.eq.-1) &
+    .or.(is_buoyant_fld.eq.-1 .and. iterns.ne.-1)) return
 
   imucpp = 0
   if (iscavr(iscal).gt.0) then

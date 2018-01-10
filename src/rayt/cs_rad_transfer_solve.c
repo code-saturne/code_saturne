@@ -601,6 +601,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
           int icvflb = 0;
 
           cs_equation_iterative_solve_scalar(0,   /* idtvar */
+                                             1,   /* external sub-iteration */
                                              -1,  /* f_id */
                                              cnom,
                                              ndirc1,

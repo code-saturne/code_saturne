@@ -111,6 +111,7 @@ double precision smbr(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
+integer          init
 integer          ivar
 integer          iel
 integer          iiun
@@ -563,9 +564,10 @@ extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
+init   = 1
 
 call codits &
- ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
+ ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

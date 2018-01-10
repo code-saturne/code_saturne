@@ -332,6 +332,7 @@ _lageqp(cs_real_t   *vitessel,
   var_cal_opt.imligr = 1;
 
   cs_equation_iterative_solve_scalar(idtva0,
+                                     1,            /* external sub-iteration? */
                                      -1,           /* field_id (not a field) */
                                      "PoissonL",   /* name */
                                      1,            /* ndircp */

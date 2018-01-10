@@ -67,10 +67,11 @@
 !______________________________________________________________________________!
 !> \param[out]    grdphd         the a priori hydrostatic pressure gradient
 !>                              \f$ \partial _x (P_{hydro}) \f$
+!> \param[in]     iterns        Navier-Stokes iteration number
 !_______________________________________________________________________________
 
 subroutine prehyd &
- ( grdphd  )
+ ( grdphd  , iterns )
 
 !===============================================================================
 
@@ -100,6 +101,7 @@ implicit none
 ! Arguments
 
 double precision grdphd(ndim, ncelet)
+integer          iterns
 
 ! Local variables
 
@@ -256,7 +258,7 @@ nomva0 = "Prhydro"
 
 call codits &
 !==========
-( idtvar , f_id0  , iconvp , idiffp , ndircp ,                   &
+( idtvar , iterns , f_id0  , iconvp , idiffp , ndircp ,          &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
   iwarnp ,                                                       &

@@ -170,7 +170,7 @@ endif
 do ifac = 1, nfabor
   brom(ifac) = ro0
 enddo
-if (iroext.gt.0.or.ivofmt.ge.0) then
+if (iroext.gt.0.or.ivofmt.ge.0.or.idilat.gt.1) then
   call field_current_to_previous(ibrom)
 endif
 

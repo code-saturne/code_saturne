@@ -1277,9 +1277,10 @@ relaxp = vcopt_k%relaxv
 thetap = vcopt_k%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+init   = 1
 
 call codits &
- ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
+ ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &
@@ -1354,7 +1355,7 @@ thetap = vcopt_e%thetav
 icvflb = 0
 
 call codits &
- ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
+ ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

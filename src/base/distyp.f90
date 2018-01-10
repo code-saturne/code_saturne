@@ -495,11 +495,12 @@ do isweep = 1, ntcmxy
   relaxp = 1.d0
   ! all boundary convective flux with upwind
   icvflb = 0
-  ! Warning: no diffusion so no need of other diffusive Boundary coeeficient
+
+  ! Warning: no diffusion so no need of other diffusive Boundary coefficient
 
   call codits &
   !==========
- ( idtva0 , f_id0  , iconvp , idiffp , ndircp ,                   &
+ ( idtva0 , init   , f_id0  , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
    ischcy , isstpy , iescap , imucpp , idftnp , iswdyp ,          &
    iwarny ,                                                       &

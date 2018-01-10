@@ -135,6 +135,7 @@ integer          isoluc
 integer          imucpp, idftnp, iswdyp
 integer          ivar_r(3,3)
 integer          icvflb
+integer          init
 integer          ivoid(1)
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
@@ -658,9 +659,10 @@ extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
+init   = 1
 
 call codits &
- ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
+ ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

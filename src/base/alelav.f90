@@ -32,7 +32,16 @@
 !>
 !-------------------------------------------------------------------------------
 
-subroutine alelav
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     iterns        Navier-Stokes iteration number
+!_______________________________________________________________________________
+
+subroutine alelav &
+ ( iterns )
 
 !===============================================================================
 
@@ -59,6 +68,10 @@ use cs_c_bindings
 !===============================================================================
 
 implicit none
+
+! Arguments
+
+integer          iterns
 
 ! Local variables
 
@@ -235,7 +248,7 @@ ivisep = 0
 
 call coditv &
 !==========
- ( idtvar , ivarfl(iuma)    , iconvp , idiffp , ndircp ,          &
+ ( idtvar , iterns , ivarfl(iuma)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &

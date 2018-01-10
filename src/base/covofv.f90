@@ -41,6 +41,7 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     iterns        Navier-Stokes iteration number
 !> \param[in]     iscal         scalar number
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
@@ -56,7 +57,7 @@
 
 subroutine covofv &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
+   iterns , iscal  ,                                              &
    icepdc , icetsm ,                                              &
    itypsm ,                                                       &
    dt     ,                                                       &
@@ -102,7 +103,7 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
-integer          iscal
+integer          iterns , iscal
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
@@ -127,6 +128,7 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap, ivissv
 integer          idftnp, iswdyp
 integer          iflid , st_prv_id, st_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
+integer          key_buoyant_id, is_buoyant_fld
 
 integer          ivoid(1)
 
@@ -180,6 +182,15 @@ iflid = ivarfl(ivar)
 
 call field_get_val_v(iflid, cvar_var)
 call field_get_val_prev_v(iflid, cvara_var)
+
+! Key id for buoyant field (inside the Navier Stokes loop)
+call field_get_key_id("is_buoyant", key_buoyant_id)
+call field_get_key_int(iflid, key_buoyant_id, is_buoyant_fld)
+
+! If the vector is buoyant, it is inside the Navier Stokes loop, and so iterns >=1
+! otherwise it is outside of the loop and iterns = -1.
+if (  (is_buoyant_fld.eq. 1 .and. iterns.eq.-1) &
+  .or.(is_buoyant_fld.eq.-1 .and. iterns.ne.-1)) return
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -638,7 +649,7 @@ call field_get_coefbf_v(iflid, cofbfp)
 
 call coditv &
 !==========
- ( idtvar , iflid  , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , iterns , iflid  , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivissv ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &

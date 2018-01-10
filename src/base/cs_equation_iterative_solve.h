@@ -88,7 +88,8 @@ BEGIN_C_DECLS
  *
  * Be careful, it is forbidden to modify \f$ f_s^{imp} \f$ here!
  *
- * \param[in]     idtvar        indicateur du schema temporel
+ * \param[in]     idtvar        indicator of the temporal scheme
+ * \param[in]     iterns        external sub-iteration number
  * \param[in]     f_id          field id (or -1)
  * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
  * \param[in]     iescap        compute the predictor indicator if 1
@@ -145,6 +146,7 @@ BEGIN_C_DECLS
 
 void
 cs_equation_iterative_solve_scalar(int                   idtvar,
+                                   int                   iterns,
                                    int                   f_id,
                                    const char           *name,
                                    int                   ndircp,
@@ -221,6 +223,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  * Be careful, it is forbidden to modify \f$ \tens{f_s}^{imp} \f$ here!
  *
  * \param[in]     idtvar        indicator of the temporal scheme
+ * \param[in]     iterns        external sub-iteration number
  * \param[in]     f_id          field id (or -1)
  * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
  * \param[in]     ivisep        indicator to take \f$ \divv
@@ -279,6 +282,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
 void
 cs_equation_iterative_solve_vector(int                   idtvar,
+                                   int                   iterns,
                                    int                   f_id,
                                    const char           *name,
                                    int                   ndircp,

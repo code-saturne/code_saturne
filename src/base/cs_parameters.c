@@ -864,6 +864,9 @@ cs_parameters_define_field_keys(void)
 
   cs_field_define_key_int("scalar_density_id", -1, CS_FIELD_VARIABLE);
 
+  /* is the field buoyant? -1 if not, 1 if yes */
+  cs_field_define_key_int("is_buoyant", -1, CS_FIELD_VARIABLE);
+
   cs_field_define_key_int("turbulent_flux_model", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("turbulent_flux_id", -1, CS_FIELD_VARIABLE);
 

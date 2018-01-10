@@ -182,7 +182,7 @@ type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 interface
 
   subroutine resopv &
-   ( nvar   , ncesmp , nfbpcd , ncmast ,                          &
+   ( nvar   , iterns , ncesmp , nfbpcd , ncmast ,                 &
      icetsm , ifbpcd , ltmast , isostd ,                          &
      dt     , vel    ,                                            &
      coefav , coefbv , coefa_dp        , coefb_dp ,               &
@@ -199,7 +199,7 @@ interface
 
     ! Arguments
 
-    integer          nvar
+    integer          nvar  , iterns
     integer          ncesmp, nfbpcd, ncmast
 
     integer          icetsm(ncesmp), ifbpcd(nfbpcd)
@@ -390,7 +390,7 @@ endif
 
 if (iphydr.eq.2) then
 
-  call prehyd(grdphd)
+  call prehyd(grdphd, iterns)
 
 endif
 
@@ -826,7 +826,7 @@ allocate(dpvar(ncelet))
 if (ippmod(icompf).lt.0) then
 
   call resopv &
-( nvar   , ncetsm , nfbpcd , ncmast ,                            &
+( nvar   , iterns , ncetsm , nfbpcd , ncmast ,                   &
   icetsm , ifbpcd , ltmast , isostd ,                            &
   dt     , vel    ,                                              &
   coefau , coefbu , coefa_dp        , coefb_dp ,                 &
@@ -848,7 +848,7 @@ call cs_bad_cells_regularisation_scalar(cvar_pr)
 if (iale.eq.1) then
 
   if (itrale.gt.nalinf) then
-    call alelav
+    call alelav(iterns)
   endif
 
 endif
@@ -1210,7 +1210,7 @@ if (ivofmt.ge.0) then
 
   ! Void fraction solving
 
-  call resvoi(dt)
+  call resvoi(dt, iterns)
 
   ! Halo synchronization
 

@@ -103,6 +103,7 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          iflmas, iflmab
 integer          iwarnp
 integer          istprv
+integer          init
 integer          imucpp, idftnp, iswdyp
 
 integer          icvflb, imasac
@@ -1031,9 +1032,10 @@ relaxp = vcopt_k%relaxv
 thetap = vcopt_k%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+init   = 1
 
 call codits &
- ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
+ ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &
@@ -1100,9 +1102,10 @@ relaxp = vcopt_w%relaxv
 thetap = vcopt_w%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+init   = 1
 
 call codits &
- ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
+ ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

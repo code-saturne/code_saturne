@@ -47,10 +47,11 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     dt            time step (per cell)
+!> \param[in]     iterns        Navier-Stokes iteration number
 !_______________________________________________________________________________
 
 subroutine resvoi &
- ( dt     )
+ ( dt     , iterns )
 
 !===============================================================================
 
@@ -78,6 +79,7 @@ implicit none
 ! Arguments
 
 double precision dt(ncelet)
+integer          iterns
 
 ! Local variables
 
@@ -304,7 +306,7 @@ icvflb = 0
 
 call codits &
 !==========
- ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
+ ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

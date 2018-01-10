@@ -33,12 +33,13 @@
 !------------------------------------------------------------------------------
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
+!> \param[in]     iterns        Navier-Stokes iteration number
 !> \param[in]     dt            time step (per cell)
 !______________________________________________________________________________
 
 subroutine scalai &
  ( nvar   , nscal  ,                                              &
-   dt     )
+   iterns , dt     )
 
 !===============================================================================
 ! Module files
@@ -68,8 +69,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
+integer          nvar, nscal, iterns
 double precision dt(ncelet)
 
 ! Local variables
@@ -219,7 +219,7 @@ if (nscapp.gt.0) then
 
     ispecf = 0
 
-    if ( ippmod(icompf).ge.0 ) then
+    if (ippmod(icompf).ge.0 .and. iterns.eq.-1) then
 
       if ( iscal.eq.itempk ) then
         ispecf = 1
@@ -296,7 +296,7 @@ if (nscapp.gt.0) then
         !==========
    ( nvar   , nscal  ,                                              &
      ncepdc , ncetsm , nfbpcd , ncmast ,                            &
-     iisc   , itspdv ,                                              &
+     iterns , iisc   , itspdv ,                                     &
      icepdc , icetsm , ifbpcd , ltmast ,                            &
      itypsm , itypcd , itypst ,                                     &
      dtr    , tslagr ,                                              &
@@ -311,7 +311,7 @@ if (nscapp.gt.0) then
         !==========
    ( nvar   , nscal  ,                                              &
      ncepdc , ncetsm ,                                              &
-     iisc   ,                                                       &
+     iterns , iisc   ,                                              &
      icepdc , icetsm ,                                              &
      itypsm ,                                                       &
      dtr    ,                                                       &
@@ -327,8 +327,8 @@ if (nscapp.gt.0) then
 
 !     On calcule ici j, E, j.E reels et imagimaires
 
-      if ( ippmod(ieljou).ge.1 .or.                               &
-           ippmod(ielarc).ge.1       ) then
+      if ((ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1)  &
+        .and. iterns.eq.-1) then
 
 
 !     On utilise le  fait que les scalaires sont dans l'ordre
@@ -388,7 +388,7 @@ endif
 
 !     On calcule ici A, B, jxB
 
-if (ippmod(ielarc).ge.1) then
+if (ippmod(ielarc).ge.1 .and. iterns.eq.-1) then
 
 !     On utilise le  fait que les scalaires sont dans l'ordre
 !       H, PotR, [PotI], [A] pour faire le calcul de A, B, jxB
@@ -473,7 +473,7 @@ if (nscaus.gt.0) then
       !==========
    ( nvar   , nscal  ,                                              &
      ncepdc , ncetsm , nfbpcd , ncmast ,                            &
-     iisc   , itspdv ,                                              &
+     iterns , iisc   , itspdv ,                                     &
      icepdc , icetsm , ifbpcd , ltmast ,                            &
      itypsm , itypcd , itypst ,                                     &
      dtr    , tslagr ,                                              &
@@ -488,7 +488,7 @@ if (nscaus.gt.0) then
         !==========
    ( nvar   , nscal  ,                                              &
      ncepdc , ncetsm ,                                              &
-     iisc   ,                                                       &
+     iterns , iisc   ,                                              &
      icepdc , icetsm ,                                              &
      itypsm ,                                                       &
      dtr    ,                                                       &
@@ -505,12 +505,12 @@ endif
 
 ! Atmospheric gaseous chemistry
 ! Resolution of chemical evolution of species
-if (ichemistry.ge.1 .and. nscal.gt.0) then
+if (ichemistry.ge.1 .and. nscal.gt.0 .and. iterns.eq.-1) then
   call compute_gaseous_chemistry(dt)
 endif
 
 ! Atmospheric aerosol chemistry
-if (iaerosol.eq.1 .and. nscal.gt.0) then
+if (iaerosol.eq.1 .and. nscal.gt.0 .and. iterns.eq.-1) then
   call compute_siream(dt)
 endif
 

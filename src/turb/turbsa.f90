@@ -108,6 +108,7 @@ integer          istprv
 integer          ipatrg
 integer          imucpp, idftnp, iswdyp
 integer          f_id
+integer          init
 
 double precision romvsd
 double precision visct , rom
@@ -575,9 +576,10 @@ relaxp = vcopt_nusa%relaxv
 thetap = vcopt_nusa%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+init   = 1
 
 call codits &
- ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
+ ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

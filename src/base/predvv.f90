@@ -1572,7 +1572,7 @@ if (iappel.eq.1) then
     ! Warning: in case of convergence estimators, eswork give the estimator
     ! of the predicted velocity
     call coditv &
- ( idtvar , ivarfl(iu)      , iconvp , idiffp , ndircp ,          &
+ ( idtvar , iterns , ivarfl(iu)      , iconvp , idiffp , ndircp ,&
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &
@@ -1592,7 +1592,7 @@ if (iappel.eq.1) then
   else if(iterns.gt.1) then
 
     call coditv &
- ( idtvar , ivarfl(iu)      , iconvp , idiffp , ndircp ,          &
+ ( idtvar , iterns , ivarfl(iu)      , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &
@@ -1638,7 +1638,7 @@ if (iappel.eq.1) then
     ivisep = 0
 
     call coditv &
- ( idtvar , ivarfl(iu)      , iconvp , idiffp , ndircp ,          &
+ ( idtvar , iterns , ivarfl(iu)      , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &

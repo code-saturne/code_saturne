@@ -220,6 +220,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
   /* Parameter for time scheme and steady case ? */
 
   cs_equation_iterative_solve_scalar(0,  /* idtvar */
+                                     1,  /* external sub-iteration */
                                      -1, /* f_id */
                                      "radiation_p1",
                                      ndirc1,

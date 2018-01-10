@@ -59,6 +59,7 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
+!> \param[in]     iterns        Navier-Stokes iteration number
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     nfbpcd        number of faces with condensation source term
 !> \param[in]     ncmast        number of cells with condensation source terms
@@ -99,7 +100,7 @@
 !_______________________________________________________________________________
 
 subroutine resopv &
- ( nvar   , ncesmp , nfbpcd , ncmast ,                            &
+ ( nvar   , iterns , ncesmp , nfbpcd , ncmast ,                   &
    icetsm , ifbpcd , ltmast , isostd ,                            &
    dt     , vel    ,                                              &
    coefav , coefbv , coefa_dp        , coefb_dp ,                 &
@@ -144,7 +145,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar
+integer          nvar  , iterns
 integer          ncesmp, nfbpcd, ncmast
 
 integer          icetsm(ncesmp), ifbpcd(nfbpcd)
@@ -1056,7 +1057,7 @@ call inimav &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
-   crom, brom   ,                                                 &
+   crom   , brom   ,                                              &
    trav   ,                                                       &
    coefav , coefbv ,                                              &
    imasfl , bmasfl )
@@ -2195,7 +2196,7 @@ if (idilat.eq.5) then
 
   call codits &
   !==========
-   ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
+   ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
      imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
      ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
      iwarnp ,                                                       &

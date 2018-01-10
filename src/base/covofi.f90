@@ -46,6 +46,7 @@
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     nfbpcd        number of faces with condensation source terms
 !> \param[in]     ncmast        number of cells with condensation source terms
+!> \param[in]     iterns        Navier-Stokes iteration number
 !> \param[in]     iscal         scalar number
 !> \param[in]     itspdv        indicator to compute production/dissipation
 !>                              terms for a variance:
@@ -78,7 +79,7 @@
 
 subroutine covofi &
  ( nvar   , nscal  , ncepdp , ncesmp , nfbpcd , ncmast ,          &
-   iscal  , itspdv ,                                              &
+   iterns , iscal  , itspdv ,                                     &
    icepdc , icetsm , ifbpcd , ltmast ,                            &
    itypsm , itypcd , itypst ,                                     &
    dt     , tslagr ,                                              &
@@ -127,7 +128,7 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncepdp , ncesmp , nfbpcd ,  ncmast
-integer          iscal  , itspdv
+integer          iterns , iscal  , itspdv
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
@@ -159,6 +160,7 @@ integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
 integer          icla
 integer          icrom_scal
+integer          key_buoyant_id, is_buoyant_fld
 
 integer          ivoid(1)
 
@@ -226,6 +228,15 @@ call field_get_val_prev_s(ivarfl(ivar), cvara_var)
 
 ! Index of the field
 iflid = ivarfl(ivar)
+
+! Key id for buoyant field (inside the Navier Stokes loop)
+call field_get_key_id("is_buoyant", key_buoyant_id)
+call field_get_key_int(iflid, key_buoyant_id, is_buoyant_fld)
+
+! If the scalar is buoyant, it is inside the Navier Stokes loop, and so iterns >=1
+! otherwise it is outside of the loop and iterns = -1.
+if (  (is_buoyant_fld.eq. 1 .and. iterns.eq.-1) &
+  .or.(is_buoyant_fld.eq.-1 .and. iterns.ne.-1)) return
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -1226,7 +1237,7 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call codits &
 !==========
- ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
+ ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

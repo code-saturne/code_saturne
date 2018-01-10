@@ -41,13 +41,14 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
+!> \param[in]     iterns        Navier-Stokes iteration number
 !> \param[in]     dt            time step (per cell)
 !_______________________________________________________________________________
 
 
 subroutine phyvar &
  ( nvar   , nscal  ,                                              &
-   dt     )
+   iterns , dt     )
 
 !===============================================================================
 
@@ -82,8 +83,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
+integer          nvar, nscal, iterns
 double precision dt(ncelet)
 
 ! Local variables
@@ -186,6 +186,19 @@ if (mbrom.eq.0) then
     brom(ifac) = crom(iel)
   enddo
 endif
+
+!
+! Parallelism and periodicity
+!
+! In navstv and visecv, we need rho in the halo
+if (irangp.ge.0.or.iperio.eq.1) then
+  call field_get_val_s(icrom, crom)
+  call synsca(crom)
+endif
+
+!
+! Only density may be updated in Navier Stokes loop
+if (iterns.gt.1) return
 
 !  Au premier pas de temps du calcul
 !     Si on a indique que rho (visc) etait constant
@@ -930,18 +943,6 @@ endif
 if (iok.ne.0) then
   write(nfecra,9999)iok
   call csexit (1)
-endif
-
-!===============================================================================
-! 11. Parallelism and periodicity
-!===============================================================================
-
-! Pour navstv et visecv on a besoin de ROM dans le halo
-
-call field_get_val_s(icrom, crom)
-
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(crom)
 endif
 
 !--------

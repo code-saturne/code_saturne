@@ -147,7 +147,8 @@ BEGIN_C_DECLS
  * <a href="../../theory.pdf#codits"><b>codits</b></a> section of the
  * theory guide for more informations.
  *
- * \param[in]     idtvar        indicateur du schema temporel
+ * \param[in]     idtvar        indicator of the temporal scheme
+ * \param[in]     iterns        external sub-iteration number
  * \param[in]     f_id          field id (or -1)
  * \param[in]     name          associated name if f_id < 0, or NULL
  * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
@@ -205,6 +206,7 @@ BEGIN_C_DECLS
 
 void
 cs_equation_iterative_solve_scalar(int                   idtvar,
+                                   int                   iterns,
                                    int                   f_id,
                                    const char           *name,
                                    int                   ndircp,
@@ -610,7 +612,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   nswmod = CS_MAX(var_cal_opt->nswrsm, 1);
 
   /* Reconstruction loop (beginning) */
-  sinfo.n_it = 0;
+  if (iterns <= 1)
+    sinfo.n_it = 0;
   isweep = 1;
 
   while ((isweep <= nswmod && residu > epsrsp*rnorm) || isweep == 1) {
@@ -1016,6 +1019,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  * Be careful, it is forbidden to modify \f$ \tens{f_s}^{imp} \f$ here!
  *
  * \param[in]     idtvar        indicator of the temporal scheme
+ * \param[in]     iterns        external sub-iteration number
  * \param[in]     f_id          field id (or -1)
  * \param[in]     name          associated name if f_id < 0, or NULL
  * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
@@ -1075,6 +1079,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
 void
 cs_equation_iterative_solve_vector(int                   idtvar,
+                                   int                   iterns,
                                    int                   f_id,
                                    const char           *name,
                                    int                   ndircp,
@@ -1410,7 +1415,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   /* Reconstruction loop (beginning)
    *-------------------------------- */
-  sinfo.n_it = 0;
+  if (iterns <= 1)
+    sinfo.n_it = 0;
 
   while ((isweep <= nswmod && residu > epsrsp*rnorm) || isweep == 1) {
     /* --- Solving on the increment dpvar */
