@@ -51,16 +51,49 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/* Term flag */
-#define CS_EQUATION_LOCKED        (1 <<  0)  //  1: modification not allowed
-#define CS_EQUATION_UNSTEADY      (1 <<  1)  //  2: unsteady term
-#define CS_EQUATION_CONVECTION    (1 <<  2)  //  4: convection term
-#define CS_EQUATION_DIFFUSION     (1 <<  3)  //  8: diffusion term
-#define CS_EQUATION_REACTION      (1 <<  4)  // 16: reaction term
+/*!
+ * @name Flags specifying which term is needed for an equation.
+ * @{
+ *
+ * \def CS_EQUATION_LOCKED
+ * \brief Parameters for setting an equation are not modifiable anymore
+ *
+ * \def CS_EQUATION_UNSTEADY
+ * \brief Unsteady term is needed
+ *
+ * \def CS_EQUATION_CONVECTION
+ * \brief Convection term is needed
+ *
+ * \def CS_EQUATION_DIFFUSION
+ * \brief Diffusion term is needed
+ *
+ * \def CS_EQUATION_REACTION
+ * \brief Reaction term is needed
+ *
+ */
+#define CS_EQUATION_LOCKED        (1 <<  0)  //  1
+#define CS_EQUATION_UNSTEADY      (1 <<  1)  //  2
+#define CS_EQUATION_CONVECTION    (1 <<  2)  //  4
+#define CS_EQUATION_DIFFUSION     (1 <<  3)  //  8
+#define CS_EQUATION_REACTION      (1 <<  4)  // 16
 
-/* Extra operations flag */
-#define CS_EQUATION_POST_PECLET      (1 << 0) //  1: Export Peclet number
-#define CS_EQUATION_POST_UPWIND_COEF (1 << 1) //  2: Export upwinding coef.
+/*!
+ * @}
+ * @name Flags specifying which extra operation is needed for an equation.
+ * @{
+ *
+ * \def CS_EQUATION_POST_PECLET
+ * \brief Compute and postprocess the Peclet number
+ *
+ * \def CS_EQUATION_POST_UPWIND_COEF
+ * \brief Postprocess the value of the upwinding coefficient
+ *
+ */
+
+#define CS_EQUATION_POST_PECLET      (1 << 0) //  1
+#define CS_EQUATION_POST_UPWIND_COEF (1 << 1) //  2
+
+/*! @} */
 
 /*============================================================================
  * Type definitions
@@ -98,14 +131,14 @@ typedef enum {
  * \var CS_EQUATION_SOLVER_CLASS_PETSC
  * Solvers available in Code_Saturne
  *
- * \var CS_EQUATION_SOLVER_N_CLASSES
+ * \var CS_EQUATION_N_SOLVER_CLASSES
  */
 
 typedef enum {
 
   CS_EQUATION_SOLVER_CLASS_CS,
   CS_EQUATION_SOLVER_CLASS_PETSC,
-  CS_EQUATION_N_CLASSES
+  CS_EQUATION_N_SOLVER_CLASSES
 
 } cs_equation_solver_class_t;
 
@@ -116,64 +149,200 @@ typedef enum {
 
 typedef struct {
 
-  cs_equation_type_t   type;           /* predefined, user... */
-  int                  dim;            /* Dimension of the unknown */
-  int                  verbosity;      /* Level of detail for output */
-  int                  sles_verbosity; /* Level of detail for SLES output */
+  /*!
+   * @name General settings
+   * @{
+   */
 
-  /* Flag to know if unsteady or diffusion or convection or reaction
-     or source term are activated or not */
-  cs_flag_t                     flag;
+  cs_equation_type_t   type;           /*!< type of equation: predefined... */
+  int                  dim;            /*!< Dimension of the unknown */
+  int                  verbosity;      /*!< Level of detail for output */
+  int                  sles_verbosity; /*!< Level of detail for SLES output */
 
-  /* Flag to known if predefined post-treatments such as Peclet,
-     Fourier, Courant numbers are requested */
-  cs_flag_t                     process_flag;
+  /*! \var flag
+   *  Flag to know if unsteady or diffusion or convection or reaction
+   *  or source term are activated or not
+   */
+  cs_flag_t                  flag;
+
+  /*! \var process_flag
+   *  Flag to known if predefined post-treatments such as Peclet,
+   *  are requested
+   */
+  cs_flag_t                  process_flag;
 
   /* Numerical settings */
-  cs_param_space_scheme_t       space_scheme;
+  cs_param_space_scheme_t    space_scheme; /*!< Space discretization scheme */
 
-  /* Max. degree of the polynomial basis */
-  int                           space_poly_degree;
+  /*! \var space_poly_degree
+   * Maximum degree of the polynomial basis
+   */
+  int                        space_poly_degree;
 
-  /* Boundary conditions */
+  /*!
+   * @}
+   * @name Settings for the boundary conditions
+   * @{
+   *
+   * \var default_bc
+   * Default boundary condition related to this equation. Valid choices:
+   * - \ref CS_PARAM_BC_HMG_NEUMANN
+   * - \ref CS_PARAM_BC_HMG_DIRICHLET
+   *
+   * \var enforcement
+   * Type of enforcement for the Dirichlet boundary conditions.
+   * See \ref cs_param_bc_enforce_t for more details.
+   *
+   * \var n_bc_defs
+   * Number of boundary conditions which are defined for this equation
+   *
+   * \var bc_defs
+   * Pointers to the definitions of the boundary conditions
+   */
+
   cs_param_bc_type_t            default_bc;
   cs_param_bc_enforce_t         enforcement;
   int                           n_bc_defs;
   cs_xdef_t                   **bc_defs;
 
-  /* High-level structure to manage/monitor the resolution of this equation */
+  /*!
+   * @}
+   * @name Settings related to the resolution of the algebraic system
+   * @{
+   *
+   * \var solver_class
+   * Class of solver available to solve the algebraic system
+   *
+   * \var itsol_info
+   * Set of parameters to specify how to to solve the algebraic
+   * - iterative solver
+   * - preconditionner
+   * - tolerance...
+   */
+
   cs_equation_solver_class_t    solver_class;
   cs_param_itsol_t              itsol_info;
 
-  /* Time-dependent term parameters */
+  /*!
+   * @}
+   * @name Numerical settings for the time-dependent parameters
+   * @{
+   *
+   * \var time_hodge
+   * Set of parameters for the discrete Hodge operator related to the unsteady
+   * term
+   *
+   * \var time_property
+   * Pointer to the \ref cs_property_t structure related to the unsteady term
+   *
+   * \var time_scheme
+   * Type of numerical scheme used for the time discretization
+   *
+   * \var theta
+   * Value of the coefficient for a theta scheme (between 0 and 1)
+   *
+   * \var do_lumping
+   * Perform a mass lumping on the matrix related to the time discretization.
+   * - true or false
+   */
+
   cs_param_hodge_t              time_hodge;
   cs_property_t                *time_property;
   cs_param_time_scheme_t        time_scheme;
   cs_real_t                     theta;
   bool                          do_lumping;
 
-  /* Initial conditions (if non trivial, i.e. not zero everywhere) */
+  /*!
+   * @}
+   * @name Numerical settings for the time-dependent parameters
+   * @{
+   *
+   * \var n_ic_defs
+   * Number of definitions for setting the intial condition
+   *
+   * \var ic_defs
+   * List of pointers to the definition of the inititial condition
+   */
+
   int                           n_ic_defs;
   cs_xdef_t                   **ic_defs;
 
-  /* Diffusion term parameters */
+  /*!
+   * @}
+   * @name Numerical settings for the diffusion term
+   * @{
+   *
+   * \var diffusion_hodge
+   * Set of parameters for the discrete Hodge operator related to the diffusion
+   *
+   * \var diffusion_property
+   * Pointer to the property related to the diffusion term
+   */
+
   cs_param_hodge_t              diffusion_hodge;
   cs_property_t                *diffusion_property;
 
-  /* Advection term parameters */
+  /*!
+   * @}
+   * @name Numerical settings for the advection term
+   * @{
+   *
+   * \var adv_formulation
+   * Type of formulation (conservative, non-conservative...) for the advective
+   * term
+   *
+   * \var adv_scheme
+   * Numerical scheme used for the discretization of the advection term
+   *
+   * \var adv_field
+   * Pointer to the \cs_adv_field_t structure associated to the advection term
+   */
+
   cs_param_advection_form_t     adv_formulation;
   cs_param_advection_scheme_t   adv_scheme;
   cs_adv_field_t               *adv_field;
 
-  /* Reaction term parameters: Belong to the left-hand and/or
-     right-hand side according to the choice of time scheme */
+  /*!
+   * @}
+   * @name Numerical settings for the reaction term
+   * The contribution of a reaction term to the algebraic system is either at
+   * the left-hand and/or right-hand side according to the choice of time
+   * scheme
+   * @{
+   *
+   * \var reaction_hodge
+   * Set of parameters for the discrete Hodge operator related to the reaction
+   * terms
+   *
+   * \var n_reaction_terms
+   * Number of reaction terms to consider.
+   *
+   * \var reaction_properties
+   * List of properties associated to each reaction term
+   */
+
   cs_param_hodge_t              reaction_hodge;
   int                           n_reaction_terms;
   cs_property_t               **reaction_properties;
 
-  /* Parameters of source terms (Always belong to the right-hand side) */
+  /*!
+   * @}
+   * @name Definition of the related source terms
+   * The contribution of a source term to the algebraic system is always at
+   * right-hand side whatever is the choice of time scheme
+   * @{
+   *
+   * \var n_source_terms
+   * Number of source terms to consider.
+   *
+   * \var source_terms
+   * List of definition of each source term
+   */
+
   int                           n_source_terms;
   cs_xdef_t                   **source_terms;
+
+  /*! @} */
 
 } cs_equation_param_t;
 

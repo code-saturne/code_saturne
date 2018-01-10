@@ -45,23 +45,28 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * @defgroup gwf_flags Flags specifying the general behavior of the groundwater
- * flow module
- *
+ * @name Flags specifying the general behavior of the groundwater flow module
  * @{
+ *
+ * \def CS_GWF_GRAVITATION
+ * \brief Gravitation effects are taken into account in the Richards equation
+ *
+ * \def CS_GWF_RICHARDS_UNSTEADY
+ * \brief Richards equation is unsteady (unsatured behavior)
+ *
+ * \def CS_GWF_SOIL_PROPERTY_UNSTEADY
+ * \brief Physical properties related to soil behavior are time-dependent
+ *
+ * \def CS_GWF_SOIL_ALL_SATURATED
+ * \brief Several different hydraulic modeling can be considered. Set a special
+ *        flag if all soils are considered as saturated (a simpler treatment
+ *        can be performed in this case)
+ *
  */
 
-/*! Gravitation effects are taken into account in the Richards equation */
 #define CS_GWF_GRAVITATION               (1 << 0)
-
-/*! Richards equation is unsteady (unsatured behavior) */
 #define CS_GWF_RICHARDS_UNSTEADY         (1 << 1)
-
-/*! Physical properties related to soil behavior are time-dependent */
 #define CS_GWF_SOIL_PROPERTY_UNSTEADY    (1 << 2)
-
-/*! Several different hydraulic modeling can be considered. Set a special
-    flag if all soils are considered as saturated (simpler treatment) */
 #define CS_GWF_SOIL_ALL_SATURATED        (1 << 3)
 
 /*! @} */
@@ -278,7 +283,7 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
 /*!
  * \brief  Predefined post-processing output for the groundwater flow module
  *         prototype of this function is fixed since it is a function pointer
- *         defined in cs_post.h (cs_post_time_mesh_dep_output_t)
+ *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
  *
  * \param[in, out] input        pointer to a optional structure (here a
  *                              cs_gwf_t structure)
