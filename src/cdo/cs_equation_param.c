@@ -31,6 +31,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <ctype.h>
+#include <string.h>
 
 #if defined(HAVE_PETSC)
 #include <petscversion.h>
@@ -46,9 +48,13 @@
 #include <bft_error.h>
 #include <bft_mem.h>
 
+#include "cs_boundary_zone.h"
+#include "cs_cdo_bc.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
 #include "cs_multigrid.h"
+#include "cs_source_term.h"
+#include "cs_volume_zone.h"
 
 #if defined(HAVE_PETSC)
 #include "cs_sles_petsc.h"
@@ -72,27 +78,19 @@ BEGIN_C_DECLS
  * Local private variables
  *============================================================================*/
 
-/* Default initialization */
-static cs_equation_algo_t _algo_info_by_default = {
-#if defined(HAVE_PETSC)
-  CS_EQUATION_ALGO_PETSC_ITSOL, // Family of iterative solvers
-#else
-  CS_EQUATION_ALGO_CS_ITSOL,    // Family of iterative solvers
-#endif
-  0,                            // n_iters
-  50,                           // max. number of iterations
-  0,                            // n_cumulated_iters
-  10000,                        // max. number of cumulated iterations
-  1e-6                          // stopping criterion
-};
-
 static cs_param_itsol_t _itsol_info_by_default = {
+
   CS_PARAM_PRECOND_DIAG,  // preconditioner
-  CS_PARAM_ITSOL_BICG,      // iterative solver
+  CS_PARAM_ITSOL_BICG,    // iterative solver
   2500,                   // max. number of iterations
   1e-12,                  // stopping criterion on the accuracy
   false                   // normalization of the residual (true or false)
+
 };
+
+static const char _err_empty_eqp[] =
+  N_(" Stop setting an empty cs_equation_param_t structure.\n"
+     " Please check your settings.\n");
 
 /*============================================================================
  * Private function prototypes
@@ -303,6 +301,54 @@ _petsc_setup_hook(void   *context,
 
 #endif /* defined(HAVE_PETSC) */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the volume zone if from the zone name (If name = NULL or
+ *         has an empty length, all entities are selected)
+ *
+ * \param[in] z_name            name of the zone
+ *
+ * \return the id of the related zone
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline int
+_get_vzone_id(const char   *z_name)
+{
+  int z_id = 0;
+  if (z_name != NULL) {
+    if (strlen(z_name) > 0) {
+      const cs_volume_zone_t  *z = cs_volume_zone_by_name(z_name);
+      z_id = z->id;
+    }
+  }
+  return z_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the boundary zone if from the zone name (If name = NULL or
+ *         has an empty length, all entities are selected)
+ *
+ * \param[in] z_name            name of the zone
+ *
+ * \return the id of the related zone
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline int
+_get_bzone_id(const char   *z_name)
+{
+  int z_id = 0;
+  if (z_name != NULL) {
+    if (strlen(z_name) > 0) {
+      const cs_boundary_zone_t  *z = cs_boundary_zone_by_name(z_name);
+      z_id = z->id;
+    }
+  }
+  return z_id;
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -320,7 +366,7 @@ _petsc_setup_hook(void   *context,
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_param_create(cs_equation_type_t     type,
+cs_equation_create_param(cs_equation_type_t     type,
                          int                    dim,
                          cs_param_bc_type_t     default_bc)
 {
@@ -393,7 +439,7 @@ cs_equation_param_create(cs_equation_type_t     type,
   eqp->bc_defs = NULL;
 
   /* Settings for driving the linear algebra */
-  eqp->algo_info = _algo_info_by_default;
+  eqp->solver_class = CS_EQUATION_SOLVER_CLASS_CS;
   eqp->itsol_info = _itsol_info_by_default;
 
   return eqp;
@@ -410,7 +456,7 @@ cs_equation_param_create(cs_equation_type_t     type,
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_param_free(cs_equation_param_t     *eqp)
+cs_equation_free_param(cs_equation_param_t     *eqp)
 {
   if (eqp == NULL)
     return NULL;
@@ -458,6 +504,551 @@ cs_equation_param_free(cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a parameter attached to a keyname in a cs_equation_param_t
+ *         structure
+ *
+ * \param[in, out]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in]       key      key related to the member of eq to set
+ * \param[in]       keyval   accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_param(cs_equation_param_t   *eqp,
+                      cs_equation_key_t      key,
+                      const char            *keyval)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  if (eqp->flag & CS_EQUATION_LOCKED)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: The current equation is not modifiable anymore.\n"
+                " Please check your settings."), __func__);
+
+  /* Conversion of the string to lower case */
+  char val[CS_BASE_STRING_LEN];
+  for (size_t i = 0; i < strlen(keyval); i++)
+    val[i] = tolower(keyval[i]);
+  val[strlen(keyval)] = '\0';
+
+  switch(key) {
+
+  case CS_EQKEY_SPACE_SCHEME:
+    if (strcmp(val, "cdo_vb") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
+      eqp->space_poly_degree = 0;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
+    }
+    else if (strcmp(val, "cdo_vcb") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_CDOVCB;
+      eqp->space_poly_degree = 0;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_VC;
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
+    }
+    else if (strcmp(val, "cdo_fb") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
+      eqp->space_poly_degree = 0;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+    }
+    else if (strcmp(val, "hho_p0") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P0;
+      eqp->space_poly_degree = 0;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+    }
+    else if (strcmp(val, "hho_p1") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P1;
+      eqp->space_poly_degree = 1;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+    }
+    else if (strcmp(val, "hho_p2") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P2;
+      eqp->space_poly_degree = 2;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+    }
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid val %s related to key CS_EQKEY_SPACE_SCHEME\n"
+                  " Choice between cdo_vb or cdo_fb"), _val);
+    }
+    break;
+
+  case CS_EQKEY_HODGE_DIFF_ALGO:
+    if (strcmp(val,"cost") == 0)
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
+    else if (strcmp(val, "voronoi") == 0)
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    else if (strcmp(val, "wbs") == 0)
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+    else if (strcmp(val, "auto") == 0)
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_AUTO;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid val %s related to key CS_EQKEY_HODGE_DIFF_ALGO\n"
+                  " Choice between cost, wbs, auto or voronoi"), _val);
+    }
+    break;
+
+  case CS_EQKEY_HODGE_TIME_ALGO:
+    if (strcmp(val,"cost") == 0)
+      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
+    else if (strcmp(val, "voronoi") == 0)
+      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    else if (strcmp(val, "wbs") == 0)
+      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid val %s related to key CS_EQKEY_HODGE_TIME_ALGO\n"
+                  " Choice between cost, wbs, voronoi"), _val);
+    }
+    break;
+
+  case CS_EQKEY_HODGE_DIFF_COEF:
+    if (strcmp(val, "dga") == 0)
+      eqp->diffusion_hodge.coef = 1./3.;
+    else if (strcmp(val, "sushi") == 0)
+      eqp->diffusion_hodge.coef = 1./sqrt(3.);
+    else if (strcmp(val, "gcr") == 0)
+      eqp->diffusion_hodge.coef = 1.0;
+    else
+      eqp->diffusion_hodge.coef = atof(val);
+    break;
+
+  case CS_EQKEY_HODGE_TIME_COEF:
+    if (strcmp(val, "dga") == 0)
+      eqp->time_hodge.coef = 1./3.;
+    else if (strcmp(val, "sushi") == 0)
+      eqp->time_hodge.coef = 1./sqrt(3.);
+    else if (strcmp(val, "gcr") == 0)
+      eqp->time_hodge.coef = 1.0;
+    else
+      eqp->time_hodge.coef = atof(val);
+    break;
+
+  case CS_EQKEY_SOLVER_FAMILY:
+    if (strcmp(val, "cs") == 0)
+      eqp->solver_class = CS_EQUATION_SOLVER_CLASS_CS;
+    else if (strcmp(val, "petsc") == 0)
+      eqp->solver_class = CS_EQUATION_SOLVER_CLASS_PETSC;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid val %s related to key CS_EQKEY_SOLVER_FAMILY\n"
+                  " Choice between cs or petsc"), _val);
+    }
+    break;
+
+  case CS_EQKEY_PRECOND:
+    if (strcmp(val, "none") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_NONE;
+    else if (strcmp(val, "jacobi") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_DIAG;
+    else if (strcmp(val, "block_jacobi") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_BJACOB;
+    else if (strcmp(val, "poly1") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_POLY1;
+    else if (strcmp(val, "ssor") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_SSOR;
+    else if (strcmp(val, "ilu0") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_ILU0;
+    else if (strcmp(val, "icc0") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_ICC0;
+    else if (strcmp(val, "amg") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_AMG;
+    else if (strcmp(val, "as") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_AS;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid val %s related to key CS_EQKEY_PRECOND\n"
+                  " Choice between jacobi, block_jacobi, poly1, ssor, ilu0,\n"
+                  " icc0, amg or as"), _val);
+    }
+    break;
+
+  case CS_EQKEY_ITSOL:
+
+    if (strcmp(val, "jacobi") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_JACOBI;
+    else if (strcmp(val, "cg") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_CG;
+    else if (strcmp(val, "bicg") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_BICG;
+    else if (strcmp(val, "bicgstab2") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_BICGSTAB2;
+    else if (strcmp(val, "cr3") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_CR3;
+    else if (strcmp(val, "gmres") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_GMRES;
+    else if (strcmp(val, "amg") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_AMG;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid val %s related to key CS_EQKEY_ITSOL\n"
+                  " Choice between cg, bicg, bicgstab2, cr3, gmres or amg"),
+                _val);
+    }
+    break;
+
+  case CS_EQKEY_ITSOL_MAX_ITER:
+    eqp->itsol_info.n_max_iter = atoi(val);
+    break;
+
+  case CS_EQKEY_ITSOL_EPS:
+    eqp->itsol_info.eps = atof(val);
+    break;
+
+  case CS_EQKEY_ITSOL_RESNORM:
+    if (strcmp(val, "true") == 0)
+      eqp->itsol_info.resid_normalized = true;
+    else
+      eqp->itsol_info.resid_normalized = false;
+    break;
+
+  case CS_EQKEY_VERBOSITY: // "verbosity"
+    eqp->verbosity = atoi(val);
+    break;
+
+  case CS_EQKEY_SLES_VERBOSITY: // "verbosity" for SLES structures
+    eqp->sles_verbosity = atoi(val);
+    break;
+
+  case CS_EQKEY_BC_ENFORCEMENT:
+    if (strcmp(val, "strong") == 0)
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+    else if (strcmp(val, "penalization") == 0)
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
+    else if (strcmp(val, "weak_sym") == 0)
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
+    else if (strcmp(val, "weak") == 0)
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid value %s related to key CS_EQKEY_BC_ENFORCEMENT\n"
+                  " Choice between strong, penalization, weak or weak_sym."),
+                _val);
+    }
+    break;
+
+  case CS_EQKEY_BC_QUADRATURE:
+    {
+      cs_quadrature_type_t  qtype = CS_QUADRATURE_NONE;
+
+      if (strcmp(val, "bary") == 0)
+        qtype = CS_QUADRATURE_BARY;
+      else if (strcmp(val, "bary_subdiv") == 0)
+        qtype = CS_QUADRATURE_BARY_SUBDIV;
+      else if (strcmp(val, "higher") == 0)
+        qtype = CS_QUADRATURE_HIGHER;
+      else if (strcmp(val, "highest") == 0)
+        qtype = CS_QUADRATURE_HIGHEST;
+      else {
+        const char *_val = val;
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Invalid value \"%s\" for key CS_EQKEY_BC_QUADRATURE\n"
+                    " Valid choices are \"bary\", \"bary_subdiv\", \"higher\""
+                    " and \"highest\"."), _val);
+      }
+
+      for (int i = 0; i < eqp->n_bc_defs; i++)
+        cs_xdef_set_quadrature(eqp->bc_defs[i], qtype);
+
+    }
+    break;
+
+  case CS_EQKEY_EXTRA_OP:
+    if (strcmp(val, "peclet") == 0)
+      eqp->process_flag |= CS_EQUATION_POST_PECLET;
+    else if (strcmp(val, "upwind_coef") == 0)
+      eqp->process_flag |= CS_EQUATION_POST_UPWIND_COEF;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                (" Invalid value \"%s\" for CS_EQKEY_EXTRA_OP\n"
+                 " Valid keys are \"peclet\", or \"upwind_coef\"."), _val);
+    }
+    break;
+
+  case CS_EQKEY_ADV_FORMULATION:
+    if (strcmp(val, "conservative") == 0)
+      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
+    else if (strcmp(val, "non_conservative") == 0)
+      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid value \"%s\" for CS_EQKEY_ADV_FORMULATION\n"
+                  " Valid keys are \"conservative\" or \"non_conservative\"."),
+                _val);
+    }
+    break;
+
+  case CS_EQKEY_ADV_SCHEME:
+    if (strcmp(val, "upwind") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+    else if (strcmp(val, "samarskii") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SAMARSKII;
+    else if (strcmp(val, "sg") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
+    else if (strcmp(val, "centered") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
+    else if (strcmp(val, "cip") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid value \"%s\" for CS_EQKEY_ADV_SCHEME\n"
+                  " Valid choices are \"upwind\", \"samarskii\", \"sg\" or"
+                  " \"centered\"."), _val);
+    }
+    break;
+
+  case CS_EQKEY_TIME_SCHEME:
+    if (strcmp(val, "implicit") == 0) {
+      eqp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
+      eqp->theta = 1.;
+    }
+    else if (strcmp(val, "explicit") == 0) {
+      eqp->time_scheme = CS_TIME_SCHEME_EXPLICIT;
+      eqp->theta = 0.;
+    }
+    else if (strcmp(val, "crank_nicolson") == 0) {
+      eqp->time_scheme = CS_TIME_SCHEME_CRANKNICO;
+      eqp->theta = 0.5;
+    }
+    else if (strcmp(val, "theta_scheme") == 0)
+      eqp->time_scheme = CS_TIME_SCHEME_THETA;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
+                  " Valid choices are \"implicit\", \"explicit\","
+                  " \"crank_nicolson\", and \"theta_scheme\"."), _val);
+    }
+    break;
+
+  case CS_EQKEY_TIME_THETA:
+    eqp->theta = atof(val);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid key for setting an equation."));
+
+  } /* Switch on keys */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set parameters for initializing SLES structures used for the
+ *        resolution of the linear system.
+ *        Settings are related to this equation.
+ *
+ * \param[in]   eqname       pointer to an cs_equation_t structure
+ * \param[in]   eqp          pointer to a cs_equation_param_t struct.
+ * \param[in]   field_id     id of the cs_field_t struct. for this equation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_set_sles(const char               *eqname,
+                           cs_equation_param_t      *eqp,
+                           int                       field_id)
+{
+  const cs_param_itsol_t  itsol = eqp->itsol_info;
+
+  switch (eqp->solver_class) {
+  case CS_EQUATION_SOLVER_CLASS_CS:
+    {
+      int  poly_degree = 0; // by default: Jacobi preconditioner
+
+      if (itsol.precond == CS_PARAM_PRECOND_POLY1)
+        poly_degree = 1;
+      if (itsol.precond == CS_PARAM_PRECOND_NONE)
+        poly_degree = -1;
+
+      if (itsol.precond != CS_PARAM_PRECOND_POLY1 &&
+          itsol.precond != CS_PARAM_PRECOND_DIAG &&
+          itsol.precond != CS_PARAM_PRECOND_NONE)
+        bft_error(__FILE__, __LINE__, 0,
+                  " Incompatible preconditioner with Code_Saturne solvers.\n"
+                  " Please change your settings (try PETSc ?)");
+
+      switch (itsol.solver) { // Type of iterative solver
+
+      case CS_PARAM_ITSOL_JACOBI:
+        assert(poly_degree == -1);
+        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_JACOBI,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_CG:
+        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_PCG,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_BICG:
+        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_BICGSTAB,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_BICGSTAB2:
+        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_BICGSTAB2,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_CR3:
+        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_PCR3,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_GMRES:
+        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_GMRES,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_AMG:
+        {
+          cs_multigrid_t  *mg = cs_multigrid_define(field_id, NULL);
+
+          /* Advanced setup (default is specified inside the brackets) */
+          cs_multigrid_set_solver_options
+            (mg,
+             CS_SLES_JACOBI,   // descent smoother type (CS_SLES_PCG)
+             CS_SLES_JACOBI,   // ascent smoother type (CS_SLES_PCG)
+             CS_SLES_PCG,      // coarse solver type (CS_SLES_PCG)
+             itsol.n_max_iter, // n max cycles (100)
+             5,                // n max iter for descent (10)
+             5,                // n max iter for asscent (10)
+             1000,             // n max iter coarse solver (10000)
+             0,                // polynomial precond. degree descent (0)
+             0,                // polynomial precond. degree ascent (0)
+             0,                // polynomial precond. degree coarse (0)
+             1.0,    // precision multiplier descent (< 0 forces max iters)
+             1.0,    // precision multiplier ascent (< 0 forces max iters)
+             1);     // requested precision multiplier coarse (default 1)
+
+        }
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Undefined iterative solver for solving %s equation.\n"
+                    " Please modify your settings."), eqname);
+        break;
+      } // end of switch
+
+      /* Define the level of verbosity for SLES structure */
+      if (eqp->sles_verbosity > 3) {
+
+        cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
+        cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
+
+        cs_sles_it_set_plot_options(sles_it, eqname,
+                                    true);    /* use_iteration instead of
+                                                 wall clock time */
+
+      }
+
+    } // Solver provided by Code_Saturne
+    break;
+
+  case CS_EQUATION_SOLVER_CLASS_PETSC:
+    {
+#if defined(HAVE_PETSC)
+
+      /* Initialization must be called before setting options;
+         it does not need to be called before calling
+         cs_sles_petsc_define(), as this is handled automatically. */
+
+      PetscBool is_initialized;
+      PetscInitialized(&is_initialized);
+      if (is_initialized == PETSC_FALSE) {
+#if defined(HAVE_MPI)
+        PETSC_COMM_WORLD = cs_glob_mpi_comm;
+#endif
+        PetscInitializeNoArguments();
+      }
+
+      if (eqp->itsol_info.precond == CS_PARAM_PRECOND_SSOR ||
+          eqp->itsol_info.precond == CS_PARAM_PRECOND_ILU0 ||
+          eqp->itsol_info.precond == CS_PARAM_PRECOND_ICC0) {
+
+        if (cs_glob_n_ranks > 1)
+          bft_error(__FILE__, __LINE__, 0,
+                    " Incompatible PETSc settings for parallel run.\n");
+
+        cs_sles_petsc_define(field_id,
+                             NULL,
+                             MATSEQAIJ, // Warning SEQ not MPI
+                             _petsc_setup_hook,
+                             (void *)eqp);
+
+      }
+      else
+        cs_sles_petsc_define(field_id,
+                             NULL,
+                             MATMPIAIJ,
+                             _petsc_setup_hook,
+                             (void *)eqp);
+#else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" PETSC algorithms used to solve %s are not linked.\n"
+                  " Please install Code_Saturne with PETSc."), eqname);
+
+#endif // HAVE_PETSC
+    } // Solver provided by PETSc
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Algorithm requested to solve %s is not implemented yet.\n"
+                " Please modify your settings."), eqname);
+    break;
+
+  } // end switch on algorithms
+
+  /* Define the level of verbosity for SLES structure */
+  if (eqp->sles_verbosity > 1) {
+
+    cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
+
+    /* Set verbosity */
+    cs_sles_set_verbosity(sles, eqp->sles_verbosity);
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Summary of a cs_equation_param_t structure
  *
  * \param[in]  eqname   name of the related equation
@@ -466,7 +1057,7 @@ cs_equation_param_free(cs_equation_param_t     *eqp)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_summary(const char                  *eqname,
+cs_equation_summary_param(const char                  *eqname,
                           const cs_equation_param_t   *eqp)
 {
   if (eqp == NULL)
@@ -705,10 +1296,12 @@ cs_equation_param_summary(const char                  *eqname,
   const cs_param_itsol_t   itsol = eqp->itsol_info;
 
   cs_log_printf(CS_LOG_SETUP, "\n  <%s/Sparse.Linear.Algebra>", eqname);
-  if (eqp->algo_info.type == CS_EQUATION_ALGO_CS_ITSOL)
+
+  if (eqp->solver_class == CS_EQUATION_SOLVER_CLASS_CS)
     cs_log_printf(CS_LOG_SETUP, " Code_Saturne iterative solvers\n");
-  else if (eqp->algo_info.type == CS_EQUATION_ALGO_PETSC_ITSOL)
+  else if (eqp->solver_class == CS_EQUATION_SOLVER_CLASS_PETSC)
     cs_log_printf(CS_LOG_SETUP, " PETSc iterative solvers\n");
+
   cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.MaxIter     %d\n",
                 eqname, itsol.n_max_iter);
   cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Name        %s\n",
@@ -722,197 +1315,504 @@ cs_equation_param_summary(const char                  *eqname,
 
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set parameters for initializing SLES structures used for the
- *        resolution of the linear system.
- *        Settings are related to this equation.
+ * \brief  Define the initial condition for the unknown related to this equation
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here a constant value is set to all the entities belonging to the
+ *         given mesh location
  *
- * \param[in]   eqname       pointer to an cs_equation_t structure
- * \param[in]   eqp          pointer to a cs_equation_param_t struct.
- * \param[in]   field_id     id of the cs_field_t struct. for this equation
+ * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       z_name    name of the associated zone (if NULL or
+ *                            "" all cells are considered)
+ * \param[in]       val       pointer to the value
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_set_sles(const char                 *eqname,
-                           const cs_equation_param_t  *eqp,
-                           int                         field_id)
+cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
+                            const char             *z_name,
+                            cs_real_t              *val)
 {
-  const cs_equation_algo_t  algo = eqp->algo_info;
-  const cs_param_itsol_t  itsol = eqp->itsol_info;
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
-  switch (algo.type) {
-  case CS_EQUATION_ALGO_CS_ITSOL:
-    {
-      int  poly_degree = 0; // by default: Jacobi preconditioner
+  /* Add a new cs_xdef_t structure */
+  int z_id = _get_vzone_id(z_name);
 
-      if (itsol.precond == CS_PARAM_PRECOND_POLY1)
-        poly_degree = 1;
-      if (itsol.precond == CS_PARAM_PRECOND_NONE)
-        poly_degree = -1;
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
 
-      if (itsol.precond != CS_PARAM_PRECOND_POLY1 &&
-          itsol.precond != CS_PARAM_PRECOND_DIAG &&
-          itsol.precond != CS_PARAM_PRECOND_NONE)
-        bft_error(__FILE__, __LINE__, 0,
-                  " Incompatible preconditioner with Code_Saturne solvers.\n"
-                  " Please change your settings (try PETSc ?)");
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        eqp->dim,
+                                        z_id,
+                                        CS_FLAG_STATE_UNIFORM, // state flag
+                                        meta_flag,
+                                        val);
 
-      switch (itsol.solver) { // Type of iterative solver
+  int  new_id = eqp->n_ic_defs;
+  eqp->n_ic_defs += 1;
+  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
+  eqp->ic_defs[new_id] = d;
+}
 
-      case CS_PARAM_ITSOL_JACOBI:
-        assert(poly_degree == -1);
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
-                          NULL,
-                          CS_SLES_JACOBI,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_CG:
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
-                          NULL,
-                          CS_SLES_PCG,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_BICG:
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
-                          NULL,
-                          CS_SLES_BICGSTAB,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_BICGSTAB2:
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
-                          NULL,
-                          CS_SLES_BICGSTAB2,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_CR3:
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
-                          NULL,
-                          CS_SLES_PCR3,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_GMRES:
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
-                          NULL,
-                          CS_SLES_GMRES,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_AMG:
-        {
-          cs_multigrid_t  *mg = cs_multigrid_define(field_id, NULL);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the unknown related to this equation
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the value related to all the entities belonging to the
+ *         given mesh location is such that the integral over these cells
+ *         returns the requested quantity
+ *
+ * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       z_name    name of the associated zone (if NULL or
+ *                            "" all cells are considered)
+ * \param[in]       quantity  quantity to distribute over the mesh location
+ */
+/*----------------------------------------------------------------------------*/
 
-          /* Advanced setup (default is specified inside the brackets) */
-          cs_multigrid_set_solver_options
-            (mg,
-             CS_SLES_JACOBI,   // descent smoother type (CS_SLES_PCG)
-             CS_SLES_JACOBI,   // ascent smoother type (CS_SLES_PCG)
-             CS_SLES_PCG,      // coarse solver type (CS_SLES_PCG)
-             itsol.n_max_iter, // n max cycles (100)
-             5,                // n max iter for descent (10)
-             5,                // n max iter for asscent (10)
-             1000,             // n max iter coarse solver (10000)
-             0,                // polynomial precond. degree descent (0)
-             0,                // polynomial precond. degree ascent (0)
-             0,                // polynomial precond. degree coarse (0)
-             1.0,    // precision multiplier descent (< 0 forces max iters)
-             1.0,    // precision multiplier ascent (< 0 forces max iters)
-             1);     // requested precision multiplier coarse (default 1)
+void
+cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
+                          const char             *z_name,
+                          double                  quantity)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
-        }
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Undefined iterative solver for solving %s equation.\n"
-                    " Please modify your settings."), eqname);
-        break;
-      } // end of switch
+  /* Add a new cs_xdef_t structure */
+  int z_id = _get_vzone_id(z_name);
 
-      /* Define the level of verbosity for SLES structure */
-      if (eqp->sles_verbosity > 3) {
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
 
-        cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
-        cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_QOV,
+                                        eqp->dim,
+                                        z_id,
+                                        0, // state flag
+                                        meta_flag,
+                                        &quantity);
 
-        cs_sles_it_set_plot_options(sles_it, eqname,
-                                    true);    /* use_iteration instead of
-                                                 wall clock time */
+  int  new_id = eqp->n_ic_defs;
+  eqp->n_ic_defs += 1;
+  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
+  eqp->ic_defs[new_id] = d;
+}
 
-      }
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the unknown related to this
+ *         equation. This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set according to an analytical function
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
 
-    } // Solver provided by Code_Saturne
-    break;
+void
+cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
+                               const char             *z_name,
+                               cs_analytic_func_t     *analytic,
+                               void                   *input)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eqp);
 
-  case CS_EQUATION_ALGO_PETSC_ITSOL:
-    {
-#if defined(HAVE_PETSC)
+  /* Add a new cs_xdef_t structure */
+  int z_id = _get_vzone_id(z_name);
 
-      /* Initialization must be called before setting options;
-         it does not need to be called before calling
-         cs_sles_petsc_define(), as this is handled automatically. */
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
 
-      PetscBool is_initialized;
-      PetscInitialized(&is_initialized);
-      if (is_initialized == PETSC_FALSE) {
-#if defined(HAVE_MPI)
-        PETSC_COMM_WORLD = cs_glob_mpi_comm;
-#endif
-        PetscInitializeNoArguments();
-      }
+  cs_xdef_analytic_input_t  anai = {.func = analytic,
+                                    .input = input };
 
-      if (eqp->itsol_info.precond == CS_PARAM_PRECOND_SSOR ||
-          eqp->itsol_info.precond == CS_PARAM_PRECOND_ILU0 ||
-          eqp->itsol_info.precond == CS_PARAM_PRECOND_ICC0) {
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                        eqp->dim, z_id,
+                                        0, // state flag
+                                        meta_flag,
+                                        &anai);
 
-        if (cs_glob_n_ranks > 1)
-          bft_error(__FILE__, __LINE__, 0,
-                    " Incompatible PETSc settings for parallel run.\n");
+  int  new_id = eqp->n_ic_defs;
+  eqp->n_ic_defs += 1;
+  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
+  eqp->ic_defs[new_id] = d;
+}
 
-        cs_sles_petsc_define(field_id,
-                             NULL,
-                             MATSEQAIJ, // Warning SEQ not MPI
-                             _petsc_setup_hook,
-                             (void *)eqp);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the given equation structure
+ *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
+ *
+ * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       bc_type   type of boundary condition to add
+ * \param[in]       z_name    name of the related boundary zone
+ * \param[in]       values    pointer to a array storing the values
+ */
+/*----------------------------------------------------------------------------*/
 
-      }
-      else
-        cs_sles_petsc_define(field_id,
-                             NULL,
-                             MATMPIAIJ,
-                             _petsc_setup_hook,
-                             (void *)eqp);
-#else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" PETSC algorithms used to solve %s are not linked.\n"
-                  " Please install Code_Saturne with PETSc."), eqname);
+void
+cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
+                            const cs_param_bc_type_t     bc_type,
+                            const char                  *z_name,
+                            cs_real_t                   *values)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
-#endif // HAVE_PETSC
-    } // Solver provided by PETSc
-    break;
+  /* Add a new cs_xdef_t structure */
+  int  dim = eqp->dim;
+  if (bc_type == CS_PARAM_BC_NEUMANN||
+      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+    dim *= 3; // vector if scalar eq, tensor if vector eq.
+  else if (bc_type == CS_PARAM_BC_ROBIN)
+    dim *= 4;
 
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Algorithm requested to solve %s is not implemented yet.\n"
-                " Please modify your settings."), eqname);
-    break;
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                          dim,
+                                          _get_bzone_id(z_name),
+                                          CS_FLAG_STATE_UNIFORM, // state flag
+                                          cs_cdo_bc_get_flag(bc_type), // meta
+                                          (void *)values);
 
-  } // end switch on algorithms
+  int  new_id = eqp->n_bc_defs;
+  eqp->n_bc_defs += 1;
+  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  eqp->bc_defs[new_id] = d;
+}
 
-  /* Define the level of verbosity for SLES structure */
-  if (eqp->sles_verbosity > 1) {
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the given equation structure
+ *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
+ *
+ * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       bc_type   type of boundary condition to add
+ * \param[in]       z_name    name of the related boundary zone
+ * \param[in]       loc       information to know where are located values
+ * \param[in]       array     pointer to an array
+ * \param[in]       index     optional pointer to the array index
+ */
+/*----------------------------------------------------------------------------*/
 
-    cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
+void
+cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
+                            const cs_param_bc_type_t    bc_type,
+                            const char                 *z_name,
+                            cs_flag_t                   loc,
+                            cs_real_t                  *array,
+                            cs_lnum_t                  *index)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
-    /* Set verbosity */
-    cs_sles_set_verbosity(sles, eqp->sles_verbosity);
+  assert(cs_flag_test(loc, cs_flag_primal_face) ||
+         cs_flag_test(loc, cs_flag_primal_vtx));
 
-  }
+  /* Add a new cs_xdef_t structure */
+  cs_xdef_array_input_t  input = {.stride = eqp->dim,
+                                  .loc = loc,
+                                  .values = array,
+                                  .index = index };
 
+  cs_flag_t  state_flag = 0;
+  if (loc == cs_flag_primal_face)
+    state_flag = CS_FLAG_STATE_FACEWISE;
+
+  int dim = eqp->dim;
+  if (bc_type == CS_PARAM_BC_NEUMANN||
+      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+    dim *= 3; // vector if scalar eq, tensor if vector eq.
+  else if (bc_type == CS_PARAM_BC_ROBIN)
+    dim *= 4;
+
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
+                                          dim,
+                                          _get_bzone_id(z_name),
+                                          state_flag,
+                                          cs_cdo_bc_get_flag(bc_type), // meta
+                                          (void *)&input);
+
+  int  new_id = eqp->n_bc_defs;
+  eqp->n_bc_defs += 1;
+  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  eqp->bc_defs[new_id] = d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the given equation param structure
+ *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type   type of boundary condition to add
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function defining the value
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
+                               const cs_param_bc_type_t    bc_type,
+                               const char                 *z_name,
+                               cs_analytic_func_t         *analytic,
+                               void                       *input)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Add a new cs_xdef_t structure */
+  cs_xdef_analytic_input_t  anai = {.func = analytic,
+                                    .input = input };
+
+  int dim = eqp->dim;
+  if (bc_type == CS_PARAM_BC_NEUMANN||
+      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+    dim *= 3; // vector if scalar eq, tensor if vector eq.
+  else if (bc_type == CS_PARAM_BC_ROBIN)
+    dim *= 4;
+
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                          dim,
+                                          _get_bzone_id(z_name),
+                                          0, // state
+                                          cs_cdo_bc_get_flag(bc_type), // meta
+                                          &anai);
+
+  int  new_id = eqp->n_bc_defs;
+  eqp->n_bc_defs += 1;
+  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  eqp->bc_defs[new_id] = d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to store parameters related
+ *         to a diffusion term
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_diffusion(cs_equation_param_t   *eqp,
+                          cs_property_t         *property)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  assert(property != NULL);
+
+  eqp->flag |= CS_EQUATION_DIFFUSION;
+  eqp->diffusion_property = property;
+  cs_property_type_t  type = cs_property_get_type(eqp->diffusion_property);
+  if (type == CS_PROPERTY_ISO)
+    eqp->diffusion_hodge.is_iso = true;
+  else
+    eqp->diffusion_hodge.is_iso = false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to store parameters related
+ *         to an unsteady term
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_time(cs_equation_param_t   *eqp,
+                     cs_property_t         *property)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  assert(property != NULL);
+
+  eqp->flag |= CS_EQUATION_UNSTEADY;
+  eqp->time_property = property;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to store parameters related
+ *         to an advection term
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      adv_field  pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_advection(cs_equation_param_t   *eqp,
+                          cs_adv_field_t        *adv_field)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  assert(adv_field != NULL);
+
+  eqp->flag |= CS_EQUATION_CONVECTION;
+  eqp->adv_field = adv_field;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to store parameters related
+ *         to a reaction term
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ *
+ * \return the id related to the reaction term
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_add_reaction(cs_equation_param_t   *eqp,
+                         cs_property_t         *property)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Only this kind of reaction term is available up to now.
+     Add a new reaction term */
+  int  new_id = eqp->n_reaction_terms;
+  eqp->n_reaction_terms += 1;
+  BFT_REALLOC(eqp->reaction_properties, eqp->n_reaction_terms, cs_property_t *);
+  eqp->reaction_properties[new_id] = property;
+
+  /* Flag the equation with "reaction" */
+  eqp->flag |= CS_EQUATION_REACTION;
+
+  return new_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a new source term structure and initialize it by value
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or
+ *                            "" all cells are considered)
+ * \param[in]      val       pointer to the value
+ *
+ * \return a pointer to the new cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_source_term_by_val(cs_equation_param_t    *eqp,
+                                   const char             *z_name,
+                                   cs_real_t              *val)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = _get_vzone_id(z_name);
+
+  /* Define a flag according to the kind of space discretization */
+  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY | CS_FLAG_STATE_UNIFORM;
+  cs_flag_t  meta_flag = cs_source_term_set_default_flag(eqp->space_scheme);
+
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        eqp->dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        (void *)val);
+
+  int  new_id = eqp->n_source_terms;
+  eqp->n_source_terms += 1;
+  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
+  eqp->source_terms[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a new source term structure and initialize it by an analytical
+ *         function
+ *
+ * \param[in, out]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      ana       pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new cs_source_term_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
+                                        const char             *z_name,
+                                        cs_analytic_func_t     *ana,
+                                        void                   *input)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = _get_vzone_id(z_name);
+
+  /* Define a flag according to the kind of space discretization */
+  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
+  cs_flag_t  meta_flag = cs_source_term_set_default_flag(eqp->space_scheme);
+
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_analytic_input_t  anai = {.func = ana,
+                                    .input = input };
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                        eqp->dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        &anai);
+
+  /* Default setting for quadrature is different in this case */
+  cs_xdef_set_quadrature(d, CS_QUADRATURE_BARY_SUBDIV);
+
+  int  new_id = eqp->n_source_terms;
+  eqp->n_source_terms += 1;
+  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
+  eqp->source_terms[new_id] = d;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/

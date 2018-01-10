@@ -36,7 +36,6 @@
 #include "cs_param.h"
 #include "cs_mesh.h"
 #include "cs_time_step.h"
-#include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -51,36 +50,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 typedef struct _cs_equation_t cs_equation_t;
-
-/* List of available keys for setting an equation */
-typedef enum {
-
-  CS_EQKEY_ADV_FORMULATION,
-  CS_EQKEY_ADV_SCHEME,
-  CS_EQKEY_ADV_FLUX_QUADRA,
-  CS_EQKEY_BC_ENFORCEMENT,
-  CS_EQKEY_BC_QUADRATURE,
-  CS_EQKEY_EXTRA_OP,
-  CS_EQKEY_HODGE_DIFF_ALGO,
-  CS_EQKEY_HODGE_DIFF_COEF,
-  CS_EQKEY_HODGE_TIME_ALGO,
-  CS_EQKEY_HODGE_TIME_COEF,
-  CS_EQKEY_HODGE_REAC_ALGO,
-  CS_EQKEY_HODGE_REAC_COEF,
-  CS_EQKEY_ITSOL,
-  CS_EQKEY_ITSOL_EPS,
-  CS_EQKEY_ITSOL_MAX_ITER,
-  CS_EQKEY_ITSOL_RESNORM,
-  CS_EQKEY_PRECOND,
-  CS_EQKEY_SLES_VERBOSITY,
-  CS_EQKEY_SOLVER_FAMILY,
-  CS_EQKEY_SPACE_SCHEME,
-  CS_EQKEY_TIME_SCHEME,
-  CS_EQKEY_TIME_THETA,
-  CS_EQKEY_VERBOSITY,
-  CS_EQKEY_N_KEYS
-
-} cs_equation_key_t;
 
 /*============================================================================
  * Public function prototypes
@@ -113,17 +82,31 @@ cs_equation_by_name(const char    *eqname);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Find the cs_equation_param_t structure with name eqname
- *         Return NULL if not find
+ * \brief  Return the cs_equation_param_t structure associated to a
+ *         cs_equation_t structure thanks to the equation name
  *
- * \param[in]  eqname    name of the equation to find
+ * \param[in]  eqname       name of the equation
  *
- * \return a pointer to a cs_equation_param_t structure or NULL if not found
+ * \return a cs_equation_param_t structure or NULL if not found
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
 cs_equation_param_by_name(const char    *eqname);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the cs_equation_param_t structure associated to a
+ *         cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a cs_equation_param_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_equation_get_param(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -138,6 +121,99 @@ cs_equation_param_by_name(const char    *eqname);
 
 cs_equation_t *
 cs_equation_by_id(int   eq_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_is_steady(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the name related to the given cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a name or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_equation_get_name(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the id number related to the given cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return an id (0 ... n-1) or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_get_id(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the field structure associated to a cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a cs_field_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_equation_get_field(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the flag associated to an equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a flag (cs_flag_t type)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_equation_get_flag(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the cs_equation_builder_t structure associated to a
+ *         cs_equation_t structure. Only for an advanced usage.
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a cs_equation_builder_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_builder_t *
+cs_equation_get_builder(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a pointer to a structure useful to handle low-level
+ *         operations for the given equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a structure to cast on-the-fly or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_equation_get_scheme_context(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -236,218 +312,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a parameter in a cs_equation_t structure attached to keyname
- *
- * \param[in, out]  eq       pointer to a cs_equation_t structure
- * \param[in]       key      key related to the member of eq to set
- * \param[in]       keyval   accessor to the value to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_param(cs_equation_t       *eq,
-                      cs_equation_key_t    key,
-                      const char          *keyval);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Associate a material property or an advection field with an equation
- *         for a given term (diffusion, time, convection)
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       keyword   "time", "diffusion", "advection"
- * \param[in]       pointer   pointer to a given structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_link(cs_equation_t       *eq,
-                 const char          *keyword,
-                 void                *pointer);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the unknown related to this equation
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here a constant value is set to all the entities belonging to the
- *         given mesh location
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
- * \param[in]       val       pointer to the value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_ic_by_value(cs_equation_t    *eq,
-                            const char       *z_name,
-                            cs_real_t        *val);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the unknown related to this equation
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the value related to all the entities belonging to the
- *         given mesh location is such that the integral over these cells
- *         returns the requested quantity
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
- * \param[in]       quantity  quantity to distribute over the mesh location
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_ic_by_qov(cs_equation_t    *eq,
-                          const char       *z_name,
-                          double            quantity);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the unknown related to this equation
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set according to an analytical function
- *
- * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_ic_by_analytic(cs_equation_t        *eq,
-                               const char           *z_name,
-                               cs_analytic_func_t   *analytic,
-                               void                 *input);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       bc_type   type of boundary condition to add
- * \param[in]       z_name    name of the related boundary zone
- * \param[in]       values    pointer to a array storing the values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_bc_by_value(cs_equation_t              *eq,
-                            const cs_param_bc_type_t    bc_type,
-                            const char                 *z_name,
-                            cs_real_t                  *values);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       bc_type   type of boundary condition to add
- * \param[in]       z_name    name of the related boundary zone
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       index     optional pointer to the array index
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_bc_by_array(cs_equation_t              *eq,
-                            const cs_param_bc_type_t    bc_type,
-                            const char                 *z_name,
-                            cs_flag_t                   loc,
-                            cs_real_t                  *array,
-                            cs_lnum_t                  *index);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the given equation structure
- *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
- *
- * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      bc_type   type of boundary condition to add
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      analytic  pointer to an analytic function defining the value
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
-                               const cs_param_bc_type_t    bc_type,
-                               const char                 *z_name,
-                               cs_analytic_func_t         *analytic,
-                               void                       *input);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to a reaction term
- *
- * \param[in, out] eq         pointer to a cs_equation_t structure
- * \param[in]      property   pointer to a cs_property_t struct.
- *
- * \return the id related to the reaction term
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_equation_add_reaction(cs_equation_t   *eq,
-                         cs_property_t   *property);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a new source term structure and initialize it by value
- *
- * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
- * \param[in]      val       pointer to the value
- *
- * \return a pointer to the new cs_xdef_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_xdef_t *
-cs_equation_add_source_term_by_val(cs_equation_t   *eq,
-                                   const char      *z_name,
-                                   cs_real_t       *val);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a new source term structure and initialize it by an analytical
- *         function
- *
- * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      ana       pointer to an analytical function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- *
- * \return a pointer to the new cs_source_term_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_xdef_t *
-cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
-                                        const char           *z_name,
-                                        cs_analytic_func_t   *ana,
-                                        void                 *input);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Create a field structure related to all cs_equation_t structures
  */
 /*----------------------------------------------------------------------------*/
@@ -515,112 +379,6 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 
 void
 cs_equation_solve(cs_equation_t   *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return true is the given equation is steady otherwise false
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_equation_is_steady(const cs_equation_t    *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the name related to the given cs_equation_t structure
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a name or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_equation_get_name(const cs_equation_t    *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the id number related to the given cs_equation_t structure
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return an id (0 ... n-1) or -1 if not found
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_equation_get_id(const cs_equation_t    *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the field structure associated to a cs_equation_t structure
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a cs_field_t structure or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-cs_field_t *
-cs_equation_get_field(const cs_equation_t    *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the flag associated to an equation
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a flag (cs_flag_t type)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_flag_t
-cs_equation_get_flag(const cs_equation_t    *eq);
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the cs_equation_param_t structure associated to a
- *         cs_equation_t structure
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a cs_equation_param_t structure or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_equation_param_t *
-cs_equation_get_param(const cs_equation_t    *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the cs_equation_builder_t structure associated to a
- *         cs_equation_t structure. Only for an advanced usage.
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a cs_equation_builder_t structure or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_builder_t *
-cs_equation_get_builder(const cs_equation_t    *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return a pointer to a structure useful to handle low-level
- *         operations for the given equation
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a pointer to a structure to cast on-the-fly or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_equation_get_scheme_context(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

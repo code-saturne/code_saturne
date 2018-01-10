@@ -75,10 +75,7 @@ EXTRA_DIST =
 examplefiles = \
 cs_user_1d_wall_thermal.c \
 cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
-cs_user_cdo-condif.c \
-cs_user_cdo-groundwater.c \
 cs_user_cdo_extra_op-verif-diffusion.c \
-cs_user_cdo_numerics-examples.c \
 cs_user_coupling-saturne.c \
 cs_user_coupling-syrthes.c \
 cs_user_coupling.c \
@@ -86,6 +83,7 @@ cs_user_electric_scaling.c \
 cs_user_extra_operations-balance_by_zone.c \
 cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
+cs_user_gwf-example.c \
 cs_user_head_losses.c \
 cs_user_lagr_boundary_conditions.c \
 cs_user_lagr_volume_conditions.c \
@@ -100,8 +98,10 @@ cs_user_mesh-modify.c \
 cs_user_mesh-periodicity.c \
 cs_user_mesh-quality.c \
 cs_user_parameters-base.c \
+cs_user_parameters-cdo-condif.c \
 cs_user_parameters-ctwr.c \
 cs_user_parameters-fans.c \
+cs_user_parameters-cdo-gwf.c \
 cs_user_parameters-linear_solvers.c \
 cs_user_parameters-time_moments.c \
 cs_user_performance_tuning-matrix.c \
@@ -210,4 +210,3 @@ install-data-hook:
 	  $(SED) -e "N;s/$${stubvers}/$${version}/" < "$${file}" > "$${file}.tmp" && \
 	  mv "$${file}.tmp" "$${file}"; \
 	done
-

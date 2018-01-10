@@ -201,35 +201,27 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                        *m,
 
   /* Local activation of CDO module if required */
 
-  cs_domain_t  *domain = cs_glob_domain;
-  int cdo_activation_ini = cs_param_cdo_mode;
+  cs_domain_t  *domain = cs_domain_create();
+  cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_WITH_FV);
 
-  if (cdo_activation_ini == CS_PARAM_CDO_MODE_OFF) {
+  cs_mesh_deform_define_dirichlet_bc_zones(1, z_id);
 
-    cs_mesh_deform_define_dirichlet_bc_zones(1, z_id);
+  cs_mesh_deform_activate();
 
-    cs_param_cdo_mode = CS_PARAM_CDO_MODE_WITH_FV;
-    assert(cs_glob_domain == NULL);
+  cs_cdo_initialize_setup(domain);
 
-    cs_mesh_deform_activate();
+  cs_cdo_initialize_structures(domain, m, mq);
 
-    cs_cdo_initialize_setup();
-    domain = cs_glob_domain;
+  /* Deactive logging and visualization for deformation
+     fields, as they are reset to 0 anyways after extrusion */
 
-    cs_cdo_initialize_structures(m, mq);
-
-    /* Deactive logging and visualization for deformation
-       fields, as they are reset to 0 anyways after extrusion */
-
-    const char *eq_name[] = {"mesh_deform_x", "mesh_deform_y", "mesh_deform_z"};
-    for (int i = 0; i < 3; i++) {
-      cs_field_t *f = cs_field_by_name_try(eq_name[i]);
-      if (f != NULL) {
-        cs_field_set_key_int(f, cs_field_key_id("log"), 0);
-        cs_field_set_key_int(f, cs_field_key_id("post_vis"), 0);
-      }
+  const char *eq_name[] = {"mesh_deform_x", "mesh_deform_y", "mesh_deform_z"};
+  for (int i = 0; i < 3; i++) {
+    cs_field_t *f = cs_field_by_name_try(eq_name[i]);
+    if (f != NULL) {
+      cs_field_set_key_int(f, cs_field_key_id("log"), 0);
+      cs_field_set_key_int(f, cs_field_key_id("post_vis"), 0);
     }
-
   }
 
   /* Now prescribe displacement (invert extrusion direction) */
@@ -265,15 +257,11 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                        *m,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
 
-  CS_TIMER_COUNTER_ADD(time_count, cs_glob_domain->tcs, time_count);
+  CS_TIMER_COUNTER_ADD(time_count, domain->tcs, time_count);
 
-  if (cdo_activation_ini == CS_PARAM_CDO_MODE_OFF) {
-    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                  "<CDO> Total runtime", time_count.wall_nsec*1e-9);
-
-    cs_glob_domain = cs_domain_free(cs_glob_domain);
-    cs_param_cdo_mode = CS_PARAM_CDO_MODE_OFF;
-  }
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
+                "<CDO> Total runtime", time_count.wall_nsec*1e-9);
+  cs_domain_free(&domain);
 
   cs_mesh_extrude(m, e, interior_gc);
 

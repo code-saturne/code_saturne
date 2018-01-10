@@ -22,7 +22,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-/*-----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 /*!
   \page parameters Input of calculation parameters (C functions: cs_user_parameters.c)
@@ -56,6 +56,44 @@
   see \ref cs_stokes_model_t structure):
 
   \snippet cs_user_parameters-base.c param_stokes_model
+
+  \section cs_user_parameters_h_cs_user_model_cdo Base model for CDO/HHO schemes
+
+  CDO/HHO schemes can be activated within this function as follows:
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_activation
+
+  The definition of the domain boundaries for CDO/HHO schemes can be specified
+  as follows:
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_domain_boundary
+
+  The management of the level and frequency of details written by the code
+  can be specified for CDO/HHO schemes as follows:
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_domain_output
+
+  The management of the time step with CDO/HHO schemes can be specified as
+  follows:
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_time_step
+
+  The computation of the wall distance with CDO schemes is performed as follows:
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_wall_distance
+
+  The add of a user-defined equation solved by CDO/HHO schemes is specified as
+  follows:
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_equation
+
+  The add of a new user-defined property or a new user-defined advection field
+  with CDO/HHO schemes is specified as follows:
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_properties
+
+  \section cs_user_parameters_h_cs_user_parameters Define or modify general
+  numerical and physical user parameters
 
   \section cs_user_parameters_h_cs_user_linear_solvers  Linear solver related options
 

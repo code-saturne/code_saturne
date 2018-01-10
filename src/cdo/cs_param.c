@@ -80,13 +80,6 @@ cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
     N_("weak using the Nitsche method"),
     N_("weak using the symmetrized Nitsche method") };
 
-static const char
-cs_param_domain_boundary_name[CS_PARAM_N_BOUNDARY_TYPES][CS_BASE_STRING_LEN] =
-  { N_("domain_walls"),
-    N_("domain_inlets"),
-    N_("domain_outlets"),
-    N_("domain_symmetries") };
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -112,26 +105,6 @@ cs_param_get_bc_name(cs_param_bc_type_t  type)
     return NULL;
   else
     return cs_param_bc_type_name[type];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of the domain boundary condition
- *          This name is also used as a name for zone definition
- *
- * \param[in] type     type of boundary
- *
- * \return the associated boundary name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_get_boundary_domain_name(cs_param_boundary_type_t  type)
-{
-  if (type == CS_PARAM_N_BOUNDARY_TYPES)
-    return NULL;
-  else
-    return cs_param_domain_boundary_name[type];
 }
 
 /*----------------------------------------------------------------------------*/

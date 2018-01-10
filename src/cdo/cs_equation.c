@@ -47,7 +47,6 @@
 
 #include <bft_mem.h>
 
-#include "cs_boundary_zone.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
@@ -56,14 +55,11 @@
 #include "cs_evaluate.h"
 #include "cs_hho_scaleq.h"
 #include "cs_log.h"
-#include "cs_mesh_location.h"
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_range_set.h"
-#include "cs_source_term.h"
 #include "cs_sles.h"
 #include "cs_timer_stats.h"
-#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -390,54 +386,6 @@ static const char _err_empty_eq[] =
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the volume zone if from the zone name (If name = NULL or
- *         has an empty length, all entities are selected)
- *
- * \param[in] z_name            name of the zone
- *
- * \return the id of the related zone
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-_get_vzone_id(const char   *z_name)
-{
-  int z_id = 0;
-  if (z_name != NULL) {
-    if (strlen(z_name) > 0) {
-      const cs_volume_zone_t  *z = cs_volume_zone_by_name(z_name);
-      z_id = z->id;
-    }
-  }
-  return z_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the boundary zone if from the zone name (If name = NULL or
- *         has an empty length, all entities are selected)
- *
- * \param[in] z_name            name of the zone
- *
- * \return the id of the related zone
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-_get_bzone_id(const char   *z_name)
-{
-  int z_id = 0;
-  if (z_name != NULL) {
-    if (strlen(z_name) > 0) {
-      const cs_boundary_zone_t  *z = cs_boundary_zone_by_name(z_name);
-      z_id = z->id;
-    }
-  }
-  return z_id;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -805,12 +753,12 @@ cs_equation_by_name(const char    *eqname)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Find the cs_equation_param_t structure with name eqname
- *         Return NULL if not find
+ * \brief  Return the cs_equation_param_t structure associated to a
+ *         cs_equation_t structure thanks to the equation name
  *
- * \param[in]  eqname    name of the equation to find
+ * \param[in]  eqname       name of the equation
  *
- * \return a pointer to a cs_equation_param_t structure or NULL if not found
+ * \return a cs_equation_param_t structure or NULL if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -820,9 +768,36 @@ cs_equation_param_by_name(const char    *eqname)
   if (eqname == NULL)
     return NULL;
 
-  cs_equation_t  *eq = cs_equation_by_name(eqname);
+  else {
 
-  return eq->param;
+    cs_equation_t  *eq = cs_equation_by_name(eqname);
+
+    if (eq == NULL)
+      return NULL;
+    else
+      return eq->param;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the cs_equation_param_t structure associated to a
+ *         cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a cs_equation_param_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_equation_get_param(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else
+    return eq->param;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -843,6 +818,306 @@ cs_equation_by_id(int   eq_id)
     return NULL;
 
   return _equations[eq_id];
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the name related to the given cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a name or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_equation_get_name(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else
+    return eq->name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the id number related to the given cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return an id (0 ... n-1) or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_get_id(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return -1;
+  else
+    return eq->id;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the field structure associated to a cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a cs_field_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_equation_get_field(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else
+    return cs_field_by_id(eq->field_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the flag associated to an equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a flag (cs_flag_t type)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_equation_get_flag(const cs_equation_t    *eq)
+{
+  cs_flag_t  ret_flag = 0;
+
+  if (eq == NULL)
+    return ret_flag;
+
+  ret_flag = eq->param->flag;
+
+  return ret_flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the cs_equation_builder_t structure associated to a
+ *         cs_equation_t structure. Only for an advanced usage.
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a cs_equation_builder_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_builder_t *
+cs_equation_get_builder(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else
+    return eq->builder;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a pointer to a structure useful to handle low-level
+ *         operations for the given equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a structure to cast on-the-fly or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_equation_get_scheme_context(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else
+    return eq->scheme_context;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a pointer to the cs_property_t structure associated to the
+ *         diffusion term for this equation (NULL if not activated).
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_equation_get_diffusion_property(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else if (eq->param == NULL)
+    return NULL;
+  else
+    return eq->param->diffusion_property;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a pointer to the cs_property_t structure associated to the
+ *         unsteady term for this equation (NULL if not activated).
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_equation_get_time_property(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else if (eq->param == NULL)
+    return NULL;
+  else
+    return eq->param->time_property;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a pointer to the cs_property_t structure associated to the
+ *         reaction term called r_name and related to this equation
+ *
+ *
+ * \param[in]  eq            pointer to a cs_equation_t structure
+ * \param[in]  reaction_id   id related to this reaction term
+ *
+ * \return a pointer to a cs_property_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_equation_get_reaction_property(const cs_equation_t    *eq,
+                                  const int               reaction_id)
+{
+  if (eq == NULL)
+    return NULL;
+
+  const cs_equation_param_t  *eqp = eq->param;
+  if (reaction_id < 0 || reaction_id > eqp->n_reaction_terms - 1)
+    return NULL;
+
+  return eqp->reaction_properties[reaction_id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_is_steady(const cs_equation_t    *eq)
+{
+  bool  is_steady = true;
+
+  if (eq->param->flag & CS_EQUATION_UNSTEADY)
+    is_steady = false;
+
+  return is_steady;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the type of numerical scheme used for the discretization in
+ *         space
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  a cs_param_space_scheme_t variable
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_space_scheme_t
+cs_equation_get_space_scheme(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return CS_SPACE_N_SCHEMES;
+  else if (eq->param == NULL)
+    return CS_SPACE_N_SCHEMES;
+  else
+    return eq->param->space_scheme;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the max. degree used in the polynomial basis for the space
+ *         discretization
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  the polynomial order
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_get_space_poly_degree(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return -1;
+  else if (eq->param == NULL)
+    return -1;
+  else
+    return eq->param->space_poly_degree;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the dimension of the variable solved by this equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  an integer corresponding to the dimension of the variable
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_get_var_dim(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return 0;
+  else if (eq->param == NULL)
+    return 0;
+  else
+    return eq->param->dim;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the type of equation for the given equation structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  the type of the given equation
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_type_t
+cs_equation_get_type(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return CS_EQUATION_N_TYPES;
+  else if (eq->param == NULL)
+    return CS_EQUATION_N_TYPES;
+  else
+    return eq->param->type;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -920,7 +1195,7 @@ cs_equation_add(const char            *eqname,
   BFT_MALLOC(eq->varname, len, char);
   strncpy(eq->varname, varname, len);
 
-  eq->param = cs_equation_param_create(eqtype, dim, default_bc);
+  eq->param = cs_equation_create_param(eqtype, dim, default_bc);
 
   eq->field_id = -1;    // field is created in a second step
   eq->do_build = true;  // Force the construction of the algebraic system
@@ -1014,7 +1289,7 @@ cs_equation_destroy_all(void)
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
 
-    eq->param = cs_equation_param_free(eq->param);
+    eq->param = cs_equation_free_param(eq->param);
 
     /* Sanity check */
     assert(eq->matrix == NULL && eq->rhs == NULL);
@@ -1098,7 +1373,7 @@ cs_equation_log_setup(void)
                   eq->name, eq->varname);
     cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
-    cs_equation_param_summary(eq->name, eq->param);
+    cs_equation_summary_param(eq->name, eq->param);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
@@ -1417,843 +1692,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a parameter in a cs_equation_t structure attached to keyname
- *
- * \param[in, out]  eq       pointer to a cs_equation_t structure
- * \param[in]       key      key related to the member of eq to set
- * \param[in]       keyval   accessor to the value to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_param(cs_equation_t       *eq,
-                      cs_equation_key_t    key,
-                      const char          *keyval)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_start(eq->main_ts_id);
-
-  cs_equation_param_t  *eqp = eq->param;
-
-  if (eqp->flag & CS_EQUATION_LOCKED)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Equation %s is not modifiable anymore.\n"
-                " Please check your settings."), eq->name);
-
-  /* Conversion of the string to lower case */
-  char val[CS_BASE_STRING_LEN];
-  for (size_t i = 0; i < strlen(keyval); i++)
-    val[i] = tolower(keyval[i]);
-  val[strlen(keyval)] = '\0';
-
-  switch(key) {
-
-  case CS_EQKEY_SPACE_SCHEME:
-    if (strcmp(val, "cdo_vb") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
-      eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
-    }
-    else if (strcmp(val, "cdo_vcb") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_CDOVCB;
-      eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_VC;
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
-    }
-    else if (strcmp(val, "cdo_fb") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
-      eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
-    }
-    else if (strcmp(val, "hho_p0") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P0;
-      eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
-    }
-    else if (strcmp(val, "hho_p1") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P1;
-      eqp->space_poly_degree = 1;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
-    }
-    else if (strcmp(val, "hho_p2") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P2;
-      eqp->space_poly_degree = 2;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
-    }
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_SPACE_SCHEME\n"
-                  " Choice between cdo_vb or cdo_fb"), _val);
-    }
-    break;
-
-  case CS_EQKEY_HODGE_DIFF_ALGO:
-    if (strcmp(val,"cost") == 0)
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
-    else if (strcmp(val, "voronoi") == 0)
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-    else if (strcmp(val, "wbs") == 0)
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
-    else if (strcmp(val, "auto") == 0)
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_AUTO;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_HODGE_DIFF_ALGO\n"
-                  " Choice between cost, wbs, auto or voronoi"), _val);
-    }
-    break;
-
-  case CS_EQKEY_HODGE_TIME_ALGO:
-    if (strcmp(val,"cost") == 0)
-      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
-    else if (strcmp(val, "voronoi") == 0)
-      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-    else if (strcmp(val, "wbs") == 0)
-      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_HODGE_TIME_ALGO\n"
-                  " Choice between cost, wbs, voronoi"), _val);
-    }
-    break;
-
-  case CS_EQKEY_HODGE_DIFF_COEF:
-    if (strcmp(val, "dga") == 0)
-      eqp->diffusion_hodge.coef = 1./3.;
-    else if (strcmp(val, "sushi") == 0)
-      eqp->diffusion_hodge.coef = 1./sqrt(3.);
-    else if (strcmp(val, "gcr") == 0)
-      eqp->diffusion_hodge.coef = 1.0;
-    else
-      eqp->diffusion_hodge.coef = atof(val);
-    break;
-
-  case CS_EQKEY_HODGE_TIME_COEF:
-    if (strcmp(val, "dga") == 0)
-      eqp->time_hodge.coef = 1./3.;
-    else if (strcmp(val, "sushi") == 0)
-      eqp->time_hodge.coef = 1./sqrt(3.);
-    else if (strcmp(val, "gcr") == 0)
-      eqp->time_hodge.coef = 1.0;
-    else
-      eqp->time_hodge.coef = atof(val);
-    break;
-
-  case CS_EQKEY_SOLVER_FAMILY:
-    if (strcmp(val, "cs") == 0)
-      eqp->algo_info.type = CS_EQUATION_ALGO_CS_ITSOL;
-    else if (strcmp(val, "petsc") == 0)
-      eqp->algo_info.type = CS_EQUATION_ALGO_PETSC_ITSOL;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_SOLVER_FAMILY\n"
-                  " Choice between cs or petsc"), _val);
-    }
-    break;
-
-  case CS_EQKEY_PRECOND:
-    if (strcmp(val, "none") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_NONE;
-    else if (strcmp(val, "jacobi") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_DIAG;
-    else if (strcmp(val, "block_jacobi") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_BJACOB;
-    else if (strcmp(val, "poly1") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_POLY1;
-    else if (strcmp(val, "ssor") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_SSOR;
-    else if (strcmp(val, "ilu0") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_ILU0;
-    else if (strcmp(val, "icc0") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_ICC0;
-    else if (strcmp(val, "amg") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_AMG;
-    else if (strcmp(val, "as") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_AS;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_PRECOND\n"
-                  " Choice between jacobi, block_jacobi, poly1, ssor, ilu0,\n"
-                  " icc0, amg or as"), _val);
-    }
-    break;
-
-  case CS_EQKEY_ITSOL:
-
-    if (strcmp(val, "jacobi") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_JACOBI;
-    else if (strcmp(val, "cg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_CG;
-    else if (strcmp(val, "bicg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_BICG;
-    else if (strcmp(val, "bicgstab2") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_BICGSTAB2;
-    else if (strcmp(val, "cr3") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_CR3;
-    else if (strcmp(val, "gmres") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_GMRES;
-    else if (strcmp(val, "amg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_AMG;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_ITSOL\n"
-                  " Choice between cg, bicg, bicgstab2, cr3, gmres or amg"),
-                _val);
-    }
-    break;
-
-  case CS_EQKEY_ITSOL_MAX_ITER:
-    eqp->itsol_info.n_max_iter = atoi(val);
-    break;
-
-  case CS_EQKEY_ITSOL_EPS:
-    eqp->itsol_info.eps = atof(val);
-    break;
-
-  case CS_EQKEY_ITSOL_RESNORM:
-    if (strcmp(val, "true") == 0)
-      eqp->itsol_info.resid_normalized = true;
-    else
-      eqp->itsol_info.resid_normalized = false;
-    break;
-
-  case CS_EQKEY_VERBOSITY: // "verbosity"
-    eqp->verbosity = atoi(val);
-    break;
-
-  case CS_EQKEY_SLES_VERBOSITY: // "verbosity" for SLES structures
-    eqp->sles_verbosity = atoi(val);
-    break;
-
-  case CS_EQKEY_BC_ENFORCEMENT:
-    if (strcmp(val, "strong") == 0)
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
-    else if (strcmp(val, "penalization") == 0)
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
-    else if (strcmp(val, "weak_sym") == 0)
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
-    else if (strcmp(val, "weak") == 0)
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value %s related to key CS_EQKEY_BC_ENFORCEMENT\n"
-                  " Choice between strong, penalization, weak or weak_sym."),
-                _val);
-    }
-    break;
-
-  case CS_EQKEY_BC_QUADRATURE:
-    {
-      cs_quadrature_type_t  qtype = CS_QUADRATURE_NONE;
-
-      if (strcmp(val, "bary") == 0)
-        qtype = CS_QUADRATURE_BARY;
-      else if (strcmp(val, "bary_subdiv") == 0)
-        qtype = CS_QUADRATURE_BARY_SUBDIV;
-      else if (strcmp(val, "higher") == 0)
-        qtype = CS_QUADRATURE_HIGHER;
-      else if (strcmp(val, "highest") == 0)
-        qtype = CS_QUADRATURE_HIGHEST;
-      else {
-        const char *_val = val;
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Invalid value \"%s\" for key CS_EQKEY_BC_QUADRATURE\n"
-                    " Valid choices are \"bary\", \"bary_subdiv\", \"higher\""
-                    " and \"highest\"."), _val);
-      }
-
-      for (int i = 0; i < eqp->n_bc_defs; i++)
-        cs_xdef_set_quadrature(eqp->bc_defs[i], qtype);
-
-    }
-    break;
-
-  case CS_EQKEY_EXTRA_OP:
-    if (strcmp(val, "peclet") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_PECLET;
-    else if (strcmp(val, "upwind_coef") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_UPWIND_COEF;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                (" Invalid value \"%s\" for CS_EQKEY_EXTRA_OP\n"
-                 " Valid keys are \"peclet\", or \"upwind_coef\"."), _val);
-    }
-    break;
-
-  case CS_EQKEY_ADV_FORMULATION:
-    if (strcmp(val, "conservative") == 0)
-      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
-    else if (strcmp(val, "non_conservative") == 0)
-      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value \"%s\" for CS_EQKEY_ADV_FORMULATION\n"
-                  " Valid keys are \"conservative\" or \"non_conservative\"."),
-                _val);
-    }
-    break;
-
-  case CS_EQKEY_ADV_SCHEME:
-    if (strcmp(val, "upwind") == 0)
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
-    else if (strcmp(val, "samarskii") == 0)
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SAMARSKII;
-    else if (strcmp(val, "sg") == 0)
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
-    else if (strcmp(val, "centered") == 0)
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
-    else if (strcmp(val, "cip") == 0)
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value \"%s\" for CS_EQKEY_ADV_SCHEME\n"
-                  " Valid choices are \"upwind\", \"samarskii\", \"sg\" or"
-                  " \"centered\"."), _val);
-    }
-    break;
-
-  case CS_EQKEY_TIME_SCHEME:
-    if (strcmp(val, "implicit") == 0) {
-      eqp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
-      eqp->theta = 1.;
-    }
-    else if (strcmp(val, "explicit") == 0) {
-      eqp->time_scheme = CS_TIME_SCHEME_EXPLICIT;
-      eqp->theta = 0.;
-    }
-    else if (strcmp(val, "crank_nicolson") == 0) {
-      eqp->time_scheme = CS_TIME_SCHEME_CRANKNICO;
-      eqp->theta = 0.5;
-    }
-    else if (strcmp(val, "theta_scheme") == 0)
-      eqp->time_scheme = CS_TIME_SCHEME_THETA;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
-                  " Valid choices are \"implicit\", \"explicit\","
-                  " \"crank_nicolson\", and \"theta_scheme\"."), _val);
-    }
-    break;
-
-  case CS_EQKEY_TIME_THETA:
-    eqp->theta = atof(val);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting an equation."));
-
-  } /* Switch on keys */
-
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_stop(eq->main_ts_id);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Associate a material property or an advection field with an equation
- *         for a given term (diffusion, time, convection)
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       keyword   "time", "diffusion", "advection"
- * \param[in]       pointer   pointer to a given structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_link(cs_equation_t       *eq,
-                 const char          *keyword,
-                 void                *pointer)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-
-  cs_equation_param_t  *eqp = eq->param;
-
-  if (strcmp("diffusion", keyword) == 0) {
-
-    eqp->flag |= CS_EQUATION_DIFFUSION;
-    eqp->diffusion_property = (cs_property_t *)pointer;
-    cs_property_type_t  type = cs_property_get_type(eqp->diffusion_property);
-    if (type == CS_PROPERTY_ISO)
-      eqp->diffusion_hodge.is_iso = true;
-    else
-      eqp->diffusion_hodge.is_iso = false;
-
-  }
-  else if (strcmp("time", keyword) == 0) {
-
-    eqp->flag |= CS_EQUATION_UNSTEADY;
-    eqp->time_property = (cs_property_t *)pointer;
-
-  }
-  else if (strcmp("advection", keyword) == 0) {
-
-    eqp->flag |= CS_EQUATION_CONVECTION;
-    eqp->adv_field = (cs_adv_field_t *)pointer;
-
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid keyword for linking an equation.\n"
-                " Current value: \"%s\"\n"
-                " Valid choices: \"diffusion\", \"time\", \"advection\"."),
-              keyword);
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the unknown related to this equation
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here a constant value is set to all the entities belonging to the
- *         given mesh location
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
- * \param[in]       val       pointer to the value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_ic_by_value(cs_equation_t    *eq,
-                            const char       *z_name,
-                            cs_real_t        *val)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-
-  /* Add a new cs_xdef_t structure */
-  cs_equation_param_t  *eqp = eq->param;
-  int z_id = _get_vzone_id(z_name);
-
-  cs_flag_t  meta_flag = 0;
-  if (z_id == 0)
-    meta_flag |= CS_FLAG_FULL_LOC;
-
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        eqp->dim, z_id,
-                                        CS_FLAG_STATE_UNIFORM, // state flag
-                                        meta_flag,
-                                        val);
-
-  int  new_id = eqp->n_ic_defs;
-  eqp->n_ic_defs += 1;
-  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
-  eqp->ic_defs[new_id] = d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the unknown related to this equation
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the value related to all the entities belonging to the
- *         given mesh location is such that the integral over these cells
- *         returns the requested quantity
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
- * \param[in]       quantity  quantity to distribute over the mesh location
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_ic_by_qov(cs_equation_t    *eq,
-                          const char       *z_name,
-                          double            quantity)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-
-  /* Add a new cs_xdef_t structure */
-  cs_equation_param_t  *eqp = eq->param;
-  int z_id = _get_vzone_id(z_name);
-
-  cs_flag_t  meta_flag = 0;
-  if (z_id == 0)
-    meta_flag |= CS_FLAG_FULL_LOC;
-
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_QOV,
-                                        eqp->dim, z_id,
-                                        0, // state flag
-                                        meta_flag,
-                                        &quantity);
-
-  int  new_id = eqp->n_ic_defs;
-  eqp->n_ic_defs += 1;
-  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
-  eqp->ic_defs[new_id] = d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the unknown related to this equation
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set according to an analytical function
- *
- * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input     pointer to a structure cast on-the-fly (may be NULL)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_ic_by_analytic(cs_equation_t        *eq,
-                               const char           *z_name,
-                               cs_analytic_func_t   *analytic,
-                               void                 *input)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-
-  /* Add a new cs_xdef_t structure */
-  cs_equation_param_t  *eqp = eq->param;
-  int z_id = _get_vzone_id(z_name);
-
-  cs_flag_t  meta_flag = 0;
-  if (z_id == 0)
-    meta_flag |= CS_FLAG_FULL_LOC;
-
-  cs_xdef_analytic_input_t  anai = {.func = analytic,
-                                    .input = input };
-
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                        eqp->dim, z_id,
-                                        0, // state flag
-                                        meta_flag,
-                                        &anai);
-
-  int  new_id = eqp->n_ic_defs;
-  eqp->n_ic_defs += 1;
-  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
-  eqp->ic_defs[new_id] = d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       bc_type   type of boundary condition to add
- * \param[in]       z_name    name of the related boundary zone
- * \param[in]       values    pointer to a array storing the values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_bc_by_value(cs_equation_t              *eq,
-                            const cs_param_bc_type_t    bc_type,
-                            const char                 *z_name,
-                            cs_real_t                  *values)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-
-  /* Add a new cs_xdef_t structure */
-  cs_equation_param_t  *eqp = eq->param;
-
-  int dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN||
-      bc_type == CS_PARAM_BC_HMG_NEUMANN)
-    dim *= 3; // vector if scalar eq, tensor if vector eq.
-  else if (bc_type == CS_PARAM_BC_ROBIN)
-    dim *= 4;
-
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                          dim,
-                                          _get_bzone_id(z_name),
-                                          CS_FLAG_STATE_UNIFORM, // state flag
-                                          cs_cdo_bc_get_flag(bc_type), // meta
-                                          (void *)values);
-
-  int  new_id = eqp->n_bc_defs;
-  eqp->n_bc_defs += 1;
-  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
-  eqp->bc_defs[new_id] = d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       bc_type   type of boundary condition to add
- * \param[in]       z_name    name of the related boundary zone
- * \param[in]       loc       information to know where are located values
- * \param[in]       array     pointer to an array
- * \param[in]       index     optional pointer to the array index
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_bc_by_array(cs_equation_t              *eq,
-                            const cs_param_bc_type_t    bc_type,
-                            const char                 *z_name,
-                            cs_flag_t                   loc,
-                            cs_real_t                  *array,
-                            cs_lnum_t                  *index)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-  assert(cs_flag_test(loc, cs_flag_primal_face) ||
-         cs_flag_test(loc, cs_flag_primal_vtx));
-
-  /* Add a new cs_xdef_t structure */
-  cs_equation_param_t  *eqp = eq->param;
-
-  cs_xdef_array_input_t  input = {.stride = eqp->dim,
-                                  .loc = loc,
-                                  .values = array,
-                                  .index = index };
-
-  cs_flag_t  state_flag = 0;
-  if (loc == cs_flag_primal_face)
-    state_flag = CS_FLAG_STATE_FACEWISE;
-
-  int dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN||
-      bc_type == CS_PARAM_BC_HMG_NEUMANN)
-    dim *= 3; // vector if scalar eq, tensor if vector eq.
-  else if (bc_type == CS_PARAM_BC_ROBIN)
-    dim *= 4;
-
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
-                                          dim,
-                                          _get_bzone_id(z_name),
-                                          state_flag,
-                                          cs_cdo_bc_get_flag(bc_type), // meta
-                                          (void *)&input);
-
-  int  new_id = eqp->n_bc_defs;
-  eqp->n_bc_defs += 1;
-  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
-  eqp->bc_defs[new_id] = d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the given equation structure
- *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
- *
- * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      bc_type   type of boundary condition to add
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      analytic  pointer to an analytic function defining the value
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
-                               const cs_param_bc_type_t    bc_type,
-                               const char                 *z_name,
-                               cs_analytic_func_t         *analytic,
-                               void                       *input)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-
-  /* Add a new cs_xdef_t structure */
-  cs_equation_param_t  *eqp = eq->param;
-  cs_xdef_analytic_input_t  anai = {.func = analytic,
-                                    .input = input };
-
-  int dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN||
-      bc_type == CS_PARAM_BC_HMG_NEUMANN)
-    dim *= 3; // vector if scalar eq, tensor if vector eq.
-  else if (bc_type == CS_PARAM_BC_ROBIN)
-    dim *= 4;
-
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                          dim,
-                                          _get_bzone_id(z_name),
-                                          0, // state
-                                          cs_cdo_bc_get_flag(bc_type), // meta
-                                          &anai);
-
-  int  new_id = eqp->n_bc_defs;
-  eqp->n_bc_defs += 1;
-  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
-  eqp->bc_defs[new_id] = d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to a reaction term
- *
- * \param[in, out] eq         pointer to a cs_equation_t structure
- * \param[in]      property   pointer to a cs_property_t structure
- *
- * \return the id related to the reaction term
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_equation_add_reaction(cs_equation_t   *eq,
-                         cs_property_t   *property)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-
-  /* Only this kind of reaction term is available up to now.
-     Add a new reaction term */
-  cs_equation_param_t  *eqp = eq->param;
-  int  new_id = eqp->n_reaction_terms;
-  eqp->n_reaction_terms += 1;
-  BFT_REALLOC(eqp->reaction_properties, eqp->n_reaction_terms, cs_property_t *);
-  eqp->reaction_properties[new_id] = property;
-
-  /* Flag the equation with "reaction" */
-  eqp->flag |= CS_EQUATION_REACTION;
-
-  return new_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a new source term structure and initialize it by value
- *
- * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
- * \param[in]      val       pointer to the value
- *
- * \return a pointer to the new cs_xdef_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_xdef_t *
-cs_equation_add_source_term_by_val(cs_equation_t   *eq,
-                                   const char      *z_name,
-                                   cs_real_t       *val)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-
-  /* Add a new cs_xdef_t structure */
-  cs_equation_param_t  *eqp = eq->param;
-  int z_id = _get_vzone_id(z_name);
-
-  /* Define a flag according to the kind of space discretization */
-  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY | CS_FLAG_STATE_UNIFORM;
-  cs_flag_t  meta_flag = cs_source_term_set_default_flag(eqp->space_scheme);
-
-  if (z_id == 0)
-    meta_flag |= CS_FLAG_FULL_LOC;
-
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        eqp->dim,
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        (void *)val);
-
-  int  new_id = eqp->n_source_terms;
-  eqp->n_source_terms += 1;
-  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
-  eqp->source_terms[new_id] = d;
-
-  return d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a new source term structure and initialize it by an analytical
- *         function
- *
- * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      ana       pointer to an analytical function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- *
- * \return a pointer to the new cs_source_term_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_xdef_t *
-cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
-                                        const char           *z_name,
-                                        cs_analytic_func_t   *ana,
-                                        void                 *input)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-
-  /* Add a new cs_xdef_t structure */
-  cs_equation_param_t  *eqp = eq->param;
-  int z_id = _get_vzone_id(z_name);
-
-  /* Define a flag according to the kind of space discretization */
-  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
-  cs_flag_t  meta_flag = cs_source_term_set_default_flag(eqp->space_scheme);
-
-  if (z_id == 0)
-    meta_flag |= CS_FLAG_FULL_LOC;
-
-  cs_xdef_analytic_input_t  anai = {.func = ana,
-                                    .input = input };
-
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                        eqp->dim,
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        &anai);
-
-  /* Default setting for quadrature is different in this case */
-  cs_xdef_set_quadrature(d, CS_QUADRATURE_BARY_SUBDIV);
-
-  int  new_id = eqp->n_source_terms;
-  eqp->n_source_terms += 1;
-  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
-  eqp->source_terms[new_id] = d;
-
-  return d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Create a field structure related to all cs_equation_t structures
  */
 /*----------------------------------------------------------------------------*/
@@ -2390,7 +1828,10 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 bool
 cs_equation_needs_build(const cs_equation_t    *eq)
 {
-  return eq->do_build;
+  if (eq == NULL)
+    return false;
+  else
+    return eq->do_build;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2410,6 +1851,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
                          double                      dt_cur,
                          cs_equation_t              *eq)
 {
+  assert(eq != NULL);
   CS_UNUSED(time_step);
 
   const cs_field_t  *fld = cs_field_by_id(eq->field_id);
@@ -2515,13 +1957,14 @@ cs_equation_solve(cs_equation_t   *eq)
                   eq->name, code, n_iters, residual, nnz);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
-    cs_dbg_darray_to_listing("EQ.AFTER.SOLVE >> X", size, x, 9);
-    cs_dbg_darray_to_listing("EQ.SOLVE >> RHS", size, b, 9);
+    cs_dbg_darray_to_listing("EQ %s: AFTER.SOLVE >> X", eq->name, size, x, 9);
+    cs_dbg_darray_to_listing("EQ %s: SOLVE >> RHS", eq->name, size, b, 9);
 #if CS_EQUATION_DBG > 2
-    cs_dbg_iarray_to_listing("ROW_INDEX", size + 1, row_index, 9);
-    cs_dbg_iarray_to_listing("COLUMN_ID", nnz, col_id, 9);
-    cs_dbg_darray_to_listing("D_VAL", size, d_val, 9);
-    cs_dbg_darray_to_listing("X_VAL", nnz, x_val, 9);
+    cs_dbg_iarray_to_listing("EQ %s: ROW_INDEX",
+                             eq->name, size + 1, row_index, 9);
+    cs_dbg_iarray_to_listing("EQ %s: COLUMN_ID", eq->name, nnz, col_id, 9);
+    cs_dbg_darray_to_listing("EQ %s: D_VAL", eq->name, size, d_val, 9);
+    cs_dbg_darray_to_listing("EQ %s: X_VAL", eq->name, nnz, x_val, 9);
 #endif
 #endif
   }
@@ -2569,312 +2012,6 @@ cs_equation_solve(cs_equation_t   *eq)
   BFT_FREE(eq->rhs);
   cs_sles_free(sles);
   cs_matrix_destroy(&(eq->matrix));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return true is the given equation is steady otherwise false
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_equation_is_steady(const cs_equation_t    *eq)
-{
-  bool  is_steady = true;
-
-  if (eq->param->flag & CS_EQUATION_UNSTEADY)
-    is_steady = false;
-
-  return is_steady;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the name related to the given cs_equation_t structure
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a name or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_equation_get_name(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return NULL;
-  else
-    return eq->name;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the id number related to the given cs_equation_t structure
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return an id (0 ... n-1) or -1 if not found
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_equation_get_id(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return -1;
-  else
-    return eq->id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the field structure associated to a cs_equation_t structure
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a cs_field_t structure or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-cs_field_t *
-cs_equation_get_field(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return NULL;
-  else
-    return cs_field_by_id(eq->field_id);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the flag associated to an equation
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a flag (cs_flag_t type)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_flag_t
-cs_equation_get_flag(const cs_equation_t    *eq)
-{
-  cs_flag_t  ret_flag = 0;
-
-  if (eq == NULL)
-    return ret_flag;
-
-  ret_flag = eq->param->flag;
-
-  return ret_flag;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the cs_equation_param_t structure associated to a
- *         cs_equation_t structure
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a cs_equation_param_t structure or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_equation_param_t *
-cs_equation_get_param(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return NULL;
-  else
-    return eq->param;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the cs_equation_builder_t structure associated to a
- *         cs_equation_t structure. Only for an advanced usage.
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a cs_equation_builder_t structure or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_builder_t *
-cs_equation_get_builder(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return NULL;
-  else
-    return eq->builder;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return a pointer to a structure useful to handle low-level
- *         operations for the given equation
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a pointer to a structure to cast on-the-fly or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_equation_get_scheme_context(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return NULL;
-  else
-    return eq->scheme_context;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return a pointer to the cs_property_t structure associated to the
- *         diffusion term for this equation (NULL if not activated).
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a pointer to a cs_property_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_property_t *
-cs_equation_get_diffusion_property(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return NULL;
-  else
-    return eq->param->diffusion_property;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return a pointer to the cs_property_t structure associated to the
- *         unsteady term for this equation (NULL if not activated).
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return a pointer to a cs_property_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_property_t *
-cs_equation_get_time_property(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return NULL;
-  else
-    return eq->param->time_property;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return a pointer to the cs_property_t structure associated to the
- *         reaction term called r_name and related to this equation
- *
- *
- * \param[in]  eq            pointer to a cs_equation_t structure
- * \param[in]  reaction_id   id related to this reaction term
- *
- * \return a pointer to a cs_property_t structure or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-cs_property_t *
-cs_equation_get_reaction_property(const cs_equation_t    *eq,
-                                  const int               reaction_id)
-{
-  if (eq == NULL)
-    return NULL;
-
-  const cs_equation_param_t  *eqp = eq->param;
-  if (reaction_id < 0 || reaction_id > eqp->n_reaction_terms - 1)
-    return NULL;
-
-  return eqp->reaction_properties[reaction_id];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the type of numerical scheme used for the discretization in
- *         space
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return  a cs_param_space_scheme_t variable
- */
-/*----------------------------------------------------------------------------*/
-
-cs_param_space_scheme_t
-cs_equation_get_space_scheme(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return CS_SPACE_N_SCHEMES;
-  else
-    return eq->param->space_scheme;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the max. degree used in the polynomial basis for the space
- *         discretization
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return  the polynomial order
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_equation_get_space_poly_degree(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return -1;
-  else
-    return eq->param->space_poly_degree;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the dimension of the variable solved by this equation
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return  an integer corresponding to the dimension of the variable
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_equation_get_var_dim(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return 0;
-  else
-    return eq->param->dim;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return the type of equation for the given equation structure
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return  the type of the given equation
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_type_t
-cs_equation_get_type(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return CS_EQUATION_N_TYPES;
-  else
-    return eq->param->type;
 }
 
 /*----------------------------------------------------------------------------*/

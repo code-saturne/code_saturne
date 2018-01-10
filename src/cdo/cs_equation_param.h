@@ -68,34 +68,25 @@ typedef enum {
 
 } cs_equation_type_t;
 
-/* Type of algorithm to get the solution of an equation */
+/*! \enum cs_equation_solver_class_t
+ *  \brief Class of iterative solvers to consider for solver the linear system
+ *
+ * \var CS_EQUATION_SOLVER_CLASS_CS
+ * Iterative solvers available in Code_Saturne
+ *
+ * \var CS_EQUATION_SOLVER_CLASS_PETSC
+ * Solvers available in Code_Saturne
+ *
+ * \var CS_EQUATION_SOLVER_N_CLASSES
+ */
+
 typedef enum {
 
-  CS_EQUATION_ALGO_CS_ITSOL,    /* Used an iterative solver
-                                   defined by Code_Saturne */
-  CS_EQUATION_ALGO_PETSC_ITSOL, /* Used an iterative solver
-                                   defined by PETSc */
-  CS_EQUATION_ALGO_UZAWA,       // To solve sadle-point system
-  CS_EQUATION_ALGO_NEWTON,      // To solve non-linear system
-  CS_EQUATION_ALGO_PICARD,      // To solve non-linear system
-  CS_EQUATION_N_ALGOS
+  CS_EQUATION_SOLVER_CLASS_CS,
+  CS_EQUATION_SOLVER_CLASS_PETSC,
+  CS_EQUATION_N_CLASSES
 
-} cs_equation_algo_type_t;
-
-/* Description of the algorithm used to solve an equation.
-   In case of non-linearity for instance */
-typedef struct {
-
-  cs_equation_algo_type_t   type;
-
-  int     n_iters;
-  int     n_max_iters;
-  int     n_cumulated_iters;
-  int     n_max_cumulated_iters;
-
-  double  eps;                    /* stopping criterion on accuracy */
-
-} cs_equation_algo_t;
+} cs_equation_solver_class_t;
 
 /* Set of parameters to handle an unsteady convection-diffusion-reaction
    equation with term sources */
@@ -127,7 +118,7 @@ typedef struct {
   cs_xdef_t                   **bc_defs;
 
   /* High-level structure to manage/monitor the resolution of this equation */
-  cs_equation_algo_t            algo_info;
+  cs_equation_solver_class_t    solver_class;
   cs_param_itsol_t              itsol_info;
 
   /* Time-dependent term parameters */
@@ -162,69 +153,186 @@ typedef struct {
 
 } cs_equation_param_t;
 
+/*! \enum cs_equation_key_t
+ *  \brief List of available keys for setting the parameters of an equation
+ *
+ * \var CS_EQKEY_ADV_FORMULATION
+ *
+ * \var CS_EQKEY_SPACE_SCHEME
+ *      Set the space discretization scheme. Available choices are:
+ *      "cdo_vb"  for CDO vertex-based scheme
+ *      "cdo_vcb" for CDO vertex+cell-based scheme
+ *      "cdo_fb"  for CDO face-based scheme
+ *
+ * \var CS_EQKEY_VERBOSITY
+ *      Set the level of details written by the code for an equation.
+ *      The higher the more detailed information is displayed.
+ *      "0" (default)
+ *      "1" detailed setup resume and coarse grain timer stats
+ *      "2" fine grain for timer stats
+ *
+ * \var CS_EQKEY_HODGE_DIFF_ALGO
+ *      Set the algorithm used for building the discrete Hodge operator used
+ *      in the diffusion term. Available choices are:
+ *      "voronoi"  leads to diagonal discrete Hodge operator but is not
+ *      consistent for all meshes
+ *      "cost" (default) is more robust (i.e. it handles more
+ *      general meshes but is is less efficient)
+ *      "wbs" is robust and accurate but is limited to the reconstruction of
+ *      potential-like degrees of freedom and needs a correct computation of
+ *      the cell barycenter
+ *
+ * \var CS_EQKEY_HODGE_TIME_ALGO
+ *      Set the algorithm used for building the discrete Hodge operator used
+ *      in the diffusion term. Available choices are:
+ *      "voronoi" (default) leads to diagonal discrete Hodge operator. It acts
+ *      as a mass lumping.
+ *      "wbs" is robust and accurate but is less efficient. It needs a correct
+ *      computation of the cell barycenter
+ *
+ * \var CS_EQKEY_HODGE_REAC_ALGO
+ *      "voronoi" leads to diagonal discrete Hodge operator but is not
+ *      consistent for all meshes
+ *       "wbs" (default) is robust and accurate but is limited to the
+ *      reconstruction of potential-like degrees of freedom and needs a correct
+ *      computation of the cell barycenter
+ *
+ * \var CS_EQKEY_HODGE_DIFF_COEF
+ * \var CS_EQKEY_HODGE_TIME_COEF
+ * \var CS_EQKEY_HODGE_REAC_COEF
+ *      This key is only useful if CS_EQKEY_HODGE_*_ALGO is set to "cost"
+ *      val is either a name or a value: "dga", "sushi", "gcr" or "1.5", "9"..
+ *      "dga" corresponds to the value 1./3.
+ *      "sushi" corresponds to the value 1./sqrt(3.)
+ *      "gcr" corresponds to the value 1.
+ *
+ *
+ * \var CS_EQKEY_SOLVER_FAMILY
+ *      Available choises are:  "cs" (default), "petsc"
+ *      WARNING: For using "petsc" one needs to install Code_Saturne with PETSc
+ *
+ * \var CS_EQKEY_ITSOL
+ *      Avalible choices are:
+ *      "cg" (default) is the standard conjuguate gradient algorithm
+ *      "bicg" is Bi-CG algorithm (for non-symmetric linear systems)
+ *      "bicgstab2" is BiCG-Stab2 algorithm (for non-symmetric linear systems)
+ *      "cr3" is a 3-layer conjugate residual solver
+ *      "gmres" is a robust iterative solver but not as efficient
+ *      "amg" is an algebraic multigrid iterative solver
+ *
+ * \var CS_EQKEY_PRECOND
+ *      Available choices are:
+ *      "jacobi" diagonal preconditoner
+ *      "block_jacobi"
+ *      "poly1"  neumann polynomial of order 1
+ *      "ssor"   symmetric successive over-relaxation (only with PETSC)
+ *      "ilu0"   incomplete LU factorization
+ *      "icc0"   incomplete Cholesky factorization (for symmetric matrices)
+ *      "amg"    algebraic multigrid
+ *
+ * \var CS_EQKEY_ITSOL_EPS
+ *      Tolerance factor for stopping the iterative processus for solving the
+ *      linear system related to an equation
+ *      "1e-10" for instance
+ *
+ * \var CS_EQKEY_ITSOL_MAX_ITER
+ *      Maximum number of iterations for solving the linear system
+ *      "2000" for instance
+ *
+ * \var CS_EQKEY_ITSOL_RESNORM
+ *      Normalized or not the residual before testing if one continues iterating
+ *      for solving the linear system
+ *     "true" or "false"
+ *
+ * \var CS_EQKEY_SLES_VERBOSITY
+ *      Level of details written by the code for the resolution of the linear
+ *      system
+ *      "0", "1", "2" or higher
+ *
+ * \var CS_EQKEY_BC_ENFORCEMENT
+ *      Set the type of enforcement of the boundary conditions. Available
+ *      choices are:
+ *      "penalization" weak enforcement using a huge penalization coefficient
+ *      "weak"         weak enforcement using the Nitsche method
+ *      "weak_sym"     weak enforcement keeping the symmetry of the system
+ *      For HHO and CDO-Face based schemes, only the penalization technique is
+ *      available.
+ *
+ * \var CS_EQKEY_BC_QUADRATURE
+ *      Set the quadrature algorithm used for evaluating integral quantities on
+ *      faces or volumes. Available choices are:
+ *      "bary"    used the barycenter approximation
+ *      "higher"  used 4 Gauss points for approximating the integral
+ *      "highest" used 5 Gauss points for approximating the integral
+ *      Remark: "higher" and "highest" implies automatically a subdivision into
+ *      tetrahedra of each cell
+ *
+ * \var CS_EQKEY_TIME_SCHEME
+ *      Set the scheme for the temporal discretization. Available choices are:
+ *      "implicit": first-order in time (inconditionnally stable)
+ *      "explicit":
+ *      "crank_nicolson": second_order in time
+ *      "theta_scheme": generic time scheme. One recovers "implicit" with theta
+ *      equal to "1", "explicit" with "0", "crank_nicolson" with "0.5"
+ *
+ * \var CS_EQKEY_TIME_THETA
+ *      Set the value of theta. Only useful if CS_EQKEY_TIME_SCHEME is set to
+ *      "theta_scheme"
+ *      "0.75" for instance (must be between 0 <=val<= 1)
+ *
+ * \var CS_EQKEY_ADV_FORMULATION
+ *      Kind of formulation of the advective term. Available choices are:
+ *      "conservative"
+ *      "non_conservative"
+ *
+ * \var CS_EQKEY_ADV_SCHEME
+ *      Type of numerical scheme for the advective term. The available choices
+ *      depend on the space discretization scheme.
+ *      "upwind"
+ *      "centered"
+ *      "samarskii" upwind/centered with a weight depending on the Peclet number
+ *      "sg"        upwind/centered with a weight depending on the Peclet number
+ *      "cip"       "continuous interior penalty" (only for CDOVCB schemes)
+ *      "sg" and "samarskii" are only available with CDOVB schemes
+ *
+ *
+ * \var CS_EQKEY_EXTRA_OP
+ *      Set the additional post-processing to perform. Available choices are:
+ *      "peclet"  post-process an estimation of the Peclet number in each cell
+ *      "upwind_coef" post-process an estimation of the upwinding coefficient
+ */
+
+typedef enum {
+
+  CS_EQKEY_ADV_FORMULATION,
+  CS_EQKEY_ADV_SCHEME,
+  CS_EQKEY_BC_ENFORCEMENT,
+  CS_EQKEY_BC_QUADRATURE,
+  CS_EQKEY_EXTRA_OP,
+  CS_EQKEY_HODGE_DIFF_ALGO,
+  CS_EQKEY_HODGE_DIFF_COEF,
+  CS_EQKEY_HODGE_TIME_ALGO,
+  CS_EQKEY_HODGE_TIME_COEF,
+  CS_EQKEY_HODGE_REAC_ALGO,
+  CS_EQKEY_HODGE_REAC_COEF,
+  CS_EQKEY_ITSOL,
+  CS_EQKEY_ITSOL_EPS,
+  CS_EQKEY_ITSOL_MAX_ITER,
+  CS_EQKEY_ITSOL_RESNORM,
+  CS_EQKEY_PRECOND,
+  CS_EQKEY_SLES_VERBOSITY,
+  CS_EQKEY_SOLVER_FAMILY,
+  CS_EQKEY_SPACE_SCHEME,
+  CS_EQKEY_TIME_SCHEME,
+  CS_EQKEY_TIME_THETA,
+  CS_EQKEY_VERBOSITY,
+  CS_EQKEY_N_KEYS
+
+} cs_equation_key_t;
+
 /*============================================================================
- * Public function prototypes
+ * Static inline public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Create a cs_equation_param_t
- *
- * \param[in] type             type of equation
- * \param[in] dim              dimension of the variable associated to this eq.
- * \param[in] default_bc       type of boundary condition set by default
- *
- * \return a pointer to a new allocated cs_equation_param_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_param_t *
-cs_equation_param_create(cs_equation_type_t     type,
-                         int                    dim,
-                         cs_param_bc_type_t     default_bc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a cs_equation_param_t
- *
- * \param[in] eqp          pointer to a cs_equation_param_t
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_param_t *
-cs_equation_param_free(cs_equation_param_t     *eqp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Summary of a cs_equation_param_t structure
- *
- * \param[in]  eqname   name of the related equation
- * \param[in]  eq       pointer to a cs_equation_param_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_param_summary(const char                 *eqname,
-                          const cs_equation_param_t  *eqp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set parameters for initializing SLES structures used for the
- *        resolution of the linear system.
- *        Settings are related to this equation.
- *
- * \param[in]   eqname       pointer to an cs_equation_t structure
- * \param[in]   eqp          pointer to a cs_equation_param_t struct.
- * \param[in]   field_id     id of the cs_field_t struct. for this equation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_param_set_sles(const char                 *eqname,
-                           const cs_equation_param_t  *eqp,
-                           int                         field_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -330,6 +438,309 @@ cs_equation_param_has_sourceterm(const cs_equation_param_t     *eqp)
   else
     return false;
 }
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a cs_equation_param_t
+ *
+ * \param[in] type             type of equation
+ * \param[in] dim              dimension of the variable associated to this eq.
+ * \param[in] default_bc       type of boundary condition set by default
+ *
+ * \return a pointer to a new allocated cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_equation_create_param(cs_equation_type_t     type,
+                         int                    dim,
+                         cs_param_bc_type_t     default_bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_equation_param_t
+ *
+ * \param[in] eqp          pointer to a cs_equation_param_t
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_equation_free_param(cs_equation_param_t     *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set a parameter attached to a keyname in a cs_equation_param_t
+ *         structure
+ *
+ * \param[in, out]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in]       key      key related to the member of eq to set
+ * \param[in]       keyval   accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_param(cs_equation_param_t   *eqp,
+                      cs_equation_key_t      key,
+                      const char            *keyval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set parameters for initializing SLES structures used for the
+ *        resolution of the linear system.
+ *        Settings are related to this equation.
+ *
+ * \param[in]   eqname       pointer to an cs_equation_t structure
+ * \param[in]   eqp          pointer to a cs_equation_param_t struct.
+ * \param[in]   field_id     id of the cs_field_t struct. for this equation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_set_sles(const char              *eqname,
+                           cs_equation_param_t     *eqp,
+                           int                      field_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Summary of a cs_equation_param_t structure
+ *
+ * \param[in]  eqname   name of the related equation
+ * \param[in]  eq       pointer to a cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_summary_param(const char                 *eqname,
+                          const cs_equation_param_t  *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the unknown related to this equation
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here a constant value is set to all the entities belonging to the
+ *         given mesh location
+ *
+ * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       z_name    name of the associated zone (if NULL or
+ *                            "" all cells are considered)
+ * \param[in]       val       pointer to the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
+                            const char             *z_name,
+                            cs_real_t              *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the unknown related to this equation
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the value related to all the entities belonging to the
+ *         given mesh location is such that the integral over these cells
+ *         returns the requested quantity
+ *
+ * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       z_name    name of the associated zone (if NULL or
+ *                            "" all cells are considered)
+ * \param[in]       quantity  quantity to distribute over the mesh location
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
+                          const char             *z_name,
+                          double                  quantity);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the unknown related to this
+ *         equation. This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set according to an analytical function
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_ic_by_analytic(cs_equation_param_t   *eqp,
+                               const char            *z_name,
+                               cs_analytic_func_t    *analytic,
+                               void                  *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the given equation structure
+ *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
+ *
+ * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       bc_type   type of boundary condition to add
+ * \param[in]       z_name    name of the related boundary zone
+ * \param[in]       values    pointer to a array storing the values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
+                            const cs_param_bc_type_t     bc_type,
+                            const char                  *z_name,
+                            cs_real_t                   *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the given equation structure
+ *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
+ *
+ * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       bc_type   type of boundary condition to add
+ * \param[in]       z_name    name of the related boundary zone
+ * \param[in]       loc       information to know where are located values
+ * \param[in]       array     pointer to an array
+ * \param[in]       index     optional pointer to the array index
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
+                            const cs_param_bc_type_t    bc_type,
+                            const char                 *z_name,
+                            cs_flag_t                   loc,
+                            cs_real_t                  *array,
+                            cs_lnum_t                  *index);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the given equation param structure
+ *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type   type of boundary condition to add
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function defining the value
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
+                               const cs_param_bc_type_t    bc_type,
+                               const char                 *z_name,
+                               cs_analytic_func_t         *analytic,
+                               void                       *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to store parameters related
+ *         to a diffusion term
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_diffusion(cs_equation_param_t   *eqp,
+                          cs_property_t         *property);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to store parameters related
+ *         to an unsteady term
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_time(cs_equation_param_t   *eqp,
+                     cs_property_t         *property);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to store parameters related
+ *         to an advection term
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      adv_field  pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_advection(cs_equation_param_t   *eqp,
+                          cs_adv_field_t        *adv_field);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to store parameters related
+ *         to a reaction term
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ *
+ * \return the id related to the reaction term
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_add_reaction(cs_equation_param_t   *eqp,
+                         cs_property_t         *property);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a new source term structure and initialize it by value
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or
+ *                           "" all cells are considered)
+ * \param[in]      val       pointer to the value
+ *
+ * \return a pointer to the new cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_source_term_by_val(cs_equation_param_t    *eqp,
+                                   const char             *z_name,
+                                   cs_real_t              *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a new source term structure and initialize it by an analytical
+ *         function
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      ana       pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new cs_source_term_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
+                                        const char             *z_name,
+                                        cs_analytic_func_t     *ana,
+                                        void                   *input);
 
 /*----------------------------------------------------------------------------*/
 

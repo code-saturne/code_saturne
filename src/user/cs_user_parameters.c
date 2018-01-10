@@ -146,6 +146,22 @@ cs_user_parameters(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  - Specify the elements such as properties, advection fields,
+ *           user-defined equations and modules which have been previously
+ *           added.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_finalize_setup(cs_domain_t   *domain)
+{
+  CS_UNUSED(domain);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define or modify output user parameters.
  */
 /*----------------------------------------------------------------------------*/

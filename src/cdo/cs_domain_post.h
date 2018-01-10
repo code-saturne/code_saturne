@@ -29,10 +29,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_advection_field.h"
-#include "cs_cdo_quantities.h"
-#include "cs_equation.h"
-#include "cs_property.h"
+#include "cs_domain.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
@@ -59,56 +56,23 @@ BEGIN_C_DECLS
 /*!
  * \brief  Initialize the generic post-processing related to a domain
  *
- * \param[in]  dt        reference time step value
- * \param[in]  quant     pointer to a cs_cdo_quantities_t
+ * \param[in]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_post_init(double                dt,
-                    cs_cdo_quantities_t  *quant);
+cs_domain_post_init(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the hidden view of the domain dedicated for post-processing
+ * \brief  Process the computational domain after the resolution
  *
- * \param[in]    dt      current value of the time step
+ * \param[in]  domain     pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_post_update(double    dt);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Activate writers and output meshes if needed
- *
- * \param[in]  time_step    pointer to a cs_time_step_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_post_activate(cs_time_step_t    *time_step);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the hidden view of the domain dedicated for post-processing
- *
- * \param[in]  time_step    pointer to a cs_time_step_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_post(cs_time_step_t    *time_step);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Finalize post-processing related to the computational domain
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_post_finalize(void);
+cs_domain_post(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 

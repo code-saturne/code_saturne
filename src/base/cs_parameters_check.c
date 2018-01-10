@@ -45,6 +45,7 @@
 
 #include "cs_1d_wall_thermal.h"
 #include "cs_base.h"
+#include "cs_domain.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_lagr.h"
@@ -810,6 +811,11 @@ cs_parameters_check(void)
   const int kvisls0 = cs_field_key_id("scalar_diffusivity_ref");
   const int restart_file_key_id = cs_field_key_id("restart_file");
   const int key_limiter = cs_field_key_id("limiter_choice");
+
+  const cs_domain_t  *domain = cs_glob_domain;
+  if (cs_domain_get_cdo_mode(domain) == CS_DOMAIN_CDO_MODE_ONLY)
+    return; /* Avoid the detection of false setting errors when using
+               CDO schemes */
 
   cs_field_t *f_pot = NULL;
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0)

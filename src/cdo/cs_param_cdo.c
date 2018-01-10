@@ -70,9 +70,6 @@ const char msepline[60] =
 const char ssepline[40] =
   "# =================\n";
 
-/* Activation of the CDO/HHO module */
-int  cs_param_cdo_mode = CS_PARAM_CDO_MODE_OFF;
-
 /*============================================================================
  * Global static variables
  *============================================================================*/
@@ -99,51 +96,6 @@ cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_BASE_STRING_LEN] =
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Set the global variable storing the mode of activation to apply
- *          to CDO/HHO schemes
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_cdo_set_mode(int  mode)
-{
-  cs_param_cdo_mode = mode;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Print a welcome message indicating which mode of CDO is activated
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_cdo_log(void)
-{
-  switch (cs_param_cdo_mode) {
-
-  case CS_PARAM_CDO_MODE_ONLY:
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n -msg- CDO/HHO module is activated *** Experimental ***"
-                  "\n -msg- CDO/HHO module is in a stand-alone mode\n");
-    break;
-
-  case CS_PARAM_CDO_MODE_WITH_FV:
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n -msg- CDO/HHO module is activated *** Experimental ***"
-                  "\n -msg- CDO/HHO module with FV schemes mode\n");
-    break;
-
-  default:
-  case CS_PARAM_CDO_MODE_OFF:
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n -msg- CDO/HHO module is not activated\n");
-    break;
-
-  }
-}
 
 /*----------------------------------------------------------------------------*/
 /*!

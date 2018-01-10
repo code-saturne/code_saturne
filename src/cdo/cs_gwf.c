@@ -456,6 +456,8 @@ cs_gwf_activate(cs_property_type_t    pty_type,
 
   gw->richards = richards;
 
+  cs_equation_param_t  *eqp = cs_equation_get_param(richards);
+
   /* Add an advection field related to the darcian flux stemming from the
      Richards equation */
   gw->adv_field = cs_advection_field_add("darcian_flux");
@@ -466,7 +468,7 @@ cs_gwf_activate(cs_property_type_t    pty_type,
   gw->permeability = cs_property_add("permeability", pty_type);
 
   /* Associate permeability to the diffusion property of the Richards eq. */
-  cs_equation_link(richards, "diffusion", gw->permeability);
+  cs_equation_add_diffusion(eqp, gw->permeability);
 
   /* Add a property related to the moisture content */
   gw->moisture_content = cs_property_add("moisture_content", CS_PROPERTY_ISO);
@@ -477,7 +479,7 @@ cs_gwf_activate(cs_property_type_t    pty_type,
     gw->soil_capacity = cs_property_add("soil_capacity", CS_PROPERTY_ISO);
 
     /* Associate soil_capacity to the unsteady term of the Richards eq. */
-    cs_equation_link(richards, "time", gw->soil_capacity);
+    cs_equation_add_time(eqp, gw->soil_capacity);
 
   }
 

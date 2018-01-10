@@ -53,7 +53,8 @@
 
 #include "cs_boundary_zone.h"
 #include "cs_domain.h"
-
+#include "cs_domain_setup.h"
+#include "cs_equation.h"
 #include "cs_mesh_builder.h"
 #include "cs_mesh_group.h"
 #include "cs_parall.h"
@@ -195,12 +196,29 @@ cs_mesh_deform_activate(void)
 
   const char *eq_name[] = {"mesh_deform_x", "mesh_deform_y", "mesh_deform_z"};
 
-  for (int i = 0; i < 3; i++)
-    cs_equation_add(eq_name[i],        // equation name
-                    eq_name[i],        // associated variable field name
-                    CS_EQUATION_TYPE_PREDEFINED,
-                    1,                 // dimension of the unknown
-                    CS_PARAM_BC_HMG_NEUMANN); // default boundary
+  for (int i = 0; i < 3; i++) {
+
+    cs_equation_t  *eq =
+      cs_equation_add(eq_name[i], // equation name
+                      eq_name[i], // associated variable field name
+                      CS_EQUATION_TYPE_PREDEFINED,
+                      1,                 // dimension of the unknown
+                      CS_PARAM_BC_HMG_NEUMANN); // default boundary
+
+    cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+
+    /* System to solve is SPD by construction */
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+
+#if defined(HAVE_PETSC)  /* Modify the default settings */
+    cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
+#else
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
+#endif
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -248,35 +266,23 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
 
   /* TODO implement a finer control to make mesh deformation
      compatible with other CDO modules */
-  cs_domain_set_default_boundary(domain, CS_PARAM_BOUNDARY_SYMMETRY);
+  cs_domain_set_default_boundary(domain, CS_DOMAIN_BOUNDARY_SYMMETRY);
 
   for (int i = 0; i < 3; i++) {
 
-    cs_equation_t  *eq = cs_equation_by_name(eq_name[i]);
+    cs_equation_param_t  *eqp = cs_equation_param_by_name(eq_name[i]);
 
     for (int j = 0; j < _n_b_zones; j++) {
       const cs_boundary_zone_t *z = cs_boundary_zone_by_id(_b_zone_ids[j]);
-      cs_equation_add_bc_by_analytic(eq,
+      cs_equation_add_bc_by_analytic(eqp,
                                      CS_PARAM_BC_DIRICHLET,
                                      z->name,
                                      _define_displ_bcs,
                                      _cs_comp_id + i);
     }
 
-    cs_equation_link(eq, "diffusion", conductivity);
+    cs_equation_add_diffusion(eqp, conductivity);
 
-    /* Enforcement of the Dirichlet boundary conditions */
-    // cs_equation_set_param(eq, CS_EQKEY_BC_ENFORCEMENT, "penalization");
-
-    /* System to solve is SPD by construction */
-    cs_equation_set_param(eq, CS_EQKEY_ITSOL, "cg");
-
-#if defined(HAVE_PETSC)  /* Modify the default settings */
-    cs_equation_set_param(eq, CS_EQKEY_SOLVER_FAMILY, "petsc");
-    cs_equation_set_param(eq, CS_EQKEY_PRECOND, "amg");
-#else
-    cs_equation_set_param(eq, CS_EQKEY_PRECOND, "jacobi");
-#endif
   }
 }
 

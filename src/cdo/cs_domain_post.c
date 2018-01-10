@@ -41,7 +41,12 @@
 
 #include <bft_mem.h>
 
+#include "cs_advection_field.h"
+#include "cs_cdo_quantities.h"
+#include "cs_equation.h"
+#include "cs_log_iteration.h"
 #include "cs_post.h"
+#include "cs_property.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -58,19 +63,9 @@ BEGIN_C_DECLS
  * Local type definitions
  *----------------------------------------------------------------------------*/
 
-typedef struct { /* Only shared with a cs_domain_t structure */
-
-  double                       dt_cur;
-
-  const cs_cdo_quantities_t   *quant;
-
-} cs_domain_post_t;
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
-
-cs_domain_post_t  *_domain_post_d = NULL;
 
 /*============================================================================
  * Private function prototypes
@@ -199,27 +194,24 @@ _domain_post(void                      *input,
   CS_UNUSED(i_face_ids);
   CS_UNUSED(b_face_ids);
 
-  if (_domain_post_d == NULL)
-    return;
-
   if (input == NULL)
     return;
 
   if (mesh_id != -1) /* Post-processing only on the generic volume mesh */
     return;
 
-  cs_domain_post_t  *dp = (cs_domain_post_t *)input;
+  cs_domain_t  *d = (cs_domain_t *)input;
 
   /* Post-processing related to advection fields */
   int n_adv_fields = cs_advection_field_get_n_fields();
   for (int adv_id = 0; adv_id < n_adv_fields; adv_id++)
     _post_advection_field(cs_advection_field_by_id(adv_id),
-                          dp->quant,
+                          d->cdo_quantities,
                           time_step,
-                          dp->dt_cur);
+                          d->dt_cur);
 
   /* Post-processing related to equations */
-  cs_equation_extra_post_all(time_step, dp->dt_cur);
+  cs_equation_extra_post_all(time_step, d->dt_cur);
 
 }
 
@@ -231,66 +223,51 @@ _domain_post(void                      *input,
 /*!
  * \brief  Initialize the generic post-processing related to a domain
  *
- * \param[in]  dt        reference time step value
- * \param[in]  quant     pointer to a cs_cdo_quantities_t
+ * \param[in]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_post_init(double                dt,
-                    cs_cdo_quantities_t  *quant)
+cs_domain_post_init(cs_domain_t   *domain)
 {
-  BFT_MALLOC(_domain_post_d, 1, cs_domain_post_t);
-
-  /* Shared */
-  _domain_post_d->dt_cur = dt;
-  _domain_post_d->quant = quant;
-
   /* Set pointers of function if additional postprocessing is requested */
-  cs_post_add_time_mesh_dep_output(_domain_post, _domain_post_d);
+  cs_post_add_time_mesh_dep_output(_domain_post, domain);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the hidden view of the domain dedicated for post-processing
+ * \brief  Process the computational domain after the resolution
  *
- * \param[in]    dt      current value of the time step
+ * \param[in]  domain     pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_post_update(double    dt)
+cs_domain_post(cs_domain_t  *domain)
 {
-  assert(_domain_post_d != NULL);
-  _domain_post_d->dt_cur = dt;
-}
+  cs_timer_t  t0 = cs_timer_time();
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Activate writers and output meshes if needed
- *
- * \param[in]  time_step    pointer to a cs_time_step_t structure
- */
-/*----------------------------------------------------------------------------*/
+  /* Pre-stage for post-processing for the current time step */
+  cs_post_time_step_begin(domain->time_step);
 
-void
-cs_domain_post_activate(cs_time_step_t    *time_step)
-{
-  cs_post_time_step_begin(time_step);
-}
+  /* Extra-operations */
+  /* ================ */
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the hidden view of the domain dedicated for post-processing
- *
- * \param[in]  time_step    pointer to a cs_time_step_t structure
- */
-/*----------------------------------------------------------------------------*/
+  /* Predefined extra-operations related to advection fields */
+  assert(domain->cdo_context != NULL);
 
-void
-cs_domain_post(cs_time_step_t    *time_step)
-{
-  assert(_domain_post_d != NULL);
+  if (domain->cdo_context->force_advfield_update)
+    cs_advection_field_update(true);
+
+  /* User-defined extra operations */
+  cs_user_cdo_extra_op(domain);
+
+  /* Log output */
+  if (cs_domain_needs_log(domain))
+    cs_log_iteration();
+
+  /* Post-processing */
+  /* =============== */
 
   /* Predefined extra-operations related to
      - the domain (advection fields and properties),
@@ -299,21 +276,12 @@ cs_domain_post(cs_time_step_t    *time_step)
      are also handled during the call of this function thanks to
      cs_post_add_time_mesh_dep_output() function pointer
   */
-  cs_post_time_step_output(time_step);
+  cs_post_time_step_output(domain->time_step);
 
   cs_post_time_step_end();
-}
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Finalize post-processing related to the computational domain
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_post_finalize(void)
-{
-  BFT_FREE(_domain_post_d);
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(domain->tcp), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/

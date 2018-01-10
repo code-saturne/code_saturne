@@ -1,5 +1,5 @@
 /*============================================================================
- * Set advanced numerical parameters for the current simulation
+ * Set main parameters for the current simulation when the CDO kernel is used
  *============================================================================*/
 
 /* VERS */
@@ -32,11 +32,18 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_quantities.h"
+#include <bft_mem.h>
+#include <bft_printf.h>
+
 #include "cs_domain.h"
 
 /*----------------------------------------------------------------------------
@@ -55,56 +62,57 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_cdo_numerics.c
+ * \file cs_user_gwf.c
  *
- * \brief Set advanced parameters about the numerical schemes for each
- *        equation to solve.
- *        Useful to change the default behaviour.
+ * \brief  Set parameters for the groundwater flow module when the CDO kernel
+ *         is used
  */
 /*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+/*! \endcond (end ignore by Doxygen) */
 
-/*=============================================================================
- * Local Macro definitions and structure definitions
+/*============================================================================
+ * Private function prototypes
+ *============================================================================*/
+
+/*============================================================================
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup advanced features concerning the way geometric quantities
- *         are built
+ * \brief  Specify for each soil and tracer how is defined each term of the
+ *         the tracer equation. Soils and tracer equations have to be added
+ *         previously
  *
- * \return the type of computation to evaluate the cell center
- */
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+*/
 /*----------------------------------------------------------------------------*/
 
-cs_cdo_cell_center_algo_t
-cs_user_cdo_geometric_settings(void)
+void
+cs_user_gwf_setup(cs_domain_t   *domain)
 {
-  /* Algorithm for computing cell centers */
-  /* ==================================== */
-
-  /* Choice between:
-     CS_CDO_CCENTER_MEANV: Cell center is computed as the mean of cell vertices
-     CS_CDO_CCENTER_BARYC: Cell center is computed as the real cell barycenter
-     CS_CDO_CCENTER_SATURNE: Cell center is given by Code_Saturne
-   */
-
-  return CS_CDO_CCENTER_SATURNE;
+  CS_UNUSED(domain);
 }
+
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup advanced features concerning the numerical parameters
- *         of the equation resolved during the computation
+ * \brief  Retrieve the bulk density related to a soil structure
+ *
+ * \param[in]  soil      pointer to a cs_gwf_soil_t structure
+ * \param[out] density   return value for the density
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_numeric_settings(void)
+cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
+                             cs_real_t             *density)
 {
+  CS_UNUSED(soil);
+  CS_UNUSED(density);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -82,13 +82,12 @@ cs_user_1d_wall_thermal.c \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions.c \
 cs_user_boundary_mass_source_terms.f90 \
-cs_user_cdo.c \
-cs_user_cdo_numerics.c \
 cs_user_cdo_extra_op.c \
 cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \
+cs_user_gwf.c \
 cs_user_head_losses.c \
 cs_user_initialization.c \
 cs_user_lagr_model.c \
@@ -228,4 +227,3 @@ install-data-hook:
 	  $(SED) -e "/$${comment}/d" > "$${file}.tmp" && \
 	  mv "$${file}.tmp" "$${file}"; \
 	done
-

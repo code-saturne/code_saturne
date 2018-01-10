@@ -34,6 +34,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_cdo_time.h"
+#include "cs_domain.h"
 #include "cs_equation_param.h"
 #include "cs_flag.h"
 #include "cs_matrix.h"
@@ -150,21 +151,15 @@ cs_equation_get_cell_mesh_flag(cs_flag_t                      cell_flag,
  * \param[in]  connect          pointer to a cs_cdo_connect_t structure
  * \param[in]  quant            pointer to additional mesh quantities struct.
  * \param[in]  time_step        pointer to a time step structure
- * \param[in]  vb_scheme_flag   metadata for Vb schemes
- * \param[in]  vcb_scheme_flag  metadata for V+C schemes
- * \param[in]  fb_scheme_flag   metadata for Fb schemes
- * \param[in]  hho_scheme_flag  metadata for HHO schemes
+ * \param[in]  cdo_context      pointer to a cs_domain_cdo_context_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
-                                       const cs_cdo_quantities_t  *quant,
-                                       const cs_time_step_t       *time_step,
-                                       cs_flag_t              vb_scheme_flag,
-                                       cs_flag_t              vcb_scheme_flag,
-                                       cs_flag_t              fb_scheme_flag,
-                                       cs_flag_t              hho_scheme_flag);
+cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
+                            const cs_cdo_quantities_t      *quant,
+                            const cs_time_step_t           *time_step,
+                            const cs_domain_cdo_context_t  *cdo_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -175,18 +170,12 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings
  *
- * \param[in] vb_scheme_flag    metadata for Vb schemes
- * \param[in] vcb_scheme_flag   metadata for V+C schemes
- * \param[in] fb_scheme_flag    metadata for Fb schemes
- * \param[in] hho_scheme_flag   metadata for HHO schemes
+ * \param[in]  cc    pointer to a structure storing CDO/HHO metadata
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_free_common_structures(cs_flag_t   vb_scheme_flag,
-                                   cs_flag_t   vcb_scheme_flag,
-                                   cs_flag_t   fb_scheme_flag,
-                                   cs_flag_t   hho_scheme_flag);
+cs_equation_common_free(const cs_domain_cdo_context_t   *cc);
 
 /*----------------------------------------------------------------------------*/
 /*!

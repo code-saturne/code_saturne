@@ -56,13 +56,18 @@ BEGIN_C_DECLS
 /* Type of algorithm used to compute the cell center */
 typedef enum {
 
-  CS_CDO_CCENTER_MEANV,   // Center is computed as the mean of cell vertices
-  CS_CDO_CCENTER_BARYC,   // Center is computed as the real cell barycenter
-  CS_CDO_CCENTER_SATURNE, // Center is given by Code_Saturne
+  /* Center is computed as the mean of cell vertices */
+  CS_CDO_QUANTITIES_MEANV_CENTER,
 
-  CS_CDO_N_CCENTER_ALGOS
+  /* Center is computed as the real cell barycenter */
+  CS_CDO_QUANTITIES_BARYC_CENTER,
 
-} cs_cdo_cell_center_algo_t;
+  /* Use the cell center computed in cs_mesh_quantities.c (Default behavior) */
+  CS_CDO_QUANTITIES_SATURNE_CENTER,
+
+  CS_CDO_QUANTITIES_N_CENTER_ALGOS
+
+} cs_cdo_quantities_algo_ccenter_t;
 
 /* Structure storing information about variation of entities accros the
    mesh for a given type of entity (cell, face and edge) */
@@ -98,10 +103,6 @@ typedef struct { /* Specific mesh quantities */
   cs_gnum_t         n_g_cells;      /* Global number of cells */
   cs_real_t        *cell_centers;
   cs_real_t        *cell_vol;
-
-  /* Type of algorithm used to define the cell center */
-  cs_cdo_cell_center_algo_t   cc_algo;
-
   cs_flag_t        *cell_flag;      /* Flag attached to cell to associate
                                        metadata like boundary cell or
                                        orthogonality */
@@ -194,9 +195,19 @@ cs_compute_area_from_quant(const cs_quant_t   qa,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the type of algorithm to use for computing the cell center
+ *
+ * \param[in]  algo     type of algorithm
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_algo_ccenter_t   algo);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Build a cs_cdo_quantities_t structure
  *
- * \param[in]  cc_algo     type of algorithm used for building the cell center
  * \param[in]  m           pointer to a cs_mesh_t structure
  * \param[in]  mq          pointer to a cs_mesh_quantities_t structure
  * \param[in]  topo        pointer to a cs_cdo_connect_t structure
@@ -206,8 +217,7 @@ cs_compute_area_from_quant(const cs_quant_t   qa,
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_quantities_t *
-cs_cdo_quantities_build(cs_cdo_cell_center_algo_t    cc_algo,
-                        const cs_mesh_t             *m,
+cs_cdo_quantities_build(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *mq,
                         const cs_cdo_connect_t      *topo);
 

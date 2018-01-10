@@ -1,5 +1,5 @@
 /*============================================================================
- * Set main parameters for the current simulation when the CDO kernel is used
+ * User functions for input of calculation parameters.
  *============================================================================*/
 
 /* VERS */
@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2017 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -32,31 +32,46 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <errno.h>
-#include <locale.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <assert.h>
 #include <math.h>
-#include <float.h>
+#include <string.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
+/*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
 
-#include "cs_boundary_zone.h"
-#include "cs_mesh_location.h"
-#include "cs_sdm.h"
-#include "cs_property.h"
 #include "cs_advection_field.h"
+#include "cs_base.h"
+#include "cs_domain.h"
+#include "cs_field.h"
+#include "cs_math.h"
+#include "cs_mesh.h"
+#include "cs_mesh_location.h"
+#include "cs_mesh_quantities.h"
+#include "cs_halo.h"
+#include "cs_param.h"
+#include "cs_property.h"
+#include "cs_prototypes.h"
+#include "cs_time_moment.h"
+#include "cs_time_step.h"
 #include "cs_walldistance.h"
 
 /*----------------------------------------------------------------------------
- * Header for the current file
+ *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_prototypes.h"
@@ -65,22 +80,15 @@
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Additional doxygen documentation
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_cdo-condif.c
+ * \file cs_user_parameters-base.c
  *
- * \brief Main user function for setting up a calculation with CDO.
+ * \brief User functions for input of calculation parameters.
  *
+ * See \subpage parameters for examples.
  */
 /*----------------------------------------------------------------------------*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*! \endcond (end ignore by Doxygen) */
 
 static const double  one_third = 1./3.;
 
@@ -377,132 +385,199 @@ _define_source(cs_real_t           time,
 }
 
 /*============================================================================
- * Public function prototypes
+ * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Activate or not the CDO module
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_user_cdo_activated(void)
-{
-  /* CS_PARAM_CDO_MODE_OFF = -1 --> CDO schemes are not used (no
-     activation)
-     CS_CDO_WITH_FV = 0 --> CDO schemes are used as well
-     as finite volume CS_CDO_ONLY = 1 --> CDO schemes are exclusively
-     used */
-
-  return  CS_PARAM_CDO_MODE_ONLY;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify for the computational domain:
- *         -- which type of boundaries closed the computational domain
- *         -- the settings for the time step
- *         -- activate predefined equations or modules
- *         -- add user-defined properties and/or advection fields
- *         -- add user-defined equations
+ * \brief Select physical model options, including user fields.
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * This function is called at the earliest stages of the data setup,
+ * so field ids are not available yet.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_init_setup(cs_domain_t   *domain)
+cs_user_model(void)
 {
-  /* ======================
-     Boundary of the domain
-     ====================== */
 
-  /* Choose a boundary by default.
-     Valid choice is CS_PARAM_BOUNDARY_WALL or CS_PARAM_BOUNDARY_SYMMETRY */
-  cs_domain_set_default_boundary(domain, CS_PARAM_BOUNDARY_WALL);
+  /*! [param_cdo_activation] */
+  {
+    /* Activate CDO/HHO module so that main additional structure are built */
 
-  /* Add a new boundary
-     >> cs_domain_add_boundary(domain,
-                               type_of_boundary,
-                               mesh_location_name);
+    cs_domain_t  *domain = cs_glob_domain;
 
-     * mesh_location_name is either a predefined mesh location or one defined
-     by the user
-     * type_of_boundary is one of the following keyword
-        CS_PARAM_BOUNDARY_WALL,
-        CS_PARAM_BOUNDARY_INLET,
-        CS_PARAM_BOUNDARY_OUTLET,
-        CS_PARAM_BOUNDARY_SYMMETRY
-  */
+    cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_ONLY);
+  }
+  /*! [param_cdo_activation] */
 
-  cs_domain_add_boundary(domain, CS_PARAM_BOUNDARY_INLET, "in");
-  cs_domain_add_boundary(domain, CS_PARAM_BOUNDARY_OUTLET, "out");
+  /*! [param_cdo_domain_boundary] */
+  {
+    /* ======================
+       Boundary of the domain
+       ====================== */
 
-  /* =========================
-     Generic output management
-     ========================= */
+    cs_domain_t  *domain = cs_glob_domain;
 
-  cs_domain_set_output_param(domain,
-                             10,     // output log frequency
-                             2);     // verbosity (-1: no, 0, ...)
+    /* Choose a boundary by default */
+    cs_domain_set_default_boundary(domain, CS_DOMAIN_BOUNDARY_WALL);
 
-  /* ====================
-     Time step management
-     ====================
+    /* Add a new boundary
+       >> cs_domain_add_boundary(domain, type_of_boundary, zone_name);
 
-     If there is an inconsistency between the max. number of iteration in
-     time and the final physical time, the first condition encountered stops
-     the calculation.
-  */
+       * zone_name is either a predefined one or user-defined one
+       * type_of_boundary is one of the following keywords:
+         CS_DOMAIN_BOUNDARY_WALL,
+         CS_DOMAIN_BOUNDARY_INLET,
+         CS_DOMAIN_BOUNDARY_OUTLET,
+         CS_DOMAIN_BOUNDARY_SYMMETRY
+    */
 
-  cs_domain_set_time_param(domain,
-                           100,     // nt_max or -1 (automatic)
-                           -1.);    // t_max or < 0. (automatic)
+    cs_domain_add_boundary(domain, CS_DOMAIN_BOUNDARY_INLET, "in");
+    cs_domain_add_boundary(domain, CS_DOMAIN_BOUNDARY_OUTLET, "out");
 
-  /* Define the value of the time step
-     >> cs_domain_def_time_step_by_value(domain, dt_val);
-     >> cs_domain_def_time_step_by_func(domain, dt_func);
+  }
+  /*! [param_cdo_domain_boundary] */
 
-     The second way to define the time step enable complex definitions.
-     dt_func must have the following prototype:
 
-     double dt_func(int  nt_cur, double  time_cur)
-  */
+  /*! [param_cdo_domain_ouput] */
+  {
+    cs_domain_t  *domain = cs_glob_domain;
 
-  cs_domain_def_time_step_by_value(domain, 1.0);
+    /* =========================
+       Generic output management
+       ========================= */
 
-  /* ============================
-     Add equations/model to solve
-     ============================
+    cs_domain_set_output_param(domain,
+                               10,     // output log frequency
+                               2);     // verbosity (-1: no, 0, ...)
 
-     Activate predefined equations/modules
+  }
+  /*! [param_cdo_domain_ouput] */
 
-     Add user equation:
-       default boundary condition is among:
+  /*! [param_cdo_time_step] */
+  {
+    cs_domain_t  *domain = cs_glob_domain;
+
+    /* ====================
+       Time step management
+       ====================
+
+       If there is an inconsistency between the max. number of iteration in
+       time and the final physical time, the first condition encountered stops
+       the calculation.
+    */
+
+    cs_domain_set_time_param(domain,
+                             100,     // nt_max or -1 (automatic)
+                             -1.);    // t_max or < 0. (automatic)
+
+    /* Define the value of the time step
+       >> cs_domain_def_time_step_by_value(domain, dt_val);
+       >> cs_domain_def_time_step_by_func(domain, dt_func);
+
+       The second way to define the time step enable complex definitions.
+       dt_func must have the following prototype:
+
+       double dt_func(int  nt_cur, double  time_cur)
+    */
+
+    cs_domain_def_time_step_by_value(domain, 1.0);
+
+  }
+  /*! [param_cdo_time_step] */
+
+  /*! [param_cdo_wall_distance] */
+  {
+    cs_walldistance_activate();
+  }
+  /*! [param_cdo_wall_distance] */
+
+  /*! [param_cdo_add_user_equation] */
+  {
+    /* Add user equation:
+       -- default boundary condition is among:
        CS_PARAM_BC_HMG_DIRICHLET or CS_PARAM_BC_HMG_NEUMANN
 
-     By default, initial values are set to zero (or the value given by the
-     restart file in case of restart).
-  */
+       By default, initial values are set to zero (or the value given by the
+       restart file in case of restart).
+    */
 
-  cs_walldistance_activate();
+    cs_equation_add_user("AdvDiff",     // equation name
+                         "Potential",   // associated variable field name
+                         1,             // dimension of the unknown
+                         CS_PARAM_BC_HMG_DIRICHLET); // default boundary
+  }
+  /*! [param_cdo_add_user_equation] */
 
-  cs_equation_add_user("AdvDiff",     // equation name
-                       "Potential",   // associated variable field name
-                       1,             // dimension of the unknown
-                       CS_PARAM_BC_HMG_DIRICHLET); // default boundary
+  /*! [param_cdo_add_user_properties] */
+  {
 
-  /* ========================================
-     Add material properties/advection fields
-     ======================================== */
+    /* ========================================
+       Add material properties/advection fields
+       ======================================== */
 
-  cs_property_add("conductivity",      // property name
-                  CS_PROPERTY_ANISO);  // type of material property
-  cs_property_add("rho.cp",            // property name
-                  CS_PROPERTY_ISO);    // type of material property
+    cs_property_add("conductivity",      // property name
+                    CS_PROPERTY_ANISO);  // type of material property
+    cs_property_add("rho.cp",            // property name
+                    CS_PROPERTY_ISO);    // type of material property
 
-  cs_advection_field_add("adv_field"); // name of the new advection field
+    cs_advection_field_add("adv_field"); // name of the new advection field
+
+  }
+  /*! [param_cdo_add_user_properties] */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define or modify general numerical and physical user parameters.
+ *
+ * At the calling point of this function, most model-related most variables
+ * and other fields have been defined, so specific settings related to those
+ * fields may be set here.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_parameters(void)
+{
+  /*! [param_cdo_numerics] */
+  {
+
+    /* Modify the setting of an equation
+       =================================
+
+       Available keywords and related values for keywords are described in
+       the DOXYGEN documentation.
+    */
+
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("FVCA6.1");
+
+    /* The modification of the space discretization should be apply first */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+
+    /* Modify other parameters than the space discretization */
+    cs_equation_set_param(eqp, CS_EQKEY_VERBOSITY, "2");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
+
+    /* Linear algebra settings */
+#if defined(HAVE_PETSC)
+    cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
+#else
+    cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+#endif
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_MAX_ITER, "2500");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-12");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM, "false");
+
+  }
+  /*! [param_cdo_numerics] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -524,45 +599,49 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
      User-defined properties
      ======================= */
 
-  cs_property_t  *conductivity = cs_property_by_name("conductivity");
-  cs_real_33_t  tensor = {{1.0,  0.5, 0.0}, {0.5, 1.0, 0.5}, {0.0, 0.5, 1.0}};
+  /*! [param_cdo_setup_property] */
+  {
+    cs_property_t  *conductivity = cs_property_by_name("conductivity");
+    cs_real_33_t  tensor = {{1.0,  0.5, 0.0}, {0.5, 1.0, 0.5}, {0.0, 0.5, 1.0}};
 
-  cs_property_def_aniso_by_value(conductivity, // property structure
-                                 "cells",      // name of the volume zone
-                                 tensor);      // values of the property
+    cs_property_def_aniso_by_value(conductivity, // property structure
+                                   "cells",      // name of the volume zone
+                                   tensor);      // values of the property
 
-  cs_property_t  *rhocp = cs_property_by_name("rho.cp");
-  cs_real_t  iso_val = 2.0;
+    cs_property_t  *rhocp = cs_property_by_name("rho.cp");
+    cs_real_t  iso_val = 2.0;
 
-  cs_property_def_iso_by_value(rhocp,    // property structure
-                               "cells",  // name of the volume zone
-                               iso_val);   // value of the property
+    cs_property_def_iso_by_value(rhocp,    // property structure
+                                 "cells",  // name of the volume zone
+                                 iso_val); // value of the property
+
+  }
+  /*! [param_cdo_setup_property] */
 
   /* =============================
      User-defined advection fields
      ============================= */
 
-  cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
+  /*! [param_cdo_setup_advfield] */
+  {
+    cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
 
-  cs_advection_field_def_by_analytic(adv, _define_adv_field, NULL);
+    cs_advection_field_def_by_analytic(adv, _define_adv_field, NULL);
 
-  /* Enable also the defintion of the advection field at mesh vertices */
-  cs_advection_field_set_option(adv, CS_ADVKEY_DEFINE_AT_VERTICES);
+    /* Enable also the defintion of the advection field at mesh vertices */
+    cs_advection_field_set_option(adv, CS_ADVKEY_DEFINE_AT_VERTICES);
 
-  /* Activate the post-processing of the related Courant number */
-  cs_advection_field_set_option(adv, CS_ADVKEY_POST_COURANT);
+    /* Activate the post-processing of the related Courant number */
+    cs_advection_field_set_option(adv, CS_ADVKEY_POST_COURANT);
+  }
+  /*! [param_cdo_setup_advfield] */
 
   /* ======================
      User-defined equations
      ====================== */
 
-  /* Retrieve the equation to set
-     >> cs_equation_t  *eq = cs_equation_by_name("eq_name");  */
-
-  cs_equation_t  *eq = cs_equation_by_name("AdvDiff");
-
   /* Define the boundary conditions
-     >> cs_equation_add_bc_by_analytic(eq,
+     >> cs_equation_add_bc_by_analytic(eqp,
                                        bc_type,
                                        "zone_name",
                                        analytic_function);
@@ -572,68 +651,56 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
         CS_PARAM_BC_DIRICHLET, CS_PARAM_BC_HMG_DIRICHLET,
         CS_PARAM_BC_NEUMANN, CS_PARAM_BC_HMG_NEUMANN, CS_PARAM_BC_ROBIN
 
-     >> cs_equation_add_bc_by_value(eq,
+     >> cs_equation_add_bc_by_value(eqp,
                                     bc_type,
                                     "mesh_location_name",
                                     values); // pointer
   */
 
-  cs_equation_add_bc_by_analytic(eq,
-                                 CS_PARAM_BC_DIRICHLET,
-                                 "boundary_faces",  // zone name
-                                 _define_bcs,       // pointer to the function
-                                 NULL);             // input structure
+  /*! [param_cdo_setup_bcs] */
+  {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff");
 
-  /* Link properties to different terms of this equation
-     >> cs_equation_link(eq,
-                         "term_keyword",
-                         structure_to_link);
+    cs_equation_add_bc_by_analytic(eqp,
+                                   CS_PARAM_BC_DIRICHLET,
+                                   "boundary_faces",  // zone name
+                                   _define_bcs,       // pointer to the function
+                                   NULL);             // input structure
 
-     - eq is the structure related to the equation to set
-     - Keyword related to the term to set is a choice among:
-       >> "diffusion", "time" or "advection"
-     - If keyword is "time" or "diffusion", the structure to link is a
-       property.
-       If keyword is "advection", the structure to link is an advection field
-  */
+  }
+  /*! [param_cdo_setup_bcs] */
 
-  /* Activate unsteady effect */
-  cs_equation_link(eq, "time", rhocp);
-  /* Activate diffusion effect */
-  cs_equation_link(eq, "diffusion", conductivity);
-  /* Activate advection effect */
-  cs_equation_link(eq, "advection", adv);
+  /*! [param_cdo_add_terms] */
+  {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff");
+    cs_property_t  *rhocp = cs_property_by_name("rho.cp");
+    cs_property_t  *conductivity = cs_property_by_name("conductivity");
+    cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
 
-  /* Add a source term:
-     >> cs_equation_add_source_term_by_val(eq,
-                                           volume_zone__name,
-                                           val);
-     or
-     >> cs_equation_add_source_term_by_analytic(eq,
-                                                volume_zone_name,
-                                                analytic_func,
-                                                input_pointer);
+    /* Activate the unsteady term */
+    cs_equation_add_time(eqp, rhocp);
 
+    /* Activate the diffusion term */
+    cs_equation_add_diffusion(eqp, conductivity);
 
-     where val is the value of the source term by m^3
-     or where analytic_func is the name of the analytical function
-   */
+    /* Activate advection effect */
+    cs_equation_add_advection(eqp, adv);
 
-  cs_xdef_t  *st
-    = cs_equation_add_source_term_by_analytic(eq,
-                                              "cells",
-                                              _define_source,
-                                              NULL);
+    /* Add a source term: _define_source is a user-defined function with a
+       a specific list of arguments.
+       Simpler definition can be used: cs_equation_add_source_term_by_val
+       where the value of the source term is given by m^3
+    */
+    cs_xdef_t  *st = cs_equation_add_source_term_by_analytic(eqp,
+                                                             "cells",
+                                                             _define_source,
+                                                             NULL);
 
-  /* Optional: specify the quadrature used for computing a source term
+    /* Optional: specify the quadrature used for computing the source term */
+    cs_xdef_set_quadrature(st, CS_QUADRATURE_BARY);
+  }
+  /*! [param_cdo_add_terms] */
 
-     >> key takes value among
-     CS_QUADRATURE_BARY     barycenter approximation
-     CS_QUADRATURE_HIGHER   4 Gauss points for approximating the integral
-     CS_QUADRATURE_HIGHEST  5 Gauss points for approximating the integral
-  */
-
-  cs_xdef_set_quadrature(st, CS_QUADRATURE_BARY);
 }
 
 /*----------------------------------------------------------------------------*/

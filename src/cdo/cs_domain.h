@@ -31,15 +31,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_advection_field.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
-#include "cs_equation.h"
-#include "cs_gwf.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_param.h"
-#include "cs_property.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
 #include "cs_xdef.h"
@@ -52,19 +47,53 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Flag related to the activation (or not) of the CDO schemes */
+#define CS_DOMAIN_CDO_MODE_OFF     -1 // CDO schemes are not used
+#define CS_DOMAIN_CDO_MODE_WITH_FV  0 // CDO and legacy FV schemes are used
+#define CS_DOMAIN_CDO_MODE_ONLY     1 // CDO schemes are exclusively used
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
 
+/* Physic-driven boundary */
+typedef enum {
+
+  CS_DOMAIN_BOUNDARY_WALL,
+  CS_DOMAIN_BOUNDARY_INLET,
+  CS_DOMAIN_BOUNDARY_OUTLET,
+  CS_DOMAIN_BOUNDARY_SYMMETRY,
+  CS_DOMAIN_N_BOUNDARY_TYPES
+
+} cs_domain_boundary_type_t;
+
 typedef struct {
 
-  cs_param_boundary_type_t    default_type; // boundary set by default
-  int                         n_zones;
-  int                        *zone_ids;
-  cs_param_boundary_type_t   *type_by_zone;
+  cs_domain_boundary_type_t    default_type; /* boundary set by default */
+  int                          n_zones;
+  int                         *zone_ids;     /* List of boundary zone ids */
+  cs_domain_boundary_type_t   *zone_type;    /* Type of boundary by zone */
 
 } cs_domain_boundary_t;
 
+typedef struct {
+
+  /* Mode for CDO: activated, switched off... */
+  int                       mode;
+
+  /* Metadata for CDO */
+  bool                      force_advfield_update;
+
+  /* Flag to know if scalar or vector equations are requested and which kind
+     of numerical schemes is requested to solve these equations */
+  cs_flag_t                 fb_scheme_flag;
+  cs_flag_t                 vb_scheme_flag;
+  cs_flag_t                 vcb_scheme_flag;
+  cs_flag_t                 hho_scheme_flag;
+
+} cs_domain_cdo_context_t;
+
+/* Structure storing the main feature */
 typedef struct {
 
   /* Code_Saturne mesh and mesh quantities structures already computed */
@@ -75,30 +104,21 @@ typedef struct {
      - cs_cdo_connect_t contains additional information about connectivity
      - cs_cdo_quantities_t contains additional information on mesh quantities
   */
-  cs_cdo_connect_t         *connect;
-  cs_cdo_quantities_t      *cdo_quantities;
+  cs_cdo_connect_t              *connect;
+  cs_cdo_quantities_t           *cdo_quantities;
 
   /* Physical boundary conditions on the computational domain:
      inlet, outmet, wall, symmetry...
      Store the type of boundary set on each boundary face */
-  cs_domain_boundary_t     *boundary_def;
+  cs_domain_boundary_t          *boundary;
 
   /* Time step management */
+  bool                      only_steady;
   bool                      is_last_iter;     // true or false
   double                    dt_cur;           // current time step
   cs_xdef_t                *time_step_def;    // Definition of the time_step
   cs_time_step_t           *time_step;        // time step descriptor
   cs_time_step_options_t    time_options;     // time step options
-
-  bool                      only_steady;
-  bool                      force_advfield_update;
-
-  /* Flag to know if scalar or vector equations are requested and which kind
-     of numerical schemes is requested to solve these equations */
-  cs_flag_t                 fb_scheme_flag;
-  cs_flag_t                 vb_scheme_flag;
-  cs_flag_t                 vcb_scheme_flag;
-  cs_flag_t                 hho_scheme_flag;
 
   /* Output options */
   int        output_nt;  /* Log information every nt iteration(s) */
@@ -106,20 +126,15 @@ typedef struct {
   bool       profiling;  /* Activate a set of timer statistics (details differ
                             according to the verbosity level) */
 
+  /* Specific context structure related to the numerical schemes */
+  cs_domain_cdo_context_t   *cdo_context;
+
   /* Monitoring */
   cs_timer_counter_t    tcp; /* Cumulated elapsed time for extra-operations
                                 and post-processing */
   cs_timer_counter_t    tcs; /* Cumulated elapsed time for setup operations */
 
 } cs_domain_t;
-
-/* List of available keys for setting a property */
-typedef enum {
-
-  CS_DOMAIN_PROFILING,        // activate the profiling
-  CS_DOMAIN_N_KEYS
-
-} cs_domain_key_t;
 
 /*============================================================================
  * Static global variables
@@ -147,58 +162,39 @@ cs_domain_create(void);
 /*!
  * \brief  Free a cs_domain_t structure
  *
- * \param[in, out]   domain    pointer to the cs_domain_t structure to free
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_domain_t *
-cs_domain_free(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the default boundary related to this domain
- *
- * \param[in, out]   domain       pointer to a cs_domain_t structure
- * \param[in]        type         type of boundary to set
+ * \param[in, out]   p_domain    pointer of pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_default_boundary(cs_domain_t                *domain,
-                               cs_param_boundary_type_t    type);
+cs_domain_free(cs_domain_t   **p_domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a boundary type defined on a mesh location
+ * \brief   Set the global variable storing the mode of activation to apply
+ *          to CDO/HHO schemes
  *
- * \param[in, out]  domain       pointer to a cs_domain_t structure
- * \param[in]       type         type of boundary to set
- * \param[in]       zone_name    name of the zone related to this boundary
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * \param[in]        mode      type of activation for the CDO/HHO module
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_add_boundary(cs_domain_t                *domain,
-                       cs_param_boundary_type_t    type,
-                       const char                 *zone_name);
+cs_domain_set_cdo_mode(cs_domain_t    *domain,
+                       int             mode);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set parameters for unsteady computations: the max number of time
- *         steps or the final physical time of the simulation
+ * \brief   Get the mode of activation for the CDO/HHO schemes
  *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
- * \param[in]       nt_max    max. number of time step iterations
- * \param[in]       t_max     final physical time of the simulation
+ * \param[in]   domain       pointer to a cs_domain_t structure
+ *
+ * \return the mode of activation for the CDO/HHO module
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_domain_set_time_param(cs_domain_t       *domain,
-                         int                nt_max,
-                         double             t_max);
+int
+cs_domain_get_cdo_mode(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -215,32 +211,33 @@ cs_domain_set_output_param(cs_domain_t       *domain,
                            int                nt_list,
                            int                verbosity);
 
+
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set to true the automatic update of all advection fields
+ * \brief  Activate profiling output
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_update_advfield(cs_domain_t       *domain);
+cs_domain_activate_profiling(cs_domain_t       *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set auxiliary parameters related to a cs_domain_t structure
+ * \brief  Set parameters for unsteady computations: the max number of time
+ *         steps or the final physical time of the simulation
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure
- * \param[in]       key       key related to the parameter to set
- * \param[in]       keyval    value related to the parameter to set
+ * \param[in]       nt_max    max. number of time step iterations
+ * \param[in]       t_max     final physical time of the simulation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_advanced_param(cs_domain_t       *domain,
-                             cs_domain_key_t    key,
-                             const char        *keyval);
-
+cs_domain_set_time_param(cs_domain_t       *domain,
+                         int                nt_max,
+                         double             t_max);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the value of the time step thanks to a predefined function
@@ -271,64 +268,44 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add new mesh locations related to domain boundaries from existing
- *         mesh locations
+ * \brief   Get the name of the domain boundary condition
  *
- * \param[in]   domain    pointer to a cs_domain_t structure
+ * \param[in] type     type of domain boundary
+ *
+ * \return the associated boundary name
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_domain_update_mesh_locations(cs_domain_t   *domain);
+const char *
+cs_domain_get_boundary_name(cs_domain_boundary_type_t  type);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup predefined equations which are activated
+ * \brief  Set the default boundary related to this domain
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * \param[in, out]   domain       pointer to a cs_domain_t structure
+ * \param[in]        type         type of boundary to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_setup_predefined_equations(cs_domain_t   *domain);
+cs_domain_set_default_boundary(cs_domain_t                 *domain,
+                               cs_domain_boundary_type_t    type);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the scheme flags for the current computational domain
+ * \brief  Add a boundary type defined on a mesh location
  *
- * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ * \param[in, out]  domain       pointer to a cs_domain_t structure
+ * \param[in]       type         type of boundary to set
+ * \param[in]       zone_name    name of the zone related to this boundary
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_scheme_flags(cs_domain_t    *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build a cs_domain_t structure
- *
- * \param[in, out]  domain            pointer to a cs_domain_t struct.
- * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
- * \param[in]       mesh_quantities   pointer to a cs_mesh_quantities_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_finalize_setup(cs_domain_t                 *domain,
-                         cs_mesh_t                   *mesh,
-                         const cs_mesh_quantities_t  *mesh_quantities);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize systems of equations and their related field values
- *         according to the user settings
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_initialize_systems(cs_domain_t   *domain);
+cs_domain_add_boundary(cs_domain_t                 *domain,
+                       cs_domain_boundary_type_t    type,
+                       const char                  *zone_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -380,47 +357,14 @@ cs_domain_increment_time(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve all the equations of a computational domain for one time step
+ * \brief   Print a welcome message indicating which mode of CDO is activated
  *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in]  domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_solve(cs_domain_t  *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Process the computational domain after the resolution
- *
- * \param[in]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_process_after_solve(cs_domain_t  *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Read a restart file for the CDO module
- *
- * \param[in]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_read_restart(const cs_domain_t  *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Write a restart file for the CDO module
- *
- * \param[in]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_write_restart(const cs_domain_t  *domain);
+cs_domain_cdo_log(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

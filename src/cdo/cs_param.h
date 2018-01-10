@@ -154,17 +154,6 @@ typedef enum {
 /* BOUNDARY CONDITIONS */
 /* =================== */
 
-/* Physic-driven boundary */
-typedef enum {
-
-  CS_PARAM_BOUNDARY_WALL,
-  CS_PARAM_BOUNDARY_INLET,
-  CS_PARAM_BOUNDARY_OUTLET,
-  CS_PARAM_BOUNDARY_SYMMETRY,
-  CS_PARAM_N_BOUNDARY_TYPES
-
-} cs_param_boundary_type_t;
-
 /* Mathematical boundary conditions */
 typedef enum {
 
@@ -294,20 +283,6 @@ cs_param_get_bc_name(cs_param_bc_type_t  bc);
 
 const char *
 cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of the domain boundary condition
- *          This name is also used as a name for zone definition
- *
- * \param[in] type     type of boundary
- *
- * \return the associated boundary name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_get_boundary_domain_name(cs_param_boundary_type_t  type);
 
 /*----------------------------------------------------------------------------*/
 

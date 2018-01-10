@@ -41,11 +41,6 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/* Flag related to the activation (or not) of the CDO schemes */
-#define CS_PARAM_CDO_MODE_OFF     -1 // CDO schemes are not used (no activation)
-#define CS_PARAM_CDO_MODE_WITH_FV  0 // CDO and legacy FV schemes are used
-#define CS_PARAM_CDO_MODE_ONLY     1 // CDO schemes are exclusively used
-
 /* Size of the buffer used to collect global ids for rows and columns
    when assembling the values in the global matrix from the local cellwise
    matrices */
@@ -127,25 +122,6 @@ extern int  cs_param_cdo_mode;
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Set the global variable storing the mode of activation to apply
- *          to CDO/HHO schemes
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_cdo_set_mode(int  mode);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Print a welcome message indicating which mode of CDO is activated
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_cdo_log(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

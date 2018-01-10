@@ -418,12 +418,31 @@ cs_walldistance_activate(void)
   /* Sanity check */
   assert(cs_wd_poisson_eq == NULL);
 
-  cs_wd_poisson_eq =
+  cs_equation_t  *eq =
     cs_equation_add("WallDistance",              // equation name
                     "WallDistance",              // variable name
                     CS_EQUATION_TYPE_PREDEFINED, // type of the equation
                     1,                           // dimension of the variable
                     CS_PARAM_BC_HMG_NEUMANN);    // default BC
+
+  /* Set now the default numerical parameters for this equation */
+  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+
+  /* Enforcement of the Dirichlet boundary conditions */
+  cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
+
+  /* System to solve is SPD by construction */
+  cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+
+#if defined(HAVE_PETSC)  /* Modify the default settings */
+  cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
+  cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
+#else
+  cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
+#endif
+
+  /* Set the static pointer */
+  cs_wd_poisson_eq = eq;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -439,18 +458,20 @@ cs_walldistance_setup(void)
 
   if (cs_wd_poisson_eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              " Stop setting the wall distance equation.\n"
-              " The wall distance computation has not been activated.");
+              " %s: Stop setting the wall distance equation.\n"
+              " The wall distance computation has not been activated.",
+              __func__);
+
+  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
   /* Unity is a property defined by default */
-  cs_equation_link(eq, "diffusion", cs_property_by_name("unity"));
+  cs_equation_add_diffusion(eqp, cs_property_by_name("unity"));
 
   /* Add boundary conditions */
   cs_real_t  zero_value = 0.;
-  const char *bc_zone_name =
-    cs_param_get_boundary_domain_name(CS_PARAM_BOUNDARY_WALL);
+  const char  bc_zone_name[] = "domain_walls";
 
-  cs_equation_add_bc_by_value(eq,
+  cs_equation_add_bc_by_value(eqp,
                               CS_PARAM_BC_DIRICHLET,
                               bc_zone_name,
                               &zero_value);
@@ -460,22 +481,9 @@ cs_walldistance_setup(void)
     cs_mesh_location_get_name(CS_MESH_LOCATION_CELLS);
   cs_real_t  unity = 1.0;
 
-  cs_equation_add_source_term_by_val(eq,
+  cs_equation_add_source_term_by_val(eqp,
                                      st_zone_name,   // zone name
                                      &unity);        // value to set
-
-  /* Enforcement of the Dirichlet boundary conditions */
-  cs_equation_set_param(eq, CS_EQKEY_BC_ENFORCEMENT, "penalization");
-
-  /* System to solve is SPD by construction */
-  cs_equation_set_param(eq, CS_EQKEY_ITSOL, "cg");
-
-#if defined(HAVE_PETSC)  /* Modify the default settings */
-  cs_equation_set_param(eq, CS_EQKEY_SOLVER_FAMILY, "petsc");
-  cs_equation_set_param(eq, CS_EQKEY_PRECOND, "amg");
-#else
-  cs_equation_set_param(eq, CS_EQKEY_PRECOND, "jacobi");
-#endif
 }
 
 /*----------------------------------------------------------------------------*/

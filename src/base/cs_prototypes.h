@@ -32,15 +32,15 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_domain.h"
+#include "cs_gwf_tracer.h"
+#include "cs_gwf_soil.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
 #include "cs_probe.h"
 #include "cs_volume_zone.h"
 
-#include "cs_domain.h"
-#include "cs_gwf_tracer.h"
-#include "cs_gwf_soil.h"
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -357,7 +357,8 @@ cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh);
 /*!
  * \brief Define volumesi from separated meshes as internal coupling zones.
  *
- * These zones must be disjoint and the face selection criteria must be specified.
+ * These zones must be disjoint and the face selection criteria must be
+ * specified.
  *
  * \param[in, out]  mesh  pointer to a cs_mesh_t structure
  */
@@ -695,30 +696,6 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Activate or not the CDO module
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_user_cdo_activated(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Start setting up the computational domain:
- *         - which type of boundaries closed the computational domain
- *         - the settings for the time step
- *         - activate module(s)
- *         - add equations to solve, properties, advection fields
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_init_setup(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  After the first step: cs_user_cdo_init_setup(), this second step
  *         concludes the setup of properties, equations, source terms...
  *         At this step, mesh quantities and connectivities are build as well
@@ -730,41 +707,6 @@ cs_user_cdo_init_setup(cs_domain_t   *domain);
 
 void
 cs_user_cdo_finalize_setup(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify for each soil and tracer how is defined each term of the
- *         the tracer equation. Soils and tracer equations have to be added
- *         previously
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
-*/
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_setup_gwf(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Setup advanced features concerning the way geometric quantities
- *         are built
- *
- * \return the type of computation to evaluate the cell center
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cdo_cell_center_algo_t
-cs_user_cdo_geometric_settings(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Setup advanced features concerning the numerical parameters
- *         of the equation resolved during the computation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_numeric_settings(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -814,6 +756,19 @@ cs_user_cdo_end_extra_op(const cs_domain_t     *domain);
 void
 cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
                              cs_real_t             *density);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify for each soil and tracer how is defined each term of the
+ *         the tracer equation. Soils and tracer equations have to be added
+ *         previously
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_gwf_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 

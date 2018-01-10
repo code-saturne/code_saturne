@@ -324,24 +324,18 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
  *         numerical settings
  *         Set also shared pointers from the main domain members
  *
- * \param[in]  connect          pointer to a cs_cdo_connect_t structure
- * \param[in]  quant            pointer to additional mesh quantities struct.
- * \param[in]  time_step        pointer to a time step structure
- * \param[in]  vb_scheme_flag   metadata for Vb schemes
- * \param[in]  vcb_scheme_flag  metadata for V+C schemes
- * \param[in]  fb_scheme_flag   metadata for Fb schemes
- * \param[in]  hho_scheme_flag  metadata for HHO schemes
+ * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant         pointer to additional mesh quantities struct.
+ * \param[in]  time_step     pointer to a time step structure
+ * \param[in]  cc            pointer to a cs_domain_cdo_context_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
-                                       const cs_cdo_quantities_t  *quant,
-                                       const cs_time_step_t       *time_step,
-                                       cs_flag_t              vb_scheme_flag,
-                                       cs_flag_t              vcb_scheme_flag,
-                                       cs_flag_t              fb_scheme_flag,
-                                       cs_flag_t              hho_scheme_flag)
+cs_equation_common_allocate(const cs_cdo_connect_t     *connect,
+                            const cs_cdo_quantities_t  *quant,
+                            const cs_time_step_t          *time_step,
+                            const cs_domain_cdo_context_t *cc)
 {
   assert(connect != NULL); // Sanity check
 
@@ -374,8 +368,8 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
   size_t  cwb_size = 2*n_cells; // initial cell-wise buffer size
 
   /* Allocate and initialize matrix assembler and matrix structures */
-  if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
-      vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
+  if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
+      cc->vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
     cs_timer_t t0 = cs_timer_time();
 
@@ -403,7 +397,7 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
     cs_equation_common_ma[CS_CDO_CONNECT_VTX_SCA] = ma;
     cs_equation_common_ms[CS_CDO_CONNECT_VTX_SCA] = ms;
 
-    if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
+    if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
       cwb_size = CS_MAX(cwb_size, (size_t)3*n_vertices);
 
@@ -412,7 +406,7 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
     }
 
-    if (vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
+    if (cc->vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
       cwb_size = CS_MAX(cwb_size, (size_t)2*(n_vertices + n_cells));
 
@@ -423,7 +417,7 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
   } // Vertex-based schemes and related ones
 
-  if (fb_scheme_flag > 0 || hho_scheme_flag > 0) {
+  if (cc->fb_scheme_flag > 0 || cc->hho_scheme_flag > 0) {
 
     cs_matrix_structure_t  *ms0 = NULL, *ms1 = NULL, *ms2 = NULL;
     cs_matrix_assembler_t  *ma0 = NULL, *ma1 = NULL, *ma2 = NULL;
@@ -437,9 +431,9 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
     cs_timer_t t1 = cs_timer_time();
     cs_timer_counter_add_diff(&tcc, &t0, &t1);
 
-    if (cs_flag_test(fb_scheme_flag,
+    if (cs_flag_test(cc->fb_scheme_flag,
                      CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR) ||
-        cs_flag_test(hho_scheme_flag,
+        cs_flag_test(cc->hho_scheme_flag,
                      CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR)) {
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
@@ -450,7 +444,7 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
       cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP0] = ma0;
       cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP0] = ms0;
 
-      if (fb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
+      if (cc->fb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
         assert(n_faces > n_cells);
         cwb_size = CS_MAX(cwb_size, (size_t)3*n_faces);
@@ -460,14 +454,14 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
       }
 
-      if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+      if (cc->hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
         cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
 
     } /* Scalar-valued CDO-Fb or HHO-P0 */
 
-    if (cs_flag_test(fb_scheme_flag,
+    if (cs_flag_test(cc->fb_scheme_flag,
                      CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR) ||
-        cs_flag_test(hho_scheme_flag,
+        cs_flag_test(cc->hho_scheme_flag,
                      CS_FLAG_SCHEME_POLY1 | CS_FLAG_SCHEME_SCALAR)) {
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
@@ -481,7 +475,7 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
       cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP1] = ma1;
       cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP1] = ms1;
 
-      if (fb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
+      if (cc->fb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
 
         /* Initialize additional structures */
         cs_cdofb_vecteq_initialize(quant, connect, time_step, ma1, ms1);
@@ -490,12 +484,12 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
       }
 
-      if (hho_scheme_flag & CS_FLAG_SCHEME_POLY1)
+      if (cc->hho_scheme_flag & CS_FLAG_SCHEME_POLY1)
         cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_1ST * n_faces);
 
     } /* Vector CDO-Fb or HHO-P1 */
 
-    if (cs_flag_test(hho_scheme_flag,
+    if (cs_flag_test(cc->hho_scheme_flag,
                      CS_FLAG_SCHEME_POLY2 | CS_FLAG_SCHEME_SCALAR)) {
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
@@ -513,8 +507,8 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
     }
 
     /* Initialize additional structures for scalar-valued HHO schemes */
-    if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-      cs_hho_scaleq_initialize(hho_scheme_flag,
+    if (cc->hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+      cs_hho_scaleq_initialize(cc->hho_scheme_flag,
                                quant, connect, time_step,
                                ma0, ma1, ma2,
                                ms0, ms1, ms2);
@@ -544,44 +538,41 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings
  *
- * \param[in] vb_scheme_flag    metadata for Vb schemes
- * \param[in] vcb_scheme_flag   metadata for V+C schemes
- * \param[in] fb_scheme_flag    metadata for Fb schemes
- * \param[in] hho_scheme_flag   metadata for HHO schemes
+ * \param[in]  cc    pointer to a structure storing CDO/HHO metadata
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_free_common_structures(cs_flag_t   vb_scheme_flag,
-                                   cs_flag_t   vcb_scheme_flag,
-                                   cs_flag_t   fb_scheme_flag,
-                                   cs_flag_t   hho_scheme_flag)
+cs_equation_common_free(const cs_domain_cdo_context_t   *cc)
 {
+  if (cc == NULL)
+    return;
+
   /* Free cell-wise and face-wise view of a mesh */
   cs_cdo_local_finalize();
 
   cs_timer_t t0 = cs_timer_time();
 
-  if (vb_scheme_flag > 0 || vcb_scheme_flag > 0)
+  if (cc->vb_scheme_flag > 0 || cc->vcb_scheme_flag > 0)
     cs_adjacency_free(&(cs_connect_v2v));
 
-  if (fb_scheme_flag > 0 || hho_scheme_flag > 0)
+  if (cc->fb_scheme_flag > 0 || cc->hho_scheme_flag > 0)
     cs_adjacency_free(&(cs_connect_f2f));
 
     /* Free common structures specific to a numerical scheme */
-  if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+  if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_cdovb_scaleq_finalize();
 
-  if (vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+  if (cc->vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_cdovcb_scaleq_finalize();
 
-  if (fb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+  if (cc->fb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_cdofb_scaleq_finalize();
 
-  if (fb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+  if (cc->fb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
     cs_cdofb_vecteq_finalize();
 
-  if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+  if (cc->hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_hho_scaleq_finalize();
 
   BFT_FREE(cs_equation_common_work_buffer);
@@ -601,6 +592,7 @@ cs_equation_free_common_structures(cs_flag_t   vb_scheme_flag,
   /* Monitoring */
   cs_timer_t t2 = cs_timer_time();
   cs_timer_counter_add_diff(&tca, &t1, &t2);
+
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %10s %10s\n",
                 " ", "Connectivity", "Assembly");
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f seconds\n",

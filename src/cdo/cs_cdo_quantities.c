@@ -112,8 +112,8 @@ typedef struct { /* These quantities are the integral of q on the plane
  * Static global variables
  *============================================================================*/
 
-static const double one_12 = 1/12.;
-static const double one_24 = 1/24.;
+cs_cdo_quantities_algo_ccenter_t  cs_cdo_quantities_cc_algo =
+  CS_CDO_QUANTITIES_SATURNE_CENTER;
 
 /*============================================================================
  * Private function prototypes
@@ -286,9 +286,9 @@ _get_proj_quantities(cs_lnum_t                f_id,
   projq.p1  *=  0.5;
   projq.pa  *=  cs_math_onesix;
   projq.pb  *= -cs_math_onesix;
-  projq.pab *=  one_24;
-  projq.pa2 *=  one_12;
-  projq.pb2 *= -one_12;
+  projq.pab *=  cs_math_one24;
+  projq.pa2 *=  cs_math_onetwelve;
+  projq.pb2 *= -cs_math_onetwelve;
 
   return  projq;
 }
@@ -883,9 +883,22 @@ cs_compute_area_from_quant(const cs_quant_t   qa,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build a cs_cdo_quantities_t structure
+ * \brief  Set the type of algorithm to use for computing the cell center
  *
- * \param[in]  cc_algo     type of algorithm used for building the cell center
+ * \param[in]  algo     type of algorithm
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_algo_ccenter_t   algo)
+{
+  cs_cdo_quantities_cc_algo = algo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a cs_cdo_quantities_t structure
+ *
  * \param[in]  m           pointer to a cs_mesh_t structure
  * \param[in]  mq          pointer to a cs_mesh_quantities_t structure
  * \param[in]  topo        pointer to a cs_cdo_connect_t structure
@@ -895,8 +908,7 @@ cs_compute_area_from_quant(const cs_quant_t   qa,
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_quantities_t *
-cs_cdo_quantities_build(cs_cdo_cell_center_algo_t     cc_algo,
-                        const cs_mesh_t              *m,
+cs_cdo_quantities_build(const cs_mesh_t              *m,
                         const cs_mesh_quantities_t   *mq,
                         const cs_cdo_connect_t       *topo)
 {
@@ -941,16 +953,9 @@ cs_cdo_quantities_build(cs_cdo_cell_center_algo_t     cc_algo,
   BFT_MALLOC(cdoq->cell_centers, 3*n_cells, cs_real_t);
   BFT_MALLOC(cdoq->cell_vol, n_cells, cs_real_t);
 
-  switch (cc_algo) {
+  switch (cs_cdo_quantities_cc_algo) {
 
-  case CS_CDO_CCENTER_BARYC:
-    cs_log_printf(CS_LOG_SETUP,
-                  " -cdo- Cell.Center.Algo >> Mirtich\n");
-    /* Compute (real) the barycentric centers and cell volumes */
-    _mirtich_algorithm(m, mq, topo, cdoq);
-    break;
-
-  case CS_CDO_CCENTER_MEANV:
+  case CS_CDO_QUANTITIES_MEANV_CENTER:
     cs_log_printf(CS_LOG_SETUP,
                   " -cdo- Cell.Center.Algo >> Vertices.MeanValue\n");
 
@@ -961,7 +966,15 @@ cs_cdo_quantities_build(cs_cdo_cell_center_algo_t     cc_algo,
     _vtx_algorithm(topo, cdoq);
     break;
 
-  case CS_CDO_CCENTER_SATURNE:
+  case CS_CDO_QUANTITIES_BARYC_CENTER:
+    cs_log_printf(CS_LOG_SETUP,
+                  " -cdo- Cell.Center.Algo >> Mirtich\n");
+    /* Compute (real) the barycentric centers and cell volumes */
+    _mirtich_algorithm(m, mq, topo, cdoq);
+    break;
+
+
+  case CS_CDO_QUANTITIES_SATURNE_CENTER:
     cs_log_printf(CS_LOG_SETUP,
                   " -cdo- Cell.Center.Algo >> Original\n");
 
@@ -974,8 +987,7 @@ cs_cdo_quantities_build(cs_cdo_cell_center_algo_t     cc_algo,
     bft_error(__FILE__, __LINE__, 0,
               _("Unkwown algorithm for cell center computation\n"));
 
-  } /* switch according to cc_algo */
-
+  } /* switch according to cs_cdo_quantities_cc_algo */
 
   if (topo->e2v != NULL) {
     cdoq->n_edges = topo->n_edges;

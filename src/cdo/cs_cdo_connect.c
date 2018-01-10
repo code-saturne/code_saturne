@@ -255,7 +255,7 @@ _update_v2v_lst(int               n_vf,
  *
  * \param[in]  m   pointer to the cs_mesh_t structure
  *
- * \return a pointer to a new allocated _edge_builder_t structure
+ * \return a pointer to a new allocated cs_adjacency_t structure
  */
 /*----------------------------------------------------------------------------*/
 

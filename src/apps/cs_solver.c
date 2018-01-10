@@ -233,8 +233,11 @@ cs_run(void)
   cs_gui_zones();
   cs_user_zones();
 
-  /* Activation of the CDO module */
-  cs_param_cdo_mode = cs_user_cdo_activated();
+  /* Create a new structure for the computational domain */
+  cs_glob_domain = cs_domain_create();
+
+  /* Update mesh zones */
+  cs_domain_update_wall_zones(cs_glob_domain);
 
   /* Initialize Fortran API and calculation setup */
 
@@ -246,20 +249,15 @@ cs_run(void)
 
     cs_gui_init();
 
-    cs_cdo_initialize_setup();
+    CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
 
-    if (cs_param_cdo_mode == CS_PARAM_CDO_MODE_OFF ||
-        cs_param_cdo_mode == CS_PARAM_CDO_MODE_WITH_FV) {
+    CS_PROCF(initi1, INITI1)();
 
-      CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
+    CS_PROCF (haltyp, HALTYP) (&ivoset);
+    if (ivoset)
+      halo_type = CS_HALO_EXTENDED;
 
-      CS_PROCF(initi1, INITI1)();
-
-      CS_PROCF (haltyp, HALTYP) (&ivoset);
-      if (ivoset)
-        halo_type = CS_HALO_EXTENDED;
-
-    }
+    cs_cdo_initialize_setup(cs_glob_domain);
 
     cs_base_fortran_bft_printf_to_c();
 
@@ -356,7 +354,9 @@ cs_run(void)
 
     /* Initialization related to CDO/HHO schemes */
 
-    cs_cdo_initialize_structures(cs_glob_mesh, cs_glob_mesh_quantities);
+    cs_cdo_initialize_structures(cs_glob_domain,
+                                 cs_glob_mesh,
+                                 cs_glob_mesh_quantities);
 
     /* Initialize gradient computation */
 
@@ -380,7 +380,7 @@ cs_run(void)
 
       if (cs_user_solver_set() == 0) {
 
-        if (cs_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY) {
+        if (cs_domain_get_cdo_mode(cs_glob_domain) == CS_DOMAIN_CDO_MODE_ONLY) {
 
           /* Only C language is called within CDO */
 
@@ -390,7 +390,7 @@ cs_run(void)
            * Call main calculation function (CDO Kernel)
            *----------------------------------------------*/
 
-          cs_cdo_main();
+          cs_cdo_main(cs_glob_domain);
 
           /* Return to the default behavior */
 
@@ -461,7 +461,11 @@ cs_run(void)
 
   /* Final stage for CDO/HHO schemes */
 
-  cs_cdo_finalize();
+  cs_cdo_finalize(cs_glob_domain);
+
+  /* Free cs_domain_structure */
+
+  cs_domain_free(&cs_glob_domain);
 
   /* Free coupling-related data */
 

@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_domain.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 
@@ -55,44 +56,52 @@ BEGIN_C_DECLS
 /*!
  * \brief  Initialize the computational domain when CDO/HHO schemes are
  *         activated
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_initialize_setup(void);
+cs_cdo_initialize_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the structures related to the computational domain when
  *         CDO/HHO schemes are activated
  *
- * \param[in, out]  m     pointer to a cs_mesh_t struct.
- * \param[in]       mq    pointer to a cs_quantities_t struct.
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in, out]  m        pointer to a cs_mesh_t struct.
+ * \param[in]       mq       pointer to a cs_quantities_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_initialize_structures(cs_mesh_t             *m,
+cs_cdo_initialize_structures(cs_domain_t           *domain,
+                             cs_mesh_t             *m,
                              cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Free all structures allocated during the resolution of CDO/HHO
  *          schemes
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_finalize(void);
+cs_cdo_finalize(cs_domain_t    *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Main program for running a simulation with the CDO kernel
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_main(void);
+cs_cdo_main(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 

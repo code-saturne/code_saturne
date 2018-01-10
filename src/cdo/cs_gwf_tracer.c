@@ -500,17 +500,18 @@ cs_gwf_tracer_init(int                      tracer_id,
 
   BFT_FREE(pty_name);
 
-  cs_equation_link(tracer->eq, "time", time_pty);
+  cs_equation_param_t  *tr_eqp = cs_equation_get_param(tracer->eq);
+
+  cs_equation_add_time(tr_eqp,  time_pty);
 
   /* Associate the advection field for the advection term */
   assert(adv_field != NULL); /* Sanity check */
-  cs_equation_link(tracer->eq, "advection", adv_field);
+  cs_equation_add_advection(tr_eqp, adv_field);
 
-  /* Set default option */
-  cs_equation_set_param(tracer->eq, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
-  cs_equation_set_param(tracer->eq, CS_EQKEY_ITSOL, "bicg");
-  cs_equation_set_param(tracer->eq, CS_EQKEY_BC_ENFORCEMENT, "weak");
-  cs_equation_set_param(tracer->eq, CS_EQKEY_ADV_SCHEME, "sg");
+  cs_equation_set_param(tr_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+  cs_equation_set_param(tr_eqp, CS_EQKEY_ITSOL, "bicg");
+  cs_equation_set_param(tr_eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
+  cs_equation_set_param(tr_eqp, CS_EQKEY_ADV_SCHEME, "sg");
 
   const int  n_soils = cs_gwf_get_n_soils();
 
@@ -673,6 +674,7 @@ cs_gwf_tracer_standard_add_terms(cs_gwf_tracer_t     *tracer)
 
   cs_gwf_std_tracer_input_t  *param =
     (cs_gwf_std_tracer_input_t  *)tracer->input;
+  cs_equation_param_t  *eqp = cs_equation_get_param(tracer->eq);
 
   const int n_soils = cs_gwf_get_n_soils();
   const double  thd = 100*DBL_MIN; // threshold to avoid a wrong activation
@@ -704,7 +706,7 @@ cs_gwf_tracer_standard_add_terms(cs_gwf_tracer_t     *tracer)
 
     cs_property_t *diff_pty = cs_property_add(pty_name, CS_PROPERTY_ANISO);
 
-    cs_equation_link(tracer->eq, "diffusion", diff_pty);
+    cs_equation_add_diffusion(eqp, diff_pty);
 
     /* Create a new field related to this property */
     const int  pty_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
@@ -733,7 +735,7 @@ cs_gwf_tracer_standard_add_terms(cs_gwf_tracer_t     *tracer)
 
     cs_property_t *r_pty = cs_property_add(pty_name, CS_PROPERTY_ISO);
 
-    tracer->reaction_id = cs_equation_add_reaction(tracer->eq, r_pty);
+    tracer->reaction_id = cs_equation_add_reaction(eqp, r_pty);
 
   } // reaction
 

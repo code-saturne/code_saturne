@@ -1,13 +1,14 @@
-/*============================================================================
- * Set main parameters for the current simulation when the CDO kernel is used
- *============================================================================*/
+#ifndef __CS_DOMAIN_SETUP_H__
+#define __CS_DOMAIN_SETUP_H__
 
-/* VERS */
+/*============================================================================
+ * Manage the definition/setting of a computation
+ *============================================================================*/
 
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2017 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -26,55 +27,34 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-
-/*----------------------------------------------------------------------------
- * Standard C library headers
- *----------------------------------------------------------------------------*/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "cs_defs.h"
 
+#include "cs_advection_field.h"
 #include "cs_domain.h"
-
-/*----------------------------------------------------------------------------
- * Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_equation.h"
+#include "cs_gwf.h"
+#include "cs_param.h"
+#include "cs_property.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Additional doxygen documentation
+/*============================================================================
+ * Macro definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_cdo.c
- *
- * \brief  Set main parameters for the current simulation when the CDO kernel
- *         is used
- */
-/*----------------------------------------------------------------------------*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
- * Private function prototypes
+ * Type definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Global variables
  *============================================================================*/
 
 /*============================================================================
@@ -83,85 +63,91 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Activate or not the CDO module
+ * \brief  Set to true the automatic update of all advection fields
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-int
-cs_user_cdo_activated(void)
-{
-  /* By default, the CDO module is not activated */
-  return  CS_PARAM_CDO_MODE_OFF;
-}
+void
+cs_domain_update_advfield(cs_domain_t       *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify for the computational domain:
- *         -- which type of boundaries closed the computational domain
- *         -- the settings for the time step
- *         -- activate predefined equations or modules
- *         -- add user-defined properties and/or advection fields
- *         -- add user-defined equations
+ * \brief  Add a new zone gathering all CS_DOMAIN_BOUNDARY_WALL zone type
+ *
+ * \param[in]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_update_wall_zones(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Setup predefined equations which are activated
+ *         At this stage, no equation is added and the space discretization
+ *         scheme and the related numerical parameters are set.
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_init_setup(cs_domain_t   *domain)
-{
-  CS_UNUSED(domain);
-}
+cs_domain_setup_predefined_equations(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify for each soil and tracer how is defined each term of the
- *         the tracer equation. Soils and tracer equations have to be added
- *         previously
+ * \brief  Define the scheme flags for the current computational domain
+ *         Requirement: domain->cdo_context is alloctated
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
-*/
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_setup_gwf(cs_domain_t   *domain)
-{
-  CS_UNUSED(domain);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  - Specify the elements such as properties, advection fields,
- *           user-defined equations and modules which have been previously
- *           added.
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
-*/
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_finalize_setup(cs_domain_t   *domain)
-{
-  CS_UNUSED(domain);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the bulk density related to a soil structure
- *
- * \param[in]  soil      pointer to a cs_gwf_soil_t structure
- * \param[out] density   return value for the density
+ * \param[in, out]  domain       pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
-                             cs_real_t             *density)
-{
-  CS_UNUSED(soil);
-  CS_UNUSED(density);
-}
+cs_domain_set_scheme_flags(cs_domain_t    *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a cs_domain_t structure
+ *
+ * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
+ * \param[in]       mesh_quantities   pointer to a cs_mesh_quantities_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_finalize_setup(cs_domain_t                 *domain,
+                         cs_mesh_t                   *mesh,
+                         const cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve all the equations of a computational domain for one time step
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_solve(cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize systems of equations and their related field values
+ *         according to the user settings
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_initialize_systems(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#endif /* __CS_DOMAIN_SETUP_H__ */
