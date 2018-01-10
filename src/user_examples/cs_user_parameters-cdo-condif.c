@@ -400,69 +400,67 @@ _define_source(cs_real_t           time,
 void
 cs_user_model(void)
 {
+  /* Activate CDO/HHO module so that main additional structure are built */
 
   /*! [param_cdo_activation] */
   {
-    /* Activate CDO/HHO module so that main additional structure are built */
-
     cs_domain_t  *domain = cs_glob_domain;
 
     cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_ONLY);
   }
   /*! [param_cdo_activation] */
 
+  /* ======================
+     Boundary of the domain
+     ====================== */
+
   /*! [param_cdo_domain_boundary] */
   {
-    /* ======================
-       Boundary of the domain
-       ====================== */
-
     cs_domain_t  *domain = cs_glob_domain;
 
     /* Choose a boundary by default */
     cs_domain_set_default_boundary(domain, CS_DOMAIN_BOUNDARY_WALL);
 
     /* Add a new boundary
-       >> cs_domain_add_boundary(domain, type_of_boundary, zone_name);
-
-       * zone_name is either a predefined one or user-defined one
-       * type_of_boundary is one of the following keywords:
-         CS_DOMAIN_BOUNDARY_WALL,
-         CS_DOMAIN_BOUNDARY_INLET,
-         CS_DOMAIN_BOUNDARY_OUTLET,
-         CS_DOMAIN_BOUNDARY_SYMMETRY
-    */
+     *  >> cs_domain_add_boundary(domain, type_of_boundary, zone_name);
+     *
+     * zone_name is either a predefined one or user-defined one
+     * type_of_boundary is one of the following keywords:
+     *   CS_DOMAIN_BOUNDARY_WALL,
+     *   CS_DOMAIN_BOUNDARY_INLET,
+     *   CS_DOMAIN_BOUNDARY_OUTLET,
+     *   CS_DOMAIN_BOUNDARY_SYMMETRY
+     */
 
     cs_domain_add_boundary(domain, CS_DOMAIN_BOUNDARY_INLET, "in");
     cs_domain_add_boundary(domain, CS_DOMAIN_BOUNDARY_OUTLET, "out");
-
   }
   /*! [param_cdo_domain_boundary] */
 
+  /* =========================
+     Generic output management
+     ========================= */
 
-  /*! [param_cdo_domain_ouput] */
+  /*! [param_cdo_domain_output] */
   {
     cs_domain_t  *domain = cs_glob_domain;
-
-    /* =========================
-       Generic output management
-       ========================= */
 
     cs_domain_set_output_param(domain,
                                10,     // output log frequency
                                2);     // verbosity (-1: no, 0, ...)
 
   }
-  /*! [param_cdo_domain_ouput] */
+  /*! [param_cdo_domain_output] */
+
+    /* ====================
+       Time step management
+       ==================== */
 
   /*! [param_cdo_time_step] */
   {
     cs_domain_t  *domain = cs_glob_domain;
 
-    /* ====================
-       Time step management
-       ====================
-
+    /*
        If there is an inconsistency between the max. number of iteration in
        time and the final physical time, the first condition encountered stops
        the calculation.
@@ -477,9 +475,6 @@ cs_user_model(void)
        >> cs_domain_def_time_step_by_func(domain, dt_func);
 
        The second way to define the time step enable complex definitions.
-       dt_func must have the following prototype:
-
-       double dt_func(int  nt_cur, double  time_cur)
     */
 
     cs_domain_def_time_step_by_value(domain, 1.0);
@@ -495,9 +490,10 @@ cs_user_model(void)
 
   /*! [param_cdo_add_user_equation] */
   {
-    /* Add user equation:
-       -- default boundary condition is among:
-       CS_PARAM_BC_HMG_DIRICHLET or CS_PARAM_BC_HMG_NEUMANN
+    /* Add a new user equation:
+       Set the default boundary condition among:
+       CS_PARAM_BC_HMG_DIRICHLET or
+       CS_PARAM_BC_HMG_NEUMANN
 
        By default, initial values are set to zero (or the value given by the
        restart file in case of restart).
@@ -510,13 +506,12 @@ cs_user_model(void)
   }
   /*! [param_cdo_add_user_equation] */
 
+  /* ========================================
+     Add material properties/advection fields
+     ======================================== */
+
   /*! [param_cdo_add_user_properties] */
   {
-
-    /* ========================================
-       Add material properties/advection fields
-       ======================================== */
-
     cs_property_add("conductivity",      // property name
                     CS_PROPERTY_ANISO);  // type of material property
     cs_property_add("rho.cp",            // property name
@@ -542,9 +537,6 @@ cs_user_model(void)
 void
 cs_user_parameters(void)
 {
-  /*! [param_cdo_numerics] */
-  {
-
     /* Modify the setting of an equation
        =================================
 
@@ -552,6 +544,8 @@ cs_user_parameters(void)
        the DOXYGEN documentation.
     */
 
+  /*! [param_cdo_numerics] */
+  {
     cs_equation_param_t  *eqp = cs_equation_param_by_name("FVCA6.1");
 
     /* The modification of the space discretization should be apply first */

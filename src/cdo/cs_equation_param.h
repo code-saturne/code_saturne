@@ -39,6 +39,14 @@
 
 BEGIN_C_DECLS
 
+/*!
+  \file cs_equation_param.h
+
+  \brief Structure and routines handling the specific settings related
+         to a cs_equation_t structure
+
+*/
+
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -58,12 +66,25 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Type of equations managed by the solver */
+/*! \enum cs_equation_type_t
+ *  \brief Type of equations managed by the solver
+ *
+ * \var CS_EQUATION_TYPE_USER
+ * User-defined equation
+ *
+ * \var CS_EQUATION_TYPE_GROUNDWATER,
+ * Equation related to the groundwater flow module
+ *
+ * \var CS_EQUATION_TYPE_PREDEFINED
+ * Predefined equationn (most part of the setting is already done)
+ * - Example: equation for the wall distance
+ */
+
 typedef enum {
 
-  CS_EQUATION_TYPE_USER,         // User-defined equation
-  CS_EQUATION_TYPE_GROUNDWATER,  // Equation specific to groundwater flows
-  CS_EQUATION_TYPE_PREDEFINED,   // General predefined equation
+  CS_EQUATION_TYPE_USER,
+  CS_EQUATION_TYPE_GROUNDWATER,
+  CS_EQUATION_TYPE_PREDEFINED,
   CS_EQUATION_N_TYPES
 
 } cs_equation_type_t;
@@ -88,8 +109,11 @@ typedef enum {
 
 } cs_equation_solver_class_t;
 
-/* Set of parameters to handle an unsteady convection-diffusion-reaction
-   equation with term sources */
+/*! \struct cs_equation_param_t
+ *  \brief Set of parameters to handle an unsteady convection-diffusion-reaction
+ *         equation with term sources
+ */
+
 typedef struct {
 
   cs_equation_type_t   type;           /* predefined, user... */
@@ -156,150 +180,184 @@ typedef struct {
 /*! \enum cs_equation_key_t
  *  \brief List of available keys for setting the parameters of an equation
  *
- * \var CS_EQKEY_ADV_FORMULATION
- *
  * \var CS_EQKEY_SPACE_SCHEME
- *      Set the space discretization scheme. Available choices are:
- *      "cdo_vb"  for CDO vertex-based scheme
- *      "cdo_vcb" for CDO vertex+cell-based scheme
- *      "cdo_fb"  for CDO face-based scheme
+ * Set the space discretization scheme. Available choices are:
+ * - "cdo_vb"  for CDO vertex-based scheme
+ * - "cdo_vcb" for CDO vertex+cell-based scheme
+ * - "cdo_fb"  for CDO face-based scheme
+ * - "hho_p1"  for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
+ * - "hho_p2"  for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
  *
  * \var CS_EQKEY_VERBOSITY
- *      Set the level of details written by the code for an equation.
- *      The higher the more detailed information is displayed.
- *      "0" (default)
- *      "1" detailed setup resume and coarse grain timer stats
- *      "2" fine grain for timer stats
+ * Set the level of details written by the code for an equation.
+ * The higher the more detailed information is displayed.
+ * - "0" (default)
+ * - "1" detailed setup resume and coarse grain timer stats
+ * - "2" fine grain for timer stats
  *
  * \var CS_EQKEY_HODGE_DIFF_ALGO
- *      Set the algorithm used for building the discrete Hodge operator used
- *      in the diffusion term. Available choices are:
- *      "voronoi"  leads to diagonal discrete Hodge operator but is not
- *      consistent for all meshes
- *      "cost" (default) is more robust (i.e. it handles more
- *      general meshes but is is less efficient)
- *      "wbs" is robust and accurate but is limited to the reconstruction of
- *      potential-like degrees of freedom and needs a correct computation of
- *      the cell barycenter
+ * Set the algorithm used for building the discrete Hodge operator used
+ * in the diffusion term. Available choices are:
+ * - "voronoi" --> leads to a diagonal discrete Hodge operator but is not
+ *   consistent for all meshes. Require an "orthogonal" (or admissible) mesh;
+ * - "cost" --> (default for diffusion) is more robust (i.e. it handles more
+ *   general meshes but is is less efficient)
+ * - "wbs" --> is robust and accurate but is limited to the reconstruction of
+ *   potential-like degrees of freedom and needs a correct computation of the
+ *   cell barycenter
  *
  * \var CS_EQKEY_HODGE_TIME_ALGO
- *      Set the algorithm used for building the discrete Hodge operator used
- *      in the diffusion term. Available choices are:
- *      "voronoi" (default) leads to diagonal discrete Hodge operator. It acts
- *      as a mass lumping.
- *      "wbs" is robust and accurate but is less efficient. It needs a correct
- *      computation of the cell barycenter
+ * Set the algorithm used for building the discrete Hodge operator used
+ * in the unsteady term. Available choices are:
+ * - "voronoi" --> (default) leads to diagonal discrete Hodge operator. It acts
+ *   as a mass lumping.
+ * - "wbs" is robust and accurate but is less efficient. It needs a correct
+ *   computation of the cell barycenter
  *
  * \var CS_EQKEY_HODGE_REAC_ALGO
- *      "voronoi" leads to diagonal discrete Hodge operator but is not
- *      consistent for all meshes
- *       "wbs" (default) is robust and accurate but is limited to the
- *      reconstruction of potential-like degrees of freedom and needs a correct
- *      computation of the cell barycenter
+ * Set the algorithm used for building the discrete Hodge operator used
+ * in the reaction term. Available choices are:
+ * - "voronoi" --> leads to diagonal discrete Hodge operator but is not
+ *   consistent for all meshes.  Require an "orthogonal" (or admissible) mesh;
+ * - "wbs" --> (default) is robust and accurate but is limited to the
+ *   reconstruction of potential-like degrees of freedom and needs a correct
+ *   computation of the cell barycenter
  *
  * \var CS_EQKEY_HODGE_DIFF_COEF
+ * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
+ * "cost".
+ * keyval is either a name or a value:
+ * - "dga" corresponds to the value \f$ 1./3. \f$
+ * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
+ * - "gcr"  corresponds to the value \f$1\f$.
+ * - or "1.5", "9" for instance
+ *
  * \var CS_EQKEY_HODGE_TIME_COEF
+ * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
+ * "cost".
+ * keyval is either a name or a value:
+ * - "dga" corresponds to the value \f$ 1./3. \f$
+ * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
+ * - "gcr"  corresponds to the value \f$1\f$.
+ * - or "1.5", "9" for instance
+ *
  * \var CS_EQKEY_HODGE_REAC_COEF
- *      This key is only useful if CS_EQKEY_HODGE_*_ALGO is set to "cost"
- *      val is either a name or a value: "dga", "sushi", "gcr" or "1.5", "9"..
- *      "dga" corresponds to the value 1./3.
- *      "sushi" corresponds to the value 1./sqrt(3.)
- *      "gcr" corresponds to the value 1.
+ * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
+ * "cost".
+ * keyval is either a name or a value:
+ * - "dga" corresponds to the value \f$ 1./3. \f$
+ * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
+ * - "gcr"  corresponds to the value \f$1\f$.
+ * - or "1.5", "9" for instance
  *
  *
  * \var CS_EQKEY_SOLVER_FAMILY
- *      Available choises are:  "cs" (default), "petsc"
- *      WARNING: For using "petsc" one needs to install Code_Saturne with PETSc
+ * Specify which class of solver are possible. Available choises are:
+ * - "cs" --> (default) List of possible iterative solvers are those of
+ *   Code_Saturne,
+ * - "petsc" --> List of possible iterative solvers are those of the PETSc
+ *   library. WARNING: one needs to install Code_Saturne with PETSc in this case
  *
  * \var CS_EQKEY_ITSOL
- *      Avalible choices are:
- *      "cg" (default) is the standard conjuguate gradient algorithm
- *      "bicg" is Bi-CG algorithm (for non-symmetric linear systems)
- *      "bicgstab2" is BiCG-Stab2 algorithm (for non-symmetric linear systems)
- *      "cr3" is a 3-layer conjugate residual solver
- *      "gmres" is a robust iterative solver but not as efficient
- *      "amg" is an algebraic multigrid iterative solver
+ * Specify the iterative solver for solvinf the linear system related to an
+ * equation. Avalaible choices are:
+ * - "cg" --> (default) the standard conjuguate gradient algorithm
+ * - "bicg" --> Bi-CG algorithm (for non-symmetric linear systems)
+ * - "bicgstab2" --> BiCG-Stab2 algorithm (for non-symmetric linear systems)
+ * - "cr3" --> a 3-layer conjugate residual solver (when "cs" is chosen as the
+ *    solver family)
+ * - "gmres" --> a robust iterative solver but slower as previous one if the
+ *   system is not difficult to solve
+ * - "amg" --> an algebraic multigrid iterative solver. Good choice for a
+ * symmetric positive definite system.
  *
  * \var CS_EQKEY_PRECOND
- *      Available choices are:
- *      "jacobi" diagonal preconditoner
- *      "block_jacobi"
- *      "poly1"  neumann polynomial of order 1
- *      "ssor"   symmetric successive over-relaxation (only with PETSC)
- *      "ilu0"   incomplete LU factorization
- *      "icc0"   incomplete Cholesky factorization (for symmetric matrices)
- *      "amg"    algebraic multigrid
+ * Specify the preconditionner associated to an iterative solver. Available
+ * choices are:
+ * - "jacobi" --> diagonal preconditoner
+ * - "block_jacobi" --> Only with PETSc
+ * - "poly1" --> Neumann polynomial of order 1 (only with Code_Saturne)
+ * - "ssor" --> symmetric successive over-relaxation (only with PETSC)
+ * - "ilu0" --> incomplete LU factorization (only with PETSc)
+ * - "icc0" --> incomplete Cholesky factorization (for symmetric matrices and
+ *   only with PETSc)
+ * - "amg" --> algebraic multigrid
  *
  * \var CS_EQKEY_ITSOL_EPS
- *      Tolerance factor for stopping the iterative processus for solving the
- *      linear system related to an equation
- *      "1e-10" for instance
+ * Tolerance factor for stopping the iterative processus for solving the
+ * linear system related to an equation
+ * - Example: "1e-10"
  *
  * \var CS_EQKEY_ITSOL_MAX_ITER
- *      Maximum number of iterations for solving the linear system
- *      "2000" for instance
+ * Maximum number of iterations for solving the linear system
+ * - Example: "2000"
  *
  * \var CS_EQKEY_ITSOL_RESNORM
- *      Normalized or not the residual before testing if one continues iterating
- *      for solving the linear system
- *     "true" or "false"
+ * Normalized or not the residual before testing if one continues iterating
+ * for solving the linear system. Available choices are:
+ * - "true" or "false"
  *
  * \var CS_EQKEY_SLES_VERBOSITY
- *      Level of details written by the code for the resolution of the linear
- *      system
- *      "0", "1", "2" or higher
+ * Level of details written by the code for the resolution of the linear system
+ * - Examples: "0", "1", "2" or higher
  *
  * \var CS_EQKEY_BC_ENFORCEMENT
- *      Set the type of enforcement of the boundary conditions. Available
- *      choices are:
- *      "penalization" weak enforcement using a huge penalization coefficient
- *      "weak"         weak enforcement using the Nitsche method
- *      "weak_sym"     weak enforcement keeping the symmetry of the system
- *      For HHO and CDO-Face based schemes, only the penalization technique is
- *      available.
+ * Set the type of enforcement of the boundary conditions.
+ * Available choices are:
+ * - "penalization" --> weak enforcement using a huge penalization coefficient
+ * - "weak" --> weak enforcement using the Nitsche method
+ * - "weak_sym" --> weak enforcement keeping the symmetry of the system
+ *
+ * For HHO and CDO-Face based schemes, only the penalization technique is
+ * available.
  *
  * \var CS_EQKEY_BC_QUADRATURE
- *      Set the quadrature algorithm used for evaluating integral quantities on
- *      faces or volumes. Available choices are:
- *      "bary"    used the barycenter approximation
- *      "higher"  used 4 Gauss points for approximating the integral
- *      "highest" used 5 Gauss points for approximating the integral
- *      Remark: "higher" and "highest" implies automatically a subdivision into
- *      tetrahedra of each cell
+ * Set the quadrature algorithm used for evaluating integral quantities on
+ * faces or volumes. Available choices are:
+ * - "bary"    used the barycenter approximation
+ * - "higher"  used 4 Gauss points for approximating the integral
+ * - "highest" used 5 Gauss points for approximating the integral
+ *
+ * Remark: "higher" and "highest" implies automatically a subdivision into
+ * tetrahedra of each cell.
  *
  * \var CS_EQKEY_TIME_SCHEME
- *      Set the scheme for the temporal discretization. Available choices are:
- *      "implicit": first-order in time (inconditionnally stable)
- *      "explicit":
- *      "crank_nicolson": second_order in time
- *      "theta_scheme": generic time scheme. One recovers "implicit" with theta
- *      equal to "1", "explicit" with "0", "crank_nicolson" with "0.5"
+ * Set the scheme for the temporal discretization. Available choices are:
+ * - "implicit": first-order in time (inconditionnally stable)
+ * - "explicit":
+ * - "crank_nicolson": second_order in time
+ * - "theta_scheme": generic time scheme. One recovers "implicit" with theta
+ *   equal to "1", "explicit" with "0", "crank_nicolson" with "0.5"
  *
  * \var CS_EQKEY_TIME_THETA
- *      Set the value of theta. Only useful if CS_EQKEY_TIME_SCHEME is set to
- *      "theta_scheme"
- *      "0.75" for instance (must be between 0 <=val<= 1)
+ * Set the value of theta. Only useful if CS_EQKEY_TIME_SCHEME is set to
+ * "theta_scheme"
+ * - Example: "0.75" (keyval must be between 0 and 1)
  *
  * \var CS_EQKEY_ADV_FORMULATION
- *      Kind of formulation of the advective term. Available choices are:
- *      "conservative"
- *      "non_conservative"
+ * Kind of formulation of the advective term. Available choices are:
+ * - "conservative"
+ * - "non_conservative"
  *
  * \var CS_EQKEY_ADV_SCHEME
- *      Type of numerical scheme for the advective term. The available choices
- *      depend on the space discretization scheme.
- *      "upwind"
- *      "centered"
- *      "samarskii" upwind/centered with a weight depending on the Peclet number
- *      "sg"        upwind/centered with a weight depending on the Peclet number
- *      "cip"       "continuous interior penalty" (only for CDOVCB schemes)
- *      "sg" and "samarskii" are only available with CDOVB schemes
+ * Type of numerical scheme for the advective term. The available choices
+ * depend on the space discretization scheme.
+ * - "upwind"
+ * - "centered"
+ * - "samarskii" --> switch smoothly betwwen an upwind and a centered scheme
+ *   thanks to a weight depending on the Peclet number.
+ * - "sg" --> closely related to "samarskii" but with a different definition of
+ *   the weight.
+ * - "cip" --> means "continuous interior penalty" (only for CDOVCB schemes).
+ *   Enable a better accuracy.
+ *
+ * "sg" and "samarskii" are only available with CDOVB schemes
  *
  *
  * \var CS_EQKEY_EXTRA_OP
- *      Set the additional post-processing to perform. Available choices are:
- *      "peclet"  post-process an estimation of the Peclet number in each cell
- *      "upwind_coef" post-process an estimation of the upwinding coefficient
+ * Set the additional post-processing to perform. Available choices are:
+ * - "peclet" --> post-process an estimation of the Peclet number in each cell
+ * - "upwind_coef" --> post-process an estimation of the upwinding coefficient
  */
 
 typedef enum {

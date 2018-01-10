@@ -59,41 +59,111 @@
 
   \section cs_user_parameters_h_cs_user_model_cdo Base model for CDO/HHO schemes
 
+  \subsection cs_user_parameters_h_cdo_activation Activation of CDO/HHO schemes
+
+  Two modes are available \ref CS_DOMAIN_CDO_MODE_ONLY or \ref CS_DOMAIN_CDO_MODE_WITH_FV
+
   CDO/HHO schemes can be activated within this function as follows:
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_activation
 
+  \subsection cs_user_parameters_h_cdo_domain_boundary Domain boundary with CDO/HHO schemes
+
+  Several types of domain boundaries can be defined. There are gathered in \ref cs_domain_boundary_type_t
   The definition of the domain boundaries for CDO/HHO schemes can be specified
   as follows:
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_domain_boundary
+
+  \subsection cs_user_parameters_h_cdo_domain_output Output with CDO/HHO schemes
 
   The management of the level and frequency of details written by the code
   can be specified for CDO/HHO schemes as follows:
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_domain_output
 
+  \subsection cs_user_parameters_h_cdo_time_step Time step with CDO/HHO schemes
+
   The management of the time step with CDO/HHO schemes can be specified as
   follows:
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_time_step
 
+  \subsection cs_user_parameters_h_cdo_walldistance Wall distance with CDO/HHO schemes
+
   The computation of the wall distance with CDO schemes is performed as follows:
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_wall_distance
+
+  \subsection cs_user_parameters_h_cdo_add_user_eq Add a user-defined equation with CDO/HHO schemes
 
   The add of a user-defined equation solved by CDO/HHO schemes is specified as
   follows:
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_equation
 
+  \subsection cs_user_parameters_h_cdo_add_user_pty Add user-defined properties with CDO/HHO schemes
+
+  The definition of an advection field allows one to handle flows with a frozen velocity field or
+  the transport of scalar quantities without solving the Navier-Stokes system.
   The add of a new user-defined property or a new user-defined advection field
   with CDO/HHO schemes is specified as follows:
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_properties
 
-  \section cs_user_parameters_h_cs_user_parameters Define or modify general
-  numerical and physical user parameters
+  \subsection cs_user_parameters_h_cdo_gwf Settings related to the groundwater flow module with CDO/HHO schemes
+
+  Activation of the groundwater flow module. The second argument is either 0 if no option is needed or a list of flags among
+  \ref CS_GWF_GRAVITATION, \ref CS_GWF_RICHARDS_UNSTEADY, \ref CS_GWF_SOIL_PROPERTY_UNSTEADY, \ref CS_GWF_SOIL_ALL_SATURATED
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_activate_gwf
+
+  Add soils (settings of the soil is performed in \ref cs_user_gwf_setup). Soils have to be added before adding tracers.
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_soil
+
+  Add tracer equations which correspond to a transport equation using
+  the darcean flux as the advection field. This call implies the
+  creation of a new equation related to a new variable field name
+  given as arguments. Advanced tracer equations can be defined using
+  \ref cs_gwf_add_tracer_user.
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_tracer
+
+  \section cs_user_parameters_h_cs_user_parameters Define or modify general numerical and physical user parameters
+
+  \subsection cs_user_parameters_h_cdo_param_eq CDO/HHO schemes
+
+  Modifiy the numerical parameters related to a given equation.
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_numerics
+
+  \section cs_user_parameters_h_cs_user_cdo_finalize_setup Finalize the set-up for CDO/HHO schemes
+
+  \subsection cs_user_parameters_h_cdo_set_pty Set up properties with CDO/HHO schemes
+
+  When a property has been added, the second step is to define this property. According to the type
+  of property (isotropic, orthotropic or anisotropic) definitions differ.
+  Here are two examples:
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_setup_property
+
+  \subsection cs_user_parameters_h_cdo_set_advfield Set up user-defined advection field with CDO/HHO schemes
+
+  When an advection field has been added, the second step is to define this advection field.
+  Here are is an example of definition using an anlytic function and the activation of optional features:
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_setup_advfield
+
+  \subsection cs_user_parameters_h_cdo_set_bcs Set up the boundary conditions for an equation
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_setup_bcs
+
+  \subsection cs_user_parameters_h_cdo_add_eq_terms Add terms to an equation
+
+  Add terms like diffusion term, advection term, unsteady term, reaction terms or source terms.
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_terms
 
   \section cs_user_parameters_h_cs_user_linear_solvers  Linear solver related options
 
