@@ -94,11 +94,15 @@
 
   \subsection cs_user_lagr_volume_conditions_h_injection  Injection sets
 
+  In the following example, we inject 1 particle set at each time step:
+  \snippet cs_user_lagr_volume_conditions.c lagr_vol_define_injection_1
+
+  \snippet cs_user_lagr_volume_conditions.c lagr_vol_define_injection_2
   In the following example, we inject 2 particle sets at computation
   initialization (i.e. at the first time step of a computation sequence
   in which the Lagrangian module is activated).
   Note that newly injected particles may also be modified using the
   \ref cs_user_lagr_in function.
 
-  \snippet cs_user_lagr_volume_conditions.c lagr_vol_define_injection_1
+  \snippet cs_user_lagr_volume_conditions.c lagr_vol_define_injection_2
 */

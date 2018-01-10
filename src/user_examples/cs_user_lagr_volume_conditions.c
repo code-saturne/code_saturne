@@ -90,50 +90,85 @@ cs_user_lagr_volume_conditions(void)
 
   /*! [lagr_vol_define_injection_1] */
 
-  /* The volume zone containing all cells always has id 0;
-     a given zone may otherwise be selected using cs_volume_zone_by_name() */
+  {
+    /* The volume zone named "particle_injection" is created in the GUI */
 
-  const cs_volume_zone_t *z = cs_volume_zone_by_id(0);
+    const cs_volume_zone_t *z = cs_volume_zone_by_name("particle_injection");
 
-  /* Inject 2 particle sets of different diameters */
+    /* Inject 1 particle set every time step */
 
-  cs_gnum_t n_inject[] = {500, 500};
-
-  cs_real_t diam[] = {1e-3, 1e-2};
-  cs_real_t diam_dev[] = {1e-6, 1e-5};
-  cs_real_t density[] = {2500., 1500.};
-
-  for (int set_id = 0; set_id < 2; set_id++) {
+    int set_id = 0;
 
     cs_lagr_injection_set_t *zis
       = cs_lagr_get_injection_set(lagr_vol_conds, z->id, set_id);
 
-    zis->n_inject = n_inject[set_id];
-    zis->injection_frequency = 0; /* if <= 0, injection at
+    zis->n_inject = 1000;
+    zis->injection_frequency = 1; /* if <= 0, injection at
                                      initialization only */
 
-    if (cs_glob_lagr_model->n_stat_classes > 0)
-      zis->cluster = set_id + 1;
-
-    zis->velocity_profile = -1; /* fluid velocity */
-
     zis->stat_weight = 1.0;
-    zis->flow_rate   = 0;
 
-    zis->diameter = diam[set_id];
-    zis->diameter_variance = diam_dev[set_id];
+    zis->diameter = 5e-6;
+    zis->diameter_variance = 1e-6;
 
-    zis->density = density[set_id];
+    zis->density = 2475.;
+
     zis->fouling_index = 100.0;
 
-    zis->temperature_profile = 0; /* fluid temperature */
+  }
+  /*! [lagr_vol_define_injection_1] */
 
-    zis->cp = 1400.0;
-    zis->emissivity = 0.7;
 
+  /* Example for a uniform injection at computation initialization */
+
+  /*! [lagr_vol_define_injection_2] */
+
+  {
+    /* The volume zone containing all cells always has id 0;
+       a given zone may otherwise be selected using cs_volume_zone_by_name() */
+
+    const cs_volume_zone_t *z = cs_volume_zone_by_id(0);
+
+    /* Inject 2 particle sets of different diameters */
+
+    cs_gnum_t n_inject[] = {500, 500};
+
+    cs_real_t diam[] = {1e-3, 1e-2};
+    cs_real_t diam_dev[] = {1e-6, 1e-5};
+    cs_real_t density[] = {2500., 1500.};
+
+    for (int set_id = 0; set_id < 2; set_id++) {
+
+      cs_lagr_injection_set_t *zis
+        = cs_lagr_get_injection_set(lagr_vol_conds, z->id, set_id);
+
+      zis->n_inject = n_inject[set_id];
+      zis->injection_frequency = 0; /* if <= 0, injection at
+                                       initialization only */
+
+      if (cs_glob_lagr_model->n_stat_classes > 0)
+        zis->cluster = set_id + 1;
+
+      zis->velocity_profile = -1; /* fluid velocity */
+
+      zis->stat_weight = 1.0;
+      zis->flow_rate   = 0;
+
+      zis->diameter = diam[set_id];
+      zis->diameter_variance = diam_dev[set_id];
+
+      zis->density = density[set_id];
+      zis->fouling_index = 100.0;
+
+      zis->temperature_profile = 0; /* fluid temperature */
+
+      zis->cp = 1400.0;
+      zis->emissivity = 0.7;
+
+    }
   }
 
-  /*! [lagr_vol_define_injection_1] */
+  /*! [lagr_vol_define_injection_2] */
 }
 
 /*----------------------------------------------------------------------------*/
