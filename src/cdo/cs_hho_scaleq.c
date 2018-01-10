@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_HHO_SCALEQ_DBG  1
+#define CS_HHO_SCALEQ_DBG  0
 #define CS_HHO_SCALEQ_MODULO  4
 
 /* Redefined the name of functions from cs_math to get shorter names */
@@ -1229,11 +1229,6 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
                          c_id, csys);
 #endif
 
-      if (c_id == 0) {
-        printf(" before static condensation\n");
-        cs_sdm_block_fprintf(NULL, NULL, 1e-16, csys->mat);
-      }
-
       /* Static condensation of the local system matrix of n_fc + 1 blocks into
          a matrix of n_fc block. Store information in the input structure in
          order to be able to compute the values at cell centers. */
@@ -1261,8 +1256,10 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 0
       if (c_id % CS_HHO_SCALEQ_MODULO == 0)
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
-      if (c_id == 0)
+      if (c_id == 0) {
+        printf(" (FINAL STATE) HHO local system for cell_id = 0\n");
         cs_sdm_block_fprintf(NULL, NULL, 1e-16, csys->mat);
+      }
 #endif
 
       /* Assemble the local system (related to vertices only since one applies
