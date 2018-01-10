@@ -782,32 +782,27 @@ cs_gwf_init_setup(void)
   } /* Gravitation is activated */
 
   /* Detect if all soils are considered as saturated. If this not the case,
-     create new fields */
+     create new fields. Check also if properties are time-dependent. */
+  bool  pty_has_previous = false;
   int soil_id = 0;
   for (soil_id = 0; soil_id < n_soils; soil_id++) {
 
     const cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
 
     /* Is there a unique model ? */
-    if (soil->model != CS_GWF_SOIL_SATURATED)
+    if (soil->model != CS_GWF_SOIL_SATURATED) {
+      gw->flag |= CS_GWF_SOIL_PROPERTY_UNSTEADY;
+      pty_has_previous = true;
       break;
+    }
 
   } // Loop on soils
 
-  /* Time-dependent properties ? */
-  int  pty_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
-  bool  pty_has_previous;
-
-  if (soil_id == n_soils) {
+  if (soil_id == n_soils)
     gw->flag |= CS_GWF_SOIL_ALL_SATURATED;
-    pty_has_previous = false;
-  }
-  else {
-    gw->flag |= CS_GWF_SOIL_PROPERTY_UNSTEADY;
-    pty_has_previous = true;
-  }
 
   /* Create a moisture field attached to cells */
+  int  pty_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
   gw->moisture_field = cs_field_create("moisture_content",
                                        pty_mask,
                                        c_loc_id,
