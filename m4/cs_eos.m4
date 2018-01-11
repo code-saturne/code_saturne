@@ -104,6 +104,14 @@ if test "x$with_eos" != "xno" ; then
                                     cs_have_eos=yes],
                                    [cs_have_eos=no])
 
+  if test "x$cs_have_eos" = "xno" ; then
+    if test "x$with_eos" != "xcheck" ; then
+      AC_MSG_FAILURE([EOS support is requested, but test for EOS failed!])
+    else
+      AC_MSG_WARN([no EOS library support])
+    fi
+  fi
+
   if test "x$cs_have_eos" != "xyes"; then
     EOS_LIBS=""
   fi
