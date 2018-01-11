@@ -138,8 +138,10 @@ typedef struct {
   cs_real_33_t  *cocg_lsq;       /* Interleaved cocg matrix
                                     for least square gradients */
 
-  cs_real_t     *corr_grad_lin_det;  /* Determinant of geometrical matrix linear gradient correction */
-  cs_real_33_t  *corr_grad_lin;      /* Geometrical matrix linear gradient correction */
+  cs_real_t     *corr_grad_lin_det;  /* Determinant of geometrical matrix
+                                        linear gradient correction */
+  cs_real_33_t  *corr_grad_lin;      /* Geometrical matrix
+                                        linear gradient correction */
 
   cs_int_t      *b_sym_flag;     /* Symmetry flag for boundary faces */
   cs_int_t      *c_solid_flag;   /* Is the fluid volume 0 flag */

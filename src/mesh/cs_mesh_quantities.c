@@ -597,8 +597,7 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
   }
 
   /* Matrix inversion */
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-  {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     double cocg11 = corr_grad_lin[cell_id][0][0] / cell_vol[cell_id];
     double cocg12 = corr_grad_lin[cell_id][1][0] / cell_vol[cell_id];
     double cocg13 = corr_grad_lin[cell_id][2][0] / cell_vol[cell_id];
@@ -667,7 +666,8 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
 
   if (m->halo != NULL) {
     cs_halo_sync_var (m->halo, CS_HALO_STANDARD, corr_grad_lin_det);
-    cs_halo_sync_var_strided (m->halo, CS_HALO_STANDARD, (cs_real_t *)corr_grad_lin, 9);
+    cs_halo_sync_var_strided (m->halo, CS_HALO_STANDARD,
+                              (cs_real_t *)corr_grad_lin, 9);
   }
 }
 
@@ -1703,7 +1703,8 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
   cs_parall_counter(&cpt1, 1);
 
   if (cpt1 > 0) {
-    bft_printf("Total number of cell centers on the other side of a face (before correction) = %lu / %d\n", cpt1, mesh->n_cells);
+    bft_printf("Total number of cell centers on the other side of a face "
+               "(before correction) = %lu / %d\n", cpt1, mesh->n_cells);
 
     /* Second pass */
     cs_real_33_t *a;
@@ -1728,17 +1729,18 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
 
       cs_lnum_t cell_id1 = i_face_cells[face_id][0];
       cs_lnum_t cell_id2 = i_face_cells[face_id][1];
-      double surfn = sqrt(   i_face_normal[face_id][0] * i_face_normal[face_id][0]
-                           + i_face_normal[face_id][1] * i_face_normal[face_id][1]
-                           + i_face_normal[face_id][2] * i_face_normal[face_id][2] );
+      double surfn = cs_math_3_norm(i_face_normal[face_id]);
 
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++) {
-          a[cell_id1][i][j] += i_face_normal[face_id][i] * i_face_normal[face_id][j] / surfn;
-          a[cell_id2][i][j] += i_face_normal[face_id][i] * i_face_normal[face_id][j] / surfn;
+          a[cell_id1][i][j] +=   i_face_normal[face_id][i]
+                               * i_face_normal[face_id][j] / surfn;
+          a[cell_id2][i][j] +=   i_face_normal[face_id][i]
+                               * i_face_normal[face_id][j] / surfn;
         }
 
-      double ps = cs_math_3_dot_product(i_face_normal[face_id], i_face_cog[face_id]);
+      double ps = cs_math_3_dot_product(i_face_normal[face_id],
+                                        i_face_cog[face_id]);
 
       for (int i = 0; i < 3; i++) {
         b[cell_id1][i] += ps * i_face_normal[face_id][i] / surfn;
@@ -1751,16 +1753,16 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
       cs_lnum_t cell_id = b_face_cells[face_id];
-      double surfn = sqrt(   b_face_normal[face_id][0] * b_face_normal[face_id][0]
-                           + b_face_normal[face_id][1] * b_face_normal[face_id][1]
-                           + b_face_normal[face_id][2] * b_face_normal[face_id][2] );
+      double surfn = cs_math_3_norm(b_face_normal[face_id]);
 
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++) {
-          a[cell_id][i][j] += b_face_normal[face_id][i] * b_face_normal[face_id][j] / surfn;
+          a[cell_id][i][j] +=   b_face_normal[face_id][i]
+                              * b_face_normal[face_id][j] / surfn;
         }
 
-      double ps = cs_math_3_dot_product(b_face_normal[face_id], b_face_cog[face_id]);
+      double ps = cs_math_3_dot_product(b_face_normal[face_id],
+                                        b_face_cog[face_id]);
 
       for (int i = 0; i < 3; i++) {
         b[cell_id][i] += ps * b_face_normal[face_id][i] / surfn;
@@ -1823,16 +1825,20 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
             aainv[2][2] = a33 * det_inv;
 
             for (int i = 0; i < 3; i++)
-              cdgbis[cell_id][i] = aainv[i][0] * bb[0] + aainv[i][1] * bb[1] + aainv[i][2] * bb[2];
+              cdgbis[cell_id][i] =   aainv[i][0] * bb[0]
+                                   + aainv[i][1] * bb[1]
+                                   + aainv[i][2] * bb[2];
           }
         }
       }
     }
 
     if (mesh->halo != NULL) {
-      cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED, (cs_real_t *)cdgbis, 3);
+      cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
+                               (cs_real_t *)cdgbis, 3);
       if (mesh->n_init_perio > 0)
-        cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED, (cs_real_t *)cdgbis);
+        cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED,
+                                  (cs_real_t *)cdgbis);
     }
 
     /* Second verification */
@@ -1868,7 +1874,8 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
         cpt2++;
     cs_parall_counter(&cpt2, 1);
 
-    bft_printf("Total number of cell centers on the other side of a face (after correction) = %lu / %d\n", cpt2, mesh->n_cells);
+    bft_printf("Total number of cell centers on the other side of a face "
+               "(after correction) = %lu / %d\n", cpt2, mesh->n_cells);
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
       if (pb1[cell_id] > 0 && pb2[cell_id] == 0) {
@@ -1880,9 +1887,11 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
     }
 
     if (mesh->halo != NULL) {
-      cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED, (cs_real_t *)cell_cen, 3);
+      cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
+                               (cs_real_t *)cell_cen, 3);
       if (mesh->n_init_perio > 0)
-        cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED, (cs_real_t *)cell_cen);
+        cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED,
+                                  (cs_real_t *)cell_cen);
     }
 
     BFT_FREE(a);
@@ -1890,9 +1899,9 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
     BFT_FREE(cdgbis);
     BFT_FREE(pb2);
   }
+
   /* Free memory */
   BFT_FREE(pb1);
-
 }
 
 /*----------------------------------------------------------------------------
