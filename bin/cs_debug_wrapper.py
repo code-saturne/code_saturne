@@ -762,6 +762,7 @@ def main(argv, pkg=None):
 
     if 'mpiexec' in cmds.keys():
         cmd_mpi = cmds['mpiexec']
+        cmd_mpi.append(sys.argv[0])
         for k in ['debugger', 'valgrind', 'program']:
             if k in cmds:
                 cmd_mpi += cmds[k]
