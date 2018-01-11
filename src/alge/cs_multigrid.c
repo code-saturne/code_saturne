@@ -1050,8 +1050,6 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
   g = mgd->grid_hierarchy[i];
   m = cs_grid_get_matrix(g);
 
-  bool symmetric = cs_matrix_is_symmetric(m);
-
   mg_lv_info = mg->lv_info + i;
 
   mgd->sles_hierarchy[0]
@@ -2435,9 +2433,15 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
   info->precision_mult[2] = precision_mult_coarse;
 
   for (int i = 0; i < 3; i++) {
-    if (   info->type[i] >= CS_SLES_JACOBI
-        || info->type[i] <= CS_SLES_P_SYM_GAUSS_SEIDEL)
+    switch(info->type[i]) {
+    case CS_SLES_JACOBI:
+    case CS_SLES_P_GAUSS_SEIDEL:
+    case CS_SLES_P_SYM_GAUSS_SEIDEL:
       info->poly_degree[i] = -1;
+      break;
+    default:
+      break;
+    }
   }
 }
 
