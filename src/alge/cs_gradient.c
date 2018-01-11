@@ -4766,7 +4766,9 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 18);
     if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)grad);
+      cs_halo_perio_sync_var_sym_tens_grad(m->halo,
+                                           halo_type,
+                                           (cs_real_t *)grad);
   }
 }
 
@@ -4982,7 +4984,9 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
       if (m->halo != NULL) {
         cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 18);
         if (cs_glob_mesh->n_init_perio > 0)
-          cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)grad);
+          cs_halo_perio_sync_var_sym_tens_grad(m->halo,
+                                               halo_type,
+                                               (cs_real_t *)grad);
       }
 
       /* Convergence test (L2 norm) */
