@@ -864,7 +864,7 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
     BFT_MALLOC(_dest_data, dc->recv_size*elt_size, unsigned char);
 
   /* Data buffer for MPI exchange (may merge data and metadata) */
-  if (   dc->dest_id_datatype == CS_LNUM_TYPE || d->dest_id != NULL
+  if (   dc->dest_id_datatype == CS_LNUM_TYPE || d->recv_id != NULL
       || reverse)
     BFT_MALLOC(_recv_data, dc->recv_size*dc->comp_size, unsigned char);
   else
@@ -886,12 +886,20 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
   if (dc->dest_id_datatype == CS_LNUM_TYPE) {
     assert(d->recv_id == NULL);
     BFT_MALLOC(d->recv_id, d->dc->recv_size, cs_lnum_t);
+    for (size_t i = 0; i < d->dc->recv_size; i++)
+      d->recv_id[i] = -1;
     const unsigned char *sp = _recv_data;
     for (size_t i = 0; i < d->dc->recv_size; i++)
       memcpy(d->recv_id + i,
              sp + d->dc->comp_size*i,
              sizeof(cs_lnum_t));
     dc->dest_id_datatype = CS_DATATYPE_NULL;
+    cs_lnum_t dest_id_max = -1;
+    for (size_t i = 0; i < d->dc->recv_size; i++) {
+      if (d->recv_id[i] > dest_id_max)
+        dest_id_max = d->recv_id[i];
+      d->n_elts_dest = dest_id_max + 1;
+    }
   }
 
   /* Now handle main data buffer (reverse implies reordering data) */
@@ -962,13 +970,25 @@ _alltoall_caller_exchange_i(cs_all_to_all_t           *d,
 
   /* Final data buffer */
 
-  size_t _n_dest_sub = dest_index[dc->recv_size];
+  size_t n_elts_dest = (reverse) ? d->n_elts_src : d->n_elts_dest;
+
+  size_t _n_dest_sub = dest_index[n_elts_dest];
   if (_dest_data == NULL && _n_dest_sub*elt_size > 0)
     BFT_MALLOC(_dest_data, _n_dest_sub*elt_size, unsigned char);
 
   /* Data buffer for MPI exchange (may merge data and metadata) */
-  if (d->dest_id != NULL || reverse)
-    BFT_MALLOC(_recv_data, _n_dest_sub*elt_size, unsigned char);
+
+  if (d->recv_id != NULL || reverse) {
+    size_t _n_dest_buf = _n_dest_sub;
+    if (d->recv_id != NULL) {
+      _n_dest_buf = 0;
+      for (size_t i = 0; i < d->dc->recv_size; i++) {
+        cs_lnum_t j = d->recv_id[i];
+        _n_dest_buf += dest_index[j+1] - dest_index[j];
+      }
+    }
+    BFT_MALLOC(_recv_data, _n_dest_buf*elt_size, unsigned char);
+  }
   else
     _recv_data = _dest_data;
 
@@ -988,19 +1008,15 @@ _alltoall_caller_exchange_i(cs_all_to_all_t           *d,
   if (_dest_data != _recv_data) {
     const unsigned char *sp = _recv_data;
     if (d->recv_id != NULL && !reverse) {
-      for (int i = 0; i < dc->n_ranks; i++) {
-        size_t i_s = dc->recv_displ[i];
-        size_t i_e = dc->recv_displ[i+1];
-        size_t r_displ = dc->recv_displ[i]*elt_size;
-        for (size_t j = i_s; j < i_e; j++) {
-          cs_lnum_t k = d->recv_id[j];
-          cs_lnum_t n_sub_recv = dest_index[k+1] - dest_index[k];
-          size_t w_displ = dest_index[k]*elt_size;
-          size_t sub_size = n_sub_recv*elt_size;
-          for (size_t l = 0; l < sub_size; l++)
-            _dest_data[w_displ + l] = sp[r_displ + l];
-          r_displ += sub_size;
-        }
+      size_t r_displ = 0;
+      for (size_t i = 0; i < dc->recv_size; i++) {
+        cs_lnum_t k = d->recv_id[i];
+        cs_lnum_t n_sub_recv = dest_index[k+1] - dest_index[k];
+        size_t w_displ = dest_index[k]*elt_size;
+        size_t sub_size = n_sub_recv*elt_size;
+        for (size_t l = 0; l < sub_size; l++)
+          _dest_data[w_displ + l] = sp[r_displ + l];
+        r_displ += sub_size;
       }
     }
     else if (reverse) {
@@ -1039,8 +1055,6 @@ _alltoall_caller_exchange_i(cs_all_to_all_t           *d,
  *
  * \param[in]  d         pointer to all-to-all distributor
  * \param[in]  src_rank  associated source rank (size: d->n_elts_dest)
- *
- * \return associated destination id array
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1524,7 +1538,15 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
         _alltoall_caller_exchange_meta(d->dc,
                                        d->n_elts_src,
                                        d->dest_rank);
-        d->n_elts_dest = d->dc->recv_size;
+        if (d->dc->dest_id_datatype == CS_LNUM_TYPE)
+          cs_all_to_all_copy_array(d,
+                                   CS_DATATYPE_NULL,
+                                   0,
+                                   false,
+                                   NULL,
+                                   NULL);
+        else
+          d->n_elts_dest = d->dc->recv_size;
       }
       break;
 
@@ -1768,7 +1790,7 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
 cs_lnum_t *
 cs_all_to_all_copy_index(cs_all_to_all_t  *d,
                          bool              reverse,
-                         cs_lnum_t        *src_index,
+                         const cs_lnum_t  *src_index,
                          cs_lnum_t        *dest_index)
 {
   cs_timer_t t0, t1;
@@ -1779,9 +1801,10 @@ cs_all_to_all_copy_index(cs_all_to_all_t  *d,
   cs_lnum_t *_dest_index = dest_index;
 
   cs_lnum_t n_src = (reverse) ? d->n_elts_dest : d->n_elts_src;
-  cs_lnum_t n_dest = cs_all_to_all_n_elts_dest(d);
-  if (reverse)
-    n_dest = d->n_elts_src;
+  cs_lnum_t n_dest = -1;
+
+  if (dest_index == NULL)
+    n_dest = (reverse) ? d->n_elts_src : cs_all_to_all_n_elts_dest(d);
 
   t0 = cs_timer_time();
 
@@ -1811,6 +1834,9 @@ cs_all_to_all_copy_index(cs_all_to_all_t  *d,
   BFT_FREE(src_count);
 
   _dest_index[0] = 0;
+
+  if (n_dest < 1)
+    n_dest = (reverse) ? d->n_elts_src : d->n_elts_dest;
 
   for (cs_lnum_t i = 0; i < n_dest; i++)
     _dest_index[i+1] += _dest_index[i];

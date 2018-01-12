@@ -285,7 +285,7 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
 cs_lnum_t *
 cs_all_to_all_copy_index(cs_all_to_all_t  *d,
                          bool              reverse,
-                         cs_lnum_t        *src_index,
+                         const cs_lnum_t  *src_index,
                          cs_lnum_t        *dest_index);
 
 /*----------------------------------------------------------------------------*/
