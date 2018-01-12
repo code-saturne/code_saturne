@@ -607,6 +607,11 @@ _define_vertices(cs_join_param_t        param,
 
     BFT_MALLOC(vertices, selection->n_vertices, cs_join_vertex_t);
 
+#if defined(DEBUG) && !defined(NDEBUG)
+    /* Avoid Valgrind warnings in byte copies due to padding */
+    memset(vertices, 0, selection->n_vertices*sizeof(cs_join_vertex_t));
+#endif
+
     for (i = 0; i < selection->n_vertices; i++) {
 
       cs_lnum_t  vtx_id = selection->vertices[i]-1;

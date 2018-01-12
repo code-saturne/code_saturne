@@ -206,6 +206,11 @@ _get_new_vertex(cs_coord_t             curv_abs,
   cs_lnum_t  k;
   cs_join_vertex_t  new_vtx_data;
 
+#if defined(DEBUG) && !defined(NDEBUG)
+  /* Avoid Valgrind warnings in byte copies due to padding */
+  memset(&new_vtx_data, 0, sizeof(cs_join_vertex_t));
+#endif
+
   cs_join_vertex_t  v1 = work->vertices[vtx_couple[0]-1];
   cs_join_vertex_t  v2 = work->vertices[vtx_couple[1]-1];
 
@@ -1230,6 +1235,11 @@ _compute_merged_vertex(cs_lnum_t               n_elts,
   cs_join_vertex_t  mvtx;
 
   cs_real_t  denum = 0.0;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  /* Avoid Valgrind warnings in byte copies due to padding */
+  memset(&mvtx, 0, sizeof(cs_join_vertex_t));
+#endif
 
   assert(n_elts > 0);
 
