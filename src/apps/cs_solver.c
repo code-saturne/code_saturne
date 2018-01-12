@@ -55,6 +55,7 @@
 #include "cs_control.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
+#include "cs_domain_setup.h"
 #include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
