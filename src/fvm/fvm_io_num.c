@@ -685,8 +685,6 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
 
-  /* block_size = ceil(this_io_num->global_count/size) */
-
   cs_block_dist_info_t
     bi = cs_block_dist_compute_sizes(local_rank,
                                      size,
@@ -1094,11 +1092,11 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
   for (size_t i = 0; i < n_ent; i++)
     dest_rank[i] = (global_num[index[i]] - 1) / _block_size;
 
-  cs_all_to_all_t *d =cs_all_to_all_create(n_ent,
-                                           0, /* flags */
-                                           NULL,
-                                           dest_rank,
-                                           comm);
+  cs_all_to_all_t *d = cs_all_to_all_create(n_ent,
+                                            0, /* flags */
+                                            NULL,
+                                            dest_rank,
+                                            comm);
   cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
   /* Get recv_index */
@@ -2291,14 +2289,14 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_id[],
     BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
     this_io_num->global_num = this_io_num->_global_num;
 
+    BFT_MALLOC(_index, n_entities + 1, cs_lnum_t);
+    _index[0] = 0;
+
     if (n_entities > 0) {
 
       cs_lnum_t   i, j, k, ent_id, _shift;
 
       /* Assign initial global numbers */
-
-      BFT_MALLOC(_index, n_entities + 1, cs_lnum_t);
-      _index[0] = 0;
 
       if (parent_entity_id != NULL) {
 
