@@ -42,6 +42,7 @@
 
 #include "fvm_io_num.h"
 
+#include "cs_all_to_all.h"
 #include "cs_block_dist.h"
 #include "cs_join_util.h"
 #include "cs_order.h"
@@ -1558,51 +1559,31 @@ cs_join_gset_t *
 cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
                         MPI_Comm         comm)
 {
-  int  shift, rank, local_rank, n_ranks, n_recv_elts;
-  cs_lnum_t i, j, elt_id, n_sub_elts;
-  cs_gnum_t g_ent_num, _n_ranks;
-
-  cs_lnum_t  *send_count = NULL, *recv_count = NULL;
-  cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
-  cs_gnum_t  *send_buffer = NULL, *recv_buffer = NULL;
+  int local_rank, n_ranks;
   cs_join_gset_t  *sync_set = NULL;
 
   assert(loc_set != NULL);
 
   MPI_Comm_rank(comm, &local_rank);
   MPI_Comm_size(comm, &n_ranks);
-  _n_ranks = n_ranks;
 
-  /* Allocate parameters for MPI functions */
+  /* Assign rank in a round-robin manner */
 
-  BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(send_shift, n_ranks + 1, cs_lnum_t);
-  BFT_MALLOC(recv_shift, n_ranks + 1, cs_lnum_t);
+  int *dest_rank;
+  BFT_MALLOC(dest_rank, loc_set->n_elts, int);
 
-  /* Initialization */
+  cs_gnum_t _n_ranks = n_ranks;
+  for (cs_lnum_t i = 0; i < loc_set->n_elts; i++)
+    dest_rank[i] = (loc_set->g_elts[i] - 1) % _n_ranks;
 
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
+  cs_all_to_all_t
+    *d = cs_all_to_all_create(loc_set->n_elts,
+                              0, /* flags */
+                              NULL, /* dest_id */
+                              dest_rank,
+                              comm);
 
-  /* Synchronize list definition for each global element */
-
-  for (i = 0; i < loc_set->n_elts; i++) {
-    rank = (loc_set->g_elts[i] - 1) % _n_ranks;
-    send_count[rank] += 1;
-  }
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
-  }
-
-  n_recv_elts = recv_shift[n_ranks];
+  cs_lnum_t n_recv_elts = cs_all_to_all_n_elts_dest(d);
 
   /* Define sync_set: a distributed cs_join_gset_t structure which
      synchronize data over the ranks */
@@ -1611,107 +1592,77 @@ cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
 
   /* Synchronize list definition for each global element */
 
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
+  cs_lnum_t *index;
+  BFT_MALLOC(index, loc_set->n_elts+1, cs_lnum_t);
 
-  for (i = 0; i < loc_set->n_elts; i++) {
-
-    rank = (loc_set->g_elts[i] - 1) % _n_ranks;
-    n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
-    send_count[rank] += 2 + n_sub_elts;
-
+  index[0] = 0;
+  for (cs_lnum_t i = 0; i < loc_set->n_elts; i++) {
+    cs_lnum_t n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
+    index[i+1] = index[i] + 1 + n_sub_elts;
   }
 
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
-  }
+  cs_lnum_t *block_index = cs_all_to_all_copy_index(d,
+                                                    false, /* reverse */
+                                                    index,
+                                                    NULL);
 
   /* Fill send_buffer: global number and number of elements in index */
 
-  BFT_MALLOC(send_buffer, send_shift[n_ranks], cs_gnum_t);
-  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], cs_gnum_t);
+  cs_gnum_t *send_buffer;
+  BFT_MALLOC(send_buffer, index[loc_set->n_elts], cs_gnum_t);
 
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
+  for (cs_lnum_t i = 0, j = 0; i < loc_set->n_elts; i++) {
 
-  for (i = 0; i < loc_set->n_elts; i++) {
+    cs_gnum_t g_ent_num = loc_set->g_elts[i];
+    cs_lnum_t n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
 
-    g_ent_num = loc_set->g_elts[i];
-    rank = (g_ent_num - 1) % _n_ranks;
-    shift = send_shift[rank] + send_count[rank];
-    n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
+    send_buffer[j++] = g_ent_num;
 
-    send_buffer[shift++] = g_ent_num;
-    send_buffer[shift++] = n_sub_elts;
-
-    for (j = 0; j < n_sub_elts; j++)
-      send_buffer[shift + j] = loc_set->g_list[loc_set->index[i] + (cs_gnum_t)j];
-
-    send_count[rank] += 2 + n_sub_elts;
+    for (cs_lnum_t k = 0; k < n_sub_elts; k++)
+      send_buffer[j++] = loc_set->g_list[loc_set->index[i] + (cs_gnum_t)k];
 
   }
 
-  MPI_Alltoallv(send_buffer, send_count, send_shift, CS_MPI_GNUM,
-                recv_buffer, recv_count, recv_shift, CS_MPI_GNUM,
-                comm);
-
-  n_recv_elts = recv_shift[n_ranks];
+  cs_gnum_t *recv_buffer = cs_all_to_all_copy_indexed(d,
+                                                      CS_GNUM_TYPE,
+                                                      false, /* reverse */
+                                                      index,
+                                                      send_buffer,
+                                                      block_index,
+                                                      NULL);
 
   /* Partial free memory */
 
+  BFT_FREE(index);
   BFT_FREE(send_buffer);
-  BFT_FREE(send_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(recv_count);
-  BFT_FREE(recv_shift);
-
-  /* Fill sync_set->index and define a new recv_count for the next comm. */
-
-  i = 0; /* position in recv_buffer */
-  elt_id = 0; /* position of the element in sync_set */
-
-  while (i < n_recv_elts) {
-
-    sync_set->g_elts[elt_id] = recv_buffer[i++];
-    n_sub_elts = recv_buffer[i++];
-    sync_set->index[elt_id+1] = n_sub_elts;
-    i += n_sub_elts;
-    elt_id++;
-
-  } /* End of loop on ranks */
 
   /* Build index on elements of sync_set */
 
-  for (i = 0; i < sync_set->n_elts; i++)
-    sync_set->index[i+1] += sync_set->index[i];
+  sync_set->index[0] = 0;
+  for (cs_lnum_t i = 0; i < n_recv_elts; i++) {
+    cs_lnum_t n_sub_elts = block_index[i+1] - block_index[i] - 1;
+    sync_set->index[i+1] = sync_set->index[i] + n_sub_elts;
+  }
+
+  BFT_FREE(block_index);
+
+  /* Fill g_list of sync_set */
 
   BFT_MALLOC(sync_set->g_list,
              sync_set->index[sync_set->n_elts],
              cs_gnum_t);
 
-  /* Fill g_list of sync_set */
+  for (cs_lnum_t i = 0, j = 0; i < n_recv_elts; i++) {
 
-  i = 0; /* position in recv_buffer */
-  elt_id = 0; /* position of the element in sync_set */
+    cs_lnum_t shift = sync_set->index[i];
 
-  while (i < n_recv_elts) {
+    sync_set->g_elts[i] = recv_buffer[j++];
 
-    i++; /* element numbering */
-    shift = sync_set->index[elt_id];
-    n_sub_elts = recv_buffer[i++];
+    cs_lnum_t n_sub_elts = sync_set->index[i+1] - sync_set->index[i];
+    for (cs_lnum_t k = 0; k < n_sub_elts; k++)
+      sync_set->g_list[k + shift] = recv_buffer[j++];
 
-    for (j = 0; j < n_sub_elts; j++)
-      sync_set->g_list[j + shift] = recv_buffer[i++];
-
-    elt_id++;
-
-  } /* End of loop on ranks */
+  }
 
   BFT_FREE(recv_buffer);
 
@@ -2155,15 +2106,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
                           cs_join_gset_t        *loc_set,
                           MPI_Comm               comm)
 {
-  int  shift, block_id;
-  int  rank, local_rank, n_ranks, n_sub_elts, n_recv_elts;
-  cs_lnum_t i, j, k, start, end;
-  cs_gnum_t g_ent_num;
-  cs_block_dist_info_t  bi;
-
-  cs_lnum_t  *send_count = NULL, *recv_count = NULL;
-  cs_lnum_t  *send_shift = NULL, *recv_shift = NULL, *wanted_rank_index = NULL;
-  cs_gnum_t  *send_buffer = NULL, *recv_buffer = NULL, *wanted_elts = NULL;
+  int  local_rank, n_ranks;
 
   if (max_gnum == 0)
     return;
@@ -2178,194 +2121,87 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
   MPI_Comm_rank(comm, &local_rank);
   MPI_Comm_size(comm, &n_ranks);
 
-  bi = cs_block_dist_compute_sizes(local_rank,
-                                   n_ranks,
-                                   1,
-                                   0,
-                                   max_gnum);
+  cs_block_dist_info_t  bi = cs_block_dist_compute_sizes(local_rank,
+                                                         n_ranks,
+                                                         1,
+                                                         0,
+                                                         max_gnum);
 
-  /* Allocate parameters for MPI functions */
+  cs_all_to_all_t
+    *d = cs_all_to_all_create_from_block(loc_set->n_elts,
+                                         0, /* flags */
+                                         loc_set->g_elts,
+                                         bi,
+                                         comm);
 
-  BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(send_shift, n_ranks + 1, cs_lnum_t);
-  BFT_MALLOC(recv_shift, n_ranks + 1, cs_lnum_t);
-  BFT_MALLOC(wanted_rank_index, n_ranks + 1, cs_lnum_t);
+  cs_gnum_t *wanted_elts = cs_all_to_all_copy_array(d,
+                                                    CS_GNUM_TYPE,
+                                                    1,
+                                                    false, /* reverse */
+                                                    loc_set->g_elts,
+                                                    NULL);
 
-  /* Initialization */
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
+  cs_lnum_t n_recv_elts = cs_all_to_all_n_elts_dest(d);
 
   /* Get a synchronized list definition for each global element */
-
-  for (i = 0; i < loc_set->n_elts; i++) {
-    rank = (loc_set->g_elts[i] - 1)/(cs_gnum_t)bi.block_size;
-    send_count[rank] += 1;
-  }
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  send_shift[0] = 0;
-  wanted_rank_index[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    wanted_rank_index[rank + 1] = wanted_rank_index[rank] + recv_count[rank];
-  }
-
-  /* Fill send_buffer: global number */
-
-  BFT_MALLOC(send_buffer, send_shift[n_ranks], cs_gnum_t);
-  BFT_MALLOC(wanted_elts, wanted_rank_index[n_ranks], cs_gnum_t);
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (i = 0; i < loc_set->n_elts; i++) {
-
-    g_ent_num = loc_set->g_elts[i];
-    rank = (g_ent_num - 1) / (cs_gnum_t)bi.block_size;
-    shift = send_shift[rank] + send_count[rank];
-
-    send_buffer[shift] = g_ent_num;
-    send_count[rank] += 1;
-
-  }
-
-  MPI_Alltoallv(send_buffer, send_count, send_shift, CS_MPI_GNUM,
-                wanted_elts, recv_count, wanted_rank_index, CS_MPI_GNUM,
-                comm);
 
   /* Send new list definition holding by sync_set to ranks which have
      request it */
 
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
+  cs_lnum_t *block_index;
+  BFT_MALLOC(block_index, n_recv_elts+1, cs_lnum_t);
 
-  for (rank = 0; rank < n_ranks; rank++) {
-
-    for (i = wanted_rank_index[rank]; i < wanted_rank_index[rank+1]; i++) {
-
-      block_id = wanted_elts[i] - bi.gnum_range[0];
-      n_sub_elts = sync_set->index[block_id+1] - sync_set->index[block_id];
-
-      send_count[rank] +=  2 + n_sub_elts; /* glob. num,
-                                              n_sub_elts,
-                                              g_list */
-
-    }
-
-  } /* End of loop on ranks */
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
+  block_index[0] = 0;
+  for (cs_lnum_t i = 0; i < n_recv_elts; i++) {
+    cs_lnum_t block_id = wanted_elts[i] - bi.gnum_range[0];
+    cs_lnum_t n_sub_elts =   sync_set->index[block_id+1]
+                           - sync_set->index[block_id];
+    block_index[i+1] = block_index[i] + n_sub_elts;
   }
 
-  BFT_REALLOC(send_buffer, send_shift[n_ranks], cs_gnum_t);
-  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], cs_gnum_t);
+  cs_all_to_all_copy_index(d,
+                           true, /* reverse */
+                           block_index,
+                           loc_set->index);
 
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
+  cs_gnum_t *block_tuples;
+  BFT_MALLOC(block_tuples, block_index[n_recv_elts], cs_gnum_t);
 
-  for (rank = 0; rank < n_ranks; rank++) {
+  for (cs_lnum_t i = 0, shift = 0; i < n_recv_elts; i++) {
 
-    for (i = wanted_rank_index[rank]; i < wanted_rank_index[rank+1]; i++) {
+    cs_lnum_t block_id = wanted_elts[i] - bi.gnum_range[0];
 
-      shift = send_shift[rank] + send_count[rank];
-      block_id = wanted_elts[i] - bi.gnum_range[0];
+    cs_lnum_t s_id = sync_set->index[block_id];
+    cs_lnum_t e_id = sync_set->index[block_id+1];
+    cs_lnum_t n_sub_elts = e_id - s_id;
 
-      start = sync_set->index[block_id];
-      end = sync_set->index[block_id+1];
-      n_sub_elts = end - start;
+    for (cs_lnum_t j = s_id, k = 0; j < e_id; j++, k++)
+      block_tuples[shift+k] = sync_set->g_list[j];
 
-      send_buffer[shift++] = wanted_elts[i];
-      send_buffer[shift++] = n_sub_elts;
+    shift += n_sub_elts;
 
-      for (j = start, k = 0; j < end; j++, k++)
-        send_buffer[shift+k] = sync_set->g_list[j];
+  }
 
-      send_count[rank] +=  2 + n_sub_elts; /* glob. num, n_sub_elts, g_list */
-
-    }
-
-  } /* End of loop on ranks */
-
-  MPI_Alltoallv(send_buffer, send_count, send_shift, CS_MPI_GNUM,
-                recv_buffer, recv_count, recv_shift, CS_MPI_GNUM,
-                comm);
-
-  n_recv_elts = recv_shift[n_ranks];
-
-  /* Partial free memory */
-
-  BFT_FREE(send_buffer);
-  BFT_FREE(send_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(recv_count);
-  BFT_FREE(recv_shift);
-
-  /* Re-initialize loc_set
-     As loc_set->g_elts and sync_set->g_elts are ordered, it's easier.
-     We can take values as they come */
-
-  /* First redefine index */
-
-  assert(loc_set->index[0] == 0);
-
-  for (i = 0; i < loc_set->n_elts; i++)
-    loc_set->index[i+1] = 0;
-
-  i = 0; /* id in recv_buffer */
-  j = 0; /* id in g_elts */
-
-  while (i < n_recv_elts) {
-
-    assert(loc_set->g_elts[j] = recv_buffer[i]);
-
-    i++;
-    n_sub_elts = recv_buffer[i++];
-    loc_set->index[j+1] = n_sub_elts;
-
-    i += n_sub_elts;
-    j++; /* go to the next elements */
-
-  } /* End of loop on elements of recv_buffer */
-
-  /* Define the new index */
-
-  for (i = 0; i < loc_set->n_elts; i++)
-    loc_set->index[i+1] += loc_set->index[i];
-
-  BFT_REALLOC(loc_set->g_list, loc_set->index[loc_set->n_elts], cs_gnum_t);
-
-  i = 0; /* id in recv_buffer */
-  j = 0; /* id in g_elts */
-
-  while (i < n_recv_elts) {
-
-    assert(loc_set->g_elts[j] = recv_buffer[i]);
-
-    i++;
-    n_sub_elts = recv_buffer[i++];
-
-    for (k = 0; k < n_sub_elts; k++)
-      loc_set->g_list[loc_set->index[j] + k] = recv_buffer[i + k];
-
-    i += n_sub_elts;
-    j++; /* go to the next elements */
-
-  } /* End of loop on elements of recv_buffer */
-
-  BFT_FREE(recv_buffer);
   BFT_FREE(wanted_elts);
-  BFT_FREE(wanted_rank_index);
+
+  /* Re-initialize loc_set */
+
+  BFT_FREE(loc_set->g_list);
+
+  loc_set->g_list = cs_all_to_all_copy_indexed(d,
+                                               CS_GNUM_TYPE,
+                                               true, /* reverse */
+                                               block_index,
+                                               block_tuples,
+                                               loc_set->index,
+                                               NULL);
+
+  /* Free some memory */
+
+  cs_all_to_all_destroy(&d);
+
+  BFT_FREE(block_index);
+  BFT_FREE(block_tuples);
 }
 
 #endif /* HAVE_MPI */
