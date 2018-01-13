@@ -1092,8 +1092,10 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
   for (size_t i = 0; i < n_ent; i++)
     dest_rank[i] = (global_num[index[i]] - 1) / _block_size;
 
+  int flags = CS_ALL_TO_ALL_ORDER_BY_SRC_RANK;
+
   cs_all_to_all_t *d = cs_all_to_all_create(n_ent,
-                                            0, /* flags */
+                                            flags,
                                             NULL,
                                             dest_rank,
                                             comm);

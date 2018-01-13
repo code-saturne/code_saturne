@@ -338,7 +338,6 @@ _crystal_create_meta_s(size_t         n_elts,
 
   cs_crystal_router_t *cr = _crystal_create(n_elts, flags, comm);
 
-  size_t comp_size = 0;
   size_t elt_size = cs_datatype_size[datatype]*stride;
   size_t align_size = sizeof(cs_lnum_t);
 
@@ -1674,8 +1673,42 @@ cs_crystal_router_n_elts(const cs_crystal_router_t  *cr)
 {
   cs_lnum_t retval = 0;
 
-  if (cr != NULL)
-    retval = cr->n_elts[0];
+  if (cr != NULL) {
+
+    if (cr->flags & CS_CRYSTAL_ROUTER_USE_DEST_ID) {
+
+      const size_t n_elts = cr->n_elts[0];
+      cs_lnum_t dest_id_max = -1;
+
+      if (cr->n_vals_shift == 0) {
+        for (size_t i = 0; i < n_elts; i++) {
+          unsigned const char *p_s = cr->buffer[0] + i*cr->comp_size;
+          const cs_lnum_t *cr_dest_id
+            = (const cs_lnum_t *)(p_s + cr->dest_id_shift);
+          if (cr_dest_id[0] > dest_id_max)
+            dest_id_max = cr_dest_id[0];
+        }
+      }
+
+      else {
+        unsigned const char *p_s = cr->buffer[0];
+        for (size_t i = 0; i < n_elts; i++) {
+          const cs_lnum_t *cr_dest_id
+            = (const cs_lnum_t *)(p_s + cr->dest_id_shift);
+          if (cr_dest_id[0] > dest_id_max)
+            dest_id_max = cr_dest_id[0];
+          const cs_lnum_t *pn = (const cs_lnum_t *)(p_s + cr->n_vals_shift);
+          p_s += cr->comp_size + cr->elt_size*pn[0];
+        }
+      }
+
+      retval = dest_id_max + 1;
+
+    }
+    else
+      retval = cr->n_elts[0];
+
+  }
 
   return retval;
 }
