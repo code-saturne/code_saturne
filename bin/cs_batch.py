@@ -156,6 +156,9 @@ class batch:
 
         if p.returncode == 0:
             return lines
+        else:
+            print(output[1])
+            return []
 
     #---------------------------------------------------------------------------
 

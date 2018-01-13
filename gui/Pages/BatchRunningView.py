@@ -539,10 +539,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         if self.jmdl.batch.rm_type != None:
 
-            self.groupBoxArchi.setTitle("Job and script files")
-            self.labelBatch.show()
-            self.toolButtonSearchBatch.show()
-
             validatorSimpleName = RegExpValidator(self.lineEditJobName,
                                                   QRegExp("[_A-Za-z0-9]*"))
             validatorAccountName = RegExpValidator(self.lineEditJobAccount,
@@ -587,7 +583,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.spinBoxNProcs.valueChanged[int].connect(self.slotNProcs)
             self.spinBoxNThreads.valueChanged[int].connect(self.slotNThreads)
 
-        self.toolButtonSearchBatch.clicked.connect(self.slotSearchBatchFile)
         self.comboBoxRunType.activated[str].connect(self.slotArgRunType)
         self.toolButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
         self.pushButtonRunSubmit.clicked.connect(self.slotBatchRunning)
@@ -609,15 +604,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.comboBoxRunType.hide()
 
         # initialize Widgets
-
-        # Check if the script file name is already defined
-
-        if self.case['runcase']:
-            name = os.path.basename(self.case['runcase'].path)
-            self.labelBatchName.setText(str(name))
-            self.toolButtonSearchBatch.setStyleSheet("background-color: green")
-        else:
-            self.toolButtonSearchBatch.setStyleSheet("background-color: red")
 
         if self.jmdl.batch.rm_type != None and self.case['runcase']:
             self.displayBatchInfo()
@@ -1152,45 +1138,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 self.spinBoxNThreads.setValue(n_threads)
         else:
             pass
-
-
-    @pyqtSlot()
-    def slotSearchBatchFile(self):
-        """
-        Open a FileDialog in order to search the batch command file
-        in the system file.
-        """
-        file_name = ""
-        if self.case['scripts_path'] and os.path.isdir(self.case['scripts_path']):
-            path = self.case['scripts_path']
-        else:
-            path = os.getcwd()
-        title = self.tr("Select the batch script")
-        filetypes = self.tr("All Files (*)")
-        file_name = QFileDialog.getOpenFileName(self, title, path, filetypes)[0]
-        file_name = str(file_name)
-
-        if file_name:
-
-            launcher = os.path.basename(file_name)
-            self.toolButtonSearchBatch.setStyleSheet("background-color: green")
-
-            if self.case['scripts_path'] == os.path.dirname(file_name):
-                self.case['runcase'] = cs_runcase.runcase(os.path.join(self.case['scripts_path'],
-                                                                       launcher),
-                                                          package=self.case['package'])
-                self.labelBatchName.setText(str(launcher))
-                self.hideBatchInfo()
-                if self.jmdl.batch.rm_type != None:
-                    self.displayBatchInfo()
-            else:
-                title = self.tr("Warning")
-                msg   = self.tr("The new batch file is not in scripts "\
-                                "directory given in the 'Identity and paths' "\
-                                "section.\n\n" + \
-                                "Verify the existence and location of these files, "\
-                                "and the 'Identity and Pathes' section")
-                QMessageBox.warning(self, title, msg)
 
 
     def tr(self, text):

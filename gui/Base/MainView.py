@@ -1123,7 +1123,8 @@ class MainView(object):
                                os.path.join(os.path.abspath(os.path.split(file_dir)[0],
                                                             'MESH')))
         self.case['runcase'] = cs_runcase.runcase(os.path.join(self.case['scripts_path'],
-                                                               self.batch_file), package=self.package)
+                                                               self.batch_file),
+                                                  package=self.package)
         del IdentityAndPathesModel
 
         self.updateStudyId()
@@ -1141,26 +1142,17 @@ class MainView(object):
         if not hasattr(self, 'case'):
             return
 
-        if self.case['runcase']:
+        if not self.case['runcase']:
+            self.case['runcase'] \
+                = cs_runcase.runcase(os.path.join(self.case['scripts_path'],
+                                                  self.batch_file),
+                                     package=self.package)
 
-            parameters = os.path.basename(self.case['xmlfile'])
 
-            self.case['runcase'].set_parameters(parameters)
-            self.case['runcase'].save()
+        parameters = os.path.basename(self.case['xmlfile'])
 
-        else:
-
-            try:
-                node_models = self.case.xmlGetNode('thermophysical_models')
-                node_cht = node_models.xmlGetNode('conjugate_heat_transfer')
-                node_syr = node_cht.xmlGetNode('external_coupling')
-                if len(node_syr.xmlGetNodeList('syrthes')) > 0:
-                    msg = "The Calculation management/Prepare batch page should be " \
-                        + "visited before saving so that the script file is updated " \
-                        + "relative to the XML file."
-                    QMessageBox.warning(self, self.package.code_name + ' Interface', msg)
-            except Exception:
-                pass
+        self.case['runcase'].set_parameters(parameters)
+        self.case['runcase'].save()
 
 
     def displayNewPage(self, index):
