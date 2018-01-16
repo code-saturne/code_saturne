@@ -239,6 +239,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.modelTurboMachineryType.addItem(self.tr("Full transient simulation"), "transient")
         self.modelTurboMachineryType.addItem(self.tr("Transient with explicit coupling"), "transient_coupled")
         self.modelTurboMachineryType.addItem(self.tr("Frozen rotor model"), "frozen")
+        self.modelTurboMachineryType.addItem(self.tr("Frozen rotor with explicit coupling"), "frozen_coupled")
 
         # Set up validators
         self.lineEditDX.setValidator(DoubleValidator(self.lineEditDX))
@@ -340,10 +341,10 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
                 self.groupBoxJoin.setTitle("Face joining (optional)")
             elif mdl == "transient":
                 self.groupBoxJoin.setTitle("Face joining")
-            elif mdl == "transient_coupled":
+            elif mdl == "frozen_coupled" or mdl == "transient_coupled":
                 self.groupBoxJoin.setTitle("Face mapping")
 
-            if mdl == "transient_coupled":
+            if mdl == "frozen_coupled" or mdl == "transient_coupled":
                 self.widgetFacesJoin.tableView.hideColumn(1)
                 self.widgetFacesJoin.tableView.hideColumn(3)
             else:

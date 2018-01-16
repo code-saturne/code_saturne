@@ -43,8 +43,6 @@ module cplsat
   integer, save :: nbrcpl
   !> indicator coupling face / face only
   integer, save :: ifaccp
-  !> "Mobil Mesh" indicator for turbo-machine applications
-  integer, save :: imobil
   !> maximum permissible number of coupling
   integer   nbcpmx
   parameter(nbcpmx=10)

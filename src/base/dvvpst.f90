@@ -153,9 +153,9 @@ if (numtyp .eq. -1) then
 
   endif
 
-  ! Relative pressure and velocity in case of moving mesh in fixed coordinates
+  ! Relative pressure and velocity in case of turbomachinery
 
-  if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
+  if (iturbo.ne.0) then
 
     call field_get_val_s(icrom, crom)
 
@@ -166,7 +166,13 @@ if (numtyp .eq. -1) then
     do iloc = 1, ncelps
 
       iel = lstcel(iloc)
-      call rotation_velocity(irotce(iel), xyzcen(:,iel), vr)
+      if (irotce(iel).gt.0) then
+        call rotation_velocity(irotce(iel), xyzcen(:,iel), vr)
+      else
+        vr(1) = 0
+        vr(2) = 0
+        vr(3) = 0
+      endif
 
       tracel(iloc) =   cvar_pr(iel) &
                      - crom(iel)*0.5d0*(vr(1)**2 + vr(2)**2 + vr(3)**2)
@@ -183,7 +189,13 @@ if (numtyp .eq. -1) then
     do iloc = 1, ncelps
 
       iel = lstcel(iloc)
-      call rotation_velocity(irotce(iel), xyzcen(:,iel), vr)
+      if (irotce(iel).gt.0) then
+        call rotation_velocity(irotce(iel), xyzcen(:,iel), vr)
+      else
+        vr(1) = 0
+        vr(2) = 0
+        vr(3) = 0
+      endif
 
       tracel(1 + (iloc-1)*idimt) = vel(1,iel) - vr(1)
       tracel(2 + (iloc-1)*idimt) = vel(2,iel) - vr(2)
@@ -209,14 +221,14 @@ if (numtyp .eq. -1) then
     do iloc = 1, ncelps
 
       iel = lstcel(iloc)
-      call rotation_velocity(1, xyzcen(:,iel), vr)
+      call rotation_velocity(0, xyzcen(:,iel), vr)
 
       tracel(iloc) = cvar_pr(iel) + &
              0.5d0*crom(iel)*(vr(1)**2 + vr(2)**2 + vr(3)**2)
 
     enddo
 
-    call post_write_var(nummai, 'Pressure', idimt, ientla, ivarpr,  &
+    call post_write_var(nummai, 'Abs Pressure', idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, tracel, rbid, rbid)
 
     idimt = 3
@@ -226,7 +238,7 @@ if (numtyp .eq. -1) then
     do iloc = 1, ncelps
 
       iel = lstcel(iloc)
-      call rotation_velocity(1, xyzcen(:,iel), vr)
+      call rotation_velocity(0, xyzcen(:,iel), vr)
 
       tracel(1 + (iloc-1)*idimt) = vel(1,iel) + vr(1)
       tracel(2 + (iloc-1)*idimt) = vel(2,iel) + vr(2)
@@ -234,7 +246,7 @@ if (numtyp .eq. -1) then
 
     enddo
 
-    call post_write_var(nummai, 'Velocity', idimt, ientla, ivarpr,  &
+    call post_write_var(nummai, 'Abs Velocity', idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, tracel, rbid, rbid)
 
   endif

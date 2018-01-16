@@ -919,10 +919,10 @@ if (ippmod(icompf).ge.0) then
 endif
 
 !===============================================================================
-! 8. Rotating frame and unsteady rotor/stator coupling: 9000 formats
+! 8. Unsteady rotor/stator coupling: 9000 formats
 !===============================================================================
 
-if (imobil.eq.1 .or. iturbo.eq.2) then
+if (iturbo.eq.2) then
   ! Unsteady rotor/stator coupling is not compatible with the
   !   steady algorithm...
   if (idtvar.lt.0) then
@@ -930,6 +930,7 @@ if (imobil.eq.1 .or. iturbo.eq.2) then
     iok = iok + 1
   endif
   ! ... nor with the time/space variable time steps
+  ! TODO-> make it ok for idtvar=1
   if (idtvar.eq.1.or.idtvar.eq.2) then
     write(nfecra,9011) idtvar
     iok = iok + 1

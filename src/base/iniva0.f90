@@ -610,7 +610,7 @@ do iflid = 0, nfld - 1
 enddo
 
 !===============================================================================
-! 8.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
+! 8.  INITIALISATIONS EN ALE
 !===============================================================================
 
 if (iale.eq.1) then
@@ -619,7 +619,7 @@ if (iale.eq.1) then
   enddo
 endif
 
-if (iale.eq.1.or.imobil.eq.1) then
+if (iale.eq.1) then
   do ii = 1, nnod
     do idim = 1, 3
       xyzno0(idim,ii) = xyznod(idim,ii)

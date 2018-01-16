@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes
 -------
 
+- Improved legacy coupling-based turbomachinery option, frozen rotor
+  is now also possible.
+
 - The GUI enforces the 'runcase' name for the script. This allows more robust
   handling of the runcase/XML file link, as one of the 2 names is fixed.
 

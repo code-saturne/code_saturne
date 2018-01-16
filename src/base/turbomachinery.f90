@@ -31,10 +31,15 @@ module turbomachinery
   !> \addtogroup at_turbomachinery
   !> \{
 
-  !> Type of turbomachinery computation :
+  !> Type of turbomachinery computation:
   !>   none (0), frozen rotor (1), transient (2)
 
   integer, save :: iturbo
+
+  !> Type of rotor/stator interface:
+  !>   joint internal faces (0), coupled boundary faces (1)
+
+  integer, save :: ityint
 
   !> Rotor identifier list (1:ncel)
 
@@ -56,11 +61,11 @@ module turbomachinery
 
     ! Interface to C function mapping some data for turbomachinery
 
-    subroutine map_turbomachinery_model (iturbo2, imobil2) &
+    subroutine map_turbomachinery_model (iturbo2, ityint2) &
       bind(C, name='cs_f_map_turbomachinery_model')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(out) :: iturbo2, imobil2
+      integer(c_int), intent(out) :: iturbo2, ityint2
     end subroutine map_turbomachinery_model
 
     !---------------------------------------------------------------------------
@@ -118,8 +123,6 @@ contains
 
     use, intrinsic :: iso_c_binding
     use mesh
-    use cstphy
-    use cplsat, only: imobil
 
     implicit none
 
@@ -133,19 +136,6 @@ contains
     call map_turbomachinery_rotor(c_p)
 
     call c_f_pointer(c_p, irotce, [ncelet])
-
-    ! In case of relative frame computation or turbomachinery computation
-    ! with code/code coupling, the data management is merged with the one
-    ! of turbomachinery module
-
-    if (iturbo.eq.0) then
-      if (icorio.eq.1.or.imobil.eq.1) then
-        allocate(irotce(ncelet))
-        do iel = 1, ncelet
-          irotce(iel) = 1
-        enddo
-      endif
-    endif
 
     ! Initialization of elapsed times
 
@@ -191,13 +181,6 @@ contains
   ! Finalization of turbomachinery module variables
 
   subroutine turbomachinery_finalize
-
-    use cstphy, only: icorio
-    use cplsat, only: imobil
-
-    if (iturbo.eq.0) then
-      if (icorio.eq.1.or.imobil.eq.1)  deallocate(irotce)
-    endif
 
     if (iturbo.eq.2)  deallocate(coftur, hfltur)
 

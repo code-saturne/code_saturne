@@ -138,7 +138,7 @@ cs_turbomachinery_t  *_turbomachinery = NULL;
  *============================================================================*/
 
 void cs_f_map_turbomachinery_model(cs_int_t    *iturbo,
-                                   cs_int_t    *imobil);
+                                   cs_int_t    *ityint);
 
 void cs_f_map_turbomachinery_rotor(int       **irotce);
 
@@ -1137,29 +1137,22 @@ _update_mesh(bool     restart_mode,
  *
  * parameters:
  *   iturbo <-- turbomachinery type flag
- *   imobil <-- mobile mesh indicator
+ *   ityint <-- 0: joining; 1: internal coupling
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_map_turbomachinery_model(cs_int_t    *iturbo,
-                              cs_int_t    *imobil)
+                              cs_int_t    *ityint)
 {
-  if (_turbomachinery != NULL) {
-
+  if (_turbomachinery != NULL)
     *iturbo = _turbomachinery->model;
-
-    if (   _turbomachinery->n_couplings > 0
-        && _turbomachinery->model == CS_TURBOMACHINERY_TRANSIENT)
-      *imobil = 1;
-
-  }
-  else {
-
+  else
     *iturbo = CS_TURBOMACHINERY_NONE;
 
-    /* leave imobil unchanged (migh be already set) */
-
-  }
+  if (_turbomachinery->n_couplings > 0)
+    *ityint = 1;
+  else
+    *ityint = 0;
 }
 
 /*----------------------------------------------------------------------------

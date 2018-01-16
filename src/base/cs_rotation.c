@@ -383,11 +383,6 @@ cs_rotation_define(double  omega_x,
   for (int i = 0; i < 3; i++) {
     r->axis[i] /= r->omega;
   }
-
-  /* As rotation is global, define it both on rotation "0" (default)
-     and "1" (rotor) so as to allow both access modes */
-
-  memcpy(_glob_rotation_0 + 1, _glob_rotation_0, sizeof(cs_rotation_t));
 }
 
 /*----------------------------------------------------------------------------*/

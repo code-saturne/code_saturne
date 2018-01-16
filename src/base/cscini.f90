@@ -51,6 +51,7 @@ use parall
 use period
 use albase
 use cplsat
+use turbomachinery
 
 !===============================================================================
 
@@ -83,19 +84,16 @@ do numcpl = 1, nbrcpl
   call mxicpl(numcpl, icorio, icormx(numcpl))
   !==========
 
-  ! Si l'un des maillages est mobiles,
-  ! on doit mettre à jour la localisation.
-
-  call mxicpl(numcpl, imobil, imobmx)
-  !==========
-
   ! De la même manière, si l'on a une approche ALE sur l'un des
   ! maillages, on doit mettre à jour la localisation.
 
   call mxicpl(numcpl, iale  , ialemx)
   !==========
 
-  if (ialemx.eq.1.or.imobmx.eq.1) then
+  ! Si on est en turbomachine avec maillages glissant, on doit aussi
+  ! mettre à jour la localisation
+
+  if (ialemx.eq.1.or.iturbo.eq.2) then
     imajcp(numcpl) = 1
   else
     imajcp(numcpl) = 0
@@ -140,6 +138,14 @@ do numcpl = 1, nbrcpl
   elseif (itytur.eq.4.and.                               &
        iturcp(numcpl)/10.ne.4) then
     write(nfecra,1001) numcpl
+    call csexit(1)
+    !==========
+  endif
+
+  ! Cohérence des referentiels de resolution
+
+  if (icorio.ne.icormx(numcpl)) then
+    write(nfecra,1100) numcpl
     call csexit(1)
     !==========
   endif
@@ -197,6 +203,24 @@ enddo
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Verifier usipph (cs_user_parameters.f90)                  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 1100 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    LES REFERENTIEL DE RESOLUTION POUR LE COUPLAGE ' ,I10    ,/,&
+'@    SONT DIFFERENTS. CE CAS DE FIGURE N''EST PAS PRIS       ',/,&
+'@    EN COMPTE.                                              ',/,&
+'@    UTILISER PLUTOT UN MODELE TURBOMACHINE.                 ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier usipph (cs_user_parameters.f90) ou definir un    ',/,&
+'@    rotor de turbomachine (cs_user_turbomachinery.f90)      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

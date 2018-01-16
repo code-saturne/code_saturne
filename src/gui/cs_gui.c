@@ -2144,6 +2144,10 @@ _turbomachinery_model(cs_turbomachinery_model_t  *model_type,
     *model_type = CS_TURBOMACHINERY_TRANSIENT;
     *coupled = true;
   }
+  else if (cs_gui_strcmp(model, "frozen_coupled")) {
+    *model_type = CS_TURBOMACHINERY_FROZEN;
+    *coupled = true;
+  }
 
   BFT_FREE(model);
 }

@@ -69,7 +69,7 @@ integer          nfld, f_type
 
 logical          is_set
 
-double precision relxsp, omgnrm
+double precision relxsp
 
 character(len=80) :: name
 
@@ -139,13 +139,6 @@ else
   if (frhist > 0.d0) then
     nthist = -1
   endif
-endif
-
-! Variable labels
-
-if (icorio.eq.1) then
-  call field_set_key_str(ivarfl(ipr), keylbl, 'Rel Pressure')
-  call field_set_key_str(ivarfl(iu), keylbl, 'Rel Velocity')
 endif
 
 ! Logging and postprocessing output
@@ -1051,21 +1044,8 @@ if (cfopre.lt.-0.5d0*grand) cfopre = 2.0d0
 call nbccpl(nbrcpl)
 !==========
 
-if (nbrcpl.ge.1) then
-  ! Si on est en couplage rotor/stator avec resolution en repere absolu
-  call angular_velocity(1, omgnrm)
-  omgnrm = abs(omgnrm)
-  if (omgnrm.ge.epzero) then
-    ! Couplage avec interpolation aux faces
-    ifaccp = 1
-    ! Mobile mesh
-    if (icorio.eq.0) then
-      imobil = 1
-      call cs_post_set_deformable
-    endif
-  else if (iturbo.ne.0) then
-    ifaccp = 1
-  endif
+if (nbrcpl.ge.1.and.iturbo.ne.0) then
+  ifaccp = 1
 endif
 
 !===============================================================================

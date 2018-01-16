@@ -281,15 +281,14 @@ ttpmob = rval(1) ! no direct read to avoid pointer issue
 nberro=nberro+ierror
 
 ! Message si erreur (pas de stop pour compatibilite avec fichiers anterieurs)
-! -> on n'affiche le message que si imobil=1 ou iturbo=2 (sinon RAS)
+! -> on n'affiche le message que si iturbo=2 (sinon RAS)
 if (nberro.ne.0) then
-  if (imobil.eq.1 .or. iturbo.eq.2) write(nfecra,9403) ttpabs
+  if (iturbo.eq.2) write(nfecra,9403) ttpabs
   ttpmob = ttpabs
 endif
 
-! Information (uniquement si imobil=1 ou iturbo=2
-!              et pas d affichage precedent)
-if (imobil.eq.1 .or. iturbo.eq.2) then
+! Information (uniquement si iturbo=2 et pas d affichage precedent)
+if (iturbo.eq.2) then
   if (nberro.eq.0)  write(nfecra,2412) ttpmob
 endif
 

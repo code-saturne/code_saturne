@@ -79,6 +79,7 @@ use optcal
 use pointe
 use albase
 use parall
+use paramx, only: isymet
 use period
 use ppppar
 use ppthch
@@ -588,7 +589,7 @@ if (iprco.le.0) then
   ! Ajout de la vitesse du solide dans le flux convectif,
   ! si le maillage est mobile (solide rigide)
   ! En turbomachine, on connait exactement la vitesse de maillage a ajouter
-  if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
+  if (iturbo.ne.0) then
     !$omp parallel do private(iel1, iel2, dtfac, rhofac )
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
@@ -641,116 +642,125 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
   call dmtmps(t1)
 
-  do ifac = 1, nfabor
-    isympa(ifac) = 1
-  enddo
+  if (ityint.eq.0) then
 
-  ! Scratch and resize temporary internal faces arrays
+    do ifac = 1, nfabor
+      ! --- To cancel the mass flux for symmetry BC
+      if (itypfb(ifac).eq.isymet) then
+        isympa(ifac) = 0
+      else
+        isympa(ifac) = 1
+      endif
+    enddo
 
-  deallocate(viscf)
-  if (iand(vcopt_u%idften, ISOTROPIC_DIFFUSION).ne.0) then
-    allocate(viscf(1, 1, nfac))
-  else if (iand(vcopt_u%idften, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
-    allocate(viscf(3, 3, nfac))
-  endif
+    ! Scratch and resize temporary internal faces arrays
 
-  if (allocated(wvisfi)) then
-    deallocate(viscfi)
-
+    deallocate(viscf)
     if (iand(vcopt_u%idften, ISOTROPIC_DIFFUSION).ne.0) then
-      if (itytur.eq.3.and.irijnu.eq.1) then
-        allocate(wvisfi(1,1,nfac))
-        viscfi => wvisfi(:,:,1:nfac)
-      else
-        viscfi => viscf(:,:,1:nfac)
-      endif
+      allocate(viscf(1, 1, nfac))
     else if (iand(vcopt_u%idften, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
-      if (itytur.eq.3.and.irijnu.eq.1) then
-        allocate(wvisfi(3,3,nfac))
-        viscfi => wvisfi(1:3,1:3,1:nfac)
-      else
-        viscfi => viscf(1:3,1:3,1:nfac)
+      allocate(viscf(3, 3, nfac))
+    endif
+
+    if (allocated(wvisfi)) then
+      deallocate(viscfi)
+
+      if (vcopt_u%idften.eq.1) then
+        if (itytur.eq.3.and.irijnu.eq.1) then
+          allocate(wvisfi(1,1,nfac))
+          viscfi => wvisfi(:,:,1:nfac)
+        else
+          viscfi => viscf(:,:,1:nfac)
+        endif
+      else if(vcopt_u%idften.eq.6) then
+        if (itytur.eq.3.and.irijnu.eq.1) then
+          allocate(wvisfi(3,3,nfac))
+          viscfi => wvisfi(1:3,1:3,1:nfac)
+        else
+          viscfi => viscf(1:3,1:3,1:nfac)
+        endif
       endif
+
     endif
 
-  endif
-
-  if (allocated(secvif)) then
-    deallocate(secvif)
-    allocate(secvif(nfac))
-  endif
-
-  ! Scratch, resize and initialize main internal faces properties array
-
-  call turbomachinery_reinit_i_face_fields
-
-  ! Update local pointers on "internal faces" fields
-
-  call field_get_val_s(iflmas, imasfl)
-
-  if (irangp.ge.0 .or. iperio.eq.1) then
-
-    ! Scratch and resize work arrays
-
-    deallocate(w1, w7, w8, w9)
-    allocate(w1(ncelet), w7(ncelet), w8(ncelet), w9(ncelet))
-
-    ! Resize auxiliary arrays (pointe module)
-
-    call resize_aux_arrays
-
-    ! Update turbomachinery module
-
-    call turbomachinery_update
-
-    ! Update field mappings ("owner" fields handled by turbomachinery_update)
-
-    call fldtri
-    call field_get_val_s_by_name('dt', dt)
-
-    ! Resize other arrays related to the velocity-pressure resolution
-
-    call resize_vec_real_array(trav)
-    call resize_vec_real_array(dfrcxt)
-
-    ! Resize other arrays, depending on user options
-
-    if (iilagr.gt.0) &
-      call resize_n_sca_real_arrays(ntersl, tslagr)
-
-    if (iphydr.eq.1) then
-      call field_get_val_v_by_name('volume_forces', frcxt)
-    elseif (iphydr.eq.2) then
-      call resize_vec_real_array(grdphd)
+    if (allocated(secvif)) then
+      deallocate(secvif)
+      allocate(secvif(nfac))
     endif
 
-    if (nterup.gt.1) then
-      call resize_vec_real_array(uvwk)
-      call resize_tens_real_array(ximpa)
-    endif
+    ! Scratch, resize and initialize main internal faces properties array
 
-    if (nterup.gt.1.or.isno2t.gt.0) then
-      call resize_vec_real_array(trava)
-    endif
+    call turbomachinery_reinit_i_face_fields
 
-    ! Update local pointers on "cells" fields
+    ! Update local pointers on "internal faces" fields
 
-    call field_get_val_s(icrom, crom)
+    call field_get_val_s(iflmas, imasfl)
 
-    call field_get_val_s(iviscl, viscl)
-    call field_get_val_s(ivisct, visct)
+    if (irangp.ge.0 .or. iperio.eq.1) then
 
-    call field_get_val_v(ivarfl(iu), vel)
-    call field_get_val_prev_v(ivarfl(iu), vela)
+      ! Scratch and resize work arrays
 
-    call field_get_val_s(ivarfl(ipr), cvar_pr)
-    call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
+      deallocate(w1, w7, w8, w9)
+      allocate(w1(ncelet), w7(ncelet), w8(ncelet), w9(ncelet))
 
-    if (idtten.ge.0) call field_get_val_v(idtten, dttens)
+      ! Resize auxiliary arrays (pointe module)
 
-    if (ivofmt.ge.0) then
-      call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
-      call field_get_val_prev_s(ivarfl(ivolf2), cvara_voidf)
+      call resize_aux_arrays
+
+      ! Update turbomachinery module
+
+      call turbomachinery_update
+
+      ! Update field mappings ("owner" fields handled by turbomachinery_update)
+
+      call fldtri
+      call field_get_val_s_by_name('dt', dt)
+
+      ! Resize other arrays related to the velocity-pressure resolution
+
+      call resize_vec_real_array(trav)
+      call resize_vec_real_array(dfrcxt)
+
+      ! Resize other arrays, depending on user options
+
+      if (iilagr.gt.0) &
+        call resize_n_sca_real_arrays(ntersl, tslagr)
+
+      if (iphydr.eq.1) then
+        call field_get_val_v_by_name('volume_forces', frcxt)
+      elseif (iphydr.eq.2) then
+        call resize_vec_real_array(grdphd)
+      endif
+
+      if (nterup.gt.1) then
+        call resize_vec_real_array(uvwk)
+        call resize_tens_real_array(ximpa)
+      endif
+
+      if (nterup.gt.1.or.isno2t.gt.0) then
+        call resize_vec_real_array(trava)
+      endif
+
+      ! Update local pointers on "cells" fields
+
+      call field_get_val_s(icrom, crom)
+
+      call field_get_val_s(iviscl, viscl)
+      call field_get_val_s(ivisct, visct)
+
+      call field_get_val_v(ivarfl(iu), vel)
+      call field_get_val_prev_v(ivarfl(iu), vela)
+
+      call field_get_val_s(ivarfl(ipr), cvar_pr)
+      call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
+
+      if (idtten.ge.0) call field_get_val_v(idtten, dttens)
+
+      if (ivofmt.ge.0) then
+        call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
+        call field_get_val_prev_s(ivarfl(ivolf2), cvara_voidf)
+      endif
+
     endif
 
   endif
@@ -1025,7 +1035,7 @@ if (ippmod(icompf).lt.0) then
         enddo
 
       ! Tensorial diffusion for the pressure
-      elseif (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+      else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
         !$omp parallel do private(unsrom)
         do iel = 1, ncel
@@ -1161,9 +1171,9 @@ endif
 ! Ajout de la vitesse du solide dans le flux convectif,
 ! si le maillage est mobile (solide rigide)
 ! En turbomachine, on connait exactement la vitesse de maillage a ajouter
-if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
+if (iturbo.ne.0) then
 
-  if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t3)
+  call dmtmps(t3)
 
   !$omp parallel do private(iel1, iel2, rhofac, vr1, vr2)
   do ifac = 1, nfac
@@ -1195,7 +1205,7 @@ if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
     endif
   enddo
 
-  if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t4)
+  call dmtmps(t4)
 
   rs_ell(2) = rs_ell(2) + t4-t3
 

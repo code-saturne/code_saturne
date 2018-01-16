@@ -95,9 +95,7 @@ integer          itytu0
 double precision xjjp   , yjjp   , zjjp
 double precision d2s3
 double precision xjpf,yjpf,zjpf,jpf
-double precision xx, yy, zz, fra(8)
-double precision omegal(3), omegad(3), omegar(3), omgnrl, omgnrd, omgnrr
-double precision vitent, daxis2
+double precision xx, yy, zz
 
 double precision, allocatable, dimension(:,:,:) :: gradv, gradts
 double precision, allocatable, dimension(:,:) :: grad
@@ -142,10 +140,6 @@ iprev  = 0
 inc    = 1
 iccocg = 1
 
-! Initialize variables to avoid compiler warnings
-
-vitent = 0.d0
-
 ! Allocate temporary arrays
 
 allocate(grad(3,ncelet))
@@ -163,45 +157,6 @@ allocate(trav8(nptdis))
 d2s3 = 2.d0/3.d0
 
 call field_get_val_s(icrom, crom)
-
-if (icormx(numcpl).eq.1) then
-
-  call rotation_to_array(1, fra)
-
-  ! Get rotation array of all instances in all cases
-  ! TODO check axes are the same
-  ! (any axis being allowed for a domain with no rotation)
-
-  omegal(1) = fra(1)*fra(7)
-  omegal(2) = fra(2)*fra(7)
-  omegal(3) = fra(3)*fra(7)
-
-  call tbrcpl(numcpl,3,3,omegal,omegad)
-
-  ! Vecteur vitesse relatif d'une instance a l'autre
-  omegar(1) = omegal(1) - omegad(1)
-  omegar(2) = omegal(2) - omegad(2)
-  omegar(3) = omegal(3) - omegad(3)
-
-  omgnrl = sqrt(omegal(1)**2 + omegal(2)**2 + omegal(3)**2)
-  omgnrd = sqrt(omegad(1)**2 + omegad(2)**2 + omegad(3)**2)
-  omgnrr = sqrt(omegar(1)**2 + omegar(2)**2 + omegar(3)**2)
-
-else
-
-  omegal(1) = 0.d0
-  omegal(2) = 0.d0
-  omegal(3) = 0.d0
-
-  omegar(1) = 0.d0
-  omegar(2) = 0.d0
-  omegar(3) = 0.d0
-
-  omgnrl = 0.d0
-  omgnrd = 0.d0
-  omgnrr = 0.d0
-
-endif
 
 ! On part du principe que l'on envoie les bonnes variables à
 ! l'instance distante et uniquement celles-là.
@@ -273,24 +228,6 @@ do isou = 1, 3
                         + yjjp*gradv(2,isou,iel)   &
                         + zjjp*gradv(3,isou,iel)
 
-      ! On prend en compte la vitesse d'entrainement en repère relatif
-      if (icormx(numcpl).eq.1) then
-
-        if (isou.eq.1) then
-          vitent =   omegar(2)*(xyzcen(3,iel)+zjjp) &
-                   - omegar(3)*(xyzcen(2,iel)+yjjp)
-        elseif (isou.eq.2) then
-          vitent =   omegar(3)*(xyzcen(1,iel)+xjjp) &
-                   - omegar(1)*(xyzcen(3,iel)+zjjp)
-        elseif (isou.eq.3) then
-          vitent =   omegar(1)*(xyzcen(2,iel)+yjjp) &
-                   - omegar(2)*(xyzcen(1,iel)+xjjp)
-        endif
-
-        rvdis(ipt,ipos) = rvdis(ipt,ipos) + vitent
-
-      endif
-
     enddo
 
     ! For a generic coupling, no assumption can be made
@@ -345,27 +282,6 @@ if (ifaccp.eq.1) then
 
     rvdis(ipt,ipos) = cvar_pr(iel) &
          + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    ! On prend en compte le potentiel centrifuge en repère relatif
-    if (icormx(numcpl).eq.1) then
-
-      ! Calcul de la distance a l'axe de rotation
-      ! On suppose que les axes sont confondus...
-
-      xx = xyzcen(1,iel) + xjjp
-      yy = xyzcen(2,iel) + yjjp
-      zz = xyzcen(3,iel) + zjjp
-
-      daxis2 =   (omegar(2)*zz - omegar(3)*yy)**2 &
-               + (omegar(3)*xx - omegar(1)*zz)**2 &
-               + (omegar(1)*yy - omegar(2)*xx)**2
-
-      daxis2 = daxis2 / omgnrr**2
-
-      rvdis(ipt,ipos) = rvdis(ipt,ipos)                         &
-           + 0.5d0*crom(iel)*(omgnrl**2 - omgnrd**2)*daxis2
-
-    endif
 
   enddo
 

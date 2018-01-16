@@ -394,7 +394,7 @@ if (iale.eq.1) then
    rcodcl , xyzno0 )
 endif
 
-if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
+if (iturbo.ne.0) then
   call mmtycl(itypfb, rcodcl)
 endif
 

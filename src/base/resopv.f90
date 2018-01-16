@@ -444,7 +444,7 @@ endif
 init   = 1
 inc    = 1
 iflmb0 = 1
-if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
+if (iale.eq.1) iflmb0 = 0
 nswrgp = 1
 imligp = vcopt_u%imligr
 iwarnp = vcopt_p%iwarni
@@ -1042,7 +1042,7 @@ inc    = 1
 ! BCs will be taken into account after in idilat>=4
 if (idilat.ge.4) inc = 0
 iflmb0 = 1
-if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
+if (iale.eq.1) iflmb0 = 0
 nswrgp = vcopt_u%nswrgr
 imligp = vcopt_u%imligr
 iwarnp = vcopt_p%iwarni
@@ -1364,7 +1364,7 @@ if (idilat.ge.4) then
   init   = 1
   inc    = 1
   iflmb0 = 1
-  if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
+  if (iale.eq.1) iflmb0 = 0
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_p%iwarni
@@ -1413,7 +1413,7 @@ if (idilat.ge.4) then
   init   = 0
   inc    = 1
   iflmb0 = 1
-  if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
+  if (iale.eq.1) iflmb0 = 0
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_p%iwarni
@@ -2007,7 +2007,7 @@ if (idilat.eq.5) then
   init   = 1
   inc    = 1
   iflmb0 = 1
-  if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
+  if (iale.eq.1) iflmb0 = 0
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_p%iwarni

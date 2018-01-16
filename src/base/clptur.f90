@@ -587,7 +587,7 @@ do ifac = 1, nfabor
     !  to be tangential (and update rcodcl for possible use)
     ! In frozen rotor (iturbo = 1), the velocity is neither tangential to the
     !  wall (absolute velocity solved in a relative frame of reference)
-    if (iale.eq.0.and.imobil.eq.0.and.iturbo.eq.0) then
+    if (iale.eq.0.and.iturbo.eq.0) then
       rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
       rcodcx = rcodcx -rcodcn*rnx
       rcodcy = rcodcy -rcodcn*rny

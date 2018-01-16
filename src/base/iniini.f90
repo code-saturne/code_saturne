@@ -157,7 +157,7 @@ call radiat_init
 call gas_mix_options_init
 call ctwr_properties_init
 
-call map_turbomachinery_model(iturbo, imobil)
+call map_turbomachinery_model(iturbo, ityint)
 
 !===============================================================================
 ! 2. ENTREES SORTIES entsor.f90

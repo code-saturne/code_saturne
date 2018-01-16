@@ -75,7 +75,7 @@ contains
 
     integer, intent(in) :: nfabor, nnod
 
-    if (iale.eq.1.or.imobil.eq.1) then
+    if (iale.eq.1) then
       allocate(xyzno0(3,nnod))
     endif
 
@@ -92,7 +92,7 @@ contains
 
     use cplsat
 
-    if (iale.eq.1.or.imobil.eq.1) then
+    if (iale.eq.1) then
       deallocate(xyzno0)
     endif
 

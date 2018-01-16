@@ -572,7 +572,7 @@ if (idtvar.ge.0) then
       call log_iteration_clipping_field(flid, icfmin(1), icfmax(1), dt, dt,icfmin(1), icfmax(1))
 
       ttcabs = ttcabs + (dtloc - dt(1))
-      if (imobil.eq.1 .or. iturbo.eq.2) then
+      if (iturbo.eq.2) then
         ttcmob = ttcmob + (dtloc - dt(1))
       endif
 

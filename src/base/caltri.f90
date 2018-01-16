@@ -386,7 +386,7 @@ if (ippmod(icompf).ge.0) then
   call init_compf (nfabor)
 endif
 
-if (iale.eq.1.or.imobil.eq.1) then
+if (iale.eq.1) then
   call init_ale (nfabor, nnod)
 endif
 
@@ -738,7 +738,7 @@ write(nfecra,2000)
 ntcabs = ntpabs
 ttcabs = ttpabs
 
-if (imobil.eq.1 .or. iturbo.eq.2)  ttcmob = ttpmob
+if (iturbo.eq.2)  ttcmob = ttpmob
 
 write(nfecra,3000)
 
@@ -800,7 +800,7 @@ if (inpdt0.eq.0 .and. itrale.gt.0) then
     ttcabs = ttcabs + dtref
   endif
   write(nfecra,3001) ttcabs,ntcabs
-  if (imobil.eq.1 .or. iturbo.eq.2) then
+  if (iturbo.eq.2) then
     if(idtvar.eq.0.or.idtvar.eq.1) then
       ttcmob = ttcmob + dt(1)
     else
@@ -1125,7 +1125,7 @@ if (ippmod(igmix).ge.0) then
   call finalize_gas_mix
 endif
 
-if (iale.eq.1.or.imobil.eq.1) then
+if (iale.eq.1) then
   call finalize_ale
 endif
 
