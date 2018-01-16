@@ -218,7 +218,7 @@ _sles_default_native(int                f_id,
                                       1,    /* n max iter for descent */
                                       1,    /* n max iter for ascent */
                                       500,  /* n max iter for coarse solve */
-                                      0, 0, 0,  /* precond degree */
+                                      0, 0, -1,  /* precond degree */
                                       -1, -1, 1); /* precision multiplier */
       cs_sles_t *sc = cs_sles_find(f_id, name);
       cs_sles_set_error_handler(sc, cs_sles_default_error);
