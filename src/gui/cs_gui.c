@@ -5815,7 +5815,7 @@ cs_gui_linear_solvers(void)
              1,   /* n max iter for descent */
              1,   /* n max iter for ascent */
              500, /* n max iter for coarse solve */
-             0, 0, 0,    /* precond degree */
+             0, 0, -1,    /* precond degree */
              -1, -1, 1); /* precision multiplier */
         }
 

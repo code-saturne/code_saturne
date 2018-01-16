@@ -952,7 +952,7 @@ cs_equation_param_set_sles(const char               *eqname,
              1000,             // n max iter coarse solver (10000)
              0,                // polynomial precond. degree descent (0)
              0,                // polynomial precond. degree ascent (0)
-             0,                // polynomial precond. degree coarse (0)
+             -1,               // polynomial precond. degree coarse (0)
              1.0,    // precision multiplier descent (< 0 forces max iters)
              1.0,    // precision multiplier ascent (< 0 forces max iters)
              1);     // requested precision multiplier coarse (default 1)
