@@ -56,7 +56,6 @@ ObjectTR = QObject()
 from ui_InfoDialog            import Ui_InfoDialog
 from ui_SetTreeLocationDialog import Ui_SetTreeLocationDialog
 from ui_ECSConversionDialog   import Ui_ECSConversionDialog
-from ui_CopyDialog            import Ui_CopyDialog
 from ui_GUIActivationDialog   import Ui_GUIActivationDialog
 import CFDSTUDYGUI_DataModel
 import CFDSTUDYGUI_Commons
@@ -543,116 +542,6 @@ class ECSConversionDialogHandler(ECSConversionDialog):
 
 #----------------------------------------------------------------------------------------------------------------------
 
-class CopyDialog(QDialog, Ui_CopyDialog):
-    """
-    Dialog informations about environment variables
-    """
-    def __init__(self, parent=None):
-        """
-        """
-        QDialog.__init__(self, parent)
-        Ui_CopyDialog.__init__(self)
-
-        self.setupUi(self)
-
-
-class CopyDialogHandler(CopyDialog):
-    """
-    """
-    def __init__(self, parent=None):
-        CopyDialog.__init__(self, parent)
-        self.CopyBtn = self.findChild(QPushButton, "CopyBtn")
-        self.CopyBtn.setText(self.tr("COPY_DLG_COPY_BUTTON"))
-
-        aBtn = self.findChild(QPushButton, "CancelBtn")
-        aBtn.setText(self.tr("DLG_CANCEL_BUTTON_TEXT"))
-
-        aLabel = self.findChild(QLabel, "SourceCaseLabel")
-        aLabel.setText(self.tr("Case"))
-
-        aLabel = self.findChild(QLabel, "SourceFileLabel")
-        aLabel.setText(self.tr("File"))
-
-        aLabel = self.findChild(QLabel, "DestCaseLabel")
-        aLabel.setText(self.tr("DATA directory"))
-
-        aLabel = self.findChild(QLabel, "DestFilelabel")
-        aLabel.setText(self.tr("New name"))
-
-        self.SourceFileName = self.findChild(QLabel,      "SourceFileName")
-        self.SourceCaseName = self.findChild(QLabel,      "SourceCaseName")
-        self.DestDirLE      = self.findChild(QLineEdit,   "DataDirectoryLineEdit")
-        self.DestDirPB      = self.findChild(QPushButton, "DataDirectoryPushButton")
-        self.DestFileLE     = self.findChild(QLineEdit,   "NewNameLineEdit")
-
-        self.setWindowTitle(self.tr("COPY_DLG_CAPTION"))
-        self.DestDirPB.clicked.connect(self.onBrowsePath)
-
-    def onBrowsePath(self):
-        new_path = self.DestDirLE.text()
-        new_path = QFileDialog.getExistingDirectory(None, self.tr("DATA directory"),new_path)
-        if not new_path or new_path == "":
-            return
-        self.DestDirLE.setText(os.path.abspath(str(new_path)))
-
-
-
-    def show(self):
-        #aStudyList = CFDSTUDYGUI_DataModel.GetStudyList()
-        #aCaseList  = []
-        #for s in aStudyList:
-            #aCaseList += CFDSTUDYGUI_DataModel.GetCaseNameList(s)
-
-        #self.DestDirLE.clear()
-        #self.DestFileLE.clear()
-        #if self.CopyBtn.isEnabled():
-            #if len(aCaseList) == 0:
-                #self.DestDirLE.setEnabled(False)
-                #self.DestFileLE.setEnabled(False)
-                #self.CopyBtn.setEnabled(False)
-            #else:
-                #self.DestDirLE.setEnabled(True)
-                #self.DestFileLE.setEnabled(True)
-                #self.CopyBtn.setEnabled(True)
-
-        CopyDialog.exec_(self)
-
-
-    def setCurrentObject(self, sobj):
-        self.Object = sobj
-        aCase  = CFDSTUDYGUI_DataModel.GetCase(sobj)
-        if not sobj or not aCase:
-            CopyDialog.reject(self)
-        else:
-            c = aCase.GetName()
-            p = CFDSTUDYGUI_DataModel._GetPath(aCase)
-            self.SourceFileName.setText(sobj.GetName())
-            self.SourceCaseName.setText(c)
-            self.DestFileLE.setText(sobj.GetName())
-            self.DestDirLE.setText(os.path.join(str(p), "DATA"))
-
-
-    def accept(self):
-        aDestDirName    = str(self.DestDirLE.text())
-        aDestFileName   = str(self.DestFileLE.text())
-        aDestFilePath = os.path.join(aDestDirName, aDestFileName)
-        if os.path.exists(aDestFilePath) and os.path.isfile(aDestFilePath):
-            mess = cfdstudyMess.trMessage(self.tr("COPY_DLG_EXISTS_ERROR_TEXT"),[])
-            cfdstudyMess.criticalMessage(mess)
-            return False
-
-        aSourceFilePath = CFDSTUDYGUI_DataModel._GetPath(self.Object)
-        shutil.copyfile(aSourceFilePath, aDestFilePath)
-
-        CopyDialog.accept(self)
-
-
-    def destCaseName(self):
-        return str(self.findChild(QLineEdit,   "DataDirectoryLineEdit").text())
-
-
-#----------------------------------------------------------------------------------------------------------------------
-
 
 class GUIActivationDialog(QDialog,Ui_GUIActivationDialog):
     """
@@ -825,7 +714,6 @@ class CFDSTUDYGUI_DialogCollector:
         self.SetTreeLocationDialog = SetTreeLocationDialogHandler()
         self.InfoDialog = InfoDialogHandler()
         self.ECSConversionDialog = ECSConversionDialogHandler()
-        self.CopyDialog = CopyDialogHandler()
         self.GUIActivationDialog = GUIActivationDialogHandler()
 
 if __name__ == "__main__":

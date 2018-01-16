@@ -96,7 +96,6 @@ EditAction                    = 22
 MoveToDRAFTAction             = 23
 CopyInDATAAction              = 24
 CopyInSRCAction               = 25
-CopyCaseFileAction            = 26
 CloseStudyAction              = 27
 DisplayImageAction            = 28
 
@@ -394,16 +393,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[CopyInSRCAction] = action_id
-
-        action = sgPyQt.createAction(-1,\
-                                      ObjectTR.tr("COPY_CASE_FILE_ACTION_TEXT"),\
-                                      ObjectTR.tr("COPY_CASE_FILE_ACTION_TIP"),\
-                                      ObjectTR.tr("COPY_CASE_FILE_ACTION_SB"),\
-                                      ObjectTR.tr("COPY_ACTION_ICON"))
-        action.triggered.connect(self.slotCopyCaseFile)
-        action_id = sgPyQt.actionId(action)
-        self._ActionMap[action_id] = action
-        self._CommonActionIdMap[CopyCaseFileAction] = action_id
 
         #export/convert actions
         action = sgPyQt.createAction(-1,
@@ -956,14 +945,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(OpenGUIAction))
             popup.addAction(self.solverAction(SolverCloseAction))
             popup.addAction(self.commonAction(InfoCFDSTUDYAction))
-#            popup.addAction(self.commonAction(CopyCaseFileAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SRCFolder"]:
             popup.addAction(self.commonAction(CheckCompilationAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SRCFile"]:
             popup.addAction(self.commonAction(CheckCompilationAction))
             popup.addAction(self.commonAction(EditAction))
             popup.addAction(self.commonAction(MoveToDRAFTAction))
-#            popup.addAction(self.commonAction(CopyCaseFileAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SRCDRAFTFile"]:
             popup.addAction(self.commonAction(EditAction))
             popup.addAction(self.commonAction(RemoveAction))
@@ -2038,30 +2025,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                                                     sobj.GetFather(),
                                                                     thePath)
             dlg.show()
-
-
-    def slotCopyCaseFile(self):
-        """
-        Copy data xml file from a study case to another with popup menu attached to the xml file
-        Copy into another case: COPY_CASE_FILE_ACTION_TEXT
-        """
-        sobj = self._singleSelectedObject()
-        if sobj == None:
-            return
-
-        self.DialogCollector.CopyDialog.setCurrentObject(sobj)
-        self.DialogCollector.CopyDialog.show()
-
-        if not self.DialogCollector.CopyDialog.result() == QDialog.Accepted:
-            return
-        # update Object Browser
-        # aDirPath: path directory where the xml file is copied
-        aDirPath = self.DialogCollector.CopyDialog.destCaseName()
-        aDirObject = CFDSTUDYGUI_DataModel.findMaxDeepObject(aDirPath)
-
-        if aDirObject != None:
-            self.updateObjBrowser(CFDSTUDYGUI_DataModel.GetCase(aDirObject))
-        # BUG if direct call to self.updateObjBrowser(aDirObject)
 
 
     def slotCheckCompilation(self):

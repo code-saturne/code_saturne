@@ -57,7 +57,6 @@ CFDSTUDY_msg_fr.qm
 
 UIFILES = \
 CFDSTUDYGUI_QProcessDialog.ui \
-CopyDialog.ui \
 ECSConversionDialog.ui \
 GUIActivationDialog.ui \
 InfoDialog.ui \
@@ -65,7 +64,6 @@ SetTreeLocationDialog.ui
 
 PYUI_FILES = \
 ui_CFDSTUDYGUI_QProcessDialog.py \
-ui_CopyDialog.py \
 ui_ECSConversionDialog.py \
 ui_GUIActivationDialog.py \
 ui_InfoDialog.py \

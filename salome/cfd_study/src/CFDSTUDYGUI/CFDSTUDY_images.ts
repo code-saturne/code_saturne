@@ -122,10 +122,6 @@
             <translation>MoveFolder.png</translation>
         </message>
         <message>
-            <source>COPY_ACTION_ICON</source>
-            <translation>Copy.png</translation>
-        </message>
-        <message>
             <source>DELETE_ACTION_ICON</source>
             <translation>Delete.png</translation>
         </message>

@@ -314,18 +314,6 @@
             <translation>Copy in SRC</translation>
         </message>
         <message>
-            <source>COPY_CASE_FILE_ACTION_TEXT</source>
-            <translation>Copy into another Case</translation>
-        </message>
-        <message>
-            <source>COPY_CASE_FILE_ACTION_TIP</source>
-            <translation>Copy into an other Case</translation>
-        </message>
-        <message>
-            <source>COPY_CASE_FILE_ACTION_SB</source>
-            <translation>Copy into an other Case</translation>
-        </message>
-        <message>
             <source>EXPORT_IN_PARAVIS_ACTION_TEXT</source>
             <translation>Export In ParaViS</translation>
         </message>
@@ -737,29 +725,6 @@
         <message>
             <source>ECSCONVERT_DLG_CAPTION</source>
             <translation>Conversion to MED</translation>
-        </message>
-    </context>
-    <context>
-        <name>CopyDialogHandler</name>
-        <message>
-            <source>COPY_DLG_COPY_BUTTON</source>
-            <translation>Copy</translation>
-        </message>
-        <message>
-            <source>DLG_CANCEL_BUTTON_TEXT</source>
-            <translation>Cancel</translation>
-        </message>
-        <message>
-            <source>COPY_DLG_CAPTION</source>
-            <translation>Copy file of parameters</translation>
-        </message>
-        <message>
-            <source>COPY_DLG_EXISTS_ERROR_CAPTION</source>
-            <translation>Error</translation>
-        </message>
-        <message>
-            <source>COPY_DLG_EXISTS_ERROR_TEXT</source>
-            <translation>Destinate file already exists!</translation>
         </message>
     </context>
     <context>
