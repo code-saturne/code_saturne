@@ -734,7 +734,7 @@ const double cs_turb_cssr1 = 1.0;
 /*!
  * Constant of the Spalart-Shur rotation/curvature correction.
  */
-const double cs_turb_cssr2 = 12.0;
+const double cs_turb_cssr2 = 2.0;
 
 /*!
  * Constant of the Spalart-Shur rotation/curvature correction.

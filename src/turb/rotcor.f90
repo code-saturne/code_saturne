@@ -96,7 +96,7 @@ integer          ii, jj, kk, iprev
 
 double precision epsrgp, climgp, extrap
 double precision matrot(3,3), sigvor(3,3)
-double precision dsijdt, trrota, wiksjk, rstar, echtm1
+double precision dsijdt, trrota, wiksjk, rstar, echtm2
 double precision stilde, wtilde, rotild
 double precision xe, xk
 
@@ -383,7 +383,8 @@ if (itycor.eq.1) then
 elseif (itycor.eq.2) then
 
 !-------------------------------------------------------------------------------
-! 2.2 Spalart-Shur correction
+! 2.2 Spalart-Shur correction (including modifications of
+!   Smirnov & Menter, ASME, 2009)
 !-------------------------------------------------------------------------------
 
   do iel = 1, ncel
@@ -392,12 +393,11 @@ elseif (itycor.eq.2) then
     stilde = max(eta1(iel)*2.d0,1.d-15)
     wtilde = max(eta2(iel)*2.d0,1.d-15)
 
-    echtm1 = sqrt(0.5d0*(stilde + wtilde))
+    echtm2 = stilde
 
-    ! Lower bound in case of k-w SST (see Smirnov & Menter, ASME, 2009)
-    if (iturb.eq.60)  echtm1 = max(echtm1,sqrt(cmu)*cvara_omg(iel))
+    if (iturb.eq.60)  echtm2 = max(echtm2,cmu*cvara_omg(iel)**2)
 
-    brtild(iel) = brtild(iel)/(echtm1**4)
+    brtild(iel) = brtild(iel)/sqrt(wtilde*echtm2**3)
 
     rstar = sqrt(stilde)/sqrt(wtilde)
 
@@ -405,7 +405,7 @@ elseif (itycor.eq.2) then
     rotfct(iel) = (1.d0 + cssr1)*2.d0*rstar/(1.d0 + rstar)     &
          *(1.d0 - cssr3*atan(cssr2*brtild(iel))) - cssr1
 
-    rotfct(iel) = max(rotfct(iel),0.d0)
+    rotfct(iel) = min(max(rotfct(iel),0.d0),1.25d0)
 
   enddo
 

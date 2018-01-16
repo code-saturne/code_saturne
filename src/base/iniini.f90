@@ -960,7 +960,7 @@ csaw3    = 2.d0
 
 ! for the Spalart-Shur rotation/curvature correction
 cssr1 = 1.d0
-cssr2 = 12.d0
+cssr2 = 2.d0
 cssr3 = 1.d0
 
 ! for the Cazalbou rotation/curvature correction
