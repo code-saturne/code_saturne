@@ -99,7 +99,6 @@ class Dico:
         """
         self.data = {}
 
-        self.data['new']              = ""
         self.data['saved']            = "yes"
         self.data['prepro']           = True
         self.data['xmlfile']          = ""
@@ -1248,12 +1247,10 @@ class Case(Dico, XMLDocument):
 
         if file_name:
             self.parse(file_name)
-            self['new'] = "no"
             self['saved'] = "yes"
         else:
             self.parseString(rootNode)
-            self['new'] = "yes"
-            self['saved'] = "yes"
+            self['saved'] = "no"
 
         self.record_func_prev = None
         self.record_argument_prev = None
@@ -1333,7 +1330,6 @@ class Case(Dico, XMLDocument):
             file.write(s)
             file.close()
             self.xml_saved = s
-            self['new'] = "no"
             self['saved'] = "yes"
             d.doc.unlink()
         except IOError:
