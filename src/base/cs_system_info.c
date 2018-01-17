@@ -135,7 +135,7 @@ _sys_info_cpu(char      *cpu_str,
 {
   strcpy(cpu_str, "");
 
-#if defined(__linux__)
+#if defined(__linux__) && !defined(__ve__)
 
   {
     unsigned _cpu_str_max = (cpu_str_max > 0) ? cpu_str_max - 1 : 0;

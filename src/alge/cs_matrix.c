@@ -1658,8 +1658,6 @@ _b_mat_vec_p_l_native_omp_atomic(bool                exclude_diag,
 
 #endif /* defined(HAVE_OPENMP) */
 
-#if defined(SX) && defined(_SX) /* For vector machines */
-
 /*----------------------------------------------------------------------------
  * Local matrix.vector product y = A.x with native matrix.
  *
@@ -1707,6 +1705,7 @@ _mat_vec_p_l_native_vector(bool                exclude_diag,
 #     else
 #       pragma dir nodep
 #       pragma GCC ivdep
+#       pragma _NEC ivdep
 #     endif
       for (face_id = 0; face_id < ms->n_edges; face_id++) {
         ii = face_cel_p[face_id][0];
@@ -1723,6 +1722,7 @@ _mat_vec_p_l_native_vector(bool                exclude_diag,
 #     else
 #       pragma dir nodep
 #       pragma GCC ivdep
+#       pragma _NEC ivdep
 #     endif
       for (face_id = 0; face_id < ms->n_edges; face_id++) {
         ii = face_cel_p[face_id][0];
@@ -1735,8 +1735,6 @@ _mat_vec_p_l_native_vector(bool                exclude_diag,
 
   }
 }
-
-#endif /* Vector machine variant */
 
 /*----------------------------------------------------------------------------
  * Destroy a CSR matrix structure.
@@ -5064,12 +5062,10 @@ _set_spmv_func(cs_matrix_type_t             m_type,
               spmv[1] = _mat_vec_p_l_native_omp;
             }
 #endif
-#if defined(SX) && defined(_SX) /* For vector machines */
             if (numbering->type == CS_NUMBERING_VECTORIZE) {
               spmv[0] = _mat_vec_p_l_native_vector;
               spmv[1] = _mat_vec_p_l_native_vector;
             }
-#endif
           }
           break;
         case CS_MATRIX_BLOCK_D:
@@ -5131,7 +5127,6 @@ _set_spmv_func(cs_matrix_type_t             m_type,
     }
 
     else if (!strcmp(func_name, "vector")) {
-#if defined(SX) && defined(_SX)
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
       case CS_MATRIX_SCALAR_SYM:
@@ -5141,9 +5136,6 @@ _set_spmv_func(cs_matrix_type_t             m_type,
       default:
         break;
       }
-#else
-      retcode = 2;
-#endif
     }
 
     break;
@@ -7353,7 +7345,6 @@ cs_matrix_variant_build_list(int                      n_fill_types,
 
 #endif
 
-#if defined(SX) && defined(_SX) /* For vector machines */
       if (numbering->type == CS_NUMBERING_VECTORIZE)
         _variant_add(_("Native, vectorized"),
                      CS_MATRIX_NATIVE,
@@ -7366,7 +7357,6 @@ cs_matrix_variant_build_list(int                      n_fill_types,
                      n_variants,
                      &n_variants_max,
                      m_variant);
-#endif
 
     }
 
