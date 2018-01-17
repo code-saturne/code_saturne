@@ -1295,12 +1295,6 @@ class Studies(object):
                     # Prepro external script might need pythondir and pkgpythondir
                     pdir = case.pkg.get_dir('pythondir')
                     pdir = pdir + ":" + case.pkg.get_dir('pkgpythondir')
-                    # Pythondirs might be different for NEPTUNE_CFD
-                    # and have to be added as well
-                    if case.pkg.code_name == "NEPTUNE_CFD":
-                        sdir = case.pkg.get_cs_dir('pythondir')
-                        sdir = sdir + ":" + case.pkg.get_cs_dir('pkgpythondir')
-                        pdir = pdir + ":" + sdir
                     retcode, t = run_studymanager_command(cmd, self.__log, pythondir = pdir)
                     os.chdir(repbase)
                     self.reporting('    - script %s --> OK (%s s)' % (cmd, t))

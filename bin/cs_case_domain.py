@@ -353,8 +353,6 @@ class base_domain:
             debug_args += 'python '
         if self.package.name != 'neptune_cfd':
             pkg_dir = self.package.get_dir('pkgpythondir')
-        else:
-            pkg_dir = self.package.get_cs_dir('pkgpythondir')
         dbg_wrapper_path = os.path.join(pkg_dir, 'cs_debug_wrapper.py')
         debug_args += dbg_wrapper_path + ' '
         for a in separate_args(debug_cmd):
