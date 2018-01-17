@@ -104,10 +104,11 @@ do iel = 1, ncel
   vmax(1) = max(vmax(1),var)
 enddo
 
-do iel = 1, ncel
-  if (clip_nusa_id.ge.0) &
+if (clip_nusa_id.ge.0) then
+  do iel = 1, ncel
     cpro_nusa_clipped(iel) = 0.d0
-enddo
+  enddo
+endif
 
 !===============================================================================
 ! ---> Clipping "standard" NUSA>0
@@ -117,7 +118,9 @@ iclpnu(1) = 0
 do iel = 1, ncel
   xnu = cvar_nusa(iel)
   if (xnu.lt.0.d0) then
-    cpro_nusa_clipped(iel) = - xnu
+    if (clip_nusa_id.ge.0) then
+      cpro_nusa_clipped(iel) = - xnu
+    endif
     iclpnu(1) = iclpnu(1) + 1
     cvar_nusa(iel) = 0.d0
   endif
