@@ -2149,7 +2149,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
       limiter = f_limiter->val;
     }
 
-    snprintf(var_name, 31, "%s", f->name);;
+    snprintf(var_name, 31, "%s", f->name);
   }
   else if (isstpp > 1) {
     bft_error(__FILE__, __LINE__, 0,
