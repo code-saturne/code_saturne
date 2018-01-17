@@ -839,7 +839,14 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         # Is the file saved?
 
-        if self.case['new'] == "yes" or len(self.case['undo']) > 0 or len(self.case['redo']) > 0:
+        xml_current = os.path.basename(self.case['xmlfile'])
+        xml_param = None
+        if self.case['runcase']:
+            xml_param = self.case['runcase'].get_parameters()
+        if not xml_current or xml_current != xml_param:
+            self.case['saved'] = "no"
+
+        if self.case['saved'] == "no" or len(self.case['undo']) > 0 or len(self.case['redo']) > 0:
 
             title = self.tr("Warning")
             msg   = self.tr("The current case must be saved before "\
@@ -882,6 +889,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         rm_type = self.jmdl.batch.rm_type
 
         batch = self.case['runcase'].path
+
         cmd = None
         run_title = None
 
