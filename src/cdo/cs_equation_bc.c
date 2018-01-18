@@ -481,9 +481,10 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
   for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
 
     const cs_xdef_t  *def = eqp->bc_defs[def_id];
-    assert(eqp->dim == def->dim);
 
     if (def->meta & CS_CDO_BC_DIRICHLET) {
+
+      assert(eqp->dim == def->dim);
 
       const cs_boundary_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
       switch(def->type) {
