@@ -69,6 +69,8 @@ BEGIN_C_DECLS
  * Local type definitions
  *============================================================================*/
 
+#define CS_CDO_LOCAL_DBG       0
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -1008,11 +1010,10 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
         cm->hfc[f] = cs_math_3_dot_product(cm->face[f].unitv,
                                            cm->dedge[f].unitv);
         cm->hfc[f] *= cm->dedge[f].meas;
-#if defined(DEBUG) && !defined(NDEBUG)
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_LOCAL_DBG > 0
         if (cm->hfc[f] <= 0)
           bft_error(__FILE__, __LINE__, 0,
-                    " Invalid result; hfc = %5.3e < 0 !\n",
-                    cm->hfc[f]);
+                    " Invalid result; hfc = %5.3e < 0 !\n", cm->hfc[f]);
 #endif
       }
 
