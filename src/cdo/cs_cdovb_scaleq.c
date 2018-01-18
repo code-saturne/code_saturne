@@ -541,14 +541,11 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
       case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
       case CS_PARAM_ADVECTION_SCHEME_SG:
-        if (cs_equation_param_has_diffusion(eqp)) {
-          eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+        eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+        if (cs_equation_param_has_diffusion(eqp))
           eqc->get_advection_matrix = cs_cdo_advection_get_vb_upwcsvdi;
-        }
-        else {
-          eqb->msh_flag |= CS_CDO_LOCAL_DFQ;
+        else
           eqc->get_advection_matrix = cs_cdo_advection_get_vb_upwcsv;
-        }
         break;
 
       default:
@@ -567,14 +564,11 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
       case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
       case CS_PARAM_ADVECTION_SCHEME_SG:
-        if (cs_equation_param_has_diffusion(eqp)) {
-          eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+        eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+        if (cs_equation_param_has_diffusion(eqp))
           eqc->get_advection_matrix = cs_cdo_advection_get_vb_upwnocdi;
-        }
-        else {
-          eqb->msh_flag |= CS_CDO_LOCAL_DFQ;
+        else
           eqc->get_advection_matrix = cs_cdo_advection_get_vb_upwnoc;
-        }
         break;
 
       default:
