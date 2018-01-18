@@ -416,6 +416,21 @@ cs_advection_field_log_setup(void)
 
     cs_log_printf(CS_LOG_SETUP, " <AdvectionField/%s> id: %d\n",
                   adv->name, adv->id);
+
+    if (adv->loc_flag & CS_FLAG_CELL)
+      cs_log_printf(CS_LOG_SETUP, " <AdvectionField/%s> Defined at cells\n",
+                    adv->name);
+    if (adv->loc_flag & CS_FLAG_VERTEX)
+      cs_log_printf(CS_LOG_SETUP, " <AdvectionField/%s> Defined at vertices\n",
+                    adv->name);
+    if (adv->flag & CS_ADVECTION_FIELD_POST_COURANT)
+      cs_log_printf(CS_LOG_SETUP,
+                    " <AdvectionField/%s> Postprocess the Courant number\n",
+                    adv->name);
+    if (adv->flag & CS_ADVECTION_FIELD_STEADY)
+      cs_log_printf(CS_LOG_SETUP,
+                    " <AdvectionField/%s> Steady-state\n", adv->name);
+
     cs_xdef_log(adv->definition);
 
   } // Loop on advection fields

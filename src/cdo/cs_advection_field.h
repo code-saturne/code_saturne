@@ -53,7 +53,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-
 #define CS_ADVECTION_FIELD_POST_COURANT (1 << 0)  // postprocess Courant number
 #define CS_ADVECTION_FIELD_STEADY       (1 << 1)  // steady-state field
 

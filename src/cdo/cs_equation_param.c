@@ -1221,7 +1221,7 @@ cs_equation_summary_param(const char                  *eqname,
     cs_log_printf(CS_LOG_SETUP, "  <Advection field>  %s\n",
                   cs_advection_field_get_name(eqp->adv_field));
 
-    if (eqp->verbosity > 0) {
+    if (eqp->verbosity > 1) {
       cs_log_printf(CS_LOG_SETUP, "  <%s/Advection.Formulation>", eqname);
       switch(eqp->adv_formulation) {
       case CS_PARAM_ADVECTION_FORM_CONSERV:
@@ -1314,18 +1314,6 @@ cs_equation_summary_param(const char                  *eqname,
                 eqname, cs_base_strtf(itsol.resid_normalized));
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -218,14 +218,14 @@ _hho_add_tetra_by_val(cs_real_t                        const_val,
 
 static void
 _hho_add_tetra_by_ana(const cs_xdef_analytic_input_t  *anai,
-                   const cs_basis_func_t           *cbf,
-                   const cs_real_3_t                xv1,
-                   const cs_real_3_t                xv2,
-                   const cs_real_3_t                xv3,
-                   const cs_real_3_t                xv4,
-                   const double                     vol,
-                   cs_cell_builder_t               *cb,
-                   cs_real_t                        array[])
+                      const cs_basis_func_t           *cbf,
+                      const cs_real_3_t                xv1,
+                      const cs_real_3_t                xv2,
+                      const cs_real_3_t                xv3,
+                      const cs_real_3_t                xv4,
+                      const double                     vol,
+                      cs_cell_builder_t               *cb,
+                      cs_real_t                        array[])
 {
   cs_real_3_t  *gpts = cb->vectors;
   cs_real_t  *gw = cb->values;
@@ -535,7 +535,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid type of definition for a source term in CDOVB");
 
-        /* TODO
+        /* TODO:
            case CS_XDEF_BY_VALUE:
            cs_source_term_vcsd_by_value; --> case CS_QUADRATURE_BARY:
 
