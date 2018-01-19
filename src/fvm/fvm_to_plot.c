@@ -562,7 +562,7 @@ fvm_to_plot_export_field(void                  *writer,
     = fvm_writer_field_helper_create(mesh,
                                      NULL, /* section list */
                                      dimension,
-                                     CS_NO_INTERLACE,
+                                     CS_INTERLACE,
                                      dest_datatype,
                                      location);
 
