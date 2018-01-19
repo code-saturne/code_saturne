@@ -5,6 +5,8 @@ Release 5.1.2 (Unreleased)
 Bug fixes
 ---------
 
+- Fix line plot/cs_prope_set writer output for vector variables.
+
 - GUI: ensure runcase and current XML file are consistent before running.
 
 - Fix automatic settings for smoothers when using mumtigrid as a solver.
