@@ -198,7 +198,7 @@ endif
 
 !
 ! Only density may be updated in Navier Stokes loop
-if (iterns.gt.1) return
+if (iterns.ge.1) return
 
 !  Au premier pas de temps du calcul
 !     Si on a indique que rho (visc) etait constant

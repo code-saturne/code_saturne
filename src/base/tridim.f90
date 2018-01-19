@@ -483,8 +483,9 @@ if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1010)
 endif
 
-iterns = 1
+iterns = -1
 call phyvar(nvar, nscal, iterns, dt)
+iterns = 1
 
 if (itrale.gt.0) then
   iappel = 2
