@@ -2237,7 +2237,6 @@ _renum_face_multipass(cs_mesh_t    *mesh,
 
   double redistribute_relaxation_factor = 0.5;
 
-  cs_lnum_t n_no_adj_halo = 0;
   cs_lnum_t new_count = 0;
   cs_lnum_t faces_list_size = n_faces, faces_list_size_new = 0;
   cs_lnum_t faces_list_assign_size = faces_list_size;
@@ -2268,7 +2267,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
   /* Build lexical ordering of faces
      (possibly forcing faces ajacent to ghost cells last) */
 
-  n_no_adj_halo
+  cs_lnum_t n_no_adj_halo
     = _order_i_faces_by_cell_adjacency(mesh,
                                        _i_faces_base_ordering,
                                        faces_list);
@@ -2322,7 +2321,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
        to ghost cells in separate (later) groups */
 
     if (n_no_adj_halo > faces_list_size / 2)
-      faces_list_assign_size = faces_list_size - n_no_adj_halo;
+      faces_list_assign_size = n_no_adj_halo;
     else {
       faces_list_assign_size = faces_list_size;
       n_no_adj_halo = 0;
@@ -2397,6 +2396,9 @@ _renum_face_multipass(cs_mesh_t    *mesh,
         new_to_old_i[new_count++] = f_id;
 
     }
+
+    if (n_no_adj_halo > 0)
+      n_no_adj_halo -= (faces_list_size - faces_list_size_new);
 
     faces_list_size = faces_list_size_new;
     faces_list_size_new = 0;
