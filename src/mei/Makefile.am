@@ -30,15 +30,11 @@ $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS =
 
-AM_LFLAGS = -l
-AM_YFLAGS = -d
-
-BUILT_SOURCES = mei_parser.h
-
 pkginclude_HEADERS = \
 mei_evaluate.h \
 mei_hash_table.h \
-mei_node.h
+mei_node.h \
+mei_parser.h
 
 noinst_HEADERS = \
 mei_parser_glob.h
@@ -50,7 +46,7 @@ mei_evaluate.c \
 mei_hash_table.c \
 mei_node.c \
 mei_parser_glob.c \
-mei_parser.y \
-mei_scanner.l
+mei_parser.c \
+mei_scanner.c
 
 libmei_la_LDFLAGS = -no-undefined

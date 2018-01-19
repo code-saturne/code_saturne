@@ -99,6 +99,7 @@ user_FCFLAGS=$FCFLAGS
 user_FCFLAGS_HOT=$FCFLAGS_HOT
 user_LDFLAGS=$LDFLAGS
 user_LIBS=$LIBS
+user_CS_LD=$CS_LD
 
 AC_PROG_CC
 AC_PROG_CXX
@@ -108,8 +109,6 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AM_PROG_CC_C_O
 AC_PROG_SED
-AM_PROG_LEX
-AC_PROG_YACC
 
 if test "x$CC" = "x" ; then
   AC_MSG_FAILURE([cannot find C compiler])
@@ -677,7 +676,9 @@ elif test x$cs_have_catalyst = xyes ; then
     cs_have_link_cxx=yes
   fi
 fi
-if test $cs_have_link_cxx = yes ; then
+if test x$user_CS_LD != "x" ; then
+  CS_LD=$user_CS_LD
+elif test $cs_have_link_cxx = yes ; then
   CS_LD=$CXX
 else
   CS_LD=$CC

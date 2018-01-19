@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 
 if [ ! -d sbin ]; then
   echo "$0 must be called from top directory (../$0)"
@@ -110,3 +110,20 @@ esac
 
 # Remove cache directory
 \rm -rf autom4te.cache
+
+# Update mei_parser and mei_scanner if possible
+# (if not, keep from previous bootstrap)
+
+which bison > /dev/null 2>&1
+if test $? = "0"; then
+  which flex > /dev/null 2>&1
+fi
+if test $? = "0"; then
+  which flex
+fi
+if test $? == "0"; then
+  echo "running flex for MEI scanner"
+  flex -o ./src/mei/mei_scanner.c ./src/mei/mei_scanner.l
+  echo "running bison for MEI parser"
+  bison --defines=./src/mei/mei_parser.h -o src/mei/mei_parser.c ./src/mei/mei_parser.y
+fi
