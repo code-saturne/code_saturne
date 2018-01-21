@@ -241,6 +241,7 @@ double precision, allocatable, dimension(:) :: ipro_visc, bpro_visc
 double precision, allocatable, dimension(:) :: cpro_visc
 double precision, allocatable, dimension(:,:) :: cpro_vitenp
 double precision, allocatable, dimension(:,:) :: trav
+double precision, dimension(:,:), pointer :: cpro_poro_div_duq
 
 !===============================================================================
 
@@ -784,6 +785,7 @@ allocate(gradp(3,ncelet))
 iccocg = 1
 iprev  = 0
 inc    = 1
+call grdpor(inc)
 
 ! Pressure gradient
 ! NB: for the VOF algo. the weighting is automatically done
@@ -792,13 +794,22 @@ call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
                               iccocg, iphydr,                     &
                               frcxt, gradp)
 
-if (iphydr.eq.1) then
+if (iphydr.eq.1.and.iporos.eq.3) then
+
+  call field_get_val_v_by_name("poro_div_duq", cpro_poro_div_duq)
   do iel = 1, ncel
     do isou = 1, 3
-      trav(isou, iel) = gradp(isou, iel) - frcxt(isou ,iel)
+      trav(isou, iel) = gradp(isou, iel) - frcxt(isou, iel) &
+        - cpro_poro_div_duq(isou, iel)
     enddo
   enddo
 
+else if (iphydr.eq.1) then
+  do iel = 1, ncel
+    do isou = 1, 3
+      trav(isou, iel) = gradp(isou, iel) - frcxt(isou, iel)
+    enddo
+  enddo
 else
   do iel = 1, ncel
     do isou = 1, 3
@@ -925,6 +936,9 @@ call inimav &
 if (iphydr.eq.1) then
   init   = 0
   inc    = 0
+
+  call grdpor(inc)
+
   iccocg = 1
   nswrgp = vcopt_p%nswrgr
   imligp = vcopt_p%imligr
@@ -962,6 +976,7 @@ endif
 
 init   = 0
 inc    = 1
+call grdpor(inc)
 iccocg = 1
 
 !----------------------

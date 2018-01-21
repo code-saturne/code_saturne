@@ -419,12 +419,30 @@ cs_mass_flux(const cs_mesh_t          *m,
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+  cs_real_2_t *i_f_face_factor;
+  cs_real_t *b_f_face_factor;
+
+  /* Local variables */
+
+  /* Discontinuous porous treatment */
+  cs_real_2_t _i_f_face_factor = {1., 1.};
+  cs_real_t _b_f_face_factor = 1.;
+  int is_p = 0; /* Is porous? */
+
+  if (cs_glob_porous_model == 3) {
+    i_f_face_factor = fvq->i_f_face_factor;
+    b_f_face_factor = fvq->b_f_face_factor;
+    is_p = 1;
+  }
+  else {
+    i_f_face_factor = _i_f_face_factor;
+    b_f_face_factor = &_b_f_face_factor;
+  }
+
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *restrict)fvq->dofij;
-
-  /* Local variables */
 
   char var_name[32];
 
@@ -695,10 +713,11 @@ cs_mass_flux(const cs_mesh_t          *m,
 
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
-          double pnd = weight[face_id];
+          cs_real_t w_i = weight[face_id] * i_f_face_factor[is_p*face_id][0];
+          cs_real_t w_j = (1. - weight[face_id]) * i_f_face_factor[is_p*face_id][1];
           /* u, v, w Components */
           for (int isou = 0; isou < 3; isou++) {
-            i_massflux[face_id] += (pnd*qdm[ii][isou]+(1.-pnd)*qdm[jj][isou])
+            i_massflux[face_id] += (w_i * qdm[ii][isou] + w_j * qdm[jj][isou])
                                   * i_f_face_normal[face_id][isou];
           }
 
@@ -723,6 +742,7 @@ cs_mass_flux(const cs_mesh_t          *m,
             for (int jsou = 0; jsou < 3; jsou++) {
               pfac += coefbv[face_id][jsou][isou]*f_momentum[face_id][jsou];
             }
+            pfac *= b_f_face_factor[is_p*face_id];
 
             b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
           }
@@ -774,21 +794,22 @@ cs_mass_flux(const cs_mesh_t          *m,
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
 
-          double pnd = weight[face_id];
-
           double dofx = dofij[face_id][0];
           double dofy = dofij[face_id][1];
           double dofz = dofij[face_id][2];
+
+          cs_real_t w_i = weight[face_id] * i_f_face_factor[is_p*face_id][0];
+          cs_real_t w_j = (1. - weight[face_id]) * i_f_face_factor[is_p*face_id][1];
 
           /* Terms along U, V, W */
           for (int isou = 0; isou < 3; isou++) {
 
             i_massflux[face_id] = i_massflux[face_id]
               /* Non-reconstructed term */
-              + (pnd*qdm[ii][isou] + (1.-pnd)*qdm[jj][isou]
+              + (w_i * qdm[ii][isou] + w_j * qdm[jj][isou]
 
                  /*  --->     ->    -->      ->
-                     (Grad(rho U ) . OFij ) . Sij */
+                     (Grad(rho U ) . OFij ) . Sij FIXME for discontinuous porous modelling */
                  + 0.5*(grdqdm[ii][isou][0] +grdqdm[jj][isou][0])*dofx
                  + 0.5*(grdqdm[ii][isou][1] +grdqdm[jj][isou][1])*dofy
                  + 0.5*(grdqdm[ii][isou][2] +grdqdm[jj][isou][2])*dofz
@@ -830,6 +851,8 @@ cs_mass_flux(const cs_mesh_t          *m,
               pfac += coefbv[face_id][jsou][isou]*pip;
 
             }
+
+            pfac *= b_f_face_factor[is_p*face_id];
 
             b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
 
@@ -1196,12 +1219,14 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
 
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
-          double pnd = weight[face_id];
+
+          cs_real_t w_i = weight[face_id];
+          cs_real_t w_j = (1. - weight[face_id]);
 
           cs_real_6_t f_mass_var;
 
           for (int isou = 0; isou < 6; isou++)
-            f_mass_var[isou] = pnd*c_mass_var[ii][isou]+(1.-pnd)*c_mass_var[jj][isou];
+            f_mass_var[isou] = w_i * c_mass_var[ii][isou] + w_j * c_mass_var[jj][isou];
 
           cs_math_sym_33_3_product_add(f_mass_var,
                                        i_f_face_normal[face_id],
@@ -1279,13 +1304,14 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
 
-          double pnd = weight[face_id];
+          cs_real_t w_i = weight[face_id];
+          cs_real_t w_j = (1. - weight[face_id]);
 
           cs_real_t f_mass_var[6];
 
           for (cs_lnum_t isou = 0; isou < 6; isou++)
             /* Non-reconstructed face value */
-            f_mass_var[isou] = pnd*c_mass_var[ii][isou]+(1.-pnd)*c_mass_var[jj][isou]
+            f_mass_var[isou] = w_i * c_mass_var[ii][isou] + w_j * c_mass_var[jj][isou]
               /* Reconstruction: face gradient times OF */
               + 0.5*(c_grad_mvar[ii][isou][0] +c_grad_mvar[jj][isou][0])*dofij[face_id][0]
               + 0.5*(c_grad_mvar[ii][isou][1] +c_grad_mvar[jj][isou][1])*dofij[face_id][1]
@@ -1638,6 +1664,26 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   const cs_real_3_t *restrict djjpf
     = (const cs_real_3_t *restrict)fvq->djjpf;
 
+  /*Additional terms due to porosity */
+  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
+
+  cs_real_t *i_poro_duq_0;
+  cs_real_t *i_poro_duq_1;
+  cs_real_t *b_poro_duq;
+  cs_real_t _f_ext = 0.;
+
+  int is_p = 0; /* Is porous? */
+  if (f_i_poro_duq_0 != NULL) {
+    is_p = 1;
+    i_poro_duq_0 = f_i_poro_duq_0->val;
+    i_poro_duq_1 = cs_field_by_name_try("i_poro_duq_1")->val;
+    b_poro_duq = cs_field_by_name_try("b_poro_duq")->val;
+  } else {
+    i_poro_duq_0 = &_f_ext;
+    i_poro_duq_1 = &_f_ext;
+    b_poro_duq = &_f_ext;
+  }
+
   /*==========================================================================*/
 
   /*==========================================================================
@@ -1670,20 +1716,26 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
-      i_massflux[face_id] =  i_massflux[face_id]
-                           + i_visc[face_id]*(
+      cs_real_2_t poro = {
+        i_poro_duq_0[is_p*face_id],
+        i_poro_duq_1[is_p*face_id]
+      };
+
+      i_massflux[face_id] += i_visc[face_id]*(
                                               ( i_face_cog[face_id][0]
                                                -cell_cen[ii][0] )*frcxt[ii][0]
                                              +( i_face_cog[face_id][1]
                                                -cell_cen[ii][1] )*frcxt[ii][1]
                                              +( i_face_cog[face_id][2]
                                                -cell_cen[ii][2] )*frcxt[ii][2]
+                                             + poro[0]
                                              -( i_face_cog[face_id][0]
                                                -cell_cen[jj][0] )*frcxt[jj][0]
                                              -( i_face_cog[face_id][1]
                                                -cell_cen[jj][1] )*frcxt[jj][1]
                                              -( i_face_cog[face_id][2]
                                                -cell_cen[jj][2] )*frcxt[jj][2]
+                                             - poro[1]
                                              );
 
     }
@@ -1698,9 +1750,13 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       cs_real_3_t normal;
       cs_math_3_normalise(b_face_normal[face_id], normal);
 
-      b_massflux[face_id] += b_visc[face_id] * b_dist[face_id]
+      cs_real_t poro = b_poro_duq[is_p*face_id];
+
+      b_massflux[face_id] += b_visc[face_id]
                             * cofbfp[face_id]
-                            * cs_math_3_dot_product(frcxt[ii], normal);
+                            * (cs_math_3_dot_product(frcxt[ii], normal)
+                                * b_dist[face_id] + poro
+                              );
 
     }
 
@@ -1718,6 +1774,11 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
+      cs_real_2_t poro = {
+        i_poro_duq_0[is_p*face_id],
+        i_poro_duq_1[is_p*face_id]
+      };
+
       double surfn = i_f_face_surf[face_id];
 
       i_massflux[face_id] += i_visc[face_id]*(
@@ -1727,12 +1788,14 @@ cs_ext_force_flux(const cs_mesh_t          *m,
                                                 -cell_cen[ii][1] )*frcxt[ii][1]
                                               +( i_face_cog[face_id][2]
                                                 -cell_cen[ii][2] )*frcxt[ii][2]
+                                              + poro[0]
                                               -( i_face_cog[face_id][0]
                                                 -cell_cen[jj][0] )*frcxt[jj][0]
                                               -( i_face_cog[face_id][1]
                                                 -cell_cen[jj][1] )*frcxt[jj][1]
                                               -( i_face_cog[face_id][2]
                                                 -cell_cen[jj][2] )*frcxt[jj][2]
+                                              - poro[1]
                                               )
                             + surfn/i_dist[face_id]*0.5
                              *( (djjpf[face_id][0]-diipf[face_id][0])*( viselx[ii]*frcxt[ii][0]
@@ -1756,9 +1819,14 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       cs_real_3_t normal;
       cs_math_3_normalise(b_face_normal[face_id], normal);
 
-      b_massflux[face_id] += b_visc[face_id] * b_dist[face_id]
+      cs_real_t poro = b_poro_duq[is_p*face_id];
+
+      b_massflux[face_id] += b_visc[face_id]
                             * cofbfp[face_id]
-                            * cs_math_3_dot_product(frcxt[ii], normal);
+                            * (cs_math_3_dot_product(frcxt[ii], normal)
+                                *  b_dist[face_id]
+                                + poro
+                              );
 
     }
   }

@@ -160,6 +160,7 @@ cs_matrix_wrapper_vector(int                  iconvp,
                          int                  tensorial_diffusion,
                          int                  ndircp,
                          int                  isym,
+                         int                  eb_size[4],
                          double               thetap,
                          const cs_real_33_t   coefbu[],
                          const cs_real_33_t   cofbfu[],
@@ -445,6 +446,7 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
  * faces).
  *
  * \param[in]     m             pointer to mesh structure
+ * \param[in]     mq            pointer to mesh quantities structure
  * \param[in]     iconvp        indicator
  *                               - 1 advection
  *                               - 0 otherwise
@@ -474,19 +476,21 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_vector(const cs_mesh_t          *m,
-                 int                       iconvp,
-                 int                       idiffp,
-                 double                    thetap,
-                 const cs_real_33_t        coefbu[],
-                 const cs_real_33_t        cofbfu[],
-                 const cs_real_33_t        fimp[],
-                 const cs_real_t           i_massflux[],
-                 const cs_real_t           b_massflux[],
-                 const cs_real_t           i_visc[],
-                 const cs_real_t           b_visc[],
-                 cs_real_33_t    *restrict da,
-                 cs_real_2_t     *restrict xa);
+cs_matrix_vector(const cs_mesh_t            *m,
+                 const cs_mesh_quantities_t *mq,
+                 int                         iconvp,
+                 int                         idiffp,
+                 int                         eb_size[4],
+                 double                      thetap,
+                 const cs_real_33_t          coefbu[],
+                 const cs_real_33_t          cofbfu[],
+                 const cs_real_33_t          fimp[],
+                 const cs_real_t             i_massflux[],
+                 const cs_real_t             b_massflux[],
+                 const cs_real_t             i_visc[],
+                 const cs_real_t             b_visc[],
+                 cs_real_33_t      *restrict da,
+                 cs_real_2_t       *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -541,6 +545,7 @@ cs_matrix_time_step(const cs_mesh_t          *m,
  * faces).
  *
  * \param[in]     m             pointer to mesh structure
+ * \param[in]     mq            pointer to mesh quantities structure
  * \param[in]     iconvp        indicator
  *                               - 1 advection
  *                               - 0 otherwise
@@ -570,19 +575,20 @@ cs_matrix_time_step(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
-                                int                       iconvp,
-                                int                       idiffp,
-                                double                    thetap,
-                                const cs_real_33_t        coefbu[],
-                                const cs_real_33_t        cofbfu[],
-                                const cs_real_33_t        fimp[],
-                                const cs_real_t           i_massflux[],
-                                const cs_real_t           b_massflux[],
-                                const cs_real_33_t        i_visc[],
-                                const cs_real_t           b_visc[],
-                                cs_real_33_t    *restrict da,
-                                cs_real_332_t   *restrict xa);
+cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
+                                const cs_mesh_quantities_t *mq,
+                                int                         iconvp,
+                                int                         idiffp,
+                                double                      thetap,
+                                const cs_real_33_t          coefbu[],
+                                const cs_real_33_t          cofbfu[],
+                                const cs_real_33_t          fimp[],
+                                const cs_real_t             i_massflux[],
+                                const cs_real_t             b_massflux[],
+                                const cs_real_33_t          i_visc[],
+                                const cs_real_t             b_visc[],
+                                cs_real_33_t      *restrict da,
+                                cs_real_332_t     *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 /*!

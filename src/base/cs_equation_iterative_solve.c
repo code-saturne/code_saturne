@@ -1153,7 +1153,11 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   /* Matrix block size */
   ibsize = 3;
   iesize = 1; /* CS_ISOTROPIC_DIFFUSION or CS_ANISOTROPIC_RIGHT_DIFFUSION */
-  if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) iesize = 3;
+  if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION)
+    iesize = 3;
+
+  if (cs_glob_porous_model == 3)//FIXME iphydr + other option?
+    iesize = 3;
 
   db_size[0] = ibsize;
   db_size[1] = ibsize;
@@ -1206,7 +1210,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   int tensorial_diffusion = 1;
 
-  if (iesize == 3)
+  if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION)
     tensorial_diffusion = 2;
 
   cs_matrix_wrapper_vector(iconvp,
@@ -1214,6 +1218,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                            tensorial_diffusion,
                            ndircp,
                            isym,
+                           eb_size,
                            thetap,
                            coefbv,
                            cofbfv,
@@ -1313,8 +1318,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
    *  on doit donc corriger SMBR (c'est le cas lorsqu'on itere sur navsto) */
 
 # pragma omp parallel for private(isou)
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-    for (isou = 0 ; isou < 3 ; isou++)
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+    for (isou = 0; isou < 3; isou++)
       smbrp[iel][isou] = 0.;
 
   /* The added convective scalar mass flux is:
@@ -1347,6 +1352,17 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                     icvflb,
                     icvfli,
                     smbrp);
+
+  if (CS_F_(u)->id == f_id) {
+    cs_field_t *f = cs_field_by_name_try("velocity_explicit_balance");
+
+    if (f != NULL) {
+      cs_real_3_t *cpro_cv_df_v = (cs_real_3_t *)f->val;
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (isou = 0 ; isou < 3; isou++)
+          cpro_cv_df_v[iel][isou] = smbrp[iel][isou];
+    }
+  }
 
   /* Dynamic relaxation*/
   if (iswdyp >= 1) {

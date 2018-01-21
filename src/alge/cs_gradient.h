@@ -72,6 +72,15 @@ extern const char *cs_gradient_type_name[];
 /*============================================================================
  * Public function prototypes for Fortran API
  *============================================================================*/
+/*----------------------------------------------------------------------------
+ * Compute the steady balance due to porous modelling for the pressure
+ * gradient
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (grdpor, GRDPOR)
+(
+ const cs_int_t   *const inc          /* <-- 0 or 1: increment or not         */
+);
 
 /*----------------------------------------------------------------------------
  * Compute cell gradient of scalar field or component of vector or

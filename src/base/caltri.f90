@@ -447,6 +447,7 @@ if (iporos.ge.1) then
   ! For integral formulation, in case of 0 fluid volume, clip fluid faces
   if (iporos.eq.3) then
     do ifac = 1, nfac
+      !TODO compute i_f_face_factor with porosi AND fluid surface and surface: epsilon_i*surface/f_surface
       if (porosi(ifacel(1, ifac)).lt.epzero) then
         porosi(ifacel(1, ifac)) = 0.d0
         isolid_0(ifacel(1, ifac)) = 1
@@ -467,6 +468,7 @@ if (iporos.ge.1) then
     enddo
 
     do ifac = 1, nfabor
+      !TODO compute i_f_face_factor with porosi AND fluid surface and surface: epsilon_i*surface/f_surface
       if (porosi(ifabor(ifac)).lt.epzero) then
         porosi(ifabor(ifac)) = 0.d0
         isolid_0(ifabor(ifac)) = 1

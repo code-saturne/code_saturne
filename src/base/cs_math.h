@@ -261,6 +261,33 @@ cs_math_3_dot_product(const cs_real_t  u[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the dot product of
+ * a tensor t with two vectors n1, and n2
+ * n1 t n2
+ *
+ * \param[in]     n1            vector of 3 real values
+ * \param[in]     t             vector of 3 real values
+ * \param[in]     n2            vector of 3 real values
+ *
+ * \return the resulting dot product n1.t.n2.
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_3_33_3_dot_product(const cs_real_t  n1[3],
+                           const cs_real_t  t[3][3],
+                           const cs_real_t  n2[3])
+{
+  cs_real_t n_t_n =
+    ( n1[0] * t[0][0] * n2[0] + n1[1] * t[1][0] * n2[0] + n1[2] * t[2][0] * n2[0]
+    + n1[0] * t[0][1] * n2[1] + n1[1] * t[1][1] * n2[1] + n1[2] * t[2][1] * n2[1]
+    + n1[0] * t[0][2] * n2[2] + n1[1] * t[1][2] * n2[2] + n1[2] * t[2][2] * n2[2]);
+  return n_t_n;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the euclidean norm of a vector of dimension 3
  *
  * \param[in]  v
@@ -338,6 +365,53 @@ cs_math_3_orthogonal_projection(const cs_real_t  n[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add the dot product with a normal vector to the normal direction
+ * to a vector.
+ *
+ * \param[in]     n             normalised face normal vector
+ * \param[in]     factor        factor
+ * \param[in,out] v             vector to be scaled
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_3_normal_scaling(const cs_real_t  n[3],
+                         cs_real_t        factor,
+                         cs_real_3_t      v)
+{
+  cs_real_t v_dot_n = (factor -1.) * cs_math_3_dot_product(v, n);
+  for (int i = 0; i < 3; i++)
+    v[i] += v_dot_n * n[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add the dot product with a normal vector to the normal,normal
+ * component of a tensor:
+ * t += factor * n.t.n n(x)n
+ *
+ * \param[in]     n             normalised face normal vector
+ * \param[in]     factor        factor
+ * \param[in,out] t             vector to be scaled
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_33_normal_scaling_add(const cs_real_t  n[3],
+                              cs_real_t        factor,
+                              cs_real_33_t     t)
+{
+  cs_real_t n_t_n = (factor -1.) *
+    ( n[0] * t[0][0] * n[0] + n[1] * t[1][0] * n[0] + n[2] * t[2][0] * n[0]
+    + n[0] * t[0][1] * n[1] + n[1] * t[1][1] * n[1] + n[2] * t[2][1] * n[1]
+    + n[0] * t[0][2] * n[2] + n[1] * t[1][2] * n[2] + n[2] * t[2][2] * n[2]);
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++)
+      t[i][j] += n_t_n * n[i] * n[j];
+  }
+}
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the product of a matrix of 3x3 real values by a vector of 3
  * real values.
  *
@@ -364,7 +438,7 @@ cs_math_33_3_product(const cs_real_t  m[3][3],
  *
  * \param[in]     m             matrix of 3x3 real values
  * \param[in]     v             vector of 3 real values
- * \param[out]    mv            vector of 3 real values
+ * \param[in,out] mv            vector of 3 real values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -685,6 +759,65 @@ cs_math_sym_33_inv_cramer(const cs_real_t  s[6],
   sout[4] *= detinv;
   sout[5] *= detinv;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the product of a matrix of 3x3 real values by a matrix of 3x3
+ * real values.
+ *
+ * \param[in]     m1            matrix of 3x3 real values
+ * \param[in]     m2            matrix of 3x3 real values
+ * \param[out]    mout          matrix of 3x3 real values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_33_product(const cs_real_t  m1[3][3],
+                   const cs_real_t  m2[3][3],
+                   cs_real_33_t     mout)
+{
+  mout[0][0] = m1[0][0]*m2[0][0] + m1[0][1]*m2[1][0] + m1[0][2]*m2[2][0];
+  mout[0][1] = m1[0][0]*m2[0][1] + m1[0][1]*m2[1][1] + m1[0][2]*m2[2][1];
+  mout[0][2] = m1[0][0]*m2[0][2] + m1[0][1]*m2[1][2] + m1[0][2]*m2[2][2];
+
+  mout[1][0] = m1[1][0]*m2[0][0] + m1[1][1]*m2[1][0] + m1[1][2]*m2[2][0];
+  mout[1][1] = m1[1][0]*m2[0][1] + m1[1][1]*m2[1][1] + m1[1][2]*m2[2][1];
+  mout[1][2] = m1[1][0]*m2[0][2] + m1[1][1]*m2[1][2] + m1[1][2]*m2[2][2];
+
+  mout[2][0] = m1[2][0]*m2[0][0] + m1[2][1]*m2[1][0] + m1[2][2]*m2[2][0];
+  mout[2][1] = m1[2][0]*m2[0][1] + m1[2][1]*m2[1][1] + m1[2][2]*m2[2][1];
+  mout[2][2] = m1[2][0]*m2[0][2] + m1[2][1]*m2[1][2] + m1[2][2]*m2[2][2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the product of a matrix of 3x3 real values by a matrix of 3x3
+ * real values and add.
+ *
+ * \param[in]     m1            matrix of 3x3 real values
+ * \param[in]     m2            matrix of 3x3 real values
+ * \param[out]    mout          matrix of 3x3 real values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_33_product_add(const cs_real_t  m1[3][3],
+                       const cs_real_t  m2[3][3],
+                       cs_real_33_t     mout)
+{
+  mout[0][0] += m1[0][0]*m2[0][0] + m1[0][1]*m2[1][0] + m1[0][2]*m2[2][0];
+  mout[0][1] += m1[0][0]*m2[0][1] + m1[0][1]*m2[1][1] + m1[0][2]*m2[2][1];
+  mout[0][2] += m1[0][0]*m2[0][2] + m1[0][1]*m2[1][2] + m1[0][2]*m2[2][2];
+
+  mout[1][0] += m1[1][0]*m2[0][0] + m1[1][1]*m2[1][0] + m1[1][2]*m2[2][0];
+  mout[1][1] += m1[1][0]*m2[0][1] + m1[1][1]*m2[1][1] + m1[1][2]*m2[2][1];
+  mout[1][2] += m1[1][0]*m2[0][2] + m1[1][1]*m2[1][2] + m1[1][2]*m2[2][2];
+
+  mout[2][0] += m1[2][0]*m2[0][0] + m1[2][1]*m2[1][0] + m1[2][2]*m2[2][0];
+  mout[2][1] += m1[2][0]*m2[0][1] + m1[2][1]*m2[1][1] + m1[2][2]*m2[2][1];
+  mout[2][2] += m1[2][0]*m2[0][2] + m1[2][1]*m2[1][2] + m1[2][2]*m2[2][2];
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!

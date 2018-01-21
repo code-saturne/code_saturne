@@ -356,7 +356,7 @@ _convergence_test(cs_sles_it_t              *c,
   const cs_sles_it_setup_t  *s = c->setup_data;
 
   const char final_fmt[]
-    = N_("  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n");
+    = N_("  n_iter: %5d, res_abs: %11.4e, res_nor: %11.4e, norm: %11.4e\n");
 
   /* Update conversion info structure */
 
@@ -381,7 +381,7 @@ _convergence_test(cs_sles_it_t              *c,
 
   if (residue < convergence->precision * convergence->r_norm) {
     if (verbosity > 1)
-      bft_printf(final_fmt, n_iter, residue, residue/convergence->r_norm);
+      bft_printf(final_fmt, n_iter, residue, residue/convergence->r_norm, convergence->r_norm);
     return CS_SLES_CONVERGED;
   }
 

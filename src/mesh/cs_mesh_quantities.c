@@ -2679,6 +2679,8 @@ cs_mesh_quantities_create(void)
   mesh_quantities->b_face_surf = NULL;
   mesh_quantities->i_f_face_surf = NULL;
   mesh_quantities->b_f_face_surf = NULL;
+  mesh_quantities->i_f_face_factor = NULL;
+  mesh_quantities->b_f_face_factor = NULL;
   mesh_quantities->i_dist = NULL;
   mesh_quantities->b_dist = NULL;
   mesh_quantities->weight = NULL;
@@ -2748,6 +2750,8 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
   if (cs_glob_porous_model == 3) {
     BFT_FREE(mq->i_f_face_surf);
     BFT_FREE(mq->b_f_face_surf);
+    BFT_FREE(mq->i_f_face_factor);
+    BFT_FREE(mq->b_f_face_factor);
   }
   BFT_FREE(mq->i_dist);
   BFT_FREE(mq->b_dist);
@@ -3000,6 +3004,13 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
     if (mesh_quantities->b_f_face_surf == NULL)
       BFT_MALLOC(mesh_quantities->b_f_face_surf, n_b_faces, cs_real_t);
+
+    if (mesh_quantities->i_f_face_factor == NULL)
+      BFT_MALLOC(mesh_quantities->i_f_face_factor, n_i_faces, cs_real_2_t);
+
+    if (mesh_quantities->b_f_face_factor == NULL)
+      BFT_MALLOC(mesh_quantities->b_f_face_factor, n_b_faces, cs_real_t);
+
   }
   else {
     mesh_quantities->i_f_face_normal = mesh_quantities->i_face_normal;
@@ -3201,6 +3212,9 @@ cs_mesh_init_fluid_sections(const cs_mesh_t       *mesh,
 
     for (int i = 0; i < 3; i++)
       i_f_face_normal[face_id][i] = i_face_normal[face_id][i];
+
+    mesh_quantities->i_f_face_factor[face_id][0] = 1.;
+    mesh_quantities->i_f_face_factor[face_id][1] = 1.;
   }
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -3209,6 +3223,8 @@ cs_mesh_init_fluid_sections(const cs_mesh_t       *mesh,
 
     for (int i = 0; i < 3; i++)
       b_f_face_normal[face_id][i] = b_face_normal[face_id][i];
+
+    mesh_quantities->b_f_face_factor[face_id] = 1.;
   }
 }
 

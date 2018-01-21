@@ -883,7 +883,7 @@ cs_blend_f_val(const double     blencp,
  * \param[in]     blencp   proportion of centered or SOLU scheme,
  *                         (1-blencp) is the proportion of upwind.
  * \param[in]     p        (relaxed) value at cell
- * \param[out]    pf       face value
+ * \param[in,out] pf       face value
  */
 /*----------------------------------------------------------------------------*/
 
@@ -970,8 +970,8 @@ cs_i_conv_flux(const int       iconvp,
  * to fluxes at face ij.
  *
  * \param[in]     iconvp       convection flag
- * \param[in]     thetap        weighting coefficient for the theta-schema,
- * \param[in]     imasac        take mass accumulation into account?
+ * \param[in]     thetap       weighting coefficient for the theta-schema,
+ * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
  * \param[out]    pifri        contribution of i to flux from i to j
@@ -979,8 +979,8 @@ cs_i_conv_flux(const int       iconvp,
  * \param[out]    pjfri        contribution of j to flux from i to j
  * \param[out]    pjfrj        contribution of j to flux from j to i
  * \param[in]     i_massflux   mass flux at face ij
- * \param[in,out] fluxi       fluxes at face i
- * \param[in,out] fluxj       fluxes at face j
+ * \param[in,out] fluxi        fluxes at face i
+ * \param[in,out] fluxj        fluxes at face j
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2288,7 +2288,7 @@ cs_i_cd_unsteady_vector(const int           ircflp,
                              pip,
                              pjp,
                              pjf);
-  } else if (ischcp ==3) {
+  } else if (ischcp == 3) {
 
     /* Centered
        --------*/
@@ -2352,6 +2352,7 @@ cs_i_cd_unsteady_vector(const int           ircflp,
   cs_blend_f_val_vector(blencp,
                         pj,
                         pjf);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2543,10 +2544,7 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
 {
   cs_real_t pir, pjr;
   cs_real_t recoi, recoj;
-  cs_real_t distf, srfan, testij, tesqck;
-
-  distf = i_dist;
-  srfan = i_face_surf;
+  cs_real_t testij, tesqck;
 
   *upwind_switch = false;
 
@@ -2578,8 +2576,8 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
   if (iconvp > 0) {
     cs_slope_test(pi,
                   pj,
-                  distf,
-                  srfan,
+                  i_dist,
+                  i_face_surf,
                   i_face_normal,
                   gradi,
                   gradj,
@@ -3024,12 +3022,8 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
 {
   cs_real_3_t pir, pjr;
   cs_real_3_t recoi, recoj;
-  cs_real_t distf, srfan;
   cs_real_t testij, tesqck;
   int isou;
-
-  distf = i_dist;
-  srfan = i_face_surf;
 
   cs_i_compute_quantities_vector(ircflp,
                                  diipf,
@@ -3059,8 +3053,8 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
   if (iconvp > 0) {
     cs_slope_test_vector(pi,
                          pj,
-                         distf,
-                         srfan,
+                         i_dist,
+                         i_face_surf,
                          i_face_normal,
                          gradi,
                          gradj,
@@ -3256,12 +3250,8 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
 {
   cs_real_6_t pir, pjr;
   cs_real_6_t recoi, recoj;
-  cs_real_t distf, srfan;
   cs_real_t testij, tesqck;
   int isou;
-
-  distf = i_dist;
-  srfan = i_face_surf;
 
   cs_i_compute_quantities_tensor(ircflp,
                                  diipf,
@@ -3291,8 +3281,8 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
   if (iconvp > 0) {
     cs_slope_test_tensor(pi,
                          pj,
-                         distf,
-                         srfan,
+                         i_dist,
+                         i_face_surf,
                          i_face_normal,
                          gradi,
                          gradj,
@@ -3482,10 +3472,7 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
   CS_UNUSED(blend_st);
 
   cs_real_t recoi, recoj;
-  cs_real_t distf, srfan, testij, tesqck;
-
-  distf = i_dist;
-  srfan = i_face_surf;
+  cs_real_t testij, tesqck;
 
   *upwind_switch = false;
 
@@ -3505,8 +3492,8 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
   if (iconvp > 0) {
     cs_slope_test(pi,
                   pj,
-                  distf,
-                  srfan,
+                  i_dist,
+                  i_face_surf,
                   i_face_normal,
                   gradi,
                   gradj,
@@ -3836,12 +3823,7 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
                                    cs_real_t           pjp[3])
 {
   cs_real_3_t recoi, recoj;
-  cs_real_t distf, srfan;
   cs_real_t testij, tesqck;
-  int isou;
-
-  distf = i_dist;
-  srfan = i_face_surf;
 
   cs_i_compute_quantities_vector(ircflp,
                                  diipf,
@@ -3859,8 +3841,8 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
   if (iconvp > 0) {
     cs_slope_test_vector(pi,
                          pj,
-                         distf,
-                         srfan,
+                         i_dist,
+                         i_face_surf,
                          i_face_normal,
                          gradi,
                          gradj,
@@ -3870,7 +3852,7 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
                          &testij,
                          &tesqck);
 
-    for (isou = 0; isou < 3; isou++) {
+    for (int isou = 0; isou < 3; isou++) {
       if (ischcp == 1) {
 
         /* Centered
@@ -3934,7 +3916,7 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
   /* If iconv=0 p*f are useless */
   } else {
 
-    for (isou = 0; isou < 3; isou++) {
+    for (int isou = 0; isou < 3; isou++) {
       cs_upwind_f_val(pi[isou],
                       &pif[isou]);
       cs_upwind_f_val(pj[isou],
@@ -3942,6 +3924,7 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
 
     }
   }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4010,12 +3993,8 @@ cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
                                    cs_real_t           pjp[6])
 {
   cs_real_6_t recoi, recoj;
-  cs_real_t distf, srfan;
   cs_real_t testij, tesqck;
   int isou;
-
-  distf = i_dist;
-  srfan = i_face_surf;
 
   cs_i_compute_quantities_tensor(ircflp,
                                  diipf,
@@ -4033,8 +4012,8 @@ cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
   if (iconvp > 0) {
     cs_slope_test_tensor(pi,
                          pj,
-                         distf,
-                         srfan,
+                         i_dist,
+                         i_face_surf,
                          i_face_normal,
                          gradi,
                          gradj,

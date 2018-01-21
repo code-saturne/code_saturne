@@ -887,6 +887,9 @@ if (ippmod(icompf).lt.0) then
 
     iccocg = 1
     inc = 0
+
+    call grdpor(inc)
+
     if (iphydr.eq.1.or.iifren.eq.1) inc = 1
     nswrgp = vcopt_p%nswrgr
     imligp = vcopt_p%imligr

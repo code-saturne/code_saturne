@@ -72,6 +72,7 @@ implicit none
 integer       iscal , id, ityloc, itycat, ifcvsl, pflag
 integer       ii
 integer       iok
+integer       f_id
 integer       ivisph, iest
 
 double precision gravn2
@@ -513,6 +514,40 @@ if (iporos.ge.1) then
   if (iporos.eq.2) then
     f_name = 'tensorial_porosity'
     call field_create(f_name, itycat, ityloc, 6, .false., iporf)
+  endif
+  if (iporos.eq.3) then
+    f_name = 'poro_div_duq'
+    call field_create(f_name,&
+                      itycat,&
+                      1,& ! location: cell
+                      3,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'i_poro_duq_0'
+    call field_create(f_name,&
+                      itycat,&
+                      2,& ! location: inner faces
+                      1,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'i_poro_duq_1'
+    call field_create(f_name,&
+                      itycat,&
+                      2,& ! location: inner faces
+                      1,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'b_poro_duq'
+    call field_create(f_name,&
+                      itycat,&
+                      3,& ! location: boundary faces
+                      1,& ! dimension
+                      .false.,&
+                      f_id)
+
   endif
 endif
 

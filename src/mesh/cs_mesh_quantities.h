@@ -105,6 +105,9 @@ typedef struct {
   cs_real_t     *i_f_face_surf;  /* Fluid surface of interior faces. */
   cs_real_t     *b_f_face_surf;  /* Fluid surface of boundary faces. */
 
+  cs_real_2_t   *i_f_face_factor;/* Fluid surface factor of interior faces. */
+  cs_real_t     *b_f_face_factor;/* Fluid surface factor of boundary faces. */
+
   cs_real_t     *dijpf;          /* Vector I'J' for interior faces */
   cs_real_t     *diipb;          /* Vector II'  for border faces */
   cs_real_t     *dofij;          /* Vector OF   for interior faces */

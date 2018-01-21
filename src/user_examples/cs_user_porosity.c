@@ -194,6 +194,23 @@ cs_user_porosity(void)
 
   }
   /*!< [set_poro_b_faces_1] */
+
+  /* Four set face factor */
+  if (mq->i_f_face_factor != NULL) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
+
+      cs_real_t face_porosity =
+        CS_MAX(
+            i_f_face_surf[face_id] / i_face_surf[face_id],
+            cs_math_epzero);
+
+      mq->i_f_face_factor[face_id][0] = cpro_porosi[ii] / face_porosity;
+      mq->i_f_face_factor[face_id][1] = cpro_porosi[jj] / face_porosity;
+    }
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

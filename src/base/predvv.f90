@@ -459,6 +459,8 @@ if (vcopt_p%iwgrec.eq.1) then
   endif
 endif
 
+call grdpor(inc)
+
 ! Pressure gradient
 call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
                               iccocg, iphydr,                     &

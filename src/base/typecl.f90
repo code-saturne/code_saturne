@@ -804,6 +804,8 @@ if (itbslb.gt.0) then
   inc = 1
   iccocg = 1
 
+  call grdpor(inc)
+
   call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,      &
                                 iccocg, iphydr,                       &
                                 frcxt, grad)
