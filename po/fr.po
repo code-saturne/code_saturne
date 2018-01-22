@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-12-22 01:28+0100\n"
+"POT-Creation-Date: 2018-01-19 22:01+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3195,6 +3195,13 @@ msgstr ""
 
 #, c-format
 msgid ""
+"       grid level %2d diag. dominance: min = %12.5e\n"
+"                                      max = %12.5e\n"
+"\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "       fine   grid anisotropy: min      = %12.5e\n"
 "                               max      = %12.5e\n"
 "       coarse grid anisotropy: min      = %12.5e\n"
@@ -3205,15 +3212,6 @@ msgstr ""
 msgid ""
 "       minimum xag_p1 / xag_p0          = %12.5e\n"
 "       maximum xag_p1 / xag_p0          = %12.5e\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"       fine   grid diag. dominance: min = %12.5e\n"
-"                                    max = %12.5e\n"
-"       coarse grid diag. dominance: min = %12.5e\n"
-"                                    max = %12.5e\n"
-"\n"
 msgstr ""
 
 #, c-format
@@ -6451,7 +6449,101 @@ msgid "vectorization"
 msgstr "vectorisation"
 
 msgid "threads"
+msgstr "fils (threads)"
+
+#, c-format
+msgid "  number of halo-independent elements: %7u\n"
+msgstr "  nombre d'éléments halo-indépendants : %7u\n"
+
+#, c-format
+msgid "  number of halo-adjacent elements:  %9u\n"
+msgstr "  nombre d'éléments halo-adjacents :  %9u\n"
+
+#, c-format
+msgid ""
+"                                       minimum   maximum      mean\n"
+"  number of halo-independent elements: %7u %9u %9u\n"
 msgstr ""
+"                                       minimum   maximum    moyenne\n"
+"  nombre d'éléments halo-indépendants : %7u %9u %9u\n"
+
+#, c-format
+msgid "  number of halo-adjacent elements:  %9u %9u %9u\n"
+msgstr "  nombre d'éléments halo-adjacents :  %9u %9u %9u\n"
+
+#, c-format
+msgid "  vector size:                             %3d\n"
+msgstr "  longueur de vecteur :                     %3d\n"
+
+#, c-format
+msgid ""
+"                                       minimum   maximum      mean\n"
+"  vector size:                             %3d       %3d       %3d\n"
+msgstr ""
+"                                        minimum   maximum    moyenne\n"
+"  longueur de vecteur :                     %3d       %3d       %3d\n"
+
+#, c-format
+msgid ""
+"  number of threads:                       %3d\n"
+"  number of exclusive groups:              %3d\n"
+msgstr ""
+"  nombre de fils :                          %3d\n"
+"  nombre de groupes exclusifs :             %3d\n"
+
+#, c-format
+msgid "   number of elements in group %2d:   %9u\n"
+msgstr "   nombre d'éléments du groupe %2d :   %9u\n"
+
+#, c-format
+msgid "  estimated thread imbalance:            %5.3f\n"
+msgstr "  déséquilibre de fils estimé :           %5.3f\n"
+
+#, c-format
+msgid ""
+"                                       minimum   maximum      mean\n"
+"  number of threads:                       %3d       %3d       %3d\n"
+"  number of exclusive groups:              %3d       %3d       %3d\n"
+msgstr ""
+"                                        minimum   maximum    moyenne\n"
+"  nombre de fils d'exécution :              %3d       %3d       %3d\n"
+"  nombre de groupes exclusifs :             %3d       %3d       %3d\n"
+
+#, c-format
+msgid "  number of halo-independent groups:       %3d       %3d       %3d\n"
+msgstr "  nombre de groupes halo-indépendants :     %3d       %3d       %3d\n"
+
+#, c-format
+msgid "   number of elements in group %2d:   %9u %9u %9u\n"
+msgstr "   nombre d'élements du groupe %2d :   %9u %9u %9u\n"
+
+#, c-format
+msgid "  estimated thread imbalance:            %5.3f     %5.3f     %5.3f\n"
+msgstr "  déséquilbre de fils estimé :            %5.3f     %5.3f     %5.3f\n"
+
+#, c-format
+msgid ""
+"\n"
+" Numbering for %s:\n"
+msgstr ""
+"\n"
+" Numérotation pour %s :\n"
+
+#, c-format
+msgid ""
+"\n"
+" Numbering type: %s for %d rank(s)\n"
+msgstr ""
+"\n"
+" Numérotation de type : %s pour %d rang(s)\n"
+
+#, c-format
+msgid ""
+"\n"
+" type: %s\n"
+msgstr ""
+"\n"
+" type : %s\n"
 
 #, c-format
 msgid "Usage: %s [options]\n"
@@ -7699,18 +7791,6 @@ msgstr ""
 "\n"
 
 #, c-format
-msgid "    minimum value =         %10.5e\n"
-msgstr "    valeur minimale =       %10.5e\n"
-
-#, c-format
-msgid ""
-"    maximum value =         %10.5e\n"
-"\n"
-msgstr ""
-"    valeur maximale =       %10.5e\n"
-"\n"
-
-#, c-format
 msgid ""
 "Faces renumbering for vectorization:\n"
 "====================================\n"
@@ -7723,14 +7803,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"\n"
-" Vectorization for interior faces to cells gathers on %d/%d ranks\n"
-msgstr ""
-"\n"
-" Vectorization des assemblages faces vers cellules sur %d/%d rangs\n"
-
-#, c-format
-msgid ""
 "Faces renumbering for vectorization:\n"
 "====================================\n"
 "\n"
@@ -7738,12 +7810,6 @@ msgid ""
 "\n"
 "Faces are not renumbered, and vectorization of face loops\n"
 "will not be forced.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" Vectorization for boundary faces to cells gathers on %d/%d ranks\n"
 msgstr ""
 
 #, c-format
@@ -7775,48 +7841,6 @@ msgstr ""
 "\n"
 " Largeur de bande de la matrice pour %s :        %llu\n"
 " Profil/lignes de la matrice pour le %s :        %llu\n"
-
-#, c-format
-msgid ""
-"\n"
-" Histogram of thread pools size for %s per rank:\n"
-"\n"
-msgstr ""
-"\n"
-" Histogramme des nombres de threads pour les %s par rang :\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-" Histogram of threading groups count for %s per rank:\n"
-"\n"
-msgstr ""
-"\n"
-" Histogramme du nombre de groupes de threads pour les %s par rang :\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-" Histogram of thread imbalance for %s per rank:\n"
-"\n"
-msgstr ""
-"\n"
-" Histogramme du déséquilibre de threads pour les %s par rang :\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-" Number of thread pools for %s :          %d\n"
-" Number of threading groups for %s :      %d\n"
-" Estimated thread imbalance for %s :      %10.5e\n"
-msgstr ""
-"\n"
-" Nombre de threads pour les %s :                 %d\n"
-" Nombre de groupes de threads pour les %s :      %d\n"
-" Déséquilibre de threads estimé pour les %s :    %10.5e\n"
 
 #, c-format
 msgid ""
@@ -7860,6 +7884,9 @@ msgid ""
 msgstr ""
 "\n"
 " Échec de la renumérotation des cellules (%s).\n"
+
+msgid "cells"
+msgstr "cellules"
 
 msgid "interior faces"
 msgstr "faces intérieures"
@@ -9468,9 +9495,6 @@ msgstr ""
 msgid " Key not implemented for setting an advection field."
 msgstr ""
 
-msgid "cells"
-msgstr "cellules"
-
 msgid ""
 " Incompatible type of boundary condition by default.\n"
 " Please modify your settings.\n"
@@ -9488,6 +9512,16 @@ msgid ""
 " Stop build a face mesh."
 msgstr ""
 
+#, c-format
+msgid ""
+"Restart mismatch for: %s\n"
+"read: %d\n"
+"expected: %d."
+msgstr ""
+
+msgid " Invalid idtvar value for the CDO module.\n"
+msgstr ""
+
 msgid "Unkwown algorithm for cell center computation\n"
 msgstr ""
 
@@ -9500,9 +9534,22 @@ msgid ""
 " Computing the flux across all interior or border faces is not managed yet."
 msgstr ""
 
+msgid "wall"
+msgstr ""
+
+msgid "inlet"
+msgstr "entrée"
+
+msgid "outlet"
+msgstr "sortie"
+
+msgid "symmetry"
+msgstr "symmétrie"
+
+#, c-format
 msgid ""
-" Invalid type of boundary by default.\n"
-" Valid choice is CS_PARAM_BOUNDARY_WALL or CS_PARAM_BOUNDARY_SYMMETRY."
+" %s: Invalid type of boundary by default.\n"
+" Valid choice is CS_DOMAIN_BOUNDARY_WALL or CS_DOMAIN_BOUNDARY_SYMMETRY."
 msgstr ""
 
 #, c-format
@@ -9511,27 +9558,9 @@ msgid ""
 " This zone is not already defined.\n"
 msgstr ""
 
-msgid " Invalid key for setting a cs_domain_t structure."
-msgstr ""
-
 #, c-format
 msgid ""
 " Undefined type of schme to solve for eq. %s. Please check your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-"Restart mismatch for: %s\n"
-"read: %d\n"
-"expected: %d."
-msgstr ""
-
-msgid ""
-" Invalid boundary by default.\n"
-" Please modify your settings."
-msgstr ""
-
-msgid " Invalid idtvar value for the CDO module.\n"
 msgstr ""
 
 msgid ""
@@ -9585,7 +9614,43 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Equation %s is not modifiable anymore.\n"
+" Space scheme for eq. %s is incompatible with a field.\n"
+" Stop adding a cs_field_t structure.\n"
+msgstr ""
+
+msgid " Invalid mesh location id (= -1) for the current field\n"
+msgstr ""
+
+#, c-format
+msgid " %s: No function defined for this operation in eq. %s"
+msgstr ""
+
+#, c-format
+msgid ""
+" Computation of the diffusive and convective flux across\n"
+" a plane is not available for equation %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid mesh location name %s.\n"
+" This mesh location is not already defined.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Cellwise computation of the diffusive flux is not\n"
+" available for equation %s\n"
+msgstr ""
+
+msgid ""
+" Stop setting an empty cs_equation_param_t structure.\n"
+" Please check your settings.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: The current equation is not modifiable anymore.\n"
 " Please check your settings."
 msgstr ""
 
@@ -9662,44 +9727,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid keyword for linking an equation.\n"
-" Current value: \"%s\"\n"
-" Valid choices: \"diffusion\", \"time\", \"advection\"."
-msgstr ""
-
-#, c-format
-msgid ""
-" Space scheme for eq. %s is incompatible with a field.\n"
-" Stop adding a cs_field_t structure.\n"
-msgstr ""
-
-msgid " Invalid mesh location id (= -1) for the current field\n"
-msgstr ""
-
-#, c-format
-msgid " %s: No function defined for this operation in eq. %s"
-msgstr ""
-
-#, c-format
-msgid ""
-" Computation of the diffusive and convective flux across\n"
-" a plane is not available for equation %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid mesh location name %s.\n"
-" This mesh location is not already defined.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Cellwise computation of the diffusive flux is not\n"
-" available for equation %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
 " Undefined iterative solver for solving %s equation.\n"
 " Please modify your settings."
 msgstr ""
@@ -9742,6 +9769,21 @@ msgstr ""
 msgid "Invalid space scheme."
 msgstr ""
 
+msgid "Stokes velocity-pressure system"
+msgstr ""
+
+msgid "Navier-Stokes velocity-pressure system"
+msgstr ""
+
+msgid "Full system coupling"
+msgstr ""
+
+msgid "Artificial compressibility algorithm"
+msgstr ""
+
+msgid "Incremental projection algorithm"
+msgstr "algorithme de projection incrémental"
+
 msgid "Homogeneous Dirichlet"
 msgstr ""
 
@@ -9767,18 +9809,6 @@ msgid "weak using the Nitsche method"
 msgstr ""
 
 msgid "weak using the symmetrized Nitsche method"
-msgstr ""
-
-msgid "domain_walls"
-msgstr ""
-
-msgid "domain_inlets"
-msgstr ""
-
-msgid "domain_outlets"
-msgstr ""
-
-msgid "domain_symmetries"
 msgstr ""
 
 msgid " Invalid solver. Stop execution."
@@ -9950,6 +9980,9 @@ msgid "Field id of Kminus (-1 if EK disabled)"
 msgstr ""
 
 msgid "Field id of solubility index (-1 if precipitation disabled)"
+msgstr ""
+
+msgid "Resolution method (0: explicit, 1: analytical)"
 msgstr ""
 
 #, c-format
@@ -10774,6 +10807,18 @@ msgid ""
 "A constant variable with the name \"%s\" has already\n"
 "been defined, which conflicts with the current transient definition.\n"
 msgstr ""
+
+#, c-format
+msgid "    minimum value =         %10.5e\n"
+msgstr "    valeur minimale =       %10.5e\n"
+
+#, c-format
+msgid ""
+"    maximum value =         %10.5e\n"
+"\n"
+msgstr ""
+"    valeur maximale =       %10.5e\n"
+"\n"
 
 #, c-format
 msgid "MEDparfileOpen() failed to open file: %s"
@@ -11951,14 +11996,8 @@ msgstr ""
 msgid "   Zone     Mass flow rate(kg/s)      Boundary type\n"
 msgstr ""
 
-msgid "inlet"
-msgstr "entrée"
-
 msgid "rebound"
 msgstr "rebond"
-
-msgid "outlet"
-msgstr "sortie"
 
 msgid "deposition"
 msgstr "déposition"
@@ -11968,9 +12007,6 @@ msgstr "encrassement"
 
 msgid "dlvo conditions"
 msgstr "conditions dlvo"
-
-msgid "symmetry"
-msgstr "symmétrie"
 
 msgid "   Boundary statistics :\n"
 msgstr ""

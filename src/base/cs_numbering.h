@@ -33,6 +33,7 @@
 
 #include "cs_defs.h"
 #include "cs_base.h"
+#include "cs_log.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -119,70 +120,91 @@ extern const char  *cs_numbering_type_name[];
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Create a default numbering information structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a default numbering information structure.
  *
- * parameters:
- *   n_elts  <-- number of associated elements
+ * \param[in]  n_elts  number of associated elements
  *
- * returns:
- *   pointer to created cs_numbering_t structure
- *---------------------------------------------------------------------------*/
+ * \return  pointer to created cs_numbering_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_numbering_t *
 cs_numbering_create_default(cs_lnum_t  n_elts);
 
-/*----------------------------------------------------------------------------
- * Create a numbering information structure in case of vectorization.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a default numbering information structure
+ *        in case of vectorization.
  *
- * parameters:
- *   n_elts      <-- number of associated elements
- *   vector_size <-- vector size used for this vectorization
+ * \param[in]  n_elts       number of associated elements
+ * \param[in]  vector_size  vector size used for this vectorization
  *
- * returns:
- *   pointer to created cs_numbering_t structure
- *---------------------------------------------------------------------------*/
+ * \return  pointer to created cs_numbering_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_numbering_t *
 cs_numbering_create_vectorized(cs_lnum_t  n_elts,
                                int        vector_size);
 
-/*----------------------------------------------------------------------------
- * Create a numbering information structure in case of threading.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a default numbering information structure
+ *        in case of threading.
  *
- * parameters:
- *   n_threads   <-- number of threads
- *   n_groups    <-- number of groups
- *   group_index <-- group_index[thread_id*group_id*2 + group_id*2] and
- *                   group_index[thread_id*group_id*2 + group_id*2 +1] define
- *                   the start and end ids for entities in a given group and
- *                   thread; (size: n_groups *2 * n_threads)
+ * \param[in]  n_elts       number of associated elements
+ * \param[in]  n_groups     number of groups
+ * \param[in]  group_index  group_index[thread_id*group_id*2 + group_id*2] and
+ *                          group_index[thread_id*group_id*2 + group_id*2 +1]
+ *                          define the start and end ids for entities in a
+ *                          given group and thread;
+ *                          (size: n_groups *2 * n_threads)
  *
- * returns:
- *   pointer to created cs_numbering_t structure
- *---------------------------------------------------------------------------*/
+ * \return  pointer to created cs_numbering_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_numbering_t *
 cs_numbering_create_threaded(int        n_threads,
                              int        n_groups,
                              cs_lnum_t  group_index[]);
 
-/*----------------------------------------------------------------------------
- * Destroy a numbering information structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a numbering information structure.
  *
- * parameters:
- *   numbering <-> pointer to cs_numbering_t structure pointer (or NULL)
- *---------------------------------------------------------------------------*/
+ * \param[in, out]  numbering  pointer to cs_numbering_t structure pointer
+ *                             (or NULL)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_numbering_destroy(cs_numbering_t  **numbering);
 
-/*----------------------------------------------------------------------------
- * Dump a cs_numbering_t structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log information relative to a cs_numbering_t structure.
  *
- * parameters:
- *   numbering <-- pointer to cs_numbering_t structure (or NULL)
- *---------------------------------------------------------------------------*/
+ * \param[in]  log          log type
+ * \param[in]  description  description of numbering type
+ * \param[in]  numbering    pointer to cs_numbering_t structure (or NULL)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_numbering_log_info(cs_log_t               log,
+                      const char            *description,
+                      const cs_numbering_t  *numbering);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Dump a cs_numbering_t structure.
+ *
+ * \param[in]  numbering    pointer to cs_numbering_t structure (or NULL)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_numbering_dump(const cs_numbering_t  *numbering);

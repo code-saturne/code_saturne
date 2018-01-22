@@ -219,8 +219,8 @@ static int _cs_renumber_vector_size = CS_NUMBERING_SIMD_SIZE;
 
 static int _cs_renumber_n_threads = 0;
 
-static cs_lnum_t  _min_i_subset_size = 64;
-static cs_lnum_t  _min_b_subset_size = 64;
+static cs_lnum_t  _min_i_subset_size = 256;
+static cs_lnum_t  _min_b_subset_size = 256;
 
 static bool _renumber_ghost_cells = true;
 static bool _cells_adjacent_to_halo_last = false;
@@ -826,24 +826,6 @@ _compute_local_minmax_gnum(cs_lnum_t        n_vals,
   if (max != NULL)  *max = _max;
 }
 
-static void
-_compute_local_minmax_double(cs_lnum_t        n_vals,
-                             const double     var[],
-                             double          *min,
-                             double          *max)
-{
-  cs_lnum_t  i;
-  double  _min = var[0], _max = var[0];
-
-  for (i = 1; i < n_vals; i++) {
-    _min = CS_MIN(_min, var[i]);
-    _max = CS_MAX(_max, var[i]);
-  }
-
-  if (min != NULL)  *min = _min;
-  if (max != NULL)  *max = _max;
-}
-
 /*----------------------------------------------------------------------------
  * Display the distribution of values of a vector.
  *
@@ -924,79 +906,6 @@ _display_histograms_gnum(int               n_vals,
     bft_printf("    %3d : [ %10llu ; %10llu ] = %10llu\n",
                1, (unsigned long long)(val_min),
                (unsigned long long)val_max,
-               (unsigned long long)n_vals);
-  }
-
-}
-
-static void
-_display_histograms_double(int           n_vals,
-                           const double  var[])
-{
-  cs_gnum_t i, j, k;
-  double val_max, val_min;
-  double step;
-
-  cs_gnum_t count[CS_RENUMBER_N_SUBS];
-  cs_gnum_t n_steps = CS_RENUMBER_N_SUBS;
-
-  /* Compute local min and max */
-
-  if (n_vals == 0) {
-    bft_printf(_("    no value\n"));
-    return;
-  }
-
-  val_max = var[0];
-  val_min = var[0];
-  _compute_local_minmax_double(n_vals, var, &val_min, &val_max);
-
-  bft_printf(_("    minimum value =         %10.5e\n"), val_min);
-  bft_printf(_("    maximum value =         %10.5e\n\n"), val_max);
-
-  /* Define axis subdivisions */
-
-  for (j = 0; j < n_steps; j++)
-    count[j] = 0;
-
-  if (val_max - val_min > 0) {
-
-    if (val_max-val_min < n_steps)
-      n_steps = CS_MAX(1, floor(val_max-val_min));
-
-    step = (double)(val_max - val_min) / n_steps;
-
-    /* Loop on values */
-
-    for (i = 0; i < (cs_gnum_t)n_vals; i++) {
-
-      /* Associated subdivision */
-
-      for (j = 0, k = 1; k < n_steps; j++, k++) {
-        if (var[i] < val_min + k*step)
-          break;
-      }
-      count[j] += 1;
-
-    }
-
-    for (i = 0, j = 1; i < n_steps - 1; i++, j++)
-      bft_printf("    %3d : [ %10.5e ; %10.5e [ = %10llu\n",
-                 (int)(i+1),
-                 val_min + i*step, val_min + j*step,
-                 (unsigned long long)(count[i]));
-
-    bft_printf("    %3d : [ %10.5e ; %10.5e ] = %10llu\n",
-               (int)n_steps,
-               val_min + (n_steps - 1)*step,
-               val_max,
-               (unsigned long long)(count[n_steps - 1]));
-
-  }
-
-  else { /* if (val_max == val_min) */
-    bft_printf("    %3d : [ %10.5e ; %10.5e ] = %10llu\n",
-               1, val_min, val_max,
                (unsigned long long)n_vals);
   }
 
@@ -2447,7 +2356,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
 
   _group_index[0] = 0;
 
-  for (g_id=0; g_id < _n_groups; g_id++) {
+  for (g_id = 0; g_id < _n_groups; g_id++) {
     for (t_id = 0; t_id < n_i_threads; t_id++) {
       _group_index[(t_id*_n_groups + g_id)*2] = -1;
       _group_index[(t_id*_n_groups + g_id)*2 + 1] = -1;
@@ -2483,7 +2392,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
   /* Finalize group index */
 
   f_id = 0;
-  for (g_id=0; g_id < _n_groups; g_id++) {
+  for (g_id = 0; g_id < _n_groups; g_id++) {
     for (t_id = 0; t_id < n_i_threads; t_id++) {
       _group_index[(t_id*_n_groups + g_id)*2] = f_id;
       f_id = CS_MAX(_group_index[(t_id*_n_groups + g_id)*2+1],
@@ -2491,7 +2400,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
     }
   }
 
-  for (g_id=0; g_id < _n_groups; g_id++) {
+  for (g_id = 0; g_id < _n_groups; g_id++) {
     for (t_id = 0; t_id < n_i_threads; t_id++) {
       if (_group_index[(t_id*_n_groups + g_id)*2 + 1] < 0)
         _group_index[(t_id*_n_groups + g_id)*2] = -1;
@@ -2888,7 +2797,6 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
     }
 
     if (iok != 0 && mesh->verbosity > 2) {
-      /* TODO: add global logging info for rank 0) */
       cs_base_warn(__FILE__, __LINE__);
       bft_printf(_("Faces renumbering for vectorization:\n"
                    "====================================\n\n"
@@ -2897,20 +2805,6 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
                    "will not be forced.\n"), (unsigned long long)iok);
       retval = -1;
     }
-
-  }
-
-  /* Output info */
-
-  if (mesh->verbosity > 0) {
-
-    int ivect_i = (retval == 0) ? 1 : 0;
-    cs_parall_sum(1, CS_INT_TYPE, &ivect_i);
-
-    bft_printf
-      (_("\n"
-         " Vectorization for interior faces to cells gathers on %d/%d ranks\n"),
-       ivect_i, cs_glob_n_ranks);
 
   }
 
@@ -3078,20 +2972,6 @@ _renum_b_faces_for_vectorizing(cs_mesh_t  *mesh,
     retval = -1;
   }
 
-  /* Output info */
-
-  if (mesh->verbosity > 0) {
-
-    int ivect_b = (retval == 0) ? 1 : 0;
-    cs_parall_sum(1, CS_INT_TYPE, &ivect_b);
-
-    bft_printf
-      (_("\n"
-         " Vectorization for boundary faces to cells gathers on %d/%d ranks\n"),
-       ivect_b, cs_glob_n_ranks);
-
-  }
-
   /* Return value */
 
   return retval;
@@ -3190,147 +3070,6 @@ _log_bandwidth_info(const cs_mesh_t  *mesh,
          " Matrix profile/lines for %s :      %llu\n"),
        title, (unsigned long long)bandwidth,
        title, (unsigned long long)profile);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Estimate unbalance between threads of a given group.
- *
- * Test local operations related to renumbering.
- *
- * Unbalance is considered to be: (max/mean - 1)
- *
- * parameters:
- *   mesh <-- pointer to mesh structure
- * returns:
- *   estimated unbalance for this group
- *----------------------------------------------------------------------------*/
-
-static double
-_estimate_imbalance(const cs_numbering_t  *face_numbering)
-{
-  double t_imbalance_tot = 0.0;
-
-  if (face_numbering == NULL)
-    return 0;
-
-  if (   face_numbering->type == CS_NUMBERING_THREADS
-      && face_numbering->n_threads > 1) {
-
-    int g_id;
-
-    cs_lnum_t n_faces = 0;
-
-    const int n_threads = face_numbering->n_threads;
-    const int n_groups = face_numbering->n_groups;
-    const cs_lnum_t *group_index = face_numbering->group_index;
-
-    for (g_id = 0; g_id < n_groups; g_id++) {
-
-      int t_id;
-      double n_t_faces_mean, imbalance;
-
-      cs_lnum_t n_t_faces_sum = 0;
-      cs_lnum_t n_t_faces_max = 0;
-
-      for (t_id = 0; t_id < n_threads; t_id++) {
-        cs_lnum_t n_t_faces =   group_index[(t_id*n_groups + g_id)*2 + 1]
-                              - group_index[(t_id*n_groups + g_id)*2];
-        n_t_faces = CS_MAX(n_t_faces, 0);
-        n_t_faces_sum += n_t_faces;
-        n_t_faces_max = CS_MAX(n_t_faces, n_t_faces_max);
-      }
-
-      n_faces += n_t_faces_sum;
-
-      n_t_faces_mean = (double)n_t_faces_sum / n_threads;
-
-      imbalance = (n_t_faces_max / n_t_faces_mean) - 1.0;
-      t_imbalance_tot += imbalance*n_t_faces_sum;
-
-    }
-
-    t_imbalance_tot /= n_faces;
-
-  }
-
-  return t_imbalance_tot;
-}
-
-/*----------------------------------------------------------------------------
- * Log statistics for threads and groups.
- *
- * parameters:
- *   elt_type_name <-- name of element type (interior of boundary face)
- *   n_domains     <-- number of MPI domains
- *   n_threads     <-- local number of threads
- *   n_groups      <-- local number of groups
- *   imbalance     <-- estimation of imbalance
- *----------------------------------------------------------------------------*/
-
-static void
-_log_threading_info(const char  *elt_type_name,
-                    int          n_domains,
-                    int          n_threads,
-                    int          n_groups,
-                    double       imbalance)
-{
-  /* Build histograms for number of threads, number for groups,
-     and group size */
-
-#if defined(HAVE_MPI)
-
-  if (n_domains > 1) {
-
-    cs_gnum_t loc_buffer;
-    double d_loc_buffer;
-    cs_gnum_t *rank_buffer = NULL;
-    double *d_rank_buffer = NULL;
-
-    BFT_MALLOC(rank_buffer, n_domains, cs_gnum_t);
-
-    loc_buffer = n_threads;
-    MPI_Allgather(&loc_buffer, 1, CS_MPI_GNUM,
-                  rank_buffer, 1, CS_MPI_GNUM, cs_glob_mpi_comm);
-    bft_printf
-      (_("\n Histogram of thread pools size for %s per rank:\n\n"),
-       elt_type_name);
-    _display_histograms_gnum(n_domains, rank_buffer);
-
-    loc_buffer = n_groups;
-    MPI_Allgather(&loc_buffer, 1, CS_MPI_GNUM,
-                  rank_buffer, 1, CS_MPI_GNUM, cs_glob_mpi_comm);
-    bft_printf
-      (_("\n Histogram of threading groups count for %s per rank:\n\n"),
-       elt_type_name);
-    _display_histograms_gnum(n_domains, rank_buffer);
-
-    BFT_FREE(rank_buffer);
-    BFT_MALLOC(d_rank_buffer, n_domains, double);
-
-    d_loc_buffer = imbalance;
-    MPI_Allgather(&d_loc_buffer, 1, MPI_DOUBLE,
-                  d_rank_buffer, 1, MPI_DOUBLE, cs_glob_mpi_comm);
-    bft_printf
-      (_("\n Histogram of thread imbalance for %s per rank:\n\n"),
-       elt_type_name);
-    _display_histograms_double(n_domains, d_rank_buffer);
-
-    BFT_FREE(d_rank_buffer);
-    BFT_FREE(rank_buffer);
-
-  } /* End if n_domains > 1 */
-
-#endif
-
-  if (n_domains == 1) {
-    bft_printf
-      (_("\n Number of thread pools for %s :          %d\n"
-         " Number of threading groups for %s :      %d\n"
-         " Estimated thread imbalance for %s :      %10.5e\n"),
-       elt_type_name, n_threads,
-       elt_type_name, n_groups,
-       elt_type_name, imbalance);
   }
 }
 
@@ -4577,8 +4316,8 @@ _renum_adj_halo_cells_last(const cs_mesh_t  *mesh,
     BFT_REALLOC(numbering->group_index, 4, cs_lnum_t);
     numbering->group_index[0] = 0;
     numbering->group_index[1] = n_i_cells;
-    numbering->group_index[0] = n_i_cells;
-    numbering->group_index[1] = mesh->n_cells;
+    numbering->group_index[2] = n_i_cells;
+    numbering->group_index[3] = mesh->n_cells;
   }
 }
 
@@ -4665,6 +4404,11 @@ _renumber_cells(cs_mesh_t  *mesh)
   if (_cells_algorithm[1] != CS_RENUMBER_CELLS_NONE)
     bft_printf
       ("\n ----------------------------------------------------------\n");
+
+  if (mesh->verbosity > 0)
+    cs_numbering_log_info(CS_LOG_DEFAULT,
+                          _("cells"),
+                          mesh->cell_numbering);
 
   /* Now free remaining array */
 
@@ -4784,16 +4528,10 @@ _renumber_i_faces(cs_mesh_t  *mesh)
                                                           n_i_groups,
                                                           i_group_index);
     mesh->i_face_numbering->n_no_adj_halo_groups = n_i_no_adj_halo_groups;
-    if (mesh->verbosity > 0)
-      _log_threading_info(_("interior faces"),
-                          mesh->n_domains,
-                          n_i_threads,
-                          n_i_groups,
-                          _estimate_imbalance(mesh->i_face_numbering));
     if (n_i_threads == 1)
       mesh->i_face_numbering->type = CS_NUMBERING_DEFAULT;
   }
-  else if (numbering_type == CS_NUMBERING_VECTORIZE) {
+  else if (numbering_type == CS_NUMBERING_VECTORIZE && retval == 0) {
     mesh->i_face_numbering
       = cs_numbering_create_vectorized(mesh->n_i_faces,
                                        _cs_renumber_vector_size);
@@ -4801,6 +4539,11 @@ _renumber_i_faces(cs_mesh_t  *mesh)
   else
     mesh->i_face_numbering
       = cs_numbering_create_default(mesh->n_i_faces);
+
+  if (mesh->verbosity > 0)
+    cs_numbering_log_info(CS_LOG_DEFAULT,
+                          _("interior faces"),
+                          mesh->i_face_numbering);
 
   /* Free memory */
 
@@ -4902,16 +4645,10 @@ _renumber_b_faces(cs_mesh_t  *mesh)
     mesh->b_face_numbering = cs_numbering_create_threaded(n_b_threads,
                                                           n_b_groups,
                                                           b_group_index);
-    if (mesh->verbosity > 0)
-      _log_threading_info(_("boundary faces"),
-                          mesh->n_domains,
-                          n_b_threads,
-                          n_b_groups,
-                          _estimate_imbalance(mesh->b_face_numbering));
     if (n_b_threads == 1)
       mesh->b_face_numbering->type = CS_NUMBERING_DEFAULT;
   }
-  else if (numbering_type == CS_NUMBERING_VECTORIZE) {
+  else if (numbering_type == CS_NUMBERING_VECTORIZE && retval == 0) {
     mesh->b_face_numbering
       = cs_numbering_create_vectorized(mesh->n_b_faces,
                                        _cs_renumber_vector_size);
@@ -4920,7 +4657,12 @@ _renumber_b_faces(cs_mesh_t  *mesh)
     mesh->b_face_numbering
       = cs_numbering_create_default(mesh->n_b_faces);
 
-  mesh->b_face_numbering->n_no_adj_halo_groups = 1;
+  mesh->b_face_numbering->n_no_adj_halo_groups = 0;
+
+  if (mesh->verbosity > 0)
+    cs_numbering_log_info(CS_LOG_DEFAULT,
+                          _("boundary faces"),
+                          mesh->b_face_numbering);
 
   /* Free memory */
 
