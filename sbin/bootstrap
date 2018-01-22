@@ -119,9 +119,6 @@ if test $? = "0"; then
   which flex > /dev/null 2>&1
 fi
 if test $? = "0"; then
-  which flex
-fi
-if test $? == "0"; then
   echo "running flex for MEI scanner"
   flex -o ./src/mei/mei_scanner.c ./src/mei/mei_scanner.l
   echo "running bison for MEI parser"

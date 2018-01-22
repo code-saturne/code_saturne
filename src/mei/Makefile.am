@@ -30,6 +30,8 @@ $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS =
 
+EXTRA_DIST = mei_parser.y mei_scanner.l
+
 pkginclude_HEADERS = \
 mei_evaluate.h \
 mei_hash_table.h \
