@@ -136,12 +136,13 @@ if test "x$with_zeromq" != "xno" -a "x$with_melissa" != "xno"; then
     AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <melissa_api_no_mpi.h>]],
 [[ int n; sr, si;
-melissa_init(&n, &sr, &si); ]])],
+melissa_init_no_mpi(&n, &sr, &si); ]])],
                    [cs_have_melissa=yes],
                    [cs_have_melissa=no])
 
   else
 
+    CPPFLAGS="${CPPFLAGS} ${MPI_CPPFLAGS}"
     LDFLAGS="${LDFLAGS} ${MELISSA_LDFLAGS} ${MPI_LDFLAGS}"
     LIBS="${MELISSA_LIBS} ${MPI_LIBS} ${LIBS}"
 

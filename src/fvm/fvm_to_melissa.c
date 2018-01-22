@@ -99,7 +99,7 @@ typedef struct {
 
   int          rank;               /* Rank of current process in communicator */
   int          n_ranks;            /* Number of processes in communicator */
-  int          parameters[2];      /* array of parameters */
+  int          simu_id;            /* simulation ID */
 
   int          nt_cur;             /* current time step */
   int          time_stamp;         /* current time step */
@@ -155,26 +155,34 @@ _write_block_doubles_l(size_t             n_values,
 
   if (is_init == 0) {
 #if defined(HAVE_MPI)
-    melissa_init(&n,
+    melissa_init(c->name,
+                 &n,
                  &c->writer->n_ranks,
                  &c->writer->rank,
-                 &c->writer->parameters[0],
-                 &c->writer->parameters[1],
+                 &c->writer->simu_id,
                  &c->writer->comm,
                  &coupling);
 #else
-    melissa_init_no_mpi (&n);
+    melissa_init_no_mpi(c->name,
+                        &n,
+                        &c->writer->simu_id);
 #endif
     is_init = 1;
   }
 
   if (c->writer->time_stamp > 0) {
+#if defined(HAVE_MPI)
     melissa_send(&(c->writer->time_stamp),
                  c->name,
                  values,
                  &c->writer->rank,
-                 &c->writer->parameters[0],
-                 &c->writer->parameters[1]);
+                 &c->writer->simu_id);
+#else
+    melissa_send_no_mpi(&(c->writer->time_stamp),
+                        c->name,
+                        values,
+                        &c->writer->simu_id);
+#endif
   }
 }
 
@@ -217,17 +225,13 @@ _field_output_g(void           *context,
   int coupling = 1;
 
   if (is_init == 0) {
-#if defined(HAVE_MPI)
-    melissa_init(&local_vect_size,
+    melissa_init(c->name,
+                 &local_vect_size,
                  &c->writer->n_ranks,
                  &c->writer->rank,
-                 &c->writer->parameters[0],
-                 &c->writer->parameters[1],
+                 &c->writer->simu_id,
                  &c->writer->comm,
                  &coupling);
-#else
-    melissa_init_no_mpi(&local_vect_size);
-#endif
     is_init = 1;
   }
 
@@ -236,8 +240,7 @@ _field_output_g(void           *context,
                  c->name,
                  buffer,
                  &c->writer->rank,
-                 &c->writer->parameters[0],
-                 &c->writer->parameters[1]);
+                 &c->writer->simu_id);
   }
 }
 
@@ -490,8 +493,7 @@ fvm_to_melissa_init_writer(const char             *name,
 
   /* Parse options */
 
-  w->parameters[0] = 0;
-  w->parameters[1] = 0;
+  w->simu_id = 0;
 
   if (options != NULL) {
 
@@ -502,21 +504,11 @@ fvm_to_melissa_init_writer(const char             *name,
       /* Add metadata */
 
       char       *options_c = NULL;
-      char       *temp_char = NULL;
-      const char  s[2] = " ";
 
       BFT_MALLOC(options_c, l+1, char);
       strncpy(options_c, options, l);
       options_c[l] = '\0';
-
-      /* get the first token */
-      temp_char = strtok(options_c, s);
-
-      /* walk through other tokens */
-      for (int i = 0; i < 2 && temp_char != NULL; i++) {
-        w->parameters[i] = atoi(temp_char);
-        temp_char = strtok(NULL, s);
-      }
+      w->simu_id = atoi(options_c);
 
       BFT_FREE(options_c);
 
