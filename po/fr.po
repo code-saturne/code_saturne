@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-01-19 22:01+0100\n"
+"POT-Creation-Date: 2018-01-22 11:48+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7763,6 +7763,12 @@ msgstr "courbe de Morton dans boîte englobante locale"
 msgid "Hilbert curve in local bounding box"
 msgstr "courbe de Hilbert dans boîte englobante locale"
 
+msgid "Reverse Cuthill-McKee"
+msgstr "Cuthill-McKee inverse"
+
+msgid "no renumbering"
+msgstr "pas de renumérotation"
+
 msgid "coloring, no shared cell in block"
 msgstr "coloriage, pas de cellule partagée dans un bloc"
 
@@ -7771,6 +7777,9 @@ msgstr "multipasse"
 
 msgid "vectorizing"
 msgstr "vectorisation"
+
+msgid "adjacent cells"
+msgstr "cellules adjacentes"
 
 msgid "no shared cell across threads"
 msgstr "pas de cellule partagée entre fils"
@@ -15341,3 +15350,6 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
+#~ msgid "base"
+#~ msgstr "base"

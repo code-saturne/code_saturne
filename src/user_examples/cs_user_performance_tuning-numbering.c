@@ -101,36 +101,7 @@ cs_user_numbering(void)
   cs_renumber_set_min_subset_size(64,   /* min. interior_subset_size */
                                   64);  /* min. boundary subset_size */
 
-  /* Select renumbering algorithms.
-
-     For cells, available algorithms are:
-
-     CS_RENUMBER_CELLS_SCOTCH_PART     (SCOTCH sub-partitioning, if available)
-     CS_RENUMBER_CELLS_SCOTCH_ORDER    (SCOTCH ordering, if available)
-     CS_RENUMBER_CELLS_METIS_PART      (METIS sub-partitioning, if available)
-     CS_RENUMBER_CELLS_METIS_ORDER     (METIS ordering, if available)
-     CS_RENUMBER_CELLS_MORTON          (Morton space filling curve)
-     CS_RENUMBER_CELLS_HILBERT         (Hilbert space filling curve)
-     CS_RENUMBER_CELLS_NONE            (no renumbering)
-
-     For interior faces, available algorithms are:
-
-     CS_RENUMBER_I_FACES_BLOCK       (no shared cell in block)
-     CS_RENUMBER_I_FACES_MULTIPASS   (use multipass face numbering)
-     CS_RENUMBER_I_FACES_SIMD        (renumbering for SIMD)
-     CS_RENUMBER_I_FACES_NONE        (no interior face numbering)
-
-     Before applying one of those algorithms, interior faces are pre-ordered
-     by a lexicographal ordering based on adjacent cells; this ordering
-     may be based on the lowest or highest adjacent id first, as defined
-     by the CS_RENUMBER_ADJACENT_LOW or CS_RENUMBER_ADJACENT_HIGH value.
-
-     For boundary faces, available algorithms are:
-
-     CS_RENUMBER_B_FACES_THREAD      (renumber for threads)
-     CS_RENUMBER_B_FACES_SIMD        (renumbering for SIMD)
-     CS_RENUMBER_B_FACES_NONE        (no interior face numbering)
-  */
+  /* Select renumbering algorithms */
 
   cs_renumber_set_algorithm
     (false,                           /* halo_adjacent_cells_last */

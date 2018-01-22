@@ -206,7 +206,20 @@ cs_adjacency_create_from_i_arrays(cs_lnum_t     n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Destroy a cs_adjacency_t structure
+ * \brief   Destroy a cs_adjacency_t structure.
+ *
+ * \param[in, out]  p_adj   pointer of pointer to a cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_adjacency_destroy(cs_adjacency_t   **p_adj);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Destroy a cs_adjacency_t structure.
+ *
+ * \deprecated This function is replaced by \ref cs_adjacency_destroy.
  *
  * \param[in, out]  p_adj   pointer of pointer to a cs_adjacency_t structure
  */

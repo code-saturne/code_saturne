@@ -56,7 +56,8 @@ typedef enum {
   CS_RENUMBER_CELLS_METIS_ORDER,     /* METIS ordering */
   CS_RENUMBER_CELLS_MORTON,          /* Morton space filling curve */
   CS_RENUMBER_CELLS_HILBERT,         /* Hilbert space filling curve */
-  CS_RENUMBER_CELLS_NONE             /* No interior face numbering */
+  CS_RENUMBER_CELLS_RCM,             /* Reverse Cuthill-McKee */
+  CS_RENUMBER_CELLS_NONE             /* No cells renumbering */
 
 } cs_renumber_cells_type_t;
 

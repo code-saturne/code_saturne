@@ -93,6 +93,7 @@ extern "C" {
 #include "cs_halo.h"
 #include "cs_join.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_post.h"
@@ -133,6 +134,8 @@ BEGIN_C_DECLS
        Order cells using domain-local Morton space-filling curve.
   \var CS_RENUMBER_CELLS_HILBERT
        Order cells using domain-local Hilbert space-filling curve.
+  \var CS_RENUMBER_CELLS_RCM
+       Order cells using domain-local reverse Cuthill-McKee algorithm.
   \var CS_RENUMBER_CELLS_NONE
        No cells renumbering.
 
@@ -192,25 +195,6 @@ BEGIN_C_DECLS
  * Local Type Definitions
  *============================================================================*/
 
-/* CSR (Compressed Sparse Row) graph representation */
-/*--------------------------------------------------*/
-
-/* Note that mesh cells correspond to graph vertices,
-   and mesh faces to graph edges */
-
-typedef struct {
-
-  cs_lnum_t         n_rows;           /* Number of rows in CSR structure */
-  cs_lnum_t         n_cols_max;       /* Maximum number of nonzero values
-                                         on a given row */
-
-  /* Pointers to structure arrays and info (row_index, col_id) */
-
-  cs_lnum_t        *row_index;        /* Row index (0 to n-1) */
-  cs_lnum_t        *col_id;           /* Column id (0 to n-1) */
-
-} _csr_graph_t;
-
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -249,18 +233,19 @@ static const char *_cell_renum_name[]
      N_("fill-reducing ordering with METIS"),
      N_("Morton curve in local bounding box"),
      N_("Hilbert curve in local bounding box"),
-     N_("none")};
+     N_("Reverse Cuthill-McKee"),
+     N_("no renumbering")};
 
 static const char *_i_face_renum_name[]
   = {N_("coloring, no shared cell in block"),
      N_("multipass"),
      N_("vectorizing"),
-     N_("none")};
+     N_("adjacent cells")};
 
 static const char *_b_face_renum_name[]
   = {N_("no shared cell across threads"),
      N_("vectorizing"),
-     N_("none")};
+     N_("adjacent cells")};
 
 /*============================================================================
  * Private function definitions
@@ -936,66 +921,51 @@ _renumber_for_threads_ibm(cs_mesh_t  *mesh)
  *   face_cell   <-- Face -> cells connectivity
  *
  * returns:
- *   pointer to allocated CSR graph structure.
+ *   pointer to allocated adjacency structure.
  *----------------------------------------------------------------------------*/
 
-static _csr_graph_t *
-_csr_graph_create(cs_lnum_t         n_cells_ext,
-                  cs_lnum_t         n_faces,
-                  const cs_lnum_t  *face_cell)
+static cs_adjacency_t *
+_c2c_from_face_cell(cs_lnum_t         n_cells_ext,
+                    cs_lnum_t         n_faces,
+                    const cs_lnum_t  *face_cell)
 {
-  int n_cols_max;
   cs_lnum_t ii, jj, f_id;
 
   cs_lnum_t  *ccount = NULL;
   bool unique_faces = true;
 
-  _csr_graph_t  *g;
-
-  /* Allocate and map */
-
-  BFT_MALLOC(g, 1, _csr_graph_t);
-
-  g->n_rows = n_cells_ext;
-
-  BFT_MALLOC(g->row_index, g->n_rows + 1, cs_lnum_t);
+  cs_adjacency_t  *a = cs_adjacency_create(0, 0, n_cells_ext);
 
   /* Count number of nonzero elements per row */
 
-  BFT_MALLOC(ccount, g->n_rows, cs_lnum_t);
+  BFT_MALLOC(ccount, a->n_elts, cs_lnum_t);
 
-  for (ii = 0; ii < g->n_rows; ii++)
+  for (ii = 0; ii < a->n_elts; ii++)
     ccount[ii] = 0;
 
   for (f_id = 0; f_id < n_faces; f_id++) {
-    ii = face_cell[f_id*2] - 1;
-    jj = face_cell[f_id*2 + 1] - 1;
+    ii = face_cell[f_id*2];
+    jj = face_cell[f_id*2 + 1];
     ccount[ii] += 1;
     ccount[jj] += 1;
   }
 
-  n_cols_max = 0;
-
-  g->row_index[0] = 0;
-  for (ii = 0; ii < g->n_rows; ii++) {
-    g->row_index[ii+1] = g->row_index[ii] + ccount[ii];
-    if (ccount[ii] > n_cols_max)
-      n_cols_max = ccount[ii];
+  a->idx[0] = 0;
+  for (ii = 0; ii < a->n_elts; ii++) {
+    a->idx[ii+1] = a->idx[ii] + ccount[ii];
     ccount[ii] = 0;
   }
 
-  g->n_cols_max = n_cols_max;
-
   /* Build structure */
 
-  BFT_MALLOC(g->col_id, (g->row_index[g->n_rows]), cs_lnum_t);
+  BFT_MALLOC(a->ids, (a->idx[a->n_elts]), cs_lnum_t);
 
   for (f_id = 0; f_id < n_faces; f_id++) {
-    ii = face_cell[f_id*2] - 1;
-    jj = face_cell[f_id*2 + 1] - 1;
-    g->col_id[g->row_index[ii] + ccount[ii]] = jj;
+    ii = face_cell[f_id*2];
+    jj = face_cell[f_id*2 + 1];
+    a->ids[a->idx[ii] + ccount[ii]] = jj;
     ccount[ii] += 1;
-    g->col_id[g->row_index[jj] + ccount[jj]] = ii;
+    a->ids[a->idx[jj] + ccount[jj]] = ii;
     ccount[jj] += 1;
   }
 
@@ -1003,42 +973,42 @@ _csr_graph_create(cs_lnum_t         n_cells_ext,
 
   /* Sort line elements by column id (for better access patterns) */
 
-  unique_faces = cs_sort_indexed(g->n_rows, g->row_index, g->col_id);
+  unique_faces = cs_sort_indexed(a->n_elts, a->idx, a->ids);
 
   /* Compact elements if necessary */
 
   if (unique_faces == false) {
 
-    cs_lnum_t *tmp_row_index = NULL;
+    cs_lnum_t *tmp_idx = NULL;
     cs_lnum_t  kk = 0;
 
-    BFT_MALLOC(tmp_row_index, g->n_rows+1, cs_lnum_t);
-    memcpy(tmp_row_index, g->row_index, (g->n_rows+1)*sizeof(cs_lnum_t));
+    BFT_MALLOC(tmp_idx, a->n_elts+1, cs_lnum_t);
+    memcpy(tmp_idx, a->idx, (a->n_elts+1)*sizeof(cs_lnum_t));
 
     kk = 0;
 
-    for (ii = 0; ii < g->n_rows; ii++) {
-      cs_lnum_t *col_id = g->col_id + g->row_index[ii];
-      cs_lnum_t n_cols = g->row_index[ii+1] - g->row_index[ii];
+    for (ii = 0; ii < a->n_elts; ii++) {
+      cs_lnum_t *col_id = a->ids + a->idx[ii];
+      cs_lnum_t n_cols = a->idx[ii+1] - a->idx[ii];
       cs_lnum_t col_id_prev = -1;
-      g->row_index[ii] = kk;
+      a->idx[ii] = kk;
       for (jj = 0; jj < n_cols; jj++) {
         if (col_id_prev != col_id[jj]) {
-          g->col_id[kk++] = col_id[jj];
+          a->ids[kk++] = col_id[jj];
           col_id_prev = col_id[jj];
         }
       }
     }
-    g->row_index[g->n_rows] = kk;
+    a->idx[a->n_elts] = kk;
 
-    assert(g->row_index[g->n_rows] < tmp_row_index[g->n_rows]);
+    assert(a->idx[a->n_elts] < tmp_idx[a->n_elts]);
 
-    BFT_FREE(tmp_row_index);
-    BFT_REALLOC(g->col_id, (g->row_index[g->n_rows]), cs_lnum_t);
+    BFT_FREE(tmp_idx);
+    BFT_REALLOC(a->ids, (a->idx[a->n_elts]), cs_lnum_t);
 
   }
 
-  return g;
+  return a;
 }
 
 /*----------------------------------------------------------------------------
@@ -1050,34 +1020,25 @@ _csr_graph_create(cs_lnum_t         n_cells_ext,
  *   face_cell   <-- Face -> cells connectivity
  *
  * returns:
- *   pointer to allocated CSR graph structure.
+ *   pointer to adjacency structure
  *----------------------------------------------------------------------------*/
 
-static _csr_graph_t *
-_csr_graph_create_cell_face(cs_lnum_t           n_cells_ext,
-                            cs_lnum_t           n_faces,
-                            const cs_lnum_2_t  *face_cell)
+static cs_adjacency_t *
+_c2f_from_face_cell(cs_lnum_t           n_cells_ext,
+                    cs_lnum_t           n_faces,
+                    const cs_lnum_2_t  *face_cell)
 {
-  int n_cols_max;
   cs_lnum_t ii, jj, f_id;
 
   cs_lnum_t  *ccount = NULL;
 
-  _csr_graph_t  *g;
-
-  /* Allocate and map */
-
-  BFT_MALLOC(g, 1, _csr_graph_t);
-
-  g->n_rows = n_cells_ext;
-
-  BFT_MALLOC(g->row_index, g->n_rows + 1, cs_lnum_t);
+  cs_adjacency_t  *a = cs_adjacency_create(0, 0, n_cells_ext);
 
   /* Count number of nonzero elements per row */
 
-  BFT_MALLOC(ccount, g->n_rows, cs_lnum_t);
+  BFT_MALLOC(ccount, a->n_elts, cs_lnum_t);
 
-  for (ii = 0; ii < g->n_rows; ii++)
+  for (ii = 0; ii < a->n_elts; ii++)
     ccount[ii] = 0;
 
   for (f_id = 0; f_id < n_faces; f_id++) {
@@ -1087,61 +1048,28 @@ _csr_graph_create_cell_face(cs_lnum_t           n_cells_ext,
     ccount[jj] += 1;
   }
 
-  n_cols_max = 0;
-
-  g->row_index[0] = 0;
-  for (ii = 0; ii < g->n_rows; ii++) {
-    g->row_index[ii+1] = g->row_index[ii] + ccount[ii];
-    if (ccount[ii] > n_cols_max)
-      n_cols_max = ccount[ii];
+  a->idx[0] = 0;
+  for (ii = 0; ii < a->n_elts; ii++) {
+    a->idx[ii+1] = a->idx[ii] + ccount[ii];
     ccount[ii] = 0;
   }
 
-  g->n_cols_max = n_cols_max;
-
   /* Build structure */
 
-  BFT_MALLOC(g->col_id, (g->row_index[g->n_rows]), cs_lnum_t);
+  BFT_MALLOC(a->ids, (a->idx[a->n_elts]), cs_lnum_t);
 
   for (f_id = 0; f_id < n_faces; f_id++) {
     ii = face_cell[f_id][0];
     jj = face_cell[f_id][1];
-    g->col_id[g->row_index[ii] + ccount[ii]] = f_id;
+    a->ids[a->idx[ii] + ccount[ii]] = f_id;
     ccount[ii] += 1;
-    g->col_id[g->row_index[jj] + ccount[jj]] = f_id;
+    a->ids[a->idx[jj] + ccount[jj]] = f_id;
     ccount[jj] += 1;
   }
 
   BFT_FREE(ccount);
 
-  return g;
-}
-
-/*----------------------------------------------------------------------------
- * Destroy CSR graph structure.
- *
- * parameters:
- *   g  <->  Pointer to CSR graph structure pointer
- *----------------------------------------------------------------------------*/
-
-static void
-_csr_graph_destroy(_csr_graph_t  **graph)
-{
-  if (graph != NULL && *graph !=NULL) {
-
-    _csr_graph_t  *g = *graph;
-
-    if (g->row_index != NULL)
-      BFT_FREE(g->row_index);
-
-    if (g->col_id != NULL)
-      BFT_FREE(g->col_id);
-
-    BFT_FREE(g);
-
-    *graph = g;
-
-  }
+  return a;
 }
 
 /*----------------------------------------------------------------------------
@@ -1196,7 +1124,7 @@ _classify_halo_cells(const cs_mesh_t  *mesh,
  * Classify (non-ghost) cells according to their neighbor domain
  *
  * For cells connected to one or more ghost cells, the cell_class value
- * will based on the halo section (separated based on domain first,
+ * will be based on the halo section (separated based on domain first,
  * transform id second; extended ghost cells do not intervene here),
  * with a base class id of 2. For cells connected to a boundary face
  * that will be later joined, the cell class will be 1. For other cells,
@@ -1536,7 +1464,6 @@ _independent_face_groups(cs_lnum_t            max_group_size,
   cs_lnum_t f_id, i, j, k;
   cs_lnum_t *group_face_ids = NULL, *face_marker = NULL;
   cs_lnum_t *old_to_new = NULL;
-  _csr_graph_t *cell_faces = NULL;
 
   cs_lnum_t first_unmarked_face_id = 0;
   cs_lnum_t _n_groups_max = 4;
@@ -1553,9 +1480,9 @@ _independent_face_groups(cs_lnum_t            max_group_size,
 
   /* Create CSR cells -> faces graph */
 
-  cell_faces = _csr_graph_create_cell_face(n_cells_ext,
-                                           n_faces,
-                                           face_cell);
+  cs_adjacency_t *cell_faces = _c2f_from_face_cell(n_cells_ext,
+                                                   n_faces,
+                                                   face_cell);
 
   /* mark cell in a group */
 
@@ -1588,10 +1515,10 @@ _independent_face_groups(cs_lnum_t            max_group_size,
           cs_lnum_t c_id[2] = {face_cell[f_cmp][0], face_cell[f_cmp][1]};
 
           for (j = 0; j < 2; j++) {
-            cs_lnum_t start_id = cell_faces->row_index[c_id[j]];
-            cs_lnum_t end_id = cell_faces->row_index[c_id[j] + 1];
+            cs_lnum_t start_id = cell_faces->idx[c_id[j]];
+            cs_lnum_t end_id = cell_faces->idx[c_id[j] + 1];
             for (k = start_id; k < end_id; k++) {
-              if (cell_faces->col_id[k] == f_id) {
+              if (cell_faces->ids[k] == f_id) {
                 f_ok = false;
                 break;
               }
@@ -1627,7 +1554,7 @@ _independent_face_groups(cs_lnum_t            max_group_size,
 
   }
 
-  _csr_graph_destroy(&cell_faces);
+  cs_adjacency_destroy(&cell_faces);
 
   BFT_FREE(face_marker);
   BFT_FREE(group_face_ids);
@@ -4161,6 +4088,184 @@ _renum_cells_scotch_order(const cs_mesh_t  *mesh,
 #endif /* defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH) */
 
 /*----------------------------------------------------------------------------
+ * Compute local ordering using reverse Cuthill-McKee
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   new_to_old  --> new to old cell renumbering
+ *----------------------------------------------------------------------------*/
+
+static void
+_renum_cells_rcm(const cs_mesh_t  *mesh,
+                 cs_lnum_t         new_to_old[])
+{
+  if (mesh->n_cells < 1)
+    return;
+
+  cs_lnum_t n_i_cells = 0;
+
+  cs_lnum_t *keys, *order;
+  int *cell_class;
+
+  BFT_MALLOC(keys, mesh->n_cells*3, cs_lnum_t);
+  BFT_MALLOC(order, mesh->n_cells, cs_lnum_t);
+
+  BFT_MALLOC(cell_class, mesh->n_cells_with_ghosts, int);
+
+  cs_adjacency_t *a
+    = _c2c_from_face_cell(mesh->n_cells_with_ghosts,
+                          mesh->n_i_faces,
+                          (const cs_lnum_t  *)(mesh->i_face_cells));
+
+  cs_lnum_t l_s = 0, l_e = 0;
+
+  if (_cells_adjacent_to_halo_last) {
+
+    _classify_cells_by_neighbor(mesh, cell_class);
+
+    int cell_class_max = 2;
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
+      if (cell_class[i] == 0)
+        n_i_cells++;
+      else if (cell_class[i] > cell_class_max)
+        cell_class_max = cell_class[i];
+    }
+    cell_class_max += 1;
+
+    for (cs_lnum_t i = mesh->n_cells; i < mesh->n_cells_with_ghosts; i++)
+      cell_class[i] = cell_class_max + 1;
+
+    /* Order halo-adjacent cells in order of matching halo cells */
+
+    for (cs_lnum_t i = mesh->n_cells_with_ghosts-1; i >= mesh->n_cells; i--) {
+      for (cs_lnum_t j = a->idx[i+1]-1; j >= a->idx[i]; j--) {
+        cs_lnum_t k = a->ids[j];
+        if (cell_class[k] < cell_class_max) {
+          cell_class[k] = cell_class_max;
+          keys[l_e*3] = a->idx[i+1]- a->idx[i];
+          keys[l_e*3+1] = -l_e;
+          keys[l_e*3+2] = k;
+          l_e++;
+        }
+      }
+    }
+
+    for (cs_lnum_t i = mesh->n_cells-1; i >= 0; i--) {
+      if (cell_class[i] > 0 && cell_class[i] < cell_class_max) {
+         /* halo-adjacent cells marked cell_class_max */
+        assert(cell_class[i] == 1);
+        cell_class[i] = 2;
+        keys[l_e*3] = a->idx[i+1]- a->idx[i];
+        keys[l_e*3+1] = -l_e;
+        keys[l_e*3+2] = i;
+        l_e++;
+      }
+    }
+
+  }
+  else {
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+      cell_class[i] = 0;
+    for (cs_lnum_t i = mesh->n_cells; i < mesh->n_cells_with_ghosts; i++)
+      cell_class[i] = 2;
+  }
+
+  /* If there are starting cells, search for cell of highest degree */
+
+  if (l_e < 1) {
+
+    cs_lnum_t id_min = 0, nn_min = a->idx[1] - a->idx[0];
+
+    for (cs_lnum_t i = 1; i < mesh->n_cells; i++) {
+      cs_lnum_t nn = a->idx[i+1] - a->idx[i];
+      if (nn <= nn_min) {
+        id_min = i;
+        nn_min = nn;
+      }
+    }
+
+    cell_class[id_min] = 2;
+    keys[0] = a->idx[id_min+1]- a->idx[id_min];
+    keys[1] = id_min;
+    keys[2] = id_min;
+    l_e = 1;
+
+  }
+
+  /* Now generate sets */
+
+  cs_lnum_t *rl;
+  BFT_MALLOC(rl, mesh->n_cells, cs_lnum_t);
+
+  int level = -1;
+
+  while (true) {
+
+    cs_order_lnum_allocated_s(NULL,
+                              keys,
+                              3,
+                              order,
+                              l_e - l_s);
+
+    for (cs_lnum_t i = l_s; i < l_e; i++) {
+      cs_lnum_t j = order[i - l_s];
+      rl[i] = keys[j*3+2];
+    }
+
+    /* Generate next set */
+
+    if (l_e >= mesh->n_cells)
+      break;
+
+    cs_lnum_t n = 0;
+
+    for (cs_lnum_t l_id = l_s; l_id < l_e; l_id++) {
+      cs_lnum_t i = rl[l_id];
+      assert(i >= 0);
+      assert(i < mesh->n_cells);
+      for (cs_lnum_t j = a->idx[i+1]-1; j >= a->idx[i]; j--) {
+        cs_lnum_t k = a->ids[j];
+        if (cell_class[k] == 0) {
+          cell_class[k] = level;
+          keys[n*3] = a->idx[i+1]- a->idx[i];
+          keys[n*3+1] = -n;
+          keys[n*3+2] = k;
+          n++;
+        }
+      }
+    }
+
+    l_s = l_e;
+    l_e = l_s + n;
+
+    level--;
+
+  }
+
+  cs_adjacency_destroy(&a);
+
+  BFT_FREE(keys);
+  BFT_FREE(order);
+  BFT_FREE(cell_class);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+    new_to_old[i] = -1;
+#endif
+
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+    new_to_old[mesh->n_cells - 1 - i] = rl[i];
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
+    assert(new_to_old[i] != -1);
+  }
+#endif
+
+  BFT_FREE(rl);
+}
+
+/*----------------------------------------------------------------------------
  * Renumber cells for locality.
  *
  * parameters:
@@ -4173,9 +4278,9 @@ _renum_cells_scotch_order(const cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 static int
-_cells_locality_renumbering_(cs_mesh_t                 *mesh,
-                             cs_renumber_cells_type_t   algorithm,
-                             cs_lnum_t                 *new_to_old_c)
+_cells_locality_renumbering(cs_mesh_t                 *mesh,
+                            cs_renumber_cells_type_t   algorithm,
+                            cs_lnum_t                 *new_to_old_c)
 {
   int retval = 0;
 
@@ -4216,6 +4321,10 @@ _cells_locality_renumbering_(cs_mesh_t                 *mesh,
     _renum_cells_hilbert(mesh, new_to_old_c);
     break;
 
+  case CS_RENUMBER_CELLS_RCM:
+    _renum_cells_rcm(mesh, new_to_old_c);
+    break;
+
   case CS_RENUMBER_CELLS_NONE:
     retval = 1;
     break;
@@ -4225,7 +4334,7 @@ _cells_locality_renumbering_(cs_mesh_t                 *mesh,
       (_("\n"
          " Cell prenumbering of type: %s\n"
          "   not supported in this build.\n"),
-       _cell_renum_name[algorithm]);
+       _(_cell_renum_name[algorithm]));
 
     retval = -1;
     break;
@@ -4364,9 +4473,9 @@ _renumber_cells(cs_mesh_t  *mesh)
 
   if (_cells_algorithm[0] != CS_RENUMBER_CELLS_NONE) {
 
-    retval = _cells_locality_renumbering_(mesh,
-                                          _cells_algorithm[0],
-                                          new_to_old_c);
+    retval = _cells_locality_renumbering(mesh,
+                                         _cells_algorithm[0],
+                                         new_to_old_c);
 
     if (retval != 0 && _cells_algorithm[0] != CS_RENUMBER_CELLS_NONE)
       bft_printf
@@ -4382,9 +4491,9 @@ _renumber_cells(cs_mesh_t  *mesh)
 
   /* Last stage: numbering for locality */
 
-  retval = _cells_locality_renumbering_(mesh,
-                                        _cells_algorithm[1],
-                                        new_to_old_c);
+  retval = _cells_locality_renumbering(mesh,
+                                       _cells_algorithm[1],
+                                       new_to_old_c);
 
   if (halo_order_stage == 2)
     _renum_adj_halo_cells_last(mesh, new_to_old_c);
@@ -5034,10 +5143,12 @@ _renumber_mesh(cs_mesh_t  *mesh)
     switch (_cells_algorithm[1]) {
     case CS_RENUMBER_CELLS_METIS_PART:
     case CS_RENUMBER_CELLS_SCOTCH_PART:
+    case CS_RENUMBER_CELLS_RCM:
       break;
     case CS_RENUMBER_CELLS_SCOTCH_ORDER:
-      if (_cells_adjacent_to_halo_last)
-        break;
+      if (!_cells_adjacent_to_halo_last)
+        _cells_algorithm[0] = CS_RENUMBER_CELLS_NONE;
+      break;
     default:
       _cells_algorithm[0] = CS_RENUMBER_CELLS_NONE;
     }
@@ -5064,9 +5175,9 @@ _renumber_mesh(cs_mesh_t  *mesh)
          "     pre-numbering:                       %s\n"
          "     cells adjacent to ghost cells last:  %s\n"
          "     numbering:                           %s\n"),
-       _cell_renum_name[_cells_algorithm[0]],
+       _(_cell_renum_name[_cells_algorithm[0]]),
        _(no_yes[c_halo_adj_last]),
-       _cell_renum_name[_cells_algorithm[1]]);
+       _(_cell_renum_name[_cells_algorithm[1]]));
 
     bft_printf
       (_("\n"
@@ -5075,13 +5186,13 @@ _renumber_mesh(cs_mesh_t  *mesh)
          "     faces adjacent to ghost cells last:  %s\n"
          "     numbering:                           %s\n"),
         _(low_high[hi]),_(no_yes[i_halo_adj_last]),
-       _i_face_renum_name[_i_faces_algorithm]);
+       _(_i_face_renum_name[_i_faces_algorithm]));
 
     bft_printf
       (_("\n"
          "   renumbering for boundary faces:\n"
          "     numbering:                           %s\n"),
-       _b_face_renum_name[_b_faces_algorithm]);
+       _(_b_face_renum_name[_b_faces_algorithm]));
 
   }
 
