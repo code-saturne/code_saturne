@@ -535,13 +535,13 @@ _compute_cell_cocg_it(const cs_mesh_t        *m,
  * Build the geometrical matrix linear gradient correction
  *
  * parameters:
- *   m               <--  mesh
- *   fvq             <->  mesh quantities
+ *   m    <--  mesh
+ *   fvq  <->  mesh quantities
  *----------------------------------------------------------------------------*/
 
 static void
 _compute_corr_grad_lin(const cs_mesh_t       *m,
-                      cs_mesh_quantities_t   *fvq)
+                       cs_mesh_quantities_t  *fvq)
 {
   /* Local variables */
 
@@ -564,36 +564,45 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
 
+  if (fvq->corr_grad_lin_det == NULL)
+    BFT_MALLOC(fvq->corr_grad_lin_det, n_cells_with_ghosts, cs_real_t);
+  if (fvq->corr_grad_lin == NULL)
+    BFT_MALLOC(fvq->corr_grad_lin, n_cells_with_ghosts, cs_real_33_t);
+
   cs_real_t    *restrict corr_grad_lin_det = fvq->corr_grad_lin_det;
   cs_real_33_t *restrict corr_grad_lin     = fvq->corr_grad_lin;
 
-    /* Initialization */
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
-    for (int i_ = 0; i_ < 3; i_++)
-      for (int j_ = 0; j_ < 3; j_++)
-        corr_grad_lin[cell_id][i_][j_] = 0.;
+  /* Initialization */
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
+        corr_grad_lin[cell_id][i][j] = 0.;
+    }
+  }
 
-    /* Internal faces contribution */
+  /* Internal faces contribution */
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
     cs_lnum_t cell_id1 = i_face_cells[face_id][0];
     cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
-    for (int i_ = 0; i_ < 3; i_++)
-      for (int j_ = 0; j_ < 3; j_++) {
-        double flux = i_face_cog[face_id][i_] * i_face_normal[face_id][j_];
-        corr_grad_lin[cell_id1][i_][j_] += flux;
-        corr_grad_lin[cell_id2][i_][j_] -= flux;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        cs_real_t flux = i_face_cog[face_id][i] * i_face_normal[face_id][j];
+        corr_grad_lin[cell_id1][i][j] += flux;
+        corr_grad_lin[cell_id2][i][j] -= flux;
       }
+    }
   }
 
   /* Boundary faces contribution */
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     cs_lnum_t cell_id = b_face_cells[face_id];
-    for (int i_ = 0; i_ < 3; i_++)
-      for (int j_ = 0; j_ < 3; j_++) {
-        double flux = b_face_cog[face_id][i_] * b_face_normal[face_id][j_];
-        corr_grad_lin[cell_id][i_][j_] += flux;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        cs_real_t flux = b_face_cog[face_id][i] * b_face_normal[face_id][j];
+        corr_grad_lin[cell_id][i][j] += flux;
       }
+    }
   }
 
   /* Matrix inversion */
@@ -665,9 +674,10 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
   }
 
   if (m->halo != NULL) {
-    cs_halo_sync_var (m->halo, CS_HALO_STANDARD, corr_grad_lin_det);
-    cs_halo_sync_var_strided (m->halo, CS_HALO_STANDARD,
-                              (cs_real_t *)corr_grad_lin, 9);
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, corr_grad_lin_det);
+    cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD,
+                             (cs_real_t *)corr_grad_lin, 9);
+    /* TODO handle rotational periodicity */
   }
 }
 
@@ -2895,9 +2905,11 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
   if (cs_glob_mesh_quantities_flag & CS_CELL_FACE_CENTER_CORRECTION) {
 
      if (mesh->halo != NULL) {
-       cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED, mesh_quantities->cell_cen, 3);
+       cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
+                                mesh_quantities->cell_cen, 3);
        if (mesh->n_init_perio > 0)
-         cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED, mesh_quantities->cell_cen);
+         cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED,
+                                   mesh_quantities->cell_cen);
      }
 
     _correct_cell_face_center(mesh,
@@ -2914,6 +2926,7 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
 
 
   }
+
   /* Compute the volume of cells */
 
   _compute_cell_volume(mesh,
@@ -3058,9 +3071,6 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
       BFT_MALLOC(mesh_quantities->cocg_lsq, n_cells_with_ghosts, cs_real_33_t);
     }
   }
-
-  BFT_MALLOC(mesh_quantities->corr_grad_lin_det, n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(mesh_quantities->corr_grad_lin, n_cells_with_ghosts, cs_real_33_t);
 
   if (mesh_quantities->b_sym_flag == NULL)
     BFT_MALLOC(mesh_quantities->b_sym_flag, n_b_faces, cs_int_t);
