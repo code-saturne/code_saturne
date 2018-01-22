@@ -65,6 +65,7 @@
 #include "bft_printf.h"
 
 #include "cs_file.h"
+#include "cs_fp_exception.h"
 #include "cs_log.h"
 #include "cs_timer.h"
 
@@ -2045,6 +2046,12 @@ cs_base_dlopen(const char *filename)
 {
   void *retval = NULL;
 
+  /* Disable floating-point traps as the initialization of some libraries
+     may intefere with this (for example, embree, and optional Paraview
+     depedency) */
+
+  cs_fp_exception_disable_trap();
+
   /* Load symbols from shared library */
 
   retval = dlopen(filename, RTLD_LAZY);
@@ -2052,6 +2059,10 @@ cs_base_dlopen(const char *filename)
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("Error loading %s: %s."), filename, dlerror());
+
+  /* Restore floating-point trap behavior */
+
+  cs_fp_exception_restore_trap();
 
   return retval;
 }
