@@ -446,6 +446,28 @@ cs_base_dlopen_plugin(const char *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get flags for dlopen.
+ *
+ * \return  flags used for dlopen.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_base_dlopen_get_flags(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set flags for dlopen.
+ *
+ * \param[in]  flags  flags to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_dlopen_set_flags(int flags);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Unload a dynamic library.
  *
  * Note that the dlopen underlying mechanism uses a reference count, so

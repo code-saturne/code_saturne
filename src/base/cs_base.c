@@ -154,6 +154,14 @@ static _cs_base_sighandler_t cs_glob_base_sigtrap_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigcpu_save = SIG_DFL;
 #endif
 
+#if defined(HAVE_DLOPEN)
+#if defined(CS_DLOPEN_USE_RTLD_GLOBAL)
+static int _cs_dlopen_flags = RTLD_LAZY | RTLD_GLOBAL;
+#else
+static int _cs_dlopen_flags = RTLD_LAZY;
+#endif
+#endif
+
 /* Installation paths */
 
 static const char _cs_base_build_localedir[] = LOCALEDIR;
@@ -2047,14 +2055,14 @@ cs_base_dlopen(const char *filename)
   void *retval = NULL;
 
   /* Disable floating-point traps as the initialization of some libraries
-     may intefere with this (for example, embree, and optional Paraview
+     may interfere with this (for example, embree, and optional Paraview
      depedency) */
 
   cs_fp_exception_disable_trap();
 
   /* Load symbols from shared library */
 
-  retval = dlopen(filename, RTLD_LAZY);
+  retval = dlopen(filename, _cs_dlopen_flags);
 
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -2081,7 +2089,7 @@ cs_base_dlopen(const char *filename)
  */
 /*----------------------------------------------------------------------------*/
 
-void*
+void *
 cs_base_dlopen_plugin(const char *name)
 {
   void *retval = NULL;
@@ -2102,6 +2110,34 @@ cs_base_dlopen_plugin(const char *name)
   BFT_FREE(lib_path);
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get flags for dlopen.
+ *
+ * \return  flags used for dlopen.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_base_dlopen_get_flags(void)
+{
+  return _cs_dlopen_flags;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set flags for dlopen.
+ *
+ * \param[in]  flags  flags to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_dlopen_set_flags(int flags)
+{
+  _cs_dlopen_flags = flags;
 }
 
 /*----------------------------------------------------------------------------*/
