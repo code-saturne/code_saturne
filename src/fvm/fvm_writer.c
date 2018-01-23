@@ -490,7 +490,13 @@ _load_plugin(fvm_writer_format_t  *wf)
              char);
   sprintf(lib_path, "%s%c%s.so", pkglibdir, DIR_SEPARATOR, wf->dl_name);
 
-  wf->dl_lib = dlopen(lib_path, RTLD_LAZY);
+#if defined(CS_DLOPEN_USE_RTLD_GLOBAL)
+  int flags = RTLD_LAZY | RTLD_GLOBAL;
+#else
+  int flags = RTLD_LAZY;
+#endif
+
+  wf->dl_lib = dlopen(lib_path, flags);
 
   if (wf->dl_lib == NULL)
     bft_error(__FILE__, __LINE__, 0,

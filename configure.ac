@@ -623,6 +623,20 @@ if test "x$cs_have_dlloader" = "xyes" ; then
 
 fi
 
+# Use long global numbers ?
+AC_ARG_ENABLE(dlopen-rtld-global,
+  [AS_HELP_STRING([--enable-dlopen-rtld-global], [add RTLD_GLOBAL to dlopen flags])],
+  [
+    case "${enableval}" in
+      yes)  AC_DEFINE([CS_DLOPEN_USE_RTLD_GLOBAL], 1,
+                       [use RTLD_GLOBAL in dlopen flags.]) ;;
+      no) ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-dlopen-rtld-global]) ;;
+    esac
+  ],
+  [ ]
+)
+
 #------------------------------------------------------------------------------
 # Checks for libraries.
 #------------------------------------------------------------------------------

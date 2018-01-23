@@ -5,6 +5,9 @@ Release 5.0.6 (unreleased)
 Bug fixes
 ---------
 
+- Add --enable-dlopen-rtld-global configure option to fix initialization issues
+  of Catalyst or PNG histogram writers as plugin on some systems.
+
 - Fix deadlock in interior faces renumbering with halo_adjacent_faces_last.
 
 - Fix line plot/cs_prope_set writer output for vector variables.
