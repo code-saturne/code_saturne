@@ -477,6 +477,12 @@ _load_plugin(fvm_writer_format_t  *wf)
   char  *lib_path = NULL;
   const char *pkglibdir = cs_base_get_pkglibdir();
 
+  /* Disable floating-point traps as the initialization of some libraries
+     may intefere with this (for example, embree, and optional Paraview
+     depedency) */
+
+  cs_fp_exception_disable_trap();
+
   /* Open from shared library */
 
   BFT_MALLOC(lib_path,
@@ -491,6 +497,10 @@ _load_plugin(fvm_writer_format_t  *wf)
               _("Error loading %s: %s."), lib_path, dlerror());
 
   BFT_FREE(lib_path);
+
+  /* Restore floating-point trap behavior */
+
+  cs_fp_exception_restore_trap();
 
   /* Increment reference count */
 
