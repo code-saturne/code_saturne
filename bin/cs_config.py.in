@@ -360,9 +360,7 @@ class config:
                 lib_dirs = [catalyst_lib_dir]
             sp_dir = os.path.join(catalyst_lib_dir, 'site-packages')
             if os.path.isdir(sp_dir):
-                pythonpath_dirs = [os.path.join(sp_dir, 'vtk'),
-                                   os.path.join(sp_dir, 'paraview'),
-                                   sp_dir]
+                pythonpath_dirs = [sp_dir]
 
         # Add possible additional Catalyst dependency paths
 
