@@ -700,9 +700,14 @@ editions, so this is recommended only for advanced users.
 
 On some systems, loading the Catalyst module as a plug-in (which is the
 default) seems to interfere with the detection of required OpenGL2 features
-or extensions. In this case, Catalyst support may be linked in the standard
-manner by using the \texttt{--disable-catalyst-as-plugin}
-configuration option.
+or extensions required by ParaView 5.2 an above. In this case, Catalyst
+support may be linked in the standard manner by using the
+\texttt{--disable-catalyst-as-plugin} configuration option.
+A less extreme option is to use the \texttt{--enable-dlopen-rtld-global}
+option, which changes the system options with which libraries are loaded
+(possibly impacting all plugins). This seems to be sufficient with
+OSMesa 17.x versions. Using the \texttt{DL\_PRELOAD} environment variable
+at runtime to preload the OSMesa library also avoids the issue.
 
 \section{Preparing for build\label{sec:prepare}}
 

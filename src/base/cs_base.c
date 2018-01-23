@@ -2047,14 +2047,20 @@ cs_base_dlopen(const char *filename)
   void *retval = NULL;
 
   /* Disable floating-point traps as the initialization of some libraries
-     may intefere with this (for example, embree, and optional Paraview
+     may interfere with this (for example, embree, and optional Paraview
      depedency) */
 
   cs_fp_exception_disable_trap();
 
   /* Load symbols from shared library */
 
-  retval = dlopen(filename, RTLD_LAZY);
+#if defined(CS_DLOPEN_USE_RTLD_GLOBAL)
+  int _cs_dlopen_flags = RTLD_LAZY | RTLD_GLOBAL;
+#else
+  int _cs_dlopen_flags = RTLD_LAZY;
+#endif
+
+  retval = dlopen(filename, _cs_dlopen_flags);
 
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -2081,7 +2087,7 @@ cs_base_dlopen(const char *filename)
  */
 /*----------------------------------------------------------------------------*/
 
-void*
+void *
 cs_base_dlopen_plugin(const char *name)
 {
   void *retval = NULL;
