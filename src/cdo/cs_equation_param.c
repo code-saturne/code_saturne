@@ -383,6 +383,7 @@ cs_equation_create_param(cs_equation_type_t     type,
   /* Build the equation flag */
   eqp->flag = 0;
   eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
+  eqp->dof_reduction = CS_PARAM_REDUCTION_DERHAM;
   eqp->space_poly_degree = 0;
 
   /* Vertex-based schemes imply the two following discrete Hodge operators
@@ -582,6 +583,19 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid val %s related to key CS_EQKEY_SPACE_SCHEME\n"
                   " Choice between cdo_vb or cdo_fb"), _val);
+    }
+    break;
+
+  case CS_EQKEY_DOF_REDUCTION:
+    if (strcmp(val, "derham") == 0)
+      eqp->dof_reduction = CS_PARAM_REDUCTION_DERHAM;
+    else if (strcmp(val, "average") == 0)
+      eqp->dof_reduction = CS_PARAM_REDUCTION_AVERAGE;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid val %s related to key CS_EQKEY_DOF_REDUCTION\n"
+                  " Choice between \"derham\" or \"average\"."), _val);
     }
     break;
 

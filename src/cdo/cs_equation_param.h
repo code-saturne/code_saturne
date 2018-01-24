@@ -172,7 +172,8 @@ typedef struct {
   cs_flag_t                  process_flag;
 
   /* Numerical settings */
-  cs_param_space_scheme_t    space_scheme; /*!< Space discretization scheme */
+  cs_param_space_scheme_t    space_scheme;  /*!< Space discretization scheme */
+  cs_param_dof_reduction_t   dof_reduction; /*!< How is defined DoF */
 
   /*! \var space_poly_degree
    * Maximum degree of the polynomial basis
@@ -357,6 +358,13 @@ typedef struct {
  * - "hho_p1"  for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
  * - "hho_p2"  for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
  *
+ * \var CS_EQKEY_DOF_REDUCTION
+ * Set how is defined each degree of freedom (DoF).
+ * - "de_rham" (default): Evaluation at vertices for potentials, integral
+ *   along a line for circulations, integral across the normal component of a
+ *   face for fluxes and integral inside a cell for densities
+ * - "average": DoF are defined as the average on the element
+ *
  * \var CS_EQKEY_VERBOSITY
  * Set the level of details written by the code for an equation.
  * The higher the more detailed information is displayed.
@@ -535,6 +543,7 @@ typedef enum {
   CS_EQKEY_ADV_SCHEME,
   CS_EQKEY_BC_ENFORCEMENT,
   CS_EQKEY_BC_QUADRATURE,
+  CS_EQKEY_DOF_REDUCTION,
   CS_EQKEY_EXTRA_OP,
   CS_EQKEY_HODGE_DIFF_ALGO,
   CS_EQKEY_HODGE_DIFF_COEF,

@@ -111,6 +111,26 @@ typedef enum {
 
 /* TIME SCHEME */
 /* =========== */
+/*! \enum cs_param_space_scheme_t
+ *  \brief How is defined the degree of freedom
+ *
+ * \var CS_PARAM_REDUCTION_DERHAM
+ *  Evaluation at vertices for potentials, integral along a line for
+ *  circulations, integral across the normal component of a face for fluxes and
+ *  integral inside a cell for densities
+ *
+ * \var CS_PARAM_REDUCTION_AVERAGE
+ * Degrees of freedom are defined as the average on the element
+ */
+
+typedef enum {
+
+  CS_PARAM_REDUCTION_DERHAM,
+  CS_PARAM_REDUCTION_AVERAGE,
+
+  CS_PARAM_N_REDUCTIONS
+
+} cs_param_dof_reduction_t;
 
 /* Type of numerical scheme for the discretization in time */
 typedef enum {
