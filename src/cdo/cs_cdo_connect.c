@@ -875,7 +875,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   /* Build the edge --> vertices connectivity */
   connect->e2v = _build_e2v_connect(v2v);
 
-  cs_adjacency_free(&v2v);
+  cs_adjacency_destroy(&v2v);
 
   connect->n_vertices = n_vertices;
   connect->n_edges = n_edges;
@@ -982,13 +982,13 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   if (connect == NULL)
     return connect;
 
-  cs_adjacency_free(&(connect->e2v));
-  cs_adjacency_free(&(connect->f2e));
-  cs_adjacency_free(&(connect->f2c));
+  cs_adjacency_destroy(&(connect->e2v));
+  cs_adjacency_destroy(&(connect->f2e));
+  cs_adjacency_destroy(&(connect->f2c));
 
-  cs_adjacency_free(&(connect->c2f));
-  cs_adjacency_free(&(connect->c2e));
-  cs_adjacency_free(&(connect->c2v));
+  cs_adjacency_destroy(&(connect->c2f));
+  cs_adjacency_destroy(&(connect->c2e));
+  cs_adjacency_destroy(&(connect->c2v));
 
   BFT_FREE(connect->cell_type);
   BFT_FREE(connect->cell_flag);

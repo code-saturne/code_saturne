@@ -527,22 +527,6 @@ cs_adjacency_destroy(cs_adjacency_t   **p_adj)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Destroy a cs_adjacency_t structure.
- *
- * \deprecated This function is replaced by \ref cs_adjacency_destroy.
- *
- * \param[in, out]  p_adj   pointer of pointer to a cs_adjacency_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_adjacency_free(cs_adjacency_t   **p_adj)
-{
-  cs_adjacency_destroy(p_adj);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Create a new cs_adjacency_t structure from the composition of
  *          two cs_adjacency_t structures: (1) A -> B and (2) B -> C
  *          The resulting structure describes A -> C. It does not rely on a

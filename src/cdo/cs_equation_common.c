@@ -152,7 +152,7 @@ _get_v2v(const cs_cdo_connect_t     *connect)
   BFT_REALLOC(v2v->ids, v2v->idx[n_vertices], cs_lnum_t);
 
   /* Free temporary buffers */
-  cs_adjacency_free(&v2c);
+  cs_adjacency_destroy(&v2c);
 
   return v2v;
 }
@@ -558,10 +558,10 @@ cs_equation_common_free(const cs_domain_cdo_context_t   *cc)
   cs_timer_t t0 = cs_timer_time();
 
   if (cc->vb_scheme_flag > 0 || cc->vcb_scheme_flag > 0)
-    cs_adjacency_free(&(cs_connect_v2v));
+    cs_adjacency_destroy(&(cs_connect_v2v));
 
   if (cc->fb_scheme_flag > 0 || cc->hho_scheme_flag > 0)
-    cs_adjacency_free(&(cs_connect_f2f));
+    cs_adjacency_destroy(&(cs_connect_f2f));
 
     /* Free common structures specific to a numerical scheme */
   if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
