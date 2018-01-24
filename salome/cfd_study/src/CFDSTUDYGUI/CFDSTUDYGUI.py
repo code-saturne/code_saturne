@@ -172,6 +172,7 @@ def setWorkSpace(ws):
     dsk = sgPyQt.getDesktop()
     _DesktopMgr.setWorkspace(dsk, ws)
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
+    ActionHandler.connectSolverGUI()
 
 
 def createPreferences():
