@@ -295,11 +295,11 @@ cs_source_term_set_default_flag(cs_param_space_scheme_t   scheme)
 
   switch (scheme) {
   case CS_SPACE_SCHEME_CDOVB:
-    meta_flag = CS_FLAG_DUAL | CS_FLAG_CELL; // Default
+    meta_flag = cs_flag_dual_cell; /* Predefined mask */
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
-    meta_flag = CS_FLAG_PRIMAL | CS_FLAG_CELL; // Default
+    meta_flag = cs_flag_primal_cell; /* Predefined mask */
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:

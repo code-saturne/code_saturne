@@ -320,6 +320,34 @@ cs_xdef_free(cs_xdef_t     *d);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  In case of definition by array, set the array after having added
+ *         this definition
+ *
+ * \param[in, out]  d       pointer to a cs_xdef_t structure
+ * \param[in]       array   values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_set_array(cs_xdef_t     *d,
+                  cs_real_t     *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, set the index to get access to the
+ *         array values.
+ *
+ * \param[in, out]  d             pointer to a cs_xdef_t structure
+ * \param[in]       array_index   index on array values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_set_array_index(cs_xdef_t     *d,
+                        cs_lnum_t     *array_index);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the type of quadrature to use for evaluating the given
  *         description
  *
