@@ -66,6 +66,17 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 static const char
+cs_param_space_scheme_name[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
+  { N_("Legacy Finite Volume"),
+    N_("CDO vertex-based"),
+    N_("CDO vertex+cell-based"),
+    N_("CDO face-based"),
+    N_("HHO-P0"),
+    N_("HHO-P1"),
+    N_("HHO-P2")
+  };
+
+static const char
 cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_BASE_STRING_LEN] =
   { N_("Homogeneous Dirichlet"),
     N_("Dirichlet"),
@@ -91,6 +102,25 @@ cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of boundary condition
+ *
+ * \param[in] type     type of boundary condition
+ *
+ * \return the associated space scheme name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_space_scheme_name(cs_param_space_scheme_t    scheme)
+{
+  if (scheme == CS_SPACE_N_SCHEMES)
+    return NULL;
+  else
+    return cs_param_space_scheme_name[scheme];
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

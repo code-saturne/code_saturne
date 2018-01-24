@@ -1093,37 +1093,13 @@ cs_equation_summary_param(const char                  *eqname,
               " Eq. %s has no type.\n Please check your settings.", eqname);
   }
 
-  switch (eqp->space_scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-    cs_log_printf(CS_LOG_SETUP,
-                  "  <%s/space scheme>  CDO vertex-based\n", eqname);
-    break;
-  case CS_SPACE_SCHEME_CDOVCB:
-    cs_log_printf(CS_LOG_SETUP,
-                  "  <%s/space scheme>  CDO vertex+cell-based\n", eqname);
-    break;
-  case CS_SPACE_SCHEME_CDOFB:
-    cs_log_printf(CS_LOG_SETUP,
-                  "  <%s/space scheme>  CDO face-based\n", eqname);
-    break;
-  case CS_SPACE_SCHEME_HHO_P0:
-    cs_log_printf(CS_LOG_SETUP,
-                  "  <%s/space scheme>  HHO-P0\n", eqname);
-    break;
-  case CS_SPACE_SCHEME_HHO_P1:
-    cs_log_printf(CS_LOG_SETUP,
-                  "  <%s/space scheme>  HHO-P1\n", eqname);
-    break;
-  case CS_SPACE_SCHEME_HHO_P2:
-    cs_log_printf(CS_LOG_SETUP,
-                  "  <%s/space scheme>  HHO-P2\n", eqname);
-    break;
-
-  default:
+  const char *space_scheme = cs_param_get_space_scheme_name(eqp->space_scheme);
+  if (eqp->space_scheme != CS_SPACE_N_SCHEMES)
+    cs_log_printf(CS_LOG_SETUP, "  <%s/space scheme> %s\n",
+                  eqname, space_scheme);
+  else
     bft_error(__FILE__, __LINE__, 0,
               " Undefined space scheme for eq. %s", eqname);
-  }
 
   cs_log_printf(CS_LOG_SETUP, "  <%s/space poly degree>  %d\n",
                 eqname, eqp->space_poly_degree);
