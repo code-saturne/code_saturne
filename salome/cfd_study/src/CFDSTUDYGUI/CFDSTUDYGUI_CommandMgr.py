@@ -132,6 +132,7 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
         """
         if self.proc is None:
             return
+#MP        self.proc.setReadChannel(QProcess.Exception)
         self.proc.setReadChannel(QProcess.StandardError)
 
         while self.proc and self.proc.canReadLine():
@@ -183,5 +184,5 @@ def runCommand(cmd, start_directory, prefix, *args):
 
             sgPyQt.message( prefix + text, False )
 
-    except OSError, e:
+    except OSError as e:
         sgPyQt.message( prefix + "Exception had occured during script execution " + e.__str__(), True )

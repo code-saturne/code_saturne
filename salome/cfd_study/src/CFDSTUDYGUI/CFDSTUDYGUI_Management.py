@@ -32,6 +32,7 @@ called by CFDSTUDYGUI_SolverGUI.
 # Standard modules
 #-------------------------------------------------------------------------------
 
+from __future__ import print_function
 import os, sys, string, logging
 
 
@@ -54,8 +55,8 @@ class Mapper:
     def __getitem__(self,expr):
         try:
             return eval(expr, self.d1, self.d2)
-        except SyntaxError, m:
-            print "Syntax Error '%s' in the mapper" % expr
+        except SyntaxError as m:
+            print("Syntax Error '%s' in the mapper" % expr)
         raise
 
 #-------------------------------------------------------------------------------
@@ -94,7 +95,7 @@ class CFDGUI_Management:
       """
       Add a new Solver GUI in the SALOME desktop.
       """
-      if studyId not in self.d_CfdCases.keys():
+      if studyId not in list(self.d_CfdCases.keys()):
           self.d_CfdCases[studyId] = []
 
       self.d_CfdCases[studyId].append([dock, dockWB, mwCFD,
@@ -114,7 +115,7 @@ class CFDGUI_Management:
 
 
     def checkDockWindowsLists(self, studyId):
-      if studyId in self.d_CfdCases.keys():
+      if studyId in list(self.d_CfdCases.keys()):
           return True
       else:
           return False
@@ -124,7 +125,7 @@ class CFDGUI_Management:
       dockWB = None
       if self.checkDockWindowsLists(studyId):
           d = self.getDocks(studyId)
-          if dock in d.keys():
+          if dock in list(d.keys()):
               ind = d[dock]
               dockWB = self.d_CfdCases[studyId][ind][self.dockWBPosInListe]
       return dockWB
@@ -134,7 +135,7 @@ class CFDGUI_Management:
       dock = None
       if self.checkDockWindowsLists(studyId):
           d = self.getDocksWB(studyId)
-          if dockWB in d.keys():
+          if dockWB in list(d.keys()):
               ind = d[dockWB]
               dock = self.d_CfdCases[studyId][ind][self.dockPosInListe]
       return dock
@@ -152,9 +153,9 @@ class CFDGUI_Management:
 
     def getElem(self, studyId, elempos):
         d = {}
-        if elempos not in range(self.nbelem):
+        if elempos not in list(range(self.nbelem)):
             return d
-        if studyId in self.d_CfdCases.keys():
+        if studyId in list(self.d_CfdCases.keys()):
             for liste in self.d_CfdCases[studyId]:
                 d[liste[elempos]] = self.d_CfdCases[studyId].index(liste)
         return d
@@ -194,7 +195,7 @@ class CFDGUI_Management:
 
     def getStudyCaseXmlNames(self, studyId, mw):
         log.debug("getStudyCaseXmlNames mw = %s" % mw)
-        if studyId in self.d_CfdCases.keys():
+        if studyId in list(self.d_CfdCases.keys()):
             for l in self.d_CfdCases[studyId]:
                 if l[self.mwCFDPosInListe] == mw:
                     return l[self.studyCFDPosInListe].GetName(), \
@@ -204,7 +205,7 @@ class CFDGUI_Management:
 
 
     def getCase(self, studyId, mw):
-        if studyId in self.d_CfdCases.keys():
+        if studyId in list(self.d_CfdCases.keys()):
             for l in self.d_CfdCases[studyId]:
                 if l[self.mwCFDPosInListe] == mw:
                     return l[self.caseCFDPosInListe]
@@ -234,7 +235,7 @@ class CFDGUI_Management:
 
     def findElem(self, xmlName, caseName, studyCFDName):
         boo = False
-        for studyId in self.d_CfdCases.keys():
+        for studyId in list(self.d_CfdCases.keys()):
             for l in self.d_CfdCases[studyId]:
                 if l[self.xmlCFDFileNamePosInListe] == xmlName:
                     if l[self.caseCFDPosInListe].GetName() == caseName:
@@ -249,7 +250,7 @@ class CFDGUI_Management:
 
     def findDock(self, xmlName, caseName, studyCFDName):
         boo = False
-        for studyId in self.d_CfdCases.keys():
+        for studyId in list(self.d_CfdCases.keys()):
             for l in self.d_CfdCases[studyId]:
                 if l[self.xmlCFDFileNamePosInListe] == xmlName:
                     if l[self.caseCFDPosInListe].GetName() == caseName:
@@ -275,7 +276,7 @@ class CFDGUI_Management:
         """
         d = self.getDocks(studyId)
         if d != {}:
-            if dock in d.keys():
+            if dock in list(d.keys()):
                 return self.d_CfdCases[studyId][d[dock]][self.mwCFDPosInListe]
         else:
             return None
@@ -321,7 +322,7 @@ class CFDGUI_Management:
         called when closing salome study and remaining into the desktop
         """
         if self.d_CfdCases == {} : return
-        for liste in self.d_CfdCases.values() :
+        for liste in list(self.d_CfdCases.values()) :
             for liste_object in liste :
                 dockcfd, docwb = liste_object[self.dockPosInListe], liste_object[self.dockWBPosInListe]
                 for dock in [dockcfd, docwb]:

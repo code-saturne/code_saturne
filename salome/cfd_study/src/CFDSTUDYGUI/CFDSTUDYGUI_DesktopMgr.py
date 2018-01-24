@@ -35,6 +35,8 @@ components: Object Browser, Python console, 3D/2D viewers, etc.
 # Standard modules
 #-------------------------------------------------------------------------------
 
+from __future__ import print_function
+
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
@@ -76,7 +78,7 @@ class CFDSTUDYGUI_DesktopMgr(QObject):
         Destroys objects with corresponding Desktop.
         """
         dsk = self.sender()
-        if Trace(): print "CFDSTUDYGUI_DesktopMgr::slotDeleteDsk() ", dsk
+        if Trace(): print("CFDSTUDYGUI_DesktopMgr::slotDeleteDsk() ", dsk)
         if dsk in self._ActionHandlerMap:
             del self._ActionHandlerMap[dsk]
 

@@ -174,7 +174,6 @@ def setWorkSpace(ws):
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
     ActionHandler.connectSolverGUI()
 
-
 def createPreferences():
     """
     Manages the preferences QDialog of the module.
@@ -219,7 +218,7 @@ def activate():
     # instance of the CFDSTUDYGUI_ActionsHandler class for the current desktop
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
 
-    if studyId not in d_activation.keys():
+    if studyId not in list(d_activation.keys()):
         d_activation[studyId] = 1
 
     if d_activation[studyId] == 1:
@@ -265,7 +264,7 @@ def activate():
     for dock in sgPyQt.getDesktop().findChildren(QDockWidget):
         dockTitle = dock.windowTitle()
         log.debug("activate -> QDockWidget: %s" % dockTitle)
-        if dockTitle in (u"Python Console", u"Console Python",  u"Message Window"):
+        if dockTitle in ("Python Console", "Console Python",  "Message Window"):
             dock.setVisible(False)
 
     return True

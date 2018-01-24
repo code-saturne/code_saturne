@@ -125,7 +125,7 @@ class InfoDialogHandler(InfoDialog):
             from cs_package import package
 
         else:
-            raise DialogError, "Invalid CFD_Code in InfoDialog class"
+            raise ValueError("Invalid CFD_Code in InfoDialog class")
 
         pkg = package()
         self.labelVersionValue.setText(pkg.version)
@@ -403,7 +403,7 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
         aStudyDir = str(aDirLE.text())
         # Load from study dir + study name
         if aNameLE.text() != aNameLE.text():
-            raise DialogError, "Names must not contain special characters."
+            raise ValueError("Names must not contain special characters.")
 
         aStudyDirName = str(aNameLE.text())
         self.StudyPath = os.path.join(aStudyDir, aStudyDirName)

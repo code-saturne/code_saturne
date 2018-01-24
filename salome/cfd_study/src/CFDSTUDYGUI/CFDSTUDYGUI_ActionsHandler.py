@@ -1040,10 +1040,10 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
                         meshGroupObject, group = CFDSTUDYGUI_DataModel.getMeshFromGroup(sobj) # on teste et on recupere le groupe
 
-                        if meshGroupObject <> None:
+                        if meshGroupObject != None:
                             if len(self.l_color) == 0:
                                 self.l_color = self.ul_color
-                            if len(self.l_color) <> 0:
+                            if len(self.l_color) != 0:
                                 a = self.l_color[0]
                                 self.ul_color.append(a)
                                 self.l_color.remove(a)
@@ -1948,7 +1948,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         cmd = ""
         aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aCaseObject, "SRC")
         if not len(aChildList) == 1:
-            raise ValueError, "There is a mistake with the SRC directory"
+            raise ValueError("There is a mistake with the SRC directory")
 
         env_code, mess = CheckCFD_CodeEnv(CFD_Code())
         if not env_code:
@@ -2299,12 +2299,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         Returns action by id from common action map of module
         """
         if not theId in self._CommonActionIdMap:
-            raise ActionError, "Invalid action id"
+            raise ActionError("Invalid action id")
 
         action_id = self._CommonActionIdMap[theId]
 
         if action_id == None or not action_id in self._ActionMap:
-            raise ActionError, "Invalid action map content"
+            raise ActionError("Invalid action map content")
         return self._ActionMap[action_id]
 
 
@@ -2320,10 +2320,10 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             action_id = self._HelpActionIdMap[theId]
 
         if action_id == None:
-            raise ActionError, "Invalid action id"
+            raise ActionError("Invalid action id")
 
         if not action_id in self._ActionMap:
-            raise ActionError, "Invalid action map content"
+            raise ActionError("Invalid action map content")
 
         return self._ActionMap[action_id]
 
@@ -2341,7 +2341,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             action_id = self._HelpActionIdMap[theId]
 
         if action_id == None:
-            raise ActionError, "Invalid action id"
+            raise ActionError("Invalid action id")
 
         return action_id
 

@@ -138,7 +138,7 @@ def CheckCFD_CodeEnv(code):
         try:
             from cs_package import package
             iok = True
-        except ImportError,e:
+        except ImportError as e:
             mess = cfdstudyMess.trMessage(ObjectTR.tr("INFO_DLG_INVALID_ENV"),[code]) + e.__str__()
             if "cs_package" in e.__str__():
                 mess = mess + cfdstudyMess.trMessage(ObjectTR.tr("CHECK_CODE_PACKAGE"),["cs_package",code])
@@ -149,7 +149,7 @@ def CheckCFD_CodeEnv(code):
         try:
             from nc_package import package
             iok = True
-        except ImportError,e:
+        except ImportError as e:
             mess = cfdstudyMess.trMessage(ObjectTR.tr("INFO_DLG_INVALID_ENV"),[code]) + e.__str__()
             if "nc_package" in e.__str__():
                 mess = mess + cfdstudyMess.trMessage(ObjectTR.tr("CHECK_CODE_PACKAGE"),["nc_package",code])
@@ -157,7 +157,7 @@ def CheckCFD_CodeEnv(code):
                 mess = mess + cfdstudyMess.trMessage(ObjectTR.tr("CHECK_PYTHON_PATH"),[])
             iok = False
     else:
-        raise ApplicationError, "Invalid name of solver!"
+        raise ValueError("Invalid name of solver!")
 
     if iok:
         pkg = package()

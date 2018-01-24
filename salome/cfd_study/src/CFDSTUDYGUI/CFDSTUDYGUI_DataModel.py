@@ -62,7 +62,7 @@ WARNING: a SALOME Study should not be confused with a CFD study.
 #-------------------------------------------------------------------------------
 # Standard modules
 #-------------------------------------------------------------------------------
-
+from __future__ import print_function
 import os
 import re
 import string
@@ -438,7 +438,7 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
     iok = True
     if theCopyOpt:
         if not os.path.exists(theNameRef):
-            raise ValueError, "reference case is not a repository"
+            raise ValueError("reference case is not a repository")
     if os.path.exists(theStudyPath) :
         if theCreateOpt:
             mess = cfdstudyMess.trMessage(ObjectTR.tr("STUDY_DIRECTORY_ALREADY_EXISTS"),[""])
@@ -459,9 +459,9 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
         aStudyDir = lst[0]
         aStudyName = lst[1]
         if aStudyName == "":
-            raise ValueError, "Empty Study Name!"
+            raise ValueError("Empty Study Name!")
         if aStudyDir == "":
-            raise ValueError, "Empty Study Directory!"
+            raise ValueError("Empty Study Directory!")
 
         studyObject  = builder.NewObject(father)
         attr = builder.FindOrCreateAttribute(studyObject, "AttributeLocalID")
@@ -699,7 +699,7 @@ def _RebuildTreeRecursively(theObject):
     if len(objList) == 0:
         while dirIndex < len(dirList):
             #append new objects
-            if Trace() : print "Whole append new Item: ", dirList[dirIndex]
+            if Trace() : print("Whole append new Item: ", dirList[dirIndex])
             _CreateObject(theObject, builder, dirList[dirIndex])
             dirIndex+=1
 
@@ -718,7 +718,7 @@ def _RebuildTreeRecursively(theObject):
             if dirName < objName:
                 if not dirEnd:
                     #append new object
-                    if Trace(): print "1 Append new Item: ", dirName
+                    if Trace(): print("1 Append new Item: ", dirName)
                     log.debug("_RebuildTreeRecursively 4: dirName = %s objName = %s" %(dirName,objName))
                     _CreateObject(theObject, builder, dirName)
                     dirIndex+=1
@@ -726,7 +726,7 @@ def _RebuildTreeRecursively(theObject):
                     if objEnd and dirIndex == len(dirList):
                         break
                 else:
-                    if Trace(): print "1 Remove Item from tree: ", objName
+                    if Trace(): print("1 Remove Item from tree: ", objName)
                     builder.RemoveObjectWithChildren(objMap[objName])
                     objIndex+=1
 
@@ -736,7 +736,7 @@ def _RebuildTreeRecursively(theObject):
             elif dirName > objName:
                 #remove object if no end
                 if not objEnd:
-                    if Trace(): print "2 Remove Item from tree: ", objName
+                    if Trace(): print("2 Remove Item from tree: ", objName)
                     builder.RemoveObjectWithChildren(objMap[objName])
                     objIndex+=1
 
@@ -745,7 +745,7 @@ def _RebuildTreeRecursively(theObject):
 
                 else:
                     #append new item at the end
-                    if Trace(): print "2 Append new Item: ", dirName
+                    if Trace(): print("2 Append new Item: ", dirName)
                     log.debug("_RebuildTreeRecursively 5: dirName = %s objName = %s" %(dirName,objName))
                     _CreateObject(theObject, builder, dirName)
                     dirIndex+=1
@@ -865,7 +865,7 @@ def _FillObject(theObject, theParent, theBuilder):
 
     # Parent is study
     if parentId == dict_object["Study"] or parentId == dict_object["CouplingStudy"]:
-        if Trace(): print "_FillObject : parent is Study ", theParent.GetName()
+        if Trace(): print("_FillObject : parent is Study ", theParent.GetName())
         #check for case
         if os.path.isdir(path):
             dirList = os.listdir(path)
@@ -1189,22 +1189,22 @@ def _FillObject(theObject, theParent, theBuilder):
            re.match(".*\.for$", name) or \
            re.match(".*\.FOR$", name):
             if _DetectUSERSObject(theObject) == True:
-                if Trace(): print "******************************", path
+                if Trace(): print("******************************", path)
                 objectId = _DetectSRCObject(theParent)
         elif re.match(".*\.c$", name):
             if _DetectUSERSObject(theObject) == True:
-                if Trace(): print "******************************", path
+                if Trace(): print("******************************", path)
                 objectId = _DetectSRCObject(theParent)
         elif re.match(".*\.cpp$", name) or \
            re.match(".*\.cxx$", name):
             if _DetectUSERSObject(theObject) == True:
-                if Trace(): print "******************************", path
+                if Trace(): print("******************************", path)
                 objectId = _DetectSRCObject(theParent)
         elif re.match(".*\.h$", name) or \
            re.match(".*\.hxx$", name) or \
            re.match(".*\.hpp$", name):
             if _DetectUSERSObject(theObject) == True:
-                if Trace(): print "******************************", path
+                if Trace(): print("******************************", path)
                 objectId = _DetectSRCObject(theParent)
 
     if objectId == dict_object["OtherFile"]:
@@ -1212,7 +1212,7 @@ def _FillObject(theObject, theParent, theBuilder):
             objectId = dict_object["OtherFolder"]
 
     log.debug("_FillObject: %s %s" % \
-        (name, [k for k, v in dict_object.iteritems() if v == objectId][0]))
+        (name, [k for k, v in dict_object.items() if v == objectId][0]))
 
     if objectId in (dict_object["OtherFile"],
                     dict_object["OtherFolder"],
@@ -1384,8 +1384,8 @@ def GetCase(theObject):
     while cur:
         attr = builder.FindOrCreateAttribute(cur, "AttributeLocalID")
         if Trace():
-            print "attr:",attr
-            print "Value", attr.Value()
+            print("attr:",attr)
+            print("Value", attr.Value())
         value = attr.Value()
         if value == dict_object["Case"]:
             return cur
@@ -1546,7 +1546,7 @@ def getXmlCaseNameList(theCase):
     aChildList = ScanChildren(theCase, "^DATA$")
     if len(aChildList) != 1:
         # no DATA folder
-        print "There are no data folder in selected by user case"
+        print("There are no data folder in selected by user case")
         return
 
     aDataObj =  aChildList[0]
@@ -1678,7 +1678,7 @@ def checkCaseLaunchGUI(theCase):
     aChildList = ScanChildren(theCase, "^DATA$")
     if not len(aChildList) == 1:
         # no DATA folder
-        print "There are no data folder in selected by user case"
+        print("There are no data folder in selected by user case")
         return False
 
     aDataObj =  aChildList[0]
@@ -1696,7 +1696,7 @@ def checkCaseLaunchGUI(theCase):
         else:
             aChildList = ScanChildren(aDataObj, "^NeptuneGUI$")
     if not len(aChildList) == 1:
-        if Trace(): print "There are no SaturneGUI or NeptuneGUI in selected by user case"
+        if Trace(): print("There are no SaturneGUI or NeptuneGUI in selected by user case")
         return False
 
     return True
@@ -1717,7 +1717,7 @@ def checkCode(theCase):
     aChildList = ScanChildren(theCase, "^DATA$")
     if not len(aChildList) == 1:
         # no DATA folder
-        print "There are not data folder in selected by user case"
+        print("There are not data folder in selected by user case")
         return CFD_Code()
 
     aDataObj =  aChildList[0]
@@ -1742,7 +1742,7 @@ def checkCode(theCase):
     aChildList = ScanChildren(theCase, "^SCRIPTS$")
     if not len(aChildList) == 1:
         # no SCRIPTS folder
-        print "There are not scripts folder in selected by user case"
+        print("There are not scripts folder in selected by user case")
         return CFD_Code()
 
     aDataObj =  aChildList[0]
@@ -1779,7 +1779,7 @@ def checkCode(theCase):
                                 else:
                                     return CFD_Neptune
         except IOError:
-            print("Error: can not open or read %s\n" % path)
+            print(("Error: can not open or read %s\n" % path))
             return CFD_Code()
 
 
@@ -1814,14 +1814,14 @@ def setCaseInProcess(theCasePath, isInProcess):
     aStudyObj = FindStudyByPath(aStudyPath)
     if not aStudyPath:
         if Trace():
-            print "Study by case path not found"
+            print("Study by case path not found")
         return
 
     #get case object
     lst = ScanChildren(aStudyObj, aCaseName)
     if len(lst) != 1:
         if Trace():
-            print "Invalid number of cases under study"
+            print("Invalid number of cases under study")
         return
 
     aCaseObj = lst[0]
@@ -1878,7 +1878,7 @@ def getOrLoadObject(item):
         builder = study.NewBuilder()
         engine = _getEngine()
         if engine is None:
-            print "Cannot load component ", __MODULE_NAME__
+            print("Cannot load component ", __MODULE_NAME__)
         object = item.GetObject()
     return object
 
