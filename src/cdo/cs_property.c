@@ -91,6 +91,30 @@ static cs_property_t  **_properties = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the volume zone if from the zone name (If name = NULL or
+ *         has an empty length, all entities are selected)
+ *
+ * \param[in] z_name            name of the zone
+ *
+ * \return the id of the related zone
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline int
+_get_vzone_id(const char   *z_name)
+{
+  int z_id = 0;
+  if (z_name != NULL) {
+    if (strlen(z_name) > 0) {
+      const cs_volume_zone_t  *z = cs_volume_zone_by_name(z_name);
+      z_id = z->id;
+    }
+  }
+  return z_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Check if the settings are valid
  *
  * \param[in]  tens      values of the tensor
@@ -476,9 +500,10 @@ cs_property_finalize_setup(void)
  * \brief  Define an isotropic cs_property_t structure by value for entities
  *         related to a volume zone
  *
- * \param[in, out]  pty          pointer to a cs_property_t structure
- * \param[in]       zone_name    name of an already defined zone
- * \param[in]       val          value to set
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       val      value to set
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -486,7 +511,7 @@ cs_property_finalize_setup(void)
 
 cs_xdef_t *
 cs_property_def_iso_by_value(cs_property_t    *pty,
-                             const char       *zone_name,
+                             const char       *zname,
                              double            val)
 {
   if (pty == NULL)
@@ -497,12 +522,12 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_def(pty);
-  const cs_volume_zone_t  *zone = cs_volume_zone_by_name(zone_name);
+  int  z_id = _get_vzone_id(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; // metadata
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
                                         1, // dim
-                                        zone->id,
+                                        z_id,
                                         state_flag,
                                         meta_flag,
                                         &val);
@@ -519,9 +544,10 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
  * \brief  Define an orthotropic cs_property_t structure by value for entities
  *         related to a volume zone
  *
- * \param[in, out]  pty         pointer to a cs_property_t structure
- * \param[in]       zone_name   name of an already defined zone
- * \param[in]       val         values to set (vector of size 3)
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       val      values to set (vector of size 3)
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -529,7 +555,7 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
 
 cs_xdef_t *
 cs_property_def_ortho_by_value(cs_property_t    *pty,
-                               const char       *zone_name,
+                               const char       *zname,
                                double            val[])
 {
   if (pty == NULL)
@@ -540,12 +566,12 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_def(pty);
-  const cs_volume_zone_t  *zone = cs_volume_zone_by_name(zone_name);
+  int  z_id = _get_vzone_id(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; // metadata
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
                                         3, // dim
-                                        zone->id,
+                                        z_id,
                                         state_flag,
                                         meta_flag,
                                         (void *)val);
@@ -562,9 +588,10 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
  * \brief  Define an anisotropic cs_property_t structure by value for entities
  *         related to a volume zone
  *
- * \param[in, out]  pty         pointer to a cs_property_t structure
- * \param[in]       zone_name   name of an already defined zone
- * \param[in]       tens        values to set (3x3 tensor)
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       tens     values to set (3x3 tensor)
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -572,7 +599,7 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
 
 cs_xdef_t *
 cs_property_def_aniso_by_value(cs_property_t    *pty,
-                               const char       *zone_name,
+                               const char       *zname,
                                cs_real_t         tens[3][3])
 {
   if (pty == NULL)
@@ -591,12 +618,12 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
               pty->name);
 
   int  new_id = _add_new_def(pty);
-  const cs_volume_zone_t  *zone = cs_volume_zone_by_name(zone_name);
+  int  z_id = _get_vzone_id(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; // metadata
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
                                         9, // dim
-                                        zone->id,
+                                        z_id,
                                         state_flag,
                                         meta_flag,
                                         tens);
@@ -613,10 +640,11 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
  * \brief  Define a cs_property_t structure thanks to an analytic function in
  *         a subdomain attached to the mesh location named ml_name
  *
- * \param[in, out]  pty         pointer to a cs_property_t structure
- * \param[in]       zone_name   name of an already defined zone
- * \param[in]       func        pointer to a cs_analytic_func_t function
- * \param[in]       input       NULL or pointer to a structure cast on-the-fly
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       func     pointer to a cs_analytic_func_t function
+ * \param[in]       input    NULL or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -624,7 +652,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 
 cs_xdef_t *
 cs_property_def_by_analytic(cs_property_t        *pty,
-                            const char           *zone_name,
+                            const char           *zname,
                             cs_analytic_func_t   *func,
                             void                 *input)
 {
@@ -632,21 +660,21 @@ cs_property_def_by_analytic(cs_property_t        *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   int  new_id = _add_new_def(pty);
+  int  z_id = _get_vzone_id(zname);
+  cs_flag_t  state_flag = 0;
+  cs_flag_t  meta_flag = 0; // metadata
+  cs_xdef_analytic_input_t  anai = {.func = func,
+                                    .input = input };
+
   int  dim = 1;
   if (pty->type == CS_PROPERTY_ORTHO)
     dim = 3;
   else if (pty->type == CS_PROPERTY_ANISO)
     dim = 9;
 
-  const cs_volume_zone_t  *zone = cs_volume_zone_by_name(zone_name);
-  cs_flag_t  state_flag = 0;
-  cs_flag_t  meta_flag = 0; // metadata
-  cs_xdef_analytic_input_t  anai = {.func = func,
-                                    .input = input };
-
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         dim,
-                                        zone->id,
+                                        z_id,
                                         state_flag,
                                         meta_flag,
                                         &anai);
@@ -664,11 +692,12 @@ cs_property_def_by_analytic(cs_property_t        *pty,
  *         scalar variable in a subdomain attached to the mesh location named
  *         ml_name
  *
- * \param[in, out] pty                  pointer to a cs_property_t structure
- * \param[in]      zone_name            name of an already defined zone
- * \param[in]      context              pointer to a structure (may be NULL)
- * \param[in]      get_eval_at_cell     pointer to a function (may be NULL)
- * \param[in]      get_eval_at_cell_cw  pointer to a function
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       context              pointer to a structure (may be NULL)
+ * \param[in]       get_eval_at_cell     pointer to a function (may be NULL)
+ * \param[in]       get_eval_at_cell_cw  pointer to a function
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -676,24 +705,25 @@ cs_property_def_by_analytic(cs_property_t        *pty,
 
 cs_xdef_t *
 cs_property_def_by_func(cs_property_t         *pty,
-                        const char            *zone_name,
+                        const char            *zname,
                         void                  *context,
                         cs_xdef_eval_t        *get_eval_at_cell,
                         cs_xdef_eval_cw_t     *get_eval_at_cell_cw)
 {
+  int  def_id = _add_new_def(pty);
+  int  z_id = _get_vzone_id(zname);
+  cs_flag_t  state_flag = 0;
+  cs_flag_t  meta_flag = 0; // metadata
+
   int dim = 1;
   if (pty->type == CS_PROPERTY_ORTHO)
     dim = 3;
   else if (pty->type == CS_PROPERTY_ANISO)
     dim = 9;
 
-  int  def_id = _add_new_def(pty);
-  const cs_volume_zone_t  *zone = cs_volume_zone_by_name(zone_name);
-  cs_flag_t  state_flag = 0;
-  cs_flag_t  meta_flag = 0; // metadata
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_FUNCTION,
                                         dim,
-                                        zone->id,
+                                        z_id,
                                         state_flag,
                                         meta_flag,
                                         context);
@@ -726,9 +756,9 @@ cs_property_def_by_array(cs_property_t    *pty,
 {
   int  id = _add_new_def(pty);
   assert(id == 0);
-  /* zone->id = 0 since all the support is selected in this case */
+  /* z_id = 0 since all the support is selected in this case */
 
-  int dim = 1;
+  int  dim = 1;
   if (pty->type == CS_PROPERTY_ORTHO)
     dim = 3;
   else if (pty->type == CS_PROPERTY_ANISO)
@@ -798,7 +828,7 @@ cs_property_def_by_field(cs_property_t    *pty,
   /* Sanity checks */
   assert(dim == field->dim);
   assert(id == 0);
-  /* zone->id = 0 since all the support is selected in this case */
+  /* z_id = 0 since all the support is selected in this case */
 
   const cs_volume_zone_t  *z = cs_volume_zone_by_id(0);
   if (field->location_id != z->location_id)

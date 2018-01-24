@@ -282,9 +282,10 @@ cs_property_get_type(const cs_property_t   *pty)
  * \brief  Define an isotropic cs_property_t structure by value for entities
  *         related to a volume zone
  *
- * \param[in, out]  pty          pointer to a cs_property_t structure
- * \param[in]       zone_name    name of an already defined zone
- * \param[in]       val          value to set
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       val      value to set
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -292,7 +293,7 @@ cs_property_get_type(const cs_property_t   *pty)
 
 cs_xdef_t *
 cs_property_def_iso_by_value(cs_property_t    *pty,
-                             const char       *zone_name,
+                             const char       *zname,
                              double            val);
 
 /*----------------------------------------------------------------------------*/
@@ -300,9 +301,10 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
  * \brief  Define an orthotropic cs_property_t structure by value for entities
  *         related to a volume zone
  *
- * \param[in, out]  pty         pointer to a cs_property_t structure
- * \param[in]       zone_name   name of an already defined zone
- * \param[in]       val         values to set (vector of size 3)
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       val      values to set (vector of size 3)
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -310,7 +312,7 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
 
 cs_xdef_t *
 cs_property_def_ortho_by_value(cs_property_t    *pty,
-                               const char       *zone_name,
+                               const char       *zname,
                                double            val[]);
 
 /*----------------------------------------------------------------------------*/
@@ -318,9 +320,10 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
  * \brief  Define an anisotropic cs_property_t structure by value for entities
  *         related to a volume zone
  *
- * \param[in, out]  pty         pointer to a cs_property_t structure
- * \param[in]       zone_name   name of an already defined zone
- * \param[in]       tens        values to set (3x3 tensor)
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       tens     values to set (3x3 tensor)
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -328,7 +331,7 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
 
 cs_xdef_t *
 cs_property_def_aniso_by_value(cs_property_t    *pty,
-                               const char       *zone_name,
+                               const char       *zname,
                                cs_real_t         tens[3][3]);
 
 /*----------------------------------------------------------------------------*/
@@ -336,10 +339,11 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
  * \brief  Define a cs_property_t structure thanks to an analytic function in
  *         a subdomain attached to the mesh location named ml_name
  *
- * \param[in, out]  pty         pointer to a cs_property_t structure
- * \param[in]       zone_name   name of an already defined zone
- * \param[in]       func        pointer to a cs_analytic_func_t function
- * \param[in]       input       NULL or pointer to a structure cast on-the-fly
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       func     pointer to a cs_analytic_func_t function
+ * \param[in]       input    NULL or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -347,7 +351,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 
 cs_xdef_t *
 cs_property_def_by_analytic(cs_property_t        *pty,
-                            const char           *zone_name,
+                            const char           *zname,
                             cs_analytic_func_t   *func,
                             void                 *input);
 
@@ -357,11 +361,12 @@ cs_property_def_by_analytic(cs_property_t        *pty,
  *         scalar variable in a subdomain attached to the mesh location named
  *         ml_name
  *
- * \param[in, out] pty                  pointer to a cs_property_t structure
- * \param[in]      zone_name            name of an already defined zone
- * \param[in]      context              pointer to a structure (may be NULL)
- * \param[in]      get_eval_at_cell     pointer to a function (may be NULL)
- * \param[in]      get_eval_at_cell_cw  pointer to a function
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       context              pointer to a structure (may be NULL)
+ * \param[in]       get_eval_at_cell     pointer to a function (may be NULL)
+ * \param[in]       get_eval_at_cell_cw  pointer to a function
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -369,7 +374,7 @@ cs_property_def_by_analytic(cs_property_t        *pty,
 
 cs_xdef_t *
 cs_property_def_by_func(cs_property_t         *pty,
-                        const char            *zone_name,
+                        const char            *zname,
                         void                  *context,
                         cs_xdef_eval_t        *get_eval_at_cell,
                         cs_xdef_eval_cw_t     *get_eval_at_cell_cw);
