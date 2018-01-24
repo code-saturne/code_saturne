@@ -54,56 +54,96 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Store common elements used when building an algebraic system related to
-   an equation */
+/*! \struct cs_equation_builder_t
+ *  \brief Store common elements used when building an algebraic system
+ *  related to an equation
+ */
+
 typedef struct {
 
-  /* Shortcut to know what to build */
-  cs_flag_t    msh_flag;     // Information related to cell mesh
-  cs_flag_t    bd_msh_flag;  // Information related to cell mesh (boundary)
-  cs_flag_t    st_msh_flag;  // Information related to cell mesh (source term)
-  cs_flag_t    sys_flag;     // Information related to the sytem
+  /*!
+   * @name Flags to know what to build and how to build such terms
+   * @{
+   */
 
-  /* Metadata related to associated properties */
-  bool         diff_pty_uniform;
-  bool         time_pty_uniform;
-  bool         reac_pty_uniform[CS_CDO_N_MAX_REACTIONS];
+  cs_flag_t    msh_flag;     /*!< Information related to what to build in a
+                              *   \ref cs_cell_mesh_t structure for a generic
+                              *   cell */
+  cs_flag_t    bd_msh_flag;  /*!< Information related to what to build in a
+                              *   \ref cs_cell_mesh_t structure for a cell close
+                              *   to the boundary */
+  cs_flag_t    st_msh_flag;  /*!< Information related to what to build in a
+                              *   \ref cs_cell_mesh_t structure when only the
+                              *   source term has to be built */
+  cs_flag_t    sys_flag;     /*!< Information related to the sytem */
 
-  /* Source terms */
-  cs_mask_t   *source_mask;  /* NULL if at least one source term is not
-                                defined for all cells (size = n_cells) */
+  /*!
+   * @}
+   * @name Metadata related to associated physical properties
+   * @{
+   */
 
-  /* Pointer to functions which compute the value of the source term */
+  bool   diff_pty_uniform;      /*!< Is diffusion property uniform ? */
+  bool   time_pty_uniform;      /*!< Is time property uniform ? */
+  bool   reac_pty_uniform[CS_CDO_N_MAX_REACTIONS]; /*!< Is each reaction
+                                                    * property uniform ? */
+
+  /*!
+   * @}
+   * @name Source terms
+   * @{
+   */
+
+  cs_mask_t   *source_mask;  /*!< NULL if no source term or one source term
+                              * is defined. Allocated to n_cells in order to
+                              * know in each cell which source term has to be
+                              * computed */
+
+  /*! \var compute_source
+   * Pointer to functions which compute the value of the source term
+   */
+
   cs_source_term_cellwise_t  *compute_source[CS_N_MAX_SOURCE_TERMS];
 
-  /* Boundary conditions:
+  /*!
+   * @}
+   * @name Boundary conditions
+   * @{
+   *
+   * \var face_bc
+   * face_bc should not change during the simulation.
+   * The case of a definition of the BCs which changes of type during the
+   * simulation is possible but not implemented.
+   * You just have to call the initialization step each time the type of BCs
+   * is modified to define an updated \ref cs_cdo_bc_t structure.
+   */
 
-     face_bc should not change during the simulation.
-     The case of a definition of the BCs which changes of type during the
-     simulation is possible but not implemented.
-     You just have to call the initialization step each time the type of BCs
-     is modified to define an updated cs_cdo_bc_t structure.
-  */
+  cs_cdo_bc_t           *face_bc; /*!< list of faces sorted by type of BCs */
 
-  cs_cdo_bc_t           *face_bc; // list of faces sorted by type of BCs
+  /*!
+   * @}
+   * @name Performance monitoring
+   * @{
+   *
+   * Monitoring the efficiency of the algorithm used to manipulate/build
+   * an equation.
+   */
 
-  /* Monitoring the efficiency of the algorithm used to manipulate/build
-     an equation builder. */
-  cs_timer_counter_t               tcb; /* Cumulated elapsed time for building
-                                           the current system */
-  /* tcb >= tcd + tca + tcr + tcs */
-  cs_timer_counter_t               tcd; /* Cumulated elapsed time for building
-                                           diffusion terms */
-  cs_timer_counter_t               tca; /* Cumulated elapsed time for building
-                                           advection terms */
-  cs_timer_counter_t               tcr; /* Cumulated elapsed time for building
-                                           reaction terms */
-  cs_timer_counter_t               tcs; /* Cumulated elapsed time for building
-                                           source terms */
+  cs_timer_counter_t     tcb; /*!< Cumulated elapsed time for building the
+                               *   current system: tcb >= tcd+tca+tcr+tcs+tcs */
+  cs_timer_counter_t     tcd; /*!< Cumulated elapsed time for building
+                               *   diffusion terms */
+  cs_timer_counter_t     tca; /*!< Cumulated elapsed time for building
+                               *   advection terms */
+  cs_timer_counter_t     tcr; /*!< Cumulated elapsed time for building
+                               *   reaction terms */
+  cs_timer_counter_t     tcs; /*!< Cumulated elapsed time for building
+                               *   source terms */
+  cs_timer_counter_t     tce; /*!< Cumulated elapsed time for computing
+                               *   all extra operations (post, balance,
+                               *   fluxes...) */
 
-  cs_timer_counter_t               tce; /* Cumulated elapsed time for computing
-                                           all extra operations (post, balance,
-                                           fluxes...) */
+  /*! @} */
 
 } cs_equation_builder_t;
 

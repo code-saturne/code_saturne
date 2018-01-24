@@ -443,7 +443,7 @@ cs_cdofb_scaleq_finalize(void)
 
 void *
 cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
-                          cs_equation_builder_t       *eqb)
+                             cs_equation_builder_t       *eqb)
 {
   /* Sanity checks */
   assert(eqp != NULL && eqb != NULL);

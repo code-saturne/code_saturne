@@ -94,23 +94,45 @@ typedef cs_real_t
  * ENUM definitions
  * ================ */
 
-/* Type of numerical scheme for the discretization in space */
+/*! \enum cs_param_space_scheme_t
+ *  \brief Type of numerical scheme for the discretization in space
+ *
+ * \var CS_SPACE_SCHEME_LEGACY
+ * Cell-centered Finite Volume Two-Point Flux
+ *
+ * \var CS_SPACE_SCHEME_CDOVB
+ * CDO scheme with vertex-based positionning
+ *
+ * \var CS_SPACE_SCHEME_CDOVCB
+ * CDO scheme with vertex+cell-based positionning
+ *
+ * \var CS_SPACE_SCHEME_CDOFB
+ * CDO scheme with vertex+cell-based positionning
+ *
+ * \var CS_SPACE_SCHEME_HHO_P0
+ * CDO scheme with vertex+cell-based positionning
+ *
+ * \var CS_SPACE_SCHEME_HHO_P1
+ * CDO scheme with vertex+cell-based positionning
+ *
+ * \var CS_SPACE_SCHEME_HHO_P2
+ * CDO scheme with vertex+cell-based positionning
+ */
+
 typedef enum {
 
-  CS_SPACE_SCHEME_LEGACY, /* Cell-centered Finite Volume Two-Point Flux */
-  CS_SPACE_SCHEME_CDOVB,  /* CDO scheme with vertex-based positionning */
-  CS_SPACE_SCHEME_CDOVCB, /* CDO scheme with vertex+cell-based positionning */
-  CS_SPACE_SCHEME_CDOFB,  /* CDO cell-based scheme with hybridization */
-  CS_SPACE_SCHEME_HHO_P0, /* Hybrid High Order scheme; P0 approx. of gradient */
-  CS_SPACE_SCHEME_HHO_P1, /* Hybrid High Order scheme; P1 approx. of gradient */
-  CS_SPACE_SCHEME_HHO_P2, /* Hybrid High Order scheme; P2 approx. of gradient */
+  CS_SPACE_SCHEME_LEGACY,
+  CS_SPACE_SCHEME_CDOVB,
+  CS_SPACE_SCHEME_CDOVCB,
+  CS_SPACE_SCHEME_CDOFB,
+  CS_SPACE_SCHEME_HHO_P0,
+  CS_SPACE_SCHEME_HHO_P1,
+  CS_SPACE_SCHEME_HHO_P2,
 
   CS_SPACE_N_SCHEMES
 
 } cs_param_space_scheme_t;
 
-/* TIME SCHEME */
-/* =========== */
 /*! \enum cs_param_space_scheme_t
  *  \brief How is defined the degree of freedom
  *
@@ -132,49 +154,122 @@ typedef enum {
 
 } cs_param_dof_reduction_t;
 
-/* Type of numerical scheme for the discretization in time */
+/*!
+ * @name Numerical settings for time discretization
+ * @{
+ *
+ * \enum cs_param_time_scheme_t
+ *   Type of numerical scheme for the discretization in time
+ *
+ * \var CS_TIME_SCHEME_IMPLICIT
+ * fully implicit (forward Euler/theta-scheme = 1)
+ *
+ * \var CS_TIME_SCHEME_EXPLICIT
+ * fully explicit (backward Euler/theta-scheme = 0)
+ *
+ * \var CS_TIME_SCHEME_CRANKNICO
+ * Crank-Nicolson (theta-scheme = 0.5)
+ *
+ * \var CS_TIME_SCHEME_THETA
+ * theta-scheme
+ */
+
 typedef enum {
 
-  /* fully implicit (forward Euler/theta-scheme = 1) */
   CS_TIME_SCHEME_IMPLICIT,
-  /* fully explicit (backward Euler/theta-scheme = 0) */
   CS_TIME_SCHEME_EXPLICIT,
-   /* Crank-Nicolson (theta-scheme = 0.5) */
   CS_TIME_SCHEME_CRANKNICO,
-  /* theta-scheme */
   CS_TIME_SCHEME_THETA,
-  /* Undefined */
+
   CS_TIME_N_SCHEMES
 
 } cs_param_time_scheme_t;
 
-/* ADVECTION OPERATOR PARAMETRIZATION */
-/* ================================== */
+/*!
+ * @}
+ * @name Settings for the advection term
+ * @{
+ *
+ * \enum cs_param_advection_form_t
+ * Type of formulation for the advection term
+ *
+ * \var CS_PARAM_ADVECTION_FORM_CONSERV
+ * conservative formulation (i.e. divergence of a flux)
+ *
+ * \var CS_PARAM_ADVECTION_FORM_NONCONS
+ * non-conservative formation (i.e advection field times
+ * the gradient)
+ *
+ */
 
 typedef enum {
 
   CS_PARAM_ADVECTION_FORM_CONSERV,
   CS_PARAM_ADVECTION_FORM_NONCONS,
+
   CS_PARAM_N_ADVECTION_FORMULATIONS
 
 } cs_param_advection_form_t;
 
-/* Type of weight functions considered */
+/*! \enum cs_param_advection_scheme_t
+ * Type of numerical scheme for the advection term
+ *
+ * \var CS_PARAM_ADVECTION_SCHEME_CENTERED
+ * centered discretization
+ *
+ * \var CS_PARAM_ADVECTION_SCHEME_CIP
+ * Continuous Interior Penalty discretization. Only available for
+ * \ref CS_SPACE_SCHEME_CDOVCB
+ *
+ * \var CS_PARAM_ADVECTION_SCHEME_UPWIND
+ * Low order upwind discretization
+ *
+ * \var CS_PARAM_ADVECTION_SCHEME_SAMARSKII
+ * Weighting between an upwind and a centered discretization relying on the
+ * Peclet number. Weighting function = Samarskii
+ *
+ * \var CS_PARAM_ADVECTION_SCHEME_SG
+ * Weighting between an upwind and a centered discretization relying on the
+ * Peclet number. Weighting function = Scharfetter-Gummel
+ */
+
 typedef enum {
 
   CS_PARAM_ADVECTION_SCHEME_CENTERED,
-  CS_PARAM_ADVECTION_SCHEME_CIP,        // Only V+C CDO schemes
+  CS_PARAM_ADVECTION_SCHEME_CIP,
   CS_PARAM_ADVECTION_SCHEME_UPWIND,
   CS_PARAM_ADVECTION_SCHEME_SAMARSKII,
   CS_PARAM_ADVECTION_SCHEME_SG,
+
   CS_PARAM_N_ADVECTION_SCHEMES
 
 } cs_param_advection_scheme_t;
 
-/* BOUNDARY CONDITIONS */
-/* =================== */
+/*!
+ * @}
+ * @name Settings for the boundary conditions
+ * @{
+ *
+ * \enum cs_param_bc_type_t
+ * Type of boundary condition to enforce.
+ *
+ * \var CS_PARAM_BC_HMG_DIRICHLET
+ * Homogeneous Dirichlet boundary conditions. The value of a variable is set
+ * to zero.
+ *
+ * \var CS_PARAM_BC_DIRICHLET
+ * Dirichlet boundary conditions. The value of the variable is set to the user
+ * requirements.
+ *
+ * \var CS_PARAM_BC_HMG_NEUMANN
+ * Homogeneous Neumann conditions. The value of the flux of variable is set
+ * to zero.
+ *
+ * \var CS_PARAM_BC_NEUMANN
+ * Neumann conditions. The value of the flux of variable is set to the user
+ * requirements.
+ */
 
-/* Mathematical boundary conditions */
 typedef enum {
 
   CS_PARAM_BC_HMG_DIRICHLET,
@@ -186,38 +281,75 @@ typedef enum {
 
 } cs_param_bc_type_t;
 
-/* Choice between different method to enforce the BCs */
+/*! \enum cs_param_bc_enforce_t
+ * Type of method for enforcing the boundary conditions. According to the type
+ * of numerical scheme, some enforcements are not available.
+ *
+ * \var CS_PARAM_BC_ENFORCE_STRONG
+ * Strong enforcement of the boundary conditions. Degrees of freedom related
+ * to this boundary condition are removed from the algebraic system.
+ *
+ * \var CS_PARAM_BC_ENFORCE_WEAK_PENA
+ * Weak enforcement of the boundary conditions (i.e. one keeps the degrees of
+ * freedom in the algebraic system) with a penalization technique using a huge
+ * value.
+ *
+ * \var CS_PARAM_BC_ENFORCE_WEAK_NITSCHE
+ * Weak enforcement of the boundary conditions (i.e. one keeps the degrees of
+ * freedom in the algebraic system) with a Nitsche-like penalization technique.
+ * This technique does not increase the conditioning number as much as
+ * \ref CS_PARAM_BC_ENFORCE_WEAK_PENA but is more computationally intensive.
+ *
+ * \var CS_PARAM_BC_ENFORCE_WEAK_SYM
+ * Weak enforcement of the boundary conditions (i.e. one keeps the degrees of
+ * freedom in the algebraic system) with a Nitsche-like penalization technique.
+ * This variant enables to keep the symmetry of the algebraic contrary to
+ * \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE.
+ */
+
 typedef enum {
 
-  CS_PARAM_BC_ENFORCE_STRONG,       /* Strong enforcement of the BCs */
-  CS_PARAM_BC_ENFORCE_WEAK_PENA,    /* Weak enforcement with a strong
-                                       penalization coefficient */
-  CS_PARAM_BC_ENFORCE_WEAK_NITSCHE, /* Weak enforcement using Nitsche method */
-  CS_PARAM_BC_ENFORCE_WEAK_SYM,     /* Weak enforcement using symmetric Nitsche
-                                       method */
+  CS_PARAM_BC_ENFORCE_STRONG,
+  CS_PARAM_BC_ENFORCE_WEAK_PENA,
+  CS_PARAM_BC_ENFORCE_WEAK_NITSCHE,
+  CS_PARAM_BC_ENFORCE_WEAK_SYM,
+
   CS_PARAM_N_BC_ENFORCEMENTS
 
 } cs_param_bc_enforce_t;
 
-/* ITERATIVE SOLVERS */
-/* ================= */
+/*!
+ * @}
+ * @name Settings for the linear solvers
+ * @{
+ *
+ * \enum cs_param_precond_type_t
+ * Type of preconditionner to use with the iterative solver. Some
+ * preconditionners as \ref CS_PARAM_PRECOND_ILU0, \ref CS_PARAM_PRECOND_ICC0 or
+ * \ref CS_PARAM_PRECOND_AS are available only with the PETSc interface.
+ */
 
 typedef enum {
 
-  CS_PARAM_PRECOND_NONE,    // No preconditioning
-  CS_PARAM_PRECOND_DIAG,    // Diagonal preconditioning (also called Jacobi)
-  CS_PARAM_PRECOND_BJACOB,  // Block Jacobi
-  CS_PARAM_PRECOND_POLY1,   // Neumann polynomial preconditioning (Order 1)
-  CS_PARAM_PRECOND_SSOR,    // Symmetric Successive OverRelaxations
-  CS_PARAM_PRECOND_ILU0,    // Incomplete LU factorization
-  CS_PARAM_PRECOND_ICC0,    // Incomplete Cholesky factorization
-  CS_PARAM_PRECOND_AMG,     // Algebraic MultiGrid
-  CS_PARAM_PRECOND_AS,      // Additive Schwarz method
+  CS_PARAM_PRECOND_NONE,    /*!< No preconditioning */
+  CS_PARAM_PRECOND_DIAG,    /*!< Diagonal (or Jacobi) preconditioning */
+  CS_PARAM_PRECOND_BJACOB,  /*!< Block Jacobi */
+  CS_PARAM_PRECOND_POLY1,   /*!< Neumann polynomial preconditioning (Order 1) */
+  CS_PARAM_PRECOND_SSOR,    /*!< Symmetric Successive OverRelaxations */
+  CS_PARAM_PRECOND_ILU0,    /*!< Incomplete LU factorization */
+  CS_PARAM_PRECOND_ICC0,    /*!< Incomplete Cholesky factorization */
+  CS_PARAM_PRECOND_AMG,     /*!< Algebraic MultiGrid */
+  CS_PARAM_PRECOND_AS,      /*!< Additive Schwarz method */
   CS_PARAM_N_PRECOND_TYPES
 
 } cs_param_precond_type_t;
 
-/* Type of iterative solver to use to inverse the linear system */
+/*!
+ * \enum cs_param_itsol_type_t
+ * Type of iterative solver to use to inverse the linear system.
+ * \ref CS_PARAM_ITSOL_CR3 is available only inside the Code_Saturne framework.
+ */
+
 typedef enum {
 
   CS_PARAM_ITSOL_JACOBI,    /*!< Jacobi */
@@ -231,17 +363,25 @@ typedef enum {
 
 } cs_param_itsol_type_t;
 
-/* Description of the algorithm used to solve an equation */
+/*!
+ * \struct cs_param_itsol_t
+ * \brief Structure storing all metadata related to the resolution of a linear
+ *        system with an iterative solver.
+ */
+
 typedef struct {
 
-  cs_param_precond_type_t  precond; /* type of preconditioner */
-  cs_param_itsol_type_t    solver;  /* type of solver */
+  cs_param_precond_type_t  precond; /*!< type of preconditioner */
+  cs_param_itsol_type_t    solver;  /*!< type of solver */
 
-  int          n_max_iter;          /* max. number of iterations */
-  double       eps;                 /* stopping criterion on accuracy */
-  bool         resid_normalized;    /* normalized or not the norm of the
-                                       residual used for the stopping
-                                       criterion */
+  int          n_max_iter;          /*!< max. number of iterations */
+  double       eps;                 /*!< stopping criterion on accuracy */
+
+  /*! \var resid_normalized
+   *  normalized or not the norm of the residual used for the stopping criterion
+   */
+  bool         resid_normalized;
+
 } cs_param_itsol_t;
 
 /*============================================================================

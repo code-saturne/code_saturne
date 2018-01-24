@@ -47,6 +47,34 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*!
+ * \enum cs_xdef_type_t
+ *
+ * \var CS_XDEF_BY_ANALYTIC_FUNCTION
+ * Definition relying on an analytic function (see \ref cs_analytic_func_t)
+ *
+ * \var CS_XDEF_BY_ARRAY
+ * Definition based on an array
+ *
+ * \var CS_XDEF_BY_FIELD
+ * Definition based on a field (see \ref cs_field_t)
+ *
+ * \var CS_XDEF_BY_FUNCTION
+ * Definition relying on a generic user-defined function. TODO
+ *
+ * \var CS_XDEF_BY_QOV
+ * QOV = Quantity Over a Volume
+ * Definition which enables to spread a given quantity inside a volume.
+ * Useful to initialized a tracer in a subdomain for instance.
+ *
+ * \var CS_XDEF_BY_TIME_FUNCTION
+ * Definition relying on a function for setting the time step (see
+ * \ref cs_timestep_func_t)
+ *
+ * \var CS_XDEF_BY_VALUE
+ * Simple definition by a constant value
+ */
+
 typedef enum {
 
   CS_XDEF_BY_ANALYTIC_FUNCTION,
@@ -56,63 +84,151 @@ typedef enum {
   CS_XDEF_BY_QOV,
   CS_XDEF_BY_TIME_FUNCTION,
   CS_XDEF_BY_VALUE,
+
   CS_N_XDEF_TYPES
 
 } cs_xdef_type_t;
+
+/*!
+ * \enum cs_xdef_support_t
+ *
+ * \var CS_XDEF_SUPPORT_TIME
+ * Definition for the time step. No zone is attached.
+ *
+ * \var CS_XDEF_SUPPORT_BOUNDARY
+ * Definition for a boundary zone. Zones are attached to a list of boundary
+ * faces.
+ *
+ * \var CS_XDEF_SUPPORT_VOLUME
+ * Definition for a volumic zone. Zones are attached to a list of cells.
+ */
 
 typedef enum {
 
   CS_XDEF_SUPPORT_TIME,      /* support for time step description */
   CS_XDEF_SUPPORT_BOUNDARY,  /* zones attached to boundary faces */
-  CS_XDEF_SUPPORT_VOLUME,    /* zones attached to cells */
+  CS_XDEF_SUPPORT_VOLUME,
+
   CS_N_XDEF_SUPPORTS
 
 } cs_xdef_support_t;
 
+/*!
+ * \struct cs_xdef_t
+ *  \brief Structure storing medata for defining a quantity in a very flexible
+ *         way
+ */
+
 typedef struct {
 
-  int                    dim;      /* dimension of the values attached to
-                                      this description */
-  cs_xdef_type_t         type;     /* type of definition */
+  /*! \var dim
+   * dimension of the values attached to this description
+   *
+   * \var type
+   * type of definition (see \ref cs_xdef_type_t)
+   *
+   * \var z_id
+   * id related to a zone (volume or boundary) for this definition
+   *
+   * \var support
+   * support for this definition (see \ref cs_xdef_support_t)
+   *
+   * \var state
+   * Flag storing state of the values related to this definition
+   * Example: steady, uniform, cellwise...
+   *
+   * \var meta
+   * Flag storing in a condensed way metadata about the description.
+   * These metadata may vary according to the object on which the description
+   * applies.
+   *
+   * \var qtype
+   * type of quadrature to use for evaluating the description (see
+   * \ref cs_quadrature_type_t)
+   *
+   * \var input
+   * Pointer to a structure cast on-the-fly according to the type of description
+   * May be set to NULL or \ref cs_xdef_array_input_t or
+   * \ref cs_xdef_analytic_input_t or \ref cs_xdef_timestep_input_t
+   */
 
-  int                    z_id;     /* zone id related to this definition */
-  cs_xdef_support_t      support;  /* support for this definition */
+  int                    dim;
+  cs_xdef_type_t         type;
+  int                    z_id;
+  cs_xdef_support_t      support;
 
-  cs_flag_t              state;    /* steady, uniform, cellwise... */
-  cs_flag_t              meta;     /* Metadata about the descitption. These
-                                      metadata may vary according to the object
-                                      on which the description applies */
-  cs_quadrature_type_t   qtype;    /* type of quadrature to use for evaluating
-                                      the description */
+  cs_flag_t              state;
+  cs_flag_t              meta;
 
-  void                  *input;    /* pointer to metadat to complete
-                                      the description */
+  cs_quadrature_type_t   qtype;
+
+  void                  *input;
 
 } cs_xdef_t;
 
-/* Input structure when an array is used for the definition */
+/*!
+ * \struct cs_xdef_array_input_t
+ * \brief Input structure when an array is used for the definition
+ */
+
 typedef struct {
 
-  int               stride;  /* array stride */
-  cs_flag_t         loc;     /* flag to know where are defined array values */
-  cs_real_t        *values;  /* array values */
-  const cs_lnum_t  *index;   /* optional index for accessing to the values */
+  /*! * \var stride
+   * stride to access the array values
+   *
+   * \var loc
+   * flag to know where are defined array values
+   *
+   * \var values
+   * array values
+   *
+   * \var index
+   * optional index for accessing to the values
+   */
+
+  int           stride;
+  cs_flag_t     loc;
+  cs_real_t    *values;
+  cs_lnum_t    *index;
 
 } cs_xdef_array_input_t;
 
-/* Input structure when an analytic function is used for the definition */
+/*!
+ * \struct cs_xdef_analytic_input_t
+ * \brief Input structure when an analytic function is used for the definition
+ */
+
 typedef struct {
 
-  void                *input;  // NULL or pointer to a structure cast on-the-fly
-  cs_analytic_func_t  *func;   // function to call
+  /*! \var input
+   * NULL or pointer to a structure cast on-the-fly for additional information
+   * used in the function
+   */
+  void                *input;
+
+  /*! \var func
+   * \ref cs_analytic_func_t to call
+   */
+  cs_analytic_func_t  *func;
 
 } cs_xdef_analytic_input_t;
 
-/* Input structure when an analytic function is used for the definition */
+/*!
+ * \struct cs_xdef_timestep_input_t
+ * \brief Input structure when a time step function is used for the definition
+ */
+
 typedef struct {
 
-  void                *input;  // NULL or pointer to a structure cast on-the-fly
-  cs_timestep_func_t  *func;   // function to call
+  /*! \var input
+   * NULL or pointer to a structure cast on-the-fly for additional information
+   * used in the function
+   *
+   * \var func
+   * \ref cs_timestep_func_t to call
+   */
+  void                *input;
+  cs_timestep_func_t  *func;
 
 } cs_xdef_timestep_input_t;
 
