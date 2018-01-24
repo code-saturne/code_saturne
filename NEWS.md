@@ -3,6 +3,12 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add mesh refinement engine.
+  * Currently only hexahedra and "generic" polyhedral refinement
+    templates are available.
+  * Coarsening not available at this stage.
+  * Load balancing currently handled through complete repartitioning.
+
 - Coal combustion:
   * The CO2 transport kinetic model may now be set with the GUI.
   * Fuel definitions must now always be done through
@@ -55,7 +61,8 @@ Architectural changes:
   is only functionnal for NEPTUNE_CFD at the moment.
 
 - Add "--with-vofi=path_to_vofi_build" configure option to build and install
-  with the VOFI (VoF initialization) library
+  with the VOFI (VoF initialization) library (only for some research uses;
+  that library's licence is too restrictive for most uses).
 
 Bug fixes:
 

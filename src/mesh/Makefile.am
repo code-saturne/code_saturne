@@ -74,6 +74,7 @@ cs_mesh_halo.h \
 cs_mesh_location.h \
 cs_mesh_quality.h \
 cs_mesh_quantities.h \
+cs_mesh_refine.h \
 cs_mesh_save.h \
 cs_mesh_thinwall.h \
 cs_mesh_to_builder.h \
@@ -113,6 +114,7 @@ cs_mesh_halo.c \
 cs_mesh_location.c \
 cs_mesh_quality.c \
 cs_mesh_quantities.c \
+cs_mesh_refine.c \
 cs_mesh_save.c \
 cs_mesh_thinwall.c \
 cs_mesh_to_builder.c \
