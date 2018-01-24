@@ -555,28 +555,28 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       eqp->space_poly_degree = 0;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
     }
     else if (strcmp(val, "hho_p0") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P0;
       eqp->space_poly_degree = 0;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
     }
     else if (strcmp(val, "hho_p1") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P1;
       eqp->space_poly_degree = 1;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
     }
     else if (strcmp(val, "hho_p2") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P2;
       eqp->space_poly_degree = 2;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
     }
     else {
       const char *_val = val;
