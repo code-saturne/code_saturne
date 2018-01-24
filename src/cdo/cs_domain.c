@@ -584,6 +584,11 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
 
   cs_xdef_t  *ts_def = domain->time_step_def;
 
+  if (ts_def == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Please check your settings: Unsteady computation but no"
+              " current time step defined.\n");
+
   if (ts_def->type != CS_XDEF_BY_VALUE) { /* dt_cur may change */
 
     if (ts_def->type == CS_XDEF_BY_TIME_FUNCTION) {
