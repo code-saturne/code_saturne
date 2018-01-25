@@ -49,8 +49,8 @@ BEGIN_C_DECLS
 
 /* Flag related to the activation (or not) of the CDO schemes */
 #define CS_DOMAIN_CDO_MODE_OFF     -1 // CDO schemes are not used
-#define CS_DOMAIN_CDO_MODE_WITH_FV  0 // CDO and legacy FV schemes are used
-#define CS_DOMAIN_CDO_MODE_ONLY     1 // CDO schemes are exclusively used
+#define CS_DOMAIN_CDO_MODE_WITH_FV  1 // CDO and legacy FV schemes are used
+#define CS_DOMAIN_CDO_MODE_ONLY     2 // CDO schemes are exclusively used
 
 /*============================================================================
  * Type definitions

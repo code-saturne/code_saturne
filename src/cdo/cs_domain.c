@@ -207,6 +207,9 @@ cs_domain_create(void)
   domain->boundary->zone_ids = NULL;
   domain->boundary->zone_type = NULL;
 
+  /* By default: CDO-HHO schemes are not activated */
+  cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
+
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(domain->tcp); // domain post
   CS_TIMER_COUNTER_INIT(domain->tcs); // domain setup
@@ -279,6 +282,8 @@ cs_domain_set_cdo_mode(cs_domain_t    *domain,
     domain->cdo_context = _create_cdo_context(mode);
   else
     domain->cdo_context->mode = mode;
+
+  CS_PROCF(set_cdo_mode, SET_CDO_MODE)(&mode);
 }
 
 /*----------------------------------------------------------------------------*/

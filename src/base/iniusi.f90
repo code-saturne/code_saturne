@@ -76,6 +76,7 @@ use cs_coal_incl
 use cs_c_bindings
 use cs_cf_bindings
 use field
+use cdomod
 
 !===============================================================================
 
@@ -205,8 +206,9 @@ iihmpu = iihmpr
 call usppmo(iihmpu)
 
 ! Define fields for variables, check and build iscapp
-
-call fldvar(nmodpp)
+if (icdo.lt.2) then
+   call fldvar(nmodpp)
+endif
 
 if (iihmpr.eq.1) then
   call csivis
@@ -249,9 +251,10 @@ if (iihmpr.eq.1) then
 
 endif
 
-! Define main properties (pointers, checks, ipp)
-
-call fldprp
+! Define main properties (pointers, checks, ipp) if not in CDO mode only
+if (icdo.lt.2) then
+   call fldprp
+endif
 
 !===============================================================================
 ! 4. INITIALISATION DE PARAMETRES UTILISATEUR SUPPLEMENTAIRES
@@ -278,16 +281,21 @@ if (iihmpr.eq.1) then
 
   call uinum1(cdtvar)
 
-  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+  ! If CDO mode only, no pressure is defined at this stage
+  if (icdo.lt.2) then
 
-!     Options numériques globales
-  relaxp = -999.d0
-  extrap = 0.d0
-  call csnum2 (relaxp, extrap, imrgra)
-  vcopt%extrag = extrap
-  if (idtvar.ge.0) vcopt%relaxv = relaxp
+     call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
-  call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+     !     Options numériques globales
+     relaxp = -999.d0
+     extrap = 0.d0
+     call csnum2 (relaxp, extrap, imrgra)
+     vcopt%extrag = extrap
+     if (idtvar.ge.0) vcopt%relaxv = relaxp
+
+     call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
+  endif
 
 !     Gravite, prop. phys
   call csphys(viscv0, visls0, itempk)

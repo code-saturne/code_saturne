@@ -44,6 +44,7 @@ use cpincl
 use dimens
 use radiat
 use cs_fuel_incl
+use cdomod
 
 !===============================================================================
 
@@ -132,9 +133,11 @@ call cs_rad_transfer_options
 
 if (ippmod(iatmos).ge.0) call cs_at_data_assim_initialize
 
-! Additional fields
+! Additional fields if not in CDO mode only
 
-call addfld
+if (icdo.lt.2) then
+   call addfld
+endif
 
 ! Time moments
 
@@ -179,13 +182,21 @@ call ussatc
 ! 4. MODIFS APRES USINI1
 !===============================================================================
 
-call modini
+! Do not call this routine if CDO mode only (default variables and properties
+! are not defined anymore)
+if (icdo.lt.2) then
+   call modini
+endif
 
 !===============================================================================
 ! 5. Some additional fields and mappings
 !===============================================================================
 
-call fldini
+! Do not call this routine if CDO mode only (default variables and properties
+! are not defined anymore)
+if (icdo.lt.2) then
+   call fldini
+endif
 
 call gui_postprocess_fields
 
@@ -201,8 +212,11 @@ call user_linear_solvers
 
 iok = 0
 
-call verini (iok)
-call parameters_check
+! No verification in CDO mode only. This done elsewhere
+if (icdo.lt.2) then
+   call verini (iok)
+   call parameters_check
+endif
 
 if(iok.gt.0) then
   write(nfecra,9999)iok
