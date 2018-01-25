@@ -73,7 +73,8 @@ AM_LDFLAGS =
 EXTRA_DIST = cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 cs_user_extra_operations.f90 \
 cs_user_head_losses.f90 cs_user_initialization.f90  \
-cs_user_parameters.f90 cs_user_physical_properties.f90
+cs_user_parameters.f90 cs_user_physical_properties.f90 \
+cs_user_porosity.f90
 
 # Library source files
 
@@ -103,7 +104,7 @@ cs_user_performance_tuning.c \
 cs_user_physical_properties.c \
 cs_user_postprocess.c \
 cs_user_postprocess_var.f90 \
-cs_user_porosity.f90 \
+cs_user_porosity.c \
 cs_user_radiative_transfer.c \
 cs_user_radiative_transfer_bcs.c \
 cs_user_solver.c \
@@ -184,18 +185,30 @@ cs_f_user_physical_properties.obj: $(cs_user_f_physical_properties)
 cs_f_user_physical_properties.lo: $(cs_user_f_physical_properties)
 	$(LTFCCOMPILE) -c -o cs_f_user_physical_properties.o $(cs_user_f_physical_properties)
 
+cs_user_f_porosity = $(top_srcdir)/src/user/cs_user_porosity.f90
+
+cs_f_user_porosity.o: $(cs_user_f_porosity)
+	$(FCCOMPILE) -c -o cs_f_user_porosity.o  $(cs_user_f_porosity)
+
+cs_f_user_porosity.obj: $(cs_user_f_porosity)
+	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_porosity)`
+
+cs_f_user_porosity.lo: $(cs_user_f_porosity)
+	$(LTFCCOMPILE) -c -o cs_f_user_porosity.o $(cs_user_f_porosity)
+
 noinst_LTLIBRARIES = libcsuser.la
 libcsuser_la_SOURCES = $(userfiles)
 libcsuser_la_LIBADD = cs_f_user_parameters.lo cs_f_user_extra_operations.lo \
 cs_f_user_initialization.lo cs_f_user_physical_properties.lo \
-cs_f_user_boundary_conditions.lo cs_f_user_head_losses.lo
+cs_f_user_boundary_conditions.lo cs_f_user_head_losses.lo \
+cs_f_user_porosity.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
 userdir = $(pkgdatadir)/user
 user_DATA = $(userfiles) cs_user_modules.f90 cs_user_parameters.f90 \
 cs_user_extra_operations.f90 cs_user_physical_properties.f90 \
-cs_user_initialization.f90 cs_user_boundary_conditions.f90
-
+cs_user_initialization.f90 cs_user_boundary_conditions.f90 \
+cs_user_porosity.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

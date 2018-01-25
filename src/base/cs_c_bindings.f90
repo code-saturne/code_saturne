@@ -760,6 +760,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief  General user parameters
+
+    subroutine user_porosity()  &
+      bind(C, name='cs_user_porosity')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine user_porosity
+
+    !---------------------------------------------------------------------------
+
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
 
     !---------------------------------------------------------------------------
