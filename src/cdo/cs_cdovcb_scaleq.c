@@ -395,11 +395,11 @@ _set_cip_coef(const cs_equation_param_t  *eqp)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_initialize(const cs_cdo_quantities_t    *quant,
-                            const cs_cdo_connect_t       *connect,
-                            const cs_time_step_t         *time_step,
-                            const cs_matrix_assembler_t  *ma,
-                            const cs_matrix_structure_t  *ms)
+cs_cdovcb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
+                             const cs_cdo_connect_t       *connect,
+                             const cs_time_step_t         *time_step,
+                             const cs_matrix_assembler_t  *ma,
+                             const cs_matrix_structure_t  *ms)
 {
   /* Assign static const pointers */
   cs_shared_quant = quant;
@@ -469,7 +469,7 @@ cs_cdovcb_scaleq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_finalize(void)
+cs_cdovcb_scaleq_finalize_common(void)
 {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel

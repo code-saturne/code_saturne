@@ -1935,8 +1935,8 @@ _main_hho_schemes(FILE             *out_hho,
   cs_cell_builder_t  *cb = NULL;
   cs_cell_sys_t  *csys = NULL;
 
-  cs_hho_scaleq_initialize(flag, quant, connect, time_step,
-                           NULL, NULL, NULL, NULL, NULL, NULL);
+  cs_hho_scaleq_init_common(flag, quant, connect, time_step,
+                            NULL, NULL, NULL, NULL, NULL, NULL);
   cs_hho_scaleq_get(&csys, &cb, &hhob);
 
   int order = 0;
@@ -1960,7 +1960,7 @@ _main_hho_schemes(FILE             *out_hho,
   /* _test_basis_functions(out_hho, order, cm, cb); */
   _test_hho_schemes(out_hho, order, cm, fm, csys, cb, hhob);
 
-  cs_hho_scaleq_finalize();
+  cs_hho_scaleq_finalize_common();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1983,7 +1983,7 @@ _main_cdovb_schemes(FILE             *out,
   cs_cell_builder_t  *cb = NULL;
   cs_cell_sys_t  *csys = NULL;
 
-  cs_cdovb_scaleq_initialize(quant, connect, time_step, NULL, NULL);
+  cs_cdovb_scaleq_init_common(quant, connect, time_step, NULL, NULL);
   cs_cdovb_scaleq_get(&csys, &cb);
 
     /* Initialize a cell view of the BC */
@@ -2028,7 +2028,7 @@ _main_cdovb_schemes(FILE             *out,
 
   _test_cdovb_schemes(out, cm, fm, csys, cb);
 
-  cs_cdovb_scaleq_finalize();
+  cs_cdovb_scaleq_finalize_common();
 }
 
 /*============================================================================

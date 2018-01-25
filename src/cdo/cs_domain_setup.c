@@ -51,6 +51,7 @@
 #include "cs_log_iteration.h"
 #include "cs_mesh_deform.h"
 #include "cs_mesh_location.h"
+#include "cs_navsto_system.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_source_term.h"
@@ -66,6 +67,13 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*!
+ *  \file cs_domain_setup.c
+ *
+ * \brief  Routines to handle the setup of a computational domain
+ *         High level interface for handling the computation.
+ */
 
 /*=============================================================================
  * Local type definitions
@@ -275,14 +283,17 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
   if (cs_walldistance_is_activated())
     cs_walldistance_setup();
 
+  /* Mesh deformation */
+  if (cs_mesh_deform_is_activated())
+    cs_mesh_deform_setup(domain);
+
   /* Groundwater flow module */
   if (cs_gwf_is_activated())
     cs_gwf_init_setup();
 
-  /* Mesh deformation */
-
-  if (cs_mesh_deform_is_activated())
-    cs_mesh_deform_setup(domain);
+  /* Navier-Stokes system */
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_init_setup();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -385,6 +396,38 @@ cs_domain_set_scheme_flags(cs_domain_t    *domain)
 
   } // Loop on equations
 
+  /* Navier-Stokes sytem */
+  if (cs_navsto_system_is_activated()) {
+
+    cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
+
+    switch (nsp->space_scheme) {
+
+    case CS_SPACE_SCHEME_CDOVB:
+      cc->vb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
+      break;
+
+    case CS_SPACE_SCHEME_CDOVCB:
+      cc->vcb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
+      break;
+
+    case CS_SPACE_SCHEME_CDOFB:
+      cc->fb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P0:
+    case CS_SPACE_SCHEME_HHO_P1:
+    case CS_SPACE_SCHEME_HHO_P2:
+      cc->hho_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
+      break;
+
+    default:
+      break;
+
+    }
+
+  } /* NavSto is activated */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -472,6 +515,10 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
 
   if (cs_gwf_is_activated())
     cs_gwf_finalize_setup(domain->connect, domain->cdo_quantities);
+
+  /* Navier-Stokes system */
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_finalize_setup(domain->connect, domain->cdo_quantities);
 
   /* Last stage to define properties (when complex definition is requested) */
   cs_property_finalize_setup();

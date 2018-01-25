@@ -54,6 +54,7 @@
 #include "cs_param_cdo.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
+#include "cs_navsto_system.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
 #include "cs_timer.h"
@@ -174,6 +175,20 @@ _read_restart(const cs_domain_t  *domain)
     bft_error(__FILE__, __LINE__, 0, _(err_i_val),
               "groundwater_flow_module", igwf, i_val);
 
+  /* Read a new section: activation or not of the Navier-Stokes system */
+  int  inss = 0; // not activated by default
+  if (cs_navsto_system_is_activated()) inss = 1;
+  cs_restart_read_section(restart,
+                          "navier_stokes_system",
+                          CS_MESH_LOCATION_NONE,
+                          1,
+                          CS_TYPE_cs_int_t,
+                          &i_val);
+
+  if (i_val != inss)
+    bft_error(__FILE__, __LINE__, 0, _(err_i_val),
+              "navier_stokes_system", inss, i_val);
+
   /* Read a new section: computation or not of the wall distance */
   int  iwall = 0;
   if (cs_walldistance_is_activated()) iwall = 1;
@@ -289,6 +304,16 @@ _write_restart(const cs_domain_t  *domain)
                            1,
                            CS_TYPE_cs_int_t,
                            &igwf);
+
+  /* Write a new section: activation or not of the Navier-Stokes system */
+  int  inss = 0; // not activated by default
+  if (cs_navsto_system_is_activated()) inss = 1;
+  cs_restart_write_section(restart,
+                           "navier_stokes_system",
+                           CS_MESH_LOCATION_NONE,
+                           1,
+                           CS_TYPE_cs_int_t,
+                           &inss);
 
   /* Write a new section: computation or not of the wall distance */
   int  iwall = 0;
@@ -463,6 +488,13 @@ _solve_domain(cs_domain_t  *domain)
                      domain->connect,
                      domain->cdo_quantities);
 
+    if (cs_navsto_system_is_activated())
+      cs_navsto_system_compute(domain->mesh,
+                               domain->time_step,
+                               domain->dt_cur,
+                               domain->connect,
+                               domain->cdo_quantities);
+
     /* User-defined equations */
     _compute_steady_user_equations(domain);
 
@@ -487,6 +519,13 @@ _solve_domain(cs_domain_t  *domain)
                      domain->dt_cur,
                      domain->connect,
                      domain->cdo_quantities);
+
+    if (cs_navsto_system_is_activated())
+      cs_navsto_system_compute(domain->mesh,
+                               domain->time_step,
+                               domain->dt_cur,
+                               domain->connect,
+                               domain->cdo_quantities);
 
     /* User-defined equations */
     _compute_unsteady_user_equations(domain, nt_cur);
@@ -580,6 +619,9 @@ _log_setup(const cs_domain_t   *domain)
     /* Summary of the groundwater module */
     cs_gwf_log_setup();
 
+    /* Summary of the Navier-Stokes system */
+    cs_navsto_system_log_setup();
+
   } /* Domain->verbosity > 0 */
 
 }
@@ -625,6 +667,7 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
       >> Wall distance
       >> Groundwater flows
       >> Mesh deformation
+      >> Navier-Stokes system
   */
   cs_domain_setup_predefined_equations(domain);
 
@@ -731,6 +774,9 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   /* Free memory related to the groundwater flow module */
   cs_gwf_destroy_all();
+
+  /* Navier-Stokes system */
+  cs_navsto_system_destroy();
 
   /* Free common structures relatated to equations */
   cs_equation_common_free(domain->cdo_context);

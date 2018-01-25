@@ -1,5 +1,5 @@
-#ifndef __CS_CDOFB_STOKES_H__
-#define __CS_CDOFB_STOKES_H__
+#ifndef __CS_CDOFB_NAVSTO_H__
+#define __CS_CDOFB_NAVSTO_H__
 
 /*============================================================================
  * Build an algebraic CDO face-based system for unsteady convection/diffusion
@@ -46,6 +46,7 @@
 #include "cs_field.h"
 #include "cs_matrix.h"
 #include "cs_mesh.h"
+#include "cs_navsto_param.h"
 #include "cs_source_term.h"
 #include "cs_time_step.h"
 
@@ -61,148 +62,158 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Algebraic system for CDO face-based discretization */
-typedef struct _cs_cdofb_stokes_t cs_cdofb_stokes_t;
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate work buffer and general structures related to CDO
- *         scalar-valued face-based schemes.
- *         Set shared pointers from the main domain members
+ * \brief  Set shared pointers from the main domain members for CDO face-based
+ *         schemes
  *
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
- * \param[in]  ma          pointer to a cs_matrix_assembler_t structure
- * \param[in]  ms          pointer to a cs_matrix_structure_t structure
+ * \param[in]  sma         pointer to a cs_matrix_assembler_t structure (scalar)
+ * \param[in]  sms         pointer to a cs_matrix_structure_t structure (scalar)
+ * \param[in]  vma         pointer to a cs_matrix_assembler_t structure (vector)
+ * \param[in]  vms         pointer to a cs_matrix_structure_t structure (vector)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_stokes_initialize(const cs_cdo_quantities_t     *quant,
-                           const cs_cdo_connect_t        *connect,
-                           const cs_time_step_t          *time_step,
-                           const cs_matrix_assembler_t   *ma,
-                           const cs_matrix_structure_t   *ms);
+cs_cdofb_navsto_init_common(const cs_cdo_quantities_t     *quant,
+                            const cs_cdo_connect_t        *connect,
+                            const cs_time_step_t          *time_step,
+                            const cs_matrix_assembler_t   *sma,
+                            const cs_matrix_structure_t   *sms,
+                            const cs_matrix_assembler_t   *vma,
+                            const cs_matrix_structure_t   *vms);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve work buffers used for building a CDO system cellwise
+ * \brief  Initialize a cs_cdofb_navsto_t structure storing in the case of a
+ *         Uzawa-Augmented Lagrangian approach
  *
- * \param[out]  csys   pointer to a pointer on a cs_cell_sys_t structure
- * \param[out]  cb     pointer to a pointer on a cs_cell_builder_t structure
+ * \param[in] nsp        pointer to a cs_navsto_param_t structure
+ * \param[in] nsc_input  pointer to a cs_navsto_coupling_uzawa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_stokes_get(cs_cell_sys_t       **csys,
-                    cs_cell_builder_t   **cb);
+cs_cdofb_navsto_init_uzawa_context(const cs_navsto_param_t     *nsp,
+                                   const void                  *nsc_input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free work buffer and general structure related to CDO face-based
- *         schemes
+ * \brief  Initialize a cs_cdofb_navsto_t structure storing in the case of an
+ *         Artificial Compressibility approach
+ *
+ * \param[in] nsp    pointer to a cs_navsto_param_t structure
+ * \param[in] nsc    pointer to a cs_navsto_coupling_uzawa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_stokes_finalize(void);
+cs_cdofb_navsto_init_ac_context(const cs_navsto_param_t   *nsp,
+                                const void                *nsc_input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdofb_stokes_t structure storing data useful for
- *         managing such a scheme
+ * \brief  Initialize a cs_cdofb_navsto_t structure storing in the case of an
+ *         incremental Projection approach
  *
- * \param[in]      eqp    pointer to a cs_equation_param_t structure
- * \param[in, out] eqb    pointer to a cs_equation_builder_t structure
- *
- * \return a pointer to a new allocated cs_cdofb_stokes_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_cdofb_stokes_init_context(const cs_equation_param_t   *eqp,
-                             cs_equation_builder_t       *eqb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Destroy a cs_cdofb_stokes_t structure
- *
- * \param[in, out]  data   pointer to a cs_cdofb_stokes_t structure
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_cdofb_stokes_free_context(void   *data);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the contributions of source terms (store inside data)
- *
- * \param[in]      eqp    pointer to a cs_equation_param_t structure
- * \param[in, out] eqb    pointer to a cs_equation_builder_t structure
- * \param[in, out] data     pointer to a cs_cdofb_stokes_t structure
+ * \param[in] nsp        pointer to a cs_navsto_param_t structure
+ * \param[in] nsc_input  pointer to a cs_navsto_coupling_uzawa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_stokes_compute_source(const cs_equation_param_t    *eqp,
-                               cs_equation_builder_t        *eqb,
-                               void                         *data);
+cs_cdofb_navsto_init_proj_context(const cs_navsto_param_t    *nsp,
+                                  const void                 *nsc_input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         data structure
+ * \brief  Destroy a cs_cdofb_navsto_t structure
  *
- * \param[in]      eqp            pointer to a cs_equation_param_t structure
- * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to cs_cdofb_stokes_t structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
+ * \param[in]      nsp        pointer to a cs_navsto_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_stokes_initialize_system(const cs_equation_param_t  *eqp,
-                                  cs_equation_builder_t      *eqb,
-                                  void                       *data,
-                                  cs_matrix_t               **system_matrix,
-                                  cs_real_t                 **system_rhs);
+cs_cdofb_navsto_free_context(const cs_navsto_param_t      *nsp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the linear system arising from a scalar convection/diffusion
- *         equation with a CDO face-based scheme.
+ * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
+ *         a Uzawa-Lagrangian Augmented approach
  *         One works cellwise and then process to the assembly
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_val  pointer to the current value of the vertex field
- * \param[in]      dt_cur     current value of the time step
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdofb_stokes_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      dt_cur      current value of the time step
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      nsp         pointer to a cs_navsto_param_t structure
+ * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
+ *                             structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_stokes_build_system(const cs_mesh_t            *mesh,
-                             const cs_real_t            *field_val,
-                             double                      dt_cur,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *data,
-                             cs_real_t                  *rhs,
-                             cs_matrix_t                *matrix);
+cs_cdofb_navsto_uzawa_compute(const cs_mesh_t              *mesh,
+                              double                        dt_cur,
+                              const cs_cdo_connect_t       *connect,
+                              const cs_cdo_quantities_t    *quant,
+                              const cs_navsto_param_t      *nsp,
+                              void                         *nsc_input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
+ *         an Artificial Compressibility approach.
+ *         One works cellwise and then process to the assembly
+ *
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      dt_cur      current value of the time step
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      nsp         pointer to a cs_navsto_param_t structure
+ * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
+ *                             structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_ac_compute(const cs_mesh_t              *mesh,
+                           double                        dt_cur,
+                           const cs_cdo_connect_t       *connect,
+                           const cs_cdo_quantities_t    *quant,
+                           const cs_navsto_param_t      *nsp,
+                           void                         *nsc_input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
+ *         an incremental correction-projection approach
+ *         One works cellwise and then process to the assembly
+ *
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      dt_cur      current value of the time step
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      nsp         pointer to a cs_navsto_param_t structure
+ * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
+ *                             structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_proj_compute(const cs_mesh_t              *mesh,
+                             double                        dt_cur,
+                             const cs_cdo_connect_t       *connect,
+                             const cs_cdo_quantities_t    *quant,
+                             const cs_navsto_param_t      *nsp,
+                             void                         *nsc_input);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -213,13 +224,13 @@ cs_cdofb_stokes_build_system(const cs_mesh_t            *mesh,
  * \param[in]      rhs        rhs associated to this solution array
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdofb_stokes_t structure
+ * \param[in, out] data       pointer to cs_cdofb_navsto_t structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_stokes_update_field(const cs_real_t              *solu,
+cs_cdofb_navsto_update_field(const cs_real_t              *solu,
                              const cs_real_t              *rhs,
                              const cs_equation_param_t    *eqp,
                              cs_equation_builder_t        *eqb,
@@ -234,12 +245,12 @@ cs_cdofb_stokes_update_field(const cs_real_t              *solu,
  * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdofb_stokes_t structure
+ * \param[in, out]  data       pointer to cs_cdofb_navsto_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_stokes_extra_op(const char                 *eqname,
+cs_cdofb_navsto_extra_op(const char                 *eqname,
                          const cs_field_t           *field,
                          const cs_equation_param_t  *eqp,
                          cs_equation_builder_t      *eqb,
@@ -249,4 +260,4 @@ cs_cdofb_stokes_extra_op(const char                 *eqname,
 
 END_C_DECLS
 
-#endif /* __CS_CDOFB_STOKES_H__ */
+#endif /* __CS_CDOFB_NAVSTO_H__ */

@@ -336,11 +336,11 @@ _condense_and_store(const cs_adjacency_t    *c2f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_initialize(const cs_cdo_quantities_t     *quant,
-                           const cs_cdo_connect_t        *connect,
-                           const cs_time_step_t          *time_step,
-                           const cs_matrix_assembler_t   *ma,
-                           const cs_matrix_structure_t   *ms)
+cs_cdofb_scaleq_init_common(const cs_cdo_quantities_t     *quant,
+                            const cs_cdo_connect_t        *connect,
+                            const cs_time_step_t          *time_step,
+                            const cs_matrix_assembler_t   *ma,
+                            const cs_matrix_structure_t   *ms)
 {
   /* Assign static const pointers */
   cs_shared_quant = quant;
@@ -410,7 +410,7 @@ cs_cdofb_scaleq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_finalize(void)
+cs_cdofb_scaleq_finalize_common(void)
 {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -702,7 +702,7 @@ cs_cdofb_scaleq_initialize_system(const cs_equation_param_t  *eqp,
  *         One works cellwise and then process to the assembly
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_val  pointer to the current value of the vertex field
+ * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure

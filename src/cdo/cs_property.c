@@ -484,12 +484,16 @@ cs_property_finalize_setup(void)
       } // Loop on definitions
 
     }
-    else { // n_definitions = 1
+    else if (pty->n_definitions == 1) {
 
       if (pty->defs[0]->type == CS_XDEF_BY_VALUE)
         pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
     }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Property \"%s\" exists with no definition.",
+                __func__, pty->name);
 
   } // Loop on properties
 

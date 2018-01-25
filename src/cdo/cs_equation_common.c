@@ -343,6 +343,11 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 {
   assert(connect != NULL); // Sanity check
 
+  if (cc == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: CDO context is not allocated. Stop execution.",
+              __func__);
+
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(tca); // assembling system
   CS_TIMER_COUNTER_INIT(tcc); // connectivity
@@ -406,7 +411,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       cwb_size = CS_MAX(cwb_size, (size_t)3*n_vertices);
 
       /* Initialize additional structures */
-      cs_cdovb_scaleq_initialize(quant, connect, time_step, ma, ms);
+      cs_cdovb_scaleq_init_common(quant, connect, time_step, ma, ms);
 
     }
 
@@ -415,7 +420,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       cwb_size = CS_MAX(cwb_size, (size_t)2*(n_vertices + n_cells));
 
       /* Initialize additional structures */
-      cs_cdovcb_scaleq_initialize(quant, connect, time_step, ma, ms);
+      cs_cdovcb_scaleq_init_common(quant, connect, time_step, ma, ms);
 
     }
 
@@ -454,7 +459,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
         cwb_size = CS_MAX(cwb_size, (size_t)3*n_faces);
 
         /* Initialize additional structures */
-        cs_cdofb_scaleq_initialize(quant, connect, time_step, ma0, ms0);
+        cs_cdofb_scaleq_init_common(quant, connect, time_step, ma0, ms0);
 
       }
 
@@ -482,7 +487,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       if (cc->fb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
 
         /* Initialize additional structures */
-        cs_cdofb_vecteq_initialize(quant, connect, time_step, ma1, ms1);
+        cs_cdofb_vecteq_init_common(quant, connect, time_step, ma1, ms1);
 
         cwb_size = CS_MAX(cwb_size, (size_t)9*n_faces);
 
@@ -512,16 +517,30 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
     /* Initialize additional structures for scalar-valued HHO schemes */
     if (cc->hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-      cs_hho_scaleq_initialize(cc->hho_scheme_flag,
-                               quant, connect, time_step,
-                               ma0, ma1, ma2,
-                               ms0, ms1, ms2);
+      cs_hho_scaleq_init_common(cc->hho_scheme_flag,
+                                quant, connect, time_step,
+                                ma0, ma1, ma2,
+                                ms0, ms1, ms2);
 
     /* Monitoring */
     cs_timer_t t2 = cs_timer_time();
     cs_timer_counter_add_diff(&tca, &t1, &t2);
 
   } // Face-based schemes (CDO or HHO)
+
+  if (cs_flag_test(cc->fb_scheme_flag, CS_FLAG_SCHEME_NAVSTO)) {
+
+    /* Solve Navier--Stokes with CDO-Fb schemes */
+    cs_cdofb_navsto_init_common(quant, connect, time_step,
+                                cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP0],
+                                cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP0],
+                                cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP1],
+                                cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP1]);
+
+  }
+
+  /* TODO: Solve Navier--Stokes with HHO schemes */
+  //  if (cs_flag_test(cc->hho_scheme_flag, CS_FLAG_SCHEME_NAVSTO))
 
   /* Assign static const pointers: shared pointers with a cs_domain_t */
   cs_shared_quant = quant;
@@ -565,19 +584,19 @@ cs_equation_common_free(const cs_domain_cdo_context_t   *cc)
 
     /* Free common structures specific to a numerical scheme */
   if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-    cs_cdovb_scaleq_finalize();
+    cs_cdovb_scaleq_finalize_common();
 
   if (cc->vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-    cs_cdovcb_scaleq_finalize();
+    cs_cdovcb_scaleq_finalize_common();
 
   if (cc->fb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-    cs_cdofb_scaleq_finalize();
+    cs_cdofb_scaleq_finalize_common();
 
   if (cc->fb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
-    cs_cdofb_vecteq_finalize();
+    cs_cdofb_vecteq_finalize_common();
 
   if (cc->hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-    cs_hho_scaleq_finalize();
+    cs_hho_scaleq_finalize_common();
 
   BFT_FREE(cs_equation_common_work_buffer);
 

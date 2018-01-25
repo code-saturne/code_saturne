@@ -83,16 +83,16 @@ typedef struct _cs_hho_scaleq_t cs_hho_scaleq_t;
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_initialize(cs_flag_t                      scheme_flag,
-                         const cs_cdo_quantities_t     *quant,
-                         const cs_cdo_connect_t        *connect,
-                         const cs_time_step_t          *time_step,
-                         const cs_matrix_assembler_t   *ma0,
-                         const cs_matrix_assembler_t   *ma1,
-                         const cs_matrix_assembler_t   *ma2,
-                         const cs_matrix_structure_t   *ms0,
-                         const cs_matrix_structure_t   *ms1,
-                         const cs_matrix_structure_t   *ms2);
+cs_hho_scaleq_init_common(cs_flag_t                      scheme_flag,
+                          const cs_cdo_quantities_t     *quant,
+                          const cs_cdo_connect_t        *connect,
+                          const cs_time_step_t          *time_step,
+                          const cs_matrix_assembler_t   *ma0,
+                          const cs_matrix_assembler_t   *ma1,
+                          const cs_matrix_assembler_t   *ma2,
+                          const cs_matrix_structure_t   *ms0,
+                          const cs_matrix_structure_t   *ms1,
+                          const cs_matrix_structure_t   *ms2);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -116,7 +116,7 @@ cs_hho_scaleq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_finalize(void);
+cs_hho_scaleq_finalize_common(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -71,7 +71,7 @@ typedef struct _cs_cdofb_vecteq_t cs_cdofb_vecteq_t;
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate work buffer and general structures related to CDO
- *         scalar-valued face-based schemes.
+ *         vector-valued face-based schemes.
  *         Set shared pointers from the main domain members
  *
  * \param[in]  quant       additional mesh quantities struct.
@@ -83,11 +83,11 @@ typedef struct _cs_cdofb_vecteq_t cs_cdofb_vecteq_t;
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_initialize(const cs_cdo_quantities_t     *quant,
-                           const cs_cdo_connect_t        *connect,
-                           const cs_time_step_t          *time_step,
-                           const cs_matrix_assembler_t   *ma,
-                           const cs_matrix_structure_t   *ms);
+cs_cdofb_vecteq_init_common(const cs_cdo_quantities_t     *quant,
+                            const cs_cdo_connect_t        *connect,
+                            const cs_time_step_t          *time_step,
+                            const cs_matrix_assembler_t   *ma,
+                            const cs_matrix_structure_t   *ms);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -110,7 +110,7 @@ cs_cdofb_vecteq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_finalize(void);
+cs_cdofb_vecteq_finalize_common(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -184,7 +184,7 @@ cs_cdofb_vecteq_initialize_system(const cs_equation_param_t  *eqp,
  *         One works cellwise and then process to the assembly
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_val  pointer to the current value of the vertex field
+ * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
