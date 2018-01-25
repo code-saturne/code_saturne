@@ -156,7 +156,7 @@ if (iturb.eq.0) then
   call hide_property(ivisct)
 endif
 
-! If hybrid spaital scheme is activated for the velocity (ischcv=3)
+! If hybrid spatial scheme is activated for the velocity (ischcv=3)
 ! creation of the field hybrid_blend wihich contains the
 ! local blending factor for each cell
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)

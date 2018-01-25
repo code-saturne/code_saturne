@@ -581,8 +581,8 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_SPACE_SCHEME\n"
-                  " Choice between cdo_vb or cdo_fb"), _val);
+                _(" Invalid val %s related to key CS_EQKEY_SPACE_SCHEME\n"),
+                _val);
     }
     break;
 
@@ -1329,7 +1329,7 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
-  int z_id = _get_vzone_id(z_name);
+  int  z_id = _get_vzone_id(z_name);
 
   cs_flag_t  meta_flag = 0;
   if (z_id == 0)
