@@ -5,6 +5,9 @@ Release 5.1.2 (Unreleased)
 Bug fixes
 ---------
 
+- Fix missing ghost cell exchange for some scalar gradient reconstructions
+  using body forces (iphydr = 1).
+
 - Add --enable-dlopen-rtld-global configure option to fix initialization issues
   of Catalyst or PNG histogram writers as plugin on some systems.
 
