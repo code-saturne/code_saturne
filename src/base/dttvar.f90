@@ -686,23 +686,30 @@ if (idtvar.ge.0) then
         endif
       enddo
 
-      xyzmin(1) = xyzcen(1,icfmin(1))
-      xyzmin(2) = xyzcen(2,icfmin(1))
-      xyzmin(3) = xyzcen(3,icfmin(1))
-      xyzmax(1) = xyzcen(1,icfmax(1))
-      xyzmax(2) = xyzcen(2,icfmax(1))
-      xyzmax(3) = xyzcen(3,icfmax(1))
+      xyzmin(1) = xyzcen(1,max(icfmin(1), 1))
+      xyzmin(2) = xyzcen(2,max(icfmin(1), 1))
+      xyzmin(3) = xyzcen(3,max(icfmin(1), 1))
+      xyzmax(1) = xyzcen(1,max(icfmax(1), 1))
+      xyzmax(2) = xyzcen(2,max(icfmax(1), 1))
+      xyzmax(3) = xyzcen(3,max(icfmax(1), 1))
 
       if (irangp.ge.0) then
         nbrval = 3
         call parmnl (nbrval, cfmin, xyzmin)
-        !==========
         call parmxl (nbrval, cfmax, xyzmax)
-        !==========
       endif
 
-      write(nfecra,1001) cnom, cfmax, xyzmax(1), xyzmax(2), xyzmax(3)
-      write(nfecra,1002) cnom, cfmin, xyzmin(1), xyzmin(2), xyzmin(3)
+      if (icfmin(1).gt.0) then
+        write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
+      else
+        write(nfecra,*) cnom, "Too big to be displayed"
+      endif
+
+      if (icfmax(1).gt.0) then
+        write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+      else
+        write(nfecra,*) cnom, "Too big to be displayed"
+      endif
 
     endif
 
@@ -836,23 +843,30 @@ if (idtvar.ge.0) then
         endif
       enddo
 
-      xyzmin(1) = xyzcen(1,icfmin(1))
-      xyzmin(2) = xyzcen(2,icfmin(1))
-      xyzmin(3) = xyzcen(3,icfmin(1))
-      xyzmax(1) = xyzcen(1,icfmax(1))
-      xyzmax(2) = xyzcen(2,icfmax(1))
-      xyzmax(3) = xyzcen(3,icfmax(1))
+      xyzmin(1) = xyzcen(1,max(icfmin(1), 1))
+      xyzmin(2) = xyzcen(2,max(icfmin(1), 1))
+      xyzmin(3) = xyzcen(3,max(icfmin(1), 1))
+      xyzmax(1) = xyzcen(1,max(icfmax(1), 1))
+      xyzmax(2) = xyzcen(2,max(icfmax(1), 1))
+      xyzmax(3) = xyzcen(3,max(icfmax(1), 1))
 
       if (irangp.ge.0) then
         nbrval = 3
         call parmnl (nbrval, cfmin, xyzmin)
-        !==========
         call parmxl (nbrval, cfmax, xyzmax)
-        !==========
       endif
 
-      write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
-      write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+      if (icfmin(1).gt.0) then
+        write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
+      else
+        write(nfecra,*) cnom, "Too big to be displayed"
+      endif
+
+      if (icfmax(1).gt.0) then
+        write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+      else
+        write(nfecra,*) cnom, "Too big to be displayed"
+      endif
 
     endif
 
@@ -896,23 +910,30 @@ if (idtvar.ge.0) then
         endif
       enddo
 
-      xyzmin(1) = xyzcen(1,icfmin(1))
-      xyzmin(2) = xyzcen(2,icfmin(1))
-      xyzmin(3) = xyzcen(3,icfmin(1))
-      xyzmax(1) = xyzcen(1,icfmax(1))
-      xyzmax(2) = xyzcen(2,icfmax(1))
-      xyzmax(3) = xyzcen(3,icfmax(1))
+      xyzmin(1) = xyzcen(1,max(icfmin(1), 1))
+      xyzmin(2) = xyzcen(2,max(icfmin(1), 1))
+      xyzmin(3) = xyzcen(3,max(icfmin(1), 1))
+      xyzmax(1) = xyzcen(1,max(icfmax(1), 1))
+      xyzmax(2) = xyzcen(2,max(icfmax(1), 1))
+      xyzmax(3) = xyzcen(3,max(icfmax(1), 1))
 
       if (irangp.ge.0) then
         nbrval = 3
         call parmnl (nbrval, cfmin, xyzmin)
-        !==========
         call parmxl (nbrval, cfmax, xyzmax)
-        !==========
       endif
 
-      write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
-      write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+      if (icfmin(1).gt.0) then
+        write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
+      else
+        write(nfecra,*) cnom, "Too big to be displayed"
+      endif
+
+      if (icfmax(1).gt.0) then
+        write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+      else
+        write(nfecra,*) cnom, "Too big to be displayed"
+      endif
 
     endif
 
