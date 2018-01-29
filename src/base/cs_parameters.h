@@ -184,19 +184,22 @@ typedef struct {
 
 typedef struct {
 
-  int           nterup;       /* number of interations on the pressure-velocity
-                                 coupling on Navier-Stokes */
+  int           nterup;         /* number of interations on the pressure-velocity
+                                   coupling on Navier-Stokes */
 
-  double        epsup;        /* relative precision for the convergence test of
-                                 the iterative process on pressure-velocity
-                                 coupling */
+  double        epsup;          /* relative precision for the convergence test of
+                                   the iterative process on pressure-velocity
+                                   coupling */
 
-  double        xnrmu;        /* norm  of the increment
-                                 \f$ \vect{u}^{k+1} - \vect{u}^k \f$
-                                 of the iterative process on pressure-velocity
-                                 coupling */
+  double        xnrmu;          /* norm  of the increment
+                                   \f$ \vect{u}^{k+1} - \vect{u}^k \f$
+                                   of the iterative process on pressure-velocity
+                                   coupling */
 
-  double        xnrmu0;       /* norm of \f$ \vect{u}^0 \f$ */
+  double        xnrmu0;         /* norm of \f$ \vect{u}^0 \f$ */
+
+  int           n_buoyant_scal; /* number of buoyant scalars,
+                                   zero if there is no buoyant scalar */
 
 } cs_piso_t;
 
@@ -278,6 +281,15 @@ cs_get_glob_space_disc(void);
 
 cs_piso_t *
 cs_get_glob_piso(void);
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Count and set number of buoyant scalars.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_set_n_buoyant_scalars(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

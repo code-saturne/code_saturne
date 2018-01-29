@@ -646,9 +646,8 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 
 endif
 
-
 !===============================================================================
-! 6.  IMPRESSIONS DE CONTROLE POUR LES INCONNUES, LE PAS DE TEMPS
+! 5.  IMPRESSIONS DE CONTROLE POUR LES INCONNUES, LE PAS DE TEMPS
 !        LE CUMUL DES DUREE POUR LES MOYENNES
 !===============================================================================
 
@@ -729,7 +728,7 @@ endif
 call time_moment_log_iteration
 
 !===============================================================================
-! 7.  ARRET GENERAL SI PB
+! 6.  ARRET GENERAL SI PB
 !===============================================================================
 
 if (iok.gt.0) then

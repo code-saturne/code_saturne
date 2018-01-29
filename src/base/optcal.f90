@@ -1087,6 +1087,10 @@ module optcal
   !> \ref paramx::iespre "iespre" calculated with \ref iescal = 2.
   integer, save :: iescal(nestmx)
 
+  !> \ref n_buoyant_fld is the number of buoyant scalar
+  !> It will be zero if there is no buoyant scalar
+  integer(c_int), pointer, save :: n_buoyant_scal
+
   !> \}
 
   !----------------------------------------------------------------------------
@@ -1593,11 +1597,12 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global PISO options structure
 
-    subroutine cs_f_piso_get_pointers(nterup, epsup, xnrmu, xnrmu0) &
+    subroutine cs_f_piso_get_pointers(nterup, epsup, xnrmu, xnrmu0,         &
+                                      n_buoyant_scal)                       &
       bind(C, name='cs_f_piso_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: nterup, epsup, xnrmu, xnrmu0
+      type(c_ptr), intent(out) :: nterup, epsup, xnrmu, xnrmu0, n_buoyant_scal
     end subroutine cs_f_piso_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1921,14 +1926,16 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_nterup, c_epsup, c_xnrmu, c_xnrmu0
+    type(c_ptr) :: c_nterup, c_epsup, c_xnrmu, c_xnrmu0, c_n_buoyant_scal
 
-    call cs_f_piso_get_pointers(c_nterup, c_epsup, c_xnrmu, c_xnrmu0)
+    call cs_f_piso_get_pointers(c_nterup, c_epsup, c_xnrmu, c_xnrmu0, &
+                                n_buoyant_scal)
 
     call c_f_pointer(c_nterup, nterup)
     call c_f_pointer(c_epsup, epsup)
     call c_f_pointer(c_xnrmu, xnrmu)
     call c_f_pointer(c_xnrmu0, xnrmu0)
+    call c_f_pointer(c_n_buoyant_scal, n_buoyant_scal)
 
   end subroutine piso_options_init
 

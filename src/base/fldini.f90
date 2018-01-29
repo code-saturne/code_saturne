@@ -102,7 +102,7 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 !===============================================================================
-! 1. Initialisation
+! Initialisation
 !===============================================================================
 
 ! The itycat variable is used to define field categories. It is used in Fortran
@@ -139,7 +139,7 @@ call field_get_key_id("drift_scalar_model", keydri)
 call field_get_n_fields(nfld)
 
 !===============================================================================
-! 2. Set keywords and add some additional fields
+! Set keywords and add some additional fields
 !===============================================================================
 
 ! User variables
@@ -541,7 +541,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1 &
 endif
 
 !===============================================================================
-! 3. Set some field keys
+! Set some field keys
 !===============================================================================
 
 ! Copy imrgra into the field structure
@@ -661,6 +661,10 @@ if (ippmod(igmix).ge.0) then
   enddo
 
 endif
+
+! Check if scalars are buoyant and set n_buoyant_fld accordingly.
+! It is then used in tridim to update buoyant scalars and density in U-P loop
+call cs_parameters_set_n_buoyant_scalars
 
 ! Some C mappings
 call cs_field_pointer_map_boundary

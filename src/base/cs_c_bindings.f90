@@ -2261,6 +2261,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function to count number of buoyant scalars.
+
+    subroutine cs_parameters_set_n_buoyant_scal()   &
+      bind(C, name='cs_parameters_set_n_buoyant_scal')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_parameters_set_n_buoyant_scal
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

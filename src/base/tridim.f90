@@ -485,7 +485,6 @@ endif
 
 iterns = -1
 call phyvar(nvar, nscal, iterns, dt)
-iterns = 1
 
 if (itrale.gt.0) then
   iappel = 2
@@ -872,6 +871,7 @@ if (ippmod(idarcy).eq.1) then
   if ((darcy_unsteady.eq.0).and.(ntcabs.gt.1)) goto 100
 endif
 
+iterns = 1
 do while (iterns.le.nterup)
 
   call precli(nvar, icodcl, rcodcl)
@@ -1297,6 +1297,14 @@ do while (iterns.le.nterup)
 ! 12. Solve momentum and mass equation
 !===============================================================================
 
+    ! In case of buoyancy, scalars and momentum are coupled
+    if (n_buoyant_fld.ge.1) then
+
+      ! Update the density
+      call phyvar(nvar, nscal, iterns, dt)
+
+    endif
+
     if (vcopt_u%iwarni.ge.1) then
       write(nfecra,1040) iterns
     endif
@@ -1366,7 +1374,7 @@ do while (iterns.le.nterup)
     endif
 
     ! In case of buoyancy, scalars and momentum are coupled
-    if (nscal.ge.1) then
+    if (n_buoyant_fld.ge.1) then
 
       if(vcopt_u%iwarni.ge.1) then
         write(nfecra,1060)
@@ -1379,9 +1387,6 @@ do while (iterns.le.nterup)
       if (idilat.ge.4) then
         call diffst(nscal, iterns)
       endif
-
-      ! Update the density
-      call phyvar(nvar, nscal, iterns, dt)
 
     endif
 

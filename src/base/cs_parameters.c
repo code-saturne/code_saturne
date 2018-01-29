@@ -502,13 +502,26 @@ static cs_var_cal_opt_t _var_cal_opt =
 
 /* Space discretisation options structure and associated pointer */
 
-static cs_space_disc_t  _space_disc = {0, 0, -1e12*10.0, 1};
+static cs_space_disc_t  _space_disc =
+{
+  .imvisf = 0,
+  .imrgra = 0,
+  .anomax = -1e12*10.,
+  .iflxmw = 1
+};
 
 const cs_space_disc_t  *cs_glob_space_disc = &_space_disc;
 
 /* PISO structure and associated pointer */
 
-static cs_piso_t  _piso = {1, 1e-5, 0, 0};
+static cs_piso_t  _piso =
+{
+  .nterup = 1,
+  .epsup = 1e-5,
+  .xnrmu = 0.,
+  .xnrmu0 = 0.,
+  .n_buoyant_scal = 0
+};
 
 const cs_piso_t  *cs_glob_piso = &_piso;
 
@@ -568,7 +581,8 @@ void
 cs_f_piso_get_pointers(int     **nterup,
                        double  **epsup,
                        double  **xnrmu,
-                       double  **xnrmu0);
+                       double  **xnrmu0,
+                       int     **n_buoyant_scal);
 
 /*============================================================================
  * Private function definitions
@@ -784,22 +798,25 @@ cs_f_space_disc_get_pointers(int     **imvisf,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   nterup  --> pointer to cs_glob_piso->nterup
- *   epsup   --> pointer to cs_glob_piso->epsup
- *   xnrmu   --> pointer to cs_glob_piso->xnrmu
- *   xnrmu0  --> pointer to cs_glob_piso->xnrmu0
+ *   nterup          --> pointer to cs_glob_piso->nterup
+ *   epsup           --> pointer to cs_glob_piso->epsup
+ *   xnrmu           --> pointer to cs_glob_piso->xnrmu
+ *   xnrmu0          --> pointer to cs_glob_piso->xnrmu0
+ *   n_buoyant_scal  --> pointer to cs_glob_piso->n_buoyant_scal
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_piso_get_pointers(int     **nterup,
                        double  **epsup,
                        double  **xnrmu,
-                       double  **xnrmu0)
+                       double  **xnrmu0,
+                       int     **n_buoyant_scal)
 {
   *nterup = &(_piso.nterup);
   *epsup  = &(_piso.epsup);
   *xnrmu  = &(_piso.xnrmu);
   *xnrmu0 = &(_piso.xnrmu0);
+  *n_buoyant_scal = &(_piso.n_buoyant_scal);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -810,9 +827,9 @@ cs_f_piso_get_pointers(int     **nterup,
 
 /*----------------------------------------------------------------------------
  *!
- * \brief Provide acces to cs_glob_space_disc
+ * \brief Provide acces to cs_glob_space_disc.
  *
- * needed to initialize structure with GUI and user C functions.
+ * Needed to initialize structure with GUI and user C functions.
  *
  * \return  piso information structure
  */
@@ -826,9 +843,9 @@ cs_get_glob_space_disc(void)
 
 /*----------------------------------------------------------------------------
  *!
- * \brief Provide acces to cs_glob_piso
+ * \brief Provide acces to cs_glob_piso.
  *
- * needed to initialize structure with GUI
+ * Needed to initialize structure with GUI.
  *
  * \return  piso information structure
  */
@@ -838,6 +855,30 @@ cs_piso_t *
 cs_get_glob_piso(void)
 {
   return &_piso;
+}
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Count and set number of buoyant scalars.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_set_n_buoyant_scalars(void)
+{
+  const int n_fields = cs_field_n_fields()
+  const int key_sca = cs_field_key_id("scalar_id");
+  const int key_buo = cs_field_key_id("is_buoyant");
+
+  for (int f_id = 0 ; f_id < n_fields ; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (   f->type & CS_FIELD_VARIABLE
+        && cs_field_get_key_int(f, key_sca) > -1) {
+      if (cs_field_get_key_int(f, key_buo)) {
+        _piso.n_buoyant_scal += 1;
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -865,7 +906,7 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("scalar_density_id", -1, CS_FIELD_VARIABLE);
 
   /* is the field buoyant? -1 if not, 1 if yes */
-  cs_field_define_key_int("is_buoyant", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_int("is_buoyant", 0, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("turbulent_flux_model", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("turbulent_flux_id", -1, CS_FIELD_VARIABLE);

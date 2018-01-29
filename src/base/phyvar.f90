@@ -41,7 +41,10 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     iterns        Navier-Stokes iteration number
+!> \param[in]     iterns        Navier-Stokes sub-iterations indicator:
+!>                              - if strictly negative, indicate that this
+!>                                function is called outside Navier-Stokes loop
+!>                              - if positive, Navier-Stokes iteration number.
 !> \param[in]     dt            time step (per cell)
 !_______________________________________________________________________________
 
