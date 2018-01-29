@@ -67,6 +67,7 @@ BEGIN_C_DECLS
  *   db_size       <-- block sizes for diagonal
  *   eb_size       <-- block sizes for extra diagonal
  *   rotation_mode <-- halo update option for rotational periodicity
+ *   f_id          <-- associated field id, or < 0
  *   dam           <-- Matrix diagonal
  *   xam           <-- Matrix extra-diagonal terms
  *   vx            <-- A*vx
