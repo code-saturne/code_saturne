@@ -2569,13 +2569,7 @@ cs_internal_coupling_setup(void)
     if (f->type & CS_FIELD_VARIABLE) {
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       if (var_cal_opt.icoupl > 0) {
-        /* Set same coupling_id for associated diffusivity field */
         cs_field_set_key_int(f, coupling_key_id, coupling_id);
-        diffusivity_id = cs_field_get_key_int(f, diffusivity_key_id);
-        if (diffusivity_id > -1) {
-          f_diff = cs_field_by_id(diffusivity_id);
-          cs_field_set_key_int(f_diff, coupling_key_id, coupling_id);
-        }
         // coupling_id++;
       }
     }
