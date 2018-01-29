@@ -1298,7 +1298,7 @@ do while (iterns.le.nterup)
 !===============================================================================
 
     ! In case of buoyancy, scalars and momentum are coupled
-    if (n_buoyant_fld.ge.1) then
+    if (n_buoyant_scal.ge.1) then
 
       ! Update the density
       call phyvar(nvar, nscal, iterns, dt)
@@ -1374,7 +1374,7 @@ do while (iterns.le.nterup)
     endif
 
     ! In case of buoyancy, scalars and momentum are coupled
-    if (n_buoyant_fld.ge.1) then
+    if (n_buoyant_scal.ge.1) then
 
       if(vcopt_u%iwarni.ge.1) then
         write(nfecra,1060)

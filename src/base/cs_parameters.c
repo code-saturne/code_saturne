@@ -866,7 +866,7 @@ cs_get_glob_piso(void)
 void
 cs_parameters_set_n_buoyant_scalars(void)
 {
-  const int n_fields = cs_field_n_fields()
+  const int n_fields = cs_field_n_fields();
   const int key_sca = cs_field_key_id("scalar_id");
   const int key_buo = cs_field_key_id("is_buoyant");
 

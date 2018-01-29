@@ -662,7 +662,7 @@ if (ippmod(igmix).ge.0) then
 
 endif
 
-! Check if scalars are buoyant and set n_buoyant_fld accordingly.
+! Check if scalars are buoyant and set n_buoyant_scal accordingly.
 ! It is then used in tridim to update buoyant scalars and density in U-P loop
 call cs_parameters_set_n_buoyant_scalars
 

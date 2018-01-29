@@ -1087,7 +1087,7 @@ module optcal
   !> \ref paramx::iespre "iespre" calculated with \ref iescal = 2.
   integer, save :: iescal(nestmx)
 
-  !> \ref n_buoyant_fld is the number of buoyant scalar
+  !> \ref n_buoyant_scal is the number of buoyant scalar
   !> It will be zero if there is no buoyant scalar
   integer(c_int), pointer, save :: n_buoyant_scal
 
@@ -1929,7 +1929,7 @@ contains
     type(c_ptr) :: c_nterup, c_epsup, c_xnrmu, c_xnrmu0, c_n_buoyant_scal
 
     call cs_f_piso_get_pointers(c_nterup, c_epsup, c_xnrmu, c_xnrmu0, &
-                                n_buoyant_scal)
+                                c_n_buoyant_scal)
 
     call c_f_pointer(c_nterup, nterup)
     call c_f_pointer(c_epsup, epsup)
