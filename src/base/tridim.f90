@@ -104,7 +104,7 @@ double precision, pointer, dimension(:,:) :: frcxt => null()
 
 logical          must_return
 
-integer          iel   , ifac  , inod  , ivar  , iscal , iappel, n_fans
+integer          iel   , ifac  , ivar  , iscal , iappel, n_fans
 integer          iok   , nfld  , f_id  , f_dim  , f_type
 integer          nbccou
 integer          ntrela
