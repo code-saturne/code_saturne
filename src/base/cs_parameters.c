@@ -1045,10 +1045,10 @@ cs_parameters_add_variable(const char  *name,
   (_user_variable_defs + _n_user_variables)->dim = dim;
   (_user_variable_defs + _n_user_variables)->is_variance = false;
 
-  if (dim != 1)
+  if (dim > 3)
     bft_error(__FILE__, __LINE__, 0,
-              _("Only user variables of dimension 1 are currently handled,\n"
-                "but %s is defined with dimension %d."),
+              _("Only user variables of dimension lower or equal to 3 are"
+                "currently handled,\nbut %s is defined with dimension %d."),
               name, dim);
 
   _n_user_variables++;

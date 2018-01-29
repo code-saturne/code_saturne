@@ -741,7 +741,7 @@ implicit none
 ! Local variables
 
 integer  iscal, nfld1, nfld2
-integer  dim, id
+integer  dim, id, ii, ivar, keycpl
 
 integer :: keyvar, keysca
 
@@ -775,6 +775,7 @@ call field_get_n_fields(nfld2)
 
 iscal = 0
 
+call field_get_key_id('coupled', keycpl)
 call field_get_key_id("scalar_id", keysca)
 call field_get_key_id("variable_id", keyvar)
 
@@ -782,23 +783,34 @@ do id = nfld1, nfld2 - 1
 
   call field_get_dim(id, dim)
 
-  if (dim.ne.1) cycle ! fields of dimension > 1 may not be handled as scalars
+  if (dim.eq.3) then
+    call field_set_key_int(id, keycpl, 1)
+  else if (dim.ne.1) then
+    cycle
+  endif
 
   iscal = iscal + 1
 
-  nvar = nvar + 1
+  ivar = nvar + 1
+  nvar = nvar + dim
   nscal = nscal + 1
 
   ! Check we have enough slots
   call fldvar_check_nvar
 
-  isca(iscal) = nvar
-  ivarfl(nvar) = id
+  isca(iscal) = ivar
+  ivarfl(ivar) = id
 
-  call field_set_key_int(id, keyvar, nvar)
+  call field_set_key_int(id, keyvar, ivar)
   call field_set_key_int(id, keysca, iscal)
   call field_set_key_double(id, ksigmas, 1.d0)
   call init_var_cal_opt(id)
+
+  if (dim .gt. 1) then
+    do ii = 2, dim
+      ivarfl(ivar + ii - 1) = id
+    enddo
+  endif
 
 enddo
 
