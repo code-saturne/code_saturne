@@ -1,6 +1,6 @@
 
-Release 5.1.2 (Unreleased)
-==========================
+Release 5.1.2 (Jan 29 2018)
+===========================
 
 Bug fixes
 ---------
@@ -19,7 +19,7 @@ Bug fixes
 
 - Fix automatic settings for smoothers when using mumtigrid as a solver.
 
-- Fix synchro. of order 3 tensor in iterative tensor gradient in case of
+- Fix syncing of order 3 tensor in iterative tensor gradient in case of
   periodicity of rotation.
 
 - Fix crash and errors in MED output with subdivided polyhedral

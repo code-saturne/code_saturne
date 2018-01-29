@@ -630,8 +630,8 @@ _log_func_default_var_cal_opt(const void *t)
                 _("Type of diffusivity: scalar (1), orthotropic (3) or symmetric "
                   "tensor (6)"));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "ischcv", _t->ischcv,
-                _("Type of convective scheme: 2nd order with centred-gradient"
-                  "upwind reconstruction (0), centered (1),"
+                _("Type of convective scheme: 2nd order with centered-gradient "
+                  "upwind reconstruction (0), centered (1), "
                   "2nd order with upwind-gradient upwind-reconstruction (SOLU) (2)"));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "isstpc", _t->isstpc,
                 _("0 for slope test, 1 for no slope test, 2 for min/max limiter "
