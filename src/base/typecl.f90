@@ -116,8 +116,8 @@ integer          ityp, ii, jj, iflmab
 integer          irangd
 integer          ifadir
 integer          iut  , ivt   , iwt, iscal
-integer          keyvar
-integer          iivar
+integer          keyvar, keycpl
+integer          iivar, icpl
 integer          f_id, i_dim, f_type, nfld, f_dim
 
 double precision pref, pipb
@@ -1490,16 +1490,25 @@ enddo
 ideb = idebty(iparoi)
 ifin = ifinty(iparoi)
 
-do ivar = 1, nvar
-  do ii = ideb, ifin
-    ifac = itrifb(ii)
-    if(icodcl(ifac,ivar).eq.0) then
-      icodcl(ifac,ivar)   = 3
-      rcodcl(ifac,ivar,1) = 0.d0
-      rcodcl(ifac,ivar,2) = rinfin
-      rcodcl(ifac,ivar,3) = 0.d0
-    endif
-  enddo
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_dim (f_id, f_dim)
+    call field_get_key_int(f_id, keyvar, ivar)
+
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        do i_dim = 0, f_dim-1
+          icodcl(ifac,ivar+i_dim) = 3
+          rcodcl(ifac,ivar+i_dim,1) = 0.d0
+          rcodcl(ifac,ivar+i_dim,2) = rinfin
+          rcodcl(ifac,ivar+i_dim,3) = 0.d0
+        enddo
+      endif
+    enddo
+  endif
 enddo
 
 ! 6.5 PAROI RUGUEUSE bis
@@ -1512,16 +1521,47 @@ enddo
 ideb = idebty(iparug)
 ifin = ifinty(iparug)
 
-do ivar = 1, nvar
-  do ii = ideb, ifin
-    ifac = itrifb(ii)
-    if(icodcl(ifac,ivar).eq.0) then
-      icodcl(ifac,ivar)   = 3
-      rcodcl(ifac,ivar,1) = 0.d0
-      rcodcl(ifac,ivar,2) = rinfin
-      rcodcl(ifac,ivar,3) = 0.d0
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_dim (f_id, f_dim)
+    call field_get_key_int(f_id, keyvar, ivar)
+
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        do i_dim = 0, f_dim-1
+          icodcl(ifac,ivar+i_dim) = 3
+          rcodcl(ifac,ivar+i_dim,1) = 0.d0
+          rcodcl(ifac,ivar+i_dim,2) = rinfin
+          rcodcl(ifac,ivar+i_dim,3) = 0.d0
+        enddo
+      endif
+    enddo
+  endif
+enddo
+
+! ensure that for all variables of dimension higher than 1 and which components
+! are coupled, icodcl is the same for all the components
+call field_get_key_id('coupled', keycpl)
+
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_dim (f_id, f_dim)
+    call field_get_key_int(f_id, keycpl, icpl)
+
+    if (f_dim.gt.1.and.icpl.eq.1) then
+      call field_get_key_int(f_id, keyvar, ivar)
+      do ifac = 1, nfabor
+        do i_dim = 1, f_dim-1
+          icodcl(ifac,ivar+i_dim) = icodcl(ifac,ivar)
+        enddo
+      enddo
     endif
-  enddo
+  endif
 enddo
 
 !===============================================================================
