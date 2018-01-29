@@ -1,6 +1,6 @@
 
-Release 5.0.6 (unreleased)
-==========================
+Release 5.0.6 (Jan 29 2018)
+===========================
 
 Bug fixes
 ---------
@@ -17,7 +17,7 @@ Bug fixes
 
 - GUI: ensure runcase and current XML file are consistent before running.
 
-- Fix synchro. of order 3 tensor in iterative tensor gradient in case of
+- Fix syncing of order 3 tensor in iterative tensor gradient in case of
   periodicity of rotation.
 
 - Fix crash and errors in MED output with subdivided polyhedral
