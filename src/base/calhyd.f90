@@ -64,6 +64,7 @@ subroutine calhyd &
 ! Module files
 !===============================================================================
 
+use atincl, only: iatmst
 use paramx
 use numvar
 use entsor
@@ -164,12 +165,15 @@ enddo
 if (irangp.ge.0) then
   call parcpt (ical)
 endif
-if (ical.eq.0) then
-  do iel = 1,ncel
-    phydr(iel) = 0.d0
-  enddo
-  indhyd = 0
-  return
+
+if (iatmst.eq.0) then
+  if (ical.eq.0) then
+    do iel = 1,ncel
+      phydr(iel) = 0.d0
+    enddo
+    indhyd = 0
+    return
+  endif
 endif
 
 if (mod(ntcabs,ntlist).eq.0.or.vcopt_u%iwarni.ge.0) write(nfecra,1000)
@@ -294,8 +298,7 @@ do isweep = 1, nswmpr
     write(nfecra,1400)chaine(1:16),isweep,residu
   endif
 
-!MO IL FAUDRA VERIFIER LA PERTINENCE DU TEST
-
+  ! FIXME coherent with resopv!
   if (residu.le.10.d0*vcopt_pr%epsrsm*rnorm) then
 !     Si convergence,  sortie
 
@@ -317,7 +320,7 @@ do isweep = 1, nswmpr
                          isym, ibsize, iesize, dam, xam,          &
                          epsilp, rnorm, niterf, residu, smbr, dpvar)
 
-  if( isweep.eq.nswmpr ) then
+  if (isweep.eq.nswmpr ) then
 !     Mise a jour de l'increment de pression
     do iel = 1, ncel
       phydr(iel) = phydr(iel) + dpvar(iel)
@@ -362,6 +365,7 @@ do isweep = 1, nswmpr
   endif
 
 enddo
+
 ! --- Boucle de reconstruction : fin
 
 if(vcopt_pr%iwarni.ge.2) then

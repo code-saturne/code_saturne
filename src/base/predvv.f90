@@ -154,7 +154,7 @@ use pointe, only: gamcav
 use cavitation
 use vof
 use cs_tagms, only:s_metal
-use atincl, only: kopint
+use atincl, only: kopint, iatmst
 
 !===============================================================================
 
@@ -1278,6 +1278,9 @@ if (iterns.eq.1) then
     if (f_oi_id.ge.0) then
       call cs_at_data_assim_source_term(ivarfl(iu), tsexp, tsimp)
     endif
+    if (iatmst.eq.1) then
+      call cs_at_source_term_for_inlet(tsexp)
+    endif
   endif
 
   ! Coupling between two Code_Saturne
@@ -1287,7 +1290,6 @@ if (iterns.eq.1) then
   endif
 
   if (iphydr.eq.1.and.igpust.eq.1) then
-
     do iel = 1, ncel
       !FIXME when using porosity
       dvol = 1.d0/cell_f_vol(iel)

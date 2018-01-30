@@ -116,6 +116,7 @@ subroutine resopv &
 ! Module files
 !===============================================================================
 
+use atincl
 use paramx
 use dimens, only: ndimfb
 use numvar
@@ -531,8 +532,8 @@ endif
 sinfo%nbivar = 0
 
 !===============================================================================
-! 3. Compute a approximated pressure increment if needed
-!    that is when there is buoyancy terms (gravity and variable density)
+! 3. Compute an approximated pressure increment if needed
+!    that is when there are buoyancy terms (gravity and variable density)
 !    with a free outlet.
 !===============================================================================
 
@@ -559,7 +560,7 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
   endif
 
   ! This computation is needed only if there are outlet faces
-  if (ifcsor.le.0) then
+  if (ifcsor.le.0.and.iatmst.eq.0) then
     indhyd = 0
   else
 
@@ -655,7 +656,9 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
     call calhyd &
     !==========
     ( indhyd ,                                &
-      frchy  , dfrchy ,                       &
+      !TODO
+      !frchy, dfrchy,                          &
+      frcxt  , dfrcxt ,                       &
       hydro_pres      , iflux  , bflux ,      &
       coefap , coefbp ,                       &
       cofafp , cofbfp ,                       &
@@ -680,8 +683,8 @@ endif
 !  that are (A = 0, B_dp = B_p) for the gradient BCs
 !  Then the A_dp is set thank to the pre-computed hydrostatic pressure
 !  so that the pressure increment will be 0 on the reference outlet face.
-if (iphydr.eq.1.or.iifren.eq.1) then
 
+if (iphydr.eq.1.or.iifren.eq.1) then
 
   if (indhyd.eq.1) then
     ifac0 = isostd(nfabor+1)
@@ -704,7 +707,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
   if (indhyd.eq.1.or.iifren.eq.1) then
 
     do ifac = 1, nfabor
-      if (isostd(ifac).eq.1) then
+      if (isostd(ifac).eq.1.or.iatmst.eq.1.and.iautom(ifac).eq.1) then
         iel=ifabor(ifac)
 
         if (indhyd.eq.1) then
@@ -1323,6 +1326,7 @@ nswmpr = vcopt_p%nswrsm
 !       cvar_pr    is the increment of the pressure
 !       dpvar      is the increment of the increment between sweeps
 !       cpro_divu       is the initial divergence of the predicted mass flux
+
 do iel = 1, ncel
   cvar_pr(iel) = 0.d0
   dpvar(iel) = 0.d0
@@ -1807,7 +1811,6 @@ if (abs(rnormp).gt.0.d0) then
 else
   sinfo%resvar = 0.d0
 endif
-
 
 ! Writing
 if(vcopt_p%iwarni.ge.1) then

@@ -100,6 +100,8 @@ integer, save :: intdrp
 integer, save :: itempc
 !> iliqwt---> liquid water content
 integer, save :: iliqwt
+!> imomst --> momentum source term field id (useful when iatmst > 0)
+integer, save :: imomst
 
 !----------------------------------------------------------------------------
 
@@ -126,6 +128,8 @@ integer, allocatable, dimension(:) :: iautom
 !> initmeteo --> use meteo profile for variables initialization
 !>                  (0: not used; 1: used (default))
 integer, save :: initmeteo
+!> iatmst --> add a momentum source term based on the meteo profile
+integer, save :: iatmst
 
 ! 2.1 Constant specific to the physics (defined in atini1.f90)
 !-------------------------------------------------------------------------------

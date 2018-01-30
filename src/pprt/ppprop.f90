@@ -117,6 +117,12 @@ if (ippmod(ieljou).ge.1 .or.                                     &
 endif
 
 ! ---> Physique particuliere : Atmospherique
+! Momentum source terms
+if (ippmod(iatmos).ge.0 .and. iatmst.gt.0) then
+  call add_property_field('momentum_source_terms', 'MomentumSourceTerms', 3, .false., imomst)
+  call field_set_key_int(imomst, keylog, 1)
+  call field_set_key_int(imomst, keyvis, 1)
+endif
 
 ! ---> Atmospheric modules:
 !      dry and humid atmosphere (ippmod(iatmos) = 1,2)

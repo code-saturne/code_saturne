@@ -291,7 +291,7 @@ elseif (ippmod(icompf).ge.0) then
 
 elseif (ippmod(iatmos).ge.0) then
 
-  call attycl(itypfb, izfppp, rcodcl)
+  call attycl(itypfb, izfppp, icodcl, rcodcl)
   !==========
 
 ! ---> Ecoulements electrique

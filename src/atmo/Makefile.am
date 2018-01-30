@@ -89,6 +89,7 @@ compute_siream.f90 \
 cs_at_plugin.c \
 cs_at_opt_interp.c \
 cs_at_data_assim.c \
+cs_at_source_terms.f90 \
 etheq.f90  \
 intprf.f90 \
 kinrates.f90 \

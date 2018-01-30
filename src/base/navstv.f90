@@ -94,6 +94,7 @@ use field
 use cavitation
 use vof
 use cs_c_bindings
+use atincl, only: iatmst, imomst, iautom
 
 !===============================================================================
 
@@ -168,6 +169,7 @@ double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
 double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:,:), pointer :: disala
+double precision, dimension(:,:), pointer :: cpro_momst
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
@@ -1012,7 +1014,7 @@ if (ippmod(icompf).lt.0) then
       call field_get_coefa_s(ivarfl(ipr), coefa_p)
       !$omp parallel do if(nfabor > thr_n_min)
       do ifac = 1, nfabor
-        if (isostd(ifac).eq.1) then
+        if (isostd(ifac).eq.1.or.iatmst.eq.1.and.iautom(ifac).eq.1) then
           coefa_p(ifac) = coefa_p(ifac) + coefa_dp(ifac)
         endif
       enddo
@@ -1439,13 +1441,29 @@ if (ippmod(icompf).lt.0) then
   xxp0   = xyzp0(1)
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)
-  do iel=1,ncel
-    cpro_prtot(iel)= cvar_pr(iel)               &
-         + ro0*( gx*(xyzcen(1,iel)-xxp0)               &
-         + gy*(xyzcen(2,iel)-xyp0)                     &
-         + gz*(xyzcen(3,iel)-xzp0) )                   &
-         + p0 - pred0
-  enddo
+
+  if (iatmst.eq.0) then
+    do iel=1,ncel
+      cpro_prtot(iel)= cvar_pr(iel)               &
+           + ro0*( gx*(xyzcen(1,iel)-xxp0)               &
+           + gy*(xyzcen(2,iel)-xyp0)                     &
+           + gz*(xyzcen(3,iel)-xzp0) )                   &
+           + p0 - pred0
+    enddo
+  else
+    call field_get_val_v(imomst, cpro_momst)
+
+    do iel=1,ncel
+      cpro_prtot(iel)= cvar_pr(iel)                      &
+           + ro0*(gx*(xyzcen(1,iel)-xxp0)                &
+           + gy*(xyzcen(2,iel)-xyp0)                     &
+           + gz*(xyzcen(3,iel)-xzp0))                    &
+           + p0 - pred0                                  &
+           + cpro_momst(1,iel)*(xyzcen(1,iel)-xxp0)      &
+           + cpro_momst(2,iel)*(xyzcen(2,iel)-xyp0)      &
+           + cpro_momst(3,iel)*(xyzcen(3,iel)-xzp0)
+    enddo
+  endif
 endif
 
 !===============================================================================
