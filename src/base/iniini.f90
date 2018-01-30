@@ -725,6 +725,8 @@ do ii = 1, ntypmx
   ifinty(ii) = 0
 enddo
 
+ifrslb = 0
+itbslb = 0
 
 ! --- Estimateurs d'erreur pour Navier-Stokes
 !       En attendant un retour d'experience et pour l'avoir,

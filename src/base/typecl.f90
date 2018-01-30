@@ -111,20 +111,18 @@ double precision rcodcl(ndimfb,nvar,3)
 
 integer          ifac, ivar, iel
 integer          iok, inc, iccocg, iprev, ideb, ifin, inb, isum
-integer          ifrslb, itbslb
 integer          ityp, ii, jj, iflmab
-integer          irangd
 integer          ifadir
 integer          iut  , ivt   , iwt, iscal
 integer          keyvar, keycpl
 integer          iivar, icpl
 integer          f_id, i_dim, f_type, nfld, f_dim
 
-double precision pref, pipb
+double precision pref
 double precision diipbx, diipby, diipbz
 double precision flumbf, flumty(ntypmx)
-double precision xxp0, xyp0, xzp0, d0, d0min
-double precision xyzref(4) ! xyzref(3) + PI' for broadcast
+double precision d0, d0min
+double precision xyzref(3)
 
 character(len=80) :: fname
 
@@ -135,8 +133,9 @@ double precision, dimension(:), pointer :: bmasfl
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, dimension(:), pointer :: cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot
-
 double precision, dimension(1,1), target :: rvoid2
+
+integer, save :: irangd
 
 integer          ipass
 data             ipass /0/
@@ -155,7 +154,6 @@ allocate(pripb(ndimfb))
 
 ! Initialize variables to avoid compiler warnings
 
-pipb = 0.d0
 pref = 0.d0
 
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -335,9 +333,13 @@ if(ipass.eq.0.or.vcopt%iwarni.ge.2) then
     ! Presence of free entrance face(s)
     if (inb.gt.0) then
       iifren = 1
-      if (.not.(allocated(b_head_loss))) allocate(b_head_loss(ndimfb))
     else
       iifren = 0
+    endif
+    if (irangp.ge.0) call parcmx(iifren)
+
+    if (iifren.eq.1) then
+      if (.not.(allocated(b_head_loss))) allocate(b_head_loss(ndimfb))
     endif
 
     ii = i_convective_inlet
@@ -541,10 +543,6 @@ enddo
 !     (if we need it, that is if there are outlet boudary faces).
 !===============================================================================
 
-xxp0   = xyzp0(1)
-xyp0   = xyzp0(2)
-xzp0   = xyzp0(3)
-
 ! ifrslb = closest free standard outlet face to xyzp0 (icodcl not modified)
 !          (or closest free inlet)
 ! itbslb = max of ifrslb on all ranks, standard outlet face presence indicator
@@ -553,107 +551,54 @@ xzp0   = xyzp0(3)
 ! origin), we choose the face whose center is closest to it, so
 ! as to be mesh numbering (and partitioning) independent.
 
-d0min = rinfin
+if (ntcabs.eq.ntpabs+1) then
 
-ifrslb = 0
+  d0min = rinfin
 
-ideb = idebty(isolib)
-ifin = ifinty(isolib)
+  ideb = idebty(isolib)
+  ifin = ifinty(isolib)
 
-do ii = ideb, ifin
-  ifac = itrifb(ii)
-  if (icodcl(ifac,ipr).eq.0) then
-    d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
-         + (cdgfbo(2,ifac)-xyp0)**2  &
-         + (cdgfbo(3,ifac)-xzp0)**2
-    if (d0.lt.d0min) then
-      ifrslb = ifac
-      d0min = d0
+  do ii = ideb, ifin
+    ifac = itrifb(ii)
+    if (icodcl(ifac,ipr).eq.0) then
+      d0 =   (cdgfbo(1,ifac)-xyzp0(1))**2  &
+           + (cdgfbo(2,ifac)-xyzp0(2))**2  &
+           + (cdgfbo(3,ifac)-xyzp0(3))**2
+      if (d0.lt.d0min) then
+        ifrslb = ifac
+        d0min = d0
+      endif
     endif
-  endif
-enddo
+  enddo
 
+  ideb = idebty(ifrent)
+  ifin = ifinty(ifrent)
 
-ideb = idebty(ifrent)
-ifin = ifinty(ifrent)
-
-do ii = ideb, ifin
-  ifac = itrifb(ii)
-  if (icodcl(ifac,ipr).eq.0) then
-    d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
-         + (cdgfbo(2,ifac)-xyp0)**2  &
-         + (cdgfbo(3,ifac)-xzp0)**2
-    if (d0.lt.d0min) then
-      ifrslb = ifac
-      d0min = d0
+  do ii = ideb, ifin
+    ifac = itrifb(ii)
+    if (icodcl(ifac,ipr).eq.0) then
+      d0 =   (cdgfbo(1,ifac)-xyzp0(1))**2  &
+           + (cdgfbo(2,ifac)-xyzp0(2))**2  &
+           + (cdgfbo(3,ifac)-xyzp0(3))**2
+      if (d0.lt.d0min) then
+        ifrslb = ifac
+        d0min = d0
+      endif
     endif
+  enddo
+
+  ! If we have free outlet faces, irangd and itbslb will
+  ! contain respectively the rank having the boundary face whose
+  ! center is closest to xyzp0, and the local number of that face
+  ! on that rank (also equal to ifrslb on that rank).
+  ! If we do not have free outlet faces, than itbslb = 0
+  ! (as it was initialized that way on all ranks).
+
+  itbslb = ifrslb
+  irangd = irangp
+  if (irangp.ge.0) then
+    call parfpt(itbslb, irangd, d0min)
   endif
-enddo
-
-! If we have free outlet faces, irangd and itbslb will
-! contain respectively the rank having the boundary face whose
-! center is closest to xyzp0, and the local number of that face
-! on that rank (also equal to ifrslb on that rank).
-! If we do not have free outlet faces, than itbslb = 0
-! (as it was initialized that way on all ranks).
-
-itbslb = ifrslb
-irangd = irangp
-if (irangp.ge.0) then
-  call parfpt(itbslb, irangd, d0min)
-endif
-
-if (itbslb.gt.0) then
-
-  if (iphydr.eq.1) then
-    call field_get_val_v_by_name('volume_forces', frcxt)
-  else
-    frcxt => rvoid2
-  endif
-
-  ! Allocate a work array for the gradient calculation
-  allocate(grad(3,ncelet))
-
-  iprev = 1
-  inc = 1
-  iccocg = 1
-
-  call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,      &
-                                iccocg, iphydr,                       &
-                                frcxt, grad)
-
-  !  Put in pripb the value at I' or F (depending on iphydr) of the
-  !  total pressure, computed from P*
-
-  if ((iphydr.eq.0.or.iphydr.eq.2).and.iifren.eq.0) then
-    do ifac = 1, nfabor
-      ii = ifabor(ifac)
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
-      pripb(ifac) = cvara_pr(ii)                                          &
-           + diipbx*grad(1,ii)+ diipby*grad(2,ii) + diipbz*grad(3,ii) &
-           + ro0*( gx*(cdgfbo(1,ifac)-xxp0)                           &
-           + gy*(cdgfbo(2,ifac)-xyp0)                                 &
-           + gz*(cdgfbo(3,ifac)-xzp0))                                &
-           + p0 - pred0
-    enddo
-  else
-    do ifac = 1, nfabor
-      ii = ifabor(ifac)
-      pripb(ifac) = cvara_pr(ii)                                    &
-           + (cdgfbo(1,ifac)-xyzcen(1,ii))*grad(1,ii)           &
-           + (cdgfbo(2,ifac)-xyzcen(2,ii))*grad(2,ii)           &
-           + (cdgfbo(3,ifac)-xyzcen(3,ii))*grad(3,ii)           &
-           + ro0*(  gx*(cdgfbo(1,ifac)-xxp0)                    &
-           + gy*(cdgfbo(2,ifac)-xyp0)                           &
-           + gz*(cdgfbo(3,ifac)-xzp0))                          &
-           + p0 - pred0
-    enddo
-  endif
-
-  ! Free memory
-  deallocate(grad)
 
 endif
 
@@ -752,26 +697,22 @@ if (itbslb.gt.0) then
     xyzref(1) = cdgfbo(1,ifrslb)
     xyzref(2) = cdgfbo(2,ifrslb)
     xyzref(3) = cdgfbo(3,ifrslb)
-    xyzref(4) = pripb(ifrslb)
     if (iphydr.eq.1.or.iifren.eq.1) isostd(nfabor+1) = ifrslb
   endif
 
   ! Broadcast PI' and pressure reference
   ! from irangd to all other ranks.
   if (irangp.ge.0) then
-    inb = 4
+    inb = 3
     call parbcr(irangd, inb, xyzref)
   endif
-
-  pipb = xyzref(4)
-  xyzref(4) = 0.d0
 
   ! If the user has not specified anything, we set ixyzp0 to 2 so as
   ! to update the reference point.
 
   if (ixyzp0.eq.-1) ixyzp0 = 2
 
-elseif (ixyzp0.lt.0) then
+elseif (ixyzp0.lt.0.and.ntcabs.eq.ntpabs+1) then
 
   ! If there are no outlet faces, we search for possible Dirichlets
   ! specified by the user so as to locate the reference point.
@@ -783,9 +724,9 @@ elseif (ixyzp0.lt.0) then
   ifadir = -1
   do ifac = 1, nfabor
     if (icodcl(ifac,ipr).eq.1) then
-      d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
-           + (cdgfbo(2,ifac)-xyp0)**2  &
-           + (cdgfbo(3,ifac)-xzp0)**2
+      d0 =   (cdgfbo(1,ifac)-xyzp0(1))**2  &
+           + (cdgfbo(2,ifac)-xyzp0(2))**2  &
+           + (cdgfbo(3,ifac)-xyzp0(3))**2
       if (d0.lt.d0min) then
         ifadir = ifac
         d0min = d0
@@ -817,7 +758,6 @@ elseif (ixyzp0.lt.0) then
 
 endif
 
-
 !   Si le point de reference n'a pas ete specifie par l'utilisateur
 !   on le change et on decale alors COEFU s'il y a des sorties.
 !   La pression totale est aussi decalee (c'est a priori
@@ -825,27 +765,25 @@ endif
 
 if (ixyzp0.eq.2) then
   ixyzp0 = 1
-  xxp0 = xyzref(1) - xyzp0(1)
-  xyp0 = xyzref(2) - xyzp0(2)
-  xzp0 = xyzref(3) - xyzp0(3)
-  xyzp0(1) = xyzref(1)
-  xyzp0(2) = xyzref(2)
-  xyzp0(3) = xyzref(3)
   if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
     call field_get_val_s(iprtot, cpro_prtot)
     do iel = 1, ncelet
-      cpro_prtot(iel) = cpro_prtot(iel) - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+      cpro_prtot(iel) = cpro_prtot(iel) - ro0*( gx*(xyzref(1) - xyzp0(1)) &
+                                              + gy*(xyzref(2) - xyzp0(2)) &
+                                              + gz*(xyzref(3) - xyzp0(3)))
     enddo
   endif
+
+  xyzp0(1) = xyzref(1)
+  xyzp0(2) = xyzref(2)
+  xyzp0(3) = xyzref(3)
+
   if (itbslb.gt.0) then
-    write(nfecra,8000)xxp0,xyp0,xzp0
-    do ifac = 1, nfabor
-      pripb(ifac) = pripb(ifac) - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
-    enddo
-    pipb = pipb - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+    write(nfecra,8000) xyzp0(1), xyzp0(2), xyzp0(3)
   else
-    write(nfecra,8001)xxp0,xyp0,xzp0
+    write(nfecra,8001) xyzp0(1), xyzp0(2), xyzp0(3)
   endif
+
 elseif (ixyzp0.eq.-1) then
   !     Il n'y a pas de sorties ni de Dirichlet et l'utilisateur n'a
   !     rien specifie -> on met IXYZP0 a 0 pour ne plus y toucher, tout
@@ -853,19 +791,45 @@ elseif (ixyzp0.eq.-1) then
   ixyzp0 = 0
 endif
 
-!     La pression totale doit etre recalee en Xref a la valeur
-!     Po + rho_0*g.(Xref-X0)
 if (itbslb.gt.0) then
-  xxp0 = xyzp0(1)
-  xyp0 = xyzp0(2)
-  xzp0 = xyzp0(3)
-  pref = p0                                            &
-       + ro0*( gx*(xyzref(1)-xxp0)                     &
-       + gy*(xyzref(2)-xyp0)                           &
-       + gz*(xyzref(3)-xzp0) )                         &
-       - pipb
-endif
 
+  if (iphydr.eq.1) then
+    call field_get_val_v_by_name('volume_forces', frcxt)
+  else
+    frcxt => rvoid2
+  endif
+
+  ! Allocate a work array for the gradient calculation
+  allocate(grad(3,ncelet))
+
+  iprev = 1
+  inc = 1
+  iccocg = 1
+
+  call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,      &
+                                iccocg, iphydr,                       &
+                                frcxt, grad)
+
+  ! Put in pripb the value at I' or F (depending on iphydr) of the
+  ! total pressure, computed from P* shifted from the ro0*g.(X-Xref)
+
+  do ifac = 1, nfabor
+    ii = ifabor(ifac)
+    pripb(ifac) = cvara_pr(ii)                                   &
+                + (cdgfbo(1,ifac)-xyzcen(1,ii))*grad(1,ii)       &
+                + (cdgfbo(2,ifac)-xyzcen(2,ii))*grad(2,ii)       &
+                + (cdgfbo(3,ifac)-xyzcen(3,ii))*grad(3,ii)
+  enddo
+
+  ! Free memory
+  deallocate(grad)
+
+  if (irangp.eq.irangd) pref = pripb(ifrslb)
+  if (irangp.ge.0) then
+    call parall_bcast_r(irangd, pref)
+  endif
+
+endif
 
 ! ---> Entree/Sortie libre
 
@@ -878,9 +842,14 @@ do ivar = 1, nvar
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 1
-        rcodcl(ifac,ivar,1) = pripb(ifac) + pref
+        rcodcl(ifac,ivar,1) = pripb(ifac) - pref
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
+      else
+        rcodcl(ifac,ivar,1) = rcodcl(ifac,ivar,1) - ro0*( gx*(cdgfbo(1,ifac) - xyzp0(1))  &
+                                                        + gy*(cdgfbo(2,ifac) - xyzp0(2))  &
+                                                        + gz*(cdgfbo(3,ifac) - xyzp0(3))) &
+                                                  - p0
       endif
     enddo
   elseif(ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
@@ -918,7 +887,7 @@ do ivar = 1, nvar
 
         ! Std outlet
         icodcl(ifac,ivar)   = 1
-        rcodcl(ifac,ivar,1) = pripb(ifac) + pref
+        rcodcl(ifac,ivar,1) = 0.d0 !pripb(ifac) - pref
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
 

@@ -1236,7 +1236,7 @@ do iel = 1, ncel
   enddo
 enddo
 
-! The computation of esplicit and implicit source terms is performed
+! The computation of explicit and implicit source terms is performed
 ! at the first iteration only.
 if (iterns.eq.1) then
 

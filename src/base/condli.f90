@@ -1187,15 +1187,7 @@ do ifac = 1, nfabor
   if (icodcl(ifac,ipr).eq.1) then
 
     hext = rcodcl(ifac,ipr,2)
-    if (ippmod(icompf).ge.0) then
-      pimp = rcodcl(ifac,ipr,1)
-    else
-      pimp = rcodcl(ifac,ipr,1)                              &
-           - ro0*( gx*(cdgfbo(1,ifac)-xxp0)                  &
-           + gy*(cdgfbo(2,ifac)-xyp0)                  &
-           + gz*(cdgfbo(3,ifac)-xzp0) )                &
-           + pred0 - p0
-    endif
+    pimp = rcodcl(ifac,ipr,1)
 
     call set_dirichlet_scalar &
        ( coefap(ifac), cofafp(ifac),                         &

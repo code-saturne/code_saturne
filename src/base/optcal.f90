@@ -1026,6 +1026,12 @@ module optcal
   !>    - 1: at least one face
   integer(c_int), pointer, save :: iifren
 
+  !> number of the closest free standard outlet (or free inlet) face to xyzp0
+  integer, save :: ifrslb
+
+  !> max of ifrslb on all ranks, standard outlet face presence indicator
+  integer, save :: itbslb
+
   !> compute the hydrostatic pressure in order to compute the Dirichlet
   !> conditions on the pressure at outlets
   !>    - 1: true

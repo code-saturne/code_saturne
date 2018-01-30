@@ -123,7 +123,6 @@ integer          nbrval, iappel
 integer          ndircp, icpt
 integer          numcpl
 integer          iflvoi, iflvob
-integer          idir
 double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, rhom, rovolsdt
 double precision epsrgp, climgp, extrap, xyzmax(3), xyzmin(3)
