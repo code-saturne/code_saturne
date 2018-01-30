@@ -643,6 +643,12 @@ _read_header(cs_xml_t  *doc)
       }
     }
 
+    /* Variant with no XML version info */
+
+    else if (strncmp(doc->buf + doc->byte, "<", 1) == 0) {
+      found = true;
+    }
+
   }
 
   assert(found);
