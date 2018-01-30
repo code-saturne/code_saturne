@@ -1807,8 +1807,8 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
           jj = i_face_cells[face_id][1];
 
           cs_real_t ktpond = (c_weight == NULL) ?
-             weight[face_id] :              // no cell weightening
-             weight[face_id] * c_weight[ii] // cell weightening active
+             weight[face_id] :              /* no cell weightening */
+             weight[face_id] * c_weight[ii] /* cell weightening active */
                / (      weight[face_id] * c_weight[ii]
                  + (1.0-weight[face_id])* c_weight[jj]);
 

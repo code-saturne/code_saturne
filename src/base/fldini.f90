@@ -348,24 +348,26 @@ itycat = FIELD_PROPERTY
 ityloc = 1         ! variables defined on cells
 idimf  = -1        ! Field dimension
 
-do ivar = 1, nvar
-  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  if (vcopt%iwgrec.eq.1) then
 
-    if (vcopt%idiff.lt.1) cycle
-    iflid = ivarfl(ivar)
-    if (iflid.eq.iflidp) cycle
-    iflidp = iflid
-    call field_get_name(iflid, name)
-    f_name = 'gradient_weighting_'//trim(name)
-    if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
-      idimf = 1
-    else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-      idimf = 6
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if (vcopt%iwgrec.eq.1 .and. vcopt%idiff .ge. 1) then
+
+      call field_get_name(f_id, name)
+      f_name = 'gradient_weighting_'//trim(name)
+      if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
+        idimf = 1
+      else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+        idimf = 6
+      endif
+      call field_create(f_name, itycat, ityloc, idimf, inoprv, iflid)
+      call field_set_key_int(f_id, kwgrec, iflid)
+
     endif
-    call field_create(f_name, itycat, ityloc, idimf, inoprv, f_id)
-    call field_set_key_int(iflid, kwgrec, f_id)
-
   endif
 enddo
 

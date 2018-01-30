@@ -559,7 +559,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
   int tr_dim = 0;
   int w_stride = 1;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_real_t *weight = NULL;
+  cs_real_t *c_weight = NULL;
   cs_internal_coupling_t  *cpl = NULL;
   cs_var_cal_opt_t var_cal_opt;
 
@@ -572,9 +572,9 @@ cs_field_gradient_scalar(const cs_field_t          *f,
       int key_id = cs_field_key_id("gradient_weighting_id");
       int diff_id = cs_field_get_key_int(f, key_id);
       if (diff_id > -1) {
-        cs_field_t *weight_f = cs_field_by_id(diff_id);
-        weight = weight_f->val;
-        w_stride = weight_f->dim;
+        cs_field_t *f_weight = cs_field_by_id(diff_id);
+        c_weight = f_weight->val;
+        w_stride = f_weight->dim;
       }
     }
   }
@@ -613,7 +613,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                      f->bc_coeffs->a,
                      f->bc_coeffs->b,
                      var,
-                     weight,
+                     c_weight,
                      cpl, /* internal coupling */
                      grad);
 }
@@ -652,7 +652,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_real_t *weight = NULL;
+  cs_real_t *c_weight = NULL;
   cs_var_cal_opt_t var_cal_opt;
 
   /* Get the calculation option from the field */
@@ -662,9 +662,9 @@ cs_field_gradient_potential(const cs_field_t          *f,
       int key_id = cs_field_key_id("gradient_weighting_id");
       int diff_id = cs_field_get_key_int(f, key_id);
       if (diff_id > -1) {
-        cs_field_t *weight_f = cs_field_by_id(diff_id);
-        weight = weight_f->val;
-        w_stride = weight_f->dim;
+        cs_field_t *f_weight = cs_field_by_id(diff_id);
+        c_weight = f_weight->val;
+        w_stride = f_weight->dim;
       }
     }
   }
@@ -687,7 +687,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
                      f->bc_coeffs->a,
                      f->bc_coeffs->b,
                      var,
-                     weight,
+                     c_weight,
                      NULL, /* internal coupling */
                      grad);
 }
@@ -727,8 +727,8 @@ cs_field_gradient_vector(const cs_field_t          *f,
       int key_id = cs_field_key_id("gradient_weighting_id");
       int diff_id = cs_field_get_key_int(f, key_id);
       if (diff_id > -1) {
-        cs_field_t *weight_f = cs_field_by_id(diff_id);
-        c_weight = weight_f->val;
+        cs_field_t *f_weight = cs_field_by_id(diff_id);
+        c_weight = f_weight->val;
       }
     }
   }
