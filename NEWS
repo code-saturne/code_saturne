@@ -5,6 +5,8 @@ Trunk (unreleased)
 Changes
 -------
 
+- Allow stopping at a given wall-clock time using the control_file.
+
 - Improved legacy coupling-based turbomachinery option, frozen rotor
   is now also possible.
 

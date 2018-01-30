@@ -84,14 +84,37 @@ void CS_PROCF (armtps, ARMTPS)
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Limit number of remaining time steps if the remaining allocated time is
- * too small to attain the requested number of steps.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get current wall-clock time limit.
  *
- * parameters:
- *   ts_cur <-- current time step number
- *   ts_max <-> maximum time step number
- *----------------------------------------------------------------------------*/
+ * \return current wall-time limit (in seconds), or -1
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_resource_get_wt_limit(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set wall-clock time limit.
+ *
+ * \param[in]  wt  wall-time limit (in seconds), or -1
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_resource_set_wt_limit(double  wt);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Limit number of remaining time steps if the remaining allocated
+ *        time is too small to attain the requested number of steps.
+ *
+ * \param[in]       ts_cur  current time step number
+ * \param[in, out]  ts_max  maximum time step number
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_resource_get_max_timestep(int   ts_cur,
