@@ -237,8 +237,8 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cpro_divu
-double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: cpro_wgrec_s
+double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: c_estim_der
 double precision, dimension(:), pointer :: cpro_tsrho
 double precision, allocatable, dimension(:) :: surfbm
@@ -926,38 +926,25 @@ iccocg = 1
 iprev  = 1
 inc    = 1
 
-if (ivofmt.lt.0) then
-  call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
-                                iccocg, iphydr,                     &
-                                frcxt, gradp)
-else
-  ! VOF algo.: continuity of the diffusive flux across internal faces
-
-  nswrgp = vcopt_p%nswrgr
-  imligp = vcopt_p%imligr
-  iwarnp = vcopt_p%iwarni
-  epsrgp = vcopt_p%epsrgr
-  climgp = vcopt_p%climgr
-  extrap = vcopt_p%extrag
-
-  call gradient_weighted_s(ivarfl(ipr), imrgra, inc, iccocg, nswrgp, imligp,  &
-                           iwarnp, epsrgp, climgp, extrap,                    &
-                           cvar_pr, xunsro, coefa_p , coefb_p,                &
-                           gradp )
-
-endif
-
-do iel = 1, ncelet
-  do isou = 1, 3
-    trav(isou,iel) = gradp(isou,iel)
-  enddo
-enddo
+! Pressure gradient
+! NB: for the VOF algo. the weighting is automatically done
+! thank to the iwgrec variable calculation option.
+call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
+                              iccocg, iphydr,                     &
+                              frcxt, gradp)
 
 if (iphydr.eq.1) then
   do iel = 1, ncel
-    trav(1,iel) = trav(1,iel) - frcxt(1 ,iel)
-    trav(2,iel) = trav(2,iel) - frcxt(2 ,iel)
-    trav(3,iel) = trav(3,iel) - frcxt(3 ,iel)
+    do isou = 1, 3
+      trav(isou, iel) = gradp(isou, iel) - frcxt(isou ,iel)
+    enddo
+  enddo
+
+else
+  do iel = 1, ncel
+    do isou = 1, 3
+      trav(isou,iel) = gradp(isou,iel)
+    enddo
   enddo
 endif
 

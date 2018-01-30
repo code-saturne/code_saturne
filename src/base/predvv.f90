@@ -206,6 +206,7 @@ integer          ircflp, ischcp, isstpp, iescap
 integer          iflmb0, nswrp
 integer          idtva0, icvflb, f_oi_id
 integer          jsou  , ivisep, imasac
+integer          f_dim , iflwgr
 integer          ivoid(1)
 
 double precision rnorm , vitnor
@@ -253,6 +254,8 @@ double precision, allocatable, dimension(:) :: surfbm
 double precision, dimension(:,:), pointer :: lapla, lagr_st_vel
 double precision, dimension(:), pointer :: cpro_tsrho
 double precision, dimension(:,:), pointer :: cpro_gradp
+double precision, dimension(:), pointer :: cpro_wgrec_s
+double precision, dimension(:,:), pointer :: cpro_wgrec_v
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
@@ -368,42 +371,37 @@ else
   iprev = 1
 endif
 
-if (ivofmt.lt.0) then
-  call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
-                                iccocg, iphydr,                     &
-                                frcxt, cpro_gradp)
+! Namely for the VOF algorithm: consistency of the gradient
+! with the diffusive flux scheme of the correction step
+if (vcopt_p%iwgrec.eq.1) then
+  ! Id weighting field for gradient
+  call field_get_key_int(ivarfl(ipr), kwgrec, iflwgr)
+  call field_get_dim(iflwgr, f_dim)
+  if (f_dim.gt.1) then
+    call field_get_val_v(iflwgr, cpro_wgrec_v)
+    do iel = 1, ncel
+      cpro_wgrec_v(1,iel) = dt(iel) / crom(iel) ! FIXME should take headlosses into account, not compatible neither with ipucou=1...
+      cpro_wgrec_v(2,iel) = dt(iel) / crom(iel)
+      cpro_wgrec_v(3,iel) = dt(iel) / crom(iel)
+      cpro_wgrec_v(4,iel) = 0.d0
+      cpro_wgrec_v(5,iel) = 0.d0
+      cpro_wgrec_v(6,iel) = 0.d0
+    enddo
+    call syntis(cpro_wgrec_v)
 
-else
-
-  ! VOF algorithm: consistency of the gradient
-  ! with the diffusive flux scheme of the correction step
-
-  call field_get_coefa_s (ivarfl(ipr), coefa_p)
-  call field_get_coefb_s (ivarfl(ipr), coefb_p)
-
-  allocate(xinvro(ncelet))
-
-  do iel = 1, ncel
-    xinvro(iel) = 1.d0/crom(iel)
-  enddo
-
-  iccocg = 1
-  inc    = 1
-  nswrgp = vcopt_p%nswrgr
-  imligp = vcopt_p%imligr
-  iwarnp = vcopt_p%iwarni
-  epsrgp = vcopt_p%epsrgr
-  climgp = vcopt_p%climgr
-  extrap = vcopt_p%extrag
-
-  call gradient_weighted_s(ivarfl(ipr), imrgra, inc, iccocg, nswrgp, imligp,  &
-                           iwarnp, epsrgp, climgp, extrap,                    &
-                           cvara_pr, xinvro, coefa_p, coefb_p,                &
-                           cpro_gradp )
-
-  deallocate(xinvro)
-
+  else
+    call field_get_val_s(iflwgr, cpro_wgrec_s)
+    do iel = 1, ncel
+      cpro_wgrec_s(iel) = dt(iel) / crom(iel)
+    enddo
+    call synsca(cpro_wgrec_s)
+  endif
 endif
+
+! Pressure gradient
+call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
+                              iccocg, iphydr,                     &
+                              frcxt, cpro_gradp)
 
 !    Calcul des efforts aux parois (partie 2/5), si demande
 !    La pression a la face est calculee comme dans gradrc/gradmc

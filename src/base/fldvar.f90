@@ -190,18 +190,21 @@ else
   call add_variable_field('hydraulic_head', 'Hydraulic head', 1, ipr)
 endif
 
+! Cavitation: activate VoF
+if (icavit.ge.0.and.ivofmt.lt.0) ivofmt = 0
+
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 if (ippmod(icompf).ge.0) then
   vcopt%istat = 1
 else
   vcopt%istat = 0
 endif
+! VoF algorithm: activate the weighthening for the pressure
+if (ivofmt.ge.0) vcopt%iwgrec = 1
 vcopt%iconv = 0
 call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 ! Void fraction (Volume of Fluid algorithm)
-
-if (icavit.ge.0.and.ivofmt.lt.0) ivofmt = 0
 if (ivofmt.ge.0) then
   call add_variable_field('void_fraction', 'Void Fraction', 1, ivolf2)
   call field_get_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
