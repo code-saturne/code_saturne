@@ -1,4 +1,15 @@
 
+Release 5.0.7 (Unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Fix crash in scalar gradient reconstruction with body forces for sequential
+  runs (due to incomplete fix in 5.0.6).
+
+- Fix obsolete URL for HDF5 download in automatic installer.
+
 Release 5.0.6 (Jan 29 2018)
 ===========================
 
