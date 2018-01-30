@@ -609,7 +609,7 @@ class Setup:
                     package="hdf5",
                     version="1.8.17",
                     archive="hdf5-1.8.17.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.17/src/%s")
+                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.17/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -1143,7 +1143,7 @@ Check the setup file and some utilities presence.
             for lib in self.optlibs:
                 p = self.packages[lib]
                 if p.installation == 'yes':
-                    sys.stdout.write("Download of %s\n" % p.name)
+                    sys.stdout.write("Download of %s\n  (%s)\n" % (p.name, p.url))
                     p.download()
             self.download = 'no'
             self.write_setup()
