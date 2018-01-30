@@ -5,6 +5,9 @@ Release 5.1.3 (Unreleased)
 Bug fixes
 ---------
 
+- Fix crash in scalar gradient reconstruction with body forces for sequantial
+  runs (due to incomplete fix in 5.1.2).
+
 - Fix obsolete URL for HDF5 download in automatic installer.
 
 Release 5.1.2 (Jan 29 2018)
