@@ -6770,10 +6770,13 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
   bool update_stats = true;
 
   if (hyd_p_flag == 1) {
-    cs_halo_sync_var_strided(cs_glob_mesh->halo, halo_type,
-                             (cs_real_t *)f_ext, 3);
-    cs_halo_perio_sync_var_vect(cs_glob_mesh->halo, halo_type,
-                                (cs_real_t *)f_ext, 3);
+    if (cs_glob_mesh->halo != NULL) {
+      cs_halo_sync_var_strided(cs_glob_mesh->halo, halo_type,
+                               (cs_real_t *)f_ext, 3);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect(cs_glob_mesh->halo, halo_type,
+                                  (cs_real_t *)f_ext, 3);
+    }
   }
 
   t0 = cs_timer_time();
