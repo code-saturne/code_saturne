@@ -1,13 +1,13 @@
 # translation of fr.po to
 # French translations for code_saturne package.
-# Copyright (C) 2008-2016 EDF S.A.
+# Copyright (C) 2008-2018 EDF S.A.
 # This file is distributed under the same license as Code_Saturne.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-01-29 12:59+0100\n"
+"POT-Creation-Date: 2018-01-31 10:55+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7953,6 +7953,22 @@ msgstr "maillage volumique"
 
 #, c-format
 msgid ""
+"\n"
+" Wall-clock time limit set by CS_MAXTIME: %dh:%dm:%ds\n"
+msgstr ""
+"\n"
+" Temps de calcul limite défini via CS_MAXTIME : %dh:%dm:%ds\n"
+
+#, c-format
+msgid ""
+"\n"
+"%s: Failed to parse CS_MAXTIME = \"%s\"\n"
+msgstr ""
+"\n"
+"%s : Erreur d'interprétation de CS_MAXTIME = \"%s\"\n"
+
+#, c-format
+msgid ""
 "===========================================================\n"
 "   ** Stop to avoid exceeding time allocation.\n"
 "      ----------------------------------------\n"
@@ -7964,28 +7980,6 @@ msgstr ""
 "      ----------------------------------------------\n"
 "      numéro de pas de temps maximal mis à : %d\n"
 "========================================================\n"
-
-#, c-format
-msgid ""
-"===============================================================\n"
-"   ** Remaining time management\n"
-"      -------------------------\n"
-"      Remaining time allocated to the job       : ', %14.5e\n"
-"      Estimated time for another time step      : ', %14.5e\n"
-"        mean time for a time step               : ', %14.5e\n"
-"        time for the previous time step         : ', %14.5e\n"
-"        security margin                         : ', %14.5e\n"
-"===============================================================\n"
-msgstr ""
-"===============================================================\n"
-"   ** Gestion du temps restant\n"
-"      ------------------------\n"
-"      Temps restant alloué à la tâche           : ', %14.5e\n"
-"      Temps estimé pour un nouveau pas de temps : ', %14.5e\n"
-"        temps moyen par pas de temps            : ', %14.5e\n"
-"        temps pour le pas de temps précédent    : ', %14.5e\n"
-"        marge de sécurité                       : ', %14.5e\n"
-"===============================================================\n"
 
 #, c-format
 msgid ""
