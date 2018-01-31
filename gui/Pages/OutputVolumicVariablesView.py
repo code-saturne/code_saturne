@@ -366,11 +366,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                     self.disabledItem.append((row, 3))
                     self.disabledItem.append((row, 4))
 
-            if self.mdl.getProbeList() == []:
-                monitor = "off"
-                self.mdl.setMonitorStatus(name, monitor)
-            else:
-                monitor = self.mdl.getMonitorStatus(name)
+            monitor = self.mdl.getMonitorStatus(name)
 
             # StandardItemModel data
             item = item_class(name, label, printing, post, monitor)

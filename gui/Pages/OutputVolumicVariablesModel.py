@@ -581,7 +581,7 @@ class OutputVolumicVariablesModel(Variables, Model):
     @Variables.undoLocal
     def setMonitorStatus(self, name, status):
         """
-        Put status for postprocessing from node with name and label
+        Put status for monitoring from node with name and label
         """
         self.isOnOff(status)
         self.isInList(name, self.getNamesList())
