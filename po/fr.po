@@ -1,13 +1,13 @@
 # translation of fr.po to
 # French translations for code_saturne package.
-# Copyright (C) 2008-2016 EDF S.A.
+# Copyright (C) 2008-2018 EDF S.A.
 # This file is distributed under the same license as Code_Saturne.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-01-22 11:48+0100\n"
+"POT-Creation-Date: 2018-01-31 10:31+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6836,7 +6836,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Only user variables of dimension 1 are currently handled,\n"
+"Only user variables of dimension lower or equal to 3 arecurrently handled,\n"
 "but %s is defined with dimension %d."
 msgstr ""
 
@@ -8001,6 +8001,18 @@ msgstr "maillage volumique"
 
 #, c-format
 msgid ""
+"\n"
+" Wall-clock time limit set by CS_MAXTIME: %dh:%dm:%ds\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"%s: Failed to parse CS_MAXTIME = \"%s\"\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "===========================================================\n"
 "   ** Stop to avoid exceeding time allocation.\n"
 "      ----------------------------------------\n"
@@ -8012,28 +8024,6 @@ msgstr ""
 "      ----------------------------------------------\n"
 "      numéro de pas de temps maximal mis à : %d\n"
 "========================================================\n"
-
-#, c-format
-msgid ""
-"===============================================================\n"
-"   ** Remaining time management\n"
-"      -------------------------\n"
-"      Remaining time allocated to the job       : ', %14.5e\n"
-"      Estimated time for another time step      : ', %14.5e\n"
-"        mean time for a time step               : ', %14.5e\n"
-"        time for the previous time step         : ', %14.5e\n"
-"        security margin                         : ', %14.5e\n"
-"===============================================================\n"
-msgstr ""
-"===============================================================\n"
-"   ** Gestion du temps restant\n"
-"      ------------------------\n"
-"      Temps restant alloué à la tâche           : ', %14.5e\n"
-"      Temps estimé pour un nouveau pas de temps : ', %14.5e\n"
-"        temps moyen par pas de temps            : ', %14.5e\n"
-"        temps pour le pas de temps précédent    : ', %14.5e\n"
-"        marge de sécurité                       : ', %14.5e\n"
-"===============================================================\n"
 
 #, c-format
 msgid ""
@@ -9664,9 +9654,13 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid " Invalid val %s related to key CS_EQKEY_SPACE_SCHEME\n"
+msgstr ""
+
+#, c-format
 msgid ""
-" Invalid val %s related to key CS_EQKEY_SPACE_SCHEME\n"
-" Choice between cdo_vb or cdo_fb"
+" Invalid val %s related to key CS_EQKEY_DOF_REDUCTION\n"
+" Choice between \"derham\" or \"average\"."
 msgstr ""
 
 #, c-format
@@ -9781,10 +9775,19 @@ msgstr ""
 msgid "Stokes velocity-pressure system"
 msgstr ""
 
-msgid "Navier-Stokes velocity-pressure system"
+msgid "Incompressible Navier-Stokes velocity-pressure system"
 msgstr ""
 
-msgid "Full system coupling"
+msgid "Fully unsteady"
+msgstr "Instationnaire"
+
+msgid "Fully steady"
+msgstr "Stationnaire"
+
+msgid "Steaty-state as the limit of an unsteady computation"
+msgstr ""
+
+msgid "Uzawa-Augmented Lagrangian coupling"
 msgstr ""
 
 msgid "Artificial compressibility algorithm"
@@ -9792,6 +9795,63 @@ msgstr ""
 
 msgid "Incremental projection algorithm"
 msgstr "algorithme de projection incrémental"
+
+msgid ""
+" Stop setting an empty cs_navsto_param_t structure.\n"
+" Please check your settings.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid val %s related to key CS_NSKEY_SPACE_SCHEME\n"
+" Choice between hho_{p0, p1, p2} or cdo_fb"
+msgstr ""
+
+#, c-format
+msgid " %s: Invalid key for setting the Navier-Stokes system."
+msgstr ""
+
+msgid "fv"
+msgstr ""
+
+msgid "cdo_vb"
+msgstr ""
+
+msgid "cdo_vcb"
+msgstr ""
+
+msgid "cdo_fb"
+msgstr ""
+
+msgid "hho_p0"
+msgstr ""
+
+msgid "hho_p1"
+msgstr ""
+
+msgid "hho_p2"
+msgstr ""
+
+msgid "Legacy Finite Volume"
+msgstr ""
+
+msgid "CDO vertex-based"
+msgstr ""
+
+msgid "CDO vertex+cell-based"
+msgstr ""
+
+msgid "CDO face-based"
+msgstr ""
+
+msgid "HHO-P0"
+msgstr ""
+
+msgid "HHO-P1"
+msgstr ""
+
+msgid "HHO-P2"
+msgstr ""
 
 msgid "Homogeneous Dirichlet"
 msgstr ""
@@ -15350,6 +15410,3 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
-
-#~ msgid "base"
-#~ msgstr "base"
