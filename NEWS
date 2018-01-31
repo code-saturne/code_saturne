@@ -10,6 +10,11 @@ Bug fixes
 
 - Fix obsolete URL for HDF5 download in automatic installer.
 
+Changes
+-------
+
+- Allow stopping at a given wall-clock time using the control_file.
+
 Release 5.0.6 (Jan 29 2018)
 ===========================
 

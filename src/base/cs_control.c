@@ -63,6 +63,7 @@
 #include "cs_log.h"
 #include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_resource.h"
 #include "cs_restart.h"
 #include "cs_time_plot.h"
 #include "cs_timer.h"
@@ -1117,6 +1118,15 @@ _parse_control_buffer(const char         *name,
       cs_time_step_define_t_max(t_max);
       bft_printf("  %-32s %12.5g (%s %12.5g)\n",
                  "max_time_value", ts->t_max, _("current:"), ts->t_cur);
+    }
+    else if (strncmp(s, "max_wall_time ", 14) == 0) {
+      double wt_max;
+      if (_read_next_double(cur_line, (const char **)&s, &wt_max) > 0)
+        wt_max = CS_MAX(wt_max, cs_timer_wtime());
+      bft_printf("  %-32s %12.5g (%s %12.5g)\n",
+                 "max_wall_time", wt_max, _("current:"),
+                 cs_resource_get_wt_limit());
+      cs_resource_set_wt_limit(wt_max);
     }
 
     /* Control file check interval */

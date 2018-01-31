@@ -62,6 +62,16 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+ * \file cs_resource.c
+ *
+ *  \brief Resource allocation management (available time).
+ */
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -76,16 +86,18 @@ BEGIN_C_DECLS
  *  Global variables
  *============================================================================*/
 
+static double  _wt_limit = -1.;
+static double  _wt_safe = 0.95;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute remaining time allocated to this process when available
- * (usually, architectures other than IBM Blue Gene or Cray XT)
+ * Compute remaining time allocated to this process when available.
  *
  * parameters:
- *   tps <-> remaining time (default: 7 days)
+ *   tps <-> remaining time (default: 30 days)
  *
  * returns:
  *   -1 (error), 0 (no limit using this method), or 1 (limit determined)
@@ -102,7 +114,7 @@ _t_remain(double  *tps)
   struct rusage buf_time;
   struct rusage buf_time1;
 
-  *tps = 3600.0 * 24.0 * 7; /* "unlimited" values by default */
+  *tps = 3600.0 * 24.0 * 30; /* "unlimited" values by default */
 
   if ((retval = getrusage(RUSAGE_SELF, &buf_time)) < 0)
     bft_error(__FILE__, __LINE__, errno,
@@ -121,7 +133,7 @@ _t_remain(double  *tps)
   /* If no error encountered (most probable case), use CPU limit returned by
      getrlimit (works at least with LSF batch systems under OSF1 or Linux),
      compute true remaining time, and put return code to 1 to indicate
-     thet the remaining time is indeed limited. */
+     that the remaining time is indeed limited. */
 
   if (retval == 0 && ressources.rlim_cur != RLIM_INFINITY) {
     *tps = (double)((int)ressources.rlim_cur
@@ -141,31 +153,31 @@ _t_remain(double  *tps)
 }
 
 /*----------------------------------------------------------------------------
- * Query CPU time allocated to this process
- *
- * parameters:
- *   tps <-> remaining time (default: 7 days)
- *
- * returns:
- *   -1 (error), 0 (no limit using this method), or 1 (limit determined)
+ * Initialize CPU time allocated based on CS_MAXTIME and user settings.
  *----------------------------------------------------------------------------*/
 
-static int
-_t_cpu_max(double  *tps)
+static void
+_init_wt_limit(void)
 {
-  char * cs_maxtime;
-  int    hrs, min, sec;
-  int    n_fields = 0;
-
-  int retval = 0;
-
-  *tps = 3600.0 * 24.0 * 7; /* "unlimited" values by default */
-
   /* Get environment variable; for example, 100:10:10 */
 
-  if ((cs_maxtime = getenv("CS_MAXTIME")) != NULL) {;
+  const char *cs_maxtime = getenv("CS_MAXTIME");
 
-    n_fields = sscanf (cs_maxtime,"%d:%d:%d",&hrs,&min,&sec);
+  if (cs_maxtime != NULL) {
+
+    int hrs = -1, min = -1, sec = -1;
+    int n_fields = sscanf(cs_maxtime,"%d:%d:%d",&hrs,&min,&sec);
+
+    /* If we only have 1 field, assume it is in seconds (user defined) */
+
+    if (n_fields == 1) {
+      int n_secs = hrs;
+      hrs = n_secs / 3600;
+      n_secs = n_secs % 3600;
+      min = n_secs / 60 ;
+      sec = n_secs %60;
+      n_fields = 3;
+    }
 
     /* If we only have 2 fields, they are hours and minutes (under PBS);
      * otherwise, if we do not have 3 fields, the information is unusable */
@@ -177,19 +189,17 @@ _t_cpu_max(double  *tps)
 
     /* Compute allocated CPU time in seconds */
     if (n_fields == 3) {
-      *tps = ((double)hrs)*3600. + ((double)min)*60. + ((double)sec);
-      retval = 1;
-#if 0
-      printf("tcpumx n_fields = %d, hrs = %d, min = %d, sec = %d\n tps = %f\n",
-             ret, hrs, min, sec, *tps);
-#endif
+      _wt_limit = ((double)hrs)*3600. + ((double)min)*60. + ((double)sec);
+      bft_printf(_("\n Wall-clock time limit set by CS_MAXTIME: %dh:%dm:%ds\n"),
+                 hrs, min, sec);
     }
-    else
-      retval = -1;
+    else {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("\n%s: Failed to parse CS_MAXTIME = \"%s\"\n"),
+                 __func__, cs_maxtime);
+    }
 
   }
-
-  return retval;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -228,14 +238,43 @@ void CS_PROCF (armtps, ARMTPS)
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Limit number of remaining time steps if the remaining allocated time is
- * too small to attain the requested number of steps.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get current wall-clock time limit.
  *
- * parameters:
- *   ts_cur <-- current time step number
- *   ts_max <-> maximum time step number
- *----------------------------------------------------------------------------*/
+ * \return current wall-time limit (in seconds), or -1
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_resource_get_wt_limit(void)
+{
+  return _wt_limit;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set wall-clock time limit.
+ *
+ * \param[in]  wt  wall-time limit (in seconds), or -1
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_resource_set_wt_limit(double  wt)
+{
+  _wt_limit = wt;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Limit number of remaining time steps if the remaining allocated
+ *        time is too small to attain the requested number of steps.
+ *
+ * \param[in]       ts_cur  current time step number
+ * \param[in, out]  ts_max  maximum time step number
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_resource_get_max_timestep(int   ts_cur,
@@ -244,12 +283,9 @@ cs_resource_get_max_timestep(int   ts_cur,
   /* Local variables */
 
   int t_lim_flag;
-  double trestc, t_it_mean, alpha;
-  double tcpuco, tresmn, titsmx;
-  double t_margin = -1., tmoy00 = -1., t_it_prev = -1., t_it_sup = -1.;
 
-  static int r_time_method = -1, ntcab0 = -1;
-  static double trest0 = -1., tcpupr = -1.;
+  static int r_time_method = -1;
+  static double wtrem0 = -1.;
 
   if (ts_cur == *ts_max)
     return;
@@ -258,97 +294,60 @@ cs_resource_get_max_timestep(int   ts_cur,
 
   if (r_time_method ==  -1) {
 
+    r_time_method = 0;
+
     /* In parallel, rank 0 decides, broadcasts to others */
 
     if (cs_glob_rank_id <= 0) {
 
-      /* First, try _t_remain. If no resource limits are set, we then try
-         _t_cpu_max, which is based on the presence of the CS_MAXTIME
-         environment variable */
+      /* First, try _t_remain. If no resource limits are set, we then use
+         _t_wt_limit, which is based on the presence of the CS_MAXTIME
+         environment variable and on user settings. */
 
-      t_lim_flag = _t_remain(&trest0);
+      t_lim_flag = _t_remain(&wtrem0);
       if (t_lim_flag == 1)
         r_time_method = 1;
-      else {
-        t_lim_flag = _t_cpu_max(&trest0);
-        if (t_lim_flag == 1)
-          r_time_method = 2;
-      }
+
+      _init_wt_limit();
 
     }
 
 #if defined(HAVE_MPI)
-    if (cs_glob_n_ranks > 1)
+    if (cs_glob_n_ranks > 1) {
       MPI_Bcast(&r_time_method, 1, MPI_INT, 0, cs_glob_mpi_comm);
-#endif
-
-    /* Remaining time and Wall-clock time at current iteration
-       (which will become the previous one) */
-
-    if (r_time_method > 0) {
-      ntcab0 = ts_cur;
-      tcpupr = cs_timer_wtime();
+      MPI_Bcast(&_wt_limit, 1, MPI_DOUBLE, 0, cs_glob_mpi_comm);
     }
+#endif
 
   }
 
-  /* At subsequent passes, use resource management method previously
-     determined. */
+  /* Use resource management method previously determined. */
 
-  else if (r_time_method > 0) {
+  if (r_time_method > 0 || _wt_limit > 0) {
 
     /* In parallel, rank 0 decides, broadcasts to others */
 
     if (cs_glob_rank_id <= 0) {
 
-      /* Mean time per iteration */
+      /* Current wall-clock and remaining time */
 
-      /* previous iteration */
-      tcpuco = cs_timer_wtime();
-      t_it_prev = tcpuco - tcpupr;
+      double wt_cur = cs_timer_wtime();
+      double wt_rem = -1;
 
-      /* Current remaining time and mean iteration time */
-
-      if (r_time_method == 1) {
-        t_lim_flag = _t_remain(&trestc);
-        tmoy00 = (trest0-trestc)/((double)(ts_cur-ntcab0));
-      }
-      else { /* if (r_time_method == 2) */
+      if (r_time_method == 1)
+        t_lim_flag = _t_remain(&wt_rem);
+      else if (r_time_method == 2) {
         /* Use initially allocated time */
-        trestc = CS_MAX((trest0 - tcpuco), 0.);
-        tmoy00 = tcpuco/((double)(ts_cur-ntcab0));
+        wt_rem = CS_MAX((wtrem0 - wt_cur), 0.);
       }
 
-      /* Estimate time per iteration (alpha > 0 safer) */
+      if (_wt_limit > 0) {
+        double wt_rem_l = _wt_limit - wt_cur;
+        if (wt_rem_l < wt_rem || wt_rem < 0)
+          wt_rem = wt_rem_l;
+      }
 
-      alpha = 0.25;
-      t_it_mean = alpha*t_it_prev + (1.-alpha)*tmoy00;
-
-      /* Remaining time and CPU time at current iteration
-         (which will become the previous one) */
-
-      tcpupr = tcpuco;
-
-      /* Time required for an additional iteration.
-       *
-       * Margin for I/O:
-       * 100 times an iteration or 10% of time allocated to process
-       * and at least 50 seconds or 1% of time allocated to process. */
-
-      t_margin = CS_MIN(t_it_mean*100, trest0*0.1);
-      t_margin = CS_MAX(t_margin, 50.);
-      t_margin = CS_MAX(t_margin, trest0*0.01);
-
-      /* Time for an additional iteration */
-
-      t_it_sup = t_it_mean + t_margin;
-
-      /* Test for calculation stop (in parallel, rank 0 decides). */
-
-      tresmn = trestc;
-      titsmx = t_it_sup;
-
-      if (tresmn < titsmx) {
+      if (wt_cur >= (wt_rem + wt_cur)*_wt_safe) {
         *ts_max = ts_cur;
         bft_printf
           (_("===========================================================\n"
@@ -367,19 +366,6 @@ cs_resource_get_max_timestep(int   ts_cur,
     if (cs_glob_n_ranks > 1)
       MPI_Bcast(ts_max, 1, CS_MPI_INT, 0, cs_glob_mpi_comm);
 #endif
-
-    if (cs_glob_rank_id <= 0 && ts_cur == *ts_max)
-      bft_printf
-        (_("===============================================================\n"
-           "   ** Remaining time management\n"
-           "      -------------------------\n"
-           "      Remaining time allocated to the job       : ', %14.5e\n"
-           "      Estimated time for another time step      : ', %14.5e\n"
-           "        mean time for a time step               : ', %14.5e\n"
-           "        time for the previous time step         : ', %14.5e\n"
-           "        security margin                         : ', %14.5e\n"
-           "===============================================================\n"),
-         trestc, t_it_sup, tmoy00, t_it_prev, t_margin);
 
   }
 
