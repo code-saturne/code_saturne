@@ -485,8 +485,7 @@ if (icp.ge.0) then
   call field_get_val_s(icp, cpro_cp)
 endif
 
-if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60 .or. &
-     iturb.eq.50 .or. iturb.eq.50) then
+if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
   call field_get_val_s(ivarfl(ik), cvar_k)
 endif
 if ((iturb.eq.30).or.(iturb.eq.31)) then
