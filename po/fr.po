@@ -8004,12 +8004,16 @@ msgid ""
 "\n"
 " Wall-clock time limit set by CS_MAXTIME: %dh:%dm:%ds\n"
 msgstr ""
+"\n"
+" Temps de calcul limite défini via CS_MAXTIME : %dh:%dm:%ds\n"
 
 #, c-format
 msgid ""
 "\n"
 "%s: Failed to parse CS_MAXTIME = \"%s\"\n"
 msgstr ""
+"\n"
+"%s : Erreur d'interprétation de CS_MAXTIME = \"%s\"\n"
 
 #, c-format
 msgid ""
