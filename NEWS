@@ -8,6 +8,9 @@ Bug fixes
 - Fix crash in scalar gradient reconstruction with body forces for sequential
   runs (due to incomplete fix in 5.0.6).
 
+- Fix issue #247: crash when running turbomachinery with LES and SIMPLEC
+  (non-validated/recommended).
+
 - Fix obsolete URL for HDF5 download in automatic installer.
 
 Changes

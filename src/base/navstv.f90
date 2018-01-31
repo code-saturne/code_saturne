@@ -704,9 +704,6 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
     if (nterup.gt.1) then
       call resize_vec_real_array(uvwk)
       call resize_tens_real_array(ximpa)
-    endif
-
-    if (nterup.gt.1.or.isno2t.gt.0) then
       call resize_vec_real_array(trava)
     endif
 
