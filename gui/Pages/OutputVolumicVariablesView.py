@@ -431,9 +431,6 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             if c_id == 1:
                 if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
                     item.item.status[1] = "off"
-            elif c_id == 2:
-                if self.mdl.getProbeList() == []:
-                    item.item.status[2] = "off"
             if item not in self.noderoot.values():
                 if c_id == 0:
                     self.mdl.setPrintingStatus(item.item.name, item.item.status[0])
