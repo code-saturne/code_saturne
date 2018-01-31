@@ -175,7 +175,7 @@ _init_wt_limit(void)
       hrs = n_secs / 3600;
       n_secs = n_secs % 3600;
       min = n_secs / 60 ;
-      n_secs = n_secs %60;
+      sec = n_secs %60;
       n_fields = 3;
     }
 
