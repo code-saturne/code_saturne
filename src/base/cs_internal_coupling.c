@@ -2479,7 +2479,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   cs_real_t e_aij[514];
 
   cs_lnum_t db_stride = db_size*db_size;
-  cs_lnum_t eb_stride = db_size*db_size;
+  cs_lnum_t eb_stride = eb_size*eb_size;
 
   assert(block_size > db_stride && block_size > eb_size);
 
@@ -2507,7 +2507,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
     jj += 1;
     kk += 1;
     db_fill += db_stride;
-    eb_fill += db_stride;
+    eb_fill += eb_stride;
 
     if (db_fill >= block_size - 1) {
       cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_row_id, d_aij);
