@@ -297,8 +297,8 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         """
         Set value for parameter IMRGRA
         """
-        imrgra = self.modelIMRGRA.getIndex(str_view=str(text))
-        self.model.setGradientReconstruction(imrgra)
+        imrgra = self.modelIMRGRA.dicoV2M[str(text)]
+        self.model.setGradientReconstruction(int(imrgra))
         log.debug("slotIMRGRA-> %s" % imrgra)
 
 
