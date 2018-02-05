@@ -1,5 +1,5 @@
 /*============================================================================
- * User head loss definitions.
+ * User definitions of porous media.
  *============================================================================*/
 
 /* VERS */
@@ -103,8 +103,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is called at the begin of the simulation only.
- *
+ * \brief This function is called at the beginning of the simulation only.
  */
 /*----------------------------------------------------------------------------*/
 
