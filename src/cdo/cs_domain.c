@@ -143,7 +143,7 @@ _create_cdo_context(int     cdo_mode)
   return cc;
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

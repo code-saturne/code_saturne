@@ -110,7 +110,7 @@ typedef struct { /* These quantities are the integral of q on the plane
 
 } _cdo_projq_t;
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Static global variables
@@ -849,7 +849,7 @@ _define_cell_flag(const cs_cdo_connect_t  *topo,
 
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

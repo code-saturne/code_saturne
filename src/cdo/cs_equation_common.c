@@ -312,7 +312,7 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
   return ma;
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

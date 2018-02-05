@@ -250,7 +250,7 @@ _hho_add_tetra_by_ana(const cs_xdef_analytic_input_t  *anai,
   }  /* End of loop on Gauss points */
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

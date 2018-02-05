@@ -128,7 +128,7 @@ struct _cs_cdovb_scaleq_t {
 
 };
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Private variables
@@ -272,7 +272,7 @@ _init_cell_structures(const cs_flag_t               cell_flag,
 
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

@@ -819,7 +819,7 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
   *p_rs = rs;
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

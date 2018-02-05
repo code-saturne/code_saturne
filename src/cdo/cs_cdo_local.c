@@ -114,7 +114,7 @@ static short int  **cs_cdo_local_kbuf = NULL;
  * Private function prototypes
  *============================================================================*/
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

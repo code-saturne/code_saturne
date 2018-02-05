@@ -1042,7 +1042,7 @@ _pvsp_by_value(cs_real_t          const_val,
   BFT_FREE(todo);
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

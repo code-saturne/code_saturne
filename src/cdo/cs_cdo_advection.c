@@ -130,7 +130,7 @@ typedef void
 // Advanced developper parameters (stabilization coefficient)
 static double  cs_cip_stab_coef = 1e-2;
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Private function prototypes
@@ -1096,7 +1096,7 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
 
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

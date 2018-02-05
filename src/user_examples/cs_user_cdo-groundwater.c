@@ -81,12 +81,11 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
-/*! \endcond (end ignore by Doxygen) */
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

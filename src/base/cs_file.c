@@ -268,7 +268,7 @@ static MPI_Info _mpi_io_hints_w = MPI_INFO_NULL;
 
 #endif
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Global variables

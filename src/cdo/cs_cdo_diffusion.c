@@ -86,7 +86,7 @@ BEGIN_C_DECLS
  * Local structure definitions
  *============================================================================*/
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Local variables
@@ -201,7 +201,7 @@ _enforce_nitsche(const double              pcoef,
 
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

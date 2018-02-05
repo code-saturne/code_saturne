@@ -94,8 +94,6 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-/*! \endcond (end ignore by Doxygen) */
-
 static FILE  *resume = NULL;
 
 /*============================================================================
@@ -290,6 +288,8 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
   }
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

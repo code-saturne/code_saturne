@@ -90,7 +90,7 @@ static struct {
   double   e_3;
 } klotz1_1 = {{0}, 0, 0, 0.};
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Global variables

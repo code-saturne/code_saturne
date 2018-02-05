@@ -523,7 +523,7 @@ _projection_last_setup(const cs_cdo_connect_t     *connect,
   /* TODO */
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

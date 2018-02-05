@@ -92,9 +92,11 @@ BEGIN_C_DECLS
  * Private constant variables
  *============================================================================*/
 
-/*! \endcond (end ignore by Doxygen) */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 static const double  cs_hodge_vc_coef = 3./20;
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Private function prototypes
@@ -457,7 +459,7 @@ _compute_hodge_cost(const int       n_ent,
 
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

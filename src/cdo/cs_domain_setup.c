@@ -214,7 +214,7 @@ _wall_boundary_selection(void              *input,
   *elt_ids = wall_elts;
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

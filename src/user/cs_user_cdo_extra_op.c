@@ -90,11 +90,11 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-/*! \endcond (end ignore by Doxygen) */
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

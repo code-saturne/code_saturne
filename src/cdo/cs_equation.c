@@ -704,7 +704,7 @@ _prepare_fb_solving(void              *eq_to_cast,
   *p_rhs = b;
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

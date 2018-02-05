@@ -134,7 +134,7 @@ struct _cs_cdovcb_scaleq_t {
 
 };
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Private variables
@@ -374,7 +374,7 @@ _set_cip_coef(const cs_equation_param_t  *eqp)
   cs_cdo_advection_set_cip_coef(gamma);
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

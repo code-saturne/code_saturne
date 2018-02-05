@@ -75,8 +75,6 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
@@ -156,6 +154,8 @@ get_tracer_sol(cs_real_t          time,
   }
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes
