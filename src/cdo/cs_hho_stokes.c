@@ -45,12 +45,9 @@
 #include <bft_mem.h>
 
 #include "cs_boundary_zone.h"
-#include "cs_cdo_advection.h"
-#include "cs_cdo_bc.h"
-#include "cs_cdo_diffusion.h"
 #include "cs_equation_common.h"
+#include "cs_equation_priv.h"
 #include "cs_hho_builder.h"
-#include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"

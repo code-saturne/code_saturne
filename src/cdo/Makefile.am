@@ -68,6 +68,7 @@ cs_domain.h \
 cs_domain_post.h \
 cs_domain_setup.h \
 cs_equation.h \
+cs_equation_priv.h \
 cs_equation_bc.h \
 cs_equation_common.h \
 cs_equation_param.h \

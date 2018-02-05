@@ -49,6 +49,7 @@
 #include "cs_cdofb_vecteq.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
+#include "cs_equation_priv.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_navsto_coupling.h"
