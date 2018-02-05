@@ -1324,7 +1324,8 @@ _cs_lagr_moment_associate_field(const char  *name,
     = cs_field_find_or_create(name,
                               CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
                               location_id,
-                              dim);
+                              dim,
+                              false); /* has previous */
 
   /* cs_field_allocate_values(f); */
   const int log_key_id = cs_field_key_id("log");

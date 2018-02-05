@@ -1549,6 +1549,7 @@ cs_field_create(const char   *name,
  * \param[in]  type_flag     mask of field property and category values
  * \param[in]  location_id   id of associated location
  * \param[in]  dim           field dimension (number of components)
+ * \param[in]  has_previous  maintain values at the previous time step ?
  *
  * \return  pointer to field
  */
@@ -1558,7 +1559,8 @@ cs_field_t *
 cs_field_find_or_create(const char   *name,
                         int           type_flag,
                         int           location_id,
-                        int           dim)
+                        int           dim,
+                        bool          has_previous)
 {
   cs_field_t *f = cs_field_by_name_try(name);
 
@@ -1588,6 +1590,10 @@ cs_field_find_or_create(const char   *name,
                        type_flag,
                        location_id,
                        dim);
+
+    cs_base_check_bool(&has_previous);
+
+    f->n_time_vals = has_previous ? 2 : 1;
 
     BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
     for (int i = 0; i < f->n_time_vals; i++)

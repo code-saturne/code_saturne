@@ -1745,11 +1745,11 @@ cs_equation_create_fields(void)
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid mesh location id (= -1) for the current field\n"));
 
-    cs_field_t  *fld = cs_field_create(eq->varname,
-                                       field_mask,
-                                       location_id,
-                                       eqp->dim,
-                                       has_previous);
+    cs_field_t  *fld = cs_field_find_or_create(eq->varname,
+                                               field_mask,
+                                               location_id,
+                                               eqp->dim,
+                                               has_previous);
 
     /* Set default value for default keys */
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;

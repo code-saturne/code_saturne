@@ -211,31 +211,33 @@ cs_field_create(const char   *name,
                 int           dim,
                 bool          has_previous);
 
-/*----------------------------------------------------------------------------
- * Return a field matching a given name and attributes,
- * creating it if necessary.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a field matching a given name and attributes,
+ *        creating it if necessary.
  *
  * If a field with the same name but different attributes is present,
  * this is considered an error.
  *
  * The default number of time values associated with a field created through
- * this function is 1. To modify it, use cs_field_set_n_time_vals().
+ * this function is 1. To modify it, use \ref cs_field_set_n_time_vals.
  *
- * parameters:
- *   name        <-- field name
- *   type_flag   <-- mask of field property and category values
- *   location_id <-- id of associated location
- *   dim         <-- field dimension (number of components)
+ * \param[in]  name          field name
+ * \param[in]  type_flag     mask of field property and category values
+ * \param[in]  location_id   id of associated location
+ * \param[in]  dim           field dimension (number of components)
+ * \param[in]  has_previous  maintain values at the previous time step ?
  *
- * returns:
- *   pointer to field
- *----------------------------------------------------------------------------*/
+ * \return  pointer to field
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_field_t *
 cs_field_find_or_create(const char   *name,
                         int           type_flag,
                         int           location_id,
-                        int           dim);
+                        int           dim,
+                        bool          has_previous);
 
 /*----------------------------------------------------------------------------
  * Change the number of time values managed by a field.

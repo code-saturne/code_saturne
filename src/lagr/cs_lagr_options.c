@@ -2403,7 +2403,8 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     cs_field_find_or_create("ustar",
                             CS_FIELD_PROPERTY | CS_FIELD_PROPERTY,
                             CS_MESH_LOCATION_BOUNDARY_FACES,
-                            1);
+                            1,
+                            false); /* has previous */
 
   /* Now activate basic statistics */
   cs_lagr_stat_initialize();
