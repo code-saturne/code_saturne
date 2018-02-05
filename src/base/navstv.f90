@@ -94,7 +94,7 @@ use field
 use cavitation
 use vof
 use cs_c_bindings
-use atincl, only: iatmst, imomst, iautom
+use atincl, only: iatmst, imomst, iautom, imeteo
 
 !===============================================================================
 
@@ -116,7 +116,7 @@ double precision, pointer, dimension(:,:,:) :: ximpa
 integer          iccocg, inc, iel, iel1, iel2, ifac, imax, imaxt, imin, imint
 integer          ii    , inod, itypfl
 integer          isou, ivar, iitsm
-integer          init
+integer          init, iautof
 integer          iflmas, iflmab
 integer          iflmb0
 integer          nswrgp, imligp, iwarnp
@@ -1011,7 +1011,13 @@ if (ippmod(icompf).lt.0) then
       call field_get_coefa_s(ivarfl(ipr), coefa_p)
       !$omp parallel do if(nfabor > thr_n_min)
       do ifac = 1, nfabor
-        if (isostd(ifac).eq.1.or.iatmst.eq.1.and.iautom(ifac).eq.1) then
+        iautof = 0
+        ! automatic inlet/outlet face for atmospheric flow
+        if (imeteo.gt.0) then
+          iautof = iautom(ifac)
+        endif
+
+        if (isostd(ifac).eq.1.or.iatmst.eq.1.and.iautof.eq.1) then
           coefa_p(ifac) = coefa_p(ifac) + coefa_dp(ifac)
         endif
       enddo

@@ -172,7 +172,7 @@ double precision coefb_dp(nfabor)
 ! Local variables
 
 character(len=80) :: chaine
-integer          lchain
+integer          lchain, iautof
 integer          iccocg, inc   , iprev, init  , isym
 integer          ii, jj, iel   , ifac  , ifac0 , iel0
 integer          nswmpr
@@ -707,7 +707,13 @@ if (iphydr.eq.1.or.iifren.eq.1) then
   if (indhyd.eq.1.or.iifren.eq.1) then
 
     do ifac = 1, nfabor
-      if (isostd(ifac).eq.1.or.iatmst.eq.1.and.iautom(ifac).eq.1) then
+      iautof = 0
+      ! automatic inlet/outlet face for atmospheric flow
+      if (imeteo.gt.0) then
+        iautof = iautom(ifac)
+      endif
+
+      if (isostd(ifac).eq.1.or.iatmst.eq.1.and.iautof.eq.1) then
         iel=ifabor(ifac)
 
         if (indhyd.eq.1) then
