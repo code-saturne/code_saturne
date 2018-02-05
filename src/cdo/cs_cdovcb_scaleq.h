@@ -69,7 +69,6 @@ typedef struct _cs_cdovcb_scaleq_t cs_cdovcb_scaleq_t;
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
- * \param[in]  ma          pointer to a cs_matrix_assembler_t structure
  * \param[in]  ms          pointer to a cs_matrix_structure_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -78,7 +77,6 @@ void
 cs_cdovcb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
                              const cs_cdo_connect_t       *connect,
                              const cs_time_step_t         *time_step,
-                             const cs_matrix_assembler_t  *ma,
                              const cs_matrix_structure_t  *ms);
 
 /*----------------------------------------------------------------------------*/

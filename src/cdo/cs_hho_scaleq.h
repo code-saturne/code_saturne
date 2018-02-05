@@ -73,9 +73,6 @@ typedef struct _cs_hho_scaleq_t cs_hho_scaleq_t;
  * \param[in]  quant        additional mesh quantities struct.
  * \param[in]  connect      pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step    pointer to a time step structure
- * \param[in]  ma0          pointer to a cs_matrix_assembler_t structure (P0)
- * \param[in]  ma1          pointer to a cs_matrix_assembler_t structure (P1)
- * \param[in]  ma2          pointer to a cs_matrix_assembler_t structure (P2)
  * \param[in]  ms0          pointer to a cs_matrix_structure_t structure (P0)
  * \param[in]  ms1          pointer to a cs_matrix_structure_t structure (P1)
  * \param[in]  ms2          pointer to a cs_matrix_structure_t structure (P2)
@@ -87,9 +84,6 @@ cs_hho_scaleq_init_common(cs_flag_t                      scheme_flag,
                           const cs_cdo_quantities_t     *quant,
                           const cs_cdo_connect_t        *connect,
                           const cs_time_step_t          *time_step,
-                          const cs_matrix_assembler_t   *ma0,
-                          const cs_matrix_assembler_t   *ma1,
-                          const cs_matrix_assembler_t   *ma2,
                           const cs_matrix_structure_t   *ms0,
                           const cs_matrix_structure_t   *ms1,
                           const cs_matrix_structure_t   *ms2);

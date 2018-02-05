@@ -93,7 +93,6 @@ struct _cs_hho_scaleq_t {
   int                            n_face_dofs;
 
   /* Structures related to the algebraic sytem construction (shared) */
-  const cs_matrix_assembler_t   *ma;
   const cs_matrix_structure_t   *ms;
   const cs_range_set_t          *rs;
 
@@ -140,11 +139,8 @@ static cs_hho_builder_t  **cs_hho_builders = NULL;
 static const cs_cdo_quantities_t  *cs_shared_quant;
 static const cs_cdo_connect_t  *cs_shared_connect;
 static const cs_time_step_t  *cs_shared_time_step;
-static const cs_matrix_assembler_t  *cs_shared_ma0;
 static const cs_matrix_structure_t  *cs_shared_ms0;
-static const cs_matrix_assembler_t  *cs_shared_ma1;
 static const cs_matrix_structure_t  *cs_shared_ms1;
-static const cs_matrix_assembler_t  *cs_shared_ma2;
 static const cs_matrix_structure_t  *cs_shared_ms2;
 
 /*============================================================================
@@ -580,9 +576,6 @@ _condense_and_store(const cs_adjacency_t    *c2f,
  * \param[in]  quant        additional mesh quantities struct.
  * \param[in]  connect      pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step    pointer to a time step structure
- * \param[in]  ma0          pointer to a cs_matrix_assembler_t structure (P0)
- * \param[in]  ma1          pointer to a cs_matrix_assembler_t structure (P1)
- * \param[in]  ma2          pointer to a cs_matrix_assembler_t structure (P2)
  * \param[in]  ms0          pointer to a cs_matrix_structure_t structure (P0)
  * \param[in]  ms1          pointer to a cs_matrix_structure_t structure (P1)
  * \param[in]  ms2          pointer to a cs_matrix_structure_t structure (P2)
@@ -594,9 +587,6 @@ cs_hho_scaleq_init_common(cs_flag_t                      scheme_flag,
                           const cs_cdo_quantities_t     *quant,
                           const cs_cdo_connect_t        *connect,
                           const cs_time_step_t          *time_step,
-                          const cs_matrix_assembler_t   *ma0,
-                          const cs_matrix_assembler_t   *ma1,
-                          const cs_matrix_assembler_t   *ma2,
                           const cs_matrix_structure_t   *ms0,
                           const cs_matrix_structure_t   *ms1,
                           const cs_matrix_structure_t   *ms2)
@@ -605,11 +595,8 @@ cs_hho_scaleq_init_common(cs_flag_t                      scheme_flag,
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
-  cs_shared_ma0 = ma0;
   cs_shared_ms0 = ms0;
-  cs_shared_ma1 = ma1;
   cs_shared_ms1 = ms1;
-  cs_shared_ma2 = ma2;
   cs_shared_ms2 = ms2;
 
   const int n_fc = connect->n_max_fbyc;
@@ -791,7 +778,6 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
     eqc->n_cell_dofs = CS_N_CELL_DOFS_0TH;
     eqc->n_face_dofs = CS_N_FACE_DOFS_0TH;
     /* Not owner; Only shared */
-    eqc->ma = cs_shared_ma0;
     eqc->ms = cs_shared_ms0;
     eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
     break;
@@ -800,7 +786,6 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
     eqc->n_cell_dofs = CS_N_CELL_DOFS_1ST;
     eqc->n_face_dofs = CS_N_FACE_DOFS_1ST;
     /* Not owner; Only shared */
-    eqc->ma = cs_shared_ma1;
     eqc->ms = cs_shared_ms1;
     eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
     break;
@@ -809,7 +794,6 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
     eqc->n_cell_dofs = CS_N_CELL_DOFS_2ND;
     eqc->n_face_dofs = CS_N_FACE_DOFS_2ND;
     /* Not owner; Only shared */
-    eqc->ma = cs_shared_ma2;
     eqc->ms = cs_shared_ms2;
     eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
     break;

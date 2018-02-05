@@ -44,6 +44,7 @@
 #include "cs_cdo_local.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovcb_scaleq.h"
+#include "cs_cdofb_navsto.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
 #include "cs_hho_scaleq.h"
@@ -411,7 +412,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       cwb_size = CS_MAX(cwb_size, (size_t)3*n_vertices);
 
       /* Initialize additional structures */
-      cs_cdovb_scaleq_init_common(quant, connect, time_step, ma, ms);
+      cs_cdovb_scaleq_init_common(quant, connect, time_step, ms);
 
     }
 
@@ -420,7 +421,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       cwb_size = CS_MAX(cwb_size, (size_t)2*(n_vertices + n_cells));
 
       /* Initialize additional structures */
-      cs_cdovcb_scaleq_init_common(quant, connect, time_step, ma, ms);
+      cs_cdovcb_scaleq_init_common(quant, connect, time_step, ms);
 
     }
 
@@ -459,7 +460,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
         cwb_size = CS_MAX(cwb_size, (size_t)3*n_faces);
 
         /* Initialize additional structures */
-        cs_cdofb_scaleq_init_common(quant, connect, time_step, ma0, ms0);
+        cs_cdofb_scaleq_init_common(quant, connect, time_step, ms0);
 
       }
 
@@ -487,7 +488,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       if (cc->fb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
 
         /* Initialize additional structures */
-        cs_cdofb_vecteq_init_common(quant, connect, time_step, ma1, ms1);
+        cs_cdofb_vecteq_init_common(quant, connect, time_step, ms1);
 
         cwb_size = CS_MAX(cwb_size, (size_t)9*n_faces);
 
@@ -519,7 +520,6 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
     if (cc->hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
       cs_hho_scaleq_init_common(cc->hho_scheme_flag,
                                 quant, connect, time_step,
-                                ma0, ma1, ma2,
                                 ms0, ms1, ms2);
 
     /* Monitoring */
@@ -532,9 +532,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
     /* Solve Navier--Stokes with CDO-Fb schemes */
     cs_cdofb_navsto_init_common(quant, connect, time_step,
-                                cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP0],
                                 cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP0],
-                                cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP1],
                                 cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP1]);
 
   }

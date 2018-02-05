@@ -74,9 +74,7 @@ BEGIN_C_DECLS
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
- * \param[in]  sma         pointer to a cs_matrix_assembler_t structure (scalar)
  * \param[in]  sms         pointer to a cs_matrix_structure_t structure (scalar)
- * \param[in]  vma         pointer to a cs_matrix_assembler_t structure (vector)
  * \param[in]  vms         pointer to a cs_matrix_structure_t structure (vector)
  */
 /*----------------------------------------------------------------------------*/
@@ -85,9 +83,7 @@ void
 cs_cdofb_navsto_init_common(const cs_cdo_quantities_t     *quant,
                             const cs_cdo_connect_t        *connect,
                             const cs_time_step_t          *time_step,
-                            const cs_matrix_assembler_t   *sma,
                             const cs_matrix_structure_t   *sms,
-                            const cs_matrix_assembler_t   *vma,
                             const cs_matrix_structure_t   *vms);
 
 /*----------------------------------------------------------------------------*/

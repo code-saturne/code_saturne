@@ -127,7 +127,6 @@ static cs_cell_builder_t  **cs_cdofb_cell_bld = NULL;
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
-static const cs_matrix_assembler_t  *cs_shared_ma;
 static const cs_matrix_structure_t  *cs_shared_ms;
 
 /*============================================================================
@@ -330,7 +329,6 @@ _condense_and_store(const cs_adjacency_t    *c2f,
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
- * \param[in]  ma          pointer to a cs_matrix_assembler_t structure
  * \param[in]  ms          pointer to a cs_matrix_structure_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -339,14 +337,12 @@ void
 cs_cdofb_scaleq_init_common(const cs_cdo_quantities_t     *quant,
                             const cs_cdo_connect_t        *connect,
                             const cs_time_step_t          *time_step,
-                            const cs_matrix_assembler_t   *ma,
                             const cs_matrix_structure_t   *ms)
 {
   /* Assign static const pointers */
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
-  cs_shared_ma = ma;
   cs_shared_ms = ms;
 
   /* Specific treatment for handling openMP */
