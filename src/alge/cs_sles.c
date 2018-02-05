@@ -357,8 +357,8 @@ static cs_sles_verbosity_t *_cs_sles_default_verbosity = NULL;
 /* Current and maximum number of systems respectively defined by field id,
    by name, or redefined after use */
 
-static int _cs_sles_n_systems[3] = {0, 0};
-static int _cs_sles_n_max_systems[3] = {0, 0};
+static int _cs_sles_n_systems[3] = {0, 0, 0};
+static int _cs_sles_n_max_systems[3] = {0, 0, 0};
 
 /* Arrays of settings and status for linear systems */
 static cs_sles_t **_cs_sles_systems[3] = {NULL, NULL, NULL};
@@ -909,7 +909,7 @@ cs_sles_finalize(void)
 {
   for (int i = 0; i < 3; i++) {
 
-    for (int j = 0; j < _cs_sles_n_systems[i]; j++) {
+    for (int j = 0; j < _cs_sles_n_max_systems[i]; j++) {
 
       if (_cs_sles_systems[i][j] != NULL) {
         cs_sles_t *sles = _cs_sles_systems[i][j];
