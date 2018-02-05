@@ -1030,12 +1030,15 @@ cs_equation_get_reaction_property(const cs_equation_t    *eq,
 bool
 cs_equation_is_steady(const cs_equation_t    *eq)
 {
-  bool  is_steady = true;
+  if (eq == NULL)
+    return true;
+  if (eq->param == NULL)
+    return true;
 
   if (eq->param->flag & CS_EQUATION_UNSTEADY)
-    is_steady = false;
-
-  return is_steady;
+    return false;
+  else
+    return true;
 }
 
 /*----------------------------------------------------------------------------*/
