@@ -25,8 +25,8 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page cs_porosity Examples of data settings for porous media (cs_user_porosity.f90)
-
+  \page cs_porosity Examples of data settings for porous media
+  (cs_user_porosity.c)
 
   \section intro_poro Introduction
 
@@ -39,38 +39,43 @@
   - \subpage base_poro_examples
 
 */
-// __________________________________________________________________________________
+
+/*-----------------------------------------------------------------------------*/
+
 /*!
+  \page base_poro_examples Setting porosity values: basic example
 
-  \page base_poro_examples Basic example
+  \section base_loc_var_poro Local definitions and initialization
 
+  \subsection mesh_quantities Mesh quantities
 
-  \section base_loc_var_poro Local variables to be added
+  It may be useful to access some mesh adjacencies and  quantities,
+  in which case local pointers allow for more readable code:
 
-  The following local variables need to be defined for the examples
-  in this section:
+  \snippet cs_user_porosity.c init_poro_mq
 
-  \snippet cs_user_porosity.f90 loc_var_dec
+  \subsection properties Associated properties
 
+  Accessing cell porosity property values is required so values may be set:
 
-  \section subroutine_end_poro Test to remove for use of subroutine end
+  \snippet cs_user_porosity.c init_poro_pro
 
-  The following initialization block needs to be added for the following examples:
+  \section example_porosity Example: define porosity by geometric zones
 
+  Individual cell porosity values can be assigned to each cell, so
+  they may be based on groups, geometric criteria, or any other
+  time-independent functions:
 
-  \subsection porosity_field Retrieve porosity field
+  \snippet cs_user_porosity.c set_poro_cells_1
 
-  \snippet cs_user_porosity.f90 init  
+  Matching face equivalent surfaces should also be assigned in a
+  corresponding manner, for interior faces:
 
+  \snippet cs_user_porosity.c set_poro_i_faces_1
 
-  \subsection example_porosity Example: fixe a linear by part porosity profile
+  and for boundary faces:
 
-  \snippet cs_user_porosity.f90 example_1
-
-  Periodicity and parallelism treatment:
-
-  \snippet cs_user_porosity.f90 parallelism
-
-
+  \snippet cs_user_porosity.c set_poro_b_faces_1
 */
-// __________________________________________________________________________________
+
+/*-----------------------------------------------------------------------------*/

@@ -170,7 +170,6 @@ cs_user_physical_properties-compressible_flow.f90 \
 cs_user_physical_properties-richards_sat.f90 \
 cs_user_physical_properties-richards_unsat.f90 \
 cs_user_physical_properties-scalar_drift.f90 \
-cs_user_porosity.f90 \
 cs_user_postprocess_var.f90 \
 cs_user_source_terms-richards.f90 \
 cs_user_source_terms-scalar_in_a_channel.f90 \

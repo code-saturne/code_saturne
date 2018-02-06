@@ -84,9 +84,7 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_porosity.c
  *
- * \brief This function computes the porosity (volume factor \f$ \epsilon \f$
- * when porosity module is activated
- * (iporos greater than 1 in cs_user_parameters.f90).
+ * \brief User definitions of porous media.
  *
  * See \subpage cs_porosity for examples.
  */
@@ -98,8 +96,11 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is called at the begin of the simulation only.
+ * \brief Compute the porosity (volume factor \f$ \epsilon \f$
+ *        when the porosity model is activated
+ *        (iporos greater than 1 in cs_user_parameters.f90).
  *
+ * This function is called at the begin of the simulation only.
  */
 /*----------------------------------------------------------------------------*/
 

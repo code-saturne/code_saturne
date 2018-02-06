@@ -89,9 +89,7 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_porosity.c
  *
- * \brief This function computes the porosity (volume factor \f$ \epsilon \f$
- * when porosity module is activated
- * (iporos greater than 1 in cs_user_parameters.f90).
+ * \brief User definitions of porous media.
  *
  * See \subpage cs_porosity for examples.
  */
@@ -103,18 +101,19 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is called at the beginning of the simulation only.
+ * \brief Compute the porosity (volume factor \f$ \epsilon \f$
+ *        when porosity model is activated.
+ *
+ * This function is called at the beginning of the simulation only.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_porosity(void)
 {
+  /*!< [init_poro_mq] */
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  /* Get the cell porosity field value */
-  cs_real_t *cpro_porosi = cs_field_by_name("porosity")->val;
 
   const cs_lnum_2_t *i_face_cells
     = (const cs_lnum_2_t *)m->i_face_cells;
@@ -136,10 +135,17 @@ cs_user_porosity(void)
 
   const cs_real_t *i_f_face_surf = mq->i_f_face_surf;
   const cs_real_t *i_face_surf = mq->i_face_surf;
+  /*!< [init_poro_mq] */
 
+  /* Get the cell porosity field value */
+  /*!< [init_poro_pro] */
+  cs_real_t *cpro_porosi = cs_field_by_name("porosity")->val;
+  /*!< [init_poro_pro] */
 
-  /* First set cell porosity value, the the fluid cell volume will be
+  /* First, set cell porosity value; the fluid cell volume will be
    * automatically deduced */
+
+  /*!< [set_poro_cells_1] */
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
     cs_real_t x = cell_cen[cell_id][0];
@@ -149,8 +155,11 @@ cs_user_porosity(void)
     else
       cpro_porosi[cell_id] = 0.5;
   }
+  /*!< [set_poro_cells_1] */
 
-  /* Second set interior face values */
+  /* Set interior face values */
+
+  /*!< [set_poro_i_faces_1] */
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
 
     cs_real_t x = i_face_cog[face_id][0];
@@ -165,8 +174,11 @@ cs_user_porosity(void)
     mq->i_f_face_surf[face_id] = cs_math_3_norm(i_f_face_normal[face_id]);
 
   }
+  /*!< [set_poro_i_faces_1] */
 
-  /* Third set boundary face values */
+  /* Set boundary face values */
+
+  /*!< [set_poro_b_faces_1] */
   for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
     cs_real_t x = b_face_cog[face_id][0];
@@ -181,7 +193,7 @@ cs_user_porosity(void)
     mq->b_f_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
 
   }
-
+  /*!< [set_poro_b_faces_1] */
 }
 
 /*----------------------------------------------------------------------------*/
