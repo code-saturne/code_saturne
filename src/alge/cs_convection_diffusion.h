@@ -4290,9 +4290,9 @@ cs_b_compute_quantities_vector(const cs_real_3_t   diipb,
                                cs_real_t           recoi[3])
 {
   for (int isou = 0; isou < 3; isou++) {
-    recoi[isou] = ircflp * (gradi[isou][0]*diipb[0]
-        + gradi[isou][1]*diipb[1]
-        + gradi[isou][2]*diipb[2]);
+    recoi[isou] = ircflp * (  gradi[isou][0]*diipb[0]
+                            + gradi[isou][1]*diipb[1]
+                            + gradi[isou][2]*diipb[2]);
   }
 }
 
