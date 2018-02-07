@@ -2200,7 +2200,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
   /* Get a synchronized list definition for each global element */
 
   for (i = 0; i < loc_set->n_elts; i++) {
-    rank = (loc_set->g_elts[i] - 1)/(cs_gnum_t)bi.block_size;
+    rank = ((loc_set->g_elts[i] - 1)/(cs_gnum_t)bi.block_size) * bi.rank_step;
     send_count[rank] += 1;
   }
 
@@ -2225,7 +2225,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
   for (i = 0; i < loc_set->n_elts; i++) {
 
     g_ent_num = loc_set->g_elts[i];
-    rank = (g_ent_num - 1) / (cs_gnum_t)bi.block_size;
+    rank = ((g_ent_num - 1) / (cs_gnum_t)bi.block_size) * bi.rank_step;
     shift = send_shift[rank] + send_count[rank];
 
     send_buffer[shift] = g_ent_num;
