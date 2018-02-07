@@ -812,15 +812,16 @@ cs_sles_solve_native(int                  f_id,
     cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
     cs_lnum_t n_cols_ext = cs_matrix_get_n_columns(a);
     assert(n_rows == m->n_cells);
+    cs_lnum_t _n_rows = n_rows*stride;
     BFT_MALLOC(_rhs, n_cols_ext*stride, cs_real_t);
     BFT_MALLOC(_vx, n_cols_ext*stride, cs_real_t);
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_rows; i++) {
+#   pragma omp parallel for  if(_n_rows > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < _n_rows; i++) {
       _rhs[i] = rhs[i];
       _vx[i] = vx[i];
     }
     cs_matrix_pre_vector_multiply_sync(rotation_mode, a, _rhs);
-    rhs_p = rhs;
+    rhs_p = _rhs;
   }
 
   /* Solve system */
