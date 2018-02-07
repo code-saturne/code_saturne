@@ -2013,7 +2013,7 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
 
   for (i = 0; i < loc_set->n_elts; i++) {
 
-    rank = (loc_set->g_elts[i] - 1)/bi.block_size;
+    rank = (loc_set->g_elts[i] - 1)/bi.block_size * bi.rank_step;
     n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
     send_count[rank] += 2 + n_sub_elts;
 
@@ -2040,7 +2040,7 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
   for (i = 0; i < loc_set->n_elts; i++) {
 
     g_ent_num = loc_set->g_elts[i];
-    rank = (g_ent_num - 1)/(cs_gnum_t)(bi.block_size);
+    rank = (g_ent_num - 1)/(cs_gnum_t)(bi.block_size) * bi.rank_step;
     shift = send_shift[rank] + send_count[rank];
     n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
 
