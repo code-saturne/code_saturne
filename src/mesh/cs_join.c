@@ -704,6 +704,11 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
     }
   }
 
+  if (bi.rank_step > 1) {
+    for (cs_lnum_t i = 0; i < n_tot_vertices; i++)
+      dest_rank[i] *= bi.rank_step;
+  }
+
   /* Send old vtx gnum to matching block */
 
   d = cs_all_to_all_create(n_tot_vertices,

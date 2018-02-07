@@ -1,4 +1,12 @@
 
+Release 5.0.8 (Unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Fix issue #251 (crash for periodicity in parallel in some cases).
+
 Release 5.0.7 (Jan 31 2018)
 ===========================
 

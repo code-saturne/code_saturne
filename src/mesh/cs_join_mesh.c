@@ -2691,7 +2691,8 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
     send_count[i] = 0;
 
   for (i = 0; i < mesh->n_vertices; i++) {
-    rank = (mesh->vertices[i].gnum - 1)/(cs_gnum_t)(bi.block_size);
+    rank =   ((mesh->vertices[i].gnum - 1)/(cs_gnum_t)(bi.block_size))
+	   * bi.rank_step;
     send_count[rank] += 1;
   }
 
