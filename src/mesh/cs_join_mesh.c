@@ -2598,7 +2598,7 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
   BFT_MALLOC(dest_rank, mesh->n_vertices, int);
 
   for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
-    dest_rank[i] = (mesh->vertices[i].gnum - 1)/bi.block_size;
+    dest_rank[i] = ((mesh->vertices[i].gnum - 1)/bi.block_size) * bi.rank_step;
 
   cs_all_to_all_t
     *d = cs_all_to_all_create(mesh->n_vertices,

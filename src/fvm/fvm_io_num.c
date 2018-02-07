@@ -879,7 +879,7 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
 
   for (cs_lnum_t i = 0; i < this_io_num->global_num_size; i++) {
     cs_gnum_t g_elt_id = global_num[stride*i] - 1;
-    dest_rank[i] = g_elt_id / block_size;
+    dest_rank[i] = (g_elt_id / block_size)*bi.rank_step;
   }
 
   cs_all_to_all_t
@@ -1090,7 +1090,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
   int *dest_rank;
   BFT_MALLOC(dest_rank, this_io_num->global_num_size, int);
   for (size_t i = 0; i < n_ent; i++)
-    dest_rank[i] = (global_num[index[i]] - 1) / _block_size;
+    dest_rank[i] = ((global_num[index[i]] - 1) / _block_size) * bi.rank_step;
 
   int flags = CS_ALL_TO_ALL_ORDER_BY_SRC_RANK;
 
