@@ -840,7 +840,13 @@ cs_sles_solve_native(int                  f_id,
 
   BFT_FREE(_rhs);
   if (_vx != vx) {
-    for (cs_lnum_t i = 0; i < m->n_cells; i++)
+    size_t stride = 1;
+    if (diag_block_size != NULL)
+      stride = diag_block_size[1];
+    cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+    cs_lnum_t _n_rows = n_rows*stride;
+#   pragma omp parallel for  if(_n_rows > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < _n_rows; i++)
       vx[i] = _vx[i];
     BFT_FREE(_vx);
   }
