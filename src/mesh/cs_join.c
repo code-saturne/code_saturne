@@ -697,11 +697,16 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
   if (param.perio_type != FVM_PERIODICITY_NULL) {
     for (cs_lnum_t i = 0; i < select->n_vertices; i++) {
       const cs_lnum_t j = mesh->n_vertices + i;
-      dest_rank[j] = (  (select->per_v_couples[2*i+1] - 1)
-                      / (cs_gnum_t)(bi.block_size)) * bi.rank_step;
+      dest_rank[j] =   (select->per_v_couples[2*i+1] - 1)
+                     / (cs_gnum_t)(bi.block_size);
       assert(dest_rank[j] >= 0 && dest_rank[j] < n_ranks);
       new_local_gnum[j] = select->per_v_couples[2*i+1];
     }
+  }
+
+  if (bi.rank_step > 1) {
+    for (cs_lnum_t i = 0; i < n_tot_vertices; i++)
+      dest_rank[i] *= bi.rank_step;
   }
 
   /* Send old vtx gnum to matching block */
