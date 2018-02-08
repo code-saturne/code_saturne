@@ -42,6 +42,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/turb \
+-I$(top_srcdir)/src/pprt \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS)
 

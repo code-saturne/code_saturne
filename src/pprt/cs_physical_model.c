@@ -63,6 +63,22 @@ BEGIN_C_DECLS
 /*!
   \file cs_physical_model.c
         Specific physical models selection.
+
+  \var cs_physical_model_type_t::CS_JOULE_EFFECT
+       Joule model flag position. Flag values can be:
+       - -1: module not activated
+       -  1: use of a real potential
+       -  2: use of a complex potential
+       -  3: use of real potential and specific boundary conditions
+       -  4: use of complex potential and specific boundary conditions
+
+  \var cs_physical_model_type_t::CS_ELECTRIC_ARCS
+       Electric arcs model flag position. Flag values can be:
+       - -1: module not activated
+       -  1: determination of the magnetic field by means of the Ampere’
+             theorem
+       -  2: determination of the magnetic field by means of the vector
+             potential
 */
 
 /*----------------------------------------------------------------------------*/

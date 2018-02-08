@@ -93,8 +93,6 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-  int         ieljou;
-  int         ielarc;
   int         ixkabe;
   int         ntdcla;
   int         irestrike;
@@ -147,8 +145,7 @@ CS_PROCF (elthht, ELTHHT) (cs_int_t  *mode,
                            cs_real_t *temp);
 
 void
-CS_PROCF (ellecd, ELLECD) (cs_int_t *ieljou,
-                           cs_int_t *ielarc);
+CS_PROCF (ellecd, ELLECD) (void);
 
 void
 CS_PROCF (elphyv, ELPHYV) (void);
@@ -162,12 +159,10 @@ CS_PROCF (eltsvv, ELTSVV) (const int       *f_id,
                            cs_real_t       *smbrv);
 
 void
-CS_PROCF (elvarp, ELVARP) (cs_int_t *ieljou,
-                           cs_int_t *ielarc);
+CS_PROCF (elvarp, ELVARP) (void);
 
 void
-CS_PROCF (elprop, ELPROP) (cs_int_t *ieljou,
-                           cs_int_t *ielarc);
+CS_PROCF (elprop, ELPROP) (void);
 
 void
 CS_PROCF (eliniv, ELINIV) (cs_int_t *isuite);
@@ -198,16 +193,14 @@ cs_get_glob_transformer(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_model_initialize(int  ielarc,
-                               int  ieljou);
+cs_electrical_model_initialize(void);
 
 /*----------------------------------------------------------------------------
  * Destroy structures for electrical model
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_model_finalize(int  ielarc,
-                             int  ieljou);
+cs_electrical_model_finalize(void);
 
 /*----------------------------------------------------------------------------
  * Specific initialization for electric arc
@@ -224,8 +217,7 @@ cs_electrical_model_specific_initialization(cs_real_t    *visls0,
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_properties_read(int   ielarc,
-                              int   ieljou);
+cs_electrical_properties_read(void);
 
 /*----------------------------------------------------------------------------
  * compute specific electric arc fields
@@ -278,16 +270,14 @@ cs_elec_source_terms_v(const cs_mesh_t             *mesh,
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_add_variable_fields(const int  *ielarc,
-                            const int  *ieljou);
+cs_elec_add_variable_fields(void);
 
 /*----------------------------------------------------------------------------
  * add properties fields
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_add_property_fields(const int  *ielarc,
-                            const int  *ieljou);
+cs_elec_add_property_fields(void);
 
 /*----------------------------------------------------------------------------
  * initialize electric fields

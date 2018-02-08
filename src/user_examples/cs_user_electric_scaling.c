@@ -47,6 +47,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_parall.h"
+#include "cs_physical_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -103,8 +104,10 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
   cs_elec_option_t *elec_opt = cs_get_glob_elec_option();
   const int kivisl = cs_field_key_id("scalar_diffusivity_id");
 
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
   /* example of a restrike arc */
-  if (cs_glob_elec_option->ielarc >= 1) {
+  if (ielarc >= 1) {
     if (cs_glob_time_step->nt_cur <= 200)
       elec_opt->couimp = 200.;
     else if (cs_glob_time_step->nt_cur > 200 &&
@@ -290,7 +293,7 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
       CS_F_(potr)->val[iel] *= coepot;
 
     /* current density */
-    if (cs_glob_elec_option->ielarc > 0)
+    if (ielarc > 0)
       for (int i = 0; i < 3 ; i++)
         for (int iel = 0; iel < 3 ; iel++)
           CS_FI_(curre, i)->val[iel] *= coepot;

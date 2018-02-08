@@ -2405,7 +2405,10 @@ cs_gui_elec_model(void)
     elec_opt->ielcor = status;
   BFT_FREE(path);
 
-  if (cs_glob_elec_option->ieljou > 0) {
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
+  if (ieljou > 0) {
     path = cs_xpath_init_path();
     cs_xpath_add_elements(&path, 3, "thermophysical_models",
                                     "joule_effect",
@@ -2418,7 +2421,7 @@ cs_gui_elec_model(void)
     BFT_FREE(path);
   }
 
-  if (cs_glob_elec_option->ielarc > 0) {
+  if (ielarc > 0) {
     path = cs_xpath_init_path();
     cs_xpath_add_elements(&path, 3, "thermophysical_models",
                                     "joule_effect",

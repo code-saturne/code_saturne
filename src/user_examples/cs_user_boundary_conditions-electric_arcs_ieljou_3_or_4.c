@@ -58,6 +58,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
+#include "cs_physical_model.h"
 #include "cs_time_step.h"
 #include "cs_selector.h"
 
@@ -162,6 +163,8 @@ cs_user_boundary_conditions(int         nvar,
       transfo->uioff[i] = 0.;
     }
 
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+
   for (int i = 0; i < nbelec; i++) {
 
     sprintf(name, "%07d", transfo->ielecc[i]);
@@ -169,7 +172,7 @@ cs_user_boundary_conditions(int         nvar,
 
     cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
     cs_real_3_t *cpro_curim = NULL;
-      if (cs_glob_elec_option->ieljou == 4)
+      if (ieljou == 4)
         cpro_curim = (cs_real_3_t *)(CS_F_(curim)->val);
 
     for (cs_lnum_t ilelt = 0; ilelt < nelts; ilelt++) {
@@ -180,7 +183,7 @@ cs_user_boundary_conditions(int         nvar,
       for (cs_lnum_t id = 0; id < 3; id++)
         sir[i] += cpro_curre[cell_id][id] * b_face_normal[id][face_id];
 
-      if (cs_glob_elec_option->ieljou == 4)
+      if (ieljou == 4)
         for (cs_lnum_t id = 0; id < 3; id++)
           sii[i] += cpro_curim[cell_id][id] * b_face_normal[id][face_id];
     }
@@ -192,14 +195,14 @@ cs_user_boundary_conditions(int         nvar,
   /* 2.1 Computation of Intensity on each termin of transformers */
   for (int i = 0; i < nbelec; i++) {
     sirb[transfo->ielect[i]][transfo->ielecb[i]] = 0.;
-    if (cs_glob_elec_option->ieljou == 4)
+    if (ieljou == 4)
       siib[transfo->ielect[i]][transfo->ielecb[i]] = 0.;
   }
 
   for (int i = 0; i < nbelec; i++) {
     if (transfo->ielect[i] != 0) {
       sirb[transfo->ielect[i]][transfo->ielecb[i]] += sir[i];
-      if (cs_glob_elec_option->ieljou == 4)
+      if (ieljou == 4)
         siib[transfo->ielect[i]][transfo->ielecb[i]] += sii[i];
     }
   }
@@ -242,14 +245,14 @@ cs_user_boundary_conditions(int         nvar,
    *     (zero valued WHEN Offset established) */
   for (int ntf = 0; ntf < nbtrf; ntf++) {
     sirt[ntf] = 0.;
-    if (cs_glob_elec_option->ieljou == 4)
+    if (ieljou == 4)
       siit[ntf] = 0.;
   }
 
   for (int i = 0; i < nbelec; i++) {
     if (transfo->ielect[i] != 0) {
       sirt[i] += sir[i];
-      if (cs_glob_elec_option->ieljou == 4)
+      if (ieljou == 4)
         siit[i] += sii[i];
     }
   }
@@ -259,7 +262,7 @@ cs_user_boundary_conditions(int         nvar,
 
   for (int ntf = 0; ntf < nbtrf; ntf++) {
     transfo->uroff[ntf] += sirt[ntf] / capaeq;
-    if (cs_glob_elec_option->ieljou == 4)
+    if (ieljou == 4)
       transfo->uioff[ntf] += siit[ntf] / capaeq;
   }
 
@@ -272,7 +275,7 @@ cs_user_boundary_conditions(int         nvar,
   for (int ntf = 0; ntf < nbtrf; ntf++) {
     for (int nb = 0; nb < nborne[ntf]; nb++) {
       ur[ntf][nb] += transfo->uroff[ntf];
-      if (cs_glob_elec_option->ieljou == 4)
+      if (ieljou == 4)
         ui[ntf][nb] += transfo->uioff[ntf];
     }
   }
@@ -303,7 +306,7 @@ cs_user_boundary_conditions(int         nvar,
         icodcl[ivar * n_b_faces + face_id] = 1;
         rcodcl[ivar * n_b_faces + face_id] = ur[transfo->ielect[i]][transfo->ielecb[i]];
 
-        if (cs_glob_elec_option->ieljou == 4) {
+        if (ieljou == 4) {
           f = CS_F_(poti);
           ivar = cs_field_get_key_int(f, keyvar) - 1;
           icodcl[ivar * n_b_faces + face_id] = 1;
@@ -316,7 +319,7 @@ cs_user_boundary_conditions(int         nvar,
         icodcl[ivar * n_b_faces + face_id] = 3;
         rcodcl[2 * n_b_faces * nvar + ivar * n_b_faces + face_id] = 0.;
 
-        if (cs_glob_elec_option->ieljou == 4) {
+        if (ieljou == 4) {
           f = CS_F_(poti);
           ivar = cs_field_get_key_int(f, keyvar) - 1;
           icodcl[ivar * n_b_faces + face_id] = 3;
@@ -337,11 +340,11 @@ cs_user_boundary_conditions(int         nvar,
         f = CS_F_(potr);
         int ivar = cs_field_get_key_int(f, keyvar) - 1;
         if (icodcl[ivar * n_b_faces + face_id] == 1) {
-          if (cs_glob_elec_option->ieljou == 3) {
+          if (ieljou == 3) {
             if (fabs(rcodcl[ivar * n_b_faces + face_id]) < 1.e-20)
               found = true;
           }
-          else if (cs_glob_elec_option->ieljou == 4) {
+          else if (ieljou == 4) {
             double val = fabs(rcodcl[ivar * n_b_faces + face_id]);
             f = CS_F_(poti);
             ivar = cs_field_get_key_int(f, keyvar) - 1;

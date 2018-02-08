@@ -60,6 +60,7 @@
 #include "cs_gradient.h"
 #include "cs_field_operator.h"
 #include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_thermal_model.h"
 #include "cs_turbulence_model.h"
 #include "cs_gui_specific_physics.h"
@@ -97,18 +98,6 @@ BEGIN_C_DECLS
 
   \brief option for electric model
 
-  \var  cs_elec_option_t::ieljou
-        Joule model
-        - -1: module not activated
-        -  1: use of a real potential
-        -  2: use of a complex potential
-        -  3: use of real potential and specific boundary conditions
-        -  4: use of complex potential and specific boundary conditions
-  \var  cs_elec_option_t::ielarc
-        Electric arc model
-        - -1: module not activated
-        -  1: determination of the magnetic field by means of the Ampere’ theorem
-        -  2: determination of the magnetic field by means of the vector potential
   \var  cs_elec_option_t::ixkabe
         Model for radiative properties
         - 0: last column read but not use
@@ -238,9 +227,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-static cs_elec_option_t  _elec_option = {.ieljou = -1,
-                                         .ielarc = -1,
-                                         .ixkabe = -1,
+static cs_elec_option_t  _elec_option = {.ixkabe = -1,
                                          .ntdcla = -1,
                                          .irestrike = -1,
                                          .restrike_point = {0., 0., 0.},
@@ -354,21 +341,23 @@ _cs_electrical_model_verify(void)
 {
   bool verif = true;
 
-  if (cs_glob_elec_option->ielarc != -1 && cs_glob_elec_option->ielarc !=  2)
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
+  if (ielarc != -1 && ielarc !=  2)
     bft_error(__FILE__, __LINE__, 0,
               _("Error for electric arc model\n"
                 "only choice -1 or 2 are permitted yet\n"
                 "model selected : \"%i\";\n"),
-              cs_glob_elec_option->ielarc);
+              ielarc);
 
-  if (cs_glob_elec_option->ieljou != -1 && cs_glob_elec_option->ieljou !=  1 &&
-      cs_glob_elec_option->ieljou !=  2 && cs_glob_elec_option->ieljou !=  3 &&
-      cs_glob_elec_option->ieljou !=  4)
+  if (   ieljou != -1 && ieljou !=  1 && ieljou !=  2 && ieljou !=  3
+      && ieljou !=  4)
     bft_error(__FILE__, __LINE__, 0,
               _("Error for joule model\n"
                 "only choice -1, 1, 2, 3 or 4 are permitted yet\n"
                 "model selected : \"%i\";\n"),
-              cs_glob_elec_option->ieljou);
+              ieljou);
 
   /* options */
   if (cs_glob_elec_option->ielcor != 0 && cs_glob_elec_option->ielcor != 1)
@@ -379,7 +368,7 @@ _cs_electrical_model_verify(void)
               cs_glob_elec_option->ielcor);
 
   if (cs_glob_elec_option->ielcor == 1) {
-    if (cs_glob_elec_option->ielarc > 0) {
+    if (ielarc > 0) {
       if (cs_glob_elec_option->couimp < 0.) {
         bft_printf("value for COUIMP must be strictly positive\n");
         verif = false;
@@ -389,7 +378,7 @@ _cs_electrical_model_verify(void)
         verif = false;
       }
     }
-    if (cs_glob_elec_option->ieljou > 0) {
+    if (ieljou > 0) {
       if (cs_glob_elec_option->puisim < 0.) {
         bft_printf("value for PUISIM must be strictly positive\n");
         verif = false;
@@ -505,11 +494,10 @@ CS_PROCF (elthht, ELTHHT) (cs_int_t  *mode,
 }
 
 void
-CS_PROCF (ellecd, ELLECD) (cs_int_t *ieljou,
-                           cs_int_t *ielarc)
+CS_PROCF (ellecd, ELLECD) (void)
 {
-  cs_electrical_model_initialize(*ielarc, *ieljou);
-  cs_electrical_properties_read(*ielarc, *ieljou);
+  cs_electrical_model_initialize();
+  cs_electrical_properties_read();
 }
 
 void
@@ -545,17 +533,15 @@ CS_PROCF (eltsvv, ELTSVV) (const int       *f_id,
 }
 
 void
-CS_PROCF (elvarp, ELVARP) (cs_int_t *ieljou,
-                           cs_int_t *ielarc)
+CS_PROCF (elvarp, ELVARP) (void)
 {
-  cs_elec_add_variable_fields(ielarc, ieljou);
+  cs_elec_add_variable_fields();
 }
 
 void
-CS_PROCF (elprop, ELPROP) (cs_int_t *ieljou,
-                           cs_int_t *ielarc)
+CS_PROCF (elprop, ELPROP) (void)
 {
-  cs_elec_add_property_fields(ielarc, ieljou);
+  cs_elec_add_property_fields();
 }
 
 void
@@ -599,14 +585,13 @@ cs_get_glob_transformer(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_model_initialize(int  ielarc,
-                               int  ieljou)
+cs_electrical_model_initialize(void)
 {
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+
   if (ieljou >= 3)
     BFT_MALLOC(_transformer, 1, cs_data_joule_effect_t);
 
-  _elec_option.ielarc    = ielarc;
-  _elec_option.ieljou    = ieljou;
   _elec_option.ixkabe    = 0;
   _elec_option.ntdcla    = 1;
   _elec_option.irestrike = 0;
@@ -643,9 +628,11 @@ cs_electrical_model_initialize(int  ielarc,
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_model_finalize(int ielarc,
-                             int ieljou)
+cs_electrical_model_finalize(void)
 {
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
   if (ielarc > 0) {
     BFT_FREE(_elec_properties.th);
     BFT_FREE(_elec_properties.ehgaz);
@@ -701,8 +688,10 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
 
   cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-  if (cs_glob_elec_option->ieljou == 2 ||
-      cs_glob_elec_option->ieljou == 4) {
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
+  if (ieljou == 2 || ieljou == 4) {
     f = CS_F_(poti);
     cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(f, keysca) - 1;
@@ -714,7 +703,7 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
 
-  if (cs_glob_elec_option->ielarc > 1) {
+  if (ielarc > 1) {
     cs_field_t  *fp = cs_field_by_name_try("vec_potential");
     cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(fp, keysca) - 1;
@@ -742,8 +731,7 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   cs_field_set_key_double(f, ksigmas, 0.7);
   cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-  if (cs_glob_elec_option->ieljou == 2 ||
-      cs_glob_elec_option->ieljou == 4) {
+  if (ieljou == 2 || ieljou == 4) {
     f = CS_F_(poti);
     cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(f, keysca) - 1;
@@ -752,7 +740,7 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
 
-  if (cs_glob_elec_option->ielarc > 1) {
+  if (ielarc > 1) {
     cs_field_t  *fp = cs_field_by_name_try("vec_potential");
     cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(fp, keysca) - 1;
@@ -788,9 +776,11 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_properties_read(int  ielarc,
-                              int  ieljou)
+cs_electrical_properties_read(void)
 {
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
   if (ielarc <= 0 && ieljou < 3)
     return;
 
@@ -1100,9 +1090,11 @@ cs_elec_physical_properties(const cs_mesh_t             *mesh,
   if (ifcvsl > 0)
     diff_th = cs_field_by_id(ifcvsl);
 
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
   /* Electric arc */
 
-  if (cs_glob_elec_option->ielarc > 0) {
+  if (ielarc > 0) {
     if (ipass == 1)
       bft_printf("electric arc module: properties read on file.\n");
 
@@ -1401,6 +1393,9 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
   cs_halo_type_t halo_type;
   cs_gradient_type_t gradient_type;
 
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
   /* if listing printing is needed */
   int modntl = 0;
   //TODO : control listing output
@@ -1448,7 +1443,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     if (diff_id > -1)
       c_prop = cs_field_by_id(diff_id);
 
-    if (cs_glob_elec_option->ieljou > 0 || cs_glob_elec_option->ielarc > 0) {
+    if (ieljou > 0 || ielarc > 0) {
       cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         cpro_curre[iel][0] = -c_prop->val[iel] * grad[iel][0];
@@ -1516,7 +1511,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       bft_printf("-----------------------------------------\n");
     }
 
-    if (cs_glob_elec_option->ieljou == 2 || cs_glob_elec_option->ieljou == 4) {
+    if (ieljou == 2 || ieljou == 4) {
       /* compute grad(potI) */
 
       /* Get the calculation option from the field */
@@ -1542,7 +1537,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       if (diff_id_i > -1)
         c_propi = cs_field_by_id(diff_id_i);
 
-      if (cs_glob_elec_option->ieljou == 4) {
+      if (ieljou == 4) {
         cs_real_3_t *cpro_curim = (cs_real_3_t *)(CS_F_(curim)->val);
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           cpro_curim[iel][0] = -c_propi->val[iel] * grad[iel][0];
@@ -1617,7 +1612,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
     cs_real_3_t *cpro_magfl = (cs_real_3_t *)(CS_F_(magfl)->val);
 
-    if (cs_glob_elec_option->ielarc == 2) {
+    if (ielarc == 2) {
       /* compute magnetic field component B */
       cs_field_t  *fp = cs_field_by_name_try("vec_potential");
       cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
@@ -1644,7 +1639,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
       BFT_FREE(gradv);
     }
-    else if (cs_glob_elec_option->ielarc == 1)
+    else if (ielarc == 1)
       bft_error(__FILE__, __LINE__, 0,
                 _("Error electric arc with ampere theorem not available\n"));
 
@@ -1661,7 +1656,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     }
 
     /* compute min max for B */
-    if (cs_glob_elec_option->ielarc > 1) {
+    if (ielarc > 1) {
       if (modntl == 0) {
         /* Grad PotR = -E */
         double vrmin, vrmax;
@@ -1731,6 +1726,8 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
   cs_real_t *w1;
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
 
@@ -1743,7 +1740,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         w1[iel] = CS_F_(joulp)->val[iel] * volume[iel];
 
-      if (cs_glob_elec_option->ielarc >= 1)
+      if (ielarc >= 1)
         if (cs_glob_elec_option->ixkabe == 2)
           for (cs_lnum_t iel = 0; iel < n_cells; iel++)
             w1[iel] -= CS_F_(radsc)->val[iel] * volume[iel];
@@ -1790,10 +1787,11 @@ cs_elec_source_terms_v(const cs_mesh_t             *mesh,
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
   /* source term for potential vector */
 
-  if (cs_glob_elec_option->ielarc >= 2
-      && f_id == (CS_F_(potva)->id)) {
+  if (ielarc >= 2 && f_id == (CS_F_(potva)->id)) {
     cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
 
     if (var_cal_opt.iwarni > 0)
@@ -1810,8 +1808,7 @@ cs_elec_source_terms_v(const cs_mesh_t             *mesh,
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_add_variable_fields(const int  *ielarc,
-                            const int  *ieljou)
+cs_elec_add_variable_fields(void)
 {
   cs_field_t *f;
   int dim1 = 1;
@@ -1823,6 +1820,9 @@ cs_elec_add_variable_fields(const int  *ielarc,
   const int kivisl = cs_field_key_id("scalar_diffusivity_id");
 
   const cs_data_elec_t  *e_props = cs_glob_elec_properties; /* local name */
+
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
 
   {
     int f_id = cs_variable_field_create("enthalpy", "Enthalpy",
@@ -1848,7 +1848,7 @@ cs_elec_add_variable_fields(const int  *ielarc,
     cs_add_model_field_indexes(f->id);
   }
 
-  if (*ieljou == 2 || *ieljou == 4) {
+  if (ieljou == 2 || ieljou == 4) {
     int f_id = cs_variable_field_create("elec_pot_i", "POT_EL_I",
                                         CS_MESH_LOCATION_CELLS, dim1);
     f = cs_field_by_id(f_id);
@@ -1858,16 +1858,14 @@ cs_elec_add_variable_fields(const int  *ielarc,
     cs_add_model_field_indexes(f->id);
   }
 
-  if (*ielarc > 1) {
-    {
-      int f_id = cs_variable_field_create("vec_potential", "POT_VEC",
-                                          CS_MESH_LOCATION_CELLS, dim3);
-      f = cs_field_by_id(f_id);
-      //cs_field_set_key_double(f, kscmin, -grand);
-      //cs_field_set_key_double(f, kscmax,  grand);
-      cs_field_set_key_int(f, kivisl, -1);
-      cs_add_model_field_indexes(f->id);
-    }
+  if (ielarc > 1) {
+    int f_id = cs_variable_field_create("vec_potential", "POT_VEC",
+                                        CS_MESH_LOCATION_CELLS, dim3);
+    f = cs_field_by_id(f_id);
+    //cs_field_set_key_double(f, kscmin, -grand);
+    //cs_field_set_key_double(f, kscmax,  grand);
+    cs_field_set_key_int(f, kivisl, -1);
+    cs_add_model_field_indexes(f->id);
   }
 
   if (e_props->ngaz > 1) {
@@ -1910,8 +1908,7 @@ cs_elec_add_variable_fields(const int  *ielarc,
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_add_property_fields(const int  *ielarc,
-                            const int  *ieljou)
+cs_elec_add_property_fields(void)
 {
   cs_field_t *f;
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
@@ -1920,6 +1917,8 @@ cs_elec_add_property_fields(const int  *ielarc,
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
   const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
 
   {
     f = cs_field_create("temperature",
@@ -1966,17 +1965,15 @@ cs_elec_add_property_fields(const int  *ielarc,
   }
 
   /* specific for joule effect */
-  if (*ieljou == 2 || *ieljou == 4) {
-    {
-      f = cs_field_create("current_im",
-                          field_type,
-                          CS_MESH_LOCATION_CELLS,
-                          3, /* dim */
-                          has_previous);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
-      cs_field_set_key_str(f, klbl, "Curent_Imag");
-    }
+  if (ieljou == 2 || ieljou == 4) {
+    f = cs_field_create("current_im",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        3, /* dim */
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Curent_Imag");
   }
 
   /* specific for electric arcs */
@@ -2044,6 +2041,8 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh,
 
   double d2s3 = 2. /3.;
 
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
   /* TODO remove initialization of turbulent variables,
      as it should be done in turbulence modeling itself
      (and probably already is; need to check) */
@@ -2092,7 +2091,7 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh,
 
     /* enthalpy */
     cs_real_t hinit = 0.;
-    if (cs_glob_elec_option->ielarc > 0) {
+    if (ielarc > 0) {
       cs_real_t *ym;
       BFT_MALLOC(ym, cs_glob_elec_properties->ngaz, cs_real_t);
       ym[0] = 1.;
@@ -2134,7 +2133,10 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
   double coepot = 0.;
   double coepoa = 1.;
 
-  if (cs_glob_elec_option->ielarc >= 1) {
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+  int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
+
+  if (ielarc >= 1) {
     if (cs_glob_elec_option->modrec == 1) {
       /* standard model */
       double somje = 0.;
@@ -2232,7 +2234,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
         CS_F_(potr)->val[iel] *= coepot;
 
       /* current density */
-      if (cs_glob_elec_option->ielarc > 0) {
+      if (ielarc > 0) {
         cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           for (cs_lnum_t i = 0; i < 3; i++)
@@ -2247,7 +2249,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
   }
 
   /* joule effect */
-  if (cs_glob_elec_option->ieljou > 0) {
+  if (ieljou > 0) {
     /* standard model */
     double somje = 0.;
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)
@@ -2271,13 +2273,12 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
     _elec_option.coejou *= coepot;
 
     /* electric potential (for post treatment) */
-    if (cs_glob_elec_option->ieljou != 3 &&
-        cs_glob_elec_option->ieljou != 4)
+    if (ieljou != 3 && ieljou != 4)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         CS_F_(potr)->val[iel] *= coepot;
 
     /* current density */
-    if (cs_glob_elec_option->ieljou == 2)
+    if (ieljou == 2)
       for (int i = 0; i < 3; i++)
         for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           CS_F_(poti)->val[iel] *= coepot;

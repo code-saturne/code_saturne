@@ -61,6 +61,7 @@
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"
 #include "cs_timer.h"
@@ -2008,7 +2009,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           rcodcl[ivar * n_b_faces + ifbr] *= cs_glob_elec_option->coejou;
         }
 
-        if (cs_glob_elec_option->ieljou == 2 || cs_glob_elec_option->ieljou == 4) {
+        int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+        if (ieljou == 2 || ieljou == 4) {
           const cs_field_t  *fi = CS_F_(poti);
           ivar = cs_field_get_key_int(fi, var_key_id) -1;
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
