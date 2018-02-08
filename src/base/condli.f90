@@ -378,7 +378,8 @@ endif
 ! 2. treatment of types of bcs given by itypfb
 !===============================================================================
 
-if (    ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
+if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
+    .and.ippmod(ieljou).eq.-1.and.ippmod(ielarc).eq.-1             &
     .or.ippmod(icompf).ge.0.and.ippmod(igmix).ge.0) then
   call pptycl &
  ( nvar   ,                                                       &

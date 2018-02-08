@@ -294,9 +294,6 @@ elseif (ippmod(iatmos).ge.0) then
   call attycl(itypfb, izfppp, icodcl, rcodcl)
   !==========
 
-! ---> Ecoulements electrique
-! nothing
-
 ! ---> Cooling towers
 
 elseif (ippmod(iaeros).ge.0) then
