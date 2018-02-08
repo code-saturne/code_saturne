@@ -43,6 +43,7 @@ from code_saturne.Base.QtCore    import *
 from code_saturne.Base.QtGui     import *
 from code_saturne.Base.QtWidgets import *
 from code_saturne.Base import QtPage
+from code_saturne.cs_exec_environment import enquote_arg
 
 #-------------------------------------------------------------------------------
 # Salome modules
@@ -2013,7 +2014,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
             args += " --no-write "
             args += " --case "
-            args += os.path.join(thePath, outfile)
+            args += enquote_arg(os.path.join(thePath, outfile))
             args += " --post-volume "
             args += " med "
             args += CFDSTUDYGUI_DataModel._GetPath(sobj)
