@@ -2043,52 +2043,7 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh,
 
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
-  /* TODO remove initialization of turbulent variables,
-     as it should be done in turbulence modeling itself
-     (and probably already is; need to check) */
-
   if (isuite == 0 && ipass == 1) {
-
-    double xkent = 1.e-10;
-    double xeent = 1.e-10;
-
-    if (cs_glob_turb_model->itytur == 2) {
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        CS_F_(k)->val[iel] = xkent;
-        CS_F_(eps)->val[iel] = xeent;
-      }
-    }
-    else if (cs_glob_turb_model->itytur == 3) {
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        CS_F_(r11)->val[iel] = d2s3 * xkent;
-        CS_F_(r22)->val[iel] = d2s3 * xkent;
-        CS_F_(r33)->val[iel] = d2s3 * xkent;
-        CS_F_(r12)->val[iel] = 0.;
-        CS_F_(r13)->val[iel] = 0.;
-        CS_F_(r23)->val[iel] = 0.;
-        CS_F_(eps)->val[iel] = xeent;
-      }
-    }
-    else if (cs_glob_turb_model->itytur == 5) {
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        CS_F_(k)->val[iel] = xkent;
-        CS_F_(eps)->val[iel] = xeent;
-        CS_F_(phi)->val[iel] = d2s3;
-        CS_F_(f_bar)->val[iel] = 0.;
-      }
-    }
-    else if (cs_glob_turb_model->itytur == 6) {
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        CS_F_(k)->val[iel] = xkent;
-        CS_F_(omg)->val[iel] = xeent / cs_turb_cmu / xkent;
-      }
-    }
-    else if (cs_glob_turb_model->itytur == 7) {
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        CS_F_(nusa)->val[iel] = cs_turb_cmu * xkent * xkent / xeent;
-      }
-    }
-
     /* enthalpy */
     cs_real_t hinit = 0.;
     if (ielarc > 0) {
