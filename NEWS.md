@@ -11,6 +11,12 @@ User changes:
 
 Numerics:
 
+- Added new multigrid coarsening algorithm compatible with matrices
+  in MSR and native formats, usable with CDO/HHO matrices in addition
+  to 2-point FV matrices.
+  * Removed rarely used and inconclusive face traversal options from
+    previous (default) coarsening algorithm.
+
 - Add choice of inexact (flexible) preconditioned congugate gradient.
   * When using multiple threads and multigrid preconditioning with a
     Gauss-Seidel smoother, this choice is set by default over the

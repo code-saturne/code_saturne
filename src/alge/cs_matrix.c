@@ -6046,7 +6046,7 @@ cs_matrix_get_type(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return matrix type.
+ * \brief Return number of columns in a matrix.
  *
  * \param[in]  matrix  pointer to matrix structure
  */
@@ -6076,6 +6076,58 @@ cs_matrix_get_n_rows(const cs_matrix_t  *matrix)
     bft_error(__FILE__, __LINE__, 0,
               _("The matrix is not defined."));
   return matrix->n_rows;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of entries in matrix.
+ *
+ * When the block size is > 1, the number reported is the number of
+ * entry blocks, not individual entries.
+ *
+ * \param[in]  matrix  pointer to matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_matrix_get_n_entries(const cs_matrix_t  *matrix)
+{
+  cs_lnum_t retval = 0;
+
+  if (matrix == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("The matrix is not defined."));
+
+  switch(matrix->type) {
+  case CS_MATRIX_NATIVE:
+    {
+      const cs_matrix_struct_native_t  *ms = matrix->structure;
+      retval = ms->n_edges*2 + ms->n_rows;
+    }
+    break;
+  case CS_MATRIX_CSR:
+    {
+      const cs_matrix_struct_csr_t  *ms = matrix->structure;
+      retval = ms->row_index[ms->n_rows];
+    }
+    break;
+  case CS_MATRIX_CSR_SYM:
+    {
+      const cs_matrix_struct_csr_t  *ms = matrix->structure;
+      retval = ms->row_index[ms->n_rows]*2 - ms->n_rows;
+    }
+    break;
+  case CS_MATRIX_MSR:
+    {
+      const cs_matrix_struct_csr_t  *ms = matrix->structure;
+      retval = ms->row_index[ms->n_rows] + ms->n_rows;
+    }
+    break;
+  default:
+    break;
+  }
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6569,6 +6621,32 @@ cs_matrix_is_symmetric(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Indicate whether coefficients were mapped from native face-based
+ *        arrays.
+ *
+ * It is used in the current multgrid code, but should be removed as soon
+ * as the dependency to the native format is removed.
+ *
+ * \param[in]  matrix  pointer to matrix structure
+ *
+ * \return  true if coefficients were mapped from native face-based arrays,
+ *          false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_matrix_is_mapped_from_native(const cs_matrix_t  *matrix)
+{
+  bool retval = false;
+
+  if (matrix->xa != NULL)
+    retval = true;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get matrix diagonal values.
  *
  * In case of matrixes with block diagonal coefficients, a pointer to
@@ -7011,6 +7089,12 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
         *x_val = mc->x_val;
     }
   }
+  else
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("%s is not available for matrix using %s storage."),
+       __func__,
+       cs_matrix_type_name[matrix->type]);
 }
 
 /*----------------------------------------------------------------------------*/

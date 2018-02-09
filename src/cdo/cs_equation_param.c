@@ -925,7 +925,7 @@ cs_equation_param_set_sles(const char               *eqname,
              1.0,    // precision multiplier descent (< 0 forces max iters)
              1.0,    // precision multiplier ascent (< 0 forces max iters)
              1);     // requested precision multiplier coarse (default 1)
-
+          break;
         }
       default:
         bft_error(__FILE__, __LINE__, 0,

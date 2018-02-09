@@ -378,6 +378,19 @@ cs_lnum_t
 cs_matrix_get_n_rows(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
+ * Return number of entries in matrix.
+ *
+ * When the block size is > 1, the number reported is the number of
+ * entry blocks, not individual entries.
+ *
+ * parameters:
+ *   matrix --> pointer to matrix structure
+ *----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_matrix_get_n_entries(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
  * Return matrix diagonal block sizes.
  *
  * Block sizes are defined by a array of 4 values:
@@ -622,6 +635,24 @@ cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
 bool
 cs_matrix_is_symmetric(const cs_matrix_t  *matrix);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Indicate whether coefficients were mapped from native face-based
+ *        arrays.
+ *
+ * It is used in the current multgrid code, but should be removed as soon
+ * as the dependency to the native format is removed.
+ *
+ * \param[in]  matrix  pointer to matrix structure
+ *
+ * \return  true if coefficients were mapped from native face-based arrays,
+ *          false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_matrix_is_mapped_from_native(const cs_matrix_t  *matrix);
+
 /*----------------------------------------------------------------------------
  * Get matrix diagonal values.
  *
@@ -718,7 +749,7 @@ cs_matrix_get_row(const cs_matrix_t     *matrix,
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_get_native_arrays(const cs_matrix_t    *matrix,
+cs_matrix_get_native_arrays(const cs_matrix_t   *matrix,
                             bool                *symmetric,
                             cs_lnum_t           *n_edges,
                             const cs_lnum_2_t  **edges,
