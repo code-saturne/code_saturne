@@ -5,6 +5,8 @@ Release 5.1.4 (Unreleased)
 Bug fixes
 ---------
 
+- GUI: delete scalar profile and time average when deleting the scalar itself.
+
 - Fix issue #251 (crash for periodicity in parallel in some cases).
 
 - GUI: fix crash when selecting gradient reconstruction mode.
