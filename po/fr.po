@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-07-18 14:29+0200\n"
+"POT-Creation-Date: 2018-07-19 19:55+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3540,6 +3540,12 @@ msgstr "   type de remplissage : %s\n"
 msgid "   Frobenius norm: %11.4e\n"
 msgstr "   norme de Frobenius : %11.4e\n"
 
+msgid "V-cycle"
+msgstr ""
+
+msgid "K-cycle"
+msgstr ""
+
 msgid "  Solver type:                       multigrid\n"
 msgstr "  Type de solveur :                  multigrille\n"
 
@@ -3561,6 +3567,10 @@ msgstr ""
 "    N. min. de lignes grossières :   %llu\n"
 "    Paramètre de relaxation P0/P1 :  %g\n"
 "  Nombre maximum de cycles :         %d\n"
+
+#, c-format
+msgid "  Cycle type:                        %s\n"
+msgstr "  Type de cycle :                    %s\n"
 
 #, c-format
 msgid ""
@@ -3620,10 +3630,12 @@ msgstr "prolongement :"
 msgid ""
 "\n"
 "  Multigrid:\n"
+"    %s\n"
 "    Coarsening: %s\n"
 msgstr ""
 "\n"
 "  Multigrille :\n"
+"    %s\n"
 "    Aggrégation : %s\n"
 
 #, c-format
@@ -15491,4 +15503,3 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
-

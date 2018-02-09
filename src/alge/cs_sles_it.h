@@ -77,7 +77,7 @@ typedef struct _cs_sles_it_t  cs_sles_it_t;
  *  Global variables
  *============================================================================*/
 
-/* Short names for matrix types */
+/* Names for iterative solver types */
 
 extern const char *cs_sles_it_type_name[];
 

@@ -11,6 +11,8 @@ User changes:
 
 Numerics:
 
+- Added K-cycle multigrid type as an option.
+
 - Added new multigrid coarsening algorithm compatible with matrices
   in MSR and native formats, usable with CDO/HHO matrices in addition
   to 2-point FV matrices.

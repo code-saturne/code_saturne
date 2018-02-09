@@ -222,7 +222,7 @@ _sles_default_native(int                f_id,
                                           sles_it_type,
                                           -1, /* poly_degree */
                                           n_max_iter);
-      cs_sles_pc_t *pc = cs_multigrid_pc_create();
+      cs_sles_pc_t *pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
       cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
       cs_sles_it_transfer_pc(c, &pc);
       cs_multigrid_set_solver_options(mg,
@@ -239,11 +239,11 @@ _sles_default_native(int                f_id,
       cs_sles_set_error_handler(sc, cs_sles_default_error);
     }
     else
-      cs_multigrid_define(f_id, name);
+      cs_multigrid_define(f_id, name, CS_MULTIGRID_V_CYCLE);
 
   }
   else if (multigrid == 2)
-    cs_multigrid_define(f_id, name);
+    cs_multigrid_define(f_id, name, CS_MULTIGRID_V_CYCLE);
 
   else
     (void)cs_sles_it_define(f_id,

@@ -572,7 +572,8 @@ class NumericalParamEquationModel(Model):
     @Variables.undoLocal
     def setSolverChoice(self, name, value):
         """ Put choice of solver for variable labelled name """
-        self.isInList(value, ('multigrid', 'conjugate_gradient',
+        self.isInList(value, ('multigrid', 'multigrid_k_cycle',
+                              'conjugate_gradient',
                               'inexact_conjugate_gradient', 'jacobi',
                               'bi_cgstab', 'bi_cgstab2', 'gmres', 'automatic',
                               'gauss_seidel', 'symmetric_gauss_seidel', 'PCR3'))
@@ -589,7 +590,8 @@ class NumericalParamEquationModel(Model):
     @Variables.undoLocal
     def setPreconditioningChoice(self, name, value):
         """ Put choice of preconditioning for variable labelled name """
-        self.isInList(value, ('multigrid', 'none', 'jacobi',
+        self.isInList(value, ('multigrid', 'multigrid_k_cycle',
+                              'none', 'jacobi',
                               'polynomial', 'automatic'))
         node = self._getSolverNameNode(name)
 

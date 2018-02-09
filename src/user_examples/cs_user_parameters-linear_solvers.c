@@ -290,7 +290,7 @@ cs_user_linear_solvers(void)
   /*------------------------------------------------------*/
 
   /*! [sles_wall_dist] */
-  cs_multigrid_define(-1, "wall_distance");
+  cs_multigrid_define(-1, "wall_distance", CS_MULTIGRID_V_CYCLE);
   /*! [sles_wall_dist] */
 
   /* Example: use BiCGStab2 for user variable (named user_1) */
@@ -335,7 +335,9 @@ cs_user_linear_solvers(void)
 
   /*! [sles_mgp_1] */
   {
-    cs_multigrid_t *mg = cs_multigrid_define(CS_F_(p)->id, NULL);
+    cs_multigrid_t *mg = cs_multigrid_define(CS_F_(p)->id,
+                                             NULL,
+                                             CS_MULTIGRID_V_CYCLE);
 
     cs_multigrid_set_coarsening_options(mg,
                                         3,    /* aggregation_limit (default 3) */
@@ -385,7 +387,7 @@ cs_user_linear_solvers(void)
                                         CS_SLES_PCG,
                                         -1,
                                         10000);
-    cs_sles_pc_t *pc = cs_multigrid_pc_create();
+    cs_sles_pc_t *pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
     cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
     cs_sles_it_transfer_pc(c, &pc);
 

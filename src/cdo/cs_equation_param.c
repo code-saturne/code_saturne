@@ -907,7 +907,8 @@ cs_equation_param_set_sles(const char               *eqname,
         break;
       case CS_PARAM_ITSOL_AMG:
         {
-          cs_multigrid_t  *mg = cs_multigrid_define(field_id, NULL);
+          cs_multigrid_t  *mg = cs_multigrid_define(field_id, NULL,
+                                                    CS_MULTIGRID_V_CYCLE);
 
           /* Advanced setup (default is specified inside the brackets) */
           cs_multigrid_set_solver_options

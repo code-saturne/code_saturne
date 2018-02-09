@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_grid.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
 #include "cs_sles_pc.h"
@@ -49,6 +50,18 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Multigrid types
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_MULTIGRID_V_CYCLE,        /* Use a V-cycle */
+  CS_MULTIGRID_K_CYCLE,        /* Use a V-cycle */
+  CS_MULTIGRID_N_TYPES         /* Number of multigrid types */
+
+} cs_multigrid_type_t;
+
 /* Multigrid linear solver context (opaque) */
 
 typedef struct _cs_multigrid_t  cs_multigrid_t;
@@ -56,6 +69,10 @@ typedef struct _cs_multigrid_t  cs_multigrid_t;
 /*============================================================================
  *  Global variables
  *============================================================================*/
+
+/* Names for multigrid types */
+
+extern const char *cs_multigrid_type_name[];
 
 /*=============================================================================
  * Public function prototypes
@@ -103,29 +120,33 @@ cs_multigrid_needed(void);
  * If needed, cs_sles_find() may be used to obtain a pointer to the
  * matching cs_sles_t container.
  *
- * parameters:
- *   f_id <-- associated field id, or < 0
- *   name <-- associated name if f_id < 0, or NULL
+ * \param[in]  f_id     associated field id, or < 0
+ * \param[in]  name     associated name if f_id < 0, or NULL
+ * \param[in]  mg_type  type of multigrid algorithm to use
  *
  * \return  pointer to new multigrid info and context
  */
 /*----------------------------------------------------------------------------*/
 
 cs_multigrid_t *
-cs_multigrid_define(int          f_id,
-                    const char  *name);
+cs_multigrid_define(int                   f_id,
+                    const char           *name,
+                    cs_multigrid_type_t   mg_type);
 
-/*----------------------------------------------------------------------------
- * Create multigrid linear system solver info and context.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create multigrid linear system solver info and context.
  *
  * The multigrid variant is an ACM (Additive Corrective Multigrid) method.
  *
- * returns:
- *   pointer to new multigrid info and context
- *----------------------------------------------------------------------------*/
+ * \param[in]  mg_type  type of multigrid algorithm to use
+ *
+ * \return  pointer to new multigrid info and context
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_multigrid_t *
-cs_multigrid_create(void);
+cs_multigrid_create(cs_multigrid_type_t  mg_type);
 
 /*----------------------------------------------------------------------------
  * Destroy multigrid linear system solver info and context.
@@ -339,15 +360,18 @@ void
 cs_multigrid_log(const void  *context,
                  cs_log_t     log_type);
 
-/*----------------------------------------------------------------------------
- * Create a multigrid preconditioner.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a multigrid preconditioner.
  *
- * returns:
- *   pointer to newly created preconditioner object.
- *----------------------------------------------------------------------------*/
+ * \param[in]  mg_type  type of multigrid algorithm to use
+ *
+ * \return  pointer to newly created preconditioner object.
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_sles_pc_t *
-cs_multigrid_pc_create(void);
+cs_multigrid_pc_create(cs_multigrid_type_t  mg_type);
 
 /*----------------------------------------------------------------------------
  * Error handler for multigrid sparse linear equation solver.

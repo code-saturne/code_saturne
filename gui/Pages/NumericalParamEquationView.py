@@ -130,7 +130,8 @@ class SolverChoiceDelegate(QItemDelegate):
         editor.addItem("Symmetric Gauss Seidel")
         editor.addItem("conjugate residual")
         if mg:
-            editor.addItem("Multigrid")
+            editor.addItem("Multigrid, V-cycle")
+            editor.addItem("Multigrid, K-cycle")
         editor.installEventFilter(self)
         return editor
 
@@ -146,7 +147,8 @@ class SolverChoiceDelegate(QItemDelegate):
                 "gauss_seidel": 7,
                 "symmetric_gauss_seidel": 8,
                 "PCR3": 9,
-                "multigrid": 10}
+                "multigrid": 10,
+                "multigrid_k_cycle": 11}
         row = index.row()
         string = index.model().dataSolver[row]['iresol']
         idx = dico[string]
@@ -179,12 +181,13 @@ class PreconditioningChoiceDelegate(QItemDelegate):
 
         editor.addItem("Automatic")
         editor.addItem("None")
-        editor.addItem("Multigrid")
+        editor.addItem("Multigrid, V-cycle")
+        editor.addItem("Multigrid, K-cycle")
         editor.addItem("Jacobi")
         editor.addItem("Polynomial")
 
         solver = index.model().dataSolver[index.row()]['iresol']
-        if solver == 'multigrid':
+        if solver in ('multigrid', 'multigrid_k_cycle'):
             editor.model().item(1).setEnabled(False)
         editor.installEventFilter(self)
         return editor
@@ -505,7 +508,8 @@ class StandardItemModelSolver(QStandardItemModel):
 
 
     def populateModel(self):
-        self.dicoV2M= {"Multigrid"              : 'multigrid',
+        self.dicoV2M= {"Multigrid, V-cycle"     : 'multigrid',
+                       "Multigrid, K-cycle"     : 'multigrid_k_cycle',
                        "Conjugate gradient"     : 'conjugate_gradient',
                        "Inexact conjugate gradient"     : 'inexact_conjugate_gradient',
                        "Jacobi"                 : 'jacobi',
@@ -518,7 +522,8 @@ class StandardItemModelSolver(QStandardItemModel):
                        "conjugate residual"     : "PCR3",
                        "None"                   : "none",
                        "Polynomial"             : "polynomial"}
-        self.dicoM2V= {"multigrid"              : 'Multigrid',
+        self.dicoM2V= {"multigrid"              : 'Multigrid, V-cycle',
+                       "multigrid_k_cycle"      : 'Multigrid, K-cycle',
                        "conjugate_gradient"     : 'Conjugate gradient',
                        "inexact_conjugate_gradient"     : 'Inexact conjugate gradient',
                        "jacobi"                 : 'Jacobi',

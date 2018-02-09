@@ -5622,6 +5622,7 @@ cs_gui_linear_solvers(void)
 
   bool multigrid = false;
   cs_sles_it_type_t sles_it_type = CS_SLES_N_IT_TYPES;
+  cs_multigrid_type_t mg_type = CS_MULTIGRID_N_TYPES;
 
   double tmp;
   char* algo_choice = NULL;
@@ -5655,8 +5656,14 @@ cs_gui_linear_solvers(void)
       algo_choice = _variable_choice(ref_name, "solver_choice");
       precond_choice = _variable_choice(ref_name, "preconditioning_choice");
 
-      if (cs_gui_strcmp(algo_choice, "multigrid"))
+      if (cs_gui_strcmp(algo_choice, "multigrid_k_cycle")) {
         multigrid = true;
+        mg_type = CS_MULTIGRID_K_CYCLE;
+      }
+      else if (cs_gui_strcmp(algo_choice, "multigrid")) {
+        multigrid = true;
+        mg_type = CS_MULTIGRID_V_CYCLE;
+      }
       else if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
         sles_it_type = CS_SLES_PCG;
       else if (cs_gui_strcmp(algo_choice, "inexact_conjugate_gradient"))
@@ -5690,13 +5697,20 @@ cs_gui_linear_solvers(void)
           poly_degree = -1;
         else if (cs_gui_strcmp(precond_choice, "polynomial"))
           poly_degree = 1;
+        else if (cs_gui_strcmp(precond_choice, "multigrid_k_cycle")) {
+          pc_multigrid = true;
+          mg_type = CS_MULTIGRID_K_CYCLE;
+          poly_degree = -1;
+        }
         else if (cs_gui_strcmp(precond_choice, "multigrid")) {
           pc_multigrid = true;
+          mg_type = CS_MULTIGRID_V_CYCLE;
           poly_degree = -1;
         }
         else { /* "automatic" or undefined */
           if (sles_it_type == CS_SLES_PCG) {
             pc_multigrid = true;
+            mg_type = CS_MULTIGRID_V_CYCLE;
             poly_degree = -1;
           }
         }
@@ -5705,35 +5719,62 @@ cs_gui_linear_solvers(void)
                                             poly_degree, n_max_iter);
 
         if (pc_multigrid) {
-          cs_sles_pc_t *pc = cs_multigrid_pc_create();
+          cs_sles_pc_t *pc = cs_multigrid_pc_create(mg_type);
           cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
           cs_sles_it_transfer_pc(c, &pc);
-          cs_multigrid_set_solver_options
-            (mg,
-             CS_SLES_P_SYM_GAUSS_SEIDEL,
-             CS_SLES_P_SYM_GAUSS_SEIDEL,
-             CS_SLES_PCG,
-             1,   /* n max cycles */
-             1,   /* n max iter for descent */
-             1,   /* n max iter for ascent */
-             500, /* n max iter for coarse solve */
-             0, 0, -1,    /* precond degree */
-             -1, -1, 1); /* precision multiplier */
+          if (mg_type == CS_MULTIGRID_V_CYCLE)
+            cs_multigrid_set_solver_options
+              (mg,
+               CS_SLES_P_SYM_GAUSS_SEIDEL,
+               CS_SLES_P_SYM_GAUSS_SEIDEL,
+               CS_SLES_PCG,
+               1,   /* n max cycles */
+               1,   /* n max iter for descent */
+               1,   /* n max iter for ascent */
+               500, /* n max iter for coarse solve */
+               0, 0, -1,    /* precond degree */
+               -1, -1, 1); /* precision multiplier */
+          else if (mg_type == CS_MULTIGRID_K_CYCLE)
+            cs_multigrid_set_solver_options
+              (mg,
+               CS_SLES_P_SYM_GAUSS_SEIDEL,
+               CS_SLES_P_SYM_GAUSS_SEIDEL,
+               CS_SLES_P_SYM_GAUSS_SEIDEL,
+               1,   /* n max cycles */
+               1,   /* n max iter for descent */
+               1,   /* n max iter for ascent */
+               1,   /* n max iter for coarse solve */
+               0, 0, 0,    /* precond degree */
+               -1, -1, -1); /* precision multiplier */
         }
 
       }
 
       else if (multigrid == true) {
-        cs_multigrid_t *mg = cs_multigrid_define(f->id, NULL);
-        cs_multigrid_set_solver_options
-          (mg,
-           CS_SLES_PCG, CS_SLES_PCG, CS_SLES_PCG,
-           100, /* n max cycles */
-           2,   /* n max iter for descent (default 2) */
-           10,  /* n max iter for ascent (default 10) */
-           n_max_iter,
-           0, 0, 0,  /* precond degree */
-           1, 1, 1); /* precision multiplier */
+        cs_multigrid_t *mg = cs_multigrid_define(f->id, NULL, mg_type);
+
+        if (mg_type == CS_MULTIGRID_V_CYCLE)
+          cs_multigrid_set_solver_options
+            (mg,
+             CS_SLES_PCG, CS_SLES_PCG, CS_SLES_PCG,
+             100, /* n max cycles */
+             2,   /* n max iter for descent (default 2) */
+             10,  /* n max iter for ascent (default 10) */
+             n_max_iter,
+             0, 0, 0,  /* precond degree */
+             1, 1, 1); /* precision multiplier */
+        else if (mg_type == CS_MULTIGRID_K_CYCLE)
+          cs_multigrid_set_solver_options
+            (mg,
+             CS_SLES_P_SYM_GAUSS_SEIDEL,
+             CS_SLES_P_SYM_GAUSS_SEIDEL,
+             CS_SLES_P_SYM_GAUSS_SEIDEL,
+             100, /* n max cycles */
+             1,   /* n max iter for descent */
+             1,   /* n max iter for ascent */
+             1,   /* n max iter for coarse solve */
+             0, 0, 0,    /* precond degree */
+             -1, -1, -1); /* precision multiplier */
 
         /* If we have convection, set appropriate options */
         if (f_id >= 0) {

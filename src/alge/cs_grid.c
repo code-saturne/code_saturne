@@ -5259,6 +5259,10 @@ cs_grid_prolong_row_var(const cs_grid_t  *c,
       for (i = 0; i < db_size[0]; i++)
         f_var[ii*db_size[1]+i] = _c_var[ic*db_size[1]+i];
     }
+    else {
+      for (i = 0; i < db_size[0]; i++)
+        f_var[ii*db_size[1]+i] = 0;
+    }
   }
 }
 
