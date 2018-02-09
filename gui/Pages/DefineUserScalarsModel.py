@@ -67,7 +67,9 @@ class DefineUserScalarsModel(Variables, Model):
         self.node_therm  = self.node_models.xmlGetNode('thermal_scalar')
         self.node_source = self.node_models.xmlGetNode('source_terms')
         self.node_bc     = self.case.xmlGetNode('boundary_conditions')
-
+        self.node_ana    = self.case.xmlInitNode('analysis_control')
+        self.node_prof   = self.node_ana.xmlInitNode('profiles')
+        self.node_ava    = self.node_ana.xmlInitNode('time_averages')
 
     def defaultScalarValues(self):
         """Return the default values - Method also used by ThermalScalarModel"""
@@ -230,6 +232,12 @@ class DefineUserScalarsModel(Variables, Model):
         node.xmlRemoveNode()
         self.__deleteScalarBoundaryConditions(name)
         self.__updateScalarNameAndDiffusivityName()
+        # delete scalar in profiles and time averages nodes
+        for node in self.node_prof.xmlGetNodeList('profile'):
+            node.xmlRemoveChild('var_prop', name=name)
+        for node in self.node_ava.xmlGetNodeList('time_average'):
+            node.xmlRemoveChild('var_prop', name=name)
+
 
 
     @Variables.noUndo
@@ -687,7 +695,7 @@ class DefineUserScalarsModel(Variables, Model):
                 if node.xmlGetString('name') == sname:
                    node.xmlRemoveNode()
 
-        # Delete all scalars
+        # Delete scalars in list
         for scalar in lst:
             self.__deleteScalar(scalar)
 
