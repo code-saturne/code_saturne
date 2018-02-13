@@ -1280,6 +1280,7 @@ _pfvp_by_value(const cs_real_t    const_vec[3],
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
+  const size_t _3real = 3*sizeof(cs_real_t);
 
   /* Initialize todo array */
   bool  *todo = NULL;
@@ -1298,7 +1299,7 @@ _pfvp_by_value(const cs_real_t    const_vec[3],
       cs_lnum_t  f_id = c2f->ids[j];
       if (todo[f_id]) {
         todo[f_id] = false;
-        memcpy(values + 3*f_id, const_vec, 3*sizeof(cs_real_t));
+        memcpy(values + 3*f_id, const_vec, _3real);
       }
 
     } /* Loop on cell vertices */
@@ -1929,6 +1930,40 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
       else
         for (cs_lnum_t i = 0; i < z->n_elts; i++) // Loop on selected cells
           retval[z->elt_ids[i]] = const_val;
+
+    } /* Located at primal cells or dual vertices */
+
+    else
+      bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
+
+  }
+  else if (dof_flag & CS_FLAG_VECTOR) { /* DoF is scalar-valued */
+
+    const size_t _3real = 3*sizeof(cs_real_t);
+
+    if (cs_flag_test(dof_flag, cs_flag_primal_face)) {
+
+      if (def->meta & CS_FLAG_FULL_LOC) {
+#       pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+        for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
+          memcpy(retval + 3*f_id, input, _3real);
+      }
+      else
+        _pfvp_by_value(input, z->n_cells, z->cell_ids, retval);
+
+    } /* Located at primal faces */
+
+    else if (cs_flag_test(dof_flag, cs_flag_primal_cell) ||
+             cs_flag_test(dof_flag, cs_flag_dual_vtx)) {
+
+      if (def->meta & CS_FLAG_FULL_LOC) {
+#       pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+        for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+          memcpy(retval + 3*c_id, input, _3real);
+      }
+      else
+        for (cs_lnum_t i = 0; i < z->n_cells; i++) /* Loop on selected cells */
+          memcpy(retval + 3*z->cell_ids[i], input, _3real);
 
     } /* Located at primal cells or dual vertices */
 
