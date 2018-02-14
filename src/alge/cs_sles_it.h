@@ -57,6 +57,7 @@ BEGIN_C_DECLS
 typedef enum {
 
   CS_SLES_PCG,                 /* Preconditionned conjugate gradient */
+  CS_SLES_IPCG,                /* Inexact preconditionned conjugate gradient */
   CS_SLES_JACOBI,              /* Jacobi */
   CS_SLES_BICGSTAB,            /* Bi-conjugate gradient stabilized */
   CS_SLES_BICGSTAB2,           /* Bi-conjugate gradient stabilized - 2*/

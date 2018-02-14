@@ -89,6 +89,8 @@ BEGIN_C_DECLS
 
   \var CS_SLES_PCG
        Preconditioned conjugate gradient
+  \var CS_SLES_IPCG
+       Inexact preconditioned conjugate gradient
   \var CS_SLES_JACOBI
        Jacobi
   \var CS_SLES_BICGSTAB
@@ -279,14 +281,16 @@ static cs_lnum_t _pcg_sr_threshold = 512;
 
 /* Sparse linear equation solver type names */
 
-const char *cs_sles_it_type_name[] = {N_("Conjugate gradient"),
-                                      N_("Jacobi"),
-                                      N_("BiCGstab"),
-                                      N_("BiCGstab2"),
-                                      N_("GMRES"),
-                                      N_("Local Gauss-Seidel"),
-                                      N_("Local symmetric Gauss-Seidel"),
-                                      N_("3-layer conjugate residual")};
+const char *cs_sles_it_type_name[]
+  = {N_("Conjugate Gradient"),
+     N_("Inexact Preconditioned Conjugate Gradient"),
+     N_("Jacobi"),
+     N_("BiCGstab"),
+     N_("BiCGstab2"),
+     N_("GMRES"),
+     N_("Local Gauss-Seidel"),
+     N_("Local symmetric Gauss-Seidel"),
+     N_("3-layer conjugate residual")};
 
 /*============================================================================
  * Private function definitions
@@ -1073,6 +1077,211 @@ _conjugate_gradient(cs_sles_it_t              *c,
 #     pragma omp for nowait
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] += (alpha * zk[ii]);
+    }
+
+  }
+
+  if (_aux_vectors != aux_vectors)
+    BFT_FREE(_aux_vectors);
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using inexact preconditioned conjugate gradient.
+ *
+ * Compared to standard PCG, IPCG supports variable preconditioners, at
+ * the expense of storing the residual at iterations k (rk) and k-1 (rkm1)
+ * to compute the Beta coefficient. When the preconditioner is constant
+ * across the iterations, IPCG is equivalent to PCG.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- matrix
+ *   diag_block_size <-- diagonal block size
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_conjugate_gradient_ip(cs_sles_it_t              *c,
+                       const cs_matrix_t         *a,
+                       int                        diag_block_size,
+                       cs_halo_rotation_t         rotation_mode,
+                       cs_sles_it_convergence_t  *convergence,
+                       const cs_real_t           *rhs,
+                       cs_real_t                 *restrict vx,
+                       size_t                     aux_size,
+                       void                      *aux_vectors)
+{
+  cs_sles_convergence_state_t cvg;
+  double  ro_0, ro_1, alpha, rk_gk_m1, rkm1_gk, rk_gk, beta, residue;
+  cs_real_t  *_aux_vectors;
+  cs_real_t  *restrict rk, *restrict rkm1, *restrict dk, *restrict gk;
+  cs_real_t  *restrict zk;
+
+  unsigned n_iter = 0;
+
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
+
+  assert(c->setup_data != NULL);
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+
+  {
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+    const size_t n_wa = 5;
+    const size_t wa_size = CS_SIMD_SIZE(n_cols);
+
+    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+    else
+      _aux_vectors = aux_vectors;
+
+    rk    = _aux_vectors;
+    rkm1  = _aux_vectors + wa_size;
+    dk    = _aux_vectors + wa_size*2;
+    gk    = _aux_vectors + wa_size*3;
+    zk    = _aux_vectors + wa_size*4;
+  }
+
+  /* Initialize iterative calculation */
+  /*----------------------------------*/
+
+  /* Residue and descent direction */
+
+  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
+
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    rk[ii] -= rhs[ii];
+
+  /* Preconditioning */
+
+  c->setup_data->pc_apply(c->setup_data->pc_context,
+                          rotation_mode,
+                          rk,
+                          gk);
+
+  /* Descent direction */
+  /*-------------------*/
+
+#if defined(HAVE_OPENMP)
+
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    dk[ii] = gk[ii];
+
+#else
+
+  memcpy(dk, gk, n_rows * sizeof(cs_real_t));
+
+#endif
+
+  _dot_products_xx_xy(c, rk, gk, &residue, &rk_gk_m1);
+  residue = sqrt(residue);
+
+  /* If no solving required, finish here */
+
+  c->setup_data->initial_residue = residue;
+  cvg = _convergence_test(c, n_iter, residue, convergence);
+
+  if (cvg == CS_SLES_ITERATING) {
+
+    n_iter = 1;
+
+    cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
+
+    /* Descent parameter */
+
+    _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
+
+    alpha =  - ro_0 / ro_1;
+
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
+    {
+#     pragma omp for nowait
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+        vx[ii] += (alpha * dk[ii]);
+
+#     pragma omp for nowait
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        rkm1[ii] = rk[ii];
+        rk[ii] += (alpha * zk[ii]);
+      }
+    }
+
+    /* Convergence test */
+
+    residue = sqrt(_dot_product_xx(c, rk));
+    cvg = _convergence_test(c, n_iter, residue, convergence);
+
+    /* Current Iteration */
+    /*-------------------*/
+
+  }
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    /* Preconditioning */
+
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            rk,
+                            gk);
+
+    /* compute residue and prepare descent parameter */
+
+    _dot_products_xx_xy_yz(c, rk, gk, rkm1, &residue, &rk_gk, &rkm1_gk);
+
+    residue = sqrt(residue);
+
+    /* Convergence test for end of previous iteration */
+
+    if (n_iter > 1)
+      cvg = _convergence_test(c, n_iter, residue, convergence);
+
+    if (cvg != CS_SLES_ITERATING)
+      break;
+
+    n_iter += 1;
+
+    /* Complete descent parameter computation and matrix.vector product */
+
+    beta = (rk_gk - rkm1_gk) / rk_gk_m1;
+    rk_gk_m1 = rk_gk;
+
+#   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      dk[ii] = gk[ii] + (beta * dk[ii]);
+
+    cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
+
+    _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
+
+    alpha =  - ro_0 / ro_1;
+
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
+    {
+#     pragma omp for nowait
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+        vx[ii] += (alpha * dk[ii]);
+
+#     pragma omp for nowait
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        rkm1[ii] = rk[ii];
+        rk[ii] += (alpha * zk[ii]);
+      }
     }
 
   }
@@ -4423,6 +4632,17 @@ cs_sles_it_solve(void                *context,
                                            aux_size,
                                            aux_vectors);
       }
+      break;
+    case CS_SLES_IPCG:
+      cvg = _conjugate_gradient_ip(c,
+                                   a,
+                                   _diag_block_size,
+                                   rotation_mode,
+                                   &convergence,
+                                   rhs,
+                                   vx,
+                                   aux_size,
+                                   aux_vectors);
       break;
     case CS_SLES_JACOBI:
       if (_diag_block_size == 1)
