@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-01-31 17:14+0100\n"
+"POT-Creation-Date: 2018-05-20 20:32+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1265,9 +1265,6 @@ msgid ""
 msgstr ""
 "Coordonnées cylindriques ou sphériques avec unité\n"
 "d'angle non définie ou inconnue (-> on suppose des radians)\n"
-
-msgid "CGNS NFACE_n elements not handled yet."
-msgstr ""
 
 #, c-format
 msgid ""
@@ -3910,7 +3907,7 @@ msgstr ""
 "  basculement du solveur multigrille vers GC préconditionné %s \n"
 "  pour nouvelle tentative et résolutions ultérieures.\n"
 
-msgid "Conjugate gradient"
+msgid "Conjugate Gradient"
 msgstr "Gradient conjugué"
 
 msgid "Jacobi"
@@ -3930,6 +3927,9 @@ msgstr "Gauss-Seidel local"
 
 msgid "3-layer conjugate residual"
 msgstr "Résidu conjugué à 3 couches"
+
+msgid "Inexact Preconditioned Conjugate Gradient"
+msgstr "Gradient conjugué préconditioné inexact"
 
 #, c-format
 msgid "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"
