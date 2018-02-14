@@ -492,13 +492,14 @@ class cs_compile(object):
         if o_files:
             cmd += o_files
 
-        if os.path.basename(exec_name) in self.pkg.config.exec_libs:
-            cmd += [self.pkg.config.exec_libs[os.path.basename(exec_name)]]
-
         # If present, address sanitizer needs to come first
+
         if '-lasan' in p_libs:
             p_libs.remove('-lasan')
             cmd += ['-lasan']
+
+        if os.path.basename(exec_name) in self.pkg.config.exec_libs:
+            cmd += [self.pkg.config.exec_libs[os.path.basename(exec_name)]]
 
         if opt_libs != None:
             if len(opt_libs) > 0:
