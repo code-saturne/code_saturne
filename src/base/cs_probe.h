@@ -357,8 +357,6 @@ cs_probe_set_snap_mode(cs_probe_set_t   *pset,
  *         deforming or moving mesh (default: \c false)
  * - \c \b boundary  if \ c true, locate on boundary mesh; if \c false,
  *         locate on volume mesh (default)
- * - \c \b auto_variables if \c true (default), automatic outut of main
- *         variables
  *
  * Other options:
  *
