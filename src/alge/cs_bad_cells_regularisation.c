@@ -54,6 +54,7 @@
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
+#include "cs_sles_default.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -79,8 +80,6 @@ BEGIN_C_DECLS
 void
 cs_bad_cells_regularisation_scalar(cs_real_t *var)
 {
-
-
   const cs_mesh_t *mesh = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
@@ -90,13 +89,9 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = mesh->n_cells;
   cs_lnum_t n_i_faces = mesh->n_i_faces;
-  cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
-  const int *b_face_cells = mesh->b_face_cells;
 
-  unsigned *bad_cell_flag = mq->bad_cell_flag;
   const cs_real_t *surfn = mq->i_face_surf;
-  const cs_real_t *surfbn = mq->b_face_surf;
   double *dist = mq->i_dist;
   double *volume  = mq->cell_vol;
 
@@ -160,7 +155,6 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
   double ressol = 0.;
   int niterf = 0;
 
-  int nitmax = 10000;
   cs_real_t epsilp = 1.e-12;
 
   /* Matrix block size */
@@ -213,11 +207,9 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_bad_cells_regularisation_vector(cs_real_3_t *var,
-                                   int         boundary_projection)
+cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
+                                   int           boundary_projection)
 {
-
-
   const cs_mesh_t *mesh = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
@@ -231,7 +223,6 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const int *b_face_cells = mesh->b_face_cells;
 
-  unsigned *bad_cell_flag = mq->bad_cell_flag;
   const cs_real_t *surfn = mq->i_face_surf;
   const cs_real_t *surfbn = mq->b_face_surf;
   double *dist = mq->i_dist;
@@ -325,7 +316,8 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
           double ssd = surfbn[face_id] / distbr[face_id];
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-              double nn = surfbo[face_id][i]/surfbn[face_id] * surfbo[face_id][j]/surfbn[face_id];
+              double nn =   surfbo[face_id][i]/surfbn[face_id]
+                          * surfbo[face_id][j]/surfbn[face_id];
               dam[cell_id][i][j] += ssd * nn;
             }
           }
@@ -334,13 +326,14 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
     }
   }
 
-  cs_real_t rnorm = sqrt(cs_gdot(3*n_cells, rhs, rhs ));
+  cs_real_t rnorm = sqrt(cs_gdot(3*n_cells,
+                                 (const cs_real_t *)rhs,
+                                 (const cs_real_t *)rhs));
 
   /*  Solver residual */
   double ressol = 0.;
   int niterf = 0;
 
-  int nitmax = 10000;
   cs_real_t epsilp = 1.e-12;
 
   /* Matrix block size */
@@ -387,8 +380,6 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
   BFT_FREE(xam);
   BFT_FREE(dam);
   BFT_FREE(rhs);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -399,10 +390,9 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
-                                       int         boundary_projection)
+cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
+                                       int           boundary_projection)
 {
-
   const cs_mesh_t *mesh = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
@@ -416,7 +406,6 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const int *b_face_cells = mesh->b_face_cells;
 
-  unsigned *bad_cell_flag = mq->bad_cell_flag;
   const cs_real_t *surfn = mq->i_face_surf;
   const cs_real_t *surfbn = mq->b_face_surf;
   double *dist = mq->i_dist;
@@ -510,7 +499,8 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
           double ssd = surfbn[face_id] / distbr[face_id];
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-              double nn = surfbo[face_id][i]/surfbn[face_id] * surfbo[face_id][j]/surfbn[face_id];
+              double nn =   surfbo[face_id][i]/surfbn[face_id]
+                          * surfbo[face_id][j]/surfbn[face_id];
 //TODO ???              dam[cell_id][i][j] += ssd * nn;
             }
           }
@@ -519,13 +509,14 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
     }
   }
 
-  cs_real_t rnorm = sqrt(cs_gdot(6*n_cells, rhs, rhs));
+  cs_real_t rnorm = sqrt(cs_gdot(6*n_cells,
+                                 (const cs_real_t *)rhs,
+                                 (const cs_real_t *)rhs));
 
   /*  Solver residual */
   double ressol = 0.;
   int niterf = 0;
 
-  int nitmax = 10000;
   cs_real_t epsilp = 1.e-12;
 
   /* Matrix block size */
@@ -571,8 +562,6 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
   BFT_FREE(xam);
   BFT_FREE(dam);
   BFT_FREE(rhs);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -583,10 +572,9 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
-                                   int         boundary_projection)
+cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
+                                   int           boundary_projection)
 {
-
   const cs_mesh_t *mesh = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
@@ -600,7 +588,6 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const int *b_face_cells = mesh->b_face_cells;
 
-  unsigned *bad_cell_flag = mq->bad_cell_flag;
   const cs_real_t *surfn = mq->i_face_surf;
   const cs_real_t *surfbn = mq->b_face_surf;
   double *dist = mq->i_dist;
@@ -694,7 +681,8 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
           double ssd = surfbn[face_id] / distbr[face_id];
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-              double nn = surfbo[face_id][i]/surfbn[face_id] * surfbo[face_id][j]/surfbn[face_id];
+              double nn =   surfbo[face_id][i]/surfbn[face_id]
+                          * surfbo[face_id][j]/surfbn[face_id];
 //TODO ???              dam[cell_id][i][j] += ssd * nn;
             }
           }
@@ -703,13 +691,14 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
     }
   }
 
-  cs_real_t rnorm = sqrt(cs_gdot(9*n_cells, rhs, rhs));
+  cs_real_t rnorm = sqrt(cs_gdot(9*n_cells,
+                                 (const cs_real_t *)rhs,
+                                 (const cs_real_t *)rhs));
 
   /*  Solver residual */
   double ressol = 0.;
   int niterf = 0;
 
-  int nitmax = 10000;
   cs_real_t epsilp = 1.e-12;
 
   /* Matrix block size */
@@ -755,8 +744,6 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
   BFT_FREE(xam);
   BFT_FREE(dam);
   BFT_FREE(rhs);
-
-  return;
 }
 
 
