@@ -1914,8 +1914,8 @@ cs_halo_dump(const cs_halo_t  *halo,
         bft_printf("  idx start %d:          idx end   %d:\n",
                    index[2*i], index[2*i+1]);
 
-        if (print_level == 1 && list != NULL) {
-          bft_printf("\n            id      cell id\n");
+        if (print_level > 0 && list != NULL) {
+          bft_printf("\n            idx     elt id\n");
           for (j = index[2*i]; j < index[2*i+1]; j++)
             bft_printf("    %10d %10d\n", j, list[j]);
         }
@@ -1928,8 +1928,8 @@ cs_halo_dump(const cs_halo_t  *halo,
         bft_printf("  idx start %d:          idx end   %d:\n",
                    index[2*i+1], index[2*i+2]);
 
-        if (print_level == 1 && list != NULL) {
-          bft_printf("\n            id      cell id\n");
+        if (print_level > 0 && list != NULL) {
+          bft_printf("\n            idx     elt id\n");
           for (j = index[2*i+1]; j < index[2*i+2]; j++)
             bft_printf("    %10d %10d %10d\n",
                        j, list[j], halo->n_local_elts+j);

@@ -78,19 +78,19 @@ cs_matrix_log_info(const cs_matrix_t  *matrix,
  * Test matrix dump operations.
  *
  * parameters:
- *   n_cells     <-- number of local cells
- *   n_cells_ext <-- number of cells including ghost cells (array size)
- *   n_faces     <-- local number of internal faces
- *   face_cell   <-- face -> cells connectivity
- *   halo        <-- cell halo structure
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
+ *   n_rows     <-- number of local rows
+ *   n_cols_ext <-- number of colmuns including ghost columns (array size)
+ *   n_edges    <-- local number of graph edges
+ *   edges      <-- graph edges connectivity
+ *   halo       <-- cell halo structure
+ *   numbering  <-- vectorization or thread-related numbering info, or NULL
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_dump_test(cs_lnum_t              n_cells,
-                    cs_lnum_t              n_cells_ext,
-                    cs_lnum_t              n_faces,
-                    const cs_lnum_2_t     *face_cell,
+cs_matrix_dump_test(cs_lnum_t              n_rows,
+                    cs_lnum_t              n_cols_ext,
+                    cs_lnum_t              n_edges,
+                    const cs_lnum_2_t     *edges,
                     const cs_halo_t       *halo,
                     const cs_numbering_t  *numbering);
 

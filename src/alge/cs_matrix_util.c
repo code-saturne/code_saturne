@@ -97,30 +97,30 @@ BEGIN_C_DECLS
  * y[i] = abs(da[i]), with da possibly NULL.
  *
  * parameters:
- *   da          <-- Pointer to coefficients array (usually matrix diagonal)
- *   dd          --> Resulting vector
- *   n_cells     <-- Number of cells
- *   n_cells_ext <-- Number of cells + ghost cells
+ *   da         <-- Pointer to coefficients array (usually matrix diagonal)
+ *   dd         --> Resulting vector
+ *   n_rows     <-- Number of rows
+ *   n_cols_ext <-- Number of columns + ghost columns
 *----------------------------------------------------------------------------*/
 
 static void
 _diag_dom_diag_contrib(const cs_real_t  *restrict da,
                        cs_real_t        *restrict dd,
-                       cs_lnum_t         n_cells,
-                       cs_lnum_t         n_cells_ext)
+                       cs_lnum_t         n_rows,
+                       cs_lnum_t         n_cols_ext)
 {
   cs_lnum_t  ii;
 
   if (da != NULL) {
 #   pragma omp parallel for
-    for (ii = 0; ii < n_cells; ii++)
+    for (ii = 0; ii < n_rows; ii++)
       dd[ii] = fabs(da[ii]);
-    for (ii = n_cells; ii < n_cells_ext; ii++)
+    for (ii = n_rows; ii < n_cols_ext; ii++)
       dd[ii] = 0.0;
   }
   else {
 #   pragma omp parallel for
-    for (ii = 0; ii < n_cells_ext; ii++)
+    for (ii = 0; ii < n_cols_ext; ii++)
       dd[ii] = 0.0;
   }
 
@@ -130,27 +130,27 @@ _diag_dom_diag_contrib(const cs_real_t  *restrict da,
  * Block diagonal contribution to diagonal dominance, with da possibly NULL.
  *
  * parameters:
- *   da          <-- Pointer to coefficients array (usually matrix diagonal)
- *   dd          --> Resulting vector
- *   n_cells     <-- Number of cells
- *   n_cells_ext <-- Number of cells + ghost cells
- *   b_size      <-- block size, including padding:
- *                   b_size[0]: useful block size
- *                   b_size[1]: vector block extents
- *                   b_size[2]: matrix line extents
- *                   b_size[3]: matrix line*column (block) extents
+ *   da         <-- Pointer to coefficients array (usually matrix diagonal)
+ *   dd         --> Resulting vector
+ *   n_rows     <-- Number of rows
+ *   n_cols_ext <-- Number of colmuns + ghost columns
+ *   b_size     <-- block size, including padding:
+ *                  b_size[0]: useful block size
+ *                  b_size[1]: vector block extents
+ *                  b_size[2]: matrix line extents
+ *                  b_size[3]: matrix line*column (block) extents
  *----------------------------------------------------------------------------*/
 
 static void
 _b_diag_dom_diag_contrib(const cs_real_t  *restrict da,
                          cs_real_t        *restrict dd,
-                         cs_lnum_t         n_cells,
-                         cs_lnum_t         n_cells_ext,
+                         cs_lnum_t         n_rows,
+                         cs_lnum_t         n_cols_ext,
                          const int         b_size[4])
 {
   cs_lnum_t  ii, jj, kk;
   double  sign;
-  const cs_lnum_t  dd_size = n_cells_ext*b_size[1];
+  const cs_lnum_t  dd_size = n_cols_ext*b_size[1];
 
 # pragma omp parallel for
   for (ii = 0; ii < dd_size; ii++)
@@ -158,7 +158,7 @@ _b_diag_dom_diag_contrib(const cs_real_t  *restrict da,
 
   if (da != NULL) {
 #   pragma omp parallel for private(jj, kk, sign)
-    for (ii = 0; ii < n_cells; ii++) {
+    for (ii = 0; ii < n_rows; ii++) {
       for (jj = 0; jj < b_size[1]; jj++)
         dd[ii*b_size[1] + jj] = 0.0;
       for (jj = 0; jj < b_size[0]; jj++) {
@@ -176,21 +176,21 @@ _b_diag_dom_diag_contrib(const cs_real_t  *restrict da,
  * Normalize diagonal dominance, with da possibly NULL.
  *
  * parameters:
- *   da          <-- Pointer to coefficients array (usually matrix diagonal)
- *   dd          --> Resulting vector
- *   n_cells     <-- Number of cells
+ *   da         <-- Pointer to coefficients array (usually matrix diagonal)
+ *   dd         --> Resulting vector
+ *   n_rows     <-- Number of rows
 *----------------------------------------------------------------------------*/
 
 static void
 _diag_dom_diag_normalize(const cs_real_t  *restrict da,
                          cs_real_t        *restrict dd,
-                         cs_lnum_t         n_cells)
+                         cs_lnum_t         n_rows)
 {
   cs_lnum_t  ii;
 
   if (da != NULL) {
 #   pragma omp parallel for
-    for (ii = 0; ii < n_cells; ii++) {
+    for (ii = 0; ii < n_rows; ii++) {
       if (fabs(da[ii]) > 1.e-18)
         dd[ii] /= fabs(da[ii]);
       else if (dd[ii] > -1.e-18)
@@ -201,7 +201,7 @@ _diag_dom_diag_normalize(const cs_real_t  *restrict da,
   }
   else {
 #   pragma omp parallel for
-    for (ii = 0; ii < n_cells; ii++) {
+    for (ii = 0; ii < n_rows; ii++) {
       if (dd[ii] > -1.e-18)
         dd[ii] = -1.e18;
       else
@@ -216,7 +216,7 @@ _diag_dom_diag_normalize(const cs_real_t  *restrict da,
  * parameters:
  *   da      <-- Pointer to coefficients array (usually matrix diagonal)
  *   dd      --> Resulting vector
- *   n_cells <-- Number of cells
+ *   n_rows  <-- Number of rows
  *   b_size  <-- block size, including padding:
  *               b_size[0]: useful block size
  *               b_size[1]: vector block extents
@@ -227,7 +227,7 @@ _diag_dom_diag_normalize(const cs_real_t  *restrict da,
 static void
 _b_diag_dom_diag_normalize(const cs_real_t  *restrict da,
                            cs_real_t        *restrict dd,
-                           cs_lnum_t         n_cells,
+                           cs_lnum_t         n_rows,
                            const int         b_size[4])
 {
   cs_lnum_t  ii, jj;
@@ -235,7 +235,7 @@ _b_diag_dom_diag_normalize(const cs_real_t  *restrict da,
 
   if (da != NULL) {
 #   pragma omp parallel for private(jj, d_val)
-    for (ii = 0; ii < n_cells; ii++) {
+    for (ii = 0; ii < n_rows; ii++) {
       for (jj = 0; jj < b_size[0]; jj++) {
         d_val = fabs(da[ii*b_size[3] + jj*b_size[2] + jj]);
         if (d_val > 1.e-18)
@@ -639,11 +639,11 @@ _b_diag_dom_msr(const cs_matrix_t  *matrix,
  * Diagonal contribution to matrix dump.
  *
  * parameters:
- *   da          <-- Pointer to coefficients array (usually matrix diagonal)
- *   m_coo       <-- Matrix coefficient coordinates array
- *   m_val       <-- Matrix coefficient values array
- *   g_coo_num   <-- Global coordinate numbers
- *   n_cells     <-- Number of cells
+ *   da         <-- Pointer to coefficients array (usually matrix diagonal)
+ *   m_coo      <-- Matrix coefficient coordinates array
+ *   m_val      <-- Matrix coefficient values array
+ *   g_coo_num  <-- Global coordinate numbers
+ *   n_rows     <-- Number of rows
 *----------------------------------------------------------------------------*/
 
 static void
@@ -651,13 +651,13 @@ _pre_dump_diag_contrib(const cs_real_t  *restrict da,
                        cs_gnum_t        *restrict m_coo,
                        cs_real_t        *restrict m_val,
                        const cs_gnum_t  *restrict g_coo_num,
-                       cs_lnum_t         n_cells)
+                       cs_lnum_t         n_rows)
 {
   cs_lnum_t  ii;
 
   if (da != NULL) {
 #   pragma omp parallel for
-    for (ii = 0; ii < n_cells; ii++) {
+    for (ii = 0; ii < n_rows; ii++) {
       m_coo[ii*2] = g_coo_num[ii];
       m_coo[ii*2 + 1] = g_coo_num[ii];
       m_val[ii] = da[ii];
@@ -665,7 +665,7 @@ _pre_dump_diag_contrib(const cs_real_t  *restrict da,
   }
   else {
 #   pragma omp parallel for
-    for (ii = 0; ii < n_cells; ii++) {
+    for (ii = 0; ii < n_rows; ii++) {
       m_coo[ii*2] = g_coo_num[ii];
       m_coo[ii*2 + 1] = g_coo_num[ii];
       m_val[ii] = 0.0;
@@ -681,7 +681,7 @@ _pre_dump_diag_contrib(const cs_real_t  *restrict da,
  *   m_coo     <-- Matrix coefficient coordinates array
  *   m_val     <-- Matrix coefficient values array
  *   g_coo_num <-- Global coordinate numbers
- *   n_cells   <-- Number of cells
+ *   n_rows    <-- Number of rows
  *   b_size    <-- block size, including padding:
  *                 b_size[0]: useful block size
  *                 b_size[1]: vector block extents
@@ -694,7 +694,7 @@ _b_pre_dump_diag_contrib(const cs_real_t  *restrict da,
                          cs_gnum_t        *restrict m_coo,
                          cs_real_t        *restrict m_val,
                          const cs_gnum_t  *restrict g_coo_num,
-                         cs_lnum_t         n_cells,
+                         cs_lnum_t         n_rows,
                          const int         b_size[4])
 {
   cs_lnum_t  ii, jj, kk;
@@ -702,7 +702,7 @@ _b_pre_dump_diag_contrib(const cs_real_t  *restrict da,
 
   if (da != NULL) {
 #   pragma omp parallel for private(jj, kk)
-    for (ii = 0; ii < n_cells; ii++) {
+    for (ii = 0; ii < n_rows; ii++) {
       for (jj = 0; jj < b_size[0]; jj++) {
         for (kk = 0; kk < b_size[0]; kk++) {
           m_coo[(ii*db_size[1] + jj*db_size[0] + kk)*2]
@@ -717,7 +717,7 @@ _b_pre_dump_diag_contrib(const cs_real_t  *restrict da,
   }
   else {
 #   pragma omp parallel for private(jj, kk)
-    for (ii = 0; ii < n_cells; ii++) {
+    for (ii = 0; ii < n_rows; ii++) {
       for (jj = 0; jj < b_size[0]; jj++) {
         for (kk = 0; kk < b_size[0]; kk++) {
           m_coo[(ii*db_size[1] + jj*db_size[0] + kk)*2]
@@ -1943,7 +1943,7 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
     break;
   }
 
-  /* Sync ghost cells as a precaution */
+  /* Sync ghost rows as a precaution */
 
   if (halo != NULL) {
     if (matrix->db_size[3] == 1)
@@ -2053,17 +2053,17 @@ cs_matrix_log_info(const cs_matrix_t  *matrix,
  * Test matrix dump operations.
  *
  * parameters:
- *   n_cells     <-- number of local cells
- *   n_cells_ext <-- number of cells including ghost cells (array size)
- *   n_edges     <-- local number of graph edges
- *   edges       <-- graph edges connectivity
- *   halo        <-- cell halo structure
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
+ *   n_rows     <-- number of local rows
+ *   n_cols_ext <-- number of columns including ghost columns (array size)
+ *   n_edges    <-- local number of graph edges
+ *   edges      <-- graph edges connectivity
+ *   halo       <-- cell halo structure
+ *   numbering  <-- vectorization or thread-related numbering info, or NULL
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_dump_test(cs_lnum_t              n_cells,
-                    cs_lnum_t              n_cells_ext,
+cs_matrix_dump_test(cs_lnum_t              n_rows,
+                    cs_lnum_t              n_cols_ext,
                     cs_lnum_t              n_edges,
                     const cs_lnum_2_t     *edges,
                     const cs_halo_t       *halo,
@@ -2097,17 +2097,17 @@ cs_matrix_dump_test(cs_lnum_t              n_cells,
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
 
-  BFT_MALLOC(rhs, n_cells_ext*diag_block_size[1], cs_real_t);
+  BFT_MALLOC(rhs, n_cols_ext*diag_block_size[1], cs_real_t);
 
-  BFT_MALLOC(da, n_cells_ext*diag_block_size[3], cs_real_t);
+  BFT_MALLOC(da, n_cols_ext*diag_block_size[3], cs_real_t);
   BFT_MALLOC(xa, n_edges*2, cs_real_t);
 
 # pragma omp parallel for
-  for (ii = 0; ii < n_cells_ext*diag_block_size[3]; ii++)
-    da[ii] = 1.0 + ii*0.1/n_cells_ext;
+  for (ii = 0; ii < n_cols_ext*diag_block_size[3]; ii++)
+    da[ii] = 1.0 + ii*0.1/n_cols_ext;
 # pragma omp parallel for
-  for (ii = 0; ii < n_cells_ext*diag_block_size[1]; ii++)
-    rhs[ii] = ii*0.1/n_cells_ext;
+  for (ii = 0; ii < n_cols_ext*diag_block_size[1]; ii++)
+    rhs[ii] = ii*0.1/n_cols_ext;
 
 # pragma omp parallel for
   for (ii = 0; ii < n_edges; ii++) {
@@ -2127,8 +2127,8 @@ cs_matrix_dump_test(cs_lnum_t              n_cells,
     cs_matrix_structure_t
       *ms = cs_matrix_structure_create(type[test_id],
                                        true,
-                                       n_cells,
-                                       n_cells_ext,
+                                       n_rows,
+                                       n_cols_ext,
                                        n_edges,
                                        edges,
                                        halo,
