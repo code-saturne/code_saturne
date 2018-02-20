@@ -680,7 +680,9 @@ if test x$cs_have_neptune_cfd = xyes ; then
 elif test x$cs_have_med_link_cxx = xyes ; then
   cs_have_link_cxx=yes
 elif test x$cs_have_medcoupling = xyes -o x$cs_have_paramedmem = xyes ; then
-  cs_have_link_cxx=yes
+  if test x$enable_shared = xno -o x$cs_have_plugin_medcoupling = xno ; then
+    cs_have_link_cxx=yes
+  fi
 elif test x$cs_have_eos = xyes ; then
   cs_have_link_cxx=yes
 elif test x$cs_have_coolprop = xyes ; then
@@ -1071,7 +1073,7 @@ cs_py_have_plugins=False
 if test "x$enable_shared" = "xyes" ; then
   if test "x$cs_have_dlloader" = "xdlopen" ; then
     # Test for different plugins here
-    if test x$cs_have_medcoupling = xyes ; then
+    if test x$cs_have_plugin_medcoupling = xyes ; then
       cs_have_plugins=yes
     elif test x$cs_have_plugin_catalyst = xyes ; then
       cs_have_plugins=yes
@@ -1238,6 +1240,7 @@ fi
 echo " MEDCoupling support: "$cs_have_medcoupling""
 if test x$cs_have_medcoupling = xyes ; then
   echo " ParaMEDMEM support: "$cs_have_paramedmem""
+  echo " MEDCoupling as plugin: "$cs_have_plugin_medcoupling""
 fi
 echo " Catalyst (ParaView co-processing) support: "$cs_have_catalyst""
 if (test x$cs_have_catalyst = xyes) ; then

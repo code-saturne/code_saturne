@@ -90,7 +90,7 @@ class config:
                         'eos', 'freesteam', 'coolprop', # Equations of state
                         'ccm', 'cgns', 'med', 'hdf5',   # Mesh filters
                         'catalyst', 'melissa',          # co-processing libraries
-                        'medcoupling', 'paramedmem',    # MED coupling
+                        'medcoupling',                  # MED coupling
                         'petsc',                        # Linear algebra
                         'metis', 'scotch',              # Partionning libraries
                         'mpi',                          # MPI
@@ -260,18 +260,10 @@ class config:
         self.libs['medcoupling'] = \
             prerequisite("MEDCOUPLING",
                          have = "@cs_have_medcoupling@",
-                         dynamic_load = True,
+                         dynamic_load = @cs_py_have_plugin_medcoupling@,
                          flags = {'cppflags': "@MEDCOUPLING_CPPFLAGS@",
                                   'ldflags': "@MEDCOUPLING_LDFLAGS@",
                                   'libs': "@MEDCOUPLING_LIBS@"})
-
-        self.libs['paramedmem'] = \
-            prerequisite("PARAMEDMEM",
-                         have = "@cs_have_paramedmem@",
-                         dynamic_load = True,
-                         flags = {'cppflags': "@PARAMEDMEM_CPPFLAGS@",
-                                  'ldflags': "@PARAMEDMEM_LDFLAGS@",
-                                  'libs': "@PARAMEDMEM_LIBS@"})
 
         self.libs['eos'] = \
             prerequisite("EOS",

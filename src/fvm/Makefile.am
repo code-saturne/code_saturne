@@ -160,6 +160,8 @@ endif
 
 if HAVE_MEDCOUPLING
 
+if HAVE_PLUGIN_MEDCOUPLING
+
 fvm_medcoupling_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
@@ -172,6 +174,24 @@ fvm_medcoupling_la_LDFLAGS = -module -avoid-version
 fvm_medcoupling_la_LIBADD = \
 $(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
 $(MEDCOUPLINGRUNPATH)
+
+else
+
+libfvm_medcoupling_la_CPPFLAGS = \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+$(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
+libfvm_medcoupling_la_CXXFLAGS = \
+$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
+$(MEDCOUPLING_CXXFLAGS)
+libfvm_medcoupling_la_LIBADD = \
+$(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
+$(MEDCOUPLINGRUNPATH)
+libfvm_medcoupling_la_SOURCES = fvm_to_medcoupling.cxx
+noinst_LTLIBRARIES += libfvm_medcoupling.la
+libfvm_filters_la_LIBADD += libfvm_medcoupling.la
+
+endif
 
 endif
 

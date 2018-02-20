@@ -41,6 +41,22 @@ AC_ARG_WITH(medcoupling,
              fi],
             [with_medcoupling=check])
 
+AC_ARG_ENABLE(medcoupling-as-plugin,
+  [AS_HELP_STRING([--disable-medcoupling-as-plugin], [do not use MEDCoupling as plugin])],
+  [
+    case "${enableval}" in
+      yes) cs_have_plugin_medcoupling=yes ;;
+      no)  cs_have_plugin_medcoupling=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-medcoupling-as-plugin]) ;;
+    esac
+  ],
+  [ cs_have_plugin_medcoupling=yes ]
+)
+
+if test x$cs_have_dlloader = xno -o x$enable_shared = xno ; then
+  cs_have_plugin_medcoupling=no
+fi
+
 if test "$with_medcoupling" != no ; then
 
   if test "$with_medcoupling" = yes -o "$with_medcoupling" = check ; then
@@ -53,11 +69,6 @@ if test "$with_medcoupling" != no ; then
     else
       AC_MSG_FAILURE([directory specified by --with-medcoupling=$with_medcoupling does not exist!])
     fi
-  fi
-
-  if test "x$enable_shared" = "xno" ; then
-    AC_MSG_WARN([MEDCoupling support plugin disabled as build is static only.])
-    with_medcoupling=no
   fi
 
 fi
@@ -74,7 +85,7 @@ if test "x$with_medcoupling" != "xno" ; then
     # Add the libdir to the runpath as libtool does not do this for modules
     MEDCOUPLINGRUNPATH="-R$MEDCOUPLING/lib"
   fi
-  MEDCOUPLING_LIBS="-lmedcoupling -linterpkernel"
+  MEDCOUPLING_LIBS="-lmedcoupling -linterpkernel -lmedcouplingremapper"
 
   CPPFLAGS="${CPPFLAGS} ${MEDCOUPLING_CPPFLAGS}"
   LDFLAGS="${MEDCOUPLING_LDFLAGS} ${LDFLAGS}"
@@ -100,31 +111,41 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
 
   if test "x$cs_have_medcoupling" = "xyes" -a "x$cs_have_mpi"; then
 
-    CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
-    LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
-    LIBS="-lparamedmem ${MEDCOUPLING_LIBS} ${MPI_LIBS} ${LIBS}"
+    cs_paramedmem_l0="-lparamedmem"
+    cs_paramedmem_l1="-lparamedmem -lparamedloader -lmedloader"
 
-    AC_LINK_IFELSE([AC_LANG_PROGRAM(
-  [[#include <InterpKernelDEC.hxx>
+    for cs_paramedmem_libs in "$cs_paramedmem_l0" "$cs_paramedmem_l1"
+    do
+
+      if test "x$cs_have_paramedmem" = "xno" ; then
+
+        CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
+        LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
+        LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MPI_LIBS} ${LIBS}"
+
+        AC_LINK_IFELSE([AC_LANG_PROGRAM(
+[[#include <InterpKernelDEC.hxx>
 #include <set>]],
-  [[using namespace MEDCoupling;
+[[using namespace MEDCoupling;
 int procs_source_c[1]={0};
 std::set<int> procs_source(procs_source_c, procs_source_c+1);
 int procs_target_c[1]={1};
 std::set<int> procs_target(procs_target_c, procs_target_c+1);
 InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
-                   ],
-                   [ AC_DEFINE([HAVE_PARAMEDMEM], 1, [ParaMEDMEM support])
-                     cs_have_paramedmem=yes
-                   ],
-                   [ AC_MSG_WARN([no ParaMEDMEM support]) ],
-                  )
+                       ],
+                       [ AC_DEFINE([HAVE_PARAMEDMEM], 1, [ParaMEDMEM support])
+                         cs_have_paramedmem=yes
+                       ],
+                       [ AC_MSG_WARN([no ParaMEDMEM support]) ],
+                      )
 
-    if test "x$cs_have_paramedmem" = "xyes"; then
-      PARAMEDMEM_CPPFLAGS="-I$withval/include/salome"
-      PARAMEDMEM_LDFLAGS="-L$withval/lib/salome"
-      PARAMEDMEM_LIBS="-lparamedmem ${MEDCOUPLING_LIBS}"
-    fi
+        if test "x$cs_have_paramedmem" = "xyes"; then
+          MEDCOUPLING_LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS}"
+        fi
+
+      fi
+
+    done
 
   fi
 
@@ -133,7 +154,11 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
   # Report MEDCOUPLING support
   #-------------------
 
-  if test "x$cs_have_medcoupling" = "xno" ; then
+  if test "x$cs_have_medcoupling" = "xyes" ; then
+    if test x$cs_have_plugin_medcoupling = xyes ; then
+      AC_DEFINE([HAVE_PLUGIN_MEDCOUPLING], 1, [MEDCoupling support as plugin])
+    fi
+  elif test "x$cs_have_medcoupling" = "xno" ; then
     if test "x$with_medcoupling" != "xcheck" ; then
       AC_MSG_FAILURE([MEDCoupling support is requested, but test for MEDCoupling failed!])
     fi
@@ -155,15 +180,19 @@ fi
 
 AM_CONDITIONAL(HAVE_MEDCOUPLING, test x$cs_have_medcoupling = xyes)
 AM_CONDITIONAL(HAVE_PARAMEDMEM, test x$cs_have_paramedmem = xyes)
+AM_CONDITIONAL(HAVE_PLUGIN_MEDCOUPLING, test x$cs_have_plugin_medcoupling = xyes)
+
+cs_py_have_plugin_medcoupling=False
+if test x$cs_have_plugin_medcoupling = xyes ; then
+  cs_py_have_plugin_medcoupling=True
+fi
 
 AC_SUBST(cs_have_medcoupling)
 AC_SUBST(cs_have_paramedmem)
+AC_SUBST(cs_py_have_plugin_medcoupling)
 AC_SUBST(MEDCOUPLING_CPPFLAGS)
 AC_SUBST(MEDCOUPLING_LDFLAGS)
 AC_SUBST(MEDCOUPLING_LIBS)
 AC_SUBST(MEDCOUPLINGRUNPATH)
-AC_SUBST(PARAMEDMEM_CPPFLAGS)
-AC_SUBST(PARAMEDMEM_LDFLAGS)
-AC_SUBST(PARAMEDMEM_LIBS)
 
 ])dnl

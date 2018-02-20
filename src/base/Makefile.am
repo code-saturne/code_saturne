@@ -389,19 +389,52 @@ lib_LTLIBRARIES =
 pkglib_LTLIBRARIES =
 
 if HAVE_PARAMEDMEM
-libcs_paramedmem_la_CPPFLAGS = \
+
+pkginclude_HEADERS += cs_paramedmem_coupling.hxx
+
+if HAVE_PLUGIN_MEDCOUPLING
+
+cs_paramedmem_la_CPPFLAGS = \
+-I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 $(CPPFLAGS_PLE) \
 $(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
-pkginclude_HEADERS += cs_paramedmem_coupling.hxx
-lib_LTLIBRARIES += libcs_paramedmem.la
+cs_paramedmem_la_LIBADD = \
+$(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
+$(MEDCOUPLINGRUNPATH)
+pkglib_LTLIBRARIES += cs_paramedmem.la
+cs_paramedmem_la_SOURCES = cs_paramedmem_coupling.cxx
+cs_paramedmem_la_LDFLAGS = -module -avoid-version
+cs_paramedmem_la_LIBADD = \
+$(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
+$(MEDCOUPLINGRUNPATH)
+
+else
+
+libcs_paramedmem_la_CPPFLAGS = \
+-I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/bft \
+$(CPPFLAGS_PLE) \
+$(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
 libcs_paramedmem_la_SOURCES = cs_paramedmem_coupling.cxx
+libcs_paramedmem_la_LIBADD = \
+$(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
+$(MEDCOUPLINGRUNPATH)
+noinst_LTLIBRARIES += libcs_paramedmem.la
+libcsbase_la_LIBADD += libcs_paramedmem.la
+
+endif
+
 endif
 
 if HAVE_EOS
+
 cs_eos_la_CPPFLAGS = \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
