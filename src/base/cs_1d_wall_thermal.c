@@ -245,35 +245,6 @@ cs_f_1d_wall_thermal_get_temp(cs_real_t **tppt1d)
   *tppt1d = _1d_wall_thermal.tppt1d;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Open the restart file associated to the 1d wall thermal module.
- *
- * Allocate cs_glob_tpar1d_suite
- *
- * parameters:
- * \param[in]   nomsui   name of the restart file
- * \param[in]   lngnom   name length
- * \param[in]   ireawr   1 for reading, 2 for writing
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_1d_wall_thermal_open_restart(char                     *nomsui,
-                              cs_lnum_t                lngnom,
-                              const cs_restart_mode_t  ireawr)
-{
-  char            *nombuf;
-
-  /* Name treatment for the C API */
-  nombuf = cs_base_string_f_to_c_create(nomsui, lngnom);
-
-  cs_glob_tpar1d_suite = cs_restart_create(nombuf, NULL, ireawr);
-
-  /* Free the memory if necessary */
-  cs_base_string_f_to_c_free(&nombuf);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -352,7 +323,7 @@ cs_1d_wall_thermal_local_models_create(void)
 void
 cs_1d_wall_thermal_local_models_init(void)
 {
-  cs_lnum_t nb_pts_tot, ii;
+  cs_lnum_t ii;
 
   /* Computation of nmxt1d */
   for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++) {
@@ -361,32 +332,32 @@ cs_1d_wall_thermal_local_models_init(void)
   }
 
   /* if necessary, sum over all the processors */
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
-    cs_parall_max(1, CS_INT_TYPE, &_1d_wall_thermal.nmxt1d);
-#endif
+  cs_parall_max(1, CS_INT_TYPE, &_1d_wall_thermal.nmxt1d);
 
   /* Initialization of the number of discretization points in each structure
      Computation of the total number of discretization points */
-  nb_pts_tot = 0;
+  cs_lnum_t nb_pts_tot = 0;
 
-  for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+  for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++)
     nb_pts_tot += _1d_wall_thermal.local_models[ii].nppt1d;
-  }
 
   /* Allocate the "t" arrays: Temperature in each point of discretization
           and the "z" arrays: Coordonnates of each point of discretization */
 
-  BFT_MALLOC(_1d_wall_thermal.local_models->z, 2 * nb_pts_tot, cs_real_t);
-  _1d_wall_thermal.local_models->t = _1d_wall_thermal.local_models->z + nb_pts_tot;
-
-  for (ii = 1 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
-    _1d_wall_thermal.local_models[ii].z = _1d_wall_thermal.local_models[ii-1].z
-                                        + _1d_wall_thermal.local_models[ii-1].nppt1d;
-    _1d_wall_thermal.local_models[ii].t = _1d_wall_thermal.local_models[ii-1].t
-                                        + _1d_wall_thermal.local_models[ii-1].nppt1d;
+  if (_1d_wall_thermal.nfpt1d > 0) {
+    BFT_MALLOC(_1d_wall_thermal.local_models->z, 2 * nb_pts_tot, cs_real_t);
+    _1d_wall_thermal.local_models->t =   _1d_wall_thermal.local_models->z
+                                       + nb_pts_tot;
   }
 
+  for (ii = 1 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    _1d_wall_thermal.local_models[ii].z
+      =   _1d_wall_thermal.local_models[ii-1].z
+        + _1d_wall_thermal.local_models[ii-1].nppt1d;
+    _1d_wall_thermal.local_models[ii].t
+      =   _1d_wall_thermal.local_models[ii-1].t
+        + _1d_wall_thermal.local_models[ii-1].nppt1d;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -404,16 +375,16 @@ cs_1d_wall_thermal_mesh_create(void)
 
   /* Allocate the global structure: cs_glob_par1d and the number of
      discretization points on each face */
-  if (_1d_wall_thermal.nfpt1d > 0)
+  if (_1d_wall_thermal.nfpt1t > 0)
    cs_1d_wall_thermal_local_models_init();
 
-  for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+  for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
 
     n = _1d_wall_thermal.local_models[ii].nppt1d;
     e = _1d_wall_thermal.local_models[ii].eppt1d;
 
     /* Initialization of the Temperature */
-    for (kk = 0 ; kk < n ; kk++) {
+    for (kk = 0; kk < n; kk++) {
       (_1d_wall_thermal.local_models[ii].t)[kk] = _1d_wall_thermal.tppt1d[ii];
     }
 
@@ -446,7 +417,6 @@ cs_1d_wall_thermal_mesh_create(void)
 /*!
  * \brief Solve the 1D equation for a given face
  *
- * parameters:
  * \param[in]   ii   face number
  * \param[in]   tf   fluid temperature at the boundarys
  * \param[in]   hf   exchange coefficient for the fluid
@@ -509,13 +479,18 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
 
   cs_real_t m;
 
+  cs_real_t _al[128];
   cs_real_t *al, *bl, *cl, *dl;
   cs_real_t *zz;
   cs_lnum_t n;
 
   n = _1d_wall_thermal.local_models[ii].nppt1d;
 
-  BFT_MALLOC(al, 4*n, cs_real_t);
+  if (n > 32)
+    BFT_MALLOC(al, 4*n, cs_real_t);
+  else
+    al = _al;
+
   bl = al+n;
   cl = bl+n;
   dl = cl+n;
@@ -598,11 +573,13 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
 
   /* Compute the new value of tp */
   _1d_wall_thermal.tppt1d[ii] = hf + xlmbt1/zz[0];
-  _1d_wall_thermal.tppt1d[ii] = 1./_1d_wall_thermal.tppt1d[ii]
-                                           *(xlmbt1*_1d_wall_thermal.local_models[ii].t[0]/zz[0]
-                                           + hf*tf);
+  _1d_wall_thermal.tppt1d[ii]
+    = 1./_1d_wall_thermal.tppt1d[ii]
+         *(xlmbt1*_1d_wall_thermal.local_models[ii].t[0]/zz[0]
+           + hf*tf);
 
-  BFT_FREE(al);
+  if (al != _al)
+    BFT_FREE(al);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -620,7 +597,6 @@ cs_1d_wall_thermal_read(void)
   cs_lnum_t           n_b_faces = cs_glob_mesh->n_b_faces;
 
   char nomsui[] = "1dwall_module";
-  cs_lnum_t lngnom = strlen(nomsui);
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
@@ -635,15 +611,12 @@ cs_1d_wall_thermal_read(void)
   }
 
   /* if necessary, sum over all the processors */
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
-    cs_parall_max(1, CS_INT_TYPE, &_1d_wall_thermal.nmxt1d);
-#endif
+  cs_parall_max(1, CS_INT_TYPE, &_1d_wall_thermal.nmxt1d);
 
   /* Open the restart file */
-  _1d_wall_thermal_open_restart(nomsui,
-                                lngnom,
-                                CS_RESTART_MODE_READ);
+  cs_glob_tpar1d_suite = cs_restart_create(nomsui,
+                                           NULL,
+                                           CS_RESTART_MODE_READ);
 
   if (cs_glob_tpar1d_suite == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -651,7 +624,6 @@ cs_1d_wall_thermal_read(void)
                 "in read mode.\n"
                 "Verify the existence and the name of the restart file: %s\n"),
               nomsui);
-
 
   /* Pointer to the global restart structure */
   suite = cs_glob_tpar1d_suite;
@@ -670,8 +642,8 @@ cs_1d_wall_thermal_read(void)
                 "the present study.\n"));
 
 
-  { /* Read the header */
-    char       nomrub[] = "version_fichier_suite_module_1d";
+  {
+    /* Read the header */
     cs_lnum_t  *tabvar;
 
     BFT_MALLOC(tabvar, 1, int);
@@ -681,7 +653,7 @@ cs_1d_wall_thermal_read(void)
     typ_val = CS_TYPE_cs_int_t;
 
     ierror = cs_restart_read_section(suite,
-                                     nomrub,
+                                     "version_fichier_suite_module_1d",
                                      support,
                                      nbvent,
                                      typ_val,
@@ -704,9 +676,9 @@ cs_1d_wall_thermal_read(void)
     BFT_FREE(tabvar);
   }
 
-  { /* Read the number of discretiaztion points and coherency checks
+  {
+    /* Read the number of discretiaztion points and coherency checks
        with the input data of USPT1D */
-    char       nomrub[] = "nb_pts_discretis";
     cs_lnum_t  *tabvar;
     cs_lnum_t  mfpt1d;
     cs_gnum_t  mfpt1t;
@@ -714,6 +686,7 @@ cs_1d_wall_thermal_read(void)
 
     BFT_MALLOC(tabvar, n_b_faces, int);
 
+    const char nomrub[] = "nb_pts_discretis";
     nbvent  = 1;
     support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_int_t;
@@ -739,10 +712,7 @@ cs_1d_wall_thermal_read(void)
     }
     mfpt1t = mfpt1d;
     /* if necessary, sum over all the processors */
-#if defined(HAVE_MPI)
-    if (cs_glob_n_ranks > 1)
-      cs_parall_counter(&mfpt1t, 1);
-#endif
+    cs_parall_counter(&mfpt1t, 1);
     if (mfpt1t != _1d_wall_thermal.nfpt1t)
       bft_error(__FILE__, __LINE__, 0,
                 _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
@@ -794,14 +764,15 @@ cs_1d_wall_thermal_read(void)
     BFT_FREE(tabvar);
   }
 
-  { /* Read the wall thickness and check the coherency with USPT1D*/
-    char        nomrub[] = "epaisseur_paroi";
+  {
+    /* Read the wall thickness and check the coherency with USPT1D*/
     cs_real_t   *tabvar;
     cs_lnum_t   iok;
     cs_real_t eppt1d;
 
     BFT_MALLOC(tabvar, n_b_faces, cs_real_t);
 
+    const char nomrub[] = "epaisseur_paroi";
     nbvent  = 1;
     support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
@@ -851,12 +822,13 @@ cs_1d_wall_thermal_read(void)
     BFT_FREE(tabvar);
   }
 
-  { /* Read the interior boundary temperature */
-    char       nomrub[] = "temperature_bord_int";
+  {
+    /* Read the interior boundary temperature */
     cs_real_t  *tabvar;
 
     BFT_MALLOC(tabvar, n_b_faces, cs_real_t);
 
+    const char nomrub[] = "temperature_bord_int";
     nbvent  = 1;
     support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
@@ -884,7 +856,6 @@ cs_1d_wall_thermal_read(void)
   }
 
   { /* Read the 1D-mesh coordinates */
-    char        nomrub[] = "coords_maillages_1d";
     cs_lnum_t   nptmx;
     cs_lnum_t   iok;
     cs_real_t   *tabvar;
@@ -893,6 +864,7 @@ cs_1d_wall_thermal_read(void)
     nptmx = n_b_faces * _1d_wall_thermal.nmxt1d;
     BFT_MALLOC(tabvar, nptmx, cs_real_t);
 
+    const char nomrub[] = "coords_maillages_1d";
     nbvent  = _1d_wall_thermal.nmxt1d;
     support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
@@ -945,20 +917,21 @@ cs_1d_wall_thermal_read(void)
       /* The array is filled until the number of discretization points of
          the given face is reached */
       for (jj = 0; jj < _1d_wall_thermal.local_models[ii].nppt1d ; jj++)
-        _1d_wall_thermal.local_models[ii].z[jj] = tabvar[jj + _1d_wall_thermal.nmxt1d*ifac];
+        _1d_wall_thermal.local_models[ii].z[jj]
+          = tabvar[jj + _1d_wall_thermal.nmxt1d*ifac];
     }
 
     BFT_FREE(tabvar);
   }
 
   { /* Read the wall temperature */
-    char        nomrub[] = "temperature_interne";
     cs_lnum_t   nptmx;
     cs_real_t   *tabvar;
 
     nptmx = n_b_faces * _1d_wall_thermal.nmxt1d;
     BFT_MALLOC(tabvar, nptmx, cs_real_t);
 
+    const char nomrub[] = "temperature_interne";
     nbvent  = _1d_wall_thermal.nmxt1d;
     support = CS_MESH_LOCATION_BOUNDARY_FACES;
     typ_val = CS_TYPE_cs_real_t;
@@ -983,7 +956,8 @@ cs_1d_wall_thermal_read(void)
       /* The array is filled until the number of discretization points of
          the given face is reached */
       for (jj = 0 ; jj < _1d_wall_thermal.local_models[ii].nppt1d ; jj++)
-        _1d_wall_thermal.local_models[ii].t[jj] = tabvar[jj + _1d_wall_thermal.nmxt1d*ifac];
+        _1d_wall_thermal.local_models[ii].t[jj]
+          = tabvar[jj + _1d_wall_thermal.nmxt1d*ifac];
 
     }
 
@@ -1009,7 +983,6 @@ cs_1d_wall_thermal_write(void)
   cs_lnum_t            ii, jj, ifac;
 
   char nomsui[] = "1dwall_module";
-  cs_lnum_t lngnom = strlen(nomsui);
 
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
@@ -1018,9 +991,9 @@ cs_1d_wall_thermal_write(void)
   cs_restart_val_type_t     typ_val;
 
   /* Open the restart file */
-  _1d_wall_thermal_open_restart(nomsui,
-                                lngnom,
-                                CS_RESTART_MODE_WRITE);
+  cs_glob_tpar1d_suite = cs_restart_create(nomsui,
+                                           NULL,
+                                           CS_RESTART_MODE_WRITE);
 
   if (cs_glob_tpar1d_suite == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -1029,37 +1002,30 @@ cs_1d_wall_thermal_write(void)
                 "Verify the existence and the name of the restart file: %s\n"),
               nomsui);
 
-
   /* Pointer to the global restart structure */
   suite = cs_glob_tpar1d_suite;
 
-  { /* Write the header */
-    char       nomrub[] = "version_fichier_suite_module_1d";
-    cs_lnum_t  *tabvar;
-
-    BFT_MALLOC(tabvar, 1, int);
-
-    *tabvar = 120;
+  {
+    /* Write the header */
+    cs_lnum_t  tabvar[1] = {120};
 
     nbvent  = 1;
     support = CS_MESH_LOCATION_NONE;
     typ_val = CS_TYPE_cs_int_t;
 
     cs_restart_write_section(suite,
-                             nomrub,
+                             "version_fichier_suite_module_1d",
                              support,
                              nbvent,
                              typ_val,
                              tabvar);
-
-    BFT_FREE(tabvar);
   }
 
-  { /* Write the number of discretization points */
-    char       nomrub[] = "nb_pts_discretis";
+  {
+    /* Write the number of discretization points */
     cs_lnum_t  *tabvar;
 
-    BFT_MALLOC(tabvar, n_b_faces, cs_int_t);
+    BFT_MALLOC(tabvar, n_b_faces, cs_lnum_t);
 
     for (ii = 0 ; ii < n_b_faces ; ii++)
       tabvar[ii] = 0;
@@ -1074,7 +1040,7 @@ cs_1d_wall_thermal_write(void)
     }
 
     cs_restart_write_section(suite,
-                             nomrub,
+                             "nb_pts_discretis",
                              support,
                              nbvent,
                              typ_val,
@@ -1083,8 +1049,8 @@ cs_1d_wall_thermal_write(void)
     BFT_FREE(tabvar);
   }
 
-  { /* Write the wall thickness */
-    char        nomrub[] = "epaisseur_paroi";
+  {
+    /* Write the wall thickness */
     cs_real_t   *tabvar;
 
     BFT_MALLOC(tabvar, n_b_faces, cs_real_t);
@@ -1102,17 +1068,17 @@ cs_1d_wall_thermal_write(void)
     }
 
     cs_restart_write_section(suite,
-                     nomrub,
-                     support,
-                     nbvent,
-                     typ_val,
-                     tabvar);
+                             "epaisseur_paroi",
+                             support,
+                             nbvent,
+                             typ_val,
+                             tabvar);
 
     BFT_FREE(tabvar);
   }
 
-  { /* Write the internal wall-boundary temperature */
-    char       nomrub[] = "temperature_bord_int";
+  {
+    /* Write the internal wall-boundary temperature */
     cs_real_t  *tabvar;
 
     BFT_MALLOC(tabvar, n_b_faces, cs_real_t);
@@ -1130,7 +1096,7 @@ cs_1d_wall_thermal_write(void)
     }
 
     cs_restart_write_section(suite,
-                             nomrub,
+                             "temperature_bord_int",
                              support,
                              nbvent,
                              typ_val,
@@ -1139,8 +1105,8 @@ cs_1d_wall_thermal_write(void)
     BFT_FREE(tabvar);
   }
 
-  { /* Write the 1D-mesh coordinates */
-    char        nomrub[] = "coords_maillages_1d";
+  {
+    /* Write the 1D-mesh coordinates */
     cs_lnum_t   nptmx;
     cs_real_t   *tabvar;
 
@@ -1161,11 +1127,12 @@ cs_1d_wall_thermal_write(void)
          the given face is reached (the following cases, up to nmxt1d, are
          already set to 0 during the initalization of tabvar */
       for (jj = 0 ; jj < _1d_wall_thermal.local_models[ii].nppt1d ; jj++)
-        tabvar[jj + _1d_wall_thermal.nmxt1d*ifac] = _1d_wall_thermal.local_models[ii].z[jj];
+        tabvar[jj + _1d_wall_thermal.nmxt1d*ifac]
+          = _1d_wall_thermal.local_models[ii].z[jj];
     }
 
     cs_restart_write_section(suite,
-                             nomrub,
+                             "coords_maillages_1d",
                              support,
                              nbvent,
                              typ_val,
@@ -1174,8 +1141,8 @@ cs_1d_wall_thermal_write(void)
     BFT_FREE(tabvar);
   }
 
-  { /* Write the wall-interior temperature */
-    char        nomrub[] = "temperature_interne";
+  {
+    /* Write the wall-interior temperature */
     cs_lnum_t   nptmx;
     cs_real_t   *tabvar;
 
@@ -1185,10 +1152,6 @@ cs_1d_wall_thermal_write(void)
     for (ii = 0 ; ii < nptmx ; ii++)
       tabvar[ii] = 0.;
 
-    nbvent  = _1d_wall_thermal.nmxt1d;
-    support = CS_MESH_LOCATION_BOUNDARY_FACES;
-    typ_val = CS_TYPE_cs_real_t;
-
     for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
 
@@ -1196,15 +1159,16 @@ cs_1d_wall_thermal_write(void)
          the given face is reached (the following cases, up to nmxt1d, are
          already set to 0 during the initalization of tabvar */
       for (jj = 0 ; jj < _1d_wall_thermal.local_models[ii].nppt1d ; jj++)
-        tabvar[jj + _1d_wall_thermal.nmxt1d*ifac] = _1d_wall_thermal.local_models[ii].t[jj];
+        tabvar[jj + _1d_wall_thermal.nmxt1d*ifac]
+          = _1d_wall_thermal.local_models[ii].t[jj];
 
     }
 
     cs_restart_write_section(suite,
-                             nomrub,
-                             support,
-                             nbvent,
-                             typ_val,
+                             "temperature_interne",
+                             CS_MESH_LOCATION_BOUNDARY_FACES,
+                             _1d_wall_thermal.nmxt1d,
+                             CS_TYPE_cs_real_t,
                              tabvar);
 
     BFT_FREE(tabvar);
@@ -1214,7 +1178,6 @@ cs_1d_wall_thermal_write(void)
 
   /* Close the restart file and free structures */
   cs_restart_destroy(&cs_glob_tpar1d_suite);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1226,7 +1189,8 @@ cs_1d_wall_thermal_write(void)
 void
 cs_1d_wall_thermal_free(void)
 {
-  BFT_FREE(_1d_wall_thermal.local_models->z);
+  if (_1d_wall_thermal.local_models != NULL)
+    BFT_FREE(_1d_wall_thermal.local_models->z);
   BFT_FREE(_1d_wall_thermal.local_models);
   BFT_FREE(_1d_wall_thermal.ifpt1d);
 }

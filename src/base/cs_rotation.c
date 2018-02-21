@@ -507,6 +507,59 @@ cs_rotation_update_coords(cs_lnum_t    n_coords,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Express a vector in the cyclindrical system associated to a rotation.
+ *
+ * \param[in]   r   pointer to rotation structure
+ * \param[in]   p   cartesian coordinates of the location point
+ * \param[in]   v   vector components in cartesian coordinates system
+ * \param[out]  vc  vector components in cylindrical coordinates system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_rotation_cyl_v(const cs_rotation_t  *r,
+                  const cs_real_t       coords[3],
+                  const cs_real_t       v[3],
+                  cs_real_t             vc[3])
+{
+  /* Axial unit vector */
+
+  const cs_real_t *e_ax = r->axis;
+
+  /* Tangential unit vector */
+
+  cs_real_t e_th[3];
+
+  e_th[0] =  e_ax[1] * (coords[2] - r->invariant[2])
+           - e_ax[2] * (coords[1] - r->invariant[1]);
+  e_th[1] =  e_ax[2] * (coords[0] - r->invariant[0])
+           - e_ax[0] * (coords[2] - r->invariant[2]);
+  e_th[2] =  e_ax[0] * (coords[1] - r->invariant[1])
+           - e_ax[1] * (coords[0] - r->invariant[0]);
+
+  cs_real_t xnrm =  sqrt(cs_math_3_square_norm(e_th));
+
+  e_th[0] /= xnrm;
+  e_th[1] /= xnrm;
+  e_th[2] /= xnrm;
+
+  /* Radial unit vector */
+
+  cs_real_t e_r[3];
+
+  e_r[0] = - e_ax[1]*e_th[2] + e_ax[2]*e_th[1];
+  e_r[1] = - e_ax[2]*e_th[0] + e_ax[0]*e_th[2];
+  e_r[2] = - e_ax[0]*e_th[1] + e_ax[1]*e_th[0];
+
+  /* Transformation into cylindrical coordinates */
+
+  vc[0] = v[0]*e_r[0]  + v[1]*e_r[1]  + v[2]*e_r[2];
+  vc[1] = v[0]*e_th[0] + v[1]*e_th[1] + v[2]*e_th[2];
+  vc[2] = v[0]*e_ax[0] + v[1]*e_ax[1] + v[2]*e_ax[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Copy rotation structure values to an array
  *
  * This may be useful to avoid requiring specific type mappings for MPI or
@@ -532,60 +585,6 @@ cs_rotation_to_array(int        r_num,
   fra[5] = r->invariant[2];
   fra[6] = r->omega;
   fra[7] = r->angle;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Express a vector in the cyclindrical system associated to a rotation
- *
- * parameters:
- * \param[in]  r   pointer to rotation structure
- * \param[in]  xyz cartesian coordinates of the location point
- * \param[in]  v   vector components in cartesian coordinates system
- * \param[out] vc  vector components in cylindrical coordinates system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_rotation_cyl_v(const cs_rotation_t  *r,
-                  const cs_real_3_t  xyz,
-                  const cs_real_3_t  v,
-                  cs_real_3_t  vc)
-{
-  /* Axial unit vector */
-
-  cs_real_3_t e_ax = {r->axis[0], r->axis[1], r->axis[2]};
-
-  /* Tangential unit vector */
-
-  cs_real_3_t e_th;
-
-  e_th[0] =  e_ax[1] * (xyz[2] - r->invariant[2])
-           - e_ax[2] * (xyz[1] - r->invariant[1]);
-  e_th[1] =  e_ax[2] * (xyz[0] - r->invariant[0])
-           - e_ax[0] * (xyz[2] - r->invariant[2]);
-  e_th[2] =  e_ax[0] * (xyz[1] - r->invariant[1])
-           - e_ax[1] * (xyz[0] - r->invariant[0]);
-
-  cs_real_t xnrm =  sqrt(cs_math_3_square_norm(e_th));
-
-  e_th[0] /= xnrm;
-  e_th[1] /= xnrm;
-  e_th[2] /= xnrm;
-
-  /* Radial unit vector */
-
-  cs_real_3_t e_r;
-
-  e_r[0] = - e_ax[1]*e_th[2] + e_ax[2]*e_th[1];
-  e_r[1] = - e_ax[2]*e_th[0] + e_ax[0]*e_th[2];
-  e_r[2] = - e_ax[0]*e_th[1] + e_ax[1]*e_th[0];
-
-  /* Transformation into cylindrical coordinates */
-
-  vc[0] = v[0]*e_r[0]  + v[1]*e_r[1]  + v[2]*e_r[2];
-  vc[1] = v[0]*e_th[0] + v[1]*e_th[1] + v[2]*e_th[2];
-  vc[2] = v[0]*e_ax[0] + v[1]*e_ax[1] + v[2]*e_ax[2];
 }
 
 /*----------------------------------------------------------------------------*/
