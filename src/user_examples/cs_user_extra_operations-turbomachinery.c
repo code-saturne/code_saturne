@@ -106,59 +106,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * User function to express a vector in the cyclindrical coordinates system of
- * a given rotation zone.
- *
- * parameters:
- *   r      <-- pointer to rotation structure
- *   coords <-- coordinates at point
- *   v      <-- vector components in cartesian coordinates system
- *   vc     --> vector components in cylindrical coordinates system
- *----------------------------------------------------------------------------*/
-
-static void
-_cart_to_cyl(const cs_rotation_t  *r,
-             const cs_real_3_t  coords,
-             const cs_real_3_t  v,
-             cs_real_3_t  vc)
-{
-  /* Axial unit vector */
-
-  cs_real_3_t e_ax = {r->axis[0], r->axis[1], r->axis[2]};
-
-  /* Tangential unit vector */
-
-  cs_real_3_t e_th;
-
-  e_th[0] =  e_ax[1] * (coords[2] - r->invariant[2])
-           - e_ax[2] * (coords[1] - r->invariant[1]);
-  e_th[1] =  e_ax[2] * (coords[0] - r->invariant[0])
-           - e_ax[0] * (coords[2] - r->invariant[2]);
-  e_th[2] =  e_ax[0] * (coords[1] - r->invariant[1])
-           - e_ax[1] * (coords[0] - r->invariant[0]);
-
-  cs_real_t xnrm =  cs_math_3_norm(e_th);
-
-  e_th[0] /= xnrm;
-  e_th[1] /= xnrm;
-  e_th[2] /= xnrm;
-
-  /* Radial unit vector */
-
-  cs_real_3_t e_r;
-
-  e_r[0] = - e_ax[1]*e_th[2] + e_ax[2]*e_th[1];
-  e_r[1] = - e_ax[2]*e_th[0] + e_ax[0]*e_th[2];
-  e_r[2] = - e_ax[0]*e_th[1] + e_ax[1]*e_th[0];
-
-  /* Transformation into cylindrical coordinates */
-
-  vc[0] = v[0]*e_r[0]  + v[1]*e_r[1]  + v[2]*e_r[2];
-  vc[1] = v[0]*e_th[0] + v[1]*e_th[1] + v[2]*e_th[2];
-  vc[2] = v[0]*e_ax[0] + v[1]*e_ax[1] + v[2]*e_ax[2];
-}
-
-/*----------------------------------------------------------------------------
  * User function to find the closest cell and the associated rank of a point
  * in a given rotation zone.
  *
@@ -371,7 +318,7 @@ cs_user_extra_operations(void)
 
           /* Radius (first component of the x vector in cylindrical coords) */
           cs_real_t xc[3];
-          _cart_to_cyl(ref_rot, cell_cen[cell_id], cell_cen[cell_id], xc);
+          cs_rotation_cyl_v(ref_rot, cell_cen[cell_id], cell_cen[cell_id], xc);
           xr = xc[0];
 
           /* Angle in [0, 2pi] */
@@ -387,7 +334,7 @@ cs_user_extra_operations(void)
 
           if (tbm_model == CS_TURBOMACHINERY_FROZEN) {
             cs_real_3_t xvc;
-            _cart_to_cyl(ref_rot, cell_cen[cell_id], vel[cell_id], xvc);
+            cs_rotation_cyl_v(ref_rot, cell_cen[cell_id], vel[cell_id], xvc);
             xvr = xvc[0];
             /* Relative tangential velocity */
             xvt = xvc[1] - omega*xr;

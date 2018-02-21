@@ -258,8 +258,25 @@ cs_rotation_to_array(int        r_num,
                      cs_real_t  fra[8]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Express a vector in the cyclindrical system associated to a rotation
+ *
+ * parameters:
+ *   r   <-- pointer to rotation structure
+ *   xyz <-- cartesian coordinates of the location point
+ *   v   <-- vector components in cartesian coordinates system
+ *   vc  --> vector components in cylindrical coordinates system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_rotation_cyl_v(const cs_rotation_t  *r,
+                  const cs_real_3_t  xyz,
+                  const cs_real_3_t  v,
+                  cs_real_3_t  vc);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
 #endif /* __CS_ROTATION_H__ */
-
