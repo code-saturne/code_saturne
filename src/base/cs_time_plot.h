@@ -67,44 +67,6 @@ typedef enum {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Create a writer for time plot probe-type data.
- *
- * This subroutine should only be called by one rank for a given data series.
- *
- * subroutine tppini (tplnum, tplnam, tplpre, tplfmt, idtvar,
- * *****************
- *                    nprb,   lstprb, xyzprb, lnam,   lpre)
- *
- * integer          tplnum      : <-- : number of plot to create (> 0)
- * character        tplnam      : <-- : name of associated plot
- * character        tplpre      : <-- : prefix for associated file
- * integer          tplfmt      : <-- : associated format
- *                                      (1: dat, 2: csv, 3: both)
- * integer          idtvar      : <-- : calculation time dependency
- * integer          nprb        : <-- : number of probes
- * integer          lstprb      : <-- : list of probes (1 to n)
- * double precision xyzprb      : <-- : probe coordinates
- * integer          lnam        : <-- : name length
- * integer          lpre        : <-- : prefix length
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (tppini, TPPINI)
-(
- const cs_int_t  *tplnum,
- const char      *tplnam,
- const char      *tplpre,
- const cs_int_t  *tplfmt,
- const cs_int_t  *idtvar,
- const cs_int_t  *nprb,
- const cs_int_t  *lstprb,
- const cs_real_t *xyzprb,
- const cs_int_t  *lnam,
- const cs_int_t  *lpre
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
  * Create a writer for time plot structure-type data.
  *
  * This subroutine should only be called by one rank for a given data series.
@@ -127,7 +89,7 @@ void CS_PROCF (tppini, TPPINI)
  * integer          lpre        : <-- : prefix length
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (tpsini, TPPINI)
+void CS_PROCF (tpsini, TPSINI)
 (
  const cs_int_t  *tplnum,
  const char      *tplnam,
