@@ -377,8 +377,10 @@ cs_1d_wall_thermal_local_models_init(void)
   /* Allocate the "t" arrays: Temperature in each point of discretization
           and the "z" arrays: Coordonnates of each point of discretization */
 
-  BFT_MALLOC(_1d_wall_thermal.local_models->z, 2 * nb_pts_tot, cs_real_t);
-  _1d_wall_thermal.local_models->t = _1d_wall_thermal.local_models->z + nb_pts_tot;
+  if (_1d_wall_thermal.nfpt1d > 0) {
+    BFT_MALLOC(_1d_wall_thermal.local_models->z, 2 * nb_pts_tot, cs_real_t);
+    _1d_wall_thermal.local_models->t = _1d_wall_thermal.local_models->z + nb_pts_tot;
+  }
 
   for (ii = 1 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
     _1d_wall_thermal.local_models[ii].z = _1d_wall_thermal.local_models[ii-1].z
@@ -404,7 +406,7 @@ cs_1d_wall_thermal_mesh_create(void)
 
   /* Allocate the global structure: cs_glob_par1d and the number of
      discretization points on each face */
-  if (_1d_wall_thermal.nfpt1d > 0)
+  if (_1d_wall_thermal.nfpt1t > 0)
    cs_1d_wall_thermal_local_models_init();
 
   for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
@@ -1226,7 +1228,8 @@ cs_1d_wall_thermal_write(void)
 void
 cs_1d_wall_thermal_free(void)
 {
-  BFT_FREE(_1d_wall_thermal.local_models->z);
+  if (_1d_wall_thermal.local_models != NULL)
+    BFT_FREE(_1d_wall_thermal.local_models->z);
   BFT_FREE(_1d_wall_thermal.local_models);
   BFT_FREE(_1d_wall_thermal.ifpt1d);
 }
