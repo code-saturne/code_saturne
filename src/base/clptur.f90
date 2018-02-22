@@ -2036,12 +2036,12 @@ double precision yplus, dplus, phit, pimp, rcprod, temp, tet, uk
 double precision viscis, visctc, xmutlm, ypth, xnuii
 double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
-double precision turb_schmidt
+double precision turb_schmidt, exchange_coef
 
 character(len=80) :: fname
 
 double precision, dimension(:), pointer :: val_s, bval_s, crom, viscls
-double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cv
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_cv
 
 double precision, dimension(:), pointer :: bfconv, bhconv
 double precision, dimension(:), pointer :: tplusp, tstarp
@@ -2093,7 +2093,7 @@ endif
 
 if (ippmod(icompf) .ge. 0) then
   if (icv.ge.0) then
-    call field_get_val_s(icv, cv)
+    call field_get_val_s(icv, cpro_cv)
   endif
 endif
 
@@ -2251,7 +2251,7 @@ do ifac = 1, nfabor
         prdtl = prdtl*cp0
       endif
       if (icv.ge.0) then
-        prdtl = prdtl/cv(iel)
+        prdtl = prdtl/cpro_cv(iel)
       else
         prdtl = prdtl/cv0
       endif
@@ -2267,7 +2267,7 @@ do ifac = 1, nfabor
           cpscv = cp0
         endif
         if (icv.ge.0) then
-          cpscv = cpscv/cv(iel)
+          cpscv = cpscv/cpro_cv(iel)
         else
           cpscv = cpscv/cv0
         endif
@@ -2286,7 +2286,7 @@ do ifac = 1, nfabor
           cpscv = cp0
         endif
         if (icv.ge.0) then
-          cpscv = cpscv/cv(iel)
+          cpscv = cpscv/cpro_cv(iel)
         else
           cpscv = cpscv/cv0
         endif
@@ -2362,8 +2362,6 @@ do ifac = 1, nfabor
       hflui = hint
       hbord2(ifac) = hflui
     endif
-
-    if (isvhbl.gt.0) hbord(ifac) = hflui
 
     hext = rcodcl(ifac,ivar,2)
     pimp = rcodcl(ifac,ivar,1)
@@ -2474,75 +2472,45 @@ do ifac = 1, nfabor
 
       endif
 
-      !--> Radiative module:
-
-      ! On stocke le coefficient d'echange lambda/distance
-      ! (ou son equivalent en turbulent) quelle que soit la
-      ! variable thermique transportee (temperature ou enthalpie)
-      ! car on l'utilise pour realiser des bilans aux parois qui
-      ! sont faits en temperature (on cherche la temperature de
-      ! paroi quelle que soit la variable thermique transportee pour
-      ! ecrire des eps sigma T4.
-
-      !     donc :
-
-      !       lorsque la variable transportee est la temperature
-      !         hconv(ifac) = hint
-      !         puisque hint = visls * cp / distbr
-      !                      = lambda/distance en W/(m2 K)
-
-      !       lorsque la variable transportee est l'enthalpie
-      !         hconv(ifac) = hint*cpr
-      !         avec
-      !            if (icp.ge.0) then
-      !              cpr = cpro_cp(iel)
-      !            else
-      !              cpr = cp0
-      !            endif
-      !         puisque hint = visls / distbr
-      !                      = lambda/(cp * distance)
-
-      !       lorsque la variable transportee est l'energie (compressible)
-      !         on procede comme pour l'enthalpie avec CV au lieu de CP
-      !         (rq : il n'y a pas d'hypothese, sf en non orthogonal :
-      !               le flux est le bon et le coef d'echange aussi)
-
-      !      De meme dans condli.
-
-      !               Si on rayonne et que
-      !                  le scalaire est la variable energetique
-
-      if (iirayo.ge.1 .and. iscal.eq.iscalt) then
-
-        ! We compute the exchange coefficient in W/(m2 K)
-
+      ! Storage of the thermal exchange coefficient
+      ! (conversion in case of energy or enthaly)
+      ! the exchange coefficient is in W/(m2 K)
+      ! Usefull for thermal coupling or radiative transfer
+      if (iirayo.ge.1 .and. iscal.eq.iscalt.or.isvhbl.gt.0) then
         ! Enthalpy
         if (itherm.eq.2) then
           ! If Cp is variable
           if (icp.ge.0) then
-            bhconv(ifac) = hflui*cpro_cp(iel)
+            exchange_coef = hflui*cpro_cp(iel)
           else
-            bhconv(ifac) = hflui*cp0
+            exchange_coef = hflui*cp0
           endif
 
-          ! Energy (compressible module)
+          ! Total energy (compressible module)
         elseif (itherm.eq.3) then
           ! If Cv is variable
           if (icv.ge.0) then
-            bhconv(ifac) = hflui*cv(iel)
+            exchange_coef = hflui*cpro_cv(iel)
           else
-            bhconv(ifac) = hflui*cv0
+            exchange_coef = hflui*cv0
           endif
 
           ! Temperature
         elseif (iscacp(iscal).eq.1) then
-          bhconv(ifac) = hflui
+          exchange_coef = hflui
         endif
+      endif
+
+      ! ---> Thermal coupling, store h = lambda/d
+      if (isvhbl.gt.0) hbord(ifac) = exchange_coef
+
+      ! ---> Radiative transfer
+      if (iirayo.ge.1 .and. iscal.eq.iscalt) then
+        bhconv(ifac) = exchange_coef
 
         ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
         !  gain for the fluid) in W/m2
-        bfconv(ifac) =   cofafp(ifac)              &
-                       + cofbfp(ifac)*theipb(ifac)
+        bfconv(ifac) = cofafp(ifac) + cofbfp(ifac)*theipb(ifac)
       endif
 
     endif ! End if icodcl.eq.5
@@ -2919,8 +2887,6 @@ do ifac = 1, nfabor
       hflui = hint
       hbord2(ifac) = hflui
     endif
-
-    if (isvhbl.gt.0) hbord(ifac) = hflui
 
     hext = rcodcl(ifac,ivar,2)
 

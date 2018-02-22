@@ -196,7 +196,7 @@ double precision xxp0, xyp0, xzp0
 double precision srfbnf, normal(3)
 double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
 double precision visci(3,3), fikis, viscis, distfi
-double precision temp
+double precision temp, exchange_coef
 double precision turb_schmidt
 double precision, allocatable, dimension(:) :: pimpts, hextts, qimpts, cflts
 double precision, allocatable, dimension(:) :: tb_save
@@ -2461,86 +2461,6 @@ if (nscal.ge.1) then
                coefbp(ifac), cofbfp(ifac),                         &
                pimp              , hint              , hext )
 
-          ! ---> COUPLAGE : on stocke le hint (lambda/d      en temperature,
-          !                                    lambda/(cp d) en enthalpie,
-          !                                    lambda/(cv d) en energie)
-          !FIXME useless
-          if (isvhbl.gt.0) then
-            hbord(ifac) = hint
-          endif
-
-          !--> Rayonnement :
-
-          !      On stocke le coefficient d'echange lambda/distance
-          !      (ou son equivalent en turbulent) quelle que soit la
-          !      variable thermique transportee (temperature ou enthalpie)
-          !      car on l'utilise pour realiser des bilans aux parois qui
-          !      sont faits en temperature (on cherche la temperature de
-          !      paroi quelle que soit la variable thermique transportee pour
-          !      ecrire des eps sigma T4).
-
-          !     donc :
-
-          !       lorsque la variable transportee est la temperature
-          !         abs(iscsth(ii)).eq.1 : hconv(ifa,iph) = hint
-          !         puisque hint = visls * cp / distbr
-          !                      = lambda/distance en W/(m2 K)
-
-          !       lorsque la variable transportee est l'enthalpie
-          !         iscsth(ii).eq.2 : hcov(ifac,iph) = hint*cpr
-          !         avec
-          !            if(icp.ge.0) then
-          !              cpr = cpro_cp(iel)
-          !            else
-          !              cpr = cp0
-          !            endif
-          !         puisque hint = visls / distbr
-          !                      = lambda/(cp * distance)
-
-          !       lorsque la variable transportee est l'energie
-          !         iscsth(ii).eq.3 :
-          !         on procede comme pour l'enthalpie avec CV au lieu de CP
-          !         (rq : il n'y a pas d'hypothese, sf en non orthogonal :
-          !               le flux est le bon et le coef d'echange aussi)
-
-          !      De meme plus bas et de meme dans clptur.
-
-          !               Si on rayonne et que
-          !                  le scalaire est la variable energetique
-
-          if (iirayo.ge.1 .and. ii.eq.iscalt) then
-
-            ! We compute the exchange coefficient in W/(m2 K)
-
-            ! Enthalpy
-            if (itherm.eq.2) then
-              ! If Cp is variable
-              if (icp.ge.0) then
-                bhconv(ifac) = hint*cpro_cp(iel)
-              else
-                bhconv(ifac) = hint*cp0
-              endif
-
-            ! Total energy (compressible module)
-            elseif (itherm.eq.3) then
-              ! If Cv is variable
-              if (ippmod(icompf).ge.0.and.icv.ge.0) then
-                bhconv(ifac) = hint*cpro_cv(iel)
-              else
-                bhconv(ifac) = hint*cv0
-              endif
-
-            ! Temperature
-            elseif(iscacp(ii).eq.1) then
-              bhconv(ifac) = hint
-            endif
-
-            ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
-            !  gain for the fluid) in W/m2
-            bfconv(ifac) = cofafp(ifac) + cofbfp(ifac)*theipb(ifac)
-
-          endif
-
         endif
 
         ! Neumann Boundary Conditions
@@ -2554,42 +2474,6 @@ if (nscal.ge.1) then
              ( coefap(ifac), cofafp(ifac),                         &
                coefbp(ifac), cofbfp(ifac),                         &
                qimp              , hint )
-
-          if (isvhbl.gt.0) hbord(ifac) = hint
-
-          !--> Rayonnement :
-
-          if (iirayo.ge.1 .and. ii.eq.iscalt) then
-
-            ! We compute the exchange coefficient in W/(m2 K)
-
-            ! Enthalpy
-            if (itherm.eq.2) then
-              ! If Cp is variable
-              if (icp.ge.0) then
-                bhconv(ifac) = hint*cpro_cp(iel)
-              else
-                bhconv(ifac) = hint*cp0
-              endif
-
-            ! Energy (compressible module)
-            elseif (itherm.eq.3) then
-              ! If Cv is variable
-              if (ippmod(icompf).ge.0.and.icv.ge.0) then
-                bhconv(ifac) = hint*cpro_cv(iel)
-              else
-                bhconv(ifac) = hint*cv0
-              endif
-
-            ! Temperature
-            elseif (itherm.eq.1) then
-              bhconv(ifac) = hint
-            endif
-
-            ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
-            !  gain for the fluid) in W/m2
-            bfconv(ifac) = rcodcl(ifac,ivar,3)
-          endif
 
         ! Convective Boundary Conditions
         !-------------------------------
@@ -2617,6 +2501,51 @@ if (nscal.ge.1) then
                coefbp(ifac), cofbfp(ifac),                         &
                pimp              , qimp )
 
+
+        endif
+
+        ! Storage of the thermal exchange coefficient
+        ! (conversion in case of energy or enthaly)
+        ! the exchange coefficient is in W/(m2 K)
+        ! Usefull for thermal coupling or radiative transfer
+        if (icodcl(ifac,ivar).eq.1.or.icodcl(ifac,ivar).eq.3) then
+          if (iirayo.ge.1 .and. ii.eq.iscalt.or.isvhbl.gt.0) then
+
+            ! Enthalpy
+            if (itherm.eq.2) then
+              ! If Cp is variable
+              if (icp.ge.0) then
+                exchange_coef = hint*cpro_cp(iel)
+              else
+                exchange_coef = hint*cp0
+              endif
+
+            ! Total energy (compressible module)
+            elseif (itherm.eq.3) then
+              ! If Cv is variable
+              if (icv.ge.0) then
+                exchange_coef = hint*cpro_cv(iel)
+              else
+                exchange_coef = hint*cv0
+              endif
+
+            ! Temperature
+            elseif (iscacp(ii).eq.1) then
+              exchange_coef = hint
+            endif
+          endif
+
+          ! ---> Thermal coupling, store hint = lambda/d
+          if (isvhbl.gt.0) hbord(ifac) = exchange_coef
+
+          ! ---> Radiative transfer
+          if (iirayo.ge.1 .and. ii.eq.iscalt) then
+            bhconv(ifac) = exchange_coef
+
+            ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
+            !  gain for the fluid) in W/m2
+            bfconv(ifac) = cofafp(ifac) + cofbfp(ifac)*theipb(ifac)
+          endif
 
         endif
 

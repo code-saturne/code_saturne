@@ -112,17 +112,10 @@ call cs_1d_wall_thermal_get_faces(ifpt1d)
 ! Conversion to temperature for enthalpy or energy
 ! (check for surface couplings to make sure it is needed)
 
-!     Afin de conserver le flux Phi = (lambda/d     ) Delta T
-!     ou Phi = (lambda/(d Cp)) Delta H
-!     on multiplie HBORD = lambda/(d Cp) par Cp pris dans la
-!     cellule adjacente.
-!     Le resultat n'est pas garanti (conservation en particulier),
-!     on ajoute donc un avertissement.
-
-!     On ne change les TBORD et HBORD que sur les faces couplees. Du coup ces
-!     tableaux contiennent des choses differentes suivant les faces.
-!     C'est dangereux mais pas trop grave car on les jette juste apres
-!     (COUPBO passe avant).
+! In enthalpy formulation, transform to temperatures for SYRTHES
+!  To conserve flux Phi = (lambda/d     ) Delta T
+!                or Phi = (lambda/(d Cp)) Delta H
+!  recall      hbord = lambda/d.
 
 if (itherm.eq.2) then
 
@@ -138,11 +131,6 @@ if (itherm.eq.2) then
     ifac = ifpt1d(ii)
     iel  = ifabor(ifac)
     tbord(ifac) = wa(ifac)
-    if (icp.ge.0) then
-      hbord(ifac) = hbord(ifac)*cpro_cp(iel)
-    else
-      hbord(ifac) = hbord(ifac)*cp0
-    endif
   enddo
 
 else if (itherm.eq.3) then
@@ -168,10 +156,8 @@ else if (itherm.eq.3) then
                     + wa(iel) )
     if (icv.ge.0) then
       tbord(ifac) = cvt/cpro_cv(iel)
-      hbord(ifac) = hbord(ifac)*cpro_cv(iel)
     else
       tbord(ifac) = cvt/cvcst
-      hbord(ifac) = hbord(ifac)*cvcst
     endif
   enddo
 

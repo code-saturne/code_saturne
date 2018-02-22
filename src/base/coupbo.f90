@@ -209,7 +209,7 @@ do inbcou = 1, nbccou
     ! In enthalpy formulation, transform to temperatures for SYRTHES
     !  To conserve flux Phi = (lambda/d     ) Delta T
     !                or Phi = (lambda/(d Cp)) Delta H
-    !  we multiply hbord = lambda/(d Cp) by Cp in the adjacent cell.
+    !  recall      hbord = lambda/d.
     !  Conservation is not guaranteed, so we add a warning.
 
     else if (itherm.eq.2) then
@@ -219,11 +219,7 @@ do inbcou = 1, nbccou
         ifac = lfcou(iloc)
         iel  = ifabor(ifac)
         tfluid(iloc) = wa(ifac)
-        if (icp.ge.0) then
-          hparoi(iloc) = hbord(ifac)*cpro_cp(iel)
-        else
-          hparoi(iloc) = hbord(ifac)*cp0
-        endif
+        hparoi(iloc) = hbord(ifac)
       enddo
 
     else if (itherm.eq.3) then
@@ -231,7 +227,7 @@ do inbcou = 1, nbccou
       ! In energy formulation, transform to temperatures for SYRTHES
       !  To conserve flux Phi = (lambda/d     ) Delta T
       !                or Phi = (lambda/(d Cp)) Delta H
-      !  we multiply hbord = lambda/(d Cp) by Cv in the adjacent cell.
+      !  Recall      hbord = lambda/ d
       !  Note that Ei = Cv Ti + 1/2 Ui*Ui + Epsilon_sup_i
       !  and  that Ep = Cv Tp + 1/2 Ui*Ui + Epsilon_sup_i
       !    (the difference is thus Cv Delta T)
@@ -251,11 +247,10 @@ do inbcou = 1, nbccou
                         + wa(iel) )
         if (icv.ge.0) then
           tfluid(iloc) = cvt/cpro_cv(iel)
-          hparoi(iloc) = hbord(ifac)*cpro_cv(iel)
         else
           tfluid(iloc) = cvt/cvcst
-          hparoi(iloc) = hbord(ifac)*cvcst
         endif
+        hparoi(iloc) = hbord(ifac)
       enddo
 
     endif
