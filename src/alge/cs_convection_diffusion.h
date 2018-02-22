@@ -387,11 +387,8 @@ cs_slope_test_tensor(const cs_real_6_t   pi,
  * \brief Reconstruct values in I' and J'.
  *
  * \param[in]     ircflp       recontruction flag
- * \param[in]     pnd          geometrical weight
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -405,11 +402,8 @@ cs_slope_test_tensor(const cs_real_6_t   pi,
 
 inline static void
 cs_i_compute_quantities(const int          ircflp,
-                        const double       pnd,
-                        const cs_real_3_t  cell_ceni,
-                        const cs_real_3_t  cell_cenj,
-                        const cs_real_3_t  i_face_cog,
-                        const cs_real_3_t  dijpf,
+                        const cs_real_3_t  diipf,
+                        const cs_real_3_t  djjpf,
                         const cs_real_3_t  gradi,
                         const cs_real_3_t  gradj,
                         const cs_real_t    pi,
@@ -419,26 +413,14 @@ cs_i_compute_quantities(const int          ircflp,
                         cs_real_t         *pip,
                         cs_real_t         *pjp)
 {
-  cs_real_t diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz;
-  cs_real_t dpxf, dpyf, dpzf;//FIXME
-
-  /* Recompute II' and JJ' at this level */
-
-  diipfx = i_face_cog[0] - (cell_ceni[0] + (1.-pnd) * dijpf[0]);
-  diipfy = i_face_cog[1] - (cell_ceni[1] + (1.-pnd) * dijpf[1]);
-  diipfz = i_face_cog[2] - (cell_ceni[2] + (1.-pnd) * dijpf[2]);
-
-  djjpfx = i_face_cog[0] -  cell_cenj[0] +     pnd  * dijpf[0];
-  djjpfy = i_face_cog[1] -  cell_cenj[1] +     pnd  * dijpf[1];
-  djjpfz = i_face_cog[2] -  cell_cenj[2] +     pnd  * dijpf[2];
-
-  dpxf = 0.5*(gradi[0] + gradj[0]);
-  dpyf = 0.5*(gradi[1] + gradj[1]);
-  dpzf = 0.5*(gradi[2] + gradj[2]);
+  cs_real_t gradpf[3] = {
+    0.5*(gradi[0] + gradj[0]),
+    0.5*(gradi[1] + gradj[1]),
+    0.5*(gradi[2] + gradj[2])};
 
   /* reconstruction only if IRCFLP = 1 */
-  *recoi = ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz);
-  *recoj = ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz);
+  *recoi = ircflp*(cs_math_3_dot_product(gradpf, diipf));
+  *recoj = ircflp*(cs_math_3_dot_product(gradpf, djjpf));
   *pip = pi + *recoi;
   *pjp = pj + *recoj;
 }
@@ -448,11 +430,8 @@ cs_i_compute_quantities(const int          ircflp,
  * \brief Reconstruct values in I' and J'.
  *
  * \param[in]     ircflp       recontruction flag
- * \param[in]     pnd          geometrical weight
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -466,33 +445,18 @@ cs_i_compute_quantities(const int          ircflp,
 
 inline static void
 cs_i_compute_quantities_vector(const int          ircflp,
-                               const double       pnd,
-                               const cs_real_3_t  cell_ceni,
-                               const cs_real_3_t  cell_cenj,
-                               const cs_real_3_t  i_face_cog,
-                               const cs_real_3_t  dijpf,
+                               const cs_real_3_t  diipf,
+                               const cs_real_3_t  djjpf,
                                const cs_real_33_t gradi,
                                const cs_real_33_t gradj,
                                const cs_real_3_t  pi,
                                const cs_real_3_t  pj,
-                               cs_real_t        recoi[3],
-                               cs_real_t        recoj[3],
-                               cs_real_t        pip[3],
-                               cs_real_t        pjp[3])
+                               cs_real_t          recoi[3],
+                               cs_real_t          recoj[3],
+                               cs_real_t          pip[3],
+                               cs_real_t          pjp[3])
 {
-  cs_real_3_t dijpfv, diipfv, djjpfv;
   cs_real_3_t dpvf;
-
-  for (int jsou = 0; jsou < 3; jsou++)
-    dijpfv[jsou] = dijpf[jsou];
-
-  /* Recompute II' and JJ' at this level */
-  for (int jsou = 0; jsou < 3; jsou++) {
-    diipfv[jsou] =   i_face_cog[jsou]
-                   - (cell_ceni[jsou] + (1.-pnd) * dijpfv[jsou]);
-    djjpfv[jsou] =   i_face_cog[jsou]
-                   - cell_cenj[jsou] + pnd  * dijpfv[jsou];
-  }
 
   /* x-y-z components, p = u, v, w */
 
@@ -504,14 +468,10 @@ cs_i_compute_quantities_vector(const int          ircflp,
 
     /* reconstruction only if IRCFLP = 1 */
 
-    recoi[isou] = ircflp*(  dpvf[0]*diipfv[0]
-                          + dpvf[1]*diipfv[1]
-                          + dpvf[2]*diipfv[2]);
+    recoi[isou] = ircflp*(cs_math_3_dot_product(dpvf, diipf));
 
 
-    recoj[isou] = ircflp*(  dpvf[0]*djjpfv[0]
-                          + dpvf[1]*djjpfv[1]
-                          + dpvf[2]*djjpfv[2]);
+    recoj[isou] = ircflp*(cs_math_3_dot_product(dpvf, djjpf));
 
     pip[isou] = pi[isou] + recoi[isou];
 
@@ -525,11 +485,8 @@ cs_i_compute_quantities_vector(const int          ircflp,
  * \brief Reconstruct values in I' and J'.
  *
  * \param[in]     ircflp       recontruction flag
- * \param[in]     pnd          geometrical weight
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -543,11 +500,8 @@ cs_i_compute_quantities_vector(const int          ircflp,
 
 inline static void
 cs_i_compute_quantities_tensor(const int          ircflp,
-                               const double       pnd,
-                               const cs_real_3_t  cell_ceni,
-                               const cs_real_3_t  cell_cenj,
-                               const cs_real_3_t  i_face_cog,
-                               const cs_real_3_t  dijpf,
+                               const cs_real_3_t  diipf,
+                               const cs_real_3_t  djjpf,
                                const cs_real_63_t gradi,
                                const cs_real_63_t gradj,
                                const cs_real_6_t  pi,
@@ -557,20 +511,7 @@ cs_i_compute_quantities_tensor(const int          ircflp,
                                cs_real_t        pip[6],
                                cs_real_t        pjp[6])
 {
-  cs_real_3_t dijpfv, diipfv, djjpfv;
   cs_real_3_t dpvf;
-
-  for (int jsou = 0; jsou < 3; jsou++)
-    dijpfv[jsou] = dijpf[jsou];
-
-  /* Recompute II' and JJ' at this level */
-
-  for (int jsou = 0; jsou < 3; jsou++) {
-    diipfv[jsou] =   i_face_cog[jsou]
-                   - (cell_ceni[jsou] + (1.-pnd) * dijpfv[jsou]);
-    djjpfv[jsou] =   i_face_cog[jsou]
-                   - cell_cenj[jsou] + pnd  * dijpfv[jsou];
-  }
 
   /* x-y-z components, p = u, v, w */
 
@@ -582,14 +523,9 @@ cs_i_compute_quantities_tensor(const int          ircflp,
 
     /* reconstruction only if IRCFLP = 1 */
 
-    recoi[isou] = ircflp*( dpvf[0]*diipfv[0]
-                         + dpvf[1]*diipfv[1]
-                         + dpvf[2]*diipfv[2]);
+    recoi[isou] = ircflp*(cs_math_3_dot_product(dpvf, diipf));
 
-
-    recoj[isou] = ircflp*( dpvf[0]*djjpfv[0]
-                         + dpvf[1]*djjpfv[1]
-                         + dpvf[2]*djjpfv[2]);
+    recoj[isou] = ircflp*(cs_math_3_dot_product(dpvf, djjpf));
 
     pip[isou] = pi[isou] + recoi[isou];
 
@@ -1225,11 +1161,8 @@ cs_i_diff_flux_tensor(const int         idiffp,
  *
  * \param[in]     ircflp       recontruction flag
  * \param[in]     relaxp       relaxation coefficient
- * \param[in]     weight       geometrical weight
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -1250,11 +1183,8 @@ cs_i_diff_flux_tensor(const int         idiffp,
 inline static void
 cs_i_cd_steady_upwind(const int          ircflp,
                       const cs_real_t    relaxp,
-                      const cs_real_t    weight,
-                      const cs_real_3_t  cell_ceni,
-                      const cs_real_3_t  cell_cenj,
-                      const cs_real_3_t  i_face_cog,
-                      const cs_real_3_t  dijpf,
+                      const cs_real_3_t  diipf,
+                      const cs_real_3_t  djjpf,
                       const cs_real_3_t  gradi,
                       const cs_real_3_t  gradj,
                       const cs_real_t    pi,
@@ -1274,11 +1204,8 @@ cs_i_cd_steady_upwind(const int          ircflp,
   cs_real_t recoi, recoj;
 
   cs_i_compute_quantities(ircflp,
-                          weight,
-                          cell_ceni,
-                          cell_cenj,
-                          i_face_cog,
-                          dijpf,
+                          diipf,
+                          djjpf,
                           gradi,
                           gradj,
                           pi,
@@ -1317,11 +1244,8 @@ cs_i_cd_steady_upwind(const int          ircflp,
  *
  * \param[in]     ircflp       recontruction flag
  * \param[in]     relaxp       relaxation coefficient
- * \param[in]     weight       geometrical weight
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -1342,11 +1266,8 @@ cs_i_cd_steady_upwind(const int          ircflp,
 inline static void
 cs_i_cd_steady_upwind_vector(const int          ircflp,
                              const cs_real_t    relaxp,
-                             const cs_real_t    weight,
-                             const cs_real_3_t  cell_ceni,
-                             const cs_real_3_t  cell_cenj,
-                             const cs_real_3_t  i_face_cog,
-                             const cs_real_3_t  dijpf,
+                             const cs_real_3_t  diipf,
+                             const cs_real_3_t  djjpf,
                              const cs_real_33_t gradi,
                              const cs_real_33_t gradj,
                              const cs_real_3_t  pi,
@@ -1366,11 +1287,8 @@ cs_i_cd_steady_upwind_vector(const int          ircflp,
   cs_real_3_t recoi, recoj;
 
   cs_i_compute_quantities_vector(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -1410,11 +1328,8 @@ cs_i_cd_steady_upwind_vector(const int          ircflp,
  *
  * \param[in]     ircflp       recontruction flag
  * \param[in]     relaxp       relaxation coefficient
- * \param[in]     weight       geometrical weight
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -1435,11 +1350,8 @@ cs_i_cd_steady_upwind_vector(const int          ircflp,
 inline static void
 cs_i_cd_steady_upwind_tensor(const int          ircflp,
                              const cs_real_t    relaxp,
-                             const cs_real_t    weight,
-                             const cs_real_3_t  cell_ceni,
-                             const cs_real_3_t  cell_cenj,
-                             const cs_real_3_t  i_face_cog,
-                             const cs_real_3_t  dijpf,
+                             const cs_real_3_t  diipf,
+                             const cs_real_3_t  djjpf,
                              const cs_real_63_t gradi,
                              const cs_real_63_t gradj,
                              const cs_real_6_t  pi,
@@ -1459,11 +1371,8 @@ cs_i_cd_steady_upwind_tensor(const int          ircflp,
   cs_real_6_t recoi, recoj;
 
   cs_i_compute_quantities_tensor(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -1501,11 +1410,8 @@ cs_i_cd_steady_upwind_tensor(const int          ircflp,
  * in case of an unsteady algorithm and a pure upwind flux.
  *
  * \param[in]     ircflp       recontruction flag
- * \param[in]     weight       geometrical weight
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -1519,11 +1425,8 @@ cs_i_cd_steady_upwind_tensor(const int          ircflp,
 
 inline static void
 cs_i_cd_unsteady_upwind(const int          ircflp,
-                        const cs_real_t    weight,
-                        const cs_real_3_t  cell_ceni,
-                        const cs_real_3_t  cell_cenj,
-                        const cs_real_3_t  i_face_cog,
-                        const cs_real_3_t  dijpf,
+                        const cs_real_3_t  diipf,
+                        const cs_real_3_t  djjpf,
                         const cs_real_3_t  gradi,
                         const cs_real_3_t  gradj,
                         const cs_real_t    pi,
@@ -1536,11 +1439,8 @@ cs_i_cd_unsteady_upwind(const int          ircflp,
   cs_real_t recoi, recoj;
 
   cs_i_compute_quantities(ircflp,
-                          weight,
-                          cell_ceni,
-                          cell_cenj,
-                          i_face_cog,
-                          dijpf,
+                          diipf,
+                          djjpf,
                           gradi,
                           gradj,
                           pi,
@@ -1560,11 +1460,8 @@ cs_i_cd_unsteady_upwind(const int          ircflp,
  * in case of an unsteady algorithm and a pure upwind flux.
  *
  * \param[in]     ircflp       recontruction flag
- * \param[in]     weight       geometrical weight
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -1578,11 +1475,8 @@ cs_i_cd_unsteady_upwind(const int          ircflp,
 
 inline static void
 cs_i_cd_unsteady_upwind_vector(const int           ircflp,
-                               const cs_real_t     weight,
-                               const cs_real_3_t   cell_ceni,
-                               const cs_real_3_t   cell_cenj,
-                               const cs_real_3_t   i_face_cog,
-                               const cs_real_3_t   dijpf,
+                               const cs_real_3_t   diipf,
+                               const cs_real_3_t   djjpf,
                                const cs_real_33_t  gradi,
                                const cs_real_33_t  gradj,
                                const cs_real_3_t   pi,
@@ -1595,11 +1489,8 @@ cs_i_cd_unsteady_upwind_vector(const int           ircflp,
   cs_real_3_t recoi, recoj;
 
   cs_i_compute_quantities_vector(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -1620,11 +1511,8 @@ cs_i_cd_unsteady_upwind_vector(const int           ircflp,
  * in case of an unsteady algorithm and a pure upwind flux.
  *
  * \param[in]     ircflp       recontruction flag
- * \param[in]     weight       geometrical weight
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -1638,11 +1526,8 @@ cs_i_cd_unsteady_upwind_vector(const int           ircflp,
 
 inline static void
 cs_i_cd_unsteady_upwind_tensor(const int           ircflp,
-                               const cs_real_t     weight,
-                               const cs_real_3_t   cell_ceni,
-                               const cs_real_3_t   cell_cenj,
-                               const cs_real_3_t   i_face_cog,
-                               const cs_real_3_t   dijpf,
+                               const cs_real_3_t   diipf,
+                               const cs_real_3_t   djjpf,
                                const cs_real_63_t  gradi,
                                const cs_real_63_t  gradj,
                                const cs_real_6_t   pi,
@@ -1655,11 +1540,8 @@ cs_i_cd_unsteady_upwind_tensor(const int           ircflp,
   cs_real_6_t recoi, recoj;
 
   cs_i_compute_quantities_tensor(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -1688,7 +1570,8 @@ cs_i_cd_unsteady_upwind_tensor(const int           ircflp,
  * \param[in]     cell_ceni    center of gravity coordinates of cell i
  * \param[in]     cell_cenj    center of gravity coordinates of cell i
  * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     gradupi      gradient upwind at cell i
@@ -1717,7 +1600,8 @@ cs_i_cd_steady(const int          ircflp,
                const cs_real_3_t  cell_ceni,
                const cs_real_3_t  cell_cenj,
                const cs_real_3_t  i_face_cog,
-               const cs_real_3_t  dijpf,
+               const cs_real_3_t  diipf,
+               const cs_real_3_t  djjpf,
                const cs_real_3_t  gradi,
                const cs_real_3_t  gradj,
                const cs_real_3_t  gradupi,
@@ -1739,11 +1623,8 @@ cs_i_cd_steady(const int          ircflp,
   cs_real_t recoi, recoj;
 
   cs_i_compute_quantities(ircflp,
-                          weight,
-                          cell_ceni,
-                          cell_cenj,
-                          i_face_cog,
-                          dijpf,
+                          diipf,
+                          djjpf,
                           gradi,
                           gradj,
                           pi,
@@ -1872,7 +1753,8 @@ cs_i_cd_steady(const int          ircflp,
  * \param[in]     cell_ceni    center of gravity coordinates of cell i
  * \param[in]     cell_cenj    center of gravity coordinates of cell i
  * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -1899,7 +1781,8 @@ cs_i_cd_steady_vector(const int           ircflp,
                       const cs_real_3_t   cell_ceni,
                       const cs_real_3_t   cell_cenj,
                       const cs_real_3_t   i_face_cog,
-                      const cs_real_3_t   dijpf,
+                      const cs_real_3_t   diipf,
+                      const cs_real_3_t   djjpf,
                       const cs_real_33_t  gradi,
                       const cs_real_33_t  gradj,
                       const cs_real_3_t   pi,
@@ -1919,11 +1802,8 @@ cs_i_cd_steady_vector(const int           ircflp,
   cs_real_3_t recoi, recoj;
 
   cs_i_compute_quantities_vector(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -2026,7 +1906,8 @@ cs_i_cd_steady_vector(const int           ircflp,
  * \param[in]     cell_ceni    center of gravity coordinates of cell i
  * \param[in]     cell_cenj    center of gravity coordinates of cell i
  * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -2053,7 +1934,8 @@ cs_i_cd_steady_tensor(const int           ircflp,
                       const cs_real_3_t   cell_ceni,
                       const cs_real_3_t   cell_cenj,
                       const cs_real_3_t   i_face_cog,
-                      const cs_real_3_t   dijpf,
+                      const cs_real_3_t   diipf,
+                      const cs_real_3_t   djjpf,
                       const cs_real_63_t  gradi,
                       const cs_real_63_t  gradj,
                       const cs_real_6_t   pi,
@@ -2074,11 +1956,8 @@ cs_i_cd_steady_tensor(const int           ircflp,
   cs_real_6_t recoi, recoj;
 
   cs_i_compute_quantities_tensor(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -2183,7 +2062,8 @@ cs_i_cd_steady_tensor(const int           ircflp,
  * \param[in]     i_face_cog     center of gravity coordinates of face ij
  * \param[in]     hybrid_blend_i blending factor between SOLU and centered
  * \param[in]     hybrid_blend_j blending factor between SOLU and centered
- * \param[in]     dijpf          distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi          gradient at cell i
  * \param[in]     gradj          gradient at cell j
  * \param[in]     gradupi        upwind gradient at cell i
@@ -2209,7 +2089,8 @@ cs_i_cd_unsteady(const int          ircflp,
                  const cs_real_3_t  i_face_cog,
                  const cs_real_t    hybrid_blend_i,
                  const cs_real_t    hybrid_blend_j,
-                 const cs_real_3_t  dijpf,
+                 const cs_real_3_t  diipf,
+                 const cs_real_3_t  djjpf,
                  const cs_real_3_t  gradi,
                  const cs_real_3_t  gradj,
                  const cs_real_3_t  gradupi,
@@ -2224,11 +2105,8 @@ cs_i_cd_unsteady(const int          ircflp,
   cs_real_t recoi, recoj;
 
   cs_i_compute_quantities(ircflp,
-                          weight,
-                          cell_ceni,
-                          cell_cenj,
-                          i_face_cog,
-                          dijpf,
+                          diipf,
+                          djjpf,
                           gradi,
                           gradj,
                           pi,
@@ -2348,7 +2226,8 @@ cs_i_cd_unsteady(const int          ircflp,
  * \param[in]     i_face_cog     center of gravity coordinates of face ij
  * \param[in]     hybrid_blend_i blending factor between SOLU and centered
  * \param[in]     hybrid_blend_j blending factor between SOLU and centered
- * \param[in]     dijpf          distance I'J'
+ * \param[in]     diipf          distance II'
+ * \param[in]     djjpf          distance JJ'
  * \param[in]     gradi          gradient at cell i
  * \param[in]     gradj          gradient at cell j
  * \param[in]     pi             value at cell i
@@ -2370,7 +2249,8 @@ cs_i_cd_unsteady_vector(const int           ircflp,
                         const cs_real_3_t   i_face_cog,
                         const cs_real_t     hybrid_blend_i,
                         const cs_real_t     hybrid_blend_j,
-                        const cs_real_3_t   dijpf,
+                        const cs_real_3_t   diipf,
+                        const cs_real_3_t   djjpf,
                         const cs_real_33_t  gradi,
                         const cs_real_33_t  gradj,
                         const cs_real_3_t   pi,
@@ -2384,11 +2264,8 @@ cs_i_cd_unsteady_vector(const int           ircflp,
   cs_real_3_t recoi, recoj;
 
   cs_i_compute_quantities_vector(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -2490,7 +2367,8 @@ cs_i_cd_unsteady_vector(const int           ircflp,
  * \param[in]     cell_ceni    center of gravity coordinates of cell i
  * \param[in]     cell_cenj    center of gravity coordinates of cell i
  * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     dijpf        distance I'J'
+ * \param[in]     diipf        distance II'
+ * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
@@ -2510,7 +2388,8 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
                         const cs_real_3_t   cell_ceni,
                         const cs_real_3_t   cell_cenj,
                         const cs_real_3_t   i_face_cog,
-                        const cs_real_3_t   dijpf,
+                        const cs_real_3_t   diipf,
+                        const cs_real_3_t   djjpf,
                         const cs_real_63_t  gradi,
                         const cs_real_63_t  gradj,
                         const cs_real_6_t   pi,
@@ -2524,11 +2403,8 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
   cs_real_6_t recoi, recoj;
 
   cs_i_compute_quantities_tensor(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -2604,7 +2480,8 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
  * \param[in]     cell_cenj       center of gravity coordinates of cell j
  * \param[in]     i_face_normal   face normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
- * \param[in]     dijpf           distance I'J'
+ * \param[in]     diipf           distance II'
+ * \param[in]     djjpf           distance JJ'
  * \param[in]     i_massflux      mass flux at face ij
  * \param[in]     gradi           gradient at cell i
  * \param[in]     gradj           gradient at cell j
@@ -2642,7 +2519,8 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
                           const cs_real_3_t  cell_cenj,
                           const cs_real_3_t  i_face_normal,
                           const cs_real_3_t  i_face_cog,
-                          const cs_real_3_t  dijpf,
+                          const cs_real_3_t  diipf,
+                          const cs_real_3_t  djjpf,
                           const cs_real_t    i_massflux,
                           const cs_real_3_t  gradi,
                           const cs_real_3_t  gradj,
@@ -2673,11 +2551,8 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
   *upwind_switch = false;
 
   cs_i_compute_quantities(ircflp,
-                          weight,
-                          cell_ceni,
-                          cell_cenj,
-                          i_face_cog,
-                          dijpf,
+                          diipf,
+                          djjpf,
                           gradi,
                           gradj,
                           pi,
@@ -2862,7 +2737,8 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
  * \param[in]     i_face_normal   face normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
- * \param[in]     dijpf           distance I'J'
+ * \param[in]     diipf           distance II'
+ * \param[in]     djjpf           distance JJ'
  * \param[in]     i_massflux      mass flux at face ij
  * \param[in]     gradi           gradient at cell i
  * \param[in]     gradj           gradient at cell j
@@ -2897,7 +2773,8 @@ cs_i_cd_steady_slope_test_vector_old(bool               *upwind_switch,
                                      const cs_real_3_t   cell_cenj,
                                      const cs_real_3_t   i_face_normal,
                                      const cs_real_3_t   i_face_cog,
-                                     const cs_real_3_t   dijpf,
+                                     const cs_real_3_t   diipf,
+                                     const cs_real_3_t   djjpf,
                                      const cs_real_t     i_massflux,
                                      const cs_real_33_t  gradi,
                                      const cs_real_33_t  gradj,
@@ -2926,11 +2803,8 @@ cs_i_cd_steady_slope_test_vector_old(bool               *upwind_switch,
   srfan = i_face_surf;
 
   cs_i_compute_quantities_vector(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -3091,7 +2965,8 @@ cs_i_cd_steady_slope_test_vector_old(bool               *upwind_switch,
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
  * \param[in]     i_face_normal   face normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
- * \param[in]     dijpf           distance I'J'
+ * \param[in]     diipf           distance II'
+ * \param[in]     djjpf           distance JJ'
  * \param[in]     i_massflux      mass flux at face ij
  * \param[in]     gradi           gradient at cell i
  * \param[in]     gradj           gradient at cell j
@@ -3127,7 +3002,8 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
                                  const cs_real_3_t   cell_cenj,
                                  const cs_real_3_t   i_face_normal,
                                  const cs_real_3_t   i_face_cog,
-                                 const cs_real_3_t   dijpf,
+                                 const cs_real_3_t   diipf,
+                                 const cs_real_3_t   djjpf,
                                  const cs_real_t     i_massflux,
                                  const cs_real_33_t  gradi,
                                  const cs_real_33_t  gradj,
@@ -3156,11 +3032,8 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
   srfan = i_face_surf;
 
   cs_i_compute_quantities_vector(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -3324,7 +3197,8 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
  * \param[in]     i_face_normal   face normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
- * \param[in]     dijpf           distance I'J'
+ * \param[in]     diipf           distance II'
+ * \param[in]     djjpf           distance JJ'
  * \param[in]     i_massflux      mass flux at face ij
  * \param[in]     gradi           gradient at cell i
  * \param[in]     gradj           gradient at cell j
@@ -3360,7 +3234,8 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
                                  const cs_real_3_t   cell_cenj,
                                  const cs_real_3_t   i_face_normal,
                                  const cs_real_3_t   i_face_cog,
-                                 const cs_real_3_t   dijpf,
+                                 const cs_real_3_t   diipf,
+                                 const cs_real_3_t   djjpf,
                                  const cs_real_t     i_massflux,
                                  const cs_real_63_t  gradi,
                                  const cs_real_63_t  gradj,
@@ -3389,11 +3264,8 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
   srfan = i_face_surf;
 
   cs_i_compute_quantities_tensor(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -3559,7 +3431,8 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
  * \param[in]     i_face_normal   face normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
- * \param[in]     dijpf           distance I'J'
+ * \param[in]     diipf           distance II'
+ * \param[in]     djjpf           distance JJ'
  * \param[in]     i_massflux      mass flux at face ij
  * \param[in]     gradi           gradient at cell i
  * \param[in]     gradj           gradient at cell j
@@ -3590,7 +3463,8 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
                             const cs_real_3_t  cell_cenj,
                             const cs_real_3_t  i_face_normal,
                             const cs_real_3_t  i_face_cog,
-                            const cs_real_3_t  dijpf,
+                            const cs_real_3_t  diipf,
+                            const cs_real_3_t  djjpf,
                             const cs_real_t    i_massflux,
                             const cs_real_3_t  gradi,
                             const cs_real_3_t  gradj,
@@ -3616,11 +3490,8 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
   *upwind_switch = false;
 
   cs_i_compute_quantities(ircflp,
-                          weight,
-                          cell_ceni,
-                          cell_cenj,
-                          i_face_cog,
-                          dijpf,
+                          diipf,
+                          djjpf,
                           gradi,
                           gradj,
                           pi,
@@ -3747,7 +3618,8 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
  * \param[in]     i_face_normal   face normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
- * \param[in]     dijpf           distance I'J'
+ * \param[in]     diipf           distance II'
+ * \param[in]     djjpf           distance JJ'
  * \param[in]     i_massflux      mass flux at face ij
  * \param[in]     gradi           gradient at cell i
  * \param[in]     gradj           gradient at cell j
@@ -3775,7 +3647,8 @@ cs_i_cd_unsteady_slope_test_vector_old(bool               *upwind_switch,
                                        const cs_real_3_t   cell_cenj,
                                        const cs_real_3_t   i_face_normal,
                                        const cs_real_3_t   i_face_cog,
-                                       const cs_real_3_t   dijpf,
+                                       const cs_real_3_t   diipf,
+                                       const cs_real_3_t   djjpf,
                                        const cs_real_t     i_massflux,
                                        const cs_real_33_t  gradi,
                                        const cs_real_33_t  gradj,
@@ -3797,11 +3670,8 @@ cs_i_cd_unsteady_slope_test_vector_old(bool               *upwind_switch,
   srfan = i_face_surf;
 
   cs_i_compute_quantities_vector(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -3921,7 +3791,8 @@ cs_i_cd_unsteady_slope_test_vector_old(bool               *upwind_switch,
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
  * \param[in]     i_face_normal   face normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
- * \param[in]     dijpf           distance I'J'
+ * \param[in]     diipf           distance II'
+ * \param[in]     djjpf           distance JJ'
  * \param[in]     i_massflux      mass flux at face ij
  * \param[in]     gradi           gradient at cell i
  * \param[in]     gradj           gradient at cell j
@@ -3950,7 +3821,8 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
                                    const cs_real_3_t   cell_cenj,
                                    const cs_real_3_t   i_face_normal,
                                    const cs_real_3_t   i_face_cog,
-                                   const cs_real_3_t   dijpf,
+                                   const cs_real_3_t   diipf,
+                                   const cs_real_3_t   djjpf,
                                    const cs_real_t     i_massflux,
                                    const cs_real_33_t  gradi,
                                    const cs_real_33_t  gradj,
@@ -3972,11 +3844,8 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
   srfan = i_face_surf;
 
   cs_i_compute_quantities_vector(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,
@@ -4096,7 +3965,8 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
  * \param[in]     cell_cenj       center of gravity coordinates of cell i
  * \param[in]     i_face_normal   face normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
- * \param[in]     dijpf           distance I'J'
+ * \param[in]     diipf           distance II'
+ * \param[in]     djjpf           distance JJ'
  * \param[in]     i_massflux      mass flux at face ij
  * \param[in]     gradi           gradient at cell i
  * \param[in]     gradj           gradient at cell j
@@ -4125,7 +3995,8 @@ cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
                                    const cs_real_3_t   cell_cenj,
                                    const cs_real_3_t   i_face_normal,
                                    const cs_real_3_t   i_face_cog,
-                                   const cs_real_3_t   dijpf,
+                                   const cs_real_3_t   diipf,
+                                   const cs_real_3_t   djjpf,
                                    const cs_real_t     i_massflux,
                                    const cs_real_63_t  gradi,
                                    const cs_real_63_t  gradj,
@@ -4147,11 +4018,8 @@ cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
   srfan = i_face_surf;
 
   cs_i_compute_quantities_tensor(ircflp,
-                                 weight,
-                                 cell_ceni,
-                                 cell_cenj,
-                                 i_face_cog,
-                                 dijpf,
+                                 diipf,
+                                 djjpf,
                                  gradi,
                                  gradj,
                                  pi,

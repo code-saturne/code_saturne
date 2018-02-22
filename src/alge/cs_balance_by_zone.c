@@ -257,7 +257,8 @@ _balance_boundary_faces(const int          icvflf,
  *   i_face_cog     -->  center of gravity coordinates of face ij
  *   hybrid_blend_i -->  blending factor between SOLU and centered
  *   hybrid_blend_j -->  blending factor between SOLU and centered
- *   dijpf          -->  distance I'J'
+ *   diipf          -->  distance I'I'
+ *   djjpf          -->  distance J'J'
  *   gradi          -->  gradient at cell i
  *   gradj          -->  gradient at cell j
  *   gradupi        -->  upwind gradient at cell i
@@ -297,7 +298,8 @@ _balance_internal_faces(const int         iupwin,
                         const cs_real_3_t i_face_cog,
                         const cs_real_t   hybrid_blend_i,
                         const cs_real_t   hybrid_blend_j,
-                        const cs_real_3_t dijpf,
+                        const cs_real_3_t diipf,
+                        const cs_real_3_t djjpf,
                         const cs_real_3_t gradi,
                         const cs_real_3_t gradj,
                         const cs_real_3_t gradupi,
@@ -327,11 +329,8 @@ _balance_internal_faces(const int         iupwin,
 
       cs_i_cd_steady_upwind(ircflp,
                             relaxp,
-                            weight,
-                            cell_ceni,
-                            cell_cenj,
-                            i_face_cog,
-                            dijpf,
+                            diipf,
+                            djjpf,
                             gradi,
                             gradj,
                             pi,
@@ -377,11 +376,8 @@ _balance_internal_faces(const int         iupwin,
       cs_real_t pif, pjf;
 
       cs_i_cd_unsteady_upwind(ircflp,
-                              weight,
-                              cell_ceni,
-                              cell_cenj,
-                              i_face_cog,
-                              dijpf,
+                              diipf,
+                              djjpf,
                               gradi,
                               gradj,
                               pi,
@@ -436,7 +432,8 @@ _balance_internal_faces(const int         iupwin,
                      cell_ceni,
                      cell_cenj,
                      i_face_cog,
-                     dijpf,
+                     diipf,
+                     djjpf,
                      gradi,
                      gradj,
                      gradupi,
@@ -492,7 +489,8 @@ _balance_internal_faces(const int         iupwin,
                        i_face_cog,
                        hybrid_blend_i,
                        hybrid_blend_j,
-                       dijpf,
+                       diipf,
+                       djjpf,
                        gradi,
                        gradj,
                        gradupi,
@@ -557,7 +555,8 @@ _balance_internal_faces(const int         iupwin,
                                 cell_cenj,
                                 i_face_normal,
                                 i_face_cog,
-                                dijpf,
+                                diipf,
+                                djjpf,
                                 i_mass_flux,
                                 gradi,
                                 gradj,
@@ -623,7 +622,8 @@ _balance_internal_faces(const int         iupwin,
                                   cell_cenj,
                                   i_face_normal,
                                   i_face_cog,
-                                  dijpf,
+                                  diipf,
+                                  djjpf,
                                   i_mass_flux,
                                   gradi,
                                   gradj,
@@ -738,8 +738,10 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     = (const cs_real_3_t *restrict)fvq->i_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
-  const cs_real_3_t *restrict dijpf
-    = (const cs_real_3_t *restrict)fvq->dijpf;
+  const cs_real_3_t *restrict diipf
+    = (const cs_real_3_t *restrict)fvq->diipf;
+  const cs_real_3_t *restrict djjpf
+    = (const cs_real_3_t *restrict)fvq->djjpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
@@ -1371,7 +1373,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                             i_face_cog[f_id_sel],
                             hybrid_coef_ii,
                             hybrid_coef_jj,
-                            dijpf[f_id_sel],
+                            diipf[f_id_sel],
+                            djjpf[f_id_sel],
                             grad[c_id1],
                             grad[c_id2],
                             gradup[c_id1],
@@ -1599,8 +1602,10 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
-  const cs_real_3_t *restrict dijpf
-    = (const cs_real_3_t *restrict)fvq->dijpf;
+  const cs_real_3_t *restrict diipf
+    = (const cs_real_3_t *restrict)fvq->diipf;
+  const cs_real_3_t *restrict djjpf
+    = (const cs_real_3_t *restrict)fvq->djjpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
@@ -1930,11 +1935,8 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_real_t p_rho_id2 = pressure[c_id2] / rho[c_id2];
 
     cs_i_cd_unsteady_upwind(ircflp,
-                            weight[f_id],
-                            cell_cen[c_id1],
-                            cell_cen[c_id2],
-                            i_face_cog[f_id_sel],
-                            dijpf[f_id_sel],
+                            diipf[f_id_sel],
+                            djjpf[f_id_sel],
                             grad,
                             grad,
                             p_rho_id1,
@@ -1997,11 +1999,8 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_real_t u2_id2 = _CS_MODULE2_2(velocity[c_id2]);
 
     cs_i_cd_unsteady_upwind(ircflp,
-                            weight[f_id],
-                            cell_cen[c_id1],
-                            cell_cen[c_id2],
-                            i_face_cog[f_id_sel],
-                            dijpf[f_id_sel],
+                            diipf[f_id_sel],
+                            djjpf[f_id_sel],
                             grad,
                             grad,
                             u2_id1,
@@ -2056,11 +2055,8 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_real_t gx_id2 = - _CS_DOT_PRODUCT(gravity, i_face_cog[f_id_sel]);
 
     cs_i_cd_unsteady_upwind(ircflp,
-                            weight[f_id],
-                            cell_cen[c_id1],
-                            cell_cen[c_id2],
-                            i_face_cog[f_id_sel],
-                            dijpf[f_id_sel],
+                            diipf[f_id_sel],
+                            djjpf[f_id_sel],
                             grad,
                             grad,
                             gx_id1,
@@ -2390,8 +2386,10 @@ cs_flux_through_surface(const char         *scalar_name,
     = (const cs_real_3_t *restrict)fvq->i_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
-  const cs_real_3_t *restrict dijpf
-    = (const cs_real_3_t *restrict)fvq->dijpf;
+  const cs_real_3_t *restrict diipf
+    = (const cs_real_3_t *restrict)fvq->diipf;
+  const cs_real_3_t *restrict djjpf
+    = (const cs_real_3_t *restrict)fvq->djjpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
@@ -2838,7 +2836,8 @@ cs_flux_through_surface(const char         *scalar_name,
                             i_face_cog[f_id_sel],
                             hybrid_coef_ii,
                             hybrid_coef_jj,
-                            dijpf[f_id_sel],
+                            diipf[f_id_sel],
+                            djjpf[f_id_sel],
                             grad[c_id1],
                             grad[c_id2],
                             gradup[c_id1],

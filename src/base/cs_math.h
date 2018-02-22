@@ -317,6 +317,27 @@ cs_math_3_normalise(const cs_real_t  vin[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Orthogonal projection of a vector with respect to a normalised
+ * vector.
+ *
+ * \param[in]     n             normal vector direction
+ * \param[in]     v             vector to be projected
+ * \param[out]    vout          projection
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_3_orthogonal_projection(const cs_real_t  n[3],
+                                const cs_real_t  v[3],
+                                cs_real_t        vout[restrict 3])
+{
+  vout[0] =  v[0]*(1.-n[0]*n[0])- v[1]*    n[1]*n[0] - v[2]*    n[2]*n[0];
+  vout[1] = -v[0]*    n[0]*n[1] + v[1]*(1.-n[1]*n[1])- v[2]*    n[2]*n[1];
+  vout[2] = -v[0]*    n[0]*n[2] - v[1]*    n[1]*n[2] + v[2]*(1.-n[2]*n[2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the product of a matrix of 3x3 real values by a vector of 3
  * real values.
  *

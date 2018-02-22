@@ -2311,8 +2311,10 @@ _compute_face_vectors(int                dim,
       double iip = sqrt(   diipb[face_id*dim]     * diipb[face_id*dim]
                          + diipb[face_id*dim + 1] * diipb[face_id*dim + 1]
                          + diipb[face_id*dim + 2] * diipb[face_id*dim + 2]);
-      double corri = 0.5 * b_dist[face_id] / CS_MAX(iip, 1.e-20);
-      corri = CS_MIN(corri, 1.);
+
+      cs_real_t corri = 1.;
+      if (iip > 0.5 * b_dist[face_id])
+        corri = 0.5 * b_dist[face_id] / iip;
 
       diipb[face_id*dim]    *= corri;
       diipb[face_id*dim +1] *= corri;
@@ -2340,8 +2342,8 @@ _compute_face_vectors(int                dim,
  *                 the vector JJ' for interior faces (djjpf)
  *
  * We also have the following formulae
- *   II' = IG - (IG.Nij)Nij
- *   JJ' = JG - (JG.Nij)Nij
+ *   II' = IF - (IF.Nij)Nij
+ *   JJ' = JF - (JF.Nij)Nij
  *
  * parameters:
  *   dim            <--  dimension
@@ -2351,6 +2353,8 @@ _compute_face_vectors(int                dim,
  *   i_face_cog     <--  center of gravity of interior faces
  *   i_face_surf    <--  interior faces surface
  *   cell_cen       <--  cell center
+ *   cell_vol       <--  cell volume
+ *   dist           <--  interior distance
  *   diipf          -->  vector ii' for interior faces
  *   djjpf          -->  vector jj' for interior faces
  *----------------------------------------------------------------------------*/
@@ -2363,52 +2367,38 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
                           const cs_real_t    i_face_surf[],
                           const cs_real_t    cell_cen[][3],
                           const cs_real_t    cell_vol[],
-                          cs_real_t          dist[],
+                          const cs_real_t    dist[],
                           cs_real_t          diipf[][3],
                           cs_real_t          djjpf[][3])
 {
-  cs_lnum_t face_id;
-
-  cs_real_t diipp, djjpp;
-  cs_real_t surfnx, surfny, surfnz;
-  cs_real_t vecigx, vecigy, vecigz, vecjgx, vecjgy, vecjgz;
 
   /* Interior faces */
 
-  for (face_id = 0; face_id < n_i_faces; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
     cs_lnum_t cell_id1 = i_face_cells[face_id][0];
     cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
     /* Normalized normal */
-    surfnx = i_face_normal[face_id][0] / i_face_surf[face_id];
-    surfny = i_face_normal[face_id][1] / i_face_surf[face_id];
-    surfnz = i_face_normal[face_id][2] / i_face_surf[face_id];
+    cs_real_3_t normal;
+    cs_math_3_normalise(i_face_normal[face_id], normal);
 
-    /* ---> IG and JG */
-    vecigx = i_face_cog[face_id][0] - cell_cen[cell_id1][0];
-    vecigy = i_face_cog[face_id][1] - cell_cen[cell_id1][1];
-    vecigz = i_face_cog[face_id][2] - cell_cen[cell_id1][2];
+    /* ---> IF and JF */
+    cs_real_t vec_if[3] = {
+      i_face_cog[face_id][0] - cell_cen[cell_id1][0],
+      i_face_cog[face_id][1] - cell_cen[cell_id1][1],
+      i_face_cog[face_id][2] - cell_cen[cell_id1][2]};
 
-    vecjgx = i_face_cog[face_id][0] - cell_cen[cell_id2][0];
-    vecjgy = i_face_cog[face_id][1] - cell_cen[cell_id2][1];
-    vecjgz = i_face_cog[face_id][2] - cell_cen[cell_id2][2];
+    cs_real_t vec_jf[3] = {
+      i_face_cog[face_id][0] - cell_cen[cell_id2][0],
+      i_face_cog[face_id][1] - cell_cen[cell_id2][1],
+      i_face_cog[face_id][2] - cell_cen[cell_id2][2]};
 
-    /* ---> DIIPP = IG.Nij */
-    diipp = vecigx*surfnx + vecigy*surfny + vecigz*surfnz;
+    /* ---> diipf = IF - (IF.Nij)Nij */
+    cs_math_3_orthogonal_projection(normal, vec_if, diipf[face_id]);
 
-    /* ---> DJJPP = JG.Nij */
-    djjpp = vecjgx*surfnx + vecjgy*surfny + vecjgz*surfnz;
-
-    /* ---> DIIPF = IG - (IG.Nij)Nij */
-    diipf[face_id][0] = vecigx - diipp*surfnx;
-    diipf[face_id][1] = vecigy - diipp*surfny;
-    diipf[face_id][2] = vecigz - diipp*surfnz;
-
-    /* ---> DJJPF = JG - (JG.Nij)Nij */
-    djjpf[face_id][0] = vecjgx - djjpp*surfnx;
-    djjpf[face_id][1] = vecjgy - djjpp*surfny;
-    djjpf[face_id][2] = vecjgz - djjpp*surfnz;
+    /* ---> djjpf = JF - (JF.Nij)Nij */
+    cs_math_3_orthogonal_projection(normal, vec_jf, djjpf[face_id]);
 
     /* Limiter on interior face reconstruction */
     if (cs_glob_mesh_quantities_flag & CS_FACE_RECONSTRUCTION_CLIP) {
@@ -2930,11 +2920,11 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
   /* Compute the volume of cells */
 
   _compute_cell_volume(mesh,
-                       (cs_real_3_t *)(mesh_quantities->i_face_normal),
-                       (cs_real_3_t *)(mesh_quantities->i_face_cog),
-                       (cs_real_3_t *)(mesh_quantities->b_face_normal),
-                       (cs_real_3_t *)(mesh_quantities->b_face_cog),
-                       (cs_real_3_t *)(mesh_quantities->cell_cen),
+                       (const cs_real_3_t *)(mesh_quantities->i_face_normal),
+                       (const cs_real_3_t *)(mesh_quantities->i_face_cog),
+                       (const cs_real_3_t *)(mesh_quantities->b_face_normal),
+                       (const cs_real_3_t *)(mesh_quantities->b_face_cog),
+                       (const cs_real_3_t *)(mesh_quantities->cell_cen),
                        mesh_quantities->cell_vol,
                        &(mesh_quantities->min_vol),
                        &(mesh_quantities->max_vol),
@@ -3059,6 +3049,13 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   if (mesh_quantities->dofij == NULL)
     BFT_MALLOC(mesh_quantities->dofij, n_i_faces*dim, cs_real_t);
 
+  if (mesh_quantities->diipf == NULL)
+    BFT_MALLOC(mesh_quantities->diipf, n_i_faces*dim, cs_real_t);
+
+  if (mesh_quantities->djjpf == NULL)
+    BFT_MALLOC(mesh_quantities->djjpf, n_i_faces*dim, cs_real_t);
+
+
   /* Compute 3x3 cocg dimensionless matrix */
 
   if (_compute_cocg_it == 1) {
@@ -3109,6 +3106,20 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                         mesh_quantities->dijpf,
                         mesh_quantities->diipb,
                         mesh_quantities->dofij);
+
+  /* Compute additional vectors relative to faces to handle non-orthogonalities */
+
+  _compute_face_sup_vectors
+    (mesh->n_i_faces,
+     (const cs_lnum_2_t *)(mesh->i_face_cells),
+     (const cs_real_3_t *)(mesh_quantities->i_face_normal),
+     (const cs_real_3_t *)(mesh_quantities->i_face_cog),
+     mesh_quantities->i_face_surf,
+     (const cs_real_3_t *)(mesh_quantities->cell_cen),
+     mesh_quantities->cell_vol,
+     mesh_quantities->i_dist,
+     (cs_real_3_t *)(mesh_quantities->diipf),
+     (cs_real_3_t *)(mesh_quantities->djjpf));
 
   /* Compute 3x3 cocg matrixes */
 
