@@ -402,9 +402,6 @@ cs_paramedmem_la_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
 $(CPPFLAGS_PLE) \
 $(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
-cs_paramedmem_la_LIBADD = \
-$(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
-$(MEDCOUPLINGRUNPATH)
 pkglib_LTLIBRARIES += cs_paramedmem.la
 cs_paramedmem_la_SOURCES = cs_paramedmem_coupling.cxx
 cs_paramedmem_la_LDFLAGS = -module -avoid-version
