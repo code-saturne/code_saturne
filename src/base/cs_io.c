@@ -300,6 +300,7 @@ _convert_to_offset(const unsigned char  buf[],
 
 #if defined(HAVE_STDINT_H)
 
+  #pragma _NEC novector
   for (i = 0; i < n; i++)
     val[i] = ((const uint64_t *)buf)[i];
 
