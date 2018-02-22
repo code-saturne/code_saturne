@@ -205,9 +205,13 @@ cs_f_user_porosity.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
 userdir = $(pkgdatadir)/user
-user_DATA = $(userfiles) cs_user_modules.f90 cs_user_parameters.f90 \
-cs_user_extra_operations.f90 cs_user_physical_properties.f90 \
-cs_user_initialization.f90 cs_user_boundary_conditions.f90 \
+user_DATA = $(userfiles) cs_user_modules.f90 \
+cs_user_boundary_conditions.f90 \
+cs_user_parameters.f90 \
+cs_user_extra_operations.f90 \
+cs_user_head_losses.f90 \
+cs_user_initialization.f90 \
+cs_user_physical_properties.f90 \
 cs_user_porosity.f90
 
 clean-local:
