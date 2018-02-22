@@ -22,8 +22,8 @@
 #
 # @ wall_clock_limit = 00:25:00, 00:20:00
 #
-# @ output = $(job_name).$(jobid).out
-# @ error  = $(job_name).$(jobid).err
+# @ output = job_$(jobid).out.log
+# @ error  = job_$(jobid).err.log
 # @ notification = never
 #
 # @ queue

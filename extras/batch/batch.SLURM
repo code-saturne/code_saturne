@@ -8,8 +8,8 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --time=0:30:00
 #SBATCH --partition=par
-#SBATCH --output=nameandcase%j
-#SBATCH --error=nameandcase%j
+#SBATCH --output=job_%j.out.log
+#SBATCH --error=job_%j.err.log
 #SBATCH --job-name=nameandcase
 #
 #  -t<time>, --time=<time>            : walltime in minutes, minutes:seconds,

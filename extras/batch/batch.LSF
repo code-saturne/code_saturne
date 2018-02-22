@@ -5,8 +5,8 @@
 #
 #BSUB -n 2
 #BSUB -W 00:05
-#BSUB -o nameandcaseo.%J
-#BSUB -e nameandcasee.%J
+#BSUB -o job_%J.out.log
+#BSUB -e job_%J.err.log
 #BSUB -J nameandcase
 #
 #  -n : number of processes (optionally: nprocs_min, nprocs_max)

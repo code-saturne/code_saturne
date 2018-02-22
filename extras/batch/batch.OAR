@@ -4,8 +4,8 @@
 # =====================
 #
 #OAR -l nodes=2,walltime=00:30:00
-#OAR -O nameandcase.%jobid%.out
-#OAR -E nameandcase.%jobid%.out
+#OAR -O job_%jobid%.log
+#OAR -E job_%jobid%.log
 #OAR -n nameandcase
 
 #  -l, --resource=<list>              : set the requested resources for the job.

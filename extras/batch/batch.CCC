@@ -5,8 +5,8 @@
 #
 #MSUB -n 2
 #MSUB -T 300
-#MSUB -o nameandcaseo.%J
-#MSUB -e nameandcasee.%J
+#MSUB -o job_%J.out.log
+#MSUB -e job_%J.err.log
 #MSUB -r nameandcase
 #
 #  -n : number of processors

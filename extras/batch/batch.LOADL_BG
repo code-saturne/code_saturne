@@ -20,8 +20,8 @@
 # @ bg_connection = mesh                   # other options: torus, prefer_torus
 #
 # @ input = /dev/null
-# @ output = $(job_name).$(jobid).out
-# @ error  = $(job_name).$(jobid).err
+# @ output = job_$(jobid).out.log
+# @ error  = job_$(jobid).err.log
 # @ notification = never
 #
 # @ queue

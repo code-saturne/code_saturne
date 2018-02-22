@@ -6,8 +6,8 @@
 #SBATCH --ntasks-per-node=16
 #SBATCH --cpus-per-task=2
 #SBATCH --time=0:30:00
-#SBATCH --output nameandcase.%j 
-#SBATCH --error nameandcase.%j 
+#SBATCH --output=job_%j.out.log
+#SBATCH --error=job_%j.err.log
 #SBATCH --job-name=nameandcase
 #
 #  -t<time>, --time=<time>            : walltime in minutes, minutes:seconds,
