@@ -234,7 +234,8 @@ _add_catalyst_mesh(fvm_to_catalyst_t  *writer,
   /* Add a new Catalyst mesh structure */
 
   int id = writer->mb->GetNumberOfBlocks();
-  vtkUnstructuredGrid* ugrid = vtkUnstructuredGrid::New();
+  vtkSmartPointer<vtkUnstructuredGrid> ugrid
+    = vtkSmartPointer<vtkUnstructuredGrid>::New();
 
   writer->mb->SetBlock(id, ugrid);
   writer->mb->GetMetaData(id)->Set(vtkCompositeDataSet::NAME(), mesh->name);
@@ -477,7 +478,7 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
               writer->n_fields+ 1,
               fvm_catalyst_field_t *);
 
-  vtkUnstructuredGrid *f =  NULL;
+  vtkUnstructuredGrid *f = NULL;
   vtkDoubleArray *tmp = NULL;
 
   const int dest_dim = (dim == 6) ? 9 : dim;
