@@ -399,7 +399,7 @@ _convergence_test(cs_sles_it_t              *c,
         return CS_SLES_DIVERGED;
       }
       else
-        return 0;
+        return CS_SLES_ITERATING;
     }
     else {
       if (verbosity > 0) {
@@ -2173,9 +2173,9 @@ _jacobi(cs_sles_it_t              *c,
 
 inline static void
 _fw_and_bw_lu33(const cs_real_t  mat[],
-                cs_real_t        x[],
-                const cs_real_t  b[],
-                const cs_real_t  c[])
+                cs_real_t        x[restrict],
+                const cs_real_t  b[restrict],
+                const cs_real_t  c[restrict])
 {
   cs_real_t  aux[3];
 
@@ -2203,9 +2203,9 @@ _fw_and_bw_lu33(const cs_real_t  mat[],
 inline static void
 _fw_and_bw_lu(const cs_real_t  mat[],
               int              db_size,
-              cs_real_t        x[],
-              const cs_real_t  b[],
-              const cs_real_t  c[])
+              cs_real_t        x[restrict],
+              const cs_real_t  b[restrict],
+              const cs_real_t  c[restrict])
 {
   assert(db_size <= DB_SIZE_MAX);
   cs_real_t aux[DB_SIZE_MAX];
@@ -2242,8 +2242,8 @@ _fw_and_bw_lu(const cs_real_t  mat[],
 inline static void
 _fw_and_bw_lu_gs(const cs_real_t  mat[],
                  int              db_size,
-                 cs_real_t        x[],
-                 const cs_real_t  b[])
+                 cs_real_t        x[restrict],
+                 const cs_real_t  b[restrict])
 {
   assert(db_size <= DB_SIZE_MAX);
 
@@ -4748,11 +4748,11 @@ cs_sles_it_solve(void                *context,
 #if defined(HAVE_MPI)
   if (c->comm != cs_glob_mpi_comm) {
     /* cvg is signed, so shift (with some margin) before copy to unsigned. */
-    unsigned buf[2] = {cvg+10, convergence.n_iterations};
+    unsigned buf[2] = {(unsigned)cvg+10, convergence.n_iterations};
     MPI_Bcast(buf, 2, MPI_UNSIGNED, 0, cs_glob_mpi_comm);
     MPI_Bcast(&convergence.residue, 1, MPI_DOUBLE, 0,
               cs_glob_mpi_comm);
-    cvg = buf[0] - 10;
+    cvg = (cs_sles_convergence_state_t)(buf[0] - 10);
     convergence.n_iterations = buf[1];
   }
 #endif
