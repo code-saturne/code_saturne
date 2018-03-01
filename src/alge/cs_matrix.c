@@ -6103,7 +6103,7 @@ cs_matrix_destroy(cs_matrix_t **matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return number of columns in matrix.
+ * \brief Return matrix type.
  *
  * \param[in]  matrix  pointer to matrix structure
  */

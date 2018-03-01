@@ -219,6 +219,11 @@ static cs_renumber_i_faces_type_t _i_faces_algorithm
   = CS_RENUMBER_I_FACES_MULTIPASS;
 static cs_renumber_b_faces_type_t _b_faces_algorithm
   = CS_RENUMBER_B_FACES_THREAD;
+#elif defined(__NEC__)
+static cs_renumber_i_faces_type_t _i_faces_algorithm
+  = CS_RENUMBER_I_FACES_SIMD;
+static cs_renumber_b_faces_type_t _b_faces_algorithm
+   = CS_RENUMBER_B_FACES_SIMD;
 #else
 static cs_renumber_i_faces_type_t _i_faces_algorithm
   = CS_RENUMBER_I_FACES_NONE;
@@ -5232,13 +5237,9 @@ void
 cs_renumber_set_n_threads(int  n_threads)
 {
   if (_cs_renumber_n_threads < 1) {
-    if (n_threads == 1) {
-      _i_faces_algorithm = CS_RENUMBER_I_FACES_NONE;
-      _b_faces_algorithm = CS_RENUMBER_B_FACES_NONE;
-    }
-    else {
+    if (n_threads > 1) {
       _i_faces_algorithm = CS_RENUMBER_I_FACES_MULTIPASS;
-      _b_faces_algorithm = CS_RENUMBER_B_FACES_NONE;
+      _b_faces_algorithm = CS_RENUMBER_B_FACES_THREAD;
     }
   }
 
