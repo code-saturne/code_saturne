@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-02-09 20:06+0100\n"
+"POT-Creation-Date: 2018-03-01 12:03+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3459,20 +3459,20 @@ msgstr "temps (s)"
 msgid " mean"
 msgstr " moyen"
 
-msgid "min"
-msgstr "min"
-
 msgid "max"
 msgstr "max"
 
 msgid "speedup"
 msgstr ""
 
-msgid "std. dev"
+msgid "std. dev."
 msgstr "écart type"
 
-msgid "s.d."
-msgstr "é.t."
+msgid "mean"
+msgstr "moyenne"
+
+msgid "min"
+msgstr "min"
 
 #, c-format
 msgid ""
@@ -8965,9 +8965,6 @@ msgstr ""
 "                                (1: température en kelvin)\n"
 "                                (2: température en celsius)\n"
 "    iscalt:      %14d (numéro du scalaire thermique)\n"
-
-msgid "mean"
-msgstr "moyenne"
 
 msgid "variance"
 msgstr "variable"
@@ -15417,3 +15414,4 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
