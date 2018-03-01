@@ -196,10 +196,10 @@ static const char *_matrix_operation_name[CS_MATRIX_N_FILL_TYPES][2]
  *----------------------------------------------------------------------------*/
 
 static void
-_set_fill_info(cs_matrix_t   *matrix,
-               bool           symmetric,
-               const int     *diag_block_size,
-               const int     *extra_diag_block_size)
+_set_fill_info(cs_matrix_t      *matrix,
+               bool              symmetric,
+               const cs_lnum_t   diag_block_size[4],
+               const cs_lnum_t   extra_diag_block_size[4])
 {
   matrix->symmetric = symmetric;
 
@@ -269,16 +269,12 @@ _clear_fill_info(cs_matrix_t  *matrix)
 
 static inline void
 _dense_b_ax(cs_lnum_t         b_id,
-            const int         b_size[4],
-            const cs_real_t  *restrict a,
-            const cs_real_t  *restrict x,
-            cs_real_t        *restrict y)
+            const cs_lnum_t   b_size[4],
+            const cs_real_t   a[restrict],
+            const cs_real_t   x[restrict],
+            cs_real_t         y[restrict])
 {
   cs_lnum_t   ii, jj;
-
-# if defined(__xlc__) /* Tell IBM compiler not to alias */
-# pragma disjoint(*x, *y, * a)
-# endif
 
   for (ii = 0; ii < b_size[0]; ii++) {
     y[b_id*b_size[1] + ii] = 0.;
@@ -303,14 +299,10 @@ _dense_b_ax(cs_lnum_t         b_id,
 
 static inline void
 _dense_3_3_ax(cs_lnum_t         b_id,
-              const cs_real_t  *restrict a,
-              const cs_real_t  *restrict x,
-              cs_real_t        *restrict y)
+              const cs_real_t   a[restrict],
+              const cs_real_t   x[restrict],
+              cs_real_t         y[restrict])
 {
-# if defined(__xlc__) /* Tell IBM compiler not to alias */
-# pragma disjoint(*x, *y, * a)
-# endif
-
   y[b_id*3]     =   a[b_id*9]         * x[b_id*3]
                   + a[b_id*9 + 1]     * x[b_id*3 + 1]
                   + a[b_id*9 + 2]     * x[b_id*3 + 2];
@@ -337,15 +329,11 @@ _dense_3_3_ax(cs_lnum_t         b_id,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_dense_6_6_ax(cs_lnum_t         b_id,
-              const cs_real_t  *restrict a,
-              const cs_real_t  *restrict x,
-              cs_real_t        *restrict y)
+_dense_6_6_ax(cs_lnum_t        b_id,
+              const cs_real_t  a[restrict],
+              const cs_real_t  x[restrict],
+              cs_real_t        y[restrict])
 {
-# if defined(__xlc__) /* Tell IBM compiler not to alias */
-# pragma disjoint(*x, *y, * a)
-# endif
-
   const cs_lnum_t b_id_6 = b_id*6, b_id_36 = b_id*36;
 
   y[b_id_6]     =   a[b_id_36]         * x[b_id_6]
@@ -414,19 +402,15 @@ _dense_6_6_ax(cs_lnum_t         b_id,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_dense_eb_ax_add(cs_lnum_t         b_i,
-                 cs_lnum_t         b_j,
-                 cs_lnum_t         b_ij,
-                 const int         b_size[4],
-                 const cs_real_t  *restrict a,
-                 const cs_real_t  *restrict x,
-                 cs_real_t        *restrict y)
+_dense_eb_ax_add(cs_lnum_t        b_i,
+                 cs_lnum_t        b_j,
+                 cs_lnum_t        b_ij,
+                 const cs_lnum_t  b_size[4],
+                 const cs_real_t  a[restrict],
+                 const cs_real_t  x[restrict],
+                 cs_real_t        y[restrict])
 {
   cs_lnum_t   ii, jj;
-
-# if defined(__xlc__) /* Tell IBM compiler not to alias */
-# pragma disjoint(*x, *y, * a)
-# endif
 
   for (ii = 0; ii < b_size[0]; ii++) {
     for (jj = 0; jj < b_size[0]; jj++)
@@ -447,16 +431,12 @@ _dense_eb_ax_add(cs_lnum_t         b_i,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_diag_vec_p_l(const cs_real_t  *restrict da,
-              const cs_real_t  *restrict x,
-              cs_real_t        *restrict y,
-              cs_lnum_t         n_elts)
+_diag_vec_p_l(const cs_real_t  da[restrict],
+              const cs_real_t  x[restrict],
+              cs_real_t        y[restrict],
+              cs_lnum_t        n_elts)
 {
   cs_lnum_t  ii;
-
-# if defined(__xlc__) /* Tell IBM compiler not to alias */
-# pragma disjoint(*x, *y, *da)
-# endif
 
   if (da != NULL) {
 #   pragma omp parallel for  if(n_elts > CS_THR_MIN)
@@ -487,11 +467,11 @@ _diag_vec_p_l(const cs_real_t  *restrict da,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_b_diag_vec_p_l(const cs_real_t  *restrict da,
-                const cs_real_t  *restrict x,
-                cs_real_t        *restrict y,
-                cs_lnum_t         n_elts,
-                const int         b_size[4])
+_b_diag_vec_p_l(const cs_real_t  da[restrict],
+                const cs_real_t  x[restrict],
+                cs_real_t        y[restrict],
+                cs_lnum_t        n_elts,
+                const cs_lnum_t  b_size[4])
 {
   cs_lnum_t   ii;
 
@@ -520,10 +500,10 @@ _b_diag_vec_p_l(const cs_real_t  *restrict da,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_3_3_diag_vec_p_l(const cs_real_t  *restrict da,
-                  const cs_real_t  *restrict x,
-                  cs_real_t        *restrict y,
-                  cs_lnum_t         n_elts)
+_3_3_diag_vec_p_l(const cs_real_t  da[restrict],
+                  const cs_real_t  x[restrict],
+                  cs_real_t        y[restrict],
+                  cs_lnum_t        n_elts)
 {
   cs_lnum_t   ii;
 
@@ -552,10 +532,10 @@ _3_3_diag_vec_p_l(const cs_real_t  *restrict da,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_6_6_diag_vec_p_l(const cs_real_t  *restrict da,
-                  const cs_real_t  *restrict x,
-                  cs_real_t        *restrict y,
-                  cs_lnum_t         n_elts)
+_6_6_diag_vec_p_l(const cs_real_t  da[restrict],
+                  const cs_real_t  x[restrict],
+                  cs_real_t        y[restrict],
+                  cs_lnum_t        n_elts)
 {
   cs_lnum_t   ii;
 
@@ -581,7 +561,7 @@ _6_6_diag_vec_p_l(const cs_real_t  *restrict da,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_zero_range(cs_real_t  *restrict y,
+_zero_range(cs_real_t   y[restrict],
             cs_lnum_t   start_id,
             cs_lnum_t   end_id)
 {
@@ -605,10 +585,10 @@ _zero_range(cs_real_t  *restrict y,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_b_zero_range(cs_real_t  *restrict y,
-              cs_lnum_t   start_id,
-              cs_lnum_t   end_id,
-              const int   b_size[2])
+_b_zero_range(cs_real_t        y[restrict],
+              cs_lnum_t        start_id,
+              cs_lnum_t        end_id,
+              const cs_lnum_t  b_size[2])
 {
   cs_lnum_t  ii;
 
@@ -627,9 +607,9 @@ _b_zero_range(cs_real_t  *restrict y,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_3_3_zero_range(cs_real_t  *restrict y,
-                cs_lnum_t   start_id,
-                cs_lnum_t   end_id)
+_3_3_zero_range(cs_real_t  y[restrict],
+                cs_lnum_t  start_id,
+                cs_lnum_t  end_id)
 {
   cs_lnum_t  ii;
 
@@ -648,9 +628,9 @@ _3_3_zero_range(cs_real_t  *restrict y,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_6_6_zero_range(cs_real_t  *restrict y,
-                cs_lnum_t   start_id,
-                cs_lnum_t   end_id)
+_6_6_zero_range(cs_real_t  y[restrict],
+                cs_lnum_t  start_id,
+                cs_lnum_t  end_id)
 {
   cs_lnum_t  ii;
 
@@ -677,10 +657,10 @@ _6_6_zero_range(cs_real_t  *restrict y,
  *----------------------------------------------------------------------------*/
 
 static cs_matrix_struct_native_t *
-_create_struct_native(cs_lnum_t           n_rows,
-                      cs_lnum_t           n_cols_ext,
-                      cs_lnum_t           n_edges,
-                      const cs_lnum_2_t  *edges)
+_create_struct_native(cs_lnum_t        n_rows,
+                      cs_lnum_t        n_cols_ext,
+                      cs_lnum_t        n_edges,
+                      const cs_lnum_t  edges[][2])
 {
   cs_matrix_struct_native_t  *ms;
 
@@ -793,9 +773,9 @@ _set_coeffs_native(cs_matrix_t        *matrix,
                    bool                symmetric,
                    bool                copy,
                    cs_lnum_t           n_edges,
-                   const cs_lnum_2_t  *restrict edges,
-                   const cs_real_t    *restrict da,
-                   const cs_real_t    *restrict xa)
+                   const cs_lnum_t     edges[restrict][2],
+                   const cs_real_t     da[restrict],
+                   const cs_real_t     xa[restrict])
 {
   CS_UNUSED(n_edges);
   CS_UNUSED(edges);
@@ -871,7 +851,7 @@ _release_coeffs_native(cs_matrix_t  *matrix)
 
 static void
 _copy_diagonal_separate(const cs_matrix_t  *matrix,
-                        cs_real_t          *restrict da)
+                        cs_real_t           da[restrict])
 {
   const cs_real_t *_da = NULL;
   if (matrix->type == CS_MATRIX_NATIVE) {
@@ -905,7 +885,7 @@ _copy_diagonal_separate(const cs_matrix_t  *matrix,
 
   else {
 
-    const int *db_size = matrix->db_size;
+    const cs_lnum_t *db_size = matrix->db_size;
 
     if (_da != NULL) {
 #     pragma omp parallel for  if(n_rows*db_size[0] > CS_THR_MIN)
@@ -935,8 +915,8 @@ _copy_diagonal_separate(const cs_matrix_t  *matrix,
 static void
 _mat_vec_p_l_native(bool                exclude_diag,
                     const cs_matrix_t  *matrix,
-                    const cs_real_t    *restrict x,
-                    cs_real_t          *restrict y)
+                    const cs_real_t     x[restrict],
+                    cs_real_t           y[restrict])
 {
   cs_lnum_t  ii, jj, face_id;
 
@@ -944,11 +924,6 @@ _mat_vec_p_l_native(bool                exclude_diag,
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->xa;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
 
   /* Diagonal part of matrix.vector product */
 
@@ -1004,8 +979,8 @@ _mat_vec_p_l_native(bool                exclude_diag,
 static void
 _b_mat_vec_p_l_native(bool                exclude_diag,
                       const cs_matrix_t  *matrix,
-                      const cs_real_t    *restrict x,
-                      cs_real_t          *restrict y)
+                      const cs_real_t    x[restrict],
+                      cs_real_t          y[restrict])
 {
   cs_lnum_t  ii, jj, kk, face_id;
 
@@ -1013,12 +988,7 @@ _b_mat_vec_p_l_native(bool                exclude_diag,
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->xa;
-  const int *db_size = matrix->db_size;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
+  const cs_lnum_t *db_size = matrix->db_size;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1078,8 +1048,8 @@ _b_mat_vec_p_l_native(bool                exclude_diag,
 static void
 _bb_mat_vec_p_l_native(bool                exclude_diag,
                        const cs_matrix_t  *matrix,
-                       const cs_real_t    *restrict x,
-                       cs_real_t          *restrict y)
+                       const cs_real_t    x[restrict],
+                       cs_real_t          y[restrict])
 {
   cs_lnum_t  ii, jj, face_id;
 
@@ -1087,13 +1057,8 @@ _bb_mat_vec_p_l_native(bool                exclude_diag,
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->xa;
-  const int *db_size = matrix->db_size;
-  const int *eb_size = matrix->eb_size;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
+  const cs_lnum_t *db_size = matrix->db_size;
+  const cs_lnum_t *eb_size = matrix->eb_size;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1151,8 +1116,8 @@ _bb_mat_vec_p_l_native(bool                exclude_diag,
 static void
 _3_3_mat_vec_p_l_native(bool                exclude_diag,
                         const cs_matrix_t  *matrix,
-                        const cs_real_t    *restrict x,
-                        cs_real_t          *restrict y)
+                        const cs_real_t     x[restrict],
+                        cs_real_t           y[restrict])
 {
   cs_lnum_t  ii, jj, kk, face_id;
 
@@ -1162,11 +1127,6 @@ _3_3_mat_vec_p_l_native(bool                exclude_diag,
   const cs_real_t  *restrict xa = mc->xa;
 
   assert(matrix->db_size[0] == 3 && matrix->db_size[3] == 9);
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
 
   /* Diagonal part of matrix.vector product */
 
@@ -1228,8 +1188,8 @@ _3_3_mat_vec_p_l_native(bool                exclude_diag,
 static void
 _6_6_mat_vec_p_l_native(bool                exclude_diag,
                         const cs_matrix_t  *matrix,
-                        const cs_real_t    *restrict x,
-                        cs_real_t          *restrict y)
+                        const cs_real_t     x[restrict],
+                        cs_real_t           y[restrict])
 {
   cs_lnum_t  ii, jj, kk, face_id;
 
@@ -1239,11 +1199,6 @@ _6_6_mat_vec_p_l_native(bool                exclude_diag,
   const cs_real_t  *restrict xa = mc->xa;
 
   assert(matrix->db_size[0] == 3 && matrix->db_size[3] == 9);
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
 
   /* Diagonal part of matrix.vector product */
 
@@ -1305,8 +1260,8 @@ _6_6_mat_vec_p_l_native(bool                exclude_diag,
 static void
 _b_mat_vec_p_l_native_fixed(bool                exclude_diag,
                             const cs_matrix_t  *matrix,
-                            const cs_real_t    *restrict x,
-                            cs_real_t          *restrict y)
+                            const cs_real_t     x[restrict],
+                            cs_real_t           y[restrict])
 {
   if (matrix->db_size[0] == 3 && matrix->db_size[3] == 9)
     _3_3_mat_vec_p_l_native(exclude_diag, matrix, x, y);
@@ -1333,8 +1288,8 @@ _b_mat_vec_p_l_native_fixed(bool                exclude_diag,
 static void
 _mat_vec_p_l_native_omp(bool                exclude_diag,
                         const cs_matrix_t  *matrix,
-                        const cs_real_t    *restrict x,
-                        cs_real_t          *restrict y)
+                        const cs_real_t     x[restrict],
+                        cs_real_t           y[restrict])
 {
   const int n_threads = matrix->numbering->n_threads;
   const int n_groups = matrix->numbering->n_groups;
@@ -1345,12 +1300,6 @@ _mat_vec_p_l_native_omp(bool                exclude_diag,
   const cs_real_t  *restrict xa = mc->xa;
 
   assert(matrix->numbering->type == CS_NUMBERING_THREADS);
-
-  /* Tell IBM compiler not to alias */
-
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
 
   /* Diagonal part of matrix.vector product */
 
@@ -1422,10 +1371,10 @@ _mat_vec_p_l_native_omp(bool                exclude_diag,
 static void
 _b_mat_vec_p_l_native_omp(bool                exclude_diag,
                           const cs_matrix_t  *matrix,
-                          const cs_real_t    *restrict x,
-                          cs_real_t          *restrict y)
+                          const cs_real_t     x[restrict],
+                          cs_real_t           y[restrict])
 {
-  const int *db_size = matrix->db_size;
+  const cs_lnum_t *db_size = matrix->db_size;
 
   const int n_threads = matrix->numbering->n_threads;
   const int n_groups = matrix->numbering->n_groups;
@@ -1436,12 +1385,6 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
   const cs_real_t  *restrict xa = mc->xa;
 
   assert(matrix->numbering->type == CS_NUMBERING_THREADS);
-
-  /* Tell IBM compiler not to alias */
-
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
 
   /* Diagonal part of matrix.vector product */
 
@@ -1519,18 +1462,12 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
 static void
 _mat_vec_p_l_native_omp_atomic(bool                exclude_diag,
                                const cs_matrix_t  *matrix,
-                               const cs_real_t    *restrict x,
-                               cs_real_t          *restrict y)
+                               const cs_real_t     x[restrict],
+                               cs_real_t           y[restrict])
 {
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
   const cs_real_t  *restrict xa = mc->xa;
-
-  /* Tell IBM compiler not to alias */
-
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
 
   /* Diagonal part of matrix.vector product */
 
@@ -1590,20 +1527,14 @@ _mat_vec_p_l_native_omp_atomic(bool                exclude_diag,
 static void
 _b_mat_vec_p_l_native_omp_atomic(bool                exclude_diag,
                                  const cs_matrix_t  *matrix,
-                                 const cs_real_t    *restrict x,
-                                 cs_real_t          *restrict y)
+                                 const cs_real_t     x[restrict],
+                                 cs_real_t           y[restrict])
 {
-  const int *db_size = matrix->db_size;
+  const cs_lnum_t *db_size = matrix->db_size;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
   const cs_real_t  *restrict xa = mc->xa;
-
-  /* Tell IBM compiler not to alias */
-
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *xa)
-# endif
 
   /* Diagonal part of matrix.vector product */
 
@@ -1671,8 +1602,8 @@ _b_mat_vec_p_l_native_omp_atomic(bool                exclude_diag,
 static void
 _mat_vec_p_l_native_vector(bool                exclude_diag,
                            const cs_matrix_t  *matrix,
-                           const cs_real_t    *restrict x,
-                           cs_real_t          *restrict y)
+                           const cs_real_t     x[restrict],
+                           cs_real_t           y[restrict])
 {
   cs_lnum_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
@@ -2097,7 +2028,7 @@ _zero_coeffs_csr(cs_matrix_t  *matrix)
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
   const cs_lnum_t  n_rows = ms->n_rows;
-  const int *eb_size = matrix->eb_size;
+  const cs_lnum_t *eb_size = matrix->eb_size;
 
   if (eb_size[0] == 1) {
 #   pragma omp parallel for  if(n_rows > CS_THR_MIN)
@@ -2139,7 +2070,7 @@ _set_xa_coeffs_csr_direct(cs_matrix_t        *matrix,
                           bool                symmetric,
                           cs_lnum_t           n_edges,
                           const cs_lnum_2_t  *edges,
-                          const cs_real_t    *restrict xa)
+                          const cs_real_t     xa[restrict])
 {
   cs_lnum_t  ii, jj, face_id;
   cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
@@ -2210,8 +2141,8 @@ static void
 _set_xa_coeffs_csr_increment(cs_matrix_t        *matrix,
                              bool                symmetric,
                              cs_lnum_t           n_edges,
-                             const cs_lnum_2_t  *edges,
-                             const cs_real_t    *restrict xa)
+                             const cs_lnum_2_t   edges[restrict],
+                             const cs_real_t     xa[restrict])
 {
   cs_lnum_t  ii, jj, face_id;
   cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
@@ -2277,13 +2208,13 @@ _set_xa_coeffs_csr_increment(cs_matrix_t        *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_coeffs_csr(cs_matrix_t        *matrix,
-                bool                symmetric,
-                bool                copy,
-                cs_lnum_t           n_edges,
-                const cs_lnum_2_t  *restrict edges,
-                const cs_real_t    *restrict da,
-                const cs_real_t    *restrict xa)
+_set_coeffs_csr(cs_matrix_t      *matrix,
+                bool              symmetric,
+                bool              copy,
+                cs_lnum_t         n_edges,
+                const cs_lnum_t   edges[restrict][2],
+                const cs_real_t   da[restrict],
+                const cs_real_t   xa[restrict])
 {
   CS_UNUSED(copy);
 
@@ -2379,9 +2310,9 @@ static void
 _set_coeffs_csr_from_msr(cs_matrix_t       *matrix,
                          const cs_lnum_t    row_index[],
                          const cs_lnum_t    col_id[],
-                         const cs_real_t   *d_vals,
+                         const cs_real_t    d_vals[restrict],
                          cs_real_t        **d_vals_transfer,
-                         const cs_real_t   *x_vals,
+                         const cs_real_t    x_vals[restrict],
                          cs_real_t        **x_vals_transfer)
 {
   cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
@@ -3166,8 +3097,8 @@ _copy_diagonal_csr_sym(const cs_matrix_t  *matrix,
 static void
 _mat_vec_p_l_csr_sym(bool                 exclude_diag,
                      const cs_matrix_t   *matrix,
-                     const cs_real_t     *restrict x,
-                     cs_real_t           *restrict y)
+                     const cs_real_t      x[restrict],
+                     cs_real_t            y[restrict])
 {
   cs_lnum_t  ii, jj, n_cols;
   cs_lnum_t  *restrict col_id;
@@ -3179,11 +3110,6 @@ _mat_vec_p_l_csr_sym(bool                 exclude_diag,
 
   cs_lnum_t jj_start = 0;
   cs_lnum_t sym_jj_start = 0;
-
-  /* Tell IBM compiler not to alias */
-# if defined(__xlc__)
-# pragma disjoint(*x, *y, *m_row, *col_id)
-# endif
 
   /* By construction, the matrix has either a full or an empty
      diagonal structure, so testing this on the first row is enough */
@@ -3322,7 +3248,7 @@ _zero_x_coeffs_msr(cs_matrix_t  *matrix)
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
   const cs_lnum_t  n_rows = ms->n_rows;
-  const int *eb_size = matrix->eb_size;
+  const cs_lnum_t *eb_size = matrix->eb_size;
 
   if (eb_size[0] == 1) {
 #   pragma omp parallel for  if(n_rows > CS_THR_MIN)
@@ -3511,7 +3437,7 @@ _map_or_copy_da_coeffs_msr(cs_matrix_t      *matrix,
   cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
 
   const cs_lnum_t n_rows = matrix->n_rows;
-  const int *db_size = matrix->db_size;
+  const cs_lnum_t *db_size = matrix->db_size;
 
   /* Map or copy diagonal values */
 
@@ -3560,7 +3486,7 @@ _map_or_copy_xa_coeffs_msr(cs_matrix_t      *matrix,
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_lnum_t n_rows = matrix->n_rows;
-  const int *eb_size = matrix->eb_size;
+  const cs_lnum_t *eb_size = matrix->eb_size;
 
   if (xa == NULL || copy) {
 
@@ -3778,9 +3704,9 @@ _release_coeffs_msr(cs_matrix_t  *matrix)
 /*----------------------------------------------------------------------------*/
 
 static void
-_csr_assembler_values_init(void        *matrix_p,
-                           const int   *db_size,
-                           const int   *eb_size)
+_csr_assembler_values_init(void             *matrix_p,
+                           const cs_lnum_t   db_size[4],
+                           const cs_lnum_t   eb_size[4])
 {
   CS_UNUSED(db_size);
 
@@ -3930,9 +3856,9 @@ _csr_assembler_values_add(void             *matrix_p,
 /*----------------------------------------------------------------------------*/
 
 static void
-_msr_assembler_values_init(void        *matrix_p,
-                           const int   *db_size,
-                           const int   *eb_size)
+_msr_assembler_values_init(void             *matrix_p,
+                           const cs_lnum_t   db_size[4],
+                           const cs_lnum_t   eb_size[4])
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
@@ -4280,13 +4206,13 @@ _mat_vec_p_l_msr_omp_sched(bool                exclude_diag,
 static void
 _b_mat_vec_p_l_msr_generic(bool                exclude_diag,
                            const cs_matrix_t  *matrix,
-                           const cs_real_t    *restrict x,
-                           cs_real_t          *restrict y)
+                           const cs_real_t     x[restrict],
+                           cs_real_t           y[restrict])
 {
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_lnum_t  n_rows = ms->n_rows;
-  const int *db_size = matrix->db_size;
+  const cs_lnum_t *db_size = matrix->db_size;
 
   /* Standard case */
 
@@ -4419,8 +4345,8 @@ _3_3_mat_vec_p_l_msr(bool                exclude_diag,
 static void
 _6_6_mat_vec_p_l_msr(bool                exclude_diag,
                      const cs_matrix_t  *matrix,
-                     const cs_real_t    *restrict x,
-                     cs_real_t          *restrict y)
+                     const cs_real_t     x[restrict],
+                     cs_real_t           y[restrict])
 {
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
@@ -4489,8 +4415,8 @@ _6_6_mat_vec_p_l_msr(bool                exclude_diag,
 static void
 _b_mat_vec_p_l_msr(bool                exclude_diag,
                    const cs_matrix_t  *matrix,
-                   const cs_real_t    *restrict x,
-                   cs_real_t          *restrict y)
+                   const cs_real_t     x[restrict],
+                   cs_real_t           y[restrict])
 {
   if (matrix->db_size[0] == 3 && matrix->db_size[3] == 9)
     _3_3_mat_vec_p_l_msr(exclude_diag, matrix, x, y);
@@ -4517,8 +4443,8 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
 static void
 _mat_vec_p_l_msr_mkl(bool                exclude_diag,
                      const cs_matrix_t  *matrix,
-                     const cs_real_t    *restrict x,
-                     cs_real_t          *restrict y)
+                     const cs_real_t     x[restrict],
+                     cs_real_t           y[restrict])
 {
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
@@ -4559,7 +4485,7 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
 static void
 _pre_vector_multiply_sync_x(cs_halo_rotation_t   rotation_mode,
                             const cs_matrix_t   *matrix,
-                            cs_real_t           *restrict x)
+                            cs_real_t            x[restrict])
 {
   assert(matrix->halo != NULL);
 
@@ -4579,7 +4505,7 @@ _pre_vector_multiply_sync_x(cs_halo_rotation_t   rotation_mode,
 
   else { /* if (matrix->db_size[3] > 1) */
 
-    const int *db_size = matrix->db_size;
+    const cs_lnum_t *db_size = matrix->db_size;
 
     /* Update distant ghost rows */
 
@@ -4623,7 +4549,7 @@ _pre_vector_multiply_sync_x(cs_halo_rotation_t   rotation_mode,
 
 static void
 _pre_vector_multiply_sync_y(const cs_matrix_t   *matrix,
-                            cs_real_t           *restrict y)
+                            cs_real_t            y[restrict])
 {
   size_t n_cols_ext = matrix->n_cols_ext;
 
@@ -4728,8 +4654,8 @@ _matrix_check(int                    n_variants,
   cs_real_t  *yr0 = NULL, *yr1 = NULL;
   cs_matrix_structure_t *ms = NULL;
   cs_matrix_t *m = NULL;
-  int d_block_size[4] = {3, 3, 3, 9};
-  int ed_block_size[4] = {3, 3, 3, 9};
+  cs_lnum_t d_block_size[4] = {3, 3, 3, 9};
+  cs_lnum_t ed_block_size[4] = {3, 3, 3, 9};
 
   /* Allocate and initialize  working arrays */
 
@@ -4769,9 +4695,9 @@ _matrix_check(int                    n_variants,
 
   for (f_id = 0; f_id < CS_MATRIX_N_FILL_TYPES; f_id++) {
 
-    const int *_d_block_size
+    const cs_lnum_t *_d_block_size
       = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size : NULL;
-    const int *_ed_block_size
+    const cs_lnum_t *_ed_block_size
       = (f_id >= CS_MATRIX_BLOCK) ? ed_block_size : NULL;
     const cs_lnum_t _block_mult = (_d_block_size != NULL) ? d_block_size[1] : 1;
     const bool sym_coeffs = (   f_id == CS_MATRIX_SCALAR_SYM
@@ -6166,7 +6092,7 @@ cs_matrix_get_n_rows(const cs_matrix_t  *matrix)
  */
 /*----------------------------------------------------------------------------*/
 
-const int *
+const cs_lnum_t *
 cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
@@ -6190,7 +6116,7 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix)
  */
 /*----------------------------------------------------------------------------*/
 
-const int *
+const cs_lnum_t *
 cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix)
 {
   if (matrix == NULL)
@@ -6238,13 +6164,13 @@ cs_matrix_get_halo(const cs_matrix_t  *matrix)
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_fill_type_t
-cs_matrix_get_fill_type(bool        symmetric,
-                        const int  *diag_block_size,
-                        const int  *extra_diag_block_size)
+cs_matrix_get_fill_type(bool              symmetric,
+                        const cs_lnum_t  *diag_block_size,
+                        const cs_lnum_t  *extra_diag_block_size)
 {
   cs_matrix_fill_type_t fill_type = CS_MATRIX_N_FILL_TYPES;
 
-  int _db_size = 1, _eb_size = 1;
+  cs_lnum_t _db_size = 1, _eb_size = 1;
   if (diag_block_size != NULL)
     _db_size = diag_block_size[0];
 
@@ -6310,8 +6236,8 @@ cs_matrix_get_fill_type(bool        symmetric,
 void
 cs_matrix_set_coefficients(cs_matrix_t        *matrix,
                            bool                symmetric,
-                           const int          *diag_block_size,
-                           const int          *extra_diag_block_size,
+                           const cs_lnum_t    *diag_block_size,
+                           const cs_lnum_t    *extra_diag_block_size,
                            const cs_lnum_t     n_edges,
                            const cs_lnum_2_t   edges[],
                            const cs_real_t    *da,
@@ -6374,8 +6300,8 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
 void
 cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
                             bool                symmetric,
-                            const int          *diag_block_size,
-                            const int          *extra_diag_block_size,
+                            const cs_lnum_t    *diag_block_size,
+                            const cs_lnum_t    *extra_diag_block_size,
                             const cs_lnum_t     n_edges,
                             const cs_lnum_2_t   edges[],
                             const cs_real_t    *da,
@@ -6434,8 +6360,8 @@ cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
 void
 cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
                                     bool                 symmetric,
-                                    const int           *diag_block_size,
-                                    const int           *extra_diag_block_size,
+                                    const cs_lnum_t     *diag_block_size,
+                                    const cs_lnum_t     *extra_diag_block_size,
                                     const cs_lnum_t      row_index[],
                                     const cs_lnum_t      col_id[],
                                     cs_real_t          **d_val,
@@ -6547,9 +6473,9 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_assembler_values_t *
-cs_matrix_assembler_values_init(cs_matrix_t  *matrix,
-                                const int    *diag_block_size,
-                                const int    *extra_diag_block_size)
+cs_matrix_assembler_values_init(cs_matrix_t      *matrix,
+                                const cs_lnum_t  *diag_block_size,
+                                const cs_lnum_t  *extra_diag_block_size)
 {
   cs_matrix_assembler_values_t *mav = NULL;
 

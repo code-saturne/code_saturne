@@ -102,8 +102,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            cs_lnum_t              n_cells_ext,
                            cs_lnum_t              n_faces,
                            bool                   symmetric,
-                           const int             *diag_block_size,
-                           const int             *extra_diag_block_size,
+                           const cs_lnum_t       *diag_block_size,
+                           const cs_lnum_t       *extra_diag_block_size,
                            const cs_lnum_2_t     *face_cell,
                            const cs_halo_t       *halo,
                            const cs_real_t       *cell_cen,
@@ -121,7 +121,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
  *----------------------------------------------------------------------------*/
 
 void
-cs_grid_destroy(cs_grid_t **grid);
+cs_grid_destroy(cs_grid_t  **grid);
 
 /*----------------------------------------------------------------------------
  * Get grid information.
@@ -143,8 +143,8 @@ void
 cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
                  bool             *symmetric,
-                 int              *db_size,
-                 int              *eb_size,
+                 cs_lnum_t        *db_size,
+                 cs_lnum_t        *eb_size,
                  int              *n_ranks,
                  cs_lnum_t        *n_cells,
                  cs_lnum_t        *n_cells_ext,

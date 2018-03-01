@@ -115,8 +115,8 @@ struct _cs_grid_t {
                                        false otherwhise */
   bool                symmetric;    /* Symmetric matrix coefficients
                                        indicator */
-  int                 diag_block_size[4]; /* Block sizes for diagonal, or NULL */
-  int                 extra_diag_block_size[4]; /* Block sizes for
+  cs_lnum_t           diag_block_size[4]; /* Block sizes for diagonal, or NULL */
+  cs_lnum_t           extra_diag_block_size[4]; /* Block sizes for
                                                    extra diagonal, or NULL */
 
   cs_lnum_t           n_cells;      /* Local number of cells */
@@ -2577,7 +2577,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
 
   cs_real_t *aggr_crit = NULL;
 
-  const int *db_size = fine_grid->diag_block_size;
+  const cs_lnum_t *db_size = fine_grid->diag_block_size;
   const cs_lnum_2_t *f_face_cells = fine_grid->face_cell;
   const cs_real_t *f_da = fine_grid->da;
   const cs_real_t *f_xa = fine_grid->xa;
@@ -3051,7 +3051,7 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
 
   cs_real_t *w1 = NULL;
 
-  const int *db_size = fine_grid->diag_block_size;
+  const cs_lnum_t *db_size = fine_grid->diag_block_size;
 
   const cs_lnum_2_t *f_face_cell = fine_grid->face_cell;
   const cs_lnum_2_t *c_face_cell = coarse_grid->face_cell;
@@ -3233,7 +3233,7 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
 
   cs_real_t *w1 = NULL;
 
-  const int *db_size = fine_grid->diag_block_size;
+  const cs_lnum_t *db_size = fine_grid->diag_block_size;
 
   const cs_lnum_2_t *f_face_cell = fine_grid->face_cell;
   const cs_lnum_2_t *c_face_cell = coarse_grid->face_cell;
@@ -3503,7 +3503,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
   cs_real_t *w1 = NULL, *w1_conv = NULL, *w1_diff = NULL;
 
-  const int *db_size = fine_grid->diag_block_size;
+  const cs_lnum_t *db_size = fine_grid->diag_block_size;
 
   const cs_lnum_2_t *f_face_cell = fine_grid->face_cell;
   const cs_lnum_2_t *c_face_cell = coarse_grid->face_cell;
@@ -3826,8 +3826,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            cs_lnum_t              n_cells_ext,
                            cs_lnum_t              n_faces,
                            bool                   symmetric,
-                           const int             *diag_block_size,
-                           const int             *extra_diag_block_size,
+                           const cs_lnum_t       *diag_block_size,
+                           const cs_lnum_t       *extra_diag_block_size,
                            const cs_lnum_2_t     *face_cell,
                            const cs_halo_t       *halo,
                            const cs_real_t       *cell_cen,
@@ -4048,8 +4048,8 @@ void
 cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
                  bool             *symmetric,
-                 int              *db_size,
-                 int              *eb_size,
+                 cs_lnum_t        *db_size,
+                 cs_lnum_t        *eb_size,
                  int              *n_ranks,
                  cs_lnum_t        *n_cells,
                  cs_lnum_t        *n_cells_ext,
@@ -4267,7 +4267,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
   cs_grid_t *c = NULL;
 
-  const int *db_size = f->diag_block_size;
+  const cs_lnum_t *db_size = f->diag_block_size;
 
   assert(f != NULL);
 
@@ -4494,7 +4494,7 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
   cs_lnum_t c_n_cells_ext = c->n_cells_r[1];
 
   const cs_lnum_t *coarse_cell;
-  const int *db_size = f->diag_block_size;
+  const cs_lnum_t *db_size = f->diag_block_size;
 
   assert(f != NULL);
   assert(c != NULL);
@@ -4608,7 +4608,7 @@ cs_grid_prolong_cell_var(const cs_grid_t  *c,
   const cs_lnum_t *coarse_cell;
   const cs_real_t *_c_var = c_var;
 
-  const int *db_size = f->diag_block_size;
+  const cs_lnum_t *db_size = f->diag_block_size;
 
   cs_lnum_t f_n_cells = f->n_cells;
 
@@ -4838,7 +4838,7 @@ cs_grid_project_var(const cs_grid_t  *g,
   cs_real_t *tmp_var_1 = NULL, *tmp_var_2 = NULL;
   const cs_grid_t *_g = g;
 
-  const int *db_size = g->diag_block_size;
+  const cs_lnum_t *db_size = g->diag_block_size;
 
   assert(g != NULL);
   assert(c_var != NULL || g->n_cells == 0);
@@ -4907,7 +4907,7 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
   int i, j;
 
   cs_real_t *dd = NULL;
-  const int *db_size = g->diag_block_size;
+  const cs_lnum_t *db_size = g->diag_block_size;
 
   assert(g != NULL);
   assert(diag_dom != NULL);

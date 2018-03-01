@@ -391,7 +391,7 @@ cs_matrix_get_n_rows(const cs_matrix_t  *matrix);
  *   pointer to block sizes
  *----------------------------------------------------------------------------*/
 
-const int *
+const cs_lnum_t *
 cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
@@ -408,7 +408,7 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
  *   pointer to block sizes
  *----------------------------------------------------------------------------*/
 
-const int *
+const cs_lnum_t *
 cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
@@ -441,9 +441,9 @@ cs_matrix_get_halo(const cs_matrix_t  *matrix);
  *----------------------------------------------------------------------------*/
 
 cs_matrix_fill_type_t
-cs_matrix_get_fill_type(bool        symmetric,
-                        const int  *diag_block_size,
-                        const int  *extra_diag_block_size);
+cs_matrix_get_fill_type(bool              symmetric,
+                        const cs_lnum_t  *diag_block_size,
+                        const cs_lnum_t  *extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
  * Set matrix coefficients defined relative to a "native" edge graph,
@@ -477,8 +477,8 @@ cs_matrix_get_fill_type(bool        symmetric,
 void
 cs_matrix_set_coefficients(cs_matrix_t        *matrix,
                            bool                symmetric,
-                           const int          *diag_block_size,
-                           const int          *extra_diag_block_size,
+                           const cs_lnum_t    *diag_block_size,
+                           const cs_lnum_t    *extra_diag_block_size,
                            const cs_lnum_t     n_edges,
                            const cs_lnum_2_t   edges[],
                            const cs_real_t    *da,
@@ -511,8 +511,8 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
 void
 cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
                             bool                symmetric,
-                            const int          *diag_block_size,
-                            const int          *extra_diag_block_size,
+                            const cs_lnum_t    *diag_block_size,
+                            const cs_lnum_t    *extra_diag_block_size,
                             const cs_lnum_t     n_edges,
                             const cs_lnum_2_t   edges[],
                             const cs_real_t    *da,
@@ -546,8 +546,8 @@ cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
 void
 cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
                                     bool                 symmetric,
-                                    const int           *diag_block_size,
-                                    const int           *extra_diag_block_size,
+                                    const cs_lnum_t     *diag_block_size,
+                                    const cs_lnum_t     *extra_diag_block_size,
                                     const cs_lnum_t      row_index[],
                                     const cs_lnum_t      col_id[],
                                     cs_real_t          **d_val,
@@ -574,9 +574,9 @@ cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_assembler_values_t *
-cs_matrix_assembler_values_init(cs_matrix_t  *matrix,
-                                const int    *diag_block_size,
-                                const int    *extra_diag_block_size);
+cs_matrix_assembler_values_init(cs_matrix_t      *matrix,
+                                const cs_lnum_t  *diag_block_size,
+                                const cs_lnum_t  *extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
  * Release shared matrix coefficients.

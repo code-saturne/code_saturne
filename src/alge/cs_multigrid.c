@@ -1139,7 +1139,7 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
 
     /* Diagonal block size is the same for all levels */
 
-    const int *db_size = cs_matrix_get_diag_block_size(m);
+    const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(m);
     stride = db_size[1];
 
   }
@@ -1469,8 +1469,8 @@ _multigrid_cycle(cs_multigrid_t       *mg,
   cs_lnum_t ii, jj;
   cs_timer_t t0, t1;
 
-  int db_size[4] = {1, 1, 1, 1};
-  int eb_size[4] = {1, 1, 1, 1};
+  cs_lnum_t db_size[4] = {1, 1, 1, 1};
+  cs_lnum_t eb_size[4] = {1, 1, 1, 1};
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING, c_cvg = CS_SLES_ITERATING;
   int n_iter = 0;
   double _residue = -1.;
@@ -2007,7 +2007,7 @@ _multigrid_pc_apply(void                *context,
 
   const cs_real_t *rhs = x_in;
 
-  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * db_size[1];
 
   /* If preconditioner is "in-place", use additional buffer */

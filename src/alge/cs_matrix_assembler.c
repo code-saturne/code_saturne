@@ -215,13 +215,13 @@ struct _cs_matrix_assembler_values_t {
   bool        separate_diag;          /* is diagonal handled separately ? */
   bool        final_assembly;         /* are we ready for final assembly ? */
 
-  int         db_size[4];             /* Diag Block size, including padding:
+  cs_lnum_t   db_size[4];             /* Diag Block size, including padding:
                                          0: useful block size
                                          1: vector block extents
                                          2: matrix line extents
                                          3: matrix line*column extents */
 
-  int         eb_size[4];             /* Extradiag block size, including padding:
+  cs_lnum_t   eb_size[4];             /* Extradiag block size, including padding:
                                          0: useful block size
                                          1: vector block extents
                                          2: matrix line extents
@@ -551,9 +551,9 @@ _g_id_rank_index(int              n_ranges,
                  const cs_gnum_t  d_ranges[],
                  cs_gnum_t        g_id)
 {
-  int start_id = 0;
-  int end_id = n_ranges - 1;
-  int mid_id = (end_id -start_id) / 2;
+  cs_lnum_t start_id = 0;
+  cs_lnum_t end_id = n_ranges - 1;
+  cs_lnum_t mid_id = (end_id -start_id) / 2;
 
   while (start_id < end_id) {
     if (d_ranges[mid_id*2+1] <= g_id)
@@ -3276,8 +3276,8 @@ cs_matrix_assembler_log_rank_counts(const cs_matrix_assembler_t  *ma,
 cs_matrix_assembler_values_t *
 cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
                                   bool                                  sep_diag,
-                                  const int                            *db_size,
-                                  const int                            *eb_size,
+                                  const cs_lnum_t                      *db_size,
+                                  const cs_lnum_t                      *eb_size,
                                   void                                 *matrix,
                                   cs_matrix_assembler_values_init_t    *init,
                                   cs_matrix_assembler_values_add_t     *add,

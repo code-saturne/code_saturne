@@ -82,9 +82,9 @@ typedef struct _cs_matrix_assembler_values_t  cs_matrix_assembler_values_t;
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_matrix_assembler_values_init_t) (void        *matrix,
-                                     const int   *db_size,
-                                     const int   *eb_size);
+(cs_matrix_assembler_values_init_t) (void             *matrix,
+                                     const cs_lnum_t  *db_size,
+                                     const cs_lnum_t  *eb_size);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -549,8 +549,8 @@ cs_matrix_assembler_log_rank_counts(const cs_matrix_assembler_t  *ma,
 cs_matrix_assembler_values_t *
 cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
                                   bool                                  sep_diag,
-                                  const int                            *db_size,
-                                  const int                            *eb_size,
+                                  const cs_lnum_t                      *db_size,
+                                  const cs_lnum_t                      *eb_size,
                                   void                                 *matrix,
                                   cs_matrix_assembler_values_init_t    *init,
                                   cs_matrix_assembler_values_add_t     *add,

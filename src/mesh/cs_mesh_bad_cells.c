@@ -645,13 +645,6 @@ _to_regularize(const cs_mesh_t             *mesh,
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const int *b_face_cells = mesh->b_face_cells;
 
-  const cs_real_t *surfn = mq->i_face_surf;
-  const cs_real_t *surfbn = mq->b_face_surf;
-  double *dist = mq->i_dist;
-  double *distbr = mq->b_dist;
-  double *volume  = mq->cell_vol;
-
-  const cs_real_3_t *xyzcen = (const cs_real_3_t *) mq->cell_cen;
   const cs_real_3_t *cdgfac = (const cs_real_3_t *) mq->i_face_cog;
   const cs_real_3_t *cdgfbo = (const cs_real_3_t *) mq->b_face_cog;
   const cs_real_3_t *surfac = (const cs_real_3_t *) mq->i_face_normal;
@@ -712,7 +705,8 @@ _to_regularize(const cs_mesh_t             *mesh,
   }
 
   if (mesh->halo != NULL)
-    cs_halo_sync_num(mesh->halo, CS_HALO_STANDARD, bad_cell_flag);
+    cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD,
+                         sizeof(unsigned), bad_cell_flag);
 
   cs_parall_counter(&nb_bad_cells, 1);
 
