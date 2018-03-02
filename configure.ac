@@ -1239,8 +1239,9 @@ if (test x$cs_have_med = xyes) ; then
 fi
 echo " MEDCoupling support: "$cs_have_medcoupling""
 if test x$cs_have_medcoupling = xyes ; then
-  echo " ParaMEDMEM support: "$cs_have_paramedmem""
-  echo " MEDCoupling as plugin: "$cs_have_plugin_medcoupling""
+  echo "   MEDLoader support: "$cs_have_medcoupling_loader""
+  echo "   ParaMEDMEM support: "$cs_have_paramedmem""
+  echo "   MEDCoupling as plugin: "$cs_have_plugin_medcoupling""
 fi
 echo " Catalyst (ParaView co-processing) support: "$cs_have_catalyst""
 if (test x$cs_have_catalyst = xyes) ; then

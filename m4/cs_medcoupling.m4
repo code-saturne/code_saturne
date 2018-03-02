@@ -28,6 +28,7 @@ dnl-----------------------------------------------------------------------------
 AC_DEFUN([CS_AC_TEST_MEDCOUPLING], [
 
 cs_have_medcoupling=no
+cs_have_medcoupling_loader=no
 cs_have_paramedmem=no
 
 # Configure options
@@ -85,43 +86,108 @@ if test "x$with_medcoupling" != "xno" ; then
     # Add the libdir to the runpath as libtool does not do this for modules
     MEDCOUPLINGRUNPATH="-R$MEDCOUPLING/lib"
   fi
-  MEDCOUPLING_LIBS="-lmedcoupling -linterpkernel -lmedcouplingremapper"
-
-  CPPFLAGS="${CPPFLAGS} ${MEDCOUPLING_CPPFLAGS}"
-  LDFLAGS="${MEDCOUPLING_LDFLAGS} ${LDFLAGS}"
-  LIBS="${MEDCOUPLING_LIBS} ${LIBS}"
 
   AC_LANG_PUSH([C++])
+
+  # First check for MEDCoupling file support
+
+  CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
+
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+[[#include <MEDCouplingFieldDouble.hxx>
+#include <MEDLoader.hxx>]],
+[[using namespace MEDCoupling;
+  std::string f_name;
+  MEDCouplingFieldDouble *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
+                    ],
+                    [ cs_have_medcoupling_loader=yes ],
+                    [ AC_MSG_WARN([no MEDCoupling support]) ],
+                  )
+
+  cs_medcoupling_l0=
 
   # Check for MEDCoupling library
   #-------------------------------
 
-  AC_LINK_IFELSE([AC_LANG_PROGRAM(
+  if test "$cs_have_medcoupling" = "no"; then
+
+    # Check for minimal MEDCoupling
+
+    if test "$cs_have_medcoupling_loader" = "no"; then
+
+      MEDCOUPLING_LIBS="-lmedcoupling -linterpkernel -lmedcouplingremapper"
+
+      LDFLAGS="${MEDCOUPLING_LDFLAGS} ${LDFLAGS}"
+      LIBS="${MEDCOUPLING_LIBS} ${LIBS}"
+
+      AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <MEDCouplingUMesh.hxx>]],
 [[using namespace MEDCoupling;
 MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
-                   ],
-                   [ AC_DEFINE([HAVE_MEDCOUPLING], 1, [MEDCoupling support])
-                     cs_have_medcoupling=yes
-                   ],
-                   [ AC_MSG_WARN([no MEDCoupling support]) ],
-                  )
+                     ],
+                     [ AC_DEFINE([HAVE_MEDCOUPLING], 1, [MEDCoupling support])
+                       cs_have_medcoupling=yes
+                     ],
+                     [ ],
+                    )
+
+    # Check for regular MEDCoupling
+
+    else
+
+      MEDCOUPLING_LIBS="-lmedcoupling -linterpkernel -lmedcouplingremapper -lmedloader"
+
+      LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MED_LDFLAGS} ${HDF5_LDFLAGS} ${LDFLAGS}"
+      LIBS="${MEDCOUPLING_LIBS} ${MED_LIBS} ${HDF5_LIBS} ${LIBS}"
+
+      AC_LINK_IFELSE([AC_LANG_PROGRAM(
+[[#include <MEDCouplingFieldDouble.hxx>
+#include <MEDLoader.hxx>]],
+[[using namespace MEDCoupling;
+  std::string f_name;
+  MEDCouplingFieldDouble *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
+                     ],
+                     [ AC_DEFINE([HAVE_MEDCOUPLING], 1, [MEDCoupling support])
+                       cs_have_medcoupling=yes
+                     ],
+                     [ ],
+                    )
+    fi
+
+    LDFLAGS="$saved_LDFLAGS"
+    LIBS="$saved_LIBS"
+
+  fi
+
+  if test "$cs_have_medcoupling" = "yes"; then
+    if test "$cs_have_medcoupling_loader" = "yes"; then
+      AC_DEFINE([HAVE_MEDCOUPLING_LOADER], 1, [MEDCoupling with loader support])
+    fi
+  else
+    cs_have_medcoupling_loader="no"
+  fi
 
   # Now check for MEDCoupling MPI support
 
-  if test "x$cs_have_medcoupling" = "xyes" -a "x$cs_have_mpi"; then
+  if test "$cs_have_medcoupling" = "yes" -a "$cs_have_mpi" = "yes"; then
+
+    CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
 
     cs_paramedmem_l0="-lparamedmem"
-    cs_paramedmem_l1="-lparamedmem -lparamedloader -lmedloader"
+    cs_paramedmem_l1="-lparamedmem -lparamedloader"
 
     for cs_paramedmem_libs in "$cs_paramedmem_l0" "$cs_paramedmem_l1"
     do
 
       if test "x$cs_have_paramedmem" = "xno" ; then
 
-        CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
-        LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
-        LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MPI_LIBS} ${LIBS}"
+        if test "$cs_have_medcoupling_loader" = "no"; then
+          LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
+          LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MPI_LIBS} ${LIBS}"
+        else
+          LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MED_LDFLAGS} ${HDF5_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
+          LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MED_LIBS} ${HDF5_LIBS} ${MPI_LIBS} ${LIBS}"
+        fi
 
         AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <InterpKernelDEC.hxx>
@@ -143,11 +209,16 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
           MEDCOUPLING_LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS}"
         fi
 
+        LDFLAGS="$saved_LDFLAGS"
+        LIBS="$saved_LIBS"
+
       fi
 
     done
 
   fi
+
+  CPPFLAGS="$saved_CPPFLAGS"
 
   AC_LANG_POP([C++])
 
@@ -167,10 +238,6 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
   if test "x$cs_have_medcoupling" = "xno"; then
     MEDCOUPLING_LIBS=""
   fi
-
-  CPPFLAGS="$saved_CPPFLAGS"
-  LDFLAGS="$saved_LDFLAGS"
-  LIBS="$saved_LIBS"
 
   unset saved_CPPFLAGS
   unset saved_LDFLAGS
