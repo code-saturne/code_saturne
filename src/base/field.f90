@@ -1626,8 +1626,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                  :: field_id
-    double precision, dimension(:), pointer, intent(out) :: p
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -1656,8 +1656,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    character(len=*), intent(in)                         :: name
-    double precision, dimension(:), pointer, intent(out) :: p
+    character(len=*), intent(in)                           :: name
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -1691,8 +1691,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    character(len=*), intent(in)                         :: name
-    double precision, dimension(:), pointer, intent(out) :: p
+    character(len=*), intent(in)                           :: name
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -1726,8 +1726,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:,:), pointer, intent(out) :: p
+    integer, intent(in)                                      :: field_id
+    double precision, dimension(:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -1756,8 +1756,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    character(len=*), intent(in)                           :: name
-    double precision, dimension(:,:), pointer, intent(out) :: p
+    character(len=*), intent(in)                             :: name
+    double precision, dimension(:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -1791,8 +1791,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    character(len=*), intent(in)                           :: name
-    double precision, dimension(:,:), pointer, intent(out) :: p
+    character(len=*), intent(in)                             :: name
+    double precision, dimension(:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -1824,8 +1824,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                  :: field_id
-    double precision, dimension(:), pointer, intent(out) :: p
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -1855,8 +1855,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                  :: field_id
-    double precision, dimension(:), pointer, intent(out) :: p
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -1885,8 +1885,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:,:), pointer, intent(out) :: p
+    integer, intent(in)                                      :: field_id
+    double precision, dimension(:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -1915,8 +1915,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                  :: field_id
-    double precision, dimension(:), pointer, intent(out) :: p
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -1945,8 +1945,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:,:), pointer, intent(out) :: p
+    integer, intent(in)                                      :: field_id
+    double precision, dimension(:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -1976,8 +1976,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                  :: field_id
-    double precision, dimension(:), pointer, intent(out) :: p
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2007,8 +2007,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:,:), pointer, intent(out) :: p
+    integer, intent(in)                                      :: field_id
+    double precision, dimension(:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2067,8 +2067,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                  :: field_id
-    double precision, dimension(:), pointer, intent(out) :: p
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2097,8 +2097,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                  :: field_id
-    double precision, dimension(:), pointer, intent(out) :: p
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2127,8 +2127,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:,:), pointer, intent(out) :: p
+    integer, intent(in)                                      :: field_id
+    double precision, dimension(:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2157,8 +2157,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:,:), pointer, intent(out) :: p
+    integer, intent(in)                                      :: field_id
+    double precision, dimension(:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2187,8 +2187,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:,:), pointer, intent(out) :: p
+    integer, intent(in)                                        :: field_id
+    double precision, dimension(:,:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2217,8 +2217,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:,:), pointer, intent(out) :: p
+    integer, intent(in)                                        :: field_id
+    double precision, dimension(:,:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2247,8 +2247,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                  :: field_id
-    double precision, dimension(:), pointer, intent(out) :: p
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2277,8 +2277,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                  :: field_id
-    double precision, dimension(:), pointer, intent(out) :: p
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2307,8 +2307,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:,:), pointer, intent(out) :: p
+    integer, intent(in)                                      :: field_id
+    double precision, dimension(:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2337,8 +2337,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                  :: field_id
-    double precision, dimension(:), pointer, intent(out) :: p
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2367,8 +2367,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:,:), pointer, intent(out) :: p
+    integer, intent(in)                                      :: field_id
+    double precision, dimension(:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2397,8 +2397,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:,:), pointer, intent(out) :: p
+    integer, intent(in)                                        :: field_id
+    double precision, dimension(:,:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2428,8 +2428,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                  :: field_id
-    double precision, dimension(:), pointer, intent(out) :: p
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:), pointer, intent(inout) :: p
 
     ! Local variables
 
@@ -2459,8 +2459,8 @@ contains
     use, intrinsic :: iso_c_binding
     implicit none
 
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:,:), pointer, intent(out) :: p
+    integer, intent(in)                                        :: field_id
+    double precision, dimension(:,:,:), pointer, intent(inout) :: p
 
     ! Local variables
 
