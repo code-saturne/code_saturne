@@ -5,6 +5,8 @@ Release 5.1.4 (Unreleased)
 Bug fixes
 ---------
 
+- Fix crash using Intel 2018 compilers.
+
 - Fix some memory leaks using Catalyst output.
 
 - Fix parallel interlock in some cases where using the 1D thermal wall model.
