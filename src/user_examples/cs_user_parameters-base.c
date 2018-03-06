@@ -193,23 +193,6 @@ cs_user_model(void)
   cs_parameters_add_property("pressure_gradient",
                              3,
                              CS_MESH_LOCATION_CELLS);
-
-
-
-  /*--------------------------------------------------------------------------*/
-
-  /*! [mesh_tag_bad_cells_correction] */
-
-  cs_glob_mesh_quantities_flag |= CS_BAD_CELLS_WARPED_CORRECTION;
-  cs_glob_mesh_quantities_flag |= CS_BAD_CELLS_REGULARISATION;
-  cs_glob_mesh_quantities_flag |= CS_CELL_FACE_CENTER_CORRECTION;
-  cs_glob_mesh_quantities_flag |= CS_CELL_CENTER_CORRECTION;
-  cs_glob_mesh_quantities_flag |= CS_FACE_DISTANCE_CLIP;
-  cs_glob_mesh_quantities_flag |= CS_FACE_RECONSTRUCTION_CLIP;
-  cs_glob_mesh_quantities_flag |= CS_CELL_VOLUME_RATIO_CORRECTION;
-
-  /*! [mesh_tag_bad_cells_correction] */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -225,7 +208,6 @@ cs_user_model(void)
 void
 cs_user_parameters(void)
 {
-
   /* Example: set options for Stokes solving */
   /*-----------------------------------------*/
 
@@ -273,7 +255,6 @@ cs_user_parameters(void)
   stokes->arak = 0.;
 
   /*! [param_stokes_model] */
-
 
   /* Example: choose a limiter for a given scalar */
   /*----------------------------------------------*/
@@ -334,6 +315,21 @@ cs_user_parameters(void)
   }
 
   /*! [param_var_boundary_vals_1] */
+
+  /* Example: activate mesh robustness options */
+  /*-------------------------------------------*/
+
+  /*! [mesh_tag_bad_cells_correction] */
+
+  cs_glob_mesh_quantities_flag |= CS_BAD_CELLS_WARPED_CORRECTION;
+  cs_glob_mesh_quantities_flag |= CS_BAD_CELLS_REGULARISATION;
+  cs_glob_mesh_quantities_flag |= CS_CELL_FACE_CENTER_CORRECTION;
+  cs_glob_mesh_quantities_flag |= CS_CELL_CENTER_CORRECTION;
+  cs_glob_mesh_quantities_flag |= CS_FACE_DISTANCE_CLIP;
+  cs_glob_mesh_quantities_flag |= CS_FACE_RECONSTRUCTION_CLIP;
+  cs_glob_mesh_quantities_flag |= CS_CELL_VOLUME_RATIO_CORRECTION;
+
+  /*! [mesh_tag_bad_cells_correction] */
 
   /* Example: post-process clippings for Rij tensor */
   /*------------------------------------------------*/
