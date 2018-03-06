@@ -1052,6 +1052,11 @@ cs_parameters_add_variable(const char  *name,
               name, dim);
 
   _n_user_variables++;
+
+  /* Make this immediate if fields have already been defined */
+
+  if (cs_field_n_fields() > 0)
+    cs_parameters_create_added_variables();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1085,6 +1090,11 @@ cs_parameters_add_variable_variance(const char  *name,
   (_user_variable_defs + _n_user_variables)->is_variance = true;
 
   _n_user_variables++;
+
+  /* Make this immediate if fields have already been defined */
+
+  if (cs_field_n_fields() > 0)
+    cs_parameters_create_added_variables();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1114,6 +1124,11 @@ cs_parameters_add_property(const char  *name,
   (_user_property_defs + _n_user_properties)->location_id = location_id;
 
   _n_user_properties++;
+
+  /* Make this immediate if fields have already been defined */
+
+  if (cs_field_n_fields() > 0)
+    cs_parameters_create_added_properties();
 }
 
 /*----------------------------------------------------------------------------*/
