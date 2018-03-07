@@ -414,10 +414,10 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
     /* Compute center offsetting coefficient */
     /*---------------------------------------*/
 
-                for (i = 0; i < dim; i++) {
+    for (i = 0; i < dim; i++) {
       v1[i] = mesh_quantities->dofij[face_id*3 + i];
       v2[i] = mesh_quantities->i_face_normal[face_id*3 + i];
-                }
+    }
     double of_s = _MODULE_3D(v1) * _MODULE_3D(v2);
 
     offsetting[cell1] = CS_MAX(offsetting[cell1],
