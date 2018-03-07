@@ -887,7 +887,7 @@ do ivar = 1, nvar
 
         ! Std outlet
         icodcl(ifac,ivar)   = 1
-        rcodcl(ifac,ivar,1) = 0.d0 !pripb(ifac) - pref
+        rcodcl(ifac,ivar,1) = pripb(ifac) - pref
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
 
