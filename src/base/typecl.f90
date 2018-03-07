@@ -845,11 +845,12 @@ do ivar = 1, nvar
         rcodcl(ifac,ivar,1) = pripb(ifac) - pref
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
-!     else
-!       rcodcl(ifac,ivar,1) = rcodcl(ifac,ivar,1) - ro0*( gx*(cdgfbo(1,ifac) - xyzp0(1))  &
-!                                                       + gy*(cdgfbo(2,ifac) - xyzp0(2))  &
-!                                                       + gz*(cdgfbo(3,ifac) - xyzp0(3))) &
-!                                                 - p0
+      else
+       rcodcl(ifac,ivar,1) =  rcodcl(ifac,ivar,1)                   &
+                            - ro0*( gx*(cdgfbo(1,ifac) - xyzp0(1))  &
+                                  + gy*(cdgfbo(2,ifac) - xyzp0(2))  &
+                                  + gz*(cdgfbo(3,ifac) - xyzp0(3))) &
+                            - p0
       endif
     enddo
   elseif(ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
