@@ -60,6 +60,28 @@ to display results.
 \end{center}
 }
 %
+\lstset{language=bash,
+        keywordstyle=\color{blueedf},
+        basicstyle=\small\ttfamily,
+        commentstyle=\ttfamily\itshape\color{gray},
+        stringstyle=\ttfamily,
+        showstringspaces=false,
+        breaklines=true,
+        frameround=ffff,
+        frame=single,
+        rulecolor=\color{black},
+        prebreak=\textbackslash,
+        breakatwhitespace=true
+}
+%
+\makeatletter
+% command \noindentgroup to be used in a group   
+\newcommand*\noindentgroup{\@@par   % clear parshape parameters
+% fool list-awareness code (as supposedly in lstlisting, not checked)
+      \@totalleftmargin\z@ \@listdepth\z@ \rightmargin\z@
+}
+\makeatother
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEBUT DU DOCUMENT
 \begin{document}
@@ -120,45 +142,76 @@ The command line options can be found with the command: \texttt{code\_saturne
 studymanager -h}.
 
 \begin{list}{$\bullet$}{}
-\item \texttt{-h, --help}: show the help message and exit;
+\item \texttt{-h, --help}: show the help message and exit
 \item \texttt{-f FILE, --file=FILE}: give the file of parameters for
 \textsc{studymanager}. This file is mandatory, and therefore this option must be
-completed;
-\item \texttt{-q, --quiet}: do not print status messages to stdout;
+completed
+\item \texttt{-q, --quiet}: do not print status messages to stdout
 \item \texttt{-u, --update}: update installation pathes in scripts (i.e. \texttt{SaturneGUI} and
-  \texttt{runcase}) only in the repository, reinitialize xml files of parameters and compile;
-\item \texttt{-x, --update-xml}: update only xml files in the repository;
-\item \texttt{-t, --test-compile}: compile all cases;
-\item \texttt{-r, --run}: run all cases;
-\item \texttt{-n N\_ITERATIONS, --n-iterations=N\_ITERATIONS}: maximum number of iterations for cases of the study;
-\item \texttt{-c, --compare}: compare chekpoint files between
-  \textbf{repository} and \textbf{destination};
-\item \texttt{-d REFERENCE, --ref-dir=REFERENCE}: absolute reference directory to compare dest with;
-\item \texttt{-p, --post}: postprocess results of computations;
-\item \texttt{-m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...}: addresses
-  for sending the reports.
-\item \texttt{-l LOG\_FILE, --log=LOG\_FILE}: name of studymanager log file (default value is 'auto\_vnv.log';
-\item \texttt{-z, --disable-tex}: disable text rendering with \LaTeX in Matplotlib (use Mathtext);
+  \texttt{runcase}) only in the repository, reinitialize XML files of parameters and compile
+\item \texttt{-x, --update-xml}: update only XML files in the repository
+\item \texttt{-t, --test-compile}: compile all cases
+\item \texttt{-r, --run}: run all cases
+\item \texttt{-n N\_ITERATIONS, --n-iterations=N\_ITERATIONS}: maximum number of iterations for cases of the study
+\item \texttt{-c, --compare}: compare chekpoint files between \textbf{repository} and \textbf{destination}
+\item \texttt{-d REFERENCE, --ref-dir=REFERENCE}: absolute reference directory to compare dest with
+\item \texttt{-p, --post}: postprocess results of computations
+\item \texttt{-m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...}: addresses for sending the reports
+\item \texttt{-l LOG\_FILE, --log=LOG\_FILE}: name of studymanager log file (default value is 'studymanager.log')
+\item \texttt{-z, --disable-tex}: disable text rendering with \LaTeX when plotting with Matplotlib. It then uses Mathtext instead which is less complete
+\item \texttt{--rm}: remove all existing run directories in destination directory
+\item \texttt{--fow}: overwrite files in MESH and POST directories in destination directory
+\item \texttt{-s, --skip-pdflatex}: disable tex reports compilation with pdflatex
+\item \texttt{--fmt=DEFAULT\_FMT}: set the global format for exporting matplotlib figure (default is pdf)
+\item \texttt{--repo=REPO\_PATH}: force the path to the repository directory
+\item \texttt{--dest=DEST\_PATH}: force the path to the destination directory
+\item \texttt{-g, --debug}: activate debugging mode
+\item \texttt{--with-tags=WITH\_TAGS}: only process runs with all specified tags (separated by commas)
+\item \texttt{--without-tags=WITHOUT\_TAGS}: exclude any run with one of specified tags (separated by commas)
 \end{list}
 
 \underline{Examples:}
 
 \begin{list}{$\bullet$}{}
-\item \texttt{code\_saturne studymanager -f sample.xml}: duplicates all cases from
-the \textbf{repository} in the \textbf{destination}, compile all user files
-and exits;
-\item \texttt{code\_saturne studymanager -f sample.xml -r}: as above, and run all
-cases if defined in \texttt{sample.xml};
-\item \texttt{code\_saturne studymanager -f sample.xml -r -c}: as above, and compares
-all new checkpoint files with those from the \textbf{repository} if defined
-in \texttt{sample.xml};
-\item \texttt{code\_saturne studymanager -f sample.xml -rcp}: as above, and plots
-results if defined in \texttt{sample.xml};
-\item \texttt{code\_saturne studymanager -f sample.xml -r -c -p -m
-"dt@moulinsart.be dd@moulinsart.be"}: as above, and send the two
-reports.
-\item \texttt{code\_saturne studymanager -f sample.xml -c -p}: compares and plots
-results in the \textbf{destination} already computed.
+\item duplicates all cases from the \textbf{repository} in the \textbf{destination}, compile all user files and exits;
+{\noindentgroup\begin{lstlisting}
+$ code_saturne studymanager -f sample.xml
+\end{lstlisting}}
+
+\item as above, and run all cases if defined in \texttt{sample.xml}
+{\noindentgroup\begin{lstlisting}
+$ code_saturne studymanager -f sample.xml -r
+\end{lstlisting}}
+
+\item as above, and compares all new checkpoint files with those from the \textbf{repository} if defined in \texttt{sample.xml}
+{\noindentgroup\begin{lstlisting}
+$ code\_saturne smgr -f sample.xml -r -c
+\end{lstlisting}}
+
+\item as above, and plots results if defined in \texttt{sample.xml}
+{\noindentgroup\begin{lstlisting}
+$ code_saturne smgr -f sample.xml -rcp
+\end{lstlisting}}
+
+\item as above, and send the two reports
+{\noindentgroup\begin{lstlisting}
+$ code_saturne smgr -f sample.xml -r -c -p -m "dt@moulinsart.be dd@moulinsart.be"
+\end{lstlisting}}
+
+\item compares and plots results in the \textbf{destination} already computed
+{\noindentgroup\begin{lstlisting}
+$ code_saturne smgr -f sample.xml -c -p
+\end{lstlisting}}
+
+\item compares and plots results in the \textbf{destination} already computed
+{\noindentgroup\begin{lstlisting}
+$ code_saturne smgr -f sample.xml -c -p
+\end{lstlisting}}
+
+\item run cases tagged "coarse" (standing for coarse mesh for example) \underline{and} "hr" (standing for high Reynolds for example) only for 2 time iterations in destination directory of path \texttt{../RUNS/RIBS} (\texttt{RIBS} will be created, \texttt{RUNS} already exists). The command is launched from inside the study directory, hence the repository which has to be the directory containing the original study is simply indicated by \texttt{..}
+{\noindentgroup\begin{lstlisting}
+$ code_saturne smgr -f smgr_ribs.xml -r -n 2 --with-tags=coarse,hr --dest=../RUNS/RIBS --repo=..
+\end{lstlisting}}
 \end{list}
 
 \underline{Note:}
@@ -227,22 +280,23 @@ The attributes are:
 \begin{list}{$\bullet$}{}
 \item \texttt{label}: the name of the file of the script;
 \item \texttt{status}: must be equal to \texttt{on} or \texttt{off},
-activate or desactivate the markup;
+activate or deactivate the markup;
 \item \texttt{compute}: must be equal to \texttt{on} or \texttt{off},
-activate or desactivate the computation of the case;
+activate or deactivate the computation of the case;
 \item \texttt{post}: must be equal to \texttt{on} or \texttt{off},
-activate or desactivate the post-processing of the case;
-\item \texttt{run\_id}: label of the directory in which the result
-is stored. If this attribut is missing or set to \texttt{run\_id=""}, an
-automatic value will be proposed by the code.
+activate or deactivate the post-processing of the case;
+\item \texttt{run\_id}: name of the run directory (sub-directory of \texttt{RESU}) in which the result
+is stored. This attribute is optional. If it is not set (or if set to \texttt{run\_id=""}), an
+automatic value will be proposed by the code (usually based on current date and time).
+\item \texttt{tags}: possible tags distinguishing the run from the others in the same XML parameter file (ex.: \texttt{tags="coarse,high-reynolds"}).
 \end{list}
 
 Only the attributes \texttt{label}, \texttt{status}, \texttt{compute}
 and \texttt{post} are mandatory.
 
 If the directory specified by the attribute \texttt{run\_id} already exists,
-the comptutation is not performed again. For the post-processing step, the existing
-results are taking into accout only if no error file is detected in the
+the computation is not performed again. For the post-processing step, the existing
+results are taken into accout only if no error file is detected in the
 directory.
 
 With the attribute \texttt{status}, a single case or a complete study can be
@@ -260,7 +314,7 @@ even if they are switched on.
 \item During the duplication, every files are copied, except mesh files, for
 which a symbolic link is used.
 \item During the duplication, if a file already exists in the
-\textbf{destination}, this file is not overwritten by \textsc{studymanager}.
+\textbf{destination}, this file is not overwritten by \textsc{studymanager} by default.
 \end{list}
 
 
