@@ -140,27 +140,27 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("--fmt", type="string",
                       dest="default_fmt", default="pdf",
-                      help="Set the default format for exporting matplotlib figure")
+                      help="set the global format for exporting matplotlib figure (default is pdf)")
 
     parser.add_option("--repo", type="string",
                       dest="repo_path", default="",
-                      help="Force the path to the repository directory")
+                      help="force the path to the repository directory")
 
     parser.add_option("--dest", type="string",
                       dest="dest_path", default="",
-                      help="Force the path to the destination directory")
+                      help="force the path to the destination directory")
 
     parser.add_option("-g", "--debug", action="store_true",
                       dest="debug", default=False,
-                      help="Activate debugging mode")
+                      help="activate debugging mode")
 
     parser.add_option("--with-tags", type="string",
                       dest="with_tags", default="",
-                      help="Only process runs with all specified tags")
+                      help="only process runs with all specified tags (separated by commas)")
 
     parser.add_option("--without-tags", type="string",
                       dest="without_tags", default="",
-                      help="Exclude any run with one of specified tags")
+                      help="exclude any run with one of specified tags (separated by commas)")
 
     (options, args) = parser.parse_args(argv)
 
