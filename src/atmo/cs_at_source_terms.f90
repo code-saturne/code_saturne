@@ -102,8 +102,10 @@ do iel = 1, ncel
   zent = xyzcen(3,iel)
 
   if (vel_id.gt.0.and.theo_interp.eq.1) then
-    xuent = met_vel(1, iel)
-    xvent = met_vel(2, iel)
+
+    xuent = met_vel(1,iel)
+    xvent = met_vel(2,iel)
+
   else
 
     call intprf                                                   &
@@ -116,6 +118,12 @@ do iel = 1, ncel
    (nbmetd, nbmetm,                                               &
     zdmet, tmmet, vmet , zent  , ttcabs, xvent )
 
+    if (vel_id.gt.0) then
+
+      met_vel(1, iel) = xuent
+      met_vel(2, iel) = xvent
+
+    endif
   endif
 
   mom_bulk(1) = mom_bulk(1) + crom(iel)*volume(iel)*xuent/tot_vol
