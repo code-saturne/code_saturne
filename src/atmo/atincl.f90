@@ -130,6 +130,12 @@ integer, allocatable, dimension(:) :: iautom
 integer, save :: initmeteo
 !> iatmst --> add a momentum source term based on the meteo profile
 integer, save :: iatmst
+!> theo_interp --> flag for meteo velocity field interpolation
+!>                 0: linear interpolation of the meteo profile
+!>                 1: the user can directly impose the exact meteo velocity
+!>                 by declaring the 'meteo_velocity' field
+!>                 Useful for iatmst = 1
+integer, save :: theo_interp
 
 ! 2.1 Constant specific to the physics (defined in atini1.f90)
 !-------------------------------------------------------------------------------

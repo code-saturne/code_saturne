@@ -105,8 +105,8 @@ do iel = 1, ncel
 
   if (vel_id.gt.0.and.theo_interp.eq.1) then
 
-    xuent = met_vel(1,iel)
-    xvent = met_vel(2,iel)
+    xuent = met_vel(1, iel)
+    xvent = met_vel(2, iel)
 
   else
 
@@ -126,15 +126,11 @@ do iel = 1, ncel
       met_vel(2, iel) = xvent
 
     endif
+
   endif
 
   mom_bulk(1) = mom_bulk(1) + crom(iel)*volume(iel)*xuent/tot_vol
   mom_bulk(2) = mom_bulk(2) + crom(iel)*volume(iel)*xvent/tot_vol
-
-  if (vel_id.gt.0) then
-    met_vel(1,iel) = xuent
-    met_vel(2,iel) = xvent
-  endif
 
 enddo
 
