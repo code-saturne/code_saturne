@@ -123,7 +123,11 @@ integer, save :: nbmetm
 !> iprofm --> read zone boundary conditions from profile
 integer, save :: iprofm(nozppm)
 !> iautom --> automatic inlet/outlet boundary condition flag
-!>            (0: not auto (default); 1: auto)
+!>            (0: not auto (default); 1,2: auto)
+!>            When meteo momentum source terms are activated (iatmst = 1),
+!>            iautom = 1 corresponds to a Dirichlet on the pressure and a
+!>            Neumann on the velocity, whereas iautom = 2 imposes a Dirichlet
+!>            on both pressure and velocity
 integer, allocatable, dimension(:) :: iautom
 !> initmeteo --> use meteo profile for variables initialization
 !>                  (0: not used; 1: used (default))

@@ -219,7 +219,7 @@ if (imbrication_flag) then
 endif ! imbrication_flag
 
 ! ==============================================================================
-! the interpollated field u_bord,v_bord,  .. will replace the values from the
+! the interpolated field u_bord,v_bord,  .. will replace the values from the
 ! standard meteo profile
 ! ==============================================================================
 
@@ -284,12 +284,12 @@ do ifac = 1, nfabor
 
     vs = xuent*surfbo(1,ifac) + xvent*surfbo(2,ifac)
 
-    !     On met a jour le type de face de bord s'il n'a pas ete specifie
-    !       par l'utilisateur.
-    !     Pour une entree, on remplit la condition de Dirichlet si elle n'a pas
-    !     ete  specifiee par utilisateur.
+    ! On met a jour le type de face de bord s'il n'a pas ete specifie
+    !   par l'utilisateur.
+    ! Pour une entree, on remplit la condition de Dirichlet si elle n'a pas
+    ! ete  specifiee par utilisateur.
 
-    if (iautom(ifac).eq.1) then
+    if (iautom(ifac).ge.1) then
       if (vs.gt.0) then
         itypfb(ifac) = isolib
       else
@@ -343,105 +343,40 @@ do ifac = 1, nfabor
     endif
 
     if (iatmst.gt.0) then
-      if (iautom(ifac).eq.1) then
 
-        ! Homogeneous Neumann on the velocity
-        icodcl(ifac,iu) = 3
-        icodcl(ifac,iv) = 3
-        icodcl(ifac,iw) = 3
-        rcodcl(ifac,iu,1) = 0.d0
-        rcodcl(ifac,iu,2) = rinfin
-        rcodcl(ifac,iu,3) = 0.d0
+      if (iautom(ifac).ge.1) then
 
-        if (itytur.eq.2) then
-          icodcl(ifac,ik) = 3
-          rcodcl(ifac,ik,1) = 0.d0
-          rcodcl(ifac,ik,2) = rinfin
-          rcodcl(ifac,ik,3) = 0.d0
-
-          icodcl(ifac,iep) = 3
-          rcodcl(ifac,iep,1) = 0.d0
-          rcodcl(ifac,iep,2) = rinfin
-          rcodcl(ifac,iep,3) = 0.d0
-        elseif (itytur.eq.3) then
-          if (irijco.eq.1) then
-            icodcl(ifac,irij) = 3
-            rcodcl(ifac,irij,1) = 0.d0
-            rcodcl(ifac,irij,2) = rinfin
-            rcodcl(ifac,irij,3) = 0.d0
-          else
-            icodcl(ifac,ir22) = 3
-            rcodcl(ifac,ir22,1) = 0.d0
-            rcodcl(ifac,ir22,2) = rinfin
-            rcodcl(ifac,ir22,3) = 0.d0
-
-            icodcl(ifac,ir33) = 3
-            rcodcl(ifac,ir33,1) = 0.d0
-            rcodcl(ifac,ir33,2) = rinfin
-            rcodcl(ifac,ir33,3) = 0.d0
-
-            icodcl(ifac,ir12) = 3
-            rcodcl(ifac,ir12,1) = 0.d0
-            rcodcl(ifac,ir12,2) = rinfin
-            rcodcl(ifac,ir12,3) = 0.d0
-
-            icodcl(ifac,ir23) = 3
-            rcodcl(ifac,ir23,1) = 0.d0
-            rcodcl(ifac,ir23,2) = rinfin
-            rcodcl(ifac,ir23,3) = 0.d0
-
-            icodcl(ifac,ir13) = 3
-            rcodcl(ifac,ir13,1) = 0.d0
-            rcodcl(ifac,ir13,2) = rinfin
-            rcodcl(ifac,ir13,3) = 0.d0
-          endif
-          icodcl(ifac,iep) = 3
-          rcodcl(ifac,iep,1) = 0.d0
-          rcodcl(ifac,iep,2) = rinfin
-          rcodcl(ifac,iep,3) = 0.d0
-        elseif (iturb.eq.50) then
-          icodcl(ifac,ik) = 3
-          rcodcl(ifac,ik,1) = 0.d0
-          rcodcl(ifac,ik,2) = rinfin
-          rcodcl(ifac,ik,3) = 0.d0
-
-          icodcl(ifac,iep) = 3
-          rcodcl(ifac,iep,1) = 0.d0
-          rcodcl(ifac,iep,2) = rinfin
-          rcodcl(ifac,iep,3) = 0.d0
-
-          icodcl(ifac,ifb) = 3
-          rcodcl(ifac,ifb,1) = 0.d0
-          rcodcl(ifac,ifb,2) = rinfin
-          rcodcl(ifac,ifb,3) = 0.d0
-
-          icodcl(ifac,iphi) = 3
-          rcodcl(ifac,iphi,1) = 0.d0
-          rcodcl(ifac,iphi,2) = rinfin
-          rcodcl(ifac,iphi,3) = 0.d0
-        elseif (iturb.eq.60) then
-          icodcl(ifac,ik) = 3
-          rcodcl(ifac,ik,1) = 0.d0
-          rcodcl(ifac,ik,2) = rinfin
-          rcodcl(ifac,ik,3) = 0.d0
-
-          icodcl(ifac,iomg) = 3
-          rcodcl(ifac,iomg,1) = 0.d0
-          rcodcl(ifac,iomg,2) = rinfin
-          rcodcl(ifac,iomg,3) = 0.d0
-        elseif (iturb.eq.70) then
-          icodcl(ifac,inusa) = 3
-          rcodcl(ifac,inusa,1) = 0.d0
-          rcodcl(ifac,inusa,2) = rinfin
-          rcodcl(ifac,inusa,3) = 0.d0
-        endif
-
-        ! Homogeneous Dirichlet on the pressure
+        ! Dirichlet on the pressure
         icodcl(ifac,ipr) = 1
         rcodcl(ifac,ipr,1) = coefap(ifac)
-        rcodcl(ifac,ipr,2) = rinfin
-        rcodcl(ifac,ipr,3) = 0.d0
+
+        ! Dirichlet on turbulent variables
+        call turbulence_bc_inlet_k_eps(ifac, xkent, xeent, rcodcl)
+
+        if (iautom(ifac).eq.1) then
+
+          ! Homogeneous Neumann on the velocity
+          icodcl(ifac,iu) = 3
+          icodcl(ifac,iv) = 3
+          icodcl(ifac,iw) = 3
+          rcodcl(ifac,iu,3) = 0.d0
+          rcodcl(ifac,iv,3) = 0.d0
+          rcodcl(ifac,iw,3) = 0.d0
+
+        else if (iautom(ifac).eq.2) then
+
+          ! Dirichlet on the velocity
+          icodcl(ifac,iu) = 1
+          icodcl(ifac,iv) = 1
+          icodcl(ifac,iw) = 1
+          rcodcl(ifac,iu,1) = xuent
+          rcodcl(ifac,iv,1) = xvent
+          rcodcl(ifac,iw,1) = 0.d0
+
+        endif
+
       endif
+
     endif
 
   endif

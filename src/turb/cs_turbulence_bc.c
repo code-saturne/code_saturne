@@ -50,6 +50,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_map.h"
+#include "cs_math.h"
 #include "cs_parall.h"
 #include "cs_mesh_location.h"
 
@@ -307,8 +308,11 @@ _inlet_bc(cs_lnum_t   face_id,
 
   if (cs_glob_turb_model->itytur == 2) {
 
-    rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
-    rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    if (rcodcl[_turb_bc_id.k  *n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
+
+    if (rcodcl[_turb_bc_id.eps*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
 
   }
 
@@ -316,49 +320,71 @@ _inlet_bc(cs_lnum_t   face_id,
 
     double d2s3 = 2./3.;
     if (_turb_bc_id.rij == -1) {
-      rcodcl[_turb_bc_id.r11*n_b_faces + face_id] = d2s3 * k;
-      rcodcl[_turb_bc_id.r22*n_b_faces + face_id] = d2s3 * k;
-      rcodcl[_turb_bc_id.r33*n_b_faces + face_id] = d2s3 * k;
-      rcodcl[_turb_bc_id.r12*n_b_faces + face_id] = 0.;
-      rcodcl[_turb_bc_id.r13*n_b_faces + face_id] = 0.;
-      rcodcl[_turb_bc_id.r23*n_b_faces + face_id] = 0.;
-      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+      if (rcodcl[_turb_bc_id.r11*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.r11*n_b_faces + face_id] = d2s3 * k;
+      if (rcodcl[_turb_bc_id.r22*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.r22*n_b_faces + face_id] = d2s3 * k;
+      if (rcodcl[_turb_bc_id.r33*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.r33*n_b_faces + face_id] = d2s3 * k;
+      if (rcodcl[_turb_bc_id.r12*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.r12*n_b_faces + face_id] = 0.;
+      if (rcodcl[_turb_bc_id.r13*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.r13*n_b_faces + face_id] = 0.;
+      if (rcodcl[_turb_bc_id.r23*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.r23*n_b_faces + face_id] = 0.;
+      if (rcodcl[_turb_bc_id.eps*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
     }
     else {
-      rcodcl[_turb_bc_id.rij*n_b_faces + face_id] = d2s3 * k;
-      rcodcl[(_turb_bc_id.rij + 1)*n_b_faces + face_id] = d2s3 * k;
-      rcodcl[(_turb_bc_id.rij + 2)*n_b_faces + face_id] = d2s3 * k;
-      rcodcl[(_turb_bc_id.rij + 3)*n_b_faces + face_id] = 0.;
-      rcodcl[(_turb_bc_id.rij + 4)*n_b_faces + face_id] = 0.;
-      rcodcl[(_turb_bc_id.rij + 5)*n_b_faces + face_id] = 0.;
-      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+      if (rcodcl[_turb_bc_id.rij*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.rij*n_b_faces + face_id] = d2s3 * k;
+      if (rcodcl[(_turb_bc_id.rij + 1)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[(_turb_bc_id.rij + 1)*n_b_faces + face_id] = d2s3 * k;
+      if (rcodcl[(_turb_bc_id.rij + 2)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[(_turb_bc_id.rij + 2)*n_b_faces + face_id] = d2s3 * k;
+      if (rcodcl[(_turb_bc_id.rij + 3)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[(_turb_bc_id.rij + 3)*n_b_faces + face_id] = 0.;
+      if (rcodcl[(_turb_bc_id.rij + 4)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[(_turb_bc_id.rij + 4)*n_b_faces + face_id] = 0.;
+      if (rcodcl[(_turb_bc_id.rij + 5)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[(_turb_bc_id.rij + 5)*n_b_faces + face_id] = 0.;
+      if (rcodcl[_turb_bc_id.eps*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
     }
 
     if (cs_glob_turb_model->iturb == 32)
-      rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] = 1.;
+      if (rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] = 1.;
 
   }
   else if (cs_glob_turb_model->itytur == 5) {
 
-    rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
-    rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    if (rcodcl[_turb_bc_id.k  *n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
+    if (rcodcl[_turb_bc_id.eps*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
 
-    rcodcl[_turb_bc_id.phi*n_b_faces + face_id] = 2./3.;
+    if (rcodcl[_turb_bc_id.phi*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[_turb_bc_id.phi*n_b_faces + face_id] = 2./3.;
     if (cs_glob_turb_model->iturb == 50)
-      rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] = 0.;
+      if (rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] = 0.;
     else if (cs_glob_turb_model->iturb == 51)
-      rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] = 0.;
+        if (rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+          rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] = 0.;
 
   }
   else if (cs_glob_turb_model->itytur == 6) {
 
-    rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
-    rcodcl[_turb_bc_id.omg*n_b_faces + face_id] = eps/cs_turb_cmu/k;
+    if (rcodcl[_turb_bc_id.k  *n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
+    if (rcodcl[_turb_bc_id.omg*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[_turb_bc_id.omg*n_b_faces + face_id] = eps/cs_turb_cmu/k;
 
   }
   else if (cs_glob_turb_model->itytur == 7) {
-
-    rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] = cs_turb_cmu*k*k/eps;
+    if (rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] = cs_turb_cmu*k*k/eps;
 
   }
 }

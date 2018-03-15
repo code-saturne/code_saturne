@@ -1462,9 +1462,9 @@ if (ippmod(icompf).lt.0) then
            + gy*(xyzcen(2,iel)-xyp0)                     &
            + gz*(xyzcen(3,iel)-xzp0))                    &
            + p0 - pred0                                  &
-           + cpro_momst(1,iel)*(xyzcen(1,iel)-xxp0)      &
-           + cpro_momst(2,iel)*(xyzcen(2,iel)-xyp0)      &
-           + cpro_momst(3,iel)*(xyzcen(3,iel)-xzp0)
+           - cpro_momst(1,iel)*(xyzcen(1,iel)-xxp0)      &
+           - cpro_momst(2,iel)*(xyzcen(2,iel)-xyp0)      &
+           - cpro_momst(3,iel)*(xyzcen(3,iel)-xzp0)
     enddo
   endif
 endif

@@ -105,8 +105,8 @@ do iel = 1, ncel
 
   if (vel_id.gt.0.and.theo_interp.eq.1) then
 
-    xuent = met_vel(1, iel)
-    xvent = met_vel(2, iel)
+    xuent = met_vel(1,iel)
+    xvent = met_vel(2,iel)
 
   else
 
@@ -122,8 +122,8 @@ do iel = 1, ncel
 
     if (vel_id.gt.0) then
 
-      met_vel(1, iel) = xuent
-      met_vel(2, iel) = xvent
+      met_vel(1,iel) = xuent
+      met_vel(2,iel) = xvent
 
     endif
 

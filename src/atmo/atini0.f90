@@ -164,6 +164,10 @@ vertical_influence_radius = 100.d0
 
 call field_get_key_id("opt_interp_id", kopint)
 
+iatmst = 0
+
+theo_interp = 0
+
 !===============================================================================
 ! 2. ON DONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
