@@ -2488,6 +2488,22 @@ if (nscal.ge.1) then
                coefbp(ifac), cofbfp(ifac),                         &
                pimp              , cfl               , hint )
 
+        ! Set total flux as a Robin condition
+        !------------------------------------
+
+        elseif (icodcl(ifac,ivar).eq.12) then
+
+          hext = rcodcl(ifac,ivar,2)
+          qimp = rcodcl(ifac,ivar,3)
+
+          call set_total_flux &
+             ( coefap(ifac), cofafp(ifac),                         &
+               coefbp(ifac), cofbfp(ifac),                         &
+               hext              , qimp )
+
+
+
+
         ! Imposed value for the convection operator, imposed flux for diffusion
         !----------------------------------------------------------------------
 
@@ -2907,7 +2923,7 @@ if (nscal.ge.1) then
               coefbp(ifac), cofbfp(ifac),                        &
               qimp              , hint )
 
-          ! Convective Boundary Conditions
+          ! Radiative Boundary Conditions
           !-------------------------------
 
         elseif (icodcl(ifac,ivar).eq.2) then
@@ -4353,6 +4369,47 @@ coefa = pinf
 ! Flux BCs
 cofaf = -hint*coefa
 cofbf =  hint*(1.d0 - coefb)
+
+return
+end subroutine
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     hext          convective flux to be imposed
+!> \param[in]     qimp          Flux value to impose
+!_______________________________________________________________________________
+
+subroutine set_total_flux &
+ ( coefa, cofaf, coefb, cofbf, hext, qimp )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa, cofaf, coefb, cofbf, qimp, hext
+
+! Gradients BCs
+coefa = 0.d0
+coefb = 1.d0
+
+! Flux BCs
+cofaf = qimp
+cofbf = hext
 
 return
 end subroutine

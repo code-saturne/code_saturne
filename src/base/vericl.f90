@@ -628,6 +628,7 @@ if(nscal.ge.1) then
            icodcl(ifac,ivar).ne. 2.and.                             &
            icodcl(ifac,ivar).ne. 3.and.                             &
            icodcl(ifac,ivar).ne. 5.and.                             &
+           icodcl(ifac,ivar).ne.12.and.                             &
            icodcl(ifac,ivar).ne.13.and.                             &
            icodcl(ifac,ivar).ne. 6 ) then
           if (itypfb(ifac).gt.0) then
