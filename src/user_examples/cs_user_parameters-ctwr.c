@@ -129,15 +129,19 @@ cs_user_parameters(void)
   /*! [ctwr_user_1] */
   {
 
+    cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
+
+    /* Evaporation model:
+       CS_CTWR_NONE None,
+       CS_CTWR_POPPE Poppe,
+       CS_CTWR_MERKEL Merkel*/
+    ct_opt->evap_model = CS_CTWR_POPPE;
+
     cs_real_t surface = 0.48 * 6540.; /* 48% of the total disc */
     cs_real_t qw = surface *  2.64; /* Water flow rate (kg/s) */
 
     cs_ctwr_define(
         "2 or 3", /* selction criterion */
-        CS_CTWR_POPPE, /*Evaporation model:
-                         CS_CTWR_NONE None,
-                         CS_CTWR_POPPE Poppe,
-                         CS_CTWR_MERKEL Merkel*/
         CS_CTWR_COUNTER_CURRENT, /*Type:
                                    CS_CTWR_COUNTER_CURRENT counter current,
                                    CS_CTWR_CROSS_CURRENT cross,
@@ -148,7 +152,8 @@ cs_user_parameters(void)
         qw,
         0.2, /* Evaportaion law constant A */
         0.5, /* Evaportaion law constant n */
-        surface);
+        surface,
+        -1.); /* Leaking factor, not taken into account if negative */
 
   }
   /*! [ctwr_user_1] */

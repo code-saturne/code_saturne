@@ -2032,6 +2032,17 @@ module cs_c_bindings
 
     ! Interface to C function for Cooling towers
 
+    subroutine cs_ctwr_restart_field_vars(rho0, t0, p0, humidity0, molmassrat)  &
+      bind(C, name='cs_ctwr_restart_field_vars')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), value :: rho0, t0, p0, humidity0, molmassrat
+    end subroutine cs_ctwr_restart_field_vars
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for Cooling towers
+
     subroutine cs_ctwr_phyvar_update(rho0, t0, p0, molmassrat)             &
       bind(C, name='cs_ctwr_phyvar_update')
       use, intrinsic :: iso_c_binding

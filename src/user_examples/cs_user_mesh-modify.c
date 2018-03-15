@@ -259,6 +259,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     cs_mesh_extrude_vectors_destroy(&e);
   }
+  /*! [mesh_modify_boundary_layer] */
 }
 
 /*----------------------------------------------------------------------------*/

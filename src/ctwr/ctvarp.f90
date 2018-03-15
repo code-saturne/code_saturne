@@ -69,6 +69,7 @@ integer          use_atmo
 ! Local variables
 
 integer          keyccl, keydri
+integer          kscmin, kscmax
 integer          icla, ifcvsl, iscdri, f_id
 
 !===============================================================================
@@ -78,6 +79,10 @@ call field_get_key_id("scalar_class", keyccl)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
+
+! Key ids for clipping
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
 
 !===============================================================================
 ! 1. Definition of fields
@@ -124,14 +129,14 @@ icla = 1
 ! Activate the drift for all scalars with key "drift" > 0
 iscdri = 1
 
-! GNU function to return the value of iscdri
-! with the bit value of iscdri at position
-! 'DRIFT_SCALAR_CENTRIFUGALFORCE' set to one
-iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
-
+!TODO make it optionnal
 ! Mass fraction of liquid
 call add_model_scalar_field('y_p', 'Yp liq', iy_p_l)
 f_id = ivarfl(isca(iy_p_l))
+
+! Set min and max clipping
+call field_set_key_double(f_id, kscmin, 0.d0)
+call field_set_key_double(f_id, kscmax, 1.d0)
 
 call field_set_key_int(f_id, keyccl, icla) ! Set the class index for the field
 
@@ -186,6 +191,9 @@ iscdri = 1
 ! Mass fraction of liquid
 call add_model_scalar_field('y_l_packing', 'Yl packing', iyml)
 f_id = ivarfl(isca(iyml))
+
+! Set min clipping
+call field_set_key_double(f_id, kscmin, 0.d0)
 
 call field_set_key_int(f_id, keyccl, icla) ! Set the class index for the field
 

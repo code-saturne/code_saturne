@@ -194,6 +194,7 @@ typedef enum {
   CS_ENUMF_(y_l_pack),       /*!< Mass of liquid per unit volume of cell */
   CS_ENUMF_(thermal_diff_h), /*!< Humid air thermal diffusivity  */
   CS_ENUMF_(thermal_diff_l), /*!< Injected liquid water thermal diffusivity */
+  CS_ENUMF_(pack_zone_id),    /*!< Id of the packing zone */
 
   /* End of attributes */
 

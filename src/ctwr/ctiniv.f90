@@ -127,6 +127,20 @@ if (isuite.eq.0) then
     visls0(ihml) = lambda_l/cp_l
   endif
 
+else
+
+   !! Add - NAT
+   !! Restarts
+
+   ! Diffusivities of the dry air and the injected liquid
+   visls0(iymw) = 1.d-12
+   visls0(iyml) = 1.d-12
+
+   !! Restarts - recompute the required properties based on the
+   !! saved solution variables: for example, the humidty, liquid
+   !! vertical velocity, etc.
+   call cs_ctwr_restart_field_vars(ro0,t0,p0,humidity0,molmass_rat)
+
 endif
 
 !===============================================================================

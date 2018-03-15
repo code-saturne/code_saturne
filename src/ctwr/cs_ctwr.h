@@ -64,9 +64,9 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_CTWR_NONE,              /*!< no cooling tower model */
-  CS_CTWR_POPPE,             /*!< Poppe's model */
-  CS_CTWR_MERKEL             /*!< Merkel's model */
+  CS_CTWR_NONE = 0,              /*!< no cooling tower model */
+  CS_CTWR_POPPE = 1,             /*!< Poppe's model */
+  CS_CTWR_MERKEL = 2             /*!< Merkel's model */
 
 } cs_ctwr_model_t;
 
@@ -75,8 +75,7 @@ typedef enum {
 typedef enum {
 
   CS_CTWR_COUNTER_CURRENT = 1,   /*!< counter-current zone */
-  CS_CTWR_CROSS_CURRENT,         /*!< cross-current zone */
-  CS_CTWR_RAIN                   /*!< rain zone */
+  CS_CTWR_CROSS_CURRENT = 2,     /*!< cross-current zone */
 
 } cs_ctwr_zone_type_t;
 
@@ -86,20 +85,38 @@ typedef struct _cs_ctwr_zone_t cs_ctwr_zone_t;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
+/*----------------------------------------------------------------------------
+ * Cooling Tower model options descriptor
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+  int         evap_model;
+  bool        has_rain;
+} cs_ctwr_option_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
+/* Pointer to cooling tower model options structure */
+extern const cs_ctwr_option_t        *cs_glob_ctwr_option;
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Provide acces to cs_ctwr_option
+ *----------------------------------------------------------------------------*/
+
+cs_ctwr_option_t *
+cs_get_glob_ctwr_option(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define a cooling tower exchange zone
  *
  * \param[in]   zone_criteria   Zone selection criteria
- * \param[in]   model           model type
  * \param[in]   zone_type       exchange zone type
  * \param[in]   delta_t         Imposed delta temperature delta between inlet
  *                              and oulet of the zone
@@ -109,12 +126,12 @@ typedef struct _cs_ctwr_zone_t cs_ctwr_zone_t;
  * \param[in]   xap             Beta_x_0 of the exchange law
  * \param[in]   xnp             Exponent n of the exchange law
  * \param[in]   surface         Total Surface of ingoing water
+ * \param[in]   xleak_fact      Leakage factor (ratio of outlet/inlet flow rate)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_ctwr_define(const char           zone_criteria[],
-               cs_ctwr_model_t      model,
                cs_ctwr_zone_type_t  zone_type,
                cs_real_t            delta_t,
                cs_real_t            relax,
@@ -122,7 +139,8 @@ cs_ctwr_define(const char           zone_criteria[],
                cs_real_t            q_l_bc,
                cs_real_t            xap,
                cs_real_t            xnp,
-               cs_real_t            surface);
+               cs_real_t            surface,
+               cs_real_t            xleak_fac);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -215,6 +233,25 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
                         cs_real_t  t0,
                         cs_real_t  p0,
                         cs_real_t  molmassrat);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset the field variables based on the restart values
+ *
+ * \param[in]     rho0        Reference density of humid air
+ * \param[in]     t0          Reference temperature of humid air
+ * \param[in]     p0          Reference pressure
+ * \param[in]     humidity0   Reference humidity
+ * \param[in]     molmassrat  Dry air to water vapor molecular mass ratio
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_restart_field_vars(cs_real_t  rho0,
+                           cs_real_t  t0,
+                           cs_real_t  p0,
+                           cs_real_t  humidity0,
+                           cs_real_t  molmassrat);
 
 /*----------------------------------------------------------------------------*/
 /*!

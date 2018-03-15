@@ -87,7 +87,7 @@ integer          kturt, kfturt, kislts, keyvar, kclipp
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          iprev, inoprv
 integer          f_id, kscavr, f_type
-integer          iopchr
+integer          iopchr, ilog
 integer          iscdri, icla, iclap
 integer          keyccl, keydri
 integer          idfm, iggafm, nfld
@@ -306,6 +306,7 @@ do iflid = 0, nfld-1
     ! Get the scalar's output options
     ! (except non-reconstructed boundary output)
     call field_get_key_int(iflid, keyvis, iopchr)
+    call field_get_key_int(iflid, keylog, ilog)
     if (iand(iopchr, POST_BOUNDARY_NR) .ne. 0) iopchr = iopchr - POST_BOUNDARY_NR
 
     ! If the mass flux is imposed, no need of drift_tau nor drift_vel
@@ -318,6 +319,7 @@ do iflid = 0, nfld-1
 
       ! Set the same visualization options as the scalar,
       call field_set_key_int(f_id, keyvis, iopchr)
+      call field_set_key_int(f_id, keylog, ilog)
 
       ! Store the drift velocity
       f_name = 'drift_vel_'//trim(name)
@@ -326,6 +328,7 @@ do iflid = 0, nfld-1
 
       ! Set the same visualization options as the scalar
       call field_set_key_int(f_id, keyvis, iopchr)
+      call field_set_key_int(f_id, keyvis, ilog)
 
     endif
 
@@ -337,6 +340,7 @@ do iflid = 0, nfld-1
 
       ! Set the same visualization options as the scalar
       call field_set_key_int(f_id, keyvis, iopchr)
+      call field_set_key_int(f_id, keyvis, ilog)
     endif
 
   endif

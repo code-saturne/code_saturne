@@ -97,6 +97,11 @@ do isc = 1, nscapp
     vcopt%blencv = 1.d0
   endif
 
+  ! Set beta limiter to maintain y_p in the limits
+  if (jj.eq.iy_p_l) then
+    vcopt%isstpc = 2
+  endif
+
   call field_set_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
 
 enddo
