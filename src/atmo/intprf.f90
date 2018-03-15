@@ -115,7 +115,3 @@ var2 = alphaz*profv(iz1,it2) + (1.d0-alphaz)*profv(iz2,it2)
 var = alphat*var1 + (1.d0 - alphat)*var2
 
 end subroutine intprf
-
-
-
-

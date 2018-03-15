@@ -60,14 +60,14 @@ double precision crvexp(3, ncelet)
 
 ! Local variables
 
-integer              iel
-double precision  :: xuent, xvent, zent, tot_vol, tau
+integer              iel, vel_id
+double precision  :: xuent, xvent, zent, tot_vol
 double precision  :: norm_bulk, norm_mom, norm_bulk_a, norm_mom_a
 double precision, save :: dp
 double precision, dimension(3), save :: mom_a, mom_bulk_a, dir_a
 double precision, dimension(3) :: mom_bulk, mom, dir, dir_qdm, dir_var
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:,:), pointer :: vel, cpro_momst
+double precision, dimension(:,:), pointer :: vel, cpro_momst, met_vel
 
 !===============================================================================
 ! 1. Initialisation
@@ -75,6 +75,8 @@ double precision, dimension(:,:), pointer :: vel, cpro_momst
 
 ! Map field arrays
 call field_get_val_v(ivarfl(iu), vel)
+call field_get_id_try('meteo_velocity', vel_id)
+if (vel_id.gt.0) call field_get_val_v_by_name('meteo_velocity', met_vel)
 call field_get_val_v(imomst, cpro_momst)
 
 ! --- Density
@@ -84,7 +86,7 @@ call field_get_val_s(icrom, crom)
 tot_vol = 0.d0
 
 do iel = 1, ncel
-    tot_vol = tot_vol + volume(iel)
+  tot_vol = tot_vol + volume(iel)
 enddo
 
 if (irangp.ge.0) then
@@ -128,6 +130,11 @@ do iel = 1, ncel
 
   mom_bulk(1) = mom_bulk(1) + crom(iel)*volume(iel)*xuent/tot_vol
   mom_bulk(2) = mom_bulk(2) + crom(iel)*volume(iel)*xvent/tot_vol
+
+  if (vel_id.gt.0) then
+    met_vel(1,iel) = xuent
+    met_vel(2,iel) = xvent
+  endif
 
 enddo
 
