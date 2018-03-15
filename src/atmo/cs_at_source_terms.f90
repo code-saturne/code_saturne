@@ -101,15 +101,22 @@ do iel = 1, ncel
 
   zent = xyzcen(3,iel)
 
-  call intprf                                                   &
-  !==========
- (nbmetd, nbmetm,                                               &
-  zdmet, tmmet, umet , zent  , ttcabs, xuent )
+  if (vel_id.gt.0.and.theo_interp.eq.1) then
+    xuent = met_vel(1, iel)
+    xvent = met_vel(2, iel)
+  else
 
-  call intprf                                                   &
-  !==========
- (nbmetd, nbmetm,                                               &
-  zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+    call intprf                                                   &
+    !==========
+   (nbmetd, nbmetm,                                               &
+    zdmet, tmmet, umet , zent  , ttcabs, xuent )
+
+    call intprf                                                   &
+    !==========
+   (nbmetd, nbmetm,                                               &
+    zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+
+  endif
 
   mom_bulk(1) = mom_bulk(1) + crom(iel)*volume(iel)*xuent/tot_vol
   mom_bulk(2) = mom_bulk(2) + crom(iel)*volume(iel)*xvent/tot_vol
