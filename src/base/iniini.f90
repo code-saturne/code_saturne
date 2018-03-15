@@ -145,6 +145,7 @@ call thermal_model_init
 call turb_model_init
 call turb_rans_model_init
 call turb_les_model_init
+call turb_model_constants_init
 call wall_functions_init
 call stokes_options_init
 call physical_constants_init
@@ -854,22 +855,16 @@ bpow    = 1.d0/7.d0
 cpow    = apow**(2.d0/(1.d0-bpow))
 dpow    = 1.d0/(1.d0+bpow)
 
-cmu     = 0.09d0
-cmu025  = cmu**0.25d0
-
 !   pour le k-epsilon
 ce1     = 1.44d0
 ce2     = 1.92d0
 ce4     = 1.20d0
 sigmak  = 1.00d0
-! sigmae is set to 1.30d0 in modini
 
 !   pour le Rij-epsilon standard (et SSG pour CRIJ3)
 crij1  = 1.80d0
 crij2  = 0.60d0
 crij3  = 0.55d0
-! csrij is set to 0.22d0 in modini
-! sigmae is fixed to csrij/0.18d0 in modini
 crijp1 = 0.50d0
 crijp2 = 0.30d0
 
@@ -893,11 +888,9 @@ cebmr4  = 0.625d0
 cebmr5  = 0.20d0
 ! cebmr6  is used in the buoyant term
 cebmr6  = 0.6d0
-! csrij is set to 0.21d0 in modini
 cebme2  = 1.83d0
 cebmmu  = 0.22d0
 xcl     = 0.122d0
-! sigmae is fixed to 1.15d0 in modini
 xa1     = 0.1d0
 xceta   = 80.d0
 xct     = 6.d0

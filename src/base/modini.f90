@@ -87,8 +87,6 @@ call field_get_key_id("variable_id", keyvar)
 
 call field_get_key_id("syrthes_coupling", kcpsyr)
 
-call cs_f_turb_complete_constants
-
 !===============================================================================
 ! 1. ENTREES SORTIES entsor
 !===============================================================================
@@ -842,14 +840,6 @@ endif
 cpow    = apow**(2.d0/(1.d0-bpow))
 dpow    = 1.d0/(1.d0+bpow)
 cmu025 = cmu**0.25d0
-
-if (iturb.eq.30.or.iturb.eq.31) then
-  sigmae = 1.22d0
-else if (iturb.eq.32) then
-  sigmae = 1.15d0
-else
-  sigmae = 1.30d0
-endif
 
 if (idirsm.eq.0) then
   csrij = 0.11d0

@@ -199,7 +199,7 @@ extern double cs_turb_cstlog_alpha;
 extern const double cs_turb_apow;
 extern const double cs_turb_bpow;
 extern double cs_turb_dpow;
-extern const double cs_turb_cmu;
+extern double cs_turb_cmu;
 extern double cs_turb_cmu025;
 extern const double cs_turb_ce1;
 extern const double cs_turb_ce2;

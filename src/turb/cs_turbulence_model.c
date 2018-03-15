@@ -422,7 +422,7 @@ double cs_turb_dpow = -1.;
  * modelling). Useful if and only if \ref iturb = 20, 21, 30, 31 or 60
  * (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or \f$k-\omega\f$).
  */
-const double cs_turb_cmu = 0.09;
+double cs_turb_cmu = 0.09;
 
 /*! \f$ C_\mu^\frac{1}{4} \f$ */
 double cs_turb_cmu025;
@@ -984,6 +984,11 @@ cs_f_turb_reference_values(double  **almax,
                            double  **uref,
                            double  **xlomlg);
 
+void
+cs_f_turb_model_constants_get_pointers(double  **sigmae,
+                                       double  **cmu,
+                                       double  **cmu025);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1114,6 +1119,28 @@ cs_f_turb_reference_values(double  **almax,
   *almax  = &(_turb_ref_values.almax);
   *uref   = &(_turb_ref_values.uref);
   *xlomlg = &(_turb_rans_model.xlomlg);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointers to constants for turbulence models.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   sigmae --> pointer to cs_turb_sigmae
+ *   cmu    --> pointer to cs_turb_cmu
+ *   cmu025 --> pointer to cs_turb_cmu025
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_turb_model_constants_get_pointers(double  **sigmae,
+                                       double  **cmu,
+                                       double  **cmu025)
+{
+  *sigmae = &cs_turb_sigmae;
+  *cmu    = &cs_turb_cmu;
+  *cmu025 = &cs_turb_cmu025;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

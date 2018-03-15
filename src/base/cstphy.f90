@@ -319,10 +319,10 @@ module cstphy
   !> (see \ref cv2fmu for the value of \f$C_\mu\f$ in case of v2f modelling).
   !> Useful if and only if \ref iturb = 20, 21, 30, 31 or 60
   !> (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or \f$k-\omega\f$)
-  double precision, save :: cmu
+  real(c_double), pointer, save :: cmu
 
   !> \f$ C_\mu^\frac{1}{4} \f$
-  double precision, save :: cmu025
+  real(c_double), pointer, save :: cmu025
 
   !> constant \f$C_{\varepsilon 1}\f$ for all the RANS turbulence models except
   !> for the v2f and the \f$k-\omega\f$ models.
@@ -354,7 +354,7 @@ module cstphy
   !> Prandtl number for \f$\varepsilon\f$.
   !> Useful if and only if \ref iturb= 20, 21, 30, 31 or 50
   !> (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or v2f)
-  double precision, save :: sigmae
+  real(c_double), pointer, save :: sigmae
 
   !> constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
   !> Useful if and only if \ref iturb=30
@@ -844,6 +844,18 @@ module cstphy
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function retrieving pointers to constants of the
+    ! turbulence model
+
+    subroutine cs_f_turb_model_constants_get_pointers(sigmae, cmu, cmu025) &
+      bind(C, name='cs_f_turb_model_constants_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: sigmae , cmu  , cmu025
+    end subroutine cs_f_turb_model_constants_get_pointers
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------
@@ -952,6 +964,28 @@ contains
     call c_f_pointer(c_xlomlg, xlomlg)
 
   end subroutine turb_reference_values_init
+
+  !> \brief Initialize Fortran turbulence model constants.
+  !> This maps Fortran pointers to global C real numbers.
+
+  subroutine turb_model_constants_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_sigmae, c_cmu, c_cmu025
+
+    call cs_f_turb_model_constants_get_pointers(c_sigmae, c_cmu, c_cmu025)
+
+    call c_f_pointer(c_sigmae , sigmae)
+    call c_f_pointer(c_cmu    , cmu   )
+    call c_f_pointer(c_cmu025 , cmu025)
+
+    call cs_f_turb_complete_constants
+
+  end subroutine turb_model_constants_init
 
   !=============================================================================
 
