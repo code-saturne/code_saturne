@@ -595,7 +595,7 @@ if (iappel.eq.1) then
     do isou = 1, 3
       fimp(isou,isou,iel) = vcopt_u%istat*pcrom(iel)/dt(iel)*cell_f_vol(iel)
       do jsou = 1, 3
-        if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
+        if(jsou.ne.isou) fimp(jsou,isou,iel) = 0.d0
       enddo
     enddo
   enddo
@@ -606,7 +606,7 @@ else
   do iel = 1, ncel
     do isou = 1, 3
       do jsou = 1, 3
-        fimp(isou,jsou,iel) = 0.d0
+        fimp(jsou,isou,iel) = 0.d0
       enddo
     enddo
   enddo
@@ -1231,7 +1231,7 @@ do iel = 1, ncel
   do isou = 1, 3
     tsexp(isou,iel) = 0.d0
     do jsou = 1, 3
-      tsimp(isou,jsou,iel) = 0.d0
+      tsimp(jsou,isou,iel) = 0.d0
     enddo
   enddo
 enddo
@@ -1310,7 +1310,7 @@ if (iterns.eq.1.and.nterup.gt.1) then
   do iel = 1, ncel
     do isou = 1, 3
       do jsou = 1, 3
-        ximpa(isou,jsou,iel) = tsimp(isou,jsou,iel)
+        ximpa(jsou,isou,iel) = tsimp(jsou,isou,iel)
       enddo
     enddo
   enddo
@@ -1378,8 +1378,8 @@ if (iappel.eq.1) then
       do iel = 1, ncel
         do isou = 1, 3
           do jsou = 1, 3
-            fimp(isou,jsou,iel) = fimp(isou,jsou,iel)                      &
-                                - ximpa(isou,jsou,iel)*thetap
+            fimp(jsou,isou,iel) = fimp(jsou,isou,iel)                      &
+                                - ximpa(jsou,isou,iel)*thetap
           enddo
         enddo
       enddo
@@ -1387,8 +1387,8 @@ if (iappel.eq.1) then
       do iel = 1, ncel
         do isou = 1, 3
           do jsou = 1, 3
-            fimp(isou,jsou,iel) = fimp(isou,jsou,iel)                      &
-                                - tsimp(isou,jsou,iel)*thetap
+            fimp(jsou,isou,iel) = fimp(jsou,isou,iel)                      &
+                                - tsimp(jsou,isou,iel)*thetap
           enddo
         enddo
       enddo
@@ -1398,8 +1398,8 @@ if (iappel.eq.1) then
       do iel = 1, ncel
         do isou = 1, 3
           do jsou = 1, 3
-            fimp(isou,jsou,iel) = fimp(isou,jsou,iel)                      &
-                                + max(-ximpa(isou,jsou,iel),zero)
+            fimp(jsou,isou,iel) = fimp(jsou,isou,iel)                      &
+                                + max(-ximpa(jsou,isou,iel),zero)
           enddo
         enddo
       enddo
@@ -1407,8 +1407,8 @@ if (iappel.eq.1) then
       do iel = 1, ncel
         do isou = 1, 3
           do jsou = 1, 3
-            fimp(isou,jsou,iel) = fimp(isou,jsou,iel)                      &
-                                + max(-tsimp(isou,jsou,iel),zero)
+            fimp(jsou,isou,iel) = fimp(jsou,isou,iel)                      &
+                                + max(-tsimp(jsou,isou,iel),zero)
           enddo
         enddo
       enddo
