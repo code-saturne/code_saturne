@@ -125,7 +125,7 @@ integer          ifcvsl, iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap, ivissv
-integer          idftnp, iswdyp
+integer          idftnp, iswdyp, pot_f_id
 integer          iflid , st_prv_id, st_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
 integer          key_buoyant_id, is_buoyant_fld
@@ -642,6 +642,9 @@ icvflb = 0
 ! transposed gradient term only for NS
 ivissv = 0
 
+! We do not add gradP to the RHS in coditv
+pot_f_id = -1
+
 call field_get_coefa_v(iflid, coefap)
 call field_get_coefb_v(iflid, coefbp)
 call field_get_coefaf_v(iflid, cofafp)
@@ -656,7 +659,7 @@ call coditv &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    cvara_var       , cvara_var       ,                            &
-   coefap , coefbp , cofafp , cofbfp ,                            &
+   coefap , coefbp , cofafp , cofbfp , pot_f_id ,                 &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &
    viscce , weighf , weighb ,                                     &

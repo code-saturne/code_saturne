@@ -153,7 +153,7 @@ do ifac = 1, nfabor
   if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
     ! the inlet mass flux integrated in space
     debin = debin - bmasfl(ifac)
-  else if (itypfb(ifac).eq.isolib.or.itypfb(ifac).eq.ifrent) then
+  else if (itypfb(ifac).eq.isolib.or.itypfb(ifac).eq.ifrent.or.itypfb(ifac).eq.i_free_outlet) then
     ! the outlet mass flux integrated in space:
     debout = debout - bmasfl(ifac)
   endif

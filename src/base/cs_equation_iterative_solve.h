@@ -249,6 +249,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               of the variable (Explicit part)
  * \param[in]     cofbfv        boundary condition array for the diffusion
  *                               of the variable (Implicit part)
+ * \param[in]     pot_f_id      add the pressure gradient to the RHS in
+ *                              coditv if > 0
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -295,6 +297,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    const cs_real_33_t    coefbv[],
                                    const cs_real_3_t     cofafv[],
                                    const cs_real_33_t    cofbfv[],
+                                   const int             pot_f_id,
                                    const cs_real_t       i_massflux[],
                                    const cs_real_t       b_massflux[],
                                    cs_real_t             i_viscm[],

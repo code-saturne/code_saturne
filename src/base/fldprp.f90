@@ -178,6 +178,9 @@ if  (iturb.eq.60) then
   end if
 endif
 
+idim3 = 3
+call add_property_field('grad_p', 'Presssure gradient', idim3, .false., igradp)
+
 call add_property_field_1d('courant_number', 'CFL', icour)
 call add_property_field_1d('fourier_number', 'Fourier Number', ifour)
 

@@ -1633,7 +1633,8 @@ module cs_c_bindings
                                                   ivisep, iescap,             &
                                                   vcopt, pvara, pvark,        &
                                                   coefav, coefbv, cofafv,     &
-                                                  cofbfv, i_massflux,         &
+                                                  cofbfv, pot_f_id,           &
+                                                  i_massflux,                 &
                                                   b_massflux, i_viscm,        &
                                                   b_viscm, i_visc, b_visc,    &
                                                   secvif, secvib,             &
@@ -1654,7 +1655,7 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: secvif, secvib
       real(kind=c_double), dimension(*), intent(in) :: viscce
       real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
-      integer(c_int), value :: icvflb
+      integer(c_int), value :: icvflb, pot_f_id
       integer(c_int), dimension(*), intent(in) :: icvfli
       real(kind=c_double), dimension(*), intent(in) :: fimp
       real(kind=c_double), dimension(*), intent(inout) :: smbrp, pvar, eswork
@@ -4467,6 +4468,8 @@ contains
   !>                               of the variable (Explicit part)
   !> \param[in]     cofbfv        boundary condition array for the diffusion
   !>                               of the variable (Implicit part)
+  !> \param[in]     pot_f_id      add the pressure gradient to the RHS in
+  !>                              coditv if > 0
   !> \param[in]     flumas        mass flux at interior faces
   !> \param[in]     flumab        mass flux at boundary faces
   !> \param[in]     viscfm        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -4496,14 +4499,14 @@ contains
   !> \param[out]    eswork        prediction-stage error estimator
   !>                              (if iescap > 0)
 
-  subroutine coditv (idtvar, iterns,                                           &
-                     f_id  , iconvp, idiffp, ndircp, imrgra, nswrsp,           &
-                     nswrgp, imligp, ircflp, ivisep, ischcp, isstpp, iescap,   &
-                     idftnp, iswdyp, iwarnp, blencp, epsilp, epsrsp, epsrgp,   &
-                     climgp, relaxp, thetap, pvara , pvark , coefav, coefbv,   &
-                     cofafv, cofbfv, i_massflux, b_massflux, i_viscm,          &
-                     b_viscm, i_visc, b_visc, secvif, secvib,                  &
-                     viscce, weighf, weighb, icvflb, icvfli,                   &
+  subroutine coditv (idtvar, iterns,                                            &
+                     f_id  , iconvp, idiffp, ndircp, imrgra, nswrsp,            &
+                     nswrgp, imligp, ircflp, ivisep, ischcp, isstpp, iescap,    &
+                     idftnp, iswdyp, iwarnp, blencp, epsilp, epsrsp, epsrgp,    &
+                     climgp, relaxp, thetap, pvara , pvark , coefav, coefbv,    &
+                     cofafv, cofbfv, pot_f_id, i_massflux, b_massflux, i_viscm, &
+                     b_viscm, i_visc, b_visc, secvif, secvib,                   &
+                     viscce, weighf, weighb, icvflb, icvfli,                    &
                      fimp, smbrp, pvar, eswork)
 
     use, intrinsic :: iso_c_binding
@@ -4517,7 +4520,7 @@ contains
 
     integer, intent(in) :: idtvar, iterns, f_id, iconvp, idiffp, ndircp, imrgra
     integer, intent(in) :: nswrsp, nswrgp, imligp, ircflp, ischcp, isstpp
-    integer, intent(in) :: iescap, ivisep, idftnp, iswdyp, iwarnp
+    integer, intent(in) :: iescap, ivisep, idftnp, iswdyp, iwarnp, pot_f_id
     double precision, intent(in) :: blencp, epsilp, epsrsp, epsrgp, climgp
     double precision, intent(in) :: relaxp, thetap
     real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefav
@@ -4574,6 +4577,7 @@ contains
                                             ivisep, iescap, c_k_value,         &
                                             pvara, pvark,                      &
                                             coefav, coefbv, cofafv, cofbfv,    &
+                                            pot_f_id,                          &
                                             i_massflux, b_massflux, i_viscm,   &
                                             b_viscm, i_visc, b_visc, secvif,   &
                                             secvib, viscce, weighf, weighb,    &

@@ -94,7 +94,7 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          st_prv_id
 integer          ivisep, ifcvsl
 integer          isou, jsou
-integer          itt
+integer          itt, pot_f_id
 integer          idftnp, iswdyp, icvflb
 integer          f_id
 integer          keyvar, iut
@@ -553,6 +553,9 @@ ivisep = 0
 icvflb = 0
 init   = 1
 
+! We do not add gradP to the RHS in coditv
+pot_f_id = -1
+
 call coditv &
 (idtvar , init   , f_id   , iconvp , idiffp , ndircp ,          &
  imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
@@ -561,7 +564,7 @@ call coditv &
  blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
  relaxp , thetv  ,                                              &
  xuta   , xuta   ,                                              &
- coefav , coefbv , cofafv , cofbfv ,                            &
+ coefav , coefbv , cofafv , cofbfv , pot_f_id ,                 &
  imasfl , bmasfl ,                                              &
  viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &
  viscce , weighf , weighb ,                                     &

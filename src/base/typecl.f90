@@ -351,6 +351,15 @@ if(ipass.eq.0.or.vcopt%iwarni.ge.2) then
     write(nfecra,6020) 'Convective inlet ', ii, inb
 #endif
 
+    ii = i_free_outlet
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Nouvelle sortie libre', ii, inb
+#else
+    write(nfecra,6020) 'New free outlet  ', ii, inb
+#endif
+
     if (nbrcpl.ge.1) then
       if (ifaccp.eq.0) then
         ii = icscpl
@@ -387,6 +396,7 @@ if(ipass.eq.0.or.vcopt%iwarni.ge.2) then
     do ii = 1, ntypmx
       if (ii.ne.ientre  .and. &
           ii.ne.i_convective_inlet .and. &
+          ii.ne.i_free_outlet .and. &
           ii.ne.iparoi  .and. &
           ii.ne.iparug  .and. &
           ii.ne.isymet  .and. &
@@ -532,6 +542,7 @@ do ivar = 1, nvar
         (itypfb(ifac) .ne. ifresf)            .and. &
         (itypfb(ifac) .ne. i_convective_inlet).and. &
         (itypfb(ifac) .ne. ientre)            .and. &
+        (itypfb(ifac) .ne. i_free_outlet)     .and. &
         (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
       rcodcl(ifac,ivar,1) = 0.d0
     endif
@@ -858,6 +869,35 @@ do ivar = 1, nvar
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 9
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  endif
+enddo
+
+! TODO
+ideb = idebty(i_free_outlet)
+ifin = ifinty(i_free_outlet)
+
+do ivar = 1, nvar
+  if (ivar.eq.ipr) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if (icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 1
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  else
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      ! Homogeneous Neumann
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 3
         rcodcl(ifac,ivar,1) = 0.d0
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
@@ -1656,6 +1696,18 @@ if(vcopt%iwarni.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
     write(nfecra,7020) 'Free outlet      ',ii,inb,flumty(ii)
 #endif
 
+    ii = i_free_outlet
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Nouvelle sortie libre',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'New free outlet   ',ii,inb,flumty(ii)
+#endif
+
     ii = ifrent
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) then
@@ -1724,6 +1776,7 @@ if(vcopt%iwarni.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
     do ii = 1, ntypmx
       if ( ii.ne.ientre  .and.                                    &
            ii.ne.i_convective_inlet .and.                         &
+           ii.ne.i_free_outlet .and.                              &
            ii.ne.iparoi  .and.                                    &
            ii.ne.iparug  .and.                                    &
            ii.ne.isymet  .and.                                    &

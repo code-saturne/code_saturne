@@ -143,7 +143,8 @@ enum {
   CS_COUPLED_FD = 13,        /* coupled face with decentered flux */
   CS_FREE_INLET = 14,
   CS_FREE_SURFACE = 15,
-  CS_CONVECTIVE_INLET = 16
+  CS_CONVECTIVE_INLET = 16,
+  CS_FREE_OUTLET = 17
 };
 
 /*----------------------------------------------------------------------------

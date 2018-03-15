@@ -283,6 +283,8 @@ module numvar
   !> field id of the strain rate tensor at the previous time step
   integer, save :: istraio
 
+  !> field id of the pressure gradient \f$\grad p$\f
+  integer, save :: igradp
   !> \}
   !----------------------------------------------------------------------------
   ! Numerical properties

@@ -295,6 +295,17 @@ cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
                                                     cs_real_t  hint);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set free oulet boundary condition for the pressure.
+ *
+ * \param[in]     visc_term          \f$ \divv (\mu \gradv \vect{u}) \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_set_free_outlet(cs_real_3_t *visc_term);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
