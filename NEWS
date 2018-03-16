@@ -5,6 +5,8 @@ Release 5.0.8 (Unreleased)
 Bug fixes
 ---------
 
+- Fix for importing some EnSight geometries (meshes) in preprocessor.
+
 - Fix crash using Intel 2018 compilers.
 
 - Fix some memory leaks using Catalyst output.

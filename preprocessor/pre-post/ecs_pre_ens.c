@@ -869,8 +869,9 @@ ecs_loc_pre_ens__ele_lin(int32_t     *connect_loc,
     for (iloc = 0; iloc < taille_ele_lin; iloc++)
       connect_loc[ipos_lin++] = connect_loc[ipos_ens++];
 
-    ECS_REALLOC(connect_loc, ipos_lin, int32_t);
   }
+
+  ECS_REALLOC(connect_loc, ipos_lin, int32_t);
 
   return connect_loc;
 }
@@ -1709,11 +1710,12 @@ ecs_loc_pre_ens__concat_elems(ecs_maillage_t         *maillage,
   if (liste_noeuds->id_noeud != NULL) {
 
     for (ient = ECS_ENTMAIL_FAC ; ient < ECS_N_ENTMAIL ; ient++)
-      ecs_maillage_pre__label_en_indice
-        (liste_noeuds->nbr_noeuds,
-         elt_pos_som_ent[ient][cpt_elt_ent[ient]] - 1,
-         liste_noeuds->id_noeud,
-         elt_val_som_ent[ient]) ;
+      if (elt_val_som_ent[ient] != NULL)
+        ecs_maillage_pre__label_en_indice
+          (liste_noeuds->nbr_noeuds,
+           elt_pos_som_ent[ient][cpt_elt_ent[ient]],
+           liste_noeuds->id_noeud,
+           elt_val_som_ent[ient]) ;
 
     ECS_FREE(liste_noeuds->id_noeud) ;
   }
