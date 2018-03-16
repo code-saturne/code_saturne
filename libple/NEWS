@@ -1,5 +1,5 @@
-Release 2.0.2 (March 16, 2018)
-==============================
+Trunk (unreleased)
+==================
 
 Bug fixes:
 ----------
@@ -8,9 +8,6 @@ Bug fixes:
 
 Changes:
 --------
-
-- Use asyncronous locator variable exchange by default when
-  number of communicating ranks is not too large (< 128).
 
 - Implement handling of point tags so as to ignore location
   on elements sharing tag (also requires matching features
