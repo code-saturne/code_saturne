@@ -1,6 +1,10 @@
+Release 2.0.2 (March 16, 2018)
+==============================
 
-Trunk (unreleased)
-==================
+Bug fixes:
+----------
+
+- Fix in ple_locator_extend_search() for non-local cases.
 
 Changes:
 --------
