@@ -6,7 +6,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2015  EDF
+  Copyright (C) 2005-2018  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -686,6 +686,12 @@ _intersects_distant(ple_locator_t       *this_locator,
 
   intersects.n = 0;
 
+  /* initialize mesh extents in case mesh is empty or dim < 3 */
+  for (i = 0; i < dim; i++) {
+    extents[i]       =  HUGE_VAL;
+    extents[i + dim] = -HUGE_VAL;
+  }
+
   mesh_extents_f(mesh,
                  1,
                  tolerance_fraction,
@@ -953,7 +959,7 @@ _locate_distant(ple_locator_t               *this_locator,
 
   if (_n_points < n_points) {
     PLE_MALLOC(_point_list, _n_points, ple_lnum_t);
-    _point_list_p = point_list;
+    _point_list_p = _point_list;
 
     _n_points = 0;
     if (point_list == NULL) {
