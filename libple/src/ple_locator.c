@@ -964,7 +964,7 @@ _locate_distant(ple_locator_t               *this_locator,
   if (_n_points < n_points) {
 
     PLE_MALLOC(_point_list, _n_points, ple_lnum_t);
-    _point_list_p = point_list;
+    _point_list_p = _point_list;
 
     _n_points = 0;
     if (point_list == NULL) {
