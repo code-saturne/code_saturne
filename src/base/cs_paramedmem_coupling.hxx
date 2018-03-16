@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2017 EDF S.A.
+  Copyright (C) 1998-2018 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -35,14 +35,6 @@
  * MED library headers
  *----------------------------------------------------------------------------*/
 
-#include <ParaFIELD.hxx>
-#include <ParaMESH.hxx>
-#include <InterpKernelDEC.hxx>
-
-#include <MEDCouplingUMesh.hxx>
-#include <MEDCouplingField.hxx>
-#include <MEDCouplingFieldDouble.hxx>
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -63,29 +55,15 @@ using namespace MEDCoupling;
 
 typedef struct _cs_paramedmem_coupling_t cs_paramedmem_coupling_t;
 
-typedef struct _cs_medcoupling_remapper_t cs_medcoupling_remapper_t;
-
 /*============================================================================
  *  Global variable definitions
  *============================================================================*/
 
+BEGIN_C_DECLS
+
 /*============================================================================
  * Public C++ function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Define new ParaMEDMEM coupling.
- *
- * arguments:
- *   name     <-- name of coupling
- *   send_dec <-- send Data Exchange Channel
- *   recv_dec <-- receive Data Exchange Channel
- *----------------------------------------------------------------------------*/
-
-cs_paramedmem_coupling_t *
-cs_paramedmem_create(const char       *name,
-                     InterpKernelDEC  *send_dec,
-                     InterpKernelDEC  *recv_dec);
 
 /*----------------------------------------------------------------------------
  * Create a paramedmem coupling based on an InterpKernelDEC.
@@ -349,8 +327,6 @@ cs_paramedmem_reattach_field(cs_paramedmem_coupling_t  *coupling,
  * Public C++ function prototypes
  *============================================================================*/
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------
  * Map MPI ranks within cs_glob_mpi_comm to their values in MPI_COMM_WORLD.
  *
@@ -363,153 +339,8 @@ BEGIN_C_DECLS
 int *
 cs_paramedmem_get_mpi_comm_world_ranks(void);
 
-/*----------------------------------------------------------------------------
- * Return remapper associated with a given id
- *
- * parameters:
- *   id <-- remapper id
- *
- * return:
- *   pointer to remapper
- *----------------------------------------------------------------------------*/
-
-cs_medcoupling_remapper_t *
-cs_medcoupling_remapper_by_id(int  r_id);
-
-/*----------------------------------------------------------------------------
- * Return remapper associated with a given name
- *
- * parameters:
- *   name <-- remapper name
- *
- * return:
- *   pointer to remapper, or NULL
- *----------------------------------------------------------------------------*/
-
-cs_medcoupling_remapper_t *
-cs_medcoupling_remapper_by_name_try(const char  *name);
-
-#if defined(HAVE_MEDCOUPLING_LOADER)
-
-/*----------------------------------------------------------------------------
- * Create or update update the list of remappers in the case where
- * several remappers may be needed.
- *
- * parameters:
- *   name            <-- new remapper name
- *   elt_dim         <-- element dimension
- *   select_criteria <-- selection criteria
- *   medfile_path    <-- path of associated MED file
- *   mesh_name       <-- mesh name
- *   n_fields        <-- number of fields
- *   field_names     <-- associated field names
- *   iteration       <-- associated iteration
- *   iteration_order <-- associated iteration order
- *
- * return:
- *   id of the newly added remapper within the list
- *----------------------------------------------------------------------------*/
-
-int
-cs_medcoupling_remapper_initialize(const char   *name,
-                                   int           elt_dim,
-                                   const char   *select_criteria,
-                                   const char   *medfile_path,
-                                   const char   *mesh_name,
-                                   int           n_fields,
-                                   const char  **field_names,
-                                   int           iteration,
-                                   int           iteration_order);
-
-#endif /* HAVE_MEDCOUPLING_LOADER */
-
-/*----------------------------------------------------------------------------
- * Update field values (if several time steps are available in the MED file).
- *
- * parameters:
- *   r               <-- remapper object
- *   iteration       <-- associated iteration
- *   iteration_order <-- associated iteration order
- *----------------------------------------------------------------------------*/
-
-void
-cs_medcoupling_remapper_set_iteration(cs_medcoupling_remapper_t  *r,
-                                      int                         iteration,
-                                      int                         iteration_order);
-
-/*----------------------------------------------------------------------------
- * Create the interpolation matrix.
- *
- * This step is separated from the interpolation step since it only needs
- * to be done once per mesh, while interpolation can be done for several
- * fields.
- *
- * parameters:
- *   r               <-- remapper object
- *   iteration       <-- associated iteration
- *   iteration_order <-- associated iteration order
- *----------------------------------------------------------------------------*/
-
-void
-cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r);
-
-/*----------------------------------------------------------------------------
- * Copy interpolated values to a new array.
- *
- * The caller is responsible for freeing the returned array.
- *
- * parameters:
- *   field_id        <-- id of given field
- *   r               <-- pointer to remapper object
- *   default_val     <-- default value
- *
- * return:
- *   pointer to allocated values array
- *----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_medcoupling_remapper_copy_values(cs_medcoupling_remapper_t  *r,
-                                    int                         field_id,
-                                    double                      default_val);
-
-/*----------------------------------------------------------------------------
- * Translate the mapped source mesh.
- *
- * Caution: cs_medcoupling_remapper_prepare() must to be called after this
- * function in order to update the interpolation matrix.
- *
- * parameters:
- *   r           <-- pointer to remapper object
- *   translation <-- translation vector
- *----------------------------------------------------------------------------*/
-
-void
-cs_medcoupling_remapper_translate(cs_medcoupling_remapper_t  *r,
-                                  cs_real_t                   translation[3]);
-
-/*----------------------------------------------------------------------------
- * Rotate the mapped source mesh.
- *
- * Caution: cs_medcoupling_remapper_prepare() must to be called after this
- * function in order to update the interpolation matrix.
- *
- * parameters:
- *   r         <-- pointer to remapper object
- *   invariant <-- coordinates of invariant point
- *   axis      <-- rotation axis vector
- *   angle     <-- rotation angle
- *----------------------------------------------------------------------------*/
-
-void
-cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
-                               cs_real_t                   invariant[3],
-                               cs_real_t                   axis[3],
-                               cs_real_t                   angle);
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_PARAMEDMEM_HXX__ */
