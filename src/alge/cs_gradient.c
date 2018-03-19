@@ -2473,10 +2473,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_int_t *isympa = fvq->b_sym_flag;
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
 
   cs_real_33_t   *restrict cocgb = (cpl == NULL) ?
     fvq->cocgb_s_lsq :
@@ -5671,26 +5667,6 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   /*--------------------------------*/
 
   if (hyd_p_flag == 1) {
-
-    /*Additional terms due to porosity */
-    cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
-
-    cs_real_t *i_poro_duq_0;
-    cs_real_t *i_poro_duq_1;
-    cs_real_t *b_poro_duq;
-    cs_real_t _f_ext = 0.;
-
-    int is_porous = 0;
-    if (f_i_poro_duq_0 != NULL) {
-      is_porous = 1;
-      i_poro_duq_0 = f_i_poro_duq_0->val;
-      i_poro_duq_1 = cs_field_by_name_try("i_poro_duq_1")->val;
-      b_poro_duq = cs_field_by_name_try("b_poro_duq")->val;
-    } else {
-      i_poro_duq_0 = &_f_ext;
-      i_poro_duq_1 = &_f_ext;
-      b_poro_duq = &_f_ext;
-    }
 
     /* Contribution from interior faces */
 

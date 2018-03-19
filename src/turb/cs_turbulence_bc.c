@@ -181,6 +181,12 @@ cs_f_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_num,
                                         double      dh,
                                         double     *rcodcl);
 
+void
+cs_f_turbulence_bc_inlet_k_eps(cs_lnum_t   face_num,
+                               double      k,
+                               double      eps,
+                               double     *rcodcl);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -399,12 +405,14 @@ _inlet_bc(cs_lnum_t   face_id,
 
     if (rcodcl[_turb_bc_id.phi*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[_turb_bc_id.phi*n_b_faces + face_id] = 2./3.;
-    if (cs_glob_turb_model->iturb == 50)
+    if (cs_glob_turb_model->iturb == 50) {
       if (rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
         rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] = 0.;
-    else if (cs_glob_turb_model->iturb == 51)
+    }
+    else if (cs_glob_turb_model->iturb == 51) {
         if (rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
           rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] = 0.;
+    }
 
   }
   else if (cs_glob_turb_model->itytur == 6) {

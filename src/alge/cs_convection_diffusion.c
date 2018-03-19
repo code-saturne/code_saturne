@@ -3410,7 +3410,6 @@ cs_convection_diffusion_vector(int                         idtvar,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
@@ -3423,7 +3422,6 @@ cs_convection_diffusion_vector(int                         idtvar,
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict diipf
@@ -8350,7 +8348,6 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 
   cs_real_6_t *viscce;
   cs_real_33_t *grad;
-  cs_real_t *bndcel;
 
   cs_field_t *f;
 

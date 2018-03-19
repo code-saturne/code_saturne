@@ -2079,7 +2079,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
   /* RHS and unknowns arrays */
   cs_real_t *restrict vx_lv = NULL;
-  cs_real_t *restrict vx2_lv1;
   const cs_real_t *restrict rhs_lv = NULL;
   const cs_matrix_t  *f_matrix = NULL, *c_matrix = NULL;
 
@@ -2097,9 +2096,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                    &c_n_cols_ext, NULL, &c_n_g_rows);
 
   cs_lnum_t _f_n_rows = f_n_rows*db_size[1];
-  cs_lnum_t _f_n_cols_ext = f_n_cols_ext*db_size[1];
   cs_lnum_t _c_n_rows = c_n_rows*db_size[1];
-  cs_lnum_t _c_n_cols_ext = c_n_cols_ext*db_size[1];
 
   static double denom_n_g_rows_0 = 1;
   if (level == 0)

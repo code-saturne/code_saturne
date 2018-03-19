@@ -1697,7 +1697,6 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
 
     for (cs_lnum_t k = s_id; k < e_id; k++) {
       cs_lnum_t v_id = m->b_face_vtx_lst[k];
-      const cs_real_t *vn = _coord_shift[v_id];
       if (cs_math_3_dot_product(_coord_shift[v_id], f_n) < 0) {
         _n_layers[v_id] = 0;
         _coord_shift[v_id][0] = 0;

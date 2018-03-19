@@ -724,11 +724,10 @@ _define_cell_face_connect(cs_lagr_track_builder_t   *builder)
   for (i = 0; i < mesh->n_i_faces; i++) {
     for (j = 0; j < 2; j++) {
 
-      cs_lnum_t iel = mesh->i_face_cells[i][j] + 1;
+      cs_lnum_t cell_id = mesh->i_face_cells[i][j];
 
-      if (iel <= mesh->n_cells) {
+      if (cell_id < mesh->n_cells) {
 
-        cs_lnum_t  cell_id = iel - 1;
         cs_lnum_t  shift = builder->cell_face_idx[cell_id] + counter[cell_id];
 
         builder->cell_face_lst[shift] = i+1;

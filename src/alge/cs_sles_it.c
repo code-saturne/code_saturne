@@ -381,7 +381,8 @@ _convergence_test(cs_sles_it_t              *c,
 
   if (residue < convergence->precision * convergence->r_norm) {
     if (verbosity > 1)
-      bft_printf(final_fmt, n_iter, residue, residue/convergence->r_norm, convergence->r_norm);
+      bft_printf(_(final_fmt), n_iter, residue, residue/convergence->r_norm,
+                 convergence->r_norm);
     return CS_SLES_CONVERGED;
   }
 
@@ -394,7 +395,8 @@ _convergence_test(cs_sles_it_t              *c,
       else {
         if (convergence->r_norm > 0.)
           bft_printf(_(final_fmt),
-              n_iter, residue, residue/convergence->r_norm);
+                     n_iter, residue, residue/convergence->r_norm,
+                     convergence->r_norm);
         else
           bft_printf(_("  n_iter : %5d, res_abs : %11.4e\n"),
               n_iter, residue);
@@ -427,7 +429,6 @@ _convergence_test(cs_sles_it_t              *c,
   }
 
   return CS_SLES_ITERATING;
-
 }
 
 /*----------------------------------------------------------------------------
