@@ -45,6 +45,7 @@
 #include <bft_mem.h>
 
 #include "cs_cdo_bc.h"
+#include "cs_cdofb_priv.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
 #include "cs_equation_bc.h"

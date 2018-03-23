@@ -63,7 +63,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Algebraic system for CDO face-based discretization */
-typedef struct _cs_cdofb_scaleq_t cs_cdofb_scaleq_t;
+typedef struct _cs_cdofb_t cs_cdofb_scaleq_t;
 
 /*============================================================================
  * Public function prototypes

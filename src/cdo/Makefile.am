@@ -59,6 +59,7 @@ cs_cdo_main.h \
 cs_cdo_quantities.h \
 cs_cdo_time.h \
 cs_cdofb_navsto.h \
+cs_cdofb_priv.h \
 cs_cdofb_scaleq.h \
 cs_cdofb_vecteq.h \
 cs_cdovb_scaleq.h \
