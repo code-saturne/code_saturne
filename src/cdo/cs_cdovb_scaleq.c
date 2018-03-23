@@ -881,10 +881,12 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
     if (cs_equation_param_has_time(eqp)) {
 
       cs_timer_t  ta = cs_timer_time();
-      cs_cdo_time_update_rhs_with_array(eqp,
-                                        eqc->n_dofs,
-                                        eqc->source_terms,
-                                        rhs);
+      cs_cdo_time_update_rhs(eqp,
+                             1, /* stride */
+                             eqc->n_dofs,
+                             NULL,
+                             eqc->source_terms,
+                             rhs);
       cs_timer_t  tb = cs_timer_time();
       cs_timer_counter_add_diff(&(eqb->tcs), &ta, &tb);
 

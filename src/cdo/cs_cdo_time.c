@@ -123,48 +123,99 @@ cs_cdo_time_get_scheme_function(const cs_flag_t             sys_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the RHS with the previously computed array values (for
- *         instance the source term)
+ * \brief  Update the RHS with the previously computed array of values (for
+ *         instance the previous source term evaluation)
+ *         Do not use OpenMP inside this function since it may be called from
+ *         an OpenMP block
  *
- * \param[in]     eqp         pointer to a cs_equation_param_t
- * \param[in]     n_dofs      size of the array of values
- * \param[in]     values      array of values
- * \param[in,out] rhs         right-hand side to update
+ * \param[in]      eqp         pointer to a cs_equation_param_t
+ * \param[in]      stride      number of entries for each DoF
+ * \param[in]      n_dofs      number of DoF to deal with
+ * \param[in]      dof_ids     list of DoF ids or NULL if no indirection
+ * \param[in]      values      array of values
+ * \param[in, out] rhs         right-hand side to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_update_rhs_with_array(const cs_equation_param_t  *eqp,
-                                  const cs_lnum_t             n_dofs,
-                                  const cs_real_t            *values,
-                                  cs_real_t                  *rhs)
+cs_cdo_time_update_rhs(const cs_equation_param_t    *eqp,
+                       int                           stride,
+                       cs_lnum_t                     n_dofs,
+                       const cs_lnum_t              *dof_ids,
+                       const cs_real_t              *values,
+                       cs_real_t                    *rhs)
 {
   if (!cs_equation_param_has_time(eqp))
     return; /* Nothing to do */
 
   /* Previous values are stored inside values */
-  switch (eqp->time_scheme) {
+  if (dof_ids != NULL) {
 
-  case CS_TIME_SCHEME_EXPLICIT:
-#   pragma omp parallel for if (n_dofs > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_dofs; i++) rhs[i] += values[i];
-    break;
+    switch (eqp->time_scheme) {
 
-  case CS_TIME_SCHEME_CRANKNICO:
-  case CS_TIME_SCHEME_THETA:
-    {
-      const double  tcoef = 1 - eqp->theta;
+    case CS_TIME_SCHEME_EXPLICIT:
+      if (stride > 1) {
 
-# pragma omp parallel for if (n_dofs > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < n_dofs; i++) rhs[i] += tcoef * values[i];
-    }
-    break;
+        for (cs_lnum_t i = 0; i < n_dofs; i++)
+          for (int k = 0; k < stride; k++)
+            rhs[stride*i+k] += values[stride*dof_ids[i]+k];
 
-  case CS_TIME_SCHEME_IMPLICIT:
-  default: // Nothing to do
-    break;
+      }
+      else {
 
-  } // End of switch
+        for (cs_lnum_t i = 0; i < n_dofs; i++) rhs[i] += values[dof_ids[i]];
+
+      }
+      break;
+
+    case CS_TIME_SCHEME_CRANKNICO:
+    case CS_TIME_SCHEME_THETA:
+      {
+        const double  tcoef = 1 - eqp->theta;
+        if (stride > 1) {
+          for (cs_lnum_t i = 0; i < n_dofs; i++)
+            for (int k = 0; k < stride; k++)
+              rhs[stride*i+k] += tcoef * values[stride*dof_ids[i]+k];
+        }
+        else {
+          for (cs_lnum_t i = 0; i < n_dofs; i++)
+            rhs[i] += tcoef * values[dof_ids[i]];
+        }
+      }
+      break;
+
+    case CS_TIME_SCHEME_IMPLICIT:
+    default: // Nothing to do
+      break;
+
+    } // End of switch
+
+  }
+  else { /* dof_ids == NULL */
+
+    switch (eqp->time_scheme) {
+
+    case CS_TIME_SCHEME_EXPLICIT:
+      for (cs_lnum_t i = 0; i < stride*n_dofs; i++) rhs[i] += values[i];
+      break;
+
+    case CS_TIME_SCHEME_CRANKNICO:
+    case CS_TIME_SCHEME_THETA:
+      {
+        const double  tcoef = 1 - eqp->theta;
+
+        for (cs_lnum_t i = 0; i < stride*n_dofs; i++)
+          rhs[i] += tcoef * values[i];
+      }
+      break;
+
+    case CS_TIME_SCHEME_IMPLICIT:
+    default: // Nothing to do
+      break;
+
+    } // End of switch
+
+  }
 
 }
 

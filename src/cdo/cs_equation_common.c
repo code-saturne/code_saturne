@@ -49,6 +49,7 @@
 #include "cs_cdofb_vecteq.h"
 #include "cs_hho_scaleq.h"
 #include "cs_log.h"
+#include "cs_math.h"
 #include "cs_xdef_eval.h"
 
 /*----------------------------------------------------------------------------*/
@@ -934,7 +935,7 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
 #   pragma omp atomic
     rhs[vi_id] += csys->rhs[i];
 
-    if (cs_equation_param_has_sourceterm(eqp)) {
+    if (sources != NULL) {
 #     pragma omp atomic
       sources[vi_id] += csys->source[i];
     }

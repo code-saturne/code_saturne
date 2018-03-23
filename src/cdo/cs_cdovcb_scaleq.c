@@ -63,6 +63,7 @@
 #include "cs_scheme_geometry.h"
 #include "cs_search.h"
 #include "cs_source_term.h"
+#include "cs_static_condensation.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -107,13 +108,15 @@ struct _cs_cdovcb_scaleq_t {
      all these quantities since they are only cellwise quantities. */
   cs_real_t   *cell_values;
   cs_real_t   *cell_rhs;  // right-hand side related to cell dofs
-  cs_real_t   *acc_inv;   // inverse of a diagonal matrix (block cell-cell)
-  cs_real_t   *acv;       /* Lower-Left block of the full matrix
-                             (block cell-vertices). Access to the values thanks
-                             to the c2v connectivity */
 
-  /* Array storing the value arising from the contribution of all source
-     terms */
+  /* Members related to the static condensation */
+  cs_real_t   *rc_tilda;   /* Acc^-1 * RHS_cell */
+  cs_real_t   *acv_tilda;  /* Acc^-1 * Acv
+                              Cell-vertices lower-Left block of the full matrix
+                              Access to the values thanks to the c2v
+                              connectivity */
+
+  /* Array storing the value of the contribution of all source terms */
   cs_real_t   *source_terms;
 
   /* Pointer of function to build the diffusion term */
@@ -245,7 +248,23 @@ _init_cell_structures(const cs_flag_t               cell_flag,
   }
   csys->dof_ids[cm->n_vc] = cm->c_id;
   csys->val_n[cm->n_vc] = eqc->cell_values[cm->c_id];
-  csys->rhs[cm->n_vc] = eqc->cell_rhs[cm->c_id]; // Used for static condensation
+
+  /* Update rhs with the previous computation of source term if needed */
+  if (cs_equation_param_has_sourceterm(eqp)) {
+    if (cs_equation_param_has_time(eqp)) {
+
+      /* Source terms attached to cells: Need to update rhs because the part
+         related to cell is used in the static condensation */
+      cs_cdo_time_update_rhs(eqp,
+                             1, /* stride */
+                             1, /* n_dofs */
+                             csys->dof_ids + cm->n_vc,
+                             eqc->source_terms + cs_shared_quant->n_vertices,
+                             csys->rhs + cm->n_vc);
+
+
+    }
+  }
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
@@ -279,63 +298,6 @@ _init_cell_structures(const cs_flag_t               cell_flag,
 #endif
 
   } /* Border cell */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Proceed to a static condensation of the local system and keep
- *          information inside the builder to be able to compute the values
- *          at cell centers
- *
- * \param[in]      c2v         pointer to a cs_adjacency_t structure
- * \param[in, out] eqc         pointer to a cs_cdovcb_scaleq_t structure
- * \param[in, out] cb          pointer to a cs_cell_builder_t structure
- * \param[in, out] csys        pointer to a cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_condense_and_store(const cs_adjacency_t    *c2v,
-                    cs_cdovcb_scaleq_t      *eqc,
-                    cs_cell_builder_t       *cb,
-                    cs_cell_sys_t           *csys)
-{
-  const int  n_dofs = csys->n_dofs;
-  const int  n_vc = n_dofs - 1;
-
-  /* Store information to compute the cell values after the resolution */
-  const double  *row_c = csys->mat->val + n_dofs*n_vc; // Last row
-  const double  inv_acc = 1/row_c[n_vc];
-  const double  cell_rhs = csys->rhs[n_vc];
-
-  eqc->acc_inv[csys->c_id] = inv_acc;
-  eqc->cell_rhs[csys->c_id] = cell_rhs;
-
-  /* Store the cell row (the last one) */
-  double  *acv = eqc->acv + c2v->idx[csys->c_id];
-  for (int v = 0; v < n_vc; v++) acv[v] = row_c[v];
-
-  double  *avc = cb->values;
-  for (int v = 0; v < n_vc; v++) avc[v] = csys->mat->val[n_dofs*v + n_vc];
-
-  /* Update csys */
-  csys->n_dofs = n_vc;
-  csys->mat->n_rows = n_vc;
-  for (short int i = 0; i < n_vc; i++) {
-
-    double  *old_i = csys->mat->val + n_dofs*i; // old row_i
-    double  *new_i = csys->mat->val + n_vc*i; // old row_i
-
-    /* Condensate the local matrix */
-    const double  coef_i = inv_acc * avc[i];
-    for (short int j = 0; j < n_vc; j++)
-      new_i[j] = old_i[j] - row_c[j]*coef_i;
-
-    /* Update RHS: RHS_v = RHS_v - Avc*Acc^-1*s_c */
-    csys->rhs[i] -= cell_rhs*coef_i;
-
-  } // Loop on vi cell vertices
 
 }
 
@@ -528,15 +490,12 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
      No need to synchronize all these quantities since they are only cellwise
      quantities. */
   BFT_MALLOC(eqc->cell_values, n_cells, cs_real_t);
-  BFT_MALLOC(eqc->cell_rhs, n_cells, cs_real_t);
-  BFT_MALLOC(eqc->acc_inv, n_cells, cs_real_t);
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    eqc->cell_values[i] = eqc->cell_rhs[i] = eqc->acc_inv[i] = 0;
+  BFT_MALLOC(eqc->rc_tilda, n_cells, cs_real_t);
+  BFT_MALLOC(eqc->acv_tilda, connect->c2v->idx[n_cells], cs_real_t);
 
-  BFT_MALLOC(eqc->acv, connect->c2v->idx[n_cells], cs_real_t);
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < connect->c2v->idx[n_cells]; i++) eqc->acv[i] = 0.;
+  memset(eqc->cell_values, 0, sizeof(cs_real_t)*n_cells);
+  memset(eqc->rc_tilda, 0, sizeof(cs_real_t)*n_cells);
+  memset(eqc->acv_tilda, 0, sizeof(cs_real_t)*connect->c2v->idx[n_cells]);
 
   /* Diffusion part */
   eqc->enforce_dirichlet = NULL;
@@ -645,8 +604,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   if (cs_equation_param_has_sourceterm(eqp)) {
 
     BFT_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
-#   pragma omp parallel for if (eqc->n_dofs > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)  eqc->source_terms[i] = 0;
+    memset(eqc->source_terms, 0, sizeof(cs_real_t)*eqc->n_dofs);
 
   } /* There is at least one source term */
 
@@ -682,9 +640,8 @@ cs_cdovcb_scaleq_free_context(void   *data)
     return eqc;
 
   BFT_FREE(eqc->cell_values);
-  BFT_FREE(eqc->cell_rhs);
-  BFT_FREE(eqc->acc_inv);
-  BFT_FREE(eqc->acv);
+  BFT_FREE(eqc->rc_tilda);
+  BFT_FREE(eqc->acv_tilda);
 
   BFT_FREE(eqc->source_terms);
 
@@ -820,15 +777,10 @@ cs_cdovcb_scaleq_initialize_system(const cs_equation_param_t   *eqp,
   /* Create the matrix related to the current algebraic system */
   *system_matrix = cs_matrix_create(cs_shared_ms);
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_v = quant->n_vertices;
-  const cs_lnum_t  n_c = quant->n_cells;
+  const cs_lnum_t  n_v = cs_shared_quant->n_vertices;
 
   BFT_MALLOC(*system_rhs, n_v, cs_real_t);
-# pragma omp parallel for if (n_v > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_v; i++) (*system_rhs)[i] = 0.0;
-# pragma omp parallel for if (n_c > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_c; i++) eqc->cell_rhs[i] = 0.0;
+  memset(*system_rhs, 0, sizeof(cs_real_t)*n_v);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
@@ -893,17 +845,14 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
   if (cs_equation_param_has_sourceterm(eqp)) {
     if (cs_equation_param_has_time(eqp)) {
 
-      /* Source terms attached to vertices */
-      cs_cdo_time_update_rhs_with_array(eqp,
-                                        quant->n_vertices,
-                                        eqc->source_terms,
-                                        rhs);
-
-      /* Source terms attached to cells */
-      cs_cdo_time_update_rhs_with_array(eqp,
-                                        quant->n_cells,
-                                        eqc->source_terms + quant->n_vertices,
-                                        eqc->cell_rhs);
+      /* Source terms attached to vertices: Update the RHS since the part
+         related to the vertices is not impacted by the static condensation */
+      cs_cdo_time_update_rhs(eqp,
+                             1, /* stride */
+                             quant->n_vertices,
+                             NULL,
+                             eqc->source_terms,
+                             rhs);
 
     }
   }
@@ -938,7 +887,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
 
-#pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       const cs_flag_t  cell_flag = connect->cell_flag[c_id];
@@ -1106,9 +1055,13 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
       }
 
       /* Static condensation of the local system matrix of size n_vc + 1 into
-         a matrix of size n_vc. Store information in the data structure in
-         order to be able to compute the values at cell centers. */
-      _condense_and_store(connect->c2v, eqc, cb, csys);
+         a matrix of size n_vc.
+         Store data in rc_tilda and acv_tilda to compute the values at cell
+         centers after solving the system */
+      cs_static_condensation_scalar_eq(connect->c2v,
+                                       eqc->rc_tilda,
+                                       eqc->acv_tilda,
+                                       cb, csys);
 
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
       /* ======================================================= */
@@ -1148,7 +1101,6 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
   cs_dbg_darray_to_listing("FINAL RHS_VTX", quant->n_vertices, rhs, 8);
-  cs_dbg_darray_to_listing("FINAL RHS_CELL",quant->n_cells, eqc->cell_rhs, 8);
 #endif
 
   /* Free temporary buffers and structures */
@@ -1188,30 +1140,15 @@ cs_cdovcb_scaleq_update_field(const cs_real_t            *solu,
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)data;
   cs_timer_t  t0 = cs_timer_time();
 
-  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
-  const cs_lnum_t  n_cells = cs_shared_quant->n_cells;
-
   /* Set the values at vertices */
-# pragma omp parallel for if (n_vertices > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_vertices; i++) field_val[i] = solu[i];
+  memcpy(field_val, solu, sizeof(cs_real_t) * cs_shared_quant->n_vertices);
 
-  /* Compute values at cells pc = acc^-1*(sc - acv*pv) */
-  const cs_adjacency_t  *c2v = cs_shared_connect->c2v;
-
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
-    const cs_lnum_t  shift_c = c2v->idx[c_id];
-    const cs_lnum_t  *v_ids = c2v->ids + shift_c;
-    const double  *acv = eqc->acv + shift_c;
-    const int  n_vc = c2v->idx[c_id+1] - shift_c;
-
-    double  acv_pv = 0.;
-    for (int v = 0; v < n_vc; v++) acv_pv += acv[v]*field_val[v_ids[v]];
-
-    eqc->cell_values[c_id] = eqc->acc_inv[c_id] * (eqc->cell_rhs[c_id]-acv_pv);
-
-  } // Loop on cells
+  /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
+  cs_static_condensation_recover_scalar(cs_shared_connect->c2v,
+                                        eqc->rc_tilda,
+                                        eqc->acv_tilda,
+                                        solu,
+                                        eqc->cell_values);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

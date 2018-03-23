@@ -57,18 +57,15 @@ struct  _cs_cdofb_t {
      DoF unknowns (x) + BCs */
   cs_real_t                       *face_values;
 
-  /* Right-hand side related to cell dofs */
-  cs_real_t                       *cell_rhs;
-
-  /* Inverse of a diagonal matrix (block cell-cell) */
-  cs_real_t                       *acc_inv;
-
-  /* Lower-Left block of the full matrix (block cell-vertices).
-     Access to the values thanks to the c2f connectivity */
-  cs_real_t                       *acf;
+  /* Members related to the static condensation */
+  cs_real_t   *rc_tilda;   /* Acc^-1 * RHS_cell */
+  cs_real_t   *acf_tilda;  /* Acc^-1 * Acf
+                              Cell-faces lower-left block of the full matrix
+                              Access to the values thanks to the c2f
+                              connectivity */
 
   /* Array storing the value arising from the contribution of all source
-     terms */
+     terms (only allocated to n_cells) */
   cs_real_t                       *source_terms;
 
   /* Pointer of function to build the diffusion term */

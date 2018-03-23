@@ -58,6 +58,7 @@
 #include "cs_reco.h"
 #include "cs_search.h"
 #include "cs_source_term.h"
+#include "cs_static_condensation.h"
 #include "cs_cdofb_priv.h"
 
 /*----------------------------------------------------------------------------
@@ -202,8 +203,23 @@ _init_cell_structures(const cs_flag_t               cell_flag,
 
     csys->dof_ids[_shift] = dof_id;
     csys->val_n[_shift] = field_tn[dof_id];
-    csys->rhs[_shift] = eqc->cell_rhs[dof_id];
 
+  }
+
+  /* Update rhs with the previous computation of source term if needed */
+  if (cs_equation_param_has_sourceterm(eqp)) {
+    if (cs_equation_param_has_time(eqp)) {
+
+      /* Source terms attached to cells: Need to update rhs because the part
+         related to cell is used in the static condensation */
+      cs_cdo_time_update_rhs(eqp,
+                             3, /* stride */
+                             1, /* n_dofs */
+                             csys->dof_ids + cm->n_fc,
+                             eqc->source_terms,
+                             csys->rhs + 3*cm->n_fc);
+
+    }
   }
 
   /* Store the local values attached to Dirichlet values if the current cell
@@ -240,101 +256,6 @@ _init_cell_structures(const cs_flag_t               cell_flag,
 
   } /* Border cell */
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Proceed to a static condensation of the local system and keep
- *          information inside the builder to be able to compute the values
- *          at cell centers
- *
- * \param[in]      c2f       pointer to a cs_adjacency_t structure
- * \param[in, out] eqc       pointer to a cs_cdofb_vecteq_t structure
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- * \param[in, out] csys      pointer to a cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_condense_and_store(const cs_adjacency_t    *c2f,
-                    cs_cdofb_vecteq_t       *eqc,
-                    cs_cell_builder_t       *cb,
-                    cs_cell_sys_t           *csys)
-{
-  cs_sdm_t  *m = csys->mat;
-  cs_sdm_block_t  *bd = m->block_desc;
-
-  const int  n_face_dofs = 3;
-  const int  n_cell_dofs = 3;
-  const int  n_fc = bd->n_row_blocks - 1;
-
-  /* Store information to compute the cell values after the resolution */
-  const double  *_cell_rhs = csys->rhs + n_face_dofs*n_fc;
-
-  /* mCC is a small square matrix of size 3x3 (should be diagonal) */
-  const cs_sdm_t  *mCC = cs_sdm_get_block(m, n_fc, n_fc);
-
-  double  *_acc_inv = eqc->acc_inv + 3*csys->c_id; /* Only the diagonal */
-  double  *cell_rhs = eqc->cell_rhs + n_cell_dofs*csys->c_id;
-  for (int i = 0; i < 3; i++) {
-    _acc_inv[i] = 1./mCC->val[3*i+i];
-    cell_rhs[i] = _cell_rhs[i];
-  }
-
-  /* Store the cell row (the last one) */
-  double  *acf = eqc->acf + 3*c2f->idx[csys->c_id]; /* Only the diagonal */
-  for (int f = 0; f < n_fc; f++) {
-    const cs_sdm_t  *mCF = cs_sdm_get_block(m, n_fc, f);
-    for (int i = 0; i < 3; i++) acf[3*f+i] = mCF->val[3*i+i];
-  }
-
-  /* Store the cell column temporary (the last one) */
-  double  *afc = cb->values;
-  for (int f = 0; f < n_fc; f++) {
-    const cs_sdm_t  *mCF = cs_sdm_get_block(m, f, n_fc);
-    for (int i = 0; i < 3; i++) afc[3*f+i] = mCF->val[3*i+i];
-  }
-
-  /* Update csys */
-  csys->n_dofs = n_face_dofs*n_fc;
-  for (short int bfi = 0; bfi < n_fc; bfi++) {
-
-    for (short int bfj = 0; bfj < n_fc; bfj++) {
-
-      cs_sdm_t  *mFF = cs_sdm_get_block(m, bfi, bfj);
-
-      for (int k = 0; k < 3; k++) {
-
-        const  cs_real_t  coef = afc[3*bfi+k] * _acc_inv[k];
-        mFF->val[3*k+k] -= coef * acf[3*bfj+k];
-
-        /* Update RHS: RHS_f = RHS_f - Afc*Acc^-1*s_c */
-        csys->rhs[3*bfi+k] -= _cell_rhs[k] * coef;
-
-      }
-
-    } /* Loop on blocks for face fj */
-  } /* Loop on blocks for face fi */
-
-  /* Reshape matrix */
-  int  shift = n_fc;
-  for (short int bfi = 1; bfi < n_fc; bfi++) {
-    for (short int bfj = 0; bfj < n_fc; bfj++) {
-
-      cs_sdm_t  *mFF_old = cs_sdm_get_block(m, bfi, bfj);
-
-      /* Set the block (i,j) */
-      cs_sdm_t  *mFF = bd->blocks + shift;
-
-      cs_sdm_copy(mFF, mFF_old);
-      shift++;
-
-    }
-  }
-
-  m->n_rows = m->n_cols = n_face_dofs*n_fc;
-  bd->n_row_blocks = n_fc;      /* instead of n_fc + 1 */
-  bd->n_col_blocks = n_fc;      /* instead of n_fc + 1 */
 }
 
 /*============================================================================
@@ -522,18 +443,17 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   for (cs_lnum_t i = 0; i < 3*n_faces; i++) eqc->face_values[i] = 0;
 
   /* Store the last computed values of the field at cell centers and the data
-     needed to compute the cell values from the vertex values.
+     needed to compute the cell values from the face values.
      No need to synchronize all these quantities since they are only cellwise
      quantities. */
-  BFT_MALLOC(eqc->cell_rhs, 3*n_cells, cs_real_t);
-  BFT_MALLOC(eqc->acc_inv, 3*n_cells, cs_real_t);
+  BFT_MALLOC(eqc->rc_tilda, 3*n_cells, cs_real_t);
 # pragma omp parallel for if (3*n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < 3*n_cells; i++)
-    eqc->cell_rhs[i] = eqc->acc_inv[i] = 0;
+    eqc->rc_tilda[i] = 0;
 
   /* Assume the 3x3 matrix is diagonal */
-  BFT_MALLOC(eqc->acf, 3*connect->c2f->idx[n_cells], cs_real_t);
-  memset(eqc->acf, 0, 3*connect->c2f->idx[n_cells]*sizeof(cs_real_t));
+  BFT_MALLOC(eqc->acf_tilda, 3*connect->c2f->idx[n_cells], cs_real_t);
+  memset(eqc->acf_tilda, 0, 3*connect->c2f->idx[n_cells]*sizeof(cs_real_t));
 
   /* Diffusion part */
   /* -------------- */
@@ -623,9 +543,8 @@ cs_cdofb_vecteq_free_context(void   *data)
   /* Free temporary buffers */
   BFT_FREE(eqc->source_terms);
   BFT_FREE(eqc->face_values);
-  BFT_FREE(eqc->cell_rhs);
-  BFT_FREE(eqc->acc_inv);
-  BFT_FREE(eqc->acf);
+  BFT_FREE(eqc->rc_tilda);
+  BFT_FREE(eqc->acf_tilda);
 
   BFT_FREE(eqc);
 
@@ -931,10 +850,14 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
           csys->rhs[f] += csys->neu_values[f];
       }
 
-      /* Static condensation of the local system matrix of size n_vc + 1 into
-         a matrix of size n_vc. Store information in the builder structure in
-         order to be able to compute the values at cell centers. */
-      _condense_and_store(connect->c2f, eqc, cb, csys);
+      /* Static condensation of the local system stored inside a block matrix of
+         size n_fc + 1 into a block matrix of size n_fc.
+         Store information in the context structure in order to be able to
+         compute the values at cell centers. */
+
+      cs_static_condensation_vector_eq(connect->c2f,
+                                       eqc->rc_tilda, eqc->acf_tilda,
+                                       cb, csys);
 
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
       /* ======================================================= */
@@ -1012,34 +935,15 @@ cs_cdofb_vecteq_update_field(const cs_real_t              *solu,
   cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)data;
   cs_timer_t  t0 = cs_timer_time();
 
-  const cs_real_t  *st = eqc->source_terms;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
-
   /* Set computed solution in builder->face_values */
-  memcpy(eqc->face_values, solu, 3*quant->n_faces*sizeof(cs_real_t));
+  memcpy(eqc->face_values, solu, 3*cs_shared_quant->n_faces*sizeof(cs_real_t));
 
-  /* Build the remaining discrete operators */
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-    cs_real_t  f_contrib[3] = {0., 0., 0.};
-    for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
-      for (int k = 0; k < 3; k++)
-        f_contrib[k] += eqc->face_values[3*c2f->ids[i]+k] * eqc->acf[3*i+k];
-    }
-
-    /* acf stores minus the row sum of the discrete Hodge operator */
-    if (cs_equation_param_has_sourceterm(eqp)) {
-      for (int k = 0; k < 3; k++)
-        field_val[3*c_id+k] = -eqc->acc_inv[3*c_id+k]
-          * (st[3*c_id+k] + f_contrib[k]);
-    }
-    else {
-      for (int k = 0; k < 3; k++)
-        field_val[3*c_id+k] = -eqc->acc_inv[3*c_id+k]*f_contrib[k];
-    }
-
-  } // loop on cells
+  /* Build the field inside each cell */
+  cs_static_condensation_recover_vector(cs_shared_connect->c2f,
+                                        eqc->rc_tilda,
+                                        eqc->acf_tilda,
+                                        eqc->face_values,
+                                        field_val);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
