@@ -1935,8 +1935,7 @@ _main_hho_schemes(FILE             *out_hho,
   cs_cell_builder_t  *cb = NULL;
   cs_cell_sys_t  *csys = NULL;
 
-  cs_hho_scaleq_init_common(flag, quant, connect, time_step,
-                            NULL, NULL, NULL, NULL, NULL, NULL);
+  cs_hho_scaleq_init_common(flag, quant, connect, time_step, NULL, NULL, NULL);
   cs_hho_scaleq_get(&csys, &cb, &hhob);
 
   int order = 0;
@@ -1983,7 +1982,7 @@ _main_cdovb_schemes(FILE             *out,
   cs_cell_builder_t  *cb = NULL;
   cs_cell_sys_t  *csys = NULL;
 
-  cs_cdovb_scaleq_init_common(quant, connect, time_step, NULL, NULL);
+  cs_cdovb_scaleq_init_common(quant, connect, time_step, NULL);
   cs_cdovb_scaleq_get(&csys, &cb);
 
     /* Initialize a cell view of the BC */
