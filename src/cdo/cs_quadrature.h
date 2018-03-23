@@ -1482,7 +1482,7 @@ cs_quadrature_get_integral_function_tetra(short int             dim,
     }
     break;
 
-  case 3:                       /* Vector-valued case */
+  case 3: /* Vector-valued case */
 
     switch (qtype) {
 

@@ -340,7 +340,7 @@ cs_compute_face_covariance_tensor(const cs_cell_mesh_t   *cm,
 
   /* Switching on face-type: optimized version for triangles */
   switch (n_ef) {
-  case 3: /* Triangle */
+  case CS_TRIANGLE_CASE: /* Triangle */
     {
       short int  v0, v1, v2;
       cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -426,7 +426,7 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
 
       switch(n_vf){
 
-      case 3:
+      case CS_TRIANGLE_CASE: /* Triangle */
         {
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);

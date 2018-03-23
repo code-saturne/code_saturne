@@ -124,16 +124,16 @@ _int_pow(cs_real_t    x,
   assert(exp > -1);
   switch (exp) {
 
-  case 0:
+  case 0: /* Unity */
     return 1;
     break;
-  case 1:
+  case 1: /* Linear */
     return x;
     break;
-  case 2:
+  case 2: /* Quadratic */
     return x*x;
     break;
-  case 3:
+  case 3: /* Cubic */
     return x*x*x;
     break;
 
@@ -957,7 +957,7 @@ _ck1_compute_projector(void                    *pbf,
       const double  hf_coef = cs_math_onethird * cm->hfc[f];
 
       switch (n_ef) { /* Optimized version for triangles */
-      case 3: /* Triangle */
+      case CS_TRIANGLE_CASE: /* Triangle */
         {
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -1116,7 +1116,7 @@ _ck2_compute_projector(void                    *pbf,
       const double  hf_coef = cs_math_onethird * cm->hfc[f];
 
       switch (n_ef) { /* Optimized version for triangles */
-      case 3: /* Triangle */
+      case CS_TRIANGLE_CASE: /* Triangle */
         {
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -1329,7 +1329,7 @@ _cka_compute_projector(void                    *pbf,
       const double  hf_coef = cs_math_onethird * cm->hfc[f];
 
       switch (n_ef) { /* Optimized version for triangles */
-      case 3: /* Triangle */
+      case CS_TRIANGLE_CASE: /* Triangle */
         {
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -1856,7 +1856,8 @@ _fk1_compute_projector(void                    *pbf,
   const short int *f2e_ids = cm->f2e_ids + start;
 
   switch (n_ef) { /* Optimized version for triangles */
-  case 3: /* Triangle */
+
+  case CS_TRIANGLE_CASE: /* Triangle */
     {
       short int  v0, v1, v2;
       cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -1990,7 +1991,8 @@ _fk2_compute_projector(void                    *pbf,
   const short int *f2e_ids = cm->f2e_ids + start;
 
   switch (n_ef) { /* Optimized version for triangles */
-  case 3: /* Triangle */
+
+  case CS_TRIANGLE_CASE: /* Triangle */
     {
       short int  v0, v1, v2;
       cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -2219,7 +2221,8 @@ _fka_compute_projector(void                    *pbf,
   const short int *f2e_ids = cm->f2e_ids + start;
 
   switch (n_ef) { /* Optimized version for triangles */
-  case 3: /* Triangle */
+
+  case CS_TRIANGLE_CASE: /* Triangle */
     {
       short int  v0, v1, v2;
       cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);

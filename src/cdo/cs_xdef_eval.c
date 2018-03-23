@@ -67,6 +67,7 @@ BEGIN_C_DECLS
 static const char _err_empty_array[] =
   " %s: Array storing the evaluation should be allocated before the call"
   " to this function.";
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -360,7 +361,7 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
   /* Evaluate the function for this time at the cell center */
   anai->func(ts->t_cur,
              n_elts, elt_ids, quant->cell_centers,
-             compact, // compacted output ?
+             compact, /* Is output compacted ? */
              anai->input,
              eval);
 }
@@ -443,8 +444,10 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
   cs_quadrature_tria_integral_t  *qfunc = NULL;
   cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)input;
+
   switch (dim) {
-  case 1:
+
+  case 1: /* Scalar-valued case */
     {
       switch (qtype) {
         /* Barycenter of the tetrahedral subdiv. */
@@ -468,7 +471,8 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
       } /* Which type of quadrature to use */
     }
     break;
-  case 3:
+
+  case 3: /* Vector-valued case */
     {
       switch (qtype) {
         /* Barycenter of the tetrahedral subdiv. */
@@ -492,10 +496,12 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
       } /* Which type of quadrature to use */
     }
     break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid dimension of the analytical fucntion.\n"));
-  } // END switch DIMENSION
+
+  } /* Switch on space dimension */
 
   const double  tcur = ts->t_cur;
   const cs_adjacency_t  *f2e = connect->f2e;
@@ -508,19 +514,13 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
       const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
       double *val_i = eval + dim*f_id;
-      const cs_lnum_t   start_idx = f2e->idx[f_id],
-        end_idx   = f2e->idx[f_id+1];
+      const cs_lnum_t  start_idx = f2e->idx[f_id],
+                       end_idx   = f2e->idx[f_id+1];
+
       switch (end_idx - start_idx) {
-      case 3:
+
+      case CS_TRIANGLE_CASE:
         {
-          /* If triangle, one-shot computation */
-          /*const cs_lnum_t _2e   = 2*f2e->ids[start_idx],*/
-          /*_2e_p = 2*f2e->ids[start_idx+1];*/
-          /*const cs_lnum_t v1  = e2v->ids[_2e],*/
-          /*v2  = e2v->ids[_2e+1],*/
-          /*tmp = e2v->ids[_2e_p],*/
-          /*v3  = ((tmp != v1) && (tmp != v2)) ?*/
-          /*tmp : e2v->ids[_2e_p+1];*/
           cs_lnum_t v1, v2, v3;
           cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
                                          &v1, &v2, &v3);
@@ -528,6 +528,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
                 anai->func, anai->input, val_i);
         }
         break;
+
       default:
         for (cs_lnum_t j = start_idx; j < end_idx; j++) {
 
@@ -539,16 +540,19 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
                 cs_math_surftri(xv + 3*v1, xv + 3*v2, pfq.center),
                 anai->func, anai->input, val_i);
 
-        } // Loop on edges
-      } // Switch tria
-      /* Average */
+        } /* Loop on edges */
+
+      } /* Switch on the type of face. Special case for triangles */
+
+      /* Compute the average */
       const double _os = 1./pfq.meas;
       for (short int xyz = 0; xyz < dim; xyz++)
         val_i[xyz] *= _os;
-    } // Loop on faces
+
+    } /* Loop on faces */
 
   }
-  else {
+  else { /* There is an indirection list */
 
     for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected faces
 
@@ -560,7 +564,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
       switch (end_idx - start_idx) {
 
-      case 3:
+      case CS_TRIANGLE_CASE:
         {
           /* If triangle, one-shot computation */
           cs_lnum_t v1, v2, v3;
@@ -582,9 +586,11 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
                 cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                 anai->func, anai->input, val_i);
 
-        } // Loop on edges
-      } // Switch tria
-      /* Average */
+        } /* Loop on edges */
+
+      } /* Switch on the type of face. Special case for triangles */
+
+      /* Compute the average */
       const double _os = 1./pfq.meas;
       for (short int xyz = 0; xyz < dim; xyz++)
         val_i[xyz] *= _os;
@@ -2358,7 +2364,7 @@ cs_xdef_eval_int_on_cell_faces(const cs_cell_mesh_t          *cm,
       assert(n_vf > 2);
       switch(n_vf){
 
-      case 3: /* triangle (optimized version, no subdivision) */
+      case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -2619,6 +2625,7 @@ cs_xdef_eval_cw_avg_reduction_by_analytic(const cs_cell_mesh_t       *cm,
 
   cs_quadrature_tetra_integral_t  *q_tet = NULL;
   cs_quadrature_tria_integral_t   *q_tri = NULL;
+
   switch (qtype) {
 
   case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
@@ -2651,12 +2658,14 @@ cs_xdef_eval_cw_avg_reduction_by_analytic(const cs_cell_mesh_t       *cm,
                                  3, //dimension
                                  q_tet, q_tri,
                                  c_eval, eval);
-  /* Averages */
+
+  /* Compute the averages */
   for (short int f = 0; f < nf; f++) {
     const cs_real_t _os = 1. / cm->face[f].meas;
     cs_real_t *f_eval = eval + 3*f;
     f_eval[0] *= _os, f_eval[1] *= _os, f_eval[2] *= _os;
-  } // Loop on f
+  }
+
   const cs_real_t _ov = 1. / cm->vol_c;
   c_eval[0] *= _ov, c_eval[1] *= _ov, c_eval[2] *= _ov;
 }

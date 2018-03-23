@@ -886,8 +886,8 @@ _pfsa_by_analytic(cs_analytic_func_t             *ana,
 
       switch (end_idx - start_idx) {
 
-      case 3:
-        { /* If triangle, one-shot computation */
+      case CS_TRIANGLE_CASE: /* Triangle: one-shot computation */
+        {
           cs_lnum_t  v1, v2, v3;
 
           cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
@@ -947,8 +947,8 @@ _pfsa_by_analytic(cs_analytic_func_t             *ana,
 
           switch (end_idx - start_idx) {
 
-          case 3:
-            { /* If triangle, one-shot computation */
+          case CS_TRIANGLE_CASE: /* Triangle: one-shot computation */
+            {
               cs_lnum_t  v1, v2, v3;
 
               cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
@@ -1030,8 +1030,8 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
 
       switch (end_idx - start_idx) {
 
-      case 3:
-        { /* If triangle, one-shot computation */
+      case CS_TRIANGLE_CASE: /* Triangle: one-shot computation */
+        {
           cs_lnum_t  v1, v2, v3;
 
           cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
@@ -1093,8 +1093,8 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
 
           switch (end_idx - start_idx) {
 
-          case 3:
-            { /* If triangle, one-shot computation */
+          case CS_TRIANGLE_CASE: /* Triangle: one-shot computation */
+            {
               cs_lnum_t  v1, v2, v3;
 
               cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
@@ -1720,7 +1720,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
       rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
       break;
 
-    case 3:
+    case 3: /* Vector-valued */
       assert(dof_flag & CS_FLAG_VECTOR);
       rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
       break;
@@ -1755,7 +1755,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
       rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
       break;
 
-    case 3:
+    case 3: /* Vector-valued */
       assert(dof_flag & CS_FLAG_VECTOR);
       rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
       break;
@@ -2040,7 +2040,7 @@ cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
 
   switch (def->dim) {
 
-  case 1:
+  case 1: /* Scalar-valued */
     {
       assert(dof_flag & CS_FLAG_SCALAR);
       rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
@@ -2075,7 +2075,7 @@ cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
     }
     break;
 
-  case 3:
+  case 3: /* Vector-valued */
     {
       assert(dof_flag & CS_FLAG_VECTOR);
       rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
@@ -2147,12 +2147,12 @@ cs_evaluate_average_on_cells_by_value(cs_flag_t          dof_flag,
 
   switch (def->dim) {
 
-  case 1:
+  case 1: /* Scalar-valued */
     assert(dof_flag & CS_FLAG_SCALAR);
     _pcsa_by_value(input[0], z->n_cells, z->cell_ids, retval);
     break;
 
-  case 3:
+  case 3: /* Vector-valued */
     assert(dof_flag & CS_FLAG_VECTOR);
     _pcva_by_value(input, z->n_cells, z->cell_ids, retval);
     break;
@@ -2267,7 +2267,7 @@ cs_evaluate_average_on_cells_by_analytic(cs_flag_t          dof_flag,
 
   switch (def->dim) {
 
-  case 1:
+  case 1: /* Scalar-valued */
     {
       assert(dof_flag & CS_FLAG_SCALAR);
 
@@ -2300,7 +2300,7 @@ cs_evaluate_average_on_cells_by_analytic(cs_flag_t          dof_flag,
     }
     break;
 
-  case 3:
+  case 3: /* Vector-valued */
     {
       assert(dof_flag & CS_FLAG_VECTOR);
 

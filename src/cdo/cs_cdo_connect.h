@@ -58,6 +58,9 @@ BEGIN_C_DECLS
 #define CS_CDO_CONNECT_FACE_SP2  4 /* HHO-P2 scalar-valued eq. */
 #define CS_CDO_CONNECT_N_CASES   5
 
+/* Additional macros */
+#define CS_TRIANGLE_CASE         3 /* Number of vertices in a triangle */
+
 /*============================================================================
  * Type definitions
  *============================================================================*/

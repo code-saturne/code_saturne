@@ -1788,7 +1788,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
           assert(n_vf > 2);
           switch(n_vf){
 
-          case 3: /* triangle (optimized version, no subdivision) */
+          case CS_TRIANGLE_CASE: /* Optimized version, no subdivision */
             {
               short int  v0, v1, v2;
               cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids,
@@ -1908,7 +1908,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
       assert(n_vf > 2);
       switch(n_vf){
 
-      case 3: /* triangle (optimized version, no subdivision) */
+      case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);

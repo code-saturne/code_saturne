@@ -882,7 +882,7 @@ cs_xdef_eval_int_on_cell(const cs_cell_mesh_t           *cm,
       assert(n_vf > 2);
       switch(n_vf){
 
-      case 3: /* triangle (optimized version, no subdivision) */
+      case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -956,7 +956,7 @@ cs_xdef_eval_int_on_face(const cs_cell_mesh_t          *cm,
   const short int *f2e_ids = cm->f2e_ids + start;
 
   switch (n_vf) {
-    case 3:
+    case CS_TRIANGLE_CASE:
       {
         short int  v0, v1, v2;
         cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);

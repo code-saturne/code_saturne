@@ -551,7 +551,7 @@ _compute_mcg(const cs_cell_mesh_t    *cm,
 
       switch(n_vf){
 
-      case 3: /* triangle (optimized version, no subdivision) */
+      case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -852,7 +852,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
       assert(n_vf > 2);
       switch(n_vf){
 
-      case 3: /* triangle (optimized version, no subdivision) */
+      case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -1144,7 +1144,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 
     switch(n_vf){
 
-    case 3: /* triangle (optimized version, no subdivision) */
+    case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
       {
         short int  v0, v1, v2;
         cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -1385,7 +1385,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
       assert(n_vf > 2);
       switch(n_vf){
 
-      case 3: /* triangle (optimized version, no subdivision) */
+      case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -1519,7 +1519,7 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
       assert(n_vf > 2);
       switch(n_vf){
 
-      case 3: /* triangle (optimized version, no subdivision) */
+      case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);

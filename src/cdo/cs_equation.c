@@ -125,13 +125,13 @@ _initialize_field_from_ic(cs_equation_t  *eq)
 
   cs_flag_t  dof_flag = 0;
   switch (eqp->dim) {
-  case 1:
+  case 1: /* Scalar-valued */
     dof_flag |= CS_FLAG_SCALAR;
     break;
-  case 3:
+  case 3: /* Vector-valued */
     dof_flag |= CS_FLAG_VECTOR;
     break;
-  case 9:
+  case 9: /* Tensor-valued */
     dof_flag |= CS_FLAG_TENSOR;
     break;
   default:
