@@ -489,11 +489,7 @@ _solve_domain(cs_domain_t  *domain)
                      domain->cdo_quantities);
 
     if (cs_navsto_system_is_activated())
-      cs_navsto_system_compute(domain->mesh,
-                               domain->time_step,
-                               domain->dt_cur,
-                               domain->connect,
-                               domain->cdo_quantities);
+      cs_navsto_system_compute(domain->mesh, domain->dt_cur);
 
     /* User-defined equations */
     _compute_steady_user_equations(domain);
@@ -521,11 +517,7 @@ _solve_domain(cs_domain_t  *domain)
                      domain->cdo_quantities);
 
     if (cs_navsto_system_is_activated())
-      cs_navsto_system_compute(domain->mesh,
-                               domain->time_step,
-                               domain->dt_cur,
-                               domain->connect,
-                               domain->cdo_quantities);
+      cs_navsto_system_compute(domain->mesh, domain->dt_cur);
 
     /* User-defined equations */
     _compute_unsteady_user_equations(domain, nt_cur);
@@ -659,10 +651,6 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
 
   cs_timer_t t0 = cs_timer_time();
 
-  /* Add variables related to user-defined and predefined equations */
-  cs_equation_create_fields();
-  cs_advection_field_create_fields();
-
   /* According to the settings, add or not predefined equations:
       >> Wall distance
       >> Groundwater flows
@@ -670,6 +658,10 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
       >> Navier-Stokes system
   */
   cs_domain_setup_predefined_equations(domain);
+
+  /* Add variables related to user-defined and predefined equations */
+  cs_equation_create_fields();
+  cs_advection_field_create_fields();
 
   /* Set the scheme flag for the computational domain */
   cs_domain_set_scheme_flags(domain);

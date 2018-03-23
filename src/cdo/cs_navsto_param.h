@@ -87,9 +87,9 @@ typedef enum {
 
 typedef enum {
 
-  CS_NAVSTO_TIME_STATE_UNSTEADY,
   CS_NAVSTO_TIME_STATE_FULL_STEADY,
   CS_NAVSTO_TIME_STATE_LIMIT_STEADY,
+  CS_NAVSTO_TIME_STATE_UNSTEADY,
 
   CS_NAVSTO_N_TIME_STATES
 
@@ -131,6 +131,17 @@ typedef struct {
   * Level of display of the information related to the Navier-Stokes system
   */
   int                           verbosity;
+
+  /*! \var dof_reduction_mode
+   *  How are defined the Degrees of freedom
+   */
+  cs_param_dof_reduction_t      dof_reduction_mode;
+
+  /*! \var time_scheme
+   * Discretization scheme for time
+   */
+  cs_param_time_scheme_t        time_scheme;
+  cs_real_t                     theta;
 
   /*! \var space_scheme
    * Discretization scheme for space
@@ -178,8 +189,20 @@ typedef struct {
  * Set the zeta coefficient (in front of the grad-div term) when an artificial
  * coefficient algorithm is used
  *
+ * \var CS_NSKEY_DOF_REDUCTION
+ * Set how the DoFs are defined (similar to \ref CS_EQKEY_DOF_REDUCTION)
+ * Enable to set this type of DoFs definition for all related equations
+ *
  * \var CS_NSKEY_SPACE_SCHEME
  * Numerical scheme for the space discretization
+ *
+ * \var CS_NSKEY_TIME_SCHEME
+ * Numerical scheme for the time discretization
+ *
+ * \var CS_NSKEY_TIME_THETA
+ * Set the value of theta. Only useful if CS_NSKEY_TIME_SCHEME is set to
+ * "theta_scheme"
+ * - Example: "0.75" (keyval must be between 0 and 1)
  *
  * \var CS_NSKEY_VERBOSITY
  * Set the level of details for the specific part related to the Navier-Stokes
@@ -190,12 +213,44 @@ typedef struct {
 typedef enum {
 
   CS_NSKEY_AC_ZETA_COEF,
+  CS_NSKEY_DOF_REDUCTION,
   CS_NSKEY_SPACE_SCHEME,
+  CS_NSKEY_TIME_SCHEME,
+  CS_NSKEY_TIME_THETA,
   CS_NSKEY_VERBOSITY,
 
   CS_NSKEY_N_KEYS
 
 } cs_navsto_key_t;
+
+/*============================================================================
+ * Inline static public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a new structure to store all numerical parameters related
+ *         to the resolution of the Navier-Stokes (NS) system
+ *
+ * \param[in]  model          model related to the NS system to solve
+ * \param[in]  time_state     state of the time for the NS equations
+ * \param[in]  algo_coupling  algorithm used for solving the NS system
+*
+ * \return a pointer to a new allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_navsto_param_is_steady(cs_navsto_param_t       *nsp)
+{
+  if (nsp == NULL)
+    return true;
+
+  if (nsp->time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
+    return true;
+  else
+    return false;
+}
 
 /*============================================================================
  * Public function prototypes

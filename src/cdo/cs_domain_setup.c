@@ -510,19 +510,6 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
      fields (no more fields are created at this stage) */
   cs_user_cdo_finalize_setup(cs_glob_domain);
 
-  if (cs_walldistance_is_activated())
-    cs_walldistance_finalize_setup(domain->connect, domain->cdo_quantities);
-
-  if (cs_gwf_is_activated())
-    cs_gwf_finalize_setup(domain->connect, domain->cdo_quantities);
-
-  /* Navier-Stokes system */
-  if (cs_navsto_system_is_activated())
-    cs_navsto_system_finalize_setup(domain->connect, domain->cdo_quantities);
-
-  /* Last stage to define properties (when complex definition is requested) */
-  cs_property_finalize_setup();
-
   /* Proceed to the last settings of a cs_equation_t structure
      - Assign to a cs_equation_t structure a list of function to manage this
        structure during the computation.
@@ -536,6 +523,25 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
 
   if (domain->only_steady)
     domain->is_last_iter = true;
+
+  /* Last stage for the settings for each predefined set of equations:
+     - wall distance computation
+     - groundwater flow module
+     - Navier-Stokes system
+   */
+
+  if (cs_walldistance_is_activated())
+    cs_walldistance_finalize_setup(domain->connect, domain->cdo_quantities);
+
+  if (cs_gwf_is_activated())
+    cs_gwf_finalize_setup(domain->connect, domain->cdo_quantities);
+
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_finalize_setup(domain->connect, domain->cdo_quantities);
+
+  /* Last stage to define properties (when complex definition is requested) */
+  cs_property_finalize_setup();
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -562,6 +568,10 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 
   /* Set the initial condition for all advection fields */
   cs_advection_field_update(false); // operate current to previous ?
+
+  /* Set the initial state for the groundawater flow module */
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_initialize();
 
   /* Set the initial state for the groundawater flow module */
   if (cs_gwf_is_activated())

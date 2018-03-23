@@ -80,9 +80,9 @@ cs_navsto_param_model_name[CS_NAVSTO_N_MODELS][CS_BASE_STRING_LEN] =
 
 static const char
 cs_navsto_param_time_state_name[CS_NAVSTO_N_TIME_STATES][CS_BASE_STRING_LEN] =
-  { N_("Fully unsteady"),
-    N_("Fully steady"),
-    N_("Steaty-state as the limit of an unsteady computation")
+  { N_("Fully steady"),
+    N_("Steaty-state as the limit of an unsteady computation"),
+    N_("Fully unsteady")
   };
 
 static const char
@@ -127,6 +127,12 @@ cs_navsto_param_create(cs_navsto_param_model_t        model,
 
   param->verbosity = 1;
 
+  /* Default numerical settings */
+  param->time_scheme =   CS_TIME_SCHEME_IMPLICIT;
+  param->theta = 1.0;
+  param->space_scheme = CS_SPACE_SCHEME_CDOFB;
+  param->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
+
   /* Which equations are solved and which terms are needed */
   param->model = model;
   param->has_gravity = false;
@@ -134,8 +140,6 @@ cs_navsto_param_create(cs_navsto_param_model_t        model,
   param->time_state = time_state;
   param->coupling = algo_coupling;
   param->ac_zeta_coef = 1.0;    /* Default value if not set by the user */
-
-  param->space_scheme = CS_SPACE_SCHEME_CDOFB;
 
   return param;
 }
@@ -192,6 +196,20 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     nsp->ac_zeta_coef = atof(val);
     break;
 
+  case CS_NSKEY_DOF_REDUCTION:
+    if (strcmp(val, "derham") == 0)
+      nsp->dof_reduction_mode = CS_PARAM_REDUCTION_DERHAM;
+    else if (strcmp(val, "average") == 0)
+      nsp->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Invalid val %s related to key CS_NSKEY_DOF_REDUCTION\n"
+                  " Choice between \"derham\" or \"average\"."),
+                __func__, _val);
+    }
+    break;
+
   case CS_NSKEY_SPACE_SCHEME:
     if (strcmp(val, "cdo_fb") == 0) {
       nsp->space_scheme = CS_SPACE_SCHEME_CDOFB;
@@ -212,6 +230,34 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
                   " Choice between hho_{p0, p1, p2} or cdo_fb"),
                 __func__, _val);
     }
+    break;
+
+  case CS_NSKEY_TIME_SCHEME:
+    if (strcmp(val, "implicit") == 0) {
+      nsp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
+      nsp->theta = 1.;
+    }
+    else if (strcmp(val, "explicit") == 0) {
+      nsp->time_scheme = CS_TIME_SCHEME_EXPLICIT;
+      nsp->theta = 0.;
+    }
+    else if (strcmp(val, "crank_nicolson") == 0) {
+      nsp->time_scheme = CS_TIME_SCHEME_CRANKNICO;
+      nsp->theta = 0.5;
+    }
+    else if (strcmp(val, "theta_scheme") == 0)
+      nsp->time_scheme = CS_TIME_SCHEME_THETA;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
+                  " Valid choices are \"implicit\", \"explicit\","
+                  " \"crank_nicolson\", and \"theta_scheme\"."), _val);
+    }
+    break;
+
+  case CS_NSKEY_TIME_THETA:
+    nsp->theta = atof(val);
     break;
 
   case CS_NSKEY_VERBOSITY:
@@ -252,13 +298,6 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
   cs_log_printf(CS_LOG_SETUP, " <NavSto/Verbosity> %d\n", nsp->verbosity);
 
-  const char *space_scheme = cs_param_get_space_scheme_name(nsp->space_scheme);
-  if (nsp->space_scheme != CS_SPACE_N_SCHEMES)
-    cs_log_printf(CS_LOG_SETUP, " <NavSto/Space scheme> %s\n", space_scheme);
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Undefined space scheme for the Navier-Stokes system");
-
   cs_log_printf(CS_LOG_SETUP, " <NavSto/Model> %s\n",
                 cs_navsto_param_model_name[nsp->model]);
   cs_log_printf(CS_LOG_SETUP, " <NavSto/Time status> %s\n",
@@ -272,6 +311,29 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                   nsp->gravity[0], nsp->gravity[1], nsp->gravity[2]);
   else
     cs_log_printf(CS_LOG_SETUP, "\n");
+
+  const char *space_scheme = cs_param_get_space_scheme_name(nsp->space_scheme);
+  if (nsp->space_scheme != CS_SPACE_N_SCHEMES)
+    cs_log_printf(CS_LOG_SETUP, " <NavSto/Space scheme> %s\n", space_scheme);
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Undefined space scheme.", __func__);
+
+  if (nsp->time_state != CS_NAVSTO_TIME_STATE_FULL_STEADY) {
+
+    const char  *time_scheme = cs_param_get_time_scheme_name(nsp->time_scheme);
+    if (time_scheme != NULL) {
+      cs_log_printf(CS_LOG_SETUP, " <NavSto/Time scheme> %s", time_scheme);
+      if (nsp->time_scheme == CS_TIME_SCHEME_THETA)
+        cs_log_printf(CS_LOG_SETUP, " with value %f\n", nsp->theta);
+      else
+        cs_log_printf(CS_LOG_SETUP, "\n");
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid time scheme.", __func__);
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

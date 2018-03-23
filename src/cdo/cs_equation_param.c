@@ -1145,24 +1145,17 @@ cs_equation_summary_param(const char                  *eqname,
     for (int i = 0; i < eqp->n_ic_defs; i++)
       cs_xdef_log(eqp->ic_defs[i]);
 
-    cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Scheme> ", eqname);
-    switch (eqp->time_scheme) {
-    case CS_TIME_SCHEME_IMPLICIT:
-      cs_log_printf(CS_LOG_SETUP, "implicit\n");
-      break;
-    case CS_TIME_SCHEME_EXPLICIT:
-      cs_log_printf(CS_LOG_SETUP, "explicit\n");
-      break;
-    case CS_TIME_SCHEME_CRANKNICO:
-      cs_log_printf(CS_LOG_SETUP, "Crank-Nicolson\n");
-      break;
-    case CS_TIME_SCHEME_THETA:
-      cs_log_printf(CS_LOG_SETUP, "theta scheme with value %f\n", eqp->theta);
-      break;
-    default:
-      bft_error(__FILE__, __LINE__, 0, " Invalid time scheme.");
-      break;
+    const char  *time_scheme = cs_param_get_time_scheme_name(eqp->time_scheme);
+    if (time_scheme != NULL) {
+      cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Scheme> %s", eqname, time_scheme);
+      if (eqp->time_scheme == CS_TIME_SCHEME_THETA)
+        cs_log_printf(CS_LOG_SETUP, " with value %f\n", eqp->theta);
+      else
+        cs_log_printf(CS_LOG_SETUP, "\n");
     }
+    else
+      bft_error(__FILE__, __LINE__, 0, " Invalid time scheme.");
+
     cs_log_printf(CS_LOG_SETUP, "  <%s/Mass.Lumping> %s\n",
                   eqname, cs_base_strtf(eqp->do_lumping));
     cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Property> %s\n",

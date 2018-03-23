@@ -394,9 +394,9 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the name of the type of boundary condition
+ * \brief   Get the name of the space discretization scheme
  *
- * \param[in] type     type of boundary condition
+ * \param[in] scheme      type of space scheme
  *
  * \return the associated space scheme name
  */
@@ -404,6 +404,19 @@ typedef struct {
 
 const char *
 cs_param_get_space_scheme_name(cs_param_space_scheme_t    scheme);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the time discretization scheme
+ *
+ * \param[in] scheme      type of time scheme
+ *
+ * \return the associated time scheme name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme);
 
 /*----------------------------------------------------------------------------*/
 /*!

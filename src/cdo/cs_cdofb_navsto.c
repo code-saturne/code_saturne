@@ -104,6 +104,27 @@ typedef struct {
 
   /*!
    * @}
+   * @name Arrays storing face unknowns
+   * @{
+   *
+   */
+
+  /* \var face_velocity
+   * Degrees of freedom for the velocity at faces
+   */
+
+  cs_real_t  *face_velocity;
+
+  /* \var face_pressure
+   * Degrees of freedom for the pressure at faces. Not always allocated.
+   * It depends on the type of algorithm used to couple the Navier-Stokes
+   * system.
+   */
+
+  cs_real_t  *face_pressure;
+
+  /*!
+   * @}
    * @name Performance monitoring
    * @{
    *
@@ -160,6 +181,9 @@ _create_navsto_context(const cs_navsto_param_t  *nsp)
 
   nssc->vecteq_context = NULL;
   nssc->scaleq_context = NULL;
+
+  nssc->face_velocity = NULL;
+  nssc->face_pressure = NULL;
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(nssc->timer);
@@ -314,8 +338,6 @@ cs_cdofb_navsto_free_context(const cs_navsto_param_t      *nsp)
  *
  * \param[in]      mesh        pointer to a cs_mesh_t structure
  * \param[in]      dt_cur      current value of the time step
- * \param[in]      connect     pointer to a cs_cdo_connect_t structure
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      nsp         pointer to a cs_navsto_param_t structure
  * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
  *                             structure cast on-the-fly
@@ -325,17 +347,13 @@ cs_cdofb_navsto_free_context(const cs_navsto_param_t      *nsp)
 void
 cs_cdofb_navsto_uzawa_compute(const cs_mesh_t              *mesh,
                               double                        dt_cur,
-                              const cs_cdo_connect_t       *connect,
-                              const cs_cdo_quantities_t    *quant,
                               const cs_navsto_param_t      *nsp,
                               void                         *nsc_input)
 {
   CS_UNUSED(dt_cur);
 
   cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
-
-  const cs_navsto_coupling_uzawa_t  *nscc =
-    (const cs_navsto_coupling_uzawa_t  *)nsc_input;
+  cs_navsto_coupling_uzawa_t  *nscc = (cs_navsto_coupling_uzawa_t  *)nsc_input;
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -353,8 +371,6 @@ cs_cdofb_navsto_uzawa_compute(const cs_mesh_t              *mesh,
  *
  * \param[in]      mesh        pointer to a cs_mesh_t structure
  * \param[in]      dt_cur      current value of the time step
- * \param[in]      connect     pointer to a cs_cdo_connect_t structure
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      nsp         pointer to a cs_navsto_param_t structure
  * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
  *                             structure cast on-the-fly
@@ -364,18 +380,13 @@ cs_cdofb_navsto_uzawa_compute(const cs_mesh_t              *mesh,
 void
 cs_cdofb_navsto_ac_compute(const cs_mesh_t              *mesh,
                            double                        dt_cur,
-                           const cs_cdo_connect_t       *connect,
-                           const cs_cdo_quantities_t    *quant,
                            const cs_navsto_param_t      *nsp,
                            void                         *nsc_input)
 {
   CS_UNUSED(dt_cur);
 
   cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
-
-  /* Cast the coupling context */
-  const cs_navsto_coupling_ac_t  *nscc =
-    (const cs_navsto_coupling_ac_t *)nsc_input;
+  cs_navsto_coupling_ac_t  *nscc = (cs_navsto_coupling_ac_t *)nsc_input;
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -393,8 +404,6 @@ cs_cdofb_navsto_ac_compute(const cs_mesh_t              *mesh,
  *
  * \param[in]      mesh        pointer to a cs_mesh_t structure
  * \param[in]      dt_cur      current value of the time step
- * \param[in]      connect     pointer to a cs_cdo_connect_t structure
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      nsp         pointer to a cs_navsto_param_t structure
  * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
  *                             structure cast on-the-fly
@@ -404,18 +413,14 @@ cs_cdofb_navsto_ac_compute(const cs_mesh_t              *mesh,
 void
 cs_cdofb_navsto_proj_compute(const cs_mesh_t              *mesh,
                              double                        dt_cur,
-                             const cs_cdo_connect_t       *connect,
-                             const cs_cdo_quantities_t    *quant,
                              const cs_navsto_param_t      *nsp,
                              void                         *nsc_input)
 {
   CS_UNUSED(dt_cur);
 
   cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
-
-  /* Cast the coupling context */
-  const cs_navsto_coupling_projection_t  *nscc =
-    (const cs_navsto_coupling_projection_t  *)nsc_input;
+  cs_navsto_coupling_projection_t  *nscc =
+    (cs_navsto_coupling_projection_t  *)nsc_input;
 
   cs_timer_t  t0 = cs_timer_time();
 

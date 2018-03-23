@@ -91,8 +91,6 @@ typedef void
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      dt_cur     current value of the time step
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      nsp        pointer to a cs_navsto_param_t structure
  * \param[in, out] nscc       Navier-Stokes coupling context: pointer to a
  *                            structure cast on-the-fly
@@ -102,8 +100,6 @@ typedef void
 typedef void
 (cs_navsto_compute_t)(const cs_mesh_t              *mesh,
                       double                        dt_cur,
-                      const cs_cdo_connect_t       *connect,
-                      const cs_cdo_quantities_t    *quant,
                       const cs_navsto_param_t      *nsp,
                       void                         *nscc);
 
@@ -232,7 +228,8 @@ cs_navsto_system_get_param(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Start setting-up the Navier-Stokes system
- *         Mesh information is not yet available.
+ *         At this stage, numerical settings should be completely determined
+ *         but connectivity and geometrical information is not yet available.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -254,22 +251,26 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the Navier-Stokes system
+ * \brief  Initialize the context structure used to build the algebraic system
+ *         This is done after the setup step.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_initialize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build, solve and update the Navier-Stokes system
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      time_step  pointer to a cs_time_step_t structure
  * \param[in]      dt_cur     current value of the time step
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_navsto_system_compute(const cs_mesh_t              *mesh,
-                         const cs_time_step_t         *time_step,
-                         double                        dt_cur,
-                         const cs_cdo_connect_t       *connect,
-                         const cs_cdo_quantities_t    *cdoq);
+                         double                        dt_cur);
 
 /*----------------------------------------------------------------------------*/
 /*!
