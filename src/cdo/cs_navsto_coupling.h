@@ -94,6 +94,26 @@ typedef struct {
 
 } cs_navsto_coupling_ac_t;
 
+/*! \struct cs_navsto_coupling_ac_vpp_t
+ *  \brief Set of parameters specific for solving the Navier-Stokes system with
+ *         the "artificial compressibility" solved by the VPP_eps algorithm
+ *
+ *  All equations are not always created. It depends on the choice of the model
+ */
+
+typedef struct {
+
+  cs_equation_t  *momentum; /*!< Momentum balance equation (vector-valued) */
+  cs_equation_t  *graddiv;  /*!< Second equation of the VPP_eps method, that is
+                              where the grad-div operator is used 
+                              (vector-valued) */
+
+  cs_property_t  *zeta;    /*!< Parameter (Artifical Compressibility) VPP
+                             alorithm attached to the grad-div stabilzation
+                             term */
+
+} cs_navsto_coupling_ac_vpp_t;
+
 /*! \struct cs_navsto_coupling_projection_t
  *  \brief Set of parameters specific for solving the Navier-Stokes system with
  *         an incremental projection algorithm

@@ -72,10 +72,12 @@ BEGIN_C_DECLS
  *         schemes
  *
  * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]  connect     pointer to a \ref cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
- * \param[in]  sms         pointer to a cs_matrix_structure_t structure (scalar)
- * \param[in]  vms         pointer to a cs_matrix_structure_t structure (vector)
+ * \param[in]  sms         pointer to a \ref cs_matrix_structure_t structure
+ *                         (scalar)
+ * \param[in]  vms         pointer to a \ref cs_matrix_structure_t structure
+ *                         (vector)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -88,11 +90,11 @@ cs_cdofb_navsto_init_common(const cs_cdo_quantities_t     *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdofb_navsto_t structure storing in the case of a
- *         Uzawa-Augmented Lagrangian approach
+ * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
+ *         a Uzawa-Augmented Lagrangian approach
  *
- * \param[in] nsp        pointer to a cs_navsto_param_t structure
- * \param[in] nsc_input  pointer to a cs_navsto_coupling_uzawa_t structure
+ * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in] nsc_input  pointer to a \ref cs_navsto_coupling_uzawa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -102,11 +104,11 @@ cs_cdofb_navsto_init_uzawa_context(const cs_navsto_param_t     *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdofb_navsto_t structure storing in the case of an
- *         Artificial Compressibility approach
+ * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
+ *         an Artificial Compressibility approach
  *
- * \param[in] nsp    pointer to a cs_navsto_param_t structure
- * \param[in] nsc    pointer to a cs_navsto_coupling_uzawa_t structure
+ * \param[in] nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in] nsc    pointer to a \ref cs_navsto_coupling_uzawa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -116,11 +118,25 @@ cs_cdofb_navsto_init_ac_context(const cs_navsto_param_t   *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdofb_navsto_t structure storing in the case of an
- *         incremental Projection approach
+ * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
+ *         an Artificial Compressibility - VPP approach
  *
- * \param[in] nsp        pointer to a cs_navsto_param_t structure
- * \param[in] nsc_input  pointer to a cs_navsto_coupling_uzawa_t structure
+ * \param[in] nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in] nsc    pointer to a \ref cs_navsto_coupling_uzawa_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_init_ac_vpp_context(const cs_navsto_param_t   *nsp,
+                                    const void                *nsc_input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
+ *         an incremental Projection approach
+ *
+ * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in] nsc_input  pointer to a \ref cs_navsto_coupling_uzawa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -130,9 +146,9 @@ cs_cdofb_navsto_init_proj_context(const cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_cdofb_navsto_t structure
+ * \brief  Destroy a \ref cs_cdofb_navsto_t structure
  *
- * \param[in]      nsp        pointer to a cs_navsto_param_t structure
+ * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -142,12 +158,11 @@ cs_cdofb_navsto_free_context(const cs_navsto_param_t      *nsp);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
- *         a Uzawa-Lagrangian Augmented approach
- *         One works cellwise and then process to the assembly
+ *         a Uzawa-Lagrangian Augmented approach.
  *
- * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
  * \param[in]      dt_cur      current value of the time step
- * \param[in]      nsp         pointer to a cs_navsto_param_t structure
+ * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
  *                             structure cast on-the-fly
  */
@@ -163,11 +178,10 @@ cs_cdofb_navsto_uzawa_compute(const cs_mesh_t              *mesh,
 /*!
  * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
  *         an Artificial Compressibility approach.
- *         One works cellwise and then process to the assembly
  *
- * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
  * \param[in]      dt_cur      current value of the time step
- * \param[in]      nsp         pointer to a cs_navsto_param_t structure
+ * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
  *                             structure cast on-the-fly
  */
@@ -182,12 +196,30 @@ cs_cdofb_navsto_ac_compute(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
- *         an incremental correction-projection approach
- *         One works cellwise and then process to the assembly
+ *         an Artificial Compressibility - VPP approach.
  *
- * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
  * \param[in]      dt_cur      current value of the time step
- * \param[in]      nsp         pointer to a cs_navsto_param_t structure
+ * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
+ *                             structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_ac_vpp_compute(const cs_mesh_t              *mesh,
+                               double                        dt_cur,
+                               const cs_navsto_param_t      *nsp,
+                               void                         *nsc_input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
+ *         an incremental correction-projection approach.
+ *
+ * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
+ * \param[in]      dt_cur      current value of the time step
+ * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
  *                             structure cast on-the-fly
  */
@@ -206,9 +238,9 @@ cs_cdofb_navsto_proj_compute(const cs_mesh_t              *mesh,
  *
  * \param[in]      solu       solution array
  * \param[in]      rhs        rhs associated to this solution array
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdofb_navsto_t structure
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] data       pointer to \ref cs_cdofb_navsto_t structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
@@ -227,9 +259,9 @@ cs_cdofb_navsto_update_field(const cs_real_t              *solu,
  *
  * \param[in]       eqname     name of the equation
  * \param[in]       field      pointer to a field structure
- * \param[in]       eqp        pointer to a cs_equation_param_t structure
- * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdofb_navsto_t structure
+ * \param[in]       eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in, out]  eqb        pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out]  data       pointer to \ref cs_cdofb_navsto_t structure
  */
 /*----------------------------------------------------------------------------*/
 

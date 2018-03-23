@@ -62,10 +62,10 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_navsto_system.c
-
-  \brief  Routines to handle the cs_navsto_system_t structure
-*/
+ *  \file cs_navsto_system.c
+ *
+ *  \brief  Routines to handle the cs_navsto_system_t structure
+ */
 
 /*=============================================================================
  * Local Macro definitions
@@ -86,6 +86,9 @@ BEGIN_C_DECLS
 static const char _err_empty_ns[] =
   " Stop execution. The structure related to the Navier-Stokes system is"
   " empty.\n Please check your settings.\n";
+
+static const char _err_invalid_coupling[] =
+  " %s: Invalid case for the coupling algorithm.\n";
 
 static const char
 _space_scheme_key[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
@@ -473,6 +476,164 @@ _ac_last_setup(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate and initialize a context structure when the Navier-Stokes
+ *         system is coupled using an Artificial Compressibility - VPP approach
+ *
+ * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ *
+ * \return a pointer to the context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void *
+_create_ac_vpp_context(cs_navsto_param_t    *nsp)
+{
+  assert(nsp != NULL);
+
+  cs_navsto_coupling_ac_vpp_t  *nsc = NULL;
+
+  BFT_MALLOC(nsc, 1, cs_navsto_coupling_ac_vpp_t);
+
+  nsc->momentum = cs_equation_add("Momentum",
+                                  "Utilde",
+                                  CS_EQUATION_TYPE_PREDEFINED,
+                                  3,
+                                  CS_PARAM_BC_HMG_DIRICHLET);
+  nsc->graddiv = cs_equation_add("Graddiv",
+                                  "Uhat",
+                                  CS_EQUATION_TYPE_PREDEFINED,
+                                  3,
+                                  CS_PARAM_BC_HMG_DIRICHLET);
+
+  /* Set the default solver settings for "Momentum" */
+  {
+    cs_equation_param_t  *eqp = cs_equation_get_param(nsc->momentum);
+
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
+  }
+
+  /* Set the default solver settings for "Graddiv" */
+  {
+    cs_equation_param_t  *eqp = cs_equation_get_param(nsc->graddiv);
+
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
+  }
+
+  nsc->zeta = cs_property_add("ac_coefficient", CS_PROPERTY_ISO);
+
+  return nsc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free the context structure related to an Artificial Compressibility
+ *          - VPP approach
+ *
+ * \param[in]      nsp      pointer to a cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+static void *
+_free_ac_vpp_context(const cs_navsto_param_t    *nsp,
+                     void                       *context)
+{
+  assert(nsp != NULL);
+
+  cs_navsto_coupling_ac_vpp_t  *nsc = (cs_navsto_coupling_ac_vpp_t *)context;
+
+  BFT_FREE(nsc);
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Start setting-up the Navier-Stokes equations when an
+ *         Artificial Compressibility with VPP algorithm is used to coupled the
+ *         system
+ *         No mesh information is available
+ *
+ * \param[in, out] ns       pointer to a cs_navsto_system_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ac_vpp_init_setup(cs_navsto_system_t     *ns)
+{
+  assert(ns != NULL);
+
+  cs_navsto_param_t  *nsp = ns->param;
+  cs_navsto_coupling_ac_vpp_t *nsc = (cs_navsto_coupling_ac_vpp_t *)ns->context;
+
+  assert(nsp != NULL && nsc != NULL);
+
+  cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
+  cs_equation_param_t  *grd_eqp = cs_equation_get_param(nsc->graddiv);
+
+  /* Navier-Stokes parameters induce numerical settings for the related
+   equations */
+  _apply_param(nsp, mom_eqp);
+  // TODO: Is this good? Should we force BC or alikes?
+  _apply_param(nsp, grd_eqp);
+
+  /* Link the time property to the momentum equation */
+  switch (nsp->time_state) {
+
+  case CS_NAVSTO_TIME_STATE_UNSTEADY:
+  case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
+    cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
+    // TODO: Are we sure? No, if it is considered as reaction
+    cs_equation_add_time(grd_eqp, cs_property_by_name("unity"));
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid choice for the time state", __func__);
+  }
+
+  /* All considered models needs a viscous term */
+  cs_equation_add_diffusion(mom_eqp, ns->lami_viscosity);
+  cs_equation_add_diffusion(grd_eqp, ns->lami_viscosity);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize the setup for the Navier-Stokes equations when an
+ *         Artificial Compressibility algorithm is used to coupled the system
+ *
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to a cs_cdo_quantities_t structure
+ * \param[in, out] ns       pointer to a cs_navsto_system_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ac_vpp_last_setup(const cs_cdo_connect_t      *connect,
+                   const cs_cdo_quantities_t   *quant,
+                   cs_navsto_system_t          *ns)
+{
+  CS_UNUSED(connect);
+  CS_UNUSED(quant);
+  assert(ns != NULL);
+
+  cs_navsto_param_t  *nsp = ns->param;
+  cs_navsto_coupling_ac_vpp_t *nsc = (cs_navsto_coupling_ac_vpp_t *)ns->context;
+
+  assert(nsp != NULL && nsc != NULL);
+
+  /* Avoid no definition of the zeta coefficient */
+  if (nsc->zeta->n_definitions == 0)
+    cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->ac_zeta_coef);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a context structure when the Navier-Stokes
  *         system is coupled using an incremental Projection approach in the
  *         the rotational form (see Minev & Guermond, 2006, JCP)
  *
@@ -680,13 +841,16 @@ cs_navsto_system_activate(cs_navsto_param_model_t        model,
     navsto->context = _create_ac_context(navsto->param);
     break;
 
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+    navsto->context = _create_ac_vpp_context(navsto->param);
+    break;
+
   case CS_NAVSTO_COUPLING_PROJECTION:
     navsto->context = _create_projection_context(navsto->param);
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid case for the coupling algorithm.\n", __func__);
+    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
     return NULL;
   }
 
@@ -730,11 +894,16 @@ cs_navsto_system_destroy(void)
     navsto->context = _free_ac_context(nsp, navsto->context);
     break;
 
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+    navsto->context = _free_ac_vpp_context(nsp, navsto->context);
+    break;
+
   case CS_NAVSTO_COUPLING_PROJECTION:
     navsto->context = _free_projection_context(nsp, navsto->context);
     break;
 
   default:
+    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
     break;
   }
 
@@ -832,11 +1001,16 @@ cs_navsto_system_init_setup(void)
     _ac_init_setup(navsto);
     break;
 
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+    _ac_vpp_init_setup(navsto);
+    break;
+
   case CS_NAVSTO_COUPLING_PROJECTION:
     _projection_init_setup(navsto);
     break;
 
   default:
+    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
     break;
 
   }
@@ -899,6 +1073,13 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
         _ac_last_setup(connect, quant, navsto);
         break;
 
+      case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+        navsto->init = cs_cdofb_navsto_init_ac_vpp_context;
+        navsto->compute = cs_cdofb_navsto_ac_vpp_compute;
+
+        _ac_vpp_last_setup(connect, quant, navsto);
+        break;
+
       case CS_NAVSTO_COUPLING_PROJECTION:
         navsto->init = cs_cdofb_navsto_init_proj_context;
         navsto->compute = cs_cdofb_navsto_proj_compute;
@@ -907,6 +1088,7 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
         break;
 
       default:
+        bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
         break;
 
       }
@@ -932,11 +1114,16 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
         _ac_last_setup(connect, quant, navsto);
         break;
 
+      case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+        _ac_vpp_last_setup(connect, quant, navsto);
+        break;
+
       case CS_NAVSTO_COUPLING_PROJECTION:
         _projection_last_setup(connect, quant, navsto);
         break;
 
       default:
+        bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
         break;
 
       }

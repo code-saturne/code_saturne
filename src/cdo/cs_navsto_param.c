@@ -89,6 +89,7 @@ static const char
 cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS][CS_BASE_STRING_LEN] =
   { N_("Uzawa-Augmented Lagrangian coupling"),
     N_("Artificial compressibility algorithm"),
+    N_("Artificial compressibility solved with the VPP_eps algorithm"),
     N_("Incremental projection algorithm")
   };
 
