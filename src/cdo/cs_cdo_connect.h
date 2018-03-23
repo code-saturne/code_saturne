@@ -54,9 +54,9 @@ BEGIN_C_DECLS
 #define CS_CDO_CONNECT_VTX_VECT  1 /* Vb or VCb vector-valued eq. */
 #define CS_CDO_CONNECT_FACE_SP0  2 /* Fb or HHO-P0 scalar-valued eq. */
 #define CS_CDO_CONNECT_FACE_SP1  3 /* HHO-P1 scalar-valued */
-#define CS_CDO_CONNECT_FACE_VP0  4 /* Fb vector-valued eq. */
-#define CS_CDO_CONNECT_FACE_SP2  5 /* HHO-P2 scalar-valued eq. */
-#define CS_CDO_CONNECT_N_CASES   6
+#define CS_CDO_CONNECT_FACE_VP0  3 /* Fb vector-valued eq. */
+#define CS_CDO_CONNECT_FACE_SP2  4 /* HHO-P2 scalar-valued eq. */
+#define CS_CDO_CONNECT_N_CASES   5
 
 /*============================================================================
  * Type definitions
