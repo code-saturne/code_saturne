@@ -1770,17 +1770,18 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
 
       /* All the support entities are selected:
          - First pass: interior faces
-         - Second pass: border faces */
+         - Second pass: border faces
+      */
       anai->func(tcur,
                  quant->n_i_faces, NULL, quant->i_face_center,
-                 true, // compacted output
+                 true, /* Output is compacted ? */
                  anai->input,
                  retval);
       anai->func(tcur,
                  quant->n_b_faces, NULL, quant->b_face_center,
-                 true, // compacted output
+                 true, /* Output is compacted ? */
                  anai->input,
-                 retval + quant->n_i_faces);
+                 retval + def->dim*quant->n_i_faces);
 
     }
     else

@@ -444,61 +444,60 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
   cs_quadrature_tria_integral_t  *qfunc = NULL;
   cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)input;
   switch (dim) {
-    case 1:
-      {
-        switch (qtype) {
+  case 1:
+    {
+      switch (qtype) {
         /* Barycenter of the tetrahedral subdiv. */
-        case CS_QUADRATURE_BARY:
-        case CS_QUADRATURE_BARY_SUBDIV:
-          qfunc = cs_quadrature_tria_1pt_scal;
-          break;
+      case CS_QUADRATURE_BARY:
+      case CS_QUADRATURE_BARY_SUBDIV:
+        qfunc = cs_quadrature_tria_1pt_scal;
+        break;
         /* Quadrature with a unique weight */
-        case CS_QUADRATURE_HIGHER:
-          qfunc = cs_quadrature_tria_3pts_scal;
-          break;
+      case CS_QUADRATURE_HIGHER:
+        qfunc = cs_quadrature_tria_3pts_scal;
+        break;
         /* Most accurate quadrature available */
-        case CS_QUADRATURE_HIGHEST:
-          qfunc = cs_quadrature_tria_4pts_scal;
-          break;
+      case CS_QUADRATURE_HIGHEST:
+        qfunc = cs_quadrature_tria_4pts_scal;
+        break;
 
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-              _("Invalid quadrature type.\n"));
-
-        } /* Which type of quadrature to use */
-      }
-      break;
-    case 3:
-      {
-        switch (qtype) {
-        /* Barycenter of the tetrahedral subdiv. */
-        case CS_QUADRATURE_BARY:
-        case CS_QUADRATURE_BARY_SUBDIV:
-          qfunc = cs_quadrature_tria_1pt_vect;
-          break;
-        /* Quadrature with a unique weight */
-        case CS_QUADRATURE_HIGHER:
-          qfunc = cs_quadrature_tria_3pts_vect;
-          break;
-        /* Most accurate quadrature available */
-        case CS_QUADRATURE_HIGHEST:
-          qfunc = cs_quadrature_tria_4pts_vect;
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-              _("Invalid quadrature type.\n"));
-
-        } /* Which type of quadrature to use */
-      }
-      break;
-    default:
+      default:
         bft_error(__FILE__, __LINE__, 0,
-            _(" Invalid dimension of the analytical fucntion.\n"));
+                  _("Invalid quadrature type.\n"));
+
+      } /* Which type of quadrature to use */
+    }
+    break;
+  case 3:
+    {
+      switch (qtype) {
+        /* Barycenter of the tetrahedral subdiv. */
+      case CS_QUADRATURE_BARY:
+      case CS_QUADRATURE_BARY_SUBDIV:
+        qfunc = cs_quadrature_tria_1pt_vect;
+        break;
+        /* Quadrature with a unique weight */
+      case CS_QUADRATURE_HIGHER:
+        qfunc = cs_quadrature_tria_3pts_vect;
+        break;
+        /* Most accurate quadrature available */
+      case CS_QUADRATURE_HIGHEST:
+        qfunc = cs_quadrature_tria_4pts_vect;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Invalid quadrature type.\n"));
+
+      } /* Which type of quadrature to use */
+    }
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid dimension of the analytical fucntion.\n"));
   } // END switch DIMENSION
 
   const double  tcur = ts->t_cur;
-  const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
   const cs_adjacency_t  *e2v = connect->e2v;
   const cs_real_t  *xv = quant->vtx_coord;
@@ -510,37 +509,37 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
       const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
       double *val_i = eval + dim*f_id;
       const cs_lnum_t   start_idx = f2e->idx[f_id],
-                        end_idx   = f2e->idx[f_id+1];
+        end_idx   = f2e->idx[f_id+1];
       switch (end_idx - start_idx) {
-        case 3:
-          {
-            /* If triangle, one-shot computation */
-            /*const cs_lnum_t _2e   = 2*f2e->ids[start_idx],*/
-                            /*_2e_p = 2*f2e->ids[start_idx+1];*/
-            /*const cs_lnum_t v1  = e2v->ids[_2e],*/
-                            /*v2  = e2v->ids[_2e+1],*/
-                            /*tmp = e2v->ids[_2e_p],*/
-                            /*v3  = ((tmp != v1) && (tmp != v2)) ?*/
-                              /*tmp : e2v->ids[_2e_p+1];*/
-            cs_lnum_t v1, v2, v3;
-            cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
+      case 3:
+        {
+          /* If triangle, one-shot computation */
+          /*const cs_lnum_t _2e   = 2*f2e->ids[start_idx],*/
+          /*_2e_p = 2*f2e->ids[start_idx+1];*/
+          /*const cs_lnum_t v1  = e2v->ids[_2e],*/
+          /*v2  = e2v->ids[_2e+1],*/
+          /*tmp = e2v->ids[_2e_p],*/
+          /*v3  = ((tmp != v1) && (tmp != v2)) ?*/
+          /*tmp : e2v->ids[_2e_p+1];*/
+          cs_lnum_t v1, v2, v3;
+          cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
                                          &v1, &v2, &v3);
-            qfunc(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
-                  anai->func, anai->input, val_i);
-          }
-          break;
-        default:
-          for (cs_lnum_t j = start_idx; j < end_idx; j++) {
+          qfunc(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
+                anai->func, anai->input, val_i);
+        }
+        break;
+      default:
+        for (cs_lnum_t j = start_idx; j < end_idx; j++) {
 
-            const cs_lnum_t  _2e = 2*f2e->ids[j];
-            const cs_lnum_t  v1 = e2v->ids[_2e];
-            const cs_lnum_t  v2 = e2v->ids[_2e+1];
+          const cs_lnum_t  _2e = 2*f2e->ids[j];
+          const cs_lnum_t  v1 = e2v->ids[_2e];
+          const cs_lnum_t  v2 = e2v->ids[_2e+1];
 
-            qfunc(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
-                  cs_math_surftri(xv + 3*v1, xv + 3*v2, pfq.center),
-                  anai->func, anai->input, val_i);
+          qfunc(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+                cs_math_surftri(xv + 3*v1, xv + 3*v2, pfq.center),
+                anai->func, anai->input, val_i);
 
-          } // Loop on edges
+        } // Loop on edges
       } // Switch tria
       /* Average */
       const double _os = 1./pfq.meas;
@@ -548,67 +547,53 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
         val_i[xyz] *= _os;
     } // Loop on faces
 
-  } else {
+  }
+  else {
 
-    /* Initialize todo array */
-    bool  *todo = NULL;
+    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected faces
 
-    BFT_MALLOC(todo, quant->n_faces, bool);
-#   pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
-    for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
-      todo[f_id] = true;
+      cs_lnum_t  f_id = elt_ids[i];
+      const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
+      double *val_i = eval + dim*f_id;
+      const cs_lnum_t  start_idx = f2e->idx[f_id],
+                       end_idx   = f2e->idx[f_id+1];
 
-    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+      switch (end_idx - start_idx) {
 
-      cs_lnum_t  c_id = elt_ids[i];
+      case 3:
+        {
+          /* If triangle, one-shot computation */
+          cs_lnum_t v1, v2, v3;
+          cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
+                                         &v1, &v2, &v3);
+          qfunc(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3,
+                pfq.meas, anai->func, anai->input, val_i);
+        }
+        break;
 
-      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+      default:
+        for (cs_lnum_t k = start_idx; k < end_idx; k++) {
 
-        cs_lnum_t  f_id = c2f->ids[j];
-        if (todo[f_id]) {
-          todo[f_id] = false;
-          const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
-          double *val_i = eval + dim*f_id;
-          const cs_lnum_t   start_idx = f2e->idx[f_id],
-                            end_idx   = f2e->idx[f_id+1];
-          switch (end_idx - start_idx) {
-            case 3:
-              {
-                /* If triangle, one-shot computation */
-                cs_lnum_t v1, v2, v3;
-                cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
-                                             &v1, &v2, &v3);
-                qfunc(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3,
-                      pfq.meas, anai->func, anai->input, val_i);
-              }
-              break;
-            default:
-              for (cs_lnum_t k = start_idx; k < end_idx; k++) {
+          const cs_lnum_t  _2e = 2*f2e->ids[k];
+          const cs_lnum_t  v1 = e2v->ids[_2e];
+          const cs_lnum_t  v2 = e2v->ids[_2e+1];
 
-                const cs_lnum_t  _2e = 2*f2e->ids[k];
-                const cs_lnum_t  v1 = e2v->ids[_2e];
-                const cs_lnum_t  v2 = e2v->ids[_2e+1];
+          qfunc(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+                cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                anai->func, anai->input, val_i);
 
-                qfunc(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
-                      cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
-                      anai->func, anai->input, val_i);
+        } // Loop on edges
+      } // Switch tria
+      /* Average */
+      const double _os = 1./pfq.meas;
+      for (short int xyz = 0; xyz < dim; xyz++)
+        val_i[xyz] *= _os;
 
-              } // Loop on edges
-          } // Switch tria
-          /* Average */
-          const double _os = 1./pfq.meas;
-          for (short int xyz = 0; xyz < dim; xyz++)
-            val_i[xyz] *= _os;
+    } // Loop on selected faces
 
-        } // if todo
-
-      } // Loop on cell faces
-
-    } // Loop on selected cells
-
-    BFT_FREE(todo);
-  } // If selected cell
+  }
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Evaluate a quantity defined at vertices using an analytic function
