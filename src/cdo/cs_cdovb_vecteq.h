@@ -1,5 +1,5 @@
-#ifndef __CS_CDOVB_SCALEQ_H__
-#define __CS_CDOVB_SCALEQ_H__
+#ifndef __CS_CDOVB_VECTEQ_H__
+#define __CS_CDOVB_VECTEQ_H__
 
 /*============================================================================
  * Build an algebraic CDO vertex-based system for unsteady convection diffusion
@@ -56,7 +56,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Algebraic system for CDO vertex-based discretization */
-typedef struct _cs_cdovb_t cs_cdovb_scaleq_t;
+typedef struct _cs_cdovb_t cs_cdovb_vecteq_t;
 
 /*============================================================================
  * Public function prototypes
@@ -72,7 +72,7 @@ typedef struct _cs_cdovb_t cs_cdovb_scaleq_t;
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_cdovb_scaleq_is_initialized(void);
+cs_cdovb_vecteq_is_initialized(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -88,7 +88,7 @@ cs_cdovb_scaleq_is_initialized(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
+cs_cdovb_vecteq_init_common(const cs_cdo_quantities_t    *quant,
                             const cs_cdo_connect_t       *connect,
                             const cs_time_step_t         *time_step,
                             const cs_matrix_structure_t  *ms);
@@ -103,7 +103,7 @@ cs_cdovb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_get(cs_cell_sys_t       **csys,
+cs_cdovb_vecteq_get(cs_cell_sys_t       **csys,
                     cs_cell_builder_t   **cb);
 
 /*----------------------------------------------------------------------------*/
@@ -114,36 +114,36 @@ cs_cdovb_scaleq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_finalize_common(void);
+cs_cdovb_vecteq_finalize_common(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdovb_scaleq_t structure storing data useful for
+ * \brief  Initialize a cs_cdovb_vecteq_t structure storing data useful for
  *         managing such a scheme
  *
  * \param[in]      eqp   pointer to a cs_equation_param_t structure
  * \param[in, out] eqb   pointer to a cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated cs_cdovb_scaleq_t structure
+ * \return a pointer to a new allocated cs_cdovb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
-cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
+cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
                              cs_equation_builder_t       *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_cdovb_scaleq_t structure
+ * \brief  Destroy a cs_cdovb_vecteq_t structure
  *
- * \param[in, out]  builder   pointer to a cs_cdovb_scaleq_t structure
+ * \param[in, out]  builder   pointer to a cs_cdovb_vecteq_t structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdovb_scaleq_free_context(void   *builder);
+cs_cdovb_vecteq_free_context(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -151,12 +151,12 @@ cs_cdovb_scaleq_free_context(void   *builder);
  *
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] data       pointer to cs_cdovb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_compute_source(const cs_equation_param_t  *eqp,
+cs_cdovb_vecteq_compute_source(const cs_equation_param_t  *eqp,
                                cs_equation_builder_t      *eqb,
                                void                       *data);
 
@@ -168,14 +168,14 @@ cs_cdovb_scaleq_compute_source(const cs_equation_param_t  *eqp,
  *
  * \param[in]      eqp            pointer to a cs_equation_param_t structure
  * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] data           pointer to cs_cdovb_vecteq_t structure
  * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
  * \param[in, out] system_rhs     pointer of pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_initialize_system(const cs_equation_param_t  *eqp,
+cs_cdovb_vecteq_initialize_system(const cs_equation_param_t  *eqp,
                                   cs_equation_builder_t      *eqb,
                                   void                       *data,
                                   cs_matrix_t               **system_matrix,
@@ -192,14 +192,14 @@ cs_cdovb_scaleq_initialize_system(const cs_equation_param_t  *eqp,
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdovcb_scaleq_t structure
+ * \param[in, out] data       pointer to cs_cdovcb_vecteq_t structure
  * \param[in, out] rhs        right-hand side
  * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
+cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
                              const cs_real_t            *field_val,
                              double                      dt_cur,
                              const cs_equation_param_t  *eqp,
@@ -217,13 +217,13 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
  * \param[in]      rhs        rhs associated to this solution array
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] data       pointer to cs_cdovb_vecteq_t structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_update_field(const cs_real_t            *solu,
+cs_cdovb_vecteq_update_field(const cs_real_t            *solu,
                              const cs_real_t            *rhs,
                              const cs_equation_param_t  *eqp,
                              cs_equation_builder_t      *eqb,
@@ -246,7 +246,7 @@ cs_cdovb_scaleq_update_field(const cs_real_t            *solu,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
+cs_cdovb_vecteq_compute_flux_across_plane(const cs_real_t             normal[],
                                           const cs_real_t            *pdi,
                                           int                         ml_id,
                                           const cs_equation_param_t  *eqp,
@@ -262,14 +262,14 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
  * \param[in]       values      discrete values for the potential
  * \param[in]       eqp         pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  data        pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out]  data        pointer to cs_cdovb_vecteq_t structure
  * \param[in, out]  location    where the flux is defined
  * \param[in, out]  diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
+cs_cdovb_vecteq_cellwise_diff_flux(const cs_real_t             *values,
                                    const cs_equation_param_t   *eqp,
                                    cs_equation_builder_t       *eqb,
                                    void                        *data,
@@ -284,12 +284,12 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
  * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out]  data       pointer to cs_cdovb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_extra_op(const char                 *eqname,
+cs_cdovb_vecteq_extra_op(const char                 *eqname,
                          const cs_field_t           *field,
                          const cs_equation_param_t  *eqp,
                          cs_equation_builder_t      *eqb,
@@ -299,4 +299,4 @@ cs_cdovb_scaleq_extra_op(const char                 *eqname,
 
 END_C_DECLS
 
-#endif /* __CS_CDOVB_SCALEQ_H__ */
+#endif /* __CS_CDOVB_VECTEQ_H__ */

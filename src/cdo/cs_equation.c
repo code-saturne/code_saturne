@@ -1202,7 +1202,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->get_extra_values = NULL;
 
         /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCA];
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
 
         /* Set the size of the algebraic system arising from the cellwise
            process */
@@ -1233,7 +1233,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->get_extra_values = cs_cdovcb_scaleq_get_cell_values;
 
         /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCA];
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
 
         /* Set the size of the algebraic system arising from the cellwise
            process */

@@ -50,12 +50,13 @@ BEGIN_C_DECLS
 /* Main categories to consider for high-level structures
    Remark: HHO-P1 and CDO-Fb vector-valued shares the same structures
 */
-#define CS_CDO_CONNECT_VTX_SCA   0 /* Vb or VCb scalar-valued eq. */
-#define CS_CDO_CONNECT_FACE_SP0  1 /* Fb or HHO-P0 scalar-valued eq. */
-#define CS_CDO_CONNECT_FACE_SP1  2 /* HHO-P1 scalar-valued */
-#define CS_CDO_CONNECT_FACE_VP0  2 /* Fb vector-valued eq. */
-#define CS_CDO_CONNECT_FACE_SP2  3 /* HHO-P2 scalar-valued eq. */
-#define CS_CDO_CONNECT_N_CASES   4
+#define CS_CDO_CONNECT_VTX_SCAL  0 /* Vb or VCb scalar-valued eq. */
+#define CS_CDO_CONNECT_VTX_VECT  1 /* Vb or VCb vector-valued eq. */
+#define CS_CDO_CONNECT_FACE_SP0  2 /* Fb or HHO-P0 scalar-valued eq. */
+#define CS_CDO_CONNECT_FACE_SP1  3 /* HHO-P1 scalar-valued */
+#define CS_CDO_CONNECT_FACE_VP0  4 /* Fb vector-valued eq. */
+#define CS_CDO_CONNECT_FACE_SP2  5 /* HHO-P2 scalar-valued eq. */
+#define CS_CDO_CONNECT_N_CASES   6
 
 /*============================================================================
  * Type definitions
@@ -98,7 +99,7 @@ typedef struct {
   int  n_max_v2ec;   // max. number of edges connected to a vertex in a cell
 
   /* Structures to handle parallelism/assembler */
-  cs_range_set_t      *range_sets[CS_CDO_CONNECT_N_CASES];
+  cs_range_set_t       *range_sets[CS_CDO_CONNECT_N_CASES];
   cs_interface_set_t   *interfaces[CS_CDO_CONNECT_N_CASES];
 
 } cs_cdo_connect_t;
@@ -133,13 +134,13 @@ cs_connect_get_next_3_vertices(const cs_lnum_t   *f2e_ids,
                                cs_lnum_t         *v1,
                                cs_lnum_t         *v2)
 {
-  const cs_lnum_t e0  = f2e_ids[start_idx],
-                  e1  = f2e_ids[start_idx+1];
-  const cs_lnum_t tmp = e2v_ids[2*e1];
+  const cs_lnum_t _2e0  = 2*f2e_ids[start_idx],
+                  _2e1  = 2*f2e_ids[start_idx+1];
+  const cs_lnum_t tmp = e2v_ids[_2e1];
 
-  *v0 = e2v_ids[2*e0];
-  *v1 = e2v_ids[2*e0+1];
-  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
+  *v0 = e2v_ids[_2e0];
+  *v1 = e2v_ids[_2e0+1];
+  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[_2e1+1];
 }
 
 /*============================================================================

@@ -793,8 +793,10 @@ _pcva_by_value(const double        const_vec[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the values at each primal faces for a scalar potential
- *         defined by an analytical function on a selection of (primal) cells
+ * \brief  Get the values at each primal faces for a potential defined
+ *         by an analytical function on a selection of (primal) cells.
+ *         This potential can, be scalar-, vector- or tensor-valued. This is
+ *         handled in the definition of the analytic function.
  *
  * \param[in]      ana         pointer to the analytic function
  * \param[in]      input       NULL or pointer to a structure cast on-the-fly
@@ -805,11 +807,11 @@ _pcva_by_value(const double        const_vec[3],
 /*----------------------------------------------------------------------------*/
 
 static void
-_pfsp_by_analytic(cs_analytic_func_t    *ana,
-                  void                  *input,
-                  const cs_lnum_t        n_elts,
-                  const cs_lnum_t       *elt_ids,
-                  double                 values[])
+_pfp_by_analytic(cs_analytic_func_t    *ana,
+                 void                  *input,
+                 const cs_lnum_t        n_elts,
+                 const cs_lnum_t       *elt_ids,
+                 double                 values[])
 {
   const double  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
@@ -1122,6 +1124,7 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
           const double _oversurf = 1./pfq.meas;
           for (short int xyz = 0; xyz < 3; xyz++)
             val_i[xyz] *= _oversurf;
+
         } // If todo
 
       } // Loop on cell faces
@@ -1136,8 +1139,10 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the values at each primal vertices for a scalar potential
+ * \brief  Get the values at each primal vertices for a potential
  *         defined by an analytical function on a selection of (primal) cells
+ *         This potential can, be scalar-, vector- or tensor-valued. This is
+ *         handled in the definition of the analytic function.
  *
  * \param[in]      ana         pointer to the analytic function
  * \param[in]      input       NULL or pointer to a structure cast on-the-fly
@@ -1148,11 +1153,11 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
 /*----------------------------------------------------------------------------*/
 
 static void
-_pvsp_by_analytic(cs_analytic_func_t    *ana,
-                  void                  *input,
-                  const cs_lnum_t        n_elts,
-                  const cs_lnum_t       *elt_ids,
-                  double                 values[])
+_pvp_by_analytic(cs_analytic_func_t    *ana,
+                 void                  *input,
+                 const cs_lnum_t        n_elts,
+                 const cs_lnum_t       *elt_ids,
+                 double                 values[])
 {
   const double  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
@@ -1411,7 +1416,7 @@ _pvsp_by_qov(const double       quantity_val,
 
   /* Handle parallelism */
   if (cs_glob_n_ranks > 1)
-    cs_interface_set_max(cs_cdo_connect->interfaces[CS_CDO_CONNECT_VTX_SCA],
+    cs_interface_set_max(cs_cdo_connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          n_vertices,
                          1,           // stride
                          true,        // interlace, not useful here
@@ -1693,17 +1698,11 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
   /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
-  int  stride = 0;
-  if (dof_flag & CS_FLAG_SCALAR)
-    stride = 1;
-  else if (dof_flag & CS_FLAG_VECTOR)
-    stride = 3;
-  else
-    bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
-
+  cs_range_set_t  *rs = NULL;
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
 
   const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
@@ -1714,6 +1713,24 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
   /* Perform the evaluation */
   if (cs_flag_test(dof_flag, cs_flag_primal_vtx)) {
 
+    switch (def->dim) {
+
+    case 1: /* Scalar-valued */
+      assert(dof_flag & CS_FLAG_SCALAR);
+      rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+      break;
+
+    case 3:
+      assert(dof_flag & CS_FLAG_VECTOR);
+      rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
+      break;
+
+    }
+
     if (def->meta & CS_FLAG_FULL_LOC)
       anai->func(tcur,
                  quant->n_vertices, NULL, quant->vtx_coord,
@@ -1721,19 +1738,33 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                  anai->input,
                  retval);
     else
-      _pvsp_by_analytic(anai->func, anai->input,
-                        z->n_cells, z->cell_ids,
-                        retval);
+      _pvp_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids,
+                       retval);
 
     if (cs_glob_n_ranks > 1)
-      cs_range_set_sync(connect->range_sets[CS_CDO_CONNECT_VTX_SCA],
-                        CS_DOUBLE,
-                        stride,
-                        (void *)retval);
+      cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
 
   } /* Located at primal vertices */
 
   else if (cs_flag_test(dof_flag, cs_flag_primal_face)) {
+
+    switch (def->dim) {
+
+    case 1: /* Scalar-valued */
+      assert(dof_flag & CS_FLAG_SCALAR);
+      rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+      break;
+
+    case 3:
+      assert(dof_flag & CS_FLAG_VECTOR);
+      rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
+      break;
+
+    }
 
     if (def->meta & CS_FLAG_FULL_LOC) {
 
@@ -1753,15 +1784,11 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
 
     }
     else
-      _pfsp_by_analytic(anai->func, anai->input,
-                        z->n_cells, z->cell_ids,
-                        retval);
+      _pfp_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids,
+                       retval);
 
     if (cs_glob_n_ranks > 1)
-      cs_range_set_sync(connect->range_sets[CS_CDO_CONNECT_FACE_SP0],
-                        CS_DOUBLE,
-                        stride,
-                        (void *)retval);
+      cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
 
   } /* Located at primal faces */
 

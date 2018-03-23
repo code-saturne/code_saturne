@@ -124,8 +124,8 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Dirichlet BCs when DoFs are scalar-valued
- *          and attached to vertices
+ * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
+ *          vertices
  *
  * \param[in]      mesh        pointer to a cs_mesh_t structure
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
@@ -140,7 +140,7 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
+cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
                                  const cs_time_step_t       *time_step,

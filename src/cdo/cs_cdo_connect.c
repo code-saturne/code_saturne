@@ -743,8 +743,8 @@ _get_cell_type(cs_lnum_t                 c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Allocate and define a cs_range_set_t structure and a
- *        cs_interface_set_t structure for schemes with DoFs at faces.
+ * \brief Allocate and define a \ref cs_range_set_t structure and a
+ *        \ref cs_interface_set_t structure for schemes with DoFs at faces.
  *
  * \param[in]       mesh          pointer to a cs_mesh_t structure
  * \param[in]       n_faces       number of faces (interior + border)
@@ -755,11 +755,11 @@ _get_cell_type(cs_lnum_t                 c_id,
 /*----------------------------------------------------------------------------*/
 
 static void
-_assign_ifs_rs(const cs_mesh_t       *mesh,
-               cs_lnum_t              n_faces,
-               int                    n_face_dofs,
-               cs_interface_set_t   **p_ifs,
-               cs_range_set_t       **p_rs)
+_assign_face_ifs_rs(const cs_mesh_t       *mesh,
+                    cs_lnum_t              n_faces,
+                    int                    n_face_dofs,
+                    cs_interface_set_t   **p_ifs,
+                    cs_range_set_t       **p_rs)
 {
   const cs_lnum_t  n_elts = n_faces * n_face_dofs;
 
@@ -819,7 +819,94 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
   *p_rs = rs;
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and define a \ref cs_range_set_t structure and a
+ *        \ref cs_interface_set_t structure for schemes with DoFs at vertices
+ *
+ * \param[in]       mesh          pointer to a cs_mesh_t structure
+ * \param[in]       n_vtx_dofs    number of DoFs per vertex
+ * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
+ * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
+                   int                    n_vtx_dofs,
+                   cs_interface_set_t   **p_ifs,
+                   cs_range_set_t       **p_rs)
+{
+  assert(mesh != NULL);
+
+  const cs_lnum_t  n_vertices = mesh->n_vertices;
+  const cs_lnum_t  n_elts = n_vertices * n_vtx_dofs;
+
+  /* Structure to define */
+  cs_range_set_t  *rs =  NULL;
+  cs_interface_set_t  *ifs = NULL;
+
+  switch (n_vtx_dofs) {
+
+  case 1:                       /* Scalar-valued */
+    ifs = mesh->vtx_interfaces;
+    rs = cs_range_set_create(ifs,
+                             NULL,
+                             n_vertices,
+                             false,   // TODO: Ask Yvan
+                             0);      // g_id_base
+    break;
+
+  default:
+    {
+      cs_gnum_t *v_gnum = NULL;
+      BFT_MALLOC(v_gnum, n_elts, cs_gnum_t);
+
+      if (cs_glob_n_ranks > 1) {
+
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_vertices; i++) {
+          const cs_gnum_t  o =  n_vtx_dofs * mesh->global_vtx_num[i];
+          cs_gnum_t  *_gnum = v_gnum + i*n_vtx_dofs;
+          for (int j = 0; j < n_vtx_dofs; j++)
+            _gnum[j] = o + (cs_gnum_t)j;
+        }
+
+      }
+      else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+        for (cs_gnum_t i = 0; i < (cs_gnum_t)(n_elts); i++)
+          v_gnum[i] = i + 1;
+
+      } /* Sequential or parallel run */
+
+      /* Do not consider periodicity up to now. Should split the vertex
+         interface into interior and border vertices to do this, since only
+         boundary vertices can be associated to a periodicity */
+      ifs = cs_interface_set_create(n_elts,
+                                    NULL,
+                                    v_gnum,
+                                    mesh->periodicity, 0, NULL, NULL, NULL);
+      rs = cs_range_set_create(ifs,
+                               NULL,
+                               n_elts,
+                               false,  //TODO: Ask Yvan
+                               0);     // g_id_base
+
+      /* Free memory */
+      BFT_FREE(v_gnum);
+    }
+    break;
+
+  } /* End of switch on dimension */
+
+  /* Return pointers */
+  *p_ifs = ifs;
+  *p_rs = rs;
+}
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes
@@ -917,45 +1004,47 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
     connect->interfaces[i] = NULL;
   }
 
+  /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
   if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
       vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
-    /* Vertex range set */
-    cs_range_set_t  *v_rs = cs_range_set_create(mesh->vtx_interfaces,
-                                                NULL,
-                                                n_vertices,
-                                                false,   // TODO: Ask Yvan
-                                                0);      // g_id_base
-    mesh->vtx_range_set = v_rs;
+    _assign_vtx_ifs_rs(mesh, 1,
+                       connect->interfaces + CS_CDO_CONNECT_VTX_SCAL,
+                       connect->range_sets + CS_CDO_CONNECT_VTX_SCAL);
 
     /* Shared structures */
-    connect->range_sets[CS_CDO_CONNECT_VTX_SCA] = v_rs;
-    connect->interfaces[CS_CDO_CONNECT_VTX_SCA] = mesh->vtx_interfaces;
-
+    mesh->vtx_range_set = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
   }
+
+  /* CDO vertex- or vertex+cell-based schemes for vector-valued variables */
+  if (vb_scheme_flag & CS_FLAG_SCHEME_VECTOR ||
+      vcb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+    _assign_vtx_ifs_rs(mesh, 3,
+                       connect->interfaces + CS_CDO_CONNECT_VTX_VECT,
+                       connect->range_sets + CS_CDO_CONNECT_VTX_VECT);
 
   /* CDO face-based schemes or HHO schemes with k=0 */
   if ((fb_scheme_flag & CS_FLAG_SCHEME_SCALAR) ||
       cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY0))
-    _assign_ifs_rs(mesh, n_faces, 1,
-                   connect->interfaces + CS_CDO_CONNECT_FACE_SP0,
-                   connect->range_sets + CS_CDO_CONNECT_FACE_SP0);
+    _assign_face_ifs_rs(mesh, n_faces, 1,
+                        connect->interfaces + CS_CDO_CONNECT_FACE_SP0,
+                        connect->range_sets + CS_CDO_CONNECT_FACE_SP0);
 
   /* HHO schemes with k=1 or CDO-Fb schemes with vector-valued unknowns */
   if ((fb_scheme_flag & CS_FLAG_SCHEME_VECTOR) ||
       cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY1))
-    _assign_ifs_rs(mesh, n_faces, 3,
-                   connect->interfaces + CS_CDO_CONNECT_FACE_SP1,
-                   connect->range_sets + CS_CDO_CONNECT_FACE_SP1);
+    _assign_face_ifs_rs(mesh, n_faces, 3,
+                        connect->interfaces + CS_CDO_CONNECT_FACE_SP1,
+                        connect->range_sets + CS_CDO_CONNECT_FACE_SP1);
 
   /* HHO schemes with k=2 */
   if (cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY2))
-    _assign_ifs_rs(mesh, n_faces, 6,
-                   connect->interfaces + CS_CDO_CONNECT_FACE_SP2,
-                   connect->range_sets + CS_CDO_CONNECT_FACE_SP2);
+    _assign_face_ifs_rs(mesh, n_faces, 6,
+                        connect->interfaces + CS_CDO_CONNECT_FACE_SP2,
+                        connect->range_sets + CS_CDO_CONNECT_FACE_SP2);
 
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();

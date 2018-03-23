@@ -62,7 +62,9 @@ cs_cdofb_navsto.h \
 cs_cdofb_priv.h \
 cs_cdofb_scaleq.h \
 cs_cdofb_vecteq.h \
+cs_cdovb_priv.h \
 cs_cdovb_scaleq.h \
+cs_cdovb_vecteq.h \
 cs_cdovcb_scaleq.h \
 cs_dbg.h \
 cs_domain.h \
@@ -117,6 +119,7 @@ cs_cdofb_navsto.c \
 cs_cdofb_scaleq.c \
 cs_cdofb_vecteq.c \
 cs_cdovb_scaleq.c \
+cs_cdovb_vecteq.c \
 cs_cdovcb_scaleq.c \
 cs_dbg.c \
 cs_domain.c \

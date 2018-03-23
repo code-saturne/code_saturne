@@ -99,10 +99,6 @@ BEGIN_C_DECLS
 
 struct _cs_cdovb_scaleq_t {
 
-  /* Pointer to a cs_equation_param_t structure shared with a cs_equation_t
-     structure.  */
-  const cs_equation_param_t  *eqp;
-
   /* System size */
   cs_lnum_t    n_dofs;
 
@@ -869,7 +865,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 
   /* Compute the values of the Dirichlet BC */
   cs_real_t  *dir_values =
-    cs_equation_compute_dirichlet_sv(mesh,
+    cs_equation_compute_dirichlet_vb(mesh,
                                      quant,
                                      connect,
                                      cs_shared_time_step,
@@ -1110,7 +1106,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       /* Assemble the local system to the global system */
       cs_equation_assemble_v(csys,
-                             connect->range_sets[CS_CDO_CONNECT_VTX_SCA],
+                             connect->range_sets[CS_CDO_CONNECT_VTX_SCAL],
                              eqp,
                              rhs, eqc->source_terms, mav); // out
 

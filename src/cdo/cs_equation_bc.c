@@ -238,8 +238,8 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Dirichlet BCs when DoFs are scalar-valued
- *          and attached to vertices
+ * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
+ *          vertices
  *
  * \param[in]      mesh        pointer to a cs_mesh_t structure
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
@@ -254,7 +254,7 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
+cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
                                  const cs_time_step_t       *time_step,
@@ -265,31 +265,31 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
   cs_flag_t  *flag = NULL, *counter = NULL;
   cs_real_t  *dir_val = NULL;
 
-  const cs_lnum_t  *face_vtx_idx = mesh->b_face_vtx_idx;
-  const cs_lnum_t  *face_vtx_lst = mesh->b_face_vtx_lst;
-
   /* Initialization */
-  BFT_MALLOC(dir_val, quant->n_vertices, cs_real_t);
+  BFT_MALLOC(dir_val, eqp->dim * quant->n_vertices, cs_real_t);
   BFT_MALLOC(counter, quant->n_vertices, cs_flag_t);
   BFT_MALLOC(flag, quant->n_vertices, cs_flag_t);
 
 # pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
   for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
-
-    dir_val[v_id] = 0;
-    flag[v_id] = 0;    // No flag by default
-    counter[v_id] = 0; // Number of faces with a Dir. related to a vertex
-
+    flag[v_id] = 0;    /* No flag by default */
+    counter[v_id] = 0; /* Number of faces with a Dir. related to a vertex */
   }
+
+# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t v_id = 0; v_id < eqp->dim * quant->n_vertices; v_id++)
+    dir_val[v_id] = 0;
+
+  const cs_lnum_t  *face_vtx_idx = mesh->b_face_vtx_idx;
+  const cs_lnum_t  *face_vtx_lst = mesh->b_face_vtx_lst;
 
   /* Define array storing the Dirichlet values */
   for (cs_lnum_t i = 0; i < dir->n_nhmg_elts; i++) {
 
     const cs_lnum_t  f_id = dir->elt_ids[i];
     const cs_lnum_t  *f2v_idx = face_vtx_idx + f_id;
-    const int  n_vf = f2v_idx[1] - f2v_idx[0];
     const cs_lnum_t  *f2v_lst = face_vtx_lst + f2v_idx[0];
-
+    const int  n_vf = f2v_idx[1] - f2v_idx[0];
     const short int  def_id = dir->def_ids[i];
     const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
@@ -299,17 +299,35 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
       {
         const cs_real_t  *constant_val = (cs_real_t *)def->input;
 
-        for (short int v = 0; v < n_vf; v++) {
+        switch (eqp->dim) {
 
-          const cs_lnum_t  v_id = f2v_lst[v];
-          dir_val[v_id] += constant_val[0];
-          flag[v_id] |= CS_CDO_BC_DIRICHLET;
-          counter[v_id] += 1;
+        case 1:
+          for (short int v = 0; v < n_vf; v++) {
+            const cs_lnum_t  v_id = f2v_lst[v];
 
-        }
+            dir_val[v_id] += constant_val[0];
+            flag[v_id] |= CS_CDO_BC_DIRICHLET;
+            counter[v_id] += 1;
+
+          }
+          break;
+
+        default:
+          for (short int v = 0; v < n_vf; v++) {
+            const cs_lnum_t  v_id = f2v_lst[v];
+
+            flag[v_id] |= CS_CDO_BC_DIRICHLET;
+            counter[v_id] += 1;
+            for (int j = 0; j < eqp->dim; j++)
+              dir_val[eqp->dim*v_id + j] += constant_val[j];
+
+          }
+          break;
+
+        } /* End of swith on eqp->dim */
 
       }
-      break;
+      break; /* By value */
 
     case CS_XDEF_BY_ARRAY:
       {
@@ -326,17 +344,33 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
                                           def->input,
                                           eval);
 
-        for (short int v = 0; v < n_vf; v++) {
+        switch (eqp->dim) {
 
-          const cs_lnum_t  v_id = f2v_lst[v];
-          dir_val[v_id] += eval[v];
-          flag[v_id] |= CS_CDO_BC_DIRICHLET;
-          counter[v_id] += 1;
+        case 1:
+          for (short int v = 0; v < n_vf; v++) {
+            const cs_lnum_t  v_id = f2v_lst[v];
 
-        }
+            dir_val[v_id] += eval[v];
+            flag[v_id] |= CS_CDO_BC_DIRICHLET;
+            counter[v_id] += 1;
+          }
+          break;
+
+        default:
+          for (short int v = 0; v < n_vf; v++) {
+            const cs_lnum_t  v_id = f2v_lst[v];
+
+            flag[v_id] |= CS_CDO_BC_DIRICHLET;
+            counter[v_id] += 1;
+            for (int j = 0; j < eqp->dim; j++)
+              dir_val[eqp->dim*v_id + j] += eval[eqp->dim*v + j];
+          }
+          break;
+
+        } /* End of switch */
 
       }
-      break;
+      break; /* By array */
 
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
       {
@@ -353,26 +387,42 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
                                              def->input,
                                              eval);
 
-        for (short int v = 0; v < n_vf; v++) {
+        switch (eqp->dim) {
 
-          const cs_lnum_t  v_id = f2v_lst[v];
-          dir_val[v_id] += eval[v];
-          flag[v_id] |= CS_CDO_BC_DIRICHLET;
-          counter[v_id] += 1;
+        case 1:
+          for (short int v = 0; v < n_vf; v++) {
+            const cs_lnum_t  v_id = f2v_lst[v];
 
-        }
+            dir_val[v_id] += eval[v];
+            flag[v_id] |= CS_CDO_BC_DIRICHLET;
+            counter[v_id] += 1;
+          }
+          break;
+
+        default:
+          for (short int v = 0; v < n_vf; v++) {
+            const cs_lnum_t  v_id = f2v_lst[v];
+
+            flag[v_id] |= CS_CDO_BC_DIRICHLET;
+            counter[v_id] += 1;
+            for (int j = 0; j < eqp->dim; j++)
+              dir_val[eqp->dim*v_id + j] += eval[eqp->dim*v + j];
+          }
+          break;
+
+        } /* End of switch */
 
       }
       break;
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid type of definition.\n"
-                  " Stop computing the Dirichlet value.\n"));
+                _(" %s: Invalid type of definition.\n"
+                  " Stop computing the Dirichlet value.\n"), __func__);
 
-    } // switch def_type
+    } /* End of switch: def_type */
 
-  } // Loop on faces with a non-homogeneous Dirichlet BC
+  } /* Loop on faces with a non-homogeneous Dirichlet BC */
 
   /* Define array storing the Dirichlet values */
   for (cs_lnum_t i = dir->n_nhmg_elts; i < dir->n_elts; i++) {
@@ -385,27 +435,27 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
     for (short int v = 0; v < n_vf; v++)
       flag[f2v_lst[v]] |= CS_CDO_BC_HMG_DIRICHLET;
 
-  } // Loop on faces with a non-homogeneous Dirichlet BC
+  } /* Loop on faces with a non-homogeneous Dirichlet BC */
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 
-    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCA],
+    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          quant->n_vertices,
                          1,            // stride
                          false,        // interlace (not useful here)
                          CS_FLAG_TYPE, // unsigned short int
                          flag);
 
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCA],
+    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          quant->n_vertices,
                          1,            // stride
                          false,        // interlace (not useful here)
                          CS_FLAG_TYPE, // unsigned short int
                          counter);
 
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCA],
+    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          quant->n_vertices,
-                         1,            // stride
+                         eqp->dim,     // stride
                          false,        // interlace (not useful here)
                          CS_REAL_TYPE,
                          dir_val);
@@ -413,27 +463,55 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
   }
 
   /* Homogeneous Dirichlet are always enforced (even in case of multiple BCs).
-     If multiple Dirichlet BCs are set, a weighted sum is used to set the
+     If multi-valued Dirichlet BCs are set, a weighted sum is used to set the
      Dirichlet value at each corresponding vertex */
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
+  if (eqp->dim == 1) {
 
-    if (flag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
-      dir_val[v_id] = 0.;
-    else if (flag[v_id] & CS_CDO_BC_DIRICHLET) {
-      assert(counter[v_id] > 0);
-      if (counter[v_id] > 1)
-        dir_val[v_id] /= counter[v_id];
-    }
+#   pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+    for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
 
-  } // Loop on vertices
+      if (flag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
+        dir_val[v_id] = 0.;
+      else if (flag[v_id] & CS_CDO_BC_DIRICHLET) {
+        assert(counter[v_id] > 0);
+        if (counter[v_id] > 1)
+          dir_val[v_id] /= counter[v_id];
+      }
+
+    } /* Loop on vertices */
+
+  }
+  else { /* eqp->dim > 1 */
+
+#   pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+    for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
+
+      if (flag[v_id] & CS_CDO_BC_HMG_DIRICHLET) {
+        for (int j = 0; j < eqp->dim; j++)
+          dir_val[eqp->dim*v_id + j] = 0.;
+      }
+      else if (flag[v_id] & CS_CDO_BC_DIRICHLET) {
+
+        assert(counter[v_id] > 0);
+        if (counter[v_id] > 1) {
+          const cs_real_t  inv_count = counter[v_id];
+          for (int j = 0; j < eqp->dim; j++)
+            dir_val[eqp->dim*v_id + j] *= inv_count;
+        }
+
+      }
+
+    } /* Loop on vertices */
+
+  }
 
   /* Free temporary buffers */
   BFT_FREE(counter);
   BFT_FREE(flag);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
-  cs_dbg_darray_to_listing("DIRICHLET_VALUES", quant->n_vertices, dir_val, 8);
+  cs_dbg_darray_to_listing("DIRICHLET_VALUES",
+                           eqp->dim*quant->n_vertices, dir_val, 6*eqp->dim);
 #endif
 
   return dir_val;

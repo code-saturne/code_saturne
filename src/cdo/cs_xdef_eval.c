@@ -731,7 +731,7 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
     else {
 
       assert(elt_ids == NULL);
-      memcpy(eval, (const cs_real_t *)array_input->values, n_elts);
+      memcpy(eval, array_input->values, n_elts * sizeof(cs_real_t));
 
     }
 
@@ -838,7 +838,7 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
     else {
 
       assert(elt_ids == NULL);
-      memcpy(eval, (const cs_real_t *)array_input->values, stride*n_elts);
+      memcpy(eval, array_input->values, stride*n_elts * sizeof(cs_real_t));
 
     }
 
@@ -922,28 +922,55 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
 
   cs_xdef_array_input_t  *array_input = (cs_xdef_array_input_t *)input;
 
-  assert(array_input->stride == 1); // other cases not managed up to now
+  const int  stride = array_input->stride;
 
   if (cs_flag_test(array_input->loc, cs_flag_primal_vtx)) {
 
     if (elt_ids != NULL && !compact) {
 
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        const cs_lnum_t  v_id = elt_ids[i];
-        eval[v_id] = array_input->values[v_id];
-      }
+      switch (stride) {
+
+      case 1: /* Scalar-valued */
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          const cs_lnum_t  v_id = elt_ids[i];
+          eval[v_id] = array_input->values[v_id];
+        }
+        break;
+
+      default:
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          const cs_lnum_t  v_id = elt_ids[i];
+          for (int j = 0; j < stride; j++)
+            eval[stride*v_id + j] = array_input->values[stride*v_id+j];
+        }
+        break;
+
+      } /* End of switch */
 
     }
     else if (elt_ids != NULL && compact) {
 
-      for (cs_lnum_t i = 0; i < n_elts; i++)
-        eval[i] = array_input->values[elt_ids[i]];
+      switch (stride) {
+
+      case 1: /* Scalar-valued */
+        for (cs_lnum_t i = 0; i < n_elts; i++)
+          eval[i] = array_input->values[elt_ids[i]];
+        break;
+
+      default:
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          for (int j = 0; j < stride; j++)
+            eval[stride*i + j] = array_input->values[stride*elt_ids[i] + j];
+        }
+        break;
+
+      } /* End of switch */
 
     }
     else {
 
       assert(elt_ids == NULL);
-      memcpy(eval, (const cs_real_t *)array_input->values, n_elts);
+      memcpy(eval, array_input->values, n_elts*stride * sizeof(cs_real_t));
 
     }
 
@@ -1203,7 +1230,7 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
     else {
 
       assert(elt_ids == NULL);
-      memcpy(eval, (const cs_real_t *)values, field->dim*n_elts);
+      memcpy(eval, values, field->dim*n_elts * sizeof(cs_real_t));
 
     }
 

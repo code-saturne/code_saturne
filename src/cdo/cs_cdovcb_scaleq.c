@@ -878,7 +878,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
   /* Compute the values of the Dirichlet BC. */
   cs_real_t  *dir_values =
-    cs_equation_compute_dirichlet_sv(mesh,
+    cs_equation_compute_dirichlet_vb(mesh,
                                      quant,
                                      connect,
                                      cs_shared_time_step,
@@ -1133,7 +1133,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
       /* Assemble the local system (related to vertices only since one applies
          a static condensation) to the global system */
       cs_equation_assemble_v(csys,
-                             connect->range_sets[CS_CDO_CONNECT_VTX_SCA],
+                             connect->range_sets[CS_CDO_CONNECT_VTX_SCAL],
                              eqp,
                              rhs, eqc->source_terms, mav);  // out
 
@@ -1627,14 +1627,14 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 
     if (cs_glob_n_ranks > 1) {
 
-      cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCA],
+      cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                            connect->n_vertices,
                            1,
                            true, // interlace
                            CS_REAL_TYPE,
                            dualcell_vol);
 
-      cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCA],
+      cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                            connect->n_vertices,
                            3,
                            true, // interlace

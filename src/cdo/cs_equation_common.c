@@ -390,7 +390,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
     cs_timer_t t1 = cs_timer_time();
     cs_timer_counter_add_diff(&tcc, &t0, &t1);
 
-    const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCA];
+    const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
 
     cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices,
                                                          1,
@@ -404,8 +404,8 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
     cs_timer_t t2 = cs_timer_time();
     cs_timer_counter_add_diff(&tca, &t1, &t2);
 
-    cs_equation_common_ma[CS_CDO_CONNECT_VTX_SCA] = ma;
-    cs_equation_common_ms[CS_CDO_CONNECT_VTX_SCA] = ms;
+    cs_equation_common_ma[CS_CDO_CONNECT_VTX_SCAL] = ma;
+    cs_equation_common_ms[CS_CDO_CONNECT_VTX_SCAL] = ms;
 
     if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
