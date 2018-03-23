@@ -108,7 +108,7 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
  *         when the definition relies on an analytic expression
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
- * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in]      def         pointer to a cs_xdef_t pointer
  * \param[in, out] retval      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -149,6 +149,152 @@ void
 cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
                                const cs_xdef_t   *def,
                                double             retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the faces
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_faces_by_value(cs_flag_t          dof_flag,
+                                      const cs_xdef_t   *def,
+                                      double             retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the faces
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
+                                         const cs_xdef_t   *def,
+                                         double             retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the faces
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_evaluate_average_on_faces(cs_flag_t          dof_flag,
+                             const cs_xdef_t   *def,
+                             double             retval[])
+{
+  /* Sanity checks */
+  assert(def != NULL);
+
+  switch (def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    cs_evaluate_average_on_faces_by_value(dof_flag, def, retval);
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    cs_evaluate_average_on_faces_by_analytic(dof_flag, def, retval);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Case not handled yet.", __func__);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the cells
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_cells_by_value(cs_flag_t          dof_flag,
+                                      const cs_xdef_t   *def,
+                                      double             retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the cells
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_cells_by_array(cs_flag_t          dof_flag,
+                                      const cs_xdef_t   *def,
+                                      double             retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the cells
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_cells_by_analytic(cs_flag_t          dof_flag,
+                                         const cs_xdef_t   *def,
+                                         double             retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the cells
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_evaluate_average_on_cells(cs_flag_t          dof_flag,
+                             const cs_xdef_t   *def,
+                             double             retval[])
+{
+  /* Sanity checks */
+  assert(def != NULL);
+
+  switch (def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    cs_evaluate_average_on_cells_by_value(dof_flag, def, retval);
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    cs_evaluate_average_on_cells_by_analytic(dof_flag, def, retval);
+    break;
+
+  case CS_XDEF_BY_ARRAY:
+    cs_evaluate_average_on_cells_by_array(dof_flag, def, retval);
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Case not handled yet.", __func__);
+
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 

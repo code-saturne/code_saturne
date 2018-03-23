@@ -37,6 +37,7 @@
 #include "cs_mesh.h"
 #include "cs_quadrature.h"
 #include "cs_time_step.h"
+#include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -115,6 +116,50 @@ typedef void
                          const cs_time_step_t       *ts,
                          void                       *input,
                          cs_real_t                  *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating a quantity defined through a
+ *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
+ *         cs_cell_mesh_t structure) which is hinged on integrals
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  qtype    quadrature type
+ * \param[in]  input    pointer to an input structure
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_xdef_eval_cw_int_t) (const cs_cell_mesh_t       *cm,
+                         const cs_time_step_t       *ts,
+                         void                       *input,
+                         cs_quadrature_type_t        qtype,
+                         cs_real_t                  *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating a quantity defined through a
+ *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
+ *         cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  qtype    quadrature type
+ * \param[in]  input    pointer to an input structure
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_xdef_eval_cw_face_t) (const cs_cell_mesh_t       *cm,
+                          short int                   f,
+                          const cs_time_step_t       *ts,
+                          void                       *input,
+                          cs_quadrature_type_t        qtype,
+                          cs_real_t                  *eval);
 
 /*============================================================================
  * Type definitions
@@ -286,6 +331,38 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
                                   const cs_time_step_t        *ts,
                                   void                        *input,
                                   cs_real_t                   *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate a quantity defined at border faces using an analytic
+ *         function
+ *
+ * \param[in]  n_elts    number of elements to consider
+ * \param[in]  elt_ids   list of element ids
+ * \param[in]  compact   true:no indirection, false:indirection for output
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]  input     pointer to an input structure
+ * \param[in]  qtype     quadrature type
+ * \param[in]  dim       dimension of the analytic function return
+ * \param[out] eval      result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
+                                        const cs_lnum_t             *elt_ids,
+                                        bool                         compact,
+                                        const cs_mesh_t             *mesh,
+                                        const cs_cdo_connect_t      *connect,
+                                        const cs_cdo_quantities_t   *quant,
+                                        const cs_time_step_t        *ts,
+                                        void                        *input,
+                                        cs_quadrature_type_t         qtype,
+                                        const short int              dim,
+                                        cs_real_t                   *eval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -756,6 +833,573 @@ cs_xdef_eval_cw_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                         void                      *input,
                                         cs_quadrature_type_t       qtype,
                                         cs_real_t                 *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Routine to integrate an analytic function over a cell
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  t_cur    time at which the function is evaluated
+ * \param[in]  ana      analytic function to integrate
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qfunc    quadrature function to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_xdef_eval_int_on_cell(const cs_cell_mesh_t           *cm,
+                         double                          t_cur,
+                         cs_analytic_func_t             *ana,
+                         void                           *input,
+                         cs_quadrature_tetra_integral_t *qfunc,
+                         cs_real_t                      *eval)
+{
+  switch (cm->type) {
+
+  case FVM_CELL_TETRA:
+    {
+      assert(cm->n_fc == 4 && cm->n_vc == 4);
+      qfunc(t_cur, cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
+            ana, input, eval);
+    }
+    break;
+
+  case FVM_CELL_PYRAM:
+  case FVM_CELL_PRISM:
+  case FVM_CELL_HEXA:
+  case FVM_CELL_POLY:
+  {
+    for (short int f = 0; f < cm->n_fc; ++f) {
+
+      const cs_quant_t  pfq = cm->face[f];
+      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const int  start = cm->f2e_idx[f];
+      const int  end = cm->f2e_idx[f+1];
+      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int *f2e_ids = cm->f2e_ids + start;
+
+      assert(n_vf > 2);
+      switch(n_vf){
+
+      case 3: /* triangle (optimized version, no subdivision) */
+        {
+          short int  v0, v1, v2;
+          cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+
+          const double  *xv0 = cm->xv + 3*v0;
+          const double  *xv1 = cm->xv + 3*v1;
+          const double  *xv2 = cm->xv + 3*v2;
+
+          qfunc(t_cur, xv0, xv1, xv2, cm->xc, hf_coef * pfq.meas,
+                ana, input, eval);
+        }
+        break;
+
+      default:
+        {
+          const double  *tef = cm->tef + start;
+
+          for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+            // Edge-related variables
+            const short int e0  = f2e_ids[e];
+            const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
+            const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+
+            qfunc(t_cur, xv0, xv1, pfq.center, cm->xc, hf_coef * tef[e],
+                  ana, input, eval);
+          }
+        }
+        break;
+
+      } /* End of switch */
+    } /* End of loop on faces */
+
+  }
+  break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,  _(" Unknown cell-type.\n"));
+    break;
+
+  } /* End of switch on the cell-type */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Routine to integrate an analytic function over a face
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  t_cur    time at which the function is evaluated
+ * \param[in]  f        local face id
+ * \param[in]  ana      analytic function to integrate
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qfunc    quadrature function to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_xdef_eval_int_on_face(const cs_cell_mesh_t          *cm,
+                         double                         t_cur,
+                         short int                      f,
+                         cs_analytic_func_t            *ana,
+                         void                          *input,
+                         cs_quadrature_tria_integral_t *qfunc,
+                         cs_real_t                     *eval)
+{
+  const cs_quant_t  pfq = cm->face[f];
+  const int  start = cm->f2e_idx[f];
+  const int  end = cm->f2e_idx[f+1];
+  const short int n_vf = end - start; // #vertices (=#edges)
+  const short int *f2e_ids = cm->f2e_ids + start;
+
+  switch (n_vf) {
+    case 3:
+      {
+        short int  v0, v1, v2;
+        cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+
+        qfunc(t_cur, cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
+              ana, input, eval);
+      }
+      break;
+    default:
+      {
+        const double *tef = cm->tef + start;
+        for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+          // Edge-related variables
+          const short int e0  = f2e_ids[e];
+          const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
+          const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+
+          qfunc(t_cur, xv0, xv1, pfq.center, tef[e], ana, input, eval);
+        }
+      }
+
+  } // Switch
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Routine to integrate an analytic function over a cell and its faces
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  ana      analytic function to integrate
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  dim      dimension of the function
+ * \param[in]  q_tet    quadrature function to use on tetrahedra
+ * \param[in]  q_tri    quadrature function to use on triangles
+ * \param[out] c_int    result of the evaluation on the cell
+ * \param[out] f_int    result of the evaluation on the faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_int_on_cell_faces(const cs_cell_mesh_t           *cm,
+                               double                          t_cur,
+                               cs_analytic_func_t             *ana,
+                               void                           *input,
+                               const short int                 dim,
+                               cs_quadrature_tetra_integral_t *q_tet,
+                               cs_quadrature_tria_integral_t  *q_tri,
+                               cs_real_t                      *c_int,
+                               cs_real_t                      *f_int);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a scalar
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_xdef_eval_cw_face_avg_scalar_by_value(const cs_cell_mesh_t       *cm,
+                                         short int                   f,
+                                         const cs_time_step_t       *ts,
+                                         void                       *input,
+                                         cs_quadrature_type_t        qtype,
+                                         cs_real_t                  *eval)
+{
+  CS_UNUSED(cm), CS_UNUSED(ts), CS_UNUSED(f), CS_UNUSED(qtype);
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+        " %s: Array storing the evaluation should be allocated before the call"
+        " to this function.",
+        __func__);
+  assert(input != NULL);
+  eval[0] = ((const cs_real_t *)input)[0];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a scalar
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_xdef_eval_cw_face_avg_scalar_by_array(const cs_cell_mesh_t       *cm,
+                                         short int                   f,
+                                         const cs_time_step_t       *ts,
+                                         void                       *input,
+                                         cs_quadrature_type_t        qtype,
+                                         cs_real_t                  *eval)
+{
+  CS_UNUSED(cm), CS_UNUSED(ts), CS_UNUSED(f), CS_UNUSED(qtype);
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+        " %s: Array storing the evaluation should be allocated before the call"
+        " to this function.",
+        __func__);
+  assert(input != NULL);
+  const cs_xdef_array_input_t *array_input =
+                                          (const cs_xdef_array_input_t *)input;
+  eval[0] = array_input->values[0];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a scalar
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_face_avg_scalar_by_analytic(const cs_cell_mesh_t       *cm,
+                                            short int                   f,
+                                            const cs_time_step_t       *ts,
+                                            void                       *input,
+                                            cs_quadrature_type_t        qtype,
+                                            cs_real_t                  *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating at the center of the face a scalar
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *         Since it's only an evaluation, the functions works for any dimension
+ *         (supposed that the function is well defined)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_xdef_eval_cw_face_drhm_by_analytic(const cs_cell_mesh_t       *cm,
+                                      short int                   f,
+                                      const cs_time_step_t       *ts,
+                                      void                       *input,
+                                      cs_quadrature_type_t        qtype,
+                                      cs_real_t                  *eval)
+{
+  CS_UNUSED(qtype);
+  cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)input;
+
+  anai->func(ts->t_cur, 1, NULL, cm->face[f].center, false, anai->input, eval);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a vector
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_xdef_eval_cw_face_avg_vector_by_value(const cs_cell_mesh_t       *cm,
+                                         short int                   f,
+                                         const cs_time_step_t       *ts,
+                                         void                       *input,
+                                         cs_quadrature_type_t        qtype,
+                                         cs_real_t                  *eval)
+{
+  CS_UNUSED(cm), CS_UNUSED(ts), CS_UNUSED(f), CS_UNUSED(qtype);
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+        " %s: Array storing the evaluation should be allocated before the call"
+        " to this function.",
+        __func__);
+  assert(input != NULL);
+  memcpy(eval,(const cs_real_t *)input,3*sizeof(cs_real_t));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a vector
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_xdef_eval_cw_face_avg_vector_by_array(const cs_cell_mesh_t       *cm,
+                                         short int                   f,
+                                         const cs_time_step_t       *ts,
+                                         void                       *input,
+                                         cs_quadrature_type_t        qtype,
+                                         cs_real_t                  *eval)
+{
+  CS_UNUSED(cm), CS_UNUSED(ts), CS_UNUSED(f), CS_UNUSED(qtype);
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+        " %s: Array storing the evaluation should be allocated before the call"
+        " to this function.",
+        __func__);
+  assert(input != NULL);
+  const cs_xdef_array_input_t *array_input =
+                                          (const cs_xdef_array_input_t *)input;
+  memcpy(eval,array_input->values,3*sizeof(cs_real_t));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a scalar
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_face_avg_vector_by_analytic(const cs_cell_mesh_t       *cm,
+                                            short int                   f,
+                                            const cs_time_step_t       *ts,
+                                            void                       *input,
+                                            cs_quadrature_type_t        qtype,
+                                            cs_real_t                  *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a tensor
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_xdef_eval_cw_face_avg_tensor_by_value(const cs_cell_mesh_t       *cm,
+                                         short int                   f,
+                                         const cs_time_step_t       *ts,
+                                         void                       *input,
+                                         cs_quadrature_type_t        qtype,
+                                         cs_real_t                  *eval)
+{
+  CS_UNUSED(cm), CS_UNUSED(ts), CS_UNUSED(f), CS_UNUSED(qtype);
+  assert(input != NULL);
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+        " %s: Array storing the evaluation should be allocated before the call"
+        " to this function.",
+        __func__);
+  const cs_real_3_t  *constant_val = (const cs_real_3_t *)input;
+  for (int ki = 0; ki < 3; ki++)
+    for (int kj = 0; kj < 3; kj++)
+      eval[3*ki+kj] = constant_val[ki][kj];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a tensor
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_xdef_eval_cw_face_avg_tensor_by_array(const cs_cell_mesh_t       *cm,
+                                         short int                   f,
+                                         const cs_time_step_t       *ts,
+                                         void                       *input,
+                                         cs_quadrature_type_t        qtype,
+                                         cs_real_t                  *eval)
+{
+  CS_UNUSED(cm), CS_UNUSED(ts), CS_UNUSED(f), CS_UNUSED(qtype);
+  assert(input != NULL);
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+        " %s: Array storing the evaluation should be allocated before the call"
+        " to this function.",
+        __func__);
+  const cs_xdef_array_input_t *array_input =
+                                          (const cs_xdef_array_input_t *)input;
+  memcpy(eval, array_input->values, 9*sizeof(cs_real_t));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a scalar
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_face_avg_tensor_by_analytic(const cs_cell_mesh_t       *cm,
+                                            short int                   f,
+                                            const cs_time_step_t       *ts,
+                                            void                       *input,
+                                            cs_quadrature_type_t        qtype,
+                                            cs_real_t                  *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating a quantity defined through a
+ *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
+ *         cs_cell_mesh_t structure) which is hinged on integrals
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  qtype    quadrature type
+ * \param[in]  input    pointer to an input structure
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_avg_scalar_by_analytic(const cs_cell_mesh_t       *cm,
+                                       const cs_time_step_t       *ts,
+                                       void                       *input,
+                                       cs_quadrature_type_t        qtype,
+                                       cs_real_t                  *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating a quantity defined through a
+ *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
+ *         cs_cell_mesh_t structure) which is hinged on integrals
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  qtype    quadrature type
+ * \param[in]  input    pointer to an input structure
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_avg_vector_by_analytic(const cs_cell_mesh_t       *cm,
+                                       const cs_time_step_t       *ts,
+                                       void                       *input,
+                                       cs_quadrature_type_t        qtype,
+                                       cs_real_t                  *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating a quantity defined through a
+ *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
+ *         cs_cell_mesh_t structure) which is hinged on integrals
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  qtype    quadrature type
+ * \param[in]  input    pointer to an input structure
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_avg_tensor_by_analytic(const cs_cell_mesh_t       *cm,
+                                       const cs_time_step_t       *ts,
+                                       void                       *input,
+                                       cs_quadrature_type_t        qtype,
+                                       cs_real_t                  *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating a the reduction by averages of a
+ *         analytic function by a cellwise process (usage of a
+ *         cs_cell_mesh_t structure) which is hinged on integrals
+ *         (faces first, then cell DoFs)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  qtype    quadrature type
+ * \param[in]  input    pointer to an input structure
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_avg_reduction_by_analytic(const cs_cell_mesh_t       *cm,
+                                          const cs_time_step_t       *ts,
+                                          void                       *input,
+                                          cs_quadrature_type_t        qtype,
+                                          cs_real_t                  *eval);
 
 /*----------------------------------------------------------------------------*/
 

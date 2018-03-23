@@ -140,7 +140,7 @@ typedef void
  * \param[in]  x      first array
  * \param[in]  y      second array
  *
- * \return  a new allocated cs_sdm_t structure
+ * \return  the dot product
  */
 /*----------------------------------------------------------------------------*/
 
@@ -158,6 +158,58 @@ cs_sdm_dot(int               n,
     dp += x[i]*y[i];
 
   return dp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Multiply a small vector by a scalar coefficient: \a y = \a s \a x
+ *         For very small array sizes (3, 4, 6) prefer functions in cs_math
+ *         For large array sizes ( from 10^3 to ..) prefer functions in cs_blas
+ *
+ * \param[in]      n      size of arrays x and y (small)
+ * \param[in]      s      scalar coefficient
+ * \param[in]      x      in array
+ * \param[in,out]  y      out array
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_sdm_scalvect(int               n,
+                const cs_real_t   s,
+                const cs_real_t   x[],
+                cs_real_t         y[])
+{
+  if (x == NULL || y == NULL)
+    return;
+
+  for (int i = 0; i < n; i++)
+    y[i] = s * x[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Multiply a small vector by a scalar coefficient: \a y += \a s \a x
+ *         For very small array sizes (3, 4, 6) prefer functions in cs_math
+ *         For large array sizes ( from 10^3 to ..) prefer functions in cs_blas
+ *
+ * \param[in]      n      size of arrays x and y (small)
+ * \param[in]      s      scalar coefficient
+ * \param[in]      x      in array
+ * \param[in,out]  y      out array
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_sdm_add_scalvect(int               n,
+                    const cs_real_t   s,
+                    const cs_real_t   x[],
+                    cs_real_t         y[])
+{
+  if (x == NULL || y == NULL)
+    return;
+
+  for (int i = 0; i < n; i++)
+    y[i] += s * x[i];
 }
 
 /*----------------------------------------------------------------------------*/

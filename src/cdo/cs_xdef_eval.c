@@ -44,7 +44,6 @@
 #include <bft_mem.h>
 
 #include "cs_defs.h"
-#include "cs_xdef.h"
 #include "cs_mesh_location.h"
 #include "cs_reco.h"
 
@@ -65,6 +64,9 @@ BEGIN_C_DECLS
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
 
+static const char _err_empty_array[] =
+  " %s: Array storing the evaluation should be allocated before the call"
+  " to this function.";
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -404,6 +406,209 @@ cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
              eval);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate a quantity defined at border faces using an analytic
+ *         function
+ *
+ * \param[in]  n_elts    number of elements to consider
+ * \param[in]  elt_ids   list of element ids
+ * \param[in]  compact   true:no indirection, false:indirection for output
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]  input     pointer to an input structure
+ * \param[in]  qtype     quadrature type
+ * \param[in]  dim       dimension of the analytic function return
+ * \param[out] eval      result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
+                                        const cs_lnum_t             *elt_ids,
+                                        bool                         compact,
+                                        const cs_mesh_t             *mesh,
+                                        const cs_cdo_connect_t      *connect,
+                                        const cs_cdo_quantities_t   *quant,
+                                        const cs_time_step_t        *ts,
+                                        void                        *input,
+                                        cs_quadrature_type_t         qtype,
+                                        const short int              dim,
+                                        cs_real_t                   *eval)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(compact);
+
+  cs_quadrature_tria_integral_t  *qfunc = NULL;
+  cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)input;
+  switch (dim) {
+    case 1:
+      {
+        switch (qtype) {
+        /* Barycenter of the tetrahedral subdiv. */
+        case CS_QUADRATURE_BARY:
+        case CS_QUADRATURE_BARY_SUBDIV:
+          qfunc = cs_quadrature_tria_1pt_scal;
+          break;
+        /* Quadrature with a unique weight */
+        case CS_QUADRATURE_HIGHER:
+          qfunc = cs_quadrature_tria_3pts_scal;
+          break;
+        /* Most accurate quadrature available */
+        case CS_QUADRATURE_HIGHEST:
+          qfunc = cs_quadrature_tria_4pts_scal;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+              _("Invalid quadrature type.\n"));
+
+        } /* Which type of quadrature to use */
+      }
+      break;
+    case 3:
+      {
+        switch (qtype) {
+        /* Barycenter of the tetrahedral subdiv. */
+        case CS_QUADRATURE_BARY:
+        case CS_QUADRATURE_BARY_SUBDIV:
+          qfunc = cs_quadrature_tria_1pt_vect;
+          break;
+        /* Quadrature with a unique weight */
+        case CS_QUADRATURE_HIGHER:
+          qfunc = cs_quadrature_tria_3pts_vect;
+          break;
+        /* Most accurate quadrature available */
+        case CS_QUADRATURE_HIGHEST:
+          qfunc = cs_quadrature_tria_4pts_vect;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+              _("Invalid quadrature type.\n"));
+
+        } /* Which type of quadrature to use */
+      }
+      break;
+    default:
+        bft_error(__FILE__, __LINE__, 0,
+            _(" Invalid dimension of the analytical fucntion.\n"));
+  } // END switch DIMENSION
+
+  const double  tcur = ts->t_cur;
+  const cs_adjacency_t  *c2f = connect->c2f;
+  const cs_adjacency_t  *f2e = connect->f2e;
+  const cs_adjacency_t  *e2v = connect->e2v;
+  const cs_real_t  *xv = quant->vtx_coord;
+
+  if (elt_ids == NULL) {
+#   pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
+
+      const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
+      double *val_i = eval + dim*f_id;
+      const cs_lnum_t   start_idx = f2e->idx[f_id],
+                        end_idx   = f2e->idx[f_id+1];
+      switch (end_idx - start_idx) {
+        case 3:
+          {
+            /* If triangle, one-shot computation */
+            /*const cs_lnum_t _2e   = 2*f2e->ids[start_idx],*/
+                            /*_2e_p = 2*f2e->ids[start_idx+1];*/
+            /*const cs_lnum_t v1  = e2v->ids[_2e],*/
+                            /*v2  = e2v->ids[_2e+1],*/
+                            /*tmp = e2v->ids[_2e_p],*/
+                            /*v3  = ((tmp != v1) && (tmp != v2)) ?*/
+                              /*tmp : e2v->ids[_2e_p+1];*/
+            cs_lnum_t v1, v2, v3;
+            cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
+                                         &v1, &v2, &v3);
+            qfunc(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
+                  anai->func, anai->input, val_i);
+          }
+          break;
+        default:
+          for (cs_lnum_t j = start_idx; j < end_idx; j++) {
+
+            const cs_lnum_t  _2e = 2*f2e->ids[j];
+            const cs_lnum_t  v1 = e2v->ids[_2e];
+            const cs_lnum_t  v2 = e2v->ids[_2e+1];
+
+            qfunc(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+                  cs_math_surftri(xv + 3*v1, xv + 3*v2, pfq.center),
+                  anai->func, anai->input, val_i);
+
+          } // Loop on edges
+      } // Switch tria
+      /* Average */
+      const double _os = 1./pfq.meas;
+      for (short int xyz = 0; xyz < dim; xyz++)
+        val_i[xyz] *= _os;
+    } // Loop on faces
+
+  } else {
+
+    /* Initialize todo array */
+    bool  *todo = NULL;
+
+    BFT_MALLOC(todo, quant->n_faces, bool);
+#   pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
+      todo[f_id] = true;
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+
+      cs_lnum_t  c_id = elt_ids[i];
+
+      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+        cs_lnum_t  f_id = c2f->ids[j];
+        if (todo[f_id]) {
+          todo[f_id] = false;
+          const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
+          double *val_i = eval + dim*f_id;
+          const cs_lnum_t   start_idx = f2e->idx[f_id],
+                            end_idx   = f2e->idx[f_id+1];
+          switch (end_idx - start_idx) {
+            case 3:
+              {
+                /* If triangle, one-shot computation */
+                cs_lnum_t v1, v2, v3;
+                cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
+                                             &v1, &v2, &v3);
+                qfunc(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3,
+                      pfq.meas, anai->func, anai->input, val_i);
+              }
+              break;
+            default:
+              for (cs_lnum_t k = start_idx; k < end_idx; k++) {
+
+                const cs_lnum_t  _2e = 2*f2e->ids[k];
+                const cs_lnum_t  v1 = e2v->ids[_2e];
+                const cs_lnum_t  v2 = e2v->ids[_2e+1];
+
+                qfunc(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+                      cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                      anai->func, anai->input, val_i);
+
+              } // Loop on edges
+          } // Switch tria
+          /* Average */
+          const double _os = 1./pfq.meas;
+          for (short int xyz = 0; xyz < dim; xyz++)
+            val_i[xyz] *= _os;
+
+        } // if todo
+
+      } // Loop on cell faces
+
+    } // Loop on selected cells
+
+    BFT_FREE(todo);
+  } // If selected cell
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Evaluate a quantity defined at vertices using an analytic function
@@ -1891,6 +2096,558 @@ cs_xdef_eval_cw_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a scalar
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_face_avg_scalar_by_analytic(const cs_cell_mesh_t       *cm,
+                                            short int                   f,
+                                            const cs_time_step_t       *ts,
+                                            void                       *input,
+                                            cs_quadrature_type_t        qtype,
+                                            cs_real_t                  *eval)
+{
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+  assert(input != NULL);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  cs_quadrature_tria_integral_t  *qfunc = NULL;
+  switch (qtype) {
+
+  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+  case CS_QUADRATURE_BARY_SUBDIV:
+    qfunc = cs_quadrature_tria_1pt_scal;
+    break;
+
+  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+    qfunc = cs_quadrature_tria_3pts_scal;
+    break;
+
+  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+    qfunc = cs_quadrature_tria_4pts_scal;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+
+  } /* Which type of quadrature to use */
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+
+  cs_xdef_eval_int_on_face(cm, ts->t_cur, f,
+                           anai->func, anai->input, qfunc, eval);
+
+  /* Average */
+  eval[0] /= cm->face[f].meas;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a scalar
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_face_avg_vector_by_analytic(const cs_cell_mesh_t       *cm,
+                                            short int                   f,
+                                            const cs_time_step_t       *ts,
+                                            void                       *input,
+                                            cs_quadrature_type_t        qtype,
+                                            cs_real_t                  *eval)
+{
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+  assert(input != NULL);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  cs_quadrature_tria_integral_t  *qfunc = NULL;
+  switch (qtype) {
+
+  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+  case CS_QUADRATURE_BARY_SUBDIV:
+    qfunc = cs_quadrature_tria_1pt_vect;
+    break;
+
+  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+    qfunc = cs_quadrature_tria_3pts_vect;
+    break;
+
+  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+    qfunc = cs_quadrature_tria_4pts_vect;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+
+  } /* Which type of quadrature to use */
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+
+  cs_xdef_eval_int_on_face(cm, ts->t_cur, f,
+                           anai->func, anai->input, qfunc, eval);
+
+  /* Average */
+  const double _oversurf = 1./cm->face[f].meas;
+  for (short int xyz = 0; xyz < 3; xyz++)
+    eval[xyz] *= _oversurf;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the average on a face of a scalar
+ *         function defined through a descriptor (cs_xdef_t structure) by a
+ *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  f        local face id
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  qtype    level of quadrature to use
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_face_avg_tensor_by_analytic(const cs_cell_mesh_t       *cm,
+                                            short int                   f,
+                                            const cs_time_step_t       *ts,
+                                            void                       *input,
+                                            cs_quadrature_type_t        qtype,
+                                            cs_real_t                  *eval)
+{
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+  assert(input != NULL);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  cs_quadrature_tria_integral_t  *qfunc = NULL;
+  switch (qtype) {
+
+  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+  case CS_QUADRATURE_BARY_SUBDIV:
+    qfunc = cs_quadrature_tria_1pt_tens;
+    break;
+
+  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+    qfunc = cs_quadrature_tria_3pts_tens;
+    break;
+
+  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+    qfunc = cs_quadrature_tria_4pts_tens;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+
+  } /* Which type of quadrature to use */
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+
+  cs_xdef_eval_int_on_face(cm, ts->t_cur, f,
+                           anai->func, anai->input, qfunc, eval);
+
+  /* Average */
+  const double _oversurf = 1./cm->face[f].meas;
+  for (short int i = 0; i < 9; i++)
+    eval[i] *= _oversurf;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Routine to integrate an analytic function over a cell and its faces
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  ana      analytic function to integrate
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  dim      dimension of the function
+ * \param[in]  q_tet    quadrature function to use on tetrahedra
+ * \param[in]  q_tri    quadrature function to use on triangles
+ * \param[out] c_int    result of the evaluation on the cell
+ * \param[out] f_int    result of the evaluation on the faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_int_on_cell_faces(const cs_cell_mesh_t          *cm,
+                               double                         t_cur,
+                               cs_analytic_func_t            *ana,
+                               void                          *input,
+                               const short int                dim,
+                               cs_quadrature_tetra_integral_t *q_tet,
+                               cs_quadrature_tria_integral_t  *q_tri,
+                               cs_real_t                      *c_int,
+                               cs_real_t                      *f_int)
+{
+  const short int nf = cm->n_fc;
+
+  /* Switching on cell-type: optimised version for tetra */
+  switch (cm->type) {
+
+  case FVM_CELL_TETRA:
+    {
+      assert(cm->n_fc == 4 && cm->n_vc == 4);
+      q_tet(t_cur, cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
+            ana, input, c_int);
+      short int  v0, v1, v2;
+      for (short int f = 0; f < nf; ++f) {
+        const cs_quant_t  pfq = cm->face[f];
+        const short int  *f2e_ids = cm->f2e_ids + cm->f2e_idx[f];
+        cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+        q_tri(t_cur, cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
+              ana, input, f_int + dim*f);
+      }
+    }
+    break;
+
+  case FVM_CELL_PYRAM:
+  case FVM_CELL_PRISM:
+  case FVM_CELL_HEXA:
+  case FVM_CELL_POLY:
+  {
+    for (short int f = 0; f < nf; ++f) {
+
+      const cs_quant_t  pfq = cm->face[f];
+      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const int  start = cm->f2e_idx[f];
+      const int  end = cm->f2e_idx[f+1];
+      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int *f2e_ids = cm->f2e_ids + start;
+
+      assert(n_vf > 2);
+      switch(n_vf){
+
+      case 3: /* triangle (optimized version, no subdivision) */
+        {
+          short int  v0, v1, v2;
+          cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+
+          const double  *xv0 = cm->xv + 3*v0;
+          const double  *xv1 = cm->xv + 3*v1;
+          const double  *xv2 = cm->xv + 3*v2;
+          q_tet(t_cur, xv0, xv1, xv2, cm->xc,  hf_coef * pfq.meas,
+                ana, input, c_int);
+          q_tri(t_cur, cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
+                ana, input, f_int + dim*f);
+        }
+        break;
+
+      default:
+        {
+          const double  *tef = cm->tef + start;
+
+          for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+            // Edge-related variables
+            const short int e0  = f2e_ids[e];
+            const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
+            const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+
+            q_tet(t_cur, xv0, xv1, pfq.center, cm->xc, hf_coef*tef[e],
+                  ana, input, c_int);
+
+            q_tri(t_cur, xv0, xv1, pfq.center, tef[e],
+                  ana, input, f_int + dim*f);
+
+          }
+        }
+        break;
+
+      } /* End of switch */
+
+    }   /* End of loop on faces */
+
+  }
+  break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,  _(" Unknown cell-type.\n"));
+    break;
+
+  } /* End of switch on the cell-type */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating a quantity defined through a
+ *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
+ *         cs_cell_mesh_t structure) which is hinged on integrals
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  qtype    quadrature type
+ * \param[in]  input    pointer to an input structure
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_avg_scalar_by_analytic(const cs_cell_mesh_t       *cm,
+                                       const cs_time_step_t       *ts,
+                                       void                       *input,
+                                       cs_quadrature_type_t        qtype,
+                                       cs_real_t                  *eval)
+
+{
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+  assert(input != NULL);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  cs_quadrature_tetra_integral_t  *qfunc = NULL;
+  switch (qtype) {
+
+  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+  case CS_QUADRATURE_BARY_SUBDIV:
+    qfunc = cs_quadrature_tet_1pt_scal;
+    break;
+
+  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+    qfunc = cs_quadrature_tet_4pts_scal;
+    break;
+
+  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+    qfunc = cs_quadrature_tet_5pts_scal;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+
+  } /* Which type of quadrature to use */
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+
+  cs_xdef_eval_int_on_cell(cm, ts->t_cur, anai->func, anai->input, qfunc, eval);
+
+  /* Average */
+  eval[0] /= cm->vol_c;
+
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating a quantity defined through a
+ *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
+ *         cs_cell_mesh_t structure) which is hinged on integrals
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  qtype    quadrature type
+ * \param[in]  input    pointer to an input structure
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_avg_vector_by_analytic(const cs_cell_mesh_t       *cm,
+                                       const cs_time_step_t       *ts,
+                                       void                       *input,
+                                       cs_quadrature_type_t        qtype,
+                                       cs_real_t                  *eval)
+{
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+  assert(input != NULL);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  cs_quadrature_tetra_integral_t  *qfunc = NULL;
+  switch (qtype) {
+
+  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+  case CS_QUADRATURE_BARY_SUBDIV:
+    qfunc = cs_quadrature_tet_1pt_vect;
+    break;
+
+  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+    qfunc = cs_quadrature_tet_4pts_vect;
+    break;
+
+  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+    qfunc = cs_quadrature_tet_5pts_vect;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+
+  } /* Which type of quadrature to use */
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+
+  cs_xdef_eval_int_on_cell(cm, ts->t_cur, anai->func, anai->input, qfunc, eval);
+
+  /* Average */
+  const double _overvol = 1./cm->vol_c;
+  for (short int xyz = 0; xyz < 3; xyz++)
+    eval[xyz] *= _overvol;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating a quantity defined through a
+ *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
+ *         cs_cell_mesh_t structure) which is hinged on integrals
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  qtype    quadrature type
+ * \param[in]  input    pointer to an input structure
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_avg_tensor_by_analytic(const cs_cell_mesh_t       *cm,
+                                       const cs_time_step_t       *ts,
+                                       void                       *input,
+                                       cs_quadrature_type_t        qtype,
+                                       cs_real_t                  *eval)
+{
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+  assert(input != NULL);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  cs_quadrature_tetra_integral_t  *qfunc = NULL;
+  switch (qtype) {
+
+  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+  case CS_QUADRATURE_BARY_SUBDIV:
+    qfunc = cs_quadrature_tet_1pt_tens;
+    break;
+
+  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+    qfunc = cs_quadrature_tet_4pts_tens;
+    break;
+
+  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+    qfunc = cs_quadrature_tet_5pts_tens;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+
+  } /* Which type of quadrature to use */
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+
+  cs_xdef_eval_int_on_cell(cm, ts->t_cur, anai->func, anai->input, qfunc, eval);
+
+  /* Average */
+  const double _overvol = 1./cm->vol_c;
+  for (short int xyz = 0; xyz < 9; xyz++)
+    eval[xyz] *= _overvol;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating a the reduction by averages of a
+ *         analytic function by a cellwise process (usage of a
+ *         cs_cell_mesh_t structure) which is hinged on integrals
+ *         (faces first, then cell DoFs)
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  ts       pointer to a cs_time_step_t structure
+ * \param[in]  qtype    quadrature type
+ * \param[in]  input    pointer to an input structure
+ * \param[out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_avg_reduction_by_analytic(const cs_cell_mesh_t       *cm,
+                                          const cs_time_step_t       *ts,
+                                          void                       *input,
+                                          cs_quadrature_type_t        qtype,
+                                          cs_real_t                  *eval)
+{
+  if (eval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+  assert(input != NULL);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  cs_quadrature_tetra_integral_t  *q_tet = NULL;
+  cs_quadrature_tria_integral_t   *q_tri = NULL;
+  switch (qtype) {
+
+  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+  case CS_QUADRATURE_BARY_SUBDIV:
+    q_tet = cs_quadrature_tet_1pt_vect;
+    q_tri = cs_quadrature_tria_1pt_vect;
+    break;
+
+  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+    q_tet = cs_quadrature_tet_4pts_vect;
+    q_tri = cs_quadrature_tria_3pts_vect;
+    break;
+
+  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+    q_tet = cs_quadrature_tet_5pts_vect;
+    q_tri = cs_quadrature_tria_4pts_vect;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+
+  } /* Which type of quadrature to use */
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+
+  const short int nf = cm->n_fc;
+  cs_real_t *c_eval = eval + 3*nf;
+  cs_xdef_eval_int_on_cell_faces(cm, ts->t_cur,
+                                 anai->func, anai->input,
+                                 3, //dimension
+                                 q_tet, q_tri,
+                                 c_eval, eval);
+  /* Averages */
+  for (short int f = 0; f < nf; f++) {
+    const cs_real_t _os = 1. / cm->face[f].meas;
+    cs_real_t *f_eval = eval + 3*f;
+    f_eval[0] *= _os, f_eval[1] *= _os, f_eval[2] *= _os;
+  } // Loop on f
+  const cs_real_t _ov = 1. / cm->vol_c;
+  c_eval[0] *= _ov, c_eval[1] *= _ov, c_eval[2] *= _ov;
+}
 /*----------------------------------------------------------------------------*/
 
 #undef _dp3

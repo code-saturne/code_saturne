@@ -108,6 +108,41 @@ typedef struct {
  *============================================================================*/
 
 /*============================================================================
+ * Static Inline Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the next three vertices in a row from a face to edge connectivity
+ *         and a edge to vertex connectivity
+ *
+ * \param[in]       f2e_ids     face-edge connectivity
+ * \param[in]       e2v_ids     edge-vertex connectivity
+ * \param[in]       start_idx   index from which the current cell infos start
+ * \param[in, out]  v0          id of the first vertex
+ * \param[in, out]  v1          id of the second vertex
+ * \param[in, out]  v2          id of the third vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_connect_get_next_3_vertices(const cs_lnum_t   *f2e_ids,
+                               const cs_lnum_t   *e2v_ids,
+                               const cs_lnum_t    start_idx,
+                               cs_lnum_t         *v0,
+                               cs_lnum_t         *v1,
+                               cs_lnum_t         *v2)
+{
+  const cs_lnum_t e0  = f2e_ids[start_idx],
+                  e1  = f2e_ids[start_idx+1];
+  const cs_lnum_t tmp = e2v_ids[2*e1];
+
+  *v0 = e2v_ids[2*e0];
+  *v1 = e2v_ids[2*e0+1];
+  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 

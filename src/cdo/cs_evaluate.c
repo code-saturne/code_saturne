@@ -46,6 +46,7 @@
 #include "cs_parall.h"
 #include "cs_range_set.h"
 #include "cs_volume_zone.h"
+#include "cs_quadrature.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -72,162 +73,11 @@ static const char _err_empty_array[] =
   " %s: Array storing the evaluation should be allocated before the call"
   " to this function.";
 static const char _err_not_handled[] = " %s: Case not handled yet.";
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the integral over a tetrahedron based on a specified
- *         quadrature rules
- *
- * \param[in]      tcur     current physical time of the simulation
- * \param[in]      xv       first point of the tetrahedron
- * \param[in]      xe       second point of the tetrahedron
- * \param[in]      xf       third point of the tetrahedron
- * \param[in]      xc       fourth point of the tetrahedron
- * \param[in]      ana      pointer to the analytic function
- * \param[in]      input    NULL or pointer to a structure cast on-the-fly
- * \param[in, out] results  array of double
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_evaluate_tetra_integral_t)(double                 tcur,
-                               const cs_real_3_t      xv,
-                               const cs_real_3_t      xe,
-                               const cs_real_3_t      xf,
-                               const cs_real_3_t      xc,
-                               cs_analytic_func_t    *ana,
-                               void                  *input,
-                               double                 results[]);
+static const char _err_quad[] = " %s: Invalid quadrature type.";
 
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the integral over a tetrahedron of the barycentric subdiv.
- *         using a barycentric quadrature rule
- *
- * \param[in]  tcur         current physical time of the simulation
- * \param[in]  xv           first point of the tetrahedron
- * \param[in]  xe           second point of the tetrahedron
- * \param[in]  xf           third point of the tetrahedron
- * \param[in]  xc           fourth point of the tetrahedron
- * \param[in]  ana          pointer to the analytic function
- * \param[in]  input        NULL or pointer to a structure cast on-the-fly
- * \param[in, out] results  array of double
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-_analytic_scalar_tet1(double                 tcur,
-                      const cs_real_3_t      xv,
-                      const cs_real_3_t      xe,
-                      const cs_real_3_t      xf,
-                      const cs_real_3_t      xc,
-                      cs_analytic_func_t    *ana,
-                      void                  *input,
-                      double                 results[])
-{
-  int  k;
-  cs_real_3_t  xg;
-  double  evaluation;
-
-  const double  vol_tet = cs_math_voltet(xv, xe, xf, xc);
-
-  for (k = 0; k < 3; k++)
-    xg[k] = 0.25*(xv[k] + xe[k] + xf[k] + xc[k]);
-
-  ana(tcur, 1, NULL, xg, true, input, &evaluation);
-
-  *results += vol_tet * evaluation;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the integral over a tetrahedron of the barycentric subdiv.
- *         with a quadrature rule using 4 Gauss points and a unique weight
- *
- * \param[in]  tcur         current physical time of the simulation
- * \param[in]  xv           first point of the tetrahedron
- * \param[in]  xe           second point of the tetrahedron
- * \param[in]  xf           third point of the tetrahedron
- * \param[in]  xc           fourth point of the tetrahedron
- * \param[in]  ana          pointer to the analytic function
- * \param[in]  input        NULL or pointer to a structure cast on-the-fly
- * \param[in, out] results  array of double
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-_analytic_scalar_tet4(double                tcur,
-                      const cs_real_3_t     xv,
-                      const cs_real_3_t     xe,
-                      const cs_real_3_t     xf,
-                      const cs_real_3_t     xc,
-                      cs_analytic_func_t   *ana,
-                      void                 *input,
-                      double                results[])
-{
-  cs_real_3_t  gauss_pts[4];
-  double  evaluation[4], weights[4];
-
-  const double  vol_tet = cs_math_voltet(xv, xe, xf, xc);
-
-  /* Compute Gauss points and its unique weight */
-  cs_quadrature_tet_4pts(xv, xe, xf, xc, vol_tet, gauss_pts, weights);
-
-  ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, true, input, evaluation);
-
-  double  add = 0.0;
-  for (int p = 0; p < 4; p++) add += weights[p] * evaluation[p];
-
-  /* Return results */
-  *results += add;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the integral over a tetrahedron of the barycentric subdiv.
- *         with a quadrature rule using 5 Gauss points and 5 weights
- *
- * \param[in]  tcur         current physical time of the simulation
- * \param[in]  xv           first point of the tetrahedron
- * \param[in]  xe           second point of the tetrahedron
- * \param[in]  xf           third point of the tetrahedron
- * \param[in]  xc           fourth point of the tetrahedron
- * \param[in]  ana          pointer to the analytic function
- * \param[in]  input        NULL or pointer to a structure cast on-the-fly
- * \param[in, out] results  array of double
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-_analytic_scalar_tet5(double                tcur,
-                      const cs_real_3_t     xv,
-                      const cs_real_3_t     xe,
-                      const cs_real_3_t     xf,
-                      const cs_real_3_t     xc,
-                      cs_analytic_func_t   *ana,
-                      void                 *input,
-                      double                results[])
-{
-  cs_real_t  weights[5], evaluation[5];
-  cs_real_3_t  gauss_pts[5];
-
-  const double  vol_tet = cs_math_voltet(xv, xe, xf, xc);
-
-  /* Compute Gauss points and its weights */
-  cs_quadrature_tet_5pts(xv, xe, xf, xc, vol_tet, gauss_pts, weights);
-
-  ana(tcur, 5, NULL, (const cs_real_t *)gauss_pts, true, input, evaluation);
-
-  double  add = 0.0;
-  for (int p = 0; p < 5; p++) add += evaluation[p] * weights[p];
-
-  *results += add;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the integral over dual cells of a scalar density field
@@ -245,10 +95,11 @@ static void
 _cellwise_dcsd_by_analytic(const cs_cell_mesh_t           *cm,
                            cs_analytic_func_t             *ana,
                            void                           *input,
-                           cs_evaluate_tetra_integral_t   *compute_integral,
+                           cs_quadrature_tetra_integral_t *compute_integral,
                            double                          values[])
 {
   const double  tcur = cs_time_step->t_cur;
+  const double  vol = cm->vol_c;
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -264,8 +115,10 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t           *cm,
       const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
       const double  *xe = cm->edge[e].center;
 
-      compute_integral(tcur, xv1, xe, xf, cm->xc, ana, input, values + v1);
-      compute_integral(tcur, xv2, xe, xf, cm->xc, ana, input, values + v2);
+      compute_integral(tcur, xv1, xe, xf, cm->xc, vol*cm->wvc[v1],
+                       ana, input, values + v1);
+      compute_integral(tcur, xv2, xe, xf, cm->xc, vol*cm->wvc[v2],
+                       ana, input, values + v2);
 
     } // Loop on face edges
 
@@ -288,12 +141,12 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t           *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_dcsd_by_analytic(cs_analytic_func_t            *ana,
-                  void                          *input,
-                  const cs_lnum_t                n_elts,
-                  const cs_lnum_t               *elt_ids,
-                  cs_evaluate_tetra_integral_t  *compute_integral,
-                  double                         values[])
+_dcsd_by_analytic(cs_analytic_func_t              *ana,
+                  void                            *input,
+                  const cs_lnum_t                  n_elts,
+                  const cs_lnum_t                 *elt_ids,
+                  cs_quadrature_tetra_integral_t  *compute_integral,
+                  double                           values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
@@ -324,9 +177,10 @@ _dcsd_by_analytic(cs_analytic_func_t            *ana,
         for (int k = 0; k < 3; k++)
           xe[k] = 0.5 * (xv1[k] + xv2[k]);
 
-        compute_integral(tcur, xv1, xe, xf, xc, ana, input, values + v1);
-        compute_integral(tcur, xv2, xe, xf, xc, ana, input, values + v2);
-
+        compute_integral(tcur, xv1, xe, xf, xc, quant->dcell_vol[v1],
+                         ana, input, values + v1);
+        compute_integral(tcur, xv2, xe, xf, xc, quant->dcell_vol[v2],
+                         ana, input, values + v2);
       } // Loop on edges
 
     } // Loop on faces
@@ -350,10 +204,10 @@ _dcsd_by_analytic(cs_analytic_func_t            *ana,
 /*----------------------------------------------------------------------------*/
 
 static double
-_cellwise_pcsd_by_analytic(const cs_cell_mesh_t          *cm,
-                           cs_analytic_func_t            *ana,
-                           void                          *input,
-                           cs_evaluate_tetra_integral_t  *compute_integral)
+_cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
+                           cs_analytic_func_t              *ana,
+                           void                            *input,
+                           cs_quadrature_tetra_integral_t  *compute_integral)
 {
   const double  tcur = cs_time_step->t_cur;
 
@@ -362,15 +216,17 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t          *cm,
   if (cs_cdo_connect->cell_type[cm->c_id] == FVM_CELL_TETRA) {
 
     compute_integral(tcur, cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
-                     ana, input, &retval);
+                     cm->vol_c, ana, input, &retval);
 
   }
   else {
 
     for (short int f = 0; f < cm->n_fc; f++) {
 
-      const short int  n_ef = cm->f2e_idx[f+1] - cm->f2e_idx[f];
-      const short int  *e_ids = cm->f2e_ids + cm->f2e_idx[f];
+      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const short int  start = cm->f2e_idx[f];
+      const short int  n_ef  = cm->f2e_idx[f+1] - start;
+      const short int *e_ids = cm->f2e_ids + cm->f2e_idx[f];
 
       if (n_ef == 3) { // Current face is a triangle --> simpler
 
@@ -379,12 +235,14 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t          *cm,
 
         const double *xv0 = cm->xv+3*v0, *xv1 = cm->xv+3*v1, *xv2 = cm->xv+3*v2;
 
-        compute_integral(tcur, xv0, xv1, xv2, cm->xc, ana, input, &retval);
+        compute_integral(tcur, xv0, xv1, xv2, cm->xc, hf_coef*cm->face[f].meas,
+                         ana, input, &retval);
 
       }
       else {
 
         const double  *xf = cm->face[f].center;
+        const double  *tef = cm->tef + start;
 
         for (short int i = 0; i < n_ef; i++) {
 
@@ -392,7 +250,8 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t          *cm,
           const double  *xv1 = cm->xv + 3*cm->e2v_ids[_2e];
           const double  *xv2 = cm->xv + 3*cm->e2v_ids[_2e+1];
 
-          compute_integral(tcur, xv1, xv2, xf, cm->xc, ana, input, &retval);
+          compute_integral(tcur, xv1, xv2, xf, cm->xc, hf_coef*tef[i],
+                           ana, input, &retval);
 
         } // Loop on face edges
 
@@ -420,12 +279,12 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t          *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_pcsd_by_analytic(cs_analytic_func_t            *ana,
-                  void                          *input,
-                  const cs_lnum_t                n_elts,
-                  const cs_lnum_t               *elt_ids,
-                  cs_evaluate_tetra_integral_t  *compute_integral,
-                  double                         values[])
+_pcsd_by_analytic(cs_analytic_func_t              *ana,
+                  void                            *input,
+                  const cs_lnum_t                  n_elts,
+                  const cs_lnum_t                 *elt_ids,
+                  cs_quadrature_tetra_integral_t  *compute_integral,
+                  double                           values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_real_t  *xv = quant->vtx_coord;
@@ -442,10 +301,9 @@ _pcsd_by_analytic(cs_analytic_func_t            *ana,
       const cs_lnum_t  *v_ids = connect->c2v->ids + connect->c2v->idx[c_id];
 
       compute_integral(tcur,
-                       xv + 3*v_ids[0], xv + 3*v_ids[1], xv + 3*v_ids[2],
-                       xv + 3*v_ids[3],
-                       ana, input,
-                       values + c_id);
+                    xv+3*v_ids[0], xv+3*v_ids[1], xv+3*v_ids[2], xv+3*v_ids[3],
+                       quant->cell_vol[c_id],
+                       ana, input, values + c_id);
 
 
     }
@@ -456,18 +314,37 @@ _pcsd_by_analytic(cs_analytic_func_t            *ana,
       for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
         const cs_lnum_t  f_id = c2f->ids[i];
-        const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
+        const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
+        const double hfc = cs_math_3_dot_product(pfq.unitv,
+                                                 quant->dedge_vector+3*f_id);
+        const cs_lnum_t start = f2e->idx[f_id],
+                          end = f2e->idx[f_id+1],
+                         n_ef = end - start;
 
-        for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
+        if (n_ef == 3) {
 
-          const cs_lnum_t  _2e = 2*f2e->ids[j];
-          const cs_lnum_t  v1 = connect->e2v->ids[_2e];
-          const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
-
-          compute_integral(tcur, xv + 3*v1, xv + 3*v2, xf, xc,
+          cs_lnum_t v0, v1, v2;
+          cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
+                                         start, &v0, &v1, &v2);
+          compute_integral(tcur,xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
+                           hfc * pfq.meas,
                            ana, input, values + c_id);
+        }
+        else {
 
-        } // Loop on edges
+          for (cs_lnum_t j = start; j < end; j++) {
+
+            const cs_lnum_t  _2e = 2*f2e->ids[j];
+            const cs_lnum_t  v1 = connect->e2v->ids[_2e];
+            const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
+
+            compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center, xc,
+                             hfc*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                             ana, input, values + c_id);
+
+          } // Loop on edges
+
+        } // Current face is triangle or not ?
 
       } // Loop on faces
 
@@ -476,6 +353,199 @@ _pcsd_by_analytic(cs_analytic_func_t            *ana,
   } // Loop on cells
 
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the average over primal cells of a scalar field defined
+ *         by an analytical function on a selection of (primal) cells
+ *
+ * \param[in]      ana               pointer to the analytic function
+ * \param[in]      input             NULL or pointer cast on-the-fly
+ * \param[in]      n_loc_elts        number of elements to consider
+ * \param[in]      elt_ids           pointer to the list od selected ids
+ * \param[in]      compute_integral  function pointer
+ * \param[in, out] values            pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pcsa_by_analytic(cs_analytic_func_t              *ana,
+                  void                            *input,
+                  const cs_lnum_t                  n_elts,
+                  const cs_lnum_t                 *elt_ids,
+                  cs_quadrature_tetra_integral_t  *compute_integral,
+                  double                           values[])
+{
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_real_t  *xv = quant->vtx_coord;
+  const cs_cdo_connect_t  *connect = cs_cdo_connect;
+  const cs_adjacency_t  *c2f = connect->c2f;
+  const cs_adjacency_t  *f2e = connect->f2e;
+  const double  tcur = cs_time_step->t_cur;
+
+  for (cs_lnum_t  id = 0; id < n_elts; id++) {
+
+    const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
+    if (connect->cell_type[c_id] == FVM_CELL_TETRA) {
+
+      const cs_lnum_t  *v_ids = connect->c2v->ids + connect->c2v->idx[c_id];
+
+      compute_integral(tcur,
+                    xv+3*v_ids[0], xv+3*v_ids[1], xv+3*v_ids[2], xv+3*v_ids[3],
+                       quant->cell_vol[c_id],
+                       ana, input, values + c_id);
+
+    }
+    else {
+
+      const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+
+      for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+
+        const cs_lnum_t  f_id = c2f->ids[i];
+        const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
+        const double hfc = cs_math_3_dot_product(pfq.unitv,
+                                                 quant->dedge_vector+3*f_id);
+        const cs_lnum_t start = f2e->idx[f_id],
+                          end = f2e->idx[f_id+1],
+                         n_ef = end - start;
+
+        if (n_ef == 3) {
+
+          cs_lnum_t v0, v1, v2;
+          cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
+                                         start, &v0, &v1, &v2);
+          compute_integral(tcur,xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
+                           hfc * pfq.meas,
+                           ana, input, values + c_id);
+        }
+        else {
+
+          for (cs_lnum_t j = start; j < end; j++) {
+
+            const cs_lnum_t  _2e = 2*f2e->ids[j];
+            const cs_lnum_t  v1 = connect->e2v->ids[_2e];
+            const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
+
+            compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center, xc,
+                             hfc*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                             ana, input, values + c_id);
+
+          } // Loop on edges
+
+        } // Current face is triangle or not ?
+
+      } // Loop on faces
+
+    } /* Not a tetrahedron */
+
+    /* Average */
+    values[c_id] /= quant->cell_vol[c_id];
+
+  } // Loop on cells
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the average over primal cells of a vector field defined
+ *         by an analytical function on a selection of (primal) cells
+ *
+ * \param[in]      ana               pointer to the analytic function
+ * \param[in]      input             NULL or pointer cast on-the-fly
+ * \param[in]      n_loc_elts        number of elements to consider
+ * \param[in]      elt_ids           pointer to the list od selected ids
+ * \param[in]      compute_integral  function pointer
+ * \param[in, out] values            pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+/* Note: the only difference from the scalar version is that there's 3*c_id in
+ * the values. Consider merging the two
+ */
+
+static void
+_pcva_by_analytic(cs_analytic_func_t              *ana,
+                  void                            *input,
+                  const cs_lnum_t                  n_elts,
+                  const cs_lnum_t                 *elt_ids,
+                  cs_quadrature_tetra_integral_t  *compute_integral,
+                  double                           values[])
+{
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_real_t  *xv = quant->vtx_coord;
+  const cs_cdo_connect_t  *connect = cs_cdo_connect;
+  const cs_adjacency_t  *c2f = connect->c2f;
+  const cs_adjacency_t  *f2e = connect->f2e;
+  const double  tcur = cs_time_step->t_cur;
+
+  for (cs_lnum_t  id = 0; id < n_elts; id++) {
+
+    const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
+    double *val_i = values + 3*c_id;
+
+    if (connect->cell_type[c_id] == FVM_CELL_TETRA) {
+
+      const cs_lnum_t  *v_ids = connect->c2v->ids + connect->c2v->idx[c_id];
+
+      compute_integral(tcur,
+                    xv+3*v_ids[0], xv+3*v_ids[1], xv+3*v_ids[2], xv+3*v_ids[3],
+                       quant->cell_vol[c_id],
+                       ana, input, values + c_id);
+
+    }
+    else {
+
+      const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+
+      for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+
+        const cs_lnum_t  f_id = c2f->ids[i];
+        const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
+        const double hfc = cs_math_3_dot_product(pfq.unitv,
+                                                 quant->dedge_vector+3*f_id);
+        const cs_lnum_t start = f2e->idx[f_id],
+                          end = f2e->idx[f_id+1],
+                         n_ef = end - start;
+
+        if (n_ef == 3) {
+
+          cs_lnum_t v0, v1, v2;
+          cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
+                                         start, &v0, &v1, &v2);
+          compute_integral(tcur, xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
+                           hfc * pfq.meas,
+                           ana, input, values + c_id);
+
+        }
+        else {
+
+          for (cs_lnum_t j = start; j < end; j++) {
+
+            const cs_lnum_t  _2e = 2*f2e->ids[j];
+            const cs_lnum_t  v1 = connect->e2v->ids[_2e];
+            const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
+
+            compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center, xc,
+                             hfc*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                             ana, input, values + c_id);
+
+          } // Loop on edges
+
+        } // Current face is triangle or not ?
+
+      } // Loop on faces
+
+    } /* Not a tetrahedron */
+
+    const double _overvol = 1./quant->cell_vol[c_id];
+    for (short int xyz = 0; xyz < 3; xyz++)
+      val_i[xyz] *= _overvol;
+
+  } // Loop on cells
+
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -611,6 +681,41 @@ _pcsd_by_value(const double       const_val,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the average over a (primal) cell of a scalar field
+ *
+ * \param[in]      const_val   constant value
+ * \param[in]      n_loc_elts  number of elements to consider
+ * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in, out] values      pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_pcsa_by_value(const double       const_val,
+               const cs_lnum_t    n_elts,
+               const cs_lnum_t   *elt_ids,
+               double             values[])
+{
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+
+  if (elt_ids == NULL) { /* All the support entities are selected */
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+      values[c_id] = const_val;
+  }
+
+  else { /* Loop on selected cells */
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t  c_id = elt_ids[i];
+      values[c_id] = const_val;
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the integral over a (primal) cell of a vector-valued
  *         density field
  *
@@ -647,6 +752,40 @@ _pcvd_by_value(const double        const_vec[3],
       values[3*c_id  ] = vol_c*const_vec[0];
       values[3*c_id+1] = vol_c*const_vec[1];
       values[3*c_id+2] = vol_c*const_vec[2];
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the average over a (primal) cell of a vector-valued field
+ *
+ * \param[in]      const_vec   constant values
+ * \param[in]      n_loc_elts  number of elements to consider
+ * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in, out] values      pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_pcva_by_value(const double        const_vec[3],
+               const cs_lnum_t     n_elts,
+               const cs_lnum_t    *elt_ids,
+               double              values[])
+{
+  if (elt_ids == NULL) { /* All the support entities are selected */
+#   pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++) {
+      memcpy(values+3*c_id,const_vec,3*sizeof(double));
+    }
+  }
+
+  else { /* Loop on selected cells */
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      const cs_lnum_t  c_id = elt_ids[i];
+      memcpy(values+3*c_id,const_vec,3*sizeof(double));
     }
   }
 
@@ -702,6 +841,297 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
   } // Loop on selected cells
 
   BFT_FREE(todo);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the average at each primal faces for a scalar potential
+ *         defined by an analytical function on a selection of (primal) cells
+ *
+ * \param[in]      ana               pointer to the analytic function
+ * \param[in]      input             NULL or pointer cast on-the-fly
+ * \param[in]      n_loc_elts        number of elements to consider
+ * \param[in]      elt_ids           pointer to the list od selected ids
+ * \param[in]      compute_integral  function pointer
+ * \param[in, out] values            pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pfsa_by_analytic(cs_analytic_func_t             *ana,
+                  void                           *input,
+                  const cs_lnum_t                 n_elts,
+                  const cs_lnum_t                *elt_ids,
+                  cs_quadrature_tria_integral_t  *compute_integral,
+                  double                          values[])
+{
+  const double  tcur = cs_time_step->t_cur;
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
+  const cs_adjacency_t  *f2e = cs_cdo_connect->f2e;
+  const cs_adjacency_t  *e2v = cs_cdo_connect->e2v;
+  const cs_real_t  *xv = quant->vtx_coord;
+
+  if (elt_ids == NULL) {
+
+#   pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
+
+      const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
+      const cs_lnum_t   start_idx = f2e->idx[f_id],
+                        end_idx   = f2e->idx[f_id+1];
+      double *val_i = values + f_id;
+
+      switch (end_idx - start_idx) {
+
+      case 3:
+        { /* If triangle, one-shot computation */
+          cs_lnum_t  v1, v2, v3;
+
+          cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
+                                         &v1, &v2, &v3);
+          compute_integral(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
+                           ana, input, val_i);
+        }
+        break;
+
+      default:
+        for (cs_lnum_t j = start_idx; j < end_idx; j++) {
+
+          const cs_lnum_t  _2e = 2*f2e->ids[j];
+          const cs_lnum_t  v1 = e2v->ids[_2e];
+          const cs_lnum_t  v2 = e2v->ids[_2e+1];
+
+          compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+                           cs_math_surftri(xv + 3*v1, xv + 3*v2, pfq.center),
+                           ana, input, val_i);
+
+        } /* Loop on edges */
+        break;
+
+      } /* End of switch */
+
+      /* Average */
+      val_i[0] /= pfq.meas;
+
+    } // Loop on faces
+
+  }
+  else {
+
+    /* Initialize todo array */
+    bool  *todo = NULL;
+
+    BFT_MALLOC(todo, quant->n_faces, bool);
+#   pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
+      todo[f_id] = true;
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+
+      cs_lnum_t  c_id = elt_ids[i];
+
+      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+        cs_lnum_t  f_id = c2f->ids[j];
+        if (todo[f_id]) {
+
+          todo[f_id] = false;
+
+          const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
+          const cs_lnum_t  start_idx = f2e->idx[f_id],
+                           end_idx   = f2e->idx[f_id+1];
+          double *val_i = values + f_id;
+
+          switch (end_idx - start_idx) {
+
+          case 3:
+            { /* If triangle, one-shot computation */
+              cs_lnum_t  v1, v2, v3;
+
+              cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
+                                             &v1, &v2, &v3);
+
+              compute_integral(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3,
+                               pfq.meas, ana, input, val_i);
+            }
+            break;
+
+          default:
+            for (cs_lnum_t k = start_idx; k < end_idx; k++) {
+
+              const cs_lnum_t  _2e = 2*f2e->ids[k];
+              const cs_lnum_t  v1 = e2v->ids[_2e];
+              const cs_lnum_t  v2 = e2v->ids[_2e+1];
+
+              compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+                               cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                               ana, input, val_i);
+            } /* Loop on edges */
+            break;
+
+          } /* End of switch */
+
+          /* Average */
+          val_i[0] /= pfq.meas;
+
+        } /* TODO == true */
+
+      } // Loop on cell faces
+
+    } // Loop on selected cells
+
+    BFT_FREE(todo);
+
+  } /* If there is a selection of cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the average at each primal faces for a vector potential
+ *         defined by an analytical function on a selection of (primal) cells
+ *
+ * \param[in]      ana               pointer to the analytic function
+ * \param[in]      input             NULL or pointer cast on-the-fly
+ * \param[in]      n_loc_elts        number of elements to consider
+ * \param[in]      elt_ids           pointer to the list od selected ids
+ * \param[in]      compute_integral  function pointer
+ * \param[in, out] values            pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pfva_by_analytic(cs_analytic_func_t             *ana,
+                  void                           *input,
+                  const cs_lnum_t                 n_elts,
+                  const cs_lnum_t                *elt_ids,
+                  cs_quadrature_tria_integral_t  *compute_integral,
+                  double                          values[])
+{
+  const double  tcur = cs_time_step->t_cur;
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
+  const cs_adjacency_t  *f2e = cs_cdo_connect->f2e;
+  const cs_adjacency_t  *e2v = cs_cdo_connect->e2v;
+  const cs_real_t  *xv = quant->vtx_coord;
+
+  if (elt_ids == NULL) {
+
+#   pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
+
+      const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
+      const cs_lnum_t   start_idx = f2e->idx[f_id],
+                        end_idx   = f2e->idx[f_id+1];
+      double *val_i = values + 3*f_id;
+
+      switch (end_idx - start_idx) {
+
+      case 3:
+        { /* If triangle, one-shot computation */
+          cs_lnum_t  v1, v2, v3;
+
+          cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
+                                         &v1, &v2, &v3);
+
+          compute_integral(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
+                           ana, input, val_i);
+        }
+        break;
+
+      default:
+        for (cs_lnum_t j = start_idx; j < end_idx; j++) {
+
+          const cs_lnum_t  _2e = 2*f2e->ids[j];
+          const cs_lnum_t  v1 = e2v->ids[_2e];
+          const cs_lnum_t  v2 = e2v->ids[_2e+1];
+
+          compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+                           cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                           ana, input, val_i);
+
+        } /* Loop on face edges */
+
+      } /* End of switch */
+
+      /* Average */
+      const double _oversurf = 1./pfq.meas;
+      for (short int xyz = 0; xyz < 3; xyz++)
+        val_i[xyz] *= _oversurf;
+
+    }  /* Loop on all faces */
+
+  }
+  else {
+
+    /* Initialize todo array */
+    bool  *todo = NULL;
+
+    BFT_MALLOC(todo, quant->n_faces, bool);
+#   pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
+      todo[f_id] = true;
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+
+      cs_lnum_t  c_id = elt_ids[i];
+
+      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+        cs_lnum_t  f_id = c2f->ids[j];
+        if (todo[f_id]) {
+
+          todo[f_id] = false;
+
+          const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
+          const cs_lnum_t   start_idx = f2e->idx[f_id],
+                            end_idx   = f2e->idx[f_id+1];
+          double *val_i = values + 3*f_id;
+
+          switch (end_idx - start_idx) {
+
+          case 3:
+            { /* If triangle, one-shot computation */
+              cs_lnum_t  v1, v2, v3;
+
+              cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
+                                             &v1, &v2, &v3);
+
+              compute_integral(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3,
+                               pfq.meas, ana, input, val_i);
+            }
+            break;
+
+          default:
+            for (cs_lnum_t k = start_idx; k < end_idx; k++) {
+
+              const cs_lnum_t  _2e = 2*f2e->ids[k];
+              const cs_lnum_t  v1 = e2v->ids[_2e];
+              const cs_lnum_t  v2 = e2v->ids[_2e+1];
+
+              compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+                               cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                               ana, input, val_i);
+
+            } /* Loop on face edges */
+
+          } /* End of switch */
+
+          /* Average */
+          const double _oversurf = 1./pfq.meas;
+          for (short int xyz = 0; xyz < 3; xyz++)
+            val_i[xyz] *= _oversurf;
+        } // If todo
+
+      } // Loop on cell faces
+
+    } // Loop on selected cells
+
+    BFT_FREE(todo);
+
+  } /* If there is a selection of cells */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -801,6 +1231,53 @@ _pfsp_by_value(const double       const_val,
       cs_lnum_t  f_id = c2f->ids[j];
       if (todo[f_id])
         values[f_id] = const_val, todo[f_id] = false;
+
+    } // Loop on cell vertices
+
+  } // Loop on selected cells
+
+  BFT_FREE(todo);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the values at each primal faces for a scalar potential
+ *
+ * \param[in]      const_vec   constant value
+ * \param[in]      n_elts      number of elements to consider
+ * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in, out] values      pointer to the array storing the values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pfvp_by_value(const double       const_vec[3],
+               cs_lnum_t          n_elts,
+               const cs_lnum_t   *elt_ids,
+               double             values[])
+{
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
+
+  /* Initialize todo array */
+  bool  *todo = NULL;
+
+  BFT_MALLOC(todo, quant->n_faces, bool);
+# pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
+    todo[f_id] = true;
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+
+    cs_lnum_t  c_id = elt_ids[i];
+
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+      cs_lnum_t  f_id = c2f->ids[j];
+      if (todo[f_id]) {
+        todo[f_id] = false;
+        memcpy(values+3*f_id,const_vec,3*sizeof(double));
+      }
 
     } // Loop on cell vertices
 
@@ -1094,20 +1571,20 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
     /* Retrieve information from mesh location structures */
   const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
-  cs_evaluate_tetra_integral_t  *qfunc = NULL;
+  cs_quadrature_tetra_integral_t  *qfunc = NULL;
   switch (def->qtype) {
 
   case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
   case CS_QUADRATURE_BARY_SUBDIV:
-    qfunc = _analytic_scalar_tet1;
+    qfunc = cs_quadrature_tet_1pt_scal;
     break;
 
   case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-    qfunc = _analytic_scalar_tet4;
+    qfunc = cs_quadrature_tet_4pts_scal;
     break;
 
   case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-    qfunc = _analytic_scalar_tet5;
+    qfunc = cs_quadrature_tet_5pts_scal;
     break;
 
   default:
@@ -1203,7 +1680,7 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
  *         when the definition relies on an analytic expression
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
- * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in]      def         pointer to a cs_xdef_t pointer
  * \param[in, out] retval      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -1352,8 +1829,8 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
 
   if (!check)
     bft_error(__FILE__, __LINE__, 0,
-              _(" Stop evaluating a potential from 'quantity over volume'.\n"
-                " This situation is not handled yet."));
+              _(" %s: Stop evaluating a potential from 'quantity over volume'."
+                "\n This situation is not handled yet."), __func__);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1431,6 +1908,407 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
   else
     bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
 
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the faces
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_faces_by_value(cs_flag_t          dof_flag,
+                                      const cs_xdef_t   *def,
+                                      double             retval[])
+{
+  /* Sanity checks */
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(cs_flag_test(dof_flag, cs_flag_primal_face));
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_real_t  *input = (cs_real_t *)def->input;
+
+  cs_range_set_t  *rs = NULL;
+
+  switch (def->dim) {
+
+  case 1: /* Scalar-valued */
+    {
+      assert(dof_flag & CS_FLAG_SCALAR);
+      rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+
+      if (def->meta & CS_FLAG_FULL_LOC) {
+#       pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+        for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
+          retval[f_id] = input[0];
+      }
+      else
+        _pfsp_by_value(input[0], z->n_cells, z->cell_ids, retval);
+    }
+    break;
+
+  case 3: /* Vector-valued */
+    {
+      assert(dof_flag & CS_FLAG_VECTOR);
+      rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+
+      if (def->meta & CS_FLAG_FULL_LOC) {
+#       pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+        for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
+          memcpy(retval + 3*f_id, input, 3*sizeof(double));
+      }
+      else
+        _pfvp_by_value(input, z->n_cells, z->cell_ids, retval);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Invalid dimension of analytical function.\n"), __func__);
+    break;
+
+  } /* End of switch on the dimension */
+
+  if (cs_glob_n_ranks > 1)
+    cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the faces
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
+                                         const cs_xdef_t   *def,
+                                         double             retval[])
+{
+  /* Sanity checks */
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(cs_flag_test(dof_flag, cs_flag_primal_face));
+
+  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+  cs_range_set_t  *rs = NULL;
+  cs_quadrature_tria_integral_t  *qfunc = NULL;
+  cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
+
+  switch (def->dim) {
+
+  case 1:
+    {
+      assert(dof_flag & CS_FLAG_SCALAR);
+      rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+
+      switch (def->qtype) {
+
+        /* Barycenter of the cell or of the tetrahedral subdiv. */
+      case CS_QUADRATURE_BARY:
+      case CS_QUADRATURE_BARY_SUBDIV:
+        qfunc = cs_quadrature_tria_1pt_scal;
+        break;
+
+        /* Quadrature with a unique weight */
+      case CS_QUADRATURE_HIGHER:
+        qfunc = cs_quadrature_tria_3pts_scal;
+        break;
+
+        /* Most accurate quadrature available */
+      case CS_QUADRATURE_HIGHEST:
+        qfunc = cs_quadrature_tria_4pts_scal;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, _err_quad, __func__);
+        break;
+
+      } /* Which type of quadrature to use */
+
+      _pfsa_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids, qfunc,
+                        retval);
+
+    }
+    break;
+
+  case 3:
+    {
+      assert(dof_flag & CS_FLAG_VECTOR);
+      rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+
+      switch (def->qtype) {
+
+        /* Barycenter of the cell or of the tetrahedral subdiv. */
+      case CS_QUADRATURE_BARY:
+      case CS_QUADRATURE_BARY_SUBDIV:
+        qfunc = cs_quadrature_tria_1pt_vect;
+        break;
+
+        /* Quadrature with a unique weight */
+      case CS_QUADRATURE_HIGHER:
+        qfunc = cs_quadrature_tria_3pts_vect;
+        break;
+
+        /* Most accurate quadrature available */
+      case CS_QUADRATURE_HIGHEST:
+        qfunc = cs_quadrature_tria_4pts_vect;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, _err_quad, __func__);
+        break;
+
+      } /* Which type of quadrature to use */
+
+      _pfva_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids, qfunc,
+                        retval);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Invalid dimension of analytical function.\n"), __func__);
+
+  } /* End of switch on dimension */
+
+  if (cs_glob_n_ranks > 1)
+    cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the cells
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_cells_by_value(cs_flag_t          dof_flag,
+                                      const cs_xdef_t   *def,
+                                      double             retval[])
+{
+  /* Sanity checks */
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(cs_flag_test(dof_flag, cs_flag_primal_cell));
+
+  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_real_t  *input = (cs_real_t *)def->input;
+
+  switch (def->dim) {
+
+  case 1:
+    assert(dof_flag & CS_FLAG_SCALAR);
+    _pcsa_by_value(input[0], z->n_cells, z->cell_ids, retval);
+    break;
+
+  case 3:
+    assert(dof_flag & CS_FLAG_VECTOR);
+    _pcva_by_value(input, z->n_cells, z->cell_ids, retval);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Invalid dimension of analytical function.\n"), __func__);
+    break;
+
+  } /* End of switch on dimension */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the cells
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_cells_by_array(cs_flag_t          dof_flag,
+                                      const cs_xdef_t   *def,
+                                      double             retval[])
+{
+  /* Sanity checks */
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(cs_flag_test(dof_flag, cs_flag_primal_cell));
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+
+  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_xdef_array_input_t *array_input =
+    (cs_xdef_array_input_t *)def->input;
+  const int stride = array_input->stride;
+  const double * val = array_input->values;
+
+  if (stride == 1) { /* Scalar */
+
+    if (def->meta & CS_FLAG_FULL_LOC) {
+#     pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++)
+        /* A global memcpy could work too */
+        retval[c_id] = val[c_id];
+    }
+    else {
+
+      assert(z->cell_ids != NULL);
+#     pragma omp parallel for if (z->n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < z->n_cells; i++) {
+        const cs_lnum_t  c_id = z->cell_ids[i];
+        retval[c_id] = val[c_id];
+      }
+
+    } /* Perform on the full location */
+
+  }
+  else { /* Not scalar-valued */
+
+    if (def->meta & CS_FLAG_FULL_LOC) {
+#     pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++) {
+        /* A global memcpy could work too */
+        memcpy(retval + stride*c_id, val + stride*c_id, stride*sizeof(double));
+      }
+    }
+    else {
+
+      assert(z->cell_ids != NULL);
+#     pragma omp parallel for if (z->n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < z->n_cells; i++) {
+        const cs_lnum_t  c_id = z->cell_ids[i];
+        memcpy(retval + stride*c_id, val + stride*c_id, stride*sizeof(double));
+      }
+
+    } /* Perform on the full location */
+
+  } /* Switch on stride */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the cells
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_average_on_cells_by_analytic(cs_flag_t          dof_flag,
+                                         const cs_xdef_t   *def,
+                                         double             retval[])
+{
+  /* Sanity checks */
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(cs_flag_test(dof_flag, cs_flag_primal_cell));
+
+  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+  cs_quadrature_tetra_integral_t  *qfunc = NULL;
+  cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
+
+  switch (def->dim) {
+
+  case 1:
+    {
+      assert(dof_flag & CS_FLAG_SCALAR);
+
+      switch (def->qtype) {
+
+        /* Barycenter of the cell or the tetrahedral subdiv. */
+      case CS_QUADRATURE_BARY:
+      case CS_QUADRATURE_BARY_SUBDIV:
+        qfunc = cs_quadrature_tet_1pt_scal;
+        break;
+
+        /* Quadrature with a unique weight */
+      case CS_QUADRATURE_HIGHER:
+        qfunc = cs_quadrature_tet_4pts_scal;
+        break;
+
+        /* Most accurate quadrature available */
+      case CS_QUADRATURE_HIGHEST:
+        qfunc = cs_quadrature_tet_5pts_scal;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, _err_quad, __func__);
+        break;
+
+      } /* Which type of quadrature to use */
+
+      _pcsa_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids, qfunc,
+                        retval);
+    }
+    break;
+
+  case 3:
+    {
+      assert(dof_flag & CS_FLAG_VECTOR);
+
+      switch (def->qtype) {
+        /* Barycenter of the cell or the tetrahedral subdiv. */
+      case CS_QUADRATURE_BARY:
+      case CS_QUADRATURE_BARY_SUBDIV:
+        qfunc = cs_quadrature_tet_1pt_vect;
+        break;
+
+        /* Quadrature with a unique weight */
+      case CS_QUADRATURE_HIGHER:
+        qfunc = cs_quadrature_tet_4pts_vect;
+        break;
+
+        /* Most accurate quadrature available */
+      case CS_QUADRATURE_HIGHEST:
+        qfunc = cs_quadrature_tet_5pts_vect;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, _err_quad, __func__);
+
+      } /* Which type of quadrature to use */
+
+      _pcva_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids, qfunc,
+                        retval);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Invalid dimension of analytical function.\n"), __func__);
+    break;
+
+  } /* End of switch on the dimension */
 }
 
 /*----------------------------------------------------------------------------*/

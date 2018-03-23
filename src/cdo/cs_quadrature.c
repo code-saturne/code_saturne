@@ -135,6 +135,22 @@ cs_quadrature_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return th name associated to a type of quadrature
+ *
+ * \param[in]     type     cs_quadrature_type_t
+ *
+ * \return the name associated to a given type of quadrature
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_quadrature_get_type_name(const cs_quadrature_type_t  type)
+{
+  return cs_quadrature_type_name[type];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute quadrature points for an edge from v1 -> v2 (2 points)
  *          Exact for polynomial function up to order 3
  *
@@ -151,7 +167,7 @@ cs_quadrature_edge_2pts(const cs_real_3_t  v1,
                         const cs_real_3_t  v2,
                         double             len,
                         cs_real_3_t        gpts[],
-                        double            *w)
+                        double             w[])
 {
   int  k;
 
@@ -162,7 +178,7 @@ cs_quadrature_edge_2pts(const cs_real_3_t  v1,
   }
 
   /* Compute weights */
-  *w= 0.5*len;
+  w[0] = w[1] = 0.5*len;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -220,7 +236,7 @@ cs_quadrature_tria_3pts(const cs_real_3_t   v1,
                         const cs_real_3_t   v3,
                         double              area,
                         cs_real_3_t         gpts[],
-                        double             *w)
+                        double              w[])
 {
   int  k;
 
@@ -232,7 +248,7 @@ cs_quadrature_tria_3pts(const cs_real_3_t   v1,
   }
 
   /* Compute weight */
-  *w = _quad_over3 * area;
+  w[0] = w[1] = w[2] = _quad_over3 * area;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -319,21 +335,21 @@ cs_quadrature_tria_7pts(const cs_real_3_t   v1,
  * \brief  Compute the quadrature in a tetrehedra. Exact for 2nd order
  *         polynomials (order 3).
  *
- * \param[in]       xv       first vertex
- * \param[in]       xe       second vertex
- * \param[in]       xf       third vertex
- * \param[in]       xc       fourth vertex
- * \param[in]       vol      volume of tetrahedron {xv, xe, xf, xc}
+ * \param[in]       v1       first vertex
+ * \param[in]       v2       second vertex
+ * \param[in]       v3       third vertex
+ * \param[in]       v4       fourth vertex
+ * \param[in]       vol      volume of tetrahedron {v1, v2, v3, v4}
  * \param[in, out]  gpts     4 Gauss points (size = 3*4)
  * \param[in, out]  weights  weight (same value for all points)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_quadrature_tet_4pts(const cs_real_3_t  xv,
-                       const cs_real_3_t  xe,
-                       const cs_real_3_t  xf,
-                       const cs_real_3_t  xc,
+cs_quadrature_tet_4pts(const cs_real_3_t  v1,
+                       const cs_real_3_t  v2,
+                       const cs_real_3_t  v3,
+                       const cs_real_3_t  v4,
                        double             vol,
                        cs_real_3_t        gpts[],
                        double             weights[])
@@ -341,12 +357,12 @@ cs_quadrature_tet_4pts(const cs_real_3_t  xv,
   /* Compute Gauss points */
   for (int k = 0; k < 3; k++) {
 
-    const double xve = xv[k] + xe[k], xfc = xf[k] + xc[k];
+    const double v12 = v1[k] + v2[k], v34 = v3[k] + v4[k];
 
-    gpts[0][k] = _tetr_quad4c1*(xf[k] + xve) + _tetr_quad4c2*xc[k];
-    gpts[1][k] = _tetr_quad4c1*(xe[k] + xfc) + _tetr_quad4c2*xv[k];
-    gpts[2][k] = _tetr_quad4c1*(xv[k] + xfc) + _tetr_quad4c2*xe[k];
-    gpts[3][k] = _tetr_quad4c1*(xc[k] + xve) + _tetr_quad4c2*xf[k];
+    gpts[0][k] = _tetr_quad4c1*(v3[k] + v12) + _tetr_quad4c2*v4[k];
+    gpts[1][k] = _tetr_quad4c1*(v2[k] + v34) + _tetr_quad4c2*v1[k];
+    gpts[2][k] = _tetr_quad4c1*(v1[k] + v34) + _tetr_quad4c2*v2[k];
+    gpts[3][k] = _tetr_quad4c1*(v4[k] + v12) + _tetr_quad4c2*v3[k];
 
   }
 
@@ -359,21 +375,21 @@ cs_quadrature_tet_4pts(const cs_real_3_t  xv,
  * \brief  Compute the quadrature in a tetrehedra. Exact for 3rd order
  *         polynomials (order 4).
  *
- * \param[in]       xv       first vertex
- * \param[in]       xe       second vertex
- * \param[in]       xf       third vertex
- * \param[in]       xc       fourth vertex
- * \param[in]       vol      volume of tetrahedron {xv, xe, xf, xc}
+ * \param[in]       v1       first vertex
+ * \param[in]       v2       second vertex
+ * \param[in]       v3       third vertex
+ * \param[in]       v4       fourth vertex
+ * \param[in]       vol      volume of tetrahedron {v1, v2, v3, v4}
  * \param[in, out]  gpts     5 Gauss points (size = 3*5)
  * \param[in, out]  weights  5 weigths related to each Gauss point
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_quadrature_tet_5pts(const cs_real_3_t  xv,
-                       const cs_real_3_t  xe,
-                       const cs_real_3_t  xf,
-                       const cs_real_3_t  xc,
+cs_quadrature_tet_5pts(const cs_real_3_t  v1,
+                       const cs_real_3_t  v2,
+                       const cs_real_3_t  v3,
+                       const cs_real_3_t  v4,
                        double             vol,
                        cs_real_3_t        gpts[],
                        double             weights[])
@@ -384,13 +400,13 @@ cs_quadrature_tet_5pts(const cs_real_3_t  xv,
   /* compute Gauss points */
   for (int k = 0; k < 3; k++) {
 
-    const double xve = xv[k] + xe[k], xfc = xf[k] + xc[k];
+    const double v12 = v1[k] + v2[k], v34 = v3[k] + v4[k];
 
-    gpts[0][k] = _quad_over6*(xve + xf[k]) + 0.5*xc[k];
-    gpts[1][k] = _quad_over6*(xfc + xe[k]) + 0.5*xv[k];
-    gpts[2][k] = _quad_over6*(xfc + xv[k]) + 0.5*xe[k];
-    gpts[3][k] = _quad_over6*(xve + xc[k]) + 0.5*xf[k];
-    gpts[4][k] = 0.25*(xve + xfc);
+    gpts[0][k] = _quad_over6*(v12 + v3[k]) + 0.5*v4[k];
+    gpts[1][k] = _quad_over6*(v34 + v2[k]) + 0.5*v1[k];
+    gpts[2][k] = _quad_over6*(v34 + v1[k]) + 0.5*v2[k];
+    gpts[3][k] = _quad_over6*(v12 + v4[k]) + 0.5*v3[k];
+    gpts[4][k] = 0.25*(v12 + v34);
   }
 
   /* Compute weights */
@@ -403,21 +419,21 @@ cs_quadrature_tet_5pts(const cs_real_3_t  xv,
  * \brief  Compute the quadrature in a tetrehedra. Exact for 5th order
  *         polynomials (order 6).
  *
- * \param[in]       xv       first vertex
- * \param[in]       xe       second vertex
- * \param[in]       xf       third vertex
- * \param[in]       xc       fourth vertex
- * \param[in]       vol      volume of tetrahedron {xv, xe, xf, xc}
+ * \param[in]       v1       first vertex
+ * \param[in]       v2       second vertex
+ * \param[in]       v3       third vertex
+ * \param[in]       v4       fourth vertex
+ * \param[in]       vol      volume of tetrahedron {v1, v2, v3, v4}
  * \param[in, out]  gpts     15 Gauss points (size = 3*15)
  * \param[in, out]  weights  15 weigths related to each Gauss point
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_quadrature_tet_15pts(const cs_real_3_t   xv,
-                        const cs_real_3_t   xe,
-                        const cs_real_3_t   xf,
-                        const cs_real_3_t   xc,
+cs_quadrature_tet_15pts(const cs_real_3_t   v1,
+                        const cs_real_3_t   v2,
+                        const cs_real_3_t   v3,
+                        const cs_real_3_t   v4,
                         double              vol,
                         cs_real_3_t         gpts[],
                         double              weights[])
@@ -428,30 +444,30 @@ cs_quadrature_tet_15pts(const cs_real_3_t   xv,
 
   for (short int i = 0; i < 3; ++i) {
 
-    const double  xvxe = xv[i] + xe[i];
-    const double  xvxf = xv[i] + xf[i];
-    const double  xvxc = xv[i] + xc[i];
-    const double  xexf = xe[i] + xf[i];
-    const double  xexc = xe[i] + xc[i];
-    const double  xfxc = xf[i] + xc[i];
+    const double  v1v2 = v1[i] + v2[i];
+    const double  v1v3 = v1[i] + v3[i];
+    const double  v1v4 = v1[i] + v4[i];
+    const double  v2v3 = v2[i] + v3[i];
+    const double  v2v4 = v2[i] + v4[i];
+    const double  v3v4 = v3[i] + v4[i];
 
-    gpts[0][i]  = _tetr_quad15g1 * (xvxe + xf[i]) + _tetr_quad15g11 * xc[i];
-    gpts[1][i]  = _tetr_quad15g1 * (xvxe + xc[i]) + _tetr_quad15g11 * xf[i];
-    gpts[2][i]  = _tetr_quad15g1 * (xvxf + xc[i]) + _tetr_quad15g11 * xe[i];
-    gpts[3][i]  = _tetr_quad15g1 * (xexf + xc[i]) + _tetr_quad15g11 * xv[i];
+    gpts[0][i]  = _tetr_quad15g1 * (v1v2 + v3[i]) + _tetr_quad15g11 * v4[i];
+    gpts[1][i]  = _tetr_quad15g1 * (v1v2 + v4[i]) + _tetr_quad15g11 * v3[i];
+    gpts[2][i]  = _tetr_quad15g1 * (v1v3 + v4[i]) + _tetr_quad15g11 * v2[i];
+    gpts[3][i]  = _tetr_quad15g1 * (v2v3 + v4[i]) + _tetr_quad15g11 * v1[i];
 
-    gpts[4][i]  = _tetr_quad15g2 * (xvxe + xf[i]) + _tetr_quad15g21 * xc[i];
-    gpts[5][i]  = _tetr_quad15g2 * (xvxe + xc[i]) + _tetr_quad15g21 * xf[i];
-    gpts[6][i]  = _tetr_quad15g2 * (xvxf + xc[i]) + _tetr_quad15g21 * xe[i];
-    gpts[7][i]  = _tetr_quad15g2 * (xexf + xc[i]) + _tetr_quad15g21 * xv[i];
+    gpts[4][i]  = _tetr_quad15g2 * (v1v2 + v3[i]) + _tetr_quad15g21 * v4[i];
+    gpts[5][i]  = _tetr_quad15g2 * (v1v2 + v4[i]) + _tetr_quad15g21 * v3[i];
+    gpts[6][i]  = _tetr_quad15g2 * (v1v3 + v4[i]) + _tetr_quad15g21 * v2[i];
+    gpts[7][i]  = _tetr_quad15g2 * (v2v3 + v4[i]) + _tetr_quad15g21 * v1[i];
 
-    gpts[8][i]  = _tetr_quad15g3 * xvxe + _tetr_quad15g31 * xfxc;
-    gpts[9][i]  = _tetr_quad15g3 * xvxc + _tetr_quad15g31 * xexf;
-    gpts[10][i] = _tetr_quad15g3 * xvxf + _tetr_quad15g31 * xexc;
-    gpts[11][i] = _tetr_quad15g3 * xexf + _tetr_quad15g31 * xvxc;
-    gpts[12][i] = _tetr_quad15g3 * xfxc + _tetr_quad15g31 * xvxe;
-    gpts[13][i] = _tetr_quad15g3 * xexc + _tetr_quad15g31 * xvxf;
-    gpts[14][i] = 0.25* (xvxe + xfxc);
+    gpts[8][i]  = _tetr_quad15g3 * v1v2 + _tetr_quad15g31 * v3v4;
+    gpts[9][i]  = _tetr_quad15g3 * v1v4 + _tetr_quad15g31 * v2v3;
+    gpts[10][i] = _tetr_quad15g3 * v1v3 + _tetr_quad15g31 * v2v4;
+    gpts[11][i] = _tetr_quad15g3 * v2v3 + _tetr_quad15g31 * v1v4;
+    gpts[12][i] = _tetr_quad15g3 * v3v4 + _tetr_quad15g31 * v1v2;
+    gpts[13][i] = _tetr_quad15g3 * v2v4 + _tetr_quad15g31 * v1v3;
+    gpts[14][i] = 0.25* (v1v2 + v3v4);
 
   }
 
@@ -460,22 +476,6 @@ cs_quadrature_tet_15pts(const cs_real_3_t   xv,
   weights[8]  = weights[9] = weights[10] = weights[11] = weights[12] = w3;
   weights[13] = w3;
   weights[14] = vol * _tetr_quad15w4;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return th name associated to a type of quadrature
- *
- * \param[in]     type     cs_quadrature_type_t
- *
- * \return the name associated to a given type of quadrature
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_quadrature_get_type_name(const cs_quadrature_type_t  type)
-{
-  return cs_quadrature_type_name[type];
 }
 
 /*----------------------------------------------------------------------------*/
