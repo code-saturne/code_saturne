@@ -934,7 +934,8 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
   }
   else {
 
-    short int  fs, cs, facto_shift;
+    short int  fs = 0, cs = 0, facto_shift = 0; /* Initialized to avoid a
+                                                   warning */
     if (hhob->face_basis[0]->poly_order == 1) {
       fs = 3;
       cs = 4;

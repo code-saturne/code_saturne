@@ -583,11 +583,10 @@ cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t   *a,
 
   const cs_sdm_block_t  *a_desc = a->block_desc;
   const cs_sdm_block_t  *b_desc = b->block_desc;
-  const cs_sdm_block_t  *c_desc = c->block_desc;
 
   assert(a_desc->n_col_blocks == b_desc->n_col_blocks &&
-         a_desc->n_row_blocks == c_desc->n_row_blocks &&
-         c_desc->n_col_blocks == b_desc->n_row_blocks);
+         a_desc->n_row_blocks == c->block_desc->n_row_blocks &&
+         c->block_desc->n_col_blocks == b_desc->n_row_blocks);
 
   for (short int i = 0; i < a_desc->n_row_blocks; i++) {
 
@@ -773,12 +772,11 @@ cs_sdm_block_add(cs_sdm_t        *mat,
   if (mat == NULL || add == NULL)
     return;
 
-  const cs_sdm_block_t  *add_desc = add->block_desc;
   const cs_sdm_block_t  *mat_desc = mat->block_desc;
 
-  assert(add_desc != NULL && mat_desc != NULL);
-  assert(add_desc->n_row_blocks == mat_desc->n_row_blocks);
-  assert(add_desc->n_col_blocks == mat_desc->n_col_blocks);
+  assert(add->block_desc != NULL && mat_desc != NULL);
+  assert(add->block_desc->n_row_blocks == mat_desc->n_row_blocks);
+  assert(add->block_desc->n_col_blocks == mat_desc->n_col_blocks);
 
   for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
     for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
@@ -859,11 +857,12 @@ cs_sdm_block_matvec(const cs_sdm_t    *mat,
   assert(mat_desc != NULL);
   memset(mv, 0, mat->n_rows * sizeof(cs_real_t));
 
-  int  n_rows, c_shift, r_shift = 0;
+  int  c_shift = 0, r_shift = 0;
 
   for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
 
     cs_real_t  *_mv = mv + r_shift;
+    int  n_rows = 0;
 
     c_shift = 0;
     for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
@@ -872,7 +871,7 @@ cs_sdm_block_matvec(const cs_sdm_t    *mat,
 
       cs_sdm_update_matvec(mat_ij, vec + c_shift, _mv);
       c_shift += mat_ij->n_cols;
-      n_rows = mat_ij->n_rows;;
+      n_rows = mat_ij->n_rows;
 
     } /* Loop on column blocks */
 

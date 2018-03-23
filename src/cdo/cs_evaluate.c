@@ -1952,6 +1952,8 @@ cs_evaluate_average_on_faces_by_value(cs_flag_t          dof_flag,
                                       const cs_xdef_t   *def,
                                       double             retval[])
 {
+  CS_UNUSED(dof_flag);
+
   /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
@@ -2024,6 +2026,8 @@ cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
                                          const cs_xdef_t   *def,
                                          double             retval[])
 {
+  CS_UNUSED(dof_flag);
+
   /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
@@ -2134,6 +2138,8 @@ cs_evaluate_average_on_cells_by_value(cs_flag_t          dof_flag,
                                       const cs_xdef_t   *def,
                                       double             retval[])
 {
+  CS_UNUSED(dof_flag);
+
   /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
@@ -2180,6 +2186,8 @@ cs_evaluate_average_on_cells_by_array(cs_flag_t          dof_flag,
                                       const cs_xdef_t   *def,
                                       double             retval[])
 {
+  CS_UNUSED(dof_flag);
+
   /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);

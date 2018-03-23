@@ -29,6 +29,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include <bft_error.h>
+
 #include "cs_base.h"
 #include "cs_defs.h"
 #include "cs_math.h"
