@@ -118,7 +118,7 @@ struct _cs_hho_scaleq_t {
      rc_tilda = Acc_inv * rhs_c (perform for each cell) */
   cs_real_t                     *rc_tilda;
 
-  /* Lower-Left block of the full matrix (block cell-vertices).
+  /* Lower-Left block of the full matrix (block cell-faces).
      Access to the values thanks to the c2f connectivity
      The transposed version of each block is stored for a more efficient
      usage */

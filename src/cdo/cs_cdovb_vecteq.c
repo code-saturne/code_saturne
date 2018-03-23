@@ -75,12 +75,12 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_cdovb_vecteq.c
-
-  \brief Build an algebraic CDO vertex-based system for unsteady
-         convection-diffusion-reaction of scalar-valued equations with
-         source terms
-
+ *  \file cs_cdovb_vecteq.c
+ *
+ * \brief Build an algebraic CDO vertex-based system for unsteady
+ *        convection-diffusion-reaction of scalar-valued equations with
+ *        source terms
+ *
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

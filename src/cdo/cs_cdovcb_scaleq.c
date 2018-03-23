@@ -893,18 +893,16 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
   if (cs_equation_param_has_sourceterm(eqp)) {
     if (cs_equation_param_has_time(eqp)) {
 
-      const cs_lnum_t  n_v = quant->n_vertices;
-
       /* Source terms attached to vertices */
       cs_cdo_time_update_rhs_with_array(eqp,
-                                        n_v,
+                                        quant->n_vertices,
                                         eqc->source_terms,
                                         rhs);
 
       /* Source terms attached to cells */
       cs_cdo_time_update_rhs_with_array(eqp,
                                         quant->n_cells,
-                                        eqc->source_terms + n_v,
+                                        eqc->source_terms + quant->n_vertices,
                                         eqc->cell_rhs);
 
     }

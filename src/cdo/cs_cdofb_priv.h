@@ -35,7 +35,6 @@
 #include "cs_cdo_advection.h"
 #include "cs_cdo_time.h"
 
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -96,4 +95,3 @@ struct  _cs_cdofb_t {
 END_C_DECLS
 
 #endif /* __CS_CDOFB_PRIV_H__ */
-
