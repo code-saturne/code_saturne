@@ -2,18 +2,42 @@
 Trunk (unreleased)
 ==================
 
-Changes
--------
+Physical modelling
+------------------
+
+- Atmospheric model: add new BCs for open-boundary flow such as atmospheric
+  flows. It consists in changing the solved pressure. This change result
+  in adding a (constant over space) momentum source terme. This momentum
+  source term is designed to reach a target bulk momentum.
+  The solved pressure has a zero Dirichlet as BC in case of constant
+  density. In case of dry atmosphere, an hydrostatic pressure is
+  pre-computed and imposed as BC.
+
+- Turbomachinery module:
+  * Improved legacy coupling-based turbomachinery option, frozen rotor
+    is now also possible.
+  * Allow time-varying rotor velocity for turbomachinery.
+  * Account for Smirnov and Menter (ASME, 2009) modifications of Spalart-Shur eddy
+    viscosity correction for rotation and curvature
+
+- Add internal coupling for vector quantities (e.g. for plasma - weldpool monolitic
+  coupling)
+
+Numerics
+--------
+
+- Add the possibility to put buoyant scalars and density update in
+  velocity-pressure loop.
+
+- Integration of a vector Laplacian for CDO-Fb schemes
+
+User changes
+------------
 
 - Allow stopping at a given wall-clock time using the control_file.
 
-- Improved legacy coupling-based turbomachinery option, frozen rotor
-  is now also possible.
-
 - The GUI enforces the 'runcase' name for the script. This allows more robust
   handling of the runcase/XML file link, as one of the 2 names is fixed.
-
-- Allow time-varying rotor velocity for turbomachinery.
 
 - Mesh-joing based turbomachinery model robustness is also improved by
   allowing multiple joining retries using a slightly perturbed position.
@@ -31,6 +55,9 @@ Changes
 - Added boundary layer insertion at selected faces, using a mesh deformation
   (CDO vertex-based), followed by boundary layer extrusion.
 
+- MEDCoupling: improve detection and add MEDLoader support. This allows e.g.
+  to use MED for interpolating from one mesh to another.
+
 Architectural changes
 ---------------------
 
@@ -42,6 +69,12 @@ Architectural changes
 
 - Add "Melissa" type writers for coupling with in-situ statistics
   Melissa server.
+
+- Generate MEI parser/scanner upon bootstrap. This assumes Bison and Flex are
+  available (but previous generated files are kept otherwise), and reduces
+  dependencies for configure and build.
+
+- CFD_Study: translate from Python2 to 3.
 
 Release 5.1.0 (October 10 2017)
 ===============================
