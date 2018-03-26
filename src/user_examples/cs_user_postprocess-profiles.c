@@ -103,56 +103,6 @@ _cell_x_profile_probes_define(void          *input,
   cs_cell_segment_intersect_probes_define(seg, n_elts, coords, s);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a profile based on centers of faces defined by a given
- *        criterion
- *
- * Here, the input points to string describing a selection criterion.
- *
- * \param[in]   input   pointer to selection criterion
- * \param[out]  n_elts  number of selected coordinates
- * \param[out]  coords  coordinates of selected elements.
- * \param[out]  s       curvilinear coordinates of selected elements
- *----------------------------------------------------------------------------*/
-
-static void
-_boundary_face_x_profile_probes_define(void          *input,
-                                       cs_lnum_t     *n_elts,
-                                       cs_real_3_t  **coords,
-                                       cs_real_t    **s)
-{
-  const char *criterion = (const char *)input;
-
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  cs_lnum_t   n_faces;
-  cs_lnum_t  *face_ids;
-
-  BFT_MALLOC(face_ids, m->n_b_faces, cs_lnum_t);
-  cs_selector_get_b_face_list(criterion, &n_faces, face_ids);
-
-  cs_real_3_t *_coords;
-  cs_real_t *_s;
-  BFT_MALLOC(_coords, n_faces, cs_real_3_t);
-  BFT_MALLOC(_s, n_faces, cs_real_t);
-
-  for (cs_lnum_t i = 0; i < n_faces; i++) {
-    for (cs_lnum_t j = 0; j < 3; j++)
-      _coords[i][j] = mq->b_face_cog[face_ids[i]*3 + j];
-    _s[i] = _coords[i][0];
-  }
-
-  BFT_FREE(face_ids);
-
-  /* Set return values */
-
-  *n_elts = n_faces;
-  *coords = _coords;
-  *s = _s;
-}
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -171,7 +121,7 @@ _boundary_face_x_profile_probes_define(void          *input,
 void
 cs_user_postprocess_writers(void)
 {
-  /* redine profile output options */
+  /* redefine profile output options */
 
   cs_post_define_writer(CS_POST_WRITER_PROFILES,  /* writer_id */
                         "",                       /* writer name */
@@ -251,7 +201,7 @@ cs_user_postprocess_probes(void)
 
     cs_probe_set_t *pset
       = cs_probe_set_create_from_local(wall_defs[i*2+1],
-                                       _boundary_face_x_profile_probes_define,
+                                       cs_b_face_criterion_probes_define,
                                        (void *)wall_defs[i*2]);  /* input */
 
     cs_probe_set_option(pset, "boundary", "true");

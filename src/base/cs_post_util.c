@@ -357,6 +357,56 @@ cs_cell_segment_intersect_probes_define(void          *input,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define a profile based on centers of faces defined by a given
+ *        criterion
+ *
+ * Here, the input points to string describing a selection criterion.
+ *
+ * \param[in]   input   pointer to selection criterion
+ * \param[out]  n_elts  number of selected coordinates
+ * \param[out]  coords  coordinates of selected elements.
+ * \param[out]  s       curvilinear coordinates of selected elements
+ *----------------------------------------------------------------------------*/
+
+void
+cs_b_face_criterion_probes_define(void          *input,
+                                  cs_lnum_t     *n_elts,
+                                  cs_real_3_t  **coords,
+                                  cs_real_t    **s)
+{
+  const char *criterion = (const char *)input;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_lnum_t   n_faces;
+  cs_lnum_t  *face_ids;
+
+  BFT_MALLOC(face_ids, m->n_b_faces, cs_lnum_t);
+  cs_selector_get_b_face_list(criterion, &n_faces, face_ids);
+
+  cs_real_3_t *_coords;
+  cs_real_t *_s;
+  BFT_MALLOC(_coords, n_faces, cs_real_3_t);
+  BFT_MALLOC(_s, n_faces, cs_real_t);
+
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
+    for (cs_lnum_t j = 0; j < 3; j++)
+      _coords[i][j] = mq->b_face_cog[face_ids[i]*3 + j];
+    _s[i] = _coords[i][0];
+  }
+
+  BFT_FREE(face_ids);
+
+  /* Set return values */
+
+  *n_elts = n_faces;
+  *coords = _coords;
+  *s = _s;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the head of a turbomachinery (total pressure increase)
  *
  * \param[in]   criteria_in   selection criteria of turbomachinery suction
@@ -565,6 +615,70 @@ cs_post_stress_tangential(cs_lnum_t        n_b_faces,
     stress[iloc][0] = (forbr[ifac][0] - fornor*srfnor[0]) / srfbn;
     stress[iloc][1] = (forbr[ifac][1] - fornor*srfnor[1]) / srfbn;
     stress[iloc][2] = (forbr[ifac][2] - fornor*srfnor[2]) / srfbn;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute pressure on a specific boundary region.
+ *
+ * \param[in]   n_b_faces    number of faces
+ * \param[in]   b_face_ids   list of faces (0 to n-1)
+ * \param[in]   hyd_p_flag   flag for hydrostatic pressure
+ * \param[in]   f_ext        exterior force generating
+ *                           the hydrostatic pressure
+ * \param[out]  pres         pressure on a specific boundary region
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_b_pressure(cs_lnum_t         n_b_faces,
+                   const cs_lnum_t   b_face_ids[],
+                   cs_real_t         pres[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *diipb = (const cs_real_3_t *)mq->diipb;
+  cs_var_cal_opt_t var_cal_opt;
+  cs_halo_type_t halo_type;
+  cs_gradient_type_t gradient_type;
+  cs_real_3_t *gradp;
+
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_field_get_key_struct(CS_F_(p), key_cal_opt_id, &var_cal_opt);
+
+  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  BFT_MALLOC(gradp, m->n_cells_with_ghosts, cs_real_3_t);
+
+  int hyd_p_flag = cs_glob_stokes_model->iphydr;
+  cs_real_3_t *f_ext = (hyd_p_flag == 1) ?
+    (cs_real_3_t *)cs_field_by_name_try("volume_forces"):NULL;
+
+  bool use_previous_t = false;
+  int inc = 1;
+  int _recompute_cocg = 1;
+  cs_field_gradient_potential(CS_F_(p),
+                              use_previous_t,
+                              gradient_type,
+                              halo_type,
+                              inc,
+                              _recompute_cocg,
+                              hyd_p_flag,
+                              f_ext,
+                              gradp);
+
+  for (cs_lnum_t iloc = 0 ; iloc < n_b_faces; iloc++) {
+    cs_lnum_t face_id = b_face_ids[iloc];
+    cs_lnum_t cell_id = m->b_face_cells[face_id];
+
+    cs_real_t pip =   CS_F_(p)->val[cell_id]
+                    + cs_math_3_dot_product(gradp[cell_id],
+                                            diipb[face_id]);
+    pres[iloc] =   CS_F_(p)->bc_coeffs->a[face_id]
+                 + CS_F_(p)->bc_coeffs->b[face_id]*pip;
   }
 }
 

@@ -133,6 +133,25 @@ cs_cell_segment_intersect_probes_define(void          *input,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define a profile based on centers of faces defined by a given
+ *        criterion
+ *
+ * Here, the input points to string describing a selection criterion.
+ *
+ * \param[in]   input   pointer to selection criterion
+ * \param[out]  n_elts  number of selected coordinates
+ * \param[out]  coords  coordinates of selected elements.
+ * \param[out]  s       curvilinear coordinates of selected elements
+ *----------------------------------------------------------------------------*/
+
+void
+cs_b_face_criterion_probes_define(void          *input,
+                                  cs_lnum_t     *n_elts,
+                                  cs_real_3_t  **coords,
+                                  cs_real_t    **s);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the head of a turbomachinery (total pressure increase)
  *
  * \param[in]   criteria_in   selection criteria of turbomachinery suction
@@ -183,6 +202,21 @@ void
 cs_post_stress_tangential(cs_lnum_t        n_b_faces,
                           const cs_lnum_t  b_face_ids[],
                           cs_real_3_t      stress[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute pressure on a specific boundary region.
+ *
+ * \param[in]   n_b_faces    number of faces
+ * \param[in]   b_face_ids   list of faces (0 to n-1)
+ * \param[out]  pres         pressure on a specific boundary region
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_b_pressure(cs_lnum_t         n_b_faces,
+                   const cs_lnum_t   b_face_ids[],
+                   cs_real_t         pres[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
