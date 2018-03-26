@@ -3034,10 +3034,13 @@ contains
   !>                                     < 0 no limitation
   !>                                     = 0 based on neighboring gradients
   !>                                     = 1 based on mean gradient
+  !> \param[in]       hyd_p_flag       flag for hydrostatic pressure
   !> \param[in]       iwarnp           verbosity
   !> \param[in]       epsrgp           relative precision for reconstruction
   !> \param[in]       climgp           limiter coefficient for imligp
   !> \param[in]       extrap           gradient extrapolation coefficient
+  !> \param[in]       f_ext            exterior force generating
+  !>                                   the hydrostatic pressure
   !> \param[in, out]  pvar             cell values whose gradient is computed
   !> \param[in, out]  c_weight         cell weighting coefficient
   !> \param[in]       coefap           boundary coefap coefficients
@@ -3045,8 +3048,9 @@ contains
   !> \param[out]      grad             resulting gradient
 
   subroutine gradient_weighted_s(f_id, imrgra, inc, recompute_cocg, nswrgp,   &
-                                 imligp, iwarnp, epsrgp, climgp, extrap,      &
-                                 pvar, c_weight, coefap, coefbp, grad)
+                                 imligp, hyd_p_flag, iwarnp, epsrgp, climgp,  &
+                                 extrap, f_ext, pvar, c_weight, coefap,       &
+                                 coefbp, grad)
 
     use, intrinsic :: iso_c_binding
     use paramx
@@ -3058,30 +3062,27 @@ contains
     ! Arguments
 
     integer, intent(in) :: f_id, imrgra, inc, recompute_cocg , nswrgp
-    integer, intent(in) :: imligp, iwarnp
+    integer, intent(in) :: imligp, hyd_p_flag, iwarnp
     double precision, intent(in) :: epsrgp, climgp, extrap
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
     real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
     real(kind=c_double), dimension(*), intent(in) :: c_weight
+    real(kind=c_double), dimension(3, *), intent(in) :: f_ext
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
 
     ! Local variables
 
-    integer          :: hyd_p_flag
     integer          :: idimtr, ipond
 
     ! The current variable is a scalar
     idimtr = 0
-
-    ! the gradient is computed with no extern hydrostatic force
-    hyd_p_flag = 0
 
     ! the pressure gradient coefficient weighting is used
     ipond = 1
 
     call cgdcel(f_id, imrgra, inc, recompute_cocg, nswrgp,                     &
                 idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
-                climgp, c_null_ptr, coefap, coefbp,                            &
+                climgp, f_ext, coefap, coefbp,                                 &
                 pvar, c_weight, grad)
 
   end subroutine gradient_weighted_s

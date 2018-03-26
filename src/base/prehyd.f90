@@ -115,7 +115,7 @@ integer          iescap, ircflp, ischcp, isstpp, f_id0
 integer          nswrsp
 integer          imucpp, idftnp, iswdyp
 integer          iharmo
-integer          icvflb
+integer          icvflb, hyd_p_flag
 integer          ivoid(1)
 
 double precision thetap
@@ -283,9 +283,12 @@ nswrgp = 1
 extrap = 0.d0
 f_id = -1
 
+hyd_p_flag = 0
+
 call gradient_weighted_s &
  ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-   iwarnp , epsrgp , climgp , extrap ,                           &
+   hyd_p_flag,                                                   &
+   iwarnp , epsrgp , climgp , extrap , rvoid  ,                  &
    prhyd  , xinvro , coefap , coefbp ,                           &
    grdphd   )
 

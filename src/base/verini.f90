@@ -942,12 +942,6 @@ endif
 !===============================================================================
 
 if (ivofmt.ge.0) then
-  ! For now, VOF method is not compatible with the handling of
-  ! hydrostatic pressure
-  if (iphydr.ne.0) then
-    write(nfecra,9110) iphydr
-    iok = iok + 1
-  endif
   ! VOF method is not compatible with dilatable or low-mach algorithms
   if (idilat.gt.1) then
     write(nfecra,9120) idilat
@@ -2288,23 +2282,6 @@ endif
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
 '@  L''indicateur IDTVAR a ete positionne a', i10,              /,&
-'@    par l''interface ou dans cs_user_parameter.f90',          /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 9110  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@   LA METHODE VOF N''EST PAS COMPATIBLE AVEC LES',            /,&
-'@     ALGORITHMES DE PRISE EN COMPTE DE LA PRESSION',          /,&
-'@     HYDROSTATIQUE',                                          /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  L''indicateur IPHYDR a ete positionne a', i10,              /,&
 '@    par l''interface ou dans cs_user_parameter.f90',          /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3658,22 +3635,6 @@ endif
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@  Integer parameter IDTVAR was set to', i10,                  /,&
-'@    through the User Interface or in cs_user_parameters.f90.',/,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 9110  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@   THE VOF METHOD IS NOT COMPATIBLE WITH THE HANDLING',       /,&
-'@     OF HYDROSTATIC PRESSURE ALGORITHMS',                     /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@  Integer parameter IPHYDR was set to', i10,                  /,&
 '@    through the User Interface or in cs_user_parameters.f90.',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

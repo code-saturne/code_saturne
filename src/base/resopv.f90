@@ -1081,7 +1081,7 @@ if (iphydr.eq.1) then
    coefbf_p ,                                                     &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  ,                                              &
-   dt     , dt     , dt     )
+   viscap     , viscap     , viscap     )
 
   ! Tensor diffusivity
   else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
@@ -1104,7 +1104,7 @@ inc    = 1
 iccocg = 1
 
 !----------------------
-! Rhie and Choow filter
+! Rhie and Chow filter
 !----------------------
 if (arak.gt.0.d0) then
 
@@ -1178,7 +1178,7 @@ if (arak.gt.0.d0) then
    cofbfp ,                                                       &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  ,                                              &
-   dt     , dt     , dt     )
+   viscap     , viscap     , viscap     )
 
       deallocate(cofbfp)
 

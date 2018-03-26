@@ -1710,6 +1710,12 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
           ii = i_face_cells[face_id][0];
           jj = i_face_cells[face_id][1];
 
+          cs_real_t ktpond = (c_weight == NULL) ?
+             weight[face_id] :              /* no cell weightening */
+             weight[face_id] * c_weight[ii] /* cell weightening active */
+               / (      weight[face_id] * c_weight[ii]
+                 + (1.0-weight[face_id])* c_weight[jj]);
+
           /*
              Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
                                       + (1-\alpha_\ij) \varia_\cellj\f$
@@ -1721,19 +1727,19 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
           /* Reconstruction part */
           cs_real_t pfaci
-            =   (  weight[face_id]
+            =  ktpond
                  * (  (i_face_cog[face_id][0] - cell_cen[ii][0])*f_ext[ii][0]
                     + (i_face_cog[face_id][1] - cell_cen[ii][1])*f_ext[ii][1]
-                    + (i_face_cog[face_id][2] - cell_cen[ii][2])*f_ext[ii][2]))
-              + ( (1.0 - weight[face_id])
+                    + (i_face_cog[face_id][2] - cell_cen[ii][2])*f_ext[ii][2])
+            +  (1.0 - ktpond)
                  * (  (i_face_cog[face_id][0] - cell_cen[jj][0])*f_ext[jj][0]
                     + (i_face_cog[face_id][1] - cell_cen[jj][1])*f_ext[jj][1]
-                    + (i_face_cog[face_id][2] - cell_cen[jj][2])*f_ext[jj][2]));
+                    + (i_face_cog[face_id][2] - cell_cen[jj][2])*f_ext[jj][2]);
 
           cs_real_t pfacj = pfaci;
 
-          pfaci += (1.0-weight[face_id]) * (pvar[jj] - pvar[ii]);
-          pfacj -=      weight[face_id]  * (pvar[jj] - pvar[ii]);
+          pfaci += (1.0-ktpond) * (pvar[jj] - pvar[ii]);
+          pfacj -=      ktpond  * (pvar[jj] - pvar[ii]);
 
           for (int j = 0; j < 3; j++) {
             grad[ii][j] += pfaci * i_f_face_normal[face_id][j];
@@ -2710,6 +2716,8 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
           ii = i_face_cells[face_id][0];
           jj = i_face_cells[face_id][1];
 
+          cs_real_t pond = weight[face_id];
+
           for (ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
@@ -2725,12 +2733,23 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
           for (ll = 0; ll < 3; ll++)
             fctb[ll] = dc[ll] * pfac;
 
-          for (ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += fctb[ll];
+          if (c_weight != NULL) {
+              cs_real_t denom = 1. / (  pond       *c_weight[ii]
+                                      + (1. - pond)*c_weight[jj]);
 
-          for (ll = 0; ll < 3; ll++)
-            rhsv[jj][ll] += fctb[ll];
+              for (ll = 0; ll < 3; ll++)
+                rhsv[ii][ll] += c_weight[jj] * denom * fctb[ll];
 
+              for (ll = 0; ll < 3; ll++)
+                rhsv[jj][ll] += c_weight[ii] * denom * fctb[ll];
+          }
+          else { // no cell weightening
+            for (ll = 0; ll < 3; ll++)
+              rhsv[ii][ll] += fctb[ll];
+
+            for (ll = 0; ll < 3; ll++)
+              rhsv[jj][ll] += fctb[ll];
+          }
         } /* loop on faces */
 
       } /* loop on threads */
@@ -5853,19 +5872,16 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
             cs_lnum_t cell_id1 = i_face_cells[face_id][0];
             cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
-            fexd[0] = 0.5 * (f_ext[cell_id1][0] - f_ext[cell_id2][0]);
-            fexd[1] = 0.5 * (f_ext[cell_id1][1] - f_ext[cell_id2][1]);
-            fexd[2] = 0.5 * (f_ext[cell_id1][2] - f_ext[cell_id2][2]);
+            cs_real_t ktpond = (c_weight == NULL) ?
+              weight[face_id] :                     // no cell weighting
+              weight[face_id]  * c_weight[cell_id1] // cell weighting active
+                / (      weight[face_id]  * c_weight[cell_id1]
+                  + (1.0-weight[face_id]) * c_weight[cell_id2]);
 
-            /* Note: changed expression from:
-             *   fmean = 0.5 * (f_ext[cell_id1] + f_ext[cell_id2])
-             *   fii = f_ext[cell_id1] - fmean
-             *   fjj = f_ext[cell_id2] - fmean
-             * to:
-             *   fexd = 0.5 * (f_ext[cell_id1] - f_ext[cell_id2])
-             *   fii =  fexd
-             *   fjj = -fexd
-             */
+
+            fexd[0] = 0.5 * (f_ext[cell_id1][0] + f_ext[cell_id2][0]);
+            fexd[1] = 0.5 * (f_ext[cell_id1][1] + f_ext[cell_id2][1]);
+            fexd[2] = 0.5 * (f_ext[cell_id1][2] + f_ext[cell_id2][2]);
 
             /*
                Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
@@ -5878,22 +5894,26 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
             /* Reconstruction part */
             cs_real_t pfaci =
-                 weight[face_id]
-                 * ( (i_face_cog[face_id][0]-cell_cen[cell_id1][0])*fexd[0]
-                   + (i_face_cog[face_id][1]-cell_cen[cell_id1][1])*fexd[1]
-                   + (i_face_cog[face_id][2]-cell_cen[cell_id1][2])*fexd[2])
-              +  (1.0 - weight[face_id])
-                 * ( (cell_cen[cell_id2][0]-i_face_cog[face_id][0])*fexd[0]
-                   + (cell_cen[cell_id2][1]-i_face_cog[face_id][1])*fexd[1]
-                   + (cell_cen[cell_id2][2]-i_face_cog[face_id][2])*fexd[2])
-              + ( dofij[face_id][0] * (grad[cell_id1][0]+grad[cell_id2][0])
-                + dofij[face_id][1] * (grad[cell_id1][1]+grad[cell_id2][1])
-                + dofij[face_id][2] * (grad[cell_id1][2]+grad[cell_id2][2]))*0.5;
+                     (i_face_cog[face_id][0]-cell_cen[cell_id1][0])
+                    *(ktpond*f_ext[cell_id1][0]-weight[face_id]*fexd[0])
+                   + (i_face_cog[face_id][1]-cell_cen[cell_id1][1])
+                    *(ktpond*f_ext[cell_id1][1]-weight[face_id]*fexd[1])
+                   + (i_face_cog[face_id][2]-cell_cen[cell_id1][2])
+                    *(ktpond*f_ext[cell_id1][2]-weight[face_id]*fexd[2])
+               +     (i_face_cog[face_id][0]-cell_cen[cell_id2][0])
+                    *((1.0 - ktpond)*f_ext[cell_id2][0]-(1.-weight[face_id])*fexd[0])
+                   + (i_face_cog[face_id][1]-cell_cen[cell_id2][1])
+                    *((1.0 - ktpond)*f_ext[cell_id2][1]-(1.-weight[face_id])*fexd[1])
+                   + (i_face_cog[face_id][2]-cell_cen[cell_id2][2])
+                    *((1.0 - ktpond)*f_ext[cell_id2][2]-(1.-weight[face_id])*fexd[2])
+               + ( dofij[face_id][0] * (grad[cell_id1][0]+grad[cell_id2][0])
+                 + dofij[face_id][1] * (grad[cell_id1][1]+grad[cell_id2][1])
+                 + dofij[face_id][2] * (grad[cell_id1][2]+grad[cell_id2][2]))*0.5;
 
             cs_real_t pfacj = pfaci;
 
-            pfaci += (1.0-weight[face_id]) * (pvar[cell_id2] - pvar[cell_id1]);
-            pfacj -= weight[face_id] * (pvar[cell_id2] - pvar[cell_id1]);
+            pfaci += (1.0-ktpond) * (pvar[cell_id2] - pvar[cell_id1]);
+            pfacj -= ktpond * (pvar[cell_id2] - pvar[cell_id1]);
 
             for (int j = 0; j < 3; j++) {
               rhs[cell_id1][j] += pfaci * i_f_face_normal[face_id][j];

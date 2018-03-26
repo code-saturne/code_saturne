@@ -933,7 +933,7 @@ if (ippmod(icompf).lt.0) then
 
       call gradient_weighted_s &
       ( ivarfl(ipr)     , imrgra , inc    , iccocg , nswrgp , imligp , &
-        iwarnp , epsrgp , climgp , extrap ,                            &
+        iphydr, iwarnp  , epsrgp , climgp , extrap , dfrcxt ,          &
         dpvar  , xinvro , coefa_dp , coefb_dp ,                        &
         gradp  )
 
@@ -1216,7 +1216,7 @@ if (iturbo.ne.0) then
 endif
 
 !===============================================================================
-! 10. Cavitation: void fraction solving and update the mixture density/viscosity
+! 10. VoF: void fraction solving and update the mixture density/viscosity
 !      and mass flux (resopv solved the convective flux of void fraction, divU)
 !===============================================================================
 

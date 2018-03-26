@@ -23,6 +23,9 @@ Physical modelling
 - Add internal coupling for vector quantities (e.g. for plasma - weldpool monolitic
   coupling)
 
+- Make compatible Volume Of Fluid algorithm and option iphydr, improving face
+  pressure interpolation by taking into account hydrostatic pressure gradient.
+
 Numerics
 --------
 

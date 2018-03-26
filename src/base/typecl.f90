@@ -907,7 +907,7 @@ do ivar = 1, nvar
 enddo
 
 ! ---> Free entrance (Bernoulli relation), std free outlet
-!      (a specific treatment si performed on the increment of pressure)
+!      (a specific treatment is performed on the increment of pressure)
 
 ideb = idebty(ifrent)
 ifin = ifinty(ifrent)
@@ -917,6 +917,7 @@ do ivar = 1, nvar
     do ii = ideb, ifin
       ifac = itrifb(ii)
       iel  = ifabor(ifac)
+
       if (icodcl(ifac,ivar).eq.0) then
 
         ! If the user has given a value of boundary head loss
