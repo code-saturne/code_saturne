@@ -49,6 +49,9 @@
 #include "cs_equation.h"
 #include "cs_log.h"
 #include "cs_post.h"
+#include "cs_flag.h"
+#include "cs_volume_zone.h"
+#include "cs_evaluate.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -115,6 +118,15 @@ _dof_reduction_key[CS_PARAM_N_REDUCTIONS][CS_BASE_STRING_LEN] =
     "average"
   };
 
+static const char
+_quad_type_key[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
+  { "none",
+    "bary",
+    "bary_subdiv",
+    "higher",
+    "highest"
+  };
+
 static cs_navsto_system_t  *cs_navsto_system = NULL;
 
 /*============================================================================
@@ -157,6 +169,12 @@ _allocate_navsto_system(void)
   navsto->free = NULL;
   navsto->compute = NULL;
 
+  /* Initial conditions */
+  navsto->n_velocity_ic_defs = 0;
+  navsto->n_pressure_ic_defs = 0;
+  navsto->velocity_ic_defs = NULL;
+  navsto->pressure_ic_defs = NULL;
+
   return navsto;
 }
 
@@ -195,6 +213,11 @@ _apply_param(const cs_navsto_param_t    *nsp,
   const char  *dof_key = _dof_reduction_key[nsp->dof_reduction_mode];
 
   cs_equation_set_param(eqp, CS_EQKEY_DOF_REDUCTION, dof_key);
+
+  /*  Set quadratures type */
+  const char  *quad_key = _quad_type_key[nsp->qtype];
+
+  cs_equation_set_param(eqp, CS_EQKEY_BC_QUADRATURE, quad_key);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -217,6 +240,7 @@ _create_uzawa_context(cs_navsto_param_t    *nsp)
 
   BFT_MALLOC(nsc, 1, cs_navsto_coupling_uzawa_t);
 
+  /* Add an equation for the momentum conservation */
   nsc->momentum = cs_equation_add("Momentum",
                                   "velocity",
                                   CS_EQUATION_TYPE_PREDEFINED,
@@ -232,13 +256,14 @@ _create_uzawa_context(cs_navsto_param_t    *nsp)
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
   }
 
+  /* Add an equation related to the mass conservation */
   nsc->mass = cs_equation_add("Mass",
                               "pressure",
                               CS_EQUATION_TYPE_PREDEFINED,
                               1,
                               CS_PARAM_BC_HMG_NEUMANN);
 
-  /* Set the default solver settings */
+  /* Set the default settings */
   {
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->mass);
 
@@ -247,6 +272,9 @@ _create_uzawa_context(cs_navsto_param_t    *nsp)
   }
 
   nsc->energy = NULL;   /* Not used up to now */
+
+  nsc->zeta = cs_property_add("graddiv_coef", CS_PROPERTY_ISO);
+  nsc->relax  = 1.0;
 
   return nsc;
 }
@@ -296,9 +324,31 @@ _uzawa_init_setup(cs_navsto_system_t          *ns)
 
   assert(nsp != NULL && nsc != NULL);
 
-  _apply_param(nsp, cs_equation_get_param(nsc->momentum));
+  /* Handle the momentum equation */
+  cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
+
+  _apply_param(nsp, mom_eqp);
+
+  /* Link the time property to the momentum equation */
+  switch (nsp->time_state) {
+
+  case CS_NAVSTO_TIME_STATE_UNSTEADY:
+  case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
+    cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid choice for the time state", __func__);
+  }
+
+  /* All considered models needs a viscous term */
+  cs_equation_add_diffusion(mom_eqp, ns->lami_viscosity);
+
+  /* Handle the mass equation */
   _apply_param(nsp, cs_equation_get_param(nsc->mass));
 
+  /* Handle the energy equation */
   if (nsc->energy != NULL)
     _apply_param(nsp, cs_equation_get_param(nsc->energy));
 
@@ -329,6 +379,10 @@ _uzawa_last_setup(const cs_cdo_connect_t      *connect,
   cs_navsto_coupling_uzawa_t  *nsc = (cs_navsto_coupling_uzawa_t *)ns->context;
 
   assert(nsp != NULL && nsc != NULL);
+
+  /* Avoid no definition of the zeta coefficient */
+  if (nsc->zeta->n_definitions == 0)
+    cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
 
   /* TODO */
 }
@@ -368,7 +422,7 @@ _create_ac_context(cs_navsto_param_t    *nsp)
   }
 
   /* Additional property */
-  nsc->zeta = cs_property_add("ac_coefficient", CS_PROPERTY_ISO);
+  nsc->zeta = cs_property_add("graddiv_coef", CS_PROPERTY_ISO);
 
   return nsc;
 }
@@ -470,7 +524,7 @@ _ac_last_setup(const cs_cdo_connect_t      *connect,
 
   /* Avoid no definition of the zeta coefficient */
   if (nsc->zeta->n_definitions == 0)
-    cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->ac_zeta_coef);
+    cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -509,7 +563,7 @@ _create_ac_vpp_context(cs_navsto_param_t    *nsp)
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->momentum);
 
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
   }
 
   /* Set the default solver settings for "Graddiv" */
@@ -517,10 +571,10 @@ _create_ac_vpp_context(cs_navsto_param_t    *nsp)
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->graddiv);
 
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
   }
 
-  nsc->zeta = cs_property_add("ac_coefficient", CS_PROPERTY_ISO);
+  nsc->zeta = cs_property_add("graddiv_coef", CS_PROPERTY_ISO);
 
   return nsc;
 }
@@ -572,13 +626,14 @@ _ac_vpp_init_setup(cs_navsto_system_t     *ns)
   assert(nsp != NULL && nsc != NULL);
 
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
-  cs_equation_param_t  *grd_eqp = cs_equation_get_param(nsc->graddiv);
+  cs_equation_param_t  *gd_eqp = cs_equation_get_param(nsc->graddiv);
 
   /* Navier-Stokes parameters induce numerical settings for the related
-   equations */
+     equations */
   _apply_param(nsp, mom_eqp);
+
   // TODO: Is this good? Should we force BC or alikes?
-  _apply_param(nsp, grd_eqp);
+  _apply_param(nsp, gd_eqp);
 
   /* Link the time property to the momentum equation */
   switch (nsp->time_state) {
@@ -586,8 +641,7 @@ _ac_vpp_init_setup(cs_navsto_system_t     *ns)
   case CS_NAVSTO_TIME_STATE_UNSTEADY:
   case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
     cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
-    // TODO: Are we sure? No, if it is considered as reaction
-    cs_equation_add_time(grd_eqp, cs_property_by_name("unity"));
+    cs_equation_add_time(gd_eqp, cs_property_by_name("unity"));
     break;
 
   default:
@@ -597,7 +651,7 @@ _ac_vpp_init_setup(cs_navsto_system_t     *ns)
 
   /* All considered models needs a viscous term */
   cs_equation_add_diffusion(mom_eqp, ns->lami_viscosity);
-  cs_equation_add_diffusion(grd_eqp, ns->lami_viscosity);
+  cs_equation_add_diffusion(gd_eqp, ns->lami_viscosity);
 
 }
 
@@ -628,7 +682,9 @@ _ac_vpp_last_setup(const cs_cdo_connect_t      *connect,
 
   /* Avoid no definition of the zeta coefficient */
   if (nsc->zeta->n_definitions == 0)
-    cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->ac_zeta_coef);
+    cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
+
+  /* TODO: Setting quadrature for the source terms */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -770,6 +826,106 @@ _projection_last_setup(const cs_cdo_connect_t     *connect,
   /* TODO */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the face values for the velocity unknows (in case of
+ *        CDO Face-based scheme) in order to have a initial guess in accordance
+ *        with the user requirements when solving the momentum equation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_init_face_velocity_values(void)
+{
+  cs_navsto_system_t  *navsto = cs_navsto_system;
+
+  const cs_navsto_param_t *nsp = navsto->param;
+  const cs_flag_t f_dof_flag = CS_FLAG_VECTOR | cs_flag_primal_face;
+  const cs_param_dof_reduction_t red = nsp->dof_reduction_mode;
+
+  cs_equation_t *first_eq = NULL;
+
+  /* Switching on coupling in order to set the values on the faces which will
+   * be used as initial guess in the first solve */
+  switch (nsp->coupling) {
+  case CS_NAVSTO_COUPLING_UZAWA:
+    first_eq = ((cs_navsto_coupling_uzawa_t*)navsto->context)->momentum;
+    break;
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    first_eq = ((cs_navsto_coupling_ac_t*)navsto->context)->momentum;
+    break;
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+    first_eq = ((cs_navsto_coupling_ac_vpp_t*)navsto->context)->momentum;
+    break;
+
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    first_eq =
+      ((cs_navsto_coupling_projection_t*)navsto->context)->prediction;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+    break;
+
+  } /* Switch on coupling algorithm */
+
+  cs_real_t  *f_values = NULL;
+  f_values = cs_equation_get_face_values(first_eq);
+
+  for (int def_id = 0; def_id < navsto->n_velocity_ic_defs; def_id++) {
+
+    /* Get and then set the definition of the initial condition */
+    cs_xdef_t  *def = navsto->velocity_ic_defs[def_id];
+
+    /* Forcing definition on all faces
+       TODO: enable multiple definitions */
+    const cs_flag_t meta_cpy = def->meta;
+    def->meta = CS_FLAG_FULL_LOC;
+
+    /* Initialize face-based array */
+    switch(def->type) {
+
+    case CS_XDEF_BY_VALUE:
+      cs_evaluate_potential_by_value(f_dof_flag, def, f_values);
+      break;
+
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+
+      /* An evaluation at the barycenter will be enough */
+      cs_xdef_set_quadrature(def, CS_QUADRATURE_BARY);
+
+      switch (red) {
+      case CS_PARAM_REDUCTION_DERHAM:
+        cs_evaluate_potential_by_analytic(f_dof_flag, def, f_values);
+        break;
+      case CS_PARAM_REDUCTION_AVERAGE:
+        cs_evaluate_average_on_faces_by_analytic(f_dof_flag, def, f_values);
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" %s: Incompatible reduction.\n"), __func__);
+
+      } /* Switch on possible reduction types */
+
+      /* Switch to the initial setting */
+      cs_xdef_set_quadrature(def, nsp->qtype);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Incompatible initialization.\n"), __func__);
+
+    } // Switch on possible type of definition
+
+    /* Resetting */
+    def->meta = meta_cpy;
+
+  } // Loop on definitions
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -873,6 +1029,24 @@ cs_navsto_system_destroy(void)
 
   if (navsto == NULL)
     return;
+
+  if (navsto->n_velocity_ic_defs > 0) {
+
+    for (short int i = 0; i < navsto->n_velocity_ic_defs; i++)
+      navsto->velocity_ic_defs[i] = cs_xdef_free(navsto->velocity_ic_defs[i]);
+    BFT_FREE(navsto->velocity_ic_defs);
+    navsto->velocity_ic_defs = NULL;
+
+  } // Velocity IC
+
+  if (navsto->n_pressure_ic_defs > 0) {
+
+    for (short int i = 0; i < navsto->n_pressure_ic_defs; i++)
+      navsto->pressure_ic_defs[i] = cs_xdef_free(navsto->pressure_ic_defs[i]);
+    BFT_FREE(navsto->pressure_ic_defs);
+    navsto->pressure_ic_defs = NULL;
+
+  } // Pressure IC
 
   /*
     Properties, advection fields, equations and fields are all destroyed
@@ -988,7 +1162,7 @@ cs_navsto_system_init_setup(void)
                                              1, /* dimension */
                                              has_previous);
 
-  /* TODO: temperature */
+  /* TODO: temperature for the energy equation */
 
   /* Setup data according to the type of coupling */
   switch (nsp->coupling) {
@@ -1142,6 +1316,184 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the initial condition for the velocity unknowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set to a constant value
+ *
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_add_velocity_ic_by_value(const char    *z_name,
+                                   cs_real_t     *val)
+{
+  assert(cs_navsto_system != NULL);
+  cs_navsto_system_t *nss = cs_navsto_system;
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = 0;
+  if (z_name != NULL && strlen(z_name) > 0)
+    z_id = (cs_volume_zone_by_name(z_name))->id;
+
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        3, // dim
+                                        z_id,
+                                        CS_FLAG_STATE_UNIFORM, // state flag
+                                        meta_flag,
+                                        val);
+
+  int  new_id = nss->n_velocity_ic_defs;
+  nss->n_velocity_ic_defs += 1;
+  BFT_REALLOC(nss->velocity_ic_defs, nss->n_velocity_ic_defs, cs_xdef_t *);
+  nss->velocity_ic_defs[new_id] = d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the pressure unknowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set to a constant value
+ *
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_add_pressure_ic_by_value(const char    *z_name,
+                                   cs_real_t     *val)
+{
+  assert(cs_navsto_system != NULL);
+  cs_navsto_system_t *nss = cs_navsto_system;
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = 0;
+  if (z_name != NULL && strlen(z_name) > 0)
+    z_id = (cs_volume_zone_by_name(z_name))->id;
+
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        1, // dim
+                                        z_id,
+                                        CS_FLAG_STATE_UNIFORM, // state flag
+                                        meta_flag,
+                                        val);
+
+  int  new_id = nss->n_pressure_ic_defs;
+  nss->n_pressure_ic_defs += 1;
+  BFT_REALLOC(nss->pressure_ic_defs, nss->n_pressure_ic_defs, cs_xdef_t *);
+  nss->pressure_ic_defs[new_id] = d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the velocity unkowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set according to an analytical function
+ *
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_add_velocity_ic_by_analytic(const char             *z_name,
+                                      cs_analytic_func_t     *analytic,
+                                      void                   *input)
+{
+  assert(cs_navsto_system != NULL);
+  cs_navsto_system_t *nss = cs_navsto_system;
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = 0;
+  if (z_name != NULL && strlen(z_name) > 0)
+    z_id = (cs_volume_zone_by_name(z_name))->id;
+
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_analytic_input_t  anai = {.func = analytic,
+                                    .input = input };
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                        3, // dim
+                                        z_id,
+                                        0, // state flag
+                                        meta_flag,
+                                        &anai);
+
+  int  new_id = nss->n_velocity_ic_defs;
+  nss->n_velocity_ic_defs += 1;
+  BFT_REALLOC(nss->velocity_ic_defs, nss->n_velocity_ic_defs, cs_xdef_t *);
+  nss->velocity_ic_defs[new_id] = d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the pressure unkowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set according to an analytical function
+ *
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_add_pressure_ic_by_analytic(const char             *z_name,
+                                      cs_analytic_func_t     *analytic,
+                                      void                   *input)
+{
+  assert(cs_navsto_system != NULL);
+  cs_navsto_system_t *nss = cs_navsto_system;
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = 0;
+  if (z_name != NULL && strlen(z_name) > 0)
+    z_id = (cs_volume_zone_by_name(z_name))->id;
+
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_analytic_input_t  anai = {.func = analytic,
+                                    .input = input };
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                        1, // dim
+                                        z_id,
+                                        0, // state flag
+                                        meta_flag,
+                                        &anai);
+
+  int  new_id = nss->n_pressure_ic_defs;
+  nss->n_pressure_ic_defs += 1;
+  BFT_REALLOC(nss->pressure_ic_defs, nss->n_pressure_ic_defs, cs_xdef_t *);
+  nss->pressure_ic_defs[new_id] = d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize the context structure used to build the algebraic system
  *         This is done after the setup step.
  */
@@ -1151,10 +1503,121 @@ void
 cs_navsto_system_initialize(void)
 {
   cs_navsto_system_t  *navsto = cs_navsto_system;
+  const cs_navsto_param_t *nsp = navsto->param;
 
   if (navsto == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  assert(nsp != NULL);
+  if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid space discretization scheme.", __func__);
 
-  navsto->init(navsto->param, navsto->context);
+  navsto->init(nsp, navsto->context);
+
+  const cs_param_dof_reduction_t  red = nsp->dof_reduction_mode;
+
+  /* Initial conditions for the velocity */
+  if (navsto->n_velocity_ic_defs > 0) {
+
+    assert(navsto->velocity_ic_defs != NULL);
+
+    /* Initialize cell-based array */
+    const cs_flag_t c_dof_flag = CS_FLAG_VECTOR | cs_flag_primal_cell;
+    cs_field_t *field  = cs_field_by_name("velocity");
+    cs_real_t  *c_values = field->val;
+
+    for (int def_id = 0; def_id < navsto->n_velocity_ic_defs; def_id++) {
+
+      /* Get and then set the definition of the initial condition */
+      cs_xdef_t  *def = navsto->velocity_ic_defs[def_id];
+
+      switch(def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        cs_evaluate_potential_by_value(c_dof_flag, def, c_values);
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        cs_xdef_set_quadrature(def, nsp->qtype);
+        switch (red) {
+        case CS_PARAM_REDUCTION_DERHAM:
+          cs_evaluate_potential_by_analytic(c_dof_flag, def, c_values);
+          break;
+        case CS_PARAM_REDUCTION_AVERAGE:
+          cs_evaluate_average_on_cells_by_analytic(c_dof_flag, def, c_values);
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    _(" Incompatible reduction for the field %s.\n"),
+                    field->name);
+
+        } // Switch on possible reduction types
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Incompatible way to initialize the field %s.\n"),
+                  field->name);
+
+      } // Switch on possible type of definition
+
+    } // Loop on definitions
+
+    /* Initialize face-based array */
+    if (true) /* DEBUG */
+      _init_face_velocity_values();
+
+  } // If velocity IC
+
+  /* Initial conditions for the pressure */
+  if (navsto->n_pressure_ic_defs > 0) {
+
+    assert(navsto->pressure_ic_defs != NULL);
+    cs_field_t *field  = cs_field_by_name("pressure");
+    cs_real_t  *values = field->val;
+    const cs_flag_t   dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
+
+    for (int def_id = 0; def_id < navsto->n_pressure_ic_defs; def_id++) {
+
+      /* Get and then set the definition of the initial condition */
+      cs_xdef_t  *def = navsto->pressure_ic_defs[def_id];
+
+      /* Initialize face-based array */
+      switch(def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        cs_evaluate_potential_by_value(dof_flag, def, values);
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        cs_xdef_set_quadrature(def, nsp->qtype);
+        switch (red) {
+        case CS_PARAM_REDUCTION_DERHAM:
+          cs_evaluate_potential_by_analytic(dof_flag, def, values);
+          break;
+        case CS_PARAM_REDUCTION_AVERAGE:
+          cs_evaluate_average_on_cells_by_analytic(dof_flag, def, values);
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    _(" Incompatible reduction for the field %s.\n"),
+                    field->name);
+
+        } // Switch on possible reduction types
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Incompatible way to initialize the field %s.\n"),
+                  field->name);
+        break;
+
+      } // Switch on possible type of definition
+
+    } // Loop on definitions
+
+  } // If pressure IC
 
   /* TODO: Set the initial condition for variables not directly related
      to an equation */

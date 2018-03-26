@@ -119,8 +119,13 @@ typedef struct {
    */
   cs_navsto_param_t  *param;
 
-  /* Set of fields (resolved variables): fields are created according to the
-     choice of model for Navier-Stokes */
+  /*!
+   * @name Fields
+   * Set of fields (resolved variables): fields are created according to the
+   * choice of model for Navier-Stokes
+   * @{
+   */
+
   cs_adv_field_t     *adv_field;
   cs_field_t         *velocity;
   cs_field_t         *pressure;
@@ -145,6 +150,7 @@ typedef struct {
   void               *context;
 
   /*!
+   * @}
    * @name Pointer to functions handling specific tasks
    * @{
    */
@@ -168,6 +174,38 @@ typedef struct {
    *  Handle the build of the system and its resolution
    */
   cs_navsto_compute_t               *compute;
+
+  /*!
+   * @}
+   * @name Initial conditions
+   *
+   * Set of parameters used to take into account the initial condition on the
+   * pressure and/or the velocity.
+   * CAUTION: so far, there is no check if the different IC are compatible
+   * @{
+   */
+
+  /*! \var n_velocity_ic_defs
+   *  Number of initial conditions associated to the velocity
+   */
+   int  n_velocity_ic_defs;
+
+  /*! \var n_pressure_ic_defs
+   *  Number of initial conditions associated to the pressure
+   */
+   int  n_pressure_ic_defs;
+
+  /*! \var velocity_ic_defs
+   *  Pointers to the definitions of the initial conditions associated to the
+   *  velocity
+   */
+   cs_xdef_t  **velocity_ic_defs;
+
+  /*! \var pressure_ic_defs
+   *  Pointers to the definitions of the initial conditions associated to the
+   *  pressure
+   */
+   cs_xdef_t  **pressure_ic_defs;
 
   /*! @} */
 
@@ -248,6 +286,78 @@ cs_navsto_system_init_setup(void);
 void
 cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
                                 const cs_cdo_quantities_t  *quant);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the velocity unknowns..
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set to a constant value
+ *
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_add_velocity_ic_by_value(const char    *z_name,
+                                   cs_real_t     *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the pressure unknowns..
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set to a constant value
+ *
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_add_pressure_ic_by_value(const char    *z_name,
+                                   cs_real_t     *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the velocity unkowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set according to an analytical function
+ *
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_add_velocity_ic_by_analytic(const char             *z_name,
+                                      cs_analytic_func_t     *analytic,
+                                      void                   *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the pressure unkowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set according to an analytical function
+ *
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_add_pressure_ic_by_analytic(const char             *z_name,
+                                      cs_analytic_func_t     *analytic,
+                                      void                   *input);
 
 /*----------------------------------------------------------------------------*/
 /*!

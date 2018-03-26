@@ -30,6 +30,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_param.h"
+#include "cs_quadrature.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -106,6 +107,12 @@ typedef enum {
  * The system is solved using an artificial compressibility algorithm.
  * One vectorial equation is solved followed by a pressure update.
  *
+ * \var CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP
+ * The system is solved using an artificial compressibility algorithm with a
+ * Vector Penalty Projection splitting.
+ * Two vectorial equations are solved: a momentum-like one and another one
+ * involving a grad-div operator.
+ *
  * \var CS_NAVSTO_COUPLING_PROJECTION
  * The system is solved using an incremental projection algorithm
  */
@@ -164,8 +171,8 @@ typedef struct {
   bool                          has_gravity;
   cs_real_3_t                   gravity;
 
-  /*! \var model
-   * Modelling related to the Navier-Stokes system of equations
+  /*! \var time_state
+   * Status of the time for the Navier-Stokes system of equations
    */
   cs_navsto_param_time_state_t  time_state;
 
@@ -174,11 +181,19 @@ typedef struct {
    */
   cs_navsto_param_coupling_t    coupling;
 
-  /*! \var ac_zeta_coef
-   *  Default value to set to the zeta coefficient (in front of the grad-div
-   *  term) when an artificial coefficient algorithm is used
+  /*! \var gd_scale_coef
+   *  Default value to set to the scaling of the grad-div term when an
+   *  artificial compressibility algorithm or an Uzawa - Augmented Lagrangian
+   *  method is used
    */
-  cs_real_t                     ac_zeta_coef;
+  cs_real_t                     gd_scale_coef;
+
+  /*! \var qtype
+   *  A \ref cs_quadrature_type_t indicating the type of quadrature to use in
+   *  all routines involving quadratures
+   */
+  cs_quadrature_type_t          qtype;
+
 
 } cs_navsto_param_t;
 
@@ -186,13 +201,17 @@ typedef struct {
  *  \brief List of available keys for setting the parameters of the
  *         Navier-Stokes system
  *
- * \var CS_NSKEY_AC_ZETA_COEF
- * Set the zeta coefficient (in front of the grad-div term) when an artificial
- * coefficient algorithm is used
- *
  * \var CS_NSKEY_DOF_REDUCTION
  * Set how the DoFs are defined (similar to \ref CS_EQKEY_DOF_REDUCTION)
  * Enable to set this type of DoFs definition for all related equations
+ *
+ * \var CS_NSKEY_GD_SCALE_COEF
+ * Set the scaling of the grad-div term when an artificial compressibility
+ * algorithm or an Uzawa - Augmented Lagrangian method is used
+ *
+ * \var CS_NSKEY_QUADRATURE
+ * Set the type to use in all routines involving quadrature (similar to \ref
+ * CS_EQKEY_BC_QUADRATURE)
  *
  * \var CS_NSKEY_SPACE_SCHEME
  * Numerical scheme for the space discretization
@@ -208,13 +227,13 @@ typedef struct {
  * \var CS_NSKEY_VERBOSITY
  * Set the level of details for the specific part related to the Navier-Stokes
  * system
- *
  */
 
 typedef enum {
 
-  CS_NSKEY_AC_ZETA_COEF,
   CS_NSKEY_DOF_REDUCTION,
+  CS_NSKEY_GD_SCALE_COEF,
+  CS_NSKEY_QUADRATURE,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_TIME_SCHEME,
   CS_NSKEY_TIME_THETA,
@@ -314,6 +333,19 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
 void
 cs_navsto_param_log(const cs_navsto_param_t    *nsp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retreive the name of the coupling algorithm
+ *
+ * \param[in]     coupling    A \ref cs_navsto_param_coupling_t
+ *
+ * \return the name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling);
 
 /*----------------------------------------------------------------------------*/
 

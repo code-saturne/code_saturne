@@ -44,6 +44,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
+#include <bft_printf.h>
 
 #include "cs_base.h"
 #include "cs_log.h"
@@ -57,6 +58,8 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
  * Local Macro definitions
@@ -101,6 +104,8 @@ static const char _err_empty_nsp[] =
  * Private function prototypes
  *============================================================================*/
 
+  /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -140,7 +145,8 @@ cs_navsto_param_create(cs_navsto_param_model_t        model,
   param->gravity[0] = param->gravity[1] = param->gravity[2] = 0.;
   param->time_state = time_state;
   param->coupling = algo_coupling;
-  param->ac_zeta_coef = 1.0;    /* Default value if not set by the user */
+  param->gd_scale_coef = 1.0;    /* Default value if not set by the user */
+  param->qtype = CS_QUADRATURE_BARY;
 
   return param;
 }
@@ -193,8 +199,24 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
   switch(key) {
 
-  case CS_NSKEY_AC_ZETA_COEF:
-    nsp->ac_zeta_coef = atof(val);
+  case CS_NSKEY_GD_SCALE_COEF:
+    switch (nsp->coupling) {
+    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+    case CS_NAVSTO_COUPLING_UZAWA:
+      nsp->gd_scale_coef = atof(val);
+      break;
+
+    case CS_NAVSTO_COUPLING_PROJECTION:
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(" Trying to set the zeta parameter with the %s\n "
+                 " although this will not have use in the algorithm.\n",
+                 cs_navsto_param_get_coupling_name(nsp->coupling));
+
+    default:
+      break;
+
+    } // Switch
     break;
 
   case CS_NSKEY_DOF_REDUCTION:
@@ -263,6 +285,29 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
   case CS_NSKEY_VERBOSITY:
     nsp->verbosity = atoi(val);
+    break;
+
+  case CS_NSKEY_QUADRATURE:
+    {
+      nsp->qtype = CS_QUADRATURE_NONE;
+
+      if (strcmp(val, "bary") == 0)
+        nsp->qtype = CS_QUADRATURE_BARY;
+      else if (strcmp(val, "bary_subdiv") == 0)
+        nsp->qtype = CS_QUADRATURE_BARY_SUBDIV;
+      else if (strcmp(val, "higher") == 0)
+        nsp->qtype = CS_QUADRATURE_HIGHER;
+      else if (strcmp(val, "highest") == 0)
+        nsp->qtype = CS_QUADRATURE_HIGHEST;
+      else {
+        const char *_val = val;
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
+                    " Valid choices are \"bary\", \"bary_subdiv\", \"higher\""
+                    " and \"highest\"."), _val);
+      }
+
+    }
     break;
 
   default:
@@ -337,6 +382,35 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retreive the name of the coupling algorithm
+ *
+ * \param[in]     coupling    A \ref cs_navsto_param_coupling_t
+ *
+ * \return the name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling)
+{
+  switch (coupling) {
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+  case CS_NAVSTO_COUPLING_UZAWA:
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    return cs_navsto_param_coupling_name[coupling];
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid coupling.", __func__);
+    break;
+
+  }
+
+  return NULL;
+}
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

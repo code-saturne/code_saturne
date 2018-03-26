@@ -76,6 +76,11 @@ typedef struct {
   cs_equation_t  *mass;     /*!< Mass balance equation (scalar-valued) */
   cs_equation_t  *energy;   /*!< Energy balance equation (scalar-valued) */
 
+  cs_property_t  *zeta;     /*!< Coefficient for the augmented Lagrangian
+                                 attached to the grad-div stabilzation term */
+  cs_real_t       relax;    /*!< Coefficient for the Uzawa algorithm attacehd
+                                 to the update of the multiplier */
+
 } cs_navsto_coupling_uzawa_t;
 
 /*! \struct cs_navsto_coupling_ac_t
@@ -89,8 +94,8 @@ typedef struct {
 
   cs_equation_t  *momentum; /*!< Momentum balance equation (vector-valued) */
 
-  cs_property_t  *zeta;    /*!< Coefficient for the artificial compressibility
-                             attached to the grad-div stabilzation term */
+  cs_property_t  *zeta;     /*!< Coefficient for the artificial compressibility
+                                 attached to the grad-div stabilization term */
 
 } cs_navsto_coupling_ac_t;
 
@@ -105,12 +110,12 @@ typedef struct {
 
   cs_equation_t  *momentum; /*!< Momentum balance equation (vector-valued) */
   cs_equation_t  *graddiv;  /*!< Second equation of the VPP_eps method, that is
-                              where the grad-div operator is used
-                              (vector-valued) */
+                                 where the grad-div operator is used
+                                 (vector-valued) */
 
   cs_property_t  *zeta;    /*!< Parameter (Artifical Compressibility) VPP
-                             alorithm attached to the grad-div stabilzation
-                             term */
+                                algorithm attached to the grad-div stabilization
+                                term */
 
 } cs_navsto_coupling_ac_vpp_t;
 
