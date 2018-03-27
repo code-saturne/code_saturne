@@ -73,7 +73,6 @@ BEGIN_C_DECLS
 typedef struct {
 
   cs_equation_t  *momentum; /*!< Momentum balance equation (vector-valued) */
-  cs_equation_t  *mass;     /*!< Mass balance equation (scalar-valued) */
   cs_equation_t  *energy;   /*!< Energy balance equation (scalar-valued) */
 
   cs_property_t  *zeta;     /*!< Coefficient for the augmented Lagrangian

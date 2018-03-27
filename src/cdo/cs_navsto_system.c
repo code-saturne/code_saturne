@@ -256,21 +256,6 @@ _create_uzawa_context(cs_navsto_param_t    *nsp)
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
   }
 
-  /* Add an equation related to the mass conservation */
-  nsc->mass = cs_equation_add("Mass",
-                              "pressure",
-                              CS_EQUATION_TYPE_PREDEFINED,
-                              1,
-                              CS_PARAM_BC_HMG_NEUMANN);
-
-  /* Set the default settings */
-  {
-    cs_equation_param_t  *eqp = cs_equation_get_param(nsc->mass);
-
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-  }
-
   nsc->energy = NULL;   /* Not used up to now */
 
   nsc->zeta = cs_property_add("graddiv_coef", CS_PROPERTY_ISO);
@@ -344,9 +329,6 @@ _uzawa_init_setup(cs_navsto_system_t          *ns)
 
   /* All considered models needs a viscous term */
   cs_equation_add_diffusion(mom_eqp, ns->lami_viscosity);
-
-  /* Handle the mass equation */
-  _apply_param(nsp, cs_equation_get_param(nsc->mass));
 
   /* Handle the energy equation */
   if (nsc->energy != NULL)
@@ -1150,6 +1132,8 @@ cs_navsto_system_init_setup(void)
               "%s: Invalid space discretization scheme.", __func__);
   }
 
+  /* Nothing to do if the velocity or pressure fields have been already
+     created */
   navsto->velocity = cs_field_find_or_create("velocity",
                                              field_mask,
                                              location_id,
