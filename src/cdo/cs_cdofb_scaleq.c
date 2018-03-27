@@ -642,9 +642,6 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
   if (eqp->flag & CS_EQUATION_CONVECTION)
     bft_error(__FILE__, __LINE__, 0,
               _(" Convection term is not handled yet.\n"));
-  if (eqp->flag & CS_EQUATION_UNSTEADY)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Unsteady terms are not handled yet.\n"));
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -670,9 +667,11 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
   /* Tag faces with a non-homogeneous Neumann BC */
   short int  *neu_tags = cs_equation_tag_neumann_face(quant, eqp);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)       \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,          \
-         dir_values, neu_tags, field_val,                                  \
+  /* No source term related to face DoFs. No update of the RHS. */
+
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
+         dir_values, neu_tags, field_val,                               \
          cs_cdofb_cell_sys, cs_cdofb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -787,7 +786,32 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
         else
           tpty_val *= cs_property_get_cell_value(c_id, eqp->time_property);
 
-        /* TODO */
+        /* Assign local matrix to a mass matrix to define */
+        cs_sdm_t  *mass_mat = cb->loc;
+        assert(mass_mat->n_rows == mass_mat->n_cols);
+        assert(mass_mat->n_rows == cm->n_fc + 1);
+
+        if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
+
+          /* Use a vector to deal with the diagonal matrix */
+          memset(mass_mat->val, 0, sizeof(cs_real_t)*(cm->n_fc + 1));
+          mass_mat->val[cm->n_fc] = cm->vol_c * tpty_val;
+
+        }
+        else {
+
+          memset(mass_mat->val, 0,
+                 sizeof(cs_real_t)*(cm->n_fc + 1)*(cm->n_fc + 1));
+
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Not implemented yet.", __func__);
+
+        }
+
+        /* Apply the time discretization to the local system.
+           Update csys (matrix and rhs) */
+        eqc->apply_time_scheme(eqp, tpty_val, mass_mat, eqb->sys_flag, cb,
+                               csys);
 
       } /* END OF TIME CONTRIBUTION */
 
