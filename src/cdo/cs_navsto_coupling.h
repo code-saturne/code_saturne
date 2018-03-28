@@ -105,7 +105,7 @@ typedef struct {
 
   cs_equation_t  *momentum; /*!< Momentum balance equation (vector-valued) */
   cs_equation_t  *graddiv;  /*!< Second equation of the VPP_eps method, that is
-                              where the grad-div operator is used 
+                              where the grad-div operator is used
                               (vector-valued) */
 
   cs_property_t  *zeta;    /*!< Parameter (Artifical Compressibility) VPP
