@@ -156,9 +156,9 @@ _wall_boundary_selection(void              *input,
       if (db->zone_type[i] != CS_DOMAIN_BOUNDARY_WALL) {
 
         int z_id = db->zone_ids[i];
-        const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(z_id);
-        const cs_lnum_t  _n_faces = z->n_faces;
-        const cs_lnum_t  *_face_ids = z->face_ids;
+        const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
+        const cs_lnum_t  _n_faces = z->n_elts;
+        const cs_lnum_t  *_face_ids = z->elt_ids;
 
         for (cs_lnum_t j = 0; j < _n_faces; j++)
           is_wall[_face_ids[j]] = false;
@@ -176,9 +176,9 @@ _wall_boundary_selection(void              *input,
       if (db->zone_type[i] == CS_DOMAIN_BOUNDARY_WALL) {
 
         int z_id = db->zone_ids[i];
-        const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(z_id);
-        const cs_lnum_t  _n_faces = z->n_faces;
-        const cs_lnum_t  *_face_ids = z->face_ids;
+        const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
+        const cs_lnum_t  _n_faces = z->n_elts;
+        const cs_lnum_t  *_face_ids = z->elt_ids;
 
         for (cs_lnum_t j = 0; j < _n_faces; j++)
           is_wall[_face_ids[j]] = true;

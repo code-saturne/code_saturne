@@ -113,8 +113,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_head_losses(const  cs_volume_zone_t  *zone,
-                    cs_real_t                 cku[][6])
+cs_user_head_losses(const  cs_zone_t  *zone,
+                    cs_real_t          cku[][6])
 {
   /*! [map_field_arrays] */
   const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(u)->val_pre);
@@ -130,8 +130,8 @@ cs_user_head_losses(const  cs_volume_zone_t  *zone,
   /*! [head_loss_1] */
   {
     if (strcmp(zone->name, "head_loss_1") == 0) {
-      for (cs_lnum_t i = 0; i < zone->n_cells; i++) {
-        cs_lnum_t c_id = zone->cell_ids[i];
+      for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+        cs_lnum_t c_id = zone->elt_ids[i];
         cs_real_t v = cs_math_3_norm(cvara_vel[c_id]);
         cku[i][0] = 10.0 * v;
         cku[i][1] = 0.0;
@@ -175,9 +175,9 @@ cs_user_head_losses(const  cs_volume_zone_t  *zone,
 
       /* compute local coefficients */
 
-      for (cs_lnum_t i = 0; i < zone->n_cells; i++) {
+      for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
-        cs_lnum_t c_id = zone->cell_ids[i];
+        cs_lnum_t c_id = zone->elt_ids[i];
         cs_real_t v = cs_math_3_norm(cvara_vel[c_id]);
 
         cku[i][0] = a11 * v;

@@ -243,7 +243,7 @@ cs_user_lagr_sde(const cs_real_t  dt[],
  * \brief Define particle boundary conditions.
  *
  * This is used for the definition of inlet and other boundaries,
- * based on predefined boundary zones (\ref cs_boundary_zone_t).
+ * based on predefined boundary zones (\ref cs_zone_t).
  *
  * \param[in] bc_type    type of the boundary faces
  */
@@ -258,7 +258,7 @@ cs_user_lagr_boundary_conditions(const int  itypfb[]);
  * \brief Define particle volume conditions.
  *
  * This is used definition of for injection
- * based on predefined volume zones (\ref cs_volume_zone_t).
+ * based on predefined volume zones (\ref cs_zone_t).
  */
 /*----------------------------------------------------------------------------*/
 

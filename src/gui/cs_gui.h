@@ -482,8 +482,8 @@ cs_gui_finalize(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gui_head_losses(const cs_volume_zone_t  *zone,
-                   cs_real_t                cku[][6]);
+cs_gui_head_losses(const cs_zone_t  *zone,
+                   cs_real_t         cku[][6]);
 
 /*-----------------------------------------------------------------------------
  * Selection of linear solvers.

@@ -258,10 +258,10 @@ cs_cdo_bc_define(cs_param_bc_type_t    default_bc,
   for (int ii = 0; ii < n_desc; ii++) {
 
     const cs_xdef_t  *d = desc[ii];
-    const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
+    const cs_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
 
-    for (cs_lnum_t i = 0; i < z->n_faces; i++)
-      bc->flag[z->face_ids[i]] |= d->meta;
+    for (cs_lnum_t i = 0; i < z->n_elts; i++)
+      bc->flag[z->elt_ids[i]] |= d->meta;
 
   } // Loop on definitions of boundary conditions
 
@@ -326,36 +326,36 @@ cs_cdo_bc_define(cs_param_bc_type_t    default_bc,
   for (short int def_id = 0; def_id < n_desc; def_id++) {
 
     const cs_xdef_t  *d = desc[def_id];
-    const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
+    const cs_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
 
-    for (cs_lnum_t i = 0; i < z->n_faces; i++)
-      bc->flag[z->face_ids[i]] |= d->meta;
+    for (cs_lnum_t i = 0; i < z->n_elts; i++)
+      bc->flag[z->elt_ids[i]] |= d->meta;
 
     if (d->meta & CS_CDO_BC_DIRICHLET) {
 
       _add_def_to_bc(def_id,
-                     z->n_faces, z->face_ids,
+                     z->n_elts, z->elt_ids,
                      shift[CS_PARAM_BC_DIRICHLET],
                      bc->dir->def_ids, bc->dir->elt_ids);
-      shift[CS_PARAM_BC_DIRICHLET] += z->n_faces;
+      shift[CS_PARAM_BC_DIRICHLET] += z->n_elts;
 
     }
     else if (d->meta & CS_CDO_BC_NEUMANN) {
 
       _add_def_to_bc(def_id,
-                     z->n_faces, z->face_ids,
+                     z->n_elts, z->elt_ids,
                      shift[CS_PARAM_BC_NEUMANN],
                      bc->neu->def_ids, bc->neu->elt_ids);
-      shift[CS_PARAM_BC_NEUMANN] += z->n_faces;
+      shift[CS_PARAM_BC_NEUMANN] += z->n_elts;
 
     }
     else if (d->meta & CS_CDO_BC_ROBIN) {
 
       _add_def_to_bc(def_id,
-                     z->n_faces, z->face_ids,
+                     z->n_elts, z->elt_ids,
                      shift[CS_PARAM_BC_ROBIN],
                      bc->rob->def_ids, bc->rob->elt_ids);
-      shift[CS_PARAM_BC_ROBIN] += z->n_faces;
+      shift[CS_PARAM_BC_ROBIN] += z->n_elts;
 
     }
 

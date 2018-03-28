@@ -64,6 +64,9 @@ User changes
 Architectural changes
 ---------------------
 
+- Partly unify boundary and volume zones, renaming the n_faces/n_cells
+  members to n_elts and face_ids/cell_ids to elt_ids.
+
 - Complete cs_all_to_all API to handle indexed cases.
 
 - Use matrix assembler instead of matrix extension function for

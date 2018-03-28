@@ -821,7 +821,7 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t   *eqp,
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
+ *         z_name corresponds to the name of a pre-existing cs_zone_t
  *
  * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
  * \param[in]       bc_type   type of boundary condition to add
@@ -840,7 +840,7 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
+ *         z_name corresponds to the name of a pre-existing cs_zone_t
  *
  * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
  * \param[in]       bc_type   type of boundary condition to add

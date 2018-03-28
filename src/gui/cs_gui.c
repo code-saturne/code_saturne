@@ -3275,7 +3275,7 @@ void CS_PROCF (uiipsu, UIIPSU) (int *iporos)
   int n_zones = cs_volume_zone_n_zones();
 
   for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
     if (z->type & CS_VOLUME_ZONE_POROSITY) {
       char *path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3344,11 +3344,11 @@ void CS_PROCF(uiporo, UIPORO)(void)
   }
 
   for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
     if (z->type & CS_VOLUME_ZONE_POROSITY) {
 
-      cs_lnum_t  n_cells = z->n_cells;
-      const cs_lnum_t *cell_ids = z->cell_ids;
+      cs_lnum_t  n_cells = z->n_elts;
+      const cs_lnum_t *cell_ids = z->elt_ids;
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3471,13 +3471,13 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
 
   cs_field_t *c_rho = CS_F_(rho);
   for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
     if (! (z->type & CS_VOLUME_ZONE_SOURCE_TERM))
       continue;
 
     if (_zone_is_type(z->id, "momentum_source_term")) {
-      const cs_lnum_t n_cells = z->n_cells;
-      const cs_lnum_t *cell_ids = z->cell_ids;
+      const cs_lnum_t n_cells = z->n_elts;
+      const cs_lnum_t *cell_ids = z->elt_ids;
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 1, "thermophysical_models");
@@ -3611,14 +3611,14 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
   int n_zones = cs_volume_zone_n_zones();
 
   for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
     if (! (z->type & CS_VOLUME_ZONE_SOURCE_TERM))
       continue;
 
     /* species source term */
     if (_zone_is_type(z->id, "scalar_source_term")) {
-      const cs_lnum_t n_cells = z->n_cells;
-      const cs_lnum_t *cell_ids = z->cell_ids;
+      const cs_lnum_t n_cells = z->n_elts;
+      const cs_lnum_t *cell_ids = z->elt_ids;
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3711,14 +3711,14 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
   int n_zones = cs_volume_zone_n_zones();
 
   for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
     if (!(z->type & CS_VOLUME_ZONE_SOURCE_TERM))
       continue;
 
     /* species source term */
     if (_zone_is_type(z->id, "thermal_source_term")) {
-      const cs_lnum_t n_cells = z->n_cells;
-      const cs_lnum_t *cell_ids = z->cell_ids;
+      const cs_lnum_t n_cells = z->n_elts;
+      const cs_lnum_t *cell_ids = z->elt_ids;
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3804,10 +3804,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
   const int n_zones = cs_volume_zone_n_zones();
 
   for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
     if (z->type & CS_VOLUME_ZONE_INITIALIZATION) {
-      const cs_lnum_t n_cells = z->n_cells;
-      const cs_lnum_t *cell_ids = z->cell_ids;
+      const cs_lnum_t n_cells = z->n_elts;
+      const cs_lnum_t *cell_ids = z->elt_ids;
 
       char z_id_str[32];
       snprintf(z_id_str, 31, "%d", z_id);
@@ -5069,11 +5069,11 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
   int n_zones = cs_volume_zone_n_zones();
 
   for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
 
     if (_zone_is_type(z->id, "groundwater_law")) {
-      const cs_lnum_t n_cells = z->n_cells;
-      const cs_lnum_t *cell_ids = z->cell_ids;
+      const cs_lnum_t n_cells = z->n_elts;
+      const cs_lnum_t *cell_ids = z->elt_ids;
 
       char z_id_str[32];
       snprintf(z_id_str, 31, "%d", z_id);
@@ -5650,8 +5650,8 @@ cs_gui_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gui_head_losses(const cs_volume_zone_t  *zone,
-                   cs_real_t                cku[][6])
+cs_gui_head_losses(const cs_zone_t  *zone,
+                   cs_real_t         cku[][6])
 {
   if (!cs_gui_file_is_loaded())
     return;
@@ -5663,8 +5663,8 @@ cs_gui_head_losses(const cs_volume_zone_t  *zone,
 
   const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(u)->val_pre);
 
-  const cs_lnum_t n_cells = zone->n_cells;
-  const cs_lnum_t *cell_ids = zone->cell_ids;
+  const cs_lnum_t n_cells = zone->n_elts;
+  const cs_lnum_t *cell_ids = zone->elt_ids;
 
   char z_id_str[32];
   snprintf(z_id_str, 31, "%d", zone->id);

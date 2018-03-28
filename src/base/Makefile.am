@@ -159,7 +159,8 @@ cs_timer_stats.h \
 cs_tree.h \
 cs_turbomachinery.h \
 cs_volume_zone.h \
-cs_wall_functions.h
+cs_wall_functions.h \
+cs_zone.h
 
 # Library source files
 

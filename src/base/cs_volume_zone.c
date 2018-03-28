@@ -108,7 +108,7 @@ typedef struct {
 
 static int  _n_zones = 0;
 static int  _n_zones_max = 0;
-static cs_volume_zone_t     **_zones = NULL;
+static cs_zone_t     **_zones = NULL;
 static cs_map_name_to_id_t   *_zone_map = NULL;
 
 /* Volume zone id associated with cells */
@@ -154,10 +154,10 @@ static const char *_type_flag_name[] = {N_("initialization"),
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_volume_zone_t  *
+static cs_zone_t  *
 _zone_by_name_try(const char  *name)
 {
-  cs_volume_zone_t *z = NULL;
+  cs_zone_t *z = NULL;
   int id = cs_map_name_to_id_try(_zone_map, name);
 
   if (id > -1)
@@ -176,13 +176,13 @@ _zone_by_name_try(const char  *name)
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_volume_zone_t *
+static cs_zone_t *
 _zone_define(const char  *name)
 {
   int zone_id = -1;
   const char *addr_0 = NULL, *addr_1 = NULL;
 
-  cs_volume_zone_t *z = _zone_by_name_try(name);
+  cs_zone_t *z = _zone_by_name_try(name);
 
   /* Check this name was not already used */
 
@@ -228,7 +228,7 @@ _zone_define(const char  *name)
       _n_zones_max = 8;
     else
       _n_zones_max *= 2;
-    BFT_REALLOC(_zones, _n_zones_max, cs_volume_zone_t *);
+    BFT_REALLOC(_zones, _n_zones_max, cs_zone_t *);
   }
 
   /* Allocate zones descriptor block if necessary
@@ -237,7 +237,7 @@ _zone_define(const char  *name)
 
   int shift_in_alloc_block = zone_id % _CS_ZONE_S_ALLOC_SIZE;
   if (shift_in_alloc_block == 0)
-    BFT_MALLOC(_zones[zone_id], _CS_ZONE_S_ALLOC_SIZE, cs_volume_zone_t);
+    BFT_MALLOC(_zones[zone_id], _CS_ZONE_S_ALLOC_SIZE, cs_zone_t);
   else
     _zones[zone_id] =   _zones[zone_id - shift_in_alloc_block]
                       + shift_in_alloc_block;
@@ -253,8 +253,8 @@ _zone_define(const char  *name)
 
   z->location_id = 0;
 
-  z->n_cells = 0;
-  z->cell_ids = NULL;
+  z->n_elts = 0;
+  z->elt_ids = NULL;
 
   z->time_varying = false;
   z->allow_overlay = true;
@@ -326,7 +326,7 @@ cs_volume_zone_initialize(void)
 
   const char *name = cs_mesh_location_get_name(CS_MESH_LOCATION_CELLS);
 
-  cs_volume_zone_t *z = _zone_define(name);
+  cs_zone_t *z = _zone_define(name);
 
   z->location_id = CS_MESH_LOCATION_CELLS;
 
@@ -413,13 +413,13 @@ cs_volume_zone_build_all(bool  mesh_modified)
   /* update zone lists */
 
   for (int i = 0; i < _n_zones; i++) {
-    cs_volume_zone_t *z = _zones[i];
+    cs_zone_t *z = _zones[i];
     if (z->time_varying) {
       cs_mesh_location_build(m, z->location_id);
       has_time_varying = true;
     }
-    z->n_cells = cs_mesh_location_get_n_elts(z->location_id)[0];
-    z->cell_ids = cs_mesh_location_get_elt_ids(z->location_id);
+    z->n_elts = cs_mesh_location_get_n_elts(z->location_id)[0];
+    z->elt_ids = cs_mesh_location_get_elt_ids(z->location_id);
   }
 
   /* Assign maximum zone id and check for overlap errors
@@ -439,9 +439,9 @@ cs_volume_zone_build_all(bool  mesh_modified)
     int overlap_error[2] = {_n_zones, _n_zones};
 
     for (int i = 1; i < _n_zones; i++) {
-      cs_volume_zone_t *z = _zones[i];
-      for (cs_lnum_t j = 0; j < z->n_cells; j++) {
-        cs_lnum_t c_id = z->cell_ids[j];
+      cs_zone_t *z = _zones[i];
+      for (cs_lnum_t j = 0; j < z->n_elts; j++) {
+        cs_lnum_t c_id = z->elt_ids[j];
         int z_id_prev = _zone_id[c_id];
         if (z_id_prev == 0)
           _zone_id[c_id] = z->id;
@@ -460,9 +460,9 @@ cs_volume_zone_build_all(bool  mesh_modified)
     if (overlap_error[0] < _n_zones) {
 
       for (int i = 1; i < _n_zones; i++) {
-        cs_volume_zone_t *z = _zones[i];
-        for (cs_lnum_t j = 0; j < z->n_cells; j++) {
-          cs_lnum_t c_id = z->cell_ids[j];
+        cs_zone_t *z = _zones[i];
+        for (cs_lnum_t j = 0; j < z->n_elts; j++) {
+          cs_lnum_t c_id = z->elt_ids[j];
           int z_id_prev = CS_ABS(_zone_id[c_id]);
           if (z_id_prev == 0)
             _zone_id[c_id] = z->id;
@@ -517,7 +517,7 @@ cs_volume_zone_define(const char  *name,
               _("%s: selection criteria string must be non-null."),
               __func__);
 
-  cs_volume_zone_t *z = _zone_define(name);
+  cs_zone_t *z = _zone_define(name);
 
   if (strcmp(criteria, "all[]"))
     z->location_id = cs_mesh_location_add(name,
@@ -562,7 +562,7 @@ cs_volume_zone_define_by_func(const char                 *name,
               _("%s: selection function pointer must be non-null."),
               __func__);
 
-  cs_volume_zone_t *z = _zone_define(name);
+  cs_zone_t *z = _zone_define(name);
 
   z->location_id = cs_mesh_location_add_by_func(name,
                                                 CS_MESH_LOCATION_CELLS,
@@ -586,7 +586,7 @@ cs_volume_zone_define_by_func(const char                 *name,
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_volume_zone_t  *
+const cs_zone_t  *
 cs_volume_zone_by_id(int  id)
 {
   if (id > -1 && id < _n_zones)
@@ -610,7 +610,7 @@ cs_volume_zone_by_id(int  id)
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_volume_zone_t  *
+const cs_zone_t  *
 cs_volume_zone_by_name(const char  *name)
 {
   int id = cs_map_name_to_id_try(_zone_map, name);
@@ -636,10 +636,10 @@ cs_volume_zone_by_name(const char  *name)
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_volume_zone_t  *
+const cs_zone_t  *
 cs_volume_zone_by_name_try(const char  *name)
 {
-  const cs_volume_zone_t *z = NULL;
+  const cs_zone_t *z = NULL;
   int id = cs_map_name_to_id_try(_zone_map, name);
 
   if (id > -1)
@@ -661,7 +661,7 @@ void
 cs_volume_zone_set_type(int   id,
                         int   type_flag)
 {
-  const cs_volume_zone_t *z0 = cs_volume_zone_by_id(id);
+  const cs_zone_t *z0 = cs_volume_zone_by_id(id);
 
   _zones[z0->id]->type |= type_flag;
 }
@@ -679,7 +679,7 @@ void
 cs_volume_zone_set_time_varying(int   id,
                                 bool  time_varying)
 {
-  const cs_volume_zone_t *z0 = cs_volume_zone_by_id(id);
+  const cs_zone_t *z0 = cs_volume_zone_by_id(id);
 
   _zones[z0->id]->time_varying = time_varying;
 }
@@ -697,7 +697,7 @@ void
 cs_volume_zone_set_overlay(int   id,
                            bool  allow_overlay)
 {
-  const cs_volume_zone_t *z0 = cs_volume_zone_by_id(id);
+  const cs_zone_t *z0 = cs_volume_zone_by_id(id);
 
   _zones[z0->id]->allow_overlay = allow_overlay;
 }
@@ -726,7 +726,7 @@ cs_volume_zone_cell_zone_id(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_volume_zone_log_info(const cs_volume_zone_t  *z)
+cs_volume_zone_log_info(const cs_zone_t  *z)
 {
   if (z == NULL)
     return;
@@ -832,7 +832,7 @@ cs_volume_zone_n_type_cells(int  type_flag)
 
   for (int i = 0; i < _n_zones; i++) {
     if (_zones[i]->type & type_flag)
-      count += _zones[i]->n_cells;
+      count += _zones[i]->n_elts;
   }
 
   return count;
@@ -858,10 +858,10 @@ cs_volume_zone_select_type_cells(int        type_flag,
   cs_lnum_t count = 0;
 
   for (int i = 0; i < _n_zones; i++) {
-    const cs_volume_zone_t *z = _zones[i];
+    const cs_zone_t *z = _zones[i];
     if (z->type & type_flag) {
-      const cs_lnum_t _n_cells = z->n_cells;
-      const cs_lnum_t *_cell_ids = z->cell_ids;
+      const cs_lnum_t _n_cells = z->n_elts;
+      const cs_lnum_t *_cell_ids = z->elt_ids;
       if (_cell_ids != NULL) {
         for (cs_lnum_t j = 0; j < _n_cells; j++) {
           cell_ids[count] = _cell_ids[j];

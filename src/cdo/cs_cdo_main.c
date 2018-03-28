@@ -557,9 +557,9 @@ _log_setup(const cs_domain_t   *domain)
 
   for (int i = 0; i < bdy->n_zones; i++) {
 
-    const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(bdy->zone_ids[i]);
+    const cs_zone_t  *z = cs_boundary_zone_by_id(bdy->zone_ids[i]);
 
-    cs_gnum_t  n_g_elts = (cs_gnum_t)z->n_faces;
+    cs_gnum_t  n_g_elts = (cs_gnum_t)z->n_elts;
     if (cs_glob_n_ranks > 1)
       cs_parall_counter(&n_g_elts, 1);
 

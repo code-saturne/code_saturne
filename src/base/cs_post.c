@@ -2032,7 +2032,7 @@ _cs_post_write_fixed_zone_info(fvm_writer_t          *writer,
     int z_id = 0;
 
     for (z_id = 0; z_id < n_zones; z_id++) {
-      const cs_volume_zone_t  *z = cs_volume_zone_by_id(z_id);
+      const cs_zone_t  *z = cs_volume_zone_by_id(z_id);
       if (z->location_id != CS_MESH_LOCATION_CELLS)
         break;
     }
@@ -2057,7 +2057,7 @@ _cs_post_write_fixed_zone_info(fvm_writer_t          *writer,
     int z_id = 0;
 
     for (z_id = 0; z_id < n_zones; z_id++) {
-      const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(z_id);
+      const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
       if (z->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
         break;
     }

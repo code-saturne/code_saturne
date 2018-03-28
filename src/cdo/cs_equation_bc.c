@@ -564,7 +564,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
       assert(eqp->dim == def->dim);
 
-      const cs_boundary_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
+      const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
       switch(def->type) {
 
       case CS_XDEF_BY_VALUE:
@@ -572,15 +572,15 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
           const cs_real_t  *constant_val = (cs_real_t *)def->input;
 
           if (def->dim ==  1) {
-#           pragma omp parallel for if (bz->n_faces > CS_THR_MIN)
-            for (cs_lnum_t i = 0; i < bz->n_faces; i++)
-              dir_val[bz->face_ids[i]] = constant_val[0];
+#           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+            for (cs_lnum_t i = 0; i < bz->n_elts; i++)
+              dir_val[bz->elt_ids[i]] = constant_val[0];
           }
           else {
-#           pragma omp parallel for if (bz->n_faces > CS_THR_MIN)
-            for (cs_lnum_t i = 0; i < bz->n_faces; i++)
+#           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+            for (cs_lnum_t i = 0; i < bz->n_elts; i++)
               for (int k = 0; k < def->dim; k++)
-                dir_val[def->dim*bz->face_ids[i]+k] = constant_val[k];
+                dir_val[def->dim*bz->elt_ids[i]+k] = constant_val[k];
           }
 
         }
@@ -592,21 +592,21 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
             (cs_xdef_array_input_t *)def->input;
 
           assert(eqp->n_bc_defs == 1); // Only one definition allowed
-          assert(bz->n_faces == quant->n_b_faces);
+          assert(bz->n_elts == quant->n_b_faces);
           assert(array_input->stride == eqp->dim);
           assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
 
-          if (bz->n_faces > 0) // Not only interior
+          if (bz->n_elts > 0) // Not only interior
             memcpy(dir_val, array_input->values,
-                   sizeof(cs_real_t)*bz->n_faces*array_input->stride);
+                   sizeof(cs_real_t)*bz->n_elts*array_input->stride);
 
         }
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
         /* Evaluate the boundary condition at each boundary vertex */
-        cs_xdef_eval_at_b_faces_by_analytic(bz->n_faces,
-                                            bz->face_ids,
+        cs_xdef_eval_at_b_faces_by_analytic(bz->n_elts,
+                                            bz->elt_ids,
                                             false, // compact output
                                             mesh,
                                             connect,
@@ -666,11 +666,11 @@ cs_equation_tag_neumann_face(const cs_cdo_quantities_t    *quant,
     const cs_xdef_t  *def = eqp->bc_defs[def_id];
     if (def->meta & CS_CDO_BC_NEUMANN) {
 
-      const cs_boundary_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
+      const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
 
-#     pragma omp parallel for if (bz->n_faces > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < bz->n_faces; i++)
-        face_tag[bz->face_ids[i]] = def_id;
+#     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < bz->n_elts; i++)
+        face_tag[bz->elt_ids[i]] = def_id;
 
     }
   }

@@ -144,9 +144,9 @@ _set_mask(const cs_xdef_t     *st,
   else {
 
     /* Retrieve information from the volume zone structure */
-    const cs_volume_zone_t *z = cs_volume_zone_by_id(st->z_id);
-    for (cs_lnum_t i = 0; i < z->n_cells; i++)
-      cell_mask[z->cell_ids[i]] |= mask;
+    const cs_zone_t *z = cs_volume_zone_by_id(st->z_id);
+    for (cs_lnum_t i = 0; i < z->n_elts; i++)
+      cell_mask[z->elt_ids[i]] |= mask;
 
   }
 

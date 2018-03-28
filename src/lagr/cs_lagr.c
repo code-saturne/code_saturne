@@ -908,9 +908,9 @@ _update_boundary_face_type(void)
 
     char z_type = bcs->zone_type[z_id];
 
-    const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(z_id);
-    for (cs_lnum_t i = 0; i < z->n_faces; i++)
-      bcs->elt_type[z->face_ids[i]] = z_type;
+    const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
+    for (cs_lnum_t i = 0; i < z->n_elts; i++)
+      bcs->elt_type[z->elt_ids[i]] = z_type;
 
   }
 

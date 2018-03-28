@@ -1067,7 +1067,7 @@ cs_gwf_update(const cs_mesh_t             *mesh,
     for (int i = 0; i < n_soils; i++) {
 
       cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(i);
-      const cs_volume_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
+      const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
 
       soil->update_properties(mesh, connect, quant, ts,
                               gw->head_in_law,

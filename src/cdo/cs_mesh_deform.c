@@ -273,7 +273,7 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
     cs_equation_param_t  *eqp = cs_equation_param_by_name(eq_name[i]);
 
     for (int j = 0; j < _n_b_zones; j++) {
-      const cs_boundary_zone_t *z = cs_boundary_zone_by_id(_b_zone_ids[j]);
+      const cs_zone_t *z = cs_boundary_zone_by_id(_b_zone_ids[j]);
       cs_equation_add_bc_by_analytic(eqp,
                                      CS_PARAM_BC_DIRICHLET,
                                      z->name,

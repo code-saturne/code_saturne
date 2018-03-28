@@ -161,7 +161,7 @@ _injection_profile(int               zone_id,
  * \brief Define particle boundary conditions.
  *
  * This is used for the definition of inlet and other boundaries,
- * based on predefined boundary zones (\ref cs_boundary_zone_t).
+ * based on predefined boundary zones (\ref cs_zone_t).
  *
  * \param[in] bc_type    type of the boundary faces
  */
@@ -197,7 +197,7 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
 
   /*! [lagr_bc_define_type_1] */
   {
-     const cs_boundary_zone_t  *z;
+     const cs_zone_t  *z;
      int n_zones = cs_boundary_zone_n_zones();
 
      /* default: rebound for all types */
@@ -254,7 +254,7 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
 
   /*! [lagr_bc_define_injection_1] */
   {
-    const cs_boundary_zone_t  *z = cs_boundary_zone_by_name("inlet");
+    const cs_zone_t  *z = cs_boundary_zone_by_name("inlet");
     int set_id = 0;
     cs_lagr_injection_set_t *zis
       = cs_lagr_get_injection_set(lagr_bcs, z->id, set_id);
@@ -300,7 +300,7 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
 
   /*! [lagr_bc_define_injection_2] */
   {
-    const cs_boundary_zone_t  *z = cs_boundary_zone_by_name("inlet");
+    const cs_zone_t  *z = cs_boundary_zone_by_name("inlet");
     int set_id = 1;
     cs_lagr_injection_set_t *zis
       = cs_lagr_get_injection_set(lagr_bcs, z->id, set_id);

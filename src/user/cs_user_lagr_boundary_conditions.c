@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  * \brief Define particle boundary conditions.
  *
  * This is used for the definition of inlet and other boundaries,
- * based on predefined boundary zones (\ref cs_boundary_zone_t).
+ * based on predefined boundary zones (\ref cs_zone_t).
  *
  * \param[in] bc_type    type of the boundary faces
  */

@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  * \brief Define particle volume conditions.
  *
  * This is used for the definition of volume injections,
- * based on predefined volume zones (\ref cs_volume_zone_t).
+ * based on predefined volume zones (\ref cs_zone_t).
  */
 /*----------------------------------------------------------------------------*/
 
@@ -93,7 +93,7 @@ cs_user_lagr_volume_conditions(void)
   {
     /* The volume zone named "particle_injection" is created in the GUI */
 
-    const cs_volume_zone_t *z = cs_volume_zone_by_name("particle_injection");
+    const cs_zone_t *z = cs_volume_zone_by_name("particle_injection");
 
     /* Inject 1 particle set every time step */
 
@@ -127,7 +127,7 @@ cs_user_lagr_volume_conditions(void)
     /* The volume zone containing all cells always has id 0;
        a given zone may otherwise be selected using cs_volume_zone_by_name() */
 
-    const cs_volume_zone_t *z = cs_volume_zone_by_id(0);
+    const cs_zone_t *z = cs_volume_zone_by_id(0);
 
     /* Inject 2 particle sets of different diameters */
 

@@ -106,7 +106,7 @@ _get_vzone_id(const char   *z_name)
   int z_id = 0;
   if (z_name != NULL) {
     if (strlen(z_name) > 0) {
-      const cs_volume_zone_t  *z = cs_volume_zone_by_name(z_name);
+      const cs_zone_t  *z = cs_volume_zone_by_name(z_name);
       z_id = z->id;
     }
   }
@@ -473,13 +473,13 @@ cs_property_finalize_setup(void)
         assert(def->z_id > 0);
         assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
-        const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+        const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
         assert(z != NULL);
 
-#       pragma omp parallel for if (z->n_cells > CS_THR_MIN)
-        for (cs_lnum_t j = 0; j < z->n_cells; j++)
-          pty->def_ids[z->cell_ids[j]] = id;
+#       pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+        for (cs_lnum_t j = 0; j < z->n_elts; j++)
+          pty->def_ids[z->elt_ids[j]] = id;
 
       } // Loop on definitions
 
@@ -834,7 +834,7 @@ cs_property_def_by_field(cs_property_t    *pty,
   assert(id == 0);
   /* z_id = 0 since all the support is selected in this case */
 
-  const cs_volume_zone_t  *z = cs_volume_zone_by_id(0);
+  const cs_zone_t  *z = cs_volume_zone_by_id(0);
   if (field->location_id != z->location_id)
     bft_error(__FILE__, __LINE__, 0,
               " Property defined by field requests that the field location"
@@ -881,10 +881,10 @@ cs_property_eval_at_cells(const cs_property_t    *pty,
   for (int i = 0; i < pty->n_definitions; i++) {
 
     cs_xdef_t  *def = pty->defs[i];
-    const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+    const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
-    pty->get_eval_at_cell[i](z->n_cells,
-                             z->cell_ids,
+    pty->get_eval_at_cell[i](z->n_elts,
+                             z->elt_ids,
                              false, // without compact output
                              cs_glob_mesh,
                              cs_cdo_connect,

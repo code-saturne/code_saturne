@@ -184,7 +184,7 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                        *m,
   int z_id[1] = {-1};
 
   {
-    const cs_boundary_zone_t  *z
+    const cs_zone_t  *z
       = cs_boundary_zone_by_name_try(z_name);
     if (z != NULL) {
       z_id[0] = z->id;

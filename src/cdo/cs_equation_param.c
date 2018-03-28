@@ -319,7 +319,7 @@ _get_vzone_id(const char   *z_name)
   int z_id = 0;
   if (z_name != NULL) {
     if (strlen(z_name) > 0) {
-      const cs_volume_zone_t  *z = cs_volume_zone_by_name(z_name);
+      const cs_zone_t  *z = cs_volume_zone_by_name(z_name);
       z_id = z->id;
     }
   }
@@ -343,7 +343,7 @@ _get_bzone_id(const char   *z_name)
   int z_id = 0;
   if (z_name != NULL) {
     if (strlen(z_name) > 0) {
-      const cs_boundary_zone_t  *z = cs_boundary_zone_by_name(z_name);
+      const cs_zone_t  *z = cs_boundary_zone_by_name(z_name);
       z_id = z->id;
     }
   }
@@ -1436,7 +1436,7 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
+ *         z_name corresponds to the name of a pre-existing cs_zone_t
  *
  * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
  * \param[in]       bc_type   type of boundary condition to add
@@ -1479,7 +1479,7 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
+ *         z_name corresponds to the name of a pre-existing cs_zone_t
  *
  * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
  * \param[in]       bc_type   type of boundary condition to add

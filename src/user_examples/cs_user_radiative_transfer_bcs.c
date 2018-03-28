@@ -208,7 +208,7 @@ cs_user_radiative_transfer_bcs(int               nvar,
   /*< [loc_var]*/
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  const cs_boundary_zone_t *zone = NULL;
+  const cs_zone_t *zone = NULL;
   int *izfrdp = cs_boundary_zone_face_class_id();
   /*< [loc_var]*/
 
@@ -233,9 +233,9 @@ cs_user_radiative_transfer_bcs(int               nvar,
   /*< [example_1]*/
   zone = cs_boundary_zone_by_name("wall_1");
 
-  for (cs_lnum_t ilelt = 0; ilelt < zone->n_faces; ilelt++) {
+  for (cs_lnum_t ilelt = 0; ilelt < zone->n_elts; ilelt++) {
 
-    cs_lnum_t face_id = zone->face_ids[ilelt];
+    cs_lnum_t face_id = zone->elt_ids[ilelt];
 
     if (bc_type[face_id] == CS_SMOOTHWALL) {
 
@@ -263,9 +263,9 @@ cs_user_radiative_transfer_bcs(int               nvar,
   /*< [example_2]*/
   zone = cs_boundary_zone_by_name("wall_2");
 
-  for (cs_lnum_t ilelt = 0; ilelt < zone->n_faces; ilelt++) {
+  for (cs_lnum_t ilelt = 0; ilelt < zone->n_elts; ilelt++) {
 
-    cs_lnum_t face_id = zone->face_ids[ilelt];
+    cs_lnum_t face_id = zone->elt_ids[ilelt];
 
     if (bc_type[face_id] == CS_ROUGHWALL) {
 
@@ -303,9 +303,9 @@ cs_user_radiative_transfer_bcs(int               nvar,
   /*< [example_3]*/
   zone = cs_boundary_zone_by_name("wall_3");
 
-  for (cs_lnum_t ilelt = 0; ilelt < zone->n_faces; ilelt++) {
+  for (cs_lnum_t ilelt = 0; ilelt < zone->n_elts; ilelt++) {
 
-    cs_lnum_t face_id = zone->face_ids[ilelt];
+    cs_lnum_t face_id = zone->elt_ids[ilelt];
 
     if (bc_type[face_id] == CS_SMOOTHWALL) {
 
@@ -352,9 +352,9 @@ cs_user_radiative_transfer_bcs(int               nvar,
   /*< [example_4]*/
   zone = cs_boundary_zone_by_name("wall_4");
 
-  for (cs_lnum_t ilelt = 0; ilelt < zone->n_faces; ilelt++) {
+  for (cs_lnum_t ilelt = 0; ilelt < zone->n_elts; ilelt++) {
 
-    cs_lnum_t face_id = zone->face_ids[ilelt];
+    cs_lnum_t face_id = zone->elt_ids[ilelt];
 
     if (bc_type[face_id] == CS_SMOOTHWALL) {
 
@@ -400,9 +400,9 @@ cs_user_radiative_transfer_bcs(int               nvar,
   /*< [example_5]*/
   zone = cs_boundary_zone_by_name("wall_5");
 
-  for (cs_lnum_t ilelt = 0; ilelt < zone->n_faces; ilelt++) {
+  for (cs_lnum_t ilelt = 0; ilelt < zone->n_elts; ilelt++) {
 
-    cs_lnum_t face_id = zone->face_ids[ilelt];
+    cs_lnum_t face_id = zone->elt_ids[ilelt];
 
     if (bc_type[face_id] == CS_SMOOTHWALL) {
 

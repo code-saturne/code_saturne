@@ -1235,14 +1235,14 @@ cs_lagr_injection(int        time_id,
       const cs_lnum_t  *z_elt_ids = NULL;
 
       if (i_loc == 0) {
-        const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(z_id);
-        n_z_elts = z->n_faces;
-        z_elt_ids = z->face_ids;
+        const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
+        n_z_elts = z->n_elts;
+        z_elt_ids = z->elt_ids;
       }
       else {
-        const cs_volume_zone_t  *z = cs_volume_zone_by_id(z_id);
-        n_z_elts = z->n_cells;
-        z_elt_ids = z->cell_ids;
+        const cs_zone_t  *z = cs_volume_zone_by_id(z_id);
+        n_z_elts = z->n_elts;
+        z_elt_ids = z->elt_ids;
       }
 
       for (int set_id = 0;

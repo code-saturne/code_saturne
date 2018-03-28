@@ -37,6 +37,7 @@
 
 #include "cs_base.h"
 #include "cs_mesh_location.h"
+#include "cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -79,27 +80,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*! Volume zone description */
-
-typedef struct {
-
-  const char       *name;           /*!< zone name */
-
-  int               id;             /*!< volume zone id */
-  int               type;           /*!< volume zone type flag */
-
-  int               location_id;    /*!< associated mesh location id */
-
-  cs_lnum_t         n_cells;        /*!< local number of associated cells */
-  const cs_lnum_t  *cell_ids;       /*!< associated cell ids */
-
-
-  bool              time_varying;   /*!< does the selected zone change
-                                      with time ? */
-  bool              allow_overlay;  /*!< allow overlaying of this zone ? */
-
-} cs_volume_zone_t;
 
 /*=============================================================================
  * Global variables
@@ -219,7 +199,7 @@ cs_volume_zone_define_by_func(const char                 *name,
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_volume_zone_t  *
+const cs_zone_t  *
 cs_volume_zone_by_id(int  id);
 
 /*----------------------------------------------------------------------------*/
@@ -234,7 +214,7 @@ cs_volume_zone_by_id(int  id);
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_volume_zone_t  *
+const cs_zone_t  *
 cs_volume_zone_by_name(const char  *name);
 
 /*----------------------------------------------------------------------------*/
@@ -249,7 +229,7 @@ cs_volume_zone_by_name(const char  *name);
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_volume_zone_t  *
+const cs_zone_t  *
 cs_volume_zone_by_name_try(const char  *name);
 
 /*----------------------------------------------------------------------------*/
@@ -312,7 +292,7 @@ cs_volume_zone_cell_zone_id(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_volume_zone_log_info(const cs_volume_zone_t  *z);
+cs_volume_zone_log_info(const cs_zone_t  *z);
 
 /*----------------------------------------------------------------------------*/
 /*!

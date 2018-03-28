@@ -64,7 +64,7 @@ BEGIN_C_DECLS
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
  * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      head_in_law  array of values for head used in law
- * \param[in]      zone         pointer to a cs_volume_zone_t
+ * \param[in]      zone         pointer to a cs_zone_t
  * \param[in, out] input        pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
@@ -75,7 +75,7 @@ typedef void
                         const cs_cdo_quantities_t   *quant,
                         const cs_time_step_t        *ts,
                         const cs_real_t             *head_values,
-                        const cs_volume_zone_t      *zone,
+                        const cs_zone_t             *zone,
                         void                        *input);
 
 /*----------------------------------------------------------------------------*/
@@ -160,7 +160,7 @@ typedef struct {
 typedef struct {
 
   int    id;       /* soil id */
-  int    zone_id;  /* id related to a cs_volume_zone_t structure (based on
+  int    zone_id;  /* id related to a cs_zone_t structure (based on
                       cells) */
 
   /* Physical modelling adopted for this soil */

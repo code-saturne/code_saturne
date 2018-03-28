@@ -339,14 +339,14 @@ _update_diff_pty4std_tracer(void                        *input,
 
     cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
 
-    const cs_volume_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
     const double  wmd = law->wmd[soil_id];
     const double  at = law->alpha_t[soil_id];
     const double  al = law->alpha_l[soil_id];
 
-    if (z->n_cells == quant->n_cells) { // No need to apply indirection
+    if (z->n_elts == quant->n_cells) { // No need to apply indirection
 
-      for (cs_lnum_t c_id = 0; c_id < z->n_cells; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < z->n_elts; c_id++) {
 
         const cs_real_t  *v = velocity + 3*c_id;
         const double  v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
@@ -377,9 +377,9 @@ _update_diff_pty4std_tracer(void                        *input,
     }
     else {
 
-      for (cs_lnum_t i = 0; i < z->n_cells; i++) {
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
-        cs_lnum_t  c_id = z->cell_ids[i];
+        cs_lnum_t  c_id = z->elt_ids[i];
         const cs_real_t  *v = velocity + 3*c_id;
         const double  v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
         const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
@@ -787,7 +787,7 @@ cs_gwf_tracer_standard_setup(const cs_cdo_connect_t      *connect,
   for (int soil_id = 0; soil_id < n_soils; soil_id++) {
 
     const cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
-    const cs_volume_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
     cs_property_def_by_func(pty,
                             z->name,
@@ -813,7 +813,7 @@ cs_gwf_tracer_standard_setup(const cs_cdo_connect_t      *connect,
     for (int soil_id = 0; soil_id < n_soils; soil_id++) {
 
       const cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
-      const cs_volume_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+      const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
       cs_property_t  *r_pty =
         cs_equation_get_reaction_property(tracer->eq, tracer->reaction_id);

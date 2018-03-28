@@ -1574,7 +1574,7 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
     /* Retrieve information from mesh location structures */
-  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   cs_quadrature_tetra_integral_t  *qfunc = NULL;
   switch (def->qtype) {
@@ -1605,13 +1605,13 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
     if (cs_flag_test(dof_flag, cs_flag_primal_cell)) {
 
       _pcsd_by_analytic(anai->func, anai->input,
-                        z->n_cells, z->cell_ids, qfunc, retval);
+                        z->n_elts, z->elt_ids, qfunc, retval);
 
     }
     else if (cs_flag_test(dof_flag, cs_flag_dual_cell)) {
 
       _dcsd_by_analytic(anai->func, anai->input,
-                        z->n_cells, z->cell_ids, qfunc,
+                        z->n_elts, z->elt_ids, qfunc,
                         retval);
 
     }
@@ -1647,7 +1647,7 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   /* Retrieve information from mesh location structures */
-  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
@@ -1655,9 +1655,9 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
     const cs_real_t  *constant_val = (const cs_real_t *)def->input;
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell))
-      _pcsd_by_value(constant_val[0], z->n_cells, z->cell_ids, retval);
+      _pcsd_by_value(constant_val[0], z->n_elts, z->elt_ids, retval);
     else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
-      _dcsd_by_value(constant_val[0], z->n_cells, z->cell_ids, retval);
+      _dcsd_by_value(constant_val[0], z->n_elts, z->elt_ids, retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
 
@@ -1667,9 +1667,9 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
     const cs_real_t  *constant_vec = (const cs_real_t *)def->input;
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell))
-      _pcvd_by_value(constant_vec, z->n_cells, z->cell_ids, retval);
+      _pcvd_by_value(constant_vec, z->n_elts, z->elt_ids, retval);
     else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
-      _dcvd_by_value(constant_vec, z->n_cells, z->cell_ids, retval);
+      _dcvd_by_value(constant_vec, z->n_elts, z->elt_ids, retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
 
@@ -1705,7 +1705,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
   cs_range_set_t  *rs = NULL;
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
 
-  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const double  tcur = cs_time_step->t_cur;
@@ -1738,7 +1738,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                  anai->input,
                  retval);
     else
-      _pvp_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids,
+      _pvp_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids,
                        retval);
 
     if (cs_glob_n_ranks > 1)
@@ -1785,7 +1785,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
 
     }
     else
-      _pfp_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids,
+      _pfp_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids,
                        retval);
 
     if (cs_glob_n_ranks > 1)
@@ -1804,7 +1804,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                  retval);
     else
       anai->func(tcur,
-                 z->n_cells, z->cell_ids, quant->cell_centers,
+                 z->n_elts, z->elt_ids, quant->cell_centers,
                  false, // compacted output
                  anai->input,
                  retval);
@@ -1841,7 +1841,7 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   const cs_real_t  *input = (cs_real_t *)def->input;
-  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   /* Perform the evaluation */
   bool check = false;
@@ -1850,7 +1850,7 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
     const cs_real_t  const_val = input[0];
 
     if (cs_flag_test(dof_flag, cs_flag_primal_vtx))
-      _pvsp_by_qov(const_val, z->n_cells, z->cell_ids, retval);
+      _pvsp_by_qov(const_val, z->n_elts, z->elt_ids, retval);
     check = true;
 
   } /* Located at primal vertices */
@@ -1884,7 +1884,7 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
 
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_real_t  *input = (cs_real_t *)def->input;
-  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
@@ -1899,7 +1899,7 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
           retval[v_id] = const_val;
       }
       else
-        _pvsp_by_value(const_val, z->n_cells, z->cell_ids, retval);
+        _pvsp_by_value(const_val, z->n_elts, z->elt_ids, retval);
 
     } /* Located at primal vertices */
 
@@ -1911,7 +1911,7 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
           retval[f_id] = const_val;
       }
       else
-        _pfsp_by_value(const_val, z->n_cells, z->cell_ids, retval);
+        _pfsp_by_value(const_val, z->n_elts, z->elt_ids, retval);
 
     } /* Located at primal faces */
 
@@ -1924,8 +1924,8 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
           retval[c_id] = const_val;
       }
       else
-        for (cs_lnum_t i = 0; i < z->n_cells; i++) // Loop on selected cells
-          retval[z->cell_ids[i]] = const_val;
+        for (cs_lnum_t i = 0; i < z->n_elts; i++) // Loop on selected cells
+          retval[z->elt_ids[i]] = const_val;
 
     } /* Located at primal cells or dual vertices */
 
@@ -1963,7 +1963,7 @@ cs_evaluate_average_on_faces_by_value(cs_flag_t          dof_flag,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_real_t  *input = (cs_real_t *)def->input;
 
   cs_range_set_t  *rs = NULL;
@@ -1981,7 +1981,7 @@ cs_evaluate_average_on_faces_by_value(cs_flag_t          dof_flag,
           retval[f_id] = input[0];
       }
       else
-        _pfsp_by_value(input[0], z->n_cells, z->cell_ids, retval);
+        _pfsp_by_value(input[0], z->n_elts, z->elt_ids, retval);
     }
     break;
 
@@ -1996,7 +1996,7 @@ cs_evaluate_average_on_faces_by_value(cs_flag_t          dof_flag,
           memcpy(retval + 3*f_id, input, 3*sizeof(double));
       }
       else
-        _pfvp_by_value(input, z->n_cells, z->cell_ids, retval);
+        _pfvp_by_value(input, z->n_elts, z->elt_ids, retval);
     }
     break;
 
@@ -2036,7 +2036,7 @@ cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(cs_flag_test(dof_flag, cs_flag_primal_face));
 
-  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   cs_range_set_t  *rs = NULL;
   cs_quadrature_tria_integral_t  *qfunc = NULL;
@@ -2073,7 +2073,7 @@ cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
 
       } /* Which type of quadrature to use */
 
-      _pfsa_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids, qfunc,
+      _pfsa_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
                         retval);
 
     }
@@ -2108,7 +2108,7 @@ cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
 
       } /* Which type of quadrature to use */
 
-      _pfva_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids, qfunc,
+      _pfva_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
                         retval);
     }
     break;
@@ -2148,19 +2148,19 @@ cs_evaluate_average_on_cells_by_value(cs_flag_t          dof_flag,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(cs_flag_test(dof_flag, cs_flag_primal_cell));
 
-  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_real_t  *input = (cs_real_t *)def->input;
 
   switch (def->dim) {
 
   case 1: /* Scalar-valued */
     assert(dof_flag & CS_FLAG_SCALAR);
-    _pcsa_by_value(input[0], z->n_cells, z->cell_ids, retval);
+    _pcsa_by_value(input[0], z->n_elts, z->elt_ids, retval);
     break;
 
   case 3: /* Vector-valued */
     assert(dof_flag & CS_FLAG_VECTOR);
-    _pcva_by_value(input, z->n_cells, z->cell_ids, retval);
+    _pcva_by_value(input, z->n_elts, z->elt_ids, retval);
     break;
 
   default:
@@ -2196,7 +2196,7 @@ cs_evaluate_average_on_cells_by_array(cs_flag_t          dof_flag,
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
-  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_xdef_array_input_t *array_input =
     (cs_xdef_array_input_t *)def->input;
   const int stride = array_input->stride;
@@ -2212,10 +2212,10 @@ cs_evaluate_average_on_cells_by_array(cs_flag_t          dof_flag,
     }
     else {
 
-      assert(z->cell_ids != NULL);
-#     pragma omp parallel for if (z->n_cells > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < z->n_cells; i++) {
-        const cs_lnum_t  c_id = z->cell_ids[i];
+      assert(z->elt_ids != NULL);
+#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+        const cs_lnum_t  c_id = z->elt_ids[i];
         retval[c_id] = val[c_id];
       }
 
@@ -2233,10 +2233,10 @@ cs_evaluate_average_on_cells_by_array(cs_flag_t          dof_flag,
     }
     else {
 
-      assert(z->cell_ids != NULL);
-#     pragma omp parallel for if (z->n_cells > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < z->n_cells; i++) {
-        const cs_lnum_t  c_id = z->cell_ids[i];
+      assert(z->elt_ids != NULL);
+#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+        const cs_lnum_t  c_id = z->elt_ids[i];
         memcpy(retval + stride*c_id, val + stride*c_id, stride*sizeof(double));
       }
 
@@ -2268,7 +2268,7 @@ cs_evaluate_average_on_cells_by_analytic(cs_flag_t          dof_flag,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(cs_flag_test(dof_flag, cs_flag_primal_cell));
 
-  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   cs_quadrature_tetra_integral_t  *qfunc = NULL;
   cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
@@ -2303,7 +2303,7 @@ cs_evaluate_average_on_cells_by_analytic(cs_flag_t          dof_flag,
 
       } /* Which type of quadrature to use */
 
-      _pcsa_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids, qfunc,
+      _pcsa_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
                         retval);
     }
     break;
@@ -2334,7 +2334,7 @@ cs_evaluate_average_on_cells_by_analytic(cs_flag_t          dof_flag,
 
       } /* Which type of quadrature to use */
 
-      _pcva_by_analytic(anai->func, anai->input, z->n_cells, z->cell_ids, qfunc,
+      _pcva_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
                         retval);
     }
     break;

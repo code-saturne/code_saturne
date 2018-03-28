@@ -38,6 +38,13 @@
 #include "cs_base.h"
 #include "cs_mesh_location.h"
 
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
+#include "cs_zone.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -67,28 +74,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*! Boundary zone description */
-
-typedef struct {
-
-  const char       *name;           /*!< zone name */
-
-  int               id;             /*!< boundary zone id */
-  int               type;           /*!< boundary zone type flag */
-
-  int               location_id;    /*!< associated mesh location id */
-
-  cs_lnum_t         n_faces;        /*!< local number of associated faces */
-  const cs_lnum_t  *face_ids;       /*!< associated face ids */
-
-
-  bool              time_varying;   /*!< does the selected zone change
-                                      with time ? */
-  bool              allow_overlay;  /*!< allow overlaying of this zone ? */
-
-
-} cs_boundary_zone_t;
 
 /*=============================================================================
  * Global variables
@@ -221,7 +206,7 @@ cs_boundary_zone_define_by_func(const char                 *name,
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_boundary_zone_t  *
+const cs_zone_t  *
 cs_boundary_zone_by_id(int  id);
 
 /*----------------------------------------------------------------------------*/
@@ -236,7 +221,7 @@ cs_boundary_zone_by_id(int  id);
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_boundary_zone_t  *
+const cs_zone_t  *
 cs_boundary_zone_by_name(const char  *name);
 
 /*----------------------------------------------------------------------------*/
@@ -251,7 +236,7 @@ cs_boundary_zone_by_name(const char  *name);
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_boundary_zone_t  *
+const cs_zone_t  *
 cs_boundary_zone_by_name_try(const char  *name);
 
 /*----------------------------------------------------------------------------*/
@@ -315,7 +300,7 @@ cs_boundary_zone_face_zone_id(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_zone_log_info(const cs_boundary_zone_t  *z);
+cs_boundary_zone_log_info(const cs_zone_t  *z);
 
 /*----------------------------------------------------------------------------*/
 /*!

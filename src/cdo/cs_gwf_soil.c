@@ -132,7 +132,7 @@ _free_saturated_soil(void       *input)
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
  * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      head_values  array of values for head used in law
- * \param[in]      zone         pointer to a cs_volume_zone_t
+ * \param[in]      zone         pointer to a cs_zone_t
  * \param[in, out] input        pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
@@ -143,7 +143,7 @@ _update_saturated_iso_soil(const cs_mesh_t             *mesh,
                            const cs_cdo_quantities_t   *quant,
                            const cs_time_step_t        *ts,
                            const cs_real_t             *head_values,
-                           const cs_volume_zone_t      *zone,
+                           const cs_zone_t             *zone,
                            void                        *input)
 {
   CS_UNUSED(mesh);
@@ -164,11 +164,11 @@ _update_saturated_iso_soil(const cs_mesh_t             *mesh,
 
   const  double  iso_satval = law->saturated_permeability[0][0];
 
-# pragma omp parallel for if (zone->n_cells > CS_THR_MIN) default(none)     \
+# pragma omp parallel for if (zone->n_elts > CS_THR_MIN) default(none)     \
   shared(zone, law, permeability_values, moisture_values)
-  for (cs_lnum_t i = 0; i < zone->n_cells; i++) {
+  for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
-    const cs_lnum_t  c_id = zone->cell_ids[i];
+    const cs_lnum_t  c_id = zone->elt_ids[i];
 
     /* Set the permeability value to the saturated values */
     permeability_values[c_id] = iso_satval;
@@ -191,7 +191,7 @@ _update_saturated_iso_soil(const cs_mesh_t             *mesh,
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
  * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      head_values  array of values for head used in law
- * \param[in]      zone         pointer to a cs_volume_zone_t
+ * \param[in]      zone         pointer to a cs_zone_t
  * \param[in, out] input        pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
@@ -202,7 +202,7 @@ _update_saturated_aniso_soil(const cs_mesh_t             *mesh,
                              const cs_cdo_quantities_t   *quant,
                              const cs_time_step_t        *ts,
                              const cs_real_t             *head_values,
-                             const cs_volume_zone_t      *zone,
+                             const cs_zone_t             *zone,
                              void                        *input)
 {
   CS_UNUSED(mesh);
@@ -221,11 +221,11 @@ _update_saturated_aniso_soil(const cs_mesh_t             *mesh,
   const cs_gwf_soil_saturated_param_t  *law =
     (cs_gwf_soil_saturated_param_t *)input;
 
-# pragma omp parallel for if (zone->n_cells > CS_THR_MIN) default(none)     \
+# pragma omp parallel for if (zone->n_elts > CS_THR_MIN) default(none)     \
   shared(zone, law, permeability_values, moisture_values)
-  for (cs_lnum_t id = 0; id < zone->n_cells; id++) {
+  for (cs_lnum_t id = 0; id < zone->n_elts; id++) {
 
-    const cs_lnum_t  c_id = zone->cell_ids[id];
+    const cs_lnum_t  c_id = zone->elt_ids[id];
 
     /* Set the permeability value to the saturated values */
     for (int i = 0; i < 3; i++)
@@ -267,7 +267,7 @@ _free_genuchten_soil(void          *input)
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
  * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      head_values  array of values for head used in law
- * \param[in]      zone         pointer to a cs_volume_zone_t
+ * \param[in]      zone         pointer to a cs_zone_t
  * \param[in, out] input        pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
@@ -278,7 +278,7 @@ _update_genuchten_iso_soil(const cs_mesh_t             *mesh,
                            const cs_cdo_quantities_t   *quant,
                            const cs_time_step_t        *ts,
                            const cs_real_t             *head_values,
-                           const cs_volume_zone_t      *zone,
+                           const cs_zone_t             *zone,
                            void                        *input)
 {
   CS_UNUSED(mesh);
@@ -308,12 +308,12 @@ _update_genuchten_iso_soil(const cs_mesh_t             *mesh,
   const  double  delta_moisture =
     law->saturated_moisture - law->residual_moisture;
 
-# pragma omp parallel for if (zone->n_cells > CS_THR_MIN) default(none)     \
+# pragma omp parallel for if (zone->n_elts > CS_THR_MIN) default(none)     \
   shared(head_values, zone, law, permeability_values, moisture_values, \
          capacity_values)
-  for (cs_lnum_t i = 0; i < zone->n_cells; i++) {
+  for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
-    const cs_lnum_t  c_id = zone->cell_ids[i];
+    const cs_lnum_t  c_id = zone->elt_ids[i];
     const cs_real_t  h = head_values[c_id];
 
     if (h < 0) { /* S_e(h) = [1 + |alpha*h|^n]^(-m) */
@@ -389,7 +389,7 @@ cs_gwf_soil_add(const char                      *z_name,
   soil->id = soil_id;
 
   /* Attached a volume zone to the current soil */
-  const cs_volume_zone_t  *zone = cs_volume_zone_by_name_try(z_name);
+  const cs_zone_t  *zone = cs_volume_zone_by_name_try(z_name);
   if (zone == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " Zone %s related to the same soil is not defined.\n"
@@ -529,7 +529,7 @@ cs_gwf_soil_by_name(const char    *name)
   for (int i = 0; i < _n_soils; i++) {
 
     cs_gwf_soil_t  *s = _soils[i];
-    const cs_volume_zone_t  *zone = cs_volume_zone_by_id(s->zone_id);
+    const cs_zone_t  *zone = cs_volume_zone_by_id(s->zone_id);
 
     if (strcmp(zone->name, name) == 0)
       return s;
@@ -818,7 +818,7 @@ cs_gwf_soil_set_all_saturated(cs_property_t         *permeability,
                 " Invalid way of setting soil parameter.\n"
                 " All soils are not considered as saturated.");
 
-    const cs_volume_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
     cs_gwf_soil_saturated_param_t  *param =
       (cs_gwf_soil_saturated_param_t  *)soil->input;
@@ -893,13 +893,13 @@ cs_gwf_build_cell2soil(cs_lnum_t    n_cells)
     for (int soil_id = 0; soil_id < _n_soils; soil_id++) {
 
       const cs_gwf_soil_t  *soil = _soils[soil_id];
-      const cs_volume_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+      const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
       assert(z != NULL);
 
-#     pragma omp parallel for if (z->n_cells > CS_THR_MIN)
-      for (cs_lnum_t j = 0; j < z->n_cells; j++)
-        _cell2soil_ids[z->cell_ids[j]] = soil_id;
+#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+      for (cs_lnum_t j = 0; j < z->n_elts; j++)
+        _cell2soil_ids[z->elt_ids[j]] = soil_id;
 
     } // Loop on soils
 
@@ -968,7 +968,7 @@ cs_gwf_soil_log_setup(void)
   for (int i = 0; i < _n_soils; i++) {
 
     const cs_gwf_soil_t  *soil = _soils[i];
-    const cs_volume_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
     cs_log_printf(CS_LOG_SETUP, "\n  <GWF/Soil %d> %s\n", soil->id, z->name);
     switch (soil->model) {

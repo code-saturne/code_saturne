@@ -369,7 +369,7 @@ cs_domain_add_boundary(cs_domain_t                 *domain,
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
-  const cs_boundary_zone_t  *zone = cs_boundary_zone_by_name(zone_name);
+  const cs_zone_t  *zone = cs_boundary_zone_by_name(zone_name);
 
   if (zone == NULL)
     bft_error(__FILE__, __LINE__, 0,

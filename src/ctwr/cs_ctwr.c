@@ -235,7 +235,7 @@ _write_liquid_vars(void                  *input,
 
     for (int ict = 0; ict < _n_ct_zones; ict++) {
       cs_ctwr_zone_t *ct = _ct_zone[ict];
-      const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
+      const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->elt_ids;
       for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
         cs_lnum_t cell_id = ze_cell_ids[i];
         if (y_l[cell_id] > 0.)
@@ -505,7 +505,7 @@ cs_ctwr_build_all(void)
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
     /* Set number of cells */
-    ct->n_cells = cs_volume_zone_by_name(ct->name)->n_cells;
+    ct->n_cells = cs_volume_zone_by_name(ct->name)->n_elts;
   }
 
   /* Postprocessing: multiply enthalpy by fraction */
@@ -925,7 +925,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
-    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
+    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->elt_ids;
     for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
       cs_lnum_t cell_id = ze_cell_ids[i];
 
@@ -1031,7 +1031,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
     BFT_MALLOC(ct->inlet_faces_ids, n_i_faces, cs_lnum_t);
     BFT_MALLOC(ct->outlet_faces_ids, n_i_faces, cs_lnum_t);
     BFT_MALLOC(ct->outlet_cells_ids, n_i_faces, cs_lnum_t);
-    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
+    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->elt_ids;
     for (int i = 0; i < ct->n_cells; i++) {
       cs_lnum_t cell_id = ze_cell_ids[i];
       packing_cell[cell_id] = ict;
@@ -1369,7 +1369,7 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
 
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
-    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
+    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->elt_ids;
     for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
       cs_lnum_t cell_id = ze_cell_ids[i];
 
@@ -1545,7 +1545,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   for (int ict = 0; ict < _n_ct_zones; ict++) {
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
-    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
+    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->elt_ids;
 
     /* Packing zone */
     for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
@@ -1733,7 +1733,7 @@ cs_ctwr_source_term(int              f_id,
     cs_real_t xnp = ct->xnp;
     int zone_type = ct->type;
 
-    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
+    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->elt_ids;
 
 
     /* Phase change source terms

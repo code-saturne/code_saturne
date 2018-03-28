@@ -860,11 +860,11 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
   for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
 
     const cs_xdef_t  *def = eqp->bc_defs[def_id];
-    const cs_boundary_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
+    const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
 
-#   pragma omp parallel for if (bz->n_faces > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < bz->n_faces; i++)
-      eqc->bf2def_ids[bz->face_ids[i]] = def_id;
+#   pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < bz->n_elts; i++)
+      eqc->bf2def_ids[bz->elt_ids[i]] = def_id;
 
   } /* Loop on BC definitions */
 
