@@ -157,7 +157,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
 
   call eliniv(isuite)
 
-  ! give back the han to the user... in fortran.
+  ! give back the hand to the user... in fortran.
   call cs_user_f_initialization(nvar, nscal, dt)
 
 endif
