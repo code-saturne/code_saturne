@@ -1101,8 +1101,8 @@ module optcal
   integer, save :: icavit
 
   !> VOF method
-  !>    -  0: method not activated
-  !>    -  1: method activated
+  !>    - -1: module not activated
+  !>    -  0: method activated
   integer, save :: ivofmt
 
   !> \}
