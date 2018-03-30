@@ -81,7 +81,7 @@ integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
-integer          ivisep, pot_f_id
+integer          ivisep
 integer          iswdyp, idftnp, icvflb
 integer          ivoid(1)
 integer          inc, iprev
@@ -246,9 +246,6 @@ icvflb = 0
 ! we do not take into account the transpose of grad
 ivisep = 0
 
-!we do not add gradP to the RHS in coditv
-pot_f_id = -1
-
 call coditv &
 !==========
  ( idtvar , iterns , ivarfl(iuma)    , iconvp , idiffp , ndircp , &
@@ -258,7 +255,7 @@ call coditv &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    mshvela         , mshvela         ,                            &
-   claale , clbale , cfaale , cfbale , pot_f_id ,                 &
+   claale , clbale , cfaale , cfbale ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscf  , viscb  , viscf  , viscb  ,          &
    rvoid  , rvoid  , rvoid  ,                                     &!FIXME do a proper anisotropic version

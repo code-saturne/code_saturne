@@ -52,20 +52,17 @@
 #include "bft_printf.h"
 
 #include "cs_blas.h"
-#include "cs_boundary_conditions.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
-#include "cs_field_operator.h"
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
-#include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_join_perio.h"
@@ -77,7 +74,6 @@
 #include "cs_convection_diffusion.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
-#include "cs_stokes_model.h"
 #include "cs_preprocessor_data.h"
 #include "cs_balance.h"
 
@@ -1050,8 +1046,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               of the variable (Explicit part)
  * \param[in]     cofbfv        boundary condition array for the diffusion
  *                               of the variable (Implicit part)
- * \param[in]     pot_f_id      add the pressure gradient to the RHS in
- *                              coditv if > 0
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -1098,7 +1092,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    const cs_real_33_t    coefbv[],
                                    const cs_real_3_t     cofafv[],
                                    const cs_real_33_t    cofbfv[],
-                                   const int             pot_f_id,
                                    const cs_real_t       i_massflux[],
                                    const cs_real_t       b_massflux[],
                                    cs_real_t             i_viscm[],
@@ -1129,8 +1122,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   double relaxp = var_cal_opt->relaxv;
   double thetap = var_cal_opt->thetav;
 
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
-  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_faces = cs_glob_mesh->n_i_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
@@ -1331,10 +1323,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
    * has to impose 1 on mass accumulation. */
   imasac = 1;
 
-  int iconv_temp = var_cal_opt->iconv;
-
-  var_cal_opt->iconv = 0;
-
   cs_balance_vector(idtvar,
                     f_id,
                     imasac,
@@ -1359,122 +1347,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                     icvflb,
                     icvfli,
                     smbrp);
-
-  var_cal_opt->iconv = iconv_temp;
-
-  if (pot_f_id >= 0) {
-
-    /* Fill the viscous term field with viscous terms */
-    cs_field_t *visc_term = cs_field_by_name_try("visc_term");
-
-    if (visc_term != NULL)
-#     pragma omp parallel for private(isou)
-      for (cs_lnum_t iel = 0 ; iel < n_cells; iel++)
-        for (isou = 0 ; isou < 3 ; isou++)
-          visc_term->val[3*iel + isou] = smbrp[iel][isou]/cell_f_vol[iel];
-
-    /* Recompute pressure boundary condition coefficients
-       if there are free outlet faces */
-    const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-    cs_gnum_t n_free_bc_faces = 0;
-    for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
-      if (cs_glob_bc_type[ifac] == CS_FREE_OUTLET)
-        n_free_bc_faces++;
-    }
-
-    if (cs_glob_rank_id >= 0)
-      cs_parall_counter(&n_free_bc_faces, 1);
-
-    if (n_free_bc_faces)
-      cs_boundary_conditions_set_free_outlet(smbrp);
-
-    /* Parameters for gradient computation */
-    const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-    cs_lnum_t incp = 1;
-    cs_lnum_t iccocg = 1;
-    bool use_previous = true;
-    cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
-    cs_halo_type_t halo_type = CS_HALO_STANDARD;
-    cs_var_cal_opt_t vcoptp;
-    cs_real_3_t *gradp;
-
-    BFT_MALLOC(gradp, n_cells_ext, cs_real_3_t);
-
-    /* Get the calculation option from the pressure field */
-    cs_field_get_key_struct(CS_F_(p), key_cal_opt_id, &vcoptp);
-
-    cs_gradient_type_by_imrgra(vcoptp.imrgra,
-                               &gradient_type,
-                               &halo_type);
-
-    /* Hydrostatic pressure algorithm? */
-    int hyd_p_flag = cs_glob_stokes_model->iphydr;
-
-    cs_real_3_t *f_ext = NULL;
-    if (hyd_p_flag == 1)
-      f_ext = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;
-
-    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > 0)
-      use_previous = false;
-
-    cs_field_gradient_potential(CS_F_(p),
-                                use_previous,
-                                gradient_type,
-                                halo_type,
-                                incp,
-                                iccocg,
-                                hyd_p_flag,
-                                f_ext,
-                                gradp);
-
-
-    /* Save gradp for post-treatment */
-    cs_field_t *gp = cs_field_by_name_try("grad_p");
-
-    if (gp != NULL)
-#     pragma omp parallel for private(isou)
-      for (cs_lnum_t iel = 0 ; iel < n_cells; iel++)
-        for (isou = 0 ; isou < 3 ; isou++)
-          gp->val[3*iel + isou] = gradp[iel][isou];
-
-#   pragma omp parallel for private(isou)
-    for (cs_lnum_t iel = 0 ; iel < n_cells; iel++)
-      for (isou = 0 ; isou < 3 ; isou++)
-        smbini[iel][isou] -= gradp[iel][isou]*cell_f_vol[iel];
-
-    BFT_FREE(gradp);
-  }
-
-  int idiff_temp = var_cal_opt->idiff;
-
-  var_cal_opt->idiff = 0;
-
-  cs_balance_vector(idtvar,
-                    f_id,
-                    imasac,
-                    inc,
-                    ivisep,
-                    var_cal_opt,
-                    pvar,
-                    pvara,
-                    coefav,
-                    coefbv,
-                    cofafv,
-                    cofbfv,
-                    i_massflux,
-                    b_massflux,
-                    i_visc,
-                    b_visc,
-                    i_secvis,
-                    b_secvis,
-                    viscel,
-                    weighf,
-                    weighb,
-                    icvflb,
-                    icvfli,
-                    smbrp);
-
-  var_cal_opt->idiff = idiff_temp;
 
   /* Dynamic relaxation*/
   if (iswdyp >= 1) {

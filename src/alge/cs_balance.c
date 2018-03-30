@@ -489,8 +489,6 @@ cs_balance_vector(int                  idtvar,
     int k_id = cs_field_key_id("var_cal_opt");
     cs_field_get_key_struct(f, k_id, &var_cal_opt_loc);
     var_cal_opt_loc.thetav = var_cal_opt->thetav;
-    var_cal_opt_loc.iconv = var_cal_opt->iconv;
-    var_cal_opt_loc.idiff = var_cal_opt->idiff;
   }
 
   /* Scalar diffusivity */
