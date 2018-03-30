@@ -1,6 +1,6 @@
 
-Release 5.1.4 (Unreleased)
-==========================
+Release 5.1.4 (March 30 2018)
+=============================
 
 Bug fixes
 ---------
@@ -18,6 +18,11 @@ Bug fixes
 - Fix issue #251 (crash for periodicity in parallel in some cases).
 
 - GUI: fix crash when selecting gradient reconstruction mode.
+
+Changes
+-------
+
+- Add Support for reading CGNS files with NFACE_n elements.
 
 Release 5.1.3 (Jan 31 2018)
 ===========================
