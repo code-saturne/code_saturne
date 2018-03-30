@@ -1,6 +1,6 @@
 
-Release 5.0.8 (Unreleased)
-==========================
+Release 5.0.8 (Mar 30 2018)
+===========================
 
 Bug fixes
 ---------
@@ -16,6 +16,11 @@ Bug fixes
 - GUI: delete scalar profile and time average when deleting the scalar itself.
 
 - Fix issue #251 (crash for periodicity in parallel in some cases).
+
+Changes
+-------
+
+- Add Support for reading CGNS files with NFACE_n elements.
 
 Release 5.0.7 (Jan 31 2018)
 ===========================
