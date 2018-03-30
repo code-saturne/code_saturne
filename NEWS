@@ -64,6 +64,8 @@ User changes
 Architectural changes
 ---------------------
 
+- Add Support for reading CGNS files with NFACE_n elements.
+
 - Partly unify boundary and volume zones, renaming the n_faces/n_cells
   members to n_elts and face_ids/cell_ids to elt_ids.
 

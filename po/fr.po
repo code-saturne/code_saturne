@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-03-01 12:03+0100\n"
+"POT-Creation-Date: 2018-03-30 03:07+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1265,9 +1265,6 @@ msgid ""
 msgstr ""
 "Coordonnées cylindriques ou sphériques avec unité\n"
 "d'angle non définie ou inconnue (-> on suppose des radians)\n"
-
-msgid "CGNS NFACE_n elements not handled yet."
-msgstr ""
 
 #, c-format
 msgid ""
@@ -9566,6 +9563,12 @@ msgid ""
 " Undefined type of schme to solve for eq. %s. Please check your settings."
 msgstr ""
 
+#, c-format
+msgid ""
+" %s: Invalid type of definition.\n"
+" Stop computing the Dirichlet value.\n"
+msgstr ""
+
 msgid ""
 " Invalid type of definition.\n"
 " Stop computing the Dirichlet value.\n"
@@ -9753,9 +9756,14 @@ msgstr ""
 msgid "Invalid quadrature type.\n"
 msgstr ""
 
+#, c-format
 msgid ""
-" Stop evaluating a potential from 'quantity over volume'.\n"
+" %s: Stop evaluating a potential from 'quantity over volume'.\n"
 " This situation is not handled yet."
+msgstr ""
+
+#, c-format
+msgid " %s: Invalid dimension of analytical function.\n"
 msgstr ""
 
 msgid " Groundwater module is activated but no soil is defined."
@@ -9782,19 +9790,22 @@ msgstr ""
 msgid "Incompressible Navier-Stokes velocity-pressure system"
 msgstr ""
 
-msgid "Fully unsteady"
-msgstr "Instationnaire"
-
 msgid "Fully steady"
 msgstr "Stationnaire"
 
 msgid "Steaty-state as the limit of an unsteady computation"
 msgstr ""
 
+msgid "Fully unsteady"
+msgstr "Instationnaire"
+
 msgid "Uzawa-Augmented Lagrangian coupling"
 msgstr ""
 
 msgid "Artificial compressibility algorithm"
+msgstr ""
+
+msgid "Artificial compressibility solved with the VPP_eps algorithm"
 msgstr ""
 
 msgid "Incremental projection algorithm"
@@ -9807,33 +9818,18 @@ msgstr ""
 
 #, c-format
 msgid ""
+" %s: Invalid val %s related to key CS_NSKEY_DOF_REDUCTION\n"
+" Choice between \"derham\" or \"average\"."
+msgstr ""
+
+#, c-format
+msgid ""
 " %s: Invalid val %s related to key CS_NSKEY_SPACE_SCHEME\n"
 " Choice between hho_{p0, p1, p2} or cdo_fb"
 msgstr ""
 
 #, c-format
 msgid " %s: Invalid key for setting the Navier-Stokes system."
-msgstr ""
-
-msgid "fv"
-msgstr ""
-
-msgid "cdo_vb"
-msgstr ""
-
-msgid "cdo_vcb"
-msgstr ""
-
-msgid "cdo_fb"
-msgstr ""
-
-msgid "hho_p0"
-msgstr ""
-
-msgid "hho_p1"
-msgstr ""
-
-msgid "hho_p2"
 msgstr ""
 
 msgid "Legacy Finite Volume"
@@ -9855,6 +9851,18 @@ msgid "HHO-P1"
 msgstr ""
 
 msgid "HHO-P2"
+msgstr ""
+
+msgid "Implicit"
+msgstr ""
+
+msgid "Explicit"
+msgstr ""
+
+msgid "Crank-Nicolson"
+msgstr ""
+
+msgid "Theta scheme"
 msgstr ""
 
 msgid "Homogeneous Dirichlet"
@@ -9961,6 +9969,9 @@ msgstr ""
 msgid " Invalid type of description."
 msgstr ""
 
+msgid " Invalid dimension of the analytical fucntion.\n"
+msgstr ""
+
 msgid "vertices"
 msgstr "sommets"
 
@@ -10007,18 +10018,19 @@ msgid ""
 "Cooling towers\n"
 "--------------\n"
 "  Droplet diameter: %f\n"
+"  Evaporation model: %s\n"
 msgstr ""
 "\n"
 "Aéroréfrigérants\n"
 "----------------\n"
 "  Diamètre de goutte : %f\n"
+"  Modèle d'évaporation : %s\n"
 
 #, c-format
 msgid ""
 "  Cooling tower zone id: %d\n"
 "    criterion: %s\n"
 "    Parameters:\n"
-"      Model: %s\n"
 "      Lambda of the exchange law: %f\n"
 "      Exponent n of the exchange law: %f\n"
 "      Type: %d\n"
@@ -15414,4 +15426,3 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
-

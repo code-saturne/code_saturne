@@ -2255,16 +2255,14 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           while (cpt_elt_loc < nbr_elt_loc) {
 
-            nbr_som_elt = *ptr_ele;
-            ptr_ele += nbr_som_elt + 1;
+            ecs_int_t nbr_fac_elt = *ptr_ele;
+            ptr_ele += nbr_fac_elt + 1;
 
             cpt_elt_loc++;
 
             cpt_elt_ent[ient] += 1;
-            cpt_val_ent[ient] += 0;  /* TODO handle this */
 
-            ecs_error(__FILE__, __LINE__, 0,
-                      _("CGNS NFACE_n elements not handled yet."));
+            /* cpt_val_ent[ient] handled later */
 
           }
 
@@ -2449,6 +2447,45 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
         nbr_elt_loc = ptr_section->num_elt_fin - ptr_section->num_elt_deb + 1;
         cpt_elt_loc = 0;
 
+        /* Counting stage for polyhedra */
+
+#if CGNS_VERSION >= 3000
+
+        if (ptr_section->type == CS_CG_ENUM(NFACE_n)) {
+
+          ient = ECS_ENTMAIL_CEL;
+
+          ptr_ele = ptr_section->elems;
+
+          size_t   connect_size = 0;
+          const size_t  *pos_som_fac = elt_pos_som_ent[ECS_ENTMAIL_FAC];
+
+          ecs_int_t n_elts_loc =    ptr_section->num_elt_fin
+                                  - ptr_section->num_elt_deb + 1;
+          for (ecs_int_t ielt = 0; ielt < n_elts_loc; ielt++) {
+
+            ecs_int_t nbr_fac_elt = *ptr_ele;
+            ptr_ele += 1;
+
+            for (ecs_int_t ind_fac = 0; ind_fac < nbr_fac_elt; ind_fac++) {
+              ecs_int_t num_fac = *(ptr_ele + ind_fac);
+              if (num_fac < 0)
+                num_fac = -num_fac;
+              connect_size +=   pos_som_fac[num_fac]
+                              - pos_som_fac[num_fac - 1] + 1;
+            }
+
+            ptr_ele += nbr_fac_elt;
+
+          }
+
+          cpt_val_ent[ient] += connect_size;
+          ECS_REALLOC(elt_val_som_ent[ient], cpt_val_ent[ient], ecs_int_t);
+
+        }
+
+#endif
+
         ptr_ele = ptr_section->elems;
 
         /* General data for section;
@@ -2554,10 +2591,49 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           }
 
+#if CGNS_VERSION >= 3000
+
           else if (ptr_section->type == CS_CG_ENUM(NFACE_n)) {
-            ecs_error(__FILE__, __LINE__, 0,
-                      _("CGNS NFACE_n elements not handled yet."));
+
+            ecs_int_t nbr_fac_elt = *ptr_ele;
+            ptr_ele += 1;
+
+            ind_pos = cpt_elt_ent[ient];
+            ind_val = elt_pos_som_ent[ient][ind_pos] - 1;
+
+            const size_t     *pos_som_fac = elt_pos_som_ent[ECS_ENTMAIL_FAC];
+            const ecs_int_t  *val_som_fac = elt_val_som_ent[ECS_ENTMAIL_FAC];
+
+            for (ecs_int_t i = 0; i < nbr_fac_elt; i++) {
+
+              ecs_int_t num_fac = *(ptr_ele + i);
+              ecs_int_t ind_fac = ECS_ABS(num_fac) - 1;
+
+              size_t s_id = pos_som_fac[ind_fac] - 1;
+              size_t e_id = pos_som_fac[ind_fac + 1] - 1;
+
+              if (num_fac < 0) {
+                ecs_int_t num_som_deb_fac = val_som_fac[e_id - 1];
+                for (size_t j = e_id; j > s_id; j--)
+                  elt_val_som_ent[ient][ind_val++] = val_som_fac[j-1];
+                elt_val_som_ent[ient][ind_val++] = num_som_deb_fac;
+              }
+
+              else {
+                ecs_int_t num_som_deb_fac = val_som_fac[s_id];
+                for (size_t j = s_id; j < e_id; j++)
+                  elt_val_som_ent[ient][ind_val++] = val_som_fac[j];
+                elt_val_som_ent[ient][ind_val++] = num_som_deb_fac;
+              }
+
+            }
+
+            elt_pos_som_ent[ient][ind_pos + 1] =  ind_val + 1;
+            ptr_ele += nbr_fac_elt;
+
           }
+
+#endif
 
           else if (ient != ECS_ENTMAIL_NONE) {
 
