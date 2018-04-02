@@ -1666,12 +1666,102 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
       _thickness_se[i][0] /= w[i][0];
       _thickness_se[i][1] /= w[i][0];
       cs_real_t nn = cs_math_3_square_norm(_coord_shift[i]);
-      for (cs_lnum_t l = 0; l < 3; l++)
-        _coord_shift[i][l] = _coord_shift[i][l] * (w[i][1] / nn);
+      if (nn > FLT_MIN) {
+        for (cs_lnum_t l = 0; l < 3; l++)
+          _coord_shift[i][l] *= (w[i][1] / nn);
+      }
+      else {
+        _n_layers[i] = 0;
+      }
     }
     else
       _n_layers[i] = 0;
   }
+
+  /* Check for opposing normal directions (may occur at edges of thin
+     boundaries; block extrusion there) */
+
+  for (cs_lnum_t j = 0; j < e->n_faces; j++) {
+
+    cs_lnum_t f_id = e->face_ids[j];
+
+    cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
+    cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
+
+    const cs_real_t *f_n = mq->b_face_normal + f_id*3;
+
+    for (cs_lnum_t k = s_id; k < e_id; k++) {
+      cs_lnum_t v_id = m->b_face_vtx_lst[k];
+      const cs_real_t *vn = _coord_shift[v_id];
+      if (cs_math_3_dot_product(_coord_shift[v_id], f_n) < 0) {
+        _n_layers[v_id] = 0;
+        _coord_shift[v_id][0] = 0;
+        _coord_shift[v_id][1] = 0;
+        _coord_shift[v_id][2] = 0;
+      }
+    }
+  }
+
+  if (m->vtx_interfaces != NULL)
+    cs_interface_set_min(m->vtx_interfaces,
+                         m->n_vertices,
+                         1,
+                         true,
+                         CS_LNUM_TYPE,
+                         _n_layers);
+
+  /* Limit jumps in number of layers */
+
+  cs_gnum_t layer_limiter = 0;
+
+  do {
+
+    layer_limiter = 0;
+
+    for (cs_lnum_t j = 0; j < e->n_faces; j++) {
+
+      cs_lnum_t f_id = e->face_ids[j];
+
+      cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
+      cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
+
+      cs_lnum_t n_l_min = _n_layers[m->b_face_vtx_lst[s_id]];
+      int up = 0;
+      int down = 0;
+      for (cs_lnum_t k = s_id+1; k < e_id; k++) {
+        cs_lnum_t l = (k+1) < e_id ? k+1 : s_id;
+        cs_lnum_t v_id0 = m->b_face_vtx_lst[k];
+        cs_lnum_t v_id1 = m->b_face_vtx_lst[l];
+        if (_n_layers[v_id1] > _n_layers[v_id0])
+          up += 1;
+        else if (_n_layers[v_id1] < _n_layers[v_id0])
+          down += 1;
+        if (_n_layers[v_id0] < n_l_min)
+          n_l_min = _n_layers[v_id0];
+      }
+      if (up > 1 || down > 1) {
+        layer_limiter += 1;
+        for (cs_lnum_t k = s_id; k < e_id; k++) {
+          cs_lnum_t v_id = m->b_face_vtx_lst[k];
+          _n_layers[v_id] = n_l_min;
+        }
+      }
+
+    }
+
+    cs_parall_counter(&layer_limiter, 1);
+
+    if (layer_limiter > 0 && m->vtx_interfaces != NULL)
+      cs_interface_set_min(m->vtx_interfaces,
+                           m->n_vertices,
+                           1,
+                           true,
+                           CS_LNUM_TYPE,
+                           _n_layers);
+
+  } while (layer_limiter > 0);
+
+  /* Now determine other parameters */
 
   /* Free temporaries */
 
