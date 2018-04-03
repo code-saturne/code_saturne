@@ -34,7 +34,7 @@ saturne1.tex \
 saturne2.tex \
 summary.tex
 
-TEXINPUTFILES = input
+TEXINPUTFILES =
 
 # Distributed files
 
