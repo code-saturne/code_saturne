@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2014 EDF S.A.
+# Copyright (C) 1998-2018 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -36,10 +36,8 @@ import os.path
 # This is not quite standard (though methods and automation level used by other
 # tools vary widely), but we want to minimize files that need to be edited
 # when releasing a version, but use a robust mechanism which will work
-# for versions pulled by different version control tools (at least
-# Subversion, used for the main repository, git svn clones, which may or
-# may not have up-to-date fetched remotes information, and clones of those
-# clones...). As we need to maintain the NEWS file anyways to provide a clear
+# for versions either pulled by Git or simple release tarballs.
+# As we need to maintain the NEWS file anyways to provide a clear
 # user-readable summary of changes between versions, using a consistent
 # presentation, using this file to determine version information is a
 # practical solution, which requires enforcing that the NEWS file is
@@ -92,20 +90,10 @@ def version_from_news(srcdir):
                     version = [j] + n.split('.')
 
                 if release[0] < 0:
-                    try:
-                        dateinfo = info.split('(')[1].split(')')[0].split()
-                        num_count = 0
-                        for d in dateinfo:
-                            try:
-                                if int(d) > 0:
-                                    num_count += 1
-                            except Exception:
-                                pass
-                        if num_count > 1:
+                    s = ''.join(c for c in info if c.isdigit())
+                    if len(s) > 0:
                             release = [j] + n.split('.')
                             break
-                    except Exception:
-                        pass
 
     if trunk > -1:
         if version[0] > -1:
@@ -114,6 +102,8 @@ def version_from_news(srcdir):
             extra = '-alpha'
 
     elif version[0] > -1:
+        while len(version) < 4:
+            version.append('')
         major, minor, release, extra \
             = branch_release_extra(version[1], version[2], version[3],
                                    release[1], release[2], release[3])
@@ -161,231 +151,13 @@ def branch_release_extra(cur_major, cur_minor, cur_release,
 
     else:
         try:
-            if int(cur_release) == 0:
+            if not cur_release or int(cur_release) == 0:
                 release = ''
                 extra = '-beta'
         except Exception:
             pass
 
     return major, minor, release, extra
-
-#-------------------------------------------------------------------------------
-
-def svn_version_from_branch(branch):
-    """
-    Determine branch version number from Subversion branch
-    """
-
-    major = ''
-    minor = ''
-
-    if branch[0:7] == 'Version':
-        v = branch[7:]
-        sep = v.find('_')
-        if (sep > -1):
-            major = v[0:sep]
-            minor = v[sep+1:]
-
-    return major, minor
-
-#-------------------------------------------------------------------------------
-
-def svn_version_from_tag(tag):
-    """
-    Determine branch version number from Subversion tag
-    """
-
-    major = ''
-    minor = ''
-    release = ''
-    extra = ''
-
-    if tag[0] == 'V':
-        v = tag[1:].split('_', 3)
-        if len(v) >= 1:
-            major = v[0]
-        if len(v) >= 2:
-            minor = v[1]
-        if len(v) >= 3:
-            if v[2] > '-1':
-                release = v[2]
-            elif v[2][0:3] == '-rc':
-                extra += v[3]
-        if len(v) >= 4:
-            extra += v[3]
-
-    return major, minor, release, extra
-
-#-------------------------------------------------------------------------------
-
-def svn_version(srcdir, defaults):
-    """
-    Determine version information from Subversion.
-    """
-
-    # Use default info to pre-determine next version
-
-    major, minor, release, extra = defaults
-
-    import subprocess
-
-    # Use the XML output from Subversion, to avoid formatting/language
-    # environment parsing issues
-
-    try:
-        from xml.dom import minidom
-    except Exception:
-        return major, minor, release, extra, revision
-
-    # Get base info from 'svn info'
-
-    url = None
-    revision = ''
-
-    cmd = ['svn', 'info', '--xml', srcdir]
-    p = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    output = p.communicate()
-    if p.returncode != 0:
-        return major, minor, release, extra, revision
-    else:
-        try:
-            svn_info = minidom.parseString(output[0]).documentElement
-            url = svn_info.getElementsByTagName("url").item(0).firstChild.data
-            entry_node = svn_info.getElementsByTagName("entry")[0]
-            revision = entry_node.getAttribute("revision")
-        except Exception:
-            pass
-
-    if not url:
-        return major, minor, release, extra, revision
-
-    # If we are in trunk, use previous local info to determine next version
-
-    # If we are in a branch, use tags to determine next version
-
-    if url.find('/branches/') > -1:
-        url_id_0 = url.find('/branches/')
-        url_id_1 = url_id_0 + len('/branches/')
-        url_root = url[:url_id_0]
-
-        if url[url_id_1:url_id_1+7] == 'Version':
-            major, minor = svn_version_from_branch(url[url_id_1:])
-
-        cmd = ['svn', 'ls', '--xml', url_root + '/tags']
-
-        p = subprocess.Popen(cmd,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        output = p.communicate()
-        if p.returncode != 0:
-            return major, minor, release, extra, revision
-        else:
-            try:
-                tag_ref = 'V' + str(major) + '_' + str(minor) + '_'
-                tag_ref_l = len(tag_ref)
-                name_max = tag_ref + '-1'
-                release = ''
-                svn_info = minidom.parseString(output[0]).documentElement
-                for tag in svn_info.getElementsByTagName("name"):
-                    name = tag.firstChild.data
-                    if (name[0:tag_ref_l] == tag_ref and name > name_max
-                        and name.find(name_max) < 0):
-                        rev_node = tag.parentNode.getElementsByTagName("commit")[0]
-                        tag_rev = rev_node.getAttribute("revision")
-                        if (tag_rev == revision):
-                            release = tag[tag_ref_l:]
-                            break
-                        elif tag_rev < revision:
-                            name_max = name
-                major, minor, release, extra = svn_version_from_tag(name_max)
-                if not release:
-                    extra += '-beta'
-                if tag_rev == revision:
-                    revision = ''
-            except Exception:
-                pass
-
-    # If we are at a tag, simply use if
-
-    elif url.find('/tags/') > -1:
-        url_id_0 = url.find('/tags/')
-        url_id_1 = url_id_0 + len('/tags/')
-        tag = url[url_id_1:]
-        major, minor, release, extra = svn_version_from_tag(url[url_id_1:])
-        revision = ''
-
-    if revision:
-        revision = '-r' + revision
-    else:
-        revision = ''
-
-    return major, minor, release, extra, revision
-
-#-------------------------------------------------------------------------------
-
-def svn_version_is_modified(srcdir):
-    """
-    Determine if version is modifed relative to Subversion revision
-    (requires a local operation only).
-    """
-
-    import subprocess
-
-    p = subprocess.Popen(['svn', 'status', '--xml', srcdir],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    output = p.communicate()
-
-    if p.returncode == 0:
-        n_entries = output[0].count('<entry')
-        n_po_entries = output[0].count('.po"')
-        if n_entries - n_po_entries > 0:
-            return True
-
-    return False
-
-#-------------------------------------------------------------------------------
-
-def git_svn_version(srcdir, url, revision, defaults):
-    """
-    Determine partial version information from Subversion.
-    """
-
-    # Use known info to pre-determine next version
-
-    major, minor, release, extra = defaults
-
-    import subprocess
-
-    # If we are in a branch, use tags if available to determine next version
-
-    if url.find('/branches/') > -1:
-        url_id_0 = url.find('/branches/')
-        url_id_1 = url_id_0 + len('/branches/')
-        url_root = url[:url_id_0]
-
-        if url[url_id_1:url_id_1+7] == 'Version':
-            major, minor = svn_version_from_branch(url[url_id_1:])
-            revision = '-svn' + revision
-
-    # If we are at a tag, simply use if
-
-    elif url.find('/tags/') > -1:
-        url_id_0 = url.find('/tags/')
-        url_id_1 = url_id_0 + len('/tags/')
-        tag = url[url_id_1:]
-        major, minor, release, extra = svn_version_from_tag(url[url_id_1:])
-        revision = ''
-
-    # If we are in trunk, branch data might not be available to determine
-    # next version, so use defaults
-
-    else:
-        revision = '-svn' + revision
-
-    return major, minor, release, extra, revision
 
 #-------------------------------------------------------------------------------
 
@@ -400,14 +172,15 @@ def git_version(srcdir, defaults):
 
     import subprocess
 
-    # Get base info from 'svn info'
+    # Get base info
 
     url = None
     revision = ''
-    head_is_svn = False
+    newline_failed = False
 
     cmd = ['git', '--no-pager', '--git-dir='+os.path.join(srcdir, '.git'),
-           '--work-tree='+srcdir, 'log', '-n', '200']
+           '--work-tree='+srcdir, 'log', '--pretty=format:%h','-n', '1']
+
     p = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
@@ -415,24 +188,8 @@ def git_version(srcdir, defaults):
     if p.returncode != 0:
         return major, minor, release, extra
     else:
-        o0 = str(output[0])
-        svn_id = o0.find('git-svn-id:')
-        if svn_id > 1:
-            svn_rev = o0[svn_id:].split(' ', 2)[1]
-            svn_url, svn_revision = svn_rev.split('@')
-            major, minor, release, extra, revision \
-                = git_svn_version(srcdir, svn_url, svn_revision, defaults)
-            # Try to count commits before the one with svn
-            svn_log = o0[:svn_id].split()
-            c1 = svn_log.count('commit')
-            c2 = svn_log.count('Author:')
-            if c1 == 1 and c2 == 1:
-                head_is_svn = True
-
-    if not head_is_svn:
-        commit_id = o0.find('commit')
-        commit_rev = o0[commit_id:].split(' ', 2)[1].split('\n')[0]
-        revision += '-git' + commit_rev
+        commit_rev = output[0]
+        revision += '-' + commit_rev
 
     return major, minor, release, extra, revision
 
@@ -511,11 +268,7 @@ if __name__ == '__main__':
         revision = ''
         extra = ''
 
-        if os.path.isdir(os.path.join(srcdir, ".svn")):
-            major, minor, release, extra, revision \
-                = svn_version(srcdir, defaults)
-            modified = svn_version_is_modified(srcdir)
-        elif os.path.isdir(os.path.join(srcdir, ".git")):
+        if os.path.isdir(os.path.join(srcdir, ".git")):
             major, minor, release, extra, revision \
                 = git_version(srcdir, defaults)
             modified = git_version_is_modified(srcdir)
