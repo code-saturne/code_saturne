@@ -362,25 +362,6 @@ install-doc:
 	  cd $(abs_top_builddir) ;\
 	done
 
-# Generate ChangeLog
-
-changelog:
-	start=2018-01-01; \
-	if test -d ${top_srcdir}/.svn ; then \
-	  today=`date +%F`; \
-	  svn2cl --reparagraph --include-rev --include-actions \
-	  --authors=${top_srcdir}/extras/changelog/authors.xml \
-	  --output=${top_srcdir}/ChangeLog \
-	  ${top_srcdir} --revision {"$${today} 23:59"}:{"$${start} 00:00"} ; \
-        elif test -d ${top_srcdir}/.git ; then \
-	  git --no-pager --git-dir=${top_srcdir}/.git --work-tree=${top_srcdir} log \
-	    --since={$${start}} --no-merges --date-order --date=iso \
-	    --format="%n%cd %aN <%ce> %n%n%x09* [%H]%n%w(82,8,8)%s" --name-status > ${top_srcdir}/ChangeLog ; \
-	else \
-	  echo "ChangeLog must be generated from a Subversion or git working copy."  > ${top_srcdir}/ChangeLog ; \
-	fi; \
-	cat ${top_srcdir}/extras/changelog/ChangeLog.base >> ${top_srcdir}/ChangeLog;
-
 # Update Copyright
 
 update-copyright:
@@ -391,14 +372,7 @@ update-copyright:
 	  $(SED) -i "s/Copyright (C) 1998-$${yold} EDF S.A./Copyright (C) 1998-$$y EDF S.A./" $$f; \
 	done
 
-dist-hook: changelog
-	\cp -f ${top_srcdir}/ChangeLog ${distdir}
-	-rm -rf `find $(distdir)/docs -name .svn`
-	-rm -rf `find $(distdir)/examples  -name .svn`
-	-rm -rf `find $(distdir)/extras  -name .svn`
-	-rm -rf `find $(distdir)/gui  -name .svn`
-	-rm -rf `find $(distdir)/patches -name .svn`
-	-rm -rf `find $(distdir)/salome -name .svn`
+dist-hook:
 	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --full > $(distdir)/build-aux/version
 
 clean-local:
