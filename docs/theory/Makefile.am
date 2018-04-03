@@ -78,7 +78,7 @@ visecv.tex \
 vortex.tex
 
 
-TEXINPUTFILES = input
+TEXINPUTFILES =
 
 # Distributed files
 
