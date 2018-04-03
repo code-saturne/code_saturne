@@ -30,7 +30,7 @@ TEXMAIN = developer.tex
 
 TEXOTHERS = coding_standards.tex common_constructs.tex write_theory.tex
 
-TEXINPUTFILES = input
+TEXINPUTFILES =
 
 # Distributed files
 
