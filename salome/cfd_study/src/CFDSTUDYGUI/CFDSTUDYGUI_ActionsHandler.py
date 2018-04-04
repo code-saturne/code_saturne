@@ -857,6 +857,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 self.commonAction(RemoveAction).setVisible(True)
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]):
                 self.commonAction(RemoveAction).setVisible(True)
+            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubErrFolder"]):
+                self.commonAction(RemoveAction).setVisible(True)
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]):
                 self.commonAction(RemoveAction).setVisible(True)
 
@@ -918,7 +920,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
              id == CFDSTUDYGUI_DataModel.dict_object["USERSFolder"]          or \
              id == CFDSTUDYGUI_DataModel.dict_object["RESUFolder"]           or \
              id == CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGFolder"]  or \
-             id == CFDSTUDYGUI_DataModel.dict_object["RESUSubErrFolder"]     or \
              id == CFDSTUDYGUI_DataModel.dict_object["RESSRCFolder"]         or \
              id == CFDSTUDYGUI_DataModel.dict_object["HISTFolder"]           or \
              id == CFDSTUDYGUI_DataModel.dict_object["PRETFolder"]           or \
@@ -966,11 +967,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]:
             popup.addAction(self.commonAction(RemoveAction))
             popup.addAction(self.commonAction(UpdateObjBrowserAction))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["RESUSubErrFolder"]:
+            popup.addAction(self.commonAction(RemoveAction))
+            popup.addAction(self.commonAction(UpdateObjBrowserAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]:
             popup.addAction(self.commonAction(RemoveAction))
             popup.addAction(self.commonAction(UpdateObjBrowserAction))
-        elif id == CFDSTUDYGUI_DataModel.dict_object["RESUSubErrFolder"]:
-            popup.addAction(self.commonAction(RemoveAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESSRCFile"]:
             popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["HISTFile"]:
@@ -1299,6 +1301,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):
                 mess = cfdstudyMess.trMessage(self.tr("REMOVE_ACTION_CONFIRM_MESS"),[sobjpath])
             elif CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]):
+                mess = cfdstudyMess.trMessage(self.tr("REMOVE_RESU_SUB_FOLDER_ACTION_CONFIRM_MESS"),[sobjpath])
+            elif CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubErrFolder"]):
                 mess = cfdstudyMess.trMessage(self.tr("REMOVE_RESU_SUB_FOLDER_ACTION_CONFIRM_MESS"),[sobjpath])
             elif CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]):
                 mess = cfdstudyMess.trMessage(self.tr("REMOVE_RESU_SUB_FOLDER_ACTION_CONFIRM_MESS"),[sobjpath])
