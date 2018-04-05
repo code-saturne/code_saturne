@@ -605,7 +605,10 @@ domains = [
             # Source files
 
             ref_src = os.path.join(self.copy, src)
-            src_files = os.listdir(ref_src)
+            if os.path.exists(ref_src):
+                src_files = os.listdir(ref_src)
+            else:
+                src_files = []
 
             c_files = fnmatch.filter(src_files, '*.c')
             cxx_files = fnmatch.filter(src_files, '*.cxx')
