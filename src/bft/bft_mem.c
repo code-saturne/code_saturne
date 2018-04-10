@@ -61,9 +61,26 @@
 
 BEGIN_C_DECLS
 
-/*-------------------------------------------------------------------------------
+/*=============================================================================
  * Additional doxygen documentation
- *-----------------------------------------------------------------------------*/
+ *============================================================================*/
+
+/*!
+  \file bft_mem.c
+        Base memory allocation wrappers with optional tracing.
+
+  The memory managment function provided here provide optional logging,
+  and tracking of non-freed pointers.
+
+  Since in most of the intended applications, failure to allocate memory
+  is considered fatal, failed allocations from these functions are
+  considedered as errors, which are fatal by default but can be handled
+  differently if an appropriate error handler is defined. So additional
+  checking of the return values in the calling code is not needed.
+
+  The functions provided here are otherwise based on the matching C library
+  functions.
+*/
 
 /*-------------------------------------------------------------------------------
  * Local macro documentation

@@ -11,24 +11,26 @@ radiative heat transfer, combustion (gas, coal, heavy fuel oil, ...),
 magneto-hydrodynamics, compressible flows, two-phase flows
 (Euler-Lagrange approach with two-way coupling), or atmospheric flows.
 
-For more information, see the http://code-saturne.org website.
+For more information, see the https://code-saturne.org website.
 
 Presentation
 ============
 
-Code_Saturne is portable on all Linux and UNIX platforms tested so far
-(HP-UX, Solaris, Cray, IBM Blue Gene, Tru64, ...). It runs in parallel with
-MPI on distributed memory machines (clusters, Cray XT, IBM Blue Gene, ...).
+Code_Saturne is portable on all Linux flavors and UNIX platforms tested so far.
+It runs in parallel with MPI on distributed memory machines (clusters, Cray,
+IBM Blue Gene and Power, ...).
 Developed since 1997 at EDF R&D, it is based on a co-located Finite Volume
 approach that accepts meshes with any type of cell (tetrahedral, hexahedral,
 prismatic, pyramidal, polyhedral...) and any type of grid structure
 (unstructured, block structured, hybrid, conforming or with hanging nodes, ...).
 
 Compatible mesh generators include I-Deas, GMSH, GAMBIT, Simail, SALOME,
-Harpoon, ICEM, ... Post-processing output is available in EnSight, CGNS
+ANSYS meshing, ... Post-processing output is available in EnSight, CGNS
 and MED formats, with advanced data management capabilities by the FVM
 library (EDF's "Finite Volume Mesh" library, under LGPL licence).
-Parallel code coupling capabilities are also provided by the FVM library.
+Parallel code coupling capabilities are also provided by the FVM library
+and in-situ postprocessing available using the ParaView Catalyst and
+Melissa libraries.
 
 Code_Saturne can be coupled to EDF's thermal software SYRTHES (conjugate
 heat transfer). It can also produce output usable by EDF's structural analysis
@@ -49,9 +51,6 @@ Manual installation
 
 Detailed installation instructions are also available as a pdf file,
 available on the Code_Saturne web site, or as part of this package.
-
-For more information about the different modules and external libraries
-necessary or compliant with Code_Saturne, refer to the COMPATIBILITY file.
 
 For generic instructions relative to the GNU autotools-based
 installation, see also the file 'INSTALL'.
@@ -89,13 +88,14 @@ Otherwise some problems can occur.
   - Scotch
   - Metis
 
-  The following packages cannot be installed
-  - Zlib
-  - BLAS
-  - PyQT
+  The following packages are not handled by the installer so must be installed
+  first:
+  - Zlib (optional)
+  - BLAS (optional)
+  - PyQT (optional, required for the GUI)
   - C, C++, and Fortran compilers
   - Python
-  - MPI
+  - MPI (optional)
 
   The install script uses a "setup" file to determine which library to
   install or to use. In not already present, This file is generated the

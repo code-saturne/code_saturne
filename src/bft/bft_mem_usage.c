@@ -113,6 +113,22 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file bft_mem_usage.c
+        Base memory usage information (System and Library dependent).
+
+  The memory-usage measurement functions provided here may be system-dependent.
+  If they have not yet been ported to a given type of environment,
+  these functions should return 0.
+
+  The user should thus check for the return values of such functions to avoid
+  reporting invalid values, but the API is guaranteed.
+*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*-------------------------------------------------------------------------------

@@ -462,7 +462,7 @@ manually using \texttt{mpirun}, then pursue the build process.
 The Autotools installation of MED is simple on most machines,
 but a few remarks may be useful for specific cases.
 
-Note that as of MED 3.2.0, HDF5 1.8 is required, but HDF5 1.10 is
+Note that as of MED 3.3.0, HDF5 1.8 is required, but HDF5 1.10 is
 not supported yet.
 
 MED has a C API, is written in a mix of C and C++ code,
@@ -790,7 +790,7 @@ Select configuration options, then run {\tt configure}, for example:
 \$ /home/user/Code\_Saturne/\verscs/src/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/\verscs/arch/prod
 \textbackslash \\
-\textcolor{Violet}{--with-med}=/home/user/opt/med-3.2 \textbackslash \\
+\textcolor{Violet}{--with-med}=/home/user/opt/med-3.3 \textbackslash \\
 \textcolor{red}{CC}=/home/user/opt/mpich-3.2/bin/mpicc \textcolor{red}{FC}=gfortran
 }\end{minipage}}
 
@@ -822,7 +822,7 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 \$ ../../code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/\verscs/arch/\textcolor{Magenta}{dbg}
 \textbackslash \\
-\textcolor{Violet}{--with-med}=/home/user/opt/med-3.2 \textbackslash \\
+\textcolor{Violet}{--with-med}=/home/user/opt/med-3.3 \textbackslash \\
 \textcolor{Magenta}{--enable-debug} \textbackslash \\
 \textcolor{red}{CC}=/home/user/opt/mpich-3.2/bin/mpicc \textcolor{red}{FC}=gfortran
 }\end{minipage}}
@@ -1083,9 +1083,9 @@ build on a cluster named \texttt{athos}, using the Intel compilers
 \textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/athos \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/athos
 \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.2/arch/athos
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.3/arch/athos
 \textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.2/arch/athos \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/athos \textbackslash \\
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.06.23/arch/athos \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/athos\_ompi \textbackslash \\
 \textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-4.0/arch/athos\_ompi \textbackslash \\
@@ -1211,9 +1211,9 @@ For an example, let us start with the front-end build:
 \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/frontend
 \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.2/arch/frontend
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.3/arch/frontend
 \textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.2/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/frontend \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/frontend \\
 }\end{minipage}}
 
@@ -1229,8 +1229,8 @@ compute nodes:
 \textcolor{Violet}{--without-blas} \\
 \textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.13/arch/bgq \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.1/arch/bgq \textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.2/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.3/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgq \textbackslash \\
 \textcolor{Violet}{
 --disable-sockets --disable-dlloader -disable-nls \textbackslash \\
@@ -1271,8 +1271,8 @@ options such as in the following example are recommended:
 \textbackslash \\
 \textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/xc30 \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/xc30 \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.2/arch/xc30 \textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.2/arch/xc30 \textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.3/arch/xc30 \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/xc30 \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/xc30 \textbackslash \\
 \textcolor{Violet}{
 --disable-sockets --disable-nls \textbackslash \\
