@@ -1622,6 +1622,60 @@ def ScanChildNames(theObject, theRegExp):
     return NameList
 
 
+def getType(theObject):
+    if theObject == None:
+        return None
+    study   = _getStudy()
+    builder = study.NewBuilder()
+    attr = builder.FindOrCreateAttribute(theObject, "AttributeLocalID")
+    return attr.Value()
+
+def hasTheSameType(ListObject):
+
+    if ListObject == []:
+        return False
+    typListBool = True
+    typListBoolRESUSub = None
+    typList = []
+    typ     = getType(ListObject[0])
+    typList.append(typ)
+    if len(ListObject)> 1:
+        for SObject in ListObject[1:]:
+            typListBool = typListBool and getType(SObject) == typ
+            typList.append(getType(SObject))
+        if not typListBool:
+            typListBoolRESUSub = True
+            for ty in typList:
+                typListBoolRESUSub = typListBoolRESUSub and (ty == dict_object["RESUSubFolder"] or ty == dict_object["RESUSubErrFolder"] or ty == dict_object["RESU_COUPLINGSubFolder"])
+    if typListBoolRESUSub != None:
+        if typListBoolRESUSub == True:
+            return typListBoolRESUSub
+    else :
+        return typListBool
+
+def isACFDSTUDYListObject(ListObject):
+    if ListObject == []:
+        return False
+    typListBool = True
+    for sobj in ListObject :
+        typListBool = typListBool and sobj.GetFatherComponent().GetName() == "CFDSTUDY"
+    return typListBool
+
+def isASmeshListObject(ListObject):
+    if ListObject == []:
+        return False
+    typListBool = True
+    for sobj in ListObject :
+        if sobj.GetFatherComponent().GetName() == "Mesh":
+            if getMeshFromMesh(sobj) == None:
+                meshGroupObject,group = getMeshFromGroup(sobj)
+                typListBool = typListBool and meshGroupObject != None
+            else:
+                typListBool = True
+        else:
+           return False
+    return typListBool
+
 def checkType(theObject, theType):
     """
     Checks if I{theObject} has the type ("AttributeLocalID") I{theType}.
@@ -1635,14 +1689,8 @@ def checkType(theObject, theType):
     """
     if theObject == None or theType == None:
         return False
-
-    study   = _getStudy()
-    builder = study.NewBuilder()
-
-    attr = builder.FindOrCreateAttribute(theObject, "AttributeLocalID")
-
-    return attr.Value() == theType
-
+    if theObject != None and theType!= None :
+        return getType(theObject) == theType
 
 def checkPreMEDType(theObject):
     """
@@ -1888,12 +1936,10 @@ def getMeshFromMesh(meshSobjItem) :
     """
     meshItem = None
     obj = getOrLoadObject(meshSobjItem)
-    if obj is not None:
+    if obj != None:
         mesh = obj._narrow(SMESH.SMESH_Mesh)
-
-        if mesh is not None:
+        if mesh != None:
             meshItem = salome.ObjectToSObject(mesh)
-
     return meshItem
 
 def SetAutoColor(meshSobjItem) :
@@ -1921,7 +1967,7 @@ def getMeshFromGroup(meshGroupItem):
 
     if obj is not None:
         group = obj._narrow(SMESH.SMESH_GroupBase)
-        if group is not None: # The type of the object is ok
+        if group != None: # The type of the object is ok
             meshObj = group.GetMesh()
             meshItem = salome.ObjectToSObject(meshObj)
     return meshItem, group

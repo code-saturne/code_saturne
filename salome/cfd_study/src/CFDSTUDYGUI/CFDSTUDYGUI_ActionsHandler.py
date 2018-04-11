@@ -208,6 +208,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._DskAgent = Desktop_Agent()
 
         self.RemoveAction = RemoveAction
+        self.DisplayImageAction = DisplayImageAction
 
     def createActions(self):
         """
@@ -1240,17 +1241,19 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         displayViewerName = str( sgPyQt.stringSetting( "CFDSTUDY", "ExternalDisplay", str(self.tr("CFDSTUDY_PREF_DISPLAY_VIEWER")) )).strip()
         if displayViewerName != "":
-            sobj = self._singleSelectedObject()
-            if sobj is not None:
-                path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-                try:
-                    if re.match("display", displayViewerName) or re.match("eog", displayViewerName):
-                        subprocess.Popen([displayViewerName, path])
-                    else:
-                        subprocess.Popen([displayViewerName, path])
-                except:
-                    mess = cfdstudyMess.trMessage(self.tr("VERIFY_DISPLAY_VIEWER_NAME_PREFERENCE"),[str(self.tr("EXTERNAL_DISPLAY"))])
-                    cfdstudyMess.aboutMessage(mess)
+
+            listSobj = self._multipleSelectedObject()
+            if listSobj != [] :
+                for sobj in listSobj:
+                    path = CFDSTUDYGUI_DataModel._GetPath(sobj)
+                    try:
+                        if re.match("display", displayViewerName) or re.match("eog", displayViewerName):
+                            subprocess.Popen([displayViewerName, path])
+                        else:
+                            subprocess.Popen([displayViewerName, path])
+                    except:
+                        mess = cfdstudyMess.trMessage(self.tr("VERIFY_DISPLAY_VIEWER_NAME_PREFERENCE"),[str(self.tr("EXTERNAL_DISPLAY"))])
+                        cfdstudyMess.aboutMessage(mess)
         else :
             mess = cfdstudyMess.trMessage(self.tr("ADD_DISPLAY_VIEWER_NAME_PREFERENCE"),[str(self.tr("EXTERNAL_DISPLAY"))])
             cfdstudyMess.aboutMessage(mess)
