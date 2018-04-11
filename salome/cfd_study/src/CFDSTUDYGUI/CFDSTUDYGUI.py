@@ -314,33 +314,45 @@ def createPopupMenu(popup, context):
     #log.debug("createPopupMenu -> SelectedCount = %s" % sg.SelectedCount())
 
     if sg.SelectedCount() > 0:
+        dictSobj = {}
         # Custom Popup menu added or removed regards to the type of the object
         for i in range(sg.SelectedCount()):
             entry = sg.getSelected(i)
             if entry != '':
                 sobj = study.FindObjectID(entry)
-                if sobj is not None:
+                if sobj != None:
                     test, anAttr = sobj.FindAttribute("AttributeLocalID")
                     if test:
                         id = anAttr._narrow(SALOMEDS.AttributeLocalID).Value()
                         if id >= 0:
+                            dictSobj[sobj] = id
 
-                            if sobj.GetFatherComponent().GetName() == "Mesh":
-                                if CFDSTUDYGUI_DataModel.getMeshFromMesh(sobj) == None:
-                                    meshGroupObject,group = CFDSTUDYGUI_DataModel.getMeshFromGroup(sobj)
-                                    if meshGroupObject != None:
-                                        ActionHandler.customPopup(id, popup)
-                                        if sg.SelectedCount() > 1:
-                                            popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
-                                else:
-                                    ActionHandler.customPopup(id, popup)
-                                    popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
-
-                            else:
+        if dictSobj != {}:
+            if CFDSTUDYGUI_DataModel.isASmeshListObject(dictSobj.keys()) :
+                for sobj in dictSobj.keys():
+                    if sobj.GetFatherComponent().GetName() == "Mesh":
+                        if CFDSTUDYGUI_DataModel.getMeshFromMesh(sobj) == None:
+                            meshGroupObject,group = CFDSTUDYGUI_DataModel.getMeshFromGroup(sobj)
+                            if meshGroupObject != None:
+                                id = dictSobj[sobj]
                                 ActionHandler.customPopup(id, popup)
-                                fathername = sobj.GetFather().GetName()
-                                if  fathername in ["RESU","RESU_COUPLING"]:
-                                    if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]) or \
-                                        CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]):
-                                        ActionHandler.customPopup(id, popup)
-                                        ActionHandler.commonAction(ActionHandler.RemoveAction).setEnabled(True)
+                                if sg.SelectedCount() > 1:
+                                    popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
+                        else:
+                            ActionHandler.customPopup(id, popup)
+                            popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
+
+            elif CFDSTUDYGUI_DataModel.isACFDSTUDYListObject(dictSobj.keys()):
+                if CFDSTUDYGUI_DataModel.hasTheSameType(dictSobj.keys()):
+                    for sobj in dictSobj.keys():
+                        id = dictSobj[sobj]
+                        ActionHandler.customPopup(id, popup)
+                        fathername = sobj.GetFather().GetName()
+                        if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUPNGFile"]):
+                            ActionHandler.customPopup(id, popup)
+                            ActionHandler.commonAction(ActionHandler.DisplayImageAction).setEnabled(True)
+                        if  fathername in ["RESU","RESU_COUPLING"]:
+                            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]) or \
+                                CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]):
+                                ActionHandler.customPopup(id, popup)
+                                ActionHandler.commonAction(ActionHandler.RemoveAction).setEnabled(True)
