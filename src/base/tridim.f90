@@ -611,8 +611,10 @@ if (icondv.eq.0) then
   !-- Condensation source terms arrays initialized
   do iel = 1, ncelet
     ltmast(iel) = 0
-    itypst(iel, ivar) = 0
-    svcond(iel, ivar) = 0.d0
+    do ivar = 1, nvar
+      itypst(iel, ivar) = 0
+      svcond(iel, ivar) = 0.d0
+    enddo
     flxmst(iel) = 0.d0
   enddo
 
