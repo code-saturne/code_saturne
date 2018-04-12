@@ -203,7 +203,9 @@ contains
     enddo
 
     do ifac = 1, nfabor
-      if(itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.isymet) then
+      if (     itypfb(ifac).eq.iparoi &
+          .or. itypfb(ifac).eq.iparug &
+          .or. itypfb(ifac).eq.isymet) then
         bmasfl(ifac) = 0.d0
       else
         iel = ifabor(ifac)

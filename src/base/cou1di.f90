@@ -166,7 +166,8 @@ do ii = 1, nfpt1d
    if ((icodcl(ifac,ivar).ne.1 .and.                           &
         icodcl(ifac,ivar).ne.5 .and.                           &
         icodcl(ifac,ivar).ne.6).and.                           &
-       itypfb(ifac).eq.iparoi      ) icodcl(ifac,ivar) = icldef
+       (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug))   &
+     icodcl(ifac,ivar) = icldef
 
    rcodcl(ifac,ivar,1) = tppt1d(ii)
    rcodcl(ifac,ivar,2) = rinfin

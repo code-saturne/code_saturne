@@ -198,7 +198,7 @@ do ifac = 1, nfabor
 ! 2. Treatment of all wall boundary faces
 !===============================================================================
 
-  if ( itypfb(ifac).eq.iparoi) then
+  if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
 
     ! pressure :
     ! if the gravity is prevailing: hydrostatic pressure

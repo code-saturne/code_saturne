@@ -289,7 +289,7 @@ if (icfgrp.eq.1) then
   ! flux if it has been taken into account in the pressure B.C. at walls.
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    if (itypfb(ifac).eq.iparoi) then
+    if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
       wflmab(ifac) = wflmab(ifac)                                              &
                      -dt(iel)*crom(iel)*(  gx*surfbo(1,ifac)                   &
                                          + gy*surfbo(2,ifac)                   &
