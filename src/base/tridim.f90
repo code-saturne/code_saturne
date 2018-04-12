@@ -129,9 +129,6 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
-integer          infpar
-save             infpar
-
 integer, allocatable, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: ilzfbr
 integer, allocatable, dimension(:) :: isostd
@@ -1195,38 +1192,9 @@ do while (iterns.le.nterup)
 
 
   ! Compute y+ if needed
-
+  ! and Van Driest "amortissement"
   if (itytur.eq.4 .and. idries.eq.1) then
-    ! Compute the number of walls
-    if (ipass.eq.1) then
-      infpar = 0
-      do ifac = 1, nfabor
-        if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
-          infpar = infpar+1
-        endif
-      enddo
-      if (irangp.ge.0) then
-        call parcpt(infpar)
-      endif
-    endif
-
-    if (infpar.gt.0) then
-      call distyp(itypfb, yplpar)
-    else
-      do iel = 1, ncelet
-        yplpar(iel) = grand
-      enddo
-    endif
-
-  endif
-
-  if (itytur.eq.4 .and. idries.eq.1) then
-
-    ! Pas d'amortissement si pas de paroi
-    if (infpar.gt.0) then
-      call vandri(visvdr, yplpar)
-    endif
-
+    call distyp(itypfb, visvdr)
   endif
 
 !===============================================================================

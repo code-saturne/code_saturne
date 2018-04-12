@@ -801,7 +801,7 @@ deallocate(grad)
 !     dans clptur, on amortit la viscosite turbulente sur les cellules
 !     de paroi si on a active van driest. la valeur finale est aussi
 !     stockee dans visvdr.
-!     plus loin, dans vandri, la viscosite sur les cellules
+!     plus loin, dans distyp, la viscosite sur les cellules
 !     de paroi sera amortie une seconde fois. on se sert alors de
 !     visvdr pour lui redonner une valeur correcte.
 if(itytur.eq.4.and.idries.eq.1) then

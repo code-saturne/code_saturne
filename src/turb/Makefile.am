@@ -102,7 +102,6 @@ turbke.f90 \
 turbkw.f90 \
 turbsa.f90 \
 turrij.f90 \
-vandri.f90 \
 visdyn.f90 \
 vislmg.f90 \
 vissma.f90 \

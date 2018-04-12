@@ -712,26 +712,6 @@ endif
 if (icdpar.eq.-1 .and. ikw.eq.1 .and. isuite.eq.1)                &
      write(nfecra,2001)
 
-! ---> IMLIGY
-!      Calcul de la distance a la paroi
-
-if (imrgrp.eq.0 .or. imrgrp.ge.4) then
-  if (imligy.eq.-999) then
-    imligy = -1
-  endif
-else
-  if (imligy.eq.-999) then
-    imligy = 1
-  endif
-endif
-
-!     Warning : non initialise => comme la vitesse
-call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-if (iwarny.eq.-999) then
-  iwarny = vcopt%iwarni
-endif
-
-
 ! ---> IKECOU
 !     En k-eps prod lin, v2f ou k-omega, on met IKECOU a 0 par defaut,
 !     sinon on le laisse a 1

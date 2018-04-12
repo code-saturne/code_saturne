@@ -116,10 +116,9 @@ integer          ifadir
 integer          iut  , ivt   , iwt, iscal
 integer          keyvar, keycpl
 integer          iivar, icpl
-integer          f_id, i_dim, f_type, nfld, f_dim
+integer          f_id, i_dim, f_type, nfld, f_dim, f_id_yplus
 
 double precision pref
-double precision diipbx, diipby, diipbz
 double precision flumbf, flumty(ntypmx)
 double precision d0, d0min
 double precision xyzref(3)
@@ -156,14 +155,13 @@ allocate(pripb(ndimfb))
 
 pref = 0.d0
 
-call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-call field_get_val_s(iflmab, bmasfl)
-
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 
 call field_get_key_id("variable_id", keyvar)
+
+call field_get_id_try("wall_yplus", f_id_yplus)
 
 ! Number of fields
 call field_get_n_fields(nfld)
@@ -1213,6 +1211,11 @@ ifin = ifinty(ientre)
 iok = 0
 iivar = 0
 do ivar = 1, nvar
+
+  ! Convective mass flux of the variable
+  call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
+  call field_get_val_s(iflmab, bmasfl)
+
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
@@ -1241,8 +1244,8 @@ do ivar = 1, nvar
       else if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
 
         flumbf = bmasfl(ifac)
-        ! Outgoing flux
-        if (flumbf.ge.-epzero) then
+        ! Outgoing flux or yplus
+        if (flumbf.ge.-epzero.or. ivarfl(ivar).eq.f_id_yplus) then
           icodcl(ifac,ivar)   = 3
           rcodcl(ifac,ivar,1) = 0.d0
           rcodcl(ifac,ivar,2) = rinfin
@@ -1292,6 +1295,11 @@ ifin = ifinty(i_convective_inlet)
 iok = 0
 iivar = 0
 do ivar = 1, nvar
+
+  ! Convective mass flux of the variable
+  call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
+  call field_get_val_s(iflmab, bmasfl)
+
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
@@ -1319,8 +1327,8 @@ do ivar = 1, nvar
       else if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
 
         flumbf = bmasfl(ifac)
-        ! Outgoing flux
-        if (flumbf.ge.-epzero) then
+        ! Outgoing flux or yplus
+        if (flumbf.ge.-epzero.or. ivarfl(ivar).eq.f_id_yplus) then
           icodcl(ifac,ivar)   = 3
           rcodcl(ifac,ivar,1) = 0.d0
           rcodcl(ifac,ivar,2) = rinfin
@@ -1581,6 +1589,10 @@ endif
 !     et au deux premiers et deux derniers pas de temps.
 if(vcopt%iwarni.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
      .or.(ntcabs.le.ntpabs+2).or.(ntcabs.ge.ntmabs-1)) then
+
+  ! Convective mass flux of the velocity
+  call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+  call field_get_val_s(iflmab, bmasfl)
 
   do ii = 1, ntypmx
     flumty(ii) = 0.d0

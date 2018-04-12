@@ -33,8 +33,6 @@
 !>
 !> \brief Add additional fields based on user options.
 !>
-!> If the user has activated a drift for a scalar for instance,
-!> additional fields are created, such an additional mass flux.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -88,8 +86,8 @@ integer          itycat, ityloc, idim1, idim3
 integer          f_id, potr, poti, flag
 integer          f_vis, f_log, iut, ialpha
 integer          kturt, kfturt
-integer          keycpl
-integer          ivar
+integer          keycpl, keydri
+integer          ivar, iscdri
 logical          iprev, inoprv, is_set
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
@@ -117,6 +115,9 @@ iopchr = 1         ! Postprocessing level for variables
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_id('turbulent_flux_id', kfturt)
 call field_get_key_id('coupled', keycpl)
+
+! Key id for drift scalar
+call field_get_key_id("drift_scalar_model", keydri)
 
 !===============================================================================
 ! 0. Initialization
@@ -334,6 +335,42 @@ if ((iturb.eq.30.and.irijec.eq.1).or.              &
   vcopt%idifft = 0
   vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
   call field_set_key_struct_var_cal_opt(iflid, vcopt)
+
+  ! Dimensionless wall distance "y+"
+  !> non-dimensional distance \f$y^+\f$ between a given volume and the closest
+  !> wall, when it is necessary (LES with van Driest-wall damping).
+  if (itytur.eq.4.and.idries.eq.1) then
+    f_name  = 'wall_yplus'
+    f_label = 'Wall Y+'
+    call add_variable_field(f_name, f_label, 1, ivar)
+    iflid = ivarfl(ivar)
+
+    call field_set_key_int(iflid, keyvis, 1)
+    call field_set_key_int(iflid, keylog, 1)
+
+    ! Elliptic equation (no convection, no time term)
+    call field_get_key_struct_var_cal_opt(iflid, vcopt)
+    vcopt%iconv = 1 ! default
+    vcopt%istat = 0
+    vcopt%idiff = 0
+    vcopt%idifft = 0
+    vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
+    vcopt%blencv = 0.d0 ! Pure upwind
+    call field_set_key_struct_var_cal_opt(iflid, vcopt)
+
+    ! Activate the drift for all scalars with key "drift" > 0
+    iscdri = 1
+
+    ! GNU function to return the value of iscdri
+    ! with the bit value of iscdri at position
+    ! 'DRIFT_SCALAR_ADD_DRIFT_FLUX' set to one
+    iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+
+    iscdri = ibset(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX)
+
+    call field_set_key_int(iflid, keydri, iscdri)
+
+  endif
 
 endif
 

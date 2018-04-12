@@ -89,22 +89,6 @@ module pointe
 
   !=============================================================================
 
-  !> \defgroup auxiliary Auxiliary variables
-
-  !> \addtogroup auxiliary
-  !> \{
-
-  !... Auxiliaires
-
-  !> non-dimensional distance \f$y^+\f$ between a given volume and the closest
-  !> wall, when it is necessary (LES with van Driest-wall damping).
-  !> The adimensional distance \f$y^+\f$ between the center of the cell \c iel
-  !> and the closest wall is therefore \c yplpar(iel1)
-  double precision, allocatable, dimension(:)   :: yplpar
-
-  !> \}
-  !=============================================================================
-
   !> \defgroup coupled_case Specific arrays for the coupled case
 
   !> \addtogroup coupled_case
@@ -357,12 +341,6 @@ contains
       call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
     endif
 
-    ! Wall-distance calculation
-
-    if (itytur.eq.4 .and. idries.eq.1) then
-      allocate(yplpar(ncelet))
-    endif
-
     ! liquid-vapour mass transfer term for cavitating flows
     ! and its part implicit in pressure
     if (icavit.ge.0) then
@@ -393,18 +371,6 @@ contains
     ! Resize/copy arrays
 
     allocate(buffer(ncelet))
-
-    if (allocated(yplpar)) then
-      do iel = 1, ncel
-        buffer(iel) = yplpar(iel)
-      enddo
-      deallocate(yplpar)
-      call synsca (buffer)
-      allocate(yplpar(ncelet))
-      do iel = 1, ncelet
-        yplpar(iel) = buffer(iel)
-      enddo
-    endif
 
     ! liquid-vapour mass transfer term for cavitating flows
     ! and its part implicit in pressure
@@ -447,7 +413,6 @@ contains
     if (allocated(idfstr)) deallocate(idfstr)
     if (allocated(izcpdc)) deallocate(izcpdc)
     if (allocated(izctsm)) deallocate(izctsm)
-    if (allocated(yplpar)) deallocate(yplpar)
     if (allocated(b_head_loss)) deallocate(b_head_loss)
     if (allocated(gamcav)) deallocate(gamcav, dgdpca)
 

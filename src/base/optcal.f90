@@ -1210,71 +1210,9 @@ module optcal
   !> Please contact the development team if you need to override this limitation.
   integer, save :: icdpar
 
-  !> maximum number of iterations for the solution of the linear systems \n
-  !> useful when \ref icdpar \f$\neq\f$ 0
-  integer, save :: nitmay
-
-  !> number of iterations for the reconstruction of the right-hand sides:
-  !> corresponds to \ref nswrsm \n
-  !> useful when \ref icdpar \f$\neq\f$ 0
-  integer, save :: nswrsy
-
-  !> number of iterations for the gradient reconstruction:
-  !> corresponds to \ref nswrgr \n
-  !> useful when \ref icdpar \f$\neq\f$ 0
-  integer, save :: nswrgy
-
-  !> type of gradient limitation: corresponds to \ref imligr
-  !> useful when \ref icdpar \f$\neq\f$ 0
-  integer, save :: imligy
-
-  !> indicates the reconstruction of the convective and diffusive fluxes at
-  !> the faces: corresponds to \ref ircflu \n
-  !> useful when \ref icdpar \f$\neq\f$ 0
-  integer, save :: ircfly
-
-  !> indicates type of second-order convective scheme: corresponds to \ref ischcv\n
-  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
-  integer, save :: ischcy
-
-  !> indicates if a ``slope test'' should be used for a second-order convective
-  !> scheme: corresponds to \ref isstpc \n
-  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
-  integer, save :: isstpy
-
-  !> specifies the level of the output writing concerning the calculation of the distance to
-  !> the wall with \ref icdpar = 0. The higher the value, the more detailed the outputs.\n
-  !> useful when \ref icdpar \f$\neq\f$ 0
-  integer, save :: iwarny
-
-  !> number of pseudo-time iterations for the calculation of the non-dimensional distance
   !> to the wall \f$ y+ \f$.\n
   !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
   integer, save :: ntcmxy
-
-  !> proportion of second-order convective scheme: corresponds to \ref blencv \n
-  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
-  double precision, save :: blency
-
-  !> relative precision for the solution of the linear systems: corresponds to \ref epsilo \n
-  !> useful when \ref icdpar \f$\neq\f$ 0
-  double precision, save :: epsily
-
-  !> relative precision for the right-hand side reconstruction: corresponds to \ref epsrsm \n
-  !> useful when \ref icdpar \f$\neq\f$ 0
-  double precision, save :: epsrsy
-
-  !> relative precision for the iterative gradient reconstruction: corresponds to \ref epsrgr \n
-  !> useful when \ref icdpar \f$\neq\f$ 0
-  double precision, save :: epsrgy
-
-  !> limitation factor of the gradients: corresponds to \ref climgr \n
-  !> useful when \ref icdpar \f$\neq\f$ 0
-  double precision, save :: climgy
-
-  !> extrapolation coefficient of the gradients at the boundaries: corresponds to \ref extrag \n
-  !> useful when \ref icdpar \f$\neq\f$ 0
-  double precision, save :: extray
 
   !> Target Courant number for the calculation of the non-dimensional distance
   !> to the wall\n

@@ -588,43 +588,11 @@ if (ineedy.eq.1) then
     write(nfecra,2700) icdpar
     iok = iok + 1
   endif
-  if (nitmay.lt.1) then
-    write(nfecra,3100) 'NITMAY',nitmay
-    iok = iok + 1
-  endif
-  if (imligy.gt.1) then
-    write(nfecra,2750) 'IMLIGY',imligy
-    iok = iok + 1
-  endif
-  if (ircfly.ne.1.and.ircfly.ne.0) then
-    write(nfecra,2200) 'IRCFLY',ircfly
-    iok = iok + 1
-  endif
-  if (ischcy.ne.1.and.ischcy.ne.0) then
-    write(nfecra,2200) 'ISCHCY',ischcy
-    iok = iok + 1
-  endif
-  if (isstpy.ne.1.and.isstpy.ne.0) then
-    write(nfecra,2200) 'ISSTPY',isstpy
-    iok = iok + 1
-  endif
   if (ntcmxy.lt.1) then
     write(nfecra,3100) 'NTCMXY',ntcmxy
     iok = iok + 1
   endif
 
-  if (blency.gt.1.d0.or.blency.lt.0.d0) then
-    write(nfecra,2710) 'BLENCY',blency
-    iok = iok + 1
-  endif
-  if (climgy.lt.1.d0) then
-    write(nfecra,2720) 'CLIMGY',climgy
-    iok = iok + 1
-  endif
-  if (abs(extray-1.d0).gt.epzero.and.abs(extray).gt.epzero) then
-    write(nfecra,2730) 'EXTRAY',extray
-    iok = iok + 1
-  endif
   if (coumxy.le.0.d0) then
     write(nfecra,2740) 'COUMXY',coumxy
     iok = iok + 1
@@ -1649,38 +1617,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2710 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN REEL INCLUS DANS LINTERVALLE [0.;1.]',/,&
-'@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2720 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN REEL SUPERIEUR OU EGAL A 1.',         /,&
-'@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2730 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1705,22 +1641,6 @@ endif
 '@    =========',                                               /,&
 '@',    a6,' DOIT ETRE UN REEL STRICTEMENT POSITIF.',           /,&
 '@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2750 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN ENTIER INFERIEUR OU EGAL A 1',        /,&
-'@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
@@ -2999,38 +2919,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2710 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE   A  REAL INCLUD IN SEGMENT       [0.;1.]',/,&
-'@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2720 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE   A  REAL SUPERIEUR or EGAL A 1.',         /,&
-'@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2730 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3055,22 +2943,6 @@ endif
 '@    =========',                                               /,&
 '@',    a6,' MUST BE   A  STRICTLY POSITIVE REAL.',             /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2750 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER  LESS THAN or EGAL A 1',        /,&
-'@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&

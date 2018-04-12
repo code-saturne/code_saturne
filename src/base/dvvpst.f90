@@ -136,23 +136,6 @@ if (numtyp .eq. -1) then
   !  Automatic additional variables
   !  ------------------------------
 
-  ! Yplus (if LES+VanDriest)
-
-  if (ineedy.eq.1) then
-
-    if (itytur.eq.4.and.idries.eq.1) then
-
-      idimt = 1
-      ientla = .true.
-      ivarpr = .true.
-
-      call post_write_var(nummai, 'Yplus', idimt, ientla, ivarpr,  &
-                          ntcabs, ttcabs, yplpar, rbid, rbid)
-
-    endif
-
-  endif
-
   ! Relative pressure and velocity in case of turbomachinery
 
   if (iturbo.ne.0) then

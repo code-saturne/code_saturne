@@ -54,6 +54,10 @@
 !>
 !> Remarks:
 !> - a steady state is looked for.
+!>
+!> Then, Imposition of an amortization of Van Driest type for the LES.
+!>        \f$ \nu_T \f$ is absorbed by \f$ (1-\exp(\dfrac{-y^+}{d^+}))^2 \f$
+!>        where \f$ d^+ \f$ is set at 26.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -62,12 +66,12 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     itypfb        boundary face types
-!> \param[out]    disty         dimensionless distance \f$ y^+ \f$
+!> \param[in]     visvdr        dynamic viscosity in edge cells after
+!>                               driest velocity amortization
 !_______________________________________________________________________________
 
 subroutine distyp &
- ( itypfb ,                                                       &
-   disty  )
+ ( itypfb , visvdr)
 
 !===============================================================================
 
@@ -82,7 +86,6 @@ use optcal
 use cstphy
 use cstnum
 use ppppar
-use coincl
 use parall
 use period
 use mesh
@@ -97,39 +100,52 @@ implicit none
 ! Arguments
 
 integer          itypfb(nfabor)
-
-double precision disty(ncelet)
+double precision visvdr(ncelet)
 
 ! Local variables
 
 integer          idtva0, f_id0, f_id  , iconvp, idiffp
+integer          f_id_yplus
 integer          ndircp
-integer          iescap, iflmb0, itypfl
+integer          iflmb0, itypfl
 integer          ifac  , iel   , init
-integer          inc   , iccocg, isym  , isweep, infpar
-integer          imucpp, idftnp, iswdyp, icvflb
+integer          inc   , iccocg, isym  , isweep
+integer          imucpp, idftnp
+integer          nswrgp, nswrsp
+integer          icvflb, iescap, imligp, ircflp, iswdyp, isstpp, ischcp, iwarnp
 integer          isou  , jsou
+integer          iflmas, iflmab
+
+integer          infpar
+save             infpar
 
 integer          ivoid(1)
 
-double precision xnorme, dtminy, dtmaxy, relaxp, thetap, timey
+double precision relaxp, blencp, climgp, epsilp, epsrgp, epsrsp, extrap
+double precision thetap
+double precision xnorme, dtminy, dtmaxy
 double precision xusnmx, xusnmn, xnorm0
 double precision dismax, dismin, usna
+double precision hint, pimp, qimp
 
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: dvarp, smbdp, rovsdp
 double precision, allocatable, dimension(:,:) :: q
-double precision, allocatable, dimension(:) :: flumas, flumab
-double precision, allocatable, dimension(:) :: rom, romb
-double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: coefav
 double precision, allocatable, dimension(:,:,:) :: coefbv
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: w_dist
+double precision, pointer, dimension(:)   :: cvar_var
+double precision, pointer, dimension(:)   :: cvara_var
 double precision, dimension(:), pointer :: crom, uetbor
 double precision, dimension(:), pointer :: viscl
+double precision, dimension(:), pointer :: visct
+double precision, pointer, dimension(:) :: coefap, coefbp
+double precision, pointer, dimension(:) :: cofafp, cofbfp
+double precision, dimension(:), pointer :: flumas, flumab
+type(var_cal_opt) :: vcopt
 
 integer          ipass
 data             ipass /0/
@@ -144,9 +160,6 @@ save             ipass
 ! Allocate temporary arrays for the distance resolution
 allocate(dvarp(ncelet), smbdp(ncelet), rovsdp(ncelet))
 allocate(q(3,ncelet))
-allocate(flumas(nfac), flumab(nfabor))
-allocate(rom(ncelet), romb(nfabor))
-allocate(coefap(nfabor), coefbp(nfabor))
 allocate(coefav(3,nfabor))
 allocate(coefbv(3,3,nfabor))
 allocate(dpvar(ncelet))
@@ -170,6 +183,46 @@ endif
 call field_get_id("wall_distance", f_id)
 call field_get_val_s(f_id, w_dist)
 
+call field_get_id("wall_yplus", f_id_yplus)
+call field_get_key_struct_var_cal_opt(f_id_yplus, vcopt)
+
+call field_get_val_s(f_id_yplus, cvar_var)
+call field_get_val_prev_s(f_id_yplus, cvara_var)
+
+call field_get_coefa_s( f_id_yplus, coefap)
+call field_get_coefb_s( f_id_yplus, coefbp)
+call field_get_coefaf_s(f_id_yplus, cofafp)
+call field_get_coefbf_s(f_id_yplus, cofbfp)
+
+call field_get_key_int(f_id_yplus, kimasf, iflmas)
+call field_get_key_int(f_id_yplus, kbmasf, iflmab)
+
+! Get pointer to the convective mass flux
+call field_get_val_s(iflmas, flumas)
+call field_get_val_s(iflmab, flumab)
+
+! Number of wall faces
+if (ipass.eq.1) then
+  infpar = 0
+  do ifac = 1, nfabor
+    if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
+      infpar = infpar+1
+    endif
+  enddo
+  if (irangp.ge.0) then
+    call parcpt(infpar)
+  endif
+endif
+
+! If no wall, no wall distance
+if (infpar.eq.0) then
+  do iel = 1, ncelet
+    cvar_var(iel) = grand
+  enddo
+
+  return
+endif
+
 !===============================================================================
 ! 2. At the first time step
 !===============================================================================
@@ -180,13 +233,13 @@ call field_get_val_s(f_id, w_dist)
 ! En effet ca prend du temps, d'autant plus que u* est petit, car il
 !   alors calculer y+ jusqu'a une grande distance des parois
 
-if(ntcabs.eq.1) then
+if (ntcabs.eq.1) then
 
   do iel = 1, ncel
-    disty(iel) = grand
+    cvar_var(iel) = grand
   enddo
 
-  if(iwarny.ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,7000)
   endif
 
@@ -195,7 +248,7 @@ if(ntcabs.eq.1) then
 endif
 
 !===============================================================================
-! 3. Compute  V = Grad(DISTPA)/|Grad(DISTPA)|
+! 3. Compute  V = Grad(y)/|Grad(y)|
 !===============================================================================
 
 ! Compute the gradient of the distance to the wall
@@ -210,7 +263,7 @@ call field_gradient_scalar(f_id, 0, imrgra, inc, iccocg, q)
 
 ! Normalization (warning, the gradient may be sometimes equal to 0)
 do iel = 1, ncel
-  xnorme = max(sqrt(q(1,iel)**2+q(2,iel)**2+q(3,iel)**2),epzero)
+  xnorme = max(sqrt(q(1,iel)**2+q(2,iel)**2+q(3,iel)**2), epzero)
   do isou = 1, 3
     q(isou,iel) = q(isou,iel)/xnorme
   enddo
@@ -225,21 +278,14 @@ endif
 ! 4. Compute the flux of V
 !===============================================================================
 
-do ifac = 1, nfabor
-  romb(ifac) = 1.d0
-enddo
-do iel = 1, ncelet
-  rom(iel)  = 1.d0
-enddo
-
 ! Le gradient normal de la distance a la paroi vaut -1 en paroi
 !   par definition et obeit a un flux nul ailleurs
 
 do ifac = 1, nfabor
   if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
-    xnorme = max(surfbn(ifac),epzero**2)
+    xnorme = max(surfbn(ifac), epzero**2)
     do isou = 1, 3
-      coefav(isou,ifac) = -surfbo(isou,ifac)/xnorme
+      coefav(isou,ifac) = - surfbo(isou,ifac)/xnorme
       do jsou = 1, 3
         coefbv(isou,jsou,ifac) = 0.d0
       enddo
@@ -258,25 +304,32 @@ do ifac = 1, nfabor
   endif
 enddo
 
-! Calcul du flux de masse
+! Compute convective mass flux
 
-! On ne le met pas a zero en paroi (justement)
+! Mass flux non-zero at walls
 iflmb0 = 0
-! On l'initialise a 0
+! Default initilization at 0
 init   = 1
-! On prend en compte les Dirichlet
+! Take Dirichlet into account
 inc    = 1
-! Il ne s'agit ni de U ni de R
+! q=grad(y) is not the Reynolds stress tensor
 f_id   = -1
 
-itypfl = 1
+! Convective velocity NOT multiplied by rho
+itypfl = 0
+
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+iwarnp = vcopt%iwarni
 
 call inimav                                                       &
  ( f_id   , itypfl ,                                              &
-   iflmb0 , init   , inc    , imrgra , nswrgy , imligy ,          &
-   iwarny ,                                                       &
-   epsrgy , climgy ,                                              &
-   rom    , romb   ,                                              &
+   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+   iwarnp ,                                                       &
+   epsrgp , climgp ,                                              &
+   rvoid  , rvoid  ,                                              &
    q      ,                                                       &
    coefav , coefbv ,                                              &
    flumas , flumab )
@@ -285,16 +338,38 @@ call inimav                                                       &
 ! 5. Boundary conditions
 !===============================================================================
 
-! Dirichlet en u*/nu aux parois, et flux nul ailleurs
+! Dirichlet u*/nu at walls, homogeneous Neumann elsewhere
 
 do ifac = 1, nfabor
   if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
     iel = ifabor(ifac)
-    coefap(ifac) = uetbor(ifac)*crom(iel)/viscl(iel)
-    coefbp(ifac) = 0.0d0
+
+    ! Dirichlet Boundary Condition
+    !-----------------------------
+
+    hint = 1.d0/distb(ifac)
+    pimp = uetbor(ifac)*crom(iel)/viscl(iel)
+
+    call set_dirichlet_scalar &
+         !====================
+       ( coefap(ifac), cofafp(ifac),             &
+         coefbp(ifac), cofbfp(ifac),             &
+         pimp        , hint        , rinfin )
+
+
   else
-    coefap(ifac) = 0.0d0
-    coefbp(ifac) = 1.0d0
+    ! Neumann Boundary Conditions
+    !----------------------------
+
+    hint = 1.d0/distb(ifac)
+    qimp = 0.d0
+
+    call set_neumann_scalar &
+         !==================
+       ( coefap(ifac), cofafp(ifac),             &
+         coefbp(ifac), cofbfp(ifac),             &
+         qimp        , hint )
+
   endif
 enddo
 
@@ -302,12 +377,12 @@ enddo
 ! 6. Compute the time step
 !===============================================================================
 
-! On vise un Courant infini (de l'ordre de 1000).
+! A large Courant number is wanted (of the order of 1000).
 
 ! On calcule avec MATRDT DA = Sigma a S/d
 iconvp = 1
 idiffp = 0
-!     La matrice est non symetrique
+! Non symmetric matrix
 isym   = 2
 
 ! Warning: no diffusion here, so no need of other Boundary coefficient
@@ -317,7 +392,7 @@ call matrdt &
  ( iconvp , idiffp , isym   ,                                     &
    coefbp , coefbp , flumas , flumab , flumas , flumab , w2     )
 
-! Le Courant est COUMXY = DT w2 / VOLUME
+! Le Courant est coumxy = DT w2 / VOLUME
 !     d'ou DTMINY = MIN(COUMXY * VOLUME/w2)
 ! Au cas ou une cellule serait a w2(IEL)=0,
 !   on ne la prend pas en compte
@@ -347,8 +422,8 @@ do iel = 1, ncel
   endif
 enddo
 
-if(iwarny.ge.2) then
-  write(nfecra,2000)dtminy,dtmaxy
+if (vcopt%iwarni.ge.2) then
+  write(nfecra,2000) dtminy, dtmaxy
 endif
 
 !===============================================================================
@@ -356,7 +431,7 @@ endif
 !===============================================================================
 
 do iel = 1, ncel
-  rovsdp(iel) = volume(iel)*rom(iel)/w1(iel)
+  rovsdp(iel) = volume(iel)/w1(iel)
 enddo
 
 !===============================================================================
@@ -365,12 +440,6 @@ enddo
 
 ! Initializations
 !=================
-
-! Iterations
-isweep = 0
-
-! Temps
-timey = 0.d0
 
 ! Inconnue
 !   Au cas ou on n'atteint pas tout a fait l'etat stationnaire,
@@ -408,7 +477,7 @@ if(ipass.eq.1) then
   enddo
 else
   do iel = 1, ncel
-    usna = disty(iel)/max(w_dist(iel),epzero)
+    usna = cvar_var(iel)/max(w_dist(iel),epzero)
     usna = max(usna,xusnmn)
     usna = min(usna,xusnmx)
     dvarp(iel) = usna
@@ -441,20 +510,10 @@ if (xnorm0.le.epzero**2) goto 100
 
 do isweep = 1, ntcmxy
 
-  ! Instant (arbitrairement +DTMINY)
-  timey = timey + dtminy
-
-  ! -- Echange pour les cas paralleles
-  !     a la premiere iteration, c'est inutile (on a fait l'init sur NCELET)
-
-  if(isweep.gt.1.or.ipass.gt.1) then
-
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(dvarp)
-      !==========
-    endif
-
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(dvarp)
   endif
+
 
 
   ! Save of the solution for convergence test
@@ -466,49 +525,56 @@ do isweep = 1, ntcmxy
 
   ! Right hand side
   !=================
-  !   Obligatoirement a tous les pas de temps
-
   do iel = 1, ncel
     smbdp(iel) = 0.d0
   enddo
 
   ! Solving
   !=========
-
-  ! La variable n'est pas la vitesse ou une composante de Rij
-  f_id0= -1
-  ! Le cas est convectif, non diffusif
-  iconvp = 1
-  idiffp = 0
-  ! Il y a des Dirichlet (car il y a des parois)
-  ndircp = 1
-  ! Pas d'estimateurs, ni de multigrille (100 et 10 sont arbitraires)
+  iconvp = vcopt%iconv
+  idiffp = vcopt%idiff
+  idftnp = vcopt%idften
+  nswrsp = vcopt%nswrsm
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  ircflp = vcopt%ircflu
+  ischcp = vcopt%ischcv
+  isstpp = vcopt%isstpc
+  ! No error estimate
   iescap = 0
   imucpp = 0
-  idftnp = ISOTROPIC_DIFFUSION
-  iswdyp = 0
-  nomva0 = 'yplus_wall'
-  ! Ordre 1 en temps (etat stationnaire cherche)
-  thetap = 1.d0
-  ! Pas de stationnaire ni de relaxation -> a modifier eventuellement
-  idtva0 = 0
-  relaxp = 1.d0
+  iswdyp = vcopt%iswdyn
+  iwarnp = vcopt%iwarni
+  blencp = vcopt%blencv
+  epsilp = vcopt%epsilo
+  epsrsp = vcopt%epsrsm
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+  extrap = vcopt%extrag
+  relaxp = vcopt%relaxv
+  thetap = vcopt%thetav
   ! all boundary convective flux with upwind
   icvflb = 0
+  init   = 1
+
+  ! There are som Dirichlet BCs
+  ndircp = 1
+  ! No steady state algo
+  idtva0 = 0
 
   ! Warning: no diffusion so no need of other diffusive Boundary coefficient
 
   call codits &
   !==========
- ( idtva0 , init   , f_id0  , iconvp , idiffp , ndircp ,          &
-   imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
-   ischcy , isstpy , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarny ,                                                       &
-   blency , epsily , epsrsy , epsrgy , climgy , extray ,          &
+ ( idtva0 , isweep , f_id_yplus, iconvp , idiffp , ndircp ,       &
+   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
+   iwarnp ,                                                       &
+   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    dvarp  , dvarp  ,                                              &
    coefap , coefbp ,                                              &
-   coefap , coefbp ,                                              &
+   cofafp , cofbfp ,                                              &
    flumas , flumab ,                                              &
    flumas , flumab , flumas , flumab , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
@@ -547,7 +613,7 @@ do isweep = 1, ntcmxy
     call parmax (xnorme)
   endif
 
-  if (iwarny.ge.2) then
+  if (vcopt%iwarni.ge.2) then
     write(nfecra,3000)isweep,xnorme,xnorm0,xnorme/xnorm0
   endif
 
@@ -559,21 +625,20 @@ write(nfecra,8000) xnorme, xnorm0, xnorme/xnorm0, ntcmxy
 
  100  continue
 
-
 !===============================================================================
 ! 9. Finalization and printing
 !===============================================================================
 
 do iel = 1, ncel
-  disty(iel) = dvarp(iel)*w_dist(iel)
+  cvar_var(iel) = dvarp(iel)*w_dist(iel)
 enddo
 
 dismax = -grand
 dismin =  grand
 
 do iel = 1, ncel
-  dismin = min(disty(iel),dismin)
-  dismax = max(disty(iel),dismax)
+  dismin = min(cvar_var(iel),dismin)
+  dismax = max(cvar_var(iel),dismax)
 enddo
 
 if (irangp.ge.0) then
@@ -581,16 +646,31 @@ if (irangp.ge.0) then
   call parmax(dismax)
 endif
 
-if (iwarny.ge.1) then
+if (vcopt%iwarni.ge.1) then
   write(nfecra,1000) dismin, dismax, min(isweep,ntcmxy)
 endif
+
+!===============================================================================
+! 10. Van Driest amortization
+!===============================================================================
+
+call field_get_val_s(icrom, crom)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
+
+do iel = 1, ncel
+  visct(iel) = visct(iel)*(1.0d0-exp(-cvar_var(iel)/cdries))**2
+enddo
+
+! For the wall cells we add the turbulent viscosity which was absorbed
+! in clptur and which has served to calculate the boundary conditions
+do iel = 1, ncel
+  if (visvdr(iel).gt.-900.d0) visct(iel) = visvdr(iel)
+enddo
 
 ! Free memory
 deallocate(dvarp, smbdp, rovsdp)
 deallocate(q)
-deallocate(flumas, flumab)
-deallocate(rom, romb)
-deallocate(coefap, coefbp)
 deallocate(coefav, coefbv)
 deallocate(w1, w2)
 deallocate(dpvar)

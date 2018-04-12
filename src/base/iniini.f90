@@ -792,28 +792,12 @@ nftcdt= 0
 !     Non utilisateur
 
 ! --- Calcul de la distance a la paroi
-!     Seules variables utilisateur : ICDPAR, IWARNY
+!     Seules variables utilisateur : ICDPAR
 
 ineedy = 0
 imajdy = 0
 icdpar = -999
-nitmay = 10000
-nswrsy = 1
-nswrgy = 100
-imligy = -999
-ircfly = 1
-ischcy = 1
-isstpy = 0
-iwarny = -999
 ntcmxy = 1000
-
-
-blency = 0.0d0
-epsily = 1.0d-8
-epsrsy = 1.0d-5
-epsrgy = 1.0d-5
-climgy = 1.5d0
-extray = 0.0d0
 coumxy = 5000.d0
 epscvy = 1.0d-8
 yplmxy = 200.d0

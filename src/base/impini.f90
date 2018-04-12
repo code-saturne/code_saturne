@@ -656,11 +656,7 @@ if(ineedy.eq.1) then
 
   write(nfecra,4950) icdpar
   if(abs(icdpar).eq.1) then
-    write(nfecra,4951)                                            &
-        nitmay, nswrsy, nswrgy, imligy, ircfly, ischcy,           &
-        isstpy, iwarny, ntcmxy,                                   &
-        blency, epsily, epsrsy, epsrgy, climgy, extray, coumxy,   &
-        epscvy, yplmxy
+    write(nfecra,4951) ntcmxy, coumxy, epscvy, yplmxy
   endif
   write(nfecra,9900)
 
@@ -738,22 +734,8 @@ endif
 '                               (-2: old et recalcule si suite',/)
 4951  format(                                                     &
                                                                 /,&
-'       NITMAY = ',4x,i10,    ' (Nb iter pour resolution iter.',/,&
-'       NSWRSY = ',4x,i10,    ' (Nb iter pour reconstr. smb. )',/,&
-'       NSWRGY = ',4x,i10,    ' (Nb iter pour reconstr. grd. )',/,&
-'       IMLIGY = ',4x,i10,    ' (Methode de limitation grd.  )',/,&
-'       IRCFLY = ',4x,i10,    ' (Reconst. flux conv. diff.   )',/,&
-'       ISCHCY = ',4x,i10,    ' (Schema convectif            )',/,&
-'       ISSTPY = ',4x,i10,    ' (Utilisation test de pente   )',/,&
-'       IWARNY = ',4x,i10,    ' (Niveau d''impression        )',/,&
 '       NTCMXY = ',4x,i10,    ' (Nb iter pour convection stat.',/,&
                                                                 /,&
-'       BLENCY = ',e14.5,     ' (Prop. ordre 2 schema convect.',/,&
-'       EPSILY = ',e14.5,     ' (Precision solveur iteratif  )',/,&
-'       EPSRSY = ',e14.5,     ' (Precision reconst. smb.     )',/,&
-'       EPSRGY = ',e14.5,     ' (Precision reconst. grd.     )',/,&
-'       CLIMGY = ',e14.5,     ' (Coeff. pour limitation grd. )',/,&
-'       EXTRAY = ',e14.5,     ' (Coeff. pour extrapolation grd',/,&
 '       COUMXY = ',e14.5,     ' (Courant max pour convection )',/,&
 '       EPSCVY = ',e14.5,     ' (Precision pour convect. stat.',/,&
 '       YPLMXY = ',e14.5,     ' (y+ max avec influence amort.)',/)
@@ -826,22 +808,8 @@ endif
 '                               (-2: old, recomputed if restrt',/)
 4951  format(                                                     &
                                                                 /,&
-'       NITMAY = ',4x,i10,    ' (Nb iter for iter resolution )',/,&
-'       NSWRSY = ',4x,i10,    ' (Nb iter for rhs reconstr.   )',/,&
-'       NSWRGY = ',4x,i10,    ' (Nb iter for grad. reconstr. )',/,&
-'       IMLIGY = ',4x,i10,    ' (Gradient limitation method  )',/,&
-'       IRCFLY = ',4x,i10,    ' (Conv. Diff. flow reconstr.  )',/,&
-'       ISCHCY = ',4x,i10,    ' (Convective scheme           )',/,&
-'       ISSTPY = ',4x,i10,    ' (Slope tet use               )',/,&
-'       IWARNY = ',4x,i10,    ' (Verbosity level             )',/,&
 '       NTCMXY = ',4x,i10,    ' (Nb iter for steady convect. )',/,&
                                                                 /,&
-'       BLENCY = ',e14.5,     ' (2nd order conv. scheme prop.)',/,&
-'       EPSILY = ',e14.5,     ' (Iterative solver precision  )',/,&
-'       EPSRSY = ',e14.5,     ' (rhs reconstruction precision)',/,&
-'       EPSRGY = ',e14.5,     ' (Gradient reconstr. precision)',/,&
-'       CLIMGY = ',e14.5,     ' (Coeff. for grad. limitation )',/,&
-'       EXTRAY = ',e14.5,     ' (Coeff. for grad. extrapolat.)',/,&
 '       COUMXY = ',e14.5,     ' (Max CFL for convection      )',/,&
 '       EPSCVY = ',e14.5,     ' (Precision for steady conv.  )',/,&
 '       YPLMXY = ',e14.5,     ' (y+ max w. damping influence )',/)
