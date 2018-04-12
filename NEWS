@@ -5,6 +5,8 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix bug in initialization of the wall condensation model
+
 - Fix crash in restart using coupled RSM model from non-RSM computation
   (issue #252).
 
