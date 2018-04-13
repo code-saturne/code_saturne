@@ -1238,7 +1238,78 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
         read_flag[CS_F_(eps)->id] += t_mask;
     }
 
+  } else if (itytur_cur == 3 && CS_F_(rij) != NULL) { /* New computation
+                                                         is in Rij-epsilon */
+
+    if (itytur_old == 2 || iturb_old == 50) { /* k-epsilon or v2f
+                                                 (phi-fbar or BL-v2/k) to-> Rij
+                                                 (epsilon already read) */
+
+      cs_real_6_t *v_rij = (cs_real_6_t *)(CS_F_(rij)->vals[t_id]);
+      cs_real_t *v_k;
+      BFT_MALLOC(v_k, n_cells, cs_real_t);
+
+      err_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
+
+      double d2s3 = 2./3.;
+
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+        double d2s3xk = v_k[i]*d2s3;
+        v_rij[i][0] = d2s3xk;
+        v_rij[i][1] = d2s3xk;
+        v_rij[i][2] = d2s3xk;
+        v_rij[i][3] = 0.;
+        v_rij[i][4] = 0.;
+        v_rij[i][5] = 0.;
+      }
+
+      if (err_sum == 0)
+        read_flag[CS_F_(rij)->id] += t_mask;
+
+      BFT_FREE(v_k);
+
+    }
+
+    /* if (itytur_old == 3) Rij to Rij variant; nothing to do
+     *                      (when switching to EBRSM to another model,
+     *                      keep alpha to default initialization) */
+
+    else if (iturb_old == 60) { /* k-omega to Rij */
+
+      cs_real_6_t *v_rij = (cs_real_6_t *)(CS_F_(rij)->vals[t_id]);
+      cs_real_t *v_eps = CS_F_(eps)->vals[t_id];
+
+      cs_real_t *v_k;
+      BFT_MALLOC(v_k, n_cells, cs_real_t);
+
+      err_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
+      err_sum += _read_turb_array_1d_compat(r, "omega", "omega", t_id, v_eps);
+
+      /* Now transform omega to epsilon */
+
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        v_eps[i] = cs_turb_cmu*v_eps[i]*v_k[i];
+
+      double d2s3 = 2./3.;
+
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+        double d2s3xk = v_k[i]*d2s3;
+        v_rij[i][0] = d2s3xk;
+        v_rij[i][1] = d2s3xk;
+        v_rij[i][2] = d2s3xk;
+        v_rij[i][3] = 0.;
+        v_rij[i][4] = 0.;
+        v_rij[i][5] = 0.;
+      }
+
+      if (err_sum == 0)
+        read_flag[CS_F_(rij)->id] += t_mask;
+
+      BFT_FREE(v_k);
+    }
+
   } else if (itytur_cur == 3) { /* New computation is in Rij-epsilon */
+                                /* using the older, non-interleaved variant */
 
     if (itytur_old == 2 || iturb_old == 50) { /* k-epsilon or v2f
                                                  (phi-fbar or BL-v2/k) to-> Rij

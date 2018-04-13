@@ -1,4 +1,13 @@
 
+Release 5.1.5 (unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Fix crash in restart using coupled RSM model from non-RSM computation
+  (issue #252).
+
 Release 5.1.4 (March 30 2018)
 =============================
 
