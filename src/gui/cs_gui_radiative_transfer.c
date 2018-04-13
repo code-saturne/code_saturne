@@ -57,6 +57,7 @@
 #include "cs_mesh.h"
 #include "cs_post.h"
 #include "cs_parameters.h"
+#include "cs_restart.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 

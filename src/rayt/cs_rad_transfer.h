@@ -110,7 +110,19 @@ typedef struct {
   int           ifrefl;
   int           itpt1d;
 
-  bool          atmo_ir_absorption; /*!< infrared absorption model */
+  bool          atmo_ir_absorption;  /*!< infrared absorption model */
+
+  bool          dispersion;          /*!< add dispersion (through diffusion) */
+  cs_real_t     dispersion_coeff;    /*!< dispersion coefficient.
+                                       The dispersion coefficient leading to the
+                                       best precision may depend on the chosen
+                                       quadrature, and has been observed to be
+                                       3 for 128 directions (T4) and
+                                       5 for 32  directions (T2) on a (cube
+                                       with point source) test case; the default
+                                       value of 1 already improves precision in
+                                       both cases. */
+
 
 } cs_rad_transfer_params_t;
 

@@ -17,6 +17,12 @@ User changes:
 
 Numerics:
 
+- Added dispersion modeling option to DOM radiative model:
+  * May be activated by setting
+    cs_glob_rad_transfer_params->dispersion to true.
+  * The associated dispersion coefficient may be set by modifying
+    cs_glob_rad_transfer_params->dispersion_coeff.
+
 - Added K-cycle multigrid type as an option.
 
 - Added new multigrid coarsening algorithm compatible with matrices

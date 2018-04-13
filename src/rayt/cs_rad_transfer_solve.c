@@ -370,8 +370,6 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
   cs_lnum_t n_i_faces  = cs_glob_mesh->n_i_faces;
   cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells   = cs_glob_mesh->n_cells;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)cs_glob_mesh->i_face_cells;
 
   cs_real_3_t *b_face_normal = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
   cs_real_3_t *i_face_normal = (cs_real_3_t *)cs_glob_mesh_quantities->i_face_normal;
@@ -418,6 +416,11 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
   vcopt.imrgra =  cs_glob_space_disc->imrgra;
   vcopt.blencv =  0; /* Pure upwind...*/
   vcopt.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
+
+  if (cs_glob_rad_transfer_params->dispersion) {
+    vcopt.idiff  =  1; /* Added face diffusion */
+    vcopt.nswrgr = 20;
+  }
 
   int iescap = 0;
   int imucpp = 0;
@@ -539,8 +542,23 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
 
           /* Implicit source term (rovsdt seen above) */
 
-          for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-            viscf[face_id] = 0.0;
+          if (cs_glob_rad_transfer_params->dispersion) {
+            const cs_real_t disp_coeff
+              = cs_glob_rad_transfer_params->dispersion_coeff;
+            const cs_real_t pi = 4.0 * atan(1.);
+            const cs_real_t tan_alpha
+              =    sqrt(domegat * (4.*pi - domegat))
+                 / (2. * pi - domegat);
+            const cs_real_t *i_face_surf = cs_glob_mesh_quantities->i_face_surf;
+
+            for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
+              viscf[face_id] = disp_coeff * tan_alpha * i_face_surf[face_id];
+          }
+
+          else {
+            for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
+              viscf[face_id] = 0.0;
+          }
 
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
             viscb[face_id] = 0.0;

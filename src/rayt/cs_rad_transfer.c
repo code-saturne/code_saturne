@@ -244,7 +244,9 @@ cs_rad_transfer_params_t _rt_params = {.type = CS_RAD_TRANSFER_NONE,
                                        .ifgrno = 31,
                                        .ifrefl = 32,
                                        .itpt1d = 4,
-                                       .atmo_ir_absorption = false};
+                                       .atmo_ir_absorption = false,
+                                       .dispersion = false,
+                                       .dispersion_coeff = 1.};
 
 cs_rad_transfer_params_t *cs_glob_rad_transfer_params = &_rt_params;
 
