@@ -31,16 +31,14 @@
 !-------------------------------------------------------------------------------
 
 !===============================================================================
-! Purpose:
-! -------
-
 !> \file cs_user_source_terms.f90
 !>
-!> \brief Additional right-hand side source terms
+!> \brief User subroutines for additional right-hand side source terms
 !>
-!> See \subpage cs_user_source_terms and \subpage cs_user_source_terms-scalar_in_a_channel
-!> for examples.
+!> See \subpage cs_user_source_terms and
+!> \subpage cs_user_source_terms-scalar_in_a_channel for examples.
 !>
+!===============================================================================
 !> \brief Additional right-hand side source terms for velocity components equation
 !> (Navier-Stokes)
 !>
@@ -64,7 +62,7 @@
 !> the routine. It is not needed to do it in the routine (waste of CPU time).
 !>
 !> \remark The additional force on \f$ x_i \f$ direction is given by
-!>  \c crvexp(i, iel) + vel(j, iel)* crvimp(j, i).
+!>  \c crvexp(i, iel) + vel(j, iel)* crvimp(j, i, iel).
 !>
 !> For stability reasons, Code_Saturne will not add -crvimp directly to the
 !> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
@@ -173,7 +171,7 @@ allocate(lstelt(ncel))
 ! Formats
 !--------
 
- 1000 format(' User source terms for variable ',A8,/)
+ 1000 format(' User source terms for variable ', a8,/)
 
 !----
 ! End
@@ -189,9 +187,6 @@ end subroutine ustsnv
 !===============================================================================
 
 !===============================================================================
-! Purpose:
-! -------
-
 !>    User subroutine.
 !> \brief    Additional right-hand side source terms for scalar equations (user
 !>     scalars and specific physics scalars).
@@ -376,10 +371,6 @@ end subroutine ustssc
 !===============================================================================
 
 !===============================================================================
-! Purpose:
-! -------
-
-!>    User subroutine.
 !> \brief    Additional right-hand side source terms for vectorial equations
 !>           (user vectors and specific physics vectors).
 !>
@@ -565,9 +556,6 @@ end subroutine ustsvv
 !===============================================================================
 
 !===============================================================================
-! Purpose:
-! -------
-
 !> \brief Additional right-hand side source terms for turbulence models
 !>
 !> \section cs_user_turbulence_source_terms_use  Usage
@@ -713,9 +701,6 @@ end subroutine cs_user_turbulence_source_terms
 
 
 !===============================================================================
-! Purpose:
-! -------
-
 !> \brief Additional right-hand side source terms for turbulence models and
 !>irijco =1
 !>

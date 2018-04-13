@@ -23,9 +23,6 @@
 !-------------------------------------------------------------------------------
 
 !===============================================================================
-! Purpose:
-! -------
-
 !> \file cs_user_physical_properties.f90
 !>
 !> \brief Definition of physical variable laws.
@@ -34,8 +31,6 @@
 !>
 
 !===============================================================================
-!> usphyv
-!>
 !> \brief Definition of physical variable laws.
 !>
 !> \section Warning
@@ -159,10 +154,6 @@ end subroutine usphyv
 
 !===============================================================================
 !===============================================================================
-! Purpose:
-! -------
-
-!> usvist
 !> \brief Modify turbulent viscosity
 !>
 !> This subroutine is called at beginning of each time step
@@ -253,10 +244,6 @@ end subroutine usvist
 !===============================================================================
 
 !===============================================================================
-! Purpose:
-! --------
-!
-!> ussmag
 !> \brief user modification of the Smagorinsky constant in the case of a
 !>   dynamic model
 !>
@@ -349,10 +336,6 @@ end subroutine ussmag
 !===============================================================================
 
 !===============================================================================
-! Purpose:
-! -------
-
-!> usvima
 !> \brief User subroutine dedicated the use of ALE
 !>  (Arbitrary Lagrangian Eulerian Method): fills mesh viscosity arrays.
 !>
