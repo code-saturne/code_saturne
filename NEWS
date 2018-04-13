@@ -5,6 +5,9 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix crash in restart using coupled RSM model from non-RSM computation
+  (issue #252).
+
 - Radiative model: fix radiative flux values at parallel boundaries.
 
 Release 5.2.0 (March 30 2018)
