@@ -554,9 +554,6 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
             flurds[face_id] =  vect_s[0] * i_face_normal[face_id][0]
                              + vect_s[1] * i_face_normal[face_id][1]
                              + vect_s[2] * i_face_normal[face_id][2];
-            if (i_face_cells[face_id][0] > n_cells || i_face_cells[face_id][1] > n_cells)
-              flurds[face_id] = 0.;//HARD CODING
-
           }
 
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
