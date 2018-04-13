@@ -1,4 +1,12 @@
 
+Release 5.2.1 (unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Radiative model: fix radiative flux values at parallel boundaries.
+
 Release 5.2.0 (March 30 2018)
 =============================
 
