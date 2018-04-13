@@ -84,7 +84,6 @@ class ElectricalModel(Variables, Model):
         default['scaling']      = "off"
         default['current']      = 0.
         default['power']        = 0.
-        default['srrom']        = 0.
         default['scalingModel'] = "general_case"
         default['direction']    = "Z"
         default['location']     = 0
@@ -301,27 +300,6 @@ class ElectricalModel(Variables, Model):
         """
         self.isInt(val)
         self.node_joule.xmlSetData('gasNumber', val)
-
-
-    @Variables.noUndo
-    def getSRROM(self):
-        """
-        Return the relaxation coefficient for mass density
-        """
-        value = self.node_joule.xmlGetDouble('density_relaxation')
-        if value == None:
-            value = self.defaultElectricalValues()['srrom']
-            self.setSRROM(value)
-        return value
-
-
-    @Variables.undoLocal
-    def setSRROM(self, val):
-        """
-        Input the relaxation coefficient for mass density
-        """
-        self.isFloat(val)
-        self.node_joule.xmlSetData('density_relaxation', val)
 
 
     @Variables.noUndo

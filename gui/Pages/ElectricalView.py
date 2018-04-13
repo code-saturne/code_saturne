@@ -104,7 +104,6 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.modelDirection.addItem(self.tr("Z"), "Z")
 
         # Connections
-        self.lineEditSRROM.textChanged[str].connect(self.slotSRROM)
         self.lineEditPower.textChanged[str].connect(self.slotPower)
         self.lineEditCurrent.textChanged[str].connect(self.slotCurrent)
         self.checkBoxScaling.clicked.connect(self.slotScaling)
@@ -118,8 +117,6 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.lineEditEpsilon.textChanged[str].connect(self.slotPlaneDefEpsilon)
 
         # Validators
-        validatorSRROM = DoubleValidator(self.lineEditSRROM, min=0.0, max=1.0)
-        validatorSRROM.setExclusiveMin(False)
         validatorPower = DoubleValidator(self.lineEditPower, min=0.0)
         validatorPower.setExclusiveMin(False)
         validatorCurrent = DoubleValidator(self.lineEditCurrent, min=0.0)
@@ -129,7 +126,6 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         validatorDefinitionC = DoubleValidator(self.lineEditPlaneDefinitionC)
         validatorDefinitionD = DoubleValidator(self.lineEditPlaneDefinitionD)
         validatorEpsilon     = DoubleValidator(self.lineEditEpsilon)
-        self.lineEditSRROM.setValidator(validatorSRROM)
         self.lineEditPower.setValidator(validatorPower)
         self.lineEditCurrent.setValidator(validatorCurrent)
         self.lineEditPlaneDefinitionA.setValidator(validatorDefinitionA)
@@ -149,9 +145,6 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Initialize widget
         """
-        srrom = self.model.getSRROM()
-        self.lineEditSRROM.setText(str(srrom))
-
         self.groupBoxRecalage.hide()
 
         if self.model.getScaling() == 'on':
@@ -196,16 +189,6 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
                     self.lineEditPlaneDefinitionD.setText(str(definition))
                     definition = self.model.getPlaneDefinition("epsilon")
                     self.lineEditEpsilon.setText(str(definition))
-
-
-    @pyqtSlot(str)
-    def slotSRROM(self, text):
-        """
-        Input Relaxation coefficient for mass density
-        """
-        if self.lineEditSRROM.validator().state == QValidator.Acceptable:
-            srrom = from_qvariant(text, float)
-            self.model.setSRROM(srrom)
 
 
     @pyqtSlot(str)
