@@ -2558,7 +2558,7 @@ endif
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@  A second ordre time-scheme was requested:',                 /,&
-'@      U,V,W : THETA = ', 3e12.4,                              /,&
+'@      U,V,W : THETA = ', e12.4,                               /,&
 '@     Source terme in Navier-Stokes: ISNO2T = ', i10,          /,&
 '@                                    THETSN = ', e12.4,        /,&
 '@      Density                     : IROEXT = ', i10,          /,&
