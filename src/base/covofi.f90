@@ -956,10 +956,14 @@ endif
 
 ! Low Mach compressible algos (conservative in time).
 ! Same algo. for Volume of Fluid method
-if (idilat.gt.1 .or. ivofmt.ge.0) then
-  call field_get_val_prev_s(icrom_scal, pcrom)
+if ((idilat.gt.1 .or. ivofmt.ge.0 .or. ipredfl.eq.0).and.irovar.eq.1) then
+  if (iterns.eq.1) then
+    call field_get_val_prev2_s(icrom_scal, pcrom)
+  else
+    call field_get_val_prev_s(icrom_scal, pcrom)
+  endif
 
-! Standard algo
+! Deprecated algo or constant density
 else
   call field_get_val_s(icrom_scal, pcrom)
 endif

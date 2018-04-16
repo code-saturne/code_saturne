@@ -184,16 +184,6 @@ elseif (istmpf.eq.2) then
 endif
 
 !    -- Proprietes physiques
-if (abs(thetro+999.d0).gt.epzero) then
-  write(nfecra,1011) 'IROEXT',iroext,'THETRO'
-  iok = iok + 1
-elseif (iroext.eq.0) then
-  thetro = 0.0d0
-elseif (iroext.eq.1) then
-  thetro = 0.5d0
-elseif (iroext.eq.2) then
-  thetro = 1.d0
-endif
 if (abs(thetvi+999.d0).gt.epzero) then
   write(nfecra,1011) 'IVIEXT',iviext,'THETVI'
   iok = iok + 1

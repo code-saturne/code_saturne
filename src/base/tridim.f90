@@ -230,7 +230,7 @@ call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1. Initialisation
 !===============================================================================
 
 allocate(isostd(nfabor+1))
@@ -409,16 +409,13 @@ if (ipass.eq.1) then
 endif
 
 !===============================================================================
-! 5. DANS LE CAS  "zero pas de temps" EN "SUITE" DE CALCUL
-!      ON SORT ICI
+! 5. Temporal update of previous values (mass flux, density, ...)
 !===============================================================================
 !  on sort avant SCHTMP car sinon a l'ordre 2 en temps la valeur du
 !  flux de masse au pas de temps precedent est ecrasee par la valeur
-!  au pas de temps actuel et la valeur au pas de temps actuel est
-!  remplacee par une extrapolation qui n'a pas lieu d'etre puisque
-!  NTCABS n'est pas incremente. Dans le cas INPDT0=1 sans suite, il
+!  au pas de temps actuel. Dans le cas INPDT0=1 sans suite, il
 !  n'y a pas de probleme puisque tous les flux de masse sont a 0           !
-!  Si ITRALE=0, on est a l'iteration d'initialisation de l'ALE,
+!  Si itrale=0, on est a l'iteration d'initialisation de l'ALE,
 !  on ne touche pas au flux de masse non plus
 
 
@@ -427,21 +424,6 @@ if (inpdt0.eq.1.and.isuite.eq.1) return
 if (itrale.gt.0) then
   iappel = 1
   call schtmp(nscal, iappel)
-endif
-
-!===============================================================================
-! 5.bis Current to previous for density
-!===============================================================================
-
-! --- Noter que exceptionnellement, on fait un calcul avec ncelet,
-!     pour eviter une nouvelle communication
-
-! If required, the density at time step n-1 is updated
-! Note that for VOF and dilatable algorithmes, density at time step n-2
-! is also updated
-if (icalhy.eq.1.or.idilat.gt.1.or.ivofmt.ge.0.or.ipthrm.eq.1) then
-  call field_current_to_previous(icrom)
-  call field_current_to_previous(ibrom)
 endif
 
 !===============================================================================
@@ -481,7 +463,6 @@ endif
 !    ON Y PASSE MEME S'IL N'Y A PAS DE PDC SUR LE PROC COURANT AU CAS OU
 !    UN UTILISATEUR DECIDERAIT D'AVOIR UN COEFF DE PDC DEPENDANT DE
 !    LA VITESSE MOYENNE OU MAX.
-
 
 if (ncpdct.gt.0) then
 
@@ -1249,7 +1230,21 @@ do while (iterns.le.nterup)
     ! In case of buoyancy, scalars and momentum are coupled
     if (n_buoyant_scal.ge.1) then
 
+      if(vcopt_u%iwarni.ge.1) then
+        write(nfecra,1060)
+      endif
+
+      ! Update buoyant scalar(s)
+      call scalai(nvar, nscal , iterns , dt)
+
+      ! Diffusion terms for weakly compressible algorithm
+      if (idilat.ge.4) then
+        call diffst(nscal, iterns)
+      endif
+
       ! Update the density
+      !-------------------
+
       call phyvar(nvar, nscal, iterns, dt)
 
     endif
@@ -1312,23 +1307,6 @@ do while (iterns.le.nterup)
 
     endif
 
-    ! In case of buoyancy, scalars and momentum are coupled
-    if (n_buoyant_scal.ge.1) then
-
-      if(vcopt_u%iwarni.ge.1) then
-        write(nfecra,1060)
-      endif
-
-      ! Update buoyant scalar(s)
-      call scalai(nvar, nscal , iterns , dt)
-
-      ! Diffusion terms for weakly compressible algorithm
-      if (idilat.ge.4) then
-        call diffst(nscal, iterns)
-      endif
-
-    endif
-
     !     Si c'est la derniere iteration : INSLST = 1
     if ((icvrge.eq.1).or.(iterns.eq.nterup)) then
 
@@ -1347,8 +1325,8 @@ do while (iterns.le.nterup)
         inslst = 1
       endif
 
-      !     On teste le flux de masse
-      if ((istmpf.eq.0.and.inslst.eq.0) .or. istmpf.ne.0) then
+      ! For explicit mass flux
+      if (istmpf.eq.0.and.inslst.eq.0) then
         iappel = 3
         call schtmp(nscal, iappel)
       endif
@@ -1477,8 +1455,6 @@ if (iccvfg.eq.0) then
   endif
 
   !     On ne passe dans SCHTMP que si ISTMPF.EQ.0 (explicite)
-  !     On teste le flux de masse
-  !     pour conserver
   if (istmpf.eq.0) then
     iappel = 4
     call schtmp(nscal, iappel)

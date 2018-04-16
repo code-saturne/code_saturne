@@ -114,7 +114,7 @@ double precision, pointer, dimension(:,:,:) :: ximpa
 ! Local variables
 
 integer          iccocg, inc, iel, iel1, iel2, ifac, imax, imaxt, imin, imint
-integer          ii    , inod, itypfl
+integer          ii    , inod, itypfl, f_id
 integer          isou, ivar, iitsm
 integer          init, iautof
 integer          iflmas, iflmab
@@ -142,6 +142,7 @@ double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
 double precision, allocatable, dimension(:,:,:), target :: wvisfi
 double precision, allocatable, dimension(:), target :: wvisbi
+double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc
 double precision, allocatable, dimension(:) :: phi
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
@@ -162,7 +163,7 @@ double precision, dimension(:,:), pointer :: coefau, cofafu, claale
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, clbale
 double precision, dimension(:), pointer :: coefa_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer :: brom, crom, croma, viscl, visct
+double precision, dimension(:), pointer :: brom, broma, crom, croma, viscl, visct
 double precision, dimension(:), pointer :: ivoifl, bvoifl
 double precision, dimension(:), pointer :: coavoi, cobvoi
 double precision, dimension(:,:), pointer :: trav
@@ -175,6 +176,9 @@ double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 double precision, dimension(:), pointer :: cvara_k
+double precision, dimension(:), pointer :: cpro_rho_mass
+double precision, dimension(:), pointer :: bpro_rho_mass
+double precision, dimension(:), pointer :: brom_eos, crom_eos
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
@@ -371,6 +375,62 @@ t2 = 0.d0
 t3 = 0.d0
 t4 = 0.d0
 
+! Id of the mass flux
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+
+! Pointers to the mass fluxes
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
+
+! Pointers to properties
+call field_get_val_s(icrom, crom_eos)
+call field_get_val_s(ibrom, brom_eos)
+
+if (irovar.eq.1) then
+  call field_get_val_prev_s(icrom, croma)
+  call field_get_val_prev_s(ibrom, broma)
+  ! If iterns = 1: this is density at time n
+  call field_get_id("density_mass", f_id)
+  call field_get_val_s(f_id, cpro_rho_mass)
+  call field_get_id("boundary_density_mass", f_id)
+  call field_get_val_s(f_id, bpro_rho_mass)
+
+  ! Time interpolated density
+  if (vcopt_u%thetav .lt. 1.d0) then
+    allocate(cpro_rho_tc(ncelet))
+    allocate(bpro_rho_tc(nfabor))
+
+    do iel = 1, ncelet
+      cpro_rho_tc(iel) = vcopt_u%thetav * cpro_rho_mass(iel) &
+        + (1.d0 - vcopt_u%thetav) * croma(iel)
+    enddo
+
+    crom => cpro_rho_tc
+
+    do ifac = 1, nfabor
+      bpro_rho_tc(ifac) = vcopt_u%thetav * bpro_rho_mass(ifac) &
+        + (1.d0 - vcopt_u%thetav) * broma(ifac)
+    enddo
+
+    brom => bpro_rho_tc
+
+  else
+    crom => cpro_rho_mass
+    brom => bpro_rho_mass
+  endif
+
+else
+  crom => crom_eos
+  brom => brom_eos
+endif
+
+! Pointers to BC coefficients
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
+call field_get_coefaf_v(ivarfl(iu), cofafu)
+call field_get_coefbf_v(ivarfl(iu), cofbfu)
+
 !===============================================================================
 ! 1. Prediction of the mass flux in case of Low Mach compressible algorithm
 !===============================================================================
@@ -428,24 +488,6 @@ endif
 
 iappel = 1
 
-! Id of the mass flux
-call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-
-! Pointers to the mass fluxes
-call field_get_val_s(iflmas, imasfl)
-call field_get_val_s(iflmab, bmasfl)
-
-! Pointers to properties
-call field_get_val_s(icrom, crom)
-call field_get_val_s(ibrom, brom)
-
-! Pointers to BC coefficients
-call field_get_coefa_v(ivarfl(iu), coefau)
-call field_get_coefb_v(ivarfl(iu), coefbu)
-call field_get_coefaf_v(ivarfl(iu), cofafu)
-call field_get_coefbf_v(ivarfl(iu), cofbfu)
-
 call predvv &
 ( iappel ,                                                       &
   nvar   , nscal  , iterns ,                                     &
@@ -453,9 +495,8 @@ call predvv &
   icepdc , icetsm , ifbpcd , ltmast ,                            &
   itypsm ,                                                       &
   dt     , vel    , vela   ,                                     &
-  imasfl , bmasfl ,                                              &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-  ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
+  ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
   trava  , ximpa  , uvwk   , dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
   w1     , w7     , w8     , w9     )
@@ -484,7 +525,7 @@ if (iprco.le.0) then
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
-   crom, brom,                                                    &
+   crom   , brom   ,                                              &
    vel    ,                                                       &
    coefau , coefbu ,                                              &
    imasfl , bmasfl )
@@ -622,6 +663,8 @@ if (iprco.le.0) then
   ! Free memory
   !--------------
   deallocate(coefa_dp, coefb_dp)
+  if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
+  if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
 
   return
 
@@ -1349,7 +1392,6 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
     enddo
 
     !   APPEL A PREDVV AVEC VALEURS AU PAS DE TEMPS COURANT
-    !                  AVEC LE FLUX DE MASSE RECALCULE
     iappel = 2
     call predvv &
  ( iappel ,                                                       &
@@ -1358,9 +1400,8 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    icepdc , icetsm , ifbpcd , ltmast ,                            &
    itypsm ,                                                       &
    dt     , vel    , vel    ,                                     &
-   esflum , esflub ,                                              &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-   ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
+   ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
    trava  , ximpa  , uvwk   , dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     )
@@ -1632,6 +1673,8 @@ deallocate(w1)
 deallocate(w7, w8, w9)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
 if (allocated(secvif)) deallocate(secvif, secvib)
+if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
+if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
 if (iphydr.eq.2) deallocate(grdphd)
 
 ! Free memory

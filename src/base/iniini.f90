@@ -441,7 +441,6 @@ thetst = -999.d0
 
 !     Masse volumique
 iroext = -999
-thetro = -999.d0
 initro = 0
 !     Viscosite totale
 iviext = -999

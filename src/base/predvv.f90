@@ -62,8 +62,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vel           velocity
 !> \param[in]     vela          velocity at the previous time step
-!> \param[in]     flumas        internal mass flux (depending on iappel)
-!> \param[in]     flumab        boundary mass flux (depending on iappel)
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     coefav        boundary condition array for the variable
 !>                               (explicit part)
@@ -80,9 +78,6 @@
 !> \param[in]     spcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, spcond is the flow rate
 !>                              \f$ \Gamma_{s, cond}^n \f$)
-!> \param[in]     svcond        variable value associated to the condensation
-!>                              source term (for ivar=ipr, svcond is the flow rate
-!>                              \f$ \Gamma_{v, cond}^n \f$)
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     trava         working array for the velocity-pressure coupling
 !> \param[in]     ximpa         same
@@ -115,9 +110,8 @@ subroutine predvv &
    icepdc , icetsm , ifbpcd , ltmast ,                            &
    itypsm ,                                                       &
    dt     , vel    , vela   ,                                     &
-   flumas , flumab ,                                              &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
-   ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
+   ckupdc , smacel , spcond , frcxt  , grdphd ,                   &
    trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     )
@@ -150,10 +144,8 @@ use cs_c_bindings
 use cfpoin
 use field
 use field_operator
-use pointe, only: gamcav
 use cavitation
 use vof
-use cs_tagms, only:s_metal
 use atincl, only: kopint, iatmst
 
 !===============================================================================
@@ -172,10 +164,9 @@ integer          ifbpcd(nfbpcd)
 integer          ltmast(ncelet)
 
 double precision dt(ncelet)
-double precision flumas(nfac), flumab(nfabor)
 double precision tslagr(ncelet,*)
 double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
-double precision spcond(nfbpcd,nvar), svcond(ncelet,nvar)
+double precision spcond(nfbpcd,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision grdphd(3, ncelet)
 double precision trava(ndim,ncelet)
@@ -203,10 +194,11 @@ integer          nswrgp, imligp, iwarnp
 integer          iswdyp, idftnp
 integer          iconvp, idiffp, ndircp, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
-integer          iflmb0, nswrp
+integer          iflmb0
 integer          idtva0, icvflb, f_oi_id
 integer          jsou  , ivisep, imasac
 integer          f_dim , iflwgr
+integer          iflmas, iflmab
 integer          ivoid(1)
 
 double precision rnorm , vitnor
@@ -215,9 +207,8 @@ double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision vit1  , vit2  , vit3, xkb, pip, pfac, pfac1
 double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
-double precision d2s3  , thetap, thetp1, thets , dtsrom
+double precision d2s3  , thetap, thetp1, thets
 double precision diipbx, diipby, diipbz
-double precision ccorio
 double precision dvol
 
 double precision rvoid(1)
@@ -232,8 +223,9 @@ double precision, dimension(:,:), allocatable :: tsexp
 double precision, dimension(:,:,:), allocatable :: tsimp
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, dimension(:,:), allocatable :: vect
-double precision, dimension(:), allocatable :: xinvro
-double precision, dimension(:), pointer :: brom, crom, croma, pcrom
+double precision, dimension(:), pointer :: brom, broma, crom, croma, cromaa, pcrom
+double precision, dimension(:), pointer :: brom_eos, crom_eos
+double precision, dimension(:), allocatable, target :: cproa_rho_tc
 double precision, dimension(:), pointer :: coefa_k, coefb_k
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:,:), allocatable :: rij
@@ -250,12 +242,12 @@ double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r23, cvara_r13
 double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: viscl, visct, c_estim
-double precision, allocatable, dimension(:) :: surfbm
 double precision, dimension(:,:), pointer :: lapla, lagr_st_vel
-double precision, dimension(:), pointer :: cpro_tsrho
 double precision, dimension(:,:), pointer :: cpro_gradp
 double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
+double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: imasfl_prev, bmasfl_prev
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
@@ -265,6 +257,46 @@ type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 ! 1. Initialization
 !===============================================================================
 
+! Id of the mass flux
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+
+! Pointers to the mass fluxes
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
+
+! Pointers to properties
+! Density at time n+1,iteration iterns+1
+call field_get_val_s(icrom, crom_eos)
+call field_get_val_s(ibrom, brom_eos)
+
+! Density at time (n)
+call field_get_val_prev_s(icrom, croma)
+call field_get_val_prev_s(ibrom, broma)
+
+! Density at time (n-1) if needed
+if ((ivofmt.ge.0 .or. idilat.gt.1 .or. ipredfl.eq.0).and.irovar.eq.1) then
+  call field_get_val_prev2_s(icrom, cromaa)
+endif
+
+! Density for the unsteady term (at time n-1)
+! Compressible algorithm (mass equation is already solved)
+if (ippmod(icompf).ge.0) then
+  pcrom => croma
+
+  ! VOF algorithm and Low Mach compressible Algos: density at time n-1
+else if ((idilat.gt.1.or.ivofmt.ge.0.or.ipredfl.eq.0).and.irovar.eq.1) then
+  if (iterns.eq.1) then
+    pcrom => cromaa
+  else
+    pcrom => croma
+  endif
+
+  ! Deprecated algo or constant density
+else
+  pcrom => crom_eos
+endif
+
 ! Allocate temporary arrays
 allocate(smbr(3,ncelet))
 allocate(fimp(3,3,ncelet))
@@ -273,6 +305,42 @@ allocate(tsimp(3,3,ncelet))
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
+! map the density pointer:
+! 1/4(n-1) + 1/2(n) + 1/4(n+1)
+! here replaced by (n)
+crom => croma
+brom => broma
+
+! Interpolation of rho^n-1/2 (stored in pcrom)
+! Interpolation of the mass flux at (n+1/2)
+! NB: the mass flux (n+1) is overwritten because not used after.
+! The mass flux for (n->n+1) will be recomputed in resopv
+! FIXME irovar=1 and if dt varies, use theta(rho) = theta(u)*...
+if (vcopt_u%thetav .lt. 1.d0 .and. iappel.eq.1 .and. iterns.gt.1) then
+  allocate(cproa_rho_tc(ncelet))
+
+  ! Pointer to the previous mass fluxes
+  call field_get_val_prev_s(iflmas, imasfl_prev)
+  call field_get_val_prev_s(iflmab, bmasfl_prev)
+
+  ! remap the density pointer: n-1/2
+  do iel = 1, ncelet
+    cproa_rho_tc(iel) = vcopt_u%thetav * croma(iel) + (1.d0 - vcopt_u%thetav) * cromaa(iel)
+  enddo
+  pcrom => cproa_rho_tc
+
+  ! Inner mass flux interpolation: n-1/2->n+1/2
+  do ifac = 1, nfac
+    imasfl(ifac) = vcopt_u%thetav * imasfl(ifac) + (1.d0 - vcopt_u%thetav) * imasfl_prev(ifac)
+  enddo
+
+  ! Boundary mass flux interpolation: n-1/2->n+1/2
+  do ifac = 1, nfabor
+    bmasfl(ifac) = vcopt_u%thetav * bmasfl(ifac) + (1.d0 - vcopt_u%thetav) * bmasfl_prev(ifac)
+  enddo
+
+endif
+
 idftnp = vcopt_u%idften
 
 if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) allocate(viscce(6,ncelet))
@@ -280,15 +348,6 @@ if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) allocate(viscce(6,ncelet))
 ! Allocate a temporary array for the prediction-stage error estimator
 if (iescal(iespre).gt.0) then
   allocate(eswork(3,ncelet))
-endif
-
-! Reperage de rho au bord
-call field_get_val_s(ibrom, brom)
-! Reperage de rho courant (ie en cas d'extrapolation rho^n+1/2)
-call field_get_val_s(icrom, crom)
-! Reperage de rho^n en cas d'extrapolation
-if (iroext.gt.0.or.idilat.gt.1) then
-  call field_get_val_prev_s(icrom, croma)
 endif
 
 if (iappel.eq.2) then
@@ -374,7 +433,7 @@ if (iterns.eq.1) then
   n_fans = cs_fan_n_fans()
   if (n_fans .gt. 0) then
     if (ntcabs.eq.ntpabs+1) then
-      call debvtl(flumas, flumab, crom, brom)
+      call debvtl(imasfl, bmasfl, crom, brom)
     endif
     call tsvvtl(tsexp)
   endif
@@ -499,71 +558,45 @@ if (iforbr.ge.0 .and. iterns.eq.1) then
   enddo
 endif
 
-!     Au premier appel, TRAV est construit directement ici.
-!     Au second  appel (estimateurs), TRAV contient deja
-!       l'increment temporel.
-!     On pourrait fusionner en initialisant TRAV a zero
-!       avant le premier appel, mais ca fait des operations en plus.
-
-!     Remarques :
-!       rho g sera a l'ordre 2 s'il est extrapole.
-!       si on itere sur navsto, ca ne sert a rien de recalculer rho g a
-!         chaque fois (ie on pourrait le passer dans trava) mais ce n'est
-!         pas cher.
 if (iappel.eq.1) then
-  if (iphydr.eq.1) then
-    do iel = 1, ncel
-      trav(1,iel) = (frcxt(1 ,iel) - cpro_gradp(1,iel)) * cell_f_vol(iel)
-      trav(2,iel) = (frcxt(2 ,iel) - cpro_gradp(2,iel)) * cell_f_vol(iel)
-      trav(3,iel) = (frcxt(3 ,iel) - cpro_gradp(3,iel)) * cell_f_vol(iel)
-    enddo
-  else if (iphydr.eq.2) then
-    do iel = 1, ncel
-      rom = crom(iel)
-      trav(1,iel) = (rom*gx - grdphd(1,iel) - cpro_gradp(1,iel)) * cell_f_vol(iel)
-      trav(2,iel) = (rom*gy - grdphd(2,iel) - cpro_gradp(2,iel)) * cell_f_vol(iel)
-      trav(3,iel) = (rom*gz - grdphd(3,iel) - cpro_gradp(3,iel)) * cell_f_vol(iel)
-    enddo
-  else if (ippmod(icompf).ge.0) then
-    do iel = 1, ncel
-      rom = crom(iel)
-      trav(1,iel) = (rom*gx - cpro_gradp(1,iel)) * cell_f_vol(iel)
-      trav(2,iel) = (rom*gy - cpro_gradp(2,iel)) * cell_f_vol(iel)
-      trav(3,iel) = (rom*gz - cpro_gradp(3,iel)) * cell_f_vol(iel)
-    enddo
-  else
-    do iel = 1, ncel
-      drom = (crom(iel)-ro0)
-      trav(1,iel) = (drom*gx - cpro_gradp(1,iel) ) * cell_f_vol(iel)
-      trav(2,iel) = (drom*gy - cpro_gradp(2,iel) ) * cell_f_vol(iel)
-      trav(3,iel) = (drom*gz - cpro_gradp(3,iel) ) * cell_f_vol(iel)
-    enddo
-  endif
 
-else if(iappel.eq.2) then
+  ! Initialization
+  ! NB: at the second call, trav contains the temporal increment
+  do iel = 1, ncel
+    trav(1,iel) = 0.d0
+    trav(2,iel) = 0.d0
+    trav(3,iel) = 0.d0
+  enddo
+endif
 
-  if (iphydr.eq.1) then
-    do iel = 1, ncel
-      trav(1,iel) = trav(1,iel) + (frcxt(1 ,iel) - cpro_gradp(1,iel))*cell_f_vol(iel)
-      trav(2,iel) = trav(2,iel) + (frcxt(2 ,iel) - cpro_gradp(2,iel))*cell_f_vol(iel)
-      trav(3,iel) = trav(3,iel) + (frcxt(3 ,iel) - cpro_gradp(3,iel))*cell_f_vol(iel)
-    enddo
-  else if (iphydr.eq.2) then
-    do iel = 1, ncel
-      rom = crom(iel)
-      trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(1,iel) - cpro_gradp(1,iel))*cell_f_vol(iel)
-      trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(2,iel) - cpro_gradp(2,iel))*cell_f_vol(iel)
-      trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(3,iel) - cpro_gradp(3,iel))*cell_f_vol(iel)
-    enddo
-  else
-    do iel = 1, ncel
-      drom = (crom(iel)-ro0)
-      trav(1,iel) = trav(1,iel) + (drom*gx - cpro_gradp(1,iel))*cell_f_vol(iel)
-      trav(2,iel) = trav(2,iel) + (drom*gy - cpro_gradp(2,iel))*cell_f_vol(iel)
-      trav(3,iel) = trav(3,iel) + (drom*gz - cpro_gradp(3,iel))*cell_f_vol(iel)
-    enddo
-  endif
-
+! FIXME : "rho g" will be second order only if extrapolated
+if (iphydr.eq.1) then
+  do iel = 1, ncel
+    trav(1,iel) = trav(1,iel)+(frcxt(1 ,iel) - cpro_gradp(1,iel)) * cell_f_vol(iel)
+    trav(2,iel) = trav(2,iel)+(frcxt(2 ,iel) - cpro_gradp(2,iel)) * cell_f_vol(iel)
+    trav(3,iel) = trav(3,iel)+(frcxt(3 ,iel) - cpro_gradp(3,iel)) * cell_f_vol(iel)
+  enddo
+else if (iphydr.eq.2) then
+  do iel = 1, ncel
+    rom = crom(iel)
+    trav(1,iel) = trav(1,iel)+(rom*gx - grdphd(1,iel) - cpro_gradp(1,iel)) * cell_f_vol(iel)
+    trav(2,iel) = trav(2,iel)+(rom*gy - grdphd(2,iel) - cpro_gradp(2,iel)) * cell_f_vol(iel)
+    trav(3,iel) = trav(3,iel)+(rom*gz - grdphd(3,iel) - cpro_gradp(3,iel)) * cell_f_vol(iel)
+  enddo
+else if (ippmod(icompf).ge.0) then
+  do iel = 1, ncel
+    rom = crom(iel)
+    trav(1,iel) = trav(1,iel)+(rom*gx - cpro_gradp(1,iel)) * cell_f_vol(iel)
+    trav(2,iel) = trav(2,iel)+(rom*gy - cpro_gradp(2,iel)) * cell_f_vol(iel)
+    trav(3,iel) = trav(3,iel)+(rom*gz - cpro_gradp(3,iel)) * cell_f_vol(iel)
+  enddo
+else
+  do iel = 1, ncel
+    drom = (crom(iel)-ro0)
+    trav(1,iel) = trav(1,iel)+(drom*gx - cpro_gradp(1,iel) ) * cell_f_vol(iel)
+    trav(2,iel) = trav(2,iel)+(drom*gy - cpro_gradp(2,iel) ) * cell_f_vol(iel)
+    trav(3,iel) = trav(3,iel)+(drom*gz - cpro_gradp(3,iel) ) * cell_f_vol(iel)
+  enddo
 endif
 
 ! Free memory
@@ -640,20 +673,6 @@ endif
 
 if (iappel.eq.1) then
 
-  ! Low Mach compressible Algos
-  if (idilat.gt.1.or.ippmod(icompf).ge.0) then
-    call field_get_val_prev_s(icrom, pcrom)
-
-  ! VOF algorithm: density at time n-1
-  else if (ivofmt.ge.0) then
-    call field_get_val_prev2_s(icrom, pcrom)
-
-  ! Standard algo
-  else
-
-    call field_get_val_s(icrom, pcrom)
-  endif
-
   do iel = 1, ncel
     do isou = 1, 3
       fimp(isou,isou,iel) = vcopt_u%istat*pcrom(iel)/dt(iel)*cell_f_vol(iel)
@@ -708,8 +727,6 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
     ! Calcul de rho^n grad k^n      si rho non extrapole
     !           rho^n grad k^n      si rho     extrapole
 
-    call field_get_val_s(icrom, crom)
-    call field_get_val_prev_s(icrom, croma)
     do iel = 1, ncel
       romvom = -croma(iel)*cell_f_vol(iel)*d2s3
       do isou = 1, 3
@@ -1245,7 +1262,9 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   ! Add -div( rho R) as external force
   if (itytur.eq.3.and.igprij.eq.1) then
     do iel = 1, ncel
-      dvol = 1.d0/cell_f_vol(iel)
+      dvol = 0.d0
+      ! If it is not a solid cell
+      if (isolid(iporos, iel).eq.0) dvol = 1.d0 / cell_f_vol(iel)
       do isou = 1, 3
         dfrcxt(isou, iel) = dfrcxt(isou, iel) - divt(isou, iel)*dvol
       enddo
@@ -1599,7 +1618,7 @@ if (iappel.eq.1) then
    relaxp , thetap ,                                              &
    vela   , vela   ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
-   flumas , flumab ,                                              &
+   imasfl , bmasfl ,                                              &
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
    rvoid  , rvoid  , rvoid  ,                                     &
    icvflb , icvfli ,                                              &
@@ -1619,7 +1638,7 @@ if (iappel.eq.1) then
    relaxp , thetap ,                                              &
    vela   , uvwk   ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
-   flumas , flumab ,                                              &
+   imasfl , bmasfl ,                                              &
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
    rvoid  , rvoid  , rvoid  ,                                     &
    icvflb , icvfli ,                                              &
@@ -1665,7 +1684,7 @@ if (iappel.eq.1) then
    relaxp , thetap ,                                              &
    vect   , vect   ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
-   flumas , flumab ,                                              &
+   imasfl , bmasfl ,                                              &
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
    rvoid  , rvoid  , rvoid  ,                                     &
    icvflb , ivoid  ,                                              &
@@ -1716,7 +1735,7 @@ else if (iappel.eq.2) then
    blencp , epsrgp , climgp , relaxp , thetap ,                            &
    vel    , vel    ,                                                       &
    coefav , coefbv , cofafv , cofbfv ,                                     &
-   flumas , flumab , viscf  , viscb  , secvif , secvib ,                   &
+   imasfl , bmasfl , viscf  , viscb  , secvif , secvib ,                   &
    rvoid  , rvoid  , rvoid  ,                                              &
    icvflb , icvfli ,                                                       &
    smbr   )
@@ -1796,6 +1815,7 @@ deallocate(tsexp)
 deallocate(tsimp)
 if (allocated(viscce)) deallocate(viscce)
 if (allocated(divt)) deallocate(divt)
+if (allocated(cproa_rho_tc)) deallocate(cproa_rho_tc)
 
 !--------
 ! Formats

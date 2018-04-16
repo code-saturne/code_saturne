@@ -31,6 +31,17 @@ User changes:
 
 Numerics:
 
+- Major change in the time stepping to ensure 2nd time order for
+  variable density flow if 2nd time order is activated.
+   It impacts all the second time order time stepping and also all variable
+   densities algorithms.
+  * If you want to go back to the previous algorithm for variable
+    density, you can specify ipredfl = 0 in the usipsu
+    (cs_user_parameters.f90) subroutine.
+  * The momentum equation is staggered in time, that is to say, when
+    2nd order is activated, velocity is solved from time n-1/2 to n+1/2.
+    A special care should be done for time averaged quantities.
+
 - Porous modelling: adapte the numerics to discontinous porosity.
   * The velocity is interpolated at faces using mass conservation and the momentum is
     corrected so that the steady state of Euler equations is retrieved.

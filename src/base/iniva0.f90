@@ -168,19 +168,25 @@ do iel = 1, ncel
   crom(iel)  = ro0
 enddo
 
-! Note: for VOF or dilatable algorithms, density at twice previous time step is
-! also stored and written here with "current to previous" function
-if (    iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1 &
-    .or.ivofmt.ge.0.or.ipthrm.eq.1) then
-  call field_current_to_previous(icrom)
-endif
-
 !     Masse volumique aux faces de bord (et au pdt precedent si ordre2)
 do ifac = 1, nfabor
   brom(ifac) = ro0
 enddo
-if (iroext.gt.0.or.ivofmt.ge.0.or.idilat.gt.1) then
-  call field_current_to_previous(ibrom)
+
+! Note: for VOF or dilatable algorithms, density at twice previous time step is
+! also stored and written here with "current to previous" function
+if (ivofmt.ge.0.or.idilat.ge.1.or.ipredfl.eq.0) then
+  call field_current_to_previous(icrom)
+  call field_current_to_previous(icrom)
+  if (iroext.gt.0.or.idilat.gt.1) then
+    call field_current_to_previous(ibrom)
+    call field_current_to_previous(ibrom)
+  endif
+else if (iroext.gt.0.or.icalhy.eq.1.or.ipthrm.eq.1.or.ippmod(icompf).ge.0) then
+  call field_current_to_previous(icrom)
+  if (iroext.gt.0) then
+    call field_current_to_previous(ibrom)
+  endif
 endif
 
 !     Viscosite moleculaire

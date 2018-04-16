@@ -35,9 +35,6 @@ subroutine verini &
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -263,7 +260,6 @@ call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 if ( (abs(vcopt%thetav-1.0d0).gt.1.d-3).or.               &
      (    thetsn       .gt.0.d0 ).or.                     &
      (    isno2t       .gt.0    ).or.                     &
-     (    thetro       .gt.0.d0 ).or.                     &
      (    iroext       .gt.0    ).or.                     &
      (    thetvi       .gt.0.d0 ).or.                     &
      (    iviext       .gt.0    )    ) then
@@ -273,7 +269,7 @@ if ( (abs(vcopt%thetav-1.0d0).gt.1.d-3).or.               &
     write(nfecra,2140)                                    &
          vcopt%thetav,                                    &
          isno2t,thetsn,                                   &
-         iroext,thetro,                                   &
+         iroext,                                          &
          iviext,thetvi
     iok = iok + 1
   endif
@@ -377,7 +373,6 @@ if (ippmod(iphpar).ge.1) then
   enddo
   if ((thetsn .gt.0.d0).or.                                &
       (isno2t .gt.0   ).or.                                &
-      (thetro .gt.0.d0).or.                                &
       (iroext .gt.0   ).or.                                &
       (thetvi .gt.0.d0).or.                                &
       (iviext .gt.0   ).or.                                &

@@ -229,7 +229,8 @@ double precision, allocatable, dimension(:,:), target :: tpusro
 double precision, dimension(:), pointer :: viscap
 double precision, dimension(:,:), pointer :: vitenp
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer :: brom, crom, croma
+double precision, dimension(:), pointer :: brom, crom, croma, broma
+double precision, dimension(:), pointer :: brom_eos, crom_eos
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cpro_divu
 double precision, dimension(:), pointer :: cpro_wgrec_s
@@ -242,6 +243,8 @@ double precision, allocatable, dimension(:) :: cpro_visc
 double precision, allocatable, dimension(:,:) :: cpro_vitenp
 double precision, allocatable, dimension(:,:) :: trav
 double precision, dimension(:,:), pointer :: cpro_poro_div_duq
+double precision, dimension(:), pointer :: cpro_rho_mass, bpro_rho_mass
+double precision, dimension(:), allocatable, target :: cpro_rho_tc, bpro_rho_tc
 
 !===============================================================================
 
@@ -315,11 +318,49 @@ call field_get_coefaf_s(ivarfl(ipr), coefaf_p)
 call field_get_coefbf_s(ivarfl(ipr), coefbf_p)
 
 ! --- Physical quantities
-call field_get_val_s(icrom, crom)
-if (icalhy.eq.1.or.idilat.gt.1) then
+call field_get_val_s(icrom, crom_eos)
+if (icalhy.eq.1.or.idilat.gt.1.or.irovar.eq.1) then
   call field_get_val_prev_s(icrom, croma)
 endif
-call field_get_val_s(ibrom, brom)
+call field_get_val_s(ibrom, brom_eos)
+if (irovar.eq.1) then
+  call field_get_val_prev_s(ibrom, broma)
+endif
+
+if (irovar.eq.1) then
+  call field_get_id("density_mass", f_id)
+  call field_get_val_s(f_id, cpro_rho_mass)
+  call field_get_id("boundary_density_mass", f_id)
+  call field_get_val_s(f_id, bpro_rho_mass)
+
+  ! Time interpolated density
+  if (vcopt_u%thetav .lt. 1.d0 .and. iterns.gt.1) then
+    allocate(cpro_rho_tc(ncelet))
+    allocate(bpro_rho_tc(nfabor))
+
+    do iel = 1, ncelet
+      cpro_rho_tc(iel) = vcopt_u%thetav * cpro_rho_mass(iel) &
+        + (1.d0 - vcopt_u%thetav) * croma(iel)
+    enddo
+
+    crom => cpro_rho_tc
+
+    do ifac = 1, nfabor
+      bpro_rho_tc(ifac) = vcopt_u%thetav * bpro_rho_mass(ifac) &
+        + (1.d0 - vcopt_u%thetav) * broma(ifac)
+    enddo
+
+    brom => bpro_rho_tc
+
+  else
+    crom => cpro_rho_mass
+    brom => bpro_rho_mass
+  endif
+
+else
+  crom => crom_eos
+  brom => brom_eos
+endif
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 
@@ -1290,10 +1331,13 @@ endif
 
 ! --- Source term associated to the mass aggregation
 if (idilat.eq.2.or.idilat.eq.3) then
+
+  ! Add source term
   do iel = 1, ncel
-    drom = crom(iel) - croma(iel)
+    drom = crom_eos(iel) - croma(iel)
     cpro_divu(iel) = cpro_divu(iel) + drom*cell_f_vol(iel)/dt(iel)
   enddo
+
 endif
 
 ! ---> Termes sources Lagrangien
@@ -1842,6 +1886,19 @@ else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
 endif
 
+! Update density (which is coherent with the mass)
+!-------------------------------------------------
+
+if (irovar.eq.1) then
+  do iel = 1, ncelet
+    cpro_rho_mass(iel) = crom_eos(iel)
+  enddo
+
+  do ifac = 1, nfabor
+    bpro_rho_mass(ifac) = brom_eos(ifac)
+  enddo
+endif
+
 !===============================================================================
 ! 6. Suppression of the mesh hierarchy
 !===============================================================================
@@ -2246,6 +2303,8 @@ if (ivofmt.ge.0.or.idilat.eq.4) then
   if (allocated(xunsro)) deallocate(xunsro)
   if (allocated(tpusro)) deallocate(tpusro)
 endif
+if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
+if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
 
 !--------
 ! Formats
