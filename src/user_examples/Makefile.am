@@ -75,6 +75,7 @@ EXTRA_DIST =
 examplefiles = \
 cs_user_1d_wall_thermal.c \
 cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
+cs_user_boundary_conditions-medcoupling_remapper_2d.c \
 cs_user_cdo_extra_op-verif-diffusion.c \
 cs_user_coupling-saturne.c \
 cs_user_coupling-syrthes.c \
