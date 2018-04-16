@@ -250,70 +250,88 @@ cs_user_parameters(void)
    */
 
   /*! [param_stokes_model] */
-
-  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
-  stokes->arak = 0.;
-
+  {
+    cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
+    stokes->arak = 0.;
+  }
   /*! [param_stokes_model] */
 
   /* Example: choose a limiter for a given scalar */
   /*----------------------------------------------*/
 
   /*! [param_var_limiter_choice] */
+  {
+    /* retrieve scalar field by its name */
+    cs_field_t *sca1 = cs_field_by_name("scalar1");
 
-  /* retrieve scalar field by its name */
-  cs_field_t *sca1 = cs_field_by_name("scalar1");
+    /* isstpc:
+      0: swich on the slope test
+      1: swich off the slope test (default)
+      2: continuous limiter ensuring boundedness (beta limiter)
+      3: NVD/TVD Scheme */
 
-  /* isstpc:
-     0: swich on the slope test
-     1: swich off the slope test (default)
-     2: continuous limiter ensuring boundedness (beta limiter)
-     3: NVD/TVD Scheme */
+    cs_var_cal_opt_t vcopt;
+    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
-  cs_var_cal_opt_t vcopt;
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+    cs_field_get_key_struct(sca1, key_cal_opt_id, &vcopt);
+    vcopt.isstpc = 3;
+    cs_field_set_key_struct(sca1, key_cal_opt_id, &vcopt);
 
-  cs_field_get_key_struct(sca1, key_cal_opt_id, &vcopt);
-  vcopt.isstpc = 3;
-  cs_field_set_key_struct(sca1, key_cal_opt_id, &vcopt);
+    /* Min/Max limiter or NVD/TVD limiters
+     * then "limiter_choice" keyword must be set:
+     *   0: Gamma
+     *   1: SMART
+     *   2: CUBISTA
+     *   3: SUPERBEE
+     *   4: MUSCL
+     *   5: MINMOD
+     *   6: CLAM
+     *   7: STOIC
+     *   8: OSHER
+     *   9: WASEB
+     *   --- VOF scheme ---
+     *   10: M-HRIC
+     *   11: M-CICSAM       */
 
-  /* Min/Max limiter or NVD/TVD limiters
-     then "limiter_choice" keyword must be set:
-     0: Gamma
-     1: SMART
-     2: CUBISTA
-     3: SUPERBEE
-     4: MUSCL
-     5: MINMOD
-     6: CLAM
-     7: STOIC
-     8: OSHER
-     9: WASEB
-     --- VOF scheme ---
-     10: M-HRIC
-     11: M-CICSAM       */
+    int key_lim_id = cs_field_key_id("limiter_choice");
+    cs_field_set_key_int(sca1, key_lim_id, CS_NVD_SUPERBEE);
 
-  int key_lim_id = cs_field_key_id("limiter_choice");
-  cs_field_set_key_int(sca1, key_lim_id, CS_NVD_SUPERBEE);
-
+  }
   /*! [param_var_limiter_choice] */
+
+  /* Example: declare a scalar as buoyant so that it is
+   * included in the velocity pressure PISO loop  */
+  /*----------------------------------------------*/
+
+  /*! [param_var_is_buoyant] */
+  {
+    /* retrieve scalar field by its name */
+    cs_field_t *sca1 = cs_field_by_name("scalar1");
+
+    int key_is_buoyant = cs_field_key_id("is_buoyant");
+
+    cs_field_set_key_int(sca1, key_is_buoyant, 1);
+
+  }
+  /*! [param_var_is_buoyant] */
+
 
   /* Example: add boundary values for all scalars */
   /*----------------------------------------------*/
 
   /*! [param_var_boundary_vals_1] */
+  {
+    int n_fields = cs_field_n_fields();
 
-  int n_fields = cs_field_n_fields();
+    for (int f_id = 0; f_id < n_fields; f_id++) {
 
-  for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t  *f = cs_field_by_id(f_id);
 
-    cs_field_t  *f = cs_field_by_id(f_id);
+      if (f->type & CS_FIELD_VARIABLE)
+        cs_parameters_add_boundary_values(f);
 
-    if (f->type & CS_FIELD_VARIABLE)
-      cs_parameters_add_boundary_values(f);
-
+    }
   }
-
   /*! [param_var_boundary_vals_1] */
 
   /* Example: activate mesh robustness options */

@@ -52,6 +52,13 @@
 
   \snippet cs_user_parameters-base.c param_var_limiter_choice
 
+  If one wants to declare a scalar as buoyant (i.e. the density depends on this scalar
+  through a given equation of state) and add it in the velocity-pressure optional
+  sub-iterations (PISO), one can set the dedicated keyword:
+
+  \snippet cs_user_parameters-base.c param_var_is_buoyant
+
+
   To set options for the solving of the Stokes problem (velocity pressure coupling
   see \ref cs_stokes_model_t structure):
 
