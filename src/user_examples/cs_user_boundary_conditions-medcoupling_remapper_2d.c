@@ -2,7 +2,7 @@
  * User definition of boundary conditions.
  *============================================================================*/
 
-/* Code_Saturne version 5.2-alpha */
+/* VERS */
 
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
