@@ -151,7 +151,7 @@ double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:,:), pointer :: cvar_vec
 double precision, dimension(:), pointer :: cvar_sca
-double precision, dimension(:), pointer :: cvar_pr, cvara_pr
+double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvara_k, cvar_ep, cvara_ep
 double precision, dimension(:), pointer :: cvar_omg, cvara_omg
 double precision, dimension(:), pointer :: cvar_nusa, cvara_nusa
@@ -269,7 +269,6 @@ if ((nfpt1t.gt.0).and.(nbccou.le.0)) then
 endif
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
-call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 if (iphydr.eq.1) then
   call field_get_val_v_by_name('volume_forces', frcxt)
@@ -1285,7 +1284,6 @@ do while (iterns.le.nterup)
       ! Update local pointer arrays for transient turbomachinery computations
       if (iturbo.eq.2) then
         call field_get_val_s(ivarfl(ipr), cvar_pr)
-        call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
       endif
 
     else
@@ -1324,15 +1322,6 @@ do while (iterns.le.nterup)
 
       endif
 
-    endif
-
-    !     Mise a jour de la pression si on utilise un couplage vitesse/pression
-    !       par point fixe
-    !     En parallele, l'echange est fait au debut de navstv.
-    if (nterup.gt.1) then
-      do iel = 1, ncel
-        cvara_pr(iel) = cvar_pr(iel)
-      enddo
     endif
 
     ! In case of buoyancy, scalars and momentum are coupled

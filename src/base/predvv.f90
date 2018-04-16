@@ -245,7 +245,7 @@ double precision, dimension(:,:,:), allocatable :: coefbt
 double precision, dimension(:,:), allocatable :: tflmas, tflmab
 double precision, dimension(:,:), allocatable :: divt
 double precision, dimension(:,:), pointer :: forbr, c_st_vel
-double precision, dimension(:), pointer :: cvara_pr, cvara_k
+double precision, dimension(:), pointer :: cvar_pr, cvara_k
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r23, cvara_r13
 double precision, dimension(:,:), pointer :: cvara_rij
@@ -293,7 +293,7 @@ endif
 
 if (iappel.eq.2) then
   if (iforbr.ge.0 .and. iterns.eq.1 .or. ivofmt.ge.0) then
-    call field_get_val_s(ivarfl(ipr), cvara_pr)
+    call field_get_val_s(ivarfl(ipr), cvar_pr)
   endif
   if(iforbr.ge.0 .and. iterns.eq.1                                          &
      .and. (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
@@ -313,7 +313,7 @@ if (iappel.eq.2) then
   endif
 else
   if (iforbr.ge.0 .and. iterns.eq.1 .or. ivofmt.ge.0) then
-    call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
+    call field_get_val_s(ivarfl(ipr), cvar_pr)
   endif
   if(iforbr.ge.0 .and. iterns.eq.1                                          &
      .and. (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
@@ -362,14 +362,8 @@ endif
 iccocg = 1
 inc    = 1
 
-! For compressible flows, the new Pressure field is required
-if (ippmod(icompf).ge.0) then
-  iprev = 0
-! For incompressible flows, keep the pressure at time n
-! in case of PISO algorithm
-else
-  iprev = 1
-endif
+! Take the latest pressure field
+iprev = 0
 
 ! Namely for the VOF algorithm: consistency of the gradient
 ! with the diffusive flux scheme of the correction step
@@ -416,10 +410,10 @@ if (iforbr.ge.0 .and. iterns.eq.1) then
     diipbx = diipb(1,ifac)
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
-    pip = cvara_pr(iel) &
+    pip = cvar_pr(iel) &
         + diipbx*cpro_gradp(1,iel) + diipby*cpro_gradp(2,iel) + diipbz*cpro_gradp(3,iel)
     pfac = coefa_p(ifac) +coefb_p(ifac)*pip
-    pfac1= cvara_pr(iel)                                              &
+    pfac1= cvar_pr(iel)                                              &
          +(cdgfbo(1,ifac)-xyzcen(1,iel))*cpro_gradp(1,iel)              &
          +(cdgfbo(2,ifac)-xyzcen(2,iel))*cpro_gradp(2,iel)              &
          +(cdgfbo(3,ifac)-xyzcen(3,iel))*cpro_gradp(3,iel)

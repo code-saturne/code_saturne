@@ -142,7 +142,7 @@ double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
 double precision, allocatable, dimension(:,:,:), target :: wvisfi
 double precision, allocatable, dimension(:), target :: wvisbi
-double precision, allocatable, dimension(:) :: dpvar
+double precision, allocatable, dimension(:) :: phi
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: esflum, esflub
@@ -171,7 +171,7 @@ double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:,:), pointer :: disala
 double precision, dimension(:,:), pointer :: cpro_momst
 double precision, dimension(:), pointer :: porosi
-double precision, dimension(:), pointer :: cvar_pr, cvara_pr
+double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 
@@ -191,7 +191,7 @@ interface
      smacel , spcond , svcond ,                                   &
      frcxt  , dfrcxt , tpucou , trav   ,                          &
      viscf  , viscb  ,                                            &
-     dpvar  , tslagr ,                                            &
+     phi    , tslagr ,                                            &
      trava  )
 
     use dimens, only: ndimfb
@@ -215,7 +215,7 @@ interface
     double precision, dimension (1:6,1:ncelet), target :: tpucou
     double precision trav(3,ncelet)
     double precision viscf(nfac), viscb(ndimfb)
-    double precision dpvar(ncelet)
+    double precision phi(ncelet)
     double precision tslagr(ncelet,*)
     double precision trava(ndim,ncelet)
     double precision coefav(3  ,ndimfb)
@@ -295,7 +295,6 @@ else
 endif
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
-call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 if (ivofmt.ge.0) then
   call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
@@ -355,11 +354,10 @@ if (nterup.gt.1) then
   endif
 
   ! On assure la periodicite ou le parallelisme de UVWK et la pression
-  ! (cette derniere vaut la pression a l'iteration precedente)
   if (iterns.gt.1) then
     if (irangp.ge.0.or.iperio.eq.1) then
       call synvin(uvwk(1,1))
-      call synsca(cvara_pr)
+      call synsca(cvar_pr)
     endif
   endif
 
@@ -750,7 +748,6 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
       call field_get_val_prev_v(ivarfl(iu), vela)
 
       call field_get_val_s(ivarfl(ipr), cvar_pr)
-      call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
       if (idtten.ge.0) call field_get_val_v(idtten, dttens)
 
@@ -829,7 +826,7 @@ if (vcopt_u%iwarni.ge.1) then
 endif
 
 ! Allocate temporary arrays for the pressure resolution
-allocate(dpvar(ncelet))
+allocate(phi(ncelet))
 
 if (ippmod(icompf).lt.0) then
 
@@ -841,7 +838,7 @@ if (ippmod(icompf).lt.0) then
   smacel , spcond , svcond ,                                     &
   frcxt  , dfrcxt , dttens , trav   ,                            &
   viscf  , viscb  ,                                              &
-  dpvar  , tslagr ,                                              &
+  phi    , tslagr ,                                              &
   trava  )
 
 endif
@@ -885,24 +882,11 @@ if (ippmod(icompf).lt.0) then
     ! The predicted velocity is corrected by the cell gradient of the
     ! pressure increment.
 
-    ! GRADIENT DE L'INCREMENT TOTAL DE PRESSION
+    ! Phi is the pressure increment
 
-    if (idtvar.lt.0) then
-      !$omp parallel do
-      do iel = 1, ncel
-        dpvar(iel) = (cvar_pr(iel) -cvara_pr(iel)) / vcopt_p%relaxv
-      enddo
-    else
-      !$omp parallel do
-      do iel = 1, ncel
-        dpvar(iel) = cvar_pr(iel) -cvara_pr(iel)
-      enddo
-    endif
-
-    ! --->    TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
-
+    ! ---> Periodicity and parallelism
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(dpvar)
+      call synsca(phi)
     endif
 
     iccocg = 1
@@ -923,7 +907,7 @@ if (ippmod(icompf).lt.0) then
        (ivarfl(ipr)     , imrgra , inc    , iccocg , nswrgp , imligp , &
         iphydr , iwarnp , epsrgp , climgp , extrap ,                   &
         dfrcxt ,                                                       &
-        dpvar  , coefa_dp        , coefb_dp        ,                   &
+        phi    , coefa_dp        , coefb_dp        ,                   &
         gradp  )
     else
       allocate(xinvro(ncelet))
@@ -934,7 +918,7 @@ if (ippmod(icompf).lt.0) then
       call gradient_weighted_s &
       ( ivarfl(ipr)     , imrgra , inc    , iccocg , nswrgp , imligp , &
         iphydr, iwarnp  , epsrgp , climgp , extrap , dfrcxt ,          &
-        dpvar  , xinvro , coefa_dp , coefb_dp ,                        &
+        phi    , xinvro , coefa_dp , coefb_dp ,                        &
         gradp  )
 
       deallocate(xinvro)
@@ -1633,7 +1617,7 @@ endif
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dpvar)
+deallocate(phi)
 deallocate(trav)
 deallocate(dfrcxt)
 deallocate(w1)
