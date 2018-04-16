@@ -94,7 +94,7 @@
 !>                               the residual
 !> \param[in]     viscf         visc*surface/dist aux faces internes
 !> \param[in]     viscb         visc*surface/dist aux faces de bord
-!> \param[in]     dpvar         tableau de travail pour increment
+!> \param[in]     phi           potential to be solved (pressure increment)
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     trava         tableau de travail pour couplage
 !_______________________________________________________________________________
@@ -107,7 +107,7 @@ subroutine resopv &
    smacel , spcond , svcond ,                                     &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  ,                                              &
-   dpvar  , tslagr ,                                              &
+   phi    , tslagr ,                                              &
    trava  )
 
 !===============================================================================
@@ -160,7 +160,7 @@ double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision, dimension (1:6,1:ncelet), target :: tpucou
 double precision trav(3,ncelet)
 double precision viscf(nfac), viscb(nfabor)
-double precision dpvar(ncelet)
+double precision phi(ncelet)
 double precision tslagr(ncelet,*)
 double precision trava(ndim,ncelet)
 double precision coefav(3  ,nfabor)
@@ -210,7 +210,7 @@ type(var_cal_opt) :: vcopt_p, vcopt_u
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: dam, xam
-double precision, allocatable, dimension(:) :: res, presa
+double precision, allocatable, dimension(:) :: res, phia
 double precision, dimension(:,:), allocatable :: gradp
 double precision, allocatable, dimension(:) :: coefaf_dp, coefbf_dp
 double precision, allocatable, dimension(:) :: coefap, coefbp, coefa_dp2
@@ -218,10 +218,10 @@ double precision, allocatable, dimension(:) :: coefa_rho, coefb_rho
 double precision, allocatable, dimension(:) :: cofafp, cofbfp, coefaf_dp2
 double precision, allocatable, dimension(:) :: rhs, rovsdt
 double precision, allocatable, dimension(:) :: hydro_pres
-double precision, allocatable, dimension(:) :: velflx, velflb, ddpvar
+double precision, allocatable, dimension(:) :: velflx, velflb, ddphi
 double precision, allocatable, dimension(:,:) :: coefar, cofafr
 double precision, allocatable, dimension(:,:,:) :: coefbr, cofbfr
-double precision, allocatable, dimension(:) :: adxk, adxkm1, dpvarm1, rhs0
+double precision, allocatable, dimension(:) :: adxk, adxkm1, dphim1, rhs0
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
@@ -236,13 +236,13 @@ double precision, dimension(:), pointer :: viscap
 double precision, dimension(:,:), pointer :: vitenp
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
-double precision, dimension(:), pointer :: cvar_pr, cvara_pr
+double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cpro_divu
 double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: c_estim_der
 double precision, dimension(:), pointer :: cpro_tsrho
-double precision, allocatable, dimension(:) :: surfbm
+double precision, allocatable, dimension(:) :: surfbm, dphi
 
 !===============================================================================
 
@@ -259,12 +259,13 @@ call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac))
-allocate(res(ncelet), presa(ncelet))
+allocate(res(ncelet), phia(ncelet))
 allocate(rhs(ncelet), rovsdt(ncelet))
 allocate(iflux(nfac), bflux(ndimfb))
+allocate(dphi(ncelet))
 iswdyp = vcopt_p%iswdyn
 if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
-                          dpvarm1(ncelet), rhs0(ncelet))
+                          dphim1(ncelet), rhs0(ncelet))
 if (icalhy.eq.1) allocate(frchy(ndim,ncelet),             &
                           dfrchy(ndim,ncelet), hydro_pres(ncelet))
 
@@ -321,7 +322,6 @@ endif
 call field_get_val_s(ibrom, brom)
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
-call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 call field_get_key_int(ivarfl(ipr), kimasf, iflmas)
 call field_get_key_int(ivarfl(ipr), kbmasf, iflmab)
@@ -664,7 +664,7 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
       cofafp , cofbfp ,                       &
       viscf  , viscb  ,                       &
       dam    , xam    ,                       &
-      dpvar  , rhs    )
+      dphi   , rhs    ) !FIXME remove work arrays.
 
     ! Free memory
     deallocate(coefap, cofafp)
@@ -932,7 +932,7 @@ deallocate(iflux, bflux)
 allocate(gradp(3,ncelet))
 
 iccocg = 1
-iprev  = 1
+iprev  = 0
 inc    = 1
 
 ! Pressure gradient
@@ -961,66 +961,78 @@ endif
 !     The RHS contains rho div(u*) and not div(rho u*)
 !     so this term will be add afterwards
 if (idilat.ge.4) then
-  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
+  if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
       ardtsr  = arak*(dt(iel)/crom(iel))
       do isou = 1, 3
-        trav(isou,iel) = ardtsr*trav(isou,iel)
+        trav(isou,iel) = ardtsr*gradp(isou,iel)
       enddo
     enddo
-  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+  else if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
       arsr  = arak/crom(iel)
 
       trav(1,iel) = arsr*(                                 &
-                           vitenp(1,iel)*(trav(1,iel))     &
-                         + vitenp(4,iel)*(trav(2,iel))     &
-                         + vitenp(6,iel)*(trav(3,iel))     &
+                           vitenp(1,iel)*gradp(1,iel)      &
+                         + vitenp(4,iel)*gradp(2,iel)      &
+                         + vitenp(6,iel)*gradp(3,iel)      &
                          )
       trav(2,iel) = arsr*(                                 &
-                           vitenp(4,iel)*(trav(1,iel))     &
-                         + vitenp(2,iel)*(trav(2,iel))     &
-                         + vitenp(5,iel)*(trav(3,iel))     &
+                           vitenp(4,iel)*gradp(1,iel)      &
+                         + vitenp(2,iel)*gradp(2,iel)      &
+                         + vitenp(5,iel)*gradp(3,iel)      &
                          )
       trav(3,iel) = arsr*(                                 &
-                           vitenp(6,iel)*(trav(1,iel))     &
-                         + vitenp(5,iel)*(trav(2,iel))     &
-                         + vitenp(3,iel)*(trav(3,iel))     &
+                           vitenp(6,iel)*gradp(1,iel)      &
+                         + vitenp(5,iel)*gradp(2,iel)      &
+                         + vitenp(3,iel)*gradp(3,iel)      &
                          )
 
+    enddo
+  else
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      do isou = 1, 3
+        trav(isou,iel) = 0.d0
+      enddo
     enddo
   endif
 
 ! Standard algorithm
 else
-  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
+
+  !$omp parallel do private(isou)
+  do iel = 1, ncel
+    do isou = 1, 3
+      trav(isou,iel) = vel(isou,iel)
+    enddo
+  enddo
+
+  if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
       ardtsr  = arak*(dt(iel)/crom(iel))
       do isou = 1, 3
-        trav(isou,iel) = vel(isou,iel) + ardtsr*trav(isou,iel)
+        trav(isou,iel) = trav(isou,iel) + ardtsr*gradp(isou,iel)
       enddo
     enddo
-  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+  else if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
       arsr  = arak/crom(iel)
 
-      trav(1,iel) = vel(1,iel)                             &
-                  + arsr*(                                 &
-                           vitenp(1,iel)*(trav(1,iel))     &
-                         + vitenp(4,iel)*(trav(2,iel))     &
-                         + vitenp(6,iel)*(trav(3,iel))     &
+      trav(1,iel) = trav(1,iel) + arsr*(                   &
+                           vitenp(1,iel)*gradp(1,iel)      &
+                         + vitenp(4,iel)*gradp(2,iel)      &
+                         + vitenp(6,iel)*gradp(3,iel)      &
                          )
-      trav(2,iel) = vel(2,iel)                             &
-                  + arsr*(                                 &
-                           vitenp(4,iel)*(trav(1,iel))     &
-                         + vitenp(2,iel)*(trav(2,iel))     &
-                         + vitenp(5,iel)*(trav(3,iel))     &
+      trav(2,iel) = trav(2,iel) + arsr*(                   &
+                           vitenp(4,iel)*gradp(1,iel)      &
+                         + vitenp(2,iel)*gradp(2,iel)      &
+                         + vitenp(5,iel)*gradp(3,iel)      &
                          )
-      trav(3,iel) = vel(3,iel)                             &
-                  + arsr*(                                 &
-                           vitenp(6,iel)*(trav(1,iel))     &
-                         + vitenp(5,iel)*(trav(2,iel))     &
-                         + vitenp(3,iel)*(trav(3,iel))     &
+      trav(3,iel) = trav(3,iel) + arsr*(                   &
+                           vitenp(6,iel)*gradp(1,iel)      &
+                         + vitenp(5,iel)*gradp(2,iel)      &
+                         + vitenp(3,iel)*gradp(3,iel)      &
                          )
 
     enddo
@@ -1108,8 +1120,8 @@ iccocg = 1
 !----------------------
 if (arak.gt.0.d0) then
 
-! --- Prise en compte de Arak : la viscosite face est multipliee
-!       Le pas de temps aussi. On retablit plus bas.
+  ! --- Prise en compte de Arak : la viscosite face est multipliee
+  !       Le pas de temps aussi. On retablit plus bas.
   do ifac = 1, nfac
     viscf(ifac) = arak*viscf(ifac)
   enddo
@@ -1147,8 +1159,8 @@ if (arak.gt.0.d0) then
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    frcxt  ,                                                                    &
-   cvara_pr          ,                                                         &
-   coefa_p , coefb_p , coefaf_p , coefbf_p ,                                   &
+   cvar_pr,                                                                    &
+   coefa_p, coefb_p, coefaf_p        , coefbf_p        ,                       &
    viscf  , viscb  ,                                                           &
    viscap ,                                                                    &
    imasfl , bmasfl )
@@ -1217,7 +1229,7 @@ if (arak.gt.0.d0) then
    iphydr , 0      , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
    frcxt  ,                                                                &
-   cvara_pr,                                                               &
+   cvar_pr,                                                                &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                               &
    viscf  , viscb  ,                                                       &
    vitenp ,                                                                &
@@ -1329,14 +1341,14 @@ endif
 nswmpr = vcopt_p%nswrsm
 
 ! --- Variables are set to 0
-!       cvar_pr    is the increment of the pressure
-!       dpvar      is the increment of the increment between sweeps
+!       phi        is the increment of the pressure
+!       dphi       is the increment of the increment between sweeps
 !       cpro_divu       is the initial divergence of the predicted mass flux
 
 do iel = 1, ncel
-  cvar_pr(iel) = 0.d0
-  dpvar(iel) = 0.d0
-  presa(iel) = 0.d0
+  phi(iel)  = 0.d0
+  dphi(iel) = 0.d0
+  phia(iel) = 0.d0
 enddo
 
 relaxp = vcopt_p%relaxv
@@ -1490,7 +1502,7 @@ endif
 
 ! --- Initial right hand side
 do iel = 1, ncel
-  rhs(iel) = - cpro_divu(iel) - rovsdt(iel)*cvar_pr(iel)
+  rhs(iel) = - cpro_divu(iel) - rovsdt(iel)*phi(iel)
 enddo
 
 
@@ -1547,7 +1559,7 @@ if (iswdyp.ge.1) then
    iwarnp ,                                                                    &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
-   dpvar  ,                                                                    &
+   dphi   ,                                                                    &
    coefa_dp  , coefb_dp  ,                                                     &
    coefaf_dp , coefbf_dp ,                                                     &
    viscf  , viscb  ,                                                           &
@@ -1562,7 +1574,7 @@ if (iswdyp.ge.1) then
    iphydr , iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                              &
    dfrcxt ,                                                                &
-   dpvar  ,                                                                &
+   dphi   ,                                                                &
    coefa_dp  , coefb_dp  ,                                                 &
    coefaf_dp , coefbf_dp ,                                                 &
    viscf  , viscb  ,                                                       &
@@ -1579,16 +1591,16 @@ endif
 
 do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
 
-  ! Solving on the increment dpvar
+  ! Solving on the increment dphi
   !-------------------------------
   if (iswdyp.eq.0) then
     do iel = 1, ncel
-      dpvar(iel) = 0.d0
+      dphi(iel) = 0.d0
     enddo
   else
     do iel = 1, ncel
-      dpvarm1(iel) = dpvar(iel)
-      dpvar(iel) = 0.d0
+      dphim1(iel) = dphi(iel)
+      dphi(iel) = 0.d0
     enddo
   endif
 
@@ -1600,7 +1612,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
 
   call sles_solve_native(ivarfl(ipr), '',                            &
                          isym, ibsize, iesize, dam, xam,             &
-                         epsilp, rnormp, niterf, ressol, rhs, dpvar)
+                         epsilp, rnormp, niterf, ressol, rhs, dphi)
 
   ! Dynamic relaxation of the system
   !---------------------------------
@@ -1634,7 +1646,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
      iwarnp ,                                                  &
      epsrgp , climgp , extrap ,                                &
      dfrcxt ,                                                  &
-     dpvar  ,                                                  &
+     dphi   ,                                                  &
      coefa_dp  , coefb_dp  ,                                   &
      coefaf_dp , coefbf_dp ,                                   &
      viscf  , viscb  ,                                         &
@@ -1649,7 +1661,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
      iphydr , iwarnp ,                                                       &
      epsrgp , climgp , extrap ,                                              &
      dfrcxt ,                                                                &
-     dpvar  ,                                                                &
+     dphi   ,                                                                &
      coefa_dp  , coefb_dp  ,                                                 &
      coefaf_dp , coefbf_dp ,                                                 &
      viscf  , viscb  ,                                                       &
@@ -1720,25 +1732,25 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
   if (iswdyp.eq.0) then
     if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) then
       do iel = 1, ncel
-        presa(iel) = cvar_pr(iel)
-        cvar_pr(iel) = presa(iel) + vcopt_p%relaxv*dpvar(iel)
+        phia(iel) = phi(iel)
+        phi(iel) = phi(iel) + vcopt_p%relaxv*dphi(iel)
       enddo
     ! If it is the last sweep, update with the total increment
     else
       do iel = 1, ncel
-        presa(iel) = cvar_pr(iel)
-        cvar_pr(iel) = presa(iel) + dpvar(iel)
+        phia(iel) = phi(iel)
+        phi(iel) = phi(iel) + dphi(iel)
       enddo
     endif
   elseif (iswdyp.eq.1) then
      do iel = 1, ncel
-      presa(iel) = cvar_pr(iel)
-      cvar_pr(iel) = presa(iel) + alph*dpvar(iel)
+      phia(iel) = phi(iel)
+      phi(iel) = phi(iel) + alph*dphi(iel)
     enddo
   elseif (iswdyp.ge.2) then
     do iel = 1, ncel
-      presa(iel) = cvar_pr(iel)
-      cvar_pr(iel) = presa(iel) + alph*dpvar(iel) + beta*dpvarm1(iel)
+      phia(iel) = phi(iel)
+      phi(iel) = phi(iel) + alph*dphi(iel) + beta*dphim1(iel)
     enddo
   endif
 
@@ -1765,7 +1777,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
    iwarnp ,                                                                    &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
-   cvar_pr   ,                                                                 &
+   phi    ,                                                                    &
    coefa_dp  , coefb_dp  ,                                                     &
    coefaf_dp , coefbf_dp ,                                                     &
    viscf  , viscb  ,                                                           &
@@ -1780,7 +1792,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
    iphydr , iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                              &
    dfrcxt ,                                                                &
-   cvar_pr   ,                                                             &
+   phi    ,                                                                &
    coefa_dp  , coefb_dp  ,                                                 &
    coefaf_dp , coefbf_dp ,                                                 &
    viscf  , viscb  ,                                                       &
@@ -1791,7 +1803,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
   endif
 
   do iel = 1, ncel
-    rhs(iel) = - cpro_divu(iel) - rhs(iel) - rovsdt(iel)*cvar_pr(iel)
+    rhs(iel) = - cpro_divu(iel) - rhs(iel) - rovsdt(iel)*phi(iel)
   enddo
 
   ! --- Convergence test
@@ -1880,7 +1892,7 @@ if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
-   presa  ,                                                                    &
+   phia   ,                                                                    &
    coefa_dp  , coefb_dp  ,                                                     &
    coefaf_dp , coefbf_dp ,                                                     &
    viscf  , viscb  ,                                                           &
@@ -1898,7 +1910,7 @@ if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
-   dpvar  ,                                                                    &
+   dphi   ,                                                                    &
    coefa_dp  , coefb_dp  ,                                                     &
    coefaf_dp , coefbf_dp ,                                                     &
    viscf  , viscb  ,                                                           &
@@ -1913,7 +1925,7 @@ else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
    iphydr , 0      , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
    dfrcxt ,                                                                &
-   presa  ,                                                                &
+   phia   ,                                                                &
    coefa_dp  , coefb_dp  ,                                                 &
    coefaf_dp , coefbf_dp ,                                                 &
    viscf  , viscb  ,                                                       &
@@ -1934,7 +1946,7 @@ else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
    iphydr , 0      , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
    dfrcxt ,                                                                &
-   dpvar  ,                                                                &
+   dphi   ,                                                                &
    coefa_dp  , coefb_dp  ,                                                 &
    coefaf_dp , coefbf_dp ,                                                 &
    viscf  , viscb  ,                                                       &
@@ -1958,7 +1970,7 @@ call sles_free_native(ivarfl(ipr), '')
 if (idilat.eq.5) then
 
   ! Allocate temporary arrays
-  allocate(ddpvar(ncelet))
+  allocate(ddphi(ncelet))
   allocate(coefar(3,ndimfb), cofafr(3,ndimfb))
   allocate(coefbr(3,3,ndimfb), cofbfr(3,3,ndimfb))
 
@@ -2142,7 +2154,7 @@ if (idilat.eq.5) then
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   cvar_pr  , cvar_pr       ,                                     &
+   phi    , phi    ,                                              &
    coefa_dp2       , coefb_p, coefaf_dp2      , coefbf_p,         &
    velflx , velflb , viscf  , viscb  , rvoid  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
@@ -2152,8 +2164,8 @@ if (idilat.eq.5) then
   ! --- Initialization of the variable to solve
   do iel = 1, ncel
     rovsdt(iel) = 340.d0/dt(iel) * cell_f_vol(iel)
-    dpvar(iel)   = 0.d0
-    ddpvar(iel)  = 0.d0
+    dphi(iel)   = 0.d0
+    ddphi(iel)  = 0.d0
     rhs(iel)    = - rhs(iel)
   enddo
 
@@ -2198,13 +2210,13 @@ if (idilat.eq.5) then
      iwarnp ,                                                       &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
-     dpvar  , dpvar  ,                                              &
+     dphi   , dphi   ,                                              &
      coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,          &
      velflx , velflb ,                                              &
      viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
      weighf , weighb ,                                              &
      icvflb , ivoid  ,                                              &
-     rovsdt , rhs    , dpvar  , ddpvar ,                            &
+     rovsdt , rhs    , dphi   , ddphi  ,                            &
      rvoid  , rvoid  )
 
   call sles_pop(ivarfl(ipr))
@@ -2212,9 +2224,9 @@ if (idilat.eq.5) then
   ! --- Update the increment of Pressure
 
   do iel = 1, ncel
-    cvar_pr(iel) = cvar_pr(iel) + dpvar(iel)
+    phi(iel) = phi(iel) + dphi(iel)
     ! Remove the last increment
-    dpvar(iel) = dpvar(iel) - ddpvar(iel)
+    dphi(iel) = dphi(iel) - ddphi(iel)
   enddo
 
   ! --- Update the Mass flux
@@ -2235,7 +2247,7 @@ if (idilat.eq.5) then
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
-   dpvar  ,                                                                    &
+   dphi   ,                                                                    &
    coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,                       &
    viscf  , viscb  ,                                                           &
    dt     ,                                                                    &
@@ -2252,7 +2264,7 @@ if (idilat.eq.5) then
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
-   ddpvar ,                                                                    &
+   ddphi  ,                                                                    &
    coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,                       &
    viscf  , viscb  ,                                                           &
    dt     ,                                                                    &
@@ -2265,7 +2277,7 @@ if (idilat.eq.5) then
      iphydr , 0      , iwarnp ,                                              &
      epsrgp , climgp , extrap ,                                              &
      dfrcxt ,                                                                &
-     dpvar  ,                                                                &
+     dphi   ,                                                                &
      coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,                   &
      viscf  , viscb  ,                                                       &
      vitenp ,                                                                &
@@ -2283,7 +2295,7 @@ if (idilat.eq.5) then
      iphydr , 0      , iwarnp ,                                              &
      epsrgp , climgp , extrap ,                                              &
      dfrcxt ,                                                                &
-     ddpvar ,                                                                &
+     ddphi  ,                                                                &
      coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,                   &
      viscf  , viscb  ,                                                       &
      vitenp ,                                                                &
@@ -2293,7 +2305,7 @@ if (idilat.eq.5) then
   endif
 
   ! Free memory
-  deallocate(ddpvar)
+  deallocate(ddphi)
   deallocate(coefa_dp2, coefaf_dp2)
   deallocate(coefar, coefbr)
   deallocate(cofafr, cofbfr)
@@ -2307,11 +2319,11 @@ endif
 
 if (idtvar.lt.0) then
   do iel = 1, ncel
-    cvar_pr(iel) = cvara_pr(iel) + vcopt_p%relaxv*cvar_pr(iel)
+    cvar_pr(iel) = cvar_pr(iel) + vcopt_p%relaxv*phi(iel)
   enddo
 else
   do iel = 1, ncel
-    cvar_pr(iel) = cvara_pr(iel) + cvar_pr(iel)
+    cvar_pr(iel) = cvar_pr(iel) + phi(iel)
   enddo
 endif
 
@@ -2334,13 +2346,13 @@ endif
 
 ! Free memory
 deallocate(dam, xam)
-deallocate(res, presa)
+deallocate(res, phia, dphi)
 if (allocated(divu)) deallocate(divu)
 deallocate(gradp)
 deallocate(coefaf_dp, coefbf_dp)
 deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
-if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
+if (iswdyp.ge.1) deallocate(adxk, adxkm1, dphim1, rhs0)
 if (icalhy.eq.1) deallocate(frchy, dfrchy, hydro_pres)
 if (ivofmt.ge.0.or.idilat.eq.4) then
   if (allocated(xdtsro)) deallocate(xdtsro)

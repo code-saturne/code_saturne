@@ -5,9 +5,12 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
-- Fix minor bug in the verification step (wrong format for the error message)
+- Rewrite pressure correction in pressure increment (fix computation of
+  pressure L2 residual if nterup > 1).
 
-- Fix bug in initialization of the wall condensation model
+- Fix minor bug in the verification step (wrong format for the error message).
+
+- Fix bug in initialization of the wall condensation model.
 
 - Fix crash in restart using coupled RSM model from non-RSM computation
   (issue #252).
