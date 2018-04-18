@@ -610,9 +610,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.17",
-                    archive="hdf5-1.8.17.tar.gz",
-                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.17/src/%s")
+                    version="1.8.20",
+                    archive="hdf5-1.8.20.tar.gz",
+                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.20/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -636,8 +636,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.2.1",
-                    archive="med-3.2.1.tar.gz",
+                    version="3.3.1",
+                    archive="med-3.3.1.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
@@ -672,9 +672,9 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="6.0.4",
-                    archive="scotch_6.0.4.tar.gz",
-                    url="https://gforge.inria.fr/frs/download.php/file/34618/%s")
+                    version="6.0.5a",
+                    archive="scotch_6.0.5a.tar.gz",
+                    url="https://gforge.inria.fr/frs/download.php/file/37401/%s")
 
     #---------------------------------------------------------------------------
 
@@ -1073,8 +1073,7 @@ Check the setup file and some utilities presence.
                 config_opts = config_opts + " --with-hdf5=" + hdf5.install_dir
                 med.config_opts += " --with-hdf5=" + hdf5.install_dir
                 cgns.config_opts += "-DCMAKE_PREFIX_PATH=" + hdf5.install_dir \
-                    + " -DHDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include" \
-                    + " -DHDF5_LIBRARY=" + hdf5.install_dir + "/lib/libhdf5.so"
+                    + " -DHDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include"
 
         # CGNS
 
