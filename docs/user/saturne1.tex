@@ -3841,12 +3841,12 @@ variable, the user may refer to the case \texttt{icodcl}=3 of \S~\ref{sec:prg_cl
 
 \item If \texttt{itypfb=ifrent}: free outlet, free inlet (based on Bernoulli relationship) face.
 
-\item If \texttt{itypfb=ifresf}: free-surface boundary condition.
-
 \begin{list}{$\rightarrow$}{}
 \item if outlet, the equivalent to standard outlet.
       In case of ingoing flux, the Benoulli relationship which links pressure and velocity is used (see the thory guide for more information). An additional head loss modelling what is going on outward of the domain can be added by the user.
 \end{list}
+
+\item If \texttt{itypfb=ifresf}: free-surface boundary condition.
 
 \item If \texttt{itypfb=i\_convective\_inlet}: inlet with zero diffusive flux for all transported variables (species and velocity). This allows to exactly impose the ingoing flux.
 
