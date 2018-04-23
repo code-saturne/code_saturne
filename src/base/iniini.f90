@@ -776,9 +776,9 @@ nftcdt= 0
 ineedy = 0
 imajdy = 0
 icdpar = -999
-ntcmxy = 1000
+ntcmxy = 100
 coumxy = 5000.d0
-epscvy = 1.0d-8
+epscvy = 1.0d-5
 yplmxy = 200.d0
 
 ! --- Methode des vortex
