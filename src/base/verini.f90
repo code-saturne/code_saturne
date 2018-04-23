@@ -268,7 +268,7 @@ if ( (abs(vcopt%thetav-1.0d0).gt.1.d-3).or.               &
      (    thetvi       .gt.0.d0 ).or.                     &
      (    iviext       .gt.0    )    ) then
   if (indest.eq.1.or.ipucou.eq.1.or.                      &
-      iphydr.eq.1.or.iphydr.eq.2.or.icalhy.eq.1.or.       &
+                     iphydr.eq.2.or.                      &
       idtvar.eq.1.or.idtvar.eq.2.or.idtvar.lt.0) then
     write(nfecra,2140)                                    &
          vcopt%thetav,                                    &
