@@ -630,9 +630,6 @@ endif
 if(ineedy.eq.1) then
 
   write(nfecra,4950) icdpar
-  if(abs(icdpar).eq.1) then
-    write(nfecra,4951) ntcmxy, coumxy, epscvy, yplmxy
-  endif
   write(nfecra,9900)
 
 endif
@@ -707,13 +704,6 @@ endif
 '                               (-1: std et recalcule si suite',/,&
 '                               ( 2: old et relu      si suite',/,&
 '                               (-2: old et recalcule si suite',/)
-4951  format(                                                     &
-                                                                /,&
-'       NTCMXY = ',4x,i10,    ' (Nb iter pour convection stat.',/,&
-                                                                /,&
-'       COUMXY = ',e14.5,     ' (Courant max pour convection )',/,&
-'       EPSCVY = ',e14.5,     ' (Precision pour convect. stat.',/,&
-'       YPLMXY = ',e14.5,     ' (y+ max avec influence amort.)',/)
 
 #else
 
@@ -781,13 +771,6 @@ endif
 '                               (-1: std, recomputed if restrt',/,&
 '                               ( 2: old, reread if restart',   /,&
 '                               (-2: old, recomputed if restrt',/)
-4951  format(                                                     &
-                                                                /,&
-'       NTCMXY = ',4x,i10,    ' (Nb iter for steady convect. )',/,&
-                                                                /,&
-'       COUMXY = ',e14.5,     ' (Max CFL for convection      )',/,&
-'       EPSCVY = ',e14.5,     ' (Precision for steady conv.  )',/,&
-'       YPLMXY = ',e14.5,     ' (y+ max w. damping influence )',/)
 
 #endif
 

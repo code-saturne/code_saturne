@@ -107,7 +107,7 @@ double precision visvdr(ncelet)
 integer          idtva0, f_id0, f_id  , iconvp, idiffp
 integer          f_id_yplus
 integer          ndircp
-integer          iflmb0, itypfl
+integer          iphydp
 integer          ifac  , iel   , init
 integer          inc   , iccocg, isym  , isweep
 integer          imucpp, idftnp
@@ -123,7 +123,7 @@ integer          ivoid(1)
 
 double precision relaxp, blencp, climgp, epsilp, epsrgp, epsrsp, extrap
 double precision thetap
-double precision xnorme, dtminy, dtmaxy
+double precision wall_surf
 double precision xusnmx, xusnmn, xnorm0
 double precision dismax, dismin, usna
 double precision hint, pimp, qimp
@@ -131,11 +131,9 @@ double precision hint, pimp, qimp
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: dvarp, smbdp, rovsdp
-double precision, allocatable, dimension(:,:) :: q
-double precision, allocatable, dimension(:,:) :: coefav
-double precision, allocatable, dimension(:,:,:) :: coefbv
-double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: dpvar
+double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, allocatable, dimension(:) :: viscap
 double precision, dimension(:), pointer :: w_dist
 double precision, pointer, dimension(:)   :: cvar_var
 double precision, pointer, dimension(:)   :: cvara_var
@@ -144,7 +142,9 @@ double precision, dimension(:), pointer :: viscl
 double precision, dimension(:), pointer :: visct
 double precision, pointer, dimension(:) :: coefap, coefbp
 double precision, pointer, dimension(:) :: cofafp, cofbfp
-double precision, dimension(:), pointer :: flumas, flumab
+double precision, pointer, dimension(:) :: a_y, b_y
+double precision, pointer, dimension(:) :: af_y, bf_y
+double precision, dimension(:), pointer :: imasfl, bmasfl
 type(var_cal_opt) :: vcopt
 
 integer          ipass
@@ -159,14 +159,9 @@ save             ipass
 
 ! Allocate temporary arrays for the distance resolution
 allocate(dvarp(ncelet), smbdp(ncelet), rovsdp(ncelet))
-allocate(q(3,ncelet))
-allocate(coefav(3,nfabor))
-allocate(coefbv(3,3,nfabor))
 allocate(dpvar(ncelet))
-
-! Allocate work arrays
-allocate(w1(ncelet))
-allocate(w2(ncelet))
+allocate(viscf(nfac), viscb(nfabor))
+allocate(viscap(ncelet))
 
 ipass  = ipass + 1
 
@@ -183,6 +178,12 @@ endif
 call field_get_id("wall_distance", f_id)
 call field_get_val_s(f_id, w_dist)
 
+call field_get_coefa_s( f_id, a_y)
+call field_get_coefb_s( f_id, b_y)
+call field_get_coefaf_s(f_id, af_y)
+call field_get_coefbf_s(f_id, bf_y)
+
+
 call field_get_id("wall_yplus", f_id_yplus)
 call field_get_key_struct_var_cal_opt(f_id_yplus, vcopt)
 
@@ -198,8 +199,8 @@ call field_get_key_int(f_id_yplus, kimasf, iflmas)
 call field_get_key_int(f_id_yplus, kbmasf, iflmab)
 
 ! Get pointer to the convective mass flux
-call field_get_val_s(iflmas, flumas)
-call field_get_val_s(iflmab, flumab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 ! Number of wall faces
 if (ipass.eq.1) then
@@ -248,94 +249,7 @@ if (ntcabs.eq.1) then
 endif
 
 !===============================================================================
-! 3. Compute  V = Grad(y)/|Grad(y)|
-!===============================================================================
-
-! Compute the gradient of the distance to the wall
-
-inc    = 1
-iccocg = 1
-
-call field_get_id("wall_distance", f_id)
-
-! Current gradient: iprev = 0
-call field_gradient_scalar(f_id, 0, imrgra, inc, iccocg, q)
-
-! Normalization (warning, the gradient may be sometimes equal to 0)
-do iel = 1, ncel
-  xnorme = max(sqrt(q(1,iel)**2+q(2,iel)**2+q(3,iel)**2), epzero)
-  do isou = 1, 3
-    q(isou,iel) = q(isou,iel)/xnorme
-  enddo
-enddo
-
-! Paralellism and periodicity
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synvin(q)
-endif
-
-!===============================================================================
-! 4. Compute the flux of V
-!===============================================================================
-
-! Le gradient normal de la distance a la paroi vaut -1 en paroi
-!   par definition et obeit a un flux nul ailleurs
-
-do ifac = 1, nfabor
-  if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
-    xnorme = max(surfbn(ifac), epzero**2)
-    do isou = 1, 3
-      coefav(isou,ifac) = - surfbo(isou,ifac)/xnorme
-      do jsou = 1, 3
-        coefbv(isou,jsou,ifac) = 0.d0
-      enddo
-    enddo
-  else
-    do isou = 1, 3
-      coefav(isou,ifac) = 0.d0
-      do jsou = 1, 3
-        if (isou == jsou) then
-          coefbv(isou,jsou,ifac) = 1.d0
-        else
-          coefbv(isou,jsou,ifac) = 0.d0
-        endif
-      enddo
-    enddo
-  endif
-enddo
-
-! Compute convective mass flux
-
-! Mass flux non-zero at walls
-iflmb0 = 0
-! Default initilization at 0
-init   = 1
-! Take Dirichlet into account
-inc    = 1
-! q=grad(y) is not the Reynolds stress tensor
-f_id   = -1
-
-! Convective velocity NOT multiplied by rho
-itypfl = 0
-
-epsrgp = vcopt%epsrgr
-climgp = vcopt%climgr
-nswrgp = vcopt%nswrgr
-imligp = vcopt%imligr
-iwarnp = vcopt%iwarni
-
-call inimav                                                       &
- ( f_id   , itypfl ,                                              &
-   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-   iwarnp ,                                                       &
-   epsrgp , climgp ,                                              &
-   rvoid  , rvoid  ,                                              &
-   q      ,                                                       &
-   coefav , coefbv ,                                              &
-   flumas , flumab )
-
-!===============================================================================
-! 5. Boundary conditions
+! 3. Boundary conditions
 !===============================================================================
 
 ! Dirichlet u*/nu at walls, homogeneous Neumann elsewhere
@@ -356,6 +270,18 @@ do ifac = 1, nfabor
          coefbp(ifac), cofbfp(ifac),             &
          pimp        , hint        , rinfin )
 
+    ! Dirichlet Boundary Condition
+    !-----------------------------
+
+    hint = 1.d0/distb(ifac)
+    pimp = 0.d0
+
+    call set_dirichlet_scalar &
+         !====================
+       ( a_y(ifac), af_y(ifac),             &
+         b_y(ifac), bf_y(ifac),             &
+         pimp     , hint      , rinfin )
+
 
   else
     ! Neumann Boundary Conditions
@@ -370,72 +296,88 @@ do ifac = 1, nfabor
          coefbp(ifac), cofbfp(ifac),             &
          qimp        , hint )
 
+    ! Neumann Boundary Conditions
+    !----------------------------
+
+    hint = 1.d0/distb(ifac)
+    qimp = 0.d0
+
+    call set_neumann_scalar &
+         !==================
+       ( a_y(ifac), af_y(ifac),             &
+         b_y(ifac), bf_y(ifac),             &
+         qimp     , hint )
+
   endif
 enddo
 
 !===============================================================================
-! 6. Compute the time step
+! 4. Compute the mass flux due to V = Grad(y)
 !===============================================================================
 
-! A large Courant number is wanted (of the order of 1000).
+call field_get_id("wall_distance", f_id)
 
-! On calcule avec MATRDT DA = Sigma a S/d
-iconvp = 1
-idiffp = 0
-! Non symmetric matrix
-isym   = 2
+! Default initilization at 0
+init   = 1
+! Take Dirichlet into account
+inc    = 1
+iccocg = 1
+iphydp = 0
 
-! Warning: no diffusion here, so no need of other Boundary coefficient
+epsrgp = vcopt%epsrgr
+extrap = vcopt%extrag
+climgp = vcopt%climgr
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+iwarnp = vcopt%iwarni
 
-call matrdt &
-!==========
- ( iconvp , idiffp , isym   ,                                     &
-   coefbp , coefbp , flumas , flumab , flumas , flumab , w2     )
-
-! Le Courant est coumxy = DT w2 / VOLUME
-!     d'ou DTMINY = MIN(COUMXY * VOLUME/w2)
-! Au cas ou une cellule serait a w2(IEL)=0,
-!   on ne la prend pas en compte
-
-! On prend dans QZ un pas de temps variable,
-!   si on ne trouve pas de pas de temps, on prend le minimum
-!   (cellules sources)
-dtminy = grand
-dtmaxy = -grand
-do iel = 1, ncel
-  w1(iel) = -grand
-  if(w2(iel).gt.epzero) then
-    w1(iel) = coumxy*volume(iel)/w2(iel)
-    dtminy  = min(w1(iel),dtminy)
-    dtmaxy  = max(w1(iel),dtmaxy)
-  endif
-enddo
-if(irangp.ge.0) then
-  call parmin (dtminy)
-  call parmax (dtmaxy)
-endif
-dtminy = max(dtminy,epzero)
-
-do iel = 1, ncel
-  if(w1(iel).le.0.d0) then
-    w1(iel) = dtminy
-  endif
+! Pseudo viscosity, to compute the convective flux "1 grad(y). Sij"
+do iel = 1, ncelet
+  viscap(iel) = 1.d0
 enddo
 
-if (vcopt%iwarni.ge.2) then
-  write(nfecra,2000) dtminy, dtmaxy
+call viscfa &
+  ( imvisf ,          &
+  viscap ,            &
+  viscf  , viscb  )
+
+! If the equation on the wall distance has no flux-reconstruction (ircflu=0)
+! then no reconstruction on the mass-flux (nswrgr)
+if (vcopt%ircflu.eq.0) then
+  nswrgp = 0
 endif
 
-!===============================================================================
-! 7. Diagonal part of the matrix
-!===============================================================================
+! Compute convective mass flux
+! here -div(1 grad(y))
+call itrmas &
+ ( f_id   , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp ,     &
+   0      , iwarnp ,                                                           &
+   epsrgp , climgp , extrap ,                                                  &
+   rvoid  ,                                                                    &
+   w_dist ,                                                                    &
+   a_y , b_y , af_y , bf_y ,                                                   &
+   viscf  , viscb  ,                                                           &
+   viscap ,                                                                    &
+   imasfl , bmasfl )
 
-do iel = 1, ncel
-  rovsdp(iel) = volume(iel)/w1(iel)
+! Now take the opposite
+do ifac = 1, nfac
+  imasfl(ifac) = - imasfl(ifac)
+enddo
+do ifac = 1, nfabor
+  bmasfl(ifac) = - bmasfl(ifac)
 enddo
 
 !===============================================================================
-! 8. Time loop
+! 5. Diagonal part of the matrix
+!===============================================================================
+
+do iel = 1, ncel
+  rovsdp(iel) = 0.d0
+enddo
+
+!===============================================================================
+! 6. Time loop
 !===============================================================================
 
 ! Initializations
@@ -471,7 +413,7 @@ if(irangp.ge.0) then
   call parmin (xusnmn)
 endif
 
-if(ipass.eq.1) then
+if (ntcabs.eq.1) then
   do iel = 1, ncelet
     dvarp(iel) = xusnmx
   enddo
@@ -484,149 +426,96 @@ else
   enddo
 endif
 
-! Norme de reference (moyenne des u*/nu)
-!   (on divise par le nombre de faces)
+! L2 norm of (u*/nu) over wall boundary faces
 xnorm0 = 0.d0
-infpar = 0
+wall_surf = 0.d0
 do ifac = 1, nfabor
   if(itypfb(ifac).eq.iparoi .or.                            &
-     itypfb(ifac).eq.iparug) then
-    infpar = infpar+1
-    xnorm0 = xnorm0 + coefap(ifac)**2
+    itypfb(ifac).eq.iparug) then
+    wall_surf = wall_surf + surfbn(ifac)
+    xnorm0 = xnorm0 + coefap(ifac)**2 * surfbn(ifac)
   endif
 enddo
 if(irangp.ge.0) then
-  call parcpt (infpar)
+  call parsom (wall_surf)
   call parsom (xnorm0)
 endif
-xnorm0 = xnorm0/dble(infpar)
+xnorm0 = sqrt(xnorm0 / wall_surf) * voltot
 
-! To prevent division by 0
-if (xnorm0.le.epzero**2) goto 100
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(dvarp)
+endif
 
-
-! Loops beginning
+! Right hand side
 !=================
+do iel = 1, ncel
+  smbdp(iel) = 0.d0
+enddo
 
-do isweep = 1, ntcmxy
+! Solving
+!=========
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
+idftnp = vcopt%idften
+nswrsp = vcopt%nswrsm
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
+! No error estimate
+iescap = 0
+imucpp = 0
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
+relaxp = vcopt%relaxv
+thetap = vcopt%thetav
+! all boundary convective flux with upwind
+icvflb = 0
+init   = 1
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(dvarp)
-  endif
+! There are som Dirichlet BCs
+ndircp = 1
+! No steady state algo
+idtva0 = 0
+! no over loops
+isweep = -1
 
+! Warning: no diffusion so no need of other diffusive Boundary coefficient
 
-
-  ! Save of the solution for convergence test
-  !===========================================
-
-  do iel = 1, ncel
-    w1(iel) = dvarp(iel)
-  enddo
-
-  ! Right hand side
-  !=================
-  do iel = 1, ncel
-    smbdp(iel) = 0.d0
-  enddo
-
-  ! Solving
-  !=========
-  iconvp = vcopt%iconv
-  idiffp = vcopt%idiff
-  idftnp = vcopt%idften
-  nswrsp = vcopt%nswrsm
-  nswrgp = vcopt%nswrgr
-  imligp = vcopt%imligr
-  ircflp = vcopt%ircflu
-  ischcp = vcopt%ischcv
-  isstpp = vcopt%isstpc
-  ! No error estimate
-  iescap = 0
-  imucpp = 0
-  iswdyp = vcopt%iswdyn
-  iwarnp = vcopt%iwarni
-  blencp = vcopt%blencv
-  epsilp = vcopt%epsilo
-  epsrsp = vcopt%epsrsm
-  epsrgp = vcopt%epsrgr
-  climgp = vcopt%climgr
-  extrap = vcopt%extrag
-  relaxp = vcopt%relaxv
-  thetap = vcopt%thetav
-  ! all boundary convective flux with upwind
-  icvflb = 0
-  init   = 1
-
-  ! There are som Dirichlet BCs
-  ndircp = 1
-  ! No steady state algo
-  idtva0 = 0
-
-  ! Warning: no diffusion so no need of other diffusive Boundary coefficient
-
-  call codits &
-  !==========
+call codits &
  ( idtva0 , isweep , f_id_yplus, iconvp , idiffp , ndircp ,       &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , xnorm0 ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    dvarp  , dvarp  ,                                              &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
-   flumas , flumab ,                                              &
-   flumas , flumab , flumas , flumab , rvoid  ,                   &
+   imasfl , bmasfl ,                                              &
+   imasfl , bmasfl , imasfl , bmasfl , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
    rovsdp , smbdp  , dvarp  , dpvar  ,                            &
    rvoid  , rvoid  )
 
+! Clipping (indispensable si on initialise par u*/nu du pas de
+!==========                                   temps precedent)
 
-  ! Clipping (indispensable si on initialise par u*/nu du pas de
-  !==========                                   temps precedent)
-
-  do iel = 1, ncel
-    dvarp(iel) = max(dvarp(iel),xusnmn)
-    dvarp(iel) = min(dvarp(iel),xusnmx)
-  enddo
-
-  ! Stopping test
-  !===============
-
-  ! on utilise QY dans lequel la solution precedente a ete sauvee
-  ! on souhaite que la variation de l'inconnue sur chaque cellule
-  !   soit inferieure a un pourcentage de la valeur moyenne de
-  !   u*/nu calculee sur les faces de bord
-  ! on limite le test aux cellules qui pourront avoir un interet pour
-  !   VanDriest, c'est a dire qu'on ignore celles a y+ > YPLMXY
-  !   comme on ne connait pas encore y+, on se base sur min(u*/nu) :
-  !   on ignore les cellules a y min(u*/nu) > YPLMXY
-
-  xnorme = -grand
-  do iel = 1, ncel
-    if(w_dist(iel)*xusnmn.le.yplmxy) then
-      xnorme = max(xnorme,(dvarp(iel)-w1(iel))**2)
-    endif
-  enddo
-  if (irangp.ge.0) then
-    call parmax (xnorme)
-  endif
-
-  if (vcopt%iwarni.ge.2) then
-    write(nfecra,3000)isweep,xnorme,xnorm0,xnorme/xnorm0
-  endif
-
-  if (xnorme.le.epscvy*xnorm0) goto 100
-
+do iel = 1, ncel
+  dvarp(iel) = max(dvarp(iel),xusnmn)
+  dvarp(iel) = min(dvarp(iel),xusnmx)
 enddo
 
-write(nfecra,8000) xnorme, xnorm0, xnorme/xnorm0, ntcmxy
-
- 100  continue
-
 !===============================================================================
-! 9. Finalization and printing
+! 7. Finalization and printing
 !===============================================================================
 
 do iel = 1, ncel
@@ -647,11 +536,11 @@ if (irangp.ge.0) then
 endif
 
 if (vcopt%iwarni.ge.1) then
-  write(nfecra,1000) dismin, dismax, min(isweep,ntcmxy)
+  write(nfecra,1000) dismin, dismax
 endif
 
 !===============================================================================
-! 10. Van Driest amortization
+! 8. Van Driest amortization
 !===============================================================================
 
 call field_get_val_s(icrom, crom)
@@ -670,10 +559,9 @@ enddo
 
 ! Free memory
 deallocate(dvarp, smbdp, rovsdp)
-deallocate(q)
-deallocate(coefav, coefbv)
-deallocate(w1, w2)
 deallocate(dpvar)
+deallocate(viscf, viscb)
+deallocate(viscap)
 
 !--------
 ! Formats
@@ -682,52 +570,17 @@ deallocate(dpvar)
 #if defined(_CS_LANG_FR)
 
  1000 format( &
-'                                                             ',/,&
-' ** DISTANCE A LA PAROI ADIMENSIONNELLE                      ',/,&
-'    ------------------------------------                     ',/,&
-'                                                             ',/,&
-'  Distance+ min = ',E14.5    ,' Distance+ max = ',E14.5       ,/,&
-'                                                             ',/,&
-'     (Calcul de la distance realise en ',I10   ,' iterations)',/)
- 2000 format( &
-'                                                             ',/,&
-' ** DISTANCE A LA PAROI ADIMENSIONNELLE                      ',/,&
-'    ------------------------------------                     ',/,&
-'                                                             ',/,&
-' Yplus:  Dt min = ',E14.5    ,'        Dt max = ',E14.5       ,/)
- 3000 format( &
-'                                                             ',/,&
-' ** DISTANCE A LA PAROI ADIMENSIONNELLE                      ',/,&
-'    ------------------------------------                     ',/,&
-'                                                             ',/,&
-' Yplus:  iteration   residu abs.     reference   residu rel. ',/,&
-' Yplus: ',I10    ,E14.5        ,E14.5        ,E14.5           ,/)
+''                                                             ,/,&
+' ** DISTANCE A LA PAROI ADIMENSIONNELLE'                      ,/,&
+'    ------------------------------------'                     ,/,&
+''                                                             ,/,&
+'  Distance+ min = ',E14.5    ,' Distance+ max = ',E14.5       ,/)
  7000 format( &
-'                                                             ',/,&
-' ** DISTANCE A LA PAROI ADIMENSIONNELLE                      ',/,&
-'    ------------------------------------                     ',/,&
-'                                                             ',/,&
-'  Elle n''est pas calculee au premier pas de temps           ',/)
- 8000 format( &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : Calcul de la distance a la paroi            ',/,&
-'@    =========                                               ',/,&
-'@     Le systeme iteratif pour le calcul de la distance a la ',/,&
-'@       paroi adimensionnelle est imparfaitement converge.   ',/,&
-'@                                                            ',/,&
-'@          Residu     Reference            Residu relatif    ',/,&
-'@  ',2E14.5,12X,E14.5                                         ,/,&
-'@                                                            ',/,&
-'@     Augmenter la valeur de NTCMXY dans usipsu peut resoudre',/,&
-'@       le probleme.                                         ',/,&
-'@     La valeur actuelle de cet entier est ',I10              ,/,&
-'@                                                            ',/,&
-'@     Le calcul se poursuit.                                 ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+''                                                             ,/,&
+' ** DISTANCE A LA PAROI ADIMENSIONNELLE'                      ,/,&
+'    ------------------------------------'                     ,/,&
+''                                                             ,/,&
+'  Elle n''est pas calculee au premier pas de temps'           ,/)
 
 #else
 
@@ -739,45 +592,12 @@ deallocate(dpvar)
 '  Min distance+ = ',E14.5    ,' Max distance+ = ',E14.5       ,/,&
 '                                                             ',/,&
 '     (Distance calculation done in ',I10   ,' iterations)'    ,/)
- 2000 format( &
-'                                                             ',/,&
-' ** DIMENSIONLESS WALL DISTANCE                              ',/,&
-'    ---------------------------                              ',/,&
-'                                                             ',/,&
-' Yplus:  Min dt = ',E14.5    ,'        Max dt = ',E14.5       ,/)
- 3000 format( &
-'                                                             ',/,&
-' ** DIMENSIONLESS WALL DISTANCE                              ',/,&
-'    ---------------------------                              ',/,&
-'                                                             ',/,&
-' Yplus:  iteration   abs. residu     reference   rel. residu ',/,&
-' Yplus: ',I10    ,E14.5        ,E14.5        ,E14.5           ,/)
  7000 format( &
-'                                                             ',/,&
-' ** DIMENSIONLESS WALL DISTANCE                              ',/,&
-'    ---------------------------                              ',/,&
-'                                                             ',/,&
-'  It is not computed at the first time step                  ',/)
- 8000 format( &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: Dimensionless distance to the wall computation ',/,&
-'@    ========                                                ',/,&
-'@     The iterative system for the dimensionless distance to ',/,&
-'@       the wall calculation has not properly converged.     ',/,&
-'@                                                            ',/,&
-'@          Residual   Reference            Relative residual ',/,&
-'@  ',2E14.5,12X,E14.5                                         ,/,&
-'@                                                            ',/,&
-'@     Increase the value of NTCMXY in usipsu may solve       ',/,&
-'@       the problem.                                         ',/,&
-'@     The current value of this integer is ',I10              ,/,&
-'@                                                            ',/,&
-'@     The calculation will be run.                           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+''                                                             ,/,&
+' ** DIMENSIONLESS WALL DISTANCE'                              ,/,&
+'    ---------------------------'                              ,/,&
+''                                                             ,/,&
+'  It is not computed at the first time step'                  ,/)
 
 #endif
 

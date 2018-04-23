@@ -1120,25 +1120,6 @@ module optcal
   !> Please contact the development team if you need to override this limitation.
   integer, save :: icdpar
 
-  !> to the wall \f$ y+ \f$.\n
-  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
-  integer, save :: ntcmxy
-
-  !> Target Courant number for the calculation of the non-dimensional distance
-  !> to the wall\n
-  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
-  double precision, save :: coumxy
-
-  !> relative precision for the convergence of the pseudo-transient regime
-  !> for the calculation of the non-dimensional distance to the wall \n
-  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
-  double precision, save :: epscvy
-
-  !> value of the non-dimensional distance to the wall above which the
-  !> calculation of the distance is not necessary (for the damping)
-  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
-  double precision, save :: yplmxy
-
   !> \}
 
   !----------------------------------------------------------------------------

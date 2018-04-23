@@ -381,6 +381,7 @@ if ((iturb.eq.30.and.irijec.eq.1).or.              &
     vcopt%idifft = 0
     vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
     vcopt%blencv = 0.d0 ! Pure upwind
+    vcopt%epsilo = 1.d-5 ! by default, not an high precision
     call field_set_key_struct_var_cal_opt(iflid, vcopt)
 
     ! Activate the drift for all scalars with key "drift" > 0

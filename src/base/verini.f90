@@ -561,19 +561,6 @@ if (ineedy.eq.1) then
     write(nfecra,2700) icdpar
     iok = iok + 1
   endif
-  if (ntcmxy.lt.1) then
-    write(nfecra,3100) 'NTCMXY',ntcmxy
-    iok = iok + 1
-  endif
-
-  if (coumxy.le.0.d0) then
-    write(nfecra,2740) 'COUMXY',coumxy
-    iok = iok + 1
-  endif
-  if (yplmxy.le.0.d0) then
-    write(nfecra,2740) 'YPLMXY',yplmxy
-    iok = iok + 1
-  endif
 
 endif
 
@@ -1503,39 +1490,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2740 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN REEL STRICTEMENT POSITIF.',           /,&
-'@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
- 3100 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN ENTIER STRICTEMENT POSITIF',          /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
 
  4300 format(                                                     &
 '@',                                                            /,&
@@ -2173,7 +2127,7 @@ endif
 '@',                                                            /,&
 '@     TIME-SCHEME FOR VELOCITY IS FIRST ORDER',                /,&
 '@       (THETAV = ', e10.2, ')',                               /,&
-'@     CERTAIN TERMS ARE HOWEVER SECOND ORDER IN TIME WITH',    /,&
+'@     SOME TERMS ARE HOWEVER SECOND ORDER IN TIME WITH',       /,&
 '@       THE FOLLOWING SETTINGS:',                              /,&
 '@',                                                            /,&
 '@ parameters       ISTMPF ISNO2T ISTO2T IROEXT IVIEXT ICPEXT', /,&
@@ -2197,7 +2151,7 @@ endif
 '@',                                                            /,&
 '@     TIME-SCHEME FOR VELOCITY IS SECOND ORDER',               /,&
 '@       (THETAV = ', e10.2, ')',                               /,&
-'@     CERTAIN TERMS ARE HOWEVER FIRST ORDER IN TIME  WITH',    /,&
+'@     SOME TERMS ARE HOWEVER FIRST ORDER IN TIME  WITH',       /,&
 '@       THE FOLLOWING SETTINGS:',                              /,&
 '@',                                                            /,&
 '@ parameters       ISTMPF ISNO2T ISTO2T IROEXT IVIEXT ICPEXT', /,&
@@ -2698,39 +2652,6 @@ endif
 '@  IL IS EQUAL',  i10,                                         /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2740 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE   A  STRICTLY POSITIVE REAL.',             /,&
-'@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
- 3100 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER  STRICTLY  POSITIVE',           /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
