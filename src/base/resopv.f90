@@ -965,7 +965,7 @@ if (idilat.ge.4) then
     do iel = 1, ncel
       ardtsr  = arak*(dt(iel)/crom(iel))
       do isou = 1, 3
-        trav(isou,iel) = ardtsr*gradp(isou,iel)
+        trav(isou,iel) = ardtsr*trav(isou,iel)
       enddo
     enddo
   else if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
@@ -973,19 +973,19 @@ if (idilat.ge.4) then
       arsr  = arak/crom(iel)
 
       trav(1,iel) = arsr*(                                 &
-                           vitenp(1,iel)*gradp(1,iel)      &
-                         + vitenp(4,iel)*gradp(2,iel)      &
-                         + vitenp(6,iel)*gradp(3,iel)      &
+                           vitenp(1,iel)*trav(1,iel)      &
+                         + vitenp(4,iel)*trav(2,iel)      &
+                         + vitenp(6,iel)*trav(3,iel)      &
                          )
       trav(2,iel) = arsr*(                                 &
-                           vitenp(4,iel)*gradp(1,iel)      &
-                         + vitenp(2,iel)*gradp(2,iel)      &
-                         + vitenp(5,iel)*gradp(3,iel)      &
+                           vitenp(4,iel)*trav(1,iel)      &
+                         + vitenp(2,iel)*trav(2,iel)      &
+                         + vitenp(5,iel)*trav(3,iel)      &
                          )
       trav(3,iel) = arsr*(                                 &
-                           vitenp(6,iel)*gradp(1,iel)      &
-                         + vitenp(5,iel)*gradp(2,iel)      &
-                         + vitenp(3,iel)*gradp(3,iel)      &
+                           vitenp(6,iel)*trav(1,iel)      &
+                         + vitenp(5,iel)*trav(2,iel)      &
+                         + vitenp(3,iel)*trav(3,iel)      &
                          )
 
     enddo
@@ -1012,7 +1012,7 @@ else
     do iel = 1, ncel
       ardtsr  = arak*(dt(iel)/crom(iel))
       do isou = 1, 3
-        trav(isou,iel) = trav(isou,iel) + ardtsr*gradp(isou,iel)
+        trav(isou,iel) = trav(isou,iel) + ardtsr*trav(isou,iel)
       enddo
     enddo
   else if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
@@ -1020,19 +1020,19 @@ else
       arsr  = arak/crom(iel)
 
       trav(1,iel) = trav(1,iel) + arsr*(                   &
-                           vitenp(1,iel)*gradp(1,iel)      &
-                         + vitenp(4,iel)*gradp(2,iel)      &
-                         + vitenp(6,iel)*gradp(3,iel)      &
+                           vitenp(1,iel)*trav(1,iel)      &
+                         + vitenp(4,iel)*trav(2,iel)      &
+                         + vitenp(6,iel)*trav(3,iel)      &
                          )
       trav(2,iel) = trav(2,iel) + arsr*(                   &
-                           vitenp(4,iel)*gradp(1,iel)      &
-                         + vitenp(2,iel)*gradp(2,iel)      &
-                         + vitenp(5,iel)*gradp(3,iel)      &
+                           vitenp(4,iel)*trav(1,iel)      &
+                         + vitenp(2,iel)*trav(2,iel)      &
+                         + vitenp(5,iel)*trav(3,iel)      &
                          )
       trav(3,iel) = trav(3,iel) + arsr*(                   &
-                           vitenp(6,iel)*gradp(1,iel)      &
-                         + vitenp(5,iel)*gradp(2,iel)      &
-                         + vitenp(3,iel)*gradp(3,iel)      &
+                           vitenp(6,iel)*trav(1,iel)      &
+                         + vitenp(5,iel)*trav(2,iel)      &
+                         + vitenp(3,iel)*trav(3,iel)      &
                          )
 
     enddo
