@@ -299,6 +299,29 @@ cs_user_parameters(void)
   }
   /*! [param_var_limiter_choice] */
 
+  /* Example: put a pourcentage of upwind when the slope test is activated */
+  /*-----------------------------------------------------------------------*/
+
+  /*! [param_var_blend_st] */
+  {
+    /* retrieve scalar field by its name */
+    cs_field_t *sca1 = cs_field_by_name("scalar1");
+
+    /* blend_st (can be between 0 and 1):
+      0: full upwind (default)
+      1: scheme without upwind */
+
+    cs_var_cal_opt_t vcopt;
+    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+
+    cs_field_get_key_struct(sca1, key_cal_opt_id, &vcopt);
+    vcopt.blend_st = 0.1;
+    cs_field_set_key_struct(sca1, key_cal_opt_id, &vcopt);
+
+  }
+  /*! [param_var_blend_st] */
+
+
   /* Example: declare a scalar as buoyant so that it is
    * included in the velocity pressure PISO loop  */
   /*----------------------------------------------*/
