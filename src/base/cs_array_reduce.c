@@ -2346,11 +2346,7 @@ _cs_real_scatter_norms_3d(cs_lnum_t           n_src_elts,
 
       } /* Loop on blocks */
 
-      for (int i = 0; i < 4; i++) {
-        vsum[i] += s[i];
-        asum[i] += s[i+4];
-        ssum[i] += s[i+8];
-      }
+      for (int i = 0; i < 12; i++) lsum[i] += s[i];
 
     } /* Loop on super-block */
 
@@ -2460,11 +2456,7 @@ _cs_real_scatter_norms_3d_filtered(cs_lnum_t           n_src_elts,
 
       } /* Loop on blocks */
 
-      for (int i = 0; i < 4; i++) {
-        vsum[i] += s[i];
-        asum[i] += s[i+4];
-        ssum[i] += s[i+8];
-      }
+      for (int i = 0; i < 12; i++) lsum[i] += s[i];
 
     } /* Loop on super-block */
 
