@@ -1028,6 +1028,13 @@ else
                          )
 
     enddo
+  else
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      do isou = 1, 3
+        trav(isou, iel) = vel(isou, iel)
+      enddo
+    enddo
   endif
 endif
 
