@@ -487,17 +487,17 @@ def get_script_return_code():
 
 #-------------------------------------------------------------------------------
 
-def run_command(cmd, pkg = None, echo = False,
+def run_command(args, pkg = None, echo = False,
                 stdout = sys.stdout, stderr = sys.stderr, env = None):
     """
     Run a command.
     """
     if echo == True:
-        if type(cmd) == str:
-            stdout.write(str(cmd) + '\n')
+        if type(args) == str:
+            stdout.write(str(args) + '\n')
         else:
             l = ''
-            for s in cmd:
+            for s in args:
                 if (s.find(' ') > -1):
                     l += ' ' + enquote_arg(s)
                 else:
@@ -525,17 +525,30 @@ def run_command(cmd, pkg = None, echo = False,
     if (stderr != sys.stderr):
         kwargs['stderr'] = stderr
 
-    if type(cmd) == str:
-        p = subprocess.Popen(cmd,
-                             shell=True,
-                             executable=get_shell_type(),
-                             universal_newlines=True,
-                             env = env,
-                             **kwargs)
-    else:
-        p = subprocess.Popen(cmd, universal_newlines=True, env = env, **kwargs)
-
-    p.communicate()
+    returncode = 1
+    try:
+        if type(args) == str:
+            p = subprocess.Popen(args,
+                                 shell=True,
+                                 executable=get_shell_type(),
+                                 universal_newlines=True,
+                                 env = env,
+                                 **kwargs)
+        else:
+            p = subprocess.Popen(args, universal_newlines=True, env = env, **kwargs)
+        p.communicate()
+        returncode = p.returncode
+    except Exception as e:
+        import traceback
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                  limit=2, file=sys.stderr)
+        print("")
+        print("Failed calling subprocess with:")
+        print("  args = " + str(args))
+        print("  env = " + str(env))
+        print("  kwargs = " + str(kwargs))
+        sys.exit(1)
 
     # Reset the PATH to its previous value
 
@@ -543,7 +556,7 @@ def run_command(cmd, pkg = None, echo = False,
         if pkg.config.features['relocatable'] == "yes":
             os.environ['PATH'] = saved_path
 
-    return p.returncode
+    return returncode
 
 #-------------------------------------------------------------------------------
 
