@@ -1023,7 +1023,7 @@ cs_f_field_var_ptr_by_id_try(int          id,
  *
  * parameters:
  *   id           <-- field id
- *   pointer_type <-- 1: var; 2: var_p;
+ *   pointer_type <-- 1: var; 2: var_prev; 3: var_prev2
  *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
  *   dim          --> dimensions (indexes in Fortran order,
  *                    dim[i] = 0 if i unused)
@@ -1047,15 +1047,12 @@ cs_f_field_var_ptr_by_id(int          id,
   dim[1] = 0;
   *p = NULL;
 
-  if (pointer_type == 1 || pointer_type == 2) {
+  if (pointer_type == 1 || pointer_type == 2 || pointer_type == 3) {
 
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
     cs_lnum_t _n_elts = n_elts[2];
 
-    if (pointer_type == 1)
-      *p = f->val;
-    else
-      *p = f->val_pre;
+    *p = f->vals[pointer_type - 1];
 
     if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
       _n_elts = 0;

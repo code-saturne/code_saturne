@@ -174,9 +174,6 @@ module numvar
   !> Density at the current time step (equal to icrom, kept for compatibility)
   integer, save :: irom
 
-  !> Density at the second previous time step
-  integer, save :: iromaa
-
   !> dynamic molecular viscosity (in kg/(m.s))
   integer, save :: iviscl
 
@@ -215,9 +212,6 @@ module numvar
 
   !> boundary density field ids of the variables
   integer, save :: ibrom
-
-  !> cell density at the second previous time step key id of the variables
-  integer, save :: icroaa
 
   !> field ids of the cell porosity
   integer, save :: ipori, iporf

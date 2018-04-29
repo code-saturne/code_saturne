@@ -575,9 +575,9 @@ if (iappel.eq.1) then
   if (idilat.gt.1.or.ippmod(icompf).ge.0) then
     call field_get_val_prev_s(icrom, pcrom)
 
-  ! VOF algorithm
+  ! VOF algorithm: density at time n-1
   else if (ivofmt.ge.0) then
-    call field_get_val_s(icroaa, pcrom)
+    call field_get_val_prev2_s(icrom, pcrom)
 
   ! Standard algo
   else

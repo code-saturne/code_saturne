@@ -132,14 +132,6 @@ if (icp.ge.0) then
   call field_set_key_int(icp, keylog, 1)
 endif
 
-! Density at the second previous time step for VOF algorithm
-! or dilatable algorithm
-if (ivofmt.ge.0.or.idilat.gt.1) then
-  call add_property_field_1d('density_old', 'Density Old', iromaa)
-  icroaa = iromaa
-  call hide_property(iromaa)
-endif
-
 ! ALE mesh viscosity
 if (iale.eq.1) then
   if (iortvm.eq.0) then
@@ -422,12 +414,18 @@ if (idilat.ge.4) then
   call field_set_key_int(id, keyvis, 0)
 endif
 
-! The density at the previous time step is required if idilat>1 or ivofmt>=0
-! or if we perform a hydrostatic pressure correction (icalhy=1)
-if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.ivofmt.ge.0 &
-    .or.ipthrm.eq.1.or.ippmod(icompf).ge.0) then
-  call field_set_n_previous(irom, 1)
-  if (iroext.gt.0.or.idilat.gt.1) then
+! Density at the second previous time step for VOF algorithm
+! or dilatable algorithm
+if (ivofmt.ge.0.or.idilat.gt.1) then
+  call field_set_n_previous(icrom, 2)
+  if (iroext.gt.0) then
+    call field_set_n_previous(ibrom, 2)
+  endif
+  ! The density at the previous time step is required if
+  ! we perform a hydrostatic pressure correction (icalhy=1)
+else if (iroext.gt.0.or.icalhy.eq.1.or.ipthrm.eq.1.or.ippmod(icompf).ge.0) then
+  call field_set_n_previous(icrom, 1)
+  if (iroext.gt.0) then
     call field_set_n_previous(ibrom, 1)
   endif
 endif

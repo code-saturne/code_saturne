@@ -270,7 +270,7 @@ call field_get_val_s(itemp, cpro_temp)
 call field_get_val_s(icrom, cpro_rho)
 
 if (idilat.ge.4) then
-  call field_get_val_s(icroaa, cproaa_rho)
+  call field_get_val_prev2_s(icrom, cproaa_rho)
   call field_get_val_s(iustdy(itsrho), cpro_tsrho)
   call field_get_val_s(iustdy(ifm  ), cpro_tsfm)
   call field_get_val_s(iustdy(ifp2m  ), cpro_tsfp2m)

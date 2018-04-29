@@ -89,7 +89,7 @@ logical          have_previous
 double precision xxk, xcmu, trii
 
 double precision, dimension(:), pointer :: dt
-double precision, dimension(:), pointer :: brom, crom, crom_prev2
+double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cofbcp
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:,:), pointer :: porosf
@@ -155,15 +155,12 @@ call field_get_val_s(ibrom, brom)
 do iel = 1, ncel
   crom(iel)  = ro0
 enddo
+
+! Note: for VOF or dilatable algorithms, density at twice previous time step is
+! also stored and written here with "current to previous" function
 if (    iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1 &
     .or.ivofmt.ge.0.or.ipthrm.eq.1) then
   call field_current_to_previous(icrom)
-endif
-if (ivofmt.ge.0.or.idilat.gt.1) then
-  call field_get_val_s(icroaa, crom_prev2)
-  do iel = 1, ncelet
-    crom_prev2(iel) = crom(iel)
-  enddo
 endif
 
 !     Masse volumique aux faces de bord (et au pdt precedent si ordre2)

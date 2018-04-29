@@ -142,7 +142,7 @@ double precision, allocatable, dimension(:) :: hbord, theipb
 double precision, allocatable, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
 double precision, allocatable, dimension(:) :: mass_source
-double precision, dimension(:), pointer :: brom, crom, crom_prev, crom_prev2
+double precision, dimension(:), pointer :: brom, crom
 
 double precision, pointer, dimension(:,:) :: uvwk
 double precision, pointer, dimension(:,:) :: trava
@@ -436,22 +436,11 @@ endif
 ! --- Noter que exceptionnellement, on fait un calcul avec ncelet,
 !     pour eviter une nouvelle communication
 
-! If required, the density at time step n-2 is updated
-if (ivofmt.ge.0.or.idilat.gt.1) then
-  call field_get_val_prev_s(icrom, crom_prev)
-  call field_get_val_s(icroaa, crom_prev2)
-  do iel = 1, ncelet
-    crom_prev2(iel) = crom_prev(iel)
-  enddo
-endif
-
 ! If required, the density at time step n-1 is updated
+! Note that for VOF and dilatable algorithmes, density at time step n-2
+! is also updated
 if (icalhy.eq.1.or.idilat.gt.1.or.ivofmt.ge.0.or.ipthrm.eq.1) then
-  call field_get_val_s(icrom, crom)
-  call field_get_val_prev_s(icrom, crom_prev)
-  do iel = 1, ncelet
-    crom_prev(iel) = crom(iel)
-  enddo
+  call field_current_to_previous(icrom)
   call field_current_to_previous(ibrom)
 endif
 
