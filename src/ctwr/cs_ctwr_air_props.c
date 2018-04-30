@@ -646,7 +646,7 @@ cs_ctwr_cp_humidair(const cs_real_t  x,
     cp_h = ct_prop->cp_a + x_s*ct_prop->cp_v + (x-x_s)*ct_prop->cp_l;
   } //FIXME + dX_s * hv ?
 
-  cp_h = cp_h/(1.0+x);
+  cp_h = cp_h / (1.0+x);
 
   return cp_h;
 }

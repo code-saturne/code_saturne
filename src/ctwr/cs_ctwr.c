@@ -1923,15 +1923,16 @@ cs_ctwr_source_term(int              f_id,
           cs_real_t cp_h = cs_ctwr_cp_humidair(x[cell_id], x_s[cell_id]);
           cs_real_t l_imp_st = vol_mass_source;
           cs_real_t xlew = _lewis_factor(evap_model,molmassrat,x[cell_id],x_s_tl);
+          /* Under saturated */
           if (x[cell_id] <= x_s_th) {
             cs_real_t coefh = vol_beta_x_ai * ( xlew * cp_h
                 + (x_s_tl - x[cell_id]) * cp_v
                 / (1. + x[cell_id]));
             exp_st[cell_id] += coefh * (t_h[cell_id] - t_l[cell_id]);
+            /* Over saturated */
           } else {
             cs_real_t coefh = xlew * cp_h;
-            exp_st[cell_id] += vol_beta_x_ai * ( coefh * t_h[cell_id]
-                - coefh * t_l[cell_id]
+            exp_st[cell_id] += vol_beta_x_ai * ( coefh * (t_h[cell_id] - t_l[cell_id])
                 + (x_s_tl - x_s_th) / (1. + x[cell_id])
                 * (  cp_l * t_h[cell_id]
                   - (cp_v * t_l[cell_id] + hv0)
