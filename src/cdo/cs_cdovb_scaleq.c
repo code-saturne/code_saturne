@@ -1217,13 +1217,6 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
   const cs_timer_t  t0 = cs_timer_time();
   const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
   const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
-
-  if (cs_glob_n_ranks == 1)
-    if (n_elts[0] > 0 && elt_ids == NULL)
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Computing the flux across all interior or border faces is"
-                  " not managed yet."));
-
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_adjacency_t  *f2c = connect->f2c;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -1236,10 +1229,15 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
 
     const cs_lnum_t  n_i_faces = connect->n_faces[2];
     const cs_lnum_t  *cell_ids = f2c->ids + f2c->idx[n_i_faces];
+    cs_lnum_t  bf_id;
 
     for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
 
-      const cs_lnum_t  bf_id = elt_ids[i];
+      if (elt_ids != NULL)
+        bf_id = elt_ids[i];
+      else
+        bf_id = i;
+
       const cs_lnum_t  f_id = n_i_faces + bf_id;
       const cs_lnum_t  c_id = cell_ids[bf_id];
       const cs_quant_t  f = cs_quant_set_face(f_id, quant);
@@ -1278,6 +1276,11 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
 
   }
   else if (ml_t == CS_MESH_LOCATION_INTERIOR_FACES) {
+
+    if (elt_ids == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Computing the flux across all interior faces is"
+                  " not managed yet."));
 
     for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
 
