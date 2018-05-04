@@ -1283,6 +1283,33 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the dual volume surrounding each vertex
+ *
+ * \param[in]      cdoq       pointer to cs_cdo_quantities_t structure
+ * \param[in]      c2v        pointer to the cell-->vertices connectivity
+ * \param[in, out] dual_vol   dual volumes related to each vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
+                                       const cs_adjacency_t        *c2v,
+                                       cs_real_t                   *dual_vol)
+{
+  if (dual_vol == NULL)
+    return;
+
+  assert(cdoq != NULL && c2v != NULL);
+
+  memset(dual_vol, 0, cdoq->n_vertices*sizeof(cs_real_t));
+
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++)
+    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+      dual_vol[c2v->ids[j]] += cdoq->dcell_vol[j];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define a cs_quant_t structure for a primal face (interior or border)
  *
  * \param[in]  f_id     id related to the face (f_id > n_i_face -> border face)

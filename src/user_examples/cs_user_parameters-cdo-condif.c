@@ -517,7 +517,7 @@ cs_user_model(void)
     cs_property_add("rho.cp",            // property name
                     CS_PROPERTY_ISO);    // type of material property
 
-    cs_advection_field_add("adv_field"); // name of the new advection field
+    cs_advection_field_add_user("adv_field"); // name of the new advection field
 
   }
   /*! [param_cdo_add_user_properties] */

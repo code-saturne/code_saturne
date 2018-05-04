@@ -353,7 +353,9 @@ _init_cell_structures(const cs_flag_t               cell_flag,
         const int _f_shift = eqc->n_face_dofs*f;
 
         csys->bf_flag[csys->n_bc_faces] = face_flag;
-        csys->bf_ids[csys->n_bc_faces++] = f;
+        csys->_f_ids[csys->n_bc_faces] = f;
+        csys->bf_ids[csys->n_bc_faces] = bf_id;
+        csys->n_bc_faces++;
 
         if (face_flag & CS_CDO_BC_HMG_DIRICHLET) {
 

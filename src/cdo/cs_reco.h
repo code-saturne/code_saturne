@@ -51,6 +51,69 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
+ * Inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value at the face center from an array of values
+ *         defined on primal vertices.
+ *
+ *  \param[in]      fm     pointer to cs_face_mesh_t structure
+ *  \param[in]      p_v    pointer to an array of values (local to this face)
+ *
+ * \return the value of the reconstruction at the face center
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_reco_fw_scalar_pv_at_face_center(const cs_face_mesh_t    *fm,
+                                    const cs_real_t         *p_v)
+{
+  cs_real_t  p_f = 0.;
+
+  if (p_v == NULL)
+    return p_f;
+
+  const cs_quant_t  pfq = fm->face;
+
+  for (short int e = 0; e < fm->n_ef; e++)
+    p_f += (p_v[fm->e2v_ids[2*e]] + p_v[fm->e2v_ids[2*e+1]]) * fm->tef[e];
+  p_f *= 0.5 / pfq.meas;
+
+  return p_f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value of a scalar potential at the cell center from
+ *         an array of values defined on primal vertices.
+ *         Algorithm based on the cs_cell_mesh_t structure.
+ *
+ *  \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ *  \param[in]      array    pointer to the array of values
+ *
+ *  \return the value of the reconstruction at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_reco_cw_scalar_pv_at_cell_center(const cs_cell_mesh_t     *cm,
+                                    const cs_real_t          *array)
+{
+  /* Sanity checks */
+  assert(cm != NULL && array != NULL);
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ));
+
+  /* Reconstruct the value at the cell center */
+  cs_real_t  pc = 0.;
+  for (short int v = 0; v < cm->n_vc; v++)
+    pc += cm->wvc[v] * array[cm->v_ids[v]];
+
+  return pc;
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -95,6 +158,25 @@ cs_reco_pv_at_cell_centers(const cs_adjacency_t        *c2v,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the value at all cell centers from an array of values
+ *         defined on primal vertices.
+ *         Case of vector-valued fields.
+ *
+ *  \param[in]      c2v      cell -> vertices connectivity
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      array    pointer to the array of values
+ *  \param[in, out] val_xc   values of the reconstruction at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_vect_pv_at_cell_centers(const cs_adjacency_t        *c2v,
+                                const cs_cdo_quantities_t   *quant,
+                                const double                *array,
+                                cs_real_t                   *val_xc);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct the value at the cell center from an array of values
  *         defined on primal vertices.
  *
@@ -112,6 +194,24 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
                           const cs_cdo_quantities_t   *quant,
                           const double                *array,
                           cs_real_t                   *val_xc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct a vector-valued array at vertices from a vector-valued
+ *         array at cells.
+ *
+ *  \param[in]      c2v       cell -> vertices connectivity
+ *  \param[in]      quant     pointer to the additional quantities struct.
+ *  \param[in]      val       pointer to the array of values
+ *  \param[in, out] reco_val  values of the reconstruction at vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_vect_pv_from_pc(const cs_adjacency_t        *c2v,
+                        const cs_cdo_quantities_t   *quant,
+                        const double                *val,
+                        cs_real_t                   *reco_val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -332,65 +432,6 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
                              const cs_real_t        *pot,
                              cs_cell_builder_t      *cb,
                              cs_real_t              *cgrd);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct the value at the face center from an array of values
- *         defined on primal vertices.
- *
- *  \param[in]      fm     pointer to cs_face_mesh_t structure
- *  \param[in]      p_v    pointer to an array of values (local to this face)
- *
- * \return the value of the reconstruction at the face center
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_real_t
-cs_reco_fw_scalar_pv_at_face_center(const cs_face_mesh_t    *fm,
-                                    const cs_real_t         *p_v)
-{
-  cs_real_t  p_f = 0.;
-
-  if (p_v == NULL)
-    return p_f;
-
-  const cs_quant_t  pfq = fm->face;
-
-  for (short int e = 0; e < fm->n_ef; e++)
-    p_f += (p_v[fm->e2v_ids[2*e]] + p_v[fm->e2v_ids[2*e+1]]) * fm->tef[e];
-  p_f *= 0.5 / pfq.meas;
-
-  return p_f;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct the value of a scalar potential at the cell center from
- *         an array of values defined on primal vertices.
- *         Algorithm based on the cs_cell_mesh_t structure.
- *
- *  \param[in]      cm       pointer to a cs_cell_mesh_t structure
- *  \param[in]      array    pointer to the array of values
- *
- *  \return the value of the reconstruction at the cell center
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_real_t
-cs_reco_cw_scalar_pv_at_cell_center(const cs_cell_mesh_t     *cm,
-                                    const cs_real_t          *array)
-{
-  /* Sanity checks */
-  assert(cm != NULL && array != NULL);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ));
-
-  /* Reconstruct the value at the cell center */
-  cs_real_t  pc = 0.;
-  for (short int v = 0; v < cm->n_vc; v++)
-    pc += cm->wvc[v] * array[cm->v_ids[v]];
-
-  return pc;
-}
 
 /*----------------------------------------------------------------------------*/
 

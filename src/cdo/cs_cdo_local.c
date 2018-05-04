@@ -250,6 +250,7 @@ cs_cell_sys_create(int          n_max_dofbyc,
 
   /* Boundary conditions */
   csys->n_bc_faces = 0;
+  csys->_f_ids = NULL;
   csys->bf_ids = NULL;
   csys->bf_flag = NULL;
   csys->has_dirichlet = false;
@@ -264,8 +265,11 @@ cs_cell_sys_create(int          n_max_dofbyc,
     BFT_MALLOC(csys->bf_flag, n_max_fbyc, cs_flag_t);
     memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_max_fbyc);
 
-    BFT_MALLOC(csys->bf_ids, n_max_fbyc, short int);
-    memset(csys->bf_ids, 0, sizeof(short int)*n_max_fbyc);
+    BFT_MALLOC(csys->_f_ids, n_max_fbyc, short int);
+    memset(csys->_f_ids, 0, sizeof(short int)*n_max_fbyc);
+
+    BFT_MALLOC(csys->bf_ids, n_max_fbyc, cs_lnum_t);
+    memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_max_fbyc);
 
   }
 
@@ -337,7 +341,8 @@ cs_cell_sys_reset(cs_flag_t        cell_flag,
     csys->has_dirichlet = csys->has_nhmg_neumann = csys->has_robin = false;
 
     memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_fbyc);
-    memset(csys->bf_ids, 0, sizeof(short int)*n_fbyc);
+    memset(csys->_f_ids, 0, sizeof(short int)*n_fbyc);
+    memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_fbyc);
     memset(csys->dof_flag, 0, sizeof(cs_flag_t)*n_dofbyc);
 
     memset(csys->dir_values, 0, s);
@@ -373,6 +378,7 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
   BFT_FREE(csys->source);
   BFT_FREE(csys->val_n);
 
+  BFT_FREE(csys->_f_ids);
   BFT_FREE(csys->bf_ids);
   BFT_FREE(csys->bf_flag);
   BFT_FREE(csys->dir_values);

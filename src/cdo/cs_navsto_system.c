@@ -883,7 +883,7 @@ _init_face_velocity_values(void)
         cs_evaluate_potential_by_analytic(f_dof_flag, def, f_values);
         break;
       case CS_PARAM_REDUCTION_AVERAGE:
-        cs_evaluate_average_on_faces_by_analytic(f_dof_flag, def, f_values);
+        cs_evaluate_average_on_faces_by_analytic(def, f_values);
         break;
 
       default:
@@ -966,7 +966,8 @@ cs_navsto_system_activate(cs_navsto_param_model_t        model,
                                            CS_PROPERTY_ISO);
 
   /* Advection field related to the resolved velocity */
-  navsto->adv_field = cs_advection_field_add("velocity_field");
+  navsto->adv_field = cs_advection_field_add("velocity_field",
+                                             CS_ADVECTION_FIELD_NAVSTO);
 
   /* Additional initialization fitting the choice of model */
   switch (navsto->param->coupling) {
@@ -1527,7 +1528,7 @@ cs_navsto_system_initialize(void)
           cs_evaluate_potential_by_analytic(c_dof_flag, def, c_values);
           break;
         case CS_PARAM_REDUCTION_AVERAGE:
-          cs_evaluate_average_on_cells_by_analytic(c_dof_flag, def, c_values);
+          cs_evaluate_average_on_cells_by_analytic(def, c_values);
           break;
 
         default:
@@ -1580,7 +1581,7 @@ cs_navsto_system_initialize(void)
           cs_evaluate_potential_by_analytic(dof_flag, def, values);
           break;
         case CS_PARAM_REDUCTION_AVERAGE:
-          cs_evaluate_average_on_cells_by_analytic(dof_flag, def, values);
+          cs_evaluate_average_on_cells_by_analytic(def, values);
           break;
 
         default:

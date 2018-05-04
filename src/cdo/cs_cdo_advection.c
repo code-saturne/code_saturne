@@ -43,6 +43,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_cdo_bc.h"
 #include "cs_hodge.h"
 #include "cs_log.h" /* For debugging purpose */
 #include "cs_math.h"
@@ -102,7 +103,8 @@ typedef double
 /*!
  * \brief   Update the system by taking into account the boundary conditions
  *
- * \param[in]      dir_values  array of Dirichlet values to set
+ * \param[in]      csys        pointer to a cellwise view of the system
+ * \param[in]      bf          local face number id (0..n_bc_faces)
  * \param[in]      flx         advective flux accros the triangle "tef"
  * \param[in]      v1          first vertex to consider in the cell numbering
  * \param[in]      v2          second vertex to consider in the cell numbering
@@ -112,7 +114,8 @@ typedef double
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(_update_vb_system_with_bc_t)(const double                *dir_values,
+(_update_vb_system_with_bc_t)(const cs_cell_sys_t         *csys,
+                              const short int              bf,
                               const double                 flx,
                               const short int              v1,
                               const short int              v2,
@@ -392,7 +395,8 @@ _update_vcb_system_with_bc(const double                 beta_nf,
  * \brief  Update the cell system with the contributions arising from the
  *         boundary conditions when the conservative formulation is used
  *
- * \param[in]      dir_values  array storing the Dirichlet values to set
+ * \param[in]      csys        pointer to a cellwise view of the system
+ * \param[in]      bf          local face number id (0..n_bc_faces)
  * \param[in]      flx         advective flux accros the triangle "tef"
  * \param[in]      v1          first vertex to consider in the cell numbering
  * \param[in]      v2          second vertex to consider in the cell numbering
@@ -402,18 +406,20 @@ _update_vcb_system_with_bc(const double                 beta_nf,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_update_with_bc_vb_csv(const double                *dir_values,
+_update_with_bc_vb_csv(const cs_cell_sys_t         *csys,
+                       const short int              bf,
                        const double                 flx,
                        const short int              v1,
                        const short int              v2,
                        double                      *rhs,
                        double                      *diag)
 {
-  if (flx < 0) { // advection field is inward w.r.t. the face normal
-
-    rhs[v1] -= flx * dir_values[v1];
-    rhs[v2] -= flx * dir_values[v2];
-
+  if (flx < 0) { /* advection field is inward w.r.t. the face normal */
+    if (cs_flag_test(csys->bf_flag[bf], CS_CDO_BC_DIRICHLET)) {
+      /* Homogoneous Dirichlet don't contribute. Other Bcs are invalid */
+      rhs[v1] -= flx * csys->dir_values[v1];
+      rhs[v2] -= flx * csys->dir_values[v2];
+    }
   }
   else { // advection is oriented outward
 
@@ -428,7 +434,8 @@ _update_with_bc_vb_csv(const double                *dir_values,
  * \brief  Update the cell system with the contributions arising from the
  *         boundary conditions when the non-conservative formulation is used
  *
- * \param[in]      dir_values  array storing the Dirichlet values to set
+ * \param[in]      csys        pointer to a cellwise view of the system
+ * \param[in]      bf          local face number id (0..n_bc_faces)
  * \param[in]      flx         advective flux accros the triangle "tef"
  * \param[in]      v1          first vertex to consider in the cell numbering
  * \param[in]      v2          second vertex to consider in the cell numbering
@@ -438,7 +445,8 @@ _update_with_bc_vb_csv(const double                *dir_values,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_update_with_bc_vb_noc(const double                *dir_values,
+_update_with_bc_vb_noc(const cs_cell_sys_t         *csys,
+                       const short int              bf,
                        const double                 flx,
                        const short int              v1,
                        const short int              v2,
@@ -447,8 +455,11 @@ _update_with_bc_vb_noc(const double                *dir_values,
 {
   if (flx < 0) { // advection field is inward w.r.t. the face normal
 
-    rhs[v1] -= flx * dir_values[v1];
-    rhs[v2] -= flx * dir_values[v2];
+    if (cs_flag_test(csys->bf_flag[bf], CS_CDO_BC_DIRICHLET)) {
+      /* Homogoneous Dirichlet don't contribute. Other Bcs are invalid */
+      rhs[v1] -= flx * csys->dir_values[v1];
+      rhs[v2] -= flx * csys->dir_values[v2];
+    }
     diag[v1] -= flx;
     diag[v2] -= flx;
 
@@ -838,7 +849,7 @@ _vcb_consistent_part(const cs_adv_field_t     *adv_field,
 
     for (int k = 0; k < 3; k++)
       xg[k] = 0.25 * (fm->xv[3*v1+k]+fm->xv[3*v2+k]+fm->xc[k]+pfq.center[k]);
-    cs_advection_field_get_at_xyz(adv_field, cm, xg, &bnv);
+    cs_advection_field_eval_at_xyz(adv_field, cm, xg, &bnv);
 
     const double  bgc = _dp3(grd_c, bnv.unitv);
     const double  pef_coef = 0.25 * bnv.meas * hf_coef * fm->tef[e];
@@ -1515,7 +1526,7 @@ cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
 
   /* Use a cellwise constant approximation of the advection field */
   cs_nvec3_t  adv_cell;
-  cs_advection_field_in_cell(cm, eqp->adv_field, &adv_cell);
+  cs_advection_field_get_cell_vector(cm->c_id, eqp->adv_field, &adv_cell);
 
   if (adv_cell.meas < cs_math_get_machine_epsilon())
     return;
@@ -1641,7 +1652,7 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
 
   /* Use a cellwise constant approximation of the advection field */
   cs_nvec3_t  adv_cell;
-  cs_advection_field_in_cell(cm, eqp->adv_field, &adv_cell);
+  cs_advection_field_get_cell_vector(cm->c_id, eqp->adv_field, &adv_cell);
 
   if (adv_cell.meas < cs_math_get_machine_epsilon())
     return;
@@ -1725,85 +1736,7 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the BC contribution for the convection operator when the
- *          advection field is approximated in each cell by a constant vector
- *          field
- *
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in, out] fm      pointer to a cs_face_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_add_vb_bc_cw(const cs_cell_mesh_t       *cm,
-                              const cs_equation_param_t  *eqp,
-                              cs_face_mesh_t             *fm,
-                              cs_cell_builder_t          *cb,
-                              cs_cell_sys_t              *csys)
-{
-  CS_UNUSED(fm);
-
-  /* Sanity checks */
-  assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ |
-                      CS_CDO_LOCAL_EV));
-
-  cs_real_t  *tmp_rhs = cb->values;
-  cs_real_t  *mat_diag = cb->values + cm->n_vc;
-
-  const cs_adv_field_t  *adv_field = eqp->adv_field;
-
-  _update_vb_system_with_bc_t  *update_bc = NULL;
-  if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
-    update_bc = _update_with_bc_vb_csv;
-  else
-    update_bc = _update_with_bc_vb_noc;
-
-  /* Reset local temporay RHS and diagonal contributions */
-  for (short int v = 0; v < cm->n_vc; v++) mat_diag[v] = tmp_rhs[v] = 0;
-
-  /* Retrieve the value of the advection field in the current cell */
-  cs_nvec3_t  adv_vec;
-  cs_advection_field_in_cell(cm, adv_field, &adv_vec);
-
-  /* Add diagonal term for vertices attached to a boundary face where
-     the advection field points inward. */
-  for (short int i = 0; i < csys->n_bc_faces; i++) { // Loop on border faces
-
-    const short int  f = csys->bf_ids[i];
-    const cs_quant_t  pfq = cm->face[f];
-    /* 0.5 since each vertex is attached to 0.5 * tef */
-    const double  dp_coef = 0.5 * adv_vec.meas * _dp3(adv_vec.unitv, pfq.unitv);
-
-    if (fabs(dp_coef) > cs_math_zero_threshold) {
-
-      /* Loop on face edges */
-      for (int j = cm->f2e_idx[f]; j < cm->f2e_idx[f+1]; j++)
-        update_bc(csys->dir_values,
-                  dp_coef * cm->tef[j],            // flux
-                  cm->e2v_ids[2*cm->f2e_ids[j]],   // v1
-                  cm->e2v_ids[2*cm->f2e_ids[j]+1], // v2
-                  tmp_rhs, mat_diag);
-
-    } /* Advection is not orthogonal to the face normal */
-
-  } // Loop on border faces
-
-  /* Update the diagonal and the RHS of the local system matrix */
-  for (short int v = 0; v < cm->n_vc; v++)  {
-    csys->mat->val[v*cm->n_vc + v] += mat_diag[v];
-    csys->rhs[v] += tmp_rhs[v];
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the BC contribution for the convection operator when the
- *          convection field is not uniform inside a cell
+ * \brief   Compute the BC contribution for the convection operator
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      eqp     pointer to a cs_equation_param_t structure
@@ -1831,6 +1764,8 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
   cs_real_t  *mat_diag = cb->values + cm->n_vc;
 
   const cs_adv_field_t  *adv_field = eqp->adv_field;
+  const cs_field_t  *normal_bdy_flux =
+    cs_advection_field_get_field(adv_field, CS_MESH_LOCATION_BOUNDARY_FACES);
 
   _update_vb_system_with_bc_t  *update_bc = NULL;
   if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
@@ -1841,92 +1776,45 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
   /* Reset local temporay RHS and diagonal contributions */
   for (short int v = 0; v < cm->n_vc; v++) mat_diag[v] = tmp_rhs[v] = 0;
 
-  /* Loop on border faces */
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
+  /* Add diagonal term for vertices attached to a boundary face where
+     the advection field points inward. */
+  for (short int i = 0; i < csys->n_bc_faces; i++) { // Loop on border faces
 
-    const short int  f = csys->bf_ids[i];
+    const cs_real_t  nflx = normal_bdy_flux->val[csys->bf_ids[i]];
 
-    /* Loop on border face edges */
-    for (int j = cm->f2e_idx[f]; j < cm->f2e_idx[f+1]; j++) {
+    if (fabs(nflx) > cs_math_zero_threshold) {
 
-      const short int  e = cm->f2e_ids[j];
-      const short int  v1 = cm->e2v_ids[2*e];
-      const short int  v2 = cm->e2v_ids[2*e+1];
-      const double  flx_tef = cs_advection_field_get_flux_tef(adv_field,
-                                                              cm,
-                                                              cm->tef[j],
-                                                              f, e, v1, v2);
+      /* We assume that the flux is constant across a boundary face so that the
+         flux attached to a vertex is proportional to the surface surounding
+         that vertex. Here it is 0.5 * |t_ef| (triangle of base the edge v1-v2
+         and of apex the face barycenter */
 
-      /* Assume that flx_tef has the same level of contribution for the two
-         vertices */
-      update_bc(csys->dir_values, 0.5*flx_tef, v1, v2, tmp_rhs, mat_diag);
+      const short int  f = csys->_f_ids[i];
+      const cs_real_t  coef_invsurf = 1./(2*cm->face[f].meas);
 
-    } // Loop on face edges
+      /* Loop on face edges */
+      for (int j = cm->f2e_idx[f]; j < cm->f2e_idx[f+1]; j++) {
 
-  } /* Loop on boundary faces for this cell */
+        const short int  *v_ids = cm->e2v_ids + 2*cm->f2e_ids[j];
+        const cs_real_t _flx = nflx * coef_invsurf * cm->tef[j];
+
+        update_bc(csys, i,
+                  _flx,       /* portion of the advective flux */
+                  v_ids[0],   /* v1 */
+                  v_ids[1],   /* v2 */
+                  tmp_rhs, mat_diag);
+
+      } /* Loop on face edges */
+
+    } /* Advection is not orthogonal to the face normal */
+
+  } /* Loop on border faces */
 
   /* Update the diagonal and the RHS of the local system matrix */
   for (short int v = 0; v < cm->n_vc; v++)  {
     csys->mat->val[v*cm->n_vc + v] += mat_diag[v];
     csys->rhs[v] += tmp_rhs[v];
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the BC contribution for the convection operator with CDO
- *          V+C schemes when the advection field is cellwise constant
- *
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in, out] fm      pointer to a cs_face_mesh_t structure
- * \param[in, out] cb      pointer to a cs_cell_builder_t structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_add_vcb_bc_cw(const cs_cell_mesh_t       *cm,
-                               const cs_equation_param_t  *eqp,
-                               cs_face_mesh_t             *fm,
-                               cs_cell_builder_t          *cb,
-                               cs_cell_sys_t              *csys)
-{
-  /* Sanity checks */
-  assert(csys != NULL && cm != NULL && eqp != NULL);
-  assert(csys->mat->n_rows == cm->n_vc + 1);
-  assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
-  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
-  assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
-
-  const cs_adv_field_t  *adv_field = eqp->adv_field;
-
-  /* Retrieve the value of the advection field in the current cell */
-  cs_nvec3_t  adv_vec;
-  cs_advection_field_in_cell(cm, adv_field, &adv_vec);
-
-  /* Loop on border faces */
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->bf_ids[i];
-    const cs_quant_t  pfq = cm->face[f];
-    const double  dp = _dp3(adv_vec.unitv, pfq.unitv);
-    const double  beta_nf = adv_vec.meas * 0.5 * (fabs(dp) - dp);
-
-    if (beta_nf > 0) { // Inflow
-
-      /* Define a facewise view of the current cell mesh */
-      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
-
-      cs_hodge_compute_wbs_surfacic(fm, cb->aux);
-
-      _update_vcb_system_with_bc(beta_nf, fm, cb->aux, csys);
-
-    } // beta_nf > 0
-
-  } // Loop on border faces
 
 }
 
@@ -1959,142 +1847,25 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  cs_nvec3_t  adv_vec;
-
   const cs_adv_field_t  *adv_field = eqp->adv_field;
+  const cs_field_t  *normal_bdy_flux =
+    cs_advection_field_get_field(adv_field, CS_MESH_LOCATION_BOUNDARY_FACES);
 
   /* Loop on border faces */
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
-    const short int  f = csys->bf_ids[i];
-    const cs_quant_t  pfq = cm->face[f];
-
-    cs_advection_field_get_at_xyz(adv_field, cm, pfq.center, &adv_vec);
-
-    const double  dp = _dp3(adv_vec.unitv, pfq.unitv);
-    const double  beta_nf = adv_vec.meas * 0.5 * (fabs(dp) - dp);
+    const cs_real_t  nflx = normal_bdy_flux->val[csys->bf_ids[i]];
+    const double  beta_nf = 0.5 * (fabs(nflx) - nflx);
 
     if (beta_nf > 0) {
 
-      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
+      cs_face_mesh_build_from_cell_mesh(cm, csys->_f_ids[i], fm);
 
       cs_hodge_compute_wbs_surfacic(fm, cb->aux);
 
       _update_vcb_system_with_bc(beta_nf, fm, cb->aux, csys);
 
     } // beta_nf > 0
-
-  } // Loop on border faces
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the BC contribution for the convection operator with CDO
- *          V+C schemes when the advection is defined by an analytic function
- *
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in, out] fm      pointer to a cs_face_mesh_t structure
- * \param[in, out] cb      pointer to a cs_cell_builder_t structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_add_vcb_bc_analytic(const cs_cell_mesh_t        *cm,
-                                     const cs_equation_param_t   *eqp,
-                                     cs_face_mesh_t              *fm,
-                                     cs_cell_builder_t           *cb,
-                                     cs_cell_sys_t               *csys)
-{
-  /* Sanity checks */
-  assert(csys != NULL && cm != NULL && eqp != NULL);
-
-  cs_real_3_t  xg;
-  cs_nvec3_t  adv_vec;
-  cs_sdm_t  *mf = cb->aux;
-  const cs_adv_field_t  *adv_field = eqp->adv_field;
-
-  /* Sanity checks */
-  assert(cs_advection_field_get_deftype(adv_field)
-         == CS_XDEF_BY_ANALYTIC_FUNCTION);
-  assert(csys->mat->n_rows == cm->n_vc + 1);
-  assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
-  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
-  assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
-
-  /* Loop on border faces */
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->bf_ids[i];
-    const cs_quant_t  pfq = cm->face[f];
-
-    cs_face_mesh_build_from_cell_mesh(cm, f, fm);
-
-    /* Initialize local face matrix. */
-    cs_sdm_square_init(fm->n_vf, mf);
-
-    for (short int e = 0; e < fm->n_ef; e++) {
-
-      const short int  vf1 = fm->e2v_ids[2*e];
-      const short int  vf2 = fm->e2v_ids[2*e+1];
-      const cs_real_t  *xv1 = fm->xv + 3*vf1;
-      const cs_real_t  *xv2 = fm->xv + 3*vf2;
-
-      for (int k = 0; k < 3; k++)
-        xg[k] = cs_math_onethird * (pfq.center[k] + xv1[k] + xv2[k]);
-
-      cs_advection_field_get_at_xyz(adv_field, cm, xg, &adv_vec);
-
-      const double  dp = _dp3(adv_vec.unitv, pfq.unitv);
-      const double  beta_nef = adv_vec.meas * 0.5 * (fabs(dp) - dp);
-
-      if (beta_nef > 0) {
-
-        const double  wtef = cs_math_onetwelve * fm->tef[e] * beta_nef;
-
-        /* Compute a surfacic Hodge-like operator */
-        for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
-
-          double  *mi = mf->val + vfi*fm->n_vf;
-
-          const bool i_in_e = (vfi == vf1 || vfi == vf2) ? true : false;
-
-          /* Diagonal term */
-          double coef_ii = 2*fm->wvf[vfi]*fm->wvf[vfi];
-          if (i_in_e)
-            coef_ii += 2*(1 + fm->wvf[vfi]);
-          mi[vfi] += coef_ii * wtef;
-
-          for (short int vfj = vfi + 1; vfj < fm->n_vf; vfj++) {
-
-            const bool j_in_e = (vfj == vf1 || vfj == vf2) ? true : false;
-
-            double  coef_ij = 2*fm->wvf[vfi]*fm->wvf[vfj];
-            if (i_in_e)
-              coef_ij += fm->wvf[vfj];
-            if (j_in_e)
-              coef_ij += fm->wvf[vfi];
-            if (i_in_e && j_in_e)
-              coef_ij += 1;
-            coef_ij *= wtef; // tef/12 * betanm
-
-            mi[vfj] += coef_ij;
-            // The current matrix is symmetric */
-            mf->val[vfj*fm->n_vf + vfi] += coef_ij;
-
-          } // Loop on face vertices (j)
-
-        } // Loop on face vertices (i)
-
-      } // beta_nef > 0
-
-    } // Loop on face edges
-
-    _update_vcb_system_with_bc(1.0, fm, cb->aux, csys);
 
   } // Loop on border faces
 

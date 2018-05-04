@@ -565,7 +565,7 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
         csys->bf_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
 
       /* Compute the face-view of the mesh */
-      cs_face_mesh_build_from_cell_mesh(cm, csys->bf_ids[i], fm);
+      cs_face_mesh_build_from_cell_mesh(cm, csys->_f_ids[i], fm);
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
@@ -624,7 +624,7 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
         csys->bf_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
 
       /* Compute the face-view of the mesh */
-      cs_face_mesh_build_from_cell_mesh(cm, csys->bf_ids[i], fm);
+      cs_face_mesh_build_from_cell_mesh(cm, csys->_f_ids[i], fm);
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;

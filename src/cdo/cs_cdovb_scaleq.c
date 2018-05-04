@@ -576,10 +576,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     /* Boundary conditions for advection */
     eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ;
-    if (cs_advection_field_is_cellwise(eqp->adv_field))
-      eqc->add_advection_bc = cs_cdo_advection_add_vb_bc_cw;
-    else
-      eqc->add_advection_bc = cs_cdo_advection_add_vb_bc;
+    eqc->add_advection_bc = cs_cdo_advection_add_vb_bc;
 
   }
   else {

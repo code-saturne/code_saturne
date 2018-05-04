@@ -198,6 +198,56 @@ cs_reco_pv_at_cell_centers(const cs_adjacency_t        *c2v,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the value at all cell centers from an array of values
+ *         defined on primal vertices.
+ *         Case of vector-valued fields.
+ *
+ *  \param[in]      c2v      cell -> vertices connectivity
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      array    pointer to the array of values
+ *  \param[in, out] val_xc   values of the reconstruction at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_vect_pv_at_cell_centers(const cs_adjacency_t        *c2v,
+                                const cs_cdo_quantities_t   *quant,
+                                const double                *array,
+                                cs_real_t                   *val_xc)
+{
+  if (array == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(c2v != NULL && quant != NULL);
+
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    const double  invvol = 1/quant->cell_vol[c_id];
+    const cs_real_t  *dcvol = quant->dcell_vol;
+
+    cs_real_t  reco_val[3] = {0, 0, 0};
+    for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++) {
+
+      const cs_real_t  *_array = array + 3*c2v->ids[jv];
+      const cs_real_t  vc_vol = dcvol[jv];
+
+      reco_val[0] += vc_vol * _array[0];
+      reco_val[1] += vc_vol * _array[1];
+      reco_val[2] += vc_vol * _array[2];
+
+    } /* Loop on cell vertices */
+
+    for (int k = 0; k < 3; k++)
+      val_xc[3*c_id+k] = invvol * reco_val[k];
+
+  } /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct the value at the cell center from an array of values
  *         defined on primal vertices.
  *
@@ -238,6 +288,56 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
   } // Loop on cell vertices;
 
   *val_xc = invvol * reco_val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct a vector-valued array at vertices from a vector-valued
+ *         array at cells.
+ *
+ *  \param[in]      c2v       cell -> vertices connectivity
+ *  \param[in]      quant     pointer to the additional quantities struct.
+ *  \param[in]      val       pointer to the array of values
+ *  \param[in, out] reco_val  values of the reconstruction at vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_vect_pv_from_pc(const cs_adjacency_t        *c2v,
+                        const cs_cdo_quantities_t   *quant,
+                        const double                *val,
+                        cs_real_t                   *reco_val)
+{
+  if (val == NULL || reco_val == NULL)
+    return;
+
+  memset(reco_val, 0, 3*quant->n_vertices*sizeof(cs_real_t));
+
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+      const cs_real_t  vc_vol = quant->dcell_vol[j];
+      cs_real_t  *rval = reco_val + 3*c2v->ids[j];
+
+      rval[0] += vc_vol * val[3*c_id];
+      rval[1] += vc_vol * val[3*c_id + 1];
+      rval[2] += vc_vol * val[3*c_id + 2];
+
+    }
+  } /* Loop on cells */
+
+  cs_real_t  *dual_vol = NULL;
+  BFT_MALLOC(dual_vol, quant->n_vertices, cs_real_t);
+  cs_cdo_quantities_compute_dual_volumes(quant, c2v, dual_vol);
+
+# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
+    const cs_real_t  invvol = 1./dual_vol[v_id];
+    for (int k = 0; k < 3; k++)
+      reco_val[3*v_id+k] *= invvol;
+  }
+
+  BFT_FREE(dual_vol);
 }
 
 /*----------------------------------------------------------------------------*/

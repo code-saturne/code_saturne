@@ -118,7 +118,8 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
   short int  n_vf;
 
   csys->bf_flag[csys->n_bc_faces] = face_flag;
-  csys->bf_ids[csys->n_bc_faces++] = f;
+  csys->bf_ids[csys->n_bc_faces] = bf_id;
+  csys->_f_ids[csys->n_bc_faces++] = f;
 
   cs_cell_mesh_get_f2v(f, cm, &n_vf, cb->ids);
 
@@ -198,7 +199,8 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
   CS_UNUSED(cb);
 
   csys->bf_flag[csys->n_bc_faces] = face_flag;
-  csys->bf_ids[csys->n_bc_faces++] = f;
+  csys->bf_ids[csys->n_bc_faces] = bf_id;
+  csys->_f_ids[csys->n_bc_faces++] = f;
 
   if (face_flag & CS_CDO_BC_HMG_DIRICHLET) {
 

@@ -46,6 +46,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_boundary_zone.h"
 #include "cs_field.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -55,6 +56,7 @@
 #include "cs_param.h"
 #include "cs_post.h"
 #include "cs_reco.h"
+#include "cs_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -76,6 +78,9 @@ BEGIN_C_DECLS
 /*============================================================================
  * Local macro definitions
  *============================================================================*/
+
+/* Redefined names of function from cs_math to get shorter names */
+#define _dp3 cs_math_3_dot_product
 
 #define CS_GWF_DBG 0
 
@@ -193,7 +198,7 @@ _update_head(cs_gwf_t                    *gw,
 #     pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
 
-        const cs_real_t  gpot = cs_math_3_dot_product(cdoq->vtx_coord + 3*i,
+        const cs_real_t  gpot = _dp3(cdoq->vtx_coord + 3*i,
                                                       gw->gravity);
 
         pressure_head->val[i] = hydraulic_head->val[i] - gpot;
@@ -215,8 +220,7 @@ _update_head(cs_gwf_t                    *gw,
 #       pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
 
-          const cs_real_t  gpot = cs_math_3_dot_product(cdoq->vtx_coord + 3*i,
-                                                        gw->gravity);
+          const cs_real_t  gpot = _dp3(cdoq->vtx_coord + 3*i, gw->gravity);
 
           pressure_head->val[i] = hydraulic_head->val[i] - gpot;
 
@@ -229,8 +233,7 @@ _update_head(cs_gwf_t                    *gw,
 #       pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
 
-          const cs_real_t  gpot =
-            cs_math_3_dot_product(cdoq->cell_centers + 3*i, gw->gravity);
+          const cs_real_t  gpot = _dp3(cdoq->cell_centers + 3*i, gw->gravity);
 
           gw->head_in_law[i] = hydraulic_head_cells[i] - gpot;
 
@@ -247,8 +250,7 @@ _update_head(cs_gwf_t                    *gw,
 #     pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
 
-        const cs_real_t  gpot = cs_math_3_dot_product(cdoq->cell_centers + 3*i,
-                                                      gw->gravity);
+        const cs_real_t  gpot = _dp3(cdoq->cell_centers + 3*i, gw->gravity);
 
         pressure_head->val[i] = hydraulic_head->val[i] - gpot;
 
@@ -294,11 +296,12 @@ _update_head(cs_gwf_t                    *gw,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update head values (pressure head or head values for laws)
+ * \brief  Update the advection field related to the Darcean flux
  *
  * \param[in, out] gw          pointer to a cs_gwf_t structure
  * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      ts          pointer to a cs_time_step_t structure
  * \param[in]      cur2prev    true or false
  */
 /*----------------------------------------------------------------------------*/
@@ -307,20 +310,28 @@ static void
 _update_darcy_velocity(cs_gwf_t                    *gw,
                        const cs_cdo_quantities_t   *cdoq,
                        const cs_cdo_connect_t      *connect,
+                       const cs_time_step_t        *ts,
                        bool                         cur2prev)
 {
-  CS_UNUSED(cdoq);
   CS_UNUSED(connect);
 
   const cs_equation_t  *richards = gw->richards;
+  const cs_equation_param_t  *r_eqp = cs_equation_get_param(richards);
+
   cs_field_t  *vel = cs_advection_field_get_field(gw->adv_field,
                                                   CS_MESH_LOCATION_CELLS);
+  cs_field_t  *nflx =
+    cs_advection_field_get_field(gw->adv_field,
+                                 CS_MESH_LOCATION_BOUNDARY_FACES);
 
-  assert(vel != NULL);
+  /* Sanity checks */
+  assert(vel != NULL && nflx != NULL);
   assert(richards != NULL);
 
-  if (cur2prev)
+  if (cur2prev) {
     cs_field_current_to_previous(vel);
+    cs_field_current_to_previous(nflx);
+  }
 
   /* Compute the darcian flux and the darcian velocity inside each cell */
   switch (cs_equation_get_space_scheme(richards)) {
@@ -344,7 +355,7 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
 #endif
 
       /* Set the new values */
-      cs_advection_field_at_cells(gw->adv_field, vel->val);
+      cs_advection_field_in_cells(gw->adv_field, vel->val);
 
     }
     else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell))
@@ -367,6 +378,87 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
   cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL", 3*cdoq->n_cells, vel->val, 3);
 #endif
+
+  /* Update the value of the normal flux related to Darcean velocity.
+     We assume a homogeneous Neumann boundary condition as a default */
+  memset(nflx->val, 0, sizeof(cs_real_t)*cdoq->n_b_faces);
+
+  for (int def_id = 0; def_id < r_eqp->n_bc_defs; def_id++) {
+
+    const cs_xdef_t  *def = r_eqp->bc_defs[def_id];
+    const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
+    assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
+
+    if (cs_flag_test(def->meta, CS_CDO_BC_NEUMANN)) {
+
+      switch (def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        {
+          const cs_real_t  *constant_val = (cs_real_t *)def->input;
+
+          if (z->elt_ids == NULL) {
+            assert(z->n_elts == cdoq->n_b_faces);
+#           pragma omp parallel for if (cdoq->n_b_faces > CS_THR_MIN)
+            for (cs_lnum_t i = 0; i < cdoq->n_b_faces; i++)
+              nflx->val[i] = constant_val[0];
+          }
+          else {
+#           pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+            for (cs_lnum_t i = 0; i < z->n_elts; i++)
+              nflx->val[z->elt_ids[i]] = constant_val[0];
+          }
+
+        }
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        {
+          cs_xdef_analytic_input_t  *anai =
+            (cs_xdef_analytic_input_t *)def->input;
+
+          anai->func(ts->t_cur, z->n_elts, z->elt_ids, cdoq->b_face_center,
+                     false,  // compacted output ?
+                     anai->input,
+                     nflx->val);
+        }
+
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.", __func__);
+      }
+
+    }
+    else if (cs_flag_test(def->meta, CS_CDO_BC_HMG_DIRICHLET) ||
+             cs_flag_test(def->meta, CS_CDO_BC_DIRICHLET)) {
+
+      cs_nvec3_t  nvec;
+
+      const cs_lnum_t  *bf2c = connect->f2c->ids + 2*cdoq->n_i_faces;
+
+#     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  bf_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
+        const cs_lnum_t  c_id = bf2c[bf_id];
+        const cs_lnum_t  f_id = cdoq->n_i_faces + bf_id;
+        const cs_quant_t  pfq = cs_quant_set_face(f_id, cdoq);
+
+        cs_nvec3(vel->val + 3*c_id, &nvec);
+        nflx->val[bf_id] = nvec.meas*pfq.meas * _dp3(pfq.unitv, nvec.unitv);
+      }
+
+    }
+    else if (cs_flag_test(def->meta, CS_CDO_BC_NEUMANN))
+      continue; /* already handled during the initialization */
+
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid type of boundary condition.", __func__);
+
+  } /* Loop on boundary conditions applied to the Richards equation */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -469,9 +561,8 @@ cs_gwf_activate(cs_property_type_t    pty_type,
 
   /* Add an advection field related to the darcian flux stemming from the
      Richards equation */
-  gw->adv_field = cs_advection_field_add("darcian_flux");
-
-  cs_advection_field_set_option(gw->adv_field, CS_ADVKEY_DEFINE_AT_CELLS);
+  gw->adv_field = cs_advection_field_add("darcian_flux",
+                                         CS_ADVECTION_FIELD_GWF);
 
   /* Add a property related to the diffusion term of the Richards eq. */
   gw->permeability = cs_property_add("permeability", pty_type);
@@ -1085,7 +1176,7 @@ cs_gwf_update(const cs_mesh_t             *mesh,
 #endif
 
   /* Update the advection field related to the groundwater flow module */
-  _update_darcy_velocity(gw, quant, connect, cur2prev);
+  _update_darcy_velocity(gw, quant, connect, ts, cur2prev);
 
   /* Update the diffusivity associated to each tracer equation if needed */
   for (int i = 0; i < gw->n_tracers; i++) {
@@ -1285,5 +1376,7 @@ cs_gwf_extra_post(void                      *input,
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS

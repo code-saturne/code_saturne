@@ -1159,7 +1159,7 @@ _test_cdovb_schemes(FILE                *out,
   /* ADVECTION OPERATOR */
   /* ================== */
 
-  cs_adv_field_t  *beta = cs_advection_field_add("Adv.Field");
+  cs_adv_field_t  *beta = cs_advection_field_add_user("Adv.Field");
   cs_equation_param_t  *eqp = cs_equation_create_param(CS_EQUATION_TYPE_USER,
                                                        1,
                                                        CS_PARAM_BC_HMG_NEUMANN);
@@ -1996,6 +1996,7 @@ _main_cdovb_schemes(FILE             *out,
       csys->rob_values[2*i] = csys->rob_values[2*i+1] = 0.;
     }
     csys->n_bc_faces = 1;
+    csys->_f_ids[0] = 4; //f_id = 4
     csys->bf_ids[0] = 4; //f_id = 4
     csys->bf_flag[0] = CS_CDO_BC_DIRICHLET;
 
@@ -2015,6 +2016,7 @@ _main_cdovb_schemes(FILE             *out,
       csys->rob_values[2*i] = csys->rob_values[2*i+1] = 0.;
     }
     csys->n_bc_faces = 1;
+    csys->_f_ids[0] = 2; //f_id = 2
     csys->bf_ids[0] = 2; //f_id = 2
     csys->bf_flag[0] = CS_CDO_BC_DIRICHLET;
 

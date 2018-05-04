@@ -297,6 +297,77 @@ cs_evaluate_average_on_cells(cs_flag_t          dof_flag,
   }
 }
 
+/*============================================================================
+ * Inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the faces
+ *
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_evaluate_average_on_faces(const cs_xdef_t   *def,
+                             cs_real_t          retval[])
+{
+  /* Sanity checks */
+  assert(def != NULL);
+
+  switch (def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    cs_evaluate_average_on_faces_by_value(def, retval);
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    cs_evaluate_average_on_faces_by_analytic(def, retval);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Case not handled yet.", __func__);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the average of a function on the cells
+ *
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_evaluate_average_on_cells(const cs_xdef_t   *def,
+                             cs_real_t          retval[])
+{
+  /* Sanity checks */
+  assert(def != NULL);
+
+  switch (def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    cs_evaluate_average_on_cells_by_value(def, retval);
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    cs_evaluate_average_on_cells_by_analytic(def, retval);
+    break;
+
+  case CS_XDEF_BY_ARRAY:
+    cs_evaluate_average_on_cells_by_array(def, retval);
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Case not handled yet.", __func__);
+
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

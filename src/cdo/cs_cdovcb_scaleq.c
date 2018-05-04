@@ -538,20 +538,13 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqb->msh_flag |= CS_CDO_LOCAL_EF;
       _set_cip_coef(eqp);
 
-      if (cs_advection_field_is_cellwise(eqp->adv_field)) {
+      eqc->add_advection_bc = cs_cdo_advection_add_vcb_bc;
+
+      if (cs_advection_field_is_cellwise(eqp->adv_field))
         eqc->get_advection_matrix = cs_cdo_advection_get_vcb_cw;
-        eqc->add_advection_bc = cs_cdo_advection_add_vcb_bc_cw;
-      }
-      else {
-
+      else
         eqc->get_advection_matrix = cs_cdo_advection_get_vcb;
-        if (cs_advection_field_get_deftype(eqp->adv_field)
-            == CS_XDEF_BY_ANALYTIC_FUNCTION)
-          eqc->add_advection_bc = cs_cdo_advection_add_vcb_bc_analytic;
-        else
-          eqc->add_advection_bc = cs_cdo_advection_add_vcb_bc;
 
-      }
       break;
 
     case CS_PARAM_ADVECTION_SCHEME_UPWIND:

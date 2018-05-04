@@ -278,29 +278,7 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the BC contribution for the convection operator when the
- *          advection field is approximated in each cell by a constant vector
- *          field
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] fm      pointer to a cs_face_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_add_vb_bc_cw(const cs_cell_mesh_t       *cm,
-                              const cs_equation_param_t  *eqp,
-                              cs_face_mesh_t             *fm,
-                              cs_cell_builder_t          *cb,
-                              cs_cell_sys_t              *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the BC contribution for the convection operator when the
- *          convection field is not uniform inside a cell
+ * \brief   Compute the BC contribution for the convection operator
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      eqp     pointer to a cs_equation_param_t structure
@@ -316,26 +294,6 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
                            cs_face_mesh_t             *fm,
                            cs_cell_builder_t          *cb,
                            cs_cell_sys_t              *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the BC contribution for the convection operator with CDO
- *          V+C schemes when the advection field is cellwise constant
- *
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in, out] fm      pointer to a cs_face_mesh_t structure
- * \param[in, out] cb      pointer to a cs_cell_builder_t structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_add_vcb_bc_cw(const cs_cell_mesh_t       *cm,
-                               const cs_equation_param_t  *eqp,
-                               cs_face_mesh_t             *fm,
-                               cs_cell_builder_t          *cb,
-                               cs_cell_sys_t              *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -356,26 +314,6 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
                             cs_face_mesh_t              *fm,
                             cs_cell_builder_t           *cb,
                             cs_cell_sys_t               *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the BC contribution for the convection operator with CDO
- *          V+C schemes when the advection is defined by an analytic function
- *
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in, out] fm      pointer to a cs_face_mesh_t structure
- * \param[in, out] cb      pointer to a cs_cell_builder_t structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_add_vcb_bc_analytic(const cs_cell_mesh_t        *cm,
-                                     const cs_equation_param_t   *eqp,
-                                     cs_face_mesh_t              *fm,
-                                     cs_cell_builder_t           *cb,
-                                     cs_cell_sys_t               *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
