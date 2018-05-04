@@ -304,7 +304,7 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
  * \param[in]      connect  pointer to a cs_cdo_connect_t structure
  * \param[in]      quant   pointer to the additional quantities struct.
  * \param[in]      pdi     pointer to the array of values
- * \param[in, out] val_xc  value of the reconstructed graident at cell center
+ * \param[in, out] val_xc  value of the reconstructed gradient at cell center
  */
 /*----------------------------------------------------------------------------*/
 

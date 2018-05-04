@@ -804,10 +804,10 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
   cs_xdef_array_input_t  *array_input = (cs_xdef_array_input_t *)input;
 
   const int  stride = array_input->stride;
-  assert(stride > 1);
 
   if (cs_flag_test(array_input->loc, cs_flag_primal_cell)) {
 
+    assert(stride > 1);
     if (elt_ids != NULL && !compact) {
 
       for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -1228,7 +1228,10 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
   }
   else if (field->location_id == v_ml_id) {
 
-    assert(field->dim == 1);
+    if (field->dim > 1)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid field dimension.", __func__);
+
     if (elt_ids != NULL && !compact) {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
 
@@ -1272,7 +1275,7 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
   }
   else
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid case for the input array", __func__);
+              " %s: Invalid case for the input field", __func__);
 }
 
 /*----------------------------------------------------------------------------*/

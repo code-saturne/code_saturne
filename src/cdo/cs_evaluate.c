@@ -92,14 +92,14 @@ static const char _err_quad[] = " %s: Invalid quadrature type.";
 /*----------------------------------------------------------------------------*/
 
 static void
-_cellwise_dcsd_by_analytic(const cs_cell_mesh_t           *cm,
-                           cs_analytic_func_t             *ana,
-                           void                           *input,
-                           cs_quadrature_tetra_integral_t *compute_integral,
-                           double                          values[])
+_cellwise_dcsd_by_analytic(const cs_cell_mesh_t            *cm,
+                           cs_analytic_func_t              *ana,
+                           void                            *input,
+                           cs_quadrature_tetra_integral_t  *compute_integral,
+                           cs_real_t                        values[])
 {
-  const double  tcur = cs_time_step->t_cur;
-  const double  vol = cm->vol_c;
+  const cs_real_t  tcur = cs_time_step->t_cur;
+  const cs_real_t  vol = cm->vol_c;
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -146,7 +146,7 @@ _dcsd_by_analytic(cs_analytic_func_t              *ana,
                   const cs_lnum_t                  n_elts,
                   const cs_lnum_t                 *elt_ids,
                   cs_quadrature_tetra_integral_t  *compute_integral,
-                  double                           values[])
+                  cs_real_t                        values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
@@ -203,7 +203,7 @@ _dcsd_by_analytic(cs_analytic_func_t              *ana,
  */
 /*----------------------------------------------------------------------------*/
 
-static double
+static cs_real_t
 _cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
                            cs_analytic_func_t              *ana,
                            void                            *input,
@@ -211,7 +211,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
 {
   const double  tcur = cs_time_step->t_cur;
 
-  double  retval = 0.;
+  cs_real_t  retval = 0.;
 
   if (cs_cdo_connect->cell_type[cm->c_id] == FVM_CELL_TETRA) {
 
@@ -223,7 +223,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
 
     for (short int f = 0; f < cm->n_fc; f++) {
 
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const cs_real_t  hf_coef = cs_math_onethird * cm->hfc[f];
       const short int  start = cm->f2e_idx[f];
       const short int  n_ef  = cm->f2e_idx[f+1] - start;
       const short int *e_ids = cm->f2e_ids + cm->f2e_idx[f];
@@ -284,14 +284,14 @@ _pcsd_by_analytic(cs_analytic_func_t              *ana,
                   const cs_lnum_t                  n_elts,
                   const cs_lnum_t                 *elt_ids,
                   cs_quadrature_tetra_integral_t  *compute_integral,
-                  double                           values[])
+                  cs_real_t                        values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_real_t  *xv = quant->vtx_coord;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
-  const double  tcur = cs_time_step->t_cur;
+  const cs_real_t  tcur = cs_time_step->t_cur;
 
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
@@ -374,14 +374,14 @@ _pcsa_by_analytic(cs_analytic_func_t              *ana,
                   const cs_lnum_t                  n_elts,
                   const cs_lnum_t                 *elt_ids,
                   cs_quadrature_tetra_integral_t  *compute_integral,
-                  double                           values[])
+                  cs_real_t                        values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_real_t  *xv = quant->vtx_coord;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
-  const double  tcur = cs_time_step->t_cur;
+  const cs_real_t  tcur = cs_time_step->t_cur;
 
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
@@ -470,19 +470,19 @@ _pcva_by_analytic(cs_analytic_func_t              *ana,
                   const cs_lnum_t                  n_elts,
                   const cs_lnum_t                 *elt_ids,
                   cs_quadrature_tetra_integral_t  *compute_integral,
-                  double                           values[])
+                  cs_real_t                        values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_real_t  *xv = quant->vtx_coord;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
-  const double  tcur = cs_time_step->t_cur;
+  const cs_real_t  tcur = cs_time_step->t_cur;
 
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
     const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
-    double *val_i = values + 3*c_id;
+    cs_real_t *val_i = values + 3*c_id;
 
     if (connect->cell_type[c_id] == FVM_CELL_TETRA) {
 
@@ -539,8 +539,7 @@ _pcva_by_analytic(cs_analytic_func_t              *ana,
     } /* Not a tetrahedron */
 
     const double _overvol = 1./quant->cell_vol[c_id];
-    for (short int xyz = 0; xyz < 3; xyz++)
-      val_i[xyz] *= _overvol;
+    for (int k = 0; k < 3; k++) val_i[k] *= _overvol;
 
   } // Loop on cells
 
@@ -560,10 +559,10 @@ _pcva_by_analytic(cs_analytic_func_t              *ana,
 /*----------------------------------------------------------------------------*/
 
 static void
-_dcsd_by_value(const double       const_val,
+_dcsd_by_value(const cs_real_t    const_val,
                const cs_lnum_t    n_elts,
                const cs_lnum_t   *elt_ids,
-               double             values[])
+               cs_real_t          values[])
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
@@ -602,10 +601,10 @@ _dcsd_by_value(const double       const_val,
 /*----------------------------------------------------------------------------*/
 
 static void
-_dcvd_by_value(const double       const_vec[3],
+_dcvd_by_value(const cs_real_t    const_vec[3],
                const cs_lnum_t    n_elts,
                const cs_lnum_t   *elt_ids,
-               double             values[])
+               cs_real_t          values[])
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
   const cs_real_t  *dual_vol = cs_cdo_quant->dcell_vol; /* scan by c2v */
@@ -656,10 +655,10 @@ _dcvd_by_value(const double       const_vec[3],
 /*----------------------------------------------------------------------------*/
 
 static void
-_pcsd_by_value(const double       const_val,
+_pcsd_by_value(const cs_real_t    const_val,
                const cs_lnum_t    n_elts,
                const cs_lnum_t   *elt_ids,
-               double             values[])
+               cs_real_t          values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
 
@@ -691,10 +690,10 @@ _pcsd_by_value(const double       const_val,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_pcsa_by_value(const double       const_val,
+_pcsa_by_value(const cs_real_t    const_val,
                const cs_lnum_t    n_elts,
                const cs_lnum_t   *elt_ids,
-               double             values[])
+               cs_real_t          values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
 
@@ -727,10 +726,10 @@ _pcsa_by_value(const double       const_val,
 /*----------------------------------------------------------------------------*/
 
 static void
-_pcvd_by_value(const double        const_vec[3],
+_pcvd_by_value(const cs_real_t     const_vec[3],
                const cs_lnum_t     n_elts,
                const cs_lnum_t    *elt_ids,
-               double              values[])
+               cs_real_t           values[])
 {
   const cs_real_t  *vol = cs_cdo_quant->cell_vol;
 
@@ -769,15 +768,15 @@ _pcvd_by_value(const double        const_vec[3],
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_pcva_by_value(const double        const_vec[3],
+_pcva_by_value(const cs_real_t     const_vec[3],
                const cs_lnum_t     n_elts,
                const cs_lnum_t    *elt_ids,
-               double              values[])
+               cs_real_t           values[])
 {
   if (elt_ids == NULL) { /* All the support entities are selected */
 #   pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++) {
-      memcpy(values+3*c_id,const_vec,3*sizeof(double));
+      memcpy(values+3*c_id,const_vec,3*sizeof(cs_real_t));
     }
   }
 
@@ -785,7 +784,7 @@ _pcva_by_value(const double        const_vec[3],
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       const cs_lnum_t  c_id = elt_ids[i];
-      memcpy(values+3*c_id,const_vec,3*sizeof(double));
+      memcpy(values+3*c_id,const_vec,3*sizeof(cs_real_t));
     }
   }
 
@@ -811,9 +810,9 @@ _pfp_by_analytic(cs_analytic_func_t    *ana,
                  void                  *input,
                  const cs_lnum_t        n_elts,
                  const cs_lnum_t       *elt_ids,
-                 double                 values[])
+                 cs_real_t              values[])
 {
-  const double  tcur = cs_time_step->t_cur;
+  const cs_real_t  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
 
@@ -865,9 +864,9 @@ _pfsa_by_analytic(cs_analytic_func_t             *ana,
                   const cs_lnum_t                 n_elts,
                   const cs_lnum_t                *elt_ids,
                   cs_quadrature_tria_integral_t  *compute_integral,
-                  double                          values[])
+                  cs_real_t                       values[])
 {
-  const double  tcur = cs_time_step->t_cur;
+  const cs_real_t  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_adjacency_t  *f2e = cs_cdo_connect->f2e;
@@ -882,7 +881,7 @@ _pfsa_by_analytic(cs_analytic_func_t             *ana,
       const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
       const cs_lnum_t   start_idx = f2e->idx[f_id],
                         end_idx   = f2e->idx[f_id+1];
-      double *val_i = values + f_id;
+      cs_real_t *val_i = values + f_id;
 
       switch (end_idx - start_idx) {
 
@@ -943,7 +942,7 @@ _pfsa_by_analytic(cs_analytic_func_t             *ana,
           const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
           const cs_lnum_t  start_idx = f2e->idx[f_id],
                            end_idx   = f2e->idx[f_id+1];
-          double *val_i = values + f_id;
+          cs_real_t *val_i = values + f_id;
 
           switch (end_idx - start_idx) {
 
@@ -1009,11 +1008,10 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
                   const cs_lnum_t                 n_elts,
                   const cs_lnum_t                *elt_ids,
                   cs_quadrature_tria_integral_t  *compute_integral,
-                  double                          values[])
+                  cs_real_t                       values[])
 {
-  const double  tcur = cs_time_step->t_cur;
+  const cs_real_t  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_adjacency_t  *f2e = cs_cdo_connect->f2e;
   const cs_adjacency_t  *e2v = cs_cdo_connect->e2v;
   const cs_real_t  *xv = quant->vtx_coord;
@@ -1023,10 +1021,10 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
 #   pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
     for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
 
-      const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
-      const cs_lnum_t   start_idx = f2e->idx[f_id],
-                        end_idx   = f2e->idx[f_id+1];
-      double *val_i = values + 3*f_id;
+      const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
+      const cs_lnum_t  start_idx = f2e->idx[f_id],
+                       end_idx   = f2e->idx[f_id+1];
+      cs_real_t *val_i = values + 3*f_id;
 
       switch (end_idx - start_idx) {
 
@@ -1067,6 +1065,8 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
   }
   else {
 
+    const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
+
     /* Initialize todo array */
     bool  *todo = NULL;
 
@@ -1089,7 +1089,7 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
           const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
           const cs_lnum_t   start_idx = f2e->idx[f_id],
                             end_idx   = f2e->idx[f_id+1];
-          double *val_i = values + 3*f_id;
+          cs_real_t *val_i = values + 3*f_id;
 
           switch (end_idx - start_idx) {
 
@@ -1157,9 +1157,9 @@ _pvp_by_analytic(cs_analytic_func_t    *ana,
                  void                  *input,
                  const cs_lnum_t        n_elts,
                  const cs_lnum_t       *elt_ids,
-                 double                 values[])
+                 cs_real_t              values[])
 {
-  const double  tcur = cs_time_step->t_cur;
+  const cs_real_t  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
 
@@ -1211,10 +1211,10 @@ _pvp_by_analytic(cs_analytic_func_t    *ana,
 /*----------------------------------------------------------------------------*/
 
 static void
-_pfsp_by_value(const double       const_val,
+_pfsp_by_value(const cs_real_t    const_val,
                cs_lnum_t          n_elts,
                const cs_lnum_t   *elt_ids,
-               double             values[])
+               cs_real_t          values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
@@ -1256,10 +1256,10 @@ _pfsp_by_value(const double       const_val,
 /*----------------------------------------------------------------------------*/
 
 static void
-_pfvp_by_value(const double       const_vec[3],
+_pfvp_by_value(const cs_real_t    const_vec[3],
                cs_lnum_t          n_elts,
                const cs_lnum_t   *elt_ids,
-               double             values[])
+               cs_real_t          values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
@@ -1281,7 +1281,7 @@ _pfvp_by_value(const double       const_vec[3],
       cs_lnum_t  f_id = c2f->ids[j];
       if (todo[f_id]) {
         todo[f_id] = false;
-        memcpy(values+3*f_id,const_vec,3*sizeof(double));
+        memcpy(values+3*f_id,const_vec,3*sizeof(cs_real_t));
       }
 
     } // Loop on cell vertices
@@ -1342,10 +1342,10 @@ _untag_frontier_vertices(cs_lnum_t      c_id,
 /*----------------------------------------------------------------------------*/
 
 static void
-_pvsp_by_qov(const double       quantity_val,
+_pvsp_by_qov(const cs_real_t    quantity_val,
              cs_lnum_t          n_elts,
              const cs_lnum_t   *elt_ids,
-             double             values[])
+             cs_real_t          values[])
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
@@ -1454,7 +1454,7 @@ _pvsp_by_qov(const double       quantity_val,
   if (cs_glob_n_ranks > 1)
     cs_parall_sum(1, CS_DOUBLE, &volume_marked);
 
-  double val_to_set = quantity_val;
+  cs_real_t val_to_set = quantity_val;
   if (volume_marked > 0)
     val_to_set /= volume_marked;
 
@@ -1493,7 +1493,7 @@ static void
 _pvsp_by_value(cs_real_t          const_val,
                cs_lnum_t          n_elts,
                const cs_lnum_t   *elt_ids,
-               double             values[])
+               cs_real_t          values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
@@ -1565,7 +1565,7 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 void
 cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
                                 const cs_xdef_t    *def,
-                                double              retval[])
+                                cs_real_t           retval[])
 {
   /* Sanity check */
   if (retval == NULL)
@@ -1638,7 +1638,7 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
 void
 cs_evaluate_density_by_value(cs_flag_t          dof_flag,
                              const cs_xdef_t   *def,
-                             double             retval[])
+                             cs_real_t          retval[])
 {
   /* Sanity check */
   if (retval == NULL)
@@ -1693,7 +1693,7 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
 void
 cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                                   const cs_xdef_t    *def,
-                                  double              retval[])
+                                  cs_real_t           retval[])
 {
   /* Sanity check */
   if (retval == NULL)
@@ -1708,7 +1708,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
-  const double  tcur = cs_time_step->t_cur;
+  const cs_real_t  tcur = cs_time_step->t_cur;
 
   /* Perform the evaluation */
   if (cs_flag_test(dof_flag, cs_flag_primal_vtx)) {
@@ -1832,7 +1832,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
 void
 cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
                              const cs_xdef_t   *def,
-                             double             retval[])
+                             cs_real_t          retval[])
 {
   /* Sanity check */
   if (retval == NULL)
@@ -1874,7 +1874,7 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
 void
 cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
                                const cs_xdef_t   *def,
-                               double             retval[])
+                               cs_real_t          retval[])
 {
   /* Sanity check */
   if (retval == NULL)
@@ -1937,28 +1937,24 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
     bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
 
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Evaluate the average of a function on the faces
  *
- * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      def       pointer to a cs_xdef_t pointer
  * \param[in, out] retval    pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_average_on_faces_by_value(cs_flag_t          dof_flag,
-                                      const cs_xdef_t   *def,
-                                      double             retval[])
+cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
+                                      cs_real_t          retval[])
 {
-  CS_UNUSED(dof_flag);
-
   /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(cs_flag_test(dof_flag, cs_flag_primal_face));
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
@@ -1966,75 +1962,75 @@ cs_evaluate_average_on_faces_by_value(cs_flag_t          dof_flag,
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_real_t  *input = (cs_real_t *)def->input;
 
-  cs_range_set_t  *rs = NULL;
+  if (def->meta & CS_FLAG_FULL_LOC) {
 
-  switch (def->dim) {
+    if (def->dim == 1) { /* Scalar-valued case */
 
-  case 1: /* Scalar-valued */
-    {
-      assert(dof_flag & CS_FLAG_SCALAR);
+#     pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+      for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
+        retval[f_id] = input[0];
+
+    }
+    else { /* Multi-valued case */
+
+#     pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+      for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
+        memcpy(retval + def->dim*f_id, input, def->dim*sizeof(cs_real_t));
+
+    }
+
+    /* No need to sync: Same values for all entities */
+
+  }
+  else { /* Definition does not apply to all entities */
+
+    cs_range_set_t  *rs = NULL;
+
+    switch (def->dim) {
+
+    case 1: /* Scalar-valued */
       rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+      _pfsp_by_value(input[0], z->n_elts, z->elt_ids, retval);
+      break;
 
-      if (def->meta & CS_FLAG_FULL_LOC) {
-#       pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
-        for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
-          retval[f_id] = input[0];
-      }
-      else
-        _pfsp_by_value(input[0], z->n_elts, z->elt_ids, retval);
-    }
-    break;
-
-  case 3: /* Vector-valued */
-    {
-      assert(dof_flag & CS_FLAG_VECTOR);
+    case 3: /* Vector-valued */
       rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+      _pfvp_by_value(input, z->n_elts, z->elt_ids, retval);
+      break;
 
-      if (def->meta & CS_FLAG_FULL_LOC) {
-#       pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
-        for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
-          memcpy(retval + 3*f_id, input, 3*sizeof(double));
-      }
-      else
-        _pfvp_by_value(input, z->n_elts, z->elt_ids, retval);
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Invalid dimension.\n"), __func__);
+      break;
+
     }
-    break;
 
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Invalid dimension of analytical function.\n"), __func__);
-    break;
+    if (cs_glob_n_ranks > 1)
+      cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
 
-  } /* End of switch on the dimension */
+  } /* Deal with a selection of cells */
 
-  if (cs_glob_n_ranks > 1)
-    cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Evaluate the average of a function on the faces
  *
- * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      def       pointer to a cs_xdef_t pointer
  * \param[in, out] retval    pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
-                                         const cs_xdef_t   *def,
-                                         double             retval[])
+cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
+                                         cs_real_t          retval[])
 {
-  CS_UNUSED(dof_flag);
-
   /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
-  assert(cs_flag_test(dof_flag, cs_flag_primal_face));
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
@@ -2046,7 +2042,6 @@ cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
 
   case 1: /* Scalar-valued */
     {
-      assert(dof_flag & CS_FLAG_SCALAR);
       rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
 
       switch (def->qtype) {
@@ -2081,7 +2076,6 @@ cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
 
   case 3: /* Vector-valued */
     {
-      assert(dof_flag & CS_FLAG_VECTOR);
       rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
 
       switch (def->qtype) {
@@ -2127,26 +2121,21 @@ cs_evaluate_average_on_faces_by_analytic(cs_flag_t          dof_flag,
 /*!
  * \brief  Evaluate the average of a function on the cells
  *
- * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      def       pointer to a cs_xdef_t pointer
  * \param[in, out] retval    pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_average_on_cells_by_value(cs_flag_t          dof_flag,
-                                      const cs_xdef_t   *def,
-                                      double             retval[])
+cs_evaluate_average_on_cells_by_value(const cs_xdef_t   *def,
+                                      cs_real_t          retval[])
 {
-  CS_UNUSED(dof_flag);
-
   /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
-  assert(cs_flag_test(dof_flag, cs_flag_primal_cell));
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_real_t  *input = (cs_real_t *)def->input;
@@ -2154,12 +2143,10 @@ cs_evaluate_average_on_cells_by_value(cs_flag_t          dof_flag,
   switch (def->dim) {
 
   case 1: /* Scalar-valued */
-    assert(dof_flag & CS_FLAG_SCALAR);
     _pcsa_by_value(input[0], z->n_elts, z->elt_ids, retval);
     break;
 
   case 3: /* Vector-valued */
-    assert(dof_flag & CS_FLAG_VECTOR);
     _pcva_by_value(input, z->n_elts, z->elt_ids, retval);
     break;
 
@@ -2175,90 +2162,73 @@ cs_evaluate_average_on_cells_by_value(cs_flag_t          dof_flag,
 /*!
  * \brief  Evaluate the average of a function on the cells
  *
- * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      def       pointer to a cs_xdef_t pointer
  * \param[in, out] retval    pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_average_on_cells_by_array(cs_flag_t          dof_flag,
-                                      const cs_xdef_t   *def,
-                                      double             retval[])
+cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
+                                      cs_real_t          retval[])
 {
-  CS_UNUSED(dof_flag);
-
   /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(cs_flag_test(dof_flag, cs_flag_primal_cell));
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-  const cs_xdef_array_input_t *array_input =
-    (cs_xdef_array_input_t *)def->input;
-  const int stride = array_input->stride;
-  const double * val = array_input->values;
+  const cs_xdef_array_input_t  *input = (cs_xdef_array_input_t *)def->input;
+  const int  stride = input->stride;
+  const cs_real_t  *val = input->values;
 
-  if (stride == 1) { /* Scalar */
+  if (cs_flag_test(input->loc, cs_flag_primal_cell) == false)
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid case. Not implemented yet.",
+              __func__);
 
-    if (def->meta & CS_FLAG_FULL_LOC) {
-#     pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++)
-        /* A global memcpy could work too */
-        retval[c_id] = val[c_id];
-    }
-    else {
+  if (def->meta & CS_FLAG_FULL_LOC)
+    memcpy(retval, val, stride*sizeof(cs_real_t)*cs_cdo_quant->n_cells);
 
-      assert(z->elt_ids != NULL);
+  else {
+
+    assert(z->elt_ids != NULL);
+    if (stride == 1) {
+
 #     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < z->n_elts; i++) {
         const cs_lnum_t  c_id = z->elt_ids[i];
         retval[c_id] = val[c_id];
       }
 
-    } /* Perform on the full location */
-
-  }
-  else { /* Not scalar-valued */
-
-    if (def->meta & CS_FLAG_FULL_LOC) {
-#     pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++) {
-        /* A global memcpy could work too */
-        memcpy(retval + stride*c_id, val + stride*c_id, stride*sizeof(double));
-      }
     }
     else {
 
-      assert(z->elt_ids != NULL);
 #     pragma omp parallel for if (z->n_elts > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < z->n_elts; i++) {
         const cs_lnum_t  c_id = z->elt_ids[i];
-        memcpy(retval + stride*c_id, val + stride*c_id, stride*sizeof(double));
+        memcpy(retval + stride*c_id, val + stride*c_id,
+               stride*sizeof(cs_real_t));
       }
 
-    } /* Perform on the full location */
+    }
 
-  } /* Switch on stride */
+  } /* deal with a selection of cells */
+
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Evaluate the average of a function on the cells
  *
- * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      def       pointer to a cs_xdef_t pointer
  * \param[in, out] retval    pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_average_on_cells_by_analytic(cs_flag_t          dof_flag,
-                                         const cs_xdef_t   *def,
-                                         double             retval[])
+cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
+                                         cs_real_t          retval[])
 {
   /* Sanity checks */
   if (retval == NULL)
@@ -2266,7 +2236,6 @@ cs_evaluate_average_on_cells_by_analytic(cs_flag_t          dof_flag,
 
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
-  assert(cs_flag_test(dof_flag, cs_flag_primal_cell));
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
@@ -2277,8 +2246,6 @@ cs_evaluate_average_on_cells_by_analytic(cs_flag_t          dof_flag,
 
   case 1: /* Scalar-valued */
     {
-      assert(dof_flag & CS_FLAG_SCALAR);
-
       switch (def->qtype) {
 
         /* Barycenter of the cell or the tetrahedral subdiv. */
@@ -2310,8 +2277,6 @@ cs_evaluate_average_on_cells_by_analytic(cs_flag_t          dof_flag,
 
   case 3: /* Vector-valued */
     {
-      assert(dof_flag & CS_FLAG_VECTOR);
-
       switch (def->qtype) {
         /* Barycenter of the cell or the tetrahedral subdiv. */
       case CS_QUADRATURE_BARY:

@@ -344,7 +344,7 @@ cs_xdef_timestep_create(cs_xdef_type_t             type,
     }
     break;
 
-  case  CS_XDEF_BY_TIME_FUNCTION:
+  case CS_XDEF_BY_TIME_FUNCTION:
     {
       cs_xdef_timestep_input_t  *a = (cs_xdef_timestep_input_t *)input;
       cs_xdef_timestep_input_t  *b = NULL;
