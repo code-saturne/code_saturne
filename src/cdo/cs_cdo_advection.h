@@ -54,7 +54,7 @@ BEGIN_C_DECLS
 /*!
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme.
- *          The local matrix related ti this operator is stored in cb->loc
+ *          The local matrix related to this operator is stored in cb->loc
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure

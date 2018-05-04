@@ -389,7 +389,6 @@ _update_vcb_system_with_bc(const double                 beta_nf,
     BFT_FREE(dirf);
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Update the cell system with the contributions arising from the
