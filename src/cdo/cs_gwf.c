@@ -134,7 +134,8 @@ struct _gwf_t {
 
   /* Settings related to the advection field stemming from the darcian flux */
   cs_flag_t        flux_location; /* indicate where the array is defined */
-  cs_real_t       *darcian_flux;  /* array defining the advection field */
+  cs_real_t       *darcian_flux;  /* array defining the advection field
+                                     (optional) */
   cs_adv_field_t  *adv_field;
 
 };
@@ -561,7 +562,7 @@ cs_gwf_activate(cs_property_type_t    pty_type,
 
   /* Add an advection field related to the darcian flux stemming from the
      Richards equation */
-  gw->adv_field = cs_advection_field_add("darcian_flux",
+  gw->adv_field = cs_advection_field_add("darcy_velocity",
                                          CS_ADVECTION_FIELD_GWF);
 
   /* Add a property related to the diffusion term of the Richards eq. */

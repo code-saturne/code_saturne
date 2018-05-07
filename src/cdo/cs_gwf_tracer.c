@@ -778,7 +778,7 @@ cs_gwf_tracer_standard_setup(const cs_cdo_connect_t      *connect,
   cs_gwf_std_tracer_input_t *sti = (cs_gwf_std_tracer_input_t *)tracer->input;
 
   /* Set additional (pre-defined) fields */
-  sti->darcy_velocity_field = cs_field_by_name("darcian_flux_cells");
+  sti->darcy_velocity_field = cs_field_by_name("darcy_velocity_cells");
   sti->moisture_content = cs_field_by_name("moisture_content");
 
   cs_property_t  *pty = cs_equation_get_time_property(tracer->eq);
