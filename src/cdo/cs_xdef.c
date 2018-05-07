@@ -390,7 +390,8 @@ cs_xdef_free(cs_xdef_t     *d)
     }
   }
 
-  if (d->type == CS_XDEF_BY_VALUE ||
+  if (d->type == CS_XDEF_BY_TIME_FUNCTION ||
+      d->type == CS_XDEF_BY_VALUE ||
       d->type == CS_XDEF_BY_ANALYTIC_FUNCTION ||
       d->type == CS_XDEF_BY_QOV)
     BFT_FREE(d->input);
