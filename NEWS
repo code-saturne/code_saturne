@@ -5,6 +5,9 @@ Release 5.1.5 (unreleased)
 Bug fixes
 ---------
 
+- GUI: fix failure to cleanly stop running computations on some
+  systems (Mantis issue #242).
+
 - Fix crash in restart using coupled RSM model from non-RSM computation
   (issue #252).
 
