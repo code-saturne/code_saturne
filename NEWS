@@ -5,6 +5,9 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- GUI: fix failure to cleanly stop running computations on some
+  systems (Mantis issue #242).
+
 - Rewrite pressure correction in pressure increment (fix computation of
   pressure L2 residual if nterup > 1).
 
