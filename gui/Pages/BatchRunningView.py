@@ -325,6 +325,7 @@ class ListingDialogView(CommandMgrDialogView):
         self.proc.waitForFinished(100)
 
 
+    @pyqtSlot()
     def slotReadFromStdout(self):
         """
         Public slot to handle the readyReadStandardOutput signal of the process.
