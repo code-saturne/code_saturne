@@ -4,6 +4,9 @@ Release 4.0.9 (unreleased)
 Bug fixes:
 ----------
 
+- GUI: fix failure to cleanly stop running computations on some
+  systems (Mantis issue #242).
+
 - Fix interlock in Syrthes coupling when combining surface and volume coupling.
 
 - GUI: fix handling of exchange coefficient boundary conditions.

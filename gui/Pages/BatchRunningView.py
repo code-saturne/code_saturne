@@ -303,6 +303,7 @@ class ListingDialogView(CommandMgrDialogView):
         self.proc.start(self.cmd)
 
 
+    @pyqtSignature("")
     def slotReadFromStdout(self):
         """
         Public slot to handle the readyReadStandardOutput signal of the process.
