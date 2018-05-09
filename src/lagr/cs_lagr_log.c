@@ -553,7 +553,7 @@ cs_lagr_log_iteration(void)
           cs_log_printf(CS_LOG_DEFAULT,
                         "    class %3d  %12.5e         %s\n",
                         j,
-                        flow_rate[z_id*n_stats]/cs_glob_lagr_time_step->dtp,
+                        flow_rate[z_id*n_stats + j]/cs_glob_lagr_time_step->dtp,
                         chcond);
       }
 
