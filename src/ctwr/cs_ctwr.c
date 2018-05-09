@@ -1,5 +1,4 @@
 /*============================================================================
- *
  * Definitions, Global variables variables, and functions associated with the
  * exchange zones
  *============================================================================*/
@@ -289,9 +288,9 @@ _write_liquid_vars(void                  *input,
 
 static cs_real_t
 _lewis_factor(const int        evap_model,
-	            const cs_real_t  molmassrat,
-	            const cs_real_t  x,
-	            const cs_real_t  x_s_tl)
+              const cs_real_t  molmassrat,
+              const cs_real_t  x,
+              const cs_real_t  x_s_tl)
 {
   /* Merkel Model
      Hypothesis of unity Lewis factor */
@@ -1202,8 +1201,8 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
         }
 
         /* Neighbouring zones, inlet for one, outlet fot the other */
-      } else if (  packing_cell[cell_id_1] >= 0 && packing_cell[cell_id_2] >= 0
-                && packing_cell[cell_id_1] != packing_cell[cell_id_2]) {
+      } else if (   packing_cell[cell_id_1] >= 0 && packing_cell[cell_id_2] >= 0
+                 && packing_cell[cell_id_1] != packing_cell[cell_id_2]) {
 
         /* cell_id_1 is an inlet for CT2, an outlet for CT1 */
         if (liq_mass_flow[face_id] > 0.0) {
@@ -1341,7 +1340,7 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
 
   /* Recompute the initial values which were used in the initialisation of
    * the calculation which is being restarted */
-  cs_real_t y_w_ini = humidity0 / ( 1.0 + humidity0); // From 'ctiniv'
+  cs_real_t y_w_ini = humidity0 / (1.0 + humidity0); // From 'ctiniv'
   if (y_w_ini < 0.0)
     y_w_ini = 0;
 
@@ -1895,19 +1894,20 @@ cs_ctwr_source_term(int              f_id,
           /* Because the writing is in a non-conservative form */
           cs_real_t cp_h = cs_ctwr_cp_humidair(x[cell_id], x_s[cell_id]);
           cs_real_t l_imp_st = vol_mass_source * cp_h;
-          cs_real_t xlew = _lewis_factor(evap_model,molmassrat,x[cell_id],x_s_tl);
+          cs_real_t xlew = _lewis_factor(evap_model, molmassrat,
+                                         x[cell_id], x_s_tl);
           if (x[cell_id] <= x_s_th) {
             /* Implicit term */
             l_imp_st += vol_beta_x_ai * ( xlew * cp_h
-                + (x_s_tl - x[cell_id]) * cp_v
-                / (1. + x[cell_id]));
+                                         + (x_s_tl - x[cell_id]) * cp_v
+                                         / (1. + x[cell_id]));
             exp_st[cell_id] += l_imp_st * (t_l[cell_id] - f_var[cell_id]);
           } else {
             cs_real_t coeft = xlew * cp_h;
             /* Implicit term */
             l_imp_st += vol_beta_x_ai * ( coeft
                 + (x_s_tl - x_s_th) * cp_l / (1. + x[cell_id]));
-            exp_st[cell_id] += vol_beta_x_ai * ( coeft * t_l[cell_id]
+            exp_st[cell_id] += vol_beta_x_ai * (coeft * t_l[cell_id]
                 + (x_s_tl - x_s_th) * (cp_v * t_l[cell_id] + hv0)
                 / (1. + x[cell_id])
                 )
@@ -1925,18 +1925,17 @@ cs_ctwr_source_term(int              f_id,
           cs_real_t xlew = _lewis_factor(evap_model,molmassrat,x[cell_id],x_s_tl);
           /* Under saturated */
           if (x[cell_id] <= x_s_th) {
-            cs_real_t coefh = vol_beta_x_ai * ( xlew * cp_h
+            cs_real_t coefh = vol_beta_x_ai * (xlew * cp_h
                 + (x_s_tl - x[cell_id]) * cp_v
                 / (1. + x[cell_id]));
             exp_st[cell_id] += coefh * (t_h[cell_id] - t_l[cell_id]);
             /* Over saturated */
           } else {
             cs_real_t coefh = xlew * cp_h;
-            exp_st[cell_id] += vol_beta_x_ai * ( coefh * (t_h[cell_id] - t_l[cell_id])
+            exp_st[cell_id] += vol_beta_x_ai * (coefh * (t_h[cell_id] - t_l[cell_id])
                 + (x_s_tl - x_s_th) / (1. + x[cell_id])
                 * (  cp_l * t_h[cell_id]
-                  - (cp_v * t_l[cell_id] + hv0)
-                  )
+                  - (cp_v * t_l[cell_id] + hv0))
                 );
           }
           /* Because we deal with an increment */
@@ -2074,7 +2073,7 @@ cs_ctwr_source_term(int              f_id,
            * NB: it should be in fact "y_rain x T_rain" */  //FIX ME
           else if (f_id == cfld_tp->id) {
             /* Implicit term */
-            //	  cs_real_t l_imp_st = vol_mass_source * cp_l;
+            //          cs_real_t l_imp_st = vol_mass_source * cp_l;
             cs_real_t l_imp_st = vol_mass_source;
             if (x[cell_id] <= x_s_th) {
               cs_real_t coefh = vol_beta_x_ai * ( xlew * cp_h
@@ -2114,7 +2113,8 @@ cs_ctwr_source_term(int              f_id,
     cs_real_t *liq_mass_frac = CS_F_(y_l_pack)->val;   /* liquid mass fraction */
     cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;     /* liquid enthalpy x liquid mass fraction */
     cs_real_t *liq_mass_flow
-      = cs_field_by_name("inner_mass_flux_y_l_packing")->val; /* Inner mass flux of liquidus (in the packing) */
+      = cs_field_by_name("inner_mass_flux_y_l_packing")->val; /* Inner mass flux of liquids
+                                                                 (in the packing) */
     cs_real_t *y_rain = (cs_real_t *)cfld_yp->val;
 
     for (int ict = 0; ict < _n_ct_zones; ict++) {
