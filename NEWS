@@ -5,6 +5,9 @@ Release 5.1.5 (unreleased)
 Bug fixes
 ---------
 
+- Lagrangian module: fix particle flow rate per class reporting in listing file
+  (GitHub issue #4).
+
 - GUI: fix failure to cleanly stop running computations on some
   systems (Mantis issue #242).
 
