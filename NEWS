@@ -5,6 +5,9 @@ Release 5.1.5 (unreleased)
 Bug fixes
 ---------
 
+- Fix pressure drop by zone computation (gravity term twice multiplied by
+  density at outlet boundary).
+
 - Lagrangian module: fix particle flow rate per class reporting in listing file
   (GitHub issue #4).
 
