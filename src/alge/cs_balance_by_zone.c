@@ -1847,15 +1847,15 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     }
 
     /* Gravity term */
-    cs_real_t rhogx = - rho[c_id] * _CS_DOT_PRODUCT(gravity, b_face_cog[f_id_sel]);
+    cs_real_t gx = - _CS_DOT_PRODUCT(gravity, b_face_cog[f_id_sel]);
     /* Trivial BCs */
-    cs_real_t a_rhogx = rhogx;
-    cs_real_t b_rhogx = 0.;
+    cs_real_t a_gx = gx;
+    cs_real_t b_gx = 0.;
 
     cs_b_cd_unsteady(ircflp,
                      diipb[f_id_sel],
                      grad,
-                     rhogx,
+                     gx,
                      &pip);
 
     term_balance = 0.;
@@ -1865,11 +1865,11 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
                      0, /* Conservative formulation, no mass accumulation */
                      inc,
                      bc_type[f_id_sel],
-                     rhogx,
-                     rhogx, /* no relaxation */
+                     gx,
+                     gx, /* no relaxation */
                      pip,
-                     a_rhogx,
-                     b_rhogx,
+                     a_gx,
+                     b_gx,
                      b_mass_flux[f_id_sel],
                      1.,
                      &term_balance);
