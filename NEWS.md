@@ -1,12 +1,12 @@
 
-Trunk (unreleased)
-==================
+Master (not on release branches yet)
+------------------------------------
 
-Release 5.2.0 (March 30 2018)
-=============================
+Release 5.2.0 - March 30, 2018
+------------------------------
 
-Physical modelling
-------------------
+Physical modelling:
+
 
 - Atmospheric model: add new BCs for open-boundary flow such as atmospheric
   flows. It consists in changing the solved pressure. This change result
@@ -21,24 +21,24 @@ Physical modelling
     is now also possible.
   * Allow time-varying rotor velocity for turbomachinery.
   * Account for Smirnov and Menter (ASME, 2009) modifications of Spalart-Shur eddy
-    viscosity correction for rotation and curvature
+    viscosity correction for rotation and curvature.
 
 - Add internal coupling for vector quantities (e.g. for plasma - weldpool monolitic
-  coupling)
+  coupling).
 
 - Make compatible Volume Of Fluid algorithm and option iphydr, improving face
   pressure interpolation by taking into account hydrostatic pressure gradient.
 
-Numerics
---------
+Numerics:
+
 
 - Add the possibility to put buoyant scalars and density update in
   velocity-pressure loop.
 
-- Integration of a vector Laplacian for CDO-Fb schemes
+- Integration of a vector Laplacian for CDO-Fb schemes.
 
-User changes
-------------
+User changes:
+
 
 - Allow stopping at a given wall-clock time using the control_file.
 
@@ -64,8 +64,8 @@ User changes
 - MEDCoupling: improve detection and add MEDLoader support. This allows e.g.
   to use MED for interpolating from one mesh to another.
 
-Architectural changes
----------------------
+Architectural changes:
+
 
 - Add Support for reading CGNS files with NFACE_n elements.
 
@@ -87,11 +87,10 @@ Architectural changes
 
 - CFD_Study: translate from Python2 to 3.
 
-Release 5.1.0 (October 10 2017)
-===============================
+Release 5.1.0 - October 10, 2017
+--------------------------------
 
-Physical modelling
-------------------
+Physical modelling:
 
 - Turbulence: add DDES tubulence model
   * Activated using k-w SST model (iturb = 60) with keyword IDDES = 1
@@ -100,8 +99,7 @@ Physical modelling
 - Atmospheric model: add an atmostpheric infra-red absorption feature.
   Based on L. Makke PhD work.
 
-Numerics
---------
+Numerics:
 
 - Atmospheric model: added partial radiative transfer properties model.
 
@@ -123,8 +121,7 @@ Numerics
 - Add an option to blend with upwind when the slope test is activated. The
   key word is blend_st in var_cal_opt structure.
 
-Default option changes
-----------------------
+Default option changes:
 
 - Make coupled solving for DRSM turbulence models default option.
 
@@ -136,8 +133,7 @@ Default option changes
 
 - Slope test on vector (and tensor) is now invariant by rotation by default
 
-User changes
-------------
+User changes:
 
 - Change low-level handling of mesh extrusion to allow easier fine
   control and prepare for boundary layer insertion.
@@ -188,8 +184,7 @@ User changes
 
 - Add option for postprocessing output of linear solver residuals.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - Add "histogram" type writers for easy output of variable histograms.
   Options include text, TixZ, or PNG (when Catalyst support is available).
@@ -202,8 +197,7 @@ Architectural changes
 
 - Remove support for restart files older than version 4.0.
 
-Bug fixes
----------
+Bug fixes:
 
 - Fix broken path in update feature of studymanager.
 
@@ -216,11 +210,10 @@ Bug fixes
 
 - Fix for idilat>3 algo. and isstpp>1 (beta or NVD/TVD limiters) compatibility.
 
-Release 5.0.0 (June 2 2017)
-===========================
+Release 5.0.0 - June 2, 2017
+----------------------------
 
-User changes
-------------
+User changes:
 
 - Allow user definitions of head losses by zones (see cs_user_head_losses.c).
 
@@ -230,8 +223,7 @@ User changes
   on each side of those boundaries, for a true topological mesh modification.
   cs_user_mesh_thinwall is also renamed to cs_user_mesh_boundary.
 
-Numerics
---------
+Numerics:
 
 - Improve time stepping of the coupled solver for the components of Reynolds
   stress tensor (irijco = 1).
@@ -255,8 +247,7 @@ Numerics
 
 - Add a convection-diffusion equation solver for additional vector variables.
 
-Physical modelling
-------------------
+Physical modelling:
 
 - Add a Volume Of Fluid algorithm:
   * partly merge cavitation algorithm with VOF algorithm.
@@ -291,8 +282,7 @@ Physical modelling
     remove them. Particles are now only removed when "completely lost",
     which should never happen.
 
-GUI changes
------------
+GUI changes:
 
 - Add handling of multiple compute builds through the GUI.
 
@@ -319,8 +309,7 @@ GUI changes
   and are not handled by the GUI. If a local file is not present, the reference
   file will be used.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - Renamed Autovnv to studymanager.
 
@@ -389,8 +378,7 @@ Architectural changes
 - Refactored parallel numbering for space-filling curves and added
   a numbering generation based on a 1D series of real values.
 
-Bug fixes
----------
+Bug fixes:
 
 - Fix missing reading and writing of mass fluxes in checkpoint/restart.
 
@@ -407,11 +395,10 @@ Bug fixes
 - Fix initialisation of flux and divergence boundary coefficients for coupled
   vector variables (field with dim=3).
 
-Release 4.3.0 (July 29 2016)
-============================
+Release 4.3.0 - July 29, 2016
+-----------------------------
 
-User changes
-------------
+User changes:
 
 - Allow user activation or deactivation of parallel domain
   visualization output (cs_post_mesh_set_post_domain function).
@@ -425,8 +412,7 @@ User changes
   previously on the boundary may by kept as an option.
   This is the default using the GUI.
 
-Changes
--------
+Changes:
 
 - Turbomachinery module: for better restart behavior, the joined mesh
   is now also handled using checkpoint/restart.
@@ -448,8 +434,7 @@ Changes
   cs_selector_get_i_face_num_list, it is no longer necessary to build
   selection mechanisms during the optional mesh modification step.
 
-Numerics
---------
+Numerics:
 
 - Add optional multigrid solver for scalars with convection and diffusion,
   based on the PhD work of Sana Khelifi.
@@ -485,8 +470,7 @@ schemes (Original SOLU, CENTER, Standard SOLU)
   * add optional Kahan compensated sum-based BLAS operations;
   * add cs_blas_set_reduce_algorithm() function to choose algorithm
 
-Architectural changes
----------------------
+Architectural changes:
 
 - Added parallel IO for MED output when underlying MED library is built
   with parallel (HDF5) IO support.
@@ -523,11 +507,10 @@ Architectural changes
   in this version, MEDCoupling is a full standalone library and may
   be used separately from the MED module.
 
-Release 4.2.0 (December 23 2015)
-================================
+Release 4.2.0 - December 23, 2015
+---------------------------------
 
-User changes
-------------
+User changes:
 
 - Automatic initialization of the Turbulence for EBRSM and k-omega models.
   From a reference velocity (uref), the turbulence profiles are reset
@@ -555,8 +538,7 @@ User changes
 
 - Add boundary cell thickness computation to mesh quality criteria.
 
-Physical modelling
-------------------
+Physical modelling:
 
 - Add gas mix thermo. and fix mass source term with the compressible module
   (internship of A. Menasria):
@@ -596,8 +578,7 @@ Physical modelling
   For both wall functions, roughness must be specified in the field nammed
   "boundary_roughness" in cs_user_boundary_conditions.f90 for instance.
 
-Numerics
---------
+Numerics:
 
 - Add new preconditioning management layer to allow for use of multigrid
   as a preconditioner.
@@ -641,8 +622,7 @@ Numerics
   * Integrate PETSc solver calls
   * Add face-based CDO schemes for pure diffusion problem.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - Add --compute-build option to "code_saturne run" command to allow choosing
   one of several compute builds at runtime.
@@ -684,11 +664,10 @@ Architectural changes
   using it requires providing its path to "--with-blas" anyways.
 
 
-Release 4.1.0 (July 31 2015)
-============================
+Release 4.1.0 - July 31, 2015
+-----------------------------
 
-User changes
-------------
+User changes:
 
 - Renamed 'efforts' to 'stress', which should be less confusing.
 
@@ -717,8 +696,7 @@ User changes
   This allows moving tests on the current turbulence model inside
   the user-callable functions, for more concise and safer programming.
 
-Physical modelling
-------------------
+Physical modelling:
 
 - Add 2-scales wall function (with V. Driest mixing length) and its consistant
   wall function on scalars (keyword iwallf in the doc.).
@@ -739,8 +717,7 @@ Physical modelling
 
 - Add ADF models for radiative transfers.
 
-Numerics and linear solvers
----------------------------
+Numerics and linear solvers:
 
 - Add vertex-based CDO (Compatible Discrete Operator) numerical scheme
   for diffusion problems. This is a first step, and does not handle
@@ -761,8 +738,7 @@ Numerics and linear solvers
   (except in case of non-convergence), as plotting provides the same
   info in a more usable manner.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - Add --sig-defaults option to cs_solver executable to allow use of
   default signal handlers.
@@ -783,11 +759,10 @@ Architectural changes
   for MED and CGNS should now be relatively straightforward.
 
 
-Release 4.0.0 (April 30 2015)
-=============================
+Release 4.0.0 - April 30, 2015
+------------------------------
 
-Changes
--------
+Changes:
 
 - Added boundary condition to flow mapping (feedback) functionnality
   (see boundary_conditions_map and boundary_conditions_mapped_set functions).
@@ -858,8 +833,7 @@ Changes
 
 - Added cell and face renumbering options to try to improve performance.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - New PLE (parallel location and exchange) library API, allowing new locator
   features and algorithm versioning. This requires an update on the Syrthes
@@ -931,8 +905,7 @@ Architectural changes
   are replaced by functions, which allow similar read-only access, but not
   modification, which must be done through the field API.
 
-Bug fixes
----------
+Bug fixes:
 
 - Face mean secondary viscosity is now computed consistantly with face mean
   viscosity (namely harmonic if imvisf equal to 1).
@@ -949,11 +922,10 @@ Bug fixes
 - Many more bug changes (see ChangeLog for details)
 
 
-Release 3.3.0 (16 May 2014)
-===========================
+Release 3.3.0 - May 16, 2014
+----------------------------
 
-Changes
--------
+Changes:
 
 - Add 2 order backward Euler scheme in time for velocity prediction.
   Set ibdtso = 2 in usipsu to activate it.
@@ -999,8 +971,7 @@ Changes
 
 - Update some external package versions for automatic installer.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - Remove rtp, rtpa and propce in user subroutines API. The access to the
   variables and the properties is carry out using field structure.
@@ -1029,8 +1000,7 @@ Architectural changes
 - Finalized cleanup of handling of boundary condition coefficients. Fields now allocate
   their coefficients, rather than map them from a common array.
 
-Bug fixes
----------
+Bug fixes:
 
  - Fix bug in the Generalized Gradient Diffusion Hypothesis (GGDH).
       - swich between two components (R13 and R23): this is not impacting the validation
@@ -1041,11 +1011,10 @@ Bug fixes
         (this model induces a GGDH on Rij and epsilon).
 
 
-Release 3.2.0 (4 Dec 2013)
-==========================
+Release 3.2.0 - December 4, 2013
+--------------------------------
 
-Changes
--------
+Changes:
 
 - Documentation:
    * moved tutorials outside the codebase, and into a separate base.
@@ -1121,8 +1090,7 @@ Changes
      - the "diffusivity_tensor" is added as a field key word
      - Rij-epsilon routines are cleaned up and doxygened.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - For CFDSTUDY, use PARAVIS instead of VISU.
 
@@ -1144,8 +1112,7 @@ Architectural changes
 
 - Move the convection-diffusion balance (bilsc2.f90) to C.
 
-Bug fixes
----------
+Bug fixes:
 
 - Fixes in the wall boundary conditions (validation cases re-run for safety,
   and were not impacted by these changes)
@@ -1159,11 +1126,10 @@ Bug fixes
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 3.1.0 (11 Jun 2013)
-===========================
+Release 3.1.0 - June 11 2013
+----------------------------
 
-Changes
--------
+Changes:
 
 - Many documentation updates
 
@@ -1216,8 +1182,7 @@ Changes
 
 - Implementation of a Lagrangian boundary condition based on the DLVO theory
 
-GUI changes
------------
+GUI changes:
 
 - If the GUI is launched through SALOME, update the object browser in order to
   display the results.
@@ -1229,8 +1194,7 @@ GUI changes
 
 - CFD_STUDY: display the listing in the standard dialog window.
 
-User and pre/post processing changes
-------------------------------------
+User and pre/post processing changes:
 
 - Lagrangian model: full rewrite of the postprocessing output,
   which is now usable in parallel.
@@ -1239,8 +1203,7 @@ User and pre/post processing changes
 
 - GUI and CFD_STUDY: display the monitoring points on the SALOME VTK viewer.
 
-AutoVnV changes
----------------
+AutoVnV changes:
 
 - Allow to call Code_Saturne GUI functions in external preprocessing scripts
  (automatically set the PYTHONPATH variable).
@@ -1257,8 +1220,7 @@ AutoVnV changes
 - Add the possibility to run the same case several times and to prescribe
   impose the name of results directory.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - Automatic installer changes. The installer is now in the top-level directory,
   and does not download Code_Saturne anymore. The setup file template is
@@ -1287,17 +1249,15 @@ Architectural changes
 
 - Add CS_LOG_DEFAULT type to use logging API to listing file.
 
-Bug fixes
----------
+Bug fixes:
 
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 3.0.0 (22 Mar 2013)
-===========================
+Release 3.0.0 - March 22, 2013
+------------------------------
 
-Changes
--------
+Changes:
 
 - Many documentation updates.
 
@@ -1481,8 +1441,7 @@ Changes
     Note 2: The 2 scales of velocity for Rij does not work properly in a channel,
             because the scale uk is underestimated.
 
-GUI changes
------------
+GUI changes:
 
 - Integration of UNDO/REDO function.
 
@@ -1496,8 +1455,7 @@ GUI changes
 
 - suppress Current species class.
 
-User and pre/post processing changes
-------------------------------------
+User and pre/post processing changes:
 
 - Change default v2f model from phi model to BL-v2k model.
 
@@ -1543,8 +1501,7 @@ User and pre/post processing changes
 
 - Lagrangian module: removal of the now-useless routine uslabo.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - Move field properties from cstphy to optcal.
 
@@ -1590,17 +1547,15 @@ Architectural changes
 
 - Rewrite gradient quality tests in C.
 
-Bug fixes
----------
+Bug fixes:
 
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 2.3.0 (23 Jul 2012)
-===========================
+Release 2.3.0 - July 23, 2012
+-----------------------------
 
-Changes
--------
+Changes:
 
 - Set the coupled velocity component solver as default option (ivelco=1).
 
@@ -1685,8 +1640,7 @@ Changes
   This can be activated with the idilat keyword set to 3 (1 being the
   current default).
 
-GUI changes
------------
+GUI changes:
 
 - Add handling of gas combustion model.
 
@@ -1731,8 +1685,7 @@ GUI changes
 
 - Add support for Rij-epsilon EBRSM and Spalart-Allmaras turbulence models.
 
-User and pre/post processing changes
-------------------------------------
+User and pre/post processing changes:
 
 - Separate usproj.f90 into multiple examples.
 
@@ -1772,8 +1725,7 @@ User and pre/post processing changes
 
 - Remove Fortran utility subroutines used to obtain global mesh element numbers.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - Use 16 characters instead of 8 for variable and property names.
   Improve formatting, and make default variable names witout GUI more
@@ -1833,17 +1785,15 @@ Architectural changes
 - Move definition of parallel rank and thread status from cs_base.*
   to cs_defs.*.
 
-Bug fixes
----------
+Bug fixes:
 
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 2.2.0 (30 Mar 2012)
-===========================
+Release 2.2.0 - March 30, 2012
+------------------------------
 
-Changes
--------
+Changes:
 
 - Add a porosity formulation.
   The transport equations (espacially in turbulence) have to be checked.
@@ -1922,8 +1872,7 @@ Changes
 
 - Many minor changes (see ChangeLog for details).
 
-User and pre/post processing changes
-------------------------------------
+User and pre/post processing changes:
 
 - Allow choice of ADF or HDF5 format for CGNS.
 
@@ -1950,8 +1899,7 @@ User and pre/post processing changes
 
 - Remove never-used user function for multigrid coarsening.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - Remove support for CGNS versions < 3.1
 
@@ -2045,17 +1993,15 @@ Architectural changes
 
 - Add logging API, which is used for improved multigrid performance information.
 
-Bug fixes
----------
+Bug fixes:
 
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 2.1.0 (20 Oct 2011)
-===========================
+Release 2.1.0 - October 20, 2011
+--------------------------------
 
-Changes
--------
+Changes:
 
 - Add thermochemistry reference files for the unified combustion modeling.
 
@@ -2144,8 +2090,7 @@ Changes
 
 - Many minor changes (see ChangeLog for details).
 
-User and pre/post processing changes
-------------------------------------
+User and pre/post processing changes:
 
 - Many updates and additions to GUI.
 
@@ -2288,8 +2233,7 @@ User and pre/post processing changes
 
 - Add timing information for mesh input I/O.
 
-Architectural changes
----------------------
+Architectural changes:
 
 - Add a developers guide with coding standards.
 
@@ -2503,14 +2447,13 @@ Architectural changes
   partitionning is done, but parallel partitioning may be selected with
   the user script.
 
-Bug fixes
----------
+Bug fixes:
 
 - Many bug fixes (see ChangeLog for details).
 
 
-Release 2.0.0 (20 Aug 2010)
-===========================
+Release 2.0.0 - August 20, 2010
+-------------------------------
 
 Code_Saturne 2.0 is a major (fully validated) production release, replacing
 version 1.3 (which is to be maintained until the release of version 3.0).
@@ -2525,8 +2468,8 @@ version 1.3 (which is to be maintained until the release of version 3.0).
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 2.0.0-rc1 (22 Jun 2010)
-===============================
+Release 2.0.0-rc2 - June 22, 2010
+---------------------------------
 
 - By-pass a possible bug with the flush Fortran 2003 statement on BG systems.
 
@@ -2545,8 +2488,8 @@ Release 2.0.0-rc1 (22 Jun 2010)
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 2.0.0-rc1 (19 Feb 2010)
-===============================
+Release 2.0.0-rc1 - February 19, 2010
+-------------------------------------
 
 - English translation of more Fortran subroutines headers.
 
@@ -2600,8 +2543,8 @@ Release 2.0.0-rc1 (19 Feb 2010)
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 2.0.0-beta1 (29 Jul 2009)
-=================================
+Release 2.0.0-beta1 - July 29, 2009
+-----------------------------------
 
 - Move loop on velocity/pressure system so that it includes
   the boundary conditions calculation.
@@ -2665,8 +2608,8 @@ Release 2.0.0-beta1 (29 Jul 2009)
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 2.0.0-beta1 (26 May 2009)
-=================================
+Release 2.0.0-beta1 - May 26, 2009
+----------------------------------
 
 - Add a quick reference card documentation.
 
@@ -2702,8 +2645,8 @@ Release 2.0.0-beta1 (26 May 2009)
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 1.4.0 (28 Nov. 2008)
-============================
+Release 1.4.0 - November 28, 2008
+---------------------------------
 
 Code_Saturne 1.4 is an intermediate development release, very similar to
 version 1.3.3 except for the items below:
@@ -2754,8 +2697,8 @@ version 1.3.3 except for the items below:
 - Several bug fixes and minor improvements (see ChangeLog for details).
 
 
-Release 1.3.3 (27 Nov 2008)
-===========================
+Release 1.3.3 - November 27, 2008
+---------------------------------
 
 - Upgrade dependencies to FVM 0.12.0 and BFT 1.0.8.
 
@@ -2782,8 +2725,8 @@ Release 1.3.3 (27 Nov 2008)
 - Several bug fixes (see ChangeLog for details).
 
 
-Release 1.3.2 (16 Apr 2008)
-===========================
+Release 1.3.2 - April 16, 2008
+------------------------------
 
 - Port to BlueGene/P and Cray XT
 
@@ -2828,8 +2771,8 @@ Release 1.3.2 (16 Apr 2008)
 - Several bug fixes (see ChangeLog for details).
 
 
-Release 1.3.1 (28 Nov 2007)
-===========================
+Release 1.3.1 - November 28, 2007
+---------------------------------
 
 - Storage on preprocessor files in a subdirectory of
   the temporary execution directory.
@@ -2851,8 +2794,8 @@ Release 1.3.1 (28 Nov 2007)
 - Several bug fixes (see ChangeLog for details).
 
 
-Release 1.3.0 (2 Aug 2007)
-==========================
+Release 1.3.0 - August 2, 2007
+------------------------------
 
 Code_Saturne 1.3 is a major (fully validated) production release.
 Release 1.3.0 is the feature-freeze release, and versions 1.3.1

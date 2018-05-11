@@ -1,22 +1,23 @@
 General Information
 ===================
 
-This directory contains the Code_Saturne CFD tool,
+This directory contains the _Code_Saturne_ CFD tool,
 EDF's general purpose Computational Fluid Dynamics (CFD) software.
 
-The basic capabilities of Code_Saturne enable the handling of either
+The basic capabilities of _Code_Saturne_ enable the handling of either
 incompressible or expandable flows with or without heat transfer and
 turbulence. Dedicated modules are available for specific physics such as
 radiative heat transfer, combustion (gas, coal, heavy fuel oil, ...),
 magneto-hydrodynamics, compressible flows, two-phase flows
 (Euler-Lagrange approach with two-way coupling), or atmospheric flows.
 
-For more information, see the https://code-saturne.org website.
+For more information, see the
+[https://code-saturne.org](https://code-saturne.org) website.
 
 Presentation
 ============
 
-Code_Saturne is portable on all Linux flavors and UNIX platforms tested so far.
+_Code_Saturne_ is portable on all Linux flavors and UNIX platforms tested so far.
 It runs in parallel with MPI on distributed memory machines (clusters, Cray,
 IBM Blue Gene and Power, ...).
 Developed since 1997 at EDF R&D, it is based on a co-located Finite Volume
@@ -27,20 +28,22 @@ prismatic, pyramidal, polyhedral...) and any type of grid structure
 Compatible mesh generators include I-Deas, GMSH, GAMBIT, Simail, SALOME,
 ANSYS meshing, ... Post-processing output is available in EnSight, CGNS
 and MED formats, with advanced data management capabilities by the FVM
-library (EDF's "Finite Volume Mesh" library, under LGPL licence).
+library (EDF's "Finite Volume Mesh" library, under the GNU LGPLv2 licence).
 Parallel code coupling capabilities are also provided by the FVM library
 and in-situ postprocessing available using the ParaView Catalyst and
 Melissa libraries.
 
-Code_Saturne can be coupled to EDF's thermal software SYRTHES (conjugate
-heat transfer). It can also produce output usable by EDF's structural analysis
-software Code_Aster, in particular in the SALOME platform. SYRTHES and
-Code_Aster are developed by EDF and distributed under GNU GPL licence.
+_Code_Saturne_ can be coupled to EDF's thermal software
+[SYRTHES](https://www.edf.fr/en/the-edf-group/world-s-largest-power-company/activities/research-and-development/scientific-communities/simulation-softwares?logiciel=10818)
+(conjugate heat transfer). It can also produce output usable by EDF's structural
+analysis software [code_aster](https://code-aster.org), in particular in the
+[SALOME platform](https://www.salome-platform.org/). SYRTHES and
+code_aster are developed by EDF and distributed under a GNU GPL licence.
 
 Copying
 =======
 
-Code_Saturne is distributed under the GNU General Public Licence.
+_Code_Saturne_ is distributed under the GNU General Public Licence, v2.
 See the COPYING file for details.
 
 Installation
@@ -50,16 +53,16 @@ Manual installation
 -------------------
 
 Detailed installation instructions are also available as a pdf file,
-available on the Code_Saturne web site, or as part of this package.
+available on the _Code_Saturne_ web site, or as part of this package.
 
 For generic instructions relative to the GNU autotools-based
 installation, see also the file 'INSTALL'.
 
-Automatic installation
-----------------------
+Semi-automatic installation
+---------------------------
 
 The Install directory contains a python script for automatic
-installation of the Code_Saturne elements and associated routines.
+installation of the _Code_Saturne_ elements and associated routines.
 In most cases, it will be enough. In case of problems, switch to
 section II for element by element install.
 These scripts are given in the hope that they will be useful, but
@@ -69,27 +72,25 @@ The script can download every package needed by the code to run
 properly. If this behaviour is not wanted, set the "download" variable
 to "no" in the setup script.
 
-Lastly, the possibility is given to compile Code_Saturne with debugging symbols
+Lastly, the possibility is given to compile _Code_Saturne_ with debugging symbols
 ("debug" variable), to disable the Graphical User Interface ("disable_gui"
 variable), and to specify the language (between English and French).
 
-On some architectures and for some elements (MED and SCOTCH for instance)
-it is preferable if the "make" command is a recent enough version of GNU "make".
-Otherwise some problems can occur.
-
 * install_saturne.py:
-  This python script will install the different elements of Code_Saturne and
+  This python script will install the different elements of _Code_Saturne_ and
   associated libraries. Due to dependencies between the different modules, the
   order of install should be the following:
+  
   - libxml2 (it is advised to use the distribution's own package instead)
   - HDF5
   - CGNS
   - MED
-  - Scotch
-  - Metis
+  - PT-Scotch
+  - ParMETIS
 
   The following packages are not handled by the installer so must be installed
   first:
+  
   - Zlib (optional)
   - BLAS (optional)
   - PyQT (optional, required for the GUI)
@@ -142,18 +143,18 @@ Post-install setup
 
 For some systems (such as when using a batch system or coupling with SYRTHES,
 a post-install step may be required). In this case, copy
-"$prefix/code_saturne-$version/etc/code_saturne.cfg.template" to
-"$prefix/code_saturne-$version/etc/code_saturne.cfg" and adapt the file to
+`"$prefix/code_saturne-$version/etc/code_saturne.cfg.template"` to
+`"$prefix/code_saturne-$version/etc/code_saturne.cfg"` and adapt the file to
 your needs.
 
-Each user of Code_Saturne may set her/his PATH or define an alias accordingly
-with the Code_Saturne installation before using the code.
+Each user of _Code_Saturne_ may set her/his PATH or define an alias accordingly
+with the _Code_Saturne_ installation before using the code.
 The easiest way is to add the following
-line in the user's ".profile" or ".alias" file(depending on the shell).
+line in the user's ".profile" or ".alias" file (depending on the shell).
 
-alias code_saturne="$prefix/code_saturne-$version/bin/code_saturne"
+`alias code_saturne="$prefix/code_saturne-$version/bin/code_saturne"`
 
-For more information please refer to the Code_Saturne documentation, available
+For more information please refer to the _Code_Saturne_ documentation, available
 through the "code_saturne info -g refcard" and "code_saturnes info -g user"
 commands.
 

@@ -59,25 +59,25 @@ def version_from_news(srcdir):
     release = ''
     extra = ''
 
-    trunk = -1
+    master = -1
     version = [-1]
     release = [-1, '', '', '']
 
-    f = open(os.path.join(srcdir, "NEWS"))
+    f = open(os.path.join(srcdir, "NEWS.md"))
     lines = f.readlines()
     f.close()
 
     for i in range(1, len(lines)):
 
-        # Release names are underlined by '==='
+        # Release names are underlined by '---'
 
-        if lines[i][0:7] == '=======':
+        if lines[i][0:7] == '-------':
 
             j = i-1
             l = lines[j]
 
-            if l[0:6] == 'Trunk ' and trunk < 0:
-                trunk = j
+            if l[0:7] == 'Master ' and master < 0:
+                master = j
 
             # If release appears, at which line, and is there a date,
             # or is it not yet released ?
@@ -95,9 +95,9 @@ def version_from_news(srcdir):
                             release = [j] + n.split('.')
                             break
 
-    if trunk > -1:
+    if master > -1:
         if version[0] > -1:
-            major, minor = trunk_major_minor(version[1], version[2])
+            major, minor = master_major_minor(version[1], version[2])
             release = ''
             extra = '-alpha'
 
@@ -112,9 +112,9 @@ def version_from_news(srcdir):
 
 #-------------------------------------------------------------------------------
 
-def trunk_major_minor(prev_major, prev_minor):
+def master_major_minor(prev_major, prev_minor):
     """
-    For trunk, determine next version based on previous branches
+    For master, determine next version based on previous branches
     """
 
     # Current release cycle plans for 4 minor releases per major release

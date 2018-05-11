@@ -1,13 +1,13 @@
-This file is the credits list for the Code_Saturne Kernel, element
-of the Code_Saturne CFD tool. The affiliation given for each contributor
-refers to the time when that contributor was active in the project,
-and does not necessarily correspond to his or her present affiliation.
+This file is the credits list for the Code_Saturne CFD tool. The affiliation
+given for each contributor refers to the time when that contributor was active
+in the project, and does not necessarily correspond to his or her
+present affiliation.
 
 
 Code_Saturne is copyright (C) 1998-2018 EDF S.A., France
 
 
-Major contributions to the Code_Saturne Kernel have been provided by
+Major contributions to Code_Saturne have been provided by
 
 Frédéric Archambeau      (EDF, Chatou, France)
 Bruno Audebert           (EDF, Chatou, France)
@@ -37,9 +37,10 @@ Dorothée Senechal        (EDF, Chatou, France)
 Jean-Luc Rousset         (EDF, Chatou, France)
 Marc Sakiz               (EDF, Chatou, France)
 Carole Vit               (INCKA, Boulogne-Billancourt, France)
+Jean-François Wald       (EDF, Chatou, France)
 
 
-Other contributors to the Code_Saturne Kernel include
+Other contributors to Code_Saturne include
 
 Pierre Cantin            (EDF, Chatou, France)
 Bertrand Carissimo       (EDF, Chatou, France)
@@ -71,7 +72,6 @@ Vincent Stobiac          (EDF, Chatou, France)
 Michaël Tartar           (INCKA, Boulogne-Billancourt, France)
 Augustin Tibere-Inglesse (EDF, Chatou, France)
 Juan Uribe               (University of Manchester, United Kingdom)
-Jean-François Wald       (EDF, Chatou, France)
 
 
 Code_Saturne may contain code by Wes Petersen
@@ -98,7 +98,6 @@ Sandro Dal Secco         (EDF, Chatou, France)
 Étienne Decossin         (EDF, Chatou, France)
 Matthieu Guillaud        (INCKA, Boulogne-Billancourt, France)
 Jean-Marc Hérard         (EDF, Chatou, France)
-Richard Howard           (EDF, Chatou, France)
 Frank Hülsemann          (EDF, Saclay, France)
 Nicolas Jamet            (INCKA, Boulogne-Billancourt, France)
 Nicolas Jarrin           (University of Manchester, United Kingdom)
