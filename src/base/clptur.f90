@@ -2857,30 +2857,24 @@ do ifac = 1, nfabor
       call csexit(1)
     endif
 
-    ! Dirichlet on the scalar, with wall function
-    if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5) then
-      call hturbp(iwalfs,prdtl,turb_schmidt,yplus,dplus,hflui,ypth)
+    ! wall function and Dirichlet or Neumann on the scalar
+    if (iturb.ne.0.and.(icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.3)) then
 
+      call hturbp(iwalfs,prdtl,turb_schmidt,yplus,dplus,hflui,ypth)
       ! Compute (y+-d+)/T+ *PrT
       yptp = hflui/prdtl
       ! Compute lambda/y * (y+-d+)/T+
       hflui = rkl/distbf *hflui
-      hbord2(ifac) = hflui
-
-    ! Neumann on the scalar, with wall function (for post-processing)
-    elseif (iturb.ne.0.and.icodcl(ifac,ivar).eq.3) then
-      call hturbp(iwalfs,prdtl,turb_schmidt,yplus,dplus,hflui,ypth)
-      hbord2(ifac) = rkl/distbf * hflui
-      ! y+/T+ *PrT
-      yptp = hflui/prdtl
-      hflui = hint
 
     else
+
       ! y+/T+ *PrT
       yptp = 1.d0/prdtl
       hflui = hint
-      hbord2(ifac) = hflui
+
     endif
+
+    hbord2(ifac) = hflui
 
     hext = rcodcl(ifac,ivar,2)
 
