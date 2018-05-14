@@ -1342,41 +1342,52 @@ cs_gwf_extra_post(void                      *input,
   if (input == NULL)
     return;
 
-  if (mesh_id != -1) /* Post-processing only on the generic volume mesh */
-    return;
-
   const cs_gwf_t  *gw = (const cs_gwf_t *)input;
 
-  if (gw->flag & CS_GWF_GRAVITATION) { /* Post-process pressure head */
+  if (mesh_id == -2) {
 
-    cs_field_t  *f = gw->pressure_head;
+    const cs_field_t  *nflx =
+      cs_advection_field_get_field(gw->adv_field,
+                                   CS_MESH_LOCATION_BOUNDARY_FACES);
 
-    if (f->location_id == cs_mesh_location_get_id_by_name("cells"))
-      cs_post_write_var(CS_POST_MESH_VOLUME,
-                        CS_POST_WRITER_ALL_ASSOCIATED,
-                        f->name,
-                        1,              // dim
-                        true,           // interlace
-                        true,           // true = original mesh
-                        CS_POST_TYPE_cs_real_t,
-                        f->val,         // values on cells
-                        NULL,           // values at internal faces
-                        NULL,           // values at border faces
-                        time_step);     // time step structure
+    if (nflx == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Null pointer encounter\n", __func__);
 
-    else if (f->location_id == cs_mesh_location_get_id_by_name("vertices"))
-      cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                               CS_POST_WRITER_ALL_ASSOCIATED,
-                               f->name,
-                               1,              // dim
-                               false,          // interlace
-                               true,           // true = original mesh
-                               CS_POST_TYPE_cs_real_t,
-                               f->val,         // values on vertices
-                               time_step);     // time step management structure
+    bft_printf(" Balance of the Darcy flux across the domain boundary\n");
 
+    cs_real_t balance = 0;
+    for (cs_lnum_t  i = 0; i < n_b_faces; i++)
+      balance += nflx->val[i];
+    cs_real_t  default_balance = balance;
 
-  } // Post pressure head
+    for (int def_id = 0; def_id < gw->adv_field->n_bdy_flux_defs; def_id++) {
+
+      const cs_xdef_t  *def = gw->adv_field->bdy_flux_defs[def_id];
+      const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
+      assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
+
+      if (z->elt_ids == NULL)
+        break; /* Nothing to do (balance = default_balance) */
+      else {
+
+        balance = 0;
+        for (cs_lnum_t i = 0; i < z->n_elts; i++)
+          balance += nflx->val[z->elt_ids[i]];
+
+        bft_printf(" %32s: % -5.3e\n", z->name, balance);
+        default_balance -= balance;
+
+      }
+    } /* Loop on boundary definitions for the Darcy flux */
+
+    if (gw->adv_field->n_bdy_flux_defs == 0)
+      bft_printf(" %32s: % -5.3e\n", "Whole boundary", default_balance);
+
+    else
+      bft_printf(" %32s: % -5.3e\n", "Remaining boundary", default_balance);
+
+  } /* mesh_id = -2 */
 
 }
 
