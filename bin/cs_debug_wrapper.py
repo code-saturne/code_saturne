@@ -45,6 +45,7 @@ rank_id = -1
 # List of supported debuggers
 
 debuggers = {"gdb": "GNU gdb debugger",
+             "gdbgui": "gdbgui gdb web browser interface",
              "ddd": "Data Display Debugger",
              "emacs": "Emacs with gdb debugger",
              "emacs23": "Emacs 23 or older with gdb debugger",
@@ -357,14 +358,13 @@ def run_minimal_debug(path, args=None,
         cmd += [path]
         if args:
             cmd += args
-        print(cmd)
 
-    if debugger_ui == 'kdbg':
+    elif debugger_ui == 'kdbg':
         if args:
             cmd += ['-a'] + args
         cmd += [path]
 
-    if debugger_ui == 'gede':
+    elif debugger_ui == 'gede':
         cmd += ['--args', path]
         if args:
             cmd += args
@@ -382,6 +382,18 @@ def run_minimal_debug(path, args=None,
             cmd += args
 
     return subprocess.call(cmd)
+
+#-------------------------------------------------------------------------------
+# Find available port (for gdbgui)
+#-------------------------------------------------------------------------------
+
+def find_free_port():
+    import socket
+    tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp.bind(('', 0))
+    addr, port = tcp.getsockname()
+    tcp.close()
+    return port
 
 #-------------------------------------------------------------------------------
 # Run gdb-based or compatible debugger.
@@ -403,7 +415,7 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
             target = True
             cmds.append(gdb_cmds[0])
 
-    # Check if we already have a commands file
+    # Check if we already have a command file
 
     cmds.append('b main')
 
@@ -488,6 +500,15 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
                 term = xterm
             cmd = [term, '-e', cmd_string]
 
+    elif debugger_ui == 'gdbgui':
+        cmd.insert(0, debugger)
+        if gdb != 'gdb':
+            cmd.insert(1, gdb)
+            cmd.insert(1, '--gdb')
+        p = find_free_port()
+        cmd.insert(1, str(p))
+        cmd.insert(1, '-p')
+
     elif debugger_ui == 'ddd':
         cmd.insert(0, debugger)
         if gdb != 'gdb':
@@ -509,6 +530,7 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
         cmd[0] = 'gdb'
 
     if not debugger_ui in ("emacs", "emacs23"):
+        print(cmd)
         p = subprocess.Popen(cmd)
     else:
         cmd_line = cmd[0]
