@@ -107,6 +107,7 @@ cs_user_performance_tuning-numbering.c \
 cs_user_performance_tuning-parallel-io.c \
 cs_user_performance_tuning-partition.c \
 cs_user_postprocess.c \
+cs_user_postprocess-boundary_pressure_profile.c \
 cs_user_postprocess-profiles.c \
 cs_user_postprocess-sfc.c \
 cs_user_radiative_transfer.c \
