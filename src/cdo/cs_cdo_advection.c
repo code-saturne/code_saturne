@@ -771,15 +771,6 @@ _vcb_cellwise_consistent_part(const cs_nvec3_t            adv_cell,
     bgvf[e][1] = bgv2;
     bgvf[e][2] = bgf;
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 2 // DEBUG
-    printf(" f %d; e %d; bgv1 %5.3e; bgv2 %5.3e; bgf %5.3e\n >> wvf:",
-      fm->f_id, fm->e_ids[e], adv_cell.meas*bgvf[e][0],
-      adv_cell.meas*bgvf[e][1], adv_cell.meas*bgvf[e][2]);
-    for (short int v = 0; v < fm->n_vf; v++)
-      printf(" %5.3e (%d)", fm->wvf[v], fm->v_ids[v]);
-    printf("\n");
-#endif
-
   } // Loop on face edges
 
 }
@@ -1420,6 +1411,7 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
                                cs_cell_builder_t           *cb)
 {
   CS_UNUSED(fm);
+
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB); // Sanity check
   assert(cs_flag_test(cm->flag,

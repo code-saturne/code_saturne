@@ -171,8 +171,6 @@ _init_cell_structures(const cs_flag_t               cell_flag,
 {
   CS_UNUSED(cb);
 
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-
   /* Cell-wise view of the linear system to build */
   const int  n_blocks = cm->n_fc + 1;
   const int  n_dofs = 3*n_blocks;
@@ -227,6 +225,8 @@ _init_cell_structures(const cs_flag_t               cell_flag,
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
   if (cell_flag & CS_FLAG_BOUNDARY) {
+
+    const cs_cdo_connect_t  *connect = cs_shared_connect;
 
     /* Identify which face is a boundary face */
     for (short int f = 0; f < cm->n_fc; f++) {
@@ -623,7 +623,6 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
                              cs_real_t                  *rhs,
                              cs_matrix_t                *matrix)
 {
-  CS_UNUSED(dt_cur);
   /* Sanity checks */
   assert(rhs != NULL && matrix != NULL);
 
@@ -660,9 +659,9 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
   /* Tag faces with a non-homogeneous Neumann BC */
   short int  *neu_tags = cs_equation_tag_neumann_face(quant, eqp);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)       \
-  shared(t_cur, dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,   \
-         dir_values, neu_tags, field_val,                                  \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)   \
+  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,      \
+         dir_values, neu_tags, field_val,                              \
          cs_cdofb_cell_sys, cs_cdofb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -705,8 +704,8 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_cell_structures(cell_flag, cm, eqp, eqb, eqc,
-                            dir_values, neu_tags, field_val,  // in
-                            csys, cb);                        // out
+                            dir_values, neu_tags, field_val, t_eval_pty,  // in
+                            csys, cb);                                    // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
       if (c_id % CS_CDOFB_VECTEQ_MODULO == 0) cs_cell_mesh_dump(cm);
@@ -843,9 +842,6 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
   cs_dbg_darray_to_listing("FINAL RHS_FACE", quant->n_faces, rhs, 9);
-  if (eqc->source_terms != NULL)
-    cs_dbg_darray_to_listing("FINAL RHS_CELL",
-                             quant->n_cells, eqc->source_terms, 9);
 #endif
 
   /* Free temporary buffers and structures */
@@ -880,6 +876,7 @@ cs_cdofb_vecteq_update_field(const cs_real_t              *solu,
                              cs_real_t                    *field_val)
 {
   CS_UNUSED(rhs);
+  CS_UNUSED(eqp);
 
   cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)data;
   cs_timer_t  t0 = cs_timer_time();

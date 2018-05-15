@@ -78,7 +78,6 @@ BEGIN_C_DECLS
 #define CS_CDOFB_SCALEQ_DBG      0
 #define CS_CDOFB_SCALEQ_MODULO  10
 
-
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -168,8 +167,6 @@ _init_cell_structures(const cs_flag_t               cell_flag,
 {
   CS_UNUSED(cb);
 
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-
   /* Cell-wise view of the linear system to build */
   const int  n_dofs = cm->n_fc + 1;
 
@@ -207,6 +204,8 @@ _init_cell_structures(const cs_flag_t               cell_flag,
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
   if (cell_flag & CS_FLAG_BOUNDARY) {
+
+    const cs_cdo_connect_t  *connect = cs_shared_connect;
 
     /* Identify which face is a boundary face */
     for (short int f = 0; f < cm->n_fc; f++) {
@@ -669,8 +668,8 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
       if (c_id % CS_CDOFB_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
 #endif
 
-      /* DIFFUSION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ============================================== */
+      /* DIFFUSION TERM */
+      /* ============== */
 
       if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -691,8 +690,8 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 #endif
       } /* END OF DIFFUSION */
 
-      /* SOURCE TERM COMPUTATION */
-      /* ======================= */
+      /* SOURCE TERM */
+      /* =========== */
 
       if (cs_equation_param_has_sourceterm(eqp)) {
 
@@ -717,8 +716,8 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       } /* End of term source contribution */
 
-      /* TIME CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ========================================= */
+      /* UNSTEADY TERM + TIME SCHEME */
+      /* =========================== */
 
       if (cs_equation_param_has_time(eqp)) {
 
@@ -815,9 +814,6 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
   cs_dbg_darray_to_listing("FINAL RHS_FACE", quant->n_faces, rhs, 8);
-  if (eqc->source_terms != NULL)
-    cs_dbg_darray_to_listing("FINAL RHS_CELL",
-                             quant->n_cells, eqc->source_terms, 8);
 #endif
 
   /* Free temporary buffers and structures */
@@ -852,11 +848,11 @@ cs_cdofb_scaleq_update_field(const cs_real_t              *solu,
                              cs_real_t                    *field_val)
 {
   CS_UNUSED(rhs);
+  CS_UNUSED(eqp);
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)data;
   cs_timer_t  t0 = cs_timer_time();
 
-  const cs_real_t  *st = eqc->source_terms;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
   /* Set computed solution in builder->face_values */

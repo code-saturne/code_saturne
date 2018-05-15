@@ -168,8 +168,8 @@ _initialize_field_from_ic(cs_real_t       t_eval,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  _(" Incompatible way to initialize the field %s.\n"),
-                  field->name);
+                  _(" %s: Invalid way to initialize equation %s.\n"),
+                  __func__, eq->name);
 
       } // Switch on possible type of definition
 
@@ -202,8 +202,8 @@ _initialize_field_from_ic(cs_real_t       t_eval,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  _(" Incompatible way to initialize the field %s.\n"),
-                  field->name);
+                  _(" %s: Invalid way to initialize equation %s.\n"),
+                  __func__, eq->name);
 
       } // Switch on possible type of definition
 
@@ -242,8 +242,8 @@ _initialize_field_from_ic(cs_real_t       t_eval,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  _(" Incompatible way to initialize the field %s.\n"),
-                  field->name);
+                  _(" %s: Invalid way to initialize equation %s.\n"),
+                  __func__, eq->name);
 
       } // Switch on possible type of definition
 
@@ -944,8 +944,8 @@ cs_equation_add(const char            *eqname,
 
   eq->param = cs_equation_create_param(eqtype, dim, default_bc);
 
-  eq->field_id = -1;    // field is created in a second step
-  eq->do_build = true;  // Force the construction of the algebraic system
+  eq->field_id = -1;    /* field is created in a second step */
+  eq->do_build = true;  /* force the construction of the algebraic system */
 
   /* Set timer statistic structure to a default value */
   eq->main_ts_id = eq->solve_ts_id = -1;
@@ -1189,6 +1189,12 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
   if (_n_equations == 0)
     return true;
 
+  const char  s_err_msg[] =
+    "%s: Only the scalar-valued case is handled for this scheme.\n";
+  const char  sv_err_msg[] =
+    "%s: Only the scalar-valued and vector-valued case are handled"
+    "for this scheme.\n";
+
   bool  all_are_steady = true;
 
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
@@ -1232,9 +1238,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Only the scalar-valued case is handled for CDO"
-                  " vertex-based schemes.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
 
       break;
 
@@ -1262,9 +1266,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Only the scalar-valued case is handled for CDO"
-                  " vertex+cell-based schemes.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
 
       break;
 
@@ -1313,9 +1315,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Only the scalar-valued and vector-valued cases are"
-                  "  handled for CDO face-based schemes.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
 
       break;
 
@@ -1342,9 +1342,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Only the scalar-valued case is handled for CDO"
-                  " HHO schemes.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
       break;
 
     case CS_SPACE_SCHEME_HHO_P1:
@@ -1371,9 +1370,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Only the scalar-valued case is handled for CDO"
-                  " HHO schemes.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
       break;
 
     case CS_SPACE_SCHEME_HHO_P2:
@@ -1400,9 +1398,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Only the scalar-valued case is handled for CDO"
-                  " HHO schemes.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
       break;
 
     default:
@@ -1424,7 +1421,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
 
-  } // Loop on equations
+  } /* Loop on equations */
 
   return all_are_steady;
 }

@@ -1354,7 +1354,8 @@ cs_gwf_extra_post(void                      *input,
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Null pointer encounter\n", __func__);
 
-    bft_printf(" Balance of the Darcy flux across the domain boundary\n");
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " Balance of the Darcy flux across the domain boundary\n");
 
     cs_real_t balance = 0;
     for (cs_lnum_t  i = 0; i < n_b_faces; i++)
@@ -1375,17 +1376,19 @@ cs_gwf_extra_post(void                      *input,
         for (cs_lnum_t i = 0; i < z->n_elts; i++)
           balance += nflx->val[z->elt_ids[i]];
 
-        bft_printf(" %32s: % -5.3e\n", z->name, balance);
+        cs_log_printf(CS_LOG_DEFAULT, " %32s: % -5.3e\n", z->name, balance);
         default_balance -= balance;
 
       }
     } /* Loop on boundary definitions for the Darcy flux */
 
     if (gw->adv_field->n_bdy_flux_defs == 0)
-      bft_printf(" %32s: % -5.3e\n", "Whole boundary", default_balance);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " %32s: % -5.3e\n", "Whole boundary", default_balance);
 
     else
-      bft_printf(" %32s: % -5.3e\n", "Remaining boundary", default_balance);
+      cs_log_printf(CS_LOG_DEFAULT, " %32s: % -5.3e\n",
+                    "Remaining boundary", default_balance);
 
   } /* mesh_id = -2 */
 

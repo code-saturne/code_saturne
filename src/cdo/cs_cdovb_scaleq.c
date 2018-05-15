@@ -239,6 +239,9 @@ _init_cell_structures(const cs_flag_t               cell_flag,
      has at least one border face */
   if (cell_flag & CS_FLAG_BOUNDARY) {
 
+    const cs_cdo_connect_t  *connect = cs_shared_connect;
+    const cs_cdo_bc_t  *face_bc = eqb->face_bc;
+
     /* Sanity check */
     assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
@@ -814,7 +817,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
 
-#pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       const cs_flag_t  cell_flag = connect->cell_flag[c_id];
@@ -833,8 +836,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
       if (c_id % CS_CDOVB_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
 #endif
 
-      /* DIFFUSION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ============================================== */
+      /* DIFFUSION TERM */
+      /* ============== */
 
       if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -843,23 +846,10 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
           cs_equation_set_diffusion_property_cw(eqp, cm, t_eval_pty, cell_flag,
                                                 cb);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-        if (!eqp->diffusion_hodge.is_iso) {
-          if (c_id % CS_CDOVB_SCALEQ_MODULO == 0)
-            cs_log_printf(CS_LOG_DEFAULT,
-                          " [% 6.3e % 6.3e % 6.3e]\n"
-                          " [% 6.3e % 6.3e % 6.3e]\n"
-                          " [% 6.3e % 6.3e % 6.3e]\n",
-                       cb->pty_mat[0][0], cb->pty_mat[0][1], cb->pty_mat[0][2],
-                       cb->pty_mat[1][0], cb->pty_mat[1][1], cb->pty_mat[1][2],
-                       cb->pty_mat[2][0], cb->pty_mat[2][1], cb->pty_mat[2][2]);
-        }
-#endif
-
-        // local matrix owned by the cellwise builder (store in cb->loc)
+        /* local matrix owned by the cellwise builder (store in cb->loc) */
         eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
 
-        // Add the local diffusion operator to the local system
+        /* Add the local diffusion operator to the local system */
         cs_sdm_add(csys->mat, cb->loc);
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
@@ -876,8 +866,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 #endif
       } /* END OF DIFFUSION */
 
-      /* ADVECTION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ============================================== */
+      /* ADVECTION TERM */
+      /* ============== */
 
       if (cs_equation_param_has_convection(eqp)) {
 
@@ -909,8 +899,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 #endif
       }
 
-      /* REACTION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ============================================= */
+      /* REACTION TERM */
+      /* ============= */
 
       if (cs_equation_param_has_reaction(eqp)) {
 
@@ -930,8 +920,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       } /* END OF REACTION */
 
-      /* SOURCE TERM COMPUTATION */
-      /* ======================= */
+      /* SOURCE TERM */
+      /* =========== */
 
       if (cs_equation_param_has_sourceterm(eqp)) {
 
@@ -951,10 +941,10 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
         for (short int v = 0; v < cm->n_vc; v++)
           csys->rhs[v] += csys->source[v];
 
-      } /* End of term source contribution */
+      } /* End of term source */
 
-      /* TIME CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ========================================= */
+      /* UNSTEADY TERM + TIME SCHEME */
+      /* =========================== */
 
       if (cs_equation_param_has_time(eqp)) {
 
@@ -1455,7 +1445,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
  * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out]  context    pointer to cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1464,10 +1454,10 @@ cs_cdovb_scaleq_extra_op(const char                 *eqname,
                          const cs_field_t           *field,
                          const cs_equation_param_t  *eqp,
                          cs_equation_builder_t      *eqb,
-                         void                       *data)
+                         void                       *context)
 {
   CS_UNUSED(field);
-  CS_UNUSED(data);
+  CS_UNUSED(context);
 
   const cs_timer_t  t0 = cs_timer_time();
 

@@ -57,7 +57,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Set the BC into a cellwise view of the current system.
- *          Case of Face-based schemes
+ *          Case of vertex-based schemes
  *
  * \param[in]      bf_id       id of the border face
  * \param[in]      f           id of the current face in a cellwise numbering

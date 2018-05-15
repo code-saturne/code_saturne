@@ -504,8 +504,8 @@ _solve_domain(cs_domain_t  *domain)
     if (do_output) {
       cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
       cs_log_printf(CS_LOG_DEFAULT,
-                    "-ite- %5d; time = %5.3e s >> Solve domain\n",
-                    nt_cur, domain->time_step->t_cur);
+                    "-ite- %5d; time= %5.3e s; dt= %5.3e >> Solve domain\n",
+                    nt_cur, domain->time_step->t_cur, domain->dt_cur);
       cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
     }
 

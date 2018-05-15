@@ -231,9 +231,6 @@ _init_cell_structures(const cs_flag_t               cell_flag,
                       cs_cell_sys_t                *csys,
                       cs_cell_builder_t            *cb)
 {
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_bc_t  *face_bc = eqb->face_bc;
-
   /* Cell-wise view of the linear system to build */
   const short int  n_dofs = cm->n_vc + 1;
 
@@ -254,6 +251,9 @@ _init_cell_structures(const cs_flag_t               cell_flag,
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
   if (cell_flag & CS_FLAG_BOUNDARY) {
+
+    const cs_cdo_connect_t  *connect = cs_shared_connect;
+    const cs_cdo_bc_t  *face_bc = eqb->face_bc;
 
     /* Identify which face is a boundary face */
     for (short int f = 0; f < cm->n_fc; f++) {
@@ -637,25 +637,26 @@ cs_cdovcb_scaleq_free_context(void   *data)
  *
  * \param[in]      eqp            pointer to a cs_equation_param_t structure
  * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to cs_cdovcb_scaleq_t structure
+ * \param[in, out] context        pointer to cs_cdovcb_scaleq_t structure
  * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
  * \param[in, out] system_rhs     pointer of pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_initialize_system(const cs_equation_param_t   *eqp,
-                                   cs_equation_builder_t       *eqb,
-                                   void                        *data,
-                                   cs_matrix_t               **system_matrix,
-                                   cs_real_t                 **system_rhs)
+cs_cdovcb_scaleq_initialize_system(const cs_equation_param_t    *eqp,
+                                   cs_equation_builder_t        *eqb,
+                                   void                         *context,
+                                   cs_matrix_t                **system_matrix,
+                                   cs_real_t                  **system_rhs)
 {
   CS_UNUSED(eqp);
-  if (data == NULL)
+
+  if (context == NULL)
     return;
+
   assert(*system_matrix == NULL && *system_rhs == NULL);
 
-  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)data;
   cs_timer_t  t0 = cs_timer_time();
 
   /* Create the matrix related to the current algebraic system */
@@ -779,8 +780,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
         cs_cell_mesh_dump(cm);
 #endif
 
-      /* DIFFUSION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ============================================== */
+      /* DIFFUSION TERM */
+      /* ============== */
 
       if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -811,8 +812,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 #endif
       } /* END OF DIFFUSION */
 
-      /* ADVECTION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ============================================== */
+      /* ADVECTION TERM */
+      /* ============== */
 
       if (cs_equation_param_has_convection(eqp)) {
 
@@ -835,8 +836,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
       if (eqb->sys_flag & CS_FLAG_SYS_HLOC_CONF)
         eqc->get_mass_matrix(eqc->hdg_mass, cm, cb); // stored in cb->hdg
 
-      /* REACTION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ============================================= */
+      /* REACTION TERM */
+      /* ============= */
 
       if (cs_equation_param_has_reaction(eqp)) {
 
@@ -855,8 +856,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       } /* END OF REACTION */
 
-      /* SOURCE TERM COMPUTATION */
-      /* ======================= */
+      /* SOURCE TERM */
+      /* =========== */
 
       if (cs_equation_param_has_sourceterm(eqp)) {
 
@@ -877,10 +878,10 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
           csys->rhs[v] += csys->source[v];
         csys->rhs[cm->n_vc] += csys->source[cm->n_vc];
 
-      } /* End of term source contribution */
+      } /* End of term source */
 
-      /* TIME CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ========================================= */
+      /* UNSTEADY TERM + TIME SCHEME */
+      /* =========================== */
 
       if (cs_equation_param_has_time(eqp)) {
 
@@ -1233,7 +1234,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
  * \param[in]       eqp         pointer to a cs_equation_param_t structure
  * \param[in]       t_eval      time at which one performs the evaluation
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  data        pointer to data specific for this scheme
+ * \param[in, out]  context     pointer to data specific for this scheme
  * \param[in, out]  location    where the flux is defined
  * \param[in, out]  diff_flux   value of the diffusive flux
   */
@@ -1244,11 +1245,11 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
                                     const cs_equation_param_t   *eqp,
                                     cs_real_t                    t_eval,
                                     cs_equation_builder_t       *eqb,
-                                    void                        *data,
+                                    void                        *context,
                                     cs_flag_t                    location,
                                     cs_real_t                   *diff_flux)
 {
-  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)data;
+  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -1350,7 +1351,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
  *
  * \param[in]       v_values    discrete values for the potential at vertices
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  data        pointer to data structure
+ * \param[in, out]  context     pointer to data structure
  * \param[in, out]  v_gradient  gradient at vertices
   */
 /*----------------------------------------------------------------------------*/
@@ -1358,10 +1359,10 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
 void
 cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
                               cs_equation_builder_t   *eqb,
-                              void                    *data,
+                              void                    *context,
                               cs_real_t               *v_gradient)
 {
-  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)data;
+  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -1472,7 +1473,7 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
  * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out]  context    pointer to cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1481,9 +1482,9 @@ cs_cdovcb_scaleq_extra_op(const char                 *eqname,
                           const cs_field_t           *field,
                           const cs_equation_param_t  *eqp,
                           cs_equation_builder_t      *eqb,
-                          void                       *data)
+                          void                       *context)
 {
-  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)data;
+  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
 
   // TODO
   CS_UNUSED(field);
