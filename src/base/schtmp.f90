@@ -368,8 +368,11 @@ elseif (iappel.eq.3) then
   call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
   call field_get_val_s(iflmas, i_mass_flux)
   call field_get_val_s(iflmab, b_mass_flux)
-  call field_get_val_prev_s(iflmas, i_mass_flux_prev)
-  call field_get_val_prev_s(iflmab, b_mass_flux_prev)
+
+  if (istmpf.ne.1) then
+    call field_get_val_prev_s(iflmas, i_mass_flux_prev)
+    call field_get_val_prev_s(iflmab, b_mass_flux_prev)
+  endif
 
   if (istmpf.eq.2) then
     theta  = thetfl

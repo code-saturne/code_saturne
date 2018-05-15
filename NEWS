@@ -4,6 +4,8 @@ Release 4.0.9 (unreleased)
 Bug fixes:
 ----------
 
+- Fix spurious mapping of previous mass flux with order 1 in time scheme.
+
 - GUI: fix failure to cleanly stop running computations on some
   systems (Mantis issue #242).
 
