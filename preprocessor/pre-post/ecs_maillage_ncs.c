@@ -441,6 +441,8 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
 
   } /* Fin : si affichage de la famille par défaut */
 
+  ECS_FREE(cpt_elt_fam);
+
   *nbr_fam = cpt_fam;
   if (bool_cree_fam_par_defaut == true)
     *nbr_fam += 1;
