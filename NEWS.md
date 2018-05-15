@@ -87,6 +87,11 @@ Architectural changes:
 
 - CFD_Study: translate from Python2 to 3.
 
+Bug fixes:
+
+
+- Fix spurious mapping of previous mass flux with order 1 in time scheme.
+
 Release 5.1.0 - October 10, 2017
 --------------------------------
 
