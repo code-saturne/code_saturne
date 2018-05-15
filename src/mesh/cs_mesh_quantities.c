@@ -151,10 +151,6 @@ _compute_cell_cocg_s_it(const cs_mesh_t         *m,
   cocg = fvq->cocg_s_it;
   cocgb = fvq->cocgb_s_it;
 
-  cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
-  int        g_id, t_id;
-  cs_real_t  fctb[4];
-
   if (cocg == NULL) {
     BFT_MALLOC(cocg, n_cells_ext, cs_real_33_t);
     BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
@@ -165,7 +161,7 @@ _compute_cell_cocg_s_it(const cs_mesh_t         *m,
   /* Compute cocg */
 
 # pragma omp parallel for
-  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     cocg[cell_id][0][0] = cell_vol[cell_id];
     cocg[cell_id][0][1] = 0.0;
     cocg[cell_id][0][2] = 0.0;
@@ -179,20 +175,22 @@ _compute_cell_cocg_s_it(const cs_mesh_t         *m,
 
   /* Contribution from interior faces */
 
-  for (g_id = 0; g_id < n_i_groups; g_id++) {
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#   pragma omp parallel for private(face_id, ii, jj, ll, mm, fctb)
-    for (t_id = 0; t_id < n_i_threads; t_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-      for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            face_id++) {
 
-        ii = i_face_cells[face_id][0];
-        jj = i_face_cells[face_id][1];
+        cs_real_t  fctb[4];
 
-        for (ll = 0; ll < 3; ll++) {
-          for (mm = 0; mm < 3; mm++) {
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
+
+        for (cs_lnum_t ll = 0; ll < 3; ll++) {
+          for (cs_lnum_t mm = 0; mm < 3; mm++) {
             fctb[mm] = -dofij[face_id][mm] * 0.5 * i_face_normal[face_id][ll];
             cocg[ii][ll][mm] += fctb[mm];
             cocg[jj][ll][mm] -= fctb[mm];
@@ -207,11 +205,11 @@ _compute_cell_cocg_s_it(const cs_mesh_t         *m,
 
   /* Save partial cocg at interior faces of boundary cells */
 
-# pragma omp parallel for private(cell_id, ll, mm)
-  for (ii = 0; ii < m->n_b_cells; ii++) {
-    cell_id = m->b_cells[ii];
-    for (ll = 0; ll < 3; ll++) {
-      for (mm = 0; mm < 3; mm++)
+# pragma omp parallel for if (m->n_b_cells > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < m->n_b_cells; ii++) {
+    cs_lnum_t cell_id = m->b_cells[ii];
+    for (cs_lnum_t ll = 0; ll < 3; ll++) {
+      for (cs_lnum_t mm = 0; mm < 3; mm++)
         cocgb[ii][ll][mm] = cocg[cell_id][ll][mm];
     }
   }
@@ -222,7 +220,7 @@ _compute_cell_cocg_s_it(const cs_mesh_t         *m,
   /* The cocg term for interior cells only changes if the mesh does */
 
 # pragma omp parallel for
-  for (cell_id = 0; cell_id < n_cells; cell_id++)
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
     cs_math_33_inv_cramer_in_place(cocg[cell_id]);
 }
 
@@ -273,15 +271,13 @@ _compute_cell_cocg_lsq(const cs_mesh_t        *m,
   }
   cs_real_33_t   *restrict cocg = fvq->cocg_lsq;
 
-  const bool* coupled_faces;
+  const bool *coupled_faces;
   if (ce != NULL) {
     coupled_faces = ce->coupled_faces;
   }
 
-  cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
-  int        g_id, t_id;
-  cs_real_t  ddc, udbfs;
-  cs_real_3_t  dc, dddij;
+  cs_real_t  udbfs;
+  cs_real_3_t  dddij;
 
   if (ce == NULL) {
     if (cocg == NULL) {
@@ -301,38 +297,39 @@ _compute_cell_cocg_lsq(const cs_mesh_t        *m,
 
   /* Initialization */
 
-# pragma omp parallel for private(ll, mm)
-  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    for (ll = 0; ll < 3; ll++) {
-      for (mm = 0; mm < 3; mm++)
+# pragma omp parallel
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t ll = 0; ll < 3; ll++) {
+      for (cs_lnum_t mm = 0; mm < 3; mm++)
         cocg[cell_id][ll][mm] = 0.0;
     }
   }
 
   /* Contribution from interior faces */
 
-  for (g_id = 0; g_id < n_i_groups; g_id++) {
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#   pragma omp parallel for private(face_id, ii, jj, ll, mm, ddc, dc)
-    for (t_id = 0; t_id < n_i_threads; t_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-      for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            face_id++) {
 
-        ii = i_face_cells[face_id][0];
-        jj = i_face_cells[face_id][1];
+        cs_real_t dc[3];
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
 
-        for (ll = 0; ll < 3; ll++)
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
-        ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        for (ll = 0; ll < 3; ll++) {
-          for (mm = 0; mm < 3; mm++)
+        for (cs_lnum_t ll = 0; ll < 3; ll++) {
+          for (cs_lnum_t mm = 0; mm < 3; mm++)
             cocg[ii][ll][mm] += dc[ll] * dc[mm] * ddc;
         }
-        for (ll = 0; ll < 3; ll++) {
-          for (mm = 0; mm < 3; mm++)
+        for (cs_lnum_t ll = 0; ll < 3; ll++) {
+          for (cs_lnum_t mm = 0; mm < 3; mm++)
             cocg[jj][ll][mm] += dc[ll] * dc[mm] * ddc;
         }
 
@@ -358,20 +355,21 @@ _compute_cell_cocg_lsq(const cs_mesh_t        *m,
                  is not supported with internal coupling");
     }
 
-#   pragma omp parallel for private(jj, ll, mm, ddc, dc)
-    for (ii = 0; ii < n_cells; ii++) {
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
       for (cs_lnum_t cidx = cell_cells_idx[ii];
            cidx < cell_cells_idx[ii+1];
            cidx++) {
 
-        jj = cell_cells_lst[cidx];
+        cs_real_t dc[3];
+        cs_lnum_t jj = cell_cells_lst[cidx];
 
-        for (ll = 0; ll < 3; ll++)
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
-        ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        for (ll = 0; ll < 3; ll++) {
-          for (mm = 0; mm < 3; mm++)
+        for (cs_lnum_t ll = 0; ll < 3; ll++) {
+          for (cs_lnum_t mm = 0; mm < 3; mm++)
             cocg[ii][ll][mm] += dc[ll] * dc[mm] * ddc;
         }
 
@@ -382,11 +380,11 @@ _compute_cell_cocg_lsq(const cs_mesh_t        *m,
 
   /* Save partial cocg at interior faces of boundary cells */
 
-# pragma omp parallel for private(cell_id, ll, mm)
-  for (ii = 0; ii < m->n_b_cells; ii++) {
-    cell_id = m->b_cells[ii];
-    for (ll = 0; ll < 3; ll++) {
-      for (mm = 0; mm < 3; mm++)
+# pragma omp parallel for
+  for (cs_lnum_t ii = 0; ii < m->n_b_cells; ii++) {
+    cs_lnum_t cell_id = m->b_cells[ii];
+    for (cs_lnum_t ll = 0; ll < 3; ll++) {
+      for (cs_lnum_t mm = 0; mm < 3; mm++)
         cocgb[ii][ll][mm] = cocg[cell_id][ll][mm];
     }
   }
@@ -394,26 +392,27 @@ _compute_cell_cocg_lsq(const cs_mesh_t        *m,
   /* Contribution from boundary faces, assuming symmetry everywhere
      so as to avoid obtaining a non-invertible matrix in 2D cases. */
 
-  for (g_id = 0; g_id < n_b_groups; g_id++) {
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#   pragma omp parallel for private(face_id, ii, ll, mm, udbfs, dddij)
-    for (t_id = 0; t_id < n_b_threads; t_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-      for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
 
-        if (ce==NULL || !coupled_faces[face_id]) {
+        if (ce == NULL || !coupled_faces[face_id]) {
 
-          ii = b_face_cells[face_id];
+          cs_lnum_t ii = b_face_cells[face_id];
 
-          udbfs = 1. / b_face_surf[face_id];
+          cs_real_t udbfs = 1. / b_face_surf[face_id];
 
-          for (ll = 0; ll < 3; ll++)
+          cs_real_t dddij[3];
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
             dddij[ll] =   udbfs * b_face_normal[face_id][ll];
 
-          for (ll = 0; ll < 3; ll++) {
-            for (mm = 0; mm < 3; mm++)
+          for (cs_lnum_t ll = 0; ll < 3; ll++) {
+            for (cs_lnum_t mm = 0; mm < 3; mm++)
               cocg[ii][ll][mm] += dddij[ll]*dddij[mm];
           }
 
@@ -431,7 +430,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t        *m,
   /* The cocg term for interior cells only changes if the mesh does */
 
 # pragma omp parallel for
-  for (cell_id = 0; cell_id < n_cells; cell_id++)
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
     cs_math_33_inv_cramer_in_place(cocg[cell_id]);
 }
 
@@ -2364,7 +2363,6 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
                           const cs_lnum_2_t  i_face_cells[],
                           const cs_real_t    i_face_normal[][3],
                           const cs_real_t    i_face_cog[][3],
-                          const cs_real_t    i_face_surf[],
                           const cs_real_t    cell_cen[][3],
                           const cs_real_t    cell_vol[],
                           const cs_real_t    dist[],
@@ -3114,7 +3112,6 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
      (const cs_lnum_2_t *)(mesh->i_face_cells),
      (const cs_real_3_t *)(mesh_quantities->i_face_normal),
      (const cs_real_3_t *)(mesh_quantities->i_face_cog),
-     mesh_quantities->i_face_surf,
      (const cs_real_3_t *)(mesh_quantities->cell_cen),
      mesh_quantities->cell_vol,
      mesh_quantities->i_dist,
@@ -3241,7 +3238,6 @@ cs_mesh_quantities_sup_vectors(const cs_mesh_t       *mesh,
      (const cs_lnum_2_t *)(mesh->i_face_cells),
      (const cs_real_3_t *)(mesh_quantities->i_face_normal),
      (const cs_real_3_t *)(mesh_quantities->i_face_cog),
-     mesh_quantities->i_face_surf,
      (const cs_real_3_t *)(mesh_quantities->cell_cen),
      mesh_quantities->cell_vol,
      mesh_quantities->i_dist,
