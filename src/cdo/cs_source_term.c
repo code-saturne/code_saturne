@@ -74,7 +74,6 @@ static const char _err_empty_st[] =
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
-static const cs_time_step_t  *cs_time_step;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -162,7 +161,7 @@ _set_mask(const cs_xdef_t     *st,
  * \param[in]       xv1        first vertex
  * \param[in]       xv2        second vertex
  * \param[in]       xv3        third vertex
- * \param[in]       xv4        third vertex
+ * \param[in]       xv4        fourth vertex
  * \param[in]       vol        volume of the tetrahedron
  * \param[in, out]  cb         pointer to a cs_cell_builder_structure_t
  * \param[in, out]  array      array storing values to compute
@@ -204,15 +203,16 @@ _hho_add_tetra_by_val(cs_real_t                        const_val,
  *         defined by an analytical expression depending on the location and
  *         the current time
  *
- * \param[in]       anai     pointer to an analytical definition
- * \param[in]       cbf      pointer to a structure for face basis functions
- * \param[in]       xv1      first vertex
- * \param[in]       xv2      second vertex
- * \param[in]       xv3      third vertex
- * \param[in]       xv4      third vertex
- * \param[in]       vol      volume of the tetrahedron
- * \param[in, out]  cb       pointer to a cs_cell_builder_structure_t
- * \param[in, out]  array    array storing values to compute
+ * \param[in]       anai      pointer to an analytical definition
+ * \param[in]       cbf       pointer to a structure for face basis functions
+ * \param[in]       xv1       first vertex
+ * \param[in]       xv2       second vertex
+ * \param[in]       xv3       third vertex
+ * \param[in]       xv4       fourth vertex
+ * \param[in]       vol       volume of the tetrahedron
+ * \param[in]       time_eval physical time at which one evaluates the term
+ * \param[in, out]  cb        pointer to a cs_cell_builder_structure_t
+ * \param[in, out]  array     array storing values to compute
  */
 /*----------------------------------------------------------------------------*/
 
@@ -224,6 +224,7 @@ _hho_add_tetra_by_ana(const cs_xdef_analytic_input_t  *anai,
                       const cs_real_3_t                xv3,
                       const cs_real_3_t                xv4,
                       const double                     vol,
+                      cs_real_t                        time_eval,
                       cs_cell_builder_t               *cb,
                       cs_real_t                        array[])
 {
@@ -236,7 +237,7 @@ _hho_add_tetra_by_ana(const cs_xdef_analytic_input_t  *anai,
   cs_quadrature_tet_15pts(xv1, xv2, xv3, xv4, vol, gpts, gw);
 
   /* Evaluate the analytical function at the Gauss points */
-  anai->func(cs_glob_time_step->t_cur, 15, NULL, (const cs_real_t *)gpts, true,
+  anai->func(time_eval, 15, NULL, (const cs_real_t *)gpts, true,
              anai->input, ana_eval);
 
   for (short int gp = 0; gp < 15; gp++) {
@@ -262,19 +263,16 @@ _hho_add_tetra_by_ana(const cs_xdef_analytic_input_t  *anai,
  *
  * \param[in]      quant      additional mesh quantities struct.
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]      time_step  pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                   const cs_cdo_connect_t       *connect,
-                                   const cs_time_step_t         *time_step)
+                                   const cs_cdo_connect_t       *connect)
 {
   /* Assign static const pointers */
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
-  cs_time_step = time_step;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -657,6 +655,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
  * \param[in]      source_mask     array storing in a compact way which source
  *                                 term is defined in a given cell
  * \param[in]      compute_source  array of function pointers
+ * \param[in]      time_eval       physical time at which one evaluates the term
  * \param[in, out] input           pointer to an element cast on-the-fly
  * \param[in, out] cb              pointer to a cs_cell_builder_t structure
  * \param[in, out] csys            cellwise algebraic system
@@ -669,6 +668,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
                                 const cs_cell_mesh_t        *cm,
                                 const cs_mask_t             *source_mask,
                                 cs_source_term_cellwise_t   *compute_source[],
+                                cs_real_t                    time_eval,
                                 void                        *input,
                                 cs_cell_builder_t           *cb,
                                 cs_cell_sys_t               *csys)
@@ -686,7 +686,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
       cs_source_term_cellwise_t  *compute = compute_source[st_id];
 
       /* Contrib is updated inside */
-      compute(source_terms[st_id], cm, cb, input, csys->source);
+      compute(source_terms[st_id], cm, time_eval, cb, input, csys->source);
 
     } // Loop on source terms
 
@@ -701,7 +701,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
         cs_source_term_cellwise_t  *compute = compute_source[st_id];
 
         /* Contrib is updated inside */
-        compute(source_terms[st_id], cm, cb, input, csys->source);
+        compute(source_terms[st_id], cm, time_eval, cb, input, csys->source);
 
       } // Compute the source term on this cell
 
@@ -718,6 +718,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
  *
  * \param[in]      loc        describe where is located the associated DoF
  * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
  */
 /*----------------------------------------------------------------------------*/
@@ -725,6 +726,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
 void
 cs_source_term_compute_from_density(cs_flag_t                loc,
                                     const cs_xdef_t         *source,
+                                    cs_real_t                time_eval,
                                     double                  *p_values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
@@ -763,7 +765,7 @@ cs_source_term_compute_from_density(cs_flag_t                loc,
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_evaluate_density_by_analytic(loc, source, values);
+    cs_evaluate_density_by_analytic(loc, source, time_eval, values);
     break;
 
   default:
@@ -782,6 +784,7 @@ cs_source_term_compute_from_density(cs_flag_t                loc,
  *
  * \param[in]      loc        describe where is located the associated DoF
  * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
  */
 /*----------------------------------------------------------------------------*/
@@ -789,6 +792,7 @@ cs_source_term_compute_from_density(cs_flag_t                loc,
 void
 cs_source_term_compute_from_potential(cs_flag_t                loc,
                                       const cs_xdef_t         *source,
+                                      cs_real_t                time_eval,
                                       double                  *p_values[])
 {
   const int  stride = 1; // Only this case is managed up to now
@@ -822,7 +826,7 @@ cs_source_term_compute_from_potential(cs_flag_t                loc,
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_evaluate_potential_by_analytic(loc, source, values);
+    cs_evaluate_potential_by_analytic(loc, source, time_eval, values);
     break;
 
     default:
@@ -845,6 +849,7 @@ cs_source_term_compute_from_potential(cs_flag_t                loc,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -854,6 +859,7 @@ cs_source_term_compute_from_potential(cs_flag_t                loc,
 void
 cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
                              void                      *input,
                              double                    *values)
@@ -862,6 +868,8 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
     return;
 
   CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL && cb->hdg != NULL);
@@ -894,6 +902,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -903,6 +912,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
                                 const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
                                 cs_cell_builder_t         *cb,
                                 void                      *input,
                                 double                    *values)
@@ -911,18 +921,17 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
     return;
 
   CS_UNUSED(input);
+
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL && cb->hdg != NULL);
   assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV));
 
-  const double  tcur = cs_time_step->t_cur;
-
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Retrieve the values of the potential at each cell vertices */
   double  *eval = cb->values;
-  anai->func(tcur, cm->n_vc, NULL, cm->xv,
+  anai->func(time_eval, cm->n_vc, NULL, cm->xv,
              true, // compacted output ?
              anai->input,
              eval);
@@ -943,6 +952,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -952,12 +962,15 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
                              void                      *input,
                              double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
   if (source == NULL)
     return;
 
@@ -983,6 +996,7 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -992,11 +1006,13 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
+                                     cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
                                      void                      *input,
                                      double                    *values)
 {
   CS_UNUSED(input);
+
   if (source == NULL)
     return;
 
@@ -1051,9 +1067,8 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
   }
 
   /* Call the analytic function to evaluate the function at xgv */
-  const double  tcur = cs_time_step->t_cur;
   double  *eval_xgv = vol_vc + cm->n_vc;
-  anai->func(tcur, cm->n_vc, NULL, (const cs_real_t *)xgv,
+  anai->func(time_eval, cm->n_vc, NULL, (const cs_real_t *)xgv,
              true, // compacted output ?
              anai->input,
              eval_xgv);
@@ -1073,6 +1088,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -1082,12 +1098,14 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
+                                     cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
                                      void                      *input,
                                      double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
+
   if (source == NULL)
     return;
 
@@ -1096,8 +1114,6 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
   assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
-
-  const double  tcur = cs_time_step->t_cur;
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1127,7 +1143,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
       for (int k = 0; k < 3; k++)
         xg[1][k] = xfc[k] + 0.375*xv2[k] + 0.125*xv1[k];
 
-      anai->func(tcur, 2, NULL, (const cs_real_t *)xg,
+      anai->func(time_eval, 2, NULL, (const cs_real_t *)xg,
                  true, // compacted output ?
                  anai->input,
                  eval_xg);
@@ -1152,6 +1168,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -1161,11 +1178,13 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
                                       const cs_cell_mesh_t      *cm,
+                                      cs_real_t                  time_eval,
                                       cs_cell_builder_t         *cb,
                                       void                      *input,
                                       double                    *values)
 {
   CS_UNUSED(input);
+
   if (source == NULL)
     return;
 
@@ -1177,25 +1196,23 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_PVQ |
                       CS_CDO_LOCAL_PEQ));
 
-  const double  tcur = cs_time_step->t_cur;
-
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Temporary buffers */
-  double  *contrib = cb->values;              // size n_vc
+  double  *contrib = cb->values; /* size n_vc */
 
   /* 1) Compute the contributions seen by the whole portion of dual cell */
 
   /* Cell evaluation */
   double  eval_c;
-  anai->func(tcur, 1, NULL, cm->xc,
+  anai->func(time_eval, 1, NULL, cm->xc,
              true, // compacted output ?
              anai->input,
              &eval_c);
 
   /* Contributions related to vertices */
   double  *eval_v = cb->values + cm->n_vc; // size n_vc
-  anai->func(tcur, cm->n_vc, NULL, cm->xv,
+  anai->func(time_eval, cm->n_vc, NULL, cm->xv,
              true,  // compacted output ?
              anai->input,
              eval_v);
@@ -1207,7 +1224,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   }
 
   double  *eval_vc = cb->values + 2*cm->n_vc; // size n_vc
-  anai->func(tcur, cm->n_vc, NULL, (const cs_real_t *)xvc,
+  anai->func(time_eval, cm->n_vc, NULL, (const cs_real_t *)xvc,
              true,  // compacted output ?
              anai->input,
              eval_vc);
@@ -1236,7 +1253,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   // Evaluate the analytic function at xe and xec
   double  *eval_e = cb->values + cm->n_vc; // size=n_ec (overwrite eval_v)
   double  *eval_ec = eval_e + cm->n_ec;    // size=n_ec (overwrite eval_vc)
-  anai->func(tcur, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
+  anai->func(time_eval, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
              true,  // compacted output ?
              anai->input,
              eval_e);
@@ -1259,7 +1276,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   } // Loop on edges
 
   double  *eval_ve = eval_ec + cm->n_ec; // size = 2*n_ec
-  anai->func(tcur, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
+  anai->func(time_eval, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
              true,  // compacted output ?
              anai->input,
              eval_ve);
@@ -1288,7 +1305,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       cs_real_3_t  xef;
       cs_real_t  eval_ef;
       for (int k = 0; k < 3; k++) xef[k] = 0.5*(cm->edge[e].center[k] + xf[k]);
-      anai->func(tcur, 1, NULL, xef,
+      anai->func(time_eval, 1, NULL, xef,
                  true,  // compacted output ?
                  anai->input,
                  &eval_ef);
@@ -1320,7 +1337,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
     }
 
     double  *eval_vfc = pvf_vol + cm->n_vc; // size=n_vf + 2
-    anai->func(tcur, 2+n_vf, NULL, (const cs_real_t *)xvfc,
+    anai->func(time_eval, 2+n_vf, NULL, (const cs_real_t *)xvfc,
                true,  // compacted output ?
                anai->input,
                eval_vfc);
@@ -1352,6 +1369,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -1361,16 +1379,18 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
+                                     cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
                                      void                      *input,
                                      double                    *values)
 {
-  double  sum, weights[5], results[5];
-  cs_real_3_t  gauss_pts[5];
-
   CS_UNUSED(input);
+
   if (source == NULL)
     return;
+
+  double  sum, weights[5], results[5];
+  cs_real_3_t  gauss_pts[5];
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
@@ -1379,7 +1399,6 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_EV));
 
-  const double  tcur = cs_time_step->t_cur;
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Temporary buffers */
@@ -1406,7 +1425,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                              tet_vol,
                              gauss_pts, weights);
 
-      anai->func(tcur, 5, NULL, (const cs_real_t *)gauss_pts,
+      anai->func(time_eval, 5, NULL, (const cs_real_t *)gauss_pts,
                  true,  // compacted output ?
                  anai->input,
                  results);
@@ -1420,7 +1439,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                              tet_vol,
                              gauss_pts, weights);
 
-      anai->func(tcur, 5, NULL, (const cs_real_t *)gauss_pts,
+      anai->func(time_eval, 5, NULL, (const cs_real_t *)gauss_pts,
                  true,  // compacted output ?
                  anai->input,
                  results);
@@ -1449,6 +1468,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -1458,11 +1478,14 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
                              void                      *input,
                              double                    *values)
 {
   CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
   if (source == NULL)
     return;
 
@@ -1498,6 +1521,7 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -1507,11 +1531,13 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
                                 const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
                                 cs_cell_builder_t         *cb,
                                 void                      *input,
                                 double                    *values)
 {
   CS_UNUSED(input);
+
   if (source == NULL)
     return;
 
@@ -1519,18 +1545,17 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(cb != NULL && cb->hdg != NULL);
 
-  const double  tcur = cs_time_step->t_cur;
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Retrieve the values of the potential at each cell vertices */
   double  *eval = cb->values;
 
-  anai->func(tcur, cm->n_vc, NULL, cm->xv,
+  anai->func(time_eval, cm->n_vc, NULL, cm->xv,
              true,  // compacted output ?
              anai->input,
              eval);
 
-  anai->func(tcur, 1, NULL, cm->xc,
+  anai->func(time_eval, 1, NULL, cm->xc,
              true,  // compacted output ?
              anai->input,
              eval + cm->n_vc);
@@ -1552,6 +1577,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed value
@@ -1561,12 +1587,15 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
                              void                      *input,
                              double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
   if (source == NULL)
     return;
 
@@ -1588,6 +1617,7 @@ cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed value
@@ -1597,12 +1627,15 @@ cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
                              void                      *input,
                              double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
   if (source == NULL)
     return;
 
@@ -1626,6 +1659,7 @@ cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in]      input      NULL or pointer to a structure cast on-the-fly
  * \param[in, out] values     pointer to the computed values
@@ -1635,12 +1669,14 @@ cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
+                                     cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
                                      void                      *input,
                                      double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
+
   if (source == NULL)
     return;
 
@@ -1650,10 +1686,8 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Call the analytic function to evaluate the function at xc */
-  const double  tcur = cs_time_step->t_cur;
   double  eval_xc;
-
-  anai->func(tcur, 1, NULL, (const cs_real_t *)cm->xc,
+  anai->func(time_eval, 1, NULL, (const cs_real_t *)cm->xc,
              true,  // compacted output ?
              anai->input,
              &eval_xc);
@@ -1673,6 +1707,7 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in]      input      NULL or pointer to a structure cast on-the-fly
  * \param[in, out] values     pointer to the computed values
@@ -1682,12 +1717,14 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
+                                     cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
                                      void                      *input,
                                      double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
+
   if (source == NULL)
     return;
 
@@ -1698,10 +1735,8 @@ cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Call the analytic function to evaluate the function at xc */
-  const double  tcur = cs_time_step->t_cur;
   double  eval_xc[3];
-
-  anai->func(tcur, 1, NULL, (const cs_real_t *)cm->xc,
+  anai->func(time_eval, 1, NULL, (const cs_real_t *)cm->xc,
              true,  // compacted output ?
              anai->input,
              eval_xc);
@@ -1719,6 +1754,7 @@ cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed value
@@ -1728,11 +1764,13 @@ cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
                               const cs_cell_mesh_t      *cm,
+                              cs_real_t                  time_eval,
                               cs_cell_builder_t         *cb,
                               void                      *input,
                               double                    *values)
 {
   CS_UNUSED(cb);
+  CS_UNUSED(time_eval);
 
   if (source == NULL)
     return;
@@ -1847,6 +1885,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed value
@@ -1856,11 +1895,14 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
                                  const cs_cell_mesh_t      *cm,
+                                 cs_real_t                  time_eval,
                                  cs_cell_builder_t         *cb,
                                  void                      *input,
                                  double                    *values)
 {
   CS_UNUSED(cb);
+  CS_UNUSED(time_eval);
+
   if (source == NULL)
     return;
 
@@ -1887,7 +1929,8 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
       assert(cm->n_fc == 4 && cm->n_vc == 4);
       _hho_add_tetra_by_ana(anai, cbf,
                             cm->xv, cm->xv+3, cm->xv+6, cm->xv+9,
-                            cm->vol_c, cb, cell_values);
+                            cm->vol_c, time_eval,
+                            cb, cell_values);
     }
     break;
 
@@ -1915,7 +1958,8 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
 
           _hho_add_tetra_by_ana(anai, cbf,
                                 cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, cm->xc,
-                                hf_coef * pfq.meas, cb, cell_values);
+                                hf_coef * pfq.meas, time_eval,
+                                cb, cell_values);
 
         }
         break;
@@ -1933,7 +1977,8 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
 
             _hho_add_tetra_by_ana(anai, cbf,
                                   xv0, xv1, pfq.center, cm->xc,
-                                  hf_coef*tef[e], cb, cell_values);
+                                  hf_coef*tef[e], time_eval,
+                                  cb, cell_values);
           }
         }
         break;

@@ -123,8 +123,7 @@ cs_cdo_time_get_scheme_function(const cs_flag_t             sys_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the RHS with the previously computed array of values (for
- *         instance the previous source term evaluation)
+ * \brief  Update the RHS with the previously computed array of values
  *         Do not use OpenMP inside this function since it may be called from
  *         an OpenMP block
  *

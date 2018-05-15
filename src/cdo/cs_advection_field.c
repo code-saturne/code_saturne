@@ -85,7 +85,6 @@ static const char _err_empty_adv[] =
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
-static const cs_time_step_t  *cs_time_step;
 
   /* Advection fields attached to the computational domain */
 static int  _n_adv_fields = 0;
@@ -129,19 +128,16 @@ _get_bzone_id(const char   *z_name)
  *
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_set_shared_pointers(const cs_cdo_quantities_t  *quant,
-                                       const cs_cdo_connect_t     *connect,
-                                       const cs_time_step_t       *time_step)
+                                       const cs_cdo_connect_t     *connect)
 {
   /* Assign static const pointers */
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
-  cs_time_step = time_step;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -914,12 +910,14 @@ cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
  * \brief  Compute the mean-value of the advection field inside each cell
  *
  * \param[in]      adv           pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval     physical time at which one evaluates the term
  * \param[in, out] cell_values   array of values at cell centers
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_in_cells(const cs_adv_field_t  *adv,
+                            cs_real_t              time_eval,
                             cs_real_t             *cell_values)
 {
   if (adv == NULL)
@@ -1014,7 +1012,7 @@ cs_advection_field_in_cells(const cs_adv_field_t  *adv,
     break; /* definition by field */
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_evaluate_average_on_cells_by_analytic(def, cell_values);
+    cs_evaluate_average_on_cells_by_analytic(def, time_eval, cell_values);
     break; /* definition by analytic */
 
   default:
@@ -1031,12 +1029,14 @@ cs_advection_field_in_cells(const cs_adv_field_t  *adv,
  * \brief  Compute the value of the advection field at vertices
  *
  * \param[in]      adv          pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval    physical time at which one evaluates the term
  * \param[in, out] vtx_values   array storing the results
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
+                               cs_real_t              time_eval,
                                cs_real_t             *vtx_values)
 {
   if (adv == NULL)
@@ -1169,7 +1169,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
     {
       cs_flag_t  dof_flag = cs_flag_primal_vtx | CS_FLAG_VECTOR;
 
-      cs_evaluate_potential_by_analytic(dof_flag, def, vtx_values);
+      cs_evaluate_potential_by_analytic(dof_flag, def, time_eval, vtx_values);
     }
     break; /* definition by analytic */
 
@@ -1190,6 +1190,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
  * \param[in]      adv          pointer to a cs_adv_field_t structure
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
  * \param[in]      xyz          location where to perform the evaluation
+ * \param[in]      time_eval    physical time at which one evaluates the term
  * \param[in, out] eval         pointer to a cs_nvec3_t
  */
 /*----------------------------------------------------------------------------*/
@@ -1198,6 +1199,7 @@ void
 cs_advection_field_eval_at_xyz(const cs_adv_field_t  *adv,
                                const cs_cell_mesh_t  *cm,
                                const cs_real_3_t      xyz,
+                               cs_real_t              time_eval,
                                cs_nvec3_t            *eval)
 {
   if (adv == NULL)
@@ -1217,19 +1219,19 @@ cs_advection_field_eval_at_xyz(const cs_adv_field_t  *adv,
     break; /* definition by value */
 
   case CS_XDEF_BY_ARRAY:
-    cs_xdef_eval_cw_3_at_xyz_by_array(cm, 1, xyz, cs_time_step, def->input,
+    cs_xdef_eval_cw_3_at_xyz_by_array(cm, 1, xyz, time_eval, def->input,
                                       vector_values);
     cs_nvec3(vector_values, eval);
     break;
 
   case CS_XDEF_BY_FIELD:
-    cs_xdef_eval_cw_3_at_xyz_by_field(cm, 1, xyz, cs_time_step, def->input,
+    cs_xdef_eval_cw_3_at_xyz_by_field(cm, 1, xyz, time_eval, def->input,
                                       vector_values);
     cs_nvec3(vector_values, eval);
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_xdef_eval_cw_at_xyz_by_analytic(cm, 1, xyz, cs_time_step, def->input,
+    cs_xdef_eval_cw_at_xyz_by_analytic(cm, 1, xyz, time_eval, def->input,
                                        vector_values);
     cs_nvec3(vector_values, eval);
     break;
@@ -1249,12 +1251,14 @@ cs_advection_field_eval_at_xyz(const cs_adv_field_t  *adv,
  *         across the boundary faces
  *
  * \param[in]      adv          pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval    physical time at which one evaluates the term
  * \param[in, out] flx_values   array storing the results
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
+                                   cs_real_t              time_eval,
                                    cs_real_t             *flx_values)
 {
   if (adv == NULL)
@@ -1293,7 +1297,6 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
         const cs_adjacency_t  *f2e = cs_cdo_connect->f2e;
         const cs_adjacency_t  *e2v = cs_cdo_connect->e2v;
         const cs_real_t  *xv = cdoq->vtx_coord;
-        const double  tcur = cs_time_step->t_cur;
 
         cs_quadrature_tria_integral_t  *compute_integral = NULL;
         cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
@@ -1341,7 +1344,8 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
               cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
                                              &v1, &v2, &v3);
 
-              compute_integral(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
+              compute_integral(time_eval,
+                               xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
                                anai->func, anai->input, val);
 
             }
@@ -1355,8 +1359,8 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
               const cs_real_t  *xv2 = xv + 3*e2v->ids[_2e+1];
               const cs_real_t  tef_meas = cs_math_surftri(xv1, xv2, pfq.center);
 
-              /* val is updated */
-              compute_integral(tcur, xv1, xv2, pfq.center, tef_meas,
+              /* val is updated (+=) */
+              compute_integral(time_eval, xv1, xv2, pfq.center, tef_meas,
                                anai->func, anai->input, val);
 
             } /* Loop on face edges */
@@ -1447,7 +1451,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
           cs_xdef_analytic_input_t  *anai =
             (cs_xdef_analytic_input_t *)def->input;
 
-          anai->func(cs_time_step->t_cur,
+          anai->func(time_eval,
                      z->n_elts, z->elt_ids, cdoq->b_face_center,
                      false,  // compacted output ?
                      anai->input,
@@ -1474,15 +1478,17 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
  * \brief  Compute the value of the flux of the advection field across the
  *         the dual faces of a cell
  *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
- * \param[in]      adv      pointer to a cs_adv_field_t structure
- * \param[in, out] fluxes   array of values attached to dual faces of a cell
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      adv        pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] fluxes     array of values attached to dual faces of a cell
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
                                    const cs_adv_field_t         *adv,
+                                   cs_real_t                     time_eval,
                                    cs_real_t                    *fluxes)
 {
   if (adv == NULL)
@@ -1503,7 +1509,7 @@ cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
     {
       /* Retrieve the advection field: Switch to a cs_nvec3_t representation */
       cs_real_3_t  cell_vector;
-      cs_xdef_eval_cw_vector_by_val(cm, cs_time_step, def->input, cell_vector);
+      cs_xdef_eval_cw_vector_by_val(cm, time_eval, def->input, cell_vector);
       cs_nvec3_t  adv_vect;
       cs_nvec3(cell_vector, &adv_vect);
 
@@ -1558,7 +1564,7 @@ cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
 
             cs_xdef_eval_cw_at_xyz_by_analytic(cm,
                                                2, (const cs_real_t *)xg,
-                                               cs_time_step,
+                                               time_eval,
                                                def->input,
                                                (cs_real_t *)adv_xg);
 
@@ -1584,7 +1590,7 @@ cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
 
             cs_xdef_eval_cw_at_xyz_by_analytic(cm,
                                                6, (const cs_real_t *)gpts,
-                                               cs_time_step,
+                                               time_eval,
                                                def->input,
                                                (cs_real_t *)eval);
 
@@ -1685,15 +1691,17 @@ cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  For each cs_adv_field_t structures, update the values of the related
- *         field(s)
+ * \brief   For each cs_adv_field_t structures, update the values of the
+ *          related field(s)
  *
- * \param[in]      cur2prev    true or false
+ * \param[in]  t_eval     physical time at which one evaluates the term
+ * \param[in]  cur2prev   true or false
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_update(bool   cur2prev)
+cs_advection_field_update(cs_real_t    t_eval,
+                          bool         cur2prev)
 {
   for (int i = 0; i < _n_adv_fields; i++) {
 
@@ -1709,41 +1717,37 @@ cs_advection_field_update(bool   cur2prev)
     if (adv->type == CS_ADVECTION_FIELD_USER) {
 
       /* Field storing the boundary normal flux */
-      cs_field_t  *fld = cs_field_by_id(adv->bdy_field_id);
+      cs_field_t  *bfld = cs_field_by_id(adv->bdy_field_id);
 
       /* Copy current field values to previous values */
       if (cur2prev)
-        cs_field_current_to_previous(fld);
+        cs_field_current_to_previous(bfld);
 
       /* Set the new values */
-      cs_advection_field_across_boundary(adv, fld->val);
-
-    }
-
-    if (adv->type == CS_ADVECTION_FIELD_USER) {
+      cs_advection_field_across_boundary(adv, t_eval, bfld->val);
 
       /* Field stored at cell centers */
-      cs_field_t  *fld = cs_field_by_id(adv->cell_field_id);
+      cs_field_t  *cfld = cs_field_by_id(adv->cell_field_id);
 
       /* Copy current field values to previous values */
       if (cur2prev)
-        cs_field_current_to_previous(fld);
+        cs_field_current_to_previous(cfld);
 
       /* Set the new values */
-      cs_advection_field_in_cells(adv, fld->val);
+      cs_advection_field_in_cells(adv, t_eval, cfld->val);
 
     }
 
     if (adv->vtx_field_id > -1) { /* Field stored at vertices */
 
-      cs_field_t  *fld = cs_field_by_id(adv->vtx_field_id);
+      cs_field_t  *vfld = cs_field_by_id(adv->vtx_field_id);
 
       /* Copy current field values to previous values */
       if (cur2prev)
-        cs_field_current_to_previous(fld);
+        cs_field_current_to_previous(vfld);
 
       /* Set the new values */
-      cs_advection_field_at_vertices(adv, fld->val);
+      cs_advection_field_at_vertices(adv, t_eval, vfld->val);
 
     }
 
@@ -1757,14 +1761,16 @@ cs_advection_field_update(bool   cur2prev)
  *
  * \param[in]      adv        pointer to the advection field struct.
  * \param[in]      diff       pointer to the diffusion property struct.
+ * \param[in]      t_eval     time at which one evaluates the advection field
  * \param[in, out] peclet     pointer to an array storing Peclet number
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_get_peclet(const cs_adv_field_t        *adv,
-                        const cs_property_t         *diff,
-                        cs_real_t                    peclet[])
+cs_advection_get_peclet(const cs_adv_field_t     *adv,
+                        const cs_property_t      *diff,
+                        cs_real_t                 t_eval,
+                        cs_real_t                 peclet[])
 {
   cs_real_t  ptymat[3][3];
   cs_real_3_t  ptydir;
@@ -1777,13 +1783,13 @@ cs_advection_get_peclet(const cs_adv_field_t        *adv,
 
   /* Get the value of the material property at the first cell center */
   if (pty_uniform)
-    cs_property_get_cell_tensor(0, diff, false, ptymat);
+    cs_property_get_cell_tensor(0, t_eval, diff, false, ptymat);
 
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
     /* Get the value of the material property at the cell center */
     if (!pty_uniform)
-      cs_property_get_cell_tensor(c_id, diff, false, ptymat);
+      cs_property_get_cell_tensor(c_id, t_eval, diff, false, ptymat);
 
     cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
 

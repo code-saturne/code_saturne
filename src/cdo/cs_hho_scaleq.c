@@ -286,6 +286,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         pointer to a cs_cdofb_scaleq_t structure
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] hhob        pointer to a cs_hho_builder_t structure
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
@@ -298,6 +299,7 @@ _init_cell_structures(const cs_flag_t               cell_flag,
                       const cs_equation_param_t    *eqp,
                       const cs_equation_builder_t  *eqb,
                       const cs_hho_scaleq_t        *eqc,
+                      cs_real_t                     t_eval,
                       cs_hho_builder_t             *hhob,
                       cs_cell_sys_t                *csys,
                       cs_cell_builder_t            *cb)
@@ -378,6 +380,7 @@ _init_cell_structures(const cs_flag_t               cell_flag,
           cs_hho_builder_compute_dirichlet(eqp->bc_defs[def_id],
                                            f,
                                            cm,
+                                           t_eval,
                                            cb,
                                            hhob,
                                            dir_reduction);
@@ -1071,7 +1074,6 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 {
   CS_UNUSED(mesh);
   CS_UNUSED(field_val);
-  CS_UNUSED(dt_cur);
 
   /* Sanity checks */
   assert(rhs != NULL && matrix != NULL && eqp != NULL && eqb != NULL);
@@ -1090,6 +1092,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -1120,7 +1123,10 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
     double  time_pty_val = 1.0;
     double  reac_pty_vals[CS_CDO_N_MAX_REACTIONS];
 
-    cs_equation_init_properties(eqp, eqb, &time_pty_val, reac_pty_vals, cb);
+    const cs_real_t  t_eval_pty = t_cur + 0.5*dt_cur;
+
+    cs_equation_init_properties(eqp, eqb, t_eval_pty,
+                                &time_pty_val, reac_pty_vals, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1140,7 +1146,9 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       cs_hho_builder_cellwise_setup(cm, cb, hhob);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _init_cell_structures(cell_flag, cm, eqp, eqb, eqc, hhob, csys, cb);
+      _init_cell_structures(cell_flag, cm, eqp, eqb, eqc,
+                            t_cur + dt_cur, /* For Dirichlet up to now */
+                            hhob, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 2
       if (c_id % CS_HHO_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
@@ -1155,7 +1163,8 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 
         /* Define the local stiffness matrix */
         if (!(eqb->diff_pty_uniform))
-          cs_equation_set_diffusion_property_cw(eqp, cm, cell_flag, cb);
+          cs_equation_set_diffusion_property_cw(eqp, cm, t_eval_pty, cell_flag,
+                                                cb);
 
         cs_hho_builder_compute_grad_reco(cm, cb, hhob);
 
@@ -1184,6 +1193,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
+                                        t_eval_pty,
                                         hhob,
                                         cb,    // mass matrix is cb->hdg
                                         csys); // Fill csys->source

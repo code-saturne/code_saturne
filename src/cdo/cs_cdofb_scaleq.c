@@ -145,8 +145,9 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         pointer to a cs_cdofb_scaleq_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
- * \param[in]      neu_tags    Definition id related to each Neumann face
+ * \param[in]      neu_tags    definition id related to each Neumann face
  * \param[in]      field_tn    values of the field at the last computed time
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -161,6 +162,7 @@ _init_cell_structures(const cs_flag_t               cell_flag,
                       const cs_real_t               dir_values[],
                       const short int               neu_tags[],
                       const cs_real_t               field_tn[],
+                      cs_real_t                     t_eval,
                       cs_cell_sys_t                *csys,
                       cs_cell_builder_t            *cb)
 {
@@ -216,10 +218,10 @@ _init_cell_structures(const cs_flag_t               cell_flag,
                                    cm,
                                    connect,
                                    cs_shared_quant,
-                                   cs_shared_time_step,
                                    eqp,
                                    dir_values,
                                    neu_tags,
+                                   t_eval,
                                    csys,
                                    cb);
 
@@ -645,6 +647,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -659,9 +662,9 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
     cs_equation_compute_dirichlet_fb(mesh,
                                      quant,
                                      connect,
-                                     cs_shared_time_step,
                                      eqp,
                                      eqb->face_bc->dir,
+                                     t_cur + dt_cur,
                                      cs_cdofb_cell_bld[0]);
 
   /* Tag faces with a non-homogeneous Neumann BC */
@@ -669,9 +672,9 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
   /* No source term related to face DoFs. No update of the RHS. */
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, neu_tags, field_val,                               \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
+  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,        \
+         dir_values, neu_tags, field_val,                                \
          cs_cdofb_cell_sys, cs_cdofb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -693,7 +696,10 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
     double  time_pty_val = 1.0;
     double  reac_pty_vals[CS_CDO_N_MAX_REACTIONS];
 
-    cs_equation_init_properties(eqp, eqb, &time_pty_val, reac_pty_vals, cb);
+    const cs_real_t  t_eval_pty = t_cur + 0.5*dt_cur;
+
+    cs_equation_init_properties(eqp, eqb, t_eval_pty,
+                                &time_pty_val, reac_pty_vals, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -711,8 +717,8 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_cell_structures(cell_flag, cm, eqp, eqb, eqc,
-                            dir_values, neu_tags, field_val,  // in
-                            csys, cb);                        // out
+                            dir_values, neu_tags, field_val, t_eval_pty, // in
+                            csys, cb);                                   // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
       if (c_id % CS_CDOFB_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
@@ -724,20 +730,14 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
       if (cs_equation_param_has_diffusion(eqp)) {
 
         /* Define the local stiffness matrix */
-        if (!(eqb->diff_pty_uniform)) {
-          cs_property_tensor_in_cell(cm,
-                                     eqp->diffusion_property,
-                                     eqp->diffusion_hodge.inv_pty,
-                                     cb->pty_mat);
+        if (!(eqb->diff_pty_uniform))
+          cs_equation_set_diffusion_property_cw(eqp, cm, t_eval_pty, cell_flag,
+                                                cb);
 
-          if (eqp->diffusion_hodge.is_iso)
-            cb->pty_val = cb->pty_mat[0][0];
-        }
-
-        // local matrix owned by the cellwise builder (store in cb->loc)
+        /* local matrix owned by the cellwise builder (store in cb->loc) */
         eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
 
-        // Add the local diffusion operator to the local system
+        /* Add the local diffusion operator to the local system */
         cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
@@ -759,6 +759,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
+                                        t_eval_pty,
                                         NULL,  // No input structure
                                         cb,    // mass matrix is cb->hdg
                                         csys); // Fill csys->source
@@ -784,7 +785,8 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
         if (eqb->time_pty_uniform)
           tpty_val *= time_pty_val;
         else
-          tpty_val *= cs_property_get_cell_value(c_id, eqp->time_property);
+          tpty_val *= cs_property_get_cell_value(c_id, t_eval_pty,
+                                                 eqp->time_property);
 
         /* Assign local matrix to a mass matrix to define */
         cs_sdm_t  *mass_mat = cb->loc;

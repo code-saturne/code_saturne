@@ -212,6 +212,7 @@ typedef void
  *
  * \param[in]       fvals       pointer to an array of field values
  * \param[in]       eqp         pointer to a cs_equation_param_t structure
+ * \param[in]       t_eval      time at which one performs the evaluation
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
  * \param[in, out]  data        pointer to a generic data structure
  * \param[in, out]  location    where the flux is defined
@@ -222,6 +223,7 @@ typedef void
 typedef void
 (cs_equation_cell_difflux_t)(const cs_real_t            *fvals,
                              const cs_equation_param_t  *eqp,
+                             cs_real_t                   t_eval,
                              cs_equation_builder_t      *eqb,
                              void                       *data,
                              cs_flag_t                   location,
@@ -280,6 +282,7 @@ struct _cs_equation_t {
   /* Variable attached to this equation is defined as a cs_field_t structure */
   char *restrict         varname;
   int                    field_id;
+  int                    boundary_flux_id;
 
   /* Algebraic system */
   /* ---------------- */

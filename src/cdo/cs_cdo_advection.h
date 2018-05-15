@@ -56,16 +56,18 @@ BEGIN_C_DECLS
  *          vertex-based scheme.
  *          The local matrix related to this operator is stored in cb->loc
  *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fm        pointer to a cs_face_mesh_t structure
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval  time at which one evaluates the advection field
+ * \param[in, out] fm      pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_cdo_advection_t)(const cs_equation_param_t   *eqp,
                      const cs_cell_mesh_t        *cm,
+                     cs_real_t                    t_eval,
                      cs_face_mesh_t              *fm,
                      cs_cell_builder_t           *cb);
 
@@ -73,7 +75,6 @@ typedef void
 /*!
  * \brief   Compute the BC contribution for the advection operator
  *
- * \param[in]      cbc     pointer to a cs_cell_bc_t structure
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in, out] fm      pointer to a cs_face_mesh_t structure
@@ -128,7 +129,8 @@ cs_cdo_advection_get_cip_coef(void);
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -136,6 +138,7 @@ cs_cdo_advection_get_cip_coef(void);
 void
 cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
                                  const cs_cell_mesh_t        *cm,
+                                 cs_real_t                    t_eval,
                                  cs_face_mesh_t              *fm,
                                  cs_cell_builder_t           *cb);
 
@@ -148,7 +151,8 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -156,6 +160,7 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
 void
 cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
                                const cs_cell_mesh_t        *cm,
+                               cs_real_t                    t_eval,
                                cs_face_mesh_t              *fm,
                                cs_cell_builder_t           *cb);
 
@@ -168,7 +173,8 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -176,6 +182,7 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
 void
 cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
                                const cs_cell_mesh_t        *cm,
+                               cs_real_t                    t_eval,
                                cs_face_mesh_t              *fm,
                                cs_cell_builder_t           *cb);
 
@@ -188,7 +195,8 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -196,6 +204,7 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
 void
 cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
                                  const cs_cell_mesh_t        *cm,
+                                 cs_real_t                    t_eval,
                                  cs_face_mesh_t              *fm,
                                  cs_cell_builder_t           *cb);
 
@@ -208,7 +217,8 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -216,6 +226,7 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
 void
 cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
                                const cs_cell_mesh_t        *cm,
+                               cs_real_t                    t_eval,
                                cs_face_mesh_t              *fm,
                                cs_cell_builder_t           *cb);
 
@@ -228,7 +239,8 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -236,6 +248,7 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
 void
 cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
                                const cs_cell_mesh_t         *cm,
+                               cs_real_t                     t_eval,
                                cs_face_mesh_t               *fm,
                                cs_cell_builder_t            *cb);
 
@@ -247,7 +260,8 @@ cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -255,6 +269,7 @@ cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
 void
 cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
                             const cs_cell_mesh_t        *cm,
+                            cs_real_t                    t_eval,
                             cs_face_mesh_t              *fm,
                             cs_cell_builder_t           *cb);
 
@@ -265,7 +280,8 @@ cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -273,6 +289,7 @@ cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
 void
 cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
                          const cs_cell_mesh_t        *cm,
+                         cs_real_t                    t_eval,
                          cs_face_mesh_t              *fm,
                          cs_cell_builder_t           *cb);
 

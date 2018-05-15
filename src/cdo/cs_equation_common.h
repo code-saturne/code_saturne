@@ -265,6 +265,7 @@ cs_equation_write_monitoring(const char                    *eqname,
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      eqb       pointer to a cs_equation_builder_t structure
+ * \param[in]      t_eval    time at which one performs the evaluation
  * \param[in, out] tpty_val  pointer to the value for the time property
  * \param[in, out] rpty_vals pointer to the values for reaction properties
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure (diffusion
@@ -275,6 +276,7 @@ cs_equation_write_monitoring(const char                    *eqname,
 void
 cs_equation_init_properties(const cs_equation_param_t     *eqp,
                             const cs_equation_builder_t   *eqb,
+                            cs_real_t                      t_eval,
                             double                        *tpty_val,
                             double                        *rpty_vals,
                             cs_cell_builder_t             *cb);
@@ -285,16 +287,18 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
  *
  * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in]      c_id    id of the cell to deal with
+ * \param[in]      t_eval  time at which one performs the evaluation
  * \param[in]      c_flag  flag related to this cell
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_diffusion_property(const cs_equation_param_t     *eqp,
-                                   cs_lnum_t                      c_id,
-                                   cs_flag_t                      c_flag,
-                                   cs_cell_builder_t             *cb);
+cs_equation_set_diffusion_property(const cs_equation_param_t   *eqp,
+                                   cs_lnum_t                    c_id,
+                                   cs_real_t                    t_eval,
+                                   cs_flag_t                    c_flag,
+                                   cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -303,6 +307,7 @@ cs_equation_set_diffusion_property(const cs_equation_param_t     *eqp,
  *
  * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval  time at which one performs the evaluation
  * \param[in]      c_flag  flag related to this cell
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
@@ -311,6 +316,7 @@ cs_equation_set_diffusion_property(const cs_equation_param_t     *eqp,
 void
 cs_equation_set_diffusion_property_cw(const cs_equation_param_t     *eqp,
                                       const cs_cell_mesh_t          *cm,
+                                      cs_real_t                      t_eval,
                                       cs_flag_t                      c_flag,
                                       cs_cell_builder_t             *cb);
 

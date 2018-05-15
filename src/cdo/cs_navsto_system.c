@@ -813,11 +813,13 @@ _projection_last_setup(const cs_cdo_connect_t     *connect,
  * \brief Initialize the face values for the velocity unknows (in case of
  *        CDO Face-based scheme) in order to have a initial guess in accordance
  *        with the user requirements when solving the momentum equation
+ *
+ * \param[in]      t_eval  time at which one performs the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_init_face_velocity_values(void)
+_init_face_velocity_values(cs_real_t    t_eval)
 {
   cs_navsto_system_t  *navsto = cs_navsto_system;
 
@@ -880,10 +882,10 @@ _init_face_velocity_values(void)
 
       switch (red) {
       case CS_PARAM_REDUCTION_DERHAM:
-        cs_evaluate_potential_by_analytic(f_dof_flag, def, f_values);
+        cs_evaluate_potential_by_analytic(f_dof_flag, def, t_eval, f_values);
         break;
       case CS_PARAM_REDUCTION_AVERAGE:
-        cs_evaluate_average_on_faces_by_analytic(def, f_values);
+        cs_evaluate_average_on_faces_by_analytic(def, t_eval, f_values);
         break;
 
       default:
@@ -1481,11 +1483,19 @@ cs_navsto_add_pressure_ic_by_analytic(const char             *z_name,
 /*!
  * \brief  Initialize the context structure used to build the algebraic system
  *         This is done after the setup step.
+ *
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_initialize(void)
+cs_navsto_system_initialize(const cs_mesh_t             *mesh,
+                            const cs_cdo_connect_t      *connect,
+                            const cs_cdo_quantities_t   *quant,
+                            const cs_time_step_t        *ts)
 {
   cs_navsto_system_t  *navsto = cs_navsto_system;
   const cs_navsto_param_t *nsp = navsto->param;
@@ -1499,6 +1509,7 @@ cs_navsto_system_initialize(void)
   navsto->init(nsp, navsto->context);
 
   const cs_param_dof_reduction_t  red = nsp->dof_reduction_mode;
+  const cs_real_t  t_cur = ts->t_cur;
 
   /* Initial conditions for the velocity */
   if (navsto->n_velocity_ic_defs > 0) {
@@ -1525,10 +1536,10 @@ cs_navsto_system_initialize(void)
         cs_xdef_set_quadrature(def, nsp->qtype);
         switch (red) {
         case CS_PARAM_REDUCTION_DERHAM:
-          cs_evaluate_potential_by_analytic(c_dof_flag, def, c_values);
+          cs_evaluate_potential_by_analytic(c_dof_flag, def, t_cur, c_values);
           break;
         case CS_PARAM_REDUCTION_AVERAGE:
-          cs_evaluate_average_on_cells_by_analytic(def, c_values);
+          cs_evaluate_average_on_cells_by_analytic(def, t_cur, c_values);
           break;
 
         default:
@@ -1550,7 +1561,7 @@ cs_navsto_system_initialize(void)
 
     /* Initialize face-based array */
     if (true) /* DEBUG */
-      _init_face_velocity_values();
+      _init_face_velocity_values(t_cur);
 
   } // If velocity IC
 
@@ -1578,10 +1589,10 @@ cs_navsto_system_initialize(void)
         cs_xdef_set_quadrature(def, nsp->qtype);
         switch (red) {
         case CS_PARAM_REDUCTION_DERHAM:
-          cs_evaluate_potential_by_analytic(dof_flag, def, values);
+          cs_evaluate_potential_by_analytic(dof_flag, def, t_cur, values);
           break;
         case CS_PARAM_REDUCTION_AVERAGE:
-          cs_evaluate_average_on_cells_by_analytic(def, values);
+          cs_evaluate_average_on_cells_by_analytic(def, t_cur, values);
           break;
 
         default:

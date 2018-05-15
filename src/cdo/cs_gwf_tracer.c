@@ -98,7 +98,7 @@ static const char _err_empty_tracer[] =
  * \param[in]      mesh      pointer to a cs_mesh_t structure
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
  * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts        pointer to a cs_time_step_t structure
+ * \param[in]      t_eval    time at which one performs the evaluation
  * \param[in]      input     pointer to an input structure cast on-the_fly
  * \param[in, out] result    array storing the result (must be allocated)
  */
@@ -111,14 +111,14 @@ _get_time_pty4std_tracer(cs_lnum_t                    n_elts,
                          const cs_mesh_t             *mesh,
                          const cs_cdo_connect_t      *connect,
                          const cs_cdo_quantities_t   *quant,
-                         const cs_time_step_t        *ts,
+                         cs_real_t                    t_eval,
                          void                        *input,
                          cs_real_t                   *result)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
-  CS_UNUSED(ts);
+  CS_UNUSED(t_eval);
 
   const cs_gwf_std_tracer_input_t  *law =
     (const cs_gwf_std_tracer_input_t *)input;
@@ -129,27 +129,17 @@ _get_time_pty4std_tracer(cs_lnum_t                    n_elts,
   const cs_real_t  *theta = law->moisture_content->val;
   const short int  *c2s = cs_gwf_get_cell2soil();
 
-  if (elt_ids != NULL && !compact) {
-
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      const cs_lnum_t  c_id = elt_ids[i];
-      result[c_id] = theta[c_id] + law->rho_kd[c2s[c_id]];
-    }
-
-  }
-  else if (elt_ids != NULL && compact) {
-
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      const cs_lnum_t  c_id = elt_ids[i];
-      result[i] = theta[c_id] + law->rho_kd[c2s[c_id]];
-    }
-
-  }
-  else {
-
-    assert(elt_ids == NULL);
+  if (elt_ids == NULL)
     for (cs_lnum_t i = 0; i < n_elts; i++)
       result[i] = theta[i] + law->rho_kd[c2s[i]];
+
+  else { /* Loop on a selection of cells */
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      const cs_lnum_t  c_id = elt_ids[i];
+      const cs_lnum_t  id = compact ? i : c_id;
+      result[id] = theta[c_id] + law->rho_kd[c2s[c_id]];
+    }
 
   }
 }
@@ -161,19 +151,19 @@ _get_time_pty4std_tracer(cs_lnum_t                    n_elts,
  *         This function fits the generic prototype of cs_xdef_cell_eval_cw_t
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
- * \param[in]      ts       pointer to a cs_time_step_t structure
+ * \param[in]      t_eval   time at which one performs the evaluation
  * \param[in]      input    pointer to an input structure cast on-the_fly
  * \param[in, out] result   array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_get_time_pty4std_tracer_cw(const cs_cell_mesh_t       *cm,
-                            const cs_time_step_t       *ts,
-                            void                       *input,
-                            cs_real_t                  *result)
+_get_time_pty4std_tracer_cw(const cs_cell_mesh_t    *cm,
+                            cs_real_t                t_eval,
+                            void                    *input,
+                            cs_real_t               *result)
 {
-  CS_UNUSED(ts);
+  CS_UNUSED(t_eval);
 
   const cs_gwf_std_tracer_input_t  *law =
     (const cs_gwf_std_tracer_input_t *)input;
@@ -199,7 +189,7 @@ _get_time_pty4std_tracer_cw(const cs_cell_mesh_t       *cm,
  * \param[in]      mesh      pointer to a cs_mesh_t structure
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
  * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts        pointer to a cs_time_step_t structure
+ * \param[in]      t_eval    time at which one performs the evaluation
  * \param[in]      input     pointer to an input structure cast on-the_fly
  * \param[in, out] result    array storing the result (must be allocated)
  */
@@ -212,14 +202,14 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
                              const cs_mesh_t             *mesh,
                              const cs_cdo_connect_t      *connect,
                              const cs_cdo_quantities_t   *quant,
-                             const cs_time_step_t        *ts,
+                             cs_real_t                    t_eval,
                              void                        *input,
                              cs_real_t                   *result)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
-  CS_UNUSED(ts);
+  CS_UNUSED(t_eval);
 
   const cs_gwf_std_tracer_input_t  *law =
     (const cs_gwf_std_tracer_input_t *)input;
@@ -230,30 +220,24 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
   const cs_real_t  *theta = law->moisture_content->val;
   const short int  *c2s = cs_gwf_get_cell2soil();
 
-  if (elt_ids != NULL && !compact) {
+  if (elt_ids == NULL) {
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
-      const cs_lnum_t  c_id = elt_ids[i];
-      const int s = c2s[c_id];
-      result[c_id] = (theta[c_id] + law->rho_kd[s]) * law->reaction_rate[s];
-    }
-
-  }
-  else if (elt_ids != NULL && compact) {
-
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      const cs_lnum_t  c_id = elt_ids[i];
-      const int s = c2s[c_id];
-      result[i] = (theta[c_id] + law->rho_kd[s]) * law->reaction_rate[s];
+      const int  s = c2s[i];  /* soil_id */
+      result[i] = (theta[i] + law->rho_kd[s]) * law->reaction_rate[s];
     }
 
   }
   else {
 
-    assert(elt_ids == NULL);
     for (cs_lnum_t i = 0; i < n_elts; i++) {
-      const int s = c2s[i];
-      result[i] = (theta[i] + law->rho_kd[s]) * law->reaction_rate[s];
+
+      const cs_lnum_t  c_id = elt_ids[i];
+      const int  s = c2s[c_id];
+      const cs_lnum_t  id = (compact) ? i : c_id;
+
+      result[id] = (theta[c_id] + law->rho_kd[s]) * law->reaction_rate[s];
+
     }
 
   }
@@ -267,7 +251,7 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
  *         This function fits the generic prototype of cs_xdef_cell_eval_cw_t
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
- * \param[in]      ts       pointer to a cs_time_step_t structure
+ * \param[in]      t_eval   time at which one performs the evaluation
  * \param[in]      input    pointer to an input structure cast on-the_fly
  * \param[in, out] result   array storing the result (must be allocated)
  */
@@ -275,11 +259,11 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
 
 static inline void
 _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
-                                const cs_time_step_t     *ts,
+                                cs_real_t                 t_eval,
                                 void                     *input,
                                 cs_real_t                *result)
 {
-  CS_UNUSED(ts);
+  CS_UNUSED(t_eval);
 
   const cs_gwf_std_tracer_input_t  *law =
     (const cs_gwf_std_tracer_input_t *)input;
@@ -301,11 +285,11 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
  *         property are defined by function).
  *         Generic function relying on the prototype cs_gwf_tracer_update_t
  *
- * \param[in, out] input        pointer to a structure cast on-the-fly
- * \param[in]      mesh         pointer to a cs_mesh_t structure
- * \param[in]      connect      pointer to a cs_cdo_connect_t structure
- * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts           pointer to a cs_time_step_t structure
+ * \param[in, out] input      pointer to a structure cast on-the-fly
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      t_eval     time at which one performs the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -314,11 +298,12 @@ _update_diff_pty4std_tracer(void                        *input,
                             const cs_mesh_t             *mesh,
                             const cs_cdo_connect_t      *connect,
                             const cs_cdo_quantities_t   *quant,
-                            const cs_time_step_t        *ts)
+                            cs_real_t                    t_eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
-  CS_UNUSED(ts);
+  CS_UNUSED(quant);
+  CS_UNUSED(t_eval);
 
   cs_gwf_tracer_t  *tracer = (cs_gwf_tracer_t *)input;
   if (tracer->diffusivity == NULL)
@@ -344,69 +329,34 @@ _update_diff_pty4std_tracer(void                        *input,
     const double  at = law->alpha_t[soil_id];
     const double  al = law->alpha_l[soil_id];
 
-    if (z->n_elts == quant->n_cells) { // No need to apply indirection
+    for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
-      for (cs_lnum_t c_id = 0; c_id < z->n_elts; c_id++) {
+      const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
+      const cs_real_t  *v = velocity + 3*c_id;
+      const double  v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
+      const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
+      const double  coef1 = wmd * theta[c_id] + at*vnorm;
 
-        const cs_real_t  *v = velocity + 3*c_id;
-        const double  v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
-        const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
-        const double  coef1 = wmd * theta[c_id] + at*vnorm;
+      double  delta = 0.;
+      if (vnorm > cs_math_zero_threshold)
+        delta = (al - at)/vnorm;
 
-        double  delta = 0.;
-        if (vnorm > cs_math_zero_threshold)
-          delta = (al - at)/vnorm;
+      const double  dcv[3] = {delta*v[0], delta*v[1], delta*v[2]};
 
-        const double  dcv[3] = {delta*v[0], delta*v[1], delta*v[2]};
+      cs_real_t  *_r = values + 9*c_id;
+      for (int ki = 0; ki < 3; ki++) {
 
-        cs_real_t  *_r = values + 9*c_id;
-        for (int ki = 0; ki < 3; ki++) {
+        /* Diagonal terms */
+        _r[3*ki+ki] = coef1 + delta*v2[ki];
 
-          /* Diagonal terms */
-          _r[3*ki+ki] = coef1 + delta*v2[ki];
-
-          /* Extra-diagonal terms */
-          for (int kj = ki + 1; kj < 3; kj++) {
-            _r[3*ki+kj] = dcv[ki]*v[kj];
-            _r[3*kj+ki] = _r[3*ki+kj]; /* tensor is symmetric by construction */
-          }
+        /* Extra-diagonal terms */
+        for (int kj = ki + 1; kj < 3; kj++) {
+          _r[3*ki+kj] = dcv[ki]*v[kj];
+          _r[3*kj+ki] = _r[3*ki+kj]; /* tensor is symmetric by construction */
         }
+      }
 
-      } // Loop on all cells
-
-    }
-    else {
-
-      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-
-        cs_lnum_t  c_id = z->elt_ids[i];
-        const cs_real_t  *v = velocity + 3*c_id;
-        const double  v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
-        const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
-        const double  coef1 = wmd * theta[c_id] + at*vnorm;
-
-        double  delta = 0.;
-        if (vnorm > cs_math_zero_threshold)
-          delta = (al - at)/vnorm;
-
-        const double  dcv[3] = {delta*v[0], delta*v[1], delta*v[2]};
-
-        cs_real_t  *_r = values + 9*c_id;
-        for (int ki = 0; ki < 3; ki++) {
-
-          /* Diagonal terms */
-          _r[3*ki+ki] = coef1 + delta*v2[ki];
-
-          /* Extra-diagonal terms */
-          for (int kj = ki + 1; kj < 3; kj++) {
-            _r[3*ki+kj] = dcv[ki]*v[kj];
-            _r[3*kj+ki] = _r[3*ki+kj]; /* tensor is symmetric by construction */
-          }
-        }
-
-      } // Loop on cells attached to this soil
-
-    } // Unique soil ?
+    } // Loop on cells attached to this soil
 
   } // Loop on soils
 

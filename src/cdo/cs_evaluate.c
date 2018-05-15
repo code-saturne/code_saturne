@@ -67,7 +67,6 @@ BEGIN_C_DECLS
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
-static const cs_time_step_t  *cs_time_step;
 
 static const char _err_empty_array[] =
   " %s: Array storing the evaluation should be allocated before the call"
@@ -78,27 +77,29 @@ static const char _err_quad[] = " %s: Invalid quadrature type.";
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the integral over dual cells of a scalar density field
  *         defined by an analytical function on a cell
  *
- * \param[in]      cm                pointer to a cs_cell_mesh_t structure
- * \param[in]      ana               pointer to the analytic function
- * \param[in]      input             NULL or pointer cast on-the-fly
- * \param[in]      compute_integral  function pointer
- * \param[in, out] values            pointer to the computed values
+ * \param[in]      cm                  pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in]      ana                 pointer to the analytic function
+ * \param[in]      input               NULL or pointer cast on-the-fly
+ * \param[in]      compute_integral    function pointer
+ * \param[in, out] values              pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _cellwise_dcsd_by_analytic(const cs_cell_mesh_t            *cm,
+                           cs_real_t                        time_eval,
                            cs_analytic_func_t              *ana,
                            void                            *input,
                            cs_quadrature_tetra_integral_t  *compute_integral,
                            cs_real_t                        values[])
 {
-  const cs_real_t  tcur = cs_time_step->t_cur;
   const cs_real_t  vol = cm->vol_c;
 
   for (short int f = 0; f < cm->n_fc; f++) {
@@ -115,9 +116,9 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t            *cm,
       const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
       const double  *xe = cm->edge[e].center;
 
-      compute_integral(tcur, xv1, xe, xf, cm->xc, vol*cm->wvc[v1],
+      compute_integral(time_eval, xv1, xe, xf, cm->xc, vol*cm->wvc[v1],
                        ana, input, values + v1);
-      compute_integral(tcur, xv2, xe, xf, cm->xc, vol*cm->wvc[v2],
+      compute_integral(time_eval, xv2, xe, xf, cm->xc, vol*cm->wvc[v2],
                        ana, input, values + v2);
 
     } // Loop on face edges
@@ -131,6 +132,7 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t            *cm,
  * \brief  Compute the integral over dual cells of a scalar density field
  *         defined by an analytical function on a selection of (primal) cells
  *
+ * \param[in]      time_eval      physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
  * \param[in]      n_elts            number of elements to consider
@@ -141,7 +143,8 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t            *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_dcsd_by_analytic(cs_analytic_func_t              *ana,
+_dcsd_by_analytic(cs_real_t                        time_eval,
+                  cs_analytic_func_t              *ana,
                   void                            *input,
                   const cs_lnum_t                  n_elts,
                   const cs_lnum_t                 *elt_ids,
@@ -152,7 +155,6 @@ _dcsd_by_analytic(cs_analytic_func_t              *ana,
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
-  const double  tcur = cs_time_step->t_cur;
 
   /* Compute dual volumes */
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
@@ -177,9 +179,9 @@ _dcsd_by_analytic(cs_analytic_func_t              *ana,
         for (int k = 0; k < 3; k++)
           xe[k] = 0.5 * (xv1[k] + xv2[k]);
 
-        compute_integral(tcur, xv1, xe, xf, xc, quant->dcell_vol[v1],
+        compute_integral(time_eval, xv1, xe, xf, xc, quant->dcell_vol[v1],
                          ana, input, values + v1);
-        compute_integral(tcur, xv2, xe, xf, xc, quant->dcell_vol[v2],
+        compute_integral(time_eval, xv2, xe, xf, xc, quant->dcell_vol[v2],
                          ana, input, values + v2);
       } // Loop on edges
 
@@ -194,10 +196,11 @@ _dcsd_by_analytic(cs_analytic_func_t              *ana,
  * \brief  Compute the integral over primal cells of a scalar density field
  *         defined by an analytical function on a cell
  *
- * \param[in]      cm                pointer to a cs_cell_mesh_t structure
- * \param[in]      ana               pointer to the analytic function
- * \param[in]      input             NULL or pointer cast on-the-fly
- * \param[in]      compute_integral  function pointer
+ * \param[in]      cm                  pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in]      ana                 pointer to the analytic function
+ * \param[in]      input               NULL or pointer cast on-the-fly
+ * \param[in]      compute_integral    function pointer
  *
  * \return the value of the corresponding integral
  */
@@ -205,17 +208,16 @@ _dcsd_by_analytic(cs_analytic_func_t              *ana,
 
 static cs_real_t
 _cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
+                           cs_real_t                        time_eval,
                            cs_analytic_func_t              *ana,
                            void                            *input,
                            cs_quadrature_tetra_integral_t  *compute_integral)
 {
-  const double  tcur = cs_time_step->t_cur;
-
   cs_real_t  retval = 0.;
 
   if (cs_cdo_connect->cell_type[cm->c_id] == FVM_CELL_TETRA) {
 
-    compute_integral(tcur, cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
+    compute_integral(time_eval, cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
                      cm->vol_c, ana, input, &retval);
 
   }
@@ -235,7 +237,8 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
 
         const double *xv0 = cm->xv+3*v0, *xv1 = cm->xv+3*v1, *xv2 = cm->xv+3*v2;
 
-        compute_integral(tcur, xv0, xv1, xv2, cm->xc, hf_coef*cm->face[f].meas,
+        compute_integral(time_eval, xv0, xv1, xv2, cm->xc,
+                         hf_coef*cm->face[f].meas,
                          ana, input, &retval);
 
       }
@@ -250,7 +253,8 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
           const double  *xv1 = cm->xv + 3*cm->e2v_ids[_2e];
           const double  *xv2 = cm->xv + 3*cm->e2v_ids[_2e+1];
 
-          compute_integral(tcur, xv1, xv2, xf, cm->xc, hf_coef*tef[i],
+          compute_integral(time_eval, xv1, xv2, xf, cm->xc,
+                           hf_coef*tef[i],
                            ana, input, &retval);
 
         } // Loop on face edges
@@ -269,6 +273,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
  * \brief  Compute the integral over primal cells of a scalar density field
  *         defined by an analytical function on a selection of (primal) cells
  *
+ * \param[in]      time_eval     physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
  * \param[in]      n_elts            number of elements to consider
@@ -279,7 +284,8 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_pcsd_by_analytic(cs_analytic_func_t              *ana,
+_pcsd_by_analytic(cs_real_t                        time_eval,
+                  cs_analytic_func_t              *ana,
                   void                            *input,
                   const cs_lnum_t                  n_elts,
                   const cs_lnum_t                 *elt_ids,
@@ -291,7 +297,6 @@ _pcsd_by_analytic(cs_analytic_func_t              *ana,
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
-  const cs_real_t  tcur = cs_time_step->t_cur;
 
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
@@ -300,7 +305,7 @@ _pcsd_by_analytic(cs_analytic_func_t              *ana,
 
       const cs_lnum_t  *v_ids = connect->c2v->ids + connect->c2v->idx[c_id];
 
-      compute_integral(tcur,
+      compute_integral(time_eval,
                     xv+3*v_ids[0], xv+3*v_ids[1], xv+3*v_ids[2], xv+3*v_ids[3],
                        quant->cell_vol[c_id],
                        ana, input, values + c_id);
@@ -326,7 +331,7 @@ _pcsd_by_analytic(cs_analytic_func_t              *ana,
           cs_lnum_t v0, v1, v2;
           cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
                                          start, &v0, &v1, &v2);
-          compute_integral(tcur,xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
+          compute_integral(time_eval, xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
                            hfc * pfq.meas,
                            ana, input, values + c_id);
         }
@@ -338,7 +343,7 @@ _pcsd_by_analytic(cs_analytic_func_t              *ana,
             const cs_lnum_t  v1 = connect->e2v->ids[_2e];
             const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
 
-            compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center, xc,
+            compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center, xc,
                              hfc*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                              ana, input, values + c_id);
 
@@ -359,6 +364,7 @@ _pcsd_by_analytic(cs_analytic_func_t              *ana,
  * \brief  Compute the average over primal cells of a scalar field defined
  *         by an analytical function on a selection of (primal) cells
  *
+ * \param[in]      time_eval      physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
  * \param[in]      n_loc_elts        number of elements to consider
@@ -369,7 +375,8 @@ _pcsd_by_analytic(cs_analytic_func_t              *ana,
 /*----------------------------------------------------------------------------*/
 
 static void
-_pcsa_by_analytic(cs_analytic_func_t              *ana,
+_pcsa_by_analytic(cs_real_t                        time_eval,
+                  cs_analytic_func_t              *ana,
                   void                            *input,
                   const cs_lnum_t                  n_elts,
                   const cs_lnum_t                 *elt_ids,
@@ -381,7 +388,6 @@ _pcsa_by_analytic(cs_analytic_func_t              *ana,
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
-  const cs_real_t  tcur = cs_time_step->t_cur;
 
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
@@ -390,7 +396,7 @@ _pcsa_by_analytic(cs_analytic_func_t              *ana,
 
       const cs_lnum_t  *v_ids = connect->c2v->ids + connect->c2v->idx[c_id];
 
-      compute_integral(tcur,
+      compute_integral(time_eval,
                     xv+3*v_ids[0], xv+3*v_ids[1], xv+3*v_ids[2], xv+3*v_ids[3],
                        quant->cell_vol[c_id],
                        ana, input, values + c_id);
@@ -415,7 +421,7 @@ _pcsa_by_analytic(cs_analytic_func_t              *ana,
           cs_lnum_t v0, v1, v2;
           cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
                                          start, &v0, &v1, &v2);
-          compute_integral(tcur,xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
+          compute_integral(time_eval, xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
                            hfc * pfq.meas,
                            ana, input, values + c_id);
         }
@@ -427,7 +433,7 @@ _pcsa_by_analytic(cs_analytic_func_t              *ana,
             const cs_lnum_t  v1 = connect->e2v->ids[_2e];
             const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
 
-            compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center, xc,
+            compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center, xc,
                              hfc*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                              ana, input, values + c_id);
 
@@ -451,6 +457,7 @@ _pcsa_by_analytic(cs_analytic_func_t              *ana,
  * \brief  Compute the average over primal cells of a vector field defined
  *         by an analytical function on a selection of (primal) cells
  *
+ * \param[in]      time_eval     physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
  * \param[in]      n_loc_elts        number of elements to consider
@@ -465,7 +472,8 @@ _pcsa_by_analytic(cs_analytic_func_t              *ana,
  */
 
 static void
-_pcva_by_analytic(cs_analytic_func_t              *ana,
+_pcva_by_analytic(cs_real_t                        time_eval,
+                  cs_analytic_func_t              *ana,
                   void                            *input,
                   const cs_lnum_t                  n_elts,
                   const cs_lnum_t                 *elt_ids,
@@ -477,7 +485,6 @@ _pcva_by_analytic(cs_analytic_func_t              *ana,
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
-  const cs_real_t  tcur = cs_time_step->t_cur;
 
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
@@ -488,7 +495,7 @@ _pcva_by_analytic(cs_analytic_func_t              *ana,
 
       const cs_lnum_t  *v_ids = connect->c2v->ids + connect->c2v->idx[c_id];
 
-      compute_integral(tcur,
+      compute_integral(time_eval,
                     xv+3*v_ids[0], xv+3*v_ids[1], xv+3*v_ids[2], xv+3*v_ids[3],
                        quant->cell_vol[c_id],
                        ana, input, values + c_id);
@@ -513,7 +520,7 @@ _pcva_by_analytic(cs_analytic_func_t              *ana,
           cs_lnum_t v0, v1, v2;
           cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
                                          start, &v0, &v1, &v2);
-          compute_integral(tcur, xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
+          compute_integral(time_eval, xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
                            hfc * pfq.meas,
                            ana, input, values + c_id);
 
@@ -526,7 +533,7 @@ _pcva_by_analytic(cs_analytic_func_t              *ana,
             const cs_lnum_t  v1 = connect->e2v->ids[_2e];
             const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
 
-            compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center, xc,
+            compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center, xc,
                              hfc*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                              ana, input, values + c_id);
 
@@ -797,6 +804,7 @@ _pcva_by_value(const cs_real_t     const_vec[3],
  *         This potential can, be scalar-, vector- or tensor-valued. This is
  *         handled in the definition of the analytic function.
  *
+ * \param[in]      time_eval   physical time at which one evaluates the term
  * \param[in]      ana         pointer to the analytic function
  * \param[in]      input       NULL or pointer to a structure cast on-the-fly
  * \param[in]      n_elts      number of elements to consider
@@ -806,13 +814,13 @@ _pcva_by_value(const cs_real_t     const_vec[3],
 /*----------------------------------------------------------------------------*/
 
 static void
-_pfp_by_analytic(cs_analytic_func_t    *ana,
+_pfp_by_analytic(cs_real_t              time_eval,
+                 cs_analytic_func_t    *ana,
                  void                  *input,
                  const cs_lnum_t        n_elts,
                  const cs_lnum_t       *elt_ids,
                  cs_real_t              values[])
 {
-  const cs_real_t  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
 
@@ -833,7 +841,7 @@ _pfp_by_analytic(cs_analytic_func_t    *ana,
       cs_lnum_t  f_id = c2f->ids[j];
       if (todo[f_id]) {
         const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
-        ana(tcur, 1, NULL, xf, false,  input, values + f_id);
+        ana(time_eval, 1, NULL, xf, false,  input, values + f_id);
         todo[f_id] = false;
       }
 
@@ -849,6 +857,7 @@ _pfp_by_analytic(cs_analytic_func_t    *ana,
  * \brief  Get the average at each primal faces for a scalar potential
  *         defined by an analytical function on a selection of (primal) cells
  *
+ * \param[in]      time_eval      physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
  * \param[in]      n_loc_elts        number of elements to consider
@@ -859,14 +868,14 @@ _pfp_by_analytic(cs_analytic_func_t    *ana,
 /*----------------------------------------------------------------------------*/
 
 static void
-_pfsa_by_analytic(cs_analytic_func_t             *ana,
+_pfsa_by_analytic(cs_real_t                       time_eval,
+                  cs_analytic_func_t             *ana,
                   void                           *input,
                   const cs_lnum_t                 n_elts,
                   const cs_lnum_t                *elt_ids,
                   cs_quadrature_tria_integral_t  *compute_integral,
                   cs_real_t                       values[])
 {
-  const cs_real_t  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_adjacency_t  *f2e = cs_cdo_connect->f2e;
@@ -891,7 +900,7 @@ _pfsa_by_analytic(cs_analytic_func_t             *ana,
 
           cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
                                          &v1, &v2, &v3);
-          compute_integral(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
+          compute_integral(time_eval, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
                            ana, input, val_i);
         }
         break;
@@ -903,7 +912,7 @@ _pfsa_by_analytic(cs_analytic_func_t             *ana,
           const cs_lnum_t  v1 = e2v->ids[_2e];
           const cs_lnum_t  v2 = e2v->ids[_2e+1];
 
-          compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+          compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center,
                            cs_math_surftri(xv + 3*v1, xv + 3*v2, pfq.center),
                            ana, input, val_i);
 
@@ -953,7 +962,7 @@ _pfsa_by_analytic(cs_analytic_func_t             *ana,
               cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
                                              &v1, &v2, &v3);
 
-              compute_integral(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3,
+              compute_integral(time_eval, xv + 3*v1, xv + 3*v2, xv + 3*v3,
                                pfq.meas, ana, input, val_i);
             }
             break;
@@ -965,7 +974,7 @@ _pfsa_by_analytic(cs_analytic_func_t             *ana,
               const cs_lnum_t  v1 = e2v->ids[_2e];
               const cs_lnum_t  v2 = e2v->ids[_2e+1];
 
-              compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+              compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center,
                                cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                                ana, input, val_i);
             } /* Loop on edges */
@@ -993,24 +1002,25 @@ _pfsa_by_analytic(cs_analytic_func_t             *ana,
  * \brief  Get the average at each primal faces for a vector potential
  *         defined by an analytical function on a selection of (primal) cells
  *
- * \param[in]      ana               pointer to the analytic function
- * \param[in]      input             NULL or pointer cast on-the-fly
- * \param[in]      n_loc_elts        number of elements to consider
- * \param[in]      elt_ids           pointer to the list od selected ids
- * \param[in]      compute_integral  function pointer
- * \param[in, out] values            pointer to the computed values
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in]      ana                 pointer to the analytic function
+ * \param[in]      input               NULL or pointer cast on-the-fly
+ * \param[in]      n_loc_elts          number of elements to consider
+ * \param[in]      elt_ids             pointer to the list od selected ids
+ * \param[in]      compute_integral    function pointer
+ * \param[in, out] values              pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_pfva_by_analytic(cs_analytic_func_t             *ana,
+_pfva_by_analytic(cs_real_t                       time_eval,
+                  cs_analytic_func_t             *ana,
                   void                           *input,
                   const cs_lnum_t                 n_elts,
                   const cs_lnum_t                *elt_ids,
                   cs_quadrature_tria_integral_t  *compute_integral,
                   cs_real_t                       values[])
 {
-  const cs_real_t  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_adjacency_t  *f2e = cs_cdo_connect->f2e;
   const cs_adjacency_t  *e2v = cs_cdo_connect->e2v;
@@ -1035,7 +1045,7 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
           cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
                                          &v1, &v2, &v3);
 
-          compute_integral(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
+          compute_integral(time_eval, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
                            ana, input, val_i);
         }
         break;
@@ -1047,7 +1057,7 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
           const cs_lnum_t  v1 = e2v->ids[_2e];
           const cs_lnum_t  v2 = e2v->ids[_2e+1];
 
-          compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+          compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center,
                            cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                            ana, input, val_i);
 
@@ -1100,7 +1110,7 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
               cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
                                              &v1, &v2, &v3);
 
-              compute_integral(tcur, xv + 3*v1, xv + 3*v2, xv + 3*v3,
+              compute_integral(time_eval, xv + 3*v1, xv + 3*v2, xv + 3*v3,
                                pfq.meas, ana, input, val_i);
             }
             break;
@@ -1112,7 +1122,7 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
               const cs_lnum_t  v1 = e2v->ids[_2e];
               const cs_lnum_t  v2 = e2v->ids[_2e+1];
 
-              compute_integral(tcur, xv + 3*v1, xv + 3*v2, pfq.center,
+              compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center,
                                cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                                ana, input, val_i);
 
@@ -1144,6 +1154,7 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
  *         This potential can, be scalar-, vector- or tensor-valued. This is
  *         handled in the definition of the analytic function.
  *
+ * \param[in]      time_eval   physical time at which one evaluates the term
  * \param[in]      ana         pointer to the analytic function
  * \param[in]      input       NULL or pointer to a structure cast on-the-fly
  * \param[in]      n_elts      number of elements to consider
@@ -1153,13 +1164,13 @@ _pfva_by_analytic(cs_analytic_func_t             *ana,
 /*----------------------------------------------------------------------------*/
 
 static void
-_pvp_by_analytic(cs_analytic_func_t    *ana,
+_pvp_by_analytic(cs_real_t              time_eval,
+                 cs_analytic_func_t    *ana,
                  void                  *input,
                  const cs_lnum_t        n_elts,
                  const cs_lnum_t       *elt_ids,
                  cs_real_t              values[])
 {
-  const cs_real_t  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
 
@@ -1191,7 +1202,7 @@ _pvp_by_analytic(cs_analytic_func_t    *ana,
   }
 
   /* One call for all selected vertices */
-  ana(tcur, n_selected_vertices, vtx_lst, quant->vtx_coord,
+  ana(time_eval, n_selected_vertices, vtx_lst, quant->vtx_coord,
       false,  // compacted output ?
       input,
       values);
@@ -1441,7 +1452,7 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
   }
   else { /* elt_ids == NULL => all cells are selected */
 
-# pragma omp parallel for reduction(+:volume_marked) if (n_cells > CS_THR_MIN)
+#   pragma omp parallel for reduction(+:volume_marked) if (n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
         if (vtx_tag[c2v->ids[j]] == -1) // activated
@@ -1536,19 +1547,16 @@ _pvsp_by_value(cs_real_t          const_val,
  *
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                const cs_cdo_connect_t       *connect,
-                                const cs_time_step_t         *time_step)
+                                const cs_cdo_connect_t       *connect)
 {
   /* Assign static const pointers */
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
-  cs_time_step = time_step;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1558,6 +1566,7 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
  * \param[in]      def         pointer to a cs_xdef_t structure
+ * \param[in]      time_eval   physical time at which one evaluates the term
  * \param[in, out] retval      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -1565,11 +1574,13 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 void
 cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
                                 const cs_xdef_t    *def,
+                                cs_real_t           time_eval,
                                 cs_real_t           retval[])
 {
   /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
@@ -1604,13 +1615,13 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell)) {
 
-      _pcsd_by_analytic(anai->func, anai->input,
+      _pcsd_by_analytic(time_eval, anai->func, anai->input,
                         z->n_elts, z->elt_ids, qfunc, retval);
 
     }
     else if (cs_flag_test(dof_flag, cs_flag_dual_cell)) {
 
-      _dcsd_by_analytic(anai->func, anai->input,
+      _dcsd_by_analytic(time_eval, anai->func, anai->input,
                         z->n_elts, z->elt_ids, qfunc,
                         retval);
 
@@ -1643,6 +1654,7 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
   /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
@@ -1686,6 +1698,7 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
  * \param[in]      def         pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval   physical time at which one evaluates the term
  * \param[in, out] retval      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -1693,6 +1706,7 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
 void
 cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                                   const cs_xdef_t    *def,
+                                  cs_real_t           time_eval,
                                   cs_real_t           retval[])
 {
   /* Sanity check */
@@ -1708,7 +1722,6 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
-  const cs_real_t  tcur = cs_time_step->t_cur;
 
   /* Perform the evaluation */
   if (cs_flag_test(dof_flag, cs_flag_primal_vtx)) {
@@ -1732,13 +1745,14 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
     }
 
     if (def->meta & CS_FLAG_FULL_LOC)
-      anai->func(tcur,
+      anai->func(time_eval,
                  quant->n_vertices, NULL, quant->vtx_coord,
                  false,  // compacted output ?
                  anai->input,
                  retval);
     else
-      _pvp_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids,
+      _pvp_by_analytic(time_eval,
+                       anai->func, anai->input, z->n_elts, z->elt_ids,
                        retval);
 
     if (cs_glob_n_ranks > 1)
@@ -1772,12 +1786,12 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
          - First pass: interior faces
          - Second pass: border faces
       */
-      anai->func(tcur,
+      anai->func(time_eval,
                  quant->n_i_faces, NULL, quant->i_face_center,
                  true, /* Output is compacted ? */
                  anai->input,
                  retval);
-      anai->func(tcur,
+      anai->func(time_eval,
                  quant->n_b_faces, NULL, quant->b_face_center,
                  true, /* Output is compacted ? */
                  anai->input,
@@ -1785,7 +1799,8 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
 
     }
     else
-      _pfp_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids,
+      _pfp_by_analytic(time_eval,
+                       anai->func, anai->input, z->n_elts, z->elt_ids,
                        retval);
 
     if (cs_glob_n_ranks > 1)
@@ -1797,13 +1812,13 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
            cs_flag_test(dof_flag, cs_flag_dual_vtx)) {
 
     if (def->meta & CS_FLAG_FULL_LOC) /* All cells are selected */
-      anai->func(tcur,
+      anai->func(time_eval,
                  quant->n_cells, NULL, quant->cell_centers,
                  false, // compacted output
                  anai->input,
                  retval);
     else
-      anai->func(tcur,
+      anai->func(time_eval,
                  z->n_elts, z->elt_ids, quant->cell_centers,
                  false, // compacted output
                  anai->input,
@@ -2016,13 +2031,15 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
 /*!
  * \brief  Evaluate the average of a function on the faces
  *
- * \param[in]      def       pointer to a cs_xdef_t pointer
- * \param[in, out] retval    pointer to the computed values
+ * \param[in]      def        pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] retval     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
+                                         cs_real_t          time_eval,
                                          cs_real_t          retval[])
 {
   /* Sanity checks */
@@ -2068,7 +2085,8 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
 
       } /* Which type of quadrature to use */
 
-      _pfsa_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+      _pfsa_by_analytic(time_eval,
+                        anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
                         retval);
 
     }
@@ -2102,7 +2120,8 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
 
       } /* Which type of quadrature to use */
 
-      _pfva_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+      _pfva_by_analytic(time_eval,
+                        anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
                         retval);
     }
     break;
@@ -2221,13 +2240,15 @@ cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
 /*!
  * \brief  Evaluate the average of a function on the cells
  *
- * \param[in]      def       pointer to a cs_xdef_t pointer
- * \param[in, out] retval    pointer to the computed values
+ * \param[in]      def        pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] retval     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
+                                         cs_real_t          time_eval,
                                          cs_real_t          retval[])
 {
   /* Sanity checks */
@@ -2270,7 +2291,8 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 
       } /* Which type of quadrature to use */
 
-      _pcsa_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+      _pcsa_by_analytic(time_eval,
+                        anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
                         retval);
     }
     break;
@@ -2299,7 +2321,8 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 
       } /* Which type of quadrature to use */
 
-      _pcva_by_analytic(anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+      _pcva_by_analytic(time_eval,
+                        anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
                         retval);
     }
     break;

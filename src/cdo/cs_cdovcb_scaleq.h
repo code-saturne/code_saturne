@@ -262,6 +262,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
  *
  * \param[in]       values      discrete values for the potential
  * \param[in]       eqp         pointer to a cs_equation_param_t structure
+ * \param[in]       t_eval      time at which one performs the evaluation
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
  * \param[in, out]  data        pointer to data specific for this scheme
  * \param[in, out]  location    where the flux is defined
@@ -272,6 +273,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
 void
 cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
                                     const cs_equation_param_t   *eqp,
+                                    cs_real_t                    t_eval,
                                     cs_equation_builder_t       *eqb,
                                     void                        *data,
                                     cs_flag_t                    location,

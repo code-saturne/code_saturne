@@ -109,12 +109,14 @@ static const char _err_empty_eq[] =
 /*!
  * \brief  Set the initial values for the variable related to an equation
  *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       t_eval   time at which one performs the evaluation
+ * \param[in, out]  eq       pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_initialize_field_from_ic(cs_equation_t  *eq)
+_initialize_field_from_ic(cs_real_t       t_eval,
+                          cs_equation_t  *eq)
 {
   assert(eq != NULL);
   const cs_equation_param_t  *eqp = eq->param;
@@ -161,7 +163,7 @@ _initialize_field_from_ic(cs_equation_t  *eq)
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        cs_evaluate_potential_by_analytic(v_flag, def, values);
+        cs_evaluate_potential_by_analytic(v_flag, def, t_eval, values);
         break;
 
       default:
@@ -195,7 +197,7 @@ _initialize_field_from_ic(cs_equation_t  *eq)
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        cs_evaluate_potential_by_analytic(f_flag, def, f_values);
+        cs_evaluate_potential_by_analytic(f_flag, def, t_eval, f_values);
         break;
 
       default:
@@ -235,7 +237,7 @@ _initialize_field_from_ic(cs_equation_t  *eq)
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        cs_evaluate_potential_by_analytic(c_flag, def, c_values);
+        cs_evaluate_potential_by_analytic(c_flag, def, t_eval, c_values);
         break;
 
       default:
@@ -597,6 +599,28 @@ cs_equation_get_field(const cs_equation_t    *eq)
     return NULL;
   else
     return cs_field_by_id(eq->field_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the field structure for the (normal) boundary flux associated
+ *         to a cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a cs_field_t structure or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_equation_get_boundary_flux(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else if (eq->boundary_flux_id < 0)
+    return NULL;
+  else
+    return cs_field_by_id(eq->boundary_flux_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1478,10 +1502,29 @@ cs_equation_create_fields(void)
     /* Store the related field id */
     eq->field_id = cs_field_id_by_name(eq->varname);
 
+    /* Add a field for the normal boundary flux */
+    location_id = cs_mesh_location_get_id_by_name("boundary faces");
+
+    char  *bdy_flux_name = NULL;
+    int  len = strlen(eq->varname) + strlen("boundary_flux") + 1;
+
+    BFT_MALLOC(bdy_flux_name, len, char);
+
+    cs_field_t  *bdy_flux_fld = cs_field_find_or_create(bdy_flux_name,
+                                                        0,
+                                                        location_id,
+                                                        eqp->dim,
+                                                        has_previous);
+
+    cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("log"), 1);
+    cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("post_vis"), post_flag);
+
+    BFT_FREE(bdy_flux_name);
+
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
 
-  } // Loop on equations
+  } /* Loop on equations */
 
 }
 
@@ -1507,7 +1550,6 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 {
   CS_UNUSED(connect);
   CS_UNUSED(quant);
-  CS_UNUSED(ts);
 
   for (int i = 0; i < _n_equations; i++) {
 
@@ -1525,11 +1567,11 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
     // By default, 0 is set as initial condition
     if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
-      _initialize_field_from_ic(eq);
 
     if (eqp->flag & CS_EQUATION_UNSTEADY)
       /* Compute the (initial) source term */
       eq->compute_source(eqp, eq->builder, eq->scheme_context);
+      _initialize_field_from_ic(ts->t_cur, eq);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
@@ -1895,6 +1937,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
  *
  * \param[in]      eq          pointer to a cs_equation_t structure
  * \param[in]      location    indicate where the flux has to be computed
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
@@ -1902,6 +1945,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 void
 cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
                                        cs_flag_t              location,
+                                       cs_real_t              t_eval,
                                        cs_real_t             *diff_flux)
 {
   if (eq == NULL)
@@ -1909,8 +1953,8 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
 
   if (eq->compute_cellwise_diff_flux == NULL) {
     bft_error(__FILE__, __LINE__, 0,
-              _(" Cellwise computation of the diffusive flux is not\n"
-                " available for equation %s\n"), eq->name);
+              _(" %s: Cellwise computation of the diffusive flux is not\n"
+                " available for equation %s\n"), __func__, eq->name);
     return; // Avoid a warning
   }
 
@@ -1923,6 +1967,7 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
   /* Perform the computation */
   eq->compute_cellwise_diff_flux(fld->val,
                                  eq->param,
+                                 t_eval,
                                  eq->builder,
                                  eq->scheme_context,
                                  location,
@@ -2013,7 +2058,10 @@ cs_equation_extra_post_all(const cs_time_step_t    *ts,
 
       /* Compute the Peclet number in each cell */
       double  *peclet = cs_equation_get_tmpbuf();
-      cs_advection_get_peclet(eqp->adv_field, eqp->diffusion_property, peclet);
+      cs_advection_get_peclet(eqp->adv_field,
+                              eqp->diffusion_property,
+                              ts->t_cur,
+                              peclet);
 
       /* Post-process */
       cs_post_write_var(CS_POST_MESH_VOLUME,

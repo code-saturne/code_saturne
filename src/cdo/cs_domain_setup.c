@@ -470,20 +470,13 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
   /* Shared main generic structure
      Avoid the declaration of global variables by sharing pointers */
   cs_source_term_set_shared_pointers(domain->cdo_quantities,
-                                     domain->connect,
-                                     domain->time_step);
-
+                                     domain->connect);
   cs_evaluate_set_shared_pointers(domain->cdo_quantities,
-                                  domain->connect,
-                                  domain->time_step);
-
+                                  domain->connect);
   cs_property_set_shared_pointers(domain->cdo_quantities,
-                                  domain->connect,
-                                  domain->time_step);
-
+                                  domain->connect);
   cs_advection_field_set_shared_pointers(domain->cdo_quantities,
-                                         domain->connect,
-                                         domain->time_step);
+                                         domain->connect);
 
   /* Groundwater flow module */
   if (cs_gwf_is_activated()) {
@@ -567,11 +560,15 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                          domain->time_step);
 
   /* Set the initial condition for all advection fields */
-  cs_advection_field_update(false); // operate current to previous ?
+  cs_advection_field_update(domain->time_step->t_cur,
+                            false); // operate current to previous ?
 
   /* Set the initial state for the groundawater flow module */
   if (cs_navsto_system_is_activated())
-    cs_navsto_system_initialize();
+    cs_navsto_system_initialize(domain->mesh,
+                                domain->connect,
+                                domain->cdo_quantities,
+                                domain->time_step);
 
   /* Set the initial state for the groundawater flow module */
   if (cs_gwf_is_activated())

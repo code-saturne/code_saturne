@@ -331,6 +331,7 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    cs_param_hodge_t structure
  * \param[in]      pty       pointer to a cs_property_t structure or NULL
  * \param[in]      in_vals   vector to multiply with the discrete Hodge op.
+ * \param[in]      t_eval    time at which one performs the evaluation
  * \param[in, out] result    array storing the resulting matrix-vector product
  */
 /*----------------------------------------------------------------------------*/
@@ -341,6 +342,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
                 const cs_param_hodge_t        h_info,
                 const cs_property_t          *pty,
                 const double                  in_vals[],
+                cs_real_t                     t_eval,
                 double                        result[]);
 
 /*----------------------------------------------------------------------------*/

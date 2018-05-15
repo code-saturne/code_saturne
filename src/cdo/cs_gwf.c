@@ -346,6 +346,7 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
       assert(gw->darcian_flux != NULL);
       cs_equation_compute_diff_flux_cellwise(richards,
                                              gw->flux_location,
+                                             ts->t_cur,
                                              gw->darcian_flux);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 2
@@ -356,12 +357,13 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
 #endif
 
       /* Set the new values */
-      cs_advection_field_in_cells(gw->adv_field, vel->val);
+      cs_advection_field_in_cells(gw->adv_field, ts->t_cur, vel->val);
 
     }
     else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell))
       cs_equation_compute_diff_flux_cellwise(richards,
                                              gw->flux_location,
+                                             ts->t_cur,
                                              vel->val);
 
     break;
@@ -1138,7 +1140,8 @@ cs_gwf_update(const cs_mesh_t             *mesh,
 
     /* Handle only the moisture field if this is the initialization */
     if (cur2prev == false)
-      cs_property_eval_at_cells(gw->moisture_content,
+      cs_property_eval_at_cells(ts->t_cur,
+                                gw->moisture_content,
                                 gw->moisture_field->val);
 
   }
@@ -1184,7 +1187,7 @@ cs_gwf_update(const cs_mesh_t             *mesh,
 
     cs_gwf_tracer_t  *tracer = gw->tracers[i];
     if (tracer->update_properties != NULL)
-      tracer->update_properties(tracer, mesh, connect, quant, ts);
+      tracer->update_properties(tracer, mesh, connect, quant, ts->t_cur);
 
   }
 
@@ -1334,6 +1337,7 @@ cs_gwf_extra_post(void                      *input,
   CS_UNUSED(cell_ids);
   CS_UNUSED(i_face_ids);
   CS_UNUSED(b_face_ids);
+  CS_UNUSED(time_step);
 
   if (input == NULL)
     return;

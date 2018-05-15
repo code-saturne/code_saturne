@@ -363,11 +363,19 @@ cs_navsto_add_pressure_ic_by_analytic(const char             *z_name,
 /*!
  * \brief  Initialize the context structure used to build the algebraic system
  *         This is done after the setup step.
+ *
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_initialize(void);
+cs_navsto_system_initialize(const cs_mesh_t             *mesh,
+                            const cs_cdo_connect_t      *connect,
+                            const cs_cdo_quantities_t   *quant,
+                            const cs_time_step_t        *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!

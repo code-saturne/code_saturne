@@ -53,11 +53,11 @@ BEGIN_C_DECLS
  * \brief  Generic function to update the phisical properties related to a
  *         tracer modelling
  *
- * \param[in, out] input        pointer to a structure cast on-the-fly
- * \param[in]      mesh         pointer to a cs_mesh_t structure
- * \param[in]      connect      pointer to a cs_cdo_connect_t structure
- * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts           pointer to a cs_time_step_t structure
+ * \param[in, out] input      pointer to a structure cast on-the-fly
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      t_eval     time at which one performs the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -66,7 +66,7 @@ typedef void
                           const cs_mesh_t             *mesh,
                           const cs_cdo_connect_t      *connect,
                           const cs_cdo_quantities_t   *quant,
-                          const cs_time_step_t        *ts);
+                          cs_real_t                    t_eval);
 
 /*----------------------------------------------------------------------------*/
 /*!

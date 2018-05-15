@@ -114,14 +114,12 @@ typedef enum {
  *
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                const cs_cdo_connect_t       *connect,
-                                const cs_time_step_t         *time_step);
+                                const cs_cdo_connect_t       *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -416,13 +414,15 @@ cs_property_def_by_field(cs_property_t    *pty,
  * \brief  Evaluate the value of the property at each cell. Store the
  *         evaluation in the given array.
  *
+ * \param[in]       t_eval   physical time at which one evaluates the term
  * \param[in]       pty      pointer to a cs_property_t structure
  * \param[in, out]  array    pointer to an array of values (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_eval_at_cells(const cs_property_t    *pty,
+cs_property_eval_at_cells(cs_real_t               t_eval,
+                          const cs_property_t    *pty,
                           cs_real_t              *array);
 
 /*----------------------------------------------------------------------------*/
@@ -430,15 +430,17 @@ cs_property_eval_at_cells(const cs_property_t    *pty,
  * \brief  Compute the value of the tensor attached a property at the cell
  *         center
  *
- * \param[in]      c_id           id of the current cell
- * \param[in]      pty            pointer to a cs_property_t structure
- * \param[in]      do_inversion   true or false
- * \param[in, out] tensor         3x3 matrix
+ * \param[in]      c_id          id of the current cell
+ * \param[in]      t_eval        physical time at which one evaluates the term
+ * \param[in]      pty           pointer to a cs_property_t structure
+ * \param[in]      do_inversion  true or false
+ * \param[in, out] tensor        3x3 matrix
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_get_cell_tensor(cs_lnum_t               c_id,
+                            cs_real_t               t_eval,
                             const cs_property_t    *pty,
                             bool                    do_inversion,
                             cs_real_3_t            *tensor);
@@ -447,8 +449,9 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
 /*!
  * \brief  Compute the value of a property at the cell center
  *
- * \param[in]   c_id           id of the current cell
- * \param[in]   pty            pointer to a cs_property_t structure
+ * \param[in]   c_id     id of the current cell
+ * \param[in]   t_eval   physical time at which one evaluates the term
+ * \param[in]   pty      pointer to a cs_property_t structure
  *
  * \return the value of the property for the given cell
  */
@@ -456,6 +459,7 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
 
 cs_real_t
 cs_property_get_cell_value(cs_lnum_t              c_id,
+                           cs_real_t              t_eval,
                            const cs_property_t   *pty);
 
 /*----------------------------------------------------------------------------*/
@@ -464,16 +468,18 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
  *         center
  *         Version using a cs_cell_mesh_t structure
  *
- * \param[in]      cm             pointer to a cs_cell_mesh_t structure
- * \param[in]      pty            pointer to a cs_property_t structure
- * \param[in]      do_inversion   true or false
- * \param[in, out] tensor         3x3 matrix
+ * \param[in]      cm            pointer to a cs_cell_mesh_t structure
+ * \param[in]      pty           pointer to a cs_property_t structure
+ * \param[in]      t_eval        physical time at which one evaluates the term
+ * \param[in]      do_inversion  true or false
+ * \param[in, out] tensor        3x3 matrix
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
                            const cs_property_t    *pty,
+                           cs_real_t               t_eval,
                            bool                    do_inversion,
                            cs_real_3_t            *tensor);
 
@@ -482,8 +488,9 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
  * \brief  Compute the value of a property at the cell center
  *         Version using a cs_cell_mesh_t structure
  *
- * \param[in]   cm        pointer to a cs_cell_mesh_t structure
- * \param[in]   pty       pointer to a cs_property_t structure
+ * \param[in]  cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]  pty       pointer to a cs_property_t structure
+ * \param[in]  t_eval    physical time at which one evaluates the term
  *
  * \return the value of the property for the given cell
  */
@@ -491,22 +498,25 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
 
 cs_real_t
 cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
-                          const cs_property_t    *pty);
+                          const cs_property_t    *pty,
+                          cs_real_t               t_eval);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the Fourier number in each cell
  *
- * \param[in]      pty        pointer to the diffusive property struct.
- * \param[in]      dt         value of the current time step
- * \param[in, out] fourier    pointer to an array storing Fourier numbers
+ * \param[in]      pty       pointer to the diffusive property struct.
+ * \param[in]      t_eval    physical time at which one evaluates the term
+ * \param[in]      dt        value of the current time step
+ * \param[in, out] fourier   pointer to an array storing Fourier numbers
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_get_fourier(const cs_property_t     *pty,
-                        double                   dt,
-                        cs_real_t                fourier[]);
+cs_property_get_fourier(const cs_property_t    *pty,
+                        cs_real_t               t_eval,
+                        double                  dt,
+                        cs_real_t               fourier[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

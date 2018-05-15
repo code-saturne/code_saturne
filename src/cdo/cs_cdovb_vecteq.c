@@ -683,6 +683,7 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -697,9 +698,9 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
     cs_equation_compute_dirichlet_vb(mesh,
                                      quant,
                                      connect,
-                                     cs_shared_time_step,
                                      eqp,
                                      eqb->face_bc->dir,
+                                     t_cur + dt_cur,
                                      cs_cdovb_cell_bld[0]);
 
   /* Tag faces with a non-homogeneous Neumann BC */

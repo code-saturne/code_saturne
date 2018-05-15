@@ -77,7 +77,6 @@ static const char _err_empty_pty[] =
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
-static const cs_time_step_t  *cs_time_step;
 
 static int  _n_properties = 0;
 static int  _n_max_properties = 0;
@@ -276,19 +275,16 @@ _create_property(const char           *name,
  *
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                const cs_cdo_connect_t       *connect,
-                                const cs_time_step_t         *time_step)
+                                const cs_cdo_connect_t       *connect)
 {
   /* Assign static const pointers */
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
-  cs_time_step = time_step;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -867,13 +863,15 @@ cs_property_def_by_field(cs_property_t    *pty,
  * \brief  Evaluate the value of the property at each cell. Store the
  *         evaluation in the given array.
  *
+ * \param[in]       t_eval   physical time at which one evaluates the term
  * \param[in]       pty      pointer to a cs_property_t structure
  * \param[in, out]  array    pointer to an array of values (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_eval_at_cells(const cs_property_t    *pty,
+cs_property_eval_at_cells(cs_real_t               t_eval,
+                          const cs_property_t    *pty,
                           cs_real_t              *array)
 {
   assert(pty != NULL && array != NULL);
@@ -889,11 +887,11 @@ cs_property_eval_at_cells(const cs_property_t    *pty,
                              cs_glob_mesh,
                              cs_cdo_connect,
                              cs_cdo_quant,
-                             cs_time_step,
+                             t_eval,
                              def->input,
                              array);
 
-  } // Loop on definitions
+  } /* Loop on definitions */
 
 }
 
@@ -902,15 +900,17 @@ cs_property_eval_at_cells(const cs_property_t    *pty,
  * \brief  Compute the value of the tensor attached a property at the cell
  *         center
  *
- * \param[in]      c_id           id of the current cell
- * \param[in]      pty            pointer to a cs_property_t structure
- * \param[in]      do_inversion   true or false
- * \param[in, out] tensor         3x3 matrix
+ * \param[in]      c_id          id of the current cell
+ * \param[in]      t_eval        physical time at which one evaluates the term
+ * \param[in]      pty           pointer to a cs_property_t structure
+ * \param[in]      do_inversion  true or false
+ * \param[in, out] tensor        3x3 matrix
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_get_cell_tensor(cs_lnum_t               c_id,
+                            cs_real_t               t_eval,
                             const cs_property_t    *pty,
                             bool                    do_inversion,
                             cs_real_3_t            *tensor)
@@ -942,7 +942,7 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
                                     cs_glob_mesh,
                                     cs_cdo_connect,
                                     cs_cdo_quant,
-                                    cs_time_step,
+                                    t_eval,
                                     def->input,
                                     &eval);
 
@@ -960,7 +960,7 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
                                     cs_glob_mesh,
                                     cs_cdo_connect,
                                     cs_cdo_quant,
-                                    cs_time_step,
+                                    t_eval,
                                     def->input,
                                     eval);
 
@@ -976,7 +976,7 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
                                   cs_glob_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
-                                  cs_time_step,
+                                  t_eval,
                                   def->input,
                                   (cs_real_t *)tensor);
     break;
@@ -999,8 +999,9 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
 /*!
  * \brief  Compute the value of a property at the cell center
  *
- * \param[in]   c_id           id of the current cell
- * \param[in]   pty            pointer to a cs_property_t structure
+ * \param[in]   c_id     id of the current cell
+ * \param[in]   t_eval   physical time at which one evaluates the term
+ * \param[in]   pty      pointer to a cs_property_t structure
  *
  * \return the value of the property for the given cell
  */
@@ -1008,6 +1009,7 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
 
 cs_real_t
 cs_property_get_cell_value(cs_lnum_t              c_id,
+                           cs_real_t              t_eval,
                            const cs_property_t   *pty)
 {
   cs_real_t  result = 0;
@@ -1034,7 +1036,7 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
                                 cs_glob_mesh,
                                 cs_cdo_connect,
                                 cs_cdo_quant,
-                                cs_time_step,
+                                t_eval,
                                 def->input,
                                 &result);
 
@@ -1047,16 +1049,18 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
  *         center
  *         Version using a cs_cell_mesh_t structure
  *
- * \param[in]      cm             pointer to a cs_cell_mesh_t structure
- * \param[in]      pty            pointer to a cs_property_t structure
- * \param[in]      do_inversion   true or false
- * \param[in, out] tensor         3x3 matrix
+ * \param[in]      cm            pointer to a cs_cell_mesh_t structure
+ * \param[in]      pty           pointer to a cs_property_t structure
+ * \param[in]      t_eval        physical time at which one evaluates the term
+ * \param[in]      do_inversion  true or false
+ * \param[in, out] tensor        3x3 matrix
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
                            const cs_property_t    *pty,
+                           cs_real_t               t_eval,
                            bool                    do_inversion,
                            cs_real_3_t            *tensor)
 {
@@ -1081,7 +1085,7 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
     {
       double  eval;
 
-      pty->get_eval_at_cell_cw[def_id](cm, cs_time_step, def->input, &eval);
+      pty->get_eval_at_cell_cw[def_id](cm, t_eval, def->input, &eval);
 
       tensor[0][0] = tensor[1][1] = tensor[2][2] = eval;
     }
@@ -1091,7 +1095,7 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
     {
       double  eval[3];
 
-      pty->get_eval_at_cell_cw[def_id](cm, cs_time_step, def->input, eval);
+      pty->get_eval_at_cell_cw[def_id](cm, t_eval, def->input, eval);
 
       for (int k = 0; k < 3; k++)
         tensor[k][k] = eval[k];
@@ -1099,7 +1103,7 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
     break;
 
   case CS_PROPERTY_ANISO:
-    pty->get_eval_at_cell_cw[def_id](cm, cs_time_step, def->input,
+    pty->get_eval_at_cell_cw[def_id](cm, t_eval, def->input,
                                      (cs_real_t *)tensor);
     break;
 
@@ -1123,8 +1127,9 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
  * \brief  Compute the value of a property at the cell center
  *         Version using a cs_cell_mesh_t structure
  *
- * \param[in]   cm        pointer to a cs_cell_mesh_t structure
- * \param[in]   pty       pointer to a cs_property_t structure
+ * \param[in]  cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]  pty       pointer to a cs_property_t structure
+ * \param[in]  t_eval    physical time at which one evaluates the term
  *
  * \return the value of the property for the given cell
  */
@@ -1132,7 +1137,8 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
 
 cs_real_t
 cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
-                          const cs_property_t    *pty)
+                          const cs_property_t    *pty,
+                          cs_real_t               t_eval)
 {
   cs_real_t  result = 0;
 
@@ -1150,7 +1156,7 @@ cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
   cs_xdef_t  *def = pty->defs[def_id];
 
   assert(pty->get_eval_at_cell_cw[def_id] != NULL);
-  pty->get_eval_at_cell_cw[def_id](cm, cs_time_step, def->input, &result);
+  pty->get_eval_at_cell_cw[def_id](cm, t_eval, def->input, &result);
 
   return result;
 }
@@ -1159,16 +1165,18 @@ cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
 /*!
  * \brief   Compute the Fourier number in each cell
  *
- * \param[in]      pty        pointer to the diffusive property struct.
- * \param[in]      dt         value of the current time step
- * \param[in, out] fourier    pointer to an array storing Fourier numbers
+ * \param[in]      pty       pointer to the diffusive property struct.
+ * \param[in]      t_eval    physical time at which one evaluates the term
+ * \param[in]      dt        value of the current time step
+ * \param[in, out] fourier   pointer to an array storing Fourier numbers
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_get_fourier(const cs_property_t     *pty,
-                        double                   dt,
-                        cs_real_t                fourier[])
+cs_property_get_fourier(const cs_property_t    *pty,
+                        cs_real_t               t_eval,
+                        double                  dt,
+                        cs_real_t               fourier[])
 {
   assert(fourier != NULL); // Sanity check
   assert(dt > 0.);
@@ -1180,46 +1188,45 @@ cs_property_get_fourier(const cs_property_t     *pty,
 
     cs_real_t  ptyval = 0.;
     if (pty_uniform)
-      ptyval = cs_property_get_cell_value(0, pty);
+      ptyval = cs_property_get_cell_value(0, t_eval, pty);
 
     for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-      if (!pty_uniform)
-        ptyval = cs_property_get_cell_value(c_id, pty);
-
       const cs_real_t  hc = cbrt(cdoq->cell_vol[c_id]);
+      if (!pty_uniform)
+        ptyval = cs_property_get_cell_value(c_id, t_eval, pty);
 
       fourier[c_id] = dt * ptyval / (hc*hc);
 
-    } // Loop on cells
+    }
 
   }
-  else { // Property is orthotropic or anisotropic
+  else { /* Property is orthotropic or anisotropic */
 
     cs_real_t  eig_max, eig_ratio;
     cs_real_t  ptymat[3][3];
 
     /* Get the value of the material property at the first cell center */
     if (pty_uniform) {
-      cs_property_get_cell_tensor(0, pty, false, ptymat);
+      cs_property_get_cell_tensor(0, t_eval, pty, false, ptymat);
       cs_math_33_eigen((const cs_real_t (*)[3])ptymat, &eig_ratio, &eig_max);
     }
 
     for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
+      const cs_real_t  hc = cbrt(cdoq->cell_vol[c_id]);
+
       /* Get the value of the material property at the cell center */
       if (!pty_uniform) {
-        cs_property_get_cell_tensor(c_id, pty, false, ptymat);
+        cs_property_get_cell_tensor(c_id, t_eval, pty, false, ptymat);
         cs_math_33_eigen((const cs_real_t (*)[3])ptymat, &eig_ratio, &eig_max);
       }
 
-      const cs_real_t  hc = cbrt(cdoq->cell_vol[c_id]);
-
       fourier[c_id] = dt * eig_max / (hc*hc);
 
-    } // Loop on cells
+    }
 
-  } // Type of property
+  } /* Type of property */
 
 }
 
@@ -1278,7 +1285,8 @@ cs_property_log_setup(void)
       cs_xdef_log(pty->defs[j]);
 
     cs_log_printf(CS_LOG_SETUP, " </pty>");
-  } // Loop on properties
+
+  } /* Loop on properties */
 
 }
 

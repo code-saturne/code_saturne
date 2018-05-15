@@ -36,7 +36,6 @@
 #include "cs_cdo_local.h"
 #include "cs_param.h"
 #include "cs_quadrature.h"
-#include "cs_time_step.h"
 #include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
@@ -60,6 +59,7 @@ BEGIN_C_DECLS
  *
  * \param[in]      source     pointer to a cs_xdef_term_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -69,6 +69,7 @@ BEGIN_C_DECLS
 typedef void
 (cs_source_term_cellwise_t)(const cs_xdef_t         *source,
                             const cs_cell_mesh_t    *cm,
+                            cs_real_t                time_eval,
                             cs_cell_builder_t       *cb,
                             void                    *input,
                             double                  *values);
@@ -84,14 +85,12 @@ typedef void
  *
  * \param[in]      quant      additional mesh quantities struct.
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]      time_step  pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                   const cs_cdo_connect_t       *connect,
-                                   const cs_time_step_t         *time_step);
+                                   const cs_cdo_connect_t       *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -168,6 +167,7 @@ cs_source_term_init(cs_param_space_scheme_t      space_scheme,
  * \param[in]      source_mask     array storing in a compact way which source
  *                                 term is defined in a given cell
  * \param[in]      compute_source  array of function pointers
+ * \param[in]      time_eval       physical time at which one evaluates the term
  * \param[in, out] input           pointer to an element cast on-the-fly
  * \param[in, out] cb              pointer to a cs_cell_builder_t structure
  * \param[in, out] csys            cellwise algebraic system
@@ -180,6 +180,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
                                 const cs_cell_mesh_t        *cm,
                                 const cs_mask_t             *source_mask,
                                 cs_source_term_cellwise_t   *compute_source[],
+                                cs_real_t                    time_eval,
                                 void                        *input,
                                 cs_cell_builder_t           *cb,
                                 cs_cell_sys_t               *csys);
@@ -191,6 +192,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
  *
  * \param[in]      loc        describe where is located the associated DoF
  * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
  */
 /*----------------------------------------------------------------------------*/
@@ -198,6 +200,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
 void
 cs_source_term_compute_from_density(cs_flag_t                loc,
                                     const cs_xdef_t         *source,
+                                    cs_real_t                time_eval,
                                     double                  *p_values[]);
 
 /*----------------------------------------------------------------------------*/
@@ -207,6 +210,7 @@ cs_source_term_compute_from_density(cs_flag_t                loc,
  *
  * \param[in]      loc        describe where is located the associated DoF
  * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
  */
 /*----------------------------------------------------------------------------*/
@@ -214,6 +218,7 @@ cs_source_term_compute_from_density(cs_flag_t                loc,
 void
 cs_source_term_compute_from_potential(cs_flag_t                loc,
                                       const cs_xdef_t         *source,
+                                      cs_real_t                time_eval,
                                       double                  *p_values[]);
 
 /*----------------------------------------------------------------------------*/
@@ -227,6 +232,7 @@ cs_source_term_compute_from_potential(cs_flag_t                loc,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -236,6 +242,7 @@ cs_source_term_compute_from_potential(cs_flag_t                loc,
 void
 cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
                              void                      *input,
                              double                    *values);
@@ -251,6 +258,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -260,6 +268,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
                                 const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
                                 cs_cell_builder_t         *cb,
                                 void                      *input,
                                 double                    *values);
@@ -272,6 +281,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -281,6 +291,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
                              void                      *input,
                              double                    *values);
@@ -296,6 +307,7 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -305,6 +317,7 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
+                                     cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
                                      void                      *input,
                                      double                    *values);
@@ -320,6 +333,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -329,6 +343,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
+                                     cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
                                      void                      *input,
                                      double                    *values);
@@ -344,6 +359,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -353,6 +369,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
                                       const cs_cell_mesh_t      *cm,
+                                      cs_real_t                  time_eval,
                                       cs_cell_builder_t         *cb,
                                       void                      *input,
                                       double                    *values);
@@ -370,6 +387,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -379,6 +397,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
+                                     cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
                                      void                      *input,
                                      double                    *values);
@@ -394,6 +413,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -403,6 +423,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
                              void                      *input,
                              double                    *values);
@@ -418,6 +439,7 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
@@ -427,6 +449,7 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
                                 const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
                                 cs_cell_builder_t         *cb,
                                 void                      *input,
                                 double                    *values);
@@ -440,6 +463,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed value
@@ -449,6 +473,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
                              void                      *input,
                              double                    *values);
@@ -463,6 +488,7 @@ cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed value
@@ -472,6 +498,7 @@ cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
                              void                      *input,
                              double                    *values);
@@ -488,6 +515,7 @@ cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in]      input      NULL or pointer to a structure cast on-the-fly
  * \param[in, out] values     pointer to the computed values
@@ -497,6 +525,7 @@ cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
+                                     cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
                                      void                      *input,
                                      double                    *values);
@@ -513,6 +542,7 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in]      input      NULL or pointer to a structure cast on-the-fly
  * \param[in, out] values     pointer to the computed values
@@ -522,6 +552,7 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
+                                     cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
                                      void                      *input,
                                      double                    *values);
@@ -535,6 +566,7 @@ cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed value
@@ -544,6 +576,7 @@ cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
 void
 cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
                               const cs_cell_mesh_t      *cm,
+                              cs_real_t                  time_eval,
                               cs_cell_builder_t         *cb,
                               void                      *input,
                               double                    *values);
@@ -558,6 +591,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed value
@@ -567,6 +601,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
                                  const cs_cell_mesh_t      *cm,
+                                 cs_real_t                  time_eval,
                                  cs_cell_builder_t         *cb,
                                  void                      *input,
                                  double                    *values);

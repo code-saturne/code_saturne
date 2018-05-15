@@ -37,7 +37,6 @@
 #include "cs_mesh_location.h"
 #include "cs_param.h"
 #include "cs_property.h"
-#include "cs_time_step.h"
 #include "cs_xdef.h"
 #include "cs_xdef_eval.h"
 
@@ -237,14 +236,12 @@ cs_advection_field_get_field(const cs_adv_field_t       *adv,
  *
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_set_shared_pointers(const cs_cdo_quantities_t  *quant,
-                                       const cs_cdo_connect_t     *connect,
-                                       const cs_time_step_t       *time_step);
+                                       const cs_cdo_connect_t     *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -557,12 +554,14 @@ cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
  * \brief  Compute the mean-value of the advection field inside each cell
  *
  * \param[in]      adv           pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval     physical time at which one evaluates the term
  * \param[in, out] cell_values   array of values at cell centers
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_in_cells(const cs_adv_field_t  *adv,
+                            cs_real_t              time_eval,
                             cs_real_t             *cell_values);
 
 /*----------------------------------------------------------------------------*/
@@ -570,12 +569,14 @@ cs_advection_field_in_cells(const cs_adv_field_t  *adv,
  * \brief  Compute the value of the advection field at vertices
  *
  * \param[in]      adv          pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval    physical time at which one evaluates the term
  * \param[in, out] vtx_values   array storing the results
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
+                               cs_real_t              time_eval,
                                cs_real_t             *vtx_values);
 
 /*----------------------------------------------------------------------------*/
@@ -586,6 +587,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
  * \param[in]      adv          pointer to a cs_adv_field_t structure
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
  * \param[in]      xyz          location where to perform the evaluation
+ * \param[in]      time_eval    physical time at which one evaluates the term
  * \param[in, out] eval         pointer to a cs_nvec3_t
  */
 /*----------------------------------------------------------------------------*/
@@ -594,6 +596,7 @@ void
 cs_advection_field_eval_at_xyz(const cs_adv_field_t  *adv,
                                const cs_cell_mesh_t  *cm,
                                const cs_real_3_t      xyz,
+                               cs_real_t              time_eval,
                                cs_nvec3_t            *eval);
 
 /*----------------------------------------------------------------------------*/
@@ -602,12 +605,14 @@ cs_advection_field_eval_at_xyz(const cs_adv_field_t  *adv,
  *         across the boundary faces
  *
  * \param[in]      adv          pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval    physical time at which one evaluates the term
  * \param[in, out] flx_values   array storing the results
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
+                                   cs_real_t              time_eval,
                                    cs_real_t             *flx_values);
 
 /*----------------------------------------------------------------------------*/
@@ -615,28 +620,32 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
  * \brief  Compute the value of the flux of the advection field across the
  *         the dual faces of a cell
  *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
- * \param[in]      adv      pointer to a cs_adv_field_t structure
- * \param[in, out] fluxes   array of values attached to dual faces of a cell
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      adv        pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] fluxes     array of values attached to dual faces of a cell
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
                                    const cs_adv_field_t         *adv,
+                                   cs_real_t                     time_eval,
                                    cs_real_t                    *fluxes);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  For each cs_adv_field_t structures, update the values of the related
- *         field(s)
+ * \brief   For each cs_adv_field_t structures, update the values of the
+ *          related field(s)
  *
- * \param[in]      cur2prev    true or false
+ * \param[in]  t_eval     physical time at which one evaluates the term
+ * \param[in]  cur2prev   true or false
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_update(bool   cur2prev);
+cs_advection_field_update(cs_real_t    t_eval,
+                          bool         cur2prev);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -644,14 +653,16 @@ cs_advection_field_update(bool   cur2prev);
  *
  * \param[in]      adv        pointer to the advection field struct.
  * \param[in]      diff       pointer to the diffusion property struct.
+ * \param[in]      t_eval     time at which one evaluates the advection field
  * \param[in, out] peclet     pointer to an array storing Peclet number
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_get_peclet(const cs_adv_field_t        *adv,
-                        const cs_property_t         *diff,
-                        cs_real_t                    peclet[]);
+cs_advection_get_peclet(const cs_adv_field_t     *adv,
+                        const cs_property_t      *diff,
+                        cs_real_t                 t_eval,
+                        cs_real_t                 peclet[]);
 
 /*----------------------------------------------------------------------------*/
 

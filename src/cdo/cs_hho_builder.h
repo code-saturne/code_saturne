@@ -188,6 +188,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
  *
  * \param[in]       def      pointer to a cs_xdef_t structure
  * \param[in]       cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]       t_eval   time at which one performs the evaluation
  * \param[in, out]  cb       pointer to a cell builder_t structure
  * \param[in, out]  hhob     pointer to a cs_hho_builder_t structure
  * \param[in, out]  red      vector containing the reduction
@@ -197,6 +198,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 void
 cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
                                        const cs_cell_mesh_t    *cm,
+                                       cs_real_t                t_eval,
                                        cs_cell_builder_t       *cb,
                                        cs_hho_builder_t        *hhob,
                                        cs_real_t                red[]);
@@ -209,6 +211,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
  * \param[in]       def      pointer to a cs_xdef_t structure
  * \param[in]       f        local face id in the cellwise view of the mesh
  * \param[in]       cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]       t_eval   time at which one performs the evaluation
  * \param[in, out]  cb       pointer to a cell builder_t structure
  * \param[in, out]  hhob     pointer to a cs_hho_builder_t structure
  * \param[in, out]  res      vector containing the result
@@ -219,6 +222,7 @@ void
 cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
                                  short int                f,
                                  const cs_cell_mesh_t    *cm,
+                                 cs_real_t                t_eval,
                                  cs_cell_builder_t       *cb,
                                  cs_hho_builder_t        *hhob,
                                  cs_real_t                res[]);

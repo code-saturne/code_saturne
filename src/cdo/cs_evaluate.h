@@ -36,7 +36,6 @@
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
 #include "cs_param.h"
-#include "cs_time_step.h"
 #include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
@@ -61,14 +60,12 @@ BEGIN_C_DECLS
  *
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                const cs_cdo_connect_t       *connect,
-                                const cs_time_step_t         *time_step);
+                                const cs_cdo_connect_t       *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -77,6 +74,7 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
  * \param[in]      def         pointer to a cs_xdef_t structure
+ * \param[in]      time_eval   physical time at which one evaluates the term
  * \param[in, out] retval      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -84,6 +82,7 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 void
 cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
                                 const cs_xdef_t    *def,
+                                cs_real_t           time_eval,
                                 cs_real_t           retval[]);
 
 /*----------------------------------------------------------------------------*/
@@ -110,6 +109,7 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
  * \param[in]      def         pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval   physical time at which one evaluates the term
  * \param[in, out] retval      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -117,6 +117,7 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
 void
 cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                                   const cs_xdef_t    *def,
+                                  cs_real_t           time_eval,
                                   cs_real_t           retval[]);
 
 /*----------------------------------------------------------------------------*/
@@ -168,13 +169,15 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
 /*!
  * \brief  Evaluate the average of a function on the faces
  *
- * \param[in]      def       pointer to a cs_xdef_t pointer
- * \param[in, out] retval    pointer to the computed values
+ * \param[in]      def        pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] retval     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
+                                         cs_real_t          time_eval,
                                          cs_real_t          retval[]);
 
 /*----------------------------------------------------------------------------*/
@@ -207,13 +210,15 @@ cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
 /*!
  * \brief  Evaluate the average of a function on the cells
  *
- * \param[in]      def       pointer to a cs_xdef_t pointer
- * \param[in, out] retval    pointer to the computed values
+ * \param[in]      def        pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] retval     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
+                                         cs_real_t          time_eval,
                                          cs_real_t          retval[]);
 
 /*============================================================================
@@ -224,13 +229,15 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 /*!
  * \brief  Evaluate the average of a function on the faces
  *
- * \param[in]      def       pointer to a cs_xdef_t pointer
- * \param[in, out] retval    pointer to the computed values
+ * \param[in]      def        pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] retval     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
 cs_evaluate_average_on_faces(const cs_xdef_t   *def,
+                             cs_real_t          time_eval,
                              cs_real_t          retval[])
 {
   /* Sanity checks */
@@ -243,7 +250,7 @@ cs_evaluate_average_on_faces(const cs_xdef_t   *def,
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_evaluate_average_on_faces_by_analytic(def, retval);
+    cs_evaluate_average_on_faces_by_analytic(def, time_eval, retval);
     break;
 
   default:
@@ -256,13 +263,15 @@ cs_evaluate_average_on_faces(const cs_xdef_t   *def,
 /*!
  * \brief  Evaluate the average of a function on the cells
  *
- * \param[in]      def       pointer to a cs_xdef_t pointer
- * \param[in, out] retval    pointer to the computed values
+ * \param[in]      def        pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] retval     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
 cs_evaluate_average_on_cells(const cs_xdef_t   *def,
+                             cs_real_t          time_eval,
                              cs_real_t          retval[])
 {
   /* Sanity checks */
@@ -275,7 +284,7 @@ cs_evaluate_average_on_cells(const cs_xdef_t   *def,
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_evaluate_average_on_cells_by_analytic(def, retval);
+    cs_evaluate_average_on_cells_by_analytic(def, time_eval, retval);
     break;
 
   case CS_XDEF_BY_ARRAY:

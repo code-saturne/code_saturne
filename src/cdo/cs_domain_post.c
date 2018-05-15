@@ -257,7 +257,7 @@ cs_domain_post(cs_domain_t  *domain)
   assert(domain->cdo_context != NULL);
 
   if (domain->cdo_context->force_advfield_update)
-    cs_advection_field_update(true);
+    cs_advection_field_update(domain->time_step->t_cur, true);
 
   /* User-defined extra operations */
   cs_user_cdo_extra_op(domain);

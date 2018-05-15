@@ -1840,6 +1840,7 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    cs_param_hodge_t structure
  * \param[in]      pty       pointer to a cs_property_t structure or NULL
  * \param[in]      in_vals   vector to multiply with the discrete Hodge op.
+ * \param[in]      t_eval    time at which one performs the evaluation
  * \param[in, out] result    array storing the resulting matrix-vector product
  */
 /*----------------------------------------------------------------------------*/
@@ -1850,6 +1851,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
                 const cs_param_hodge_t        h_info,
                 const cs_property_t          *pty,
                 const double                  in_vals[],
+                cs_real_t                     t_eval,
                 double                        result[])
 {
   if (in_vals == NULL)
@@ -1861,7 +1863,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
   assert(connect != NULL && quant != NULL); // Sanity checks
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \
-  shared(quant, connect, in_vals, result, pty)
+  shared(quant, connect, in_vals, t_eval, result, pty)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2005,7 +2007,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
     }
 
     if (pty_uniform) { /* Get the value from the first cell */
-      cs_property_get_cell_tensor(0, pty, h_info.inv_pty, cb->pty_mat);
+      cs_property_get_cell_tensor(0, t_eval, pty, h_info.inv_pty, cb->pty_mat);
       if (h_info.is_iso)
         cb->pty_val = cb->pty_mat[0][0];
     }
@@ -2018,7 +2020,8 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
       /* Retrieve the value of the property inside the current cell */
       if (!pty_uniform) {
-        cs_property_tensor_in_cell(cm, pty, h_info.inv_pty, cb->pty_mat);
+        cs_property_tensor_in_cell(cm, pty, t_eval, h_info.inv_pty,
+                                   cb->pty_mat);
         if (h_info.is_iso)
           cb->pty_val = cb->pty_mat[0][0];
       }

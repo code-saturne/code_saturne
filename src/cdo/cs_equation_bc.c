@@ -86,10 +86,10 @@ BEGIN_C_DECLS
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]      time_step   pointer to a time step structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      dir_values  Dirichlet values associated to each vertex
- * \param[in]      neu_tags    Definition id related to each Neumann face
+ * \param[in]      neu_tags    definition id related to each Neumann face
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -102,10 +102,10 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
                            const cs_cell_mesh_t         *cm,
                            const cs_cdo_connect_t       *connect,
                            const cs_cdo_quantities_t    *quant,
-                            const cs_time_step_t        *time_step,
                            const cs_equation_param_t    *eqp,
                            const cs_real_t               dir_values[],
                            const short int               neu_tags[],
+                           cs_real_t                     t_eval,
                            cs_cell_sys_t                *csys,
                            cs_cell_builder_t            *cb)
 {
@@ -149,9 +149,9 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
     cs_equation_compute_neumann_sv(neu_tags[bf_id],
                                    f,
                                    quant,
-                                   time_step,
                                    eqp,
                                    cm,
+                                   t_eval,
                                    csys->neu_values);
 
   }
@@ -172,10 +172,10 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]      time_step   pointer to a time step structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      dir_values  Dirichlet values associated to each vertex
- * \param[in]      neu_tags    Definition id related to each Neumann face
+ * \param[in]      neu_tags    definition id related to each Neumann face
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -188,10 +188,10 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
                            const cs_cell_mesh_t         *cm,
                            const cs_cdo_connect_t       *connect,
                            const cs_cdo_quantities_t    *quant,
-                            const cs_time_step_t        *time_step,
                            const cs_equation_param_t    *eqp,
                            const cs_real_t               dir_values[],
                            const short int               neu_tags[],
+                           cs_real_t                     t_eval,
                            cs_cell_sys_t                *csys,
                            cs_cell_builder_t            *cb)
 {
@@ -226,8 +226,9 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
 
     cs_equation_compute_neumann_fb(neu_tags[bf_id], f,
                                    quant,
-                                   time_step,
-                                   eqp, cm, csys->neu_values);
+                                   eqp, cm,
+                                   t_eval,
+                                   csys->neu_values);
 
   }
   else if (face_flag & CS_CDO_BC_ROBIN) {
@@ -246,9 +247,9 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
  * \param[in]      mesh        pointer to a cs_mesh_t structure
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]      time_step   pointer to a time step structure
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      dir         pointer to a cs_cdo_bc_list_t structure
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  *
  * \return a pointer to a new allocated array storing the dirichlet values
@@ -259,9 +260,9 @@ cs_real_t *
 cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
-                                 const cs_time_step_t       *time_step,
                                  const cs_equation_param_t  *eqp,
                                  const cs_cdo_bc_list_t     *dir,
+                                 cs_real_t                   t_eval,
                                  cs_cell_builder_t          *cb)
 {
   cs_flag_t  *flag = NULL, *counter = NULL;
@@ -342,7 +343,7 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                                           mesh,
                                           connect,
                                           quant,
-                                          time_step,
+                                          t_eval,
                                           def->input,
                                           eval);
 
@@ -385,7 +386,7 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                                              mesh,
                                              connect,
                                              quant,
-                                             time_step,
+                                             t_eval,
                                              def->input,
                                              eval);
 
@@ -527,9 +528,9 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]      time_step  pointer to a time step structure
  * \param[in]      eqp        pointer to a cs_equation_param_t
  * \param[in]      dir        pointer to a cs_cdo_bc_list_t structure
+ * \param[in]      t_eval     time at which one evaluates the boundary cond.
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  *
  * \return a pointer to a new allocated array storing the dirichlet values
@@ -540,9 +541,9 @@ cs_real_t *
 cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
-                                 const cs_time_step_t       *time_step,
                                  const cs_equation_param_t  *eqp,
                                  const cs_cdo_bc_list_t     *dir,
+                                 cs_real_t                   t_eval,
                                  cs_cell_builder_t          *cb)
 {
   CS_UNUSED(dir);
@@ -613,7 +614,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                             mesh,
                                             connect,
                                             quant,
-                                            time_step,
+                                            t_eval,
                                             def->input,
                                             dir_val);
         break;
@@ -688,9 +689,9 @@ cs_equation_tag_neumann_face(const cs_cdo_quantities_t    *quant,
  * \param[in]      def_id      id of the definition for setting the Neumann BC
  * \param[in]      f           local face number in the cs_cell_mesh_t
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]      time_step   pointer to a time step structure
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] neu_values  array storing the Neumann values
  */
 /*----------------------------------------------------------------------------*/
@@ -699,9 +700,9 @@ void
 cs_equation_compute_neumann_sv(short int                   def_id,
                                short int                   f,
                                const cs_cdo_quantities_t  *quant,
-                               const cs_time_step_t       *time_step,
                                const cs_equation_param_t  *eqp,
                                const cs_cell_mesh_t       *cm,
+                               cs_real_t                   t_eval,
                                double                     *neu_values)
 {
   assert(neu_values != NULL && cm != NULL && eqp != NULL);
@@ -717,13 +718,13 @@ cs_equation_compute_neumann_sv(short int                   def_id,
   switch(def->type) {
 
   case CS_XDEF_BY_VALUE:
-    cs_xdef_eval_cw_at_vtx_flux_by_val(cm, f, def->input, neu_values);
+    cs_xdef_eval_cw_at_vtx_flux_by_val(cm, f, t_eval, def->input, neu_values);
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     cs_xdef_eval_cw_at_vtx_flux_by_analytic(cm,
                                             f,
-                                            time_step,
+                                            t_eval,
                                             def->input,
                                             def->qtype,
                                             neu_values);
@@ -743,7 +744,7 @@ cs_equation_compute_neumann_sv(short int                   def_id,
 
       cs_real_t  *face_val = array_input->values + 3*bf_id;
 
-      cs_xdef_eval_cw_at_vtx_flux_by_val(cm, f, face_val, neu_values);
+      cs_xdef_eval_cw_at_vtx_flux_by_val(cm, f, t_eval, face_val, neu_values);
     }
     break;
 
@@ -764,9 +765,9 @@ cs_equation_compute_neumann_sv(short int                   def_id,
  * \param[in]      def_id      id of the definition for setting the Neumann BC
  * \param[in]      f           local face number in the cs_cell_mesh_t
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]      time_step   pointer to a time step structure
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] neu_values  array storing Neumann values to use
  */
 /*----------------------------------------------------------------------------*/
@@ -775,9 +776,9 @@ void
 cs_equation_compute_neumann_fb(short int                    def_id,
                                short int                    f,
                                const cs_cdo_quantities_t   *quant,
-                               const cs_time_step_t        *time_step,
                                const cs_equation_param_t   *eqp,
                                const cs_cell_mesh_t        *cm,
+                               cs_real_t                    t_eval,
                                double                      *neu_values)
 {
   assert(neu_values != NULL && cm != NULL && eqp != NULL);
@@ -795,23 +796,23 @@ cs_equation_compute_neumann_fb(short int                    def_id,
 
   case CS_XDEF_BY_VALUE:
     if (eqp->dim == 1)
-      cs_xdef_eval_cw_flux_by_val(cm, f, def->input, neu_values);
+      cs_xdef_eval_cw_flux_by_val(cm, f, t_eval, def->input, neu_values);
     else if (eqp->dim == 3)
-      cs_xdef_eval_cw_tensor_flux_by_val(cm, f, def->input, neu_values);
+      cs_xdef_eval_cw_tensor_flux_by_val(cm, f, t_eval, def->input, neu_values);
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     if (eqp->dim == 1)
       cs_xdef_eval_cw_flux_by_analytic(cm,
                                        f,
-                                       time_step,
+                                       t_eval,
                                        def->input,
                                        def->qtype,
                                        neu_values);
     else if (eqp->dim == 3)
       cs_xdef_eval_cw_tensor_flux_by_analytic(cm,
                                               f,
-                                              time_step,
+                                              t_eval,
                                               def->input,
                                               def->qtype,
                                               neu_values);
@@ -831,7 +832,7 @@ cs_equation_compute_neumann_fb(short int                    def_id,
 
       cs_real_t  *face_val = array_input->values + 3*bf_id;
 
-      cs_xdef_eval_cw_flux_by_val(cm, f, face_val, neu_values);
+      cs_xdef_eval_cw_flux_by_val(cm, f, t_eval, face_val, neu_values);
     }
     break;
 

@@ -177,6 +177,20 @@ cs_equation_get_field(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the field structure for the (normal) boundary flux associated
+ *         to a cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a cs_field_t structure or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_equation_get_boundary_flux(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the flag associated to an equation
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
@@ -535,6 +549,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
  *
  * \param[in]      eq          pointer to a cs_equation_t structure
  * \param[in]      location    indicate where the flux has to be computed
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
@@ -542,6 +557,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 void
 cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
                                        cs_flag_t              location,
+                                       cs_real_t              t_eval,
                                        cs_real_t             *diff_flux);
 
 /*----------------------------------------------------------------------------*/

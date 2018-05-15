@@ -115,6 +115,7 @@ _fill_vol_reco_op(cs_sdm_t             *stiffness,
  *         defined by an analytical expression depending on the location and
  *         the current time
  *
+ * \param[in]       t_eval   time at which one performs the evaluation
  * \param[in]       anai     pointer to an analytical definition
  * \param[in]       fbf      pointer to a structure for face basis functions
  * \param[in]       xv1      first vertex
@@ -127,7 +128,8 @@ _fill_vol_reco_op(cs_sdm_t             *stiffness,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_add_tria_reduction(const cs_xdef_analytic_input_t  *anai,
+_add_tria_reduction(cs_real_t                        t_eval,
+                    const cs_xdef_analytic_input_t  *anai,
                     const cs_basis_func_t           *fbf,
                     const cs_real_3_t                xv1,
                     const cs_real_3_t                xv2,
@@ -145,7 +147,7 @@ _add_tria_reduction(const cs_xdef_analytic_input_t  *anai,
   cs_quadrature_tria_7pts(xv1, xv2, xv3, surf, gpts, gw);
 
   /* Evaluate the analytical function at the Gauss points */
-  anai->func(cs_glob_time_step->t_cur, 7, NULL, (const cs_real_t *)gpts, true,
+  anai->func(t_eval, 7, NULL, (const cs_real_t *)gpts, true,
              anai->input, ana_eval);
 
   for (short int gp = 0; gp < 7; gp++) {
@@ -165,6 +167,7 @@ _add_tria_reduction(const cs_xdef_analytic_input_t  *anai,
  *         defined by an analytical expression depending on the location and
  *         the current time
  *
+ * \param[in]       t_eval   time at which one performs the evaluation
  * \param[in]       anai     pointer to an analytical definition
  * \param[in]       cbf      pointer to a structure for face basis functions
  * \param[in]       xv1      first vertex
@@ -178,7 +181,8 @@ _add_tria_reduction(const cs_xdef_analytic_input_t  *anai,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_add_tetra_reduction(const cs_xdef_analytic_input_t  *anai,
+_add_tetra_reduction(cs_real_t                        t_eval,
+                     const cs_xdef_analytic_input_t  *anai,
                      const cs_basis_func_t           *cbf,
                      const cs_real_3_t                xv1,
                      const cs_real_3_t                xv2,
@@ -197,7 +201,7 @@ _add_tetra_reduction(const cs_xdef_analytic_input_t  *anai,
   cs_quadrature_tet_15pts(xv1, xv2, xv3, xv4, vol, gpts, gw);
 
   /* Evaluate the analytical function at the Gauss points */
-  anai->func(cs_glob_time_step->t_cur, 15, NULL, (const cs_real_t *)gpts, true,
+  anai->func(t_eval, 15, NULL, (const cs_real_t *)gpts, true,
              anai->input, ana_eval);
 
   for (short int gp = 0; gp < 15; gp++) {
@@ -1288,6 +1292,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
  *
  * \param[in]       def      pointer to a cs_xdef_t structure
  * \param[in]       cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]       t_eval   time at which one performs the evaluation
  * \param[in, out]  cb       pointer to a cell builder_t structure
  * \param[in, out]  hhob     pointer to a cs_hho_builder_t structure
  * \param[in, out]  red      vector containing the reduction
@@ -1297,6 +1302,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 void
 cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
                                        const cs_cell_mesh_t    *cm,
+                                       cs_real_t                t_eval,
                                        cs_cell_builder_t       *cb,
                                        cs_hho_builder_t        *hhob,
                                        cs_real_t                red[])
@@ -1304,11 +1310,12 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
   /* Sanity checks */
   if (hhob == NULL || def == NULL)
     return;
-  assert(hhob->cell_basis != NULL && hhob->face_basis != NULL);
   if (red == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " %s : array storing the reduction has to be allocated.\n",
               __func__);
+
+  assert(hhob->cell_basis != NULL && hhob->face_basis != NULL);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
   assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
@@ -1333,7 +1340,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
     {
       assert(cm->n_fc == 4 && cm->n_vc == 4);
 
-      _add_tetra_reduction(anai, cbf,
+      _add_tetra_reduction(t_eval, anai, cbf,
                            cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
                            cb, c_rhs);
 
@@ -1351,7 +1358,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
 
         cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-        _add_tria_reduction(anai, fbf,
+        _add_tria_reduction(t_eval, anai, fbf,
                             cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
                             cb, f_rhs);
 
@@ -1395,9 +1402,9 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
           const double  *xv1 = cm->xv + 3*v1;
           const double  *xv2 = cm->xv + 3*v2;
 
-          _add_tria_reduction(anai, fbf, xv0, xv1, xv2, pfq.meas, cb, f_rhs);
+          _add_tria_reduction(t_eval, anai, fbf, xv0, xv1, xv2, pfq.meas, cb, f_rhs);
 
-          _add_tetra_reduction(anai, cbf,
+          _add_tetra_reduction(t_eval, anai, cbf,
                                xv0, xv1, xv2, cm->xc, hf_coef * pfq.meas,
                                cb, c_rhs);
 
@@ -1415,10 +1422,10 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
-            _add_tetra_reduction(anai, cbf, xv0, xv1, pfq.center, cm->xc,
+            _add_tetra_reduction(t_eval, anai, cbf, xv0, xv1, pfq.center, cm->xc,
                                  hf_coef*tef[e], cb, c_rhs);
 
-            _add_tria_reduction(anai, fbf, xv0, xv1, pfq.center, tef[e],
+            _add_tria_reduction(t_eval, anai, fbf, xv0, xv1, pfq.center, tef[e],
                                 cb, f_rhs);
 
           }
@@ -1454,6 +1461,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
  * \param[in]       def      pointer to a cs_xdef_t structure
  * \param[in]       f        local face id in the cellwise view of the mesh
  * \param[in]       cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]       t_eval   time at which one performs the evaluation
  * \param[in, out]  cb       pointer to a cell builder_t structure
  * \param[in, out]  hhob     pointer to a cs_hho_builder_t structure
  * \param[in, out]  res      vector containing the result
@@ -1464,6 +1472,7 @@ void
 cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
                                  short int                f,
                                  const cs_cell_mesh_t    *cm,
+                                 cs_real_t                t_eval,
                                  cs_cell_builder_t       *cb,
                                  cs_hho_builder_t        *hhob,
                                  cs_real_t                res[])
@@ -1529,7 +1538,9 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
           const double  *xv1 = cm->xv + 3*v1;
           const double  *xv2 = cm->xv + 3*v2;
 
-          _add_tria_reduction(anai, fbf, xv0, xv1, xv2, pfq.meas, cb, rhs);
+          _add_tria_reduction(t_eval, anai, fbf,
+                              xv0, xv1, xv2, pfq.meas,
+                              cb, rhs);
         }
         break;
 
@@ -1544,7 +1555,8 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
-            _add_tria_reduction(anai, fbf, xv0, xv1, pfq.center, tef[e],
+            _add_tria_reduction(t_eval, anai, fbf,
+                                xv0, xv1, pfq.center, tef[e],
                                 cb, rhs);
 
           }
