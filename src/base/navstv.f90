@@ -993,7 +993,7 @@ if (ippmod(icompf).lt.0) then
       ! Update of the Dirichlet boundary conditions on the
       ! pressure for the outlet
       call field_get_coefa_s(ivarfl(ipr), coefa_p)
-      !$omp parallel do if(nfabor > thr_n_min)
+      !$omp parallel do if(nfabor > thr_n_min) private(iautof)
       do ifac = 1, nfabor
         iautof = 0
         ! automatic inlet/outlet face for atmospheric flow
