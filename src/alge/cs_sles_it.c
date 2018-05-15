@@ -273,7 +273,7 @@ typedef struct _cs_sles_it_convergence_t {
  *  Global variables
  *============================================================================*/
 
-static bool _thread_debug = false;
+static int _thread_debug = 0;
 
 /* Mean system rows threshold under which we use single-reduce version of PCG */
 
