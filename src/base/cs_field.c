@@ -1052,6 +1052,8 @@ cs_f_field_var_ptr_by_id(int          id,
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
     cs_lnum_t _n_elts = n_elts[2];
 
+    assert(pointer_type <= f->n_time_vals);
+
     *p = f->vals[pointer_type - 1];
 
     if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
