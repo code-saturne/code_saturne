@@ -5,6 +5,8 @@ Release 5.0.9 (unreleased)
 Bug fixes
 ---------
 
+- Fix spurious mapping of previous mass flux with order 1 in time scheme.
+
 - Fix pressure drop by zone computation (gravity term twice multiplied by
   density at outlet boundary).
 
