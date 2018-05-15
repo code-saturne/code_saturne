@@ -17,7 +17,7 @@ for file in src/*/*.[ch] src/*/*.f90 src/*/*.[ch]xx tests/*.c build-aux/*.py \
             salome/fsi_coupling/src/*/*.py.in \
             salome/fsi_coupling/src/*/*.py \
             salome/cfd_study/src/*/*.py \
-            NEWS
+            NEWS.md
 do
   tmpfile=`basename $file`
   sed -e 's/ *$//' -e 's/	/        /g' $file > $RMBDIR/$tmpfile
