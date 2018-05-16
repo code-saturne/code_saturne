@@ -143,21 +143,6 @@ cs_hho_scaleq_free_context(void   *data);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the contributions of source terms (store inside builder)
- *
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in, out] eqb      pointer to a cs_equation_builder_t structure
- * \param[in, out] data     pointer to a cs_hho_scaleq_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hho_scaleq_compute_source(const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *data);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Create the matrix of the current algebraic system.
  *         Allocate and initialize the right-hand side associated to the given
  *         data structure

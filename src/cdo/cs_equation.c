@@ -966,7 +966,6 @@ cs_equation_add(const char            *eqname,
   eq->initialize_system = NULL;
   eq->build_system = NULL;
   eq->update_field = NULL;
-  eq->compute_source = NULL;
   eq->compute_flux_across_plane = NULL;
   eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = NULL;
@@ -1218,7 +1217,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->build_system = cs_cdovb_scaleq_build_system;
         eq->prepare_solving = _prepare_vb_solving;
         eq->update_field = cs_cdovb_scaleq_update_field;
-        eq->compute_source = cs_cdovb_scaleq_compute_source;
         eq->compute_flux_across_plane =
           cs_cdovb_scaleq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
@@ -1249,7 +1247,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->build_system = cs_cdovcb_scaleq_build_system;
         eq->prepare_solving = _prepare_vb_solving;
         eq->update_field = cs_cdovcb_scaleq_update_field;
-        eq->compute_source = cs_cdovcb_scaleq_compute_source;
         eq->compute_flux_across_plane =
           cs_cdovcb_scaleq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
@@ -1280,7 +1277,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->build_system = cs_cdofb_scaleq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_cdofb_scaleq_update_field;
-        eq->compute_source = cs_cdofb_scaleq_compute_source;
         eq->compute_flux_across_plane = NULL;
         eq->compute_cellwise_diff_flux = NULL;
         eq->postprocess = cs_cdofb_scaleq_extra_op;
@@ -1302,7 +1298,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->build_system = cs_cdofb_vecteq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_cdofb_vecteq_update_field;
-        eq->compute_source = cs_cdofb_vecteq_compute_source;
         eq->compute_flux_across_plane = NULL;
         eq->compute_cellwise_diff_flux = NULL;
         eq->postprocess = cs_cdofb_vecteq_extra_op;
@@ -1333,7 +1328,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->build_system = cs_hho_scaleq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_hho_scaleq_update_field;
-        eq->compute_source = cs_hho_scaleq_compute_source;
         eq->compute_flux_across_plane = NULL;
         eq->compute_cellwise_diff_flux = NULL;
         eq->postprocess = cs_hho_scaleq_extra_op;
@@ -1362,7 +1356,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->build_system = cs_hho_scaleq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_hho_scaleq_update_field;
-        eq->compute_source = cs_hho_scaleq_compute_source;
         eq->compute_flux_across_plane = NULL;
         eq->compute_cellwise_diff_flux = NULL;
         eq->postprocess = cs_hho_scaleq_extra_op;
@@ -1392,7 +1385,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->build_system = cs_hho_scaleq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_hho_scaleq_update_field;
-        eq->compute_source = cs_hho_scaleq_compute_source;
         eq->compute_flux_across_plane = NULL;
         eq->compute_cellwise_diff_flux = NULL;
         eq->postprocess = cs_hho_scaleq_extra_op;
@@ -1533,7 +1525,6 @@ cs_equation_create_fields(void)
  * \brief  Allocate and initialize the builder of the algebraic system.
  *         Set the initialize condition to all variable fields associated to
  *         each cs_equation_t structure.
- *         Compute the initial source term.
  *
  * \param[in]  mesh      pointer to a cs_mesh_t structure
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
@@ -1567,10 +1558,6 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
     // By default, 0 is set as initial condition
     if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
-
-    if (eqp->flag & CS_EQUATION_UNSTEADY)
-      /* Compute the (initial) source term */
-      eq->compute_source(eqp, eq->builder, eq->scheme_context);
       _initialize_field_from_ic(ts->t_cur, eq);
 
     if (eq->main_ts_id > -1)

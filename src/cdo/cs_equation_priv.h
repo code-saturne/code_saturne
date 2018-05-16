@@ -166,22 +166,6 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the contribution of source terms for the current time
- *
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in, out] eqb      pointer to a cs_equation_builder_t structure
- * \param[in, out] data    pointer to a scheme data structure which is cast
- *                          on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_equation_compute_source_t)(const cs_equation_param_t  *eqp,
-                               cs_equation_builder_t      *eqb,
-                               void                       *builder);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the diffusive and convective flux across a list of faces
  *
  * \param[in]       normal     indicate in which direction flux is > 0
@@ -326,7 +310,6 @@ struct _cs_equation_t {
   cs_equation_build_system_t       *build_system;
   cs_equation_prepare_solve_t      *prepare_solving;
   cs_equation_update_field_t       *update_field;
-  cs_equation_compute_source_t     *compute_source;
   cs_equation_flux_plane_t         *compute_flux_across_plane;
   cs_equation_cell_difflux_t       *compute_cellwise_diff_flux;
   cs_equation_extra_op_t           *postprocess;

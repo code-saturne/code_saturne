@@ -251,23 +251,6 @@ _init_cell_structures(const cs_flag_t               cell_flag,
   csys->dof_ids[cm->n_vc] = cm->c_id;
   csys->val_n[cm->n_vc] = eqc->cell_values[cm->c_id];
 
-  /* Update rhs with the previous computation of source term if needed */
-  if (cs_equation_param_has_sourceterm(eqp)) {
-    if (cs_equation_param_has_time(eqp)) {
-
-      /* Source terms attached to cells: Need to update rhs because the part
-         related to cell is used in the static condensation */
-      cs_cdo_time_update_rhs(eqp,
-                             1, /* stride */
-                             1, /* n_dofs */
-                             csys->dof_ids + cm->n_vc,
-                             eqc->source_terms + cs_shared_quant->n_vertices,
-                             csys->rhs + cm->n_vc);
-
-
-    }
-  }
-
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
   if (cell_flag & CS_FLAG_BOUNDARY) {
@@ -648,100 +631,6 @@ cs_cdovcb_scaleq_free_context(void   *data)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the contributions of source terms (store inside data)
- *
- * \param[in]       eqp    pointer to a cs_equation_param_t structure
- * \param[in, out]  eqb    pointer to a cs_equation_builder_t structure
- * \param[in, out]  data   pointer to a cs_cdovcb_scaleq_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovcb_scaleq_compute_source(const cs_equation_param_t  *eqp,
-                                cs_equation_builder_t      *eqb,
-                                void                       *data)
-{
-  if (data == NULL)
-    return;
-
-  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)data;
-
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-
-  if (eqp->n_source_terms == 0)
-    return;
-
-  cs_timer_t  t0 = cs_timer_time();
-
-  /* Compute the source term cell by cell */
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(quant, connect, eqp, eqb, eqc, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
-  {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
-
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_sys_t  *csys = cs_cdovcb_cell_sys[t_id];
-    cs_cell_builder_t  *cb = cs_cdovcb_cell_bld[t_id];
-    cs_flag_t  msh_flag = eqb->st_msh_flag;
-
-    /* Reset source term array */
-#   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t i = 0; i < eqc->n_dofs; i++) eqc->source_terms[i] = 0;
-
-    cs_real_t  *cell_sources = eqc->source_terms + quant->n_vertices;
-
-#   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-      /* Set the local mesh structure for the current cell */
-      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
-
-      /* Build the local dense matrix related to this operator
-         Store in cb->hdg inside the cs_cell_builder_t structure */
-      if (eqb->sys_flag & CS_FLAG_SYS_SOURCES_HLOC)
-        eqc->get_mass_matrix(eqc->hdg_mass, cm, cb);
-
-      /* Initialize the local number of DoFs */
-      csys->n_dofs = cm->n_vc + 1;
-
-      /* Compute the contribution of all source terms in each cell */
-      cs_source_term_compute_cellwise(eqp->n_source_terms,
-                  (const cs_xdef_t **)eqp->source_terms,
-                                      cm,
-                                      eqb->source_mask,
-                                      eqb->compute_source,
-                                      NULL,  // No data structure
-                                      cb,    // mass matrix is cb->hdg
-                                      csys); // Fill csys->source
-
-      /* Assemble the cellwise contribution to the rank contribution */
-      for (short int v = 0; v < cm->n_vc; v++)
-#       pragma omp atomic
-        eqc->source_terms[cm->v_ids[v]] += csys->source[v];
-      cell_sources[c_id] = csys->source[cm->n_vc]; // Not critical
-
-    } // Loop on cells
-
-  } // OpenMP block
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
-  cs_dbg_darray_to_listing("INIT_SOURCE_TERM_VTX", quant->n_vertices,
-                           eqc->source_terms, 8);
-  cs_dbg_darray_to_listing("INIT_SOURCE_TERM_CELL", quant->n_cells,
-                           eqc->source_terms + quant->n_vertices, 8);
-#endif
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcs), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Create the matrix of the current algebraic system.
  *         Allocate and initialize the right-hand side associated to the given
  *         data structure
@@ -836,22 +725,6 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
   /* Tag faces with a non-homogeneous Neumann BC */
   short int  *neu_tags = cs_equation_tag_neumann_face(quant, eqp);
-
-  /* Update rhs with the previous computation of source term if needed */
-  if (cs_equation_param_has_sourceterm(eqp)) {
-    if (cs_equation_param_has_time(eqp)) {
-
-      /* Source terms attached to vertices: Update the RHS since the part
-         related to the vertices is not impacted by the static condensation */
-      cs_cdo_time_update_rhs(eqp,
-                             1, /* stride */
-                             quant->n_vertices,
-                             NULL,
-                             eqc->source_terms,
-                             rhs);
-
-    }
-  }
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)          \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values, \
@@ -1000,12 +873,9 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
                                         cb,    // mass matrix is cb->hdg
                                         csys); // Fill csys->source
 
-        if (cs_equation_param_has_time(eqp) == false) {
-          /* Steady case: Same strategy as if one applies a implicit scheme */
-          for (short int v = 0; v < cm->n_vc; v++)
-            csys->rhs[v] += csys->source[v];
-          csys->rhs[cm->n_vc] += csys->source[cm->n_vc];
-        }
+        for (short int v = 0; v < cm->n_vc; v++)
+          csys->rhs[v] += csys->source[v];
+        csys->rhs[cm->n_vc] += csys->source[cm->n_vc];
 
       } /* End of term source contribution */
 
@@ -1089,11 +959,6 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
                              connect->range_sets[CS_CDO_CONNECT_VTX_SCAL],
                              eqp,
                              rhs, eqc->source_terms, mav);  // out
-
-      /* Reset the value of the source term for the cell DoF (Sources related
-         to vertices is updated in *_assemble_v() function */
-      if (cs_equation_param_has_sourceterm(eqp))
-        cell_sources[c_id] = csys->source[cm->n_vc];
 
     } // Main loop on cells
 

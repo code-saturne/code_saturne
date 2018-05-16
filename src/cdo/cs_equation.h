@@ -339,7 +339,6 @@ cs_equation_create_fields(void);
  * \brief  Allocate and initialize the builder of the algebraic system.
  *         Set the initialize condition to all variable fields associated to
  *         each cs_equation_t structure.
- *         Compute the initial source term.
  *
  * \param[in]  mesh      pointer to a cs_mesh_t structure
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure

@@ -555,62 +555,6 @@ cs_cdofb_vecteq_free_context(void   *data)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the contributions of source terms (store inside data)
- *
- * \param[in]      eqp    pointer to a cs_equation_param_t structure
- * \param[in, out] eqb    pointer to a cs_equation_builder_t structure
- * \param[in, out] data   pointer to a cs_cdofb_vecteq_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_vecteq_compute_source(const cs_equation_param_t    *eqp,
-                               cs_equation_builder_t        *eqb,
-                               void                         *data)
-{
-  if (data == NULL)
-    return;
-
-  cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)data;
-
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-
-  if (eqp->n_source_terms == 0)
-    return;
-  cs_timer_t  t0 = cs_timer_time();
-
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < 3*quant->n_cells; i++) eqc->source_terms[i] = 0.0;
-
-  /* Compute the source term in each cell */
-  double  *contrib = cs_equation_get_tmpbuf();
-  cs_flag_t  dof_loc = CS_FLAG_VECTOR | cs_flag_primal_cell;
-
-  for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
-
-    const cs_xdef_t  *st = eqp->source_terms[st_id];
-
-    /* contrib is updated inside this function */
-    cs_source_term_compute_from_density(dof_loc, st, &contrib);
-
-    /* Update source term array */
-#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < quant->n_cells; i++)
-      eqc->source_terms[i] += contrib[i];
-
-  } // Loop on source terms
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
-  cs_dbg_darray_to_listing("INIT_SOURCE_TERM",
-                           quant->n_cells, eqc->source_terms, 8);
-#endif
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcs), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Create the matrix of the current algebraic system.
  *         Allocate and initialize the right-hand side associated to the given
  *         data structure
@@ -833,11 +777,8 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
                                         cb,    // mass matrix is cb->hdg
                                         csys); // Fill csys->source
 
-        if (cs_equation_param_has_time(eqp) ==  false) {
-          /* Steady case: Same strategy as if one applies a implicit scheme */
-          for (int k = 0; k < 3; k++)
-            csys->rhs[3*cm->n_fc + k] += csys->source[3*cm->n_fc + k];
-        }
+        for (int k = 0; k < 3; k++)
+          csys->rhs[3*cm->n_fc + k] += csys->source[3*cm->n_fc + k];
 
         /* Reset the value of the source term for the cell DoF
            Source term is only hold by the cell DoF in face-based schemes */
