@@ -654,8 +654,6 @@ class Plotter(object):
             except:
                 print("Error with the matplotlib command: %s" % cmd)
 
-        plt.hold(True)
-
     #---------------------------------------------------------------------------
 
     def __draw_axis(self, ax, p):
@@ -743,8 +741,6 @@ class Plotter(object):
 
             for curve in p.curves:
                 self.__draw_curve(ax, curve, p)
-
-        plt.hold(False)
 
         # title of subplot, axis and legend
         bool = len(figure.subplots) > 1
