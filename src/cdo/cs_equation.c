@@ -1492,18 +1492,21 @@ cs_equation_create_fields(void)
     eq->field_id = cs_field_id_by_name(eq->varname);
 
     /* Add a field for the normal boundary flux */
-    location_id = cs_mesh_location_get_id_by_name("boundary faces");
+    location_id = cs_mesh_location_get_id_by_name("boundary_faces");
 
     char  *bdy_flux_name = NULL;
-    int  len = strlen(eq->varname) + strlen("boundary_flux") + 1;
+    int  len = strlen(eq->varname) + strlen("_boundary_flux") + 2;
 
     BFT_MALLOC(bdy_flux_name, len, char);
+    sprintf(bdy_flux_name, "%s_boundary_flux", eq->varname);
 
     cs_field_t  *bdy_flux_fld = cs_field_find_or_create(bdy_flux_name,
                                                         0,
                                                         location_id,
                                                         eqp->dim,
                                                         has_previous);
+
+    eq->boundary_flux_id = cs_field_id_by_name(bdy_flux_name);
 
     cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("post_vis"), post_flag);
