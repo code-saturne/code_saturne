@@ -1,7 +1,7 @@
 General Information
 ===================
 
-This directory contains the _Code_Saturne_ CFD tool,
+This directory contains the [_Code_Saturne_](https://code-saturne.org) CFD tool,
 EDF's general purpose Computational Fluid Dynamics (CFD) software.
 
 The basic capabilities of _Code_Saturne_ enable the handling of either
@@ -11,29 +11,24 @@ radiative heat transfer, combustion (gas, coal, heavy fuel oil, ...),
 magneto-hydrodynamics, compressible flows, two-phase flows
 (Euler-Lagrange approach with two-way coupling), or atmospheric flows.
 
-For more information, see the
-[https://code-saturne.org](https://code-saturne.org) website.
-
 Presentation
 ============
 
 _Code_Saturne_ is portable on all Linux flavors and UNIX platforms tested so far.
-It runs in parallel with MPI on distributed memory machines (clusters, Cray,
-IBM Blue Gene and Power, ...).
+It runs in parallel with MPI on distributed memory machines (Intel, Cray X series,
+IBM Blue Gene, IBM Power, ...).
 Developed since 1997 at EDF R&D, it is based on a co-located Finite Volume
 approach that accepts meshes with any type of cell (tetrahedral, hexahedral,
 prismatic, pyramidal, polyhedral...) and any type of grid structure
 (unstructured, block structured, hybrid, conforming or with hanging nodes, ...).
 
-Compatible mesh generators include I-Deas, GMSH, GAMBIT, Simail, SALOME,
-ANSYS meshing, ... Post-processing output is available in EnSight, CGNS
-and MED formats, with advanced data management capabilities by the FVM
-library (EDF's "Finite Volume Mesh" library, under the GNU LGPLv2 licence).
-Parallel code coupling capabilities are also provided by the FVM library
-and in-situ postprocessing available using the ParaView Catalyst and
-Melissa libraries.
+Meshes may be imported using the CGNS, MED, GMSH, I-Deas, GAMBIT, or Simail
+formats, and Post-processing output is available in EnSight, CGNS
+and MED formats. In-situ postprocessing is available using the
+[ParaView Catalyst](https://www.paraview.org/in-situ) and
+[Melissa](https://melissa-sa.github.io) libraries.
 
-_Code_Saturne_ can be coupled to EDF's thermal software
+_Code_Saturne_ can be coupled in parallel to EDF's thermal software
 [SYRTHES](https://www.edf.fr/en/the-edf-group/world-s-largest-power-company/activities/research-and-development/scientific-communities/simulation-softwares?logiciel=10818)
 (conjugate heat transfer). It can also produce output usable by EDF's structural
 analysis software [code_aster](https://code-aster.org), in particular in the
@@ -80,7 +75,7 @@ variable), and to specify the language (between English and French).
   This python script will install the different elements of _Code_Saturne_ and
   associated libraries. Due to dependencies between the different modules, the
   order of install should be the following:
-  
+
   - libxml2 (it is advised to use the distribution's own package instead)
   - HDF5
   - CGNS
@@ -90,7 +85,7 @@ variable), and to specify the language (between English and French).
 
   The following packages are not handled by the installer so must be installed
   first:
-  
+
   - Zlib (optional)
   - BLAS (optional)
   - PyQT (optional, required for the GUI)
