@@ -528,6 +528,8 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
               _(" %s: The current equation is not modifiable anymore.\n"
                 " Please check your settings."), __func__);
 
+  const char  emsg[] = " %s: Invalid key value %s for keyword %s.\n";
+
   /* Conversion of the string to lower case */
   char val[CS_BASE_STRING_LEN];
   for (size_t i = 0; i < strlen(keyval); i++)
@@ -582,8 +584,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_SPACE_SCHEME\n"),
-                _val);
+                emsg, __func__, _val, "CS_EQKEY_SPACE_SCHEME");
     }
     break;
 
@@ -595,8 +596,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_DOF_REDUCTION\n"
-                  " Choice between \"derham\" or \"average\"."), _val);
+                emsg, __func__, _val, "CS_EQKEY_DOF_REDUCTION");
     }
     break;
 
@@ -612,8 +612,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_HODGE_DIFF_ALGO\n"
-                  " Choice between cost, wbs, auto or voronoi"), _val);
+                emsg, __func__, _val, "CS_EQKEY_HODGE_DIFF_ALGO");
     }
     break;
 
@@ -627,8 +626,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_HODGE_TIME_ALGO\n"
-                  " Choice between cost, wbs, voronoi"), _val);
+                emsg, __func__, _val, "CS_EQKEY_HODGE_TIME_ALGO");
     }
     break;
 
@@ -662,8 +660,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_SOLVER_FAMILY\n"
-                  " Choice between cs or petsc"), _val);
+                emsg, __func__, _val, "CS_EQKEY_SOLVER_FAMILY");
     }
     break;
 
@@ -689,14 +686,11 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_PRECOND\n"
-                  " Choice between jacobi, block_jacobi, poly1, ssor, ilu0,\n"
-                  " icc0, amg or as"), _val);
+                emsg, __func__, _val, "CS_EQKEY_PRECOND");
     }
     break;
 
   case CS_EQKEY_ITSOL:
-
     if (strcmp(val, "jacobi") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_JACOBI;
     else if (strcmp(val, "cg") == 0)
@@ -714,9 +708,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key CS_EQKEY_ITSOL\n"
-                  " Choice between cg, bicg, bicgstab2, cr3, gmres or amg"),
-                _val);
+                emsg, __func__, _val, "CS_EQKEY_ITSOL");
     }
     break;
 
@@ -755,9 +747,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value %s related to key CS_EQKEY_BC_ENFORCEMENT\n"
-                  " Choice between strong, penalization, weak or weak_sym."),
-                _val);
+                emsg, __func__, _val, "CS_EQKEY_BC_ENFORCEMENT");
     }
     break;
 
@@ -776,9 +766,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       else {
         const char *_val = val;
         bft_error(__FILE__, __LINE__, 0,
-                  _(" Invalid value \"%s\" for key CS_EQKEY_BC_QUADRATURE\n"
-                    " Valid choices are \"bary\", \"bary_subdiv\", \"higher\""
-                    " and \"highest\"."), _val);
+                  emsg, __func__, _val, "CS_EQKEY_BC_QUADRATURE");
       }
 
       for (int i = 0; i < eqp->n_bc_defs; i++)
@@ -797,8 +785,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                (" Invalid value \"%s\" for CS_EQKEY_EXTRA_OP\n"
-                 " Valid keys are \"peclet\", or \"upwind_coef\"."), _val);
+                emsg, __func__, _val, "CS_EQKEY_EXTRA_OP");
     }
     break;
 
@@ -810,9 +797,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value \"%s\" for CS_EQKEY_ADV_FORMULATION\n"
-                  " Valid keys are \"conservative\" or \"non_conservative\"."),
-                _val);
+                emsg, __func__, _val, "CS_EQKEY_ADV_FORMULATION");
     }
     break;
 
@@ -830,9 +815,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value \"%s\" for CS_EQKEY_ADV_SCHEME\n"
-                  " Valid choices are \"upwind\", \"samarskii\", \"sg\" or"
-                  " \"centered\"."), _val);
+                emsg, __func__, _val, "CS_EQKEY_ADV_SCHEME");
     }
     break;
 
@@ -854,9 +837,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
-                  " Valid choices are \"implicit\", \"explicit\","
-                  " \"crank_nicolson\", and \"theta_scheme\"."), _val);
+                emsg, __func__, _val, "CS_EQKEY_TIME_SCHEME");
     }
     break;
 

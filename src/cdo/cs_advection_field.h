@@ -163,7 +163,7 @@ typedef struct {
   int                         cell_field_id;
   int                         bdy_field_id;
 
-  /* We assume that there is only one definition assiocated to an advection
+  /* We assume that there is only one definition associated to an advection
      field inside the computational domain */
   cs_xdef_t                  *definition;
 

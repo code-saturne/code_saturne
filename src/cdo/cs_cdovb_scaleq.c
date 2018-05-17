@@ -211,16 +211,16 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_cell_structures(const cs_flag_t               cell_flag,
-                      const cs_cell_mesh_t         *cm,
-                      const cs_equation_param_t    *eqp,
-                      const cs_equation_builder_t  *eqb,
-                      const cs_real_t               dir_values[],
-                      const short int               neu_tags[],
-                      const cs_real_t               field_tn[],
-                      cs_real_t                     t_eval,
-                      cs_cell_sys_t                *csys,
-                      cs_cell_builder_t            *cb)
+_init_cell_system(const cs_flag_t               cell_flag,
+                  const cs_cell_mesh_t         *cm,
+                  const cs_equation_param_t    *eqp,
+                  const cs_equation_builder_t  *eqb,
+                  const cs_real_t               dir_values[],
+                  const short int               neu_tags[],
+                  const cs_real_t               field_tn[],
+                  cs_real_t                     t_eval,
+                  cs_cell_sys_t                *csys,
+                  cs_cell_builder_t            *cb)
 {
   /* Cell-wise view of the linear system to build:
      Initialize the local system */
@@ -450,9 +450,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
      Only activated on boundary cells */
   eqb->bd_msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE;
 
-  /* Diffusion part */
-  /* -------------- */
-
+  /* DIFFUSION */
   eqc->get_stiffness_matrix = NULL;
   eqc->boundary_flux_op = NULL;
   eqc->enforce_dirichlet = NULL;
@@ -508,11 +506,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     }
 
-  } // Has diffusion
+  } /* DIFFUSION */
 
-  /* Advection part */
-  /* -------------- */
-
+  /* ADVECTION */
   eqc->get_advection_matrix = NULL;
   eqc->add_advection_bc = NULL;
 
@@ -595,9 +591,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-  /* Reaction part */
-  /* ------------- */
-
+  /* REACTION */
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
@@ -611,10 +605,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Reaction */
 
-  /* Time part */
-  /* --------- */
-
+  /* TIME */
   eqc->apply_time_scheme = NULL;
+
   if (cs_equation_param_has_time(eqp)) {
 
     if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
@@ -635,10 +628,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Time part */
 
-  /* Source term part */
-  /* ---------------- */
-
+  /* SOURCE TERM */
   eqc->source_terms = NULL;
+
   if (cs_equation_param_has_sourceterm(eqp)) {
 
     BFT_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
@@ -821,16 +813,15 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       const cs_flag_t  cell_flag = connect->cell_flag[c_id];
-      const cs_flag_t  msh_flag =
-        cs_equation_get_cell_mesh_flag(cell_flag, eqb);
+      const cs_flag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
 
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _init_cell_structures(cell_flag, cm, eqp, eqb,
-                            dir_values, neu_tags, field_val, t_eval_pty, // in
-                            csys, cb);                                   // out
+      _init_cell_system(cell_flag, cm, eqp, eqb,
+                        dir_values, neu_tags, field_val, t_eval_pty, // in
+                        csys, cb);                                   // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
       if (c_id % CS_CDOVB_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);

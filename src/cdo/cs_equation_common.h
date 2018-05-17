@@ -181,8 +181,8 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 
 static inline cs_flag_t
-cs_equation_get_cell_mesh_flag(cs_flag_t                      cell_flag,
-                               const cs_equation_builder_t   *eqb)
+cs_equation_cell_mesh_flag(cs_flag_t                      cell_flag,
+                           const cs_equation_builder_t   *eqb)
 {
   cs_flag_t  _flag = eqb->msh_flag | eqb->st_msh_flag;
 
