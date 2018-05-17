@@ -48,6 +48,7 @@
 #include <bft_mem.h>
 
 #include "cs_cdovb_scaleq.h"
+#include "cs_cdovb_vecteq.h"
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
@@ -1235,6 +1236,30 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         /* Set the size of the algebraic system arising from the cellwise
            process */
         eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
+
+      }
+      else if (eqp->dim == 3) {
+
+        eq->init_context = cs_cdovb_vecteq_init_context;
+        eq->free_context = cs_cdovb_vecteq_free_context;
+        eq->initialize_system = cs_cdovb_vecteq_initialize_system;
+        eq->set_dir_bc = cs_cdovb_vecteq_set_dir_bc;
+        eq->build_system = cs_cdovb_vecteq_build_system;
+        eq->prepare_solving = _prepare_vb_solving;
+        eq->update_field = cs_cdovb_vecteq_update_field;
+        eq->compute_flux_across_plane =
+          cs_cdovb_vecteq_compute_flux_across_plane;
+        eq->compute_cellwise_diff_flux = cs_cdovb_vecteq_cellwise_diff_flux;
+        eq->postprocess = cs_cdovb_vecteq_extra_op;
+        eq->get_extra_values = NULL;
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eqp->dim * connect->n_vertices;
+        eq->n_sles_scatter_elts = eqp->dim * connect->n_vertices;
 
       }
       else
