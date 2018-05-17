@@ -162,6 +162,26 @@ cs_cdofb_vecteq_initialize_system(const cs_equation_param_t  *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the boundary conditions known from the settings when the fields
+ *         stem from a vector CDO face-based scheme.
+ *
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in]      t_eval      time at which one evaluates BCs
+ * \param[in, out] field_val   pointer to the values of the variable field
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_set_dir_bc(const cs_mesh_t              *mesh,
+                           const cs_equation_param_t    *eqp,
+                           cs_equation_builder_t        *eqb,
+                           cs_real_t                     t_eval,
+                           cs_real_t                     field_val[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build the linear system arising from a scalar convection/diffusion
  *         equation with a CDO face-based scheme.
  *         One works cellwise and then process to the assembly

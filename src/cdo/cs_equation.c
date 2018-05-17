@@ -52,6 +52,7 @@
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
+#include "cs_equation_bc.h"
 #include "cs_equation_common.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
@@ -145,19 +146,17 @@ _post_balance_at_vertices(const cs_equation_t   *eq,
  *
  * \param[in]       t_eval   time at which one performs the evaluation
  * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in, out]  values   pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_initialize_field_from_ic(cs_real_t       t_eval,
-                          cs_equation_t  *eq)
+_initialize_field_from_ic(cs_real_t         t_eval,
+                          cs_equation_t    *eq,
+                          cs_real_t        *values)
 {
   assert(eq != NULL);
   const cs_equation_param_t  *eqp = eq->param;
-
-  /* Retrieve the associated field */
-  cs_field_t  *field = cs_field_by_id(eq->field_id);
-  cs_real_t  *values = field->val;
 
   cs_flag_t  dof_flag = 0;
   switch (eqp->dim) {
@@ -998,6 +997,7 @@ cs_equation_add(const char            *eqname,
   eq->init_context = NULL;
   eq->free_context = NULL;
   eq->initialize_system = NULL;
+  eq->set_dir_bc = NULL;
   eq->build_system = NULL;
   eq->update_field = NULL;
   eq->compute_balance = NULL;
@@ -1255,6 +1255,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->init_context = cs_cdovb_scaleq_init_context;
         eq->free_context = cs_cdovb_scaleq_free_context;
         eq->initialize_system = cs_cdovb_scaleq_initialize_system;
+        eq->set_dir_bc = cs_cdovb_scaleq_set_dir_bc;
         eq->build_system = cs_cdovb_scaleq_build_system;
         eq->prepare_solving = _prepare_vb_solving;
         eq->update_field = cs_cdovb_scaleq_update_field;
@@ -1308,6 +1309,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->init_context = cs_cdovcb_scaleq_init_context;
         eq->free_context = cs_cdovcb_scaleq_free_context;
         eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
+        eq->set_dir_bc = cs_cdovcb_scaleq_set_dir_bc;
         eq->build_system = cs_cdovcb_scaleq_build_system;
         eq->prepare_solving = _prepare_vb_solving;
         eq->update_field = cs_cdovcb_scaleq_update_field;
@@ -1336,6 +1338,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->init_context = cs_cdofb_scaleq_init_context;
         eq->free_context = cs_cdofb_scaleq_free_context;
         eq->initialize_system = cs_cdofb_scaleq_initialize_system;
+        eq->set_dir_bc = cs_cdofb_scaleq_set_dir_bc;
         eq->build_system = cs_cdofb_scaleq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_cdofb_scaleq_update_field;
@@ -1358,6 +1361,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->init_context = cs_cdofb_vecteq_init_context;
         eq->free_context = cs_cdofb_vecteq_free_context;
         eq->initialize_system = cs_cdofb_vecteq_initialize_system;
+        eq->set_dir_bc = cs_cdofb_vecteq_set_dir_bc;
         eq->build_system = cs_cdofb_vecteq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_cdofb_vecteq_update_field;
@@ -1386,6 +1390,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->init_context = cs_hho_scaleq_init_context;
         eq->free_context = cs_hho_scaleq_free_context;
         eq->initialize_system = cs_hho_scaleq_initialize_system;
+        eq->set_dir_bc = NULL;
         eq->build_system = cs_hho_scaleq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_hho_scaleq_update_field;
@@ -1413,6 +1418,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->init_context = cs_hho_scaleq_init_context;
         eq->free_context = cs_hho_scaleq_free_context;
         eq->initialize_system = cs_hho_scaleq_initialize_system;
+        eq->set_dir_bc = NULL;
         eq->build_system = cs_hho_scaleq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_hho_scaleq_update_field;
@@ -1441,6 +1447,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->init_context = cs_hho_scaleq_init_context;
         eq->free_context = cs_hho_scaleq_free_context;
         eq->initialize_system = cs_hho_scaleq_initialize_system;
+        eq->set_dir_bc = NULL;
         eq->build_system = cs_hho_scaleq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_hho_scaleq_update_field;
@@ -1600,9 +1607,6 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
                        const cs_cdo_quantities_t   *quant,
                        const cs_time_step_t        *ts)
 {
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
-
   for (int i = 0; i < _n_equations; i++) {
 
     cs_equation_t *eq = _equations[i];
@@ -1617,14 +1621,47 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     eq->builder = cs_equation_init_builder(eqp, mesh);
     eq->scheme_context = eq->init_context(eqp, eq->builder);
 
-    // By default, 0 is set as initial condition
+    /* Retrieve the associated fields */
+    cs_field_t  *var_field = cs_field_by_id(eq->field_id);
+    cs_field_t  *bflux = cs_field_by_id(eq->boundary_flux_id);
+
+    /* By default, 0 is set as initial condition for the computational domain */
     if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
-      _initialize_field_from_ic(ts->t_cur, eq);
+      _initialize_field_from_ic(ts->t_cur, eq, var_field->val);
+
+    /* Enforce initial boundary condition if there is Dirichlet values */
+    if (eq->set_dir_bc != NULL) {
+
+      cs_real_t  *values = NULL;
+      switch (eqp->space_scheme) {
+
+      case CS_SPACE_SCHEME_CDOVB:
+      case CS_SPACE_SCHEME_CDOVCB:
+        values = var_field->val;
+        break;
+
+      case CS_SPACE_SCHEME_CDOFB:
+        values = cs_equation_get_face_values(eq);
+        values = values + connect->n_faces[2]; /* Point only on the boundary
+                                                  faces */
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid space scheme.", __func__);
+      }
+
+      eq->set_dir_bc(mesh, eqp, eq->builder, ts->t_cur, values);
+
+    }
+
+    /* Assign the initial boundary flux where Neumann is defined */
+    cs_equation_init_boundary_flux_from_bc(ts->t_cur, quant, eqp, bflux->val);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
 
-  } // Loop on equations
+  }  /* Loop on equations */
 
 }
 
@@ -1838,7 +1875,7 @@ cs_equation_solve(cs_equation_t   *eq)
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_real_t *
+cs_real_t *
 cs_equation_get_face_values(const cs_equation_t    *eq)
 {
   if (eq == NULL)
@@ -1883,7 +1920,7 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_real_t *
+cs_real_t *
 cs_equation_get_cell_values(const cs_equation_t    *eq)
 {
   if (eq == NULL)

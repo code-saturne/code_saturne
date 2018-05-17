@@ -102,6 +102,25 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the Dirichlet boundary stemming from the settings.
+ *
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in]      t_eval      time at which one evaluates BCs
+ * \param[in, out] field_val   pointer to the values of the variable field
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_set_dir_bc_t)(const cs_mesh_t              *mesh,
+                           const cs_equation_param_t    *eqp,
+                           cs_equation_builder_t        *eqb,
+                           cs_real_t                     t_eval,
+                           cs_real_t                     field_val[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build a linear system within the CDO framework
  *
  * \param[in]      m          pointer to a cs_mesh_t structure
@@ -331,6 +350,7 @@ struct _cs_equation_t {
   cs_equation_init_context_t       *init_context;
   cs_equation_free_context_t       *free_context;
   cs_equation_initialize_system_t  *initialize_system;
+  cs_equation_set_dir_bc_t         *set_dir_bc;
   cs_equation_build_system_t       *build_system;
   cs_equation_prepare_solve_t      *prepare_solving;
   cs_equation_update_field_t       *update_field;

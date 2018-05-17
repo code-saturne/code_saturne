@@ -47,6 +47,7 @@
 #include <bft_mem.h>
 
 #include "cs_boundary_zone.h"
+#include "cs_equation_bc.h"
 #include "cs_field.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -382,9 +383,8 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
   cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL", 3*cdoq->n_cells, vel->val, 3);
 #endif
 
-  /* Update the value of the normal flux related to Darcean velocity.
-     We assume a homogeneous Neumann boundary condition as a default */
-  memset(nflx->val, 0, sizeof(cs_real_t)*cdoq->n_b_faces);
+  /* Update the value of the normal flux related to Darcean velocity. */
+  cs_equation_init_boundary_flux_from_bc(ts->t_cur, cdoq, r_eqp, nflx->val);
 
   for (int def_id = 0; def_id < r_eqp->n_bc_defs; def_id++) {
 
@@ -392,49 +392,8 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
     const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
     assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
 
-    if (cs_flag_test(def->meta, CS_CDO_BC_NEUMANN)) {
-
-      switch (def->type) {
-
-      case CS_XDEF_BY_VALUE:
-        {
-          const cs_real_t  *constant_val = (cs_real_t *)def->input;
-
-          if (z->elt_ids == NULL) {
-            assert(z->n_elts == cdoq->n_b_faces);
-#           pragma omp parallel for if (cdoq->n_b_faces > CS_THR_MIN)
-            for (cs_lnum_t i = 0; i < cdoq->n_b_faces; i++)
-              nflx->val[i] = constant_val[0];
-          }
-          else {
-#           pragma omp parallel for if (z->n_elts > CS_THR_MIN)
-            for (cs_lnum_t i = 0; i < z->n_elts; i++)
-              nflx->val[z->elt_ids[i]] = constant_val[0];
-          }
-
-        }
-        break;
-
-      case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        {
-          cs_xdef_analytic_input_t  *anai =
-            (cs_xdef_analytic_input_t *)def->input;
-
-          anai->func(ts->t_cur, z->n_elts, z->elt_ids, cdoq->b_face_center,
-                     false,  // compacted output ?
-                     anai->input,
-                     nflx->val);
-        }
-
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.", __func__);
-      }
-
-    }
-    else if (cs_flag_test(def->meta, CS_CDO_BC_HMG_DIRICHLET) ||
-             cs_flag_test(def->meta, CS_CDO_BC_DIRICHLET)) {
+    if (cs_flag_test(def->meta, CS_CDO_BC_HMG_DIRICHLET) ||
+        cs_flag_test(def->meta, CS_CDO_BC_DIRICHLET)) {
 
       cs_nvec3_t  nvec;
 
@@ -453,7 +412,8 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
       }
 
     }
-    else if (cs_flag_test(def->meta, CS_CDO_BC_NEUMANN))
+    else if (cs_flag_test(def->meta, CS_CDO_BC_HMG_NEUMANN) ||
+             cs_flag_test(def->meta, CS_CDO_BC_NEUMANN))
       continue; /* already handled during the initialization */
 
     else

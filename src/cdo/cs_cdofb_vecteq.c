@@ -424,15 +424,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
-  eqb->bd_msh_flag = 0;
-  for (int i = 0; i < eqp->n_bc_defs; i++) {
-    const cs_xdef_t  *def = eqp->bc_defs[i];
-    if (def->meta & CS_CDO_BC_NEUMANN)
-      if (def->qtype == CS_QUADRATURE_BARY_SUBDIV ||
-          def->qtype == CS_QUADRATURE_HIGHER ||
-          def->qtype == CS_QUADRATURE_HIGHEST)
-        eqb->bd_msh_flag |= CS_CDO_LOCAL_EV|CS_CDO_LOCAL_EF|CS_CDO_LOCAL_EFQ;
-  }
+  eqb->bd_msh_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ;
 
   /* Set members and structures related to the management of the BCs
      Translate user-defined information about BC into a structure well-suited
@@ -598,6 +590,45 @@ cs_cdofb_vecteq_initialize_system(const cs_equation_param_t  *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the boundary conditions known from the settings when the fields
+ *         stem from a vector CDO face-based scheme.
+ *
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in]      t_eval      time at which one evaluates BCs
+ * \param[in, out] field_val   pointer to the values of the variable field
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_set_dir_bc(const cs_mesh_t              *mesh,
+                           const cs_equation_param_t    *eqp,
+                           cs_equation_builder_t        *eqb,
+                           cs_real_t                     t_eval,
+                           cs_real_t                     field_val[])
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  cs_timer_t  t0 = cs_timer_time();
+
+  /* Compute the values of the Dirichlet BC */
+  cs_equation_compute_dirichlet_fb(mesh,
+                                   quant,
+                                   connect,
+                                   eqp,
+                                   eqb->face_bc,
+                                   t_eval,
+                                   cs_cdofb_cell_bld[0], /* static variable */
+                                   field_val);
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build the linear system arising from a scalar convection/diffusion
  *         equation with a CDO face-based scheme.
  *         One works cellwise and then process to the assembly
@@ -647,14 +678,18 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
   cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)data;
 
   /* Dirichlet values at boundary faces are first computed */
-  cs_real_t  *dir_values =
-    cs_equation_compute_dirichlet_fb(mesh,
-                                     quant,
-                                     connect,
-                                     eqp,
-                                     eqb->face_bc->dir,
-                                     t_cur + dt_cur,
-                                     cs_cdofb_cell_bld[0]);
+  cs_real_t  *dir_values = NULL;
+  BFT_MALLOC(dir_values, quant->n_b_faces, cs_real_t);
+  memset(dir_values, 0, quant->n_b_faces*sizeof(cs_real_t));
+
+  cs_equation_compute_dirichlet_fb(mesh,
+                                   quant,
+                                   connect,
+                                   eqp,
+                                   eqb->face_bc,
+                                   t_cur + dt_cur,
+                                   cs_cdofb_cell_bld[0],
+                                   dir_values);
 
   /* Tag faces with a non-homogeneous Neumann BC */
   short int  *neu_tags = cs_equation_tag_neumann_face(quant, eqp);

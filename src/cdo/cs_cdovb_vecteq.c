@@ -271,7 +271,8 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
-  eqb->bd_msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE;
+  eqb->bd_msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+    CS_CDO_LOCAL_FEQ;
 
   /* Diffusion part */
   /* -------------- */
@@ -554,6 +555,45 @@ cs_cdovb_vecteq_initialize_system(const cs_equation_param_t  *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the boundary conditions known from the settings when the fields
+ *         stem from a vector CDO vertex-based scheme.
+ *
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in]      t_eval      time at which one evaluates BCs
+ * \param[in, out] field_val   pointer to the values of the variable field
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_vecteq_set_dir_bc(const cs_mesh_t              *mesh,
+                           const cs_equation_param_t    *eqp,
+                           cs_equation_builder_t        *eqb,
+                           cs_real_t                     t_eval,
+                           cs_real_t                     field_val[])
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  cs_timer_t  t0 = cs_timer_time();
+
+  /* Compute the values of the Dirichlet BC */
+  cs_equation_compute_dirichlet_vb(mesh,
+                                   quant,
+                                   connect,
+                                   eqp,
+                                   eqb->face_bc,
+                                   t_eval,
+                                   cs_cdovb_cell_bld[0], /* static variable */
+                                   field_val);
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build the linear system arising from a scalar convection/diffusion
  *         equation with a CDO vertex-based scheme.
  *         One works cellwise and then process to the assembly
@@ -595,19 +635,22 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
   cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)data;
 
   /* Compute the values of the Dirichlet BC */
-  cs_real_t  *dir_values =
-    cs_equation_compute_dirichlet_vb(mesh,
-                                     quant,
-                                     connect,
-                                     eqp,
-                                     eqb->face_bc->dir,
-                                     t_cur + dt_cur,
-                                     cs_cdovb_cell_bld[0]);
+  cs_real_t  *dir_values = NULL;
+  BFT_MALLOC(dir_values, quant->n_vertices, cs_real_t);
+  memset(dir_values, 0, quant->n_vertices*sizeof(cs_real_t));
 
-  /* Tag faces with a non-homogeneous Neumann BC */
-  short int  *neu_tags = cs_equation_tag_neumann_face(quant, eqp);
+  cs_equation_compute_dirichlet_vb(mesh,
+                                   quant,
+                                   connect,
+                                   eqp,
+                                   eqb->face_bc,
+                                   t_cur + dt_cur,
+                                   cs_cdovb_cell_bld[0],
+                                   dir_values);
+
 
   /* TODO */
+  BFT_FREE(dir_values);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
@@ -717,6 +760,7 @@ cs_cdovb_vecteq_compute_flux_across_plane(const cs_real_t             normal[],
  *
  * \param[in]       values      discrete values for the potential
  * \param[in]       eqp         pointer to a cs_equation_param_t structure
+ * \param[in]       t_eval      time at which one performs the evaluation
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
  * \param[in, out]  data        pointer to cs_cdovb_vecteq_t structure
  * \param[in, out]  location    where the flux is defined
@@ -727,6 +771,7 @@ cs_cdovb_vecteq_compute_flux_across_plane(const cs_real_t             normal[],
 void
 cs_cdovb_vecteq_cellwise_diff_flux(const cs_real_t             *values,
                                    const cs_equation_param_t   *eqp,
+                                   cs_real_t                    t_eval,
                                    cs_equation_builder_t       *eqb,
                                    void                        *data,
                                    cs_flag_t                    location,

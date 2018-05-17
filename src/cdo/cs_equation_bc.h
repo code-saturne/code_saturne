@@ -56,6 +56,25 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the values for the normal boundary flux stemming from the
+ *         Neumann boundary conditions (zero is left where a Dirichlet is
+ *         set. This can be updated later one)
+ *
+ * \param[in]       t_eval   time at which one performs the evaluation
+ * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure
+ * \param[in]       eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out]  values   pointer to the array of values to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_init_boundary_flux_from_bc(cs_real_t                   t_eval,
+                                       const cs_cdo_quantities_t  *cdoq,
+                                       const cs_equation_param_t  *eqp,
+                                       cs_real_t                  *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Set the BC into a cellwise view of the current system.
  *          Case of vertex-based schemes
  *
@@ -131,22 +150,22 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      eqp         pointer to a cs_equation_param_t
- * \param[in]      dir         pointer to a cs_cdo_bc_list_t structure
+ * \param[in]      face_bc     pointer to a cs_cdo_bc_t structure
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a new allocated array storing the dirichlet values
+ * \param[in, out] values      pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
+void
 cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
                                  const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_list_t     *dir,
+                                 const cs_cdo_bc_t          *face_bc,
                                  cs_real_t                   t_eval,
-                                 cs_cell_builder_t          *cb);
+                                 cs_cell_builder_t          *cb,
+                                 cs_real_t                  *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -157,22 +176,22 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]      eqp        pointer to a cs_equation_param_t
- * \param[in]      dir        pointer to a cs_cdo_bc_list_t structure
+ * \param[in]      face_bc    pointer to a cs_cdo_bc_t structure
  * \param[in]      t_eval     time at which one evaluates the boundary cond.
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a new allocated array storing the dirichlet values
+ * \param[in, out] values     pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
+void
 cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
                                  const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_list_t     *dir,
+                                 const cs_cdo_bc_t          *face_bc,
                                  cs_real_t                   t_eval,
-                                 cs_cell_builder_t          *cb);
+                                 cs_cell_builder_t          *cb,
+                                 cs_real_t                  *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -200,6 +219,7 @@ cs_equation_tag_neumann_face(const cs_cdo_quantities_t    *quant,
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      f2v_ids     vertex ids of the face in the cell numbering
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] neu_values  array storing the Neumann values
  */
@@ -211,6 +231,7 @@ cs_equation_compute_neumann_sv(short int                   def_id,
                                const cs_cdo_quantities_t  *quant,
                                const cs_equation_param_t  *eqp,
                                const cs_cell_mesh_t       *cm,
+                               const short int            *f2v_ids,
                                cs_real_t                   t_eval,
                                double                     *neu_values);
 

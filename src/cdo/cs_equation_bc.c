@@ -71,9 +71,150 @@ BEGIN_C_DECLS
  * Private function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the Dirichlet BC values to the face vertices.
+ *          Case of vertex-based schemes
+ *
+ * \param[in]      dim          number of values to assign to each vertex
+ * \param[in]      n_vf         number of vertices in a face
+ * \param[in]      lst          list of vertex numbering
+ * \param[in]      eval         result of the evaluation to set
+ * \param[in]      is_constant  same value for all vertices ?
+ * \param[in, out] vvals        vertex values to update
+ * \param[in, out] flag         flag to update
+ * \param[in, out] counter      counter to update
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_assign_vb_dirichlet_values(int                dim,
+                            int                n_vf,
+                            const cs_lnum_t   *lst,
+                            const cs_real_t   *eval,
+                            _Bool              is_constant,
+                            cs_real_t         *vvals,
+                            cs_flag_t          flag[],
+                            cs_flag_t          counter[])
+{
+  switch (dim) {
+
+  case 1:
+    for (short int v = 0; v < n_vf; v++) {
+
+      const cs_lnum_t  v_id = lst[v];
+      const short int  _v = is_constant ? 0 : v;
+
+      flag[v_id] |= CS_CDO_BC_DIRICHLET;
+      counter[v_id] += 1;
+      vvals[v_id] += eval[_v];
+    }
+    break;
+
+  default:
+    for (short int v = 0; v < n_vf; v++) {
+
+      const cs_lnum_t  v_id = lst[v];
+      const short int  _v = is_constant ? 0 : v;
+
+      flag[v_id] |= CS_CDO_BC_DIRICHLET;
+      counter[v_id] += 1;
+      for (int k = 0; k < dim; k++)
+        vvals[dim*v_id + k] += eval[dim*_v + k];
+    }
+    break;
+
+  } /* End of switch */
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the values for the normal boundary flux stemming from the
+ *         Neumann boundary conditions (zero is left where a Dirichlet is
+ *         set. This can be updated later one)
+ *
+ * \param[in]       t_eval   time at which one performs the evaluation
+ * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure
+ * \param[in]       eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out]  values   pointer to the array of values to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
+                                       const cs_cdo_quantities_t   *cdoq,
+                                       const cs_equation_param_t   *eqp,
+                                       cs_real_t                   *values)
+{
+  /* We assume a homogeneous Neumann boundary condition as a default */
+  memset(values, 0, sizeof(cs_real_t)*cdoq->n_b_faces);
+
+  for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
+
+    const cs_xdef_t  *def = eqp->bc_defs[def_id];
+    const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
+    assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
+
+    if (cs_flag_test(def->meta, CS_CDO_BC_NEUMANN)) {
+
+      switch (def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        {
+          const cs_real_t  *constant_val = (cs_real_t *)def->input;
+
+          switch (eqp->dim) {
+
+          case 1: /* scalar-valued equation */
+#           pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+            for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+              const cs_lnum_t  elt_id =
+                (z->elt_ids != NULL) ? z->elt_ids[i] : i;
+              values[elt_id] = constant_val[0];
+            }
+            break;
+
+          default:
+#           pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+            for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+              const cs_lnum_t  elt_id =
+                (z->elt_ids != NULL) ? z->elt_ids[i] : i;
+              for (int k = 0; k < eqp->dim; k++)
+                values[eqp->dim*elt_id + k] = constant_val[k];
+            }
+            break;
+
+          } /* switch on dimension */
+
+        }
+        break; /* definition by value */
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        {
+          cs_xdef_analytic_input_t  *anai =
+            (cs_xdef_analytic_input_t *)def->input;
+
+          anai->func(t_eval,
+                     z->n_elts, z->elt_ids, cdoq->b_face_center,
+                     false,       /* compacted output ? */
+                     anai->input,
+                     values);
+        }
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.", __func__);
+      }
+
+    } /* Neumann boundary conditions */
+
+  } /* Loop on boundary conditions applied to the Richards equation */
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -122,6 +263,7 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
   csys->_f_ids[csys->n_bc_faces++] = f;
 
   cs_cell_mesh_get_f2v(f, cm, &n_vf, cb->ids);
+  assert(n_vf == cm->f2e_idx[f+1] - cm->f2e_idx[f]);
 
   if (face_flag & CS_CDO_BC_HMG_DIRICHLET) {
 
@@ -151,6 +293,7 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
                                    quant,
                                    eqp,
                                    cm,
+                                   cb->ids,
                                    t_eval,
                                    csys->neu_values);
 
@@ -248,28 +391,33 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      eqp         pointer to a cs_equation_param_t
- * \param[in]      dir         pointer to a cs_cdo_bc_list_t structure
+ * \param[in]      face_bc     pointer to a cs_cdo_bc_t structure
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a new allocated array storing the dirichlet values
+ * \param[in, out] values      pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
+void
 cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
                                  const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_list_t     *dir,
+                                 const cs_cdo_bc_t          *face_bc,
                                  cs_real_t                   t_eval,
-                                 cs_cell_builder_t          *cb)
+                                 cs_cell_builder_t          *cb,
+                                 cs_real_t                  *values)
 {
+  assert(face_bc != NULL);
+  assert(face_bc->n_elts == quant->n_b_faces);
+
+  const cs_cdo_bc_list_t  *dir = face_bc->dir;
+  const cs_lnum_t  *bf2v_idx = mesh->b_face_vtx_idx;
+  const cs_lnum_t  *bf2v_lst = mesh->b_face_vtx_lst;
+
   cs_flag_t  *flag = NULL, *counter = NULL;
-  cs_real_t  *dir_val = NULL;
 
   /* Initialization */
-  BFT_MALLOC(dir_val, eqp->dim * quant->n_vertices, cs_real_t);
   BFT_MALLOC(counter, quant->n_vertices, cs_flag_t);
   BFT_MALLOC(flag, quant->n_vertices, cs_flag_t);
 
@@ -279,58 +427,39 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
     counter[v_id] = 0; /* Number of faces with a Dir. related to a vertex */
   }
 
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t v_id = 0; v_id < eqp->dim * quant->n_vertices; v_id++)
-    dir_val[v_id] = 0;
+  /* Set the values to zero for all vertices attached to a Diriclet BC */
+# pragma omp parallel for if (quant->n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
+    if ((face_bc->flag[bf_id] & CS_CDO_BC_DIRICHLET) ||
+        (face_bc->flag[bf_id] & CS_CDO_BC_HMG_DIRICHLET)) {
+      for (cs_lnum_t i = bf2v_idx[bf_id]; i < bf2v_idx[bf_id+1]; i++) {
 
-  const cs_lnum_t  *face_vtx_idx = mesh->b_face_vtx_idx;
-  const cs_lnum_t  *face_vtx_lst = mesh->b_face_vtx_lst;
+        const cs_lnum_t v_id = bf2v_lst[i];
+        for (int k = 0; k < eqp->dim; k++)
+          values[eqp->dim*v_id + k] = 0;
+
+      }
+    } /* face with a Dirichlet */
+  } /* Loop on boundary faces */
 
   /* Define array storing the Dirichlet values */
   for (cs_lnum_t i = 0; i < dir->n_nhmg_elts; i++) {
 
-    const cs_lnum_t  f_id = dir->elt_ids[i];
-    const cs_lnum_t  *f2v_idx = face_vtx_idx + f_id;
-    const cs_lnum_t  *f2v_lst = face_vtx_lst + f2v_idx[0];
-    const int  n_vf = f2v_idx[1] - f2v_idx[0];
+    const cs_lnum_t  bf_id = dir->elt_ids[i];
+    const cs_lnum_t  *idx = bf2v_idx + bf_id;
+    const cs_lnum_t  *lst = bf2v_lst + idx[0];
+    const int  n_vf = idx[1] - idx[0];
     const short int  def_id = dir->def_ids[i];
     const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
     switch(def->type) {
 
     case CS_XDEF_BY_VALUE:
-      {
-        const cs_real_t  *constant_val = (cs_real_t *)def->input;
-
-        switch (eqp->dim) {
-
-        case 1:
-          for (short int v = 0; v < n_vf; v++) {
-            const cs_lnum_t  v_id = f2v_lst[v];
-
-            dir_val[v_id] += constant_val[0];
-            flag[v_id] |= CS_CDO_BC_DIRICHLET;
-            counter[v_id] += 1;
-
-          }
-          break;
-
-        default:
-          for (short int v = 0; v < n_vf; v++) {
-            const cs_lnum_t  v_id = f2v_lst[v];
-
-            flag[v_id] |= CS_CDO_BC_DIRICHLET;
-            counter[v_id] += 1;
-            for (int j = 0; j < eqp->dim; j++)
-              dir_val[eqp->dim*v_id + j] += constant_val[j];
-
-          }
-          break;
-
-        } /* End of swith on eqp->dim */
-
-      }
-      break; /* By value */
+      _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
+                                  (const cs_real_t *)def->input,
+                                  true, /* is constant for all vertices ? */
+                                  values, flag, counter);
+      break;
 
     case CS_XDEF_BY_ARRAY:
       {
@@ -338,7 +467,7 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
 
         /* Evaluate the boundary condition at each boundary vertex */
         cs_xdef_eval_at_vertices_by_array(n_vf,
-                                          f2v_lst,
+                                          lst,
                                           true, // compact ouput
                                           mesh,
                                           connect,
@@ -347,30 +476,10 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                                           def->input,
                                           eval);
 
-        switch (eqp->dim) {
-
-        case 1:
-          for (short int v = 0; v < n_vf; v++) {
-            const cs_lnum_t  v_id = f2v_lst[v];
-
-            dir_val[v_id] += eval[v];
-            flag[v_id] |= CS_CDO_BC_DIRICHLET;
-            counter[v_id] += 1;
-          }
-          break;
-
-        default:
-          for (short int v = 0; v < n_vf; v++) {
-            const cs_lnum_t  v_id = f2v_lst[v];
-
-            flag[v_id] |= CS_CDO_BC_DIRICHLET;
-            counter[v_id] += 1;
-            for (int j = 0; j < eqp->dim; j++)
-              dir_val[eqp->dim*v_id + j] += eval[eqp->dim*v + j];
-          }
-          break;
-
-        } /* End of switch */
+        _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
+                                    eval,
+                                    false, /* is constant for all vertices ? */
+                                    values, flag, counter);
 
       }
       break; /* By array */
@@ -381,7 +490,7 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
 
         /* Evaluate the boundary condition at each boundary vertex */
         cs_xdef_eval_at_vertices_by_analytic(n_vf,
-                                             f2v_lst,
+                                             lst,
                                              true, // compact output
                                              mesh,
                                              connect,
@@ -390,31 +499,10 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                                              def->input,
                                              eval);
 
-        switch (eqp->dim) {
-
-        case 1:
-          for (short int v = 0; v < n_vf; v++) {
-            const cs_lnum_t  v_id = f2v_lst[v];
-
-            dir_val[v_id] += eval[v];
-            flag[v_id] |= CS_CDO_BC_DIRICHLET;
-            counter[v_id] += 1;
-          }
-          break;
-
-        default:
-          for (short int v = 0; v < n_vf; v++) {
-            const cs_lnum_t  v_id = f2v_lst[v];
-
-            flag[v_id] |= CS_CDO_BC_DIRICHLET;
-            counter[v_id] += 1;
-            for (int j = 0; j < eqp->dim; j++)
-              dir_val[eqp->dim*v_id + j] += eval[eqp->dim*v + j];
-          }
-          break;
-
-        } /* End of switch */
-
+        _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
+                                    eval,
+                                    false, /* is constant for all vertices ? */
+                                    values, flag, counter);
       }
       break;
 
@@ -431,12 +519,12 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = dir->n_nhmg_elts; i < dir->n_elts; i++) {
 
     const cs_lnum_t  f_id = dir->elt_ids[i];
-    const cs_lnum_t  *f2v_idx = face_vtx_idx + f_id;
-    const int  n_vf = f2v_idx[1] - f2v_idx[0];
-    const cs_lnum_t  *f2v_lst = face_vtx_lst + f2v_idx[0];
+    const cs_lnum_t  *idx = bf2v_idx + f_id;
+    const int  n_vf = idx[1] - idx[0];
+    const cs_lnum_t  *lst = bf2v_lst + idx[0];
 
     for (short int v = 0; v < n_vf; v++)
-      flag[f2v_lst[v]] |= CS_CDO_BC_HMG_DIRICHLET;
+      flag[lst[v]] |= CS_CDO_BC_HMG_DIRICHLET;
 
   } /* Loop on faces with a non-homogeneous Dirichlet BC */
 
@@ -461,7 +549,7 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                          eqp->dim,     // stride
                          false,        // interlace (not useful here)
                          CS_REAL_TYPE,
-                         dir_val);
+                         values);
 
   }
 
@@ -474,11 +562,11 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
     for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
 
       if (flag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
-        dir_val[v_id] = 0.;
+        values[v_id] = 0.;
       else if (flag[v_id] & CS_CDO_BC_DIRICHLET) {
         assert(counter[v_id] > 0);
         if (counter[v_id] > 1)
-          dir_val[v_id] /= counter[v_id];
+          values[v_id] /= counter[v_id];
       }
 
     } /* Loop on vertices */
@@ -491,22 +579,20 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
 
       if (flag[v_id] & CS_CDO_BC_HMG_DIRICHLET) {
         for (int j = 0; j < eqp->dim; j++)
-          dir_val[eqp->dim*v_id + j] = 0.;
+          values[eqp->dim*v_id + j] = 0.;
       }
       else if (flag[v_id] & CS_CDO_BC_DIRICHLET) {
-
         assert(counter[v_id] > 0);
         if (counter[v_id] > 1) {
           const cs_real_t  inv_count = counter[v_id];
           for (int j = 0; j < eqp->dim; j++)
-            dir_val[eqp->dim*v_id + j] *= inv_count;
+            values[eqp->dim*v_id + j] *= inv_count;
         }
-
       }
 
     } /* Loop on vertices */
 
-  }
+  } /* eqp->dim ? */
 
   /* Free temporary buffers */
   BFT_FREE(counter);
@@ -514,10 +600,8 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
   cs_dbg_darray_to_listing("DIRICHLET_VALUES",
-                           eqp->dim*quant->n_vertices, dir_val, 6*eqp->dim);
+                           eqp->dim*quant->n_vertices, values, 6*eqp->dim);
 #endif
-
-  return dir_val;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -529,36 +613,29 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]      eqp        pointer to a cs_equation_param_t
- * \param[in]      dir        pointer to a cs_cdo_bc_list_t structure
+ * \param[in]      face_bc    pointer to a cs_cdo_bc_t structure
  * \param[in]      t_eval     time at which one evaluates the boundary cond.
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a new allocated array storing the dirichlet values
+ * \param[in, out] values     pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
+void
 cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
                                  const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_list_t     *dir,
+                                 const cs_cdo_bc_t          *face_bc,
                                  cs_real_t                   t_eval,
-                                 cs_cell_builder_t          *cb)
+                                 cs_cell_builder_t          *cb,
+                                 cs_real_t                  *values)
 {
-  CS_UNUSED(dir);
+  assert(face_bc != NULL);
+  assert(face_bc->n_elts == quant->n_b_faces);
+
   CS_UNUSED(cb);
 
-  cs_real_t  *dir_val = NULL;
-
-  /* Initialization */
-  cs_lnum_t  array_size = eqp->dim*quant->n_b_faces;
-  BFT_MALLOC(dir_val, array_size, cs_real_t);
-
-# pragma omp parallel for if (array_size > CS_THR_MIN)
-  for (cs_lnum_t f_id = 0; f_id < array_size; f_id++) dir_val[f_id] = 0;
-
-  /* Define array storing the Dirichlet values */
+  /* Define the array storing the Dirichlet values */
   for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
 
     const cs_xdef_t  *def = eqp->bc_defs[def_id];
@@ -568,6 +645,8 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
       assert(eqp->dim == def->dim);
 
       const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
+      const cs_lnum_t  *elt_ids = bz->elt_ids;
+
       switch(def->type) {
 
       case CS_XDEF_BY_VALUE:
@@ -575,17 +654,24 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
           const cs_real_t  *constant_val = (cs_real_t *)def->input;
 
           if (def->dim ==  1) {
+
 #           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-            for (cs_lnum_t i = 0; i < bz->n_elts; i++)
-              dir_val[bz->elt_ids[i]] = constant_val[0];
+            for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+              const cs_lnum_t  elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+              values[elt_id] = constant_val[0];
+            }
+
           }
           else {
-#           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-            for (cs_lnum_t i = 0; i < bz->n_elts; i++)
-              for (int k = 0; k < def->dim; k++)
-                dir_val[def->dim*bz->elt_ids[i]+k] = constant_val[k];
-          }
 
+#           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+            for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+              const cs_lnum_t  elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+              for (int k = 0; k < def->dim; k++)
+                values[def->dim*elt_id+k] = constant_val[k];
+            }
+
+          }
         }
         break;
 
@@ -599,9 +685,8 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
           assert(array_input->stride == eqp->dim);
           assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
 
-          if (bz->n_elts > 0) // Not only interior
-            memcpy(dir_val, array_input->values,
-                   sizeof(cs_real_t)*bz->n_elts*array_input->stride);
+          memcpy(values, array_input->values,
+                 sizeof(cs_real_t)*bz->n_elts*eqp->dim);
 
         }
         break;
@@ -616,7 +701,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                             quant,
                                             t_eval,
                                             def->input,
-                                            dir_val);
+                                            values);
         break;
 
       default:
@@ -629,13 +714,18 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
     } // Definition based on Dirichlet BC
   } // Loop on definitions
 
+  /* Set the values to zero for all vertices attached to a homogeneous
+     Diriclet BC */
+# pragma omp parallel for if (quant->n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++)
+    if (face_bc->flag[bf_id] & CS_CDO_BC_HMG_DIRICHLET)
+      for (int k = 0; k < eqp->dim; k++)
+        values[eqp->dim*bf_id + k] = 0;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
   cs_dbg_darray_to_listing("DIRICHLET_VALUES",
-                           eqp->dim*quant->n_b_faces, dir_val, 9);
+                           eqp->dim*quant->n_b_faces, values, 9);
 #endif
-
-  return dir_val;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -691,6 +781,7 @@ cs_equation_tag_neumann_face(const cs_cdo_quantities_t    *quant,
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      f2v_ids     vertex ids of the face in the cell numbering
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] neu_values  array storing the Neumann values
  */
@@ -702,6 +793,7 @@ cs_equation_compute_neumann_sv(short int                   def_id,
                                const cs_cdo_quantities_t  *quant,
                                const cs_equation_param_t  *eqp,
                                const cs_cell_mesh_t       *cm,
+                               const short int            *f2v_ids,
                                cs_real_t                   t_eval,
                                double                     *neu_values)
 {
@@ -737,14 +829,30 @@ cs_equation_compute_neumann_sv(short int                   def_id,
 
       assert(eqp->n_bc_defs == 1); // Only one definition allowed
       assert(array_input->stride == 3);
-      assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
       assert(bf_id > -1);
 
-      cs_real_t  *face_val = array_input->values + 3*bf_id;
+      if (cs_flag_test(array_input->loc, cs_flag_primal_face))
+        cs_xdef_eval_cw_at_vtx_flux_by_val(cm, f, t_eval,
+                                           array_input->values + 3*bf_id,
+                                           neu_values);
 
-      cs_xdef_eval_cw_at_vtx_flux_by_val(cm, f, t_eval, face_val, neu_values);
+      else if (cs_flag_test(array_input->loc, cs_flag_dual_face_byc)) {
+
+        assert(array_input->index != NULL);
+
+        const short int  n_vf = cm->f2e_idx[f+1] - cm->f2e_idx[f];
+        /* Retrieve the bf2v->idx stored in the cs_cdo_connect_t structure */
+        const cs_lnum_t  shift = array_input->index[bf_id];
+        for (short int v = 0; v < n_vf; v++)
+          neu_values[f2v_ids[v]] = array_input->values[shift + v];
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid array location.", __func__);
+
     }
     break;
 

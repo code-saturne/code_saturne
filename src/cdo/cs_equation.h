@@ -504,7 +504,7 @@ cs_equation_get_type(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_real_t *
+cs_real_t *
 cs_equation_get_face_values(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
@@ -518,7 +518,7 @@ cs_equation_get_face_values(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_real_t *
+cs_real_t *
 cs_equation_get_cell_values(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
