@@ -530,7 +530,6 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
         cmd[0] = 'gdb'
 
     if not debugger_ui in ("emacs", "emacs23"):
-        print(cmd)
         p = subprocess.Popen(cmd)
     else:
         cmd_line = cmd[0]
