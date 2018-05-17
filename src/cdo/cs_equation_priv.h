@@ -166,6 +166,30 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the balance for an equation over the full computational
+ *         domain between time t_cur and t_cur + dt_cur
+ *
+ * \param[in]      eqp             pointer to a cs_equation_param_t structure
+ * \param[in]      eqb             pointer to a cs_equation_builder_t structure
+ * \param[in, out] context         pointer to a scheme builder structure
+ * \param[in]      var_field_id    id of the variable field
+ * \param[in]      bflux_field_id  id of the variable field
+ * \param[in]      dt_cur          current value of the time step
+ *
+ * \return a pointer to a cs_equation_balance_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef cs_equation_balance_t *
+(cs_equation_get_balance_t)(const cs_equation_param_t    *eqp,
+                            const cs_equation_builder_t  *eqb,
+                            void                         *context,
+                            int                           var_field_id,
+                            int                           bflux_field_id,
+                            cs_real_t                     dt_cur);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the diffusive and convective flux across a list of faces
  *
  * \param[in]       normal     indicate in which direction flux is > 0
@@ -310,9 +334,12 @@ struct _cs_equation_t {
   cs_equation_build_system_t       *build_system;
   cs_equation_prepare_solve_t      *prepare_solving;
   cs_equation_update_field_t       *update_field;
+
+  cs_equation_get_balance_t        *compute_balance;
   cs_equation_flux_plane_t         *compute_flux_across_plane;
   cs_equation_cell_difflux_t       *compute_cellwise_diff_flux;
   cs_equation_extra_op_t           *postprocess;
+
   cs_equation_get_extra_values_t   *get_extra_values;
 
   /* Timer statistic for a "light" profiling */

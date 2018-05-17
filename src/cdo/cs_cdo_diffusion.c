@@ -993,6 +993,54 @@ cs_cdo_diffusion_wbs_get_pc_flux(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the normal flux for a face assuming only the knowledge
+ *          of the potential at cell vertices. COST algorithm is used for
+ *          reconstructing a piecewise constant gradient from the degrees of
+ *          freedom.
+ *
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      diff_tensor  property tensor times the face normal
+ * \param[in]      pot_values   array of values of the potential (all the mesh)
+ * \param[in]      f            face id in the cell mesh
+ * \param[in]      t_eval       time at which one evaluates the advection field
+ * \param[in, out] fluxes       values of the fluxes related to each vertex
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_diffusion_face_p0_flux(const cs_cell_mesh_t     *cm,
+                                const cs_real_3_t        *diff_tensor,
+                                const cs_real_t          *pot_values,
+                                short int                 f,
+                                cs_real_t                 t_eval,
+                                cs_real_t                *fluxes)
+{
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ));
+
+  cs_real_3_t  mnuf;
+  cs_real_3_t  gc = {0, 0, 0};
+
+  cs_math_33_3_product((const cs_real_t (*)[3])diff_tensor, cm->face[f].unitv,
+                       mnuf);
+
+  cs_reco_dfbyc_in_cell(cm, pot_values, gc);
+
+  for (short int v = 0; v < cm->n_vc; v++)  fluxes[v] = 0;
+
+  const cs_real_t  flux_coef = 0.5 * _dp3(gc, mnuf);
+  for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+    const cs_real_t  _flx = flux_coef * cm->tef[i];
+    const int  eshft = 2*cm->f2e_ids[i];
+
+    fluxes[cm->e2v_ids[eshft]]   += _flx;
+    fluxes[cm->e2v_ids[eshft+1]] += _flx;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the diffusive flux across a face (based on a subdivision
  *          into tetrahedra of the volume p_{f,c})
  *

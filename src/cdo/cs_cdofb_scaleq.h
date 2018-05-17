@@ -212,6 +212,31 @@ cs_cdofb_scaleq_update_field(const cs_real_t              *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the balance for an equation over the full computational
+ *         domain between time t_cur and t_cur + dt_cur
+ *         Case of scalar-valued CDO face-based scheme
+ *
+ * \param[in]      eqp             pointer to a cs_equation_param_t structure
+ * \param[in]      eqb             pointer to a cs_equation_builder_t structure
+ * \param[in, out] context         pointer to a scheme builder structure
+ * \param[in]      var_field_id    id of the variable field
+ * \param[in]      bflux_field_id  id of the variable field
+ * \param[in]      dt_cur          current value of the time step
+ *
+ * \return a pointer to a cs_equation_balance_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_balance_t *
+cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
+                        const cs_equation_builder_t   *eqb,
+                        void                          *context,
+                        int                            var_field_id,
+                        int                            bflux_field_id,
+                        cs_real_t                      dt_cur);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation

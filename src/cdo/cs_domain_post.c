@@ -201,6 +201,7 @@ _domain_post(void                      *input,
     return;
 
   cs_domain_t  *d = (cs_domain_t *)input;
+  assert(time_step == d->time_step);
 
   /* Post-processing related to advection fields */
   int n_adv_fields = cs_advection_field_get_n_fields();
@@ -211,7 +212,11 @@ _domain_post(void                      *input,
                           d->dt_cur);
 
   /* Post-processing related to equations */
-  cs_equation_extra_post_all(time_step, d->dt_cur);
+  cs_equation_extra_post_all(d->mesh,
+                             d->connect,
+                             d->cdo_quantities,
+                             time_step,
+                             d->dt_cur);
 
 }
 

@@ -147,6 +147,24 @@ typedef struct {
 
 } cs_equation_builder_t;
 
+/*
+ * Structure used to store information generated during the analysis
+ * of the balance of each term of an equation
+ */
+typedef struct {
+
+  cs_real_t      *balance;
+
+  /* Balance for each main term */
+  cs_real_t      *unsteady_term;
+  cs_real_t      *reaction_term;
+  cs_real_t      *diffusion_term;
+  cs_real_t      *advection_term;
+  cs_real_t      *source_term;
+  cs_real_t      *boundary_term;
+
+} cs_equation_balance_t;
+
 /*============================================================================
  * Inline public function prototypes
  *============================================================================*/
@@ -409,6 +427,44 @@ cs_equation_get_tmpbuf(void);
 
 size_t
 cs_equation_get_tmpbuf_size(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate a cs_equation_balance_t structure
+ *
+ * \param[in]  size       size of arrays in the structure
+ *
+ * \return  a pointer to the new allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_balance_t *
+cs_equation_balance_create(cs_lnum_t  size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reset a cs_equation_balance_t structure
+ *
+ * \param[in]      size       size of arrays in the structure
+ * \param[in, out] b     pointer to a cs_equation_balance_t to reset
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_balance_reset(cs_lnum_t                size,
+                          cs_equation_balance_t   *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_equation_balance_t structure
+ *
+ * \param[in, out]  p_balance  pointer to the pointer to free
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_balance_destroy(cs_equation_balance_t   **p_balance);
 
 /*----------------------------------------------------------------------------*/
 

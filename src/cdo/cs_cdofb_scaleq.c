@@ -875,6 +875,246 @@ cs_cdofb_scaleq_update_field(const cs_real_t              *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the balance for an equation over the full computational
+ *         domain between time t_cur and t_cur + dt_cur
+ *         Case of scalar-valued CDO face-based scheme
+ *
+ * \param[in]      eqp             pointer to a cs_equation_param_t structure
+ * \param[in]      eqb             pointer to a cs_equation_builder_t structure
+ * \param[in, out] context         pointer to a scheme builder structure
+ * \param[in]      var_field_id    id of the variable field
+ * \param[in]      bflux_field_id  id of the variable field
+ * \param[in]      dt_cur          current value of the time step
+ *
+ * \return a pointer to a cs_equation_balance_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_balance_t *
+cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
+                        const cs_equation_builder_t   *eqb,
+                        void                          *context,
+                        int                            var_field_id,
+                        int                            bflux_field_id,
+                        cs_real_t                      dt_cur)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
+  const cs_real_t  t_eval_pty = t_cur + 0.5*dt_cur;
+
+  cs_timer_t  t0 = cs_timer_time();
+
+  cs_field_t  *pot = cs_field_by_id(var_field_id);
+  cs_field_t  *bflux = cs_field_by_id(bflux_field_id);
+  cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
+
+  /* Allocate and initialize the structure storing the balance evaluation */
+  cs_equation_balance_t  *eb = cs_equation_balance_create(quant->n_cells);
+
+  cs_equation_balance_reset(quant->n_cells, eb);
+
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+  shared(dt_cur, quant, connect, eqp, eqb, eqc, pot, bflux,             \
+         eb, cs_cdofb_cell_bld)
+  {
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    /* Each thread get back its related structures:
+       Get the cell-wise view of the mesh and the algebraic system */
+    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
+
+    /* Set inside the OMP section so that each thread has its own value */
+
+    cs_real_t  _p_cur[10], _p_prev[10], _p_theta[10];
+    cs_real_t  *p_cur = NULL, *p_prev = NULL, *p_theta = NULL;
+
+    if (connect->n_max_vbyc > 10) {
+      BFT_MALLOC(p_cur, connect->n_max_vbyc, cs_real_t);
+      BFT_MALLOC(p_prev, connect->n_max_vbyc, cs_real_t);
+      BFT_MALLOC(p_theta, connect->n_max_vbyc, cs_real_t);
+    }
+    else {
+      p_cur = _p_cur;
+      p_prev = _p_prev;
+      p_theta = _p_theta;
+    }
+
+    /* Initialization of the values of properties */
+    double  time_pty_val = 1.0;
+    double  reac_pty_vals[CS_CDO_N_MAX_REACTIONS];
+
+    const cs_real_t  t_eval_pty = t_cur + 0.5*dt_cur;
+
+    cs_equation_init_properties(eqp, eqb, t_eval_pty,
+                                &time_pty_val, reac_pty_vals, cb);
+
+    /* --------------------------------------------- */
+    /* Main loop on cells to build the linear system */
+    /* --------------------------------------------- */
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
+      const cs_flag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
+
+      /* Set the local mesh structure for the current cell */
+      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+
+      /* Set the value of the current potential */
+      for (short int f = 0; f < cm->n_fc; f++)
+        p_cur[f] = eqc->face_values[cm->f_ids[f]];
+      p_cur[cm->n_fc] = pot->val[cm->c_id];
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
+      if (c_id % CS_CDOFB_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
+#endif
+
+      /* Set p_theta */
+      switch (eqp->time_scheme) {
+      case CS_TIME_SCHEME_EXPLICIT:
+        for (short int i = 0; i < cm->n_fc + 1; i++)
+          p_theta[i] = p_prev[i];
+        break;
+
+      case CS_TIME_SCHEME_CRANKNICO:
+        for (short int i = 0; i < cm->n_fc + 1; i++)
+          p_theta[i] = 0.5*(p_cur[i] + p_prev[i]);
+        break;
+
+      case CS_TIME_SCHEME_THETA:
+        for (short int i = 0; i < cm->n_fc + 1; i++)
+          p_theta[i] = eqp->theta*p_cur[i] + (1-eqp->theta)*p_prev[i];
+        break;
+
+      default:
+        for (short int i = 0; i < cm->n_fc + 1; i++)
+          p_theta[i] = p_cur[i];
+        break;
+
+      } /* Switch on time scheme */
+
+      /* DIFFUSION TERM */
+      if (cs_equation_param_has_diffusion(eqp)) {
+
+        /* Define the local stiffness matrix */
+        if (!(eqb->diff_pty_uniform))
+          cs_equation_set_diffusion_property_cw(eqp, cm, t_eval_pty, cell_flag,
+                                                cb);
+
+        /* local matrix owned by the cellwise builder (store in cb->loc) */
+        eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
+
+        cs_real_t  *res = cb->values;
+        for (short int v = 0; v < cm->n_vc; v++)
+          res[v] = 0.;
+
+        cs_sdm_square_matvec(cb->loc, p_theta, res);
+
+        eb->diffusion_term[cm->c_id] = res[cm->n_fc];
+
+      } /* END OF DIFFUSION */
+
+      /* SOURCE TERM */
+      /* =========== */
+
+      if (cs_equation_param_has_sourceterm(eqp)) {
+
+        /* Reset the local contribution */
+        cs_real_t  *src = cb->values;
+        memset(src, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
+
+        /* Source term contribution to the algebraic system
+           If the equation is steady, the source term has already been computed
+           and is added to the right-hand side during its initialization. */
+        cs_source_term_compute_cellwise(eqp->n_source_terms,
+                    (const cs_xdef_t **)eqp->source_terms,
+                                        cm,
+                                        eqb->source_mask,
+                                        eqb->compute_source,
+                                        t_eval_pty,
+                                        NULL,  /* No input structure */
+                                        cb,    /* mass matrix is cb->hdg */
+                                        src);
+
+        eb->source_term[cm->c_id] += src[cm->n_fc];
+
+      } /* End of term source contribution */
+
+      /* /\* UNSTEADY TERM + TIME SCHEME *\/ */
+      /* /\* =========================== *\/ */
+
+      /* if (cs_equation_param_has_time(eqp)) { */
+
+      /*   /\* Get the value of the time property *\/ */
+      /*   double  tpty_val = 1/dt_cur; */
+      /*   if (eqb->time_pty_uniform) */
+      /*     tpty_val *= time_pty_val; */
+      /*   else */
+      /*     tpty_val *= cs_property_get_cell_value(c_id, t_eval_pty, */
+      /*                                            eqp->time_property); */
+
+      /*   /\* Assign local matrix to a mass matrix to define *\/ */
+      /*   cs_sdm_t  *mass_mat = cb->loc; */
+      /*   assert(mass_mat->n_rows == mass_mat->n_cols); */
+      /*   assert(mass_mat->n_rows == cm->n_fc + 1); */
+
+      /*   if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { */
+
+      /*     /\* Use a vector to deal with the diagonal matrix *\/ */
+      /*     memset(mass_mat->val, 0, sizeof(cs_real_t)*(cm->n_fc + 1)); */
+      /*     mass_mat->val[cm->n_fc] = cm->vol_c * tpty_val; */
+
+      /*   } */
+      /*   else { */
+
+      /*     memset(mass_mat->val, 0, */
+      /*            sizeof(cs_real_t)*(cm->n_fc + 1)*(cm->n_fc + 1)); */
+
+      /*     bft_error(__FILE__, __LINE__, 0, */
+      /*               "%s: Not implemented yet.", __func__); */
+
+      /*   } */
+
+      /*   /\* Apply the time discretization to the local system. */
+      /*      Update csys (matrix and rhs) *\/ */
+      /*   eqc->apply_time_scheme(eqp, tpty_val, mass_mat, eqb->sys_flag, cb, */
+      /*                          csys); */
+
+      /* } /\* END OF TIME CONTRIBUTION *\/ */
+
+
+    } // Main loop on cells
+
+    if (p_cur != _p_cur) {
+      BFT_FREE(p_cur);
+      BFT_FREE(p_prev);
+      BFT_FREE(p_theta);
+    }
+
+  } // OPENMP Block
+
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+    eb->balance[c_id] =
+      eb->unsteady_term[c_id] + eb->reaction_term[c_id] +
+      eb->diffusion_term[c_id] + eb->advection_term[c_id] +
+      eb->source_term[c_id];
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
+
+  return eb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation

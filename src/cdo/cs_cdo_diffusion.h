@@ -357,6 +357,31 @@ cs_cdo_diffusion_wbs_get_pc_flux(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the normal flux for a face assuming only the knowledge
+ *          of the potential at cell vertices. COST algorithm is used for
+ *          reconstructing a piecewise constant gradient from the degrees of
+ *          freedom.
+ *
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      diff_tensor  property tensor times the face normal
+ * \param[in]      pot_values   array of values of the potential (all the mesh)
+ * \param[in]      f            face id in the cell mesh
+ * \param[in]      t_eval       time at which one evaluates the advection field
+ * \param[in, out] fluxes       values of the fluxes related to each vertex
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_diffusion_face_p0_flux(const cs_cell_mesh_t     *cm,
+                                const cs_real_3_t        *diff_tensor,
+                                const cs_real_t          *pot_values,
+                                short int                 f,
+                                cs_real_t                 t_eval,
+                                cs_real_t                *fluxes);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the diffusive flux across a face (based on a subdivision
  *          into tetrahedra of the volume p_{f,c})
  *

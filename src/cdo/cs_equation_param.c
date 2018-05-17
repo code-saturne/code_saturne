@@ -788,7 +788,9 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_EXTRA_OP:
-    if (strcmp(val, "peclet") == 0)
+    if (strcmp(val, "balance") == 0)
+      eqp->process_flag |= CS_EQUATION_POST_BALANCE;
+    else if (strcmp(val, "peclet") == 0)
       eqp->process_flag |= CS_EQUATION_POST_PECLET;
     else if (strcmp(val, "upwind_coef") == 0)
       eqp->process_flag |= CS_EQUATION_POST_UPWIND_COEF;

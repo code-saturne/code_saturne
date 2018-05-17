@@ -110,6 +110,39 @@ static const char _err_empty_eq[] =
 /*!
  * \brief  Set the initial values for the variable related to an equation
  *
+ * \param[in]       eq       pointer to a cs_equation_t structure
+ * \param[in]       ts       pointer to cs_time_step_t structure
+ * \param[in]       tag      tag to add to the equation name to build the label
+ * \param[in, out]  label    label for the postprocessing
+ * \param[in]       values   pointer to the array of values to post
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_post_balance_at_vertices(const cs_equation_t   *eq,
+                          const cs_time_step_t  *ts,
+                          const char            *tag,
+                          char                  *label,
+                          const cs_real_t       *values)
+
+{
+  sprintf(label, "%s.Balance.%s", eq->name, tag);
+
+  cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                           CS_POST_WRITER_DEFAULT,
+                           label,
+                           eq->param->dim,
+                           false,
+                           false,
+                           CS_POST_TYPE_cs_real_t,
+                           values,
+                           ts);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the initial values for the variable related to an equation
+ *
  * \param[in]       t_eval   time at which one performs the evaluation
  * \param[in, out]  eq       pointer to a cs_equation_t structure
  */
@@ -967,6 +1000,7 @@ cs_equation_add(const char            *eqname,
   eq->initialize_system = NULL;
   eq->build_system = NULL;
   eq->update_field = NULL;
+  eq->compute_balance = NULL;
   eq->compute_flux_across_plane = NULL;
   eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = NULL;
@@ -1224,6 +1258,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->build_system = cs_cdovb_scaleq_build_system;
         eq->prepare_solving = _prepare_vb_solving;
         eq->update_field = cs_cdovb_scaleq_update_field;
+        eq->compute_balance = cs_cdovb_scaleq_balance;
         eq->compute_flux_across_plane =
           cs_cdovb_scaleq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
@@ -1306,6 +1341,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->update_field = cs_cdofb_scaleq_update_field;
         eq->compute_flux_across_plane = NULL;
         eq->compute_cellwise_diff_flux = NULL;
+        eq->compute_balance = cs_cdofb_scaleq_balance;
         eq->postprocess = cs_cdofb_scaleq_extra_op;
         eq->get_extra_values = cs_cdofb_scaleq_get_face_values;
 
@@ -2029,26 +2065,25 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
 /*!
  * \brief  Predefined extra-operations related to all equations
  *
- * \param[in]  ts      pointer to a cs_time_step_t struct.
- * \param[in]  dt      value of the current time step
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t struct.
+ * \param[in]  dtcur     value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_extra_post_all(const cs_time_step_t    *ts,
-                           double                   dt)
+cs_equation_extra_post_all(const cs_mesh_t            *mesh,
+                           const cs_cdo_connect_t     *connect,
+                           const cs_cdo_quantities_t  *cdoq,
+                           const cs_time_step_t       *ts,
+                           double                      dt_cur)
 {
-  if (_n_equations < 1)
-    return;
-
-  CS_UNUSED(dt);
-
-  int  len;
-
   for (int i = 0; i < _n_equations; i++) {
 
     cs_equation_t  *eq = _equations[i];
-    char *postlabel = NULL;
+    assert(eq != NULL); /* Sanity check */
 
     const cs_field_t  *field = cs_field_by_id(eq->field_id);
     const cs_equation_param_t  *eqp = eq->param;
@@ -2064,7 +2099,8 @@ cs_equation_extra_post_all(const cs_time_step_t    *ts,
        number */
     if (eqp->process_flag & CS_EQUATION_POST_PECLET) {
 
-      len = strlen(eq->name) + 7 + 1;
+      char *postlabel = NULL;
+      int len = strlen(eq->name) + 7 + 1;
       BFT_MALLOC(postlabel, len, char);
       sprintf(postlabel, "%s.Peclet", eq->name);
 
@@ -2092,8 +2128,90 @@ cs_equation_extra_post_all(const cs_time_step_t    *ts,
 
     } // Peclet number
 
+    /* Post-processing of a common adimensionnal quantities: the Peclet
+       number */
+    if (eqp->process_flag & CS_EQUATION_POST_BALANCE) {
+      if (eq->compute_balance != NULL) {
+
+        cs_equation_balance_t  *b = eq->compute_balance(eqp,
+                                                        eq->builder,
+                                                        eq->scheme_context,
+                                                        eq->field_id,
+                                                        eq->boundary_flux_id,
+                                                        dt_cur);
+
+        char *postlabel = NULL;
+        int len = strlen(eq->name) + 13 + 1;
+        BFT_MALLOC(postlabel, len, char);
+
+        switch (eqp->space_scheme) {
+
+        case CS_SPACE_SCHEME_CDOVB:
+          {
+            sprintf(postlabel, "%s.Balance", eq->name);
+
+            cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                                     CS_POST_WRITER_DEFAULT,
+                                     postlabel,
+                                     eqp->dim,
+                                     false,
+                                     false,
+                                     CS_POST_TYPE_cs_real_t,
+                                     b->balance,
+                                     ts);
+
+            if (cs_equation_param_has_diffusion(eqp))
+              _post_balance_at_vertices(eq, ts, "Diff", postlabel,
+                                        b->diffusion_term);
+
+            if (cs_equation_param_has_convection(eqp))
+              _post_balance_at_vertices(eq, ts, "Adv", postlabel,
+                                        b->advection_term);
+
+            if (cs_equation_param_has_time(eqp))
+              _post_balance_at_vertices(eq, ts, "Time", postlabel,
+                                        b->unsteady_term);
+
+            if (cs_equation_param_has_reaction(eqp))
+              _post_balance_at_vertices(eq, ts, "Reac", postlabel,
+                                        b->reaction_term);
+
+            if (cs_equation_param_has_sourceterm(eqp))
+              _post_balance_at_vertices(eq, ts, "Src", postlabel,
+                                        b->source_term);
+
+          }
+          break;
+
+        default:
+          break;
+        }
+
+        sprintf(postlabel, "%s.BdyFlux", eq->name);
+
+        /* Post-process the boundary fluxes (diffusive and convective) */
+        cs_post_write_var(CS_POST_MESH_BOUNDARY,
+                          CS_POST_WRITER_DEFAULT,
+                          postlabel,
+                          1,
+                          true,             // interlace
+                          true,             // true = original mesh
+                          CS_POST_TYPE_cs_real_t,
+                          NULL,             // values on cells
+                          NULL,             // values at internal faces
+                          b->boundary_term, // values at border faces
+                          ts);              // time step management struct.
+
+        /* Free buffers */
+        BFT_FREE(postlabel);
+        cs_equation_balance_destroy(&b);
+
+      } /* compute_balance is defined */
+    }   /* do the analysis */
+
     /* Perform post-processing specific to a numerical scheme */
-    eq->postprocess(eq->name, field,
+    eq->postprocess(eq->name,
+                    field,
                     eq->param,
                     eq->builder,
                     eq->scheme_context);

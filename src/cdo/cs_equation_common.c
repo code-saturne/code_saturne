@@ -1178,5 +1178,94 @@ cs_equation_get_tmpbuf_size(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate a cs_equation_balance_t structure
+ *
+ * \param[in]  size       size of arrays in the structure
+ *
+ * \return  a pointer to the new allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_balance_t *
+cs_equation_balance_create(cs_lnum_t  size)
+{
+  cs_equation_balance_t  *b = NULL;
+
+  BFT_MALLOC(b, 1, cs_equation_balance_t);
+
+  BFT_MALLOC(b->balance, size, cs_real_t);
+  BFT_MALLOC(b->unsteady_term, size, cs_real_t);
+  BFT_MALLOC(b->reaction_term, size, cs_real_t);
+  BFT_MALLOC(b->diffusion_term, size, cs_real_t);
+  BFT_MALLOC(b->advection_term, size, cs_real_t);
+  BFT_MALLOC(b->source_term, size, cs_real_t);
+  BFT_MALLOC(b->boundary_term, size, cs_real_t);
+
+  return b;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reset a cs_equation_balance_t structure
+ *
+ * \param[in]      size       size of arrays in the structure
+ * \param[in, out] b     pointer to a cs_equation_balance_t to reset
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_balance_reset(cs_lnum_t                size,
+                          cs_equation_balance_t   *b)
+{
+  if (b == NULL)
+    return;
+  if (size < 1)
+    return;
+
+  if (b->balance == NULL)
+    bft_error(__FILE__, __LINE__, 0, " %s: array is not allocated.", __func__);
+
+  size_t  bufsize = size *sizeof(cs_real_t);
+
+  memset(b->balance, 0, bufsize);
+  memset(b->unsteady_term, 0, bufsize);
+  memset(b->reaction_term, 0, bufsize);
+  memset(b->diffusion_term, 0, bufsize);
+  memset(b->advection_term, 0, bufsize);
+  memset(b->source_term, 0, bufsize);
+  memset(b->boundary_term, 0, bufsize);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_equation_balance_t structure
+ *
+ * \param[in, out]  p_balance  pointer to the pointer to free
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_balance_destroy(cs_equation_balance_t   **p_balance)
+{
+  cs_equation_balance_t *b = *p_balance;
+
+  if (b == NULL)
+    return;
+
+  BFT_FREE(b->balance);
+  BFT_FREE(b->unsteady_term);
+  BFT_FREE(b->reaction_term);
+  BFT_FREE(b->diffusion_term);
+  BFT_FREE(b->advection_term);
+  BFT_FREE(b->source_term);
+  BFT_FREE(b->boundary_term);
+
+  BFT_FREE(b);
+  *p_balance = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

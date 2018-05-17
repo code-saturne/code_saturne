@@ -1058,6 +1058,351 @@ cs_cdovb_scaleq_update_field(const cs_real_t            *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the balance for an equation over the full computational
+ *         domain between time t_cur and t_cur + dt_cur
+ *         Case of scalar-valued CDO vertex-based scheme
+ *
+ * \param[in]      eqp             pointer to a cs_equation_param_t structure
+ * \param[in]      eqb             pointer to a cs_equation_builder_t structure
+ * \param[in, out] context         pointer to a scheme builder structure
+ * \param[in]      var_field_id    id of the variable field
+ * \param[in]      bflux_field_id  id of the variable field
+ * \param[in]      dt_cur          current value of the time step
+ *
+ * \return a pointer to a cs_equation_balance_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_balance_t *
+cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
+                        const cs_equation_builder_t   *eqb,
+                        void                          *context,
+                        int                            var_field_id,
+                        int                            bflux_field_id,
+                        cs_real_t                      dt_cur)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
+  const cs_real_t  t_eval_pty = t_cur + 0.5*dt_cur;
+
+  cs_timer_t  t0 = cs_timer_time();
+
+  cs_field_t  *pot = cs_field_by_id(var_field_id);
+  cs_field_t  *bflux = cs_field_by_id(bflux_field_id);
+  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
+
+  /* Assign the boundary flux for faces where Neumann is defined */
+  cs_equation_init_boundary_flux_from_bc(t_cur, quant, eqp, bflux->val);
+
+  /* Allocate and initialize the structure storing the balance evaluation */
+  cs_equation_balance_t  *eb = cs_equation_balance_create(quant->n_vertices);
+
+  cs_equation_balance_reset(quant->n_vertices, eb);
+
+  /* OpenMP block */
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
+  shared(dt_cur, quant, connect, eqp, eqb, eqc, pot, bflux,             \
+         eb, cs_cdovb_cell_bld)
+  {
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    /* Each thread get back its related structures:
+       Get the cell-wise view of the mesh and the algebraic system */
+    cs_face_mesh_light_t  *fm = cs_cdo_local_get_face_mesh_light(t_id);
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_builder_t  *cb = cs_cdovb_cell_bld[t_id];
+
+    /* Set inside the OMP section so that each thread has its own value */
+    cs_real_t  _p_cur[10], _p_prev[10], _p_theta[10];
+    cs_real_t  *p_cur = NULL, *p_prev = NULL, *p_theta = NULL;
+
+    if (connect->n_max_vbyc > 10) {
+      BFT_MALLOC(p_cur, connect->n_max_vbyc, cs_real_t);
+      BFT_MALLOC(p_prev, connect->n_max_vbyc, cs_real_t);
+      BFT_MALLOC(p_theta, connect->n_max_vbyc, cs_real_t);
+    }
+    else {
+      p_cur = _p_cur;
+      p_prev = _p_prev;
+      p_theta = _p_theta;
+    }
+
+    /* Initialization of the values of properties */
+    double  time_pty_val = 1.0;
+    double  reac_pty_vals[CS_CDO_N_MAX_REACTIONS];
+
+    cs_equation_init_properties(eqp, eqb, t_eval_pty,
+                                &time_pty_val, reac_pty_vals, cb);
+
+    /* --------------------------------------------- */
+    /* Main loop on cells to build the linear system */
+    /* --------------------------------------------- */
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
+      const cs_flag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
+
+      /* Set the local mesh structure for the current cell */
+      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+
+      /* Set the value of the current potential */
+      for (short int v = 0; v < cm->n_vc; v++)
+        p_cur[v] = pot->val[cm->v_ids[v]];
+
+      if (eqb->sys_flag & CS_FLAG_SYS_HLOC_CONF)
+        eqc->get_mass_matrix(eqc->hdg_mass, cm, cb); // stored in cb->hdg
+
+      /* UNSTEADY TERM */
+      if (cs_equation_param_has_time(eqp)) {
+
+        /* Set the value of the previous potential */
+        for (short int v = 0; v < cm->n_vc; v++)
+          p_prev[v] = pot->val_pre[cm->v_ids[v]];
+
+        /* Get the value of the time property */
+        double  tpty_val = 1/dt_cur;
+        if (eqb->time_pty_uniform)
+          tpty_val *= time_pty_val;
+        else
+          tpty_val *= cs_property_value_in_cell(cm,
+                                                eqp->time_property,
+                                                t_eval_pty);
+
+        if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
+
+          assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+          /* |c|*wvc = |dual_cell(v) cap c| */
+          const double  ptyc = tpty_val * cm->vol_c;
+          for (short int v = 0; v < cm->n_vc; v++) {
+            cs_real_t  dp = p_cur[v] - p_prev[v];
+#           pragma omp atomic
+            eb->unsteady_term[cm->v_ids[v]] += ptyc * cm->wvc[v] * dp;
+          }
+
+        }
+        else {
+
+          cs_real_t  *dp = cb->values;
+          cs_real_t  *res = cb->values + cm->n_vc;
+          for (short int v = 0; v < cm->n_vc; v++) {
+            res[v] = 0.;
+            dp[v] = p_cur[v] - p_prev[v];
+          }
+          cs_sdm_square_matvec(cb->hdg, dp, res);
+
+          for (short int v = 0; v < cm->n_vc; v++) {
+#           pragma omp atomic
+            eb->unsteady_term[cm->v_ids[v]] += res[v];
+          }
+
+        } /* Add unsteady contribution */
+
+      } /* TIME */
+
+      /* Set p_theta */
+      switch (eqp->time_scheme) {
+      case CS_TIME_SCHEME_EXPLICIT:
+        for (short int v = 0; v < cm->n_vc; v++)
+          p_theta[v] = p_prev[v];
+        break;
+
+      case CS_TIME_SCHEME_CRANKNICO:
+        for (short int v = 0; v < cm->n_vc; v++)
+          p_theta[v] = 0.5*(p_cur[v] + p_prev[v]);
+        break;
+
+      case CS_TIME_SCHEME_THETA:
+        for (short int v = 0; v < cm->n_vc; v++)
+          p_theta[v] = eqp->theta*p_cur[v] + (1-eqp->theta)*p_prev[v];
+        break;
+
+      default:
+        for (short int v = 0; v < cm->n_vc; v++)
+          p_theta[v] = p_cur[v];
+        break;
+
+      } /* Switch on time scheme */
+
+      /* REACTION TERM */
+      if (cs_equation_param_has_reaction(eqp)) {
+
+        /* Define the local reaction property */
+        double  rpty_val = 0;
+        for (int r = 0; r < eqp->n_reaction_terms; r++)
+          if (eqb->reac_pty_uniform[r])
+            rpty_val += reac_pty_vals[r];
+          else
+            rpty_val += cs_property_value_in_cell(cm,
+                                                  eqp->reaction_properties[r],
+                                                  t_eval_pty);
+
+        cs_real_t  *res = cb->values;
+        for (short int v = 0; v < cm->n_vc; v++)
+          res[v] = 0.;
+
+        cs_sdm_square_matvec(cb->hdg, p_theta, res);
+
+        for (short int v = 0; v < cm->n_vc; v++) {
+#         pragma omp atomic
+          eb->reaction_term[cm->v_ids[v]] += rpty_val * res[v];
+        }
+
+      } /* REACTION */
+
+      /* DIFFUSION */
+      if (cs_equation_param_has_diffusion(eqp)) {
+
+        /* Define the local stiffness matrix */
+        if (!(eqb->diff_pty_uniform))
+          cs_equation_set_diffusion_property_cw(eqp, cm, t_eval_pty, cell_flag,
+                                                cb);
+
+        /* local matrix owned by the cellwise builder (store in cb->loc) */
+        eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
+
+        cs_real_t  *res = cb->values;
+        for (short int v = 0; v < cm->n_vc; v++)
+          res[v] = 0.;
+
+        cs_sdm_square_matvec(cb->loc, p_theta, res);
+
+        for (short int v = 0; v < cm->n_vc; v++) {
+#         pragma omp atomic
+          eb->diffusion_term[cm->v_ids[v]] += res[v];
+        }
+
+      } /* DIFFUSION */
+
+      /* ADVECTION TERM */
+      if (cs_equation_param_has_convection(eqp)) {
+
+        /* Define the local advection matrix */
+        eqc->get_advection_matrix(eqp, cm, t_eval_pty, fm, cb);
+
+        cs_real_t  *res = cb->values;
+        for (short int v = 0; v < cm->n_vc; v++)
+          res[v] = 0.;
+
+        cs_sdm_square_matvec(cb->loc, p_theta, res);
+
+        for (short int v = 0; v < cm->n_vc; v++) {
+#         pragma omp atomic
+          eb->advection_term[cm->v_ids[v]] += res[v];
+        }
+
+      } /* END OF ADVECTION */
+
+      /* SOURCE TERM */
+      if (cs_equation_param_has_sourceterm(eqp)) {
+
+        cs_real_t  *src = cb->values;
+        memset(src, 0, cm->n_vc*sizeof(cs_real_t));
+
+        /* Source term contribution to the algebraic system
+           If the equation is steady, the source term has already been computed
+           and is added to the right-hand side during its initialization. */
+        cs_source_term_compute_cellwise(eqp->n_source_terms,
+                    (const cs_xdef_t **)eqp->source_terms,
+                                        cm,
+                                        eqb->source_mask,
+                                        eqb->compute_source,
+                                        t_eval_pty,
+                                        NULL,  /* No input structure */
+                                        cb,    /* mass matrix is cb->hdg */
+                                        src);
+
+        for (short int v = 0; v < cm->n_vc; v++) {
+#         pragma omp atomic
+          eb->source_term[cm->v_ids[v]] += src[v];
+        }
+
+      } /* End of term source */
+
+      /* BOUNDARY CONDITIONS */
+      if (cell_flag &  CS_FLAG_BOUNDARY) {
+
+        const cs_cdo_bc_t  *face_bc = eqb->face_bc;
+
+        /* Identify which face is a boundary face */
+        for (short int f = 0; f < cm->n_fc; f++) {
+          const cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+          if (bf_id > -1) { /* Border face */
+
+            /* Advective flux */
+            if (cs_equation_param_has_convection(eqp)) {
+              cs_advection_field_get_f2v_boundary_flux(cm,
+                                                       eqp->adv_field,
+                                                       f,
+                                                       t_eval_pty,
+                                                       cb->values);
+
+              for (short int v = 0; v < cm->n_vc; v++) {
+                const cs_real_t  adv_flux = cb->values[v] * p_cur[v];
+#               pragma omp atomic
+                eb->boundary_term[bf_id] += adv_flux;
+#               pragma omp atomic
+                eb->advection_term[cm->v_ids[v]] += adv_flux;
+              }
+            }
+
+            /* Diffusive flux */
+            if (cs_equation_param_has_diffusion(eqp)) {
+              if (face_bc->flag[bf_id] & CS_CDO_BC_DIRICHLET ||
+                  face_bc->flag[bf_id] & CS_CDO_BC_HMG_DIRICHLET) {
+                cs_cdovb_diffusion_face_p0_flux(cm,
+                        (const cs_real_t (*)[3])cb->pty_mat,
+                                                p_cur,
+                                                f,
+                                                t_eval_pty,
+                                                cb->values);
+
+                for (short int v = 0; v < cm->n_vc; v++) {
+#                 pragma omp atomic
+                  eb->boundary_term[bf_id] += cb->values[v];
+#                 pragma omp atomic
+                  eb->diffusion_term[cm->v_ids[v]] += cb->values[v];
+                }
+
+              }
+            }
+
+          } /* Is a boundary face */
+        } /* Loop on cell faces */
+
+      } /* BOUNDARY CONDITIONS */
+
+    } /* Main loop on cells */
+
+    if (p_cur != _p_cur) {
+      BFT_FREE(p_cur);
+      BFT_FREE(p_prev);
+      BFT_FREE(p_theta);
+    }
+
+  } /* OpenMP Block */
+
+  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
+    eb->balance[v_id] =
+      eb->unsteady_term[v_id] + eb->reaction_term[v_id] +
+      eb->diffusion_term[v_id] + eb->advection_term[v_id] +
+      eb->source_term[v_id];
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+
+  return eb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the diffusive and convective flux across a list of faces
  *
  * \param[in]       normal     indicate in which direction flux is > 0

@@ -576,14 +576,20 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
 /*!
  * \brief  Predefined extra-operations related to all equations
  *
- * \param[in]  ts      pointer to a cs_time_step_t struct.
- * \param[in]  dt      value of the current time step
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t struct.
+ * \param[in]  dtcur     value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_extra_post_all(const cs_time_step_t    *ts,
-                           double                   dt);
+cs_equation_extra_post_all(const cs_mesh_t            *mesh,
+                           const cs_cdo_connect_t     *connect,
+                           const cs_cdo_quantities_t  *cdoq,
+                           const cs_time_step_t       *ts,
+                           double                      dt_cur);
 
 /*----------------------------------------------------------------------------*/
 

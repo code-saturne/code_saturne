@@ -82,6 +82,9 @@ BEGIN_C_DECLS
  * @name Flags specifying which extra operation is needed for an equation.
  * @{
  *
+ * \def CS_EQUATION_POST_BALANCE
+ * \brief Compute and postprocess the equation balance
+ *
  * \def CS_EQUATION_POST_PECLET
  * \brief Compute and postprocess the Peclet number
  *
@@ -90,8 +93,9 @@ BEGIN_C_DECLS
  *
  */
 
-#define CS_EQUATION_POST_PECLET      (1 << 0) //  1
-#define CS_EQUATION_POST_UPWIND_COEF (1 << 1) //  2
+#define CS_EQUATION_POST_BALANCE     (1 << 0) /* 1 */
+#define CS_EQUATION_POST_PECLET      (1 << 1) /* 2 */
+#define CS_EQUATION_POST_UPWIND_COEF (1 << 2) /* 4 */
 
 /*! @} */
 
