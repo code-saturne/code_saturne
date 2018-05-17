@@ -1047,6 +1047,13 @@ cs_f_field_var_ptr_by_id(int          id,
   dim[1] = 0;
   *p = NULL;
 
+  if (pointer_type > f->n_time_vals)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Fortran pointer with %d previous values of field \"%s\",\n"
+         "requests the %d previous values."),
+       f->n_time_vals-1, f->name, pointer_type-1);
+
   if (pointer_type == 1 || pointer_type == 2 || pointer_type == 3) {
 
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
