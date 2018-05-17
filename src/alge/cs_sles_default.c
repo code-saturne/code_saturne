@@ -215,6 +215,8 @@ _sles_default_native(int                f_id,
     /* Multigrid used as preconditioner if possible, as solver otherwise */
 
     if ((matrix_type == CS_MATRIX_MSR) || (matrix_type == CS_MATRIX_N_TYPES)) {
+      if (sles_it_type == CS_SLES_PCG && cs_glob_n_threads > 1)
+        sles_it_type = CS_SLES_IPCG;
       cs_sles_it_t *c = cs_sles_it_define(f_id,
                                           name,
                                           sles_it_type,
