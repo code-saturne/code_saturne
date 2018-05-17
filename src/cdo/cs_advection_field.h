@@ -665,6 +665,21 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
                         cs_real_t                 peclet[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the divergence of the advection field
+ *
+ * \param[in]      adv         pointer to the advection field struct.
+ * \param[in]      t_eval      time at which one evaluates the advection field
+ *
+ * \return a pointer to an array storing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_advection_field_divergence(const cs_adv_field_t     *adv,
+                              cs_real_t                 t_eval);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

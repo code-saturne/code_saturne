@@ -1344,7 +1344,7 @@ cs_gwf_extra_post(void                      *input,
 
   const cs_gwf_t  *gw = (const cs_gwf_t *)input;
 
-  if (mesh_id == -2) {
+  if (mesh_id == CS_POST_MESH_BOUNDARY) {
 
     const cs_field_t  *nflx =
       cs_advection_field_get_field(gw->adv_field,
@@ -1390,7 +1390,30 @@ cs_gwf_extra_post(void                      *input,
       cs_log_printf(CS_LOG_DEFAULT, " %32s: % -5.3e\n",
                     "Remaining boundary", default_balance);
 
-  } /* mesh_id = -2 */
+  } /* boundary mesh_id */
+
+  if (mesh_id == CS_POST_MESH_VOLUME) {
+
+    /* Only case avalaible up to now */
+    if (cs_advection_field_get_deftype(gw->adv_field) == CS_XDEF_BY_ARRAY) {
+
+      cs_real_t  *divergence = cs_advection_field_divergence(gw->adv_field,
+                                                             time_step->t_cur);
+
+      cs_post_write_vertex_var(mesh_id,
+                               CS_POST_WRITER_DEFAULT,
+                               "darcy_flux_divergence",
+                               1,
+                               false,
+                               false,
+                               CS_POST_TYPE_cs_real_t,
+                               divergence,
+                               time_step);
+
+      BFT_FREE(divergence);
+    }
+
+  } /* volume mesh id */
 
 }
 

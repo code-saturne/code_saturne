@@ -1804,6 +1804,108 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the divergence of the advection field
+ *
+ * \param[in]      adv         pointer to the advection field struct.
+ * \param[in]      t_eval      time at which one evaluates the advection field
+ *
+ * \return a pointer to an array storing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_advection_field_divergence(const cs_adv_field_t     *adv,
+                              cs_real_t                 t_eval)
+{
+  CS_UNUSED(t_eval); /* Useful in case of analytic definition */
+
+  cs_real_t  *divergence = NULL;
+
+  if (adv == NULL)
+    return divergence;
+
+  const cs_xdef_t  *def = adv->definition;
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+  const cs_cdo_connect_t  *connect = cs_cdo_connect;
+
+  switch (def->type) {
+
+  case CS_XDEF_BY_ARRAY:
+    {
+      cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)def->input;
+
+      if (cs_flag_test(ai->loc, cs_flag_dual_face_byc)) {
+
+        const cs_adjacency_t  *c2e = connect->c2e;
+        const cs_adjacency_t  *e2v = connect->e2v;
+
+        BFT_MALLOC(divergence, cdoq->n_vertices, cs_real_t);
+        memset(divergence, 0, sizeof(cs_real_t)*cdoq->n_vertices);
+
+        for (cs_lnum_t  c_id = 0; c_id < cdoq->n_cells; c_id++) {
+          for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
+
+            const cs_lnum_t  e_id = c2e->ids[j];
+            const cs_real_t  flx = ai->values[j];
+            const cs_lnum_t  eshift = 2*e_id;
+            const cs_lnum_t  v0 = e2v->ids[eshift];
+            const cs_lnum_t  v1 = e2v->ids[eshift+1];
+            const short int  sgn = e2v->sgn[eshift];
+
+            divergence[v0] +=  sgn*flx;
+            divergence[v1] += -sgn*flx;
+
+          } /* Loop on cell edges */
+        } /* Loop on cells */
+
+        /* Handle the boundary flux */
+        const cs_field_t  *bflx =
+          cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+        const cs_adjacency_t  *f2e = connect->f2e;
+
+        for (cs_lnum_t bf_id = 0; bf_id < cdoq->n_b_faces; bf_id++) {
+
+          const cs_real_t  face_flx = bflx->val[bf_id];
+          const cs_real_t  invsurf = 1./cdoq->b_face_surf[bf_id];
+          const cs_lnum_t  f_id = cdoq->n_i_faces + bf_id;
+
+          for (cs_lnum_t i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
+
+            const cs_lnum_t  e_id = f2e->ids[i];
+            const cs_lnum_t  eshift = 2*e_id;
+            const cs_lnum_t  v0 = e2v->ids[eshift];
+            const cs_lnum_t  v1 = e2v->ids[eshift+1];
+            const double  tef = cs_math_surftri(cdoq->vtx_coord + 3*v0,
+                                                cdoq->vtx_coord + 3*v1,
+                                                cdoq->b_face_center + 3*bf_id);
+
+            const double  weighted_flux = 0.5 * tef * invsurf * face_flx;
+
+            divergence[v0] += weighted_flux;
+            divergence[v1] += weighted_flux;
+
+          } /* Loop on face edges */
+
+        } /* Loop on boundary faces */
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid location for the array.", __func__);
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.", __func__);
+
+  }
+
+  return divergence;
+}
+
+/*----------------------------------------------------------------------------*/
 
 #undef _dp3
 
