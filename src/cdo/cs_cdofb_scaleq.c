@@ -695,6 +695,9 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       if (cs_equation_param_has_sourceterm(eqp)) {
 
+        /* Reset the local contribution */
+        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
@@ -704,9 +707,9 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
                                         eqb->source_mask,
                                         eqb->compute_source,
                                         t_eval_pty,
-                                        NULL,  // No input structure
-                                        cb,    // mass matrix is cb->hdg
-                                        csys); // Fill csys->source
+                                        NULL,  /* No input structure */
+                                        cb,    /* mass matrix is cb->hdg */
+                                        csys->source);
 
         csys->rhs[cm->n_fc] += csys->source[cm->n_fc];
 

@@ -658,7 +658,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
  * \param[in]      time_eval       physical time at which one evaluates the term
  * \param[in, out] input           pointer to an element cast on-the-fly
  * \param[in, out] cb              pointer to a cs_cell_builder_t structure
- * \param[in, out] csys            cellwise algebraic system
+ * \param[in, out] result          array storing the result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -671,24 +671,21 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
                                 cs_real_t                    time_eval,
                                 void                        *input,
                                 cs_cell_builder_t           *cb,
-                                cs_cell_sys_t               *csys)
+                                cs_real_t                   *result)
 {
-  /* Reset local contributions */
-  memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
-
   if (n_source_terms < 1)
     return;
 
-  if (source_mask == NULL) { // All source terms are defined on the whole mesh
+  if (source_mask == NULL) { /* Source terms are defined on the whole mesh */
 
     for (short int st_id = 0; st_id < n_source_terms; st_id++) {
 
       cs_source_term_cellwise_t  *compute = compute_source[st_id];
 
       /* Contrib is updated inside */
-      compute(source_terms[st_id], cm, time_eval, cb, input, csys->source);
+      compute(source_terms[st_id], cm, time_eval, cb, input, result);
 
-    } // Loop on source terms
+    } /* Loop on source terms */
 
   }
   else { /* Some source terms are only defined on a selection of cells */
@@ -701,13 +698,13 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
         cs_source_term_cellwise_t  *compute = compute_source[st_id];
 
         /* Contrib is updated inside */
-        compute(source_terms[st_id], cm, time_eval, cb, input, csys->source);
+        compute(source_terms[st_id], cm, time_eval, cb, input, result);
 
-      } // Compute the source term on this cell
+      } /* Compute the source term on this cell */
 
-    } // Loop on source terms
+    } /* Loop on source terms */
 
-  } // Source terms are defined on the whole domain or not ?
+  } /* Source terms are defined on the whole domain or not ? */
 
 }
 

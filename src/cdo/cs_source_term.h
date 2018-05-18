@@ -170,7 +170,7 @@ cs_source_term_init(cs_param_space_scheme_t      space_scheme,
  * \param[in]      time_eval       physical time at which one evaluates the term
  * \param[in, out] input           pointer to an element cast on-the-fly
  * \param[in, out] cb              pointer to a cs_cell_builder_t structure
- * \param[in, out] csys            cellwise algebraic system
+ * \param[in, out] result          array storing the result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -183,7 +183,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
                                 cs_real_t                    time_eval,
                                 void                        *input,
                                 cs_cell_builder_t           *cb,
-                                cs_cell_sys_t               *csys);
+                                cs_real_t                   *result);
 
 /*----------------------------------------------------------------------------*/
 /*!
