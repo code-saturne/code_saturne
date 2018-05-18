@@ -44,6 +44,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_boundary_zone.h"
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
@@ -903,7 +904,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
         /* Last treatment for the advection term: Apply boundary conditions
            csys is updated inside (matrix and rhs) */
         if (cell_flag & CS_FLAG_BOUNDARY)
-          eqc->add_advection_bc(cm, eqp, fm, cb, csys);
+          eqc->add_advection_bc(cm, eqp, t_eval_pty, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
         if (c_id % CS_CDOVB_SCALEQ_MODULO == 0)
@@ -1138,7 +1139,8 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_face_mesh_light_t  *fm = cs_cdo_local_get_face_mesh_light(t_id);
+    cs_face_mesh_light_t  *fml = cs_cdo_local_get_face_mesh_light(t_id);
+    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_builder_t  *cb = cs_cdovb_cell_bld[t_id];
 

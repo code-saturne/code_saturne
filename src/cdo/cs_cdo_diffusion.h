@@ -397,12 +397,39 @@ cs_cdovb_diffusion_face_p0_flux(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_diffusion_face_flux(const cs_face_mesh_t      *fm,
-                           const cs_real_t            pty_tens[3][3],
-                           const double              *p_v,
-                           const double               p_f,
-                           const double               p_c,
-                           cs_cell_builder_t         *cb);
+cs_cdo_diffusion_face_wbs_flux(const cs_face_mesh_t      *fm,
+                               const cs_real_t            pty_tens[3][3],
+                               const double              *p_v,
+                               const double               p_f,
+                               const double               p_c,
+                               cs_cell_builder_t         *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the normal flux for a face assuming only the knowledge
+ *          of the potential at cell vertices. COST algorithm is used for
+ *          reconstructing the degrees of freedom.
+ *          This routine shares similarities with
+ *          \ref cs_cdovb_diffusion_cost_flux_op
+ *
+ * \param[in]   f             face id in the cell mesh
+ * \param[in]   cm            pointer to a cs_cell_mesh_t structure
+ * \param[in]   diff_tensor   property tensor times the face normal
+ * \param[in]   pot_values    array of values of the potential (all the mesh)
+ * \param[in]   beta          value of the stabilization coef. related to reco.
+ * \param[in, out]  cb        auxiliary structure dedicated to diffusion
+ *
+ * \return the diffusive flux across the face f
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdovb_diffusion_face_cost_flux(short int                 f,
+                                  const cs_cell_mesh_t     *cm,
+                                  const cs_real_3_t        *diff_tensor,
+                                  const cs_real_t          *pot_values,
+                                  double                    beta,
+                                  cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 

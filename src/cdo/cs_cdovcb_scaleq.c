@@ -855,7 +855,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
         /* Last treatment for the advection term: Apply boundary conditions
            csys is updated inside (matrix and rhs) */
         if (cell_flag & CS_FLAG_BOUNDARY)
-          eqc->add_advection_bc(cm, eqp, fm, cb, csys);
+          eqc->add_advection_bc(cm, eqp, t_eval_pty, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
         if (c_id % CS_CDOVCB_SCALEQ_MODULO == 0)
@@ -1176,10 +1176,10 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
                                     eqp->diffusion_hodge.inv_pty,
                                     pty_tens);
 
-        flx = cs_cdo_diffusion_face_flux(fm,
-                                         (const cs_real_3_t (*))pty_tens,
-                                         p_v, p_f, eqc->cell_values[c_id],
-                                         cb);
+        flx = cs_cdo_diffusion_face_wbs_flux(fm,
+                                             (const cs_real_3_t (*))pty_tens,
+                                             p_v, p_f, eqc->cell_values[c_id],
+                                             cb);
         *d_flux += sgn * flx;
 
       } // Diffusive flux
@@ -1226,10 +1226,10 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
                                       eqp->diffusion_hodge.inv_pty,
                                       pty_tens);
 
-          flx = cs_cdo_diffusion_face_flux(fm,
-                                           (const cs_real_3_t (*))pty_tens,
-                                           p_v, p_f, eqc->cell_values[c_id],
-                                           cb);
+          flx = cs_cdo_diffusion_face_wbs_flux(fm,
+                                               (const cs_real_3_t (*))pty_tens,
+                                               p_v, p_f, eqc->cell_values[c_id],
+                                               cb);
 
           *d_flux += sgn * 0.5 * flx;
 

@@ -58,6 +58,8 @@ const cs_flag_t  cs_flag_dual_face = CS_FLAG_DUAL | CS_FLAG_FACE;
 const cs_flag_t  cs_flag_dual_cell = CS_FLAG_DUAL | CS_FLAG_CELL;
 const cs_flag_t  cs_flag_dual_face_byc =
   CS_FLAG_DUAL | CS_FLAG_FACE | CS_FLAG_BY_CELL;
+const cs_flag_t  cs_flag_dual_closure_byf =
+  CS_FLAG_DUAL | CS_FLAG_CELL | CS_FLAG_BORDER | CS_FLAG_BY_FACE;
 
 /*============================================================================
  * Private function prototypes

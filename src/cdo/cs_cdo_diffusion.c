@@ -445,7 +445,7 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
  * \param[in]      fm      pointer to a cs_face_mesh_t structure
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      mnu     property tensor times the face normal
- * \param[in]      beta    value of the stabilizarion coef. related to reco.
+ * \param[in]      beta    value of the stabilization coef. related to reco.
  * \param[in, out] cb      pointer to a cell builder structure
  * \param[in, out] ntrgrd  local matrix related to the normal trace op. i.e.
  *                         the flux operator
@@ -1034,8 +1034,8 @@ cs_cdovb_diffusion_face_p0_flux(const cs_cell_mesh_t     *cm,
     const cs_real_t  _flx = flux_coef * cm->tef[i];
     const int  eshft = 2*cm->f2e_ids[i];
 
-    fluxes[cm->e2v_ids[eshft]]   += _flx;
-    fluxes[cm->e2v_ids[eshft+1]] += _flx;
+    fluxes[cm->e2v_ids[eshft]]   -= _flx;
+    fluxes[cm->e2v_ids[eshft+1]] -= _flx;
   }
 }
 
@@ -1056,12 +1056,12 @@ cs_cdovb_diffusion_face_p0_flux(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_diffusion_face_flux(const cs_face_mesh_t      *fm,
-                           const cs_real_t            pty_tens[3][3],
-                           const double              *p_v,
-                           const double               p_f,
-                           const double               p_c,
-                           cs_cell_builder_t         *cb)
+cs_cdo_diffusion_face_wbs_flux(const cs_face_mesh_t      *fm,
+                               const cs_real_t            pty_tens[3][3],
+                               const double              *p_v,
+                               const double               p_f,
+                               const double               p_c,
+                               cs_cell_builder_t         *cb)
 {
   cs_real_3_t  grd_c, grd_v1, grd_v2, grd_pef, mnuf;
 
@@ -1112,6 +1112,100 @@ cs_cdo_diffusion_face_flux(const cs_face_mesh_t      *fm,
   } // Loop on face edges
 
   return f_flux;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the normal flux for a face assuming only the knowledge
+ *          of the potential at cell vertices. COST algorithm is used for
+ *          reconstructing the degrees of freedom.
+ *          This routine shares similarities with
+ *          \ref cs_cdovb_diffusion_cost_flux_op
+ *
+ * \param[in]   f             face id in the cell mesh
+ * \param[in]   cm            pointer to a cs_cell_mesh_t structure
+ * \param[in]   diff_tensor   property tensor times the face normal
+ * \param[in]   pot_values    array of values of the potential (all the mesh)
+ * \param[in]   beta          value of the stabilization coef. related to reco.
+ * \param[in, out]  cb        auxiliary structure dedicated to diffusion
+ *
+ * \return the diffusive flux across the face f
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdovb_diffusion_face_cost_flux(short int                 f,
+                                  const cs_cell_mesh_t     *cm,
+                                  const cs_real_3_t        *diff_tensor,
+                                  const cs_real_t          *pot_values,
+                                  double                    beta,
+                                  cs_cell_builder_t        *cb)
+{
+/*   cs_real_3_t  lek; */
+/*   cs_real_3_t  *le_grd = cb->vectors; */
+
+/*   const cs_real_t  over_vol_c = 1/cm->vol_c; */
+
+
+/*   /\* Loop on border face edges *\/ */
+/*   for (short int e = 0; e < fm->n_ef; e++) { */
+
+/*     const cs_quant_t  peq_i = fm->edge[e]; */
+/*     const short int  vi1 = fm->v_ids[fm->e2v_ids[2*e]]; */
+/*     const short int  vi2 = fm->v_ids[fm->e2v_ids[2*e+1]]; */
+/*     const short int  ei = fm->e_ids[e]; // edge id in the cell mesh */
+/*     const cs_nvec3_t  dfq_i = cm->dface[ei]; */
+/*     const double  dp = _dp3(peq_i.unitv, dfq_i.unitv); */
+/*     const double  tmp_val = peq_i.meas * dfq_i.meas * dp; // 3*pec_vol */
+/*     const double  beta_pec_vol = 3. * beta/tmp_val; */
+/*     const double  coef_ei = 3. * beta/dp; */
+
+/*     /\* Reset L_Ec(GRAD(p_j)) for each vertex of the cell *\/ */
+/*     for (short int v = 0; v < cm->n_vc; v++) */
+/*       le_grd[v][0] = le_grd[v][1] = le_grd[v][2] = 0; */
+
+/*     /\* Term related to the flux reconstruction: */
+/*        Compute L_Ec(GRAD(p_j)) on t_{e,f} for each vertex j of the cell *\/ */
+/*     for (short int ek = 0; ek < cm->n_ec; ek++) { */
+
+/*       const short int  vj1 = cm->e2v_ids[2*ek], vj2 = cm->e2v_ids[2*ek+1]; */
+/*       const short int  sgn_vj1 = cm->e2v_sgn[ek]; // sgn_vj2 = - sgn_vj1 */
+/*       const cs_nvec3_t  dfq_k = cm->dface[ek]; */
+
+/*       /\* Compute l_(ek,c)|p(ei,f,c) *\/ */
+/*       const double  eik_part = coef_ei * _dp3(dfq_k.unitv, peq_i.unitv); */
+/*       const double  coef_mult = dfq_k.meas * over_vol_c; */
+
+/*       for (int k = 0; k < 3; k++) */
+/*         lek[k] = coef_mult * (dfq_k.unitv[k] - eik_part * dfq_i.unitv[k]); */
+
+/*       if (ek == ei) */
+/*         for (int k = 0; k < 3; k++) */
+/*           lek[k] += dfq_k.meas * dfq_k.unitv[k] * beta_pec_vol; */
+
+/*       for (int k = 0; k < 3; k++) { */
+/*         le_grd[vj1][k] += sgn_vj1 * lek[k]; */
+/*         le_grd[vj2][k] -= sgn_vj1 * lek[k]; */
+/*       } */
+
+/*     } // Loop on cell edges */
+
+/*     for (short int v = 0; v < cm->n_vc; v++) { */
+
+/*       const double  contrib = _dp3(mnu, le_grd[v]) * fm->tef[e]; */
+/*       ntrgrd->val[vi1*cm->n_vc + v] += contrib; */
+/*       ntrgrd->val[vi2*cm->n_vc + v] += contrib; */
+
+/*     } */
+
+/*   } // Loop on face edges */
+
+/* #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1 */
+/*   cs_log_printf(CS_LOG_DEFAULT, */
+/*                 ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)", */
+/*                 cm->c_id, cm->f_ids[fm->f_id]); */
+/*   cs_sdm_dump(cm->c_id, NULL, NULL, ntrgrd); */
+/* #endif */
 }
 
 /*----------------------------------------------------------------------------*/

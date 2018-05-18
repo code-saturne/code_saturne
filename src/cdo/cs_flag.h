@@ -86,18 +86,19 @@ BEGIN_C_DECLS
  * @{
  */
 
-#define CS_FLAG_PRIMAL    (1 <<  0) /*!<   1: on primal mesh */
-#define CS_FLAG_DUAL      (1 <<  1) /*!<   2: on dual mesh */
-#define CS_FLAG_VERTEX    (1 <<  2) /*!<   4: on vertices */
-#define CS_FLAG_EDGE      (1 <<  3) /*!<   8: on edges */
-#define CS_FLAG_FACE      (1 <<  4) /*!<  16: on faces */
-#define CS_FLAG_CELL      (1 <<  5) /*!<  32: on cells */
-#define CS_FLAG_BORDER    (1 <<  6) /*!<  64: located on the boundary */
-#define CS_FLAG_SCALAR    (1 <<  7) /*!< 128: scalar-valued (stride = 1) */
-#define CS_FLAG_VECTOR    (1 <<  8) /*!< 256: vector-valued (stride = 3) */
-#define CS_FLAG_TENSOR    (1 <<  9) /*!< 512: tensor-valued (stride = 9) */
-#define CS_FLAG_BY_CELL   (1 << 10) /*!< 1024: by cell (c2e, c2f, c2v) */
-#define CS_FLAG_FULL_LOC  (1 << 11) /*!< 2048: defined on the whole location */
+#define CS_FLAG_FULL_LOC  (1 <<  0) /*!<    1: defined on the whole location */
+#define CS_FLAG_SCALAR    (1 <<  1) /*!<    2: scalar-valued (stride = 1) */
+#define CS_FLAG_VECTOR    (1 <<  2) /*!<    4: vector-valued (stride = 3) */
+#define CS_FLAG_TENSOR    (1 <<  3) /*!<    8: tensor-valued (stride = 9) */
+#define CS_FLAG_VERTEX    (1 <<  4) /*!<   16: on vertices */
+#define CS_FLAG_EDGE      (1 <<  5) /*!<   32: on edges */
+#define CS_FLAG_FACE      (1 <<  6) /*!<   64: on faces */
+#define CS_FLAG_CELL      (1 <<  7) /*!<  128: on cells */
+#define CS_FLAG_PRIMAL    (1 <<  8) /*!<  256: on primal mesh */
+#define CS_FLAG_DUAL      (1 <<  9) /*!<  512: on dual mesh */
+#define CS_FLAG_BORDER    (1 << 10) /*!< 1024: located on the boundary */
+#define CS_FLAG_BY_CELL   (1 << 11) /*!< 2048: by cell (c2e, c2f, c2v) */
+#define CS_FLAG_BY_FACE   (1 << 12) /*!< 4096: by face (bf2v) */
 
 /*!
  * @}
@@ -138,6 +139,9 @@ extern const cs_flag_t  cs_flag_dual_vtx;
 extern const cs_flag_t  cs_flag_dual_face;
 extern const cs_flag_t  cs_flag_dual_cell;
 extern const cs_flag_t  cs_flag_dual_face_byc;
+
+/* Part of dual cell closure belonging to a boundary primal face */
+extern const cs_flag_t  cs_flag_dual_closure_byf;
 
 /*============================================================================
  * Public function prototypes

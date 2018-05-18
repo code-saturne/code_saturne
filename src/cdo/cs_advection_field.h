@@ -170,6 +170,7 @@ typedef struct {
   /* Optional: Definition(s) for the boundary flux */
   int                         n_bdy_flux_defs;
   cs_xdef_t                 **bdy_flux_defs;
+  short int                  *bdy_def_ids;
 
 } cs_adv_field_t;
 
@@ -536,6 +537,16 @@ cs_advection_field_create_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Last stage of the definition of an advection field based on several
+ *         definitions (i.e. definition by subdomains on the boundary)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_finalize_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the value of the advection field at the cell center
  *
  * \param[in]      c_id    id of the current cell
@@ -618,6 +629,26 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the value of the flux of the advection field across the
+ *         the closure of the dual cell related to each vertex
+ *
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      adv        pointer to a cs_adv_field_t structure
+ * \param[in]      f          face id in the cellwise numbering
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] fluxes     normal boundary flux for each vertex of the face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
+                                         const cs_adv_field_t   *adv,
+                                         short int               f,
+                                         cs_real_t               time_eval,
+                                         cs_real_t              *fluxes);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the flux of the advection field across the
  *         the dual faces of a cell
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -666,7 +697,8 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the divergence of the advection field
+ * \brief   Compute the divergence of the advection field at vertices
+ *          Useful for CDO Vertex-based schemes
  *
  * \param[in]      adv         pointer to the advection field struct.
  * \param[in]      t_eval      time at which one evaluates the advection field
@@ -676,8 +708,8 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_advection_field_divergence(const cs_adv_field_t     *adv,
-                              cs_real_t                 t_eval);
+cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
+                                          cs_real_t                 t_eval);
 
 /*----------------------------------------------------------------------------*/
 

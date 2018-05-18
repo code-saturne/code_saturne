@@ -77,6 +77,7 @@ typedef void
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      t_eval  time at which one evaluates the advection field
  * \param[in, out] fm      pointer to a cs_face_mesh_t structure
  * \param[in, out] b       pointer to a convection builder structure
  * \param[in, out] csys    cell-wise structure storing the local system
@@ -86,6 +87,7 @@ typedef void
 typedef void
 (cs_cdo_advection_bc_t)(const cs_cell_mesh_t       *cm,
                         const cs_equation_param_t  *eqp,
+                        cs_real_t                   t_eval,
                         cs_face_mesh_t             *fm,
                         cs_cell_builder_t          *cb,
                         cs_cell_sys_t              *csys);
@@ -299,6 +301,7 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      t_eval  time at which one evaluates the advection field
  * \param[in, out] fm      pointer to a cs_face_mesh_t structure
  * \param[in, out] cb      pointer to a convection builder structure
  * \param[in, out] csys    cell-wise structure storing the local system
@@ -308,6 +311,7 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
 void
 cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
                            const cs_equation_param_t  *eqp,
+                           cs_real_t                   t_eval,
                            cs_face_mesh_t             *fm,
                            cs_cell_builder_t          *cb,
                            cs_cell_sys_t              *csys);
@@ -319,6 +323,7 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      t_eval  time at which one evaluates the advection field
  * \param[in, out] fm      pointer to a cs_face_mesh_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  * \param[in, out] csys    cell-wise structure storing the local system
@@ -328,6 +333,7 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
 void
 cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
                             const cs_equation_param_t   *eqp,
+                            cs_real_t                    t_eval,
                             cs_face_mesh_t              *fm,
                             cs_cell_builder_t           *cb,
                             cs_cell_sys_t               *csys);

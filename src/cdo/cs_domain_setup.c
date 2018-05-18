@@ -535,6 +535,8 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
   /* Last stage to define properties (when complex definition is requested) */
   cs_property_finalize_setup();
 
+  /* Last stage to define properties (when complex definition is requested) */
+  cs_advection_field_finalize_setup();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -576,6 +578,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                   domain->connect,
                   domain->cdo_quantities,
                   domain->time_step,
+                  domain->dt_cur,
                   false); // operate current to previous ?
 }
 
