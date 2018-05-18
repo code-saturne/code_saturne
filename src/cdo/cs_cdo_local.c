@@ -75,8 +75,9 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
-cs_cell_mesh_t   **cs_cdo_local_cell_meshes = NULL;
-cs_face_mesh_t   **cs_cdo_local_face_meshes = NULL;
+cs_cell_mesh_t        **cs_cdo_local_cell_meshes = NULL;
+cs_face_mesh_t        **cs_cdo_local_face_meshes = NULL;
+cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light = NULL;
 
 /*============================================================================
  * Local static variables
@@ -137,9 +138,11 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
 
   int  n_vc = connect->n_max_vbyc;
   int  size = cs_glob_n_threads;
+
   cs_cdo_local_n_structures = size;
   BFT_MALLOC(cs_cdo_local_cell_meshes, size, cs_cell_mesh_t *);
   BFT_MALLOC(cs_cdo_local_face_meshes, size, cs_face_mesh_t *);
+  BFT_MALLOC(cs_cdo_local_face_meshes_light, size, cs_face_mesh_light_t *);
   BFT_MALLOC(cs_cdo_local_dbuf, size, double *);
   BFT_MALLOC(cs_cdo_local_kbuf, size, short int *);
 
@@ -151,6 +154,8 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
 
     cs_cdo_local_cell_meshes[t_id] = cs_cell_mesh_create(connect);
     cs_cdo_local_face_meshes[t_id] = cs_face_mesh_create(connect->n_max_vbyf);
+    cs_cdo_local_face_meshes_light[t_id] =
+      cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
 
     BFT_MALLOC(cs_cdo_local_dbuf[t_id], n_vc*(n_vc+1)/2, double);
     BFT_MALLOC(cs_cdo_local_kbuf[t_id], CS_MAX(connect->v_max_cell_range,
@@ -163,6 +168,8 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
 
   cs_cdo_local_cell_meshes[0] = cs_cell_mesh_create(connect);
   cs_cdo_local_face_meshes[0] = cs_face_mesh_create(connect->n_max_vbyf);
+  cs_cdo_local_face_meshes_light[0] =
+    cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
 
   BFT_MALLOC(cs_cdo_local_dbuf[0], n_vc*(n_vc+1)/2, double);
   BFT_MALLOC(cs_cdo_local_kbuf[0], CS_MAX(connect->v_max_cell_range,
@@ -195,6 +202,7 @@ cs_cdo_local_finalize(void)
 
     cs_cell_mesh_free(&(cs_cdo_local_cell_meshes[t_id]));
     cs_face_mesh_free(&(cs_cdo_local_face_meshes[t_id]));
+    cs_face_mesh_light_free(&(cs_cdo_local_face_meshes_light[t_id]));
     BFT_FREE(cs_cdo_local_dbuf[t_id]);
     BFT_FREE(cs_cdo_local_kbuf[t_id]);
 
@@ -203,12 +211,14 @@ cs_cdo_local_finalize(void)
   assert(cs_glob_n_threads == 1);
   cs_cell_mesh_free(&(cs_cdo_local_cell_meshes[0]));
   cs_face_mesh_free(&(cs_cdo_local_face_meshes[0]));
+  cs_face_mesh_light_free(&(cs_cdo_local_face_meshes_light[0]));
   BFT_FREE(cs_cdo_local_dbuf[0]);
   BFT_FREE(cs_cdo_local_kbuf[0]);
 #endif /* openMP */
 
   BFT_FREE(cs_cdo_local_cell_meshes);
   BFT_FREE(cs_cdo_local_face_meshes);
+  BFT_FREE(cs_cdo_local_face_meshes_light);
   BFT_FREE(cs_cdo_local_dbuf);
   BFT_FREE(cs_cdo_local_kbuf);
 }
@@ -485,44 +495,6 @@ cs_cell_builder_free(cs_cell_builder_t     **p_cb)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get a pointer to a cs_cell_mesh_t structure corresponding to mesh id
- *
- * \param[in]   mesh_id   id in the array of pointer to cs_cell_mesh_t struct.
- *
- * \return a pointer to a cs_cell_mesh_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cell_mesh_t *
-cs_cdo_local_get_cell_mesh(int    mesh_id)
-{
-  if (mesh_id < 0 || mesh_id >= cs_glob_n_threads)
-    return NULL;
-
-  return cs_cdo_local_cell_meshes[mesh_id];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get a pointer to a cs_face_mesh_t structure corresponding to mesh id
- *
- * \param[in]   mesh_id   id in the array of pointer to cs_face_mesh_t struct.
- *
- * \return a pointer to a cs_face_mesh_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_face_mesh_t *
-cs_cdo_local_get_face_mesh(int    mesh_id)
-{
-  if (mesh_id < 0 || mesh_id >= cs_glob_n_threads)
-    return NULL;
-
-  return cs_cdo_local_face_meshes[mesh_id];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Allocate and initialize a cs_cell_mesh_t structure
  *
  * \param[in]  connect        pointer to a cs_cdo_connect_t structure
@@ -582,6 +554,25 @@ cs_cell_mesh_create(const cs_cdo_connect_t   *connect)
   cs_cell_mesh_reset(cm);
 
   return cm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a pointer to a cs_cell_mesh_t structure corresponding to mesh id
+ *
+ * \param[in]   mesh_id   id in the array of pointer to cs_cell_mesh_t struct.
+ *
+ * \return a pointer to a cs_cell_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cell_mesh_t *
+cs_cdo_local_get_cell_mesh(int    mesh_id)
+{
+  if (mesh_id < 0 || mesh_id >= cs_glob_n_threads)
+    return NULL;
+
+  return cs_cdo_local_cell_meshes[mesh_id];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1234,6 +1225,25 @@ cs_face_mesh_create(short int   n_max_vbyf)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get a pointer to a cs_face_mesh_t structure corresponding to mesh id
+ *
+ * \param[in]   mesh_id   id in the array of pointer to cs_face_mesh_t struct.
+ *
+ * \return a pointer to a cs_face_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_face_mesh_t *
+cs_cdo_local_get_face_mesh(int    mesh_id)
+{
+  if (mesh_id < 0 || mesh_id >= cs_glob_n_threads)
+    return NULL;
+
+  return cs_cdo_local_face_meshes[mesh_id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free a cs_face_mesh_t structure
  *
  * \param[in, out]  p_fm   pointer of pointer to a cs_face_mesh_t structure
@@ -1521,6 +1531,160 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
   }
 
   const double  invf = 0.5/pfq.meas;
+  for (short int v = 0; v < fm->n_vf; v++) fm->wvf[v] *= invf;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate a cs_face_mesh_light_t structure
+ *
+ * \param[in]  n_max_vbyf    max. number of vertices for a face
+ * \param[in]  n_max_vbyc    max. number of vertices for a cell
+ *
+ * \return a pointer to a new allocated cs_face_mesh_light_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_face_mesh_light_t *
+cs_face_mesh_light_create(short int   n_max_vbyf,
+                          short int   n_max_vbyc)
+{
+  cs_face_mesh_light_t  *fm = NULL;
+
+  BFT_MALLOC(fm, 1, cs_face_mesh_light_t);
+
+  fm->n_max_vbyf = n_max_vbyf;
+  fm->c_id = -1;
+  fm->f = -1;
+
+  /* Vertex-related quantities */
+  fm->n_vf = 0;
+  BFT_MALLOC(fm->v_ids, n_max_vbyc, short int);
+  BFT_MALLOC(fm->wvf, n_max_vbyc, double);
+
+  /* Edge-related quantities */
+  fm->n_ef = 0;
+  BFT_MALLOC(fm->e_ids, fm->n_max_vbyf, short int);
+  BFT_MALLOC(fm->tef, fm->n_max_vbyf, double);
+
+  return fm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a pointer to a cs_face_mesh_light_t structure corresponding to
+ *         mesh id
+ *
+ * \param[in]   mesh_id   id in the cs_face_mesh_light_t array
+ *
+ * \return a pointer to a cs_face_mesh_light_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_face_mesh_light_t *
+cs_cdo_local_get_face_mesh_light(int    mesh_id)
+{
+  if (mesh_id < 0 || mesh_id >= cs_glob_n_threads)
+    return NULL;
+
+  return cs_cdo_local_face_meshes_light[mesh_id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_face_mesh_light_t structure
+ *
+ * \param[in, out]  p_fm   pointer of pointer to a cs_face_mesh_light_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_face_mesh_light_free(cs_face_mesh_light_t     **p_fm)
+{
+  cs_face_mesh_light_t  *fm = *p_fm;
+
+  if (fm == NULL)
+    return;
+
+  BFT_FREE(fm->v_ids);
+  BFT_FREE(fm->wvf);
+  BFT_FREE(fm->e_ids);
+  BFT_FREE(fm->tef);
+
+  BFT_FREE(fm);
+  *p_fm = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_face_mesh_light_t structure starting from a
+ *         cs_cell_mesh_t structure.
+ *
+ * \param[in]       cm     pointer to the reference cs_cell_mesh_t structure
+ * \param[in]       f      face id in the cs_cell_mesh_t structure
+ * \param[in, out]  fm     pointer to a cs_face_mesh_light_t structure to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
+                         short int                f,
+                         cs_face_mesh_light_t    *fm)
+{
+  if (fm == NULL || cm == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(f > -1 && f < cm->n_fc);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  fm->c_id = cm->c_id;
+  fm->f = f;
+
+  const short int  *f2e_idx = cm->f2e_idx + f;
+  const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
+
+  /* Initialization */
+  fm->n_vf = fm->n_ef = f2e_idx[1] - f2e_idx[0];
+  for (int i = 0; i < cm->n_vc; i++) {
+    fm->v_ids[i] = -1;
+    fm->wvf[i] = 0;
+  }
+
+  /* Define wvf from the knowledge of tef */
+  const double *_tef = cm->tef + f2e_idx[0];
+
+  for (short int e = 0; e < fm->n_ef; e++) {
+
+    const short int  e_cellwise = f2e_ids[e];
+    const int  eshft = 2*e_cellwise;
+    const short int  v1_cellwise = cm->e2v_ids[eshft];
+    const short int  v2_cellwise = cm->e2v_ids[eshft+1];
+
+    fm->e_ids[e] = e_cellwise;
+    fm->tef[e] = _tef[e];
+    fm->v_ids[v1_cellwise] = 1;
+    fm->v_ids[v2_cellwise] = 1;
+
+    /* Build wvf */
+    fm->wvf[v1_cellwise] += _tef[e];
+    fm->wvf[v2_cellwise] += _tef[e];
+
+  } /* Loop on face edges */
+
+  /* Compact vertex numbering to this face */
+  short int nv = 0; /* current vertex id in the face numbering */
+  for (short int v = 0; v < cm->n_vc; v++) {
+    if (fm->v_ids[v] > 0) {
+      fm->v_ids[nv] = v;
+      fm->wvf[nv] = fm->wvf[v];
+      nv++;
+    }
+  }
+
+  assert(nv == fm->n_vf); // Sanity check
+  const double  invf = 0.5/cm->face[f].meas;
   for (short int v = 0; v < fm->n_vf; v++) fm->wvf[v] *= invf;
 }
 

@@ -219,12 +219,39 @@ typedef struct {
 
 } cs_face_mesh_t;
 
+/*
+   A cs_face_mesh_light_t structure is close to a cs_face_mesh_t structure
+   There are less members to be buildt quicker.
+   Such structure is always associated to a cs_cell_mesh_t structure
+*/
+
+typedef struct {
+
+  short int    n_max_vbyf;  /* Max number of vertices belonging to a face
+                               (= n_max_ebyf) */
+
+  cs_lnum_t    c_id;    /* id of related cell in the mesh numbering */
+  short int    f;       /* id of the face in the cell mesh numbering */
+
+  /* Vertex information */
+  short int    n_vf;    /* local number of vertices on this face */
+  short int   *v_ids;   /* vertex ids in the cellwise numbering */
+  double      *wvf;     /* weights related to each vertex */
+
+  /* Edge information */
+  short int    n_ef;    /* local number of edges on this face (= n_vf) */
+  short int   *e_ids;   /* edge ids in the cellwise numbering */
+  double      *tef;     /* area of the triangle of base e and apex xf */
+
+} cs_face_mesh_light_t;
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
 
-extern cs_cell_mesh_t  **cs_cdo_local_cell_meshes;
-extern cs_face_mesh_t  **cs_cdo_local_face_meshes;
+extern cs_cell_mesh_t        **cs_cdo_local_cell_meshes;
+extern cs_face_mesh_t        **cs_cdo_local_face_meshes;
+extern cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light;
 
 /*============================================================================
  * Public function prototypes
@@ -328,6 +355,43 @@ cs_cell_builder_create(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Free a cs_cell_builder_t structure
+ *
+ * \param[in, out]  p_cb   pointer of pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_builder_free(cs_cell_builder_t     **p_cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a cs_cell_mesh_t structure
+ *
+ * \param[in]  connect        pointer to a cs_cdo_connect_t structure
+ *
+ * \return a pointer to a new allocated cs_cell_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cell_mesh_t *
+cs_cell_mesh_create(const cs_cdo_connect_t   *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a pointer to a cs_cell_mesh_t structure corresponding to mesh id
+ *
+ * \param[in]   mesh_id   id in the array of pointer to cs_cell_mesh_t struct.
+ *
+ * \return a pointer to a cs_cell_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cell_mesh_t *
+cs_cdo_local_get_cell_mesh(int    mesh_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize to invalid values a cs_cell_mesh_t structure
  *
  * \param[in]  cm         pointer to a cs_cell_mesh_t structure
@@ -347,56 +411,6 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm);
 
 void
 cs_cell_mesh_dump(cs_cell_mesh_t     *cm);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a cs_cell_builder_t structure
- *
- * \param[in, out]  p_cb   pointer of pointer to a cs_cell_builder_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cell_builder_free(cs_cell_builder_t     **p_cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get a pointer to a cs_cell_mesh_t structure corresponding to mesh id
- *
- * \param[in]   mesh_id   id in the array of pointer to cs_cell_mesh_t struct.
- *
- * \return a pointer to a cs_cell_mesh_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cell_mesh_t *
-cs_cdo_local_get_cell_mesh(int    mesh_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get a pointer to a cs_face_mesh_t structure corresponding to mesh id
- *
- * \param[in]   mesh_id   id in the array of pointer to cs_face_mesh_t struct.
- *
- * \return a pointer to a cs_face_mesh_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_face_mesh_t *
-cs_cdo_local_get_face_mesh(int    mesh_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize a cs_cell_mesh_t structure
- *
- * \param[in]  connect        pointer to a cs_cdo_connect_t structure
- *
- * \return a pointer to a new allocated cs_cell_mesh_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cell_mesh_t *
-cs_cell_mesh_create(const cs_cdo_connect_t   *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -468,9 +482,38 @@ cs_cell_mesh_get_f2v(short int                    f,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the next three vertices in a row from a face to edge connectivity
+ *         and a edge to vertex connectivity
+ *
+ * \param[in]       f2e_ids     face-edge connectivity
+ * \param[in]       e2v_ids     edge-vertex connectivity
+ * \param[in, out]  v0          id of the first vertex
+ * \param[in, out]  v1          id of the second vertex
+ * \param[in, out]  v2          id of the third vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cell_mesh_get_next_3_vertices(const short int   *f2e_ids,
+                                 const short int   *e2v_ids,
+                                 short int         *v0,
+                                 short int         *v1,
+                                 short int         *v2)
+{
+  const short int e0  = f2e_ids[0];
+  const short int e1  = f2e_ids[1];
+  const short int tmp = e2v_ids[2*e1];
+
+  *v0 = e2v_ids[2*e0];
+  *v1 = e2v_ids[2*e0+1];
+  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate a cs_face_mesh_t structure
  *
- * \param[in]  n_max_vbyf    max. number of vertices fir a face
+ * \param[in]  n_max_vbyf    max. number of vertices for a face
  *
  * \return a pointer to a new allocated cs_face_mesh_t structure
  */
@@ -478,6 +521,19 @@ cs_cell_mesh_get_f2v(short int                    f,
 
 cs_face_mesh_t *
 cs_face_mesh_create(short int   n_max_vbyf);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a pointer to a cs_face_mesh_t structure corresponding to mesh id
+ *
+ * \param[in]   mesh_id   id in the array of pointer to cs_face_mesh_t struct.
+ *
+ * \return a pointer to a cs_face_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_face_mesh_t *
+cs_cdo_local_get_face_mesh(int    mesh_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -528,32 +584,59 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the next three vertices in a row from a face to edge connectivity
- *         and a edge to vertex connectivity
+ * \brief  Allocate a cs_face_mesh_light_t structure
  *
- * \param[in]       f2e_ids     face-edge connectivity
- * \param[in]       e2v_ids     edge-vertex connectivity
- * \param[in, out]  v0          id of the first vertex
- * \param[in, out]  v1          id of the second vertex
- * \param[in, out]  v2          id of the third vertex
+ * \param[in]  n_max_vbyf    max. number of vertices for a face
+ * \param[in]  n_max_vbyc    max. number of vertices for a cell
+ *
+ * \return a pointer to a new allocated cs_face_mesh_light_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
-cs_cell_mesh_get_next_3_vertices(const short int   *f2e_ids,
-                                 const short int   *e2v_ids,
-                                 short int         *v0,
-                                 short int         *v1,
-                                 short int         *v2)
-{
-  const short int e0  = f2e_ids[0];
-  const short int e1  = f2e_ids[1];
-  const short int tmp = e2v_ids[2*e1];
+cs_face_mesh_light_t *
+cs_face_mesh_light_create(short int   n_max_vbyf,
+                          short int   n_max_vbyc);
 
-  *v0 = e2v_ids[2*e0];
-  *v1 = e2v_ids[2*e0+1];
-  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
-}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a pointer to a cs_face_mesh_light_t structure corresponding to
+ *         mesh id
+ *
+ * \param[in]   mesh_id   id in the cs_face_mesh_light_t array
+ *
+ * \return a pointer to a cs_face_mesh_light_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_face_mesh_light_t *
+cs_cdo_local_get_face_mesh_light(int    mesh_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_face_mesh_light_t structure
+ *
+ * \param[in, out]  p_fm   pointer of pointer to a cs_face_mesh_light_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_face_mesh_light_free(cs_face_mesh_light_t     **p_fm);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_face_mesh_light_t structure starting from a
+ *         cs_cell_mesh_t structure.
+ *
+ * \param[in]       cm     pointer to the reference cs_cell_mesh_t structure
+ * \param[in]       f      face id in the cs_cell_mesh_t structure
+ * \param[in, out]  fm     pointer to a cs_face_mesh_light_t structure to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
+                         short int                f,
+                         cs_face_mesh_light_t    *fm);
 
 /*----------------------------------------------------------------------------*/
 
