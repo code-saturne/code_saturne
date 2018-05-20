@@ -70,22 +70,24 @@ typedef struct {
 
   cs_lnum_t          n_vertices;
   cs_lnum_t          n_edges;
-  cs_lnum_t          n_faces[3];  // 0: all, 1: border, 2: interior
+  cs_lnum_t          n_faces[3];  /* 0: all, 1: border, 2: interior */
   cs_lnum_t          n_cells;
 
   /* Edge-related members */
-  cs_adjacency_t    *e2v;         // edge --> vertices connectivity
+  cs_adjacency_t    *e2v;         /* edge --> vertices connectivity */
 
   /* Face-related members */
-  cs_adjacency_t    *f2c;         // face --> cells connectivity
-  cs_adjacency_t    *f2e;         // face --> edges connectivity
+  cs_adjacency_t    *f2c;         /* face --> cells connectivity */
+  cs_adjacency_t    *f2e;         /* face --> edges connectivity */
+  cs_adjacency_t    *bf2v;        /* border face --> vertices connectivity
+                                     (map from cs_mesh_t) */
 
   /* Cell-related members */
-  fvm_element_t     *cell_type;   // type of cell
-  cs_flag_t         *cell_flag;   // Flag (Border)
-  cs_adjacency_t    *c2f;         // cell --> faces connectivity
-  cs_adjacency_t    *c2e;         // cell --> edges connectivity
-  cs_adjacency_t    *c2v;         // cell --> vertices connectivity
+  fvm_element_t     *cell_type;   /* type of cell */
+  cs_flag_t         *cell_flag;   /* Flag (Border) */
+  cs_adjacency_t    *c2f;         /* cell --> faces connectivity */
+  cs_adjacency_t    *c2e;         /* cell --> edges connectivity */
+  cs_adjacency_t    *c2v;         /* cell --> vertices connectivity */
 
   /* Delta of ids between the min./max. values of entities related to a cell
      Useful to store compactly the link between mesh ids and cell mesh ids
@@ -94,12 +96,12 @@ typedef struct {
   cs_lnum_t  v_max_cell_range;
 
   /* Max. connectitivy size for cells */
-  int  n_max_vbyc;   // max. number of vertices in a cell
-  int  n_max_ebyc;   // max. number of edges in a cell
-  int  n_max_fbyc;   // max. number of faces in a cell
-  int  n_max_vbyf;   // max. number of vertices in a face
-  int  n_max_v2fc;   // max. number of faces connected to a vertex in a cell
-  int  n_max_v2ec;   // max. number of edges connected to a vertex in a cell
+  int  n_max_vbyc;   /* max. number of vertices in a cell */
+  int  n_max_ebyc;   /* max. number of edges in a cell */
+  int  n_max_fbyc;   /* max. number of faces in a cell */
+  int  n_max_vbyf;   /* max. number of vertices in a face */
+  int  n_max_v2fc;   /* max. number of faces connected to a vertex in a cell */
+  int  n_max_v2ec;   /* max. number of edges connected to a vertex in a cell */
 
   /* Structures to handle parallelism/assembler */
   cs_range_set_t       *range_sets[CS_CDO_CONNECT_N_CASES];

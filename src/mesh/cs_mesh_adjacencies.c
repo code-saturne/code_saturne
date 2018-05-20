@@ -448,8 +448,8 @@ cs_adjacency_create_from_s_arrays(cs_lnum_t    n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Create a cs_adjacency_t structure sharing arrays scanned with a
- *          stride
+ * \brief   Create a cs_adjacency_t structure sharing arrays scanned with an
+ *          index
  *
  * \param[in]  n_elts    number of elements
  * \param[in]  idx       array of size n_elts + 1
