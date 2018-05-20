@@ -149,6 +149,9 @@ cs_xdef_volume_create(cs_xdef_type_t    type,
       b->values = a->values;
       b->index = a->index;
 
+      if (a->values != NULL)
+        d->state |= CS_FLAG_STATE_OWNER;
+
       /* Update state flag */
       if (cs_flag_test(b->loc, cs_flag_primal_cell) ||
           cs_flag_test(b->loc, cs_flag_dual_face_byc))
@@ -259,6 +262,10 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       b->stride = a->stride;
       b->loc = a->loc;
       b->values = a->values;
+      b->index = a->index;
+
+      if (a->values != NULL)
+        d->state |= CS_FLAG_STATE_OWNER;
 
       d->input = b;
 
@@ -386,8 +393,8 @@ cs_xdef_free(cs_xdef_t     *d)
 
       cs_xdef_array_input_t  *a = (cs_xdef_array_input_t *)d->input;
       BFT_FREE(a->values);
-      BFT_FREE(d->input);
     }
+    BFT_FREE(d->input);
   }
 
   if (d->type == CS_XDEF_BY_TIME_FUNCTION ||
@@ -464,13 +471,15 @@ cs_xdef_copy(cs_xdef_t     *src)
  * \brief  In case of definition by array, set the array after having added
  *         this definition
  *
- * \param[in, out]  d       pointer to a cs_xdef_t structure
- * \param[in]       array   values
+ * \param[in, out]  d          pointer to a cs_xdef_t structure
+ * \param[in]       is_owner   manage or not the lifecycle of the array values
+ * \param[in]       array      values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_xdef_set_array(cs_xdef_t     *d,
+                  bool           is_owner,
                   cs_real_t     *array)
 {
   if (d == NULL)
@@ -482,6 +491,14 @@ cs_xdef_set_array(cs_xdef_t     *d,
               __func__);
 
   cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)d->input;
+
+  /* An array is already assigned and one manages the lifecycle */
+  if ((d->state & CS_FLAG_STATE_OWNER) &&
+      ai->values != NULL)
+    BFT_FREE(ai->values);
+
+  if (is_owner)
+    d->state |= CS_FLAG_STATE_OWNER;
 
   ai->values = array;
 }

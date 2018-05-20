@@ -336,13 +336,15 @@ cs_xdef_copy(cs_xdef_t     *src);
  * \brief  In case of definition by array, set the array after having added
  *         this definition
  *
- * \param[in, out]  d       pointer to a cs_xdef_t structure
- * \param[in]       array   values
+ * \param[in, out]  d          pointer to a cs_xdef_t structure
+ * \param[in]       is_owner   manage or not the lifecycle of the array values
+ * \param[in]       array      values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_xdef_set_array(cs_xdef_t     *d,
+                  bool           is_owner,
                   cs_real_t     *array);
 
 /*----------------------------------------------------------------------------*/

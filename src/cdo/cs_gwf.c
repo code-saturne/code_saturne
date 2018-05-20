@@ -608,7 +608,9 @@ cs_gwf_destroy_all(void)
 
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
-  BFT_FREE(gw->darcian_flux);
+  /* darcian_flux is allocated only if the advection field is defined by array.
+     In this case, the lifecycle is managed by the definition */
+
   if (gw->head_in_law != NULL)
     BFT_FREE(gw->head_in_law);
 
