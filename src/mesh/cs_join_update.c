@@ -3240,7 +3240,6 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
               new_face_cells[n_fb_faces] = mesh->b_face_cells[fid];
 
               /* Check orientation: fid forces the orientation */
-
               orient_tag = _get_topo_orient(fid+1, i+1, mesh, jmesh, gtmp);
 
               if (orient_tag < 0) { /* Different orientation => re-orient*/
@@ -3498,7 +3497,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   cs_gnum_t  *gtmp = NULL;
   double  *dtmp = NULL;
   cs_lnum_t  *ltmp = NULL;
-  cs_lnum_t  n_fi_faces = 0, n_ii_faces = mesh->n_i_faces, n_discarded = 0;
+  cs_lnum_t  n_fi_faces = 0, n_ii_faces = mesh->n_i_faces;
   cs_lnum_t  *new_f2v_idx = mesh->i_face_vtx_idx;
   cs_lnum_t  *new_f2v_lst = mesh->i_face_vtx_lst;
   cs_lnum_t   *_new_face_family = mesh->i_face_family;
@@ -3637,7 +3636,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   BFT_FREE(gtmp);
   BFT_FREE(ltmp);
 
-  assert(mesh->n_i_faces == n_fi_faces + n_discarded);
+  assert(mesh->n_i_faces == n_fi_faces);
 
   /* Build index */
 
@@ -4288,15 +4287,21 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
     }
     else if (n_parents == 2) {
       j = n2o_face_hist->index[i];
-      cs_gnum_t g0 = cell_gnum[j], g1 = cell_gnum[j+1];
-      if (g0 > 0 && g1 > 0 && g0 != g1) {
+      if (join_param.perio_type != FVM_PERIODICITY_NULL) {
         n_new_i_faces += 1;
         new_face_type[i] = CS_JOIN_FACE_INTERIOR;
       }
       else {
-        n_new_b_faces += 1;
-        new_face_type[i] = CS_JOIN_FACE_MULTIPLE_BORDER;
-        n_multiple_bfaces += 1;
+        cs_gnum_t g0 = cell_gnum[j], g1 = cell_gnum[j+1];
+        if (g0 > 0 && g1 > 0 && g0 != g1)  {
+          n_new_i_faces += 1;
+          new_face_type[i] = CS_JOIN_FACE_INTERIOR;
+        }
+        else {
+          n_new_b_faces += 1;
+          new_face_type[i] = CS_JOIN_FACE_MULTIPLE_BORDER;
+          n_multiple_bfaces += 1;
+        }
       }
     }
     else if (n_parents > 2) {
