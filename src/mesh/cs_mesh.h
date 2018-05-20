@@ -404,6 +404,21 @@ cs_mesh_t *
 cs_mesh_destroy(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
+ * Update (compactify) an array of global numbers.
+ *
+ * parameters:
+ *   n_elts   <-> number of local elements
+ *   elt_gnum <-> global element numbers
+ *
+ * return:
+ *   associated global number of elements
+ *----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_mesh_compact_gnum(cs_lnum_t   n_elts,
+                     cs_gnum_t  *elt_gnum);
+
+/*----------------------------------------------------------------------------
  * Remove arrays and structures that mey be rebuilt.
  *
  * mesh       <-> pointer to a mesh structure

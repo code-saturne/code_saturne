@@ -2,11 +2,14 @@
 Master (not on release branches yet)
 ------------------------------------
 
+User changes:
+
+- Allow joining of meshes including isolated faces.
+
 Release 5.2.0 - March 30, 2018
 ------------------------------
 
 Physical modelling:
-
 
 - Atmospheric model: add new BCs for open-boundary flow such as atmospheric
   flows. It consists in changing the solved pressure. This change result
@@ -31,14 +34,12 @@ Physical modelling:
 
 Numerics:
 
-
 - Add the possibility to put buoyant scalars and density update in
   velocity-pressure loop.
 
 - Integration of a vector Laplacian for CDO-Fb schemes.
 
 User changes:
-
 
 - Allow stopping at a given wall-clock time using the control_file.
 
@@ -65,7 +66,6 @@ User changes:
   to use MED for interpolating from one mesh to another.
 
 Architectural changes:
-
 
 - Add Support for reading CGNS files with NFACE_n elements.
 

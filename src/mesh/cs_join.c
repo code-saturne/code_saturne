@@ -185,6 +185,7 @@ _select_entities(cs_join_t   *this_join,
      - Get the adjacent faces, ... */
 
   this_join->selection = cs_join_select_create(selection_criteria,
+                                               param.perio_type,
                                                param.verbosity);
 
   /* Free arrays and structures needed for selection */

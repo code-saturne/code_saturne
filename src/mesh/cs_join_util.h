@@ -369,6 +369,7 @@ cs_join_destroy(cs_join_t  **join);
  *
  * parameters:
  *   selection_criteria <-- pointer to a cs_mesh_select_t structure
+ *   perio_type         <-- periodicity type (FVM_PERIODICITY_NULL if none)
  *   verbosity          <-- level of verbosity required
  *
  * returns:
@@ -376,8 +377,9 @@ cs_join_destroy(cs_join_t  **join);
  *---------------------------------------------------------------------------*/
 
 cs_join_select_t *
-cs_join_select_create(const char  *selection_criteria,
-                      int          verbosity);
+cs_join_select_create(const char              *selection_criteria,
+                      fvm_periodicity_type_t   perio_type,
+                      int                      verbosity);
 
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_select_t structure.

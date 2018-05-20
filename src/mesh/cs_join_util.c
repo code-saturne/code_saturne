@@ -2207,6 +2207,7 @@ cs_join_destroy(cs_join_t  **join)
  *
  * parameters:
  *   selection_criteria <-- pointer to a cs_mesh_select_t structure
+ *   perio_type         <-- periodicity type (FVM_PERIODICITY_NULL if none)
  *   verbosity          <-- level of verbosity required
  *
  * returns:
@@ -2214,8 +2215,9 @@ cs_join_destroy(cs_join_t  **join)
  *---------------------------------------------------------------------------*/
 
 cs_join_select_t *
-cs_join_select_create(const char  *selection_criteria,
-                      int          verbosity)
+cs_join_select_create(const char              *selection_criteria,
+                      fvm_periodicity_type_t   perio_type,
+                      int                      verbosity)
 {
   cs_lnum_t  i;
 
@@ -2280,6 +2282,19 @@ cs_join_select_create(const char  *selection_criteria,
   cs_selector_get_b_face_num_list(selection_criteria,
                                   &(selection->n_faces),
                                   selection->faces);
+
+  /* In case of periodicity, ensure no isolated faces are
+     selected */
+
+  if (perio_type != FVM_PERIODICITY_NULL) {
+    cs_lnum_t j = 0;
+    for (i = 0; i < selection->n_faces; i++) {
+      cs_lnum_t f_id = selection->faces[i];
+      if (mesh->b_face_cells[f_id] > -1)
+        selection->faces[j++] = f_id;
+    }
+    selection->n_faces = j;
+  }
 
   BFT_MALLOC(order, selection->n_faces, cs_lnum_t);
   BFT_MALLOC(ordered_faces, selection->n_faces, cs_lnum_t);
