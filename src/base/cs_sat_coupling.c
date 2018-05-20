@@ -826,23 +826,6 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * User function wrapper for definition of Code_Saturne couplings
- *
- * Fortran Interface:
- *
- * SUBROUTINE USSATC
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (ussatc, USSATC)
-(
- void
-)
-{
-  cs_user_saturne_coupling();
-}
-
-/*----------------------------------------------------------------------------
  * Get number of code couplings
  *
  * Fortran interface:

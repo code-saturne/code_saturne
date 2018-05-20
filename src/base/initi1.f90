@@ -164,22 +164,7 @@ call lagran_init_map
 call lagopt(isuite, iccvfg, iscalt, dtref)
 
 !===============================================================================
-! 3. DEFINITION DES COUPLAGES AVEC SYRTHES
-!===============================================================================
-
-! Le nombre de couplage SYRTHES doit etre connu avant MODINI a des fins
-! de verification de coherence avec la definition des scalaires
-
-if (iihmpr.eq.1) then
-  call uisyrc
-endif
-
-call user_syrthes_coupling
-
-call ussatc
-
-!===============================================================================
-! 4. MODIFS APRES USINI1
+! 3. MODIFS APRES USINI1
 !===============================================================================
 
 ! Do not call this routine if CDO mode only (default variables and properties
@@ -189,7 +174,7 @@ if (icdo.lt.2) then
 endif
 
 !===============================================================================
-! 5. Some additional fields and mappings
+! 4. Some additional fields and mappings
 !===============================================================================
 
 ! Do not call this routine if CDO mode only (default variables and properties
@@ -207,7 +192,7 @@ call gui_linear_solvers
 call user_linear_solvers
 
 !===============================================================================
-! 6. Coherency checks
+! 5. Coherency checks
 !===============================================================================
 
 iok = 0

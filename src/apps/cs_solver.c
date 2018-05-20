@@ -64,6 +64,7 @@
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
 #include "cs_gui.h"
+#include "cs_gui_conjugate_heat_transfer.h"
 #include "cs_gui_output.h"
 #include "cs_gui_particles.h"
 #include "cs_gui_radiative_transfer.h"
@@ -240,6 +241,12 @@ cs_run(void)
   /* Update mesh zones */
   cs_domain_update_wall_zones(cs_glob_domain);
 
+  /* Define MPI-based Couplings if applicable */
+
+  cs_gui_syrthes_coupling();
+  cs_user_syrthes_coupling();
+  cs_user_saturne_coupling();
+
   /* Initialize Fortran API and calculation setup */
 
   if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
@@ -339,7 +346,7 @@ cs_run(void)
   }
 
   if (check_mask && cs_syr_coupling_n_couplings())
-    bft_error(__FILE__, __LINE__, errno,
+    bft_error(__FILE__, __LINE__, 0,
               _("Coupling with SYRTHES is not possible in mesh preprocessing\n"
                 "or verification mode."));
 

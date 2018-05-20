@@ -106,20 +106,8 @@ _get_syrthes_coupling(const char*  keyword,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public Fortran function definitions
+ * Public Function definitions
  *============================================================================*/
-
-/*-----------------------------------------------------------------------------
- * Wrapper to define new SYRTHES coupling.
- *
- * subroutine uisyrc
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uisyrc, UISYRC) (void)
-{
-  cs_gui_syrthes_coupling();
-}
 
 /*-----------------------------------------------------------------------------
  * Define new SYRTHES coupling.
@@ -132,8 +120,12 @@ void CS_PROCF (uisyrc, UISYRC) (void)
  *
  *----------------------------------------------------------------------------*/
 
-void cs_gui_syrthes_coupling(void)
+void
+cs_gui_syrthes_coupling(void)
 {
+  if (!cs_gui_file_is_loaded())
+    return;
+
   int zone_id;
   int verbosity = 0;
   int visualization = 1;

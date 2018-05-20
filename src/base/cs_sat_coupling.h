@@ -82,20 +82,6 @@ typedef void
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * User function wrapper for definition of Code_Saturne couplings
- *
- * Fortran Interface:
- *
- * SUBROUTINE USSATC
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (ussatc, USSATC)
-(
- void
-);
-
-/*----------------------------------------------------------------------------
  * Get number of code coupling
  *
  * Fortran interface:
