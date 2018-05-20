@@ -58,6 +58,7 @@
 #include "cs_numbering.h"
 #include "cs_order.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parall.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_timer.h"
 
@@ -419,7 +420,9 @@ _print_cell_neighbor_info(const cs_mesh_t  *mesh)
  *   lexicographical
  *----------------------------------------------------------------------------*/
 
-static int _compare_couples(const void *x, const void *y)
+static int
+_compare_couples(const void *x,
+                 const void *y)
 {
   int retval = 1;
 
@@ -2266,6 +2269,43 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
+ * Update (compactify) an array of global numbers.
+ *
+ * parameters:
+ *   n_elts   <-> number of local elements
+ *   elt_gnum <-> global element numbers
+ *
+ * return:
+ *   associated global number of elements
+ *----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_mesh_compact_gnum(cs_lnum_t   n_elts,
+                     cs_gnum_t  *elt_gnum)
+{
+  cs_gnum_t n_g_elts = n_elts;
+
+  if (cs_glob_n_ranks > 1 || elt_gnum != NULL) {
+
+    fvm_io_num_t *tmp_num = fvm_io_num_create(NULL, elt_gnum, n_elts, 0);
+
+    if (n_elts > 0)
+      memcpy(elt_gnum,
+             fvm_io_num_get_global_num(tmp_num),
+             n_elts*sizeof(cs_gnum_t));
+
+    n_g_elts = fvm_io_num_get_global_count(tmp_num);
+
+    assert(fvm_io_num_get_local_count(tmp_num) == n_elts);
+
+    tmp_num = fvm_io_num_destroy(tmp_num);
+
+  }
+
+  return n_g_elts;
+}
+
+/*----------------------------------------------------------------------------
  * Remove arrays and structures that may be rebuilt.
  *
  * mesh       <-> pointer to a mesh structure
@@ -2382,31 +2422,8 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh)
 
   /* Build an I/O numbering on boundary faces to compact the global numbering */
 
-  if (cs_glob_n_ranks > 1) {
-
-    fvm_io_num_t *tmp_num = fvm_io_num_create(NULL,
-                                              mesh->global_b_face_num,
-                                              mesh->n_b_faces,
-                                              0);
-
-    if (mesh->n_b_faces > 0)
-      memcpy(mesh->global_b_face_num,
-             fvm_io_num_get_global_num(tmp_num),
-             mesh->n_b_faces*sizeof(cs_gnum_t));
-
-    mesh->n_g_b_faces = fvm_io_num_get_global_count(tmp_num);
-
-    assert(fvm_io_num_get_local_count(tmp_num) == (cs_lnum_t)mesh->n_b_faces);
-
-    tmp_num = fvm_io_num_destroy(tmp_num);
-
-  }
-  else { /* if (cs_glob_ranks == 1) */
-
-    assert(mesh->global_b_face_num == NULL);
-    mesh->n_g_b_faces = mesh->n_b_faces;
-
-  }
+  mesh->n_g_b_faces = cs_mesh_compact_gnum(mesh->n_b_faces,
+                                           mesh->global_b_face_num);
 
   /* Now also clean-up unreferenced vertices */
 

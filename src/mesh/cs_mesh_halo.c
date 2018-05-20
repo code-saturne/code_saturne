@@ -2152,7 +2152,7 @@ _check_i_face_cells(cs_mesh_t  *mesh)
   for (i = 0; i < mesh->n_i_faces; i++) {
 
     if (mesh->i_face_cells[i][0] < 0) {
-      if (n_c_domains > 1)
+      if (mesh->global_i_face_num != NULL)
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
                   " Face %d (%llu) has an incomplete connectivity.\n"
@@ -2170,7 +2170,7 @@ _check_i_face_cells(cs_mesh_t  *mesh)
     }
 
     if (mesh->i_face_cells[i][1] < 0) {
-      if (n_c_domains > 1)
+      if (mesh->global_i_face_num != NULL)
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
                   " Face %d (%llu) has an incomplete connectivity.\n"
