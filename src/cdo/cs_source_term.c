@@ -495,6 +495,11 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           } // quad_type
           break;
 
+        case CS_XDEF_BY_ARRAY:
+          msh_flag |= CS_CDO_LOCAL_PVQ;
+          compute_source[st_id] = cs_source_term_dcsd_by_array;
+          break;
+
         default:
           bft_error(__FILE__, __LINE__, 0,
                     " Invalid type of definition for a source term in CDOVB");
@@ -588,9 +593,12 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           compute_source[st_id] = cs_source_term_fbsd_bary_by_analytic;
         break;
 
+      case CS_XDEF_BY_ARRAY:
+        compute_source[st_id] = cs_source_term_pcsd_by_array;
+        break;
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " Invalid type of definition for a source term in CDOVB");
+                  " Invalid type of definition for a source term in CDOFB");
         break;
 
       } // switch def_type
@@ -980,6 +988,88 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
 
   for (int v = 0; v < cm->n_vc; v++)
     values[v] += density_value * cm->wvc[v] * cm->vol_c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar density defined at dual cells by an array.
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcsd_by_array(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
+                             cs_cell_builder_t         *cb,
+                             void                      *input,
+                             double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
+
+  const cs_xdef_array_input_t  *ai =
+    (const cs_xdef_array_input_t *)source->input;
+
+  assert(cs_flag_test(ai->loc, cs_flag_primal_vtx));
+  for (int v = 0; v < cm->n_vc; v++)
+    values[v] += ai->values[cm->v_ids[v]] * cm->wvc[v] * cm->vol_c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar density defined at primal cells by an array.
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_pcsd_by_array(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
+                             cs_cell_builder_t         *cb,
+                             void                      *input,
+                             double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+
+  const cs_xdef_array_input_t  *ai =
+    (const cs_xdef_array_input_t *)source->input;
+
+  assert(cs_flag_test(ai->loc, cs_flag_primal_cell));
+  values[cm->c_id] += ai->values[cm->c_id];
 }
 
 /*----------------------------------------------------------------------------*/
