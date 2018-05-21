@@ -1310,6 +1310,54 @@ cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the weight related to each vertex of a face. This weight
+ *         ensures a 2nd order approximation if the face center is the face
+ *         barycenter
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       bf_id     border face id
+ * \param[in, out]  wvf       quantities to compute (pre-allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_wvf(const cs_cdo_connect_t       *connect,
+                              const cs_cdo_quantities_t    *cdoq,
+                              cs_lnum_t                     bf_id,
+                              cs_real_t                     wvf[])
+{
+  assert(wvf != NULL);
+
+  const cs_real_t  *xf = cdoq->b_face_center + 3*bf_id;
+  const cs_lnum_t  *idx = connect->bf2v->idx + bf_id;
+  const cs_lnum_t  *ids = connect->bf2v->ids + idx[0];
+  const int  n_vf = idx[1] - idx[0];
+
+  for (cs_lnum_t  v = 0; v < n_vf; v++) wvf[v] = 0.; /* Init */
+
+  int  _v0, _v1;
+  for (cs_lnum_t  v = 0; v < n_vf; v++) { /* Compute */
+
+    if (v < n_vf - 1)
+      _v0 = v, _v1 = v+1;
+    else
+      _v0 = n_vf-1, _v1 = 0;
+
+    const double  tef = cs_math_surftri(cdoq->vtx_coord + 3*ids[_v0],
+                                        cdoq->vtx_coord + 3*ids[_v1],
+                                        xf);
+    wvf[_v0] += tef;
+    wvf[_v1] += tef;
+
+  } /* Loop on face vertices */
+
+  const cs_real_t  coef = 0.5/cdoq->b_face_surf[bf_id];
+  for (cs_lnum_t  v = 0; v < n_vf; v++) wvf[v] *= coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define a cs_quant_t structure for a primal face (interior or border)
  *
  * \param[in]  f_id     id related to the face (f_id > n_i_face -> border face)

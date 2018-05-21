@@ -275,6 +275,25 @@ cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the weight related to each vertex of a face. This weight
+ *         ensures a 2nd order approximation if the face center is the face
+ *         barycenter
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       bf_id     border face id
+ * \param[in, out]  wvf       quantities to compute (pre-allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_wvf(const cs_cdo_connect_t       *connect,
+                              const cs_cdo_quantities_t    *cdoq,
+                              cs_lnum_t                     bf_id,
+                              cs_real_t                     wvf[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define a cs_quant_t structure for a primal face (interior or border)
  *
  * \param[in]  f_id     id related to the face (f_id > n_i_face -> border face)
