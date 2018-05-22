@@ -120,17 +120,88 @@ cs_user_extra_operations(void)
 
   //!< [example_2]
 
-  cs_balance_by_zone("box[-0.5d0, 1.3d0, 0.d0, 1.d0, 1.9d0, 1.d0]",
+  cs_balance_by_zone("box[-0.5, 1.3, 0.0, 1.0, 1.9, 1.0]",
                      "scalar1");
 
   //!< [example_2]
 
   //!< [example_3]
-  cs_real_3_t normal = {0., 0., 1.,};
+  cs_real_t normal[3] = {0., 0., 1.,};
 
   cs_surface_balance("selection_criterion", "scalar1", normal);
   //!< [example_3]
 
+  /* More advanced usage for pressure drop */
+
+  {
+    /*< [example_4] */
+    const char criteria[] = "zone_group";
+
+    cs_lnum_t   n_selected_cells = 0;
+    cs_lnum_t  *selected_cells = NULL;
+
+    cs_real_t balance[CS_BALANCE_P_N_TERMS];
+
+    BFT_MALLOC(selected_cells, cs_glob_mesh->n_cells, cs_lnum_t);
+
+    cs_selector_get_cell_list(criteria,
+                              &n_selected_cells,
+                              selected_cells);
+
+    cs_balance_by_zone_compute("scalar1",
+                               n_selected_cells,
+                               selected_cells,
+                               balance);
+
+    BFT_FREE(selected_cells);
+
+    cs_balance_term_t  mass_in_idx = CS_BALANCE_MASS_IN;
+    cs_balance_term_t  mass_out_idx = CS_BALANCE_MASS_OUT;
+
+    bft_printf("inlet mass flow  (scalar 1): %g\n",
+               "outlet mass flow (scalar 1): %g\n",
+               balance[mass_in_idx],
+               balance[mass_out_idx]);
+    /*< [example_4] */
+  }
+  //!< [example_5]
+
+  cs_pressure_drop_by_zone("zone_group");
+
+  //!< [example_5]
+
+  /* More advanced usage for pressure drop */
+
+  {
+    /*< [example_6] */
+    const char criteria[] = "zone_group";
+
+    cs_lnum_t   n_selected_cells = 0;
+    cs_lnum_t  *selected_cells = NULL;
+
+    cs_real_t balance[CS_BALANCE_P_N_TERMS];
+
+    BFT_MALLOC(selected_cells, cs_glob_mesh->n_cells, cs_lnum_t);
+
+    cs_selector_get_cell_list(criteria,
+                              &n_selected_cells,
+                              selected_cells);
+
+    cs_pressure_drop_by_zone_compute(n_selected_cells,
+                                     selected_cells,
+                                     balance);
+
+    BFT_FREE(selected_cells);
+
+    cs_balance_p_term_t  rhou_in_idx = CS_BALANCE_P_RHOU_IN;
+    cs_balance_p_term_t  rhou_out_idx = CS_BALANCE_P_RHOU_OUT;
+
+    bft_printf("inlet mass flow  (rho.u): %g\n",
+               "outlet mass flow (rho.u): %g\n",
+               balance[rhou_in_idx],
+               balance[rhou_out_idx]);
+    /*< [example_6] */
+  }
 }
 
 /*----------------------------------------------------------------------------*/
