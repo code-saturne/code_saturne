@@ -191,6 +191,16 @@ _petsc_setup_hook(void   *context,
               " Iterative solver not interfaced with PETSc.");
   }
 
+  /* Set KSP tolerances */
+  PetscReal rtol, abstol, dtol;
+  PetscInt  maxit;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  KSPSetTolerances(ksp,
+                   info.eps,          // relative convergence tolerance
+                   abstol,            // absolute convergence tolerance
+                   dtol,              // divergence tolerance
+                   info.n_max_iter);  // max number of iterations
+
   /* Set the preconditioner */
   KSPGetPC(ksp, &pc);
 
