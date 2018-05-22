@@ -667,6 +667,8 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       eqp->itsol_info.solver = CS_PARAM_ITSOL_GMRES;
     else if (strcmp(val, "amg") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_AMG;
+    else if (strcmp(val, "fcg") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_FCG;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -893,6 +895,13 @@ cs_equation_param_set_sles(const char               *eqname,
         cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
                           NULL,
                           CS_SLES_GMRES,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_FCG:
+        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_IPCG,
                           poly_degree,
                           itsol.n_max_iter);
         break;

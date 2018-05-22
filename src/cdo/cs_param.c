@@ -220,6 +220,9 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_GMRES:
     return "GMRES";
     break;
+  case CS_PARAM_ITSOL_FCG:
+    return  "FCG";
+    break;
   case CS_PARAM_ITSOL_AMG:
     return "Algebraic.Multigrid";
     break;

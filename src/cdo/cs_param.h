@@ -358,6 +358,7 @@ typedef enum {
   CS_PARAM_ITSOL_BICGSTAB2, /*!< Stabilized Bi-Conjuguate gradient */
   CS_PARAM_ITSOL_CR3,       /*!< 3-layer conjugate residual*/
   CS_PARAM_ITSOL_GMRES,     /*!< Generalized Minimal RESidual */
+  CS_PARAM_ITSOL_FCG,       /*!< Flexible Conjuguate Gradient */
   CS_PARAM_ITSOL_AMG,       /*!< Algebraic MultiGrid */
   CS_PARAM_N_ITSOL_TYPES
 
