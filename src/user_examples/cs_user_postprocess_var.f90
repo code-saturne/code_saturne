@@ -215,65 +215,13 @@ endif
 ! Examples for initialization
 !===============================================================================
 
-
-!===============================================================================
-! Examples of volume variables on the main volume mesh (ipart = -1)
-!===============================================================================
-
-if (ipart .eq. -1) then
-
-!< [postprocess_var_ex_2]
-
-  ! Output of a combination of moments
-  ! ----------------------------------
-
-  ! We assume in this example that we have 2 temporal means (moments):
-  !   <u>  for imom=1
-  !   <uu> for imom=2
-  ! We seek to plot <u'u'>=<uu>-<U>**2
-
-  if (cs_time_moment_n_moments() .ge. 2) then
-
-    ! Moment numbers:
-    imom1 = 1
-    imom2 = 2
-
-    ! Temporal accumulation for moments
-    call field_get_val_s(time_moment_field_id(imom1), cmom_1)
-    call field_get_val_s(time_moment_field_id(imom2), cmom_2)
-
-    ! To improve this example's readability, we assume moments imom1 and imom2
-    ! have been computed on the same time window.
-
-    allocate(scel(ncelps))
-
-    do iloc = 1, ncelps
-      iel = lstcel(iloc)
-      scel(iloc) = cmom_2(iel) - (cmom_1(iel))**2
-    enddo
-
-    idimt = 1        ! 1: scalar, 3: vector, 6/9: symm/non-symm tensor
-    ientla = .true.  ! dimension 1 here, so no effect
-    ivarpr = .false. ! defined on the work array, not on the parent
-
-    ! Output values; as we have no face values, we can pass a
-    ! trivial array for those.
-    call post_write_var(ipart, '<upup>', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, scel, rvoid, rvoid)
-
-    deallocate(scel)
-
-  endif
-
-!< [postprocess_var_ex_2]
-
 !< [postprocess_var_ex_3]
 
 !===============================================================================
 ! Examples of volume variables on the boundary mesh (ipart = -2)
 !===============================================================================
 
-else if (ipart .eq. -2) then
+if (ipart .eq. -2) then
 
   ! Output of the density at the boundary
   ! -------------------------------------
@@ -288,6 +236,8 @@ else if (ipart .eq. -2) then
   call post_write_var(ipart, 'Density at boundary', idimt, ientla, ivarpr,    &
                       ntcabs, ttcabs, rvoid, rvoid, bfpro_rom)
 
+endif
+
 !< [postprocess_var_ex_3]
 
 !< [postprocess_var_ex_4]
@@ -296,7 +246,7 @@ else if (ipart .eq. -2) then
 ! Examples of volume variables on user meshes 1 or 2
 !===============================================================================
 
-else if (ipart.eq.1 .or. ipart.eq.2) then
+if (ipart.eq.1 .or. ipart.eq.2) then
   ! Map field arrays
   call field_get_val_v(ivarfl(iu), cvar_vel)
 

@@ -44,18 +44,10 @@
    The examples of post-processing given below are using the meshes defined
    \ref cs_user_postprocess "here".
 
-  \section cs_user_postprocess_var_h_volume_mesh Output on the volume mesh (ipart = -1)
-
-  \subsection cs_user_postprocess_var_h_volume_mesh_mom Output of a combination of moments
-
-  A combination of moments can also be post-processed using the \ref usvpst subroutine.
-
-  \snippet cs_user_postprocess_var.f90 postprocess_var_ex_2
-
   \section cs_user_postprocess_var_h_boundary_mesh Output on the boundary mesh (ipart = -2)
 
   Variables can be post-processed on the boundary mesh even if they are orignally
-  define at cell centers. The following code block illustrates the post-processing
+  definen at cell centers. The following code block illustrates the post-processing
   of the density on the boundary mesh.
 
   \snippet cs_user_postprocess_var.f90 postprocess_var_ex_3
