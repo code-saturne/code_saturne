@@ -34,7 +34,6 @@
   to perform data extraction or modify values
   in \ref cs_user_extra_operations.
 
-
   \section cs_user_extra_operations_examples_cs_user_extra_op_examples Extra operations examples
   Here is the list of examples dedicated to different physics:
 
@@ -154,7 +153,7 @@
 // __________________________________________________________________________________
 /*!
 
-  \page cs_user_extra_operations_examples_scalar_by_zone_p Scalar and head loss balance by zone
+  \page cs_user_extra_operations_examples_balance_by_zone_p Scalar and head loss balance by zone
 
   \section cs_user_extra_operations_examples_scalar_balance_by_zone Scalar balance by zone
 
@@ -248,12 +247,32 @@
 
   \snippet cs_user_extra_operations-balance_by_zone.c example_3
 
+  \subsection cs_user_extra_operations_examples_example_4 Specific terms of a scalar balance
+
+  Instead of simply logging the various balance terms, it is possible to access
+  them using the lower level functions, and the \ref cs_balance_term_t
+  components of the computed balance.
+
+  The following exemple shows how to access for example the mass flow
+  components of the scalar balance:
+  \snippet cs_user_extra_operations-balance_by_zone.c example_4
+
   \section cs_user_extra_operations_examples_head_balance_by_zone Head loss balance by zone
 
-  This example computes the head balance  for a volume zone.
+  This example computes the head balance for a volume zone.
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-balance_by_zone.c example_4
+  \snippet cs_user_extra_operations-balance_by_zone.c example_5
+
+  \subsection cs_user_extra_operations_examples_example_6 Specific terms of a head balance
+
+  Instead of simply logging the various balance terms, it is possible to access
+  them using the lower level functions, and the \ref cs_balance_p_term_t
+  components of the computed balance.
+
+  The following exemple shows how to access for example the mass flow
+  components of the pressure drop computation:
+  \snippet cs_user_extra_operations-balance_by_zone.c example_6
 
 */
 // __________________________________________________________________________________

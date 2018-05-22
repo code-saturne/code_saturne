@@ -25,19 +25,24 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page cs_user_postprocess Post-processing output (C functions)
+  \page cs_user_postprocess Post-processing output
 
-  \section cs_user_postprocess_h_intro Introduction
+  This page provides several examples that may be used or adapted
+  to perform extra or advanced post-processing data extraction in
+  in \ref cs_user_postprocess.c.
 
-  C user functions for definition of postprocessing output.
-    These subroutines are called in all cases.
+  - \subpage cs_user_postprocess_h_intro_p
+  - \subpage cs_user_postprocess_h_writers_p
+  - \subpage cs_user_postprocess_h_mesh_p
+  - \subpage cs_user_postprocess_h_mesh_advanced_p
+  - \subpage cs_user_postprocess_h_probes_p
+  - \subpage cs_user_postprocess_h_var_p
+  - \subpage cs_user_postprocess_h_activation_p
 
-  If the Code_Saturne GUI is used, this file is not required (but may be
-    used to override parameters entered through the GUI, and to set
-    parameters not accessible through the GUI).
+  \page cs_user_postprocess_h_intro_p Introduction and main concepts
 
-  Several functions are present in the file, each destined to defined
-    specific parameters.
+  Several functions are present in \ref cs_user_postprocess.c, each
+  destined to define specific parameters.
 
   The functions defined in \ref cs_user_postprocess.c, namely
   \ref cs_user_postprocess_writers, \ref cs_user_postprocess_meshes,
@@ -45,7 +50,7 @@
   \ref cs_user_postprocess_activate allow for the definition of post-processing
   output formats and frequency, and for the definition of surface or volume
   sections, in order to generate chronological outputs in \em EnSight, \em MED,
-  or \em CGNS format, as in-situ visualization using \em Catalyst.
+  or \em CGNS format, as in-situ visualization using \em Catalyst or \em Melissa.
 
   Point sets (probes and profiles) may also be defined, with outputs in the more
   classical comma-separated (\em csv) or white-space-separated (\em dat) text
@@ -83,17 +88,12 @@
   every 10 time steps, while another field is output to the same part
   every 200 time steps.
 
-  \section cs_user_postprocess_h_writers Definition of post-processing writers
+  \page cs_user_postprocess_h_writers_p Definition of post-processing writers
 
   Writers may be defined in the \ref cs_user_postprocess_writers
   function.
 
-  Flushing parameters for time plots may also be defined here. By default,
-  for best performance, time plot files are kept open, and flushing is not
-  forced. This behavior may be modified, as in the following example.
-  The default settings should be changed before time plots are defined.
-
-  \snippet cs_user_postprocess.c post_set_tp_flush
+  \section cs_user_postprocess_h_writers_mesh Mesh or sub-mesh output writers
 
   The following local variable definitions can shared beween several examples:
 
@@ -115,12 +115,42 @@
 
   \snippet cs_user_postprocess.c post_define_writer_2
 
-  In the following example, a plot writers is defined. Such a writer
-  will be used to output probe, profile, or other point data
+  \section cs_user_postprocess_h_writers_probe Probe and profile plotting writers
+
+  \subsection cs_user_postprocess_h_writers_probe_def Defining plot and profile writers
+
+  Default plot and probe writers, \ref CS_POST_WRITER_PROBES and
+  \ref CS_POST_WRITER_PROFILES are defined by default. Redefining them
+  here allows modifying some of their parameters.
+
+  In the following example, an additional plot writer is defined. Such a writer
+  may be used to output probe, profile, or other point data
   (probes may be output to 3D formats, but plot and time plot
   outputs drop cell or face-based ouptut).
 
   \snippet cs_user_postprocess.c post_define_writer_3
+
+  In the next example, the default profile output writer is redefined so
+  as to modify its defaults, including the output format (.dat instead
+  of the default CSV).
+
+  \snippet cs_user_postprocess-profiles.c post_writer_profile
+
+  \subsection cs_user_postprocess_h_writers_probe_flush Forcing plot output updates
+
+  Due to buffering, plots may not be updated at every time step, and frequency
+  of that update depends both on the volume of data produced and the machine.
+  Forcing updates at each time step while not required may degrade performance,
+  so it is not done by default.
+
+  Flushing parameters for time plots may be defined here. By default,
+  for best performance, time plot files are kept open, and flushing is not
+  forced. This behavior may be modified, as in the following example.
+  The default settings should be changed before time plots are defined.
+
+  \snippet cs_user_postprocess.c post_set_tp_flush
+
+  \section cs_user_postprocess_h_histo Histogram output
 
   In this last example, a histogram writer is defined. The format can
   be changed, as well as the number of subdivisions in the format options.
@@ -129,7 +159,9 @@
 
   \snippet cs_user_postprocess.c post_define_writer_4
 
-  \section cs_user_postprocess_h_mesh Definition of post-processing and mesh zones
+  \page cs_user_postprocess_h_mesh_p Definition of post-processing and mesh zones
+
+  \section cs_user_postprocess_h_mesh About postprocessing meshes
 
   Postprocessing meshes may be defined in the
   \ref cs_user_postprocess_meshes function, using one of several postprocessing
@@ -154,12 +186,11 @@
   and will only bear groups, not variable fields.
 
   The additional variables to post-process on the defined meshes
-  will be specified in the subroutine \ref usvpst in the
-  \ref cs_user_postprocess_var.f90 file.
+  will be specified in the \ref cs_user_postprocess_values function.
 
   \warning In the parallel case, some meshes may not contain any
-  local elements on a given processor. This is not a problem at all, as
-  long as the mesh is defined for all processors (empty or not).
+  local elements on a given process rank. This is not a problem at all, as
+  long as the mesh is defined for all ranks (empty or not).
   It would in fact not be a good idea at all to define a post-processing
   mesh only if it contains local elements, global operations on that
   mesh would become impossible, leading to probable deadlocks or crashes.}
@@ -184,7 +215,33 @@
 
   \snippet cs_user_postprocess.c post_define_mesh_1
 
-  \section cs_user_postprocess_h_mesh_advanced Advanced definitions of post-processing and mesh zones
+  \section cs_user_postprocess_h_mesh_atach Associating with writers
+
+  By default, meshes are associated with writers at the time of their
+  definition, either explicitly for regular postprocessing meshes,
+  or implicitely for probes and profiles. To prepare for future unification
+  of those approaches, a previously defined mesh may be associated with a
+  given writer. This allows ataching meshes to writers without requiring
+  redefinition of their other characteristics.
+
+  \subsection cs_user_postprocess_h_mesh_a4 Example: attach mesh to a histogram writer
+
+  Post-processing meshes can be associated to writers.
+
+  In the following example, the default boundary mesh is associated to the default
+  histogram writer. The format of this writer is txt (text files) and it writes
+  only at the end of the calculation.
+
+  \snippet cs_user_postprocess.c post_attach_mesh_1
+
+  In the following example, the default volume mesh is now associated to a user
+  defined writer of Id 6.
+
+  \snippet cs_user_postprocess.c post_attach_mesh_2
+
+  \page cs_user_postprocess_h_mesh_advanced_p Advanced definitions of post-processing and mesh zones
+
+  \section cs_user_postprocess_h_mesh_function Output meshes defined by user-defined functions
 
   More advanced mesh element selection is possible using
   \ref cs_post_define_volume_mesh_by_func or
@@ -263,6 +320,8 @@
   implemented output functions do not allow them yet) and some may
   not allow empty meshes, even if this is only transient.
 
+  \section cs_user_postprocess_h_mesh_other Other advanced mesh types
+
   \subsection cs_user_postprocess_h_mesh_a3 Example: edges mesh
 
   In cases where a mesh containing polygonal elements is output through
@@ -277,40 +336,9 @@
 
   \snippet cs_user_postprocess.c post_define_mesh_5
 
-  \subsection cs_user_postprocess_h_mesh_a4 Example: attach mesh to a histogram writer
+  \page cs_user_postprocess_h_probes_p Probes and profiles
 
-  Post-processing meshes can be associated to writers.
-
-  In the following example, the default boundary mesh is associated to the default
-  histogram writer. The format of this writer is txt (text files) and it writes
-  only at the end of the calculation.
-
-  \snippet cs_user_postprocess.c post_attach_mesh_1
-
-  In the following example, the default volume mesh is now associated to a user
-  defined writer of Id 6.
-
-  \snippet cs_user_postprocess.c post_attach_mesh_2
-
-  \section cs_user_postprocess_h_activation Management of output times
-
-  By default, a post-processing frequency is defined for each writer,
-  as defined using the GUI or through the \ref cs_user_postprocess_writers
-  function. For each writer, the user may define if an output is
-  automatically generated at the end of the calculation, even if the
-  last time step is not a multiple of the required time step number
-  of physical time.
-
-  For finer control, the \ref cs_user_postprocess_activate function
-  file may be used to specify when post-processing outputs will be
-  generated, overriding the default behavior.
-
-  In the following example, all output is deactivated until time step 1000
-  is reached, at which time the normal behavior resumes:
-
-  \snippet cs_user_postprocess.c post_activate
-
-  \section cs_user_postprocess_h_probes Probes
+  \section cs_user_postprocess_h_probes About Probes and profiles
 
   Sets of probes may also be defined through the \ref cs_user_postprocess_probes
   function, to allow for extraction and output of values at specific mesh
@@ -340,7 +368,42 @@
   associated by default to a set of monitoring probes.
   This is not the case for profiles.
 
-  \section cs_user_postprocess_h_var Definition of the variables to post-process
+  \section cs_user_postprocess_h_profile_advanced Advanced profile definitions
+
+  As with regular meshes, profiles may be defined using user functions.
+
+  \subsection cs_user_postprocess_h_profile_a1 Definition of a series of profiles
+
+  In this example, we define a series of profiles. To avoid redundant code,
+  an array defining both the name of each profile and the matching
+  x coordinate (as a text string) is defined. The code then loops
+  along these array values to define the series:
+
+  \snippet cs_user_postprocess-profiles.c post_profile_advanced_1
+
+  As we observe here, the \ref cs_probe_set_create_from_local requires
+  a process-local definition, calling a user-defined function. This
+  requires that the line_defs array be defined as static, so as to be available
+  when this function is called. For this example, the function is defined
+  as follows (before the calling function, preferably in the file's
+  local function definitions section).
+
+  \snippet cs_user_postprocess-profiles.c post_profile_advanced_df_1
+
+  \subsection cs_user_postprocess_h_profile_a2 Boundary profiles
+
+  Probes and profiles may also be associated to the mesh boundary.
+
+  In the following example, two profiles are defined based on a mesh boundary
+  selection criterion, using the predefined
+  \ref cs_b_face_criterion_probes_define (which assumes curvilinear coordinates
+  based on the "x" direction):
+
+  \snippet cs_user_postprocess-profiles.c post_profile_advanced_2
+
+  \page cs_user_postprocess_h_var_p Definition of the variables to post-process
+
+  \section cs_user_postprocess_h_var Additional post-processing variables
 
   For the mesh parts defined using the GUI or in \ref cs_user_postprocess.c,
   the \ref cs_user_postprocess_values function  of the \ref cs_user_postprocess.c
@@ -361,4 +424,45 @@
   as shown in the following example:
 
   \snippet cs_user_postprocess.c postprocess_values_ex_1
+
+  \section cs_user_postprocess_h_var_profile Additional profile variables
+
+  The following examples match the advanced profile definitions given
+  in \ref cs_user_postprocess_h_profile_advanced.
+
+  The first section is common to both profile series:
+
+  \snippet cs_user_postprocess-profiles.c post_profile_advanced_var_0
+
+  For the profiles along fixed x, the following code is used. Note that
+  this code's complexity is mainly due to extracting Reynolds stresses
+  for different turbulence models and options. Specific values
+  are then computed for each colum, in the switch statement:
+
+  \snippet cs_user_postprocess-profiles.c post_profile_advanced_var_1
+
+  For the second series, values for each column are also computed,
+  requiring a reference pressure based on the mesh point closest to
+  a given point, and computation of tangential stresses, so as to
+  determine drag coefficients.
+
+  \snippet cs_user_postprocess-profiles.c post_profile_advanced_var_2
+
+  \page cs_user_postprocess_h_activation_p Advanced management of output times
+
+  By default, a post-processing frequency is defined for each writer,
+  as defined using the GUI or through the \ref cs_user_postprocess_writers
+  function. For each writer, the user may define if an output is
+  automatically generated at the end of the calculation, even if the
+  last time step is not a multiple of the required time step number
+  of physical time.
+
+  For finer control, the \ref cs_user_postprocess_activate function
+  file may be used to specify when post-processing outputs will be
+  generated, overriding the default behavior.
+
+  In the following example, all output is deactivated until time step 1000
+  is reached, at which time the normal behavior resumes:
+
+  \snippet cs_user_postprocess.c post_activate
 */

@@ -86,14 +86,17 @@ BEGIN_C_DECLS
  * \param[out]  s       curvilinear coordinates of selected elements
  *----------------------------------------------------------------------------*/
 
+/*! [post_profile_advanced_df_1] */
 static void
 _cell_x_profile_probes_define(void          *input,
                               cs_lnum_t     *n_elts,
                               cs_real_3_t  **coords,
                               cs_real_t    **s)
 {
-  const char *x_str = (const char *)input;
+  /* Determine x value from input string, to define
+     associated segment (with fixed y and z values) */
 
+  const char *x_str = (const char *)input;
   cs_real_t x = atof(x_str);
 
   cs_real_t seg[6] = {x, 0.1, -0.05, x, -5, -0.05};
@@ -102,6 +105,7 @@ _cell_x_profile_probes_define(void          *input,
 
   cs_cell_segment_intersect_probes_define(seg, n_elts, coords, s);
 }
+/*! [post_profile_advanced_df_1] */
 
 /*============================================================================
  * User function definitions
@@ -123,6 +127,7 @@ cs_user_postprocess_writers(void)
 {
   /* redefine profile output options */
 
+/*! [post_writer_profile] */
   cs_post_define_writer(CS_POST_WRITER_PROFILES,  /* writer_id */
                         "",                       /* writer name */
                         "profiles",
@@ -133,6 +138,7 @@ cs_user_postprocess_writers(void)
                         true,                     /* output at end */
                         -1,                       /* time step frequency */
                         -1.0);                    /* time value frequency */
+/*! [post_writer_profile] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -150,6 +156,7 @@ cs_user_postprocess_probes(void)
      its members are garanteed to be present when the _cell_profile_select
      function is called */
 
+/*! [post_profile_advanced_1] */
   static const char *line_defs[]
     = {"-5.87", "buicesat-6",
        "2.59", "buicesat03",
@@ -190,9 +197,11 @@ cs_user_postprocess_probes(void)
     cs_probe_set_associate_writers(pset, 1, writer_ids);
 
   }
+/*! [post_profile_advanced_1] */
 
   /* Define top and bottom profiles */
 
+/*! [post_profile_advanced_2] */
   static const char *wall_defs[]
     = {"UP",   "buicstr",
        "DOWN", "buicinc"};
@@ -212,6 +221,7 @@ cs_user_postprocess_probes(void)
     cs_probe_set_associate_writers(pset, 1, writer_ids);
 
   }
+/*! [post_profile_advanced_2] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -257,6 +267,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 {
   if (probes != NULL) {
 
+/*! [post_profile_advanced_var_0] */
     const cs_mesh_t *m = cs_glob_mesh;
     const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
@@ -270,17 +281,15 @@ cs_user_postprocess_values(const char            *mesh_name,
 
     const cs_time_step_t *ts_post = (ts->nt_cur == ts->nt_max) ? NULL : ts;
 
-    /*==============================================
-     * Files for the Buice & Eaton comparison
-     *==============================================*/
-
     /* Common variables */
 
     const cs_real_t href = 1.;
+/*! [post_profile_advanced_var_0] */
 
     /* For "x" profiles
        ---------------- */
 
+/*! [post_profile_advanced_var_1] */
     if (strncmp(name, "buicesat", strlen("buicesat")) == 0) {
 
       cs_real_t *val;
@@ -430,10 +439,12 @@ cs_user_postprocess_values(const char            *mesh_name,
       BFT_FREE(val);
 
     }
+/*! [post_profile_advanced_var_1] */
 
     /* Pressure and friction coefficients
        ---------------------------------- */
 
+/*! [post_profile_advanced_var_2] */
     else if (   strcmp(name, "buicstr") == 0
              || strcmp(name, "buicinc") == 0) {
 
@@ -551,6 +562,7 @@ cs_user_postprocess_values(const char            *mesh_name,
       BFT_FREE(stresses);
       BFT_FREE(val);
     }
+/*! [post_profile_advanced_var_2] */
 
   }
 }
