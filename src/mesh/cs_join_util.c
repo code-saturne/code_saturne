@@ -2289,9 +2289,9 @@ cs_join_select_create(const char              *selection_criteria,
   if (perio_type != FVM_PERIODICITY_NULL) {
     cs_lnum_t j = 0;
     for (i = 0; i < selection->n_faces; i++) {
-      cs_lnum_t f_id = selection->faces[i];
+      cs_lnum_t f_id = selection->faces[i]-1;
       if (mesh->b_face_cells[f_id] > -1)
-        selection->faces[j++] = f_id;
+        selection->faces[j++] = f_id+1;
     }
     selection->n_faces = j;
   }
