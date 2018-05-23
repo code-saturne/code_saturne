@@ -6934,40 +6934,24 @@ cs_post_init_error_writer_cells(void)
 
   const cs_mesh_t *mesh = cs_glob_mesh;
 
-  /* If post-processing is active, output info */
-  /*-------------------------------------------*/
+  const int writer_id = CS_POST_WRITER_ERRORS;
+  const char *mesh_name = N_("Calculation domain");
+  cs_post_mesh_t *post_mesh = NULL;
 
-  if (mesh->i_face_vtx_idx != NULL || mesh->b_face_vtx_idx != NULL) {
+  cs_post_init_error_writer();
+  cs_post_activate_writer(writer_id, 1);
 
-    const int writer_id = CS_POST_WRITER_ERRORS;
-    const char *mesh_name = N_("Calculation domain");
-    cs_post_mesh_t *post_mesh = NULL;
+  mesh_id = cs_post_get_free_mesh_id();
 
-    cs_post_init_error_writer();
-    cs_post_activate_writer(writer_id, 1);
+  cs_post_define_volume_mesh(mesh_id,
+                             _(mesh_name),
+                             "all[]",
+                             false,
+                             false,
+                             1,
+                             &writer_id);
 
-    mesh_id = cs_post_get_free_mesh_id();
-
-    post_mesh = _predefine_mesh(mesh_id, false, 0, 1, &writer_id);
-
-    /* Define mesh based on current arguments */
-
-    BFT_MALLOC(post_mesh->name, strlen(_(mesh_name)) + 1, char);
-    strcpy(post_mesh->name, _(mesh_name));
-
-    post_mesh->add_groups = false;
-
-    _define_export_mesh(post_mesh,
-                        mesh->n_cells,
-                        0,
-                        0,
-                        NULL,
-                        NULL,
-                        NULL);
-
-    _cs_post_write_mesh(post_mesh, NULL);
-
-  }
+  cs_post_write_meshes(NULL);
 
   return mesh_id;
 }
