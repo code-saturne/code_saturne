@@ -5,6 +5,8 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix empty mesh in error postprocessing for linear solvers.
+
 - Fix for possible bug in postprocessing edges mesh extraction.
 
 - Fix for OpenMP multigrid-preconditioned Conjugate Gradient convergence issue.
