@@ -5,6 +5,8 @@ Release 5.1.5 (unreleased)
 Bug fixes
 ---------
 
+- Fix for possible bug in postprocessing edges mesh extraction.
+
 - Fix for OpenMP multigrid-preconditioned Conjugate Gradient convergence issue.
   This requires using a flexible variant of the Conjugate Gradient when
   using a Gauss-Seidel smoother with multiple threads.
