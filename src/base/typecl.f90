@@ -152,7 +152,7 @@ type(var_cal_opt) :: vcopt
 allocate(pripb(ndimfb))
 
 ! Initialize variables to avoid compiler warnings
-
+pripb = 0.d0
 pref = 0.d0
 
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
