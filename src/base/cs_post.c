@@ -4096,7 +4096,7 @@ cs_post_define_edges_mesh(int        mesh_id,
   BFT_MALLOC(post_mesh->name,
              strlen(post_base->name) + strlen(_(" edges")) + 1,
              char);
-  strcpy(post_base->name, post_base->name);
+  strcpy(post_mesh->name, post_base->name);
   strcat(post_mesh->name, _(" edges"));
 }
 
