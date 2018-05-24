@@ -1295,7 +1295,8 @@ cs_sles_petsc_solve(void                *context,
   else if (reason < KSP_CONVERGED_ITERATING) {
     if (reason == KSP_DIVERGED_ITS)
       cvg = CS_SLES_MAX_ITERATION;
-    if (reason == KSP_DIVERGED_BREAKDOWN || reason == KSP_DIVERGED_BREAKDOWN_BICG)
+    else if (   reason == KSP_DIVERGED_BREAKDOWN
+             || reason == KSP_DIVERGED_BREAKDOWN_BICG)
       cvg = CS_SLES_BREAKDOWN;
     else
       cvg = CS_SLES_DIVERGED;
