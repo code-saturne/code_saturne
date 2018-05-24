@@ -403,6 +403,64 @@ cs_xdef_free(cs_xdef_t     *d)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  copy a cs_xdef_t structure
+ *
+ * \param[in]  src    pointer to a cs_xdef_t structure to copy
+ *
+ * \return a pointer to a new allocated cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_xdef_copy(cs_xdef_t     *src)
+{
+  cs_xdef_t  *cpy = NULL;
+  if (src == NULL)
+    return cpy;
+
+  /* In the case of a definition by array where the structure is not owner
+     one sets the copy to be owner of the array in order to avoid a memory
+     leak */
+
+  switch (src->support) {
+
+  case CS_XDEF_SUPPORT_VOLUME:
+    cpy = cs_xdef_volume_create(src->type,
+                                src->dim,
+                                src->z_id,
+                                src->state,
+                                src->meta,
+                                src->input);
+    break;
+
+  case CS_XDEF_SUPPORT_TIME:
+    cpy = cs_xdef_timestep_create(src->type,
+                                  src->state,
+                                  src->meta,
+                                  src->input);
+    break;
+
+  case CS_XDEF_SUPPORT_BOUNDARY:
+    cpy = cs_xdef_boundary_create(src->type,
+                                  src->dim,
+                                  src->z_id,
+                                  src->state,
+                                  src->meta,
+                                  src->input);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid case");
+
+  }
+
+  cpy->qtype = src->qtype;
+
+  return cpy;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  In case of definition by array, set the array after having added
  *         this definition
  *

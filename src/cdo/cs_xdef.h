@@ -320,6 +320,19 @@ cs_xdef_free(cs_xdef_t     *d);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  copy a cs_xdef_t structure
+ *
+ * \param[in]  src    pointer to a cs_xdef_t structure to copy
+ *
+ * \return a pointer to a new allocated cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_xdef_copy(cs_xdef_t     *src);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  In case of definition by array, set the array after having added
  *         this definition
  *
