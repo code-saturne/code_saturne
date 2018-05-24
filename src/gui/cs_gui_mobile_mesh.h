@@ -53,20 +53,18 @@ BEGIN_C_DECLS
  * SUBROUTINE UIALIN()
  * *****************
  *
- * INTEGER          IALE    <--   iale method activation
- * INTEGER          NALINF  <--   number of subiterations of initialization of
- *                                fluid
- * INTEGER          NALIMX  <--   max number of iterations of implicitation of
- *                                the displacement of the structures
- * DOUBLE           EPALIM  <--   realtive precision of implicitation of
- *                                the displacement of the structures
+ * nalinf  <->   number of subiterations of initialization of
+ *               fluid
+ * nalimx  <->   max number of iterations of implicitation of
+ *               the displacement of the structures
+ * epalim  <->   realtive precision of implicitation of
+ *               the displacement of the structures
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialin, UIALIN) (int    *const iale,
-                                int    *const nalinf,
-                                int    *const nalimx,
-                                double *const epalim);
+void CS_PROCF (uialin, UIALIN) (int    *nalinf,
+                                int    *nalimx,
+                                double *epalim);
 
 /*----------------------------------------------------------------------------
  * ALE diffusion type
@@ -198,6 +196,18 @@ cs_gui_get_ale_viscosity_type(int  *type);
 
 void
 cs_gui_mesh_viscosity(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the fixed velocity for a boundary
+ *
+ * \param[in]  label boundary condition label
+ * \param[out] vel   imposed mesh velocity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_get_fixed_velocity(const char*    label,
+                                      cs_real_t     *vel);
 
 /*----------------------------------------------------------------------------*/
 

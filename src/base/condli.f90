@@ -389,7 +389,7 @@ if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
    rcodcl )
 endif
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   call altycl &
  ( itypfb , ialtyb , icodcl , impale ,                            &
    dt     ,                                                       &

@@ -611,7 +611,7 @@ if (iecaux.eq.1) then
 
 ! ---> Methode ALE
 
-  if (iale.eq.1) then
+  if (iale.ge.1) then
 
     itysup = 4
     nbval  = 3

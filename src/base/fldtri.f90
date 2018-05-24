@@ -238,6 +238,7 @@ nfld = 0
 ! Mesh velocity
 !--------------
 
+! ALE legacy solver
 if (iale.eq.1) then
   ivar = iuma
   if (ipass .eq. 1) then

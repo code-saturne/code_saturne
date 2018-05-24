@@ -39,6 +39,7 @@
 
 #include "bft_mem.h"
 
+#include "cs_ale.h"
 #include "cs_boundary_zone.h"
 #include "cs_evaluate.h"
 #include "cs_equation.h"
@@ -416,6 +417,10 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   if (cs_navsto_system_is_activated())
     cs_navsto_system_init_setup();
 
+  /* ALE mesh velocity */
+  if (cs_ale_is_activated())
+    cs_ale_setup(domain);
+
   /* Add variables related to user-defined and predefined equations */
   cs_equation_create_fields();
   cs_advection_field_create_fields();
@@ -547,6 +552,9 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
     cs_navsto_system_finalize_setup(domain->connect,
                                     domain->cdo_quantities,
                                     domain->time_step);
+
+  if (cs_ale_is_activated())
+    cs_ale_finalize_setup(domain->connect, domain->cdo_quantities);
 
   /* Last stage to define properties (when complex definition is requested) */
   cs_property_finalize_setup();

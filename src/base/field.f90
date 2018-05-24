@@ -32,7 +32,7 @@ module field
 
   !=============================================================================
 
-  integer :: FIELD_INTENSIVE, FIELD_EXTENSIVE, FIELD_STEADY
+  integer :: FIELD_INTENSIVE, FIELD_EXTENSIVE
   integer :: FIELD_VARIABLE, FIELD_PROPERTY
   integer :: FIELD_POSTPROCESS, FIELD_ACCUMULATOR, FIELD_USER
 
@@ -41,12 +41,11 @@ module field
 
   parameter (FIELD_INTENSIVE=1)
   parameter (FIELD_EXTENSIVE=2)
-  parameter (FIELD_STEADY=4)
-  parameter (FIELD_VARIABLE=8)
-  parameter (FIELD_PROPERTY=16)
-  parameter (FIELD_POSTPROCESS=32)
-  parameter (FIELD_ACCUMULATOR=64)
-  parameter (FIELD_USER=128)
+  parameter (FIELD_VARIABLE=4)
+  parameter (FIELD_PROPERTY=8)
+  parameter (FIELD_POSTPROCESS=16)
+  parameter (FIELD_ACCUMULATOR=32)
+  parameter (FIELD_USER=64)
 
   parameter (FIELD_OK=0)
   parameter (FIELD_INVALID_KEY_NAME=1)

@@ -148,7 +148,7 @@ endif
 ! GUI
 
 if (iihmpr.eq.1) then
-  call uialin (iale, nalinf, nalimx, epalim)
+  call uialin (nalinf, nalimx, epalim)
 endif
 
 ! User sub-routines
@@ -167,7 +167,6 @@ if (iihmpr.eq.1) then
 endif
 
 ! User sub-routines
-
 call cs_user_model
 
 !===============================================================================
@@ -208,7 +207,7 @@ if (icdo.lt.2) then
 endif
 
 if (iihmpr.eq.1) then
-  if (iale.eq.1) then
+  if (iale.ge.1) then
     call uialvm
   endif
   call csivis
@@ -372,6 +371,11 @@ endif
 call cs_user_internal_coupling
 
 call cs_internal_coupling_setup
+
+! Activate CDO for ALE
+if (iale.eq.2) then
+  call cs_ale_activate
+endif
 
 !----
 ! Formats

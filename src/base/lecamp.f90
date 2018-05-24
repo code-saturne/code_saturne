@@ -208,9 +208,9 @@ jale = ival(1)
 nberro=nberro+ierror
 
 ! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers anterieurs)
-!       -> on n'affiche le message que si IALE=1 (sinon RAS)
+!       -> on n'affiche le message que si IALE>=1 (sinon RAS)
 if (nberro.ne.0) then
-  if (iale.eq.1) write(nfecra,9401)
+  if (iale.ge.1) write(nfecra,9401)
   jale = 0
 endif
 
@@ -262,7 +262,7 @@ write(nfecra,2411) ttpabs
 
 ! --->  Si le calcul precedent etait en ALE, on DOIT relire les
 !         coordonnees des noeuds dans le fichier auxiliaire
-if (iale.eq.1 .and. jale.eq.1) then
+if (iale.ge.1 .and. jale.ge.1) then
   if (ileaux.ne.1) then
     write(nfecra,9402)jale,iale,ileaux
     call csexit(1)

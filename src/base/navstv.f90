@@ -454,7 +454,7 @@ endif
 ! 3. Pressure resolution and computation of mass flux for compressible flow
 !===============================================================================
 
-if ( ippmod(icompf).ge.0 ) then
+if (ippmod(icompf).ge.0) then
 
   if(vcopt_u%iwarni.ge.1) then
     write(nfecra,1080)
@@ -511,7 +511,7 @@ if (iprco.le.0) then
   init   = 1
   inc    = 1
   iflmb0 = 1
-  if (iale.eq.1) iflmb0 = 0
+  if (iale.ge.1) iflmb0 = 0
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_u%iwarni
@@ -529,39 +529,41 @@ if (iprco.le.0) then
    imasfl , bmasfl )
 
   ! In the ALE framework, we add the mesh velocity
-  if (iale.eq.1) then
+  if (iale.ge.1) then
 
     call field_get_val_v(ivarfl(iuma), mshvel)
 
     call field_get_val_prev_v(fdiale, disala)
 
-    ! One temporary array needed for internal faces, in case some internal vertices
-    !  are moved directly by the user
-    allocate(intflx(nfac), bouflx(ndimfb))
+    if (iflxmw.gt.0) then
+      ! One temporary array needed for internal faces, in case some internal vertices
+      !  are moved directly by the user
+      allocate(intflx(nfac), bouflx(ndimfb))
 
-    itypfl = 1
-    init   = 1
-    inc    = 1
-    iflmb0 = 1
-    call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
-    nswrgp = vcopt%nswrgr
-    imligp = vcopt%imligr
-    iwarnp = vcopt%iwarni
-    epsrgp = vcopt%epsrgr
-    climgp = vcopt%climgr
+      itypfl = 1
+      init   = 1
+      inc    = 1
+      iflmb0 = 1
+      call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+      nswrgp = vcopt%nswrgr
+      imligp = vcopt%imligr
+      iwarnp = vcopt%iwarni
+      epsrgp = vcopt%epsrgr
+      climgp = vcopt%climgr
 
-    call field_get_coefa_v(ivarfl(iuma), claale)
-    call field_get_coefb_v(ivarfl(iuma), clbale)
+      call field_get_coefa_v(ivarfl(iuma), claale)
+      call field_get_coefb_v(ivarfl(iuma), clbale)
 
-    call inimav &
-  ( ivarfl(iuma)    , itypfl ,                                     &
-    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-    iwarnp ,                                                       &
-    epsrgp , climgp ,                                              &
-    crom, brom,                                                    &
-    mshvel ,                                                       &
-    claale , clbale ,                                              &
-    intflx , bouflx )
+      call inimav &
+    ( ivarfl(iuma)    , itypfl ,                                     &
+      iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+      iwarnp ,                                                       &
+      epsrgp , climgp ,                                              &
+      crom, brom,                                                    &
+      mshvel ,                                                       &
+      claale , clbale ,                                              &
+      intflx , bouflx )
+    endif
 
     ! Here we need of the opposite of the mesh velocity.
     do ifac = 1, nfabor
@@ -617,9 +619,10 @@ if (iprco.le.0) then
       endif
     enddo
 
-    ! Free memory
-    deallocate(intflx, bouflx)
-
+    if (iflxmw.gt.0) then
+      ! Free memory
+      deallocate(intflx, bouflx)
+    endif
   endif
 
   ! Ajout de la vitesse du solide dans le flux convectif,
@@ -889,7 +892,7 @@ call cs_bad_cells_regularisation_scalar(cvar_pr)
 ! 8. Mesh velocity solving (ALE)
 !===============================================================================
 
-if (iale.eq.1) then
+if (iale.ge.1) then
 
   if (itrale.gt.nalinf) then
     call cs_ale_solve_mesh_velocity(iterns, impale, ialtyb)
@@ -1095,40 +1098,42 @@ endif
 call cs_bad_cells_regularisation_vector(vel, 1)
 
 ! In the ALE framework, we add the mesh velocity
-if (iale.eq.1) then
+if (iale.ge.1) then
 
   call field_get_val_v(ivarfl(iuma), mshvel)
 
   call field_get_val_v(fdiale, disale)
   call field_get_val_prev_v(fdiale, disala)
 
-  ! One temporary array needed for internal faces, in case some internal vertices
-  !  are moved directly by the user
-  allocate(intflx(nfac), bouflx(ndimfb))
+  if (iflxmw.gt.0) then
+    ! One temporary array needed for internal faces, in case some internal vertices
+    !  are moved directly by the user
+    allocate(intflx(nfac), bouflx(ndimfb))
 
-  itypfl = 1
-  init   = 1
-  inc    = 1
-  iflmb0 = 1
-  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
-  nswrgp = vcopt%nswrgr
-  imligp = vcopt%imligr
-  iwarnp = vcopt%iwarni
-  epsrgp = vcopt%epsrgr
-  climgp = vcopt%climgr
+    itypfl = 1
+    init   = 1
+    inc    = 1
+    iflmb0 = 1
+    call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+    nswrgp = vcopt%nswrgr
+    imligp = vcopt%imligr
+    iwarnp = vcopt%iwarni
+    epsrgp = vcopt%epsrgr
+    climgp = vcopt%climgr
 
-  call field_get_coefa_v(ivarfl(iuma), claale)
-  call field_get_coefb_v(ivarfl(iuma), clbale)
+    call field_get_coefa_v(ivarfl(iuma), claale)
+    call field_get_coefb_v(ivarfl(iuma), clbale)
 
-  call inimav &
-( ivarfl(iuma)    , itypfl ,                                     &
-  iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-  iwarnp ,                                                       &
-  epsrgp , climgp ,                                              &
-  crom, brom,                                                    &
-  mshvel ,                                                       &
-  claale , clbale ,                                              &
-  intflx , bouflx )
+    call inimav &
+  ( ivarfl(iuma)    , itypfl ,                                     &
+    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+    iwarnp ,                                                       &
+    epsrgp , climgp ,                                              &
+    crom, brom,                                                    &
+    mshvel ,                                                       &
+    claale , clbale ,                                              &
+    intflx , bouflx )
+  endif
 
   ! Here we need of the opposite of the mesh velocity.
   !$omp parallel do if(nfabor > thr_n_min)
@@ -1186,9 +1191,10 @@ if (iale.eq.1) then
     endif
   enddo
 
-  ! Free memory
-  deallocate(intflx, bouflx)
-
+  if (iflxmw.gt.0) then
+    ! Free memory
+    deallocate(intflx, bouflx)
+  endif
 endif
 
 !FIXME for me we should do that before predvv
@@ -1322,7 +1328,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
   init   = 1
   inc    = 1
   iflmb0 = 1
-  if (iale.eq.1) iflmb0 = 0
+  if (iale.ge.1) iflmb0 = 0
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_u%iwarni

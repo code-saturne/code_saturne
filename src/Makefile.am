@@ -102,7 +102,7 @@ base/turbomachinery.f90
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
-base/albase.lo: base/cplsat.lo base/optcal.lo
+base/albase.lo: base/cplsat.lo base/optcal.lo base/cs_c_bindings.lo
 base/alstru.lo: base/paramx.lo
 base/cavitation.lo: base/cstphy.lo base/field.lo base/numvar.lo base/optcal.lo\
  base/pointe.lo base/mesh.lo base/paramx.lo base/entsor.lo base/parall.lo \

@@ -292,7 +292,7 @@ endif
 
 ! --- Mesh displacement for ALE
 
-if (iale.eq.1) then
+if (iale.ge.1) then
 
   has_previous = .true.
   idim3 = 3

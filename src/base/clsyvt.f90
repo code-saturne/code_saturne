@@ -303,7 +303,7 @@ do ifac = 1, nfabor
     !   TX a partir de la vitesse tangentielle absolue car l'orientation
     !   de TX et T2X est sans importance pour les symetries)
     rcodcn = 0.d0
-    if (iale.eq.1) then
+    if (iale.ge.1) then
       rcodcn = rcodcl(ifac,iu,1)*rnx                           &
              + rcodcl(ifac,iv,1)*rny                           &
              + rcodcl(ifac,iw,1)*rnz

@@ -157,6 +157,7 @@ call listing_writing_period_init
 call radiat_init
 call gas_mix_options_init
 call ctwr_properties_init
+call map_ale
 
 call map_turbomachinery_model(iturbo, ityint)
 
@@ -993,9 +994,6 @@ iihmpr = 0
 !===============================================================================
 ! 10. INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90
 !===============================================================================
-
-! --- Methode ALE
-iale = 0
 
 ! --- Iterations d'initialisation fluide seul
 nalinf = 0

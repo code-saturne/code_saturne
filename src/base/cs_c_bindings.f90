@@ -2359,6 +2359,27 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief  Binding to cs_ale_activate
+
+    subroutine cs_ale_activate()  &
+      bind(C, name='cs_ale_activate')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_ale_activate
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function to get the cs_glob_ale option
+
+    subroutine cs_f_ale_get_pointers(iale) &
+      bind(C, name='cs_f_ale_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: iale
+    end subroutine cs_f_ale_get_pointers
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

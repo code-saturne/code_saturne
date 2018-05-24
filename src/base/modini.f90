@@ -108,7 +108,7 @@ if (idtvar.lt.0) then
   call hide_property(ifour)
 endif
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   call cs_post_set_deformable
 endif
 
@@ -990,7 +990,7 @@ endif
 ! 5. ELEMENTS DE albase
 !===============================================================================
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   if (isuite.eq.0 .and. italin.eq.-999 ) italin = 1
 else
   italin = 0

@@ -397,7 +397,7 @@ if (ippmod(icompf).ge.0) then
   call init_compf (nfabor)
 endif
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   call init_ale (nfabor, nnod)
 endif
 
@@ -548,7 +548,7 @@ if (isuite.eq.1) then
   call lecamo
 
   ! Using ALE, geometric parameters must be recalculated
-  if (iale.eq.1) then
+  if (iale.ge.1) then
 
     call field_get_val_v(fdiale, disale)
 
@@ -715,7 +715,7 @@ endif
 
 ! -- Structures mobiles en ALE
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   call strini(dt)
 endif
 
@@ -891,12 +891,10 @@ endif
 ! Update mesh (ALE)
 !===============================================================================
 
-if (iale.eq.1 .and. inpdt0.eq.0) then
+if (iale.ge.1 .and. inpdt0.eq.0) then
 
   if (itrale.eq.0 .or. itrale.gt.nalinf) then
-
     call cs_ale_update_mesh(itrale, xyzno0)
-
   endif
 
 endif
@@ -1117,7 +1115,7 @@ if (ippmod(igmix).ge.0) then
   call finalize_gas_mix
 endif
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   call finalize_ale
 endif
 

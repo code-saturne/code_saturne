@@ -44,6 +44,7 @@
 #include "bft_printf.h"
 
 #include "cs_1d_wall_thermal.h"
+#include "cs_ale.h"
 #include "cs_base.h"
 #include "cs_domain.h"
 #include "cs_field.h"
@@ -2007,6 +2008,16 @@ cs_parameters_check(void)
                                        0., cs_turb_smagmx);
     }
   }
+
+  /*--------------------------------------------------------------
+   * ALE
+   *--------------------------------------------------------------*/
+
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("flag for ALE method"),
+                                "cs_glob_ale or iale in Fortran",
+                                cs_glob_ale,
+                                0, 3);
 
   /*--------------------------------------------------------------
    * Rotating frame and unsteady rotor/stator coupling.

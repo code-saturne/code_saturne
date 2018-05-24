@@ -261,7 +261,7 @@ do iscal = 1, nscal
 enddo
 
 ! Mesh viscosity for ALE
-if (iale.eq.1) then
+if (iale.ge.1) then
 
   call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt_uma)
   idftnp = vcopt_uma%idften
@@ -620,13 +620,13 @@ enddo
 ! 8.  INITIALISATIONS EN ALE
 !===============================================================================
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   do ii = 1, nnod
     impale(ii) = 0
   enddo
 endif
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   do ii = 1, nnod
     do idim = 1, 3
       xyzno0(idim,ii) = xyznod(idim,ii)

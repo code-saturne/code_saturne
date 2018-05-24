@@ -536,7 +536,8 @@ icavit = -1
 
 
 ! --- Activation of ALE (Arbitrary Lagrangian Eulerian) method
-
+!      1: legacy solver
+!      2: CDO solver
 
 iale = 1
 

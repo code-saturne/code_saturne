@@ -322,7 +322,7 @@ contains
 
     ! ALE array for structure definition
 
-    if (iale.eq.1) then
+    if (iale.ge.1) then
       allocate(idfstr(nfabor))
     endif
 

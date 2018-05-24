@@ -1149,7 +1149,7 @@ write(nfecra,9900)
 ' ** METHODE ALE (MAILLAGE MOBILE)',                            /,&
 '    -----------',                                              /)
  8220 format(                                                     &
-'       IALE   = ',4x,i10,    ' (1 : activee                 )',/ &
+'       IALE   = ',4x,i10,    ' (1 : activee, 2 : CDO        )',/ &
 '       NALINF = ',4x,i10,    ' (Iterations d''initialisation', / &
 '                                                   du fluide)',/ &
 '       IFLXMW = ',4x,i10,    ' (Calcul du flux de masse ALE',  / &
@@ -1163,7 +1163,7 @@ write(nfecra,9900)
 ' ** ALE METHOD (MOVING MESH)',                                 /,&
 '    -----------',                                              /)
  8220 format(                                                     &
-'       IALE   = ',4x,i10,    ' (1: activated                )',/ &
+'       IALE   = ',4x,i10,    ' (1: activated,2: CDO         )',/ &
 '       NALINF = ',4x,i10,    ' (Fluid initialization',         / &
 '                                                  iterations)',/ &
 '       IFLXMW = ',4x,i10,    ' (ALE mass flux computation',    / &

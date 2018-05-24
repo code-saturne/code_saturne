@@ -101,13 +101,11 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
  * *****************
  *
  * integer          nozppm  <-- max number of boundary conditions zone
- * integer          iale    <-- ale module activated
  * integer          itypfb  <-- type of boundary for each face
  * integer          izfppp  <-- zone number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
-                               const int  *iale,
                                int        *itypfb,
                                int        *izfppp);
 

@@ -40,6 +40,7 @@
 
 #include "fvm_defs.h"
 
+#include "cs_ale.h"
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
 #include "cs_control.h"
@@ -498,6 +499,9 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   /* Navier-Stokes system */
   cs_navsto_system_destroy();
+
+  /* ALE */
+  cs_ale_destroy_all();
 
   /* Free common structures relatated to equations */
   cs_equation_common_free(domain->cdo_context);

@@ -112,7 +112,7 @@ if (icp.ge.0) then
 endif
 
 ! ALE mesh viscosity
-if (iale.eq.1) then
+if (iale.ge.1) then
   call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
   idftnp = vcopt%idften
 

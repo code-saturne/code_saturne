@@ -50,6 +50,7 @@
 
 #include "mei_evaluate.h"
 
+#include "cs_ale.h"
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
@@ -2805,13 +2806,11 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
  * *****************
  *
  * integer          nozppm  <-- max number of boundary conditions zone
- * integer          iale    <-- ale module activated
  * integer          itypfb  <-- type of boundary for each face
  * integer          izfppp  <-- zone number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
-                               const int  *iale,
                                int        *itypfb,
                                int        *izfppp)
 {
@@ -2837,7 +2836,8 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
     else if (cs_gui_strcmp(boundaries->nature[izone], "free_inlet_outlet")) {
       inature = CS_FREE_INLET;
     }
-    else if (cs_gui_strcmp(boundaries->nature[izone], "free_surface") && *iale) {
+    else if (cs_gui_strcmp(boundaries->nature[izone], "free_surface")
+        && (cs_glob_ale != 0)) {
       inature = CS_FREE_SURFACE;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {

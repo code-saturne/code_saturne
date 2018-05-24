@@ -118,7 +118,7 @@ end subroutine usppmo
 !>                              used (1: yes, 0: no
 !> \param[in, out] iturb        turbulence model
 !> \param[in, out] itherm       thermal model
-!> \param[in, out] iale         ale module
+!> \param[in, out] iale         ALE module
 !> \param[in, out] ivofmt       vof method
 !> \param[in, out] icavit       cavitation model
 !______________________________________________________________________________!

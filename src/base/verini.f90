@@ -773,15 +773,10 @@ if (irangp.ge.0.and.ineedy.eq.1.and.abs(icdpar).eq.2) then
 endif
 
 !===============================================================================
-! 6. METHODE ALE (albase, alstru) : formats 7000
+! 6. METHODE ALE (albase, alstru)
 !===============================================================================
 
-if (iale.ne.0 .and. iale.ne.1) then
-  write(nfecra,7000)iale
-  iok = iok + 1
-endif
-
-if (iale.eq.1) then
+if (iale.ge.1) then
 
   if (nalinf.lt.0) then
     write(nfecra,7010)nalinf
@@ -1765,23 +1760,6 @@ endif
 '@    le parallelisme.',                                        /,&
 '@',                                                            /,&
 '@  Utiliser ICDPAR = 1 ou -1.',                                /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 7000 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    INDICATEUR DE METHODE ALE',                               /,&
-'@',                                                            /,&
-'@  IALE DOIT VALOIR 0 OU 1',                                   /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface ou usipph.',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -2932,23 +2910,6 @@ endif
 '@    ICDPAR = ', i10, ' does not allow for parallel computing', /,&
 '@',                                                            /,&
 '@  Use ICDPAR = 1 or -1.',                                     /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 7000 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    FLAG FOR ALE  METHOD',                                    /,&
-'@',                                                            /,&
-'@  IALE should be = 0 or 1',                                   /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  Verify   the parameters given  in   interface or usipph.',  /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

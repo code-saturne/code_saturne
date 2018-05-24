@@ -36,10 +36,46 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_domain.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+typedef struct {
+  const char         *z_name;
+} cs_ale_bc_input_t;
+
+/*----------------------------------------------------------------------------
+ * ALE type
+ *----------------------------------------------------------------------------*/
+
+enum {
+  CS_ALE_NONE = 0,
+  CS_ALE_LEGACY = 1,
+  CS_ALE_CDO = 2
+};
+
+/*=============================================================================
+ * Global variables
+ *============================================================================*/
+
+extern int cs_glob_ale;
+
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Get pointer to cs_glob_ale
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_ale_get_pointers(int **iale);
 
 /*============================================================================
  * Public function prototypes
@@ -65,7 +101,7 @@ cs_ale_update_mesh_quantities(cs_real_t  *min_vol,
 /*!
  * \brief  Project the displacement on mesh vertices (solved on cell center).
  *
- * \param[in]       ialtyb        Type of boundary for ALE
+ * \param[in]       ale_bc_type   Type of boundary for ALE
  * \param[in]       meshv         Mesh velocity
  * \param[in]       gradm         Mesh velocity gradient
  *                                (du_i/dx_j : gradv[][i][j])
@@ -77,7 +113,7 @@ cs_ale_update_mesh_quantities(cs_real_t  *min_vol,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_project_displacement(const int           ialtyb[],
+cs_ale_project_displacement(const int           ale_bc_type[],
                             const cs_real_3_t  *meshv,
                             const cs_real_33_t  gradm[],
                             const cs_real_3_t  *claale,
@@ -106,14 +142,75 @@ cs_ale_update_mesh(const int           itrale,
  *
  * \param[in]       iterns        Navier-Stokes iteration number
  * \param[in]       impale        Indicator for fixed node displacement
- * \param[in]       ialtyb        Type of boundary for ALE
+ * \param[in]       ale_bc_type   Type of boundary for ALE
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_ale_solve_mesh_velocity(const int   iterns,
                            const int  *impale,
-                           const int  *ialtyb);
+                           const int  *ale_bc_type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup the equations related to mesh deformation.
+ *
+ * \param[in, out]   domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_ale_setup(cs_domain_t *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup the equations solving the mesh velocity
+ *
+ * \param[in, out]   domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_ale_setup_boundaries(const int           impale[],
+                        const int           ale_bc_type[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the mesh velocity solving with CDO
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_ale_activate(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Test if mesh velocity solving with CDO is activated
+ *
+ * \return true ifmesh velocity solving with CDO is requested, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+bool
+cs_ale_is_activated(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize the setup stage for the equation of the mesh velocity
+ *
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_finalize_setup(const cs_cdo_connect_t       *connect,
+                      const cs_cdo_quantities_t    *cdoq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free the main structure related to the ALE mesh velocity solving
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 

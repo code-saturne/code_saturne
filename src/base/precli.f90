@@ -131,7 +131,7 @@ do ivar = 1, nvar
 enddo
 
 ! En ALE, on initialise aussi le tableau IALTYB
-if (iale.eq.1) then
+if (iale.ge.1) then
   do ifac = 1, nfabor
     ialtyb(ifac) = 0
   enddo

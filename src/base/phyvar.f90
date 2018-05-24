@@ -842,7 +842,7 @@ endif
 
 ! ---> Calcul des bornes de viscosite de maillage en ALE
 
-if (iale.eq.1 .and. ntcabs.eq.ntpabs+1) then
+if (iale.ge.1 .and. ntcabs.eq.ntpabs+1) then
 
   call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
   idftnp = vcopt%idften

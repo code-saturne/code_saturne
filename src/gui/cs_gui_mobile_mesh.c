@@ -49,6 +49,7 @@
 #include "mei_evaluate.h"
 
 #include "cs_base.h"
+#include "cs_ale.h"
 #include "cs_boundary_zone.h"
 #include "cs_convection_diffusion.h"
 #include "cs_field_pointer.h"
@@ -104,7 +105,7 @@ enum ale_boundary_nature
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
- * Return value for iale method
+ * Return value for ALE method
  *
  * parameters:
  *   tn_ale    <-- tree node associated with ALE
@@ -114,7 +115,7 @@ enum ale_boundary_nature
  *----------------------------------------------------------------------------*/
 
 static int
-_iale_visc_type(cs_tree_node_t  *tn_ale)
+_ale_visc_type(cs_tree_node_t  *tn_ale)
 {
   int mvisc_type = 0;
 
@@ -575,27 +576,25 @@ _get_external_coupling_dof(cs_tree_node_t  *tn_ec,
  * SUBROUTINE UIALIN
  * *****************
  *
- * INTEGER          IALE    <--  iale method activation
- * INTEGER          NALINF  <--  number of sub iteration of initialization
- *                               of fluid
- * INTEGER          NALIMX  <--  max number of iterations of implicitation of
- *                               the displacement of the structures
- * DOUBLE           EPALIM  <--  realtive precision of implicitation of
- *                               the displacement of the structures
+ * nalinf  <->  number of sub iteration of initialization
+ *              of fluid
+ * nalimx  <->  max number of iterations of implicitation of
+ *              the displacement of the structures
+ * epalim  <->  realtive precision of implicitation of
+ *              the displacement of the structures
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialin, UIALIN) (int     *iale,
-                                int     *nalinf,
+void CS_PROCF (uialin, UIALIN) (int     *nalinf,
                                 int     *nalimx,
                                 double  *epalim)
 {
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
 
-  cs_gui_node_get_status_int(tn, iale);
+  cs_gui_node_get_status_int(tn, &cs_glob_ale);
 
-  if (*iale) {
+  if (cs_glob_ale) {
     cs_gui_node_get_child_int(tn, "fluid_initialization_sub_iterations",
                               nalinf);
     cs_gui_node_get_child_int(tn, "max_iterations_implicitation",
@@ -606,8 +605,8 @@ void CS_PROCF (uialin, UIALIN) (int     *iale,
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--iale = %i\n", *iale);
-  if (*iale) {
+  bft_printf("--cs_glob_ale = %i\n", cs_glob_ale);
+  if (cs_glob_ale > 0) {
     bft_printf("--nalinf = %i\n", *nalinf);
     bft_printf("--nalimx = %i\n", *nalimx);
     bft_printf("--epalim = %g\n", *epalim);
@@ -629,7 +628,7 @@ void CS_PROCF (uialvm, UIALVM) ()
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
 
-  int iortvm = _iale_visc_type(tn);
+  int iortvm = _ale_visc_type(tn);
 
   cs_var_cal_opt_t vcopt;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -993,7 +992,7 @@ cs_gui_get_ale_viscosity_type(int  *type)
     = cs_tree_get_node(cs_glob_tree,
                        "thermophysical_models/ale_method");
 
-  *type = _iale_visc_type(tn);
+  *type = _ale_visc_type(tn);
 }
 
 /*----------------------------------------------------------------------------
@@ -1023,7 +1022,7 @@ cs_gui_mesh_viscosity(void)
                                "mesh_viscosity_2",
                                "mesh_viscosity_3" };
 
-  int orthotropic = _iale_visc_type(tn0);
+  int orthotropic = _ale_visc_type(tn0);
 
   cs_lnum_t nd = (orthotropic) ? 3 : 1;
 
@@ -1053,6 +1052,62 @@ cs_gui_mesh_viscosity(void)
     }
   }
   mei_tree_destroy(ev);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the fixed velocity for a boundary
+ *
+ * \param[in]  label boundary condition label
+ * \param[out] vel   imposed mesh velocity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_get_fixed_velocity(const char*    label,
+                                      cs_real_3_t    vel)
+{
+  cs_real_t dtref = cs_glob_time_step_options->dtref;
+  cs_real_t ttcabs = cs_glob_time_step->t_cur;
+  int ntcabs = cs_glob_time_step->nt_cur;
+
+  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+
+  /* Loop on wall boundary zones */
+
+  for (cs_tree_node_t *tn_w = cs_tree_node_get_child(tn_b0, "wall");
+       tn_w != NULL;
+       tn_w = cs_tree_node_get_next_of_name(tn_w)) {
+
+    const char *_node_label = cs_tree_node_get_tag(tn_w, "label");
+
+    if (strcmp(_node_label, label) == 0) {
+
+      const char*  variables[3] = {"mesh_velocity_U",
+                                   "mesh_velocity_V",
+                                   "mesh_velocity_W" };
+
+      /* Get formula */
+      const char *formula = _get_ale_boundary_formula(tn_w, "fixed_velocity");
+
+      if (!formula)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Boundary nature formula is null for %s."),
+                  cs_gui_node_get_tag(tn_w, "label"));
+
+      /* Init MEI */
+      mei_tree_t *ev = _init_mei_tree(formula, variables, 3, 0, 0, 0,
+                                      dtref, ttcabs, ntcabs);
+
+      mei_evaluate(ev);
+
+      vel[0] = mei_tree_lookup(ev, "mesh_velocity_U");
+      vel[1] = mei_tree_lookup(ev, "mesh_velocity_V");
+      vel[2] = mei_tree_lookup(ev, "mesh_velocity_W");
+
+      mei_tree_destroy(ev);
+
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

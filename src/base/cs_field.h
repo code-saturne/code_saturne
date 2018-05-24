@@ -57,25 +57,22 @@ BEGIN_C_DECLS
 /*! represents an extensive quantity */
 #define CS_FIELD_EXTENSIVE           (1 << 1)
 
-/*! steady (non-time-varying) quantity */
-#define CS_FIELD_STEADY              (1 << 2)
-
 /* Field category */
 
 /*! resolved variable */
-#define CS_FIELD_VARIABLE            (1 << 3)
+#define CS_FIELD_VARIABLE            (1 << 2)
 
 /*! computed property */
-#define CS_FIELD_PROPERTY            (1 << 4)
+#define CS_FIELD_PROPERTY            (1 << 3)
 
 /*! intended for postprocessing */
-#define CS_FIELD_POSTPROCESS         (1 << 5)
+#define CS_FIELD_POSTPROCESS         (1 << 4)
 
 /*! accumulator for some statisicial values */
-#define CS_FIELD_ACCUMULATOR         (1 << 6)
+#define CS_FIELD_ACCUMULATOR         (1 << 5)
 
 /*! user-defined */
-#define CS_FIELD_USER                (1 << 7)
+#define CS_FIELD_USER                (1 << 6)
 
 /*! @} */
 

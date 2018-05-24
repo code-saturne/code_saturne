@@ -79,7 +79,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, iscal
+integer          ii, iscal, iloc1
 integer          ifcvsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
@@ -156,6 +156,8 @@ call field_get_key_id('label', keylbl)
 ! 1. Additional variable fields
 !===============================================================================
 
+iloc1 = 1
+
 ! User variables
 !---------------
 
@@ -174,7 +176,7 @@ do ii = 1, nscal
       f_name = trim(name)//'_turbulent_flux'
 
       if (ityturt(ii).eq.3) then
-        call add_variable_field(f_name, f_name, 3, iut)
+        call add_variable_field(f_name, f_name, 3, iut, iloc1)
         iflid = ivarfl(iut)
 
         call field_set_key_int(iflid, keycpl, 1)
@@ -199,7 +201,7 @@ do ii = 1, nscal
       if (iturt(ii).eq.11 .or. iturt(ii).eq.21 .or. iturt(ii).eq.31) then
         f_name = trim(name)//'_alpha'
 
-        call add_variable_field(f_name, f_name, 1, ialpha)
+        call add_variable_field(f_name, f_name, 1, ialpha, iloc1)
         iflid = ivarfl(ialpha)
 
         ! Elliptic equation (no convection, no time term)
@@ -349,7 +351,7 @@ if ((iturb.eq.30.and.irijec.eq.1).or.              &
   ineedy = 1
   f_name  = 'wall_distance'
   f_label = 'Wall distance'
-  call add_variable_field(f_name, f_label, 1, ivar)
+  call add_variable_field(f_name, f_label, 1, ivar, iloc1)
   iflid = ivarfl(ivar)
 
   ! Elliptic equation (no convection, no time term)
@@ -367,7 +369,7 @@ if ((iturb.eq.30.and.irijec.eq.1).or.              &
   if (itytur.eq.4.and.idries.eq.1) then
     f_name  = 'wall_yplus'
     f_label = 'Wall Y+'
-    call add_variable_field(f_name, f_label, 1, ivar)
+    call add_variable_field(f_name, f_label, 1, ivar, iloc1)
     iflid = ivarfl(ivar)
 
     call field_set_key_int(iflid, keyvis, 1)
@@ -424,7 +426,7 @@ endif
 
 ! In case of ALE or boundary efforts postprocessing, create appropriate field
 
-if (iale.eq.1 .or. ipstdv(ipstfo).ne.0) then
+if (iale.ge.1 .or. ipstdv(ipstfo).ne.0) then
   itycat = FIELD_EXTENSIVE + FIELD_POSTPROCESS
   call field_create('boundary_forces', itycat, ityloc, idim3, inoprv, &
                     iforbr)

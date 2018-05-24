@@ -767,7 +767,7 @@ endif
 italim = 1
 itrfin = 1
 ineefl = 0
-if (iale.eq.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
+if (iale.ge.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
 !     On reserve certains tableaux pour permettre le retour a l'etat
 !       initial en fin d'iteration ALE
 !       - flux de masse
@@ -895,7 +895,7 @@ do while (iterns.le.nterup)
 
   if (iihmpr.eq.1) then
 
-    call uiclve(nozppm, iale, itypfb, izfppp)
+    call uiclve(nozppm, itypfb, izfppp)
 
   endif
 
@@ -931,7 +931,7 @@ do while (iterns.le.nterup)
 
   ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
 
-  if (iale.eq.1) then
+  if (iale.ge.1) then
 
     call field_get_val_v(fdiale, disale)
 
@@ -1180,7 +1180,7 @@ do while (iterns.le.nterup)
 ! 11. RESOLUTION DE LA VITESSE DE MAILLAGE EN ALE
 !===============================================================================
 
-  if (iale.eq.1) then
+  if (iale.ge.1) then
 
     ! otherwise it is done in navstv.f90
     if (itrale.eq.0) then

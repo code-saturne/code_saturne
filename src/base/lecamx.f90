@@ -214,17 +214,17 @@ jale = ival(1)
 nberro=nberro+ierror
 
 ! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers anterieurs)
-!       -> on n'affiche le message que si IALE=1 (sinon RAS)
+!       -> on n'affiche le message que si IALE>=1 (sinon RAS)
 if (nberro.ne.0) then
-  if (iale.eq.1) write(nfecra,9210)
+  if (iale.ge.1) write(nfecra,9210)
   jale = 0
 endif
 
 ! ---> Pas d'iteration d'initialisation si suite de calcul ALE
 if (italin.eq.-999) then
-  if (iale.eq.1 .and. jale.eq.1) then
+  if (iale.ge.1 .and. jale.ge.1) then
     italin = 0
-  else if (iale.eq.1) then
+  else if (iale.ge.1) then
     italin = 1
   else
     italin = 0
@@ -810,7 +810,7 @@ endif
 ! 13.  DEPLACEMENT AUX NOEUDS EN ALE
 !===============================================================================
 
-if (iale.eq.1 .and. jale.eq.1) then
+if (iale.ge.1 .and. jale.ge.1) then
   nberro = 0
 
   itysup = 4

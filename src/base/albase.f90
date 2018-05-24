@@ -27,6 +27,8 @@ module albase
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   implicit none
 
   !=============================================================================
@@ -36,8 +38,11 @@ module albase
   !> \addtogroup albase
   !> \{
 
-  !> Activates (=1) or not (=0), activate the ALE module
-  integer, save :: iale
+  !> Activates (=1 o) or not (=0), activate the ALE module:
+  !>  - 0: not activated
+  !>  - 1: legacy solver
+  !>  - 2: CDO solver
+  integer(c_int), pointer, save :: iale
   !> the number of sub-iterations of initialization of the fluid
   integer, save :: nalinf
   !> maximum number of imlicitation iterations of of the structure displacement
@@ -73,11 +78,8 @@ contains
 
     integer, intent(in) :: nfabor, nnod
 
-    if (iale.eq.1) then
+    if (iale.ge.1) then
       allocate(xyzno0(3,nnod))
-    endif
-
-    if (iale.eq.1) then
       allocate(impale(nnod))
       allocate(ialtyb(nfabor))
     endif
@@ -90,16 +92,30 @@ contains
 
     use cplsat
 
-    if (iale.eq.1) then
+    if (iale.ge.1) then
       deallocate(xyzno0)
-    endif
-
-    if (iale.eq.1) then
       deallocate(impale)
       deallocate(ialtyb)
     endif
 
   end subroutine finalize_ale
+
+  !=============================================================================
+
+  subroutine map_ale
+
+    use, intrinsic :: iso_c_binding
+    use cs_c_bindings
+
+    ! Local variables
+
+    type(c_ptr) :: c_iale
+
+    call cs_f_ale_get_pointers(c_iale)
+
+    call c_f_pointer(c_iale, iale)
+
+  end subroutine map_ale
 
   !=============================================================================
 
