@@ -5,6 +5,8 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix error on unconverged linear solver using PETSc.
+
 - Fix empty mesh in error postprocessing for linear solvers.
 
 - Fix for possible bug in postprocessing edges mesh extraction.
