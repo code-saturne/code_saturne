@@ -7,6 +7,9 @@ Bug fixes
 
 - Fix error on unconverged linear solver using PETSc.
 
+- Fix in weakly compressible algorithm for scalar diffusion terms when
+  multiple scalars are present.
+
 - Fix empty mesh in error postprocessing for linear solvers.
 
 - Fix for possible bug in postprocessing edges mesh extraction.
