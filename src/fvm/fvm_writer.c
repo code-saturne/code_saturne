@@ -838,6 +838,8 @@ fvm_writer_get_format_id(const char  *format_name)
     strcpy(closest_name, "Catalyst");
   else if (strncmp(tmp_name, "ccm", 3) == 0)
     strcpy(closest_name, "CCM-IO");
+  else if (strncmp(tmp_name, "melissa", 7) == 0)
+    strcpy(closest_name, "Melissa");
   else
     strcpy(closest_name, tmp_name);
 
