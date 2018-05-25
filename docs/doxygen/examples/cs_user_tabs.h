@@ -27,44 +27,57 @@
 /*!
   \page cs_user_examples User examples
 
-Here is a list of user examples. Thorougly documented snippets are provided.
+Here is a list of user examples. Thoroughly documented snippets are provided.
 
-   - \subpage cs_user_mesh
-   - \subpage user_initialization "Physical fields user initialization"
-   - \subpage cs_user_boundary_conditions_examples "User boundary condition definitions"
-   - \subpage les_inflow "Inflow Boundary conditions for LES"
+\section example_preprocessing Preprocessing
+   - \subpage cs_user_mesh "Preprocessing and mesh modification examples"
+   - \subpage user_coupling
+
+\section example_model_selection Model selection and global parameters setting
    - \subpage f_parameters
    - \subpage parameters
    - \subpage turbomachinery
    - \subpage cavit
-   - \subpage physical_properties
-   - \subpage cs_user_postprocess
-   - \subpage cs_user_postprocess_var
-   - \subpage drift_coal_scalars
-   - \subpage drift_scalars
-   - \subpage cs_porosity
-   - \subpage cs_head_losses
    - \subpage cs_lagrangian_particle_tracking_module
-   - \subpage cs_user_source_terms
-   - \subpage cs_user_mass_source_terms
-   - \subpage condens
-   - \subpage cs_user_boundary_conditions_ale
-   - \subpage cs_user_radiative_transfer
-   - \subpage cs_user_extra_operations_examples "User extra operations"
-   - \subpage cs_user_extra_operations-nusselt_calculation
-   - \subpage cs_user_source_terms-scalar_in_a_channel
+   - \subpage cs_user_fluid_structure_interaction
    - \subpage richards
    - \subpage cs_user_gwf_cdo
-   - \subpage cs_user_fluid_structure_interaction
-   - \subpage user_coupling
-   - \subpage cs_user_performance_tuning
+   - \subpage cs_user_radiative_transfer
    - \subpage cs_user_electric_scaling
    - \subpage cs_user_atmospheric_model
+   - \subpage cs_user_cooling_towers "Cooling towers definition"
+
+\section example_physical_properties Physical properties definition
+   - \subpage physical_properties
+   - \subpage cs_porosity "Define porous modelling properties"
+   - \subpage drift_coal_scalars
+   - \subpage drift_scalars
+
+\section example_volume_bc Volume and boundary conditions
+   - \subpage user_initialization "Physical fields user initialization"
+   - \subpage cs_user_boundary_conditions_examples "User boundary condition definitions"
+   - \subpage cs_user_boundary_conditions_ale "User boundary condition definition for the ALE model"
+   - \subpage les_inflow "Inflow Boundary conditions for LES"
+   - \subpage cs_head_losses "Define head losses zones"
+   - \subpage cs_user_source_terms "Define additional source terms for transport equations (momentum and species)"
+   - \subpage cs_user_mass_source_terms "Define mass source termes"
+   - \subpage condens "Define condensation"
+
+\section example_numerical_param Numerical parameters
+   - \subpage cs_user_performance_tuning
+
+\section example_calculation_control Calculation control
+   - \subpage cs_user_postprocess
+   - \subpage cs_user_postprocess_var
+   - \subpage cs_user_extra_operations_examples "User extra operations"
+   - \subpage cs_user_extra_operations-nusselt_calculation
+
+\section example_other OtherCalculation control
    - \subpage cs_user_modules
    - \subpage user_solver
-   - \subpage cs_user_cooling_towers "Cooling towers definition"
    - \subpage us_thht
    - \subpage us_vosy
    - \subpage us_pt1d
    - \subpage us_vort
+
 */
