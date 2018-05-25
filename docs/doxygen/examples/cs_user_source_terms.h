@@ -39,6 +39,7 @@
    - \subpage subroutine_ustsnv
    - \subpage subroutine_ustssc
    - \subpage subroutine_cs_user_turbulence_source_terms
+   - \subpage cs_user_source_terms-scalar_in_a_channel
 
 
 */
@@ -128,7 +129,7 @@ which yields:
 
  \section body2 Body
 
-   \snippet cs_user_source_terms.f90 boussinesq_st 
+   \snippet cs_user_source_terms.f90 boussinesq_st
 
 */
 //_________________________________________________________________________________________________
