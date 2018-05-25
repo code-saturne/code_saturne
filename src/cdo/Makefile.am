@@ -82,6 +82,7 @@ cs_gwf_soil.h \
 cs_gwf_tracer.h \
 cs_hho_builder.h \
 cs_hho_scaleq.h \
+cs_hho_vecteq.h \
 cs_hho_stokes.h \
 cs_hodge.h \
 cs_mesh_deform.h \
@@ -138,6 +139,7 @@ cs_gwf_soil.c \
 cs_gwf_tracer.c \
 cs_hho_builder.c \
 cs_hho_scaleq.c \
+cs_hho_vecteq.c \
 cs_hho_stokes.c \
 cs_hodge.c \
 cs_mesh_deform.c \

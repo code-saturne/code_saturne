@@ -48,6 +48,7 @@
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
 #include "cs_hho_scaleq.h"
+#include "cs_hho_vecteq.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_xdef_eval.h"
@@ -473,7 +474,9 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
     if (cs_flag_test(cc->fb_scheme_flag,
                      CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR) ||
         cs_flag_test(cc->hho_scheme_flag,
-                     CS_FLAG_SCHEME_POLY1 | CS_FLAG_SCHEME_SCALAR)) {
+                     CS_FLAG_SCHEME_POLY1 | CS_FLAG_SCHEME_SCALAR) ||
+        cs_flag_test(cc->hho_scheme_flag,
+                     CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)) {
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
 
@@ -483,22 +486,20 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
                                     rs);
       ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
 
+      assert((CS_CDO_CONNECT_FACE_SP1 == CS_CDO_CONNECT_FACE_VP0) &&
+             (CS_CDO_CONNECT_FACE_SP1 == CS_CDO_CONNECT_FACE_VHP0));
+
       cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP1] = ma1;
       cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP1] = ms1;
 
-      if (cc->fb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
+      cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_1ST * n_faces);
 
-        /* Initialize additional structures */
+      /* Initialize additional structures */
+      if (cs_flag_test(cc->fb_scheme_flag,
+                       CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR))
         cs_cdofb_vecteq_init_common(quant, connect, time_step, ms1);
 
-        cwb_size = CS_MAX(cwb_size, (size_t)9*n_faces);
-
-      }
-
-      if (cc->hho_scheme_flag & CS_FLAG_SCHEME_POLY1)
-        cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_1ST * n_faces);
-
-    } /* Vector CDO-Fb or HHO-P1 */
+    } /* Vector CDO-Fb or HHO-P1 or vector HHO-P0 */
 
     if (cs_flag_test(cc->hho_scheme_flag,
                      CS_FLAG_SCHEME_POLY2 | CS_FLAG_SCHEME_SCALAR)) {
@@ -515,6 +516,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP2] = ms2;
 
       cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_2ND * n_faces);
+
     }
 
     /* Initialize additional structures for scalar-valued HHO schemes */
@@ -523,11 +525,60 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
                                 quant, connect, time_step,
                                 ms0, ms1, ms2);
 
+    /* For vector equations and HHO */
+    if (cs_flag_test(cc->hho_scheme_flag,
+                     CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY1) ||
+        cs_flag_test(cc->hho_scheme_flag,
+                     CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2)) {
+
+      if  (cc->hho_scheme_flag & CS_FLAG_SCHEME_POLY1){
+
+        const cs_range_set_t  *rs =
+          connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
+
+        ma1 = _build_matrix_assembler(n_faces,
+                                      3*CS_N_FACE_DOFS_1ST,
+                                      cs_connect_f2f,
+                                      rs);
+        ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
+
+        cs_equation_common_ma[CS_CDO_CONNECT_FACE_VHP1] = ma1;
+        cs_equation_common_ms[CS_CDO_CONNECT_FACE_VHP1] = ms1;
+
+        cwb_size = CS_MAX(cwb_size, (size_t)3*CS_N_FACE_DOFS_1ST*n_faces);
+
+      }
+      else if  (cc->hho_scheme_flag & CS_FLAG_SCHEME_POLY2)       {
+
+        const cs_range_set_t  *rs =
+          connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
+
+        ma2 = _build_matrix_assembler(n_faces,
+                                      3*CS_N_FACE_DOFS_2ND,
+                                      cs_connect_f2f,
+                                      rs);
+        ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
+
+        cs_equation_common_ma[CS_CDO_CONNECT_FACE_VHP2] = ma2;
+        cs_equation_common_ms[CS_CDO_CONNECT_FACE_VHP2] = ms2;
+
+        cwb_size = CS_MAX(cwb_size, (size_t)3*CS_N_FACE_DOFS_2ND*n_faces);
+
+      }
+
+    }
+
+    /* Initialize vector-valued HHO equations */
+    if (cc->hho_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+      cs_hho_vecteq_init_common(cc->hho_scheme_flag,
+                                quant, connect, time_step,
+                                ms0, ms1, ms2);
+
     /* Monitoring */
     cs_timer_t t2 = cs_timer_time();
     cs_timer_counter_add_diff(&tca, &t1, &t2);
 
-  } // Face-based schemes (CDO or HHO)
+  } /* Face-based schemes (CDO or HHO) */
 
   if (cs_flag_test(cc->fb_scheme_flag, CS_FLAG_SCHEME_NAVSTO)) {
 

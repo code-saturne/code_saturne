@@ -48,6 +48,7 @@
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_param.h"
+#include "cs_param_cdo.h"
 #include "cs_sort.h"
 
 /*----------------------------------------------------------------------------
@@ -1019,6 +1020,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
     /* Shared structures */
     mesh->vtx_range_set = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+
   }
 
   /* CDO vertex- or vertex+cell-based schemes for vector-valued variables */
@@ -1036,10 +1038,14 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
                         connect->interfaces + CS_CDO_CONNECT_FACE_SP0,
                         connect->range_sets + CS_CDO_CONNECT_FACE_SP0);
 
-  /* HHO schemes with k=1 or CDO-Fb schemes with vector-valued unknowns */
-  if ((fb_scheme_flag & CS_FLAG_SCHEME_VECTOR) ||
-      cs_flag_test(hho_scheme_flag,
-                   CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY1))
+  /* HHO schemes with k=1,
+     CDO-Fb schemes with vector-valued unknowns
+     HHO schemes with k=0 and vector-valued unknows */
+  if ((fb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+      || cs_flag_test(hho_scheme_flag,
+                      CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY1)
+      || cs_flag_test(hho_scheme_flag,
+                      CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY0))
     _assign_face_ifs_rs(mesh, n_faces, 3,
                         connect->interfaces + CS_CDO_CONNECT_FACE_SP1,
                         connect->range_sets + CS_CDO_CONNECT_FACE_SP1);
@@ -1047,9 +1053,24 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   /* HHO schemes with k=2 */
   if (cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY2))
-    _assign_face_ifs_rs(mesh, n_faces, 6,
+    _assign_face_ifs_rs(mesh, n_faces, CS_N_FACE_DOFS_2ND,
                         connect->interfaces + CS_CDO_CONNECT_FACE_SP2,
                         connect->range_sets + CS_CDO_CONNECT_FACE_SP2);
+
+  /* HHO schemes with vector-valued unknowns with polynomial order k=1*/
+  if (cs_flag_test(hho_scheme_flag,
+                   CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY1))
+    _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_FACE_DOFS_1ST,
+                        connect->interfaces + CS_CDO_CONNECT_FACE_VHP1,
+                        connect->range_sets + CS_CDO_CONNECT_FACE_VHP1);
+
+
+  /* HHO schemes with vector-valued unknowns with polynomial order k=2*/
+  if (cs_flag_test(hho_scheme_flag,
+                   CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2))
+    _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_FACE_DOFS_2ND,
+                        connect->interfaces + CS_CDO_CONNECT_FACE_VHP2,
+                        connect->range_sets + CS_CDO_CONNECT_FACE_VHP2);
 
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();

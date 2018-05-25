@@ -653,6 +653,33 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
                                  double                    *values);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution of a source term for a cell and add it to
+ *         the given array of values.
+ *         Case of a vector field (vd) defined on primal cells by an analytic
+ *         function.
+ *         Case of HHO schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
+                                 const cs_cell_mesh_t      *cm,
+                                 cs_real_t                  time_eval,
+                                 cs_cell_builder_t         *cb,
+                                 void                      *input,
+                                 double                    *values);
+
+/*----------------------------------------------------------------------------*/
+
+
 
 END_C_DECLS
 

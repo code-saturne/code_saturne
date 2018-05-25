@@ -251,6 +251,77 @@ _hho_add_tetra_by_ana(const cs_xdef_analytic_input_t  *anai,
   }  /* End of loop on Gauss points */
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the reduction onto the cell polynomial space of a function
+ *         defined by an analytical expression depending on the location and
+ *         the current time. This is the vector case.
+ *
+ * \param[in]       anai      pointer to an analytical definition
+ * \param[in]       cbf       pointer to a structure for cell basis functions
+ * \param[in]       xv1       first vertex
+ * \param[in]       xv2       second vertex
+ * \param[in]       xv3       third vertex
+ * \param[in]       xv4       third vertex
+ * \param[in]       vol       volume of the tetrahedron
+ * \param[in]       time_eval physical time at which one evaluates the term
+ * \param[in, out]  cb        pointer to a cs_cell_builder_structure_t
+ * \param[in, out]  array     array storing values to compute
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_hho_add_tetra_by_ana_vd(const cs_xdef_analytic_input_t  *anai,
+                         const cs_basis_func_t           *cbf,
+                         const cs_real_3_t                xv1,
+                         const cs_real_3_t                xv2,
+                         const cs_real_3_t                xv3,
+                         const cs_real_3_t                xv4,
+                         const double                     vol,
+                         cs_real_t                        time_eval,
+                         cs_cell_builder_t               *cb,
+                         cs_real_t                        array[])
+{
+  cs_real_3_t  *gpts = cb->vectors;
+
+  /* cb->values is big enough to store:
+     gw+ana_eval+phi_eval= 15+3*15+cell_basis
+     = 64  < 78  + 12      for k=1
+     = 70  < 465 + 30      for k=2
+  */
+  cs_real_t  *gw = cb->values;
+  cs_real_t  *ana_eval = cb->values + 15;
+  cs_real_t  *phi_eval = cb->values + 15 + 3*15;
+
+  /* Compute Gauss points and related weights */
+  cs_quadrature_tet_15pts(xv1, xv2, xv3, xv4, vol, gpts, gw);
+
+  /* Evaluate the analytical function at the Gauss points */
+  anai->func(time_eval, 15, NULL, (const cs_real_t *)gpts, true, anai->input,
+             ana_eval);
+
+  for (short int gp = 0; gp < 15; gp++) {
+
+    cbf->eval_all_at_point(cbf, gpts[gp], phi_eval);
+
+    for (short int i = 0; i < cbf->size; i++) {
+
+      const double  gcoef = gw[gp] * phi_eval[i];
+
+      /* x-component */
+      array[i              ] += gcoef * ana_eval[3*gp];
+      /* y-component */
+      array[i +   cbf->size] += gcoef * ana_eval[3*gp+1];
+      /* z-component */
+      array[i + 2*cbf->size] += gcoef * ana_eval[3*gp+2];
+
+    }
+
+  }  /* End of loop on Gauss points */
+
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -609,16 +680,25 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
       switch (st_def->type) {
 
       case CS_XDEF_BY_VALUE:
-        compute_source[st_id] = cs_source_term_hhosd_by_value;
+        if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Invalid type of definition for a source term in HHO",
+                    __func__);
+        else
+          compute_source[st_id] = cs_source_term_hhosd_by_value;
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        compute_source[st_id] = cs_source_term_hhosd_by_analytic;
+        if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
+          compute_source[st_id] = cs_source_term_hhovd_by_analytic;
+        else
+          compute_source[st_id] = cs_source_term_hhosd_by_analytic;
         break;
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " Invalid type of definition for a source term in CDOVB");
+                  " Invalid type of definition for a source term in HHO",
+                  __func__);
         break;
 
       } // switch def_type
@@ -2083,6 +2163,129 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
 
   } /* End of switch on the cell-type */
 }
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution of a source term for a cell and add it to
+ *         the given array of values.
+ *         Case of a vector field (vd) defined on primal cells by an analytic
+ *         function.
+ *         Case of HHO schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
+                                 const cs_cell_mesh_t      *cm,
+                                 cs_real_t                  time_eval,
+                                 cs_cell_builder_t         *cb,
+                                 void                      *input,
+                                 double                    *values)
+{
+  CS_UNUSED(cb);
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL && input != NULL);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+  cs_real_t  *cell_values = values + 3*cm->n_fc * hhob->face_basis[0]->size;
+
+  const cs_basis_func_t  *cbf = hhob->cell_basis;
+
+  /* Reset cell values:
+     JB<integration> *3 ? */
+  memset(cell_values, 0, 3*sizeof(cs_real_t)*cbf->size);
+
+  /* Switch according to the cell type: optimised version for tetra */
+  switch (cm->type) {
+
+  case FVM_CELL_TETRA:
+    {
+      assert(cm->n_fc == 4 && cm->n_vc == 4);
+      _hho_add_tetra_by_ana_vd(anai, cbf,
+                               cm->xv, cm->xv+3, cm->xv+6, cm->xv+9,
+                               cm->vol_c, time_eval,
+                               cb, cell_values);
+    }
+    break;
+
+  case FVM_CELL_PYRAM:
+  case FVM_CELL_PRISM:
+  case FVM_CELL_HEXA:
+  case FVM_CELL_POLY:
+  {
+    for (short int f = 0; f < cm->n_fc; ++f) {
+
+      const cs_quant_t  pfq = cm->face[f];
+      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const int  start = cm->f2e_idx[f];
+      const int  end = cm->f2e_idx[f+1];
+      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int *f2e_ids = cm->f2e_ids + start;
+
+      assert(n_vf > 2);
+      switch(n_vf){
+
+      case 3: /* triangle (optimized version, no subdivision) */
+        {
+          short int  v0, v1, v2;
+          cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+
+          _hho_add_tetra_by_ana_vd(anai, cbf,
+                                   cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2,
+                                   cm->xc, hf_coef * pfq.meas, time_eval,
+                                   cb, cell_values);
+        }
+        break;
+
+      default:
+        {
+          const double  *tef = cm->tef + start;
+
+          for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+            // Edge-related variables
+            const short int e0  = f2e_ids[e];
+            const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
+            const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+
+            _hho_add_tetra_by_ana_vd(anai, cbf,
+                                     xv0, xv1, pfq.center, cm->xc,
+                                     hf_coef*tef[e], time_eval,
+                                     cb, cell_values);
+          }
+        }
+        break;
+
+      } /* End of switch */
+
+    } /* End of loop on faces */
+
+  }
+  break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,  _(" Unknown cell-type.\n"));
+    break;
+
+  } /* End of switch on the cell-type */
+}
+
+
 
 /*----------------------------------------------------------------------------*/
 

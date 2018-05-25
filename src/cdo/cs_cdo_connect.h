@@ -50,16 +50,20 @@ BEGIN_C_DECLS
 /* Main categories to consider for high-level structures
    Remark: HHO-P1 and CDO-Fb vector-valued shares the same structures
 */
-#define CS_CDO_CONNECT_VTX_SCAL  0 /* Vb or VCb scalar-valued eq. */
-#define CS_CDO_CONNECT_VTX_VECT  1 /* Vb or VCb vector-valued eq. */
-#define CS_CDO_CONNECT_FACE_SP0  2 /* Fb or HHO-P0 scalar-valued eq. */
-#define CS_CDO_CONNECT_FACE_SP1  3 /* HHO-P1 scalar-valued */
-#define CS_CDO_CONNECT_FACE_VP0  3 /* Fb vector-valued eq. */
-#define CS_CDO_CONNECT_FACE_SP2  4 /* HHO-P2 scalar-valued eq. */
-#define CS_CDO_CONNECT_N_CASES   5
+#define CS_CDO_CONNECT_VTX_SCAL   0 /* Vb or VCb scalar-valued eq. */
+#define CS_CDO_CONNECT_VTX_VECT   1 /* Vb or VCb vector-valued eq. */
+#define CS_CDO_CONNECT_FACE_SP0   2 /* Fb or HHO-P0 scalar-valued eq. */
+#define CS_CDO_CONNECT_FACE_VP0   3 /* Fb vector-valued eq. */
+#define CS_CDO_CONNECT_FACE_SP1   3 /* HHO-P1 scalar-valued */
+#define CS_CDO_CONNECT_FACE_SP2   4 /* HHO-P2 scalar-valued eq. */
+#define CS_CDO_CONNECT_FACE_VHP0  3 /* HHO-P0 vector-valued eq. */
+#define CS_CDO_CONNECT_FACE_VHP1  5 /* HHO-P1 vector-valued eq. */
+#define CS_CDO_CONNECT_FACE_VHP2  6 /* HHO-P2 vector-valued eq. */
+
+#define CS_CDO_CONNECT_N_CASES    7
 
 /* Additional macros */
-#define CS_TRIANGLE_CASE         3 /* Number of vertices in a triangle */
+#define CS_TRIANGLE_CASE          3 /* Number of vertices in a triangle */
 
 /*============================================================================
  * Type definitions

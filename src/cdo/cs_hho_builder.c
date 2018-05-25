@@ -61,7 +61,7 @@ BEGIN_C_DECLS
 #define _dp3  cs_math_3_dot_product
 #define _mv3  cs_math_33_3_product
 
-#define CS_HHO_BUILDER_DBG  1
+#define CS_HHO_BUILDER_DBG  0
 
 /*============================================================================
  * Private variables
@@ -163,6 +163,71 @@ _add_tria_reduction(cs_real_t                        t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the reduction onto the face polynomial space of a function
+ *         defined by an analytical expression depending on the location and
+ *         the current time. Vector case.
+ *
+ * \param[in]       anai     pointer to an analytical definition
+ * \param[in]       fbf      pointer to a structure for face basis functions
+ * \param[in]       xv1      first vertex
+ * \param[in]       xv2      second vertex
+ * \param[in]       xv3      third vertex
+ * \param[in]       surf     area of the triangle
+ * \param[in, out]  cb       pointer to a cs_cell_builder_structure_t
+ * \param[in, out]  array    array storing values to compute
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_add_tria_reduction_v(const cs_xdef_analytic_input_t  *anai,
+                      const cs_basis_func_t           *fbf,
+                      const cs_real_3_t                xv1,
+                      const cs_real_3_t                xv2,
+                      const cs_real_3_t                xv3,
+                      const double                     surf,
+                      cs_cell_builder_t               *cb,
+                      cs_real_t                        array[])
+{
+  cs_real_3_t  *gpts = cb->vectors;
+
+  /* cb->values is big enough to store:
+     gw+ana_eval+phi_eval = 7+3*7+cell_basis
+                          = 32  < 78  + 12      for k=1
+                          = 38  < 465 + 30      for k=2
+  */
+  cs_real_t  *gw = cb->values;
+  cs_real_t  *ana_eval = cb->values + 7;
+  cs_real_t  *phi_eval = cb->values + 7 + 3*7;
+
+  /* Compute Gauss points and related weights */
+  cs_quadrature_tria_7pts(xv1, xv2, xv3, surf, gpts, gw);
+
+  /* Evaluate the analytical function at the Gauss points */
+  anai->func(cs_glob_time_step->t_cur, 7, NULL, (const cs_real_t *)gpts, true,
+             anai->input, ana_eval);
+
+  for (short int gp = 0; gp < 7; gp++) {
+
+    fbf->eval_all_at_point(fbf, gpts[gp], phi_eval);
+
+    for (short int i = 0; i < fbf->size; i++) {
+
+      const double  gcoef = gw[gp] * phi_eval[i];
+
+      /* x-component */
+      array[i]               +=  gcoef * ana_eval[3*gp];
+      /* y-component */
+      array[i +   fbf->size] +=  gcoef * ana_eval[3*gp+1];
+      /* z-component */
+      array[i + 2*fbf->size] +=  gcoef * ana_eval[3*gp+2];
+
+    }
+
+  }  /* End of loop on Gauss points */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the reduction onto the cell polynomial space of a function
  *         defined by an analytical expression depending on the location and
  *         the current time
@@ -211,6 +276,72 @@ _add_tetra_reduction(cs_real_t                        t_eval,
     const cs_real_t  w = gw[gp] * ana_eval[gp];
     for (short int i = 0; i < cbf->size; i++)
       array[i] += w * phi_eval[i];
+
+  }  /* End of loop on Gauss points */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the reduction onto the cell polynomial space of a function
+ *         defined by an analytical expression depending on the location and
+ *         the current time.Vector case.
+ *
+ * \param[in]       anai     pointer to an analytical definition
+ * \param[in]       cbf      pointer to a structure for face basis functions
+ * \param[in]       xv1      first vertex
+ * \param[in]       xv2      second vertex
+ * \param[in]       xv3      third vertex
+ * \param[in]       xv4      third vertex
+ * \param[in]       vol      volume of the tetrahedron
+ * \param[in, out]  cb       pointer to a cs_cell_builder_structure_t
+ * \param[in, out]  array    array storing values to compute
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_add_tetra_reduction_v(const cs_xdef_analytic_input_t  *anai,
+                       const cs_basis_func_t           *cbf,
+                       const cs_real_3_t                xv1,
+                       const cs_real_3_t                xv2,
+                       const cs_real_3_t                xv3,
+                       const cs_real_3_t                xv4,
+                       const double                     vol,
+                       cs_cell_builder_t               *cb,
+                       cs_real_t                        array[])
+{
+  cs_real_3_t  *gpts = cb->vectors;
+
+  /* cb->values is big enough to store:
+     gw+ana_eval+phi_eval = 15+3*15 + cell_basis
+                          = 64  < 78  + 12      for k=1
+                          = 70  < 465 + 30      for k=2
+ */
+  cs_real_t  *gw = cb->values;
+  cs_real_t  *ana_eval = cb->values + 15;
+  cs_real_t  *phi_eval = cb->values + 15 + 3*15;
+
+  /* Compute Gauss points and related weights */
+  cs_quadrature_tet_15pts(xv1, xv2, xv3, xv4, vol, gpts, gw);
+
+  /* Evaluate the analytical function at the Gauss points */
+  anai->func(cs_glob_time_step->t_cur, 15, NULL, (const cs_real_t *)gpts, true,
+             anai->input, ana_eval);
+
+  for (short int gp = 0; gp < 15; gp++) {
+
+    cbf->eval_all_at_point(cbf, gpts[gp], phi_eval);
+
+    for (short int i = 0; i < cbf->size; i++){
+
+      const double  gcoef = gw[gp] *  phi_eval[i];
+      /* x-component */
+      array[i              ] += gcoef * ana_eval[3*gp];
+      /* y-component */
+      array[i +   cbf->size] += gcoef * ana_eval[3*gp+1];
+      /* z-component */
+      array[i + 2*cbf->size] += gcoef * ana_eval[3*gp+2];
+
+    }
 
   }  /* End of loop on Gauss points */
 }
@@ -1326,6 +1457,8 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
   const cs_basis_func_t  *cbf = hhob->cell_basis;
   assert(cbf->facto != NULL && cbf->project != NULL);
 
+  /* See _add_tria_reduction & _add_tetra_reduction
+     to understand the following shifts */
   int  shift = 0;
   cs_real_t  *c_rhs = cb->values + 30 + cbf->size;
   cs_real_t  *f_rhs = c_rhs + cbf->size;
@@ -1455,6 +1588,208 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the reduction onto the polynomial spaces (cell and faces)
+ *         of a function defined by an analytical expression depending on the
+ *         location and the current time
+ *         This function handles the vector case.
+ *
+ *         red array has to be allocated before calling this function.
+ *
+ * \param[in]       def      pointer to a cs_xdef_t structure
+ * \param[in]       cm       pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  cb       pointer to a cell builder_t structure
+ * \param[in, out]  hhob     pointer to a cs_hho_builder_t structure
+ * \param[in, out]  red      vector containing the reduction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
+                                         const cs_cell_mesh_t    *cm,
+                                         cs_cell_builder_t       *cb,
+                                         cs_hho_builder_t        *hhob,
+                                         cs_real_t                red[])
+{
+  /* Sanity checks */
+  if (hhob == NULL || def == NULL)
+    return;
+  assert(hhob->cell_basis != NULL && hhob->face_basis != NULL);
+  if (red == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s : array storing the reduction has to be allocated.\n",
+              __func__);
+  assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+
+  const cs_basis_func_t  *cbf = hhob->cell_basis;
+  assert(cbf->facto != NULL && cbf->project != NULL);
+
+  /* See _add_tria_reduction_v & _add_tetra_reduction_v
+     to understand the following shifts */
+  int  shift = 0;
+  cs_real_t  *c_rhs = cb->values + 15 + 3*15 + cbf->size;
+  cs_real_t  *f_rhs = c_rhs + 3*cbf->size;
+
+  /* Note: total memory needed in cb_values:
+     since _add_tetra_reduction_v > _add_tria_reduction_v in terms of memory,
+     then total memory= _add_tetra_reduction_v + 3*cbasis_size +  3*fbasis_size
+     =  85  for k =1 < 78  + 12
+     =  118 for k =2 < 465 + 30 */
+
+  /* Initialize cell related array (Vector case: multiply by 3) */
+  memset(c_rhs, 0, 3*cbf->size*sizeof(cs_real_t));
+
+  /* Switch according to the cell type: optimised version for tetra */
+  switch (cm->type) {
+
+  case FVM_CELL_TETRA:
+    {
+      assert(cm->n_fc == 4 && cm->n_vc == 4);
+
+      /* Call vector case reduction */
+      _add_tetra_reduction_v(anai, cbf,
+                             cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
+                             cb, c_rhs);
+
+      short int  v0, v1, v2;
+      for (short int f = 0; f < cm->n_fc; ++f) {
+
+        const cs_quant_t  pfq = cm->face[f];
+        const short int  *f2e_ids = cm->f2e_ids + cm->f2e_idx[f];
+        const cs_basis_func_t  *fbf = hhob->face_basis[f];
+
+        assert(fbf->facto != NULL);
+        assert(cbf->size >= fbf->size);
+
+        /* Vector case: multiply by 3 */
+        memset(f_rhs, 0, 3*fbf->size*sizeof(cs_real_t));
+
+        cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+
+        /*Call vector case reduction*/
+        _add_tria_reduction_v(anai, fbf,
+                              cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
+                              cb, f_rhs);
+
+        /* Modified Cholesky decomposition to compute DoF (component-wise) */
+        fbf->project(fbf, f_rhs, red + shift);               /* x component */
+        shift +=  fbf->size;
+        fbf->project(fbf, f_rhs + fbf->size, red + shift);   /* y component */
+        shift +=  fbf->size;
+        fbf->project(fbf, f_rhs + 2*fbf->size, red + shift); /* z component */
+        shift +=  fbf->size;
+
+      } /* Loop on cell faces */
+
+    }
+    break;
+
+  case FVM_CELL_PYRAM:
+  case FVM_CELL_PRISM:
+  case FVM_CELL_HEXA:
+  case FVM_CELL_POLY:
+    {
+      for (short int f = 0; f < cm->n_fc; ++f) {
+
+        const cs_quant_t  pfq = cm->face[f];
+        const double  hf_coef = cs_math_onethird * cm->hfc[f];
+        const int  start = cm->f2e_idx[f];
+        const int  end = cm->f2e_idx[f+1];
+        const short int n_vf = end - start; // #vertices (=#edges)
+        const short int *f2e_ids = cm->f2e_ids + start;
+        const cs_basis_func_t  *fbf = hhob->face_basis[f];
+
+        /* Vector case: multiply by 3 */
+        memset(f_rhs, 0, 3*fbf->size*sizeof(cs_real_t));
+
+        assert(fbf->facto != NULL);
+        assert(cbf->size >= fbf->size);
+        assert(n_vf > 2);
+        switch(n_vf){
+
+        case CS_TRIANGLE_CASE: /* Triangle (optimized, no subdivision) */
+          {
+            short int  v0, v1, v2;
+            cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids,
+                                             &v0, &v1, &v2);
+
+            const double  *xv0 = cm->xv + 3*v0;
+            const double  *xv1 = cm->xv + 3*v1;
+            const double  *xv2 = cm->xv + 3*v2;
+
+            /* Call vector case reductions */
+            _add_tria_reduction_v(anai, fbf, xv0, xv1, xv2, pfq.meas, cb,
+                                  f_rhs);
+
+            _add_tetra_reduction_v(anai, cbf,
+                                   xv0, xv1, xv2, cm->xc, hf_coef * pfq.meas,
+                                   cb,
+                                   c_rhs);
+
+          }
+          break;
+
+        default:
+          {
+            const double  *tef = cm->tef + start;
+
+            for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+              /* Edge-related variables */
+              const short int e0  = f2e_ids[e];
+              const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
+              const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+
+              /* Call vector case reductions */
+              _add_tetra_reduction_v(anai, cbf, xv0, xv1, pfq.center, cm->xc,
+                                     hf_coef*tef[e], cb,
+                                     c_rhs);
+
+              _add_tria_reduction_v(anai, fbf, xv0, xv1, pfq.center, tef[e],
+                                    cb,
+                                    f_rhs);
+
+            }
+          }
+          break;
+
+        } /* End of switch */
+
+        /* Modified Cholesky decomposition to compute DoF (component-wise) */
+
+        fbf->project(fbf, f_rhs, red + shift);               /* x component */
+        shift +=  fbf->size;
+        fbf->project(fbf, f_rhs + fbf->size, red + shift);   /* y component */
+        shift +=  fbf->size;
+        fbf->project(fbf, f_rhs + 2*fbf->size, red + shift); /* z component */
+        shift +=  fbf->size;
+
+      } /* End of loop on faces */
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,  _(" %s: Unknown cell-type.\n"), __func__);
+    break;
+
+  } /* End of switch on the cell-type */
+
+  /* Modified Cholesky decomposition to compute DoF (component-wise) */
+  cbf->project(cbf, c_rhs,               red + shift);   /* x component */
+  shift +=  cbf->size;
+  cbf->project(cbf, c_rhs +   cbf->size, red + shift);   /* y component */
+  shift +=  cbf->size;
+  cbf->project(cbf, c_rhs + 2*cbf->size, red + shift);   /* z component */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the projection of the Dirichlet boundary conditions onto
  *         the polynomial spaces on faces
  *
@@ -1577,6 +1912,137 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
                 " Invalid type of definition.\n"), __func__);
 
   } // switch def_type
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the projection of the Dirichlet boundary conditions onto
+ *         the polynomial spaces on faces. Vector case.
+ *
+ * \param[in]       def      pointer to a cs_xdef_t structure
+ * \param[in]       f        local face id in the cellwise view of the mesh
+ * \param[in]       cm       pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  cb       pointer to a cell builder_t structure
+ * \param[in, out]  hhob     pointer to a cs_hho_builder_t structure
+ * \param[in, out]  res      vector containing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hho_builder_compute_dirichlet_v(const cs_xdef_t         *def,
+                                   short int                f,
+                                   const cs_cell_mesh_t    *cm,
+                                   cs_cell_builder_t       *cb,
+                                   cs_hho_builder_t        *hhob,
+                                   cs_real_t                res[])
+{
+  /* Sanity checks */
+  if (hhob == NULL || def == NULL)
+    return;
+
+  assert(hhob->face_basis != NULL);
+
+  const cs_quant_t  pfq = cm->face[f];
+  const cs_basis_func_t  *fbf = hhob->face_basis[f];
+
+  /* See _add_tria_reduction_v to understand the following shift */
+  cs_real_t  *rhs = cb->values + 7+ 3*7 + fbf->size;
+
+  assert(fbf != NULL);
+  assert(fbf->facto != NULL);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  /*In vector case we multiply by 3*/
+  memset(res, 0, 3*fbf->size*sizeof(cs_real_t));
+  memset(rhs, 0, 3*fbf->size*sizeof(cs_real_t));
+
+  switch(def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    {
+      const cs_real_t  *constant_val = (cs_real_t *)def->input;
+
+      /* The bc is constant thus its projection is a multiple of the
+         constant basis function */
+      cs_real_t  phi0;
+
+      fbf->eval_at_point(fbf, pfq.center, 0, 1, &phi0);
+
+      /* Warning: we assume constant_val is an array of 3 elements not just
+         a double pointer */
+      for (int i = 0; i < fbf->size; i++) {
+        res[i              ] = constant_val[0] / phi0;
+        res[i +   fbf->size] = constant_val[1] / phi0;
+        res[i + 2*fbf->size] = constant_val[2] / phi0;
+      }
+
+    }
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+
+      const int  start = cm->f2e_idx[f];
+      const int  end = cm->f2e_idx[f+1];
+      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int *f2e_ids = cm->f2e_ids + start;
+
+      assert(n_vf > 2);
+      switch(n_vf){
+
+      case CS_TRIANGLE_CASE: /* triangle (optimized, no subdivision) */
+        {
+          short int  v0, v1, v2;
+          cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+
+          const double  *xv0 = cm->xv + 3*v0;
+          const double  *xv1 = cm->xv + 3*v1;
+          const double  *xv2 = cm->xv + 3*v2;
+
+          /* Call the vector case */
+          _add_tria_reduction_v(anai, fbf, xv0, xv1, xv2, pfq.meas, cb, rhs);
+        }
+        break;
+
+      default:
+        {
+          const double  *tef = cm->tef + start;
+
+          for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+            /* Edge-related variables */
+            const short int e0  = f2e_ids[e];
+            const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
+            const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+
+            /* Call the vector case*/
+            _add_tria_reduction_v(anai, fbf, xv0, xv1, pfq.center, tef[e],
+                                  cb, rhs);
+
+          }
+        }
+        break;
+
+      } /* End of switch */
+
+      /* Modified Cholesky decomposition to compute DoF (component-wise) */
+      fbf->project(fbf, rhs,               res);               /* x component */
+      fbf->project(fbf, rhs +   fbf->size, res + fbf->size);   /* y component */
+      fbf->project(fbf, rhs + 2*fbf->size, res + 2*fbf->size); /* z component */
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Stop execution.\n"
+                " Invalid type of definition.\n"), __func__);
+
+  } /* Switch on def_type */
 
 }
 

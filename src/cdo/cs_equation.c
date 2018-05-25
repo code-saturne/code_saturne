@@ -57,6 +57,7 @@
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
 #include "cs_hho_scaleq.h"
+#include "cs_hho_vecteq.h"
 #include "cs_log.h"
 #include "cs_parall.h"
 #include "cs_post.h"
@@ -462,6 +463,61 @@ _prepare_fb_solving(void              *eq_to_cast,
   /* Return pointers */
   *p_x = x;
   *p_rhs = b;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the pointers of function for the given equation.
+ *         Case of scalar-valued HHO schemes
+ *
+ * \param[in, out]  eq       pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_scal_hho_function_pointers(cs_equation_t  *eq)
+{
+  if (eq == NULL)
+    return;
+
+  eq->init_context = cs_hho_scaleq_init_context;
+  eq->free_context = cs_hho_scaleq_free_context;
+  eq->initialize_system = cs_hho_scaleq_initialize_system;
+  eq->set_dir_bc = NULL;
+  eq->build_system = cs_hho_scaleq_build_system;
+  eq->prepare_solving = _prepare_fb_solving;
+  eq->update_field = cs_hho_scaleq_update_field;
+  eq->compute_flux_across_plane = NULL;
+  eq->compute_cellwise_diff_flux = NULL;
+  eq->postprocess = cs_hho_scaleq_extra_op;
+  eq->get_extra_values = cs_hho_scaleq_get_face_values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the pointers of function for the given equation.
+ *         Case of vector-valued HHO schemes
+ *
+ * \param[in, out]  eq       pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_vect_hho_function_pointers(cs_equation_t  *eq)
+{
+  if (eq == NULL)
+    return;
+
+  eq->init_context = cs_hho_vecteq_init_context;
+  eq->free_context = cs_hho_vecteq_free_context;
+  eq->initialize_system = cs_hho_vecteq_initialize_system;
+  eq->build_system = cs_hho_vecteq_build_system;
+  eq->prepare_solving = _prepare_fb_solving;
+  eq->update_field = cs_hho_vecteq_update_field;
+  eq->compute_flux_across_plane = NULL;
+  eq->compute_cellwise_diff_flux = NULL;
+  eq->postprocess = cs_hho_vecteq_extra_op;
+  eq->get_extra_values = cs_hho_vecteq_get_face_values;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1395,17 +1451,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
     case CS_SPACE_SCHEME_HHO_P0:
       if (eqp->dim == 1) {
 
-        eq->init_context = cs_hho_scaleq_init_context;
-        eq->free_context = cs_hho_scaleq_free_context;
-        eq->initialize_system = cs_hho_scaleq_initialize_system;
-        eq->set_dir_bc = NULL;
-        eq->build_system = cs_hho_scaleq_build_system;
-        eq->prepare_solving = _prepare_fb_solving;
-        eq->update_field = cs_hho_scaleq_update_field;
-        eq->compute_flux_across_plane = NULL;
-        eq->compute_cellwise_diff_flux = NULL;
-        eq->postprocess = cs_hho_scaleq_extra_op;
-        eq->get_extra_values = cs_hho_scaleq_get_face_values;
+        /* Set pointers of function */
+        _set_scal_hho_function_pointers(eq);
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
@@ -1423,17 +1470,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
     case CS_SPACE_SCHEME_HHO_P1:
       if (eqp->dim == 1) {
 
-        eq->init_context = cs_hho_scaleq_init_context;
-        eq->free_context = cs_hho_scaleq_free_context;
-        eq->initialize_system = cs_hho_scaleq_initialize_system;
-        eq->set_dir_bc = NULL;
-        eq->build_system = cs_hho_scaleq_build_system;
-        eq->prepare_solving = _prepare_fb_solving;
-        eq->update_field = cs_hho_scaleq_update_field;
-        eq->compute_flux_across_plane = NULL;
-        eq->compute_cellwise_diff_flux = NULL;
-        eq->postprocess = cs_hho_scaleq_extra_op;
-        eq->get_extra_values = cs_hho_scaleq_get_face_values;
+        /* Set pointers of function */
+        _set_scal_hho_function_pointers(eq);
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
@@ -1444,6 +1482,20 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->n_sles_scatter_elts = CS_N_FACE_DOFS_1ST * connect->n_faces[0];
 
       }
+      else if (eqp->dim == 3) {
+
+        /* Set pointers of function */
+        _set_vect_hho_function_pointers(eq);
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process (OK for a sequential run) */
+        eq->n_sles_gather_elts = 3*CS_N_FACE_DOFS_1ST * connect->n_faces[0];
+        eq->n_sles_scatter_elts = 3*CS_N_FACE_DOFS_1ST * connect->n_faces[0];
+
+      }
       else
         bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
 
@@ -1452,17 +1504,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
     case CS_SPACE_SCHEME_HHO_P2:
       if (eqp->dim == 1) {
 
-        eq->init_context = cs_hho_scaleq_init_context;
-        eq->free_context = cs_hho_scaleq_free_context;
-        eq->initialize_system = cs_hho_scaleq_initialize_system;
-        eq->set_dir_bc = NULL;
-        eq->build_system = cs_hho_scaleq_build_system;
-        eq->prepare_solving = _prepare_fb_solving;
-        eq->update_field = cs_hho_scaleq_update_field;
-        eq->compute_flux_across_plane = NULL;
-        eq->compute_cellwise_diff_flux = NULL;
-        eq->postprocess = cs_hho_scaleq_extra_op;
-        eq->get_extra_values = cs_hho_scaleq_get_face_values;
+        /* Set pointers of function */
+        _set_scal_hho_function_pointers(eq);
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
@@ -1471,6 +1514,20 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
            process (OK for a sequential run) */
         eq->n_sles_gather_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
         eq->n_sles_scatter_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
+
+      }
+      else if (eqp->dim == 3) {
+
+        /* Set pointers of function */
+        _set_vect_hho_function_pointers(eq);
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process (OK for a sequential run) */
+        eq->n_sles_gather_elts = 3*CS_N_FACE_DOFS_2ND * connect->n_faces[0];
+        eq->n_sles_scatter_elts = 3*CS_N_FACE_DOFS_2ND * connect->n_faces[0];
 
       }
       else
@@ -1871,6 +1928,8 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
 
     if (eq->param->dim == 1)    /* scalar-valued unknown */
       return cs_hho_scaleq_get_face_values(eq->scheme_context);
+    else if (eq->param->dim == 3) /* vector-valued unknown */
+      return cs_hho_vecteq_get_face_values(eq->scheme_context);
     else
       return NULL;               /* TODO */
 
@@ -1922,6 +1981,8 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
     {
       if (eq->param->dim == 1)    /* scalar-valued unknown */
         return cs_hho_scaleq_get_cell_values(eq->scheme_context);
+      else  if (eq->param->dim == 3)    /* vector-valued unknown */
+        return cs_hho_vecteq_get_cell_values(eq->scheme_context);
       else
         return NULL;               /* TODO */
     }
