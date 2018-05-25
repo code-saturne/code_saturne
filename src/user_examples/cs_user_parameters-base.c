@@ -276,7 +276,7 @@ cs_user_parameters(void)
   cs_field_set_key_int(CS_F_(rij), cs_field_key_id("clipping_id"), 1);
   cs_field_set_key_int(CS_F_(eps), cs_field_key_id("clipping_id"), 1);
 
-  /*! [param_var_rij_clipping */
+  /*! [param_var_rij_clipping] */
 
   /* Example: post-process the Q-criterion on the whole domain mesh */
   /*----------------------------------------------------------------*/
