@@ -136,7 +136,7 @@ if os.environ.get('QT_API', 'pyqt') == 'pyqt':
 
     def from_qvariant(qobj=None, convfunc=None):
         """Convert QVariant object to Python object
-        This is a transitional function from PyQt API #1 (QVariant exist)
+        This is a transitional function from PyQt API #1 (QVariant exists)
         to PyQt API #2 and Pyside (QVariant does not exist)"""
         if PYQT_API_1:
             assert isinstance(convfunc, collections.Callable)
@@ -151,15 +151,16 @@ if os.environ.get('QT_API', 'pyqt') == 'pyqt':
             else:
                 return convfunc(qobj)
         else:
-            if convfunc in TEXT_TYPES or convfunc is to_text_string:
-                return str(qobj)
-            elif convfunc is int:
-                return int(qobj)
-            elif convfunc is float:
-                try:
-                    return float(qobj)
-                except Exception:
-                    return locale.atof(qobj)
+            if (qobj):
+                if convfunc in TEXT_TYPES or convfunc is to_text_string:
+                    return str(qobj)
+                elif convfunc is int:
+                    return int(qobj)
+                elif convfunc is float:
+                    try:
+                        return float(qobj)
+                    except Exception:
+                        return locale.atof(qobj)
             else:
                 return qobj
 
