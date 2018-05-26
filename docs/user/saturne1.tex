@@ -60,7 +60,7 @@ elements) and may have structural non-conformities (hanging nodes).
 \CS is composed of two main elements and an optional GUI,
 as shown on \figurename~\ref{fig:elements}:
 \begin{itemize}
-\item the Kernel module is the numerical solver
+\item the Solver module is the numerical solver
 \item the Preprocessor module is in charge of mesh import\\
 \end{itemize}
 
@@ -275,7 +275,7 @@ In the standard cases, \texttt{RESU/<run\_id>} contains a
 restart files, a \texttt{monitoring} directory for the files of chronological
 record of the results at specific locations (probes),\\
 \texttt{preprocessor.log} and \texttt{listing} files reporting the
-Preprocessor and the Kernel execution. All files from the \texttt{DATA}
+Preprocessor and the Solver execution. All files from the \texttt{DATA}
 directory not in subdirectories are also copied. For a tracing of
 the modifications in prior calculations, the user-subroutines used in
 a calculation are stored in a \texttt{src\_saturne} subdirectory. The data files
@@ -311,7 +311,7 @@ version of the code, ...).
 &                                   &calculation\\
 &        \texttt{runcase}           &Copy of the launch script used for the calculation\\
 &        \texttt{preprocessor.log}  &Execution report for the \CS Preprocessor\\
-&        \texttt{listing}           &Execution report for the Kernel module of \CS\\
+&        \texttt{listing}           &Execution report for the Solver module of \CS\\
 &        \texttt{summary}           &General information (machine, user, version, ...)\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/SCRIPTS:}}&{\bf Launch script}\\
 &        \texttt{runcase}           &Launch script (which may contain batch
@@ -373,7 +373,7 @@ file being directly placed in \texttt{STUDY/RESU\_COUPLING/}\emph{\texttt{YYYYMM
 \end{table}
 
 %==================================
-\subsubsection{\CS Kernel library files}
+\subsubsection{\CS Solver library files}
 %==================================
 \label{sec:prg_library}%
 Information about the content of the \CS base directories is given below. It
@@ -393,20 +393,11 @@ contain the libraries and compiled executables respectively.
 The data files (for instance thermochemical data) are located in the
 directory \texttt{data}.
 
-The user subroutines are available in the directory \texttt{users},
-under subdirectories corresponding to each module:
-\texttt{base} (general routines),
-\texttt{cfbl} (compressible flows),
-\texttt{cogz} (gas combustion),
-\texttt{cplv} (pulverised coal combustion),
-\texttt{ctwr} (cooling towers modelling),
-\texttt{elec} (electric module),
-\texttt{fuel} (heavy fuel oil combustion module),
-\texttt{lagr} (Lagrangian module,
-\texttt{pprt} (general specific physics routines) and
-\texttt{rayt} (radiative heat transfer).
+The user subroutines are available in the directory \texttt{src/user},
+with examples in \texttt{src/user\_examples}.
 The case preparer command \texttt{code\_saturne~create} copies all these files
-in the user directory \texttt{SRC/REFERENCE} during the case preparation.
+in the user directories \texttt{SRC/REFERENCE} and \texttt{SRC/EXAMPLES}
+during the case preparation.
 
 The directory \texttt{bin} contains an example of the launch script, the
 compilation parameter files and various utility programs.
@@ -692,8 +683,8 @@ accumulate and may hinder the correct operation of the machine.\\
 %==================================
 \label{sec:prg_executionmodes}%
 As explained before, \CS is composed of two main modules, the Preprocessor and the
-Kernel (solver). The Preprocessor reads the meshes.
-The resulting data is transferred to the Kernel through specific
+Solver. The Preprocessor reads the meshes.
+The resulting data is transferred to the Solver through specific
 files, named \texttt{mesh\_input}, or placed in a directory of that name when multiple meshes are imported. In a standard calculation, the files
 are not copied from the temporary execution directory to the results directory,
 as they have no interest for data analysis, and are considered ``internal''
@@ -709,10 +700,10 @@ either a {mesh\_input} from a previous Preprocessor run or a {mesh\_output}
 from a previous solver run), the script will copy or link it to
 the execution directory, and the Preprocessor will not be rerun.
 
-\hspace*{0.5cm} If \texttt{domain.exec\_kernel = False}, the Kernel will not
+\hspace*{0.5cm} If \texttt{domain.exec\_kernel = False}, the Solver will not
 be run. This is useful when only the mesh import stage is required.
 
-In a similar manner, the Kernel accepts several command-line options relative to execution mode, notably \texttt{domain.solver\_args\_kernel = '--preprocess'} or \texttt{'--quality'}, restricting the run to the preprocessing stages, or preprocessing stages augmented by mesh quality criteria computation. Whenever the preprocessing stages defined lead to an effective mesh modification, a \texttt{mesh\_output} file is produced, which can be used directly as an input for a successive calculation.
+In a similar manner, the Solver accepts several command-line options relative to execution mode, notably \texttt{domain.solver\_args = '--preprocess'} or \texttt{'--quality'}, restricting the run to the preprocessing stages, or preprocessing stages augmented by mesh quality criteria computation. Whenever the preprocessing stages defined lead to an effective mesh modification, a \texttt{mesh\_output} file is produced, which can be used directly as an input for a successive calculation.
 
 The GUI presents the range of options in the form of four execution modes:
 
@@ -720,7 +711,7 @@ The GUI presents the range of options in the form of four execution modes:
 
 \item {\bf mesh import}: the Preprocessor is run to transform one or more meshes into an internal \texttt{mesh\_input} file (or directory in case of multiple meshes).
 
-\item {\bf mesh preprocessing}: the Kernel is run in preprocessing mode, so as to handle all mesh modification operations, such as joining, periodicity, smoothing, \emph{etc.} If a \texttt{mesh\_input} file or directory is provided, it is used directly; otherwise, mesh import is run first.
+\item {\bf mesh preprocessing}: the Solver is run in preprocessing mode, so as to handle all mesh modification operations, such as joining, periodicity, smoothing, \emph{etc.} If a \texttt{mesh\_input} file or directory is provided, it is used directly; otherwise, mesh import is run first.
 
 \item {\bf mesh quality criteria}: similar to preprocessing, with the addition of mesh quality criteria computation, and post-processing output of those criteria. Some additional mesh consistency checks are also run.
 
@@ -734,7 +725,7 @@ not to define any preprocessing operations, so as to skip the preprocessing stag
 It is encouraged to separate the preprocessing and calculation runs, as
 this not only speeds up calculations, but also ensures that the mesh is identical, regardless of the architecture or number of processors it is run on. Indeed, when running the same pre-processing stages such as mesh joining on a different machine or a different number of processors, very minor floating-point truncation errors may lead to very slightly different preprocessed meshes.
 
-Note also that mesh partitioning is done directly by the Kernel.
+Note also that mesh partitioning is done directly by the Solver.
 Depending on the partitioning algorithm used, a partition map
 (\texttt{partition\_output/domain\_number\_*}) may be output,
 allowing the use of the same partitioning in future calculations.
@@ -1025,7 +1016,8 @@ Zone selection:    & colors (always) and named groups\\
 Compatibility:     & \ideas (\emph{Master Series} 5 to 9, \emph{NX Series} 10 to 12)
                      at least\\
 \hline
-Documentation:     & Online I-deas NX Series documentation\\
+Documentation:     & Online I-deas NX Series documentation, and\\
+                     \url{https://docs.plm.automation.siemens.com/tdoc/nx/10/nx_help/#uid:index_advanced:xid602249:id625716:id625821}
 \hline
 \end{tabular}
 
@@ -1234,9 +1226,9 @@ Documentation:     & online documentation, also available at:
 
 Initially defined by EDF R\&D, this format (\emph{Mod\`ele d'\'echanges de Donn\'ees},
 or \emph{Model for Exchange of Data}) has been defined and maintained through
-a \med working group comprising members of EDF R\&D and CEA (the \CS team
-being represented). This is the reference format for the
-\href{http://www.opencascade.org/SALOME/Salome.html}{\emph SALOME} environment.
+a \med working group comprising members of EDF R\&D and CEA.
+This is the reference format for the
+\href{http://www.salome-platform.org/}{\emph SALOME} environment.
 This format is quite complete, allowing the definition of all ``classical''
 element types, in nodal or descending connectivity.
 It may handle polygonal faces and polyhedral cells,
@@ -1244,7 +1236,7 @@ as well as the definition of structured meshes.
 
 This format, which requires a library also depending on the free HDF5 library,
 allows both for reading and writing meshes with their attributes (``families'' of
-color/attribute and group combinations), as well as handling calculation data,
+group combinations), as well as handling calculation data,
 with the possibility (unused by \CS) of defining variables only on a subset
 (``profile'') of a mesh.
 
@@ -1252,7 +1244,7 @@ The \med library is available under a \href{http://www.gnu.org}{LGPL} license,
 and is even packaged in some Linux distributions
 (at least Debian and Ubuntu). \CS requires at least \med 3.0.2, which in turn
 requires HDF5 1.8. This format is upwards-compatible with \med 2.3,
-so files in that version of the format may be read, though not output.
+so old files in that version of the format may be read, though not output.
 
 \smallskip \noindent
 \begin{tabular}[top]{|p{4.5cm}%
@@ -1269,7 +1261,7 @@ Volume elements:      & tetrahedra, pyramids, prisms, hexahedra, simple polyhedr
 \hline
 Zone selection:       & element families ({\it i.e.} colors and groups)\\
 \hline
-Input compatibility:  & \med 2.3, 3.0, 3.1, or 3.2
+Input compatibility:  & \med 2.3, 3.0 to 3.3
                      (only unstructured nodal connectivity is supported)\\
 \hline
 Output compatibility: & \med 3.0 and above \\
@@ -1336,7 +1328,7 @@ documentation make it clear that a field must be defined on all elements
 of maximum dimension in a zone, not on all elements.}
 
 Though many tools support CGNS, that support was often quite disappointing,
-at least for unstructured meshes, although it has improved in recent years.
+at least for unstructured meshes, until recent years.
 Some editors seem to use different means to mark zones to associate with
 boundary conditions than the ones recommended in the CGNS documentation, and
 some behaviours are worse. Also, many readers do not allow the user to
@@ -1373,7 +1365,7 @@ Documentation:        & See CGNS site: \url{http://www.cgns.org}\\
 
 This polyhedral format is the current CD-Adapco (SIEMENS) format, and is based on
 CD-Adapco's libccmio, which is based on ADF (the low-level file format
-used by CGNS prior to the shift to HDF-5). libccmio comes with a version
+used by CGNS prior to the shift to HDF5). libccmio comes with a version
 of ADF modified for performance, but also works with a standard version
 from CGNS.
 
@@ -1403,9 +1395,10 @@ As such, this formal may be useful for interoperability of data
 with a CCMIO-based tool-chain, but simultaneously using another output
 format to visualize possible error output is recommended.
 
-The CCMIO library is distributed freely by CD-Adapco upon demand.
+The CCMIO library is distributed by CD-Adapco to its clients upon demand.
 
-Use of the CGNS format should be preferred to this format.
+Use of the CGNS format should be preferred to this format when possible,
+and CGNS output is available in Star-CCM+ since version 12.06 at least.
 
 \smallskip \noindent
 \begin{tabular}[top]{|p{4.5cm}%
@@ -1487,8 +1480,7 @@ of hybrid meshes. The user is encouraged to export to CGNS, which
 does not have this limitation.
 
 Tools related to the \salome platform should preferably use
-\salome{}'s native \med format (export to \ideas universal is
-also possible, but has some limitations).
+\salome{}'s native \med format.
 
 %==================================
 \subsubsection{Meshing remarks}
@@ -1523,7 +1515,7 @@ whose output does not conform to the format specifications.
 \end{list}
 
 %==================================
-\subsection{Kernel command line options}
+\subsection{Solver command line options}
 %==================================
 \label{sec:prg_optappelnoy}%
 In the standard cases, the compilation of \CS and its execution are entirely
@@ -1531,7 +1523,7 @@ controlled by the launch script. The potential command line options are passed
 through user modifiable variables at the beginning of the \texttt{cs\_user\_scripts.py} file
 (this file may be copied from the \texttt{DATA/REFERENCE} to the \texttt{DATA} and edited).
 This way, the user only has to fill these variables and doesn't need
-to search deep in the script for the Kernel command line. For more advanced
+to search deep in the script for the Solver command line. For more advanced
 usage, the main options are described below:
 
 \begin{list}{$\bullet$}{}
@@ -1541,7 +1533,7 @@ is used to distinguish between different code instances launched together.
 
 \item \texttt{--mpi}: specifies that the calculation is running
 with MPI communications. The number of processors used will be determined
-automatically by the Kernel. With most MPI implementations, the
+automatically by the Solver. With most MPI implementations, the
 code will detect the presence of an MPI environment automatically, and
 this option is redundant. It is only kept for the rare case in which the
 MPI environment might not be detected.
@@ -1569,7 +1561,7 @@ operations to those implying MPI communications and does only one of each
 elementary operation, to avoid overfilling the MPI trace report.\\
 This command is to be placed in the \\texttt{domain.solver\_args} variable
 in the \texttt{cs\_user\_scripts.py} file to be added automatically to the
-Kernel command line.
+Solver command line.
 
 \item \texttt{--log n}: specifies the destination of the output for a
 single-processor calculation or for the processor of rank 0 in a parallel
@@ -1747,7 +1739,7 @@ following:
 \item Boundary conditions: definition of the boundary conditions for
       each variable. The colors of the boundary faces may be read
       directly from a ``preprocessor.log*'' files created by the \pcs
-      or a ``listing'' file from a previous Kernel run.
+      or a ``listing'' file from a previous Solver run.
 
 \item Numerical parameters: number and type of time step, advanced parameters
       for the numerical solution of the equations.
@@ -2483,7 +2475,7 @@ command lines passed to the Preprocessor module}.}
 
 {\em NOTE: when joining of faces or periodicity is used, two nodes closer
 than a certain (small) tolerance will be merged. Hence, due to numerical
-round-up errors, two different machines may yield different results.
+truncation errors, two different machines may yield different results.
 This might change the number of faces in the global
 domain\footnote{The number of cells will not be modified, it is always the sum of the
 number of cells of the different meshes} and make restart files
@@ -2758,12 +2750,12 @@ may thus lead to reduced performance.
 %==================================
 
 Importing meshes is done by the \pcs module, while and preprocessing
-is done mainly by the code Kernel (except for element orientation
+is done mainly by the code Solver (except for element orientation
 checking, which is done by the \pcs).
 
 The \pcs module of \CS reads the
 mesh file(s) (under any supported format) and translates the necessary
-information into a Kernel input file.
+information into a Solver input file.
 
 When multiple meshes are used, the \pcs is called once per mesh,
 and each resulting output is added in a \texttt{mesh\_input}
@@ -2886,7 +2878,7 @@ Under the indicated length ($10^{-15}$ by default), an edge is considered
 to be degenerate and its vertices will be merged after the transformation
 to descending connectivity. Degenerate edges and faces will thus be
 removed. Hence, the post-processed element does not change, but the
-Kernel may handle a prism where the preprocessor input contained a
+Solver may handle a prism where the preprocessor input contained a
 hexahedron with two identical vertex couples (and thus a face of zero
 surface). If the \pcs does not print any information relative to this
 type of correction, it means that it has not been necessary. To completely
@@ -2973,13 +2965,13 @@ same topology are merged: the initial presence of two layers of identical
 surface elements belonging to different groups would thus lead to
 a calculation mesh with faces belonging to two groups).
 
-\subsection{Files passed to the Kernel\label{sec:pcs:mode_comm}}
+\subsection{Files passed to the Solver\label{sec:pcs:mode_comm}}
 
-Data passed to the Kernel by the \pcs is transmitted using a
+Data passed to the Solver by the \pcs is transmitted using a
 binary file, using ``big endian'' data representation, named
 \texttt{mesh\_input} (or contained in a directory of that name).
 
-When using the \pcs for mesh verification, data for the Kernel
+When using the \pcs for mesh verification, data for the Solver
 is not always needed. In this case, the \texttt{--no-write} option may
 avoid creating a \pcs output file.
 
@@ -3234,20 +3226,20 @@ criteria.
 %==================================
 
 Graph partitioning (using one of the optional \metis or
-\scotch libraries) is done by the Kernel. Unless explicitly
+\scotch libraries) is done by the Solver. Unless explicitly
 deactivated, this stage produces one or several ``cell $\rightarrow$ domain''
 distribution files, named {\tt domain\_number\_\it{p}} for a partitioning on
 $p$ sub-domains, which may be read when starting a subsequent computation so as
 to avoid re-running that stage. These files are placed in a directory named
 {\tt partition\_output}.
 
-The Kernel redistributes data read in {\tt mesh\_input} based on the associated
+The Solver redistributes data read in {\tt mesh\_input} based on the associated
 (re-read or computed) partitioning, so there is no need to run any
 prior script when running on a different number of processors, although
 a previous partitioning may optionally be re-used.
 
 Without a graph-based partitioning library, or based on the user's choice,
-the Kernel will use a built-in partitioning using a space-filling curve
+the Solver will use a built-in partitioning using a space-filling curve
 (Z or Hilbert curve) technique. This usually leads to partitionings
 of lower quality than with graph partitioning, but parallel
 performance remains reasonable.
@@ -3289,7 +3281,7 @@ but repartitioning may also be forced or inhibited using the
 
 \subsection{Partitioner choice\label{sec:parall:part:partlib}}
 
-If the Kernel has been configured with both \ptscotch or \scotch and
+If the Solver has been configured with both \ptscotch or \scotch and
 \parmetis or \metis libraries, \ptscotch will be used by default\footnote{
 Though \parmetis will be chosen before serial \scotch in a parallel
 run}, but the user may force the selection of another partitioning
