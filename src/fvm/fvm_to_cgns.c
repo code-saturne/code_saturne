@@ -151,10 +151,14 @@ typedef struct {
  * CGNS writer structure
  *----------------------------------------------------------------------------*/
 
-typedef struct {
+struct _fvm_to_cgns_writer_t {
 
   char                   *name;            /* Writer name */
   char                   *filename;        /* associated CGNS file name */
+
+  const char             *basename;        /* pointer to portion of associated
+                                              file name without path prefix */
+
   int                     index;           /* index in associated CGNS file */
 
   int                     n_bases;         /* Number of CGNS bases */
@@ -166,13 +170,13 @@ typedef struct {
   int                    *time_steps;      /* Array of mesh time steps */
   double                 *time_values;     /* Array of mesh time values */
 
-  _Bool        is_open;            /* True if CGNS file is open */
+  bool         is_open;            /* True if CGNS file is open */
 
-  _Bool        discard_polygons;   /* Option to discard polygonal elements */
-  _Bool        discard_polyhedra;  /* Option to discard polyhedral elements */
+  bool         discard_polygons;   /* Option to discard polygonal elements */
+  bool         discard_polyhedra;  /* Option to discard polyhedral elements */
 
-  _Bool        divide_polygons;    /* Option to tesselate polygonal elements */
-  _Bool        divide_polyhedra;   /* Option to tesselate polygonal elements */
+  bool         divide_polygons;    /* Option to tesselate polygonal elements */
+  bool         divide_polyhedra;   /* Option to tesselate polygonal elements */
 
   int          rank;               /* Rank of current process in communicator */
   int          n_ranks;            /* Number of processes in communicator */
@@ -183,7 +187,13 @@ typedef struct {
   cs_lnum_t    min_block_size;     /* Minimum block size */
 #endif
 
-} fvm_to_cgns_writer_t;
+  /* Linked writers */
+
+  struct _fvm_to_cgns_writer_t  *mesh_writer;  /* Writer for mesh */
+
+};
+
+typedef struct _fvm_to_cgns_writer_t fvm_to_cgns_writer_t;
 
 /*----------------------------------------------------------------------------
  * Context structure for fvm_writer_field_helper_output_* functions.
@@ -209,6 +219,204 @@ static char _cgns_version_string[32] = "";
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Build a FVM to CGNS file writer structure.
+ *
+ * parameters:
+ *   name           <-- base output case name
+ *   postfix        <-- name postfix, or NULL
+ *   path           <-- base path, or NULL
+ *   reference      <-- reference whose attributes may be copied, or NULL
+ *                      (used for linked writers)
+ *   time_dependecy <-- indicates if and how meshes will change with time
+ *
+ * returns:
+ *   pointer to opaque CGNS writer structure.
+ *----------------------------------------------------------------------------*/
+
+static void *
+_create_writer(const char             *name,
+               const char             *postfix,
+               const char             *path,
+               fvm_to_cgns_writer_t   *reference,
+               fvm_writer_time_dep_t   time_dependency)
+{
+  int  filename_length, name_length, path_length;
+
+  fvm_to_cgns_writer_t  *w = NULL;
+
+  /* Initialize writer */
+
+  BFT_MALLOC(w, 1, fvm_to_cgns_writer_t);
+
+  /* Writer name */
+
+  name_length = strlen(name);
+  if (name_length == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Empty CGNS filename."));
+
+  if (postfix != NULL)
+    name_length += strlen(postfix);
+
+  BFT_MALLOC(w->name, name_length + 1, char);
+
+  strcpy(w->name, name);
+  if (postfix != NULL)
+    strcat(w->name, postfix);
+
+  for (int i = 0; i < name_length; i++) {
+    if (w->name[i] == ' ' || w->name[i] == '\t')
+      w->name[i] = '_';
+  }
+
+  /* Writer's associated filename(s) */
+
+  if (path != NULL)
+    path_length = strlen(path);
+  else
+    path_length = 0;
+  filename_length = path_length + name_length + strlen(".cgns") + 1;
+  BFT_MALLOC(w->filename, filename_length, char);
+
+  if (path != NULL) {
+    strcpy(w->filename, path);
+    w->basename = w->filename + strlen(path);
+  }
+  else {
+    w->filename[0] = '\0';
+    w->basename = w->filename;
+  }
+
+  strcat(w->filename, w->name);
+  strcat(w->filename, ".cgns");
+
+  /* CGNS Base structure */
+
+  w->n_bases = 0;
+  w->bases = NULL;
+
+  /* Mesh time dependency */
+
+  w->time_dependency = time_dependency;
+  w->n_time_steps = 0;
+  w->time_steps = NULL;
+  w->time_values = NULL;
+
+  w->is_open = false;
+
+  /* Other variables */
+
+  w->rank = 0;
+  w->n_ranks = 1;
+
+  w->discard_polygons = false;
+  w->discard_polyhedra = false;
+  w->divide_polygons = false;
+  w->divide_polyhedra = true;
+
+/* As CGNS does not handle polyhedral elements simply, polyhedra are
+ * automatically tesselated with tetrahedra and pyramids
+ * (adding a vertex near each polyhedron's center) unless discarded. */
+
+  /* Copy from reference if present) */
+
+  if (reference != NULL) {
+    w->discard_polygons = reference->discard_polygons;
+    w->divide_polygons = reference->divide_polygons;
+    w->discard_polyhedra = reference->discard_polyhedra;
+    w->divide_polyhedra = reference->divide_polyhedra;
+    w->rank = reference->rank;
+    w->n_ranks = reference->n_ranks;
+#if defined(HAVE_MPI)
+    w->comm = reference->comm;
+    w->min_rank_step = reference->min_rank_step;
+    w->min_block_size = reference->min_block_size;
+#endif
+  }
+
+  if (w->discard_polyhedra)
+    w->divide_polyhedra = false;
+  if (w->discard_polygons)
+    w->divide_polygons = false;
+
+  /* Open CNGS file(s) */
+
+  w->is_open = false;
+
+  w->index = -1;
+
+  /* Additional writers for linked files */
+
+  w->mesh_writer = NULL;
+
+  return w;
+}
+
+/*----------------------------------------------------------------------------
+ * Open a CGNS file.
+ *
+ * parameters:
+ *   writer     <-> CGNS writer structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_open_file(fvm_to_cgns_writer_t   *writer)
+{
+  if (writer->is_open)
+    return;
+
+  int fn = -1;
+
+  writer->index = -1;
+
+  if (writer->rank == 0) {
+
+    if (cg_open(writer->filename, CG_MODE_WRITE, &fn) != CG_OK)
+      bft_error(__FILE__, __LINE__, 0,
+                _("cg_open() failed to open file \"%s\" : \n%s"),
+                writer->filename, cg_get_error());
+
+  }
+
+#if defined(HAVE_MPI)
+  if (writer->n_ranks > 1)
+    MPI_Bcast(&fn, 1, MPI_INT, 0, writer->comm);
+#endif
+
+  writer->index = fn;
+
+  writer->is_open = true;
+}
+
+/*----------------------------------------------------------------------------
+ * Close a CGNS file.
+ *
+ * parameters:
+ *   writer     <-> CGNS writer structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_close_file(fvm_to_cgns_writer_t   *writer)
+{
+  if (writer->is_open == true) {
+
+    if (writer->rank == 0) {
+
+      if (cg_close(writer->index) != CG_OK)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("cg_close() failed to close file \"%s\" :\n%s"),
+                  writer->filename, cg_get_error());
+
+    }
+
+    writer->index = -1;
+
+  }
+
+  writer->is_open = false;
+}
 
 /*----------------------------------------------------------------------------
  * Return datatype matching cgsize_t
@@ -401,6 +609,60 @@ _base_id(const fvm_to_cgns_writer_t   *writer,
 }
 
 /*----------------------------------------------------------------------------
+ * Write a link to another CGNS file
+ *
+ * parameters:
+ *   writer   <-- pointer to associated writer.
+ *   base     <-- pointer to associated base data
+ *   nodename <-- name of node to link
+ *   filename <-- name of file to link to
+ *----------------------------------------------------------------------------*/
+
+static void
+_write_zone_link(fvm_to_cgns_writer_t      *writer,
+                 const fvm_to_cgns_base_t  *base,
+                 const char                *nodename,
+                 const char                *filename)
+{
+  if (writer->rank == 0) {
+
+    /* Simply add link */
+
+    int retval = cg_goto(writer->index,
+                         base->index,
+                         "Zone_t",
+                         1,
+                         "end");
+
+    if (retval != CG_OK)
+      bft_error(__FILE__, __LINE__, 0,
+                _("cg_goto() failed access requested Zone_t node:\n"
+                  "Associated writer: \"%s\"\n"
+                  "Associated mesh: \"%s\"\n%s"),
+                writer->name, base->name, cg_get_error());
+
+    size_t l = strlen(base->name) + strlen("Zone 1") + strlen(nodename) + 4;
+    char *name_in_file;
+    BFT_MALLOC(name_in_file, l+1, char);
+    snprintf(name_in_file, l, "/%s/%s/%s", base->name, "Zone 1", nodename);
+
+    retval = cg_link_write(nodename,
+                           filename,
+                           name_in_file);
+
+    BFT_FREE(name_in_file);
+
+    if (retval != CG_OK)
+      bft_error(__FILE__, __LINE__, 0,
+                _("cg_link_write() failed to create link %s\n"
+                  "Associated writer: \"%s\"\n"
+                  "Associated mesh: \"%s\"\n%s"),
+                nodename, writer->name, base->name, cg_get_error());
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Associate new time step with a CGNS writer.
  *
  * parameters:
@@ -453,7 +715,7 @@ _add_solution(fvm_to_cgns_writer_t        *writer,
   base->solutions[sol_id]->name = NULL;
 
   if (time_step < 0)
-    sprintf(sol_name, "Stationary (%s)",
+    sprintf(sol_name, "Steady (%s)",
             GridLocationName[location]);
   else
     sprintf(sol_name, "Solution %3d (%s)",
@@ -678,8 +940,6 @@ _add_zone(const fvm_nodal_t           *mesh,
               writer->name, base->name, cg_get_error());
 
   assert(zone_index == 1);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -760,6 +1020,7 @@ _define_section(const fvm_writer_section_t  *section,
  * parameters:
  *   w             <-- writer
  *   base          <-- associated CGNS base
+ *   grid_index    <-- associated grid index
  *   datatype      <-- output datatype
  *   cgns_datatype <-- output CGNS datatype
  *   coord_name    <-- name of coordinate
@@ -771,6 +1032,7 @@ _define_section(const fvm_writer_section_t  *section,
 static void
 _coord_output(const fvm_to_cgns_writer_t  *w,
               const fvm_to_cgns_base_t    *base,
+              int                          grid_index,
               cs_datatype_t                datatype,
               CGNS_ENUMT(DataType_t)       cgns_datatype,
               const char                  *coord_name,
@@ -816,26 +1078,40 @@ _coord_output(const fvm_to_cgns_writer_t  *w,
 
         assert(block_end > block_start);
 
-        retval = cg_coord_partial_write(w->index,
-                                        base->index,
-                                        zone_index,
-                                        cgns_datatype,
-                                        coord_name,
-                                        &partial_write_idx_start,
-                                        &partial_write_idx_end,
-                                        _values,
-                                        &coord_index);
+        /* Fixed mesh */
 
-        if (retval != CG_OK)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("%s() failed to write coords:\n"
-                      "Associated writer: \"%s\"\n"
-                      "Associated base: \"%s\"\n"
-                      "CGNS error:%s"),
-                    "cg_coord_partial_write",
-                    w->name, base->name, cg_get_error());
+        if (grid_index < 2) {
 
-        partial_write_idx_start = partial_write_idx_end + 1;
+          retval = cg_coord_partial_write(w->index,
+                                          base->index,
+                                          zone_index,
+                                          cgns_datatype,
+                                          coord_name,
+                                          &partial_write_idx_start,
+                                          &partial_write_idx_end,
+                                          _values,
+                                          &coord_index);
+
+          if (retval != CG_OK)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("%s() failed to write coords:\n"
+                        "Associated writer: \"%s\"\n"
+                        "Associated base: \"%s\"\n"
+                        "CGNS error:%s"),
+                      "cg_coord_partial_write",
+                      w->name, base->name, cg_get_error());
+
+          partial_write_idx_start = partial_write_idx_end + 1;
+
+        }
+
+        /* Deforming mesh */
+
+        else {
+
+          /* TODO */
+
+        }
 
       }
 
@@ -850,22 +1126,29 @@ _coord_output(const fvm_to_cgns_writer_t  *w,
 
   if (w->n_ranks == 1) {
 
-    int retval = cg_coord_write(w->index,
-                                base->index,
-                                zone_index,
-                                cgns_datatype,
-                                coord_name,
-                                buffer,
-                                &coord_index);
+    /* Fixed or first coordinates */
 
-    if (retval != CG_OK)
-      bft_error(__FILE__, __LINE__, 0,
-                _("%s() failed to write coords:\n"
-                  "Associated writer: \"%s\"\n"
-                  "Associated base: \"%s\"\n"
-                  "CGNS error:%s"),
-                "cg_coord_write",
-                w->name, base->name, cg_get_error());
+    if (grid_index < 2) {
+
+      int retval = cg_coord_write(w->index,
+                                  base->index,
+                                  zone_index,
+                                  cgns_datatype,
+                                  coord_name,
+                                  buffer,
+                                  &coord_index);
+
+      if (retval != CG_OK)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("%s() failed to write coords:\n"
+                    "Associated writer: \"%s\"\n"
+                    "Associated base: \"%s\"\n"
+                    "CGNS error:%s"),
+                  "cg_coord_write",
+                  w->name, base->name, cg_get_error());
+
+    }
+
   }
 }
 
@@ -1028,12 +1311,14 @@ _field_output(void           *context,
  *   writer        <-- pointer to associated writer.
  *   mesh          <-- pointer to nodal mesh structure that should be written.
  *   base          <-- pointer to CGNS base structure.
+ *   grid_index    <-- grid index
  *----------------------------------------------------------------------------*/
 
 static void
 _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
                         const fvm_nodal_t     *mesh,
-                        fvm_to_cgns_base_t    *base)
+                        fvm_to_cgns_base_t    *base,
+                        int                    grid_index)
 {
   cs_block_dist_info_t  bi;
 
@@ -1166,6 +1451,7 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
 
     _coord_output(writer,
                   base,
+                  grid_index,
                   datatype,
                   cgns_datatype,
                   coord_name[j],
@@ -1192,19 +1478,19 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
  *   writer        <-- pointer to associated writer.
  *   mesh          <-- pointer to nodal mesh structure.
  *   base          <-- pointer to CGNS base structure.
+ *   grid_index    <-- associated grid index
  *----------------------------------------------------------------------------*/
 
 static void
 _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
                         const fvm_nodal_t     *mesh,
-                        fvm_to_cgns_base_t    *base)
+                        fvm_to_cgns_base_t    *base,
+                        int                    grid_index)
 {
-  int  coord_index;
   cs_lnum_t   i, j;
-  cgsize_t  idx_start, idx_end;
+  cs_datatype_t datatype;
   CGNS_ENUMT(DataType_t)  cgns_datatype;
 
-  int  zone_index = 1;
   size_t  stride = (size_t)mesh->dim;
   cs_lnum_t   n_extra_vertices = 0;
   cs_coord_t  *extra_vertex_coords = NULL;
@@ -1218,15 +1504,17 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
                                      "CoordinateY",
                                      "CoordinateZ"};
 
-  int  retval = CG_OK;
-
   assert(writer->is_open == true);
   assert(base != NULL);
 
-  if (sizeof(cs_coord_t) == sizeof(double))
+  if (sizeof(cs_coord_t) == sizeof(double)) {
+    datatype = CS_DOUBLE;
     cgns_datatype = CGNS_ENUMV(RealDouble);
-  else
+  }
+  else {
+    datatype = CS_FLOAT;
     cgns_datatype = CGNS_ENUMV(RealSingle);
+  }
 
   /* Compute extra vertex coordinates if present */
 
@@ -1237,7 +1525,7 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
 
   extra_vertex_coords = fvm_writer_extra_vertex_coords(mesh, n_extra_vertices);
 
-  BFT_MALLOC(coords_tmp, CS_MAX(n_vertices, n_extra_vertices), cs_coord_t);
+  BFT_MALLOC(coords_tmp, n_vertices + n_extra_vertices, cs_coord_t);
 
   /* Loop on dimension */
 
@@ -1254,61 +1542,22 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
         coords_tmp[i] = vertex_coords[i*stride + j];
     }
 
+    for (i = 0 ; i < n_extra_vertices ; i++)
+      coords_tmp[n_vertices + i] = extra_vertex_coords[i*stride + j];
+
     /* Write grid coordinates */
 
     if (coords_tmp != NULL) {
 
-      idx_start = 1;
-      idx_end = mesh->n_vertices;
-
-      retval = cg_coord_partial_write(writer->index,
-                                      base->index,
-                                      zone_index,
-                                      cgns_datatype,
-                                      coord_name[j],
-                                      &idx_start,
-                                      &idx_end,
-                                      coords_tmp,
-                                      &coord_index);
-    }
-
-    if (retval != CG_OK)
-      bft_error(__FILE__, __LINE__, 0,
-                _("%s() failed to write coords:\n"
-                  "Associated writer: \"%s\"\n"
-                  "Associated base: \"%s\"\n"
-                  "Associated zone index: \"%i\"\n%s"),
-                "cg_coord_partial_write",
-                writer->name, base->name, zone_index, cg_get_error());
-
-    /* Extra vertex coordinates */
-
-    for (i = 0 ; i < n_extra_vertices ; i++)
-      coords_tmp[i] = extra_vertex_coords[i*stride + j];
-
-    if (n_extra_vertices > 0) {
-
-      idx_start = mesh->n_vertices + 1;
-      idx_end = mesh->n_vertices + n_extra_vertices;
-
-      retval = cg_coord_partial_write(writer->index,
-                                      base->index,
-                                      zone_index,
-                                      cgns_datatype,
-                                      coord_name[j],
-                                      &idx_start,
-                                      &idx_end,
-                                      coords_tmp,
-                                      &coord_index);
-
-      if (retval != CG_OK)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("%s() failed to write coords:\n"
-                    "Associated writer: \"%s\"\n"
-                    "Associated base: \"%s\"\n"
-                    "Associated zone index: \"%i\"\n%s"),
-                  "cg_coord_partial_write",
-                  writer->name, base->name, zone_index, cg_get_error());
+      _coord_output(writer,
+                    base,
+                    grid_index,
+                    datatype,
+                    cgns_datatype,
+                    coord_name[j],
+                    1,
+                    n_vertices + n_extra_vertices + 1,
+                    coords_tmp);
 
     }
 
@@ -1318,7 +1567,6 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
 
   if (extra_vertex_coords != NULL)
     BFT_FREE(extra_vertex_coords);
-
 }
 
 #if defined(HAVE_MPI)
@@ -2624,10 +2872,11 @@ fvm_to_cgns_version_string(int string_index,
  *   divide_polygons     tesselate polygons with triangles
  *   adf                 use ADF file type
  *   hdf5                use HDF5 file type (default if available)
+ *   links               split output to separate files using links
  *
- * As CGNS does not handle polyhedral elements, polyhedra are automatically
- * tesselated with tetrahedra and pyramids (adding a vertex near each
- * polyhedron's center) unless discarded.
+ * As CGNS does not handle polyhedral elements in a simple manner,
+ * polyhedra are automatically tesselated with tetrahedra and pyramids
+ * (adding a vertex near each polyhedron's center) unless discarded.
  *
  * parameters:
  *   name           <-- base output case name.
@@ -2654,72 +2903,13 @@ fvm_to_cgns_init_writer(const char             *name,
                         fvm_writer_time_dep_t   time_dependency)
 #endif
 {
-  int  i, writer_index;
-  int  filename_length, name_length, path_length;
   bool force_adf = false, force_hdf5 = false;
 
-  fvm_to_cgns_writer_t  *writer = NULL;
-
-  /* Initialize writer */
-
-  BFT_MALLOC(writer, 1, fvm_to_cgns_writer_t);
-
-  /* Mesh time dependency */
-
-  writer->time_dependency = time_dependency;
-
-  /* Writer name */
-
-  name_length = strlen(name);
-  if (name_length == 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Empty CGNS filename."));
-  BFT_MALLOC(writer->name, name_length + 1, char);
-  strcpy(writer->name, name);
-
-  for (i = 0; i < name_length; i++) {
-    if (writer->name[i] == ' ' || writer->name[i] == '\t')
-      writer->name[i] = '_';
-  }
-
-  /* Writer's associated filename */
-
-  if (path != NULL)
-    path_length = strlen(path);
-  else
-    path_length = 0;
-  filename_length = path_length + name_length + strlen(".cgns") + 1;
-  BFT_MALLOC(writer->filename, filename_length, char);
-
-  if (path != NULL)
-    strcpy(writer->filename, path);
-  else
-    writer->filename[0] = '\0';
-
-  strcat(writer->filename, writer->name);
-  strcat(writer->filename, ".cgns");
-
-  /* CGNS Base structure */
-
-  writer->n_bases = 0;
-  writer->bases = NULL;
-
-  /* Other variables */
-
-  writer->n_time_steps = 0;
-  writer->time_steps = NULL;
-  writer->time_values = NULL;
-  writer->rank = 0;
-  writer->n_ranks = 1;
-
-  writer->discard_polygons = false;
-  writer->discard_polyhedra = false;
-  writer->divide_polygons = false;
-  writer->divide_polyhedra = true;
-
-/* As CGNS does not handle polyhedral elements, polyhedra are automatically
- * tesselated with tetrahedra and pyramids (adding a vertex near each
- * polyhedron's center) unless discarded. */
+  fvm_to_cgns_writer_t  *writer = _create_writer(name,
+                                                 NULL,
+                                                 path,
+                                                 NULL,
+                                                 time_dependency);
 
 #if defined(HAVE_MPI)
   {
@@ -2741,6 +2931,8 @@ fvm_to_cgns_init_writer(const char             *name,
 #endif /* defined(HAVE_MPI) */
 
   /* Parse options */
+
+  bool use_links = false;
 
   if (options != NULL) {
     int i1, i2, l_opt;
@@ -2772,6 +2964,10 @@ fvm_to_cgns_init_writer(const char             *name,
                && (strncmp(options + i1, "hdf5", l_opt) == 0))
         force_hdf5 = false;
 
+      else if (   (l_opt == 5)
+               && (strncmp(options + i1, "links", l_opt) == 0))
+        use_links = true;
+
       for (i1 = i2 + 1; i1 < l_tot && options[i1] == ' '; i1++);
     }
   }
@@ -2781,33 +2977,21 @@ fvm_to_cgns_init_writer(const char             *name,
   if (writer->discard_polygons)
     writer->divide_polygons = false;
 
-  /* Open CNGS file */
+  /* CNGS file type options */
 
-  writer->is_open = false;
+  if (force_adf == true)
+    cg_set_file_type(CG_FILE_ADF);
 
-  if (writer->rank == 0) {
+  if (force_hdf5 == true)
+    cg_set_file_type(CG_FILE_HDF5);
 
-    if (force_adf == true)
-      cg_set_file_type(CG_FILE_ADF);
+  /* Additional writers for linked files */
 
-    if (force_hdf5 == true)
-      cg_set_file_type(CG_FILE_HDF5);
-
-    if (cg_open(writer->filename, CG_MODE_WRITE, &writer_index) != CG_OK)
-      bft_error(__FILE__, __LINE__, 0,
-                _("cg_open() failed to open file \"%s\" : \n%s"),
-                writer->filename, cg_get_error());
-
-    writer->is_open = true;
-
+  if (   use_links
+      && writer->time_dependency < FVM_WRITER_TRANSIENT_CONNECT) {
+    writer->mesh_writer = _create_writer(name, "_mesh", path, writer,
+                                         FVM_WRITER_FIXED_MESH);
   }
-
-#if defined(HAVE_MPI)
-  if (writer->n_ranks > 1)
-    MPI_Bcast(&writer_index, 1, MPI_INT, 0, writer->comm);
-#endif
-
-  writer->index = writer_index;
 
   return writer;
 }
@@ -2825,42 +3009,31 @@ fvm_to_cgns_init_writer(const char             *name,
 void *
 fvm_to_cgns_finalize_writer(void  *this_writer_p)
 {
-  int i;
-
   fvm_to_cgns_writer_t  *writer
                         = (fvm_to_cgns_writer_t *)this_writer_p;
 
   assert(writer != NULL);
 
-  if (writer->rank == 0) {
+  if (writer->mesh_writer != NULL)
+    writer->mesh_writer = fvm_to_cgns_finalize_writer(writer->mesh_writer);
+
+  if (writer->rank == 0 && writer->index > -1) {
 
     if (writer->bases != NULL) {
 
       /* Create index for time-dependent data */
-      /*--------------------------------------*/
 
       _create_timedependent_data(writer);
 
     }
 
     /* Close CGNS File */
-    /*-----------------*/
-
-    if (writer->is_open == true) {
-
-      if (cg_close(writer->index) != CG_OK)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("cg_close() failed to close file \"%s\" :\n%s"),
-                  writer->filename, cg_get_error());
-
-    }
 
   } /* End if rank = 0 */
 
-  /* Free structures */
-  /*-----------------*/
+  _close_file(writer);
 
-  /* Free names */
+  /* Free structures */
 
   BFT_FREE(writer->name);
   BFT_FREE(writer->filename);
@@ -2869,7 +3042,7 @@ fvm_to_cgns_finalize_writer(void  *this_writer_p)
 
   /* Free fvm_to_cgns_base structure */
 
-  for (i = 0; i < writer->n_bases; i++)
+  for (int i = 0; i < writer->n_bases; i++)
     writer->bases[i] = _del_base(writer->bases[i]);
 
   BFT_FREE(writer->bases);
@@ -2956,6 +3129,9 @@ fvm_to_cgns_set_mesh_time(void     *this_writer_p,
     writer->time_steps[n_vals - 1] = time_step;
   }
 
+  if (writer->mesh_writer != NULL)
+    _close_file(writer->mesh_writer);
+
 }
 
 /*----------------------------------------------------------------------------
@@ -3025,8 +3201,11 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
   char  base_name[FVM_CGNS_NAME_SIZE+1];
   int   base_index;
 
+  int grid_index = 1;
   int section_id = 0;
   cs_gnum_t   global_counter = 0;
+
+  bool new_base = true;
 
   const fvm_writer_section_t  *export_section = NULL;
   fvm_writer_section_t  *export_list = NULL;
@@ -3038,6 +3217,8 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
 
   /* Initialization */
   /*----------------*/
+
+  _open_file(writer);
 
   /* Clean mesh->name */
 
@@ -3053,8 +3234,15 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
     base_index = _add_base(writer,
                            base_name,
                            mesh);
+  else
+    new_base = false;
 
   base = writer->bases[base_index - 1];
+
+  /* When using a linked mesh file, main output to that file */
+
+  if (writer->mesh_writer)
+    fvm_to_cgns_export_nodal(writer->mesh_writer, mesh);
 
   /* Build list of sections that are used here, in order of output */
 
@@ -3070,32 +3258,53 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
   /* Create a zone */
   /*---------------*/
 
-  _add_zone(mesh,
-            writer,
-            base,
-            export_list);
+  if (new_base || writer->time_dependency > FVM_WRITER_TRANSIENT_COORDS)
+    _add_zone(mesh,
+              writer,
+              base,
+              export_list);
 
   /* Vertex coordinates */
   /*--------------------*/
 
+  if (writer->mesh_writer != NULL) {
+
+    /* Simply add link if mesh written in separate file */
+
+    _write_zone_link(writer,
+                     base,
+                     "GridCoordinates",
+                     writer->mesh_writer->basename);
+
+  }
+  else {
+
 #if defined(HAVE_MPI)
 
-  if (n_ranks > 1)
-    _export_vertex_coords_g(writer,
-                            mesh,
-                            base);
+    if (n_ranks > 1)
+      _export_vertex_coords_g(writer,
+                              mesh,
+                              base,
+                              grid_index);
 
 #endif /* HAVE_MPI */
 
-  if (n_ranks == 1)
-    _export_vertex_coords_l(writer,
-                            mesh,
-                            base);
+    if (n_ranks == 1)
+      _export_vertex_coords_l(writer,
+                              mesh,
+                              base,
+                              grid_index);
+
+  }
 
   /* Element connectivity */
   /*----------------------*/
 
-  export_section = export_list;
+  if (   new_base
+      || writer->time_dependency ==  FVM_WRITER_TRANSIENT_CONNECT)
+    export_section = export_list;
+  else
+    export_section = NULL;
 
   while (export_section != NULL) {
 
@@ -3104,6 +3313,23 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
     /* update section_id (used in section name) */
 
     section_id++;
+
+    /* Simply add link if mesh written in separate file */
+
+    if (writer->mesh_writer != NULL) {
+      char section_name[FVM_CGNS_NAME_SIZE + 1];
+      CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
+      _define_section(export_section, section_id, section_name, &cgns_elt_type);
+
+      _write_zone_link(writer,
+                       base,
+                       section_name,
+                       writer->mesh_writer->basename);
+
+      export_section = export_section->next;
+
+      continue;
+    }
 
     /* Output for strided (regular) element types */
     /*--------------------------------------------*/
@@ -3473,7 +3699,22 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
 
   if (rank == 0)
     BFT_FREE(field_label);
+}
 
+/*----------------------------------------------------------------------------
+ * Flush files associated with a given writer.
+ *
+ * parameters:
+ *   this_writer_p    <-- pointer to associated writer
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_to_cgns_flush(void  *this_writer_p)
+{
+  fvm_to_cgns_writer_t *w = (fvm_to_cgns_writer_t *)this_writer_p;
+
+  if (w->mesh_writer != NULL)
+    _close_file(w->mesh_writer);
 }
 
 /*----------------------------------------------------------------------------*/

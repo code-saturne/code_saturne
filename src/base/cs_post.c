@@ -2391,11 +2391,16 @@ _cs_post_write_displacements(int     nt_cur_abs,
 
       writer = _cs_post_writers + post_mesh->writer_id[j];
 
-      if (writer->active == 1) {
+      if (writer->writer == NULL)
+        continue;
+
+      fvm_writer_time_dep_t time_dep = fvm_writer_get_time_dep(writer->writer);
+
+      if (writer->active == 1 && time_dep == FVM_WRITER_FIXED_MESH) {
 
         fvm_writer_export_field(writer->writer,
                                 post_mesh->exp_mesh,
-                                _("displacement"),
+                                "displacement",
                                 FVM_WRITER_PER_NODE,
                                 3,
                                 CS_INTERLACE,
@@ -6942,11 +6947,8 @@ cs_post_init_error_writer_cells(void)
 {
   int mesh_id = 0;
 
-  const cs_mesh_t *mesh = cs_glob_mesh;
-
   const int writer_id = CS_POST_WRITER_ERRORS;
   const char *mesh_name = N_("Calculation domain");
-  cs_post_mesh_t *post_mesh = NULL;
 
   cs_post_init_error_writer();
   cs_post_activate_writer(writer_id, 1);

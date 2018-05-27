@@ -6,6 +6,11 @@ User changes:
 
 - Allow joining of meshes including isolated faces.
 
+Architectural changes:
+
+- Add CGNS writer "links" option to write mesh data in a separate file,
+  mapped transparently in the main file through CGNS links.
+
 Release 5.2.0 - March 30, 2018
 ------------------------------
 
@@ -88,7 +93,6 @@ Architectural changes:
 - CFD_Study: translate from Python2 to 3.
 
 Bug fixes:
-
 
 - Fix spurious mapping of previous mass flux with order 1 in time scheme.
 

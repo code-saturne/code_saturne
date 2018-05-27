@@ -174,7 +174,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     "3.1 +",
     (  FVM_WRITER_FORMAT_USE_EXTERNAL
      | FVM_WRITER_FORMAT_HAS_POLYGON),
-    FVM_WRITER_FIXED_MESH,
+    FVM_WRITER_TRANSIENT_COORDS,
     0,                                 /* dynamic library count */
     NULL,                              /* dynamic library */
     NULL,                              /* dynamic library name */

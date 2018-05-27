@@ -101,10 +101,11 @@ fvm_to_cgns_version_string(int string_index,
  *   divide_polygons     tesselate polygons with triangles
  *   adf                 use ADF file type
  *   hdf5                use HDF5 file type (default if available)
+ *   links               split output to separate files using links
  *
- * As CGNS does not handle polyhedral elements, polyhedra are automatically
- * tesselated with tetrahedra and pyramids (adding a vertex near each
- * polyhedron's center) unless discarded.
+ * As CGNS does not handle polyhedral elements in a simple manner,
+ * polyhedra are automatically tesselated with tetrahedra and pyramids
+ * (adding a vertex near each polyhedron's center) unless discarded.
  *
  * parameters:
  *   name           <-- base output case name.
@@ -230,6 +231,16 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
                          int                     time_step,
                          double                  time_value,
                          const void       *const field_values[]);
+
+/*----------------------------------------------------------------------------
+ * Flush files associated with a given writer.
+ *
+ * parameters:
+ *   this_writer_p    <-- pointer to associated writer
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_to_cgns_flush(void  *this_writer_p);
 
 /*----------------------------------------------------------------------------*/
 
