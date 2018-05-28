@@ -69,11 +69,12 @@ implicit none
 
 ! Local variables
 
-integer       iscal , id, ityloc, itycat, ifcvsl, pflag
-integer       ii
-integer       iok
-integer       f_id
-integer       ivisph, iest
+integer          iscal , id, ityloc, itycat, ifcvsl, pflag
+integer          ii
+integer          iok
+integer          f_id
+integer          ivisph, iest
+integer          key_buoyant_id, is_buoyant_fld
 
 double precision gravn2
 
@@ -96,6 +97,9 @@ endif
 !===============================================================================
 ! Initialization
 !===============================================================================
+
+! Key id for buoyant field (inside the Navier Stokes loop)
+call field_get_key_id("is_buoyant", key_buoyant_id)
 
 ! Determine itycor now that irccor is known (iturb/itytur known much earlier)
 ! type of rotation/curvature correction for turbulent viscosity models
@@ -474,6 +478,11 @@ endif
 if (nscal.ge.1) then
   do ii = 1, nscal
     if (isso2t(ii).gt.0) then
+      ! For buoyant scalars, save the current user source term
+      call field_get_key_int(ivarfl(isca(ii)), key_buoyant_id, is_buoyant_fld)
+      if (is_buoyant_fld.eq.1) then
+        call add_source_term_field(ivarfl(isca(ii)))
+      endif
       call add_source_term_prev_field(ivarfl(isca(ii)))
     endif
     ! Only usefull for Min/Max limiter

@@ -109,6 +109,7 @@ integer          iok   , nfld  , f_id  , f_dim  , f_type
 integer          nbccou
 integer          ntrela
 integer          icmst
+integer          st_id
 
 integer          isvhb, iz
 integer          ii
@@ -623,8 +624,16 @@ do f_id = 0, nfld - 1
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
     call field_current_to_previous(f_id)
+
+    ! For buoyant scalar with source termes, current to previous for them
+    call field_get_key_int(f_id, kst, st_id)
+    if (st_id .ge.0) then
+      call field_current_to_previous(st_id)
+    endif
   endif
 enddo
+
+
 
 if (ippmod(idarcy).eq.1) then
 
