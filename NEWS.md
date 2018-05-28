@@ -6,6 +6,13 @@ User changes:
 
 - Allow joining of meshes including isolated faces.
 
+Numerics:
+
+- Add choice of inexact (flexible) preconditioned congugate gradient.
+  * When using multiple threads and multigrid preconditioning with a
+    Gauss-Seidel smoother, this choice is set by default over the
+    standard preconditioned congugate gradient.
+
 Architectural changes:
 
 - Add CGNS writer "links" option to write mesh data in a separate file,

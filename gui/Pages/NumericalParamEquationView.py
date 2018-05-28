@@ -122,6 +122,7 @@ class SolverChoiceDelegate(QItemDelegate):
         mg = index.model().dataSolver[index.row()]['mg']
         editor.addItem("Automatic")
         editor.addItem("Conjugate gradient")
+        editor.addItem("Inexact conjugate gradient")
         editor.addItem("Jacobi")
         editor.addItem("BiCGstab")
         editor.addItem("BiCGstab2")
@@ -136,9 +137,17 @@ class SolverChoiceDelegate(QItemDelegate):
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"automatic": 0, "conjugate_gradient": 1, "jacobi": 2,
-                "bi_cgstab": 3, "bi_cgstab2": 4, "gmres": 5, "multigrid": 9,
-                "gauss_seidel": 6, "symmetric_gauss_seidel": 7, "PCR3": 8}
+        dico = {"automatic": 0,
+                "conjugate_gradient": 1,
+                "inexact_conjugate_gradient": 2,
+                "jacobi": 3,
+                "bi_cgstab": 4,
+                "bi_cgstab2": 5,
+                "gmres": 6,
+                "gauss_seidel": 7,
+                "symmetric_gauss_seidel": 8,
+                "PCR3": 9,
+                "multigrid": 10}
         row = index.row()
         string = index.model().dataSolver[row]['iresol']
         idx = dico[string]
@@ -500,6 +509,7 @@ class StandardItemModelSolver(QStandardItemModel):
     def populateModel(self):
         self.dicoV2M= {"Multigrid"              : 'multigrid',
                        "Conjugate gradient"     : 'conjugate_gradient',
+                       "Inexact conjugate gradient"     : 'inexact_conjugate_gradient',
                        "Jacobi"                 : 'jacobi',
                        "BiCGstab"               : 'bi_cgstab',
                        "BiCGstab2"              : 'bi_cgstab2',
@@ -512,6 +522,7 @@ class StandardItemModelSolver(QStandardItemModel):
                        "Polynomial"             : "polynomial"}
         self.dicoM2V= {"multigrid"              : 'Multigrid',
                        "conjugate_gradient"     : 'Conjugate gradient',
+                       "inexact_conjugate_gradient"     : 'Inexact conjugate gradient',
                        "jacobi"                 : 'Jacobi',
                        "bi_cgstab"              : 'BiCGstab',
                        "bi_cgstab2"             : 'BiCGstab2',
