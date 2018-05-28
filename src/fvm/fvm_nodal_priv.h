@@ -33,6 +33,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_mesh.h"
 #include "fvm_defs.h"
 #include "fvm_group.h"
 #include "fvm_nodal.h"
@@ -219,6 +220,10 @@ struct _fvm_nodal_t {
      on rank 0; for the same reason, only shared labels are needed */
 
   char   **global_vertex_labels;  /* Pointer to vertex labels, or NULL */
+
+  /* Pointer to parent mesh, if defined */
+
+  const cs_mesh_t  *parent;
 
 };
 

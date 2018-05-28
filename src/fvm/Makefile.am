@@ -27,6 +27,7 @@
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/mesh \
 $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT)
@@ -38,10 +39,12 @@ $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
 libfvm_cgns_la_CPPFLAGS =\
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/mesh \
 $(CGNS_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_med_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/mesh \
 $(HDF5_CPPFLAGS) $(MED_CPPFLAGS) $(MPI_CPPFLAGS)
 
 # Public header files (to be installed)
@@ -165,6 +168,7 @@ if HAVE_PLUGIN_MEDCOUPLING
 fvm_medcoupling_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/mesh \
 $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
 $(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
 pkglib_LTLIBRARIES += fvm_medcoupling.la
@@ -180,6 +184,7 @@ else
 libfvm_medcoupling_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/mesh \
 $(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_medcoupling_la_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
@@ -204,6 +209,7 @@ if HAVE_PLUGIN_CATALYST
 fvm_catalyst_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/mesh \
 $(CATALYST_CPPFLAGS) $(MPI_CPPFLAGS)
 fvm_catalyst_la_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
@@ -221,6 +227,7 @@ else
 libfvm_catalyst_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/mesh \
 $(CATALYST_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_catalyst_la_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
@@ -246,6 +253,7 @@ if HAVE_PLUGIN_MELISSA
 fvm_melissa_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/mesh \
 $(MELISSA_CPPFLAGS) $(MPI_CPPFLAGS)
 fvm_melissa_la_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
@@ -262,6 +270,7 @@ else
 libfvm_melissa_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/mesh \
 $(MELISSA_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_melissa_la_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \

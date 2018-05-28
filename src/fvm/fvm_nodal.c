@@ -41,6 +41,7 @@
 
 #include "bft_mem.h"
 #include "bft_printf.h"
+#include "cs_mesh.h"
 
 #include "fvm_defs.h"
 #include "fvm_io_num.h"
@@ -1172,6 +1173,8 @@ fvm_nodal_create(const char  *name,
 
   this_nodal->global_vertex_labels = NULL;
 
+  this_nodal->parent = NULL;
+
   return (this_nodal);
 }
 
@@ -2166,6 +2169,37 @@ fvm_nodal_get_global_vertex_labels(const fvm_nodal_t  *this_nodal)
   assert(this_nodal != NULL);
 
   return (const char **)(this_nodal->global_vertex_labels);
+}
+
+/*----------------------------------------------------------------------------
+ * Return a const pointer to a nodal mesh representation's parent mesh.
+ *
+ * parameters:
+ *   this_nodal <-> pointer to structure that should be reduced
+ *
+ * return:
+ *   const pointer to parent mesh
+ *----------------------------------------------------------------------------*/
+
+const cs_mesh_t  *
+fvm_nodal_get_parent(const fvm_nodal_t  *this_nodal)
+{
+  return this_nodal->parent;
+}
+
+/*----------------------------------------------------------------------------
+ * Associate a parent mesh to a nodal mesh representation structure.
+ *
+ * parameters:
+ *   this_nodal <-> pointer to structure that should be reduced
+ *   parent     <-- const pointer to parent mesh
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_set_parent(fvm_nodal_t      *this_nodal,
+                     const cs_mesh_t  *parent)
+{
+  this_nodal->parent = parent;
 }
 
 /*----------------------------------------------------------------------------

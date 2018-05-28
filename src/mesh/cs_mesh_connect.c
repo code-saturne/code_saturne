@@ -619,6 +619,8 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 
   extr_mesh = fvm_nodal_create(name, 3);
 
+  fvm_nodal_set_parent(extr_mesh, mesh);
+
   assert(sizeof(int) == sizeof(cs_lnum_t)); /* For families */
 
   if (include_families)
@@ -722,6 +724,8 @@ cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
                 "reconstruction (cs_mesh_connect_faces_to_nodal)."));
 
   extr_mesh = fvm_nodal_create(name, 3);
+
+  fvm_nodal_set_parent(extr_mesh, mesh);
 
   _add_faces_to_nodal(mesh,
                       extr_mesh,

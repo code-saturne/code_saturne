@@ -33,6 +33,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_mesh.h"
 #include "fvm_defs.h"
 #include "fvm_group.h"
 #include "fvm_io_num.h"
@@ -495,6 +496,31 @@ fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
 
 const char **
 fvm_nodal_get_global_vertex_labels(const fvm_nodal_t  *this_nodal);
+
+/*----------------------------------------------------------------------------
+ * Return a const pointer to a nodal mesh representation's parent mesh.
+ *
+ * parameters:
+ *   this_nodal <-> pointer to structure that should be reduced
+ *
+ * return:
+ *   const pointer to parent mesh
+ *----------------------------------------------------------------------------*/
+
+const cs_mesh_t  *
+fvm_nodal_get_parent(const fvm_nodal_t  *this_nodal);
+
+/*----------------------------------------------------------------------------
+ * Associate a parent mesh to a nodal mesh representation structure.
+ *
+ * parameters:
+ *   this_nodal <-> pointer to structure that should be reduced
+ *   parent     <-- const pointer to parent mesh
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_set_parent(fvm_nodal_t      *this_nodal,
+                     const cs_mesh_t  *parent);
 
 /*----------------------------------------------------------------------------
  * Compute tesselation a a nodal mesh's sections of a given type, and add the
