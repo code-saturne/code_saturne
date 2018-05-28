@@ -139,6 +139,12 @@ interface
 
   !=============================================================================
 
+  subroutine turbulence_model_free_bc_ids()  &
+    bind(C, name='cs_turbulence_model_free_bc_ids')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine turbulence_model_free_bc_ids
+
 end interface
 
 !===============================================================================
@@ -1087,6 +1093,7 @@ call turbomachinery_finalize
 call radiat_finalize
 
 call boundary_conditions_finalize
+call turbulence_model_free_bc_ids
 
 call finalize_aux_arrays
 

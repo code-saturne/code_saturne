@@ -121,6 +121,11 @@ typedef struct {
   int  omg;    /* variable id for omega */
   int  nusa;   /* variable id for nu_t (SA model) */
 
+  int  size_ut;      /* size of variable ids for turbulent fluxes array */
+  int  size_alpha_t; /* size of variable ids for alpha_thet array */
+  int *ut;           /* variable ids for turbulent fluxes */
+  int *alpha_t;      /* variable ids for alpha_theta */
+
 } cs_turb_bc_id_t;
 
 /*============================================================================
@@ -148,7 +153,12 @@ _turb_bc_id =
   -1, /* alpha */
 
   -1, /* omg */
-  -1 /* nusa */
+  -1, /* nusa */
+
+  0,    /* size of ut */
+  0,    /* size of alpha_t */
+  NULL, /* ut */
+  NULL  /* alpha_t */
 };
 
 /*============================================================================
@@ -356,6 +366,29 @@ _inlet_bc(cs_lnum_t   face_id,
       if (rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
         rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] = 1.;
 
+    /* Initialization of the turbulent fluxes to 0 if DFM or
+     * EB-DFM are used for scalars (iturt = 30 or 31)
+     * Alpha_theta for EB-DFM / EB-AFM / EB-GGDH is
+     * initialize to 1 */
+
+    if (_turb_bc_id.size_ut > 0) {
+      for (int var_id = 0; var_id < _turb_bc_id.size_ut; var_id++) {
+        if (rcodcl[_turb_bc_id.ut[var_id]*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+          rcodcl[_turb_bc_id.ut[var_id]*n_b_faces + face_id] = 0.;
+        if (rcodcl[(_turb_bc_id.ut[var_id]+1)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+          rcodcl[(_turb_bc_id.ut[var_id]+1)*n_b_faces + face_id] = 0.;
+        if (rcodcl[(_turb_bc_id.ut[var_id]+2)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+          rcodcl[(_turb_bc_id.ut[var_id]+2)*n_b_faces + face_id] = 0.;
+      }
+    }
+
+    if (_turb_bc_id.size_alpha_t > 0) {
+      for (int var_id = 0; var_id < _turb_bc_id.size_alpha_t; var_id++) {
+        if (rcodcl[_turb_bc_id.alpha_t[var_id]*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+          rcodcl[_turb_bc_id.alpha_t[var_id]*n_b_faces + face_id] = 1.;
+      }
+    }
+
   }
   else if (cs_glob_turb_model->itytur == 5) {
 
@@ -485,7 +518,11 @@ cs_turbulence_model_init_bc_ids(void)
 {
   /* CAUTION: see note about the cs_turb_bc_id structure above. */
 
-  const int var_key_id = cs_field_key_id("variable_id");
+  const int var_key_id      = cs_field_key_id("variable_id");
+  const int k_turbt         = cs_field_key_id("turbulent_flux_model");
+  const int k_f_turbt       = cs_field_key_id("turbulent_flux_id");
+  const int k_f_turbt_alpha = cs_field_key_id("alpha_turbulent_flux_id");
+  const int k_sca           = cs_field_key_id("scalar_id");
 
   if (CS_F_(k) != NULL)
     _turb_bc_id.k = cs_field_get_key_int(CS_F_(k), var_key_id) -1;
@@ -518,8 +555,76 @@ cs_turbulence_model_init_bc_ids(void)
     _turb_bc_id.omg = cs_field_get_key_int(CS_F_(omg), var_key_id) -1;
   if (CS_F_(nusa) != NULL)
     _turb_bc_id.nusa = cs_field_get_key_int(CS_F_(nusa), var_key_id) -1;
+
+  int n_fields = cs_field_n_fields();
+  int n_sca_ut = 0;
+  int n_sca_alpha = 0;
+
+  /* For scalar turbulent fluxes, loop over all scalars to determine:
+   *  - number of scalars  with (EB)DFM (iturt=30 or 31)
+   *  - number of scalars using an elliptic blending model
+   *    (iturt = 11 or 21 or 31) */
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    const cs_field_t *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE) {
+      int s_num = cs_field_get_key_int(f, k_sca);
+      if (s_num > 0) {
+        int f_turbt = cs_field_get_key_int(f, k_turbt) ;
+        if (f_turbt / 10 == 3)
+          n_sca_ut ++;
+        if (f_turbt == 11 || f_turbt == 21 || f_turbt == 31)
+          n_sca_alpha ++;
+      }
+    }
+  }
+
+  _turb_bc_id.size_ut = n_sca_ut;
+  _turb_bc_id.size_alpha_t = n_sca_alpha;
+
+  if (_turb_bc_id.size_ut > 0)
+    BFT_MALLOC(_turb_bc_id.ut      , n_sca_ut   , int);
+  if (_turb_bc_id.size_alpha_t > 0)
+    BFT_MALLOC( _turb_bc_id.alpha_t, n_sca_alpha, int);
+
+  n_sca_ut = 0;
+  n_sca_alpha = 0;
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    const cs_field_t *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE) {
+      int s_num = cs_field_get_key_int(f, k_sca);
+      if (s_num > 0) {
+        int f_turbt = cs_field_get_key_int(f, k_turbt) ;
+        if (f_turbt / 10 == 3) {
+          int fid_turbt = cs_field_get_key_int(f, k_f_turbt);
+          _turb_bc_id.ut[n_sca_ut] = cs_field_get_key_int(cs_field_by_id(fid_turbt), var_key_id) -1;
+          n_sca_ut ++;
+        }
+        if (f_turbt == 11 || f_turbt == 21 || f_turbt == 31) {
+          int fid_turbt = cs_field_get_key_int(f, k_f_turbt_alpha);
+          _turb_bc_id.alpha_t[n_sca_alpha] = cs_field_get_key_int(cs_field_by_id(fid_turbt), var_key_id) -1;
+          n_sca_alpha ++;
+        }
+      }
+    }
+  }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free memory allocations for turbulence boundary conditions ids.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_model_free_bc_ids(void)
+{
+  if (_turb_bc_id.size_ut > 0)
+    BFT_FREE(_turb_bc_id.ut);
+  if (_turb_bc_id.size_alpha_t > 0)
+    BFT_FREE( _turb_bc_id.alpha_t);
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Calculation of \f$ u^\star \f$, \f$ k \f$ and \f$\varepsilon \f$

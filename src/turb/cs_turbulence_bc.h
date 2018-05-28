@@ -64,6 +64,15 @@ cs_turbulence_model_init_bc_ids(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Free memory allocations for turbulence boundary conditions ids.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_model_free_bc_ids(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Calculation of \f$ u^\star \f$, \f$ k \f$ and \f$\varepsilon \f$
  *        from a diameter \f$ D_H \f$ and the reference velocity \f$ U_{ref} \f$
  *        for a circular duct flow with smooth wall

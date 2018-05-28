@@ -81,20 +81,6 @@ character(len=80) :: f_name, f_label, s_label, s_name
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
-! Interfaces
-!===============================================================================
-
-interface
-
-  subroutine cs_turbulence_model_init_bc_ids()  &
-    bind(C, name='cs_turbulence_model_init_bc_ids')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_turbulence_model_init_bc_ids
-
-end interface
-
-!===============================================================================
 ! Verification
 !===============================================================================
 
@@ -592,8 +578,6 @@ endif
 
 call cs_field_pointer_map_base
 call cs_field_pointer_map_boundary
-
-call cs_turbulence_model_init_bc_ids
 
 return
 

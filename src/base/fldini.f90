@@ -83,7 +83,7 @@ implicit none
 
 integer          ii, ivar
 integer          iflid, kcvlim, ifctsl, clip_id
-integer          kturt, kfturt, kislts, keyvar, kclipp
+integer          kturt, kfturt, kislts, keyvar, kclipp, kfturt_alpha
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          iprev, inoprv
 integer          f_id, kscavr, f_type
@@ -128,6 +128,7 @@ call field_get_key_id("first_moment_id", kscavr)
 ! Keys not stored globally
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_id('turbulent_flux_id', kfturt)
+call field_get_key_id('alpha_turbulent_flux_id', kfturt_alpha)
 
 ! Key id of the coal scalar class
 call field_get_key_id("scalar_class", keyccl)
