@@ -2031,8 +2031,8 @@ integer          ifac, iel, isou, jsou
 integer          ifcvsl, itplus, itstar
 
 double precision cpp, rkl, prdtl, visclc, romc, tplus, cofimp, cpscv
-double precision distfi, distbf, fikis, hint, heq, yptp, hflui, hext
-double precision yplus, dplus, phit, pimp, rcprod, temp, tet, uk
+double precision distfi, distbf, fikis, hint, hint_al, heq, yptp, hflui, hext
+double precision yplus, dplus, phit, pimp, pimp_al, rcprod, temp, tet, uk
 double precision viscis, visctc, xmutlm, ypth, xnuii
 double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
@@ -2400,72 +2400,6 @@ do ifac = 1, nfabor
       cofafp(ifac) = -heq*pimp
       cofbfp(ifac) =  heq
 
-      !--> Turbulent heat flux
-      if (ityturt(iscal).eq.3) then
-
-        ! Turbulent diffusive flux of the scalar T
-        ! (blending factor so that the component v'T' have only
-        !  mu_T/(mu+mu_T)* Phi_T)
-        phit = (cofafp(ifac) + cofbfp(ifac)*val_s(iel))
-
-        hintt(1) =   0.5d0*(visclc+rkl)/distbf                        &
-                   + visten(1,iel)*ctheta(iscal)/distbf/csrij
-        hintt(2) =   0.5d0*(visclc+rkl)/distbf                        &
-                   + visten(2,iel)*ctheta(iscal)/distbf/csrij
-        hintt(3) =   0.5d0*(visclc+rkl)/distbf                        &
-                   + visten(3,iel)*ctheta(iscal)/distbf/csrij
-        hintt(4) = visten(4,iel)*ctheta(iscal)/distbf/csrij
-        hintt(5) = visten(5,iel)*ctheta(iscal)/distbf/csrij
-        hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
-
-        ! Dirichlet Boundary Condition
-        !-----------------------------
-
-        ! Add rho*uk*Tet to T'v' in High Reynolds
-        if (yplus.ge.ypth) then
-          do isou = 1, 3
-            pimpv(isou) = surfbo(isou,ifac)*phit/(surfbn(ifac)*cpp*romc)
-          enddo
-        else
-          do isou = 1, 3
-            pimpv(isou) = 0.d0
-          enddo
-        endif
-
-        call set_dirichlet_vector_aniso &
-             !========================
-           ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
-             coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
-             pimpv            , hintt            , rinfiv )
-
-        ! Boundary conditions used in the temperature equation
-        do isou = 1, 3
-          cofarut(isou,ifac) = 0.d0
-          do jsou = 1, 3
-            cofbrut(isou,jsou,ifac) = 0.d0
-          enddo
-        enddo
-
-      endif
-
-      ! EB-GGDH/AFM/DFM alpha boundary conditions
-      if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
-
-        ! Dirichlet Boundary Condition
-        !-----------------------------
-
-        pimp = 0.d0
-
-        hint = 1.d0/distbf
-
-        call set_dirichlet_scalar &
-             !====================
-           ( a_al(ifac), af_al(ifac),             &
-             b_al(ifac), bf_al(ifac),             &
-             pimp      , hint       , rinfin )
-
-      endif
-
       ! Storage of the thermal exchange coefficient
       ! (conversion in case of energy or enthaly)
       ! the exchange coefficient is in W/(m2 K)
@@ -2508,6 +2442,78 @@ do ifac = 1, nfabor
       endif
 
     endif ! End if icodcl.eq.5
+
+    !--> Turbulent heat flux
+    if (ityturt(iscal).eq.3) then
+
+      ! Turbulent diffusive flux of the scalar T
+      ! (blending factor so that the component v'T' have only
+      !  mu_T/(mu+mu_T)* Phi_T)
+      if (icodcl(ifac,ivar).eq.5) then
+        phit = cofafp(ifac)+cofbfp(ifac)*val_s(ifac)
+      elseif (icodcl(ifac,ivar).eq.3) then
+        phit = rcodcl(ifac,ivar,3)
+      elseif (icodcl(ifac,ivar).eq.1) then
+        phit = heq *(val_s(ifac) - pimp)
+      else
+        phit = 0.d0
+      endif
+
+      hintt(1) =   0.5d0*(visclc+rkl)/distbf                        &
+                 + visten(1,iel)*ctheta(iscal)/distbf/csrij
+      hintt(2) =   0.5d0*(visclc+rkl)/distbf                        &
+                 + visten(2,iel)*ctheta(iscal)/distbf/csrij
+      hintt(3) =   0.5d0*(visclc+rkl)/distbf                        &
+                 + visten(3,iel)*ctheta(iscal)/distbf/csrij
+      hintt(4) = visten(4,iel)*ctheta(iscal)/distbf/csrij
+      hintt(5) = visten(5,iel)*ctheta(iscal)/distbf/csrij
+      hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
+
+      ! Dirichlet Boundary Condition
+      !-----------------------------
+
+      ! Add rho*uk*Tet to T'v' in High Reynolds
+      if (yplus.ge.ypth) then
+        do isou = 1, 3
+          pimpv(isou) = surfbo(isou,ifac)*phit/(surfbn(ifac)*cpp*romc)
+        enddo
+      else
+        do isou = 1, 3
+          pimpv(isou) = 0.d0
+        enddo
+      endif
+
+      call set_dirichlet_vector_aniso &
+           !========================
+         ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
+           coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
+           pimpv            , hintt            , rinfiv )
+
+      ! Boundary conditions used in the temperature equation
+      do isou = 1, 3
+        cofarut(isou,ifac) = 0.d0
+        do jsou = 1, 3
+          cofbrut(isou,jsou,ifac) = 0.d0
+        enddo
+      enddo
+
+    endif
+
+    ! EB-GGDH/AFM/DFM alpha boundary conditions
+    if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+
+      ! Dirichlet Boundary Condition
+      !-----------------------------
+      pimp_al = 0.d0
+      hint_al = 1.d0/distbf
+
+      call set_dirichlet_scalar &
+           !====================
+         ( a_al(ifac), af_al(ifac),             &
+           b_al(ifac), bf_al(ifac),             &
+           pimp_al   , hint_al    , rinfin )
+
+    endif
 
     ! Save the values of of T^star and T^+ for post-processing
 

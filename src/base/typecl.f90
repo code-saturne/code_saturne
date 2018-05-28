@@ -113,7 +113,7 @@ integer          ifac, ivar, iel
 integer          iok, inc, iccocg, iprev, ideb, ifin, inb, isum
 integer          ityp, ii, jj, iflmab
 integer          ifadir
-integer          iut  , ivt   , iwt, iscal
+integer          iut  , ivt   , iwt, ialt, iscal
 integer          keyvar, keycpl
 integer          iivar, icpl
 integer          f_id, i_dim, f_type, nfld, f_dim, f_id_yplus
@@ -1057,7 +1057,7 @@ do ivar = 1, nvar
   endif
 enddo
 
-! Turbulent fluxes: 0 Dirichlet if Dirichlet on the scalar
+! Turbulent fluxes
 do iscal = 1, nscal
   if (ityturt(iscal).eq.3) then
     ! Name of the scalar ivar
@@ -1066,7 +1066,6 @@ do iscal = 1, nscal
     ! Index of the corresponding turbulent flux
     call field_get_id(trim(fname)//'_turbulent_flux', f_id)
 
-
     ! Set pointer values of turbulent fluxes in icodcl
     call field_get_key_int(f_id, keyvar, iut)
     ivt = iut + 1
@@ -1074,14 +1073,7 @@ do iscal = 1, nscal
 
     do ii = ideb, ifin
       ifac = itrifb(ii)
-      if (icodcl(ifac, isca(iscal)).eq.1.and.icodcl(ifac, iut).eq.0) then
-        icodcl(ifac,iut) = 1
-        icodcl(ifac,ivt) = 1
-        icodcl(ifac,iwt) = 1
-        rcodcl(ifac,iut,1) = 0.d0
-        rcodcl(ifac,ivt,1) = 0.d0
-        rcodcl(ifac,iwt,1) = 0.d0
-      else if (icodcl(ifac, isca(iscal)).eq.5.and.icodcl(ifac, iut).eq.0) then
+      if (icodcl(ifac, iut).eq.0) then
         icodcl(ifac,iut) = 5
         icodcl(ifac,ivt) = 5
         icodcl(ifac,iwt) = 5
@@ -1091,6 +1083,28 @@ do iscal = 1, nscal
       endif
     enddo
   endif
+
+  ! EB-GGDH/AFM/DFM alpha boundary conditions
+  if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+    ! Name of the scalar ivar
+    call field_get_name(ivarfl(isca(iscal)), fname)
+
+    ! Index of the corresponding turbulent flux
+    call field_get_id(trim(fname)//'_alpha', f_id)
+
+    ! Set pointer values of turbulent fluxes in icodcl
+    call field_get_key_int(f_id, keyvar, ialt)
+
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if (icodcl(ifac, ialt).eq.0) then
+        icodcl(ifac,ialt) = 5
+        rcodcl(ifac,ialt,1) = 0.d0
+      endif
+    enddo
+  endif
+
+! End loop over scalars
 enddo
 
 
@@ -1153,7 +1167,7 @@ do ivar = 1, nvar
   endif
 enddo
 
-! Turbulent fluxes: 0 Dirichlet if Dirichlet on the scalar
+! Turbulent fluxes
 do iscal = 1, nscal
   if (ityturt(iscal).eq.3) then
     ! Name of the scalar ivar
@@ -1162,7 +1176,6 @@ do iscal = 1, nscal
     ! Index of the corresponding turbulent flux
     call field_get_id(trim(fname)//'_turbulent_flux', f_id)
 
-
     ! Set pointer values of turbulent fluxes in icodcl
     call field_get_key_int(f_id, keyvar, iut)
     ivt = iut + 1
@@ -1170,14 +1183,7 @@ do iscal = 1, nscal
 
     do ii = ideb, ifin
       ifac = itrifb(ii)
-      if (icodcl(ifac, isca(iscal)).eq.1.and.icodcl(ifac, iut).eq.0) then
-        icodcl(ifac,iut) = 1
-        icodcl(ifac,ivt) = 1
-        icodcl(ifac,iwt) = 1
-        rcodcl(ifac,iut,1) = 0.d0
-        rcodcl(ifac,ivt,1) = 0.d0
-        rcodcl(ifac,iwt,1) = 0.d0
-      else if (icodcl(ifac, isca(iscal)).eq.6.and.icodcl(ifac, iut).eq.0) then
+      if (icodcl(ifac, iut).eq.0) then
         icodcl(ifac,iut) = 6
         icodcl(ifac,ivt) = 6
         icodcl(ifac,iwt) = 6
@@ -1187,6 +1193,28 @@ do iscal = 1, nscal
       endif
     enddo
   endif
+
+  ! EB-GGDH/AFM/DFM alpha boundary conditions
+  if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+    ! Name of the scalar ivar
+    call field_get_name(ivarfl(isca(iscal)), fname)
+
+    ! Index of the corresponding turbulent flux
+    call field_get_id(trim(fname)//'_alpha', f_id)
+
+    ! Set pointer values of turbulent fluxes in icodcl
+    call field_get_key_int(f_id, keyvar, ialt)
+
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if (icodcl(ifac, ialt).eq.0) then
+        icodcl(ifac,ialt) = 6
+        rcodcl(ifac,ialt,1) = 0.d0
+      endif
+    enddo
+  endif
+
+! End loop over scalars
 enddo
 
 !===============================================================================
