@@ -5698,6 +5698,8 @@ cs_gui_linear_solvers(void)
         multigrid = true;
       else if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
         sles_it_type = CS_SLES_PCG;
+      else if (cs_gui_strcmp(algo_choice, "inexact_conjugate_gradient"))
+        sles_it_type = CS_SLES_IPCG;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))
         sles_it_type = CS_SLES_JACOBI;
       else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
