@@ -73,7 +73,7 @@ integer          nscal  , iappel
 
 integer          iel    , ifac   , iscal
 integer          iflmas , iflmab
-integer          ifcvsl
+integer          f_id
 double precision flux   , theta  , aa, bb, viscos, xmasvo, varcp
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 double precision, dimension(:), pointer :: i_mass_flux_prev, b_mass_flux_prev
@@ -169,22 +169,22 @@ if (iappel.eq.1) then
   if (nscal.ge.1) then
     do iscal = 1, nscal
       ! Diffusivity
-      call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
-      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
+      call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
+      if (f_id.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
-          call field_get_val_s(ifcvsl, cpro_visls)
-          call field_get_val_prev_s(ifcvsl, cproa_visls)
+          call field_get_val_s(f_id, cpro_visls)
+          call field_get_val_prev_s(f_id, cproa_visls)
           do iel = 1, ncel
             cproa_visls(iel) = cpro_visls(iel)
           enddo
         endif
       endif
       ! Densisty
-      call field_get_key_int (ivarfl(isca(iscal)), kromsl, ifcvsl)
-      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
+      call field_get_key_int (ivarfl(isca(iscal)), kromsl, f_id)
+      if (f_id.ge.0.and.iscavr(iscal).le.0) then
         if (iroext.gt.0) then
-          call field_get_val_s(ifcvsl, cpro_romls)
-          call field_get_val_prev_s(ifcvsl, cproa_romls)
+          call field_get_val_s(f_id, cpro_romls)
+          call field_get_val_prev_s(f_id, cproa_romls)
           do iel = 1, ncel
             cproa_romls(iel) = cpro_romls(iel)
           enddo
@@ -253,11 +253,11 @@ elseif (iappel.eq.2) then
       ! Diffusivity
       if (initvs(iscal).ne.1) then
         initvs(iscal) = 1
-        call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
-        if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
+        call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
+        if (f_id.ge.0.and.iscavr(iscal).le.0) then
           if (ivsext(iscal).gt.0) then
-            call field_get_val_s(ifcvsl, cpro_visls)
-            call field_get_val_prev_s(ifcvsl, cproa_visls)
+            call field_get_val_s(f_id, cpro_visls)
+            call field_get_val_prev_s(f_id, cproa_visls)
             do iel = 1, ncel
               cproa_visls(iel) = cpro_visls(iel)
             enddo
@@ -333,12 +333,12 @@ elseif (iappel.eq.2) then
   if (nscal.ge.1) then
     do iscal = 1, nscal
       ! Diffusivity
-      call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
-      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
+      call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
+      if (f_id.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
           theta  = thetvs(iscal)
-          call field_get_val_s(ifcvsl, cpro_visls)
-          call field_get_val_prev_s(ifcvsl, cproa_visls)
+          call field_get_val_s(f_id, cpro_visls)
+          call field_get_val_prev_s(f_id, cproa_visls)
           do iel = 1, ncel
             viscos = cpro_visls(iel)
             cpro_visls(iel) = (1.d0+theta)*cpro_visls(iel) &
@@ -348,12 +348,12 @@ elseif (iappel.eq.2) then
         endif
       endif
       ! Density
-      call field_get_key_int (ivarfl(isca(iscal)), kromsl, ifcvsl)
-      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
+      call field_get_key_int (ivarfl(isca(iscal)), kromsl, f_id)
+      if (f_id.ge.0.and.iscavr(iscal).le.0) then
         if (iroext.gt.0) then
           theta = thetvs(iscal)
-          call field_get_val_s(ifcvsl, cpro_romls)
-          call field_get_val_prev_s(ifcvsl, cproa_romls)
+          call field_get_val_s(f_id, cpro_romls)
+          call field_get_val_prev_s(f_id, cproa_romls)
           do iel = 1, ncel
             viscos = cpro_romls(iel)
             cpro_romls(iel) = (1.d0+theta)*cpro_romls(iel) &
@@ -544,22 +544,22 @@ elseif (iappel.eq.5) then
   if (nscal.ge.1) then
     do iscal = 1, nscal
       ! Diffusivity
-      call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
-      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
+      call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
+      if (f_id.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
-          call field_get_val_s(ifcvsl, cpro_visls)
-          call field_get_val_prev_s(ifcvsl, cproa_visls)
+          call field_get_val_s(f_id, cpro_visls)
+          call field_get_val_prev_s(f_id, cproa_visls)
           do iel = 1, ncel
             cpro_visls(iel) = cproa_visls(iel)
           enddo
         endif
       endif
       ! Density
-      call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
-      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
+      call field_get_key_int (ivarfl(isca(iscal)), kromsl, f_id)
+      if (f_id.ge.0.and.iscavr(iscal).le.0) then
         if (iroext.gt.0) then
-          call field_get_val_s(ifcvsl, cpro_romls)
-          call field_get_val_prev_s(ifcvsl, cproa_romls)
+          call field_get_val_s(f_id, cpro_romls)
+          call field_get_val_prev_s(f_id, cproa_romls)
           do iel = 1, ncel
             cpro_romls(iel) = cproa_romls(iel)
           enddo
