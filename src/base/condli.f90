@@ -182,7 +182,7 @@ integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
 integer          ifcvsl
 integer          itplus, itstar
-integer          f_id, iut, ivt, iwt, iflmab
+integer          f_id, iut, ivt, iwt, ialt, iflmab
 integer          kbfid, b_f_id
 integer          keyvar
 integer          dimrij, f_dim
@@ -2883,6 +2883,8 @@ if (nscal.ge.1) then
       ! Index of the corresponding turbulent flux
       call field_get_id(trim(fname)//'_alpha', f_id)
 
+      call field_get_key_int(f_id, keyvar, ialt)
+
       call field_get_coefa_s (f_id, coefap)
       call field_get_coefb_s (f_id, coefbp)
       call field_get_coefaf_s(f_id, cofafp)
@@ -2899,10 +2901,10 @@ if (nscal.ge.1) then
         ! Dirichlet Boundary Condition
         !-----------------------------
 
-        if (icodcl(ifac,ivar).eq.1) then
+        if (icodcl(ifac,ialt).eq.1) then
 
-          pimp = rcodcl(ifac,ivar,1)
-          hext = rcodcl(ifac,ivar,2)
+          pimp = rcodcl(ifac,ialt,1)
+          hext = rcodcl(ifac,ialt,2)
 
           call set_dirichlet_scalar &
             ( coefap(ifac), cofafp(ifac),                        &
@@ -2914,9 +2916,9 @@ if (nscal.ge.1) then
         ! Neumann Boundary Conditions
         !----------------------------
 
-        if (icodcl(ifac,ivar).eq.3) then
+        if (icodcl(ifac,ialt).eq.3) then
 
-          qimp = rcodcl(ifac,ivar,3)
+          qimp = rcodcl(ifac,ialt,3)
 
           call set_neumann_scalar &
             ( coefap(ifac), cofafp(ifac),                        &
@@ -2926,10 +2928,10 @@ if (nscal.ge.1) then
           ! Radiative Boundary Conditions
           !-------------------------------
 
-        elseif (icodcl(ifac,ivar).eq.2) then
+        elseif (icodcl(ifac,ialt).eq.2) then
 
-          pimp = rcodcl(ifac,ivar,1)
-          cfl = rcodcl(ifac,ivar,2)
+          pimp = rcodcl(ifac,ialt,1)
+          cfl = rcodcl(ifac,ialt,2)
 
           call set_convective_outlet_scalar &
             ( coefap(ifac), cofafp(ifac),                        &
@@ -2939,10 +2941,10 @@ if (nscal.ge.1) then
           ! Imposed value for the convection operator, imposed flux for diffusion
           !----------------------------------------------------------------------
 
-        elseif (icodcl(ifac,ivar).eq.13) then
+        elseif (icodcl(ifac,ialt).eq.13) then
 
-          pimp = rcodcl(ifac,ivar,1)
-          qimp = rcodcl(ifac,ivar,3)
+          pimp = rcodcl(ifac,ialt,1)
+          qimp = rcodcl(ifac,ialt,3)
 
           call set_dirichlet_conv_neumann_diff_scalar &
             ( coefap(ifac), cofafp(ifac),                         &
