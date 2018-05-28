@@ -5,6 +5,8 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix incorrect access to per-scalar density in some cases.
+
 - Fix error on unconverged linear solver using PETSc.
 
 - Fix in weakly compressible algorithm for scalar diffusion terms when
