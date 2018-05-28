@@ -572,7 +572,8 @@ class NumericalParamEquationModel(Model):
     @Variables.undoLocal
     def setSolverChoice(self, name, value):
         """ Put choice of solver for variable labelled name """
-        self.isInList(value, ('multigrid', 'conjugate_gradient', 'jacobi',
+        self.isInList(value, ('multigrid', 'conjugate_gradient',
+                              'inexact_conjugate_gradient', 'jacobi',
                               'bi_cgstab', 'bi_cgstab2', 'gmres', 'automatic',
                               'gauss_seidel', 'symmetric_gauss_seidel', 'PCR3'))
         node = self._getSolverNameNode(name)

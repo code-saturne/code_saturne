@@ -29,6 +29,13 @@ Bug fixes
 - Fix crash in restart using coupled RSM model from non-RSM computation
   (issue #252).
 
+Numerics:
+
+- Add choice of inexact (flexible) preconditioned congugate gradient.
+  * When using multiple threads and multigrid preconditioning with a
+    Gauss-Seidel smoother, this choice is set by default over the
+    standard preconditioned congugate gradient.
+
 Release 5.1.4 (March 30 2018)
 =============================
 
