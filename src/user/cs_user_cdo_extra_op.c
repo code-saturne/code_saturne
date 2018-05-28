@@ -105,12 +105,12 @@ BEGIN_C_DECLS
  * \brief  Initial step for user-defined operations on results provided by the
  *         CDO kernel.
  *
- * \param[in]  domain   pointer to a cs_domain_t structure
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_start_extra_op(const cs_domain_t     *domain)
+cs_user_cdo_start_extra_op(cs_domain_t     *domain)
 {
   CS_UNUSED(domain);
 }
@@ -120,12 +120,12 @@ cs_user_cdo_start_extra_op(const cs_domain_t     *domain)
  * \brief  Additional user-defined operations on results provided by the CDO
  *         kernel. Define advanced post-processing and analysis for example.
  *
- * \param[in]  domain   pointer to a cs_domain_t structure
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_extra_op(const cs_domain_t           *domain)
+cs_user_cdo_extra_op(cs_domain_t           *domain)
 {
   CS_UNUSED(domain);
 }
@@ -135,12 +135,12 @@ cs_user_cdo_extra_op(const cs_domain_t           *domain)
  * \brief  Final step for user-defined operations on results provided by the
  *         CDO kernel.
  *
- * \param[in]  domain   pointer to a cs_domain_t structure
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_end_extra_op(const cs_domain_t     *domain)
+cs_user_cdo_end_extra_op(cs_domain_t     *domain)
 {
   CS_UNUSED(domain);
 }
