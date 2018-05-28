@@ -385,8 +385,6 @@ endif
 !===============================================================================
 
 ! ---> Added in the matrix diagonal
-
-call field_get_key_struct_var_cal_opt(ivarfl(ivar+isou-1), vcopt)
 do iel=1,ncel
   do isou = 1, dimrij
     rovsdt(isou,isou,iel) = rovsdt(isou, isou,iel)                            &
@@ -404,8 +402,6 @@ enddo
 !     +Cr4*rho*k(aik*sjk+ajk*sik-2/3*akl*skl*deltaij)
 !     +Cr5*rho*k*(aik*rjk + ajk*rik)
 !     -2/3*epsilon*deltaij
-
-call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
 ! EBRSM
 if (iturb.eq.32) then
