@@ -236,6 +236,7 @@ endif
 
 !        if = -1   module not activated
 !        if = 0    module activated
+!        if = 1    barotropic version
 
 if (ixmlpu.eq.0) then
 

@@ -215,6 +215,9 @@ module cstphy
   !> It must be given in Kelvin.
   real(c_double), pointer, save :: t0
 
+  !> Reference internal energy for the barotropic compressible module
+  double precision, save :: eint0
+
   !> reference specific heat.
   !>
   !> Useful if there is 1 <= n <= nscaus,

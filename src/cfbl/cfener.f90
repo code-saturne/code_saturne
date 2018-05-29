@@ -216,6 +216,9 @@ if(vcopt_e%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 
+! Barotropic version
+if (ippmod(icompf) .eq. 1) goto 33
+
 !===============================================================================
 ! 2. Source terms
 !===============================================================================
@@ -880,6 +883,16 @@ endif
 call cs_cf_thermo_pt_from_de(cpro_cp, cpro_cv, crom, cvar_energ, cvar_pr, &
                              cvar_tempk, vel, ncel)
 
+33 continue
+! Barotropic version
+if (ippmod(icompf) .eq. 1) then
+  do iel = 1, ncel
+    cvar_energ(iel) = eint0
+  enddo
+endif
+!                             n+1      n+1  n+1
+! The state equation is used P   =P(rho   ,e   )
+
 !===============================================================================
 ! 7. Communication of pressure, energy and temperature
 !===============================================================================
@@ -894,11 +907,11 @@ if (irangp.ge.0.or.iperio.eq.1) then
 endif
 
 ! Free memory
-deallocate(wb)
-deallocate(smbrs, rovsdt)
-deallocate(grad)
-deallocate(w1)
-deallocate(w7, w9)
+if (allocated(wb)) deallocate(wb)
+if (allocated(smbrs)) deallocate(smbrs, rovsdt)
+if (allocated(grad)) deallocate(grad)
+if (allocated(w1)) deallocate(w1)
+if (allocated(w7)) deallocate(w7, w9)
 
 !--------
 ! Formats
