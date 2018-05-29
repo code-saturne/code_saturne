@@ -99,6 +99,8 @@ use cpincl
 use ppincl
 use atincl
 use mesh
+use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -132,13 +134,15 @@ iok = 0
 do ifac = 1, nfabor
   if(izfppp(ifac).le.0.or.izfppp(ifac).gt.nozppm) then
     iok = iok + 1
-    write(nfecra,1000)ifac,nozppm,izfppp(ifac)
+    izfppp(ifac) = min(0, izfppp(ifac))
   endif
 enddo
 
-if(iok.gt.0) then
-  call csexit (1)
-  !==========
+if (irangp.ge.0) call parcmx(iok)
+
+if (iok.gt.0) then
+  write(nfecra,1000) nozppm
+  call boundary_conditions_error(izfppp)
 endif
 
 ! --> On construit une liste des numeros des zones frontieres.
@@ -178,22 +182,24 @@ endif
 nozapm = izonem
 
  1000 format(                                                           &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PHYSIQUE PARTICULIERE                       ',/,&
-'@    =========                                               ',/,&
-'@    LES CONDITIONS AUX LIMITES SONT INCOMPLETES OU ERRONEES ',/,&
-'@                                                            ',/,&
-'@  Le numero de zone associee a la face ',I10   ,' doit etre ',/,&
-'@    un entier strictement positif et inferieur ou egal a    ',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : PHYSIQUE PARTICULIERE'                       ,/,&
+'@    ========='                                               ,/,&
+'@    LES CONDITIONS AUX LIMITES SONT INCOMPLETES OU ERRONEES' ,/,&
+'@'                                                            ,/,&
+'@  Le numero de zone associee a certaines faces doit etre'    ,/,&
+'@    un entier strictement positif et inferieur ou egal a'    ,/,&
 '@    NOZPPM = ',I10                                           ,/,&
-'@  Ce numero (IZFPPP(IFAC)) vaut ici ',I10                    ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les conditions aux limites.                      ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@'                                                            ,/,&
+'@  Verifier les conditions aux limites.'                      ,/,&
+'@'                                                            ,/,&
+'@  Vous pouvez visualiser les faces de bord sorties en'       ,/,&
+'@  erreur.'                                                   ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  1001 format(                                                           &
