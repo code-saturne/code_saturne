@@ -999,6 +999,7 @@ _test_cdovb_schemes(FILE                *out,
                     cs_cell_sys_t       *csys,
                     cs_cell_builder_t   *cb)
 {
+  const double  tcur = 0.;
 
   /* Initialize a cell view of the algebraic system */
   csys->n_dofs = cm->n_vc;
@@ -1216,13 +1217,17 @@ _test_cdovb_schemes(FILE                *out,
         st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
 
       cs_timer_t  t0 = cs_timer_time();
-      cs_source_term_dcsd_bary_by_analytic(stu, cm, cb, NULL, st0_values);
+      cs_source_term_dcsd_bary_by_analytic(stu, cm, tcur, cb, NULL,
+                                           st0_values);
       cs_timer_t  t1 = cs_timer_time();
-      cs_source_term_dcsd_q1o1_by_analytic(stu, cm, cb, NULL, st1_values);
+      cs_source_term_dcsd_q1o1_by_analytic(stu, cm, tcur, cb, NULL,
+                                           st1_values);
       cs_timer_t  t2 = cs_timer_time();
-      cs_source_term_dcsd_q10o2_by_analytic(stu, cm, cb, NULL, st2_values);
+      cs_source_term_dcsd_q10o2_by_analytic(stu, cm, tcur, cb, NULL,
+                                            st2_values);
       cs_timer_t  t3 = cs_timer_time();
-      cs_source_term_dcsd_q5o3_by_analytic(stu, cm, cb, NULL, st3_values);
+      cs_source_term_dcsd_q5o3_by_analytic(stu, cm, tcur, cb, NULL,
+                                           st3_values);
       cs_timer_t  t4 = cs_timer_time();
 
       cs_timer_counter_add_diff(&(tc0), &t0, &t1);
@@ -1263,13 +1268,17 @@ _test_cdovb_schemes(FILE                *out,
         st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
 
       cs_timer_t  t0 = cs_timer_time();
-      cs_source_term_dcsd_bary_by_analytic(stl, cm, cb, NULL, st0_values);
+      cs_source_term_dcsd_bary_by_analytic(stl, cm, tcur, cb, NULL,
+                                           st0_values);
       cs_timer_t  t1 = cs_timer_time();
-      cs_source_term_dcsd_q1o1_by_analytic(stl, cm, cb, NULL, st1_values);
+      cs_source_term_dcsd_q1o1_by_analytic(stl, cm, tcur, cb, NULL,
+                                           st1_values);
       cs_timer_t  t2 = cs_timer_time();
-      cs_source_term_dcsd_q10o2_by_analytic(stl, cm, cb, NULL, st2_values);
+      cs_source_term_dcsd_q10o2_by_analytic(stl, cm, tcur, cb, NULL,
+                                            st2_values);
       cs_timer_t  t3 = cs_timer_time();
-      cs_source_term_dcsd_q5o3_by_analytic(stl, cm, cb, NULL, st3_values);
+      cs_source_term_dcsd_q5o3_by_analytic(stl, cm, tcur, cb, NULL,
+                                           st3_values);
       cs_timer_t  t4 = cs_timer_time();
 
       cs_timer_counter_add_diff(&(tc0), &t0, &t1);
@@ -1308,13 +1317,17 @@ _test_cdovb_schemes(FILE                *out,
         st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
 
       cs_timer_t  t0 = cs_timer_time();
-      cs_source_term_dcsd_bary_by_analytic(stq, cm, cb, NULL, st0_values);
+      cs_source_term_dcsd_bary_by_analytic(stq, cm, tcur, cb, NULL,
+                                           st0_values);
       cs_timer_t  t1 = cs_timer_time();
-      cs_source_term_dcsd_q1o1_by_analytic(stq, cm, cb, NULL, st1_values);
+      cs_source_term_dcsd_q1o1_by_analytic(stq, cm, tcur, cb, NULL,
+                                           st1_values);
       cs_timer_t  t2 = cs_timer_time();
-      cs_source_term_dcsd_q10o2_by_analytic(stq, cm, cb, NULL, st2_values);
+      cs_source_term_dcsd_q10o2_by_analytic(stq, cm, tcur, cb, NULL,
+                                            st2_values);
       cs_timer_t  t3 = cs_timer_time();
-      cs_source_term_dcsd_q5o3_by_analytic(stq, cm, cb, NULL, st3_values);
+      cs_source_term_dcsd_q5o3_by_analytic(stq, cm, tcur, cb, NULL,
+                                           st3_values);
       cs_timer_t  t4 = cs_timer_time();
 
       cs_timer_counter_add_diff(&(tc0), &t0, &t1);
@@ -1360,13 +1373,17 @@ _test_cdovb_schemes(FILE                *out,
         st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
 
       cs_timer_t  t0 = cs_timer_time();
-      cs_source_term_dcsd_bary_by_analytic(st, cm, cb, NULL, st0_values);
+      cs_source_term_dcsd_bary_by_analytic(st, cm, tcur, cb, NULL,
+                                           st0_values);
       cs_timer_t  t1 = cs_timer_time();
-      cs_source_term_dcsd_q1o1_by_analytic(st, cm, cb, NULL, st1_values);
+      cs_source_term_dcsd_q1o1_by_analytic(st, cm, tcur, cb, NULL,
+                                           st1_values);
       cs_timer_t  t2 = cs_timer_time();
-      cs_source_term_dcsd_q10o2_by_analytic(st, cm, cb, NULL, st2_values);
+      cs_source_term_dcsd_q10o2_by_analytic(st, cm, tcur, cb, NULL,
+                                            st2_values);
       cs_timer_t  t3 = cs_timer_time();
-      cs_source_term_dcsd_q5o3_by_analytic(st, cm, cb, NULL, st3_values);
+      cs_source_term_dcsd_q5o3_by_analytic(st, cm, tcur, cb, NULL,
+                                           st3_values);
       cs_timer_t  t4 = cs_timer_time();
 
       cs_timer_counter_add_diff(&(tc0), &t0, &t1);
@@ -1741,6 +1758,7 @@ _test_hho_schemes(FILE                *out,
 {
   CS_UNUSED(fm);
   CS_UNUSED(csys);
+  const double  tcur = 0.;
 
   switch (scheme_order) {
 
@@ -1819,9 +1837,10 @@ _test_hho_schemes(FILE                *out,
       for (int i = 0; i < 3*cm->n_fc+4; i++)
         reduction_uni[i] = reduction_xyz[i] = reduction_x2[i] = 0.0;
 
-      /* cs_hho_builder_reduction_from_analytic(uni, cm, cb, hhob, reduction_uni); */
-      cs_hho_builder_reduction_from_analytic(lin, cm, cb, hhob, reduction_xyz);
-      /* cs_hho_builder_reduction_from_analytic(x2 , cm, cb, hhob, reduction_x2); */
+      /* cs_hho_builder_reduction_from_analytic(uni, cm, tcur, cb, hhob, reduction_uni); */
+      cs_hho_builder_reduction_from_analytic(lin, cm, tcur, cb, hhob,
+                                             reduction_xyz);
+      /* cs_hho_builder_reduction_from_analytic(x2 , cm, tcur, cb, hhob, reduction_x2); */
 
       fprintf(out, "\n Reduction of polynomial functions.\n"
               "    const   |   linear   | quadratic\n");
@@ -2105,7 +2124,7 @@ main(int    argc,
   BFT_MALLOC(time_step, 1, cs_time_step_t);
   time_step->t_cur = 0.; // Useful when analytic function are called
 
-  cs_source_term_set_shared_pointers(quant, connect, time_step);
+  cs_source_term_set_shared_pointers(quant, connect);
 
   /* Allocate local structures */
   cs_cell_mesh_t  *cm = cs_cell_mesh_create(connect);
