@@ -2509,4 +2509,64 @@ contains
 
   !=============================================================================
 
+  !> \brief Return pointer to the hext array of a given variable field
+
+  !> \param[in]     field_id  id of given field (has to be a variable)
+  !> \param[out]    p         pointer to scalar field BC hext values
+
+  subroutine field_get_hext(field_id, p)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    integer, intent(in)                                  :: field_id
+    double precision, dimension(:), pointer, intent(out) :: p
+
+    ! Local variables
+
+    integer(c_int) :: f_id, p_type, p_rank
+    integer(c_int), dimension(3) :: f_dim
+    type(c_ptr) :: c_p
+
+    f_id = field_id
+    p_type = 9
+    p_rank = 1
+
+    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
+    call c_f_pointer(c_p, p, [f_dim(1)])
+
+  end subroutine field_get_hext
+
+  !=============================================================================
+
+  !> \brief Return pointer to the hint array of a given variable field
+
+  !> \param[in]     field_id  id of given field (has to be a variable)
+  !> \param[out]    p         pointer to scalar field BC hint values
+
+  subroutine field_get_hint(field_id, p)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    integer, intent(in)                                  :: field_id
+    double precision, dimension(:), pointer, intent(out) :: p
+
+    ! Local variables
+
+    integer(c_int) :: f_id, p_type, p_rank
+    integer(c_int), dimension(3) :: f_dim
+    type(c_ptr) :: c_p
+
+    f_id = field_id
+    p_type = 10
+    p_rank = 1
+
+    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
+    call c_f_pointer(c_p, p, [f_dim(1)])
+
+  end subroutine field_get_hint
+
+  !=============================================================================
+
 end module field

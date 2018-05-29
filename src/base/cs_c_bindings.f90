@@ -1964,16 +1964,52 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Binding to cs_ic_set_exchcoeff
+    !> \brief Binding to cs_ic_field_set_exchcoeff
 
-    subroutine cs_ic_set_exchcoeff(field_id,               &
-                                   hbord)                  &
-      bind(C, name='cs_ic_set_exchcoeff')
+    !> \param[in]   field_id   field id
+    !> \param[in]   hbnd       boundary exchange coefficients passed by face id
+
+    subroutine cs_ic_field_set_exchcoeff(field_id, &
+                                         hbnd)     &
+      bind(C, name='cs_ic_field_set_exchcoeff')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(kind=c_int), value :: field_id
-      real(kind=c_double), dimension(*), intent(in) :: hbord
-    end subroutine cs_ic_set_exchcoeff
+      real(kind=c_double), dimension(*), intent(in) :: hbnd
+    end subroutine cs_ic_field_set_exchcoeff
+
+    !---------------------------------------------------------------------------
+
+    !  Binding to cs_f_ic_field_coupled_faces
+
+    subroutine cs_f_ic_field_coupled_faces(f_id, c_p)  &
+      bind(C, name='cs_f_ic_field_coupled_faces')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), value :: f_id
+      type(c_ptr), intent(out)   :: c_p
+    end subroutine cs_f_ic_field_coupled_faces
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Binding to cs_ic_field_dist_data_by_face_id
+
+    !> \param[in]  field_id    field id
+    !> \param[in]  stride      number of values (interlaced) by entity
+    !> \param[in]  tab_distant exchanged data by face id
+    !> \param[out] tab_local   local data by face id
+
+    subroutine cs_ic_field_dist_data_by_face_id(field_id,    &
+                                                stride,      &
+                                                tab_distant, &
+                                                tab_local)   &
+      bind(C, name='cs_ic_field_dist_data_by_face_id')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), value :: field_id, stride
+      real(kind=c_double), dimension(*), intent(in) :: tab_distant
+      real(kind=c_double), dimension(*), intent(out) :: tab_local
+    end subroutine cs_ic_field_dist_data_by_face_id
 
     !---------------------------------------------------------------------------
 
@@ -2200,6 +2236,19 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(inout) :: exp_st
       real(kind=c_double), dimension(*), intent(inout) :: imp_st
     end subroutine cs_at_data_assim_source_term
+
+    !---------------------------------------------------------------------------
+
+    ! Binding to cs_ic_set_temp
+
+    subroutine cs_ic_set_temp(field_id, theipb,       &
+                             temp_neig)              &
+      bind(C, name='cs_ic_set_temp')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), value :: field_id
+      real(kind=c_double), dimension(*), intent(in) :: theipb, temp_neig
+    end subroutine cs_ic_set_temp
 
     !---------------------------------------------------------------------------
 
@@ -5185,6 +5234,38 @@ contains
     return
 
   end subroutine bilscv
+
+  !=============================================================================
+
+  !> \brief Return pointer to coupling face indicator for a field
+
+  !> \param[in]     f_id      id of given field
+  !> \param[out]    cpl_faces pointer to coupling face indicator
+
+  subroutine field_get_coupled_faces(f_id, cpl_faces)
+
+    use, intrinsic :: iso_c_binding
+    use mesh, only:nfabor
+
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in) :: f_id
+    logical(kind=c_bool), dimension(:), pointer, intent(inout) :: cpl_faces
+
+    ! Local variables
+    type(c_ptr) :: c_p
+
+    call cs_f_ic_field_coupled_faces(f_id, c_p)
+    call c_f_pointer(c_p, cpl_faces, [nfabor])
+
+    return
+
+  end subroutine field_get_coupled_faces
+
+  !=============================================================================
+
 
   !=============================================================================
 

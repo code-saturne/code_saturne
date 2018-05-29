@@ -1142,6 +1142,10 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
       *p = f->bc_coeffs->ac;
     else if (pointer_type == 8)
       *p = f->bc_coeffs->bc;
+    else if (pointer_type == 9)
+      *p = f->bc_coeffs->hext;
+    else if (pointer_type == 10)
+      *p = f->bc_coeffs->hint;
 
     if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
       _n_elts = 0;

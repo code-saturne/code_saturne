@@ -111,30 +111,32 @@ typedef struct {
 int
 cs_internal_coupling_n_couplings(void);
 
-/*----------------------------------------------------------------------------
- * Define coupling volume using given criteria.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define coupling volume using given selection criteria.
  *
  * Then, this volume must be seperated from the rest of the domain with a wall.
  *
- * parameters:
- *   mesh           <-> pointer to mesh structure to modify
- *   criteria_cells <-- selection criteria for the first group of cells
- *   criteria_faces <-- selection criteria for faces to be joined
- *----------------------------------------------------------------------------*/
+ * \param[in, out] mesh            pointer to mesh structure to modify
+ * \param[in]      criteria_cells  criteria for the first group of cells
+ * \param[in]      criteria_faces  criteria for faces to be joined
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_add(cs_mesh_t   *mesh,
                          const char   criteria_cells[],
                          const char   criteria_faces[]);
 
-/*----------------------------------------------------------------------------
- * Define coupling volume using given criteria. Then, this volume will be
- * seperated from the rest of the domain with thin walls.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define coupling volume using given criteria. Then, this volume will
+ * be separated from the rest of the domain with thin walls.
  *
- * parameters:
- *   mesh           <->  pointer to mesh structure to modify
- *   criteria_cells <-- string criteria for the first group of cells
- *----------------------------------------------------------------------------*/
+ * \param[in, out] mesh            pointer to mesh structure to modify
+ * \param[in]      criteria_cells  criteria for the first group of cells
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_add_volume(cs_mesh_t  *mesh,
@@ -144,39 +146,46 @@ cs_internal_coupling_add_volume(cs_mesh_t  *mesh,
 /*!
  * \brief Impose wall BCs to internal coupled faces if not yet defined.
  *
- *   \param[in,out]     bc_type       face boundary condition type
+ *   \param[in, out]     bc_type       face boundary condition type
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_bcs(int         bc_type[]);
 
-/*----------------------------------------------------------------------------
- * Destruction of all internal coupling related structures.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destruction of all internal coupling related structures.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_finalize(void);
 
-/*----------------------------------------------------------------------------
- * Return the coupling associated with a given coupling_id.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the coupling associated with a given coupling_id.
  *
- * parameters:
- *   coupling_id <-> id associated with a coupling entity
- *----------------------------------------------------------------------------*/
+ * \param[in]  coupling_id  associated with a coupling entity
+ *
+ * \return pointer to associated coupling structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_internal_coupling_t *
 cs_internal_coupling_by_id(int coupling_id);
 
-/*----------------------------------------------------------------------------
- * Exchange quantities from distant to local (update local using distant)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Exchange quantities from distant to local
+ * (update local using distant).
  *
- * parameters:
- *   cpl     <-- pointer to coupling entity
- *   stride  <-- Stride (e.g. 1 for double, 3 for interleaved coordinates)
- *   distant <-- Distant values, size coupling->n_distant
- *   local   --> Local values, size coupling->n_local
- *----------------------------------------------------------------------------*/
+ * \param[in]  cpl     pointer to coupling entity
+ * \param[in]  stride  stride (e.g. 1 for double, 3 for interleaved coordinates)
+ * \param[in]  distant distant values, size coupling->n_distant
+ * \param[out] local   local values, size coupling->n_local
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_exchange_var(const cs_internal_coupling_t  *cpl,
@@ -184,15 +193,16 @@ cs_internal_coupling_exchange_var(const cs_internal_coupling_t  *cpl,
                                   cs_real_t                      distant[],
                                   cs_real_t                      local[]);
 
-/*----------------------------------------------------------------------------
- * Exchange variable between groups using cell id
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Exchange variable between groups using cell id.
  *
- * parameters:
- *   cpl    <-- pointer to coupling entity
- *   stride <-- number of values (non interlaced) by entity
- *   tab    <-- variable exchanged
- *   local  --> local data
- *----------------------------------------------------------------------------*/
+ * \param[in]  cpl     pointer to coupling entity
+ * \param[in]  stride  number of values (non interlaced) by entity
+ * \param[in]  tab     variable exchanged
+ * \param[out] local   local data
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_exchange_by_cell_id(const cs_internal_coupling_t  *cpl,
@@ -200,15 +210,16 @@ cs_internal_coupling_exchange_by_cell_id(const cs_internal_coupling_t  *cpl,
                                          const cs_real_t                tab[],
                                          cs_real_t                      local[]);
 
-/*----------------------------------------------------------------------------
- * Exchange variable between groups using face id
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Exchange variable between groups using face id.
  *
- * parameters:
- *   cpl    <-- pointer to coupling entity
- *   stride <-- number of values (non interlaced) by entity
- *   tab    <-- variable exchanged
- *   local  --> local data
- *----------------------------------------------------------------------------*/
+ * \param[in]  cpl     pointer to coupling entity
+ * \param[in]  stride  number of values (non interlaced) by entity
+ * \param[in]  tab     variable exchanged
+ * \param[out] local   local data
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
@@ -532,19 +543,6 @@ void
 cs_internal_coupling_dump(void);
 
 /*----------------------------------------------------------------------------
- * Update components hint_* and hext_* using hbord
- *   in the coupling entity associated with given field_id
- *
- * parameters:
- *   field_id <-- id of the field
- *   hbord    <-- array used to update hint_* and hext_*
- *----------------------------------------------------------------------------*/
-
-void
-cs_ic_set_exchcoeff(const int         field_id,
-                    const cs_real_t  *hbord);
-
-/*----------------------------------------------------------------------------
  * Add preprocessing operations required by coupling volume using given
  * criteria.
  *
@@ -580,13 +578,13 @@ cs_internal_coupling_add_entity(int        f_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add contribution from coupled faces (internal coupling) to
- * initialisation for iterative scalar gradient calculation
+ * \brief Add contribution from coupled faces (internal coupling) to
+ * initialisation for iterative scalar gradient calculation.
  *
- * \param[in]       cpl       pointer to coupling entity
- * \param[in]       c_weight  weighted gradient coefficient variable, or NULL
- * \param[in, out]  pvar      variable
- * \param[in, out]  grad      gradient
+ * \param[in]      cpl       pointer to coupling entity
+ * \param[in]      c_weight  weighted gradient coefficient variable, or NULL
+ * \param[in]      pvar      variable
+ * \param[in, out] grad      gradient
  */
 /*----------------------------------------------------------------------------*/
 
@@ -604,7 +602,7 @@ cs_internal_coupling_initialize_scalar_gradient(
  *
  * \param[in]       cpl       pointer to coupling entity
  * \param[in]       c_weight  weighted gradient coefficient variable, or NULL
- * \param[in, out]  pvar      variable
+ * \param[in]       pvar      variable
  * \param[in, out]  grad      gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -636,6 +634,37 @@ cs_internal_coupling_initialize_tensor_gradient(
     const cs_real_6_t              pvar[],
     cs_real_63_t         *restrict grad);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update internal coupling coefficients of the field of the
+ * given id using given boundary exchange coefficients passed by face id.
+ *
+ * \param[in] field_id  field id
+ * \param[in] hbnd      boundary exchange coefficients passed by face id
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ic_field_set_exchcoeff(const int         field_id,
+                          const cs_real_t  *hbnd);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get distant data using face id at all coupling faces for a given
+ * field id.
+ *
+ * \param[in]  field_id    field id
+ * \param[in]  stride      number of values (interlaced) by entity
+ * \param[in]  tab_distant exchanged data by face id
+ * \param[out] tab_local   local data by face id
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ic_field_dist_data_by_face_id(const int         field_id,
+                                 int               stride,
+                                 const cs_real_t   tab_distant[],
+                                 cs_real_t         tab_local[]);
 
 /*----------------------------------------------------------------------------*/
 
