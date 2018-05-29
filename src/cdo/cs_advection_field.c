@@ -1618,6 +1618,8 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
 
   cs_lnum_t  bf_id = cm->f_ids[f] - cs_cdo_quant->n_i_faces;
   assert(bf_id > -1);
+  assert(cs_flag_test(cm->flag,  CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_FEQ |
+                      CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
   for (short int v = 0; v < cm->n_vc; v++) fluxes[v] = 0;
 
@@ -1625,12 +1627,57 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
 
     /* Implicit definition of the boundary flux from the definition of the
        advection field inside the computational domain */
+    cs_xdef_t  *def = adv->definition;
+
     assert(adv->bdy_def_ids == NULL);
+    switch (def->type) {
 
-    const cs_field_t  *bflx =
-      cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+      {
+        cs_quadrature_tria_integral_t
+          *compute_integral = cs_quadrature_get_tria_integral(def->dim,
+                                                              def->qtype);
+        cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
 
-    _fill_cw_uniform_boundary_flux(cm, f, bflx->val[bf_id], fluxes);
+        const cs_quant_t  pfq = cm->face[f];
+        const short int  end_idx = cm->f2e_idx[f+1], start_idx = cm->f2e_idx[f];
+        const short int n_ef = end_idx - start_idx; /* #vertices (= #edges) */
+        const short int *f2e_ids = cm->f2e_ids + start_idx;
+        const double  *tef = cm->tef + start_idx;
+
+        for (short int e = 0; e < n_ef; e++) { /* Loop on face edges */
+
+          const short int  _2e = 2*f2e_ids[e];
+          const short int  v1 = cm->e2v_ids[_2e];
+          const short int  v2 = cm->e2v_ids[_2e+1];
+
+          cs_real_t  val[3] = {0, 0, 0};
+
+          /* val is updated (+=) */
+          compute_integral(time_eval,
+                           cm->xv + 3*v1, cm->xv + 3*v2, pfq.center, tef[e],
+                           anai->func, anai->input, val);
+
+          const double  e_contrib = 0.5*_dp3(pfq.unitv, val);
+
+          fluxes[v1] += e_contrib;
+          fluxes[v2] += e_contrib;
+
+        } /* Loop on face edges */
+
+      }
+      break;
+
+    default:
+      {
+        const cs_field_t  *bflx =
+          cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+
+        _fill_cw_uniform_boundary_flux(cm, f, bflx->val[bf_id], fluxes);
+      }
+      break;
+
+    } /* End of switch */
 
   }
   else {
