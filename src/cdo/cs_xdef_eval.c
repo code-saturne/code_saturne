@@ -443,66 +443,9 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(compact);
 
-  cs_quadrature_tria_integral_t  *qfunc = NULL;
+  cs_quadrature_tria_integral_t
+    *qfunc = cs_quadrature_get_tria_integral(dim, qtype);
   cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)input;
-
-  switch (dim) {
-
-  case 1: /* Scalar-valued case */
-    {
-      switch (qtype) {
-        /* Barycenter of the tetrahedral subdiv. */
-      case CS_QUADRATURE_BARY:
-      case CS_QUADRATURE_BARY_SUBDIV:
-        qfunc = cs_quadrature_tria_1pt_scal;
-        break;
-        /* Quadrature with a unique weight */
-      case CS_QUADRATURE_HIGHER:
-        qfunc = cs_quadrature_tria_3pts_scal;
-        break;
-        /* Most accurate quadrature available */
-      case CS_QUADRATURE_HIGHEST:
-        qfunc = cs_quadrature_tria_4pts_scal;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Invalid quadrature type.\n"));
-
-      } /* Which type of quadrature to use */
-    }
-    break;
-
-  case 3: /* Vector-valued case */
-    {
-      switch (qtype) {
-        /* Barycenter of the tetrahedral subdiv. */
-      case CS_QUADRATURE_BARY:
-      case CS_QUADRATURE_BARY_SUBDIV:
-        qfunc = cs_quadrature_tria_1pt_vect;
-        break;
-        /* Quadrature with a unique weight */
-      case CS_QUADRATURE_HIGHER:
-        qfunc = cs_quadrature_tria_3pts_vect;
-        break;
-        /* Most accurate quadrature available */
-      case CS_QUADRATURE_HIGHEST:
-        qfunc = cs_quadrature_tria_4pts_vect;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Invalid quadrature type.\n"));
-
-      } /* Which type of quadrature to use */
-    }
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid dimension of the analytical fucntion.\n"));
-
-  } /* Switch on space dimension */
 
   const cs_adjacency_t  *f2e = connect->f2e;
   const cs_adjacency_t  *e2v = connect->e2v;
@@ -2157,27 +2100,8 @@ cs_xdef_eval_cw_face_avg_scalar_by_analytic(const cs_cell_mesh_t   *cm,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  cs_quadrature_tria_integral_t  *qfunc = NULL;
-  switch (qtype) {
-
-  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-  case CS_QUADRATURE_BARY_SUBDIV:
-    qfunc = cs_quadrature_tria_1pt_scal;
-    break;
-
-  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-    qfunc = cs_quadrature_tria_3pts_scal;
-    break;
-
-  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-    qfunc = cs_quadrature_tria_4pts_scal;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
-
-  } /* Which type of quadrature to use */
-
+  cs_quadrature_tria_integral_t
+    *qfunc = cs_quadrature_get_tria_integral(1, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
   cs_xdef_eval_int_on_face(cm, time_eval, f,
@@ -2219,27 +2143,8 @@ cs_xdef_eval_cw_face_avg_vector_by_analytic(const cs_cell_mesh_t    *cm,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  cs_quadrature_tria_integral_t  *qfunc = NULL;
-  switch (qtype) {
-
-  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-  case CS_QUADRATURE_BARY_SUBDIV:
-    qfunc = cs_quadrature_tria_1pt_vect;
-    break;
-
-  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-    qfunc = cs_quadrature_tria_3pts_vect;
-    break;
-
-  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-    qfunc = cs_quadrature_tria_4pts_vect;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
-
-  } /* Which type of quadrature to use */
-
+  cs_quadrature_tria_integral_t
+    *qfunc = cs_quadrature_get_tria_integral(3, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
   cs_xdef_eval_int_on_face(cm, t_eval, f,
@@ -2282,27 +2187,8 @@ cs_xdef_eval_cw_face_avg_tensor_by_analytic(const cs_cell_mesh_t    *cm,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  cs_quadrature_tria_integral_t  *qfunc = NULL;
-  switch (qtype) {
-
-  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-  case CS_QUADRATURE_BARY_SUBDIV:
-    qfunc = cs_quadrature_tria_1pt_tens;
-    break;
-
-  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-    qfunc = cs_quadrature_tria_3pts_tens;
-    break;
-
-  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-    qfunc = cs_quadrature_tria_4pts_tens;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
-
-  } /* Which type of quadrature to use */
-
+  cs_quadrature_tria_integral_t
+    *qfunc = cs_quadrature_get_tria_integral(9, qtype);;
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
   cs_xdef_eval_int_on_face(cm, t_eval, f,
@@ -2343,27 +2229,8 @@ cs_xdef_eval_cw_avg_scalar_by_analytic(const cs_cell_mesh_t     *cm,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  cs_quadrature_tetra_integral_t  *qfunc = NULL;
-  switch (qtype) {
-
-  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-  case CS_QUADRATURE_BARY_SUBDIV:
-    qfunc = cs_quadrature_tet_1pt_scal;
-    break;
-
-  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-    qfunc = cs_quadrature_tet_4pts_scal;
-    break;
-
-  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-    qfunc = cs_quadrature_tet_5pts_scal;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
-
-  } /* Which type of quadrature to use */
-
+  cs_quadrature_tetra_integral_t
+    *qfunc = cs_quadrature_get_tetra_integral(1, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
   cs_xdef_eval_int_on_cell(cm, t_eval, anai->func, anai->input, qfunc, eval);
@@ -2401,27 +2268,8 @@ cs_xdef_eval_cw_avg_vector_by_analytic(const cs_cell_mesh_t     *cm,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  cs_quadrature_tetra_integral_t  *qfunc = NULL;
-  switch (qtype) {
-
-  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-  case CS_QUADRATURE_BARY_SUBDIV:
-    qfunc = cs_quadrature_tet_1pt_vect;
-    break;
-
-  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-    qfunc = cs_quadrature_tet_4pts_vect;
-    break;
-
-  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-    qfunc = cs_quadrature_tet_5pts_vect;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
-
-  } /* Which type of quadrature to use */
-
+  cs_quadrature_tetra_integral_t
+    *qfunc = cs_quadrature_get_tetra_integral(3, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
   cs_xdef_eval_int_on_cell(cm, t_eval, anai->func, anai->input, qfunc, eval);
@@ -2461,27 +2309,8 @@ cs_xdef_eval_cw_avg_tensor_by_analytic(const cs_cell_mesh_t     *cm,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  cs_quadrature_tetra_integral_t  *qfunc = NULL;
-  switch (qtype) {
-
-  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-  case CS_QUADRATURE_BARY_SUBDIV:
-    qfunc = cs_quadrature_tet_1pt_tens;
-    break;
-
-  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-    qfunc = cs_quadrature_tet_4pts_tens;
-    break;
-
-  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-    qfunc = cs_quadrature_tet_5pts_tens;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
-
-  } /* Which type of quadrature to use */
-
+  cs_quadrature_tetra_integral_t
+    *qfunc = cs_quadrature_get_tetra_integral(9, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
   cs_xdef_eval_int_on_cell(cm, t_eval, anai->func, anai->input, qfunc, eval);
@@ -2626,11 +2455,11 @@ cs_xdef_eval_int_on_cell_faces(const cs_cell_mesh_t             *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_eval_cw_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
-                                          cs_real_t                 t_eval,
-                                          void                     *input,
-                                          cs_quadrature_type_t      qtype,
-                                          cs_real_t                *eval)
+cs_xdef_eval_cw_vect_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
+                                               cs_real_t                 t_eval,
+                                               void                     *input,
+                                               cs_quadrature_type_t      qtype,
+                                               cs_real_t                *eval)
 {
   if (eval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
@@ -2640,32 +2469,10 @@ cs_xdef_eval_cw_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  cs_quadrature_tetra_integral_t  *q_tet = NULL;
-  cs_quadrature_tria_integral_t   *q_tri = NULL;
-
-  switch (qtype) {
-
-  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-  case CS_QUADRATURE_BARY_SUBDIV:
-    q_tet = cs_quadrature_tet_1pt_vect;
-    q_tri = cs_quadrature_tria_1pt_vect;
-    break;
-
-  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-    q_tet = cs_quadrature_tet_4pts_vect;
-    q_tri = cs_quadrature_tria_3pts_vect;
-    break;
-
-  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-    q_tet = cs_quadrature_tet_5pts_vect;
-    q_tri = cs_quadrature_tria_4pts_vect;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
-
-  } /* Which type of quadrature to use */
-
+  cs_quadrature_tetra_integral_t
+    *q_tet = cs_quadrature_get_tetra_integral(3, qtype);
+  cs_quadrature_tria_integral_t
+    *q_tri = cs_quadrature_get_tria_integral(3, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
   const short int nf = cm->n_fc;

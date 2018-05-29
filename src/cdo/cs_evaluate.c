@@ -1587,26 +1587,8 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
     /* Retrieve information from mesh location structures */
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
-  cs_quadrature_tetra_integral_t  *qfunc = NULL;
-  switch (def->qtype) {
-
-  case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-  case CS_QUADRATURE_BARY_SUBDIV:
-    qfunc = cs_quadrature_tet_1pt_scal;
-    break;
-
-  case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-    qfunc = cs_quadrature_tet_4pts_scal;
-    break;
-
-  case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-    qfunc = cs_quadrature_tet_5pts_scal;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
-
-  } /* Which type of quadrature to use */
+  cs_quadrature_tetra_integral_t
+    *qfunc = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
 
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
@@ -2052,78 +2034,26 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   cs_range_set_t  *rs = NULL;
-  cs_quadrature_tria_integral_t  *qfunc = NULL;
+  cs_quadrature_tria_integral_t
+    *qfunc = cs_quadrature_get_tria_integral(def->dim, def->qtype);
   cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
 
   switch (def->dim) {
 
   case 1: /* Scalar-valued */
-    {
-      rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+    rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
 
-      switch (def->qtype) {
-
-        /* Barycenter of the cell or of the tetrahedral subdiv. */
-      case CS_QUADRATURE_BARY:
-      case CS_QUADRATURE_BARY_SUBDIV:
-        qfunc = cs_quadrature_tria_1pt_scal;
-        break;
-
-        /* Quadrature with a unique weight */
-      case CS_QUADRATURE_HIGHER:
-        qfunc = cs_quadrature_tria_3pts_scal;
-        break;
-
-        /* Most accurate quadrature available */
-      case CS_QUADRATURE_HIGHEST:
-        qfunc = cs_quadrature_tria_4pts_scal;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, _err_quad, __func__);
-        break;
-
-      } /* Which type of quadrature to use */
-
-      _pfsa_by_analytic(time_eval,
-                        anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
-                        retval);
-
-    }
+    _pfsa_by_analytic(time_eval,
+                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      retval);
     break;
 
   case 3: /* Vector-valued */
-    {
-      rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+    rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
 
-      switch (def->qtype) {
-
-        /* Barycenter of the cell or of the tetrahedral subdiv. */
-      case CS_QUADRATURE_BARY:
-      case CS_QUADRATURE_BARY_SUBDIV:
-        qfunc = cs_quadrature_tria_1pt_vect;
-        break;
-
-        /* Quadrature with a unique weight */
-      case CS_QUADRATURE_HIGHER:
-        qfunc = cs_quadrature_tria_3pts_vect;
-        break;
-
-        /* Most accurate quadrature available */
-      case CS_QUADRATURE_HIGHEST:
-        qfunc = cs_quadrature_tria_4pts_vect;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, _err_quad, __func__);
-        break;
-
-      } /* Which type of quadrature to use */
-
-      _pfva_by_analytic(time_eval,
-                        anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
-                        retval);
-    }
+    _pfva_by_analytic(time_eval,
+                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      retval);
     break;
 
   default:
@@ -2260,71 +2190,22 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
-  cs_quadrature_tetra_integral_t  *qfunc = NULL;
+  cs_quadrature_tetra_integral_t
+    *qfunc = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
   cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
 
   switch (def->dim) {
 
   case 1: /* Scalar-valued */
-    {
-      switch (def->qtype) {
-
-        /* Barycenter of the cell or the tetrahedral subdiv. */
-      case CS_QUADRATURE_BARY:
-      case CS_QUADRATURE_BARY_SUBDIV:
-        qfunc = cs_quadrature_tet_1pt_scal;
-        break;
-
-        /* Quadrature with a unique weight */
-      case CS_QUADRATURE_HIGHER:
-        qfunc = cs_quadrature_tet_4pts_scal;
-        break;
-
-        /* Most accurate quadrature available */
-      case CS_QUADRATURE_HIGHEST:
-        qfunc = cs_quadrature_tet_5pts_scal;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, _err_quad, __func__);
-        break;
-
-      } /* Which type of quadrature to use */
-
-      _pcsa_by_analytic(time_eval,
-                        anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
-                        retval);
-    }
+    _pcsa_by_analytic(time_eval,
+                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      retval);
     break;
 
   case 3: /* Vector-valued */
-    {
-      switch (def->qtype) {
-        /* Barycenter of the cell or the tetrahedral subdiv. */
-      case CS_QUADRATURE_BARY:
-      case CS_QUADRATURE_BARY_SUBDIV:
-        qfunc = cs_quadrature_tet_1pt_vect;
-        break;
-
-        /* Quadrature with a unique weight */
-      case CS_QUADRATURE_HIGHER:
-        qfunc = cs_quadrature_tet_4pts_vect;
-        break;
-
-        /* Most accurate quadrature available */
-      case CS_QUADRATURE_HIGHEST:
-        qfunc = cs_quadrature_tet_5pts_vect;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, _err_quad, __func__);
-
-      } /* Which type of quadrature to use */
-
-      _pcva_by_analytic(time_eval,
-                        anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
-                        retval);
-    }
+    _pcva_by_analytic(time_eval,
+                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      retval);
     break;
 
   default:

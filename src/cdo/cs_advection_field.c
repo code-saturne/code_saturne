@@ -1426,33 +1426,10 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
         const cs_adjacency_t  *e2v = cs_cdo_connect->e2v;
         const cs_real_t  *xv = cdoq->vtx_coord;
 
-        cs_quadrature_tria_integral_t  *compute_integral = NULL;
+        cs_quadrature_tria_integral_t
+          *compute_integral = cs_quadrature_get_tria_integral(def->dim,
+                                                              def->qtype);
         cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
-
-        switch (def->qtype) {
-
-          /* Barycenter of the cell or of the tetrahedral subdiv. */
-        case CS_QUADRATURE_BARY:
-        case CS_QUADRATURE_BARY_SUBDIV:
-          compute_integral = cs_quadrature_tria_1pt_vect;
-          break;
-
-          /* Quadrature with a unique weight */
-        case CS_QUADRATURE_HIGHER:
-          compute_integral = cs_quadrature_tria_3pts_vect;
-          break;
-
-          /* Most accurate quadrature available */
-        case CS_QUADRATURE_HIGHEST:
-          compute_integral = cs_quadrature_tria_4pts_vect;
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0, " %s: Invalid quadrature rule.",
-                    __func__);
-          break;
-
-        } /* Which type of quadrature to use */
 
         for (cs_lnum_t i = 0; i < n_b_faces; i++) {
 

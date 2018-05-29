@@ -1368,7 +1368,7 @@ cs_quadrature_tet_5pts_tens(double                tcur,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the integral function according to the the quadrature type
+ * \brief  Retrieve the integral function according to the quadrature type
  *         and the stride provided
  *
  * \param[in]     dim          dimension of the function to integrate
@@ -1379,8 +1379,8 @@ cs_quadrature_tet_5pts_tens(double                tcur,
 /*----------------------------------------------------------------------------*/
 
 static inline cs_quadrature_tria_integral_t *
-cs_quadrature_get_integral_function_tria(short int             dim,
-                                         cs_quadrature_type_t  qtype)
+cs_quadrature_get_tria_integral(int                   dim,
+                                cs_quadrature_type_t  qtype)
 {
   switch (dim) {
 
@@ -1450,7 +1450,7 @@ cs_quadrature_get_integral_function_tria(short int             dim,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the integral function according to the the quadrature type
+ * \brief  Retrieve the integral function according to the quadrature type
  *         and the stride provided
  *
  * \param[in]     dim          dimension of the function to integrate
@@ -1460,9 +1460,9 @@ cs_quadrature_get_integral_function_tria(short int             dim,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_quadrature_tetra_integral_t*
-cs_quadrature_get_integral_function_tetra(short int             dim,
-                                          cs_quadrature_type_t  qtype)
+static inline cs_quadrature_tetra_integral_t *
+cs_quadrature_get_tetra_integral(int                   dim,
+                                 cs_quadrature_type_t  qtype)
 {
   switch (dim) {
 

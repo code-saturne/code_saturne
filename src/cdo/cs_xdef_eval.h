@@ -1029,11 +1029,11 @@ cs_xdef_eval_int_on_cell_faces(const cs_cell_mesh_t            *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_eval_cw_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
-                                          cs_real_t                 t_eval,
-                                          void                     *input,
-                                          cs_quadrature_type_t      qtype,
-                                          cs_real_t                *eval);
+cs_xdef_eval_cw_vect_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
+                                               cs_real_t                 t_eval,
+                                               void                     *input,
+                                               cs_quadrature_type_t      qtype,
+                                               cs_real_t                *eval);
 
 /*============================================================================
  * Static inline public function prototypes
