@@ -94,6 +94,11 @@ fi
 if test "x$LMOD_CMD" != "x" ; then
   MODULECMD=$LMOD_CMD
   AC_SUBST(MODULECMD)
+  "$MODULECMD" python avail > /dev/null 2>&1
+  if test $? != 0 ; then
+    AC_MSG_WARN([LMOD_CMD defined but module commmand does not seem usable])
+    cs_env_modules="no"
+  fi
 elif test "x$MODULESHOME" != "x" ; then
   AC_PATH_PROG([MODULECMD], [modulecmd], [], [${MODULESHOME}/bin:$PATH])
 else
