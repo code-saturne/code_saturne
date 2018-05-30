@@ -1495,8 +1495,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
           } /* End of switch */
 
-          cs_nvec3(val, &nvec);
-          flx_values[i] = pfq.meas*nvec.meas * _dp3(pfq.unitv, nvec.unitv);
+          flx_values[i] = _dp3(pfq.unitv, val);
 
         }
 
