@@ -189,7 +189,7 @@ typedef void
  *         domain between time t_cur and t_cur + dt_cur
  *
  * \param[in]      eqp             pointer to a cs_equation_param_t structure
- * \param[in]      eqb             pointer to a cs_equation_builder_t structure
+ * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
  * \param[in, out] context         pointer to a scheme builder structure
  * \param[in]      var_field_id    id of the variable field
  * \param[in]      bflux_field_id  id of the variable field
@@ -201,7 +201,7 @@ typedef void
 
 typedef cs_equation_balance_t *
 (cs_equation_get_balance_t)(const cs_equation_param_t    *eqp,
-                            const cs_equation_builder_t  *eqb,
+                            cs_equation_builder_t        *eqb,
                             void                         *context,
                             int                           var_field_id,
                             int                           bflux_field_id,

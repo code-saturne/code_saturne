@@ -31,6 +31,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include <string.h>
+
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
 #include "cs_param.h"

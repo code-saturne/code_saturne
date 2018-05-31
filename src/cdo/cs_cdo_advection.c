@@ -1790,6 +1790,8 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
                             cs_cell_builder_t           *cb,
                             cs_cell_sys_t               *csys)
 {
+  CS_UNUSED(t_eval);
+
   /* Sanity checks */
   assert(csys != NULL && cm != NULL && eqp != NULL);
   assert(csys->mat->n_rows == cm->n_vc + 1);

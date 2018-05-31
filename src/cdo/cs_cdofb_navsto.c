@@ -292,6 +292,9 @@ cs_cdofb_navsto_init_uzawa_context(const cs_navsto_param_t     *nsp,
   const cs_navsto_coupling_uzawa_t  *nsc =
     (const cs_navsto_coupling_uzawa_t  *)nsc_input;
 
+  /* TODO */
+  CS_UNUSED(nsc);
+
   cs_cdofb_navsto_context = nssc;
 }
 
@@ -361,9 +364,11 @@ cs_cdofb_navsto_init_ac_vpp_context(const cs_navsto_param_t   *nsp,
 
   nssc->is_zeta_uniform = cs_property_is_uniform(nsc->zeta);
 
-  // TODO: face_velocity?
+  /* TODO: face_velocity? */
   BFT_MALLOC(nssc->face_velocity, 3*cs_shared_quant->n_faces, cs_real_t);
 
+  CS_UNUSED(grd_eq);
+  CS_UNUSED(mom_eq);
 }
 
 /*----------------------------------------------------------------------------*/

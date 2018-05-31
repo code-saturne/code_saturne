@@ -914,7 +914,7 @@ cs_cdofb_scaleq_update_field(const cs_real_t              *solu,
  *         Case of scalar-valued CDO face-based scheme
  *
  * \param[in]      eqp             pointer to a cs_equation_param_t structure
- * \param[in]      eqb             pointer to a cs_equation_builder_t structure
+ * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
  * \param[in, out] context         pointer to a scheme builder structure
  * \param[in]      var_field_id    id of the variable field
  * \param[in]      bflux_field_id  id of the variable field
@@ -926,7 +926,7 @@ cs_cdofb_scaleq_update_field(const cs_real_t              *solu,
 
 cs_equation_balance_t *
 cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
-                        const cs_equation_builder_t   *eqb,
+                        cs_equation_builder_t         *eqb,
                         void                          *context,
                         int                            var_field_id,
                         int                            bflux_field_id,
@@ -983,8 +983,6 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
     /* Initialization of the values of properties */
     double  time_pty_val = 1.0;
     double  reac_pty_vals[CS_CDO_N_MAX_REACTIONS];
-
-    const cs_real_t  t_eval_pty = t_cur + 0.5*dt_cur;
 
     cs_equation_init_properties(eqp, eqb, t_eval_pty,
                                 &time_pty_val, reac_pty_vals, cb);

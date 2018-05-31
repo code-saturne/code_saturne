@@ -648,6 +648,9 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
                                    cs_cdovb_cell_bld[0],
                                    dir_values);
 
+  CS_UNUSED(eqc);
+  CS_UNUSED(mav);
+  CS_UNUSED(field_val);
 
   /* TODO */
   BFT_FREE(dir_values);
@@ -685,6 +688,9 @@ cs_cdovb_vecteq_update_field(const cs_real_t            *solu,
   cs_timer_t  t0 = cs_timer_time();
 
   /* TODO */
+  CS_UNUSED(eqc);
+  CS_UNUSED(solu);
+  CS_UNUSED(field_val);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
@@ -749,6 +755,10 @@ cs_cdovb_vecteq_compute_flux_across_plane(const cs_real_t             normal[],
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
   /* TODO */
+  CS_UNUSED(quant);
+  CS_UNUSED(f2c);
+  CS_UNUSED(normal);
+  CS_UNUSED(eqp);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
@@ -794,6 +804,11 @@ cs_cdovb_vecteq_cellwise_diff_flux(const cs_real_t             *values,
   const cs_timer_t  t0 = cs_timer_time();
 
   /* TODO */
+  CS_UNUSED(quant);
+  CS_UNUSED(connect);
+  CS_UNUSED(values);
+  CS_UNUSED(t_eval);
+  CS_UNUSED(eqp);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
@@ -824,6 +839,8 @@ cs_cdovb_vecteq_extra_op(const char                 *eqname,
   const cs_timer_t  t0 = cs_timer_time();
 
   /* TODO */
+  CS_UNUSED(eqname);
+  CS_UNUSED(eqp);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

@@ -455,7 +455,7 @@ cs_xdef_copy(cs_xdef_t     *src)
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0, " %s: Invalid case");
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid case", __func__);
 
   }
 

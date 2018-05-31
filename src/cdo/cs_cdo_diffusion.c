@@ -1016,6 +1016,7 @@ cs_cdovb_diffusion_face_p0_flux(const cs_cell_mesh_t     *cm,
                                 cs_real_t                 t_eval,
                                 cs_real_t                *fluxes)
 {
+  CS_UNUSED(t_eval);
   assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ));
 
@@ -1141,6 +1142,15 @@ cs_cdovb_diffusion_face_cost_flux(short int                 f,
                                   double                    beta,
                                   cs_cell_builder_t        *cb)
 {
+  CS_UNUSED(f);
+  CS_UNUSED(cm);
+  CS_UNUSED(diff_tensor);
+  CS_UNUSED(pot_values);
+  CS_UNUSED(beta);
+  CS_UNUSED(cb);
+
+  cs_real_t  flux = 0.;
+
 /*   cs_real_3_t  lek; */
 /*   cs_real_3_t  *le_grd = cb->vectors; */
 
@@ -1206,6 +1216,8 @@ cs_cdovb_diffusion_face_cost_flux(short int                 f,
 /*                 cm->c_id, cm->f_ids[fm->f_id]); */
 /*   cs_sdm_dump(cm->c_id, NULL, NULL, ntrgrd); */
 /* #endif */
+
+  return flux;
 }
 
 /*----------------------------------------------------------------------------*/
