@@ -283,6 +283,28 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the integral over a given set of cells of the field related
+ *         to a tracer equation. This integral turns out to be exact for linear
+ *         functions.
+ *
+ * \param[in]    connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]    quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]    tracer    pointer to a cs_gwf_tracer_t structure
+ * \param[in]    z_name    name of the volumic zone where the integral is done
+ *                         (if NULL or "" all cells are considered)
+ *
+ * \return the value of the integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
+                        const cs_cdo_quantities_t  *cdoq,
+                        const cs_gwf_tracer_t      *tracer,
+                        const char                 *z_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined post-processing output for the groundwater flow module
  *         prototype of this function is fixed since it is a function pointer
  *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)

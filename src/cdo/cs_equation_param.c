@@ -302,54 +302,6 @@ _petsc_setup_hook(void   *context,
 
 #endif /* defined(HAVE_PETSC) */
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the volume zone if from the zone name (If name = NULL or
- *         has an empty length, all entities are selected)
- *
- * \param[in] z_name            name of the zone
- *
- * \return the id of the related zone
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-_get_vzone_id(const char   *z_name)
-{
-  int z_id = 0;
-  if (z_name != NULL) {
-    if (strlen(z_name) > 0) {
-      const cs_zone_t  *z = cs_volume_zone_by_name(z_name);
-      z_id = z->id;
-    }
-  }
-  return z_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the boundary zone if from the zone name (If name = NULL or
- *         has an empty length, all entities are selected)
- *
- * \param[in] z_name            name of the zone
- *
- * \return the id of the related zone
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-_get_bzone_id(const char   *z_name)
-{
-  int z_id = 0;
-  if (z_name != NULL) {
-    if (strlen(z_name) > 0) {
-      const cs_zone_t  *z = cs_boundary_zone_by_name(z_name);
-      z_id = z->id;
-    }
-  }
-  return z_id;
-}
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -1306,7 +1258,7 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
-  int  z_id = _get_vzone_id(z_name);
+  int  z_id = cs_get_vol_zone_id(z_name);
 
   cs_flag_t  meta_flag = 0;
   if (z_id == 0)
@@ -1350,7 +1302,7 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
-  int z_id = _get_vzone_id(z_name);
+  int z_id = cs_get_vol_zone_id(z_name);
 
   cs_flag_t  meta_flag = 0;
   if (z_id == 0)
@@ -1394,7 +1346,7 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
-  int z_id = _get_vzone_id(z_name);
+  int z_id = cs_get_vol_zone_id(z_name);
 
   cs_flag_t  meta_flag = 0;
   if (z_id == 0)
@@ -1447,7 +1399,7 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           dim,
-                                          _get_bzone_id(z_name),
+                                          cs_get_bdy_zone_id(z_name),
                                           CS_FLAG_STATE_UNIFORM, // state flag
                                           cs_cdo_bc_get_flag(bc_type), // meta
                                           (void *)values);
@@ -1506,7 +1458,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,
-                                          _get_bzone_id(z_name),
+                                          cs_get_bdy_zone_id(z_name),
                                           state_flag,
                                           cs_cdo_bc_get_flag(bc_type), // meta
                                           (void *)&input);
@@ -1555,7 +1507,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           dim,
-                                          _get_bzone_id(z_name),
+                                          cs_get_bdy_zone_id(z_name),
                                           0, // state
                                           cs_cdo_bc_get_flag(bc_type), // meta
                                           &anai);
@@ -1691,7 +1643,7 @@ cs_equation_add_source_term_by_val(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
-  int z_id = _get_vzone_id(z_name);
+  int z_id = cs_get_vol_zone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
   cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY | CS_FLAG_STATE_UNIFORM;
@@ -1740,7 +1692,7 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
-  int z_id = _get_vzone_id(z_name);
+  int z_id = cs_get_vol_zone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
   cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
@@ -1796,7 +1748,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
-  int z_id = _get_vzone_id(z_name);
+  int z_id = cs_get_vol_zone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
   cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;

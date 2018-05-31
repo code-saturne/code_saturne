@@ -32,8 +32,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_param.h"
 #include "cs_quadrature.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -231,6 +233,58 @@ typedef struct {
   cs_timestep_func_t  *func;
 
 } cs_xdef_timestep_input_t;
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the volume zone if from the zone name (If name = NULL or
+ *         has an empty length, all entities are selected)
+ *
+ * \param[in] z_name            name of the zone
+ *
+ * \return the id of the related zone
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline int
+cs_get_vol_zone_id(const char   *z_name)
+{
+  int z_id = 0;
+  if (z_name != NULL) {
+    if (strlen(z_name) > 0) {
+      const cs_zone_t  *z = cs_volume_zone_by_name(z_name);
+      z_id = z->id;
+    }
+  }
+  return z_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the boundary zone if from the zone name (If name = NULL or
+ *         has an empty length, all entities are selected)
+ *
+ * \param[in] z_name            name of the zone
+ *
+ * \return the id of the related zone
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline int
+cs_get_bdy_zone_id(const char   *z_name)
+{
+  int z_id = 0;
+  if (z_name != NULL) {
+    if (strlen(z_name) > 0) {
+      const cs_zone_t  *z = cs_boundary_zone_by_name(z_name);
+      z_id = z->id;
+    }
+  }
+  return z_id;
+}
 
 /*============================================================================
  * Public function prototypes

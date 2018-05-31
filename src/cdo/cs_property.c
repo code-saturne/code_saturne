@@ -90,30 +90,6 @@ static cs_property_t  **_properties = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the volume zone if from the zone name (If name = NULL or
- *         has an empty length, all entities are selected)
- *
- * \param[in] z_name            name of the zone
- *
- * \return the id of the related zone
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-_get_vzone_id(const char   *z_name)
-{
-  int z_id = 0;
-  if (z_name != NULL) {
-    if (strlen(z_name) > 0) {
-      const cs_zone_t  *z = cs_volume_zone_by_name(z_name);
-      z_id = z->id;
-    }
-  }
-  return z_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Check if the settings are valid
  *
  * \param[in]  tens      values of the tensor
@@ -522,7 +498,7 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_def(pty);
-  int  z_id = _get_vzone_id(zname);
+  int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; // metadata
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
@@ -566,7 +542,7 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   int  new_id = _add_new_def(pty);
-  int  z_id = _get_vzone_id(zname);
+  int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; // metadata
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
@@ -618,7 +594,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
               pty->name);
 
   int  new_id = _add_new_def(pty);
-  int  z_id = _get_vzone_id(zname);
+  int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; // metadata
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
@@ -660,7 +636,7 @@ cs_property_def_by_analytic(cs_property_t        *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   int  new_id = _add_new_def(pty);
-  int  z_id = _get_vzone_id(zname);
+  int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = 0; // metadata
   cs_xdef_analytic_input_t  anai = {.func = func,
@@ -711,7 +687,7 @@ cs_property_def_by_func(cs_property_t         *pty,
                         cs_xdef_eval_cw_t     *get_eval_at_cell_cw)
 {
   int  def_id = _add_new_def(pty);
-  int  z_id = _get_vzone_id(zname);
+  int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = 0; // metadata
 

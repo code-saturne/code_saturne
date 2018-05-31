@@ -96,30 +96,6 @@ static cs_adv_field_t  **_adv_fields = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the boundary zone if from the zone name (If name = NULL or
- *         has an empty length, all entities are selected)
- *
- * \param[in] z_name            name of the zone
- *
- * \return the id of the related zone
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-_get_bzone_id(const char   *z_name)
-{
-  int z_id = 0;
-  if (z_name != NULL) {
-    if (strlen(z_name) > 0) {
-      const cs_zone_t  *z = cs_boundary_zone_by_name(z_name);
-      z_id = z->id;
-    }
-  }
-  return z_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Update the contribution of the flux
  *
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
@@ -766,7 +742,7 @@ cs_advection_field_def_boundary_flux_by_value(cs_adv_field_t    *adv,
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           1, // dim.
-                                          _get_bzone_id(zname),
+                                          cs_get_bdy_zone_id(zname),
                                           state_flag,
                                           meta_flag,
                                           (void *)&normal_flux);
@@ -805,7 +781,7 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           1, // dim.
-                                          _get_bzone_id(zname),
+                                          cs_get_bdy_zone_id(zname),
                                           state_flag,
                                           meta_flag,
                                           &anai);
@@ -846,7 +822,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                   .values = array,
                                   .index = index };
 
-  int  z_id = _get_bzone_id(zname);
+  int  z_id = cs_get_bdy_zone_id(zname);
   if (z_id == 0)
     meta_flag  |= CS_FLAG_FULL_LOC;
 

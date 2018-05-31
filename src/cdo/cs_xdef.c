@@ -39,12 +39,10 @@
 
 #include "bft_mem.h"
 
-#include "cs_boundary_zone.h"
 #include "cs_field.h"
 #include "cs_flag.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
-#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -1411,6 +1411,78 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the integral over a given set of cells of the field related
+ *         to a tracer equation. This integral turns out to be exact for linear
+ *         functions.
+ *
+ * \param[in]    connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]    quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]    tracer    pointer to a cs_gwf_tracer_t structure
+ * \param[in]    z_name    name of the volumic zone where the integral is done
+ *                         (if NULL or "" all cells are considered)
+ *
+ * \return the value of the integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
+                        const cs_cdo_quantities_t  *cdoq,
+                        const cs_gwf_tracer_t      *tracer,
+                        const char                 *z_name)
+{
+  const int  z_id = cs_get_vol_zone_id(z_name);
+  const cs_zone_t  *z = cs_volume_zone_by_id(z_id);
+  const short int  *cell2soil = cs_gwf_get_cell2soil();
+
+  const cs_field_t  *f = cs_field_by_name("moisture_content");
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, 0, " %s: \"moisture_content\" not defined",
+              __func__);
+  assert(tracer != NULL);
+
+  const cs_real_t  *moisture_val = f->val;
+  const cs_equation_param_t  *tr_eqp = cs_equation_get_param(tracer->eq);
+  const cs_field_t  *tr_f = cs_equation_get_field(tracer->eq);
+  const cs_real_t  *fvals = tr_f->val;
+
+  cs_gwf_std_tracer_input_t  *sti = (cs_gwf_std_tracer_input_t *)tracer->input;
+  cs_real_t int_value = 0.0;
+
+  switch (tr_eqp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    {
+      const cs_adjacency_t  *c2v = connect->c2v;
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
+
+        cs_real_t  _int_value = 0.;
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+          _int_value += cdoq->dcell_vol[j] * fvals[c2v->ids[j]];
+        }
+
+        int_value +=
+          (moisture_val[c_id] + sti->rho_kd[cell2soil[c_id]]) * _int_value;
+
+      } /* Loop on selected cells */
+
+    }
+    break; /* CS_SPACE_SCHEME_CDOVB */
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme", __func__);
+    break;
+
+  } /* End of switch */
+
+  return int_value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined post-processing output for the groundwater flow module
  *         prototype of this function is fixed since it is a function pointer
  *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
