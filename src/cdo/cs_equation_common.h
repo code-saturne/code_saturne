@@ -153,6 +153,9 @@ typedef struct {
  */
 typedef struct {
 
+  /* where balance is computed: primal vertices or primal cells */
+  cs_flag_t       location;
+  cs_lnum_t       size;
   cs_real_t      *balance;
 
   /* Balance for each main term */
@@ -432,6 +435,7 @@ cs_equation_get_tmpbuf_size(void);
 /*!
  * \brief  Allocate a cs_equation_balance_t structure
  *
+ * \param[in]  location   where the balance is performed
  * \param[in]  size       size of arrays in the structure
  *
  * \return  a pointer to the new allocated structure
@@ -439,27 +443,38 @@ cs_equation_get_tmpbuf_size(void);
 /*----------------------------------------------------------------------------*/
 
 cs_equation_balance_t *
-cs_equation_balance_create(cs_lnum_t  size);
+cs_equation_balance_create(cs_flag_t    location,
+                           cs_lnum_t    size);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Reset a cs_equation_balance_t structure
  *
- * \param[in]      size       size of arrays in the structure
  * \param[in, out] b     pointer to a cs_equation_balance_t to reset
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_balance_reset(cs_lnum_t                size,
-                          cs_equation_balance_t   *b);
+cs_equation_balance_reset(cs_equation_balance_t   *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Synchronize balance terms if this is a parallel computation
+ *
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in, out] b         pointer to a cs_equation_balance_t to rsync
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_balance_sync(const cs_cdo_connect_t    *connect,
+                         cs_equation_balance_t     *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Free a cs_equation_balance_t structure
  *
  * \param[in, out]  p_balance  pointer to the pointer to free
- *
  */
 /*----------------------------------------------------------------------------*/
 

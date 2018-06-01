@@ -1122,9 +1122,10 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
   cs_equation_init_boundary_flux_from_bc(t_cur, quant, eqp, bflux->val);
 
   /* Allocate and initialize the structure storing the balance evaluation */
-  cs_equation_balance_t  *eb = cs_equation_balance_create(quant->n_vertices);
+  cs_equation_balance_t  *eb = cs_equation_balance_create(cs_flag_primal_vtx,
+                                                          quant->n_vertices);
 
-  cs_equation_balance_reset(quant->n_vertices, eb);
+  cs_equation_balance_reset(eb);
 
   /* OpenMP block */
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
@@ -1420,6 +1421,9 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
       eb->unsteady_term[v_id] + eb->reaction_term[v_id] +
       eb->diffusion_term[v_id] + eb->advection_term[v_id] +
       eb->source_term[v_id];
+
+  /* Parallel synchronisation */
+  cs_equation_balance_sync(connect, eb);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

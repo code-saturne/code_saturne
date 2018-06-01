@@ -944,9 +944,10 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
 
   /* Allocate and initialize the structure storing the balance evaluation */
-  cs_equation_balance_t  *eb = cs_equation_balance_create(quant->n_cells);
+  cs_equation_balance_t  *eb = cs_equation_balance_create(cs_flag_primal_cell,
+                                                          quant->n_cells);
 
-  cs_equation_balance_reset(quant->n_cells, eb);
+  cs_equation_balance_reset(eb);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, pot, bflux,             \
