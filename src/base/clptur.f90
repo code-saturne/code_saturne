@@ -2450,11 +2450,11 @@ do ifac = 1, nfabor
       ! (blending factor so that the component v'T' have only
       !  mu_T/(mu+mu_T)* Phi_T)
       if (icodcl(ifac,ivar).eq.5) then
-        phit = cofafp(ifac)+cofbfp(ifac)*val_s(ifac)
+        phit = cofafp(ifac)+cofbfp(ifac)*val_s(iel)
       elseif (icodcl(ifac,ivar).eq.3) then
         phit = rcodcl(ifac,ivar,3)
       elseif (icodcl(ifac,ivar).eq.1) then
-        phit = heq *(val_s(ifac) - pimp)
+        phit = heq *(val_s(iel) - pimp)
       else
         phit = 0.d0
       endif
