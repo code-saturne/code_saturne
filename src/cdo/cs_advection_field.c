@@ -2232,6 +2232,16 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
 
   } /* Boundary part */
 
+#if defined(HAVE_MPI) /* Parallel synchronisation if needed */
+  if (cs_glob_n_ranks > 1)
+    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                         cdoq->n_vertices,
+                         1,            // stride
+                         false,        // interlace (not useful here)
+                         CS_REAL_TYPE,
+                         divergence);
+#endif  /* MPI */
+
   return divergence;
 }
 

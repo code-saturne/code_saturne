@@ -240,6 +240,15 @@ _vb_enforce_boundary_divergence(const cs_cdo_connect_t        *connect,
     }   /* Is a boundary cell ? */
   } /* Loop on cells */
 
+  /* Parallel synchronisation */
+  if (cs_glob_n_ranks > 1)
+    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                         cdoq->n_vertices,
+                         1,            // stride
+                         false,        // interlace (not useful here)
+                         CS_REAL_TYPE,
+                         divergence);
+
   cs_real_t  *correction = NULL;
   BFT_MALLOC(correction, n_vertices, cs_real_t);
   memset(correction, 0, sizeof(cs_real_t)*n_vertices);
@@ -280,6 +289,15 @@ _vb_enforce_boundary_divergence(const cs_cdo_connect_t        *connect,
   } /* Loop on boundary faces */
 
   BFT_FREE(wvf);
+
+  /* Parallel synchronisation */
+  if (cs_glob_n_ranks > 1)
+    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                         cdoq->n_vertices,
+                         1,            // stride
+                         false,        // interlace (not useful here)
+                         CS_REAL_TYPE,
+                         correction);
 
   /* Compute the correction coefficient */
   for (cs_lnum_t v = 0; v < n_vertices; v++) {
@@ -1477,6 +1495,10 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
     break;
 
   } /* End of switch */
+
+  /* Parallel synchronisation */
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(1, CS_REAL_TYPE, &int_value);
 
   return int_value;
 }
