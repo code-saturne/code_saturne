@@ -186,7 +186,8 @@ _vb_enforce_boundary_divergence(const cs_cdo_connect_t        *connect,
   const cs_adjacency_t  *c2e = connect->c2e;
   const cs_adjacency_t  *e2v = connect->e2v;
   const cs_adjacency_t  *bf2v = connect->bf2v;
-  const cs_lnum_t  *bf2c = connect->f2c->ids + 2*cdoq->n_i_faces;
+  const cs_adjacency_t  *f2c = connect->f2c;
+  const cs_lnum_t  *bf2c = f2c->ids + + f2c->idx[cdoq->n_i_faces];
   const cs_lnum_t  n_b_faces = cdoq->n_b_faces;
   const cs_lnum_t  n_vertices = cdoq->n_vertices;
 
