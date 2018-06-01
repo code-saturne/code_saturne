@@ -1625,10 +1625,6 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     cs_field_t  *var_field = cs_field_by_id(eq->field_id);
     cs_field_t  *bflux = cs_field_by_id(eq->boundary_flux_id);
 
-    /* By default, 0 is set as initial condition for the computational domain */
-    if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
-      _initialize_field_from_ic(ts->t_cur, eq, var_field->val);
-
     /* Enforce initial boundary condition if there is Dirichlet values */
     if (eq->set_dir_bc != NULL) {
 
@@ -1657,6 +1653,15 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
     /* Assign the initial boundary flux where Neumann is defined */
     cs_equation_init_boundary_flux_from_bc(ts->t_cur, quant, eqp, bflux->val);
+
+    /* By default, 0 is set as initial condition for the computational domain.
+
+       Warning: This operation has to be done after the settings of the
+       Dirichlet boundary conditions where an interface sum is performed
+       for vertex-based schemes
+    */
+    if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
+      _initialize_field_from_ic(ts->t_cur, eq, var_field->val);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
