@@ -1572,7 +1572,10 @@ cs_gwf_extra_post(void                      *input,
     cs_real_t balance = 0;
     for (cs_lnum_t  i = 0; i < n_b_faces; i++)
       balance += nflx->val[i];
+
     cs_real_t  default_balance = balance;
+    if (cs_glob_n_ranks > 1)
+      cs_parall_sum(1, CS_REAL_TYPE, &default_balance);
 
     for (int def_id = 0; def_id < gw->adv_field->n_bdy_flux_defs; def_id++) {
 
@@ -1583,21 +1586,22 @@ cs_gwf_extra_post(void                      *input,
       if (z->elt_ids == NULL || def->meta & CS_FLAG_FULL_LOC)
         break; /* Nothing to do (balance = default_balance) */
       else {
-
         balance = 0;
         for (cs_lnum_t i = 0; i < z->n_elts; i++)
           balance += nflx->val[z->elt_ids[i]];
-
-        cs_log_printf(CS_LOG_DEFAULT, " %32s: % -5.3e\n", z->name, balance);
-        default_balance -= balance;
-
       }
+
+      if (cs_glob_n_ranks > 1)
+        cs_parall_sum(1, CS_REAL_TYPE, &balance);
+
+      cs_log_printf(CS_LOG_DEFAULT, " %32s: % -5.3e\n", z->name, balance);
+      default_balance -= balance;
+
     } /* Loop on boundary definitions for the Darcy flux */
 
     if (gw->adv_field->n_bdy_flux_defs < 2)
       cs_log_printf(CS_LOG_DEFAULT,
                     " %32s: % -5.3e\n", "Whole boundary", default_balance);
-
     else
       cs_log_printf(CS_LOG_DEFAULT, " %32s: % -5.3e\n",
                     "Remaining boundary", default_balance);
