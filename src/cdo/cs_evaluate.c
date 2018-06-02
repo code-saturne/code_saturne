@@ -320,8 +320,9 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
 
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
-        const double hfc = cs_math_3_dot_product(pfq.unitv,
-                                                 quant->dedge_vector+3*f_id);
+        const double hfco =
+          cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
+                                                   quant->dedge_vector+3*i);
         const cs_lnum_t start = f2e->idx[f_id],
                           end = f2e->idx[f_id+1],
                          n_ef = end - start;
@@ -332,7 +333,7 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
           cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
                                          start, &v0, &v1, &v2);
           compute_integral(time_eval, xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
-                           hfc * pfq.meas,
+                           hfco * pfq.meas,
                            ana, input, values + c_id);
         }
         else {
@@ -344,7 +345,7 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
             const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
 
             compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center, xc,
-                             hfc*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                             hfco*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                              ana, input, values + c_id);
 
           } // Loop on edges
@@ -410,8 +411,9 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
 
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
-        const double hfc = cs_math_3_dot_product(pfq.unitv,
-                                                 quant->dedge_vector+3*f_id);
+        const double hfco =
+          cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
+                                                   quant->dedge_vector+3*i);
         const cs_lnum_t start = f2e->idx[f_id],
                           end = f2e->idx[f_id+1],
                          n_ef = end - start;
@@ -422,7 +424,7 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
           cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
                                          start, &v0, &v1, &v2);
           compute_integral(time_eval, xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
-                           hfc * pfq.meas,
+                           hfco * pfq.meas,
                            ana, input, values + c_id);
         }
         else {
@@ -434,7 +436,7 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
             const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
 
             compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center, xc,
-                             hfc*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                             hfco*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                              ana, input, values + c_id);
 
           } // Loop on edges
@@ -498,7 +500,7 @@ _pcva_by_analytic(cs_real_t                        time_eval,
       compute_integral(time_eval,
                     xv+3*v_ids[0], xv+3*v_ids[1], xv+3*v_ids[2], xv+3*v_ids[3],
                        quant->cell_vol[c_id],
-                       ana, input, values + c_id);
+                       ana, input, val_i);
 
     }
     else {
@@ -509,8 +511,9 @@ _pcva_by_analytic(cs_real_t                        time_eval,
 
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
-        const double hfc = cs_math_3_dot_product(pfq.unitv,
-                                                 quant->dedge_vector+3*f_id);
+        const double hfco =
+          cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
+                                                   quant->dedge_vector+3*i);
         const cs_lnum_t start = f2e->idx[f_id],
                           end = f2e->idx[f_id+1],
                          n_ef = end - start;
@@ -521,8 +524,8 @@ _pcva_by_analytic(cs_real_t                        time_eval,
           cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
                                          start, &v0, &v1, &v2);
           compute_integral(time_eval, xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
-                           hfc * pfq.meas,
-                           ana, input, values + c_id);
+                           hfco * pfq.meas,
+                           ana, input, val_i);
 
         }
         else {
@@ -534,8 +537,8 @@ _pcva_by_analytic(cs_real_t                        time_eval,
             const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
 
             compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center, xc,
-                             hfc*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
-                             ana, input, values + c_id);
+                             hfco*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                             ana, input, val_i);
 
           } // Loop on edges
 

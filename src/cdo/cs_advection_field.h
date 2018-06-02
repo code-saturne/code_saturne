@@ -214,7 +214,7 @@ cs_advection_field_get_field(const cs_adv_field_t       *adv,
     break;
 
   case CS_MESH_LOCATION_VERTICES:
-    assert(adv->cell_field_id > -1);
+    assert(adv->vtx_field_id > -1);
     f = cs_field_by_id(adv->vtx_field_id);
     break;
 
