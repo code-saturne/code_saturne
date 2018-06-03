@@ -1817,7 +1817,7 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
 
       cs_hodge_compute_wbs_surfacic(fm, cb->aux);
 
-      _update_vcb_system_with_bc(beta_nf, fm, cb->aux, csys);
+      _update_vcb_system_with_bc(beta_nf/fm->face.meas, fm, cb->aux, csys);
 
     } // beta_nf > 0
 
