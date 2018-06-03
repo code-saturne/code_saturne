@@ -357,6 +357,17 @@ cs_domain_increment_time(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the time step after one temporal iteration
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_increment_time_step(cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Print a welcome message indicating which mode of CDO is activated
  *
  * \param[in]  domain    pointer to a cs_domain_t structure

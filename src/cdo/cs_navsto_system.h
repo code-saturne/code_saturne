@@ -379,6 +379,18 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build, solve and update the Navier-Stokes system in case of a
+ *         steady-state approach
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_compute_steady_state(const cs_mesh_t      *mesh);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build, solve and update the Navier-Stokes system
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure

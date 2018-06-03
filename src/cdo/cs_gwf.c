@@ -1331,6 +1331,64 @@ cs_gwf_update(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the steady-state of the groundwater flows module.
+ *         Nothing is done if all equations are unsteady.
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
+                            const cs_time_step_t         *time_step,
+                            const cs_cdo_connect_t       *connect,
+                            const cs_cdo_quantities_t    *cdoq)
+{
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+  cs_equation_t  *richards = gw->richards;
+  double  dt_cur = 0.;  /* Useless in case of steady-state computation */
+
+  /* Sanity check */
+  assert(richards != NULL);
+  assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
+
+  /* Build and solve the linear system related to the Richards equations */
+  if (cs_equation_is_steady(richards)) {
+
+    /* Define the algebraic system */
+    cs_equation_build_system(mesh, time_step, dt_cur, richards);
+
+    /* Solve the algebraic system */
+    cs_equation_solve(richards);
+
+    /* Update the variables related to the groundwater flow system */
+    cs_gwf_update(mesh, connect, cdoq, time_step, dt_cur, true);
+
+  }
+
+  for (int i = 0; i < gw->n_tracers; i++) {
+
+    cs_gwf_tracer_t  *tracer = gw->tracers[i];
+
+    if (cs_equation_is_steady(tracer->eq)) {
+
+      /* Define the algebraic system */
+      cs_equation_build_system(mesh, time_step, dt_cur, tracer->eq);
+
+      /* Solve the algebraic system */
+      cs_equation_solve(tracer->eq);
+
+    } /* Solve this equation which is steady */
+
+  } /* Loop on tracer equations */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the system related to groundwater flows module
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
@@ -1357,74 +1415,37 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
 
   const int  nt_cur = time_step->nt_cur;
 
-  if (nt_cur == 0) {
+  /* Build and solve the linear system related to the Richards equations */
+  if (!cs_equation_is_steady(richards)) {
 
-    /* Build and solve the linear system related to the Richards equations */
-    if (cs_equation_is_steady(richards)) {
-
-      /* Define the algebraic system */
+    /* Define the algebraic system */
+    if (cs_equation_needs_build(richards)) // unsteady ?
       cs_equation_build_system(mesh, time_step, dt_cur, richards);
 
-      /* Solve the algebraic system */
-      cs_equation_solve(richards);
+    /* Solve the algebraic system */
+    cs_equation_solve(richards);
 
-      /* Update the variables related to the groundwater flow system */
-      cs_gwf_update(mesh, connect, cdoq, time_step, dt_cur, true);
-
-    }
-
-    for (int i = 0; i < gw->n_tracers; i++) {
-
-      cs_gwf_tracer_t  *tracer = gw->tracers[i];
-
-      if (cs_equation_is_steady(tracer->eq)) {
-
-        /* Define the algebraic system */
-        cs_equation_build_system(mesh, time_step, dt_cur, tracer->eq);
-
-        /* Solve the algebraic system */
-        cs_equation_solve(tracer->eq);
-
-      } /* Solve this equation which is steady */
-
-    } /* Loop on tracer equations */
+    /* Update the variables related to the groundwater flow system */
+    cs_gwf_update(mesh, connect, cdoq, time_step, dt_cur, true);
 
   }
-  else { /* nt_cur > 0 */
 
-    /* Build and solve the linear system related to the Richards equations */
-    if (!cs_equation_is_steady(richards)) {
+  for (int i = 0; i < gw->n_tracers; i++) {
+
+    cs_gwf_tracer_t  *tracer = gw->tracers[i];
+
+    if (!cs_equation_is_steady(tracer->eq)) { // unsteady ?
 
       /* Define the algebraic system */
-      if (cs_equation_needs_build(richards)) // unsteady ?
-        cs_equation_build_system(mesh, time_step, dt_cur, richards);
+      if (cs_equation_needs_build(tracer->eq))
+        cs_equation_build_system(mesh, time_step, dt_cur, tracer->eq);
 
       /* Solve the algebraic system */
-      cs_equation_solve(richards);
+      cs_equation_solve(tracer->eq);
 
-      /* Update the variables related to the groundwater flow system */
-      cs_gwf_update(mesh, connect, cdoq, time_step, dt_cur, true);
+    } /* Solve this equation which is steady */
 
-    }
-
-    for (int i = 0; i < gw->n_tracers; i++) {
-
-      cs_gwf_tracer_t  *tracer = gw->tracers[i];
-
-      if (!cs_equation_is_steady(tracer->eq)) { // unsteady ?
-
-        /* Define the algebraic system */
-        if (cs_equation_needs_build(tracer->eq))
-          cs_equation_build_system(mesh, time_step, dt_cur, tracer->eq);
-
-        /* Solve the algebraic system */
-        cs_equation_solve(tracer->eq);
-
-      } /* Solve this equation which is steady */
-
-    } /* Loop on tracer equations */
-
-  } /* nt_cur > 0 */
+  } /* Loop on tracer equations */
 
 }
 

@@ -264,6 +264,24 @@ cs_gwf_update(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the steady-state of the groundwater flows module.
+ *         Nothing is done if all equations are unsteady.
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
+                            const cs_time_step_t         *time_step,
+                            const cs_cdo_connect_t       *connect,
+                            const cs_cdo_quantities_t    *cdoq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the system related to groundwater flows module
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure

@@ -365,6 +365,7 @@ static void
 _compute_steady_user_equations(cs_domain_t   *domain)
 {
   int  n_equations = cs_equation_get_n_equations();
+  double  dt_cur = 0.; /* Useless for steady-state equations */
 
   for (int eq_id = 0; eq_id < n_equations; eq_id++) {
 
@@ -379,7 +380,7 @@ _compute_steady_user_equations(cs_domain_t   *domain)
         /* Define the algebraic system */
         cs_equation_build_system(domain->mesh,
                                  domain->time_step,
-                                 domain->dt_cur,
+                                 dt_cur,
                                  eq);
 
         /* Solve the algebraic system */
@@ -442,6 +443,57 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Solve only steady-state equations
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_solve_steady_state_domain(cs_domain_t  *domain)
+{
+  bool  do_output = cs_domain_needs_log(domain);
+
+  /* Output information */
+  if (domain->only_steady) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_DEFAULT, "#      Solve steady-state problem(s)\n");
+    cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
+  }
+  else if (do_output) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "-ite- 0; >> Solve only steady-state equations");
+  }
+
+  /* Predefined equation for the computation of the wall distance */
+  if (cs_walldistance_is_activated())
+    cs_walldistance_compute(domain->mesh,
+                            domain->time_step,
+                            domain->connect,
+                            domain->cdo_quantities);
+
+  /* If the problem is globally unsteady, only steady-state equations are
+     solved */
+  if (cs_gwf_is_activated())
+    cs_gwf_compute_steady_state(domain->mesh,
+                                domain->time_step,
+                                domain->connect,
+                                domain->cdo_quantities);
+
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_compute_steady_state(domain->mesh);
+
+  /* User-defined equations */
+  _compute_steady_user_equations(domain);
+
+  /* Extra operations and post-processing of the computed solutions */
+  cs_domain_post(domain);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Solve all the equations of a computational domain for one time step
  *
  * \param[in, out]  domain     pointer to a cs_domain_t structure
@@ -454,75 +506,31 @@ _solve_domain(cs_domain_t  *domain)
   int  nt_cur = domain->time_step->nt_cur;
   bool  do_output = cs_domain_needs_log(domain);
 
-  /* Setup step for all equations */
-  if (nt_cur == 0) {
+  /* Output information */
+  if (do_output) {
 
-    /* Output information */
-    if (domain->only_steady) {
-      cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
-      cs_log_printf(CS_LOG_DEFAULT, "#      Solve steady-state problem(s)\n");
-      cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
-    }
-    else if (do_output) {
-      cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "-ite- %5d; time= %5.3e s; dt= %5.3e >> Solve domain\n",
-                    nt_cur, domain->time_step->t_cur, domain->dt_cur);
-      cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
-    }
+    double  t_cur = domain->time_step->t_cur;
 
-    /* Predefined equation for the computation of the wall distance */
-    if (cs_walldistance_is_activated())
-      cs_walldistance_compute(domain->mesh,
-                              domain->time_step,
-                              domain->dt_cur,
-                              domain->connect,
-                              domain->cdo_quantities);
-
-    /* If unsteady, only initialization is done, otherwise one makes the whole
-       computation */
-    if (cs_gwf_is_activated())
-      cs_gwf_compute(domain->mesh,
-                     domain->time_step,
-                     domain->dt_cur,
-                     domain->connect,
-                     domain->cdo_quantities);
-
-    if (cs_navsto_system_is_activated())
-      cs_navsto_system_compute(domain->mesh, domain->dt_cur);
-
-    /* User-defined equations */
-    _compute_steady_user_equations(domain);
-
-    /* Only initialization is done */
-    _compute_unsteady_user_equations(domain, nt_cur);
-
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "-ite- %d >> Solve domain from time=%6.4e to %6.4e;"
+                  " dt=%5.3e",
+                  nt_cur, t_cur, t_cur + domain->dt_cur, domain->dt_cur);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
   }
-  else { /* nt_cur > 0: solve unsteady problems */
 
-    /* Output information */
-    if (do_output) {
-      cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "-ite- %5d; time= %5.3e s; dt= %5.3e >> Solve domain\n",
-                    nt_cur, domain->time_step->t_cur, domain->dt_cur);
-      cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
-    }
+  if (cs_gwf_is_activated())
+    cs_gwf_compute(domain->mesh,
+                   domain->time_step,
+                   domain->dt_cur,
+                   domain->connect,
+                   domain->cdo_quantities);
 
-    if (cs_gwf_is_activated())
-      cs_gwf_compute(domain->mesh,
-                     domain->time_step,
-                     domain->dt_cur,
-                     domain->connect,
-                     domain->cdo_quantities);
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_compute(domain->mesh, domain->dt_cur);
 
-    if (cs_navsto_system_is_activated())
-      cs_navsto_system_compute(domain->mesh, domain->dt_cur);
-
-    /* User-defined equations */
-    _compute_unsteady_user_equations(domain, nt_cur);
-
-  }
+  /* User-defined equations */
+  _compute_unsteady_user_equations(domain, nt_cur);
 
 }
 
@@ -805,11 +813,19 @@ cs_cdo_main(cs_domain_t   *domain)
   cs_domain_initialize_systems(domain);
 
   /* Initialization for user-defined extra operations. Should be done
-     after the domain initializatoin if one wants to overwrite the field
+     after the domain initialization if one wants to overwrite the field
      initialization for instance */
   cs_user_cdo_start_extra_op(cs_glob_domain);
 
-  while (cs_domain_needs_iteration(domain)) { // Main time loop
+  /* Build and solve equations related to the computational domain in case of
+     steady-state equations */
+  _solve_steady_state_domain(domain);
+
+  /* Main time loop */
+  if (domain->time_step->nt_cur == 0)
+    domain->time_step->nt_cur = 1; /* Same numbering as Finite Volume part */
+
+  while (cs_domain_needs_iteration(domain)) {
 
     /* Define the current time step */
     cs_domain_define_current_time_step(domain);
@@ -817,11 +833,15 @@ cs_cdo_main(cs_domain_t   *domain)
     /* Build and solve equations related to the computational domain */
     _solve_domain(domain);
 
+    /* Increment time */
+    cs_domain_increment_time(domain);
+
     /* Extra operations and post-processing of the computed solutions */
     cs_domain_post(domain);
 
     /* Increment time */
-    cs_domain_increment_time(domain);
+    cs_domain_increment_time_step(domain);
+
     cs_timer_stats_increment_time_step();
 
   }

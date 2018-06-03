@@ -512,7 +512,6 @@ cs_walldistance_finalize_setup(const cs_cdo_connect_t       *connect,
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      time_step  pointer to a cs_time_step_t structure
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
  */
@@ -521,7 +520,6 @@ cs_walldistance_finalize_setup(const cs_cdo_connect_t       *connect,
 void
 cs_walldistance_compute(const cs_mesh_t              *mesh,
                         const cs_time_step_t         *time_step,
-                        double                        dt_cur,
                         const cs_cdo_connect_t       *connect,
                         const cs_cdo_quantities_t    *cdoq)
 {
@@ -529,6 +527,7 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
      Solve the equation related to the definition of the wall distance. */
 
   cs_equation_t  *eq = cs_wd_poisson_eq;
+  double  dt_cur = 0.;  /* Wall distance is a steady-stae equation */
 
   /* Sanity check */
   assert(cs_equation_is_steady(eq));
