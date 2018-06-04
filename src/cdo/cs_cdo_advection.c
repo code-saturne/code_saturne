@@ -422,20 +422,26 @@ _build_cell_epcd_upw(const cs_cell_mesh_t      *cm,
       const double  c1mw = beta_flx * (1 - wv1);
       const double  cw = beta_flx * wv1;
 
-      /* Update local convection matrix */
+      /* Update local convection matrix.
+         Remember that sgn_v2 = -sgn_v1 */
       short int  v1 = cm->e2v_ids[2*e];
       short int  v2 = cm->e2v_ids[2*e+1];
       assert(v1 != -1 && v2 != -1); // Sanity check
-      double  *m1 = adv->val + v1*adv->n_rows, *m2 = adv->val + v2*adv->n_rows;
 
-      m1[v1] +=  c1mw;
-      m1[v2] =  -c1mw; // sgn_v2 = -sgn_v1
-      m2[v2] += -cw;   // sgn_v2 = -sgn_v1
-      m2[v1] =   cw;
+      /* Update for the vertex v1 */
+      double  *m1 = adv->val + v1*adv->n_rows;
+      m1[v1] +=  c1mw;           /* diagonal term */
+      m1[v2] =  -c1mw;           /* extra-diag term */
 
-    } // convective flux is greater than zero
 
-  } // Loop on cell edges
+      /* Update for the vertex v2 */
+      double  *m2 = adv->val + v2*adv->n_rows;
+      m2[v2] += -cw;           /* diagonal term */
+      m2[v1] =   cw;           /* extra-diag term */
+
+    } /* convective flux is greater than zero */
+
+  } /* Loop on cell edges */
 
 }
 
@@ -466,18 +472,21 @@ _build_cell_epcd_cen(const cs_cell_mesh_t          *cm,
       short int  v1 = cm->e2v_ids[2*e];
       short int  v2 = cm->e2v_ids[2*e+1];
       assert(v1 != -1 && v2 != -1);        // Sanity check
+
+      /* Update for the vertex v1 */
       double  *adv1 = adv->val + v1*adv->n_rows;
+      adv1[v1] +=  wflx;           /* diagonal term */
+      adv1[v2] =  -wflx;           /* extra-diag term */
+
+      /* Update for the vertex v2
+         Use the fact that fd(e),cd(v) = -v,e and sgn_v1 = -sgn_v2 */
       double  *adv2 = adv->val + v2*adv->n_rows;
+      adv2[v2] += -wflx;           /* diagonal term */
+      adv2[v1] =   wflx;           /* extra-diag term */
 
-      // Use the fact that fd(e),cd(v) = -v,e and sgn_v1 = -sgn_v2
-      adv1[v1] +=  wflx;
-      adv1[v2] =  -wflx;
-      adv2[v2] += -wflx;
-      adv2[v1] =   wflx;
+    } /* convective flux is greater than zero */
 
-    } // convective flux is greater than zero
-
-  } // Loop on cell edges
+  } /* Loop on cell edges */
 
 }
 
@@ -510,8 +519,8 @@ _build_cell_vpfd_upw(const cs_cell_mesh_t          *cm,
 
       short int  sgn_v1 = cm->e2v_sgn[e];
 
-      /* Compute the updwind coefficient knowing that fd(e),cd(v) = -v,e */
-      const double  wv1 = get_weight(-sgn_v1 * upwcoef[e]);
+      /* Compute the upwind coefficient knowing that fd(e),cd(v) = -v,e */
+      const double  wv1 = get_weight(-sgn_v1 * upwcoef[e]); /* in [0,1] */
       const double  cw1 = sgn_v1 * beta_flx * wv1;
       const double  cw2 = sgn_v1 * beta_flx * (1 - wv1);
 
@@ -519,16 +528,20 @@ _build_cell_vpfd_upw(const cs_cell_mesh_t          *cm,
       short int  v1 = cm->e2v_ids[2*e];
       short int  v2 = cm->e2v_ids[2*e+1];
       assert(v1 != -1 && v2 != -1); // Sanity check
-      double  *m1 = adv->val + v1*adv->n_rows, *m2 = adv->val + v2*adv->n_rows;
 
-      m1[v1] += -cw1;
-      m1[v2] =  -cw2;
-      m2[v2] +=  cw2;
-      m2[v1] =   cw1;
+      /* Update for the vertex v1 */
+      double  *m1 = adv->val + v1*adv->n_rows;
+      m1[v1] += -cw1;           /* diagonal term */
+      m1[v2] =  -cw2;           /* extra-diag term */
 
-    } // convective flux is greater than zero
+      /* Update for the vertex v2 */
+      double  *m2 = adv->val + v2*adv->n_rows;
+      m2[v2] +=  cw2;           /* diagonal term */
+      m2[v1] =   cw1;           /* extra-diag term */
 
-  } // Loop on cell edges
+    } /* convective flux is greater than zero */
+
+  } /* Loop on cell edges */
 
 }
 
@@ -558,17 +571,20 @@ _build_cell_vpfd_cen(const cs_cell_mesh_t          *cm,
       short int  v1 = cm->e2v_ids[2*e];
       short int  v2 = cm->e2v_ids[2*e+1];
       assert(v1 != -1 && v2 != -1);        // Sanity check
+
+      /* Update for the vertex v1 */
       double  *adv1 = adv->val + v1*adv->n_rows;
+      adv1[v1] += -wflx;           /* diagonal term */
+      adv1[v2] =  -wflx;           /* extra-diag term */
+
+      /* Update for the vertex v2 (sgn_v2 = -sgn_v1) */
       double  *adv2 = adv->val + v2*adv->n_rows;
+      adv2[v2] +=  wflx;           /* diagonal term */
+      adv2[v1] =   wflx;           /* extra-diag term */
 
-      adv1[v1] += -wflx;
-      adv1[v2] =  -wflx;
-      adv2[v2] +=  wflx; // sgn_v2 = -sgn_v1
-      adv2[v1] =   wflx; // sgn_v2 = -sgn_v1
+    } /* convective flux is greater than zero */
 
-    } // convective flux is greater than zero
-
-  } // Loop on cell edges
+  } /* Loop on cell edges */
 
 }
 

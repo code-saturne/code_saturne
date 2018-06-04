@@ -129,30 +129,6 @@ cs_xdef_eval_scalar_by_val(cs_lnum_t                    n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate a scalar-valued quantity by a cellwise process
- *
- * \param[in]  cm         pointer to a cs_cell_mesh_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input    pointer to an input structure
- * \param[out] eval     result of the evaluation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_eval_cw_scalar_by_val(const cs_cell_mesh_t     *cm,
-                              cs_real_t                 time_eval,
-                              void                     *input,
-                              cs_real_t                *eval)
-{
-  CS_UNUSED(cm);
-  CS_UNUSED(time_eval);
-
-  cs_real_t  *constant_val = (cs_real_t *)input;
-  *eval = constant_val[0];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Evaluate a vector-valued quantity for a list of elements
  *
  * \param[in]  n_elts     number of elements to consider
@@ -207,33 +183,6 @@ cs_xdef_eval_vector_by_val(cs_lnum_t                    n_elts,
     }
 
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Evaluate a vector-valued quantity by a cellwise process
- *
- * \param[in]  cm         pointer to a cs_cell_mesh_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_eval_cw_vector_by_val(const cs_cell_mesh_t     *cm,
-                              cs_real_t                 time_eval,
-                              void                     *input,
-                              cs_real_t                *eval)
-{
-  CS_UNUSED(cm);
-  CS_UNUSED(time_eval);
-
-  const cs_real_t  *constant_val = (cs_real_t *)input;
-
-  eval[0] = constant_val[0];
-  eval[1] = constant_val[1];
-  eval[2] = constant_val[2];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -299,32 +248,6 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
     }
 
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Evaluate a tensor-valued quantity by a cellwise process
- *
- * \param[in]  cm         pointer to a cs_cell_mesh_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_eval_cw_tensor_by_val(const cs_cell_mesh_t     *cm,
-                              cs_real_t                 time_eval,
-                              void                     *input,
-                              cs_real_t                *eval)
-{
-  CS_UNUSED(cm);
-  CS_UNUSED(time_eval);
-
-  const cs_real_3_t  *constant_val = (const cs_real_3_t *)input;
-  for (int ki = 0; ki < 3; ki++)
-    for (int kj = 0; kj < 3; kj++)
-      eval[3*ki+kj] = constant_val[ki][kj];
 }
 
 /*----------------------------------------------------------------------------*/
