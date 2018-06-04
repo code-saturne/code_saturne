@@ -100,6 +100,7 @@ cs_source_term.h \
 cs_static_condensation.h \
 cs_walldistance.h \
 cs_xdef.h \
+cs_xdef_cw_eval.h \
 cs_xdef_eval.h
 
 # Library source files
@@ -154,6 +155,7 @@ cs_source_term.c \
 cs_static_condensation.c \
 cs_walldistance.c \
 cs_xdef.c \
+cs_xdef_cw_eval.c \
 cs_xdef_eval.c
 
 libcscdo_la_LDFLAGS = -no-undefined

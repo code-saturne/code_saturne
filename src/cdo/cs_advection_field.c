@@ -1323,19 +1323,19 @@ cs_advection_field_eval_at_xyz(const cs_adv_field_t  *adv,
     break; /* definition by value */
 
   case CS_XDEF_BY_ARRAY:
-    cs_xdef_eval_cw_3_at_xyz_by_array(cm, 1, xyz, time_eval, def->input,
-                                      vector_values);
+    cs_xdef_cw_eval_vector_at_xyz_by_array(cm, 1, xyz, time_eval, def->input,
+                                           vector_values);
     cs_nvec3(vector_values, eval);
     break;
 
   case CS_XDEF_BY_FIELD:
-    cs_xdef_eval_cw_3_at_xyz_by_field(cm, 1, xyz, time_eval, def->input,
-                                      vector_values);
+    cs_xdef_cw_eval_vector_at_xyz_by_field(cm, 1, xyz, time_eval, def->input,
+                                           vector_values);
     cs_nvec3(vector_values, eval);
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_xdef_eval_cw_at_xyz_by_analytic(cm, 1, xyz, time_eval, def->input,
+    cs_xdef_cw_eval_at_xyz_by_analytic(cm, 1, xyz, time_eval, def->input,
                                        vector_values);
     cs_nvec3(vector_values, eval);
     break;
@@ -1760,7 +1760,7 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
     {
       /* Retrieve the advection field: Switch to a cs_nvec3_t representation */
       cs_real_3_t  cell_vector;
-      cs_xdef_eval_cw_vector_by_val(cm, time_eval, def->input, cell_vector);
+      cs_xdef_cw_eval_vector_by_val(cm, time_eval, def->input, cell_vector);
       cs_nvec3_t  adv_vect;
       cs_nvec3(cell_vector, &adv_vect);
 
@@ -1813,7 +1813,7 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
               xg[1][k] *= cs_math_onethird;
             }
 
-            cs_xdef_eval_cw_at_xyz_by_analytic(cm,
+            cs_xdef_cw_eval_at_xyz_by_analytic(cm,
                                                2, (const cs_real_t *)xg,
                                                time_eval,
                                                def->input,
@@ -1839,7 +1839,7 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
                                     sef1.meas,
                                     gpts + 3, w + 1);
 
-            cs_xdef_eval_cw_at_xyz_by_analytic(cm,
+            cs_xdef_cw_eval_at_xyz_by_analytic(cm,
                                                6, (const cs_real_t *)gpts,
                                                time_eval,
                                                def->input,

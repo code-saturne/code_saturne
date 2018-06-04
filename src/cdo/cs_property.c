@@ -194,7 +194,7 @@ _add_new_def(cs_property_t     *pty)
   BFT_REALLOC(pty->get_eval_at_cell, pty->n_definitions,
               cs_xdef_eval_t *);
   BFT_REALLOC(pty->get_eval_at_cell_cw, pty->n_definitions,
-              cs_xdef_eval_cw_t *);
+              cs_xdef_cw_eval_t *);
 
   return new_id;
 }
@@ -510,7 +510,7 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
 
   pty->defs[new_id] = d;
   pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_by_val;
-  pty->get_eval_at_cell_cw[new_id] = cs_xdef_eval_cw_scalar_by_val;
+  pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_scalar_by_val;
 
   return d;
 }
@@ -554,7 +554,7 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
 
   pty->defs[new_id] = d;
   pty->get_eval_at_cell[new_id] = cs_xdef_eval_vector_by_val;
-  pty->get_eval_at_cell_cw[new_id] = cs_xdef_eval_cw_vector_by_val;
+  pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_vector_by_val;
 
   return d;
 }
@@ -606,7 +606,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 
   pty->defs[new_id] = d;
   pty->get_eval_at_cell[new_id] = cs_xdef_eval_tensor_by_val;
-  pty->get_eval_at_cell_cw[new_id] = cs_xdef_eval_cw_tensor_by_val;
+  pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_tensor_by_val;
 
   return d;
 }
@@ -657,7 +657,7 @@ cs_property_def_by_analytic(cs_property_t        *pty,
 
   pty->defs[new_id] = d;
   pty->get_eval_at_cell[new_id] = cs_xdef_eval_at_cells_by_analytic;
-  pty->get_eval_at_cell_cw[new_id] = cs_xdef_eval_cw_cell_by_analytic;
+  pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_by_analytic;
 
   return d;
 }
@@ -684,7 +684,7 @@ cs_property_def_by_func(cs_property_t         *pty,
                         const char            *zname,
                         void                  *context,
                         cs_xdef_eval_t        *get_eval_at_cell,
-                        cs_xdef_eval_cw_t     *get_eval_at_cell_cw)
+                        cs_xdef_cw_eval_t     *get_eval_at_cell_cw)
 {
   int  def_id = _add_new_def(pty);
   int  z_id = cs_get_vol_zone_id(zname);
@@ -769,7 +769,7 @@ cs_property_def_by_array(cs_property_t    *pty,
     pty->get_eval_at_cell[id] = cs_xdef_eval_scalar_at_cells_by_array;
   else
     pty->get_eval_at_cell[id] = cs_xdef_eval_nd_at_cells_by_array;
-  pty->get_eval_at_cell_cw[id] = cs_xdef_eval_cw_cell_by_array;
+  pty->get_eval_at_cell_cw[id] = cs_xdef_cw_eval_by_array;
 
   if (cs_flag_test(loc, cs_flag_primal_cell)   == false &&
       cs_flag_test(loc, cs_flag_primal_vtx)    == false &&
@@ -831,7 +831,7 @@ cs_property_def_by_field(cs_property_t    *pty,
                                         field);
 
   pty->get_eval_at_cell[id] = cs_xdef_eval_cell_by_field;
-  pty->get_eval_at_cell_cw[id] = cs_xdef_eval_cw_cell_by_field;
+  pty->get_eval_at_cell_cw[id] = cs_xdef_cw_eval_by_field;
 }
 
 /*----------------------------------------------------------------------------*/

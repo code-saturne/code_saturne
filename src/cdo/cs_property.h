@@ -34,6 +34,7 @@
 #include "cs_flag.h"
 #include "cs_param.h"
 #include "cs_xdef.h"
+#include "cs_xdef_cw_eval.h"
 #include "cs_xdef_eval.h"
 
 /*----------------------------------------------------------------------------*/
@@ -88,7 +89,7 @@ typedef struct {
 
   /* Same thing as the previous one but now with the usage of cellwise algo.
      relying on a cs_cell_mesh_t structure */
-  cs_xdef_eval_cw_t  **get_eval_at_cell_cw;
+  cs_xdef_cw_eval_t  **get_eval_at_cell_cw;
 
 } cs_property_t;
 
@@ -375,7 +376,7 @@ cs_property_def_by_func(cs_property_t         *pty,
                         const char            *zname,
                         void                  *context,
                         cs_xdef_eval_t        *get_eval_at_cell,
-                        cs_xdef_eval_cw_t     *get_eval_at_cell_cw);
+                        cs_xdef_cw_eval_t     *get_eval_at_cell_cw);
 
 /*----------------------------------------------------------------------------*/
 /*!

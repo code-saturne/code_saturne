@@ -810,11 +810,11 @@ cs_equation_compute_neumann_sv(short int                   def_id,
   switch(def->type) {
 
   case CS_XDEF_BY_VALUE:
-    cs_xdef_eval_cw_at_vtx_flux_by_val(cm, f, t_eval, def->input, neu_values);
+    cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, t_eval, def->input, neu_values);
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_xdef_eval_cw_at_vtx_flux_by_analytic(cm,
+    cs_xdef_cw_eval_flux_at_vtx_by_analytic(cm,
                                             f,
                                             t_eval,
                                             def->input,
@@ -834,7 +834,7 @@ cs_equation_compute_neumann_sv(short int                   def_id,
       assert(bf_id > -1);
 
       if (cs_flag_test(array_input->loc, cs_flag_primal_face))
-        cs_xdef_eval_cw_at_vtx_flux_by_val(cm, f, t_eval,
+        cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, t_eval,
                                            array_input->values + 3*bf_id,
                                            neu_values);
 
@@ -904,21 +904,21 @@ cs_equation_compute_neumann_fb(short int                    def_id,
 
   case CS_XDEF_BY_VALUE:
     if (eqp->dim == 1)
-      cs_xdef_eval_cw_flux_by_val(cm, f, t_eval, def->input, neu_values);
+      cs_xdef_cw_eval_flux_by_val(cm, f, t_eval, def->input, neu_values);
     else if (eqp->dim == 3)
-      cs_xdef_eval_cw_tensor_flux_by_val(cm, f, t_eval, def->input, neu_values);
+      cs_xdef_cw_eval_tensor_flux_by_val(cm, f, t_eval, def->input, neu_values);
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     if (eqp->dim == 1)
-      cs_xdef_eval_cw_flux_by_analytic(cm,
+      cs_xdef_cw_eval_flux_by_analytic(cm,
                                        f,
                                        t_eval,
                                        def->input,
                                        def->qtype,
                                        neu_values);
     else if (eqp->dim == 3)
-      cs_xdef_eval_cw_tensor_flux_by_analytic(cm,
+      cs_xdef_cw_eval_tensor_flux_by_analytic(cm,
                                               f,
                                               t_eval,
                                               def->input,
@@ -940,7 +940,7 @@ cs_equation_compute_neumann_fb(short int                    def_id,
 
       cs_real_t  *face_val = array_input->values + 3*bf_id;
 
-      cs_xdef_eval_cw_flux_by_val(cm, f, t_eval, face_val, neu_values);
+      cs_xdef_cw_eval_flux_by_val(cm, f, t_eval, face_val, neu_values);
     }
     break;
 
