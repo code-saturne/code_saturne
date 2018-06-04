@@ -649,6 +649,24 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the value of the flux of the advection field across the
+ *         the (primal) faces of a cell
+ *
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      adv        pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] fluxes     array of values attached to dual faces of a cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_get_cw_face_flux(const cs_cell_mesh_t       *cm,
+                                    const cs_adv_field_t       *adv,
+                                    cs_real_t                   time_eval,
+                                    cs_real_t                  *fluxes);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the flux of the advection field across the
  *         the dual faces of a cell
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure

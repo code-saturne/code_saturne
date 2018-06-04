@@ -1727,6 +1727,136 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the value of the flux of the advection field across the
+ *         the (primal) faces of a cell
+ *
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      adv        pointer to a cs_adv_field_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] fluxes     array of values attached to dual faces of a cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_get_cw_face_flux(const cs_cell_mesh_t       *cm,
+                                    const cs_adv_field_t       *adv,
+                                    cs_real_t                   time_eval,
+                                    cs_real_t                  *fluxes)
+{
+  if (adv == NULL)
+    return;
+
+  if (fluxes == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " fluxes array should be allocated before the call.");
+
+  cs_xdef_t  *def = adv->definition;
+
+  cs_field_t  *bflux =
+    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+  const cs_real_t  *bflux_val = bflux->val;
+
+  /* Sanity checks */
+  assert(def != NULL);
+  assert(bflux_val != NULL);
+
+  switch (def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    {
+      /* Loop on cell faces */
+      for (short int f = 0; f < cm->n_fc; f++)
+        cs_xdef_cw_eval_flux_by_val(cm, f, time_eval, def->input, fluxes);
+
+    }
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_PFQ));
+
+      /* Loop on cell faces */
+      for (short int f = 0; f < cm->n_fc; f++)
+        cs_xdef_cw_eval_flux_by_analytic(cm, f,
+                                         time_eval,
+                                         def->input, def->qtype,
+                                         fluxes);
+
+    } /* definition by analytic function */
+    break;
+
+  case CS_XDEF_BY_ARRAY:
+    {
+      cs_xdef_array_input_t  *input = (cs_xdef_array_input_t *)def->input;
+
+      /* Test if location has at least the pattern of the reference support */
+      if (cs_flag_test(input->loc, cs_flag_primal_face)) {
+
+        /* Sanity check */
+        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PF));
+        for (short int f = 0; f < cm->n_fc; f++)
+          fluxes[f] = input->values[cm->f_ids[f]];
+
+      }
+      else if (cs_flag_test(input->loc, cs_flag_primal_cell)) {
+
+        /* Retrieve the advection field:
+           Switch to a cs_nvec3_t representation */
+        cs_nvec3_t  adv_vect;
+        cs_nvec3(input->values + 3*cm->c_id, &adv_vect);
+
+        /* Sanity check */
+        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
+
+        /* Loop on cell faces */
+        for (short int f = 0; f < cm->n_fc; f++)
+          fluxes[f] = adv_vect.meas*cm->face[f].meas * _dp3(adv_vect.unitv,
+                                                            cm->face[f].unitv);
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " Invalid support for evaluating the advection field %s"
+                  " at the cell center of cell %d.", adv->name, cm->c_id);
+    }
+    break;
+
+  case CS_XDEF_BY_FIELD:
+    {
+      cs_field_t  *f = (cs_field_t *)def->input;
+
+      if (f->location_id == cs_mesh_location_get_id_by_name(N_("cells"))) {
+
+        /* Retrieve the advection field:
+           Switch to a cs_nvec3_t representation */
+        cs_nvec3_t  adv_vect;
+        cs_nvec3(f->val + 3*cm->c_id, &adv_vect);
+
+        /* Sanity check */
+        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
+
+        /* Loop on cell faces */
+        for (short int f = 0; f < cm->n_fc; f++)
+          fluxes[f] = adv_vect.meas*cm->face[f].meas * _dp3(adv_vect.unitv,
+                                                            cm->face[f].unitv);
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "Incompatible type of definition.");
+    break;
+
+  } /* def_type */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the flux of the advection field across the
  *         the dual faces of a cell
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
