@@ -1737,10 +1737,10 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
-                                   const cs_adv_field_t         *adv,
-                                   cs_real_t                     time_eval,
-                                   cs_real_t                    *fluxes)
+cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
+                                     const cs_adv_field_t     *adv,
+                                     cs_real_t                 time_eval,
+                                     cs_real_t                *fluxes)
 {
   if (adv == NULL)
     return;
@@ -1936,7 +1936,7 @@ cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
     bft_error(__FILE__, __LINE__, 0, "Incompatible type of definition.");
     break;
 
-  } // def_type
+  } /* def_type */
 
 }
 

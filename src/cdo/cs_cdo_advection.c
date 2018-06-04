@@ -1094,7 +1094,7 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1168,7 +1168,7 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1225,7 +1225,7 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Define the local operator for advection */
   _build_cell_vpfd_cen(cm, fluxes, adv);
@@ -1275,7 +1275,7 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1349,7 +1349,7 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1405,7 +1405,7 @@ cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values; // size n_ec
-  cs_advection_field_get_flux_dfaces(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Define the local operator for advection */
   _build_cell_epcd_cen(cm, fluxes, adv);
