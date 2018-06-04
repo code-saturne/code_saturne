@@ -1251,7 +1251,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             if self.mesh_dirs[i] != None:
                 l_mesh_dirs.append(QUrl.fromLocalFile(self.mesh_dirs[i]))
 
-        dialog = QFileDialog(self, title, default)
+        dialog = QFileDialog()
+        dialog.setWindowTitle(title)
+        dialog.setDirectory(default)
+
         if hasattr(dialog, 'setOptions'):
             dialog.setOptions(options)
         dialog.setSidebarUrls(l_mesh_dirs)
@@ -1314,7 +1317,11 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         for Format in MeshModel().getFileFormatList():
             filetypes += "%s (%s);;"%(Format[0], Format[1])
 
-        dialog = QFileDialog(self, title, default, filetypes)
+        dialog = QFileDialog()
+        dialog.setWindowTitle(title)
+        dialog.setDirectory(default)
+        dialog.setNameFilter(filetypes)
+
         if hasattr(dialog, 'setOptions'):
             dialog.setOptions(options)
         dialog.setSidebarUrls(l_mesh_dirs)

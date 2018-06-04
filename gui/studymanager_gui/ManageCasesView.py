@@ -483,7 +483,9 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         path = os.path.abspath(os.path.join(self.mdl.repo, study))
         os.chdir(path)
 
-        dialog = QFileDialog(self, title, path)
+        dialog = QFileDialog()
+        dialog.setWindowTitle(title)
+        dialog.setDirectory(path)
         dialog.setFileMode(QFileDialog.DirectoryOnly)
 
         if dialog.exec_() == 1:
@@ -512,7 +514,9 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         path = os.path.abspath(self.mdl.repo)
         os.chdir(path)
 
-        dialog = QFileDialog(self, title, path)
+        dialog = QFileDialog()
+        dialog.setWindowTitle(title)
+        dialog.setDirectory(path)
         dialog.setFileMode(QFileDialog.DirectoryOnly)
 
         if dialog.exec_() == 1:

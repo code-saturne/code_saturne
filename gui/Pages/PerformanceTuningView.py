@@ -231,7 +231,10 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         else:
             options  = QFileDialog.DontUseNativeDialog
 
-        dialog = QFileDialog(self, title, default)
+        dialog = QFileDialog()
+        dialog.setWindowTitle(title)
+        dialog.setDirectory(default)
+
         if hasattr(dialog, 'setOptions'):
             dialog.setOptions(options)
         dialog.setSidebarUrls(l_restart_dirs)
