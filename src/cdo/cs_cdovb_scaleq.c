@@ -65,6 +65,10 @@
 #include "cs_source_term.h"
 #include "cs_timer.h"
 
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/

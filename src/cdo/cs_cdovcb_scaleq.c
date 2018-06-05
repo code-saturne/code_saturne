@@ -66,6 +66,10 @@
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
 
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/

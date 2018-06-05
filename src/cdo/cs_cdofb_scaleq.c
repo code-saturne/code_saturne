@@ -61,6 +61,10 @@
 #include "cs_static_condensation.h"
 #include "cs_cdofb_priv.h"
 
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/

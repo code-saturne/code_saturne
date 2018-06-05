@@ -1822,14 +1822,14 @@ cs_advection_field_get_cw_face_flux(const cs_cell_mesh_t       *cm,
 
   case CS_XDEF_BY_FIELD:
     {
-      cs_field_t  *f = (cs_field_t *)def->input;
+      cs_field_t  *fld = (cs_field_t *)def->input;
 
-      if (f->location_id == cs_mesh_location_get_id_by_name(N_("cells"))) {
+      if (fld->location_id == cs_mesh_location_get_id_by_name(N_("cells"))) {
 
         /* Retrieve the advection field:
            Switch to a cs_nvec3_t representation */
         cs_nvec3_t  adv_vect;
-        cs_nvec3(f->val + 3*cm->c_id, &adv_vect);
+        cs_nvec3(fld->val + 3*cm->c_id, &adv_vect);
 
         /* Sanity check */
         assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));

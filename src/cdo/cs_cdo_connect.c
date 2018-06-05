@@ -805,11 +805,11 @@ _assign_face_ifs_rs(const cs_mesh_t       *mesh,
                                 face_gnum,
                                 mesh->periodicity, 0, NULL, NULL, NULL);
 
-  cs_range_set_t  *rs = cs_range_set_create(ifs,
-                                            NULL,
+  cs_range_set_t  *rs = cs_range_set_create(ifs,   /* interface set */
+                                            NULL,  /* halo */
                                             n_elts,
-                                            false, //TODO: Ask Yvan
-                                            0);    // g_id_base
+                                            false, /* TODO: Ask Yvan */
+                                            0);    /* g_id_base */
 
   /* Free memory */
   BFT_FREE(face_gnum);

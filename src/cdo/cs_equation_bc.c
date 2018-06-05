@@ -43,6 +43,10 @@
 #include "cs_boundary_zone.h"
 #include "cs_xdef.h"
 
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS

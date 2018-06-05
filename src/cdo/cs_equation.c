@@ -64,6 +64,10 @@
 #include "cs_sles.h"
 #include "cs_timer_stats.h"
 
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/

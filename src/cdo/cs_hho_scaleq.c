@@ -62,6 +62,10 @@
 #include "cs_sdm.h"
 #include "cs_source_term.h"
 
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -76,8 +80,8 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_HHO_SCALEQ_DBG  0
-#define CS_HHO_SCALEQ_MODULO  4
+#define CS_HHO_SCALEQ_DBG     0
+#define CS_HHO_SCALEQ_MODULO  100
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product

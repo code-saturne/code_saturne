@@ -60,6 +60,10 @@
 #include "cs_reco.h"
 #include "cs_zone.h"
 
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -1412,8 +1416,6 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
   /* Sanity check */
   assert(richards != NULL);
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
-
-  const int  nt_cur = time_step->nt_cur;
 
   /* Build and solve the linear system related to the Richards equations */
   if (!cs_equation_is_steady(richards)) {
