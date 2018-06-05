@@ -425,6 +425,32 @@
 
   \snippet cs_user_postprocess.c postprocess_values_ex_1
 
+  \subsection cs_user_postprocess_h_value_boundary_p Output of a variable on a surface mesh
+
+  Values can also be output on a surface mesh, possibly, containing a mix of
+  In the following example, we simply average or project adjacent cell values
+  on faces, but more precise techniques could be used:
+
+  \snippet cs_user_postprocess.c postprocess_values_ex_2
+
+  \subsection cs_user_postprocess_h_value_volume_simple Simple output of an existing field or array
+
+  For fields or arrays already defined on the full mesh, the "use_parent"
+  option of \ref cs_post_write_var may be used to simply reference
+  the values on the parent (i.e. full) mesh when requesting an output.
+  Note that the example below can also be used with probes or profiles:
+
+  \snippet cs_user_postprocess.c postprocess_values_ex_3
+
+  \subsection cs_user_postprocess_h_value_single_t Single output of time-independent values
+
+  Finally, a minor modification f the above example shows how it is
+  possible to output time-independent values to a writer also
+  used for time-dependent fields without requiring multiple outputs
+  of those values:
+
+  \snippet cs_user_postprocess.c postprocess_values_ex_4
+
   \section cs_user_postprocess_h_var_profile Additional profile variables
 
   The following examples match the advanced profile definitions given

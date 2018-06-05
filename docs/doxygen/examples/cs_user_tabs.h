@@ -66,13 +66,12 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
 \section example_numerical_param Numerical parameters
    - \subpage cs_user_performance_tuning
 
-\section example_calculation_control Calculation control
+\section example_calculation_control Calculation control and postprocessing
    - \subpage cs_user_postprocess
-   - \subpage cs_user_postprocess_var
    - \subpage cs_user_extra_operations_examples "User extra operations"
    - \subpage cs_user_extra_operations-nusselt_calculation
 
-\section example_other OtherCalculation control
+\section example_other Other Calculation control
    - \subpage cs_user_modules
    - \subpage user_solver
    - \subpage us_thht

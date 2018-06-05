@@ -680,6 +680,121 @@ cs_user_postprocess_values(const char            *mesh_name,
   }
   /*< [postprocess_values_ex_1] */
 
+  /* Output pressure on surface mesh
+     ------------------------------- */
+
+  /*< [postprocess_values_ex_2] */
+  if (strcmp(mesh_name, "pressure_surface") == 0) { /* Restrict to this mesh */
+
+    cs_real_t *cvar_p = CS_F_(p)->val; /* pressure */
+
+    /* Ensure variable is synchronized in parallel or periodic cases;
+       should already have been done before, repeated for safety */
+    cs_mesh_sync_var_scal(cvar_p);
+
+    const cs_mesh_t *m = cs_glob_mesh;
+
+    cs_real_t *s_i_faces = NULL, *s_b_faces = NULL;
+
+    /* Interior faces  */
+
+    if (n_i_faces > 0) {
+      BFT_MALLOC(s_i_faces, n_i_faces, cs_real_t);
+
+      for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+        cs_lnum_t face_id = i_face_list[i];
+        /* Use unweighted mean of adjacent cell values here */
+        cs_lnum_t c1 = m->i_face_cells[face_id][0];
+        cs_lnum_t c2 = m->i_face_cells[face_id][1];
+        s_i_faces[i] = 0.5 * (cvar_p[c1] + cvar_p[c2]);
+      }
+    }
+
+    /* Boundary faces  */
+
+    if (n_b_faces > 0) {
+      BFT_MALLOC(s_b_faces, n_b_faces, cs_real_t);
+
+      for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+        cs_lnum_t face_id = b_face_list[i];
+        /* Use adjacent cell value here */
+        cs_lnum_t cell_id = m->b_face_cells[face_id];
+        s_b_faces[i] = cvar_p[cell_id];
+      }
+    }
+
+    cs_post_write_var(mesh_id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
+                      "Pressure",                     /* var_name */
+                      1,                              /* var_dim */
+                      true,                           /* interlace, */
+                      false,                          /* use_parent */
+                      CS_POST_TYPE_cs_real_t,         /* var_type */
+                      NULL,                           /* cel_vals */
+                      s_i_faces,                      /* i_face_vals */
+                      s_b_faces,                      /* b_face_vals */
+                      ts);
+
+    BFT_FREE(s_i_faces);
+    BFT_FREE(s_b_faces);
+  }
+  /*< [postprocess_values_ex_2] */
+
+  /* Output cell-based scalar user field values on volume and meshes
+     ---------------------------------------------------------------- */
+
+  /*< [postprocess_values_ex_3] */
+  if (   cat_id == CS_POST_MESH_VOLUME
+      || cat_id == CS_POST_MESH_PROBES) {
+
+    const cs_field_t *f = cs_field_by_name_try("my_field");
+
+    if (f != NULL)
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
+                        f->dim,                         /* var_name */
+                        1,                              /* var_dim */
+                        true,                           /* interlace, */
+                        true,                           /* use_parent */
+                        CS_POST_TYPE_cs_real_t,         /* var_type */
+                        f->val,                         /* cel_vals */
+                        NULL,                           /* i_face_vals */
+                        NULL,                           /* b_face_vals */
+                        ts);
+  }
+  /*< [postprocess_values_ex_3] */
+
+  /* Output constant cell-based scalar user field values on volume mesh
+     ------------------------------------------------------------------ */
+
+  /*< [postprocess_values_ex_4] */
+  if (cat_id == CS_POST_MESH_VOLUME) {
+
+    const cs_field_t *f = cs_field_by_name_try("my_const_field");
+
+    if (f != NULL) {
+      if (ts->nt_cur == ts->nt_prev + 1) { /* before time loop */
+
+        cs_time_step_t ts0 = *ts;
+        ts0.nt_cur = 1; /* Negative time step value implies time-independent */
+
+        cs_post_write_var(mesh_id,
+                          CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
+                          f->dim,                         /* var_name */
+                          1,                              /* var_dim */
+                          true,                           /* interlace, */
+                          true,                           /* use_parent */
+                          CS_POST_TYPE_cs_real_t,         /* var_type */
+                          f->val,                         /* cel_vals */
+                          NULL,                           /* i_face_vals */
+                          NULL,                           /* b_face_vals */
+                          &ts0);
+
+      }
+    }
+
+  }
+  /*< [postprocess_values_ex_4] */
 }
 
 /*----------------------------------------------------------------------------*/
