@@ -683,8 +683,8 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
 
   /* Dirichlet values at boundary faces are first computed */
   cs_real_t  *dir_values = NULL;
-  BFT_MALLOC(dir_values, quant->n_b_faces, cs_real_t);
-  memset(dir_values, 0, quant->n_b_faces*sizeof(cs_real_t));
+  BFT_MALLOC(dir_values, 3*quant->n_b_faces, cs_real_t);
+  memset(dir_values, 0, 3*quant->n_b_faces*sizeof(cs_real_t));
 
   cs_equation_compute_dirichlet_fb(mesh,
                                    quant,
