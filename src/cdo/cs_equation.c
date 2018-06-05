@@ -309,7 +309,8 @@ _prepare_vb_solving(void              *eq_to_cast,
 {
   cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
   const cs_field_t  *fld = cs_field_by_id(eq->field_id);
-  const int  eq_dim = fld->dim;
+  const int  stride = 1;  /* Since the global numbering is adapted in each
+                             case (scalar-, vector-valued equations) */
 
   cs_real_t  *x = NULL, *b = NULL;
 
@@ -324,9 +325,10 @@ _prepare_vb_solving(void              *eq_to_cast,
 
     /* Compact numbering to fit the algebraic decomposition */
     cs_range_set_gather(eq->rset,
-                        CS_REAL_TYPE, eq_dim, // type and stride
-                        fld->val,             // in: size = n_sles_scatter_elts
-                        x);                   //out: size = n_sles_gather_elts
+                        CS_REAL_TYPE, /* type */
+                        stride,       /* stride */
+                        fld->val,     /* in: size = n_sles_scatter_elts */
+                        x);           /* out: size = n_sles_gather_elts */
 
     /* The right-hand side stems from a cellwise building on this rank.
        Other contributions from distant ranks may contribute to an element
@@ -342,14 +344,14 @@ _prepare_vb_solving(void              *eq_to_cast,
 #endif
 
     cs_interface_set_sum(eq->rset->ifs,
-                         eq->n_sles_scatter_elts, eq_dim, false, CS_REAL_TYPE,
+                         eq->n_sles_scatter_elts, stride, false, CS_REAL_TYPE,
                          b);
 
     cs_range_set_gather(eq->rset,
-                        CS_REAL_TYPE, eq_dim, // type and stride
-                        b,                    // in: size = n_sles_scatter_elts
-                        b);                   //out: size = n_sles_gather_elts
-
+                        CS_REAL_TYPE,/* type */
+                        stride,      /* stride */
+                        b,           /* in: size = n_sles_scatter_elts */
+                        b);          /* out: size = n_sles_gather_elts */
   }
   else { /* Serial mode *** without periodicity *** */
 
@@ -393,7 +395,8 @@ _prepare_fb_solving(void              *eq_to_cast,
   cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
   const cs_field_t  *fld = cs_field_by_id(eq->field_id);
   const cs_real_t  *f_values = eq->get_extra_values(eq->scheme_context);
-  const int  eq_dim = fld->dim;
+  const int  stride = 1;  /* Since the global numbering is adapted in each
+                             case (scalar-, vector-valued equations) */
 
   /* Sanity check */
   assert(f_values != NULL);
@@ -410,9 +413,10 @@ _prepare_fb_solving(void              *eq_to_cast,
 
     /* Compact numbering to fit the algebraic decomposition */
     cs_range_set_gather(eq->rset,
-                        CS_REAL_TYPE, eq_dim, // type and stride
-                        f_values,             // in: size = n_sles_scatter_elts
-                        x);                   //out: size = n_sles_gather_elts
+                        CS_REAL_TYPE,  /* type */
+                        stride,        /* stride */
+                        f_values,      /* in: size = n_sles_scatter_elts */
+                        x);            /* out: size = n_sles_gather_elts */
 
     /* The right-hand side stems from a cellwise building on this rank.
        Other contributions from distant ranks may contribute to an element
@@ -428,13 +432,14 @@ _prepare_fb_solving(void              *eq_to_cast,
 #endif
 
     cs_interface_set_sum(eq->rset->ifs,
-                         eq->n_sles_scatter_elts, eq_dim, false, CS_REAL_TYPE,
+                         eq->n_sles_scatter_elts, stride, false, CS_REAL_TYPE,
                          b);
 
     cs_range_set_gather(eq->rset,
-                        CS_REAL_TYPE, eq_dim, // type and stride
-                        b,                    // in: size = n_sles_scatter_elts
-                        b);                   //out: size = n_sles_gather_elts
+                        CS_REAL_TYPE,  /* type */
+                        stride,        /* stride */
+                        b,             /* in: size = n_sles_scatter_elts */
+                        b);            /* out: size = n_sles_gather_elts */
 
   }
   else { /* Serial mode *** without periodicity *** */
