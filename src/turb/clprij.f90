@@ -407,7 +407,7 @@ end do
 call parrmx(3, rijmax)
 
 trref  = sum(rijmax)
-rijref = trref/3.0d0
+rijref = max(trref/3.0d0,epzero)
 
 do iel = 1, ncel
 
