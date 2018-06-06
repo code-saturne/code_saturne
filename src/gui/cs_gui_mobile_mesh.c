@@ -1199,8 +1199,8 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (uiaste, UIASTE) (int     *const idfstr,
-                           double  *const asddlf)
+CS_PROCF(uiaste, UIASTE)(int       *idfstr,
+                         cs_int_t  *asddlf)
 {
   if (!cs_gui_file_is_loaded())
     return;
