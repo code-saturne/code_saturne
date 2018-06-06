@@ -467,6 +467,19 @@ cs_probe_set_get_n_local(const cs_probe_set_t   *pset);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the list of curvilinear abscissa for the given probe set
+ *
+ * \param[in]  pset              pointer to a cs_probe_set_t structure
+ *
+ * \return NULL or the pointer to the array of abscissa
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_probe_set_get_curvilinear_abscissa(const cs_probe_set_t   *pset);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the ids of a probe set's local matching elements, relative
  *         to a given mesh location.
  *
