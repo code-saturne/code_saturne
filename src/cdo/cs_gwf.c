@@ -1360,7 +1360,8 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
 
   /* Build and solve the linear system related to the Richards equations */
-  if (cs_equation_is_steady(richards)) {
+  if (cs_equation_is_steady(richards) ||
+      gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS) {
 
     /* Define the algebraic system */
     cs_equation_build_system(mesh, time_step, dt_cur, richards);
@@ -1418,7 +1419,8 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
 
   /* Build and solve the linear system related to the Richards equations */
-  if (!cs_equation_is_steady(richards)) {
+  if (!cs_equation_is_steady(richards) ||
+      gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS) {
 
     /* Define the algebraic system */
     cs_equation_build_system(mesh, time_step, dt_cur, richards);

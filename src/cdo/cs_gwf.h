@@ -62,12 +62,17 @@ BEGIN_C_DECLS
  *        flag if all soils are considered as saturated (a simpler treatment
  *        can be performed in this case)
  *
+ * \def CS_GWF_FORCE_RICHARDS_ITERATIONS
+ * \brief Even if the Richards equation is steady-state, this equation is
+ *        solved at each iteration.
+ *
  */
 
-#define CS_GWF_GRAVITATION               (1 << 0)
-#define CS_GWF_RICHARDS_UNSTEADY         (1 << 1)
-#define CS_GWF_SOIL_PROPERTY_UNSTEADY    (1 << 2)
-#define CS_GWF_SOIL_ALL_SATURATED        (1 << 3)
+#define CS_GWF_GRAVITATION                (1 << 0)
+#define CS_GWF_RICHARDS_UNSTEADY          (1 << 1)
+#define CS_GWF_SOIL_PROPERTY_UNSTEADY     (1 << 2)
+#define CS_GWF_SOIL_ALL_SATURATED         (1 << 3)
+#define CS_GWF_FORCE_RICHARDS_ITERATIONS  (1 << 4)
 
 /*! @} */
 

@@ -731,6 +731,7 @@ cs_gwf_tracer_standard_setup(const cs_cdo_connect_t      *connect,
   sti->darcy_velocity_field = cs_field_by_name("darcy_velocity_cells");
   sti->moisture_content = cs_field_by_name("moisture_content");
 
+  /* We assume that the unsteady term is always activated */
   cs_property_t  *pty = cs_equation_get_time_property(tracer->eq);
   assert(pty != NULL);
 
@@ -745,7 +746,7 @@ cs_gwf_tracer_standard_setup(const cs_cdo_connect_t      *connect,
                             _get_time_pty4std_tracer,
                             _get_time_pty4std_tracer_cw);
 
-  } // Loop on soils
+  } /* Loop on soils */
 
   if (eq_flag & CS_EQUATION_DIFFUSION) { /* Setup the diffusion property */
 
@@ -768,15 +769,16 @@ cs_gwf_tracer_standard_setup(const cs_cdo_connect_t      *connect,
       cs_property_t  *r_pty =
         cs_equation_get_reaction_property(tracer->eq, tracer->reaction_id);
 
-      cs_property_def_by_func(r_pty,
-                              z->name,
-                              (void *)tracer->input,
-                              _get_reaction_pty4std_tracer,
-                              _get_reaction_pty4std_tracer_cw);
+      if (r_pty != NULL) /* The default reaction property is defined */
+        cs_property_def_by_func(r_pty,
+                                z->name,
+                                (void *)tracer->input,
+                                _get_reaction_pty4std_tracer,
+                                _get_reaction_pty4std_tracer_cw);
 
-    } // Loop on soils
+    } /* Loop on soils */
 
-  } // reaction
+  } /* reaction */
 
 }
 
