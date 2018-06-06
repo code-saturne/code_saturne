@@ -6,6 +6,8 @@ User changes:
 
 - Allow joining of meshes including isolated faces.
 
+- Add postprocessing of temperature and flux at internal coupling interface.
+
 Numerics:
 
 - Add choice of inexact (flexible) preconditioned congugate gradient.
