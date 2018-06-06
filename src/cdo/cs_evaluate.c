@@ -2223,5 +2223,57 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the integral over the full computational domain of a
+ *         quantity defined by an array
+ *
+ * \param[in]      array_loc  flag indicating where are located values
+ * \param[in]      array_val  array of values
+ *
+ * \return the value of the integration
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
+                                          const cs_real_t  *array_val)
+{
+  cs_real_t  result = 0.;
+
+  /* Sanity checks */
+  if (array_val == NULL)
+    return result;
+
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+
+  if (cs_flag_test(array_loc, cs_flag_primal_cell)) {
+
+#   pragma omp parallel for reduction(+:result)
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+      result += array_val[c_id] * quant->cell_vol[c_id];
+
+  }
+  else if (cs_flag_test(array_loc, cs_flag_primal_vtx)) {
+
+    const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
+    const cs_real_t  *dc_vol = quant->dcell_vol;
+
+#   pragma omp parallel for reduction(+:result)
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        result += dc_vol[j] * array_val[c2v->ids[j]];
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid array location. Stop evaluation.", __func__);
+
+  if (cs_glob_n_ranks > 1)      /* MPI synchronization */
+    cs_parall_sum(1, CS_REAL_TYPE, &result);
+
+  return result;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

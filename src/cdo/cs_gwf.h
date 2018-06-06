@@ -48,8 +48,27 @@ BEGIN_C_DECLS
  * @name Flags specifying the general behavior of the groundwater flow module
  * @{
  *
+ * \def CS_GWF_FORCE_RICHARDS_ITERATIONS
+ * \brief Even if the Richards equation is steady-state, this equation is
+ *        solved at each iteration.
+ *
  * \def CS_GWF_GRAVITATION
  * \brief Gravitation effects are taken into account in the Richards equation
+ *
+ * \def CS_GWF_POST_CAPACITY
+ * \brief Activate the post-processing of the capacity (property in front of
+ *        the unsteady term in Richards equation)
+ *
+ * \def CS_GWF_POST_MOISTURE
+ * \brief Activate the post-processing of the moisture content
+ *
+ * \def CS_GWF_POST_PERMEABILITY
+ * \brief Activate the post-processing of the permeability field
+ *
+ * \def CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE
+ * \brief Compute the mean-value of the hydraulic head field and subtract this
+ *        mean-value to get a field with zero mean-value. It's important to set
+ *        this flag if no boundary condition is given.
  *
  * \def CS_GWF_RICHARDS_UNSTEADY
  * \brief Richards equation is unsteady (unsatured behavior)
@@ -62,17 +81,18 @@ BEGIN_C_DECLS
  *        flag if all soils are considered as saturated (a simpler treatment
  *        can be performed in this case)
  *
- * \def CS_GWF_FORCE_RICHARDS_ITERATIONS
- * \brief Even if the Richards equation is steady-state, this equation is
- *        solved at each iteration.
  *
  */
 
-#define CS_GWF_GRAVITATION                (1 << 0)
-#define CS_GWF_RICHARDS_UNSTEADY          (1 << 1)
-#define CS_GWF_SOIL_PROPERTY_UNSTEADY     (1 << 2)
-#define CS_GWF_SOIL_ALL_SATURATED         (1 << 3)
-#define CS_GWF_FORCE_RICHARDS_ITERATIONS  (1 << 4)
+#define CS_GWF_FORCE_RICHARDS_ITERATIONS       (1 << 0)
+#define CS_GWF_GRAVITATION                     (1 << 1)
+#define CS_GWF_POST_CAPACITY                   (1 << 2)
+#define CS_GWF_POST_MOISTURE                   (1 << 3)
+#define CS_GWF_POST_PERMEABILITY               (1 << 4)
+#define CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE (1 << 5)
+#define CS_GWF_RICHARDS_UNSTEADY               (1 << 6)
+#define CS_GWF_SOIL_PROPERTY_UNSTEADY          (1 << 7)
+#define CS_GWF_SOIL_ALL_SATURATED              (1 << 8)
 
 /*! @} */
 

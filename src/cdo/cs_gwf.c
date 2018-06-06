@@ -49,6 +49,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_equation_bc.h"
+#include "cs_evaluate.h"
 #include "cs_field.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -356,8 +357,55 @@ _update_head(cs_gwf_t                    *gw,
   const cs_equation_t  *richards = gw->richards;
   assert(richards != NULL);
 
-  const cs_field_t  *hydraulic_head = cs_equation_get_field(richards);
+  cs_param_space_scheme_t r_scheme = cs_equation_get_space_scheme(richards);
+  cs_field_t  *hydraulic_head = cs_equation_get_field(richards);
   cs_field_t  *pressure_head = gw->pressure_head;
+
+  if (gw->flag & CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE) {
+
+    cs_real_t  domain_integral = 0.;
+
+    switch (r_scheme) {
+
+    case CS_SPACE_SCHEME_CDOVB:
+      {
+        assert(hydraulic_head->location_id ==
+               cs_mesh_location_get_id_by_name("vertices"));
+
+        domain_integral =
+          cs_evaluate_scal_domain_integral_by_array(cs_flag_primal_vtx,
+                                                    hydraulic_head->val);
+
+        const cs_real_t  mean_value = domain_integral / cdoq->vol_tot;
+
+#       pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++)
+          hydraulic_head->val[i] -= mean_value;
+      }
+      break;
+
+    case CS_SPACE_SCHEME_CDOFB:
+      {
+        assert(hydraulic_head->location_id ==
+               cs_mesh_location_get_id_by_name("cells"));
+
+        domain_integral =
+          cs_evaluate_scal_domain_integral_by_array(cs_flag_primal_cell,
+                                                    hydraulic_head->val);
+
+        const cs_real_t  mean_value = domain_integral / cdoq->vol_tot;
+#       pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < cdoq->n_cells; i++)
+          hydraulic_head->val[i] -= mean_value;
+      }
+      break;
+
+    default:
+      break; /* Nothing to do */
+
+    }
+
+  } /* Rescale hydraulic_head */
 
   if (gw->flag & CS_GWF_GRAVITATION) { /* Update the pressure head */
 
@@ -370,26 +418,18 @@ _update_head(cs_gwf_t                    *gw,
     if (cur2prev)
       cs_field_current_to_previous(gw->pressure_head);
 
-    switch (cs_equation_get_space_scheme(richards)) {
+    switch (r_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
-      assert(hydraulic_head->location_id ==
-             cs_mesh_location_get_id_by_name("vertices"));
 
 #     pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
-
-        const cs_real_t  gpot = _dp3(cdoq->vtx_coord + 3*i,
-                                                      gw->gravity);
-
+        const cs_real_t  gpot = _dp3(cdoq->vtx_coord + 3*i, gw->gravity);
         pressure_head->val[i] = hydraulic_head->val[i] - gpot;
-
       }
 
       /* Update head_in_law */
-      cs_reco_pv_at_cell_centers(connect->c2v,
-                                 cdoq,
-                                 pressure_head->val,
+      cs_reco_pv_at_cell_centers(connect->c2v, cdoq,pressure_head->val,
                                  gw->head_in_law);
       break;
 
@@ -400,11 +440,8 @@ _update_head(cs_gwf_t                    *gw,
 
 #       pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
-
           const cs_real_t  gpot = _dp3(cdoq->vtx_coord + 3*i, gw->gravity);
-
           pressure_head->val[i] = hydraulic_head->val[i] - gpot;
-
         }
 
         /* Update head_in_law */
@@ -413,11 +450,8 @@ _update_head(cs_gwf_t                    *gw,
 
 #       pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
-
           const cs_real_t  gpot = _dp3(cdoq->cell_centers + 3*i, gw->gravity);
-
           gw->head_in_law[i] = hydraulic_head_cells[i] - gpot;
-
         }
 
       }
@@ -425,29 +459,24 @@ _update_head(cs_gwf_t                    *gw,
 
     case CS_SPACE_SCHEME_CDOFB:
     case CS_SPACE_SCHEME_HHO_P0:
-      assert(hydraulic_head->location_id ==
-             cs_mesh_location_get_id_by_name("cells"));
 
 #     pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
-
         const cs_real_t  gpot = _dp3(cdoq->cell_centers + 3*i, gw->gravity);
-
         pressure_head->val[i] = hydraulic_head->val[i] - gpot;
-
       }
-      break; // Nothing to do (h_head is a pointer to richards field)
+      break;
 
     default:
       bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
 
-    } // Switch on space scheme
+    } /* Switch on space scheme */
 
   }
-  else { // No gravity effect id taken into account
+  else { /* No gravity effect is taken into account */
 
     /* Update head_in_law */
-    switch(cs_equation_get_space_scheme(richards)) {
+    switch(r_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
       cs_reco_pv_at_cell_centers(connect->c2v,
@@ -467,9 +496,9 @@ _update_head(cs_gwf_t                    *gw,
       break;
 
     default:
-      break; // Nothing to do
+      break; // Nothing to do for CDO-Fb schemes and HHO schemes
 
-    } // Switch on the space scheme related to the Richards equation
+    }  /* Switch on the space scheme related to the Richards equation */
 
   } /* Gravity is activated or not */
 
@@ -760,6 +789,11 @@ cs_gwf_log_setup(void)
   else
     cs_log_printf(CS_LOG_SETUP, "  <GW/Gravitation> false\n");
 
+  if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
+    cs_log_printf(CS_LOG_SETUP, "  <GW> Force to resolve Richards equation\n");
+  if (gw->flag & CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE)
+    cs_log_printf(CS_LOG_SETUP, "  <GW> Rescale head w.r.t zero mean value\n");
+
   /* Tracers */
   cs_log_printf(CS_LOG_SETUP,
                 "  <GW/Tracer> n_tracer_equations %d\n", gw->n_tracers);
@@ -950,7 +984,7 @@ cs_gwf_init_setup(void)
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
   assert(gw->richards != NULL);
 
-  int  n_soils = cs_gwf_get_n_soils();
+  const int  n_soils = cs_gwf_get_n_soils();
   if (n_soils < 1)
     bft_error(__FILE__, __LINE__, 0,
               _(" Groundwater module is activated but no soil is defined."));
@@ -959,12 +993,13 @@ cs_gwf_init_setup(void)
   const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
   const int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
   const int  v_loc_id = cs_mesh_location_get_id_by_name("vertices");
+  const int  log_key = cs_field_key_id("log");
+  const int  post_key = cs_field_key_id("post_vis");
+  const cs_param_space_scheme_t  space_scheme =
+    cs_equation_get_space_scheme(gw->richards);
 
   /* Handle gravity effects */
   if (gw->flag & CS_GWF_GRAVITATION) {
-
-    const cs_param_space_scheme_t  space_scheme =
-      cs_equation_get_space_scheme(gw->richards);
 
     switch (space_scheme) {
     case CS_SPACE_SCHEME_CDOVB:
@@ -989,8 +1024,8 @@ cs_gwf_init_setup(void)
       bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
     }
 
-    cs_field_set_key_int(gw->pressure_head, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(gw->pressure_head, cs_field_key_id("post_vis"), 1);
+    cs_field_set_key_int(gw->pressure_head, log_key, 1);
+    cs_field_set_key_int(gw->pressure_head, post_key, 1);
 
   } /* Gravitation is activated */
 
@@ -1022,7 +1057,9 @@ cs_gwf_init_setup(void)
                                        1,   // dimension
                                        pty_has_previous);
 
-  cs_field_set_key_int(gw->moisture_field, cs_field_key_id("log"), 1);
+  cs_field_set_key_int(gw->moisture_field, log_key, 1);
+  if (gw->flag & CS_GWF_POST_MOISTURE)
+    cs_field_set_key_int(gw->moisture_field, post_key, 1);
 
   if (!(gw->flag & CS_GWF_SOIL_ALL_SATURATED)) {
 
@@ -1043,12 +1080,12 @@ cs_gwf_init_setup(void)
       break;
 
     default:
-      permeability_dim = 0; // avoid warning
+      permeability_dim = 0;  /* avoid warning */
       bft_error(__FILE__, __LINE__, 0, "%s: Invalid type of property for %s.",
                 __func__, cs_property_get_name(gw->permeability));
       break;
 
-    } // Switch on property type
+    } /* Switch on property type */
 
     gw->permea_field = cs_field_create("permeability",
                                        pty_mask,
@@ -1056,24 +1093,29 @@ cs_gwf_init_setup(void)
                                        permeability_dim,   // dimension
                                        pty_has_previous);
 
-    cs_field_set_key_int(gw->permea_field, cs_field_key_id("log"), 1);
-
-    /* Add the post-processing of the moisture content */
-    cs_field_set_key_int(gw->moisture_field, cs_field_key_id("post_vis"), 1);
+    cs_field_set_key_int(gw->permea_field, log_key, 1);
+    if (gw->flag & CS_GWF_POST_PERMEABILITY)
+      cs_field_set_key_int(gw->permea_field, post_key, 1);
 
     /* Create a capacity field attached to cells */
-    if (gw->flag & CS_GWF_RICHARDS_UNSTEADY)
+    if (gw->flag & CS_GWF_RICHARDS_UNSTEADY) {
+
       gw->capacity_field = cs_field_create("soil_capacity",
                                            pty_mask,
                                            c_loc_id,
                                            1,   // dimension
                                            pty_has_previous);
 
+      cs_field_set_key_int(gw->capacity_field, log_key, 1);
+      if (gw->flag & CS_GWF_POST_CAPACITY)
+        cs_field_set_key_int(gw->capacity_field, post_key, 1);
+
+    }
+
   }
 
   /* Add default post-processing related to groundwater flow module */
   cs_post_add_time_mesh_dep_output(cs_gwf_extra_post, gw);
-
 }
 
 /*----------------------------------------------------------------------------*/

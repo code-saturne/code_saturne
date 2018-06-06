@@ -297,6 +297,22 @@ cs_evaluate_average_on_cells(const cs_xdef_t   *def,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the integral over the full computational domain of a
+ *         quantity defined by an array
+ *
+ * \param[in]      array_loc  flag indicating where are located values
+ * \param[in]      array_val  array of values
+ *
+ * \return the value of the integration
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
+                                          const cs_real_t  *array_val);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
