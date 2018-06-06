@@ -379,12 +379,10 @@ double precision crvexp(ncelet), crvimp(ncelet)
 
 integer          iel
 
-double precision, dimension(:), pointer :: imasfl
+double precision, dimension(:,:), pointer :: cvar_vel
 
-double precision, dimension(:,:), pointer :: vel
-
-double precision ubulk, surf, xx
-integer          iflmas, ifac, nn
+double precision ubulk, flux_tot
+integer          ifac
 double precision ubulkm
 data             ubulkm /0.d0/
 save             ubulkm
@@ -398,38 +396,30 @@ if (iscal.ne.iscalt) return
 !===============================================================================
 !< [init_scal]
 ubulk= 0.d0
-surf = 0.d0
 !< [init_scal]
 ! Map field arrays
 !< [map_field_scal]
-call field_get_val_v(ivarfl(iu), vel)
+call field_get_val_v(ivarfl(iu), cvar_vel)
 
-call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-call field_get_val_s(iflmas, imasfl)
 !< [map_field_scal
-nn= 0
-do ifac = 1, nfac
-  xx=cdgfac(1,ifac)
-  if(abs(xx).lt.1.d-5) then
-    nn = nn + 1
-    ubulk = ubulk + imasfl(ifac)
-    surf  = surf + surfac(1,ifac)
-  endif
+! Bulk mean velocity (x component)
+do iel = 1, ncel
+  ubulk = ubulk + cvar_vel(1, iel) * cell_f_vol(iel)
 enddo
 !< [map_field_scal]
 ! Parallelism
 !< [parallelism_scal]
 if (irangp.ge.0) then
   call parsom(ubulk)
-  call parsom(surf)
 endif
 
-ubulk = abs(ubulk)/abs(surf)
-ubulk = max(ubulk,1d-12)
+ubulk = max(abs(ubulk) / voltot, 1d-12)
 
+! Flux x Total surface / (rho Cp)
+flux_tot = 1.d0
 do iel = 1, ncel
   crvimp(iel) = 0.d0
-  crvexp(iel) = volume(iel)*vel(1,iel)/ubulk
+  crvexp(iel) = cell_f_vol(iel)*cvar_vel(1, iel) * flux_tot / ubulk
 enddo
 !< [parallelism_scal]
 !--------
