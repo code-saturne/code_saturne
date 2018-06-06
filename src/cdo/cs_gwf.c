@@ -1421,8 +1421,7 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
   if (!cs_equation_is_steady(richards)) {
 
     /* Define the algebraic system */
-    if (cs_equation_needs_build(richards)) // unsteady ?
-      cs_equation_build_system(mesh, time_step, dt_cur, richards);
+    cs_equation_build_system(mesh, time_step, dt_cur, richards);
 
     /* Solve the algebraic system */
     cs_equation_solve(richards);
@@ -1439,8 +1438,7 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
     if (!cs_equation_is_steady(tracer->eq)) { // unsteady ?
 
       /* Define the algebraic system */
-      if (cs_equation_needs_build(tracer->eq))
-        cs_equation_build_system(mesh, time_step, dt_cur, tracer->eq);
+      cs_equation_build_system(mesh, time_step, dt_cur, tracer->eq);
 
       /* Solve the algebraic system */
       cs_equation_solve(tracer->eq);

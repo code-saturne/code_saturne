@@ -355,19 +355,6 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if one has to build the linear system
- *
- * \param[in]  eq        pointer to a cs_equation_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_equation_needs_build(const cs_equation_t    *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Build the linear system for this equation
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure

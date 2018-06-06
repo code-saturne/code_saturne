@@ -368,8 +368,6 @@ struct _cs_equation_t {
   int     solve_ts_id;  /* Id of the timer stats structure related to the
                            inversion of the linear system */
 
-  bool    do_build;     /* false => keep the system as it is */
-
 };
 
 /*============================================================================

@@ -987,7 +987,6 @@ cs_equation_add(const char            *eqname,
   eq->param = cs_equation_create_param(eqtype, dim, default_bc);
 
   eq->field_id = -1;    /* field is created in a second step */
-  eq->do_build = true;  /* force the construction of the algebraic system */
 
   /* Set timer statistic structure to a default value */
   eq->main_ts_id = eq->solve_ts_id = -1;
@@ -1681,25 +1680,6 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if one has to build the linear system
- *
- * \param[in]  eq        pointer to a cs_equation_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_equation_needs_build(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return false;
-  else
-    return eq->do_build;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Build the linear system for this equation
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure
@@ -1740,8 +1720,6 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
                    eq->scheme_context,
                    eq->rhs,
                    eq->matrix);
-
-  eq->do_build = false;
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
@@ -1861,10 +1839,6 @@ cs_equation_solve(cs_equation_t   *eq)
   /* Define the new field value for the current time */
   eq->update_field(x, eq->rhs, eq->param,
                    eq->builder, eq->scheme_context, fld->val);
-
-  if (eq->param->flag & CS_EQUATION_UNSTEADY)
-    eq->do_build = true; /* Improvement: exhibit cases where a new build
-                            is not needed */
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);

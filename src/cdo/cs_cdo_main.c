@@ -422,11 +422,10 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
         if (type == CS_EQUATION_TYPE_USER) {
 
           /* Define the algebraic system */
-          if (cs_equation_needs_build(eq))
-            cs_equation_build_system(domain->mesh,
-                                     domain->time_step,
-                                     domain->dt_cur,
-                                     eq);
+          cs_equation_build_system(domain->mesh,
+                                   domain->time_step,
+                                   domain->dt_cur,
+                                   eq);
 
           /* Solve domain */
           cs_equation_solve(eq);
