@@ -427,7 +427,8 @@
 
   \subsection cs_user_postprocess_h_value_boundary_p Output of a variable on a surface mesh
 
-  Values can also be output on a surface mesh, possibly, containing a mix of
+  Values can also be output on a surface mesh, possibly containing a mix of
+  boundary and internal faces.
   In the following example, we simply average or project adjacent cell values
   on faces, but more precise techniques could be used:
 
