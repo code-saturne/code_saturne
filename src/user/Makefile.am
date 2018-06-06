@@ -102,7 +102,6 @@ cs_user_parameters.c \
 cs_user_performance_tuning.c \
 cs_user_physical_properties.c \
 cs_user_postprocess.c \
-cs_user_postprocess_var.f90 \
 cs_user_porosity.c \
 cs_user_radiative_transfer.c \
 cs_user_radiative_transfer_bcs.c \

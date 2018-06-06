@@ -173,26 +173,6 @@ void CS_PROCF (usthht, USTHHT)
  cs_real_t       *temper     /* <-- temperature */
 );
 
-/*----------------------------------------------------------------------------
- * User function for output of variables on a post-processing mesh
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (usvpst, USVPST)
-(
- const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
- const cs_int_t  *nvar,      /* <-- number of variables */
- const cs_int_t  *nscal,     /* <-- number of scalars */
- const cs_int_t  *nvlsta,    /* <-- number of statistical variables (lagr) */
- const cs_int_t  *ncelps,    /* <-- number of post-processed cells */
- const cs_int_t  *nfacps,    /* <-- number of post processed interior faces */
- const cs_int_t  *nfbrps,    /* <-- number of post processed boundary faces */
- const cs_int_t   itypps[3], /* <-- flag (0 or 1) for presence of cells, */
-                             /*     interior faces, and boundary faces */
- const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
- const cs_int_t   lstfac[],  /* <-- list of post-processed interior faces */
- const cs_int_t   lstfbr[]   /* <-- list of post-processed boundary faces */
-);
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute GUI-defined head losses for a given volume zone.

@@ -161,7 +161,7 @@ _write_additional_vars(void                  *input,
  /* Allocate work array to build variables */
 
   BFT_MALLOC(var_trav,
-             (n_cells + n_i_faces + n_b_faces) * 3,
+             (n_cells + n_b_faces) * 3,
              cs_real_t);
 
   /* Pointers to variable assembly arrays, set to NULL if unused
@@ -177,7 +177,7 @@ _write_additional_vars(void                  *input,
 
   /* Add specific outputs for Code_Saturne */
 
-  cs_lnum_t *cell_num = NULL, *i_face_num = NULL, *b_face_num = NULL;
+  cs_lnum_t *cell_num = NULL, *b_face_num = NULL;
 
   if (n_cells > 0) {
     BFT_MALLOC(cell_num, n_cells, cs_lnum_t);
@@ -188,17 +188,6 @@ _write_additional_vars(void                  *input,
     else {
       for (cs_lnum_t k = 0; k < n_cells; k++)
         cell_num[k] = k + 1;
-    }
-  }
-  if (n_i_faces > 0) {
-    BFT_MALLOC(i_face_num, n_i_faces, cs_lnum_t);
-    if (i_face_ids != NULL) {
-      for (cs_lnum_t k = 0; k < n_i_faces; k++)
-        i_face_num[k] = i_face_ids[k] + 1;
-    }
-    else {
-      for (cs_lnum_t k = 0; k < n_i_faces; k++)
-        i_face_num[k] = k + 1;
     }
   }
   if (n_b_faces > 0) {
@@ -226,16 +215,7 @@ _write_additional_vars(void                  *input,
 
   BFT_FREE(var_trav);
 
-  /* Call to user subroutine for additional post-processing */
-
-  CS_PROCF(usvpst, USVPST) (&nummai,
-                            _input->nvar, _input->nscal, 0,
-                            &n_cells, &n_i_faces, &n_b_faces,
-                            itypps,
-                            cell_num, i_face_num, b_face_num);
-
   BFT_FREE(cell_num);
-  BFT_FREE(i_face_num);
   BFT_FREE(b_face_num);
 }
 
