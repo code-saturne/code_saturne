@@ -90,7 +90,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define CS_CDOVB_VECTEQ_DBG     0
-#define CS_CDOVB_VECTEQ_MODULO  100
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product

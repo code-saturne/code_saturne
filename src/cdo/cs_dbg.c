@@ -203,6 +203,105 @@ cs_dbg_iarray_to_listing(const char        *header,
   }
 
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In debug mode, dump a linear system
+ *
+ * \param[in] eqname     name of the equation related to the current system
+ * \param[in] size       number of elements in array
+ * \param[in] x          solution array
+ * \param[in] b          right-hand side
+ * \param[in] row_index  index on row entries (column id and extra-diag values)
+ * \param[in] col_id     list of column id
+ * \param[in] xval       array of extra-diagonal values
+ * \param[in] dval       array of diagonal values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_dump_linear_system(const char        *eqname,
+                          cs_lnum_t          size,
+                          int                verbosity,
+                          const cs_real_t    x[],
+                          const cs_real_t    b[],
+                          const cs_lnum_t    row_index[],
+                          const cs_lnum_t    col_id[],
+                          const cs_real_t    xval[],
+                          const cs_real_t    dval[])
+{
+  cs_log_printf(CS_LOG_DEFAULT, "\nDUMP LINEAR SYSTEM FOR THE EQUATION >> %s\n",
+                eqname);
+
+  int  n_dump_cols = 8;
+  int  n_dump_rows = size/n_dump_cols;
+
+  cs_log_printf(CS_LOG_DEFAULT, " >> SOLUTION\n");
+  for (cs_lnum_t i = 0; i < n_dump_rows; i++) {
+    for (cs_lnum_t j = i*n_dump_cols; j < (i+1)*n_dump_cols; j++)
+      cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, x[j]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
+  if (n_dump_rows*n_dump_cols < size) {
+    for (cs_lnum_t j = n_dump_rows*n_dump_cols; j < size; j++)
+      cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, x[j]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
+
+  cs_log_printf(CS_LOG_DEFAULT, " >> RIGHT-HAND SIDE\n");
+  for (cs_lnum_t i = 0; i < n_dump_rows; i++) {
+    for (cs_lnum_t j = i*n_dump_cols; j < (i+1)*n_dump_cols; j++)
+      cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, b[j]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
+  if (n_dump_rows*n_dump_cols < size) {
+    for (cs_lnum_t j = n_dump_rows*n_dump_cols; j < size; j++)
+      cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, b[j]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
+
+  if (verbosity > 2) {
+
+    cs_log_printf(CS_LOG_DEFAULT, " >> DIAGONAL ENTRIES\n");
+    for (cs_lnum_t i = 0; i < n_dump_rows; i++) {
+      for (cs_lnum_t j = i*n_dump_cols; j < (i+1)*n_dump_cols; j++)
+        cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, dval[j]);
+      cs_log_printf(CS_LOG_DEFAULT, "\n");
+    }
+    if (n_dump_rows*n_dump_cols < size) {
+      for (cs_lnum_t j = n_dump_rows*n_dump_cols; j < size; j++)
+        cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, dval[j]);
+      cs_log_printf(CS_LOG_DEFAULT, "\n");
+    }
+
+    cs_log_printf(CS_LOG_DEFAULT, " >> EXTRA-DIAGONAL ENTRIES\n");
+    for (cs_lnum_t i = 0; i < size; i++) {
+
+      const cs_lnum_t  *idx = row_index + i;
+      const cs_lnum_t  *_col = col_id + idx[0];
+      const cs_real_t  *_val = xval + idx[0];
+      const int  n_entries = idx[1] - idx[0];
+
+      int  _n_cols = 6;
+      int  _n_rows = n_entries/_n_cols;
+
+      for (cs_lnum_t ii = 0; ii < _n_rows; ii++) {
+        cs_log_printf(CS_LOG_DEFAULT, "ROW%4d >> ", i);
+        for (cs_lnum_t jj = ii*_n_cols; jj < (ii+1)*_n_cols; jj++)
+          cs_log_printf(CS_LOG_DEFAULT, "%4d: % -6.4e |", _col[jj], _val[jj]);
+        cs_log_printf(CS_LOG_DEFAULT, "\n");
+      }
+      if (_n_rows*_n_cols < n_entries) {
+        cs_log_printf(CS_LOG_DEFAULT, "ROW%4d >> ", i);
+        for (cs_lnum_t jj = _n_rows*_n_cols; jj < n_entries; jj++)
+          cs_log_printf(CS_LOG_DEFAULT, "%4d: % -6.4e |", _col[jj], _val[jj]);
+        cs_log_printf(CS_LOG_DEFAULT, "\n");
+      }
+
+    }
+
+  } /* verbosity */
+}
 #endif  /* Only in debug mode */
 
 /*----------------------------------------------------------------------------*/

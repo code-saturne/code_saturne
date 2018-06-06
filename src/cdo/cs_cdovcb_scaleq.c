@@ -95,7 +95,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define CS_CDOVCB_SCALEQ_DBG       0
-#define CS_CDOVCB_SCALEQ_MODULO  100
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
@@ -810,7 +809,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
                         csys, cb);                                   // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-      if (c_id % CS_CDOVCB_SCALEQ_MODULO == 0)
+      if (_test_debug_cellwise(cm))
         cs_cell_mesh_dump(cm);
 #endif
 
@@ -841,7 +840,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
         } // Border cell
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-        if (c_id % CS_CDOVCB_SCALEQ_MODULO == 0)
+        if (_test_debug_cellwise(cm))
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
       } /* END OF DIFFUSION */
@@ -862,7 +861,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
           eqc->add_advection_bc(cm, eqp, t_eval_pty, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-        if (c_id % CS_CDOVCB_SCALEQ_MODULO == 0)
+        if (_test_debug_cellwise(cm))
           cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
 #endif
       } /* END OF ADVECTION */
@@ -953,7 +952,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
       } /* END OF TIME CONTRIBUTION */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (c_id % CS_CDOVCB_SCALEQ_MODULO == 0)
+      if (_test_debug_cellwise(cm))
         cs_cell_sys_dump(">> Local system matrix before condensation",
                          c_id, csys);
 #endif
@@ -988,7 +987,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
-      cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
+      if (_test_debug_cellwise(cm))
+        cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
       /* Assemble the local system (related to vertices only since one applies

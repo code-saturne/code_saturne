@@ -80,7 +80,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define CS_CDOFB_SCALEQ_DBG      0
-#define CS_CDOFB_SCALEQ_MODULO  10
 
 /*============================================================================
  * Private variables
@@ -703,7 +702,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
                         csys, cb);                                   // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
-      if (c_id % CS_CDOFB_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
+      if (_test_debug_cellwise(cm)) cs_cell_mesh_dump(cm);
 #endif
 
       /* DIFFUSION TERM */
@@ -723,7 +722,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
         cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-        if (c_id % CS_CDOFB_SCALEQ_MODULO == 0)
+        if (_test_debug_cellwise(cm))
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
       } /* END OF DIFFUSION */
@@ -800,7 +799,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
       } /* END OF TIME CONTRIBUTION */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-      if (c_id % CS_CDOFB_SCALEQ_MODULO == 0)
+      if (_test_debug_cellwise(cm))
         cs_cell_sys_dump(">> Local system matrix before condensation",
                          c_id, csys);
 #endif
@@ -835,7 +834,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
-      if (c_id % CS_CDOFB_SCALEQ_MODULO == 0)
+      if (_test_debug_cellwise(cm))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
@@ -1010,8 +1009,8 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
         p_cur[f] = eqc->face_values[cm->f_ids[f]];
       p_cur[cm->n_fc] = pot->val[cm->c_id];
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
-      if (c_id % CS_CDOFB_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 3
+      if (_test_debug_cellwise(cm)) cs_cell_mesh_dump(cm);
 #endif
 
       /* Set p_theta */
@@ -1140,7 +1139,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
     eb->balance[c_id] =
-      eb->unsteady_term[c_id] + eb->reaction_term[c_id] +
+      eb->unsteady_term[c_id]  + eb->reaction_term[c_id]  +
       eb->diffusion_term[c_id] + eb->advection_term[c_id] +
       eb->source_term[c_id];
 

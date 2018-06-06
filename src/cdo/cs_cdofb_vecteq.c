@@ -80,7 +80,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define CS_CDOFB_VECTEQ_DBG      0
-#define CS_CDOFB_VECTEQ_MODULO  10
 
 /*============================================================================
  * Private variables
@@ -746,7 +745,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
                         csys, cb);                                    // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
-      if (c_id % CS_CDOFB_VECTEQ_MODULO == 0) cs_cell_mesh_dump(cm);
+      if (_test_debug_cellwise(cm)) cs_cell_mesh_dump(cm);
 #endif
 
       /* DIFFUSION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
@@ -791,7 +790,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
         }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
-        if (c_id % CS_CDOFB_VECTEQ_MODULO == 0)
+        if (_test_debug_cellwise(cm))
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
       } /* END OF DIFFUSION */
@@ -828,7 +827,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
       } /* End of term source contribution */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
-      if (c_id % CS_CDOFB_VECTEQ_MODULO == 0)
+      if (_test_debug_cellwise(cm))
         cs_cell_sys_dump(">> Local system matrix before condensation",
                          c_id, csys);
 #endif
@@ -863,7 +862,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 0
-      if (c_id % CS_CDOFB_VECTEQ_MODULO == 0)
+      if (_test_debug_cellwise(cm))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 

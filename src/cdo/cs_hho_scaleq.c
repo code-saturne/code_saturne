@@ -81,7 +81,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define CS_HHO_SCALEQ_DBG     0
-#define CS_HHO_SCALEQ_MODULO  100
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
@@ -1061,7 +1060,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
                         hhob, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 2
-      if (c_id % CS_HHO_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
+      if (_test_debug_cellwise(cm)) cs_cell_mesh_dump(cm);
 #endif
 
       const short int  face_offset = cm->n_fc*eqc->n_face_dofs;
@@ -1085,7 +1084,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
         cs_sdm_block_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 1
-        if (c_id % CS_HHO_SCALEQ_MODULO == 0)
+        if (_test_debug_cellwise(cm))
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
       } /* END OF DIFFUSION */
@@ -1133,7 +1132,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       } /* End of term source contribution */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 1
-      if (c_id % CS_HHO_SCALEQ_MODULO == 0)
+      if (_test_debug_cellwise(cm))
         cs_cell_sys_dump(">> Local system matrix before condensation",
                          c_id, csys);
 #endif
@@ -1163,9 +1162,8 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 0
-      if (c_id % CS_HHO_SCALEQ_MODULO == 0)
+      if (_test_debug_cellwise(cm)) {
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
-      if (c_id == 0) {
         printf(" (FINAL STATE) HHO local system for cell_id = 0\n");
         cs_sdm_block_fprintf(NULL, NULL, 1e-16, csys->mat);
       }

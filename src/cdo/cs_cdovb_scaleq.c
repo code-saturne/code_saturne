@@ -95,7 +95,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define CS_CDOVB_SCALEQ_DBG     0
-#define CS_CDOVB_SCALEQ_MODULO  100
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
@@ -862,7 +861,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
                         csys, cb);                                   // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-      if (c_id % CS_CDOVB_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
+      if (_test_debug_cellwise(cm)) cs_cell_mesh_dump(cm);
 #endif
 
       /* DIFFUSION TERM */
@@ -890,7 +889,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
                                  fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-        if (c_id % CS_CDOVB_SCALEQ_MODULO == 0)
+        if (_test_debug_cellwise(cm))
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
       } /* END OF DIFFUSION */
@@ -911,7 +910,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
           eqc->add_advection_bc(cm, eqp, t_eval_pty, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-        if (c_id % CS_CDOVB_SCALEQ_MODULO == 0)
+        if (_test_debug_cellwise(cm))
           cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
 #endif
 
@@ -921,7 +920,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
         eqc->get_mass_matrix(eqc->hdg_mass, cm, cb); // stored in cb->hdg
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-        if (c_id % CS_CDOVB_SCALEQ_MODULO == 0) {
+        if (_test_debug_cellwise(cm)) {
           cs_log_printf(CS_LOG_DEFAULT, ">> Local mass matrix");
           cs_sdm_dump(c_id, csys->dof_ids, csys->dof_ids, cb->hdg);
         }
@@ -1017,7 +1016,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-      if (c_id % CS_CDOVB_SCALEQ_MODULO == 0)
+      if (_test_debug_cellwise(cm))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
@@ -1757,7 +1756,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      if (c_id % CS_CDOVB_SCALEQ_MODULO == 0)
+      if (_test_debug_cellwise(cm))
         cs_cell_mesh_dump(cm);
 #endif
 

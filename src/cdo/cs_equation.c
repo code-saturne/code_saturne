@@ -1789,26 +1789,19 @@ cs_equation_solve(cs_equation_t   *eq)
 
     cs_matrix_get_msr_arrays(eq->matrix, &row_index, &col_id, &d_val, &x_val);
 
-    cs_gnum_t  nnz = row_index[size];
-    if (cs_glob_n_ranks > 1)
-      cs_parall_counter(&nnz, 1);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
+    cs_dbg_dump_linear_system(eq->name, size, CS_EQUATION_DBG,
+                              x, b,
+                              row_index, col_id, x_val, d_val);
+#endif
 
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "  <%s/sles_cvg> code  %d n_iters  %d residual  % -8.4e"
-                  " nnz %lu\n",
+    cs_gnum_t  nnz = row_index[size];
+    if (cs_glob_n_ranks > 1) cs_parall_counter(&nnz, 1);
+
+    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code  %d n_iters  %d"
+                  " residual  % -8.4e nnz %lu\n",
                   eq->name, code, n_iters, residual, nnz);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
-    cs_dbg_darray_to_listing("EQ %s: AFTER.SOLVE >> X", eq->name, size, x, 9);
-    cs_dbg_darray_to_listing("EQ %s: SOLVE >> RHS", eq->name, size, b, 9);
-#if CS_EQUATION_DBG > 2
-    cs_dbg_iarray_to_listing("EQ %s: ROW_INDEX",
-                             eq->name, size + 1, row_index, 9);
-    cs_dbg_iarray_to_listing("EQ %s: COLUMN_ID", eq->name, nnz, col_id, 9);
-    cs_dbg_darray_to_listing("EQ %s: D_VAL", eq->name, size, d_val, 9);
-    cs_dbg_darray_to_listing("EQ %s: X_VAL", eq->name, nnz, x_val, 9);
-#endif
-#endif
   }
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */

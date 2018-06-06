@@ -30,6 +30,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_cdo_local.h"
 #include "cs_defs.h"
 #include "cs_math.h"
 
@@ -49,6 +50,16 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+#if defined(DEBUG) && !defined(NDEBUG)
+static inline bool
+_test_debug_cellwise(const cs_cell_mesh_t  *cm)
+{
+  if (cm->xc[0] > 0.75 && cm->xc[2] > 0.75 && cm->xc[1] > 0.85)
+    return true;
+  else
+    return false;
+}
+
 /*============================================================================
  * Static inline function prototypes
  *============================================================================*/
@@ -57,7 +68,6 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
-#if defined(DEBUG) && !defined(NDEBUG)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Print a cs_sdm_t structure which is defined by block
@@ -116,6 +126,32 @@ cs_dbg_iarray_to_listing(const char        *header,
                          const cs_lnum_t    size,
                          const cs_lnum_t    array[],
                          int                n_cols);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In debug mode, dump a linear system
+ *
+ * \param[in] eqname     name of the equation related to the current system
+ * \param[in] size       number of elements in array
+ * \param[in] x          solution array
+ * \param[in] b          right-hand side
+ * \param[in] row_index  index on row entries (column id and extra-diag values)
+ * \param[in] col_id     list of column id
+ * \param[in] xval       array of extra-diagonal values
+ * \param[in] dval       array of diagonal values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_dump_linear_system(const char        *eqname,
+                          cs_lnum_t          size,
+                          int                verbosity,
+                          const cs_real_t    x[],
+                          const cs_real_t    b[],
+                          const cs_lnum_t    row_index[],
+                          const cs_lnum_t    col_id[],
+                          const cs_real_t    xval[],
+                          const cs_real_t    dval[]);
 #endif
 
 /*----------------------------------------------------------------------------*/
