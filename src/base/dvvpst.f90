@@ -106,6 +106,7 @@ integer          ifcsii, iflpst, itplus, iprev, f_id
 
 double precision rbid(1)
 double precision vr(3)
+double precision cvisls0
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: tplusp
@@ -507,11 +508,6 @@ if (numtyp.eq.-1) then
 
       ! As in elflux
 
-      call field_get_key_int (f_id, kivisl, ifcsii)
-      if (ifcsii .ge. 0) then
-        call field_get_val_s(ifcsii, cvisii)
-      endif
-
       inc = 1
       iprev = 0
       iccocg = 1
@@ -520,19 +516,31 @@ if (numtyp.eq.-1) then
                                  iccocg,                                     &
                                  grad)
 
-      do iloc = 1, ncelps
-        iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) = -cvisii(iel)*grad(1,iel)
-        tracel(2 + (iloc-1)*idimt) = -cvisii(iel)*grad(2,iel)
-        tracel(3 + (iloc-1)*idimt) = -cvisii(iel)*grad(3,iel)
-      enddo
+      call field_get_key_int (f_id, kivisl, ifcsii)
+      if (ifcsii .ge. 0) then
+        call field_get_val_s(ifcsii, cvisii)
+        do iloc = 1, ncelps
+          iel = lstcel(iloc)
+          tracel(1 + (iloc-1)*idimt) = -cvisii(iel)*grad(1,iel)
+          tracel(2 + (iloc-1)*idimt) = -cvisii(iel)*grad(2,iel)
+          tracel(3 + (iloc-1)*idimt) = -cvisii(iel)*grad(3,iel)
+        enddo
+      else
+        call field_get_key_double(f_id, kvisl0, cvisls0)
+        do iloc = 1, ncelps
+          iel = lstcel(iloc)
+          tracel(1 + (iloc-1)*idimt) = -cvisls0*grad(1,iel)
+          tracel(2 + (iloc-1)*idimt) = -cvisls0*grad(2,iel)
+          tracel(3 + (iloc-1)*idimt) = -cvisls0*grad(3,iel)
+        enddo
+      endif
 
       idimt  = 3
       ientla = .true.
       ivarpr = .false.
 
       call post_write_var(nummai, 'Current_Im', idimt, ientla, ivarpr,       &
-                          ntcabs, ttcabs, grad, rbid, rbid)
+                          ntcabs, ttcabs, tracel, rbid, rbid)
 
     endif
 
