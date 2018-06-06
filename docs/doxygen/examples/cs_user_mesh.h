@@ -58,6 +58,19 @@
 
   \snippet cs_user_mesh-modify.c mesh_modify_extrude_1
 
+  \subsection cs_user_mesh_h_cs_user_mesh_modifiy_boundary_layer_1 Boundary layer insertion
+
+  Boundary faces extrusion can also be used to insert boundary layer cells,
+  by first shrinking the mesh around the selected zones so as to accomodate for
+  added cells. The following example shows how this can be done for 2 different
+  zones, using different parameters for each zone. Note that adjacent zones with
+  a different number of inserted layers are possible. Also a positive zone
+  thickness implies a fixed thicknesss, while a negative thickness is interpreted
+  as a ratio relative to the mean adjacent cell size, allowing for automatic
+  and adapted local thickness definition.
+
+  \snippet cs_user_mesh-modify.c mesh_modify_boundary_layer
+
   Groups of cells, interior, and boundary faces may be created or
   modified, using the \ref cs_mesh_group_cells_set, \ref cs_mesh_group_i_faces_set,
   \ref cs_mesh_group_b_faces_set functions to assign a group to selected
@@ -191,7 +204,7 @@
   Boundaries can be directly inserted based on a selection of interior faces,
   such as shown here:
 
-  \snippet cs_user_mesh-boundary.c mesh_boundary
+  \snippet cs_user_mesh-boundary.c mesh_thinwall
 
   Boundaries can also be inserted between a set of selected cells and the
   rest of the mesh. In this case, a mesh group name can be assigned to
