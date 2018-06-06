@@ -715,17 +715,19 @@ do iel = 1, ncel
       aikakj = aikakj + xaniso(iii,kk)*xaniso(kk,jjj)
     enddo
 
-    !     If we extrapolate the source terms (rarely), we put all in the previous ST..
-    !     We do not implicit the term with Cs1*aij neither the term with Cr1*P*aij.
-    !     Otherwise, we put all in smbr and we can implicit Cs1*aij
-    !     and Cr1*P*aij. Here we store the second member and the implicit term
-    !     in W1 and W2, to avoid the test(ST_PRV_ID.GE.0)
-    !     in the ncel loop
-    !     In the term with W1, which is dedicated to be extrapolated, we use
-    !     cromo.
-    !     The implicitation of the two terms can also be done in the case of
-    !     extrapolation, by isolating those two terms and by putting it in
-    !     the RHS but not in the prev. ST and by using ipcrom .... to be modified if needed
+    ! If we extrapolate the source terms (rarely),
+    ! we put all in the previous ST..
+    ! We do not implicit the term with Cs1*aij neither the term with Cr1*P*aij.
+    ! Otherwise, we put all in smbr and we can implicit Cs1*aij
+    ! and Cr1*P*aij. Here we store the second member and the implicit term
+    ! in W1 and W2, to avoid the test(ST_PRV_ID.GE.0)
+    ! in the ncel loop
+    ! In the term with W1, which is dedicated to be extrapolated, we use
+    ! cromo.
+    ! The implicitation of the two terms can also be done in the case of
+    ! extrapolation, by isolating those two terms and by putting it in
+    ! the RHS but not in the prev. ST and by using ipcrom .... to be modified
+    ! if needed.
 
     if (iturb.eq.31) then
 
@@ -735,7 +737,7 @@ do iel = 1, ncel
          (cssgs1*xaniso(iii,jjj)+cssgs2*(aikakj-d1s3*deltij(isou)*aii))
       phiij2 = - cssgr1*trprod*xaniso(iii,jjj)                             &
              +   trrij*xstrai(iii,jjj)*(cssgr2-cssgr3*sqrt(aii))           &
-             +   cssgr4*trrij*(aiksjk-d2s3*deltij(isou)*aklskl)                  &
+             +   cssgr4*trrij*(aiksjk-d2s3*deltij(isou)*aklskl)            &
              +   cssgr5*trrij* aikrjk
       epsij = -d2s3*cvara_ep(iel)*deltij(isou)
 
