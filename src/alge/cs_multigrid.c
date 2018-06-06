@@ -3043,6 +3043,8 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
   const char *name = cs_sles_get_name(sles);
 
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
+  if (mgd == NULL)
+    return false;
 
   int level = mgd->exit_level;
 
