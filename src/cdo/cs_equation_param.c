@@ -82,9 +82,9 @@ BEGIN_C_DECLS
 static cs_param_itsol_t _itsol_info_by_default = {
 
   CS_PARAM_PRECOND_DIAG,  // preconditioner
-  CS_PARAM_ITSOL_BICG,    // iterative solver
+  CS_PARAM_ITSOL_GMRES,   // iterative solver
   2500,                   // max. number of iterations
-  1e-12,                  // stopping criterion on the accuracy
+  1e-10,                  // stopping criterion on the accuracy
   false                   // normalization of the residual (true or false)
 
 };
