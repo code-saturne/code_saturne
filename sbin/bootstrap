@@ -38,8 +38,8 @@ rm -rf m4/codeset.m4 m4/fcntl-o.m4 m4/gettext.m4 \
 
 # Simply run autoreconf.
 
-# If only gettext 0.17 or 0.18 is available, allow it by modifying configure.ac temporarily,
-# but otherwise prefer 0.19.
+# If only gettext 0.17 or 0.18 is available, allow it by modifying configure.ac
+# temporarily, but otherwise prefer 0.19 (which avoids automake warnings)
 
 cs_gettext_version=`gettext --version | head -1 | sed -e s/gettext.*0/0/`
 case $cs_gettext_version in
