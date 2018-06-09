@@ -1076,10 +1076,6 @@ fvm_triangulate_polygon(int                             dim,
   int n_tries = 0;
   double epsilon[] = {1.0e-1, 1.0e-2, 0.0, -1.0e-2, -1.0e-1};
 
-  int  *const list_previous = state->list_previous;
-  int  *const list_next = state->list_next;
-  _Bool  *const concave = state->concave;
-
   /* Special case for quadrangle */
 
   if (n_vertices == 4)
@@ -1108,7 +1104,12 @@ fvm_triangulate_polygon(int                             dim,
     BFT_REALLOC(state->edge_neighbors, n_edges_tot_max*2, int);
     BFT_REALLOC(state->edge_is_delaunay, n_edges_tot_max, _Bool);
     BFT_REALLOC(state->concave, n_vertices_max, _Bool);
+
   }
+
+  int  *const list_previous = state->list_previous;
+  int  *const list_next = state->list_next;
+  _Bool  *const concave = state->concave;
 
   if (parent_vertex_num != NULL) {
     if (polygon_vertices != NULL) {
