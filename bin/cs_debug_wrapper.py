@@ -45,6 +45,7 @@ rank_id = -1
 # List of supported debuggers
 
 debuggers = {"gdb": "GNU gdb debugger",
+             "cgdb": "Console front-end to gdb",
              "gdbgui": "gdbgui gdb web browser interface",
              "ddd": "Data Display Debugger",
              "emacs": "Emacs with gdb debugger",
@@ -108,6 +109,7 @@ Debugger options:
   --asan-bp              Adds a breakpoint for gcc's Address-Sanitizer
   --back-end=GDB         Path to debugger back-end (for graphical front-ends)
   --breakpoints=LIST     Comma-separated list of breakpoints to insert
+  --terminal=TERM        Select terminal type to use for console debugger
 
   Other, standard options specific to each debugger may also be
   used, as long as they do not conflict with options in this script.
@@ -450,6 +452,10 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
 
     debugger_command_file = None
 
+    term = os.getenv('TERM')
+    if not term:
+        term = xterm
+
     if debugger_opts:
         file_next = False
         for o in debugger_opts:
@@ -464,7 +470,9 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
                 for bp in o[o.find('=')+1:].split(','):
                     cmds.append('b ' + bp)
             elif o == '--asan-bp': # gcc Adress sanitizer breakpoints
-                cmds.append('b __asan_report_error')
+                cmds.append('b __asan::ReportGenericError')
+            elif o.find('--terminal=') == 0: # Specify terminal
+                term = o[o.find('=')+1:]
             else:
                 cmd.append(o)
 
@@ -488,16 +496,13 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
 
     # Start building command to run
 
-    if debugger_ui == 'terminal':
-        if rank_id < 0:
+    if debugger_ui in ['terminal', 'cgdb']:
+        if rank_id < 0 and not target:
             cmd = [str(debugger)] + cmd
         else:
             cmd_string = str(debugger)
             for c in cmd:
                 cmd_string += ' ' + enquote_arg(str(c))
-            term = os.getenv('TERM')
-            if not term:
-                term = xterm
             cmd = [term, '-e', cmd_string]
 
     elif debugger_ui == 'gdbgui':
@@ -616,7 +621,8 @@ def run_vgdb_debug(path,
 # Run program under Valgrind.
 #-------------------------------------------------------------------------------
 
-def run_valgrind(path, args=None, valgrind='valgrind', valgrind_opts=None):
+def run_valgrind(path, args=None, valgrind='valgrind', valgrind_opts=None,
+                 debugger_opts=None):
     """
     Run program under Valgrind.
     """
@@ -644,14 +650,17 @@ def run_valgrind(path, args=None, valgrind='valgrind', valgrind_opts=None):
 
     # Start building command to run
 
-    if rank_id < 0:
-        return subprocess.call(cmd)
-
-    else:
-        if debugger_attach:
+    if debugger_attach:
+        if rank_id < 0:
+            return subprocess.call(cmd)
+        else:
             term = os.getenv('TERM')
             if not term:
                 term = xterm
+            if debugger_opts:
+                for o in debugger_opts:
+                    if o.find('--terminal=') == 0: # Specify terminal
+                        term = o[o.find('=')+1:]
 
             cmd_line = term + ' -e "' + valgrind
             for c in cmd[1:]:
@@ -660,16 +669,16 @@ def run_valgrind(path, args=None, valgrind='valgrind', valgrind_opts=None):
 
             return subprocess.call(cmd_line, shell=True)
 
+    else:
+        if rank_id > 0:
+            vg_f = open('valgrind.out.r' + str(rank_id), 'w')
+            returncode = subprocess.call(cmd,
+                                         stdout=vg_f,
+                                         stderr=subprocess.STDOUT)
+            vg_f.close()
+            return returncode
         else:
-            if rank_id > 0:
-                vg_f = open('valgrind.out.r' + str(rank_id), 'w')
-                returncode = subprocess.call(cmd,
-                                             stdout=vg_f,
-                                             stderr=subprocess.STDOUT)
-                vg_f.close()
-                return returncode
-            else:
-                return subprocess.call(cmd)
+            return subprocess.call(cmd)
 
 #-------------------------------------------------------------------------------
 # Run debugger
@@ -758,7 +767,8 @@ def run_debug(cmds):
         return run_valgrind(path = cmds['program'][0],
                             args = cmds['program'][1:],
                             valgrind = cmds['valgrind'][0],
-                            valgrind_opts = cmds['valgrind'][1:])
+                            valgrind_opts = cmds['valgrind'][1:],
+                            debugger_opts = cmds['debugger'][1:])
 
     # We should not reach this area.
 
