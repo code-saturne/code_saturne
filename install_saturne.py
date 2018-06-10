@@ -595,7 +595,7 @@ class Setup:
                     package="code_saturne",
                     version=None,
                     archive=None,
-                    url="http://code-saturne.org")
+                    url="https://code-saturne.org")
 
         p = self.packages['code_saturne']
 
@@ -672,9 +672,9 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="6.0.5a",
-                    archive="scotch_6.0.5a.tar.gz",
-                    url="https://gforge.inria.fr/frs/download.php/file/37401/%s")
+                    version="6.0.4",
+                    archive="scotch_6.0.4.tar.gz",
+                    url="https://gforge.inria.fr/frs/download.php/file/34618/%s")
 
     #---------------------------------------------------------------------------
 
