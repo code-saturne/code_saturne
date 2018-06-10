@@ -208,7 +208,8 @@ endif
 if HAVE_BACKEND
 cs_solver$(EXEEXT): libcs_solver.la
 	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+        $(top_srcdir)/src/apps/cs_solver.c
 endif
 
 # Code_Saturne IO utility (minimal dependencies)
