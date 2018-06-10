@@ -17,6 +17,9 @@ Numerics:
 
 Architectural changes:
 
+- Add "--disable-backend" configure option to build and install only
+  front-end and documentation.
+
 - Add CGNS writer "links" option to write mesh data in a separate file,
   mapped transparently in the main file through CGNS links.
 

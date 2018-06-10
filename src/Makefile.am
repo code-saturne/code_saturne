@@ -22,11 +22,15 @@
 
 #-------------------------------------------------------------------------------
 
-SUBDIRS = \
-. bft fvm mei gui \
+SUBDIRS = . bft mei
+
+if HAVE_BACKEND
+SUBDIRS += \
+fvm gui \
 base cdo pprt alge mesh turb darc \
 atmo cfbl cogz comb ctwr elec lagr rayt \
 user user_examples apps
+endif
 
 # General flags
 
@@ -39,6 +43,8 @@ AM_LDFLAGS = -no-undefined
 # Library source files
 
 noinst_LTLIBRARIES = libcsmodules.la
+
+if HAVE_BACKEND
 
 libcsmodules_la_SOURCES = \
 base/paramx.f90 \
@@ -183,3 +189,5 @@ uninstall-local:
 	echo " ( cd '$(DESTDIR)$(pkgincludedir)' && rm -f" $$files ")"; \
 	cd "$(DESTDIR)$(pkgincludedir)" && rm -f $$files
 	rmdir $(pkgincludedir) || exit 0
+
+endif

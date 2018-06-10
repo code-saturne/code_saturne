@@ -721,6 +721,24 @@ AM_CONDITIONAL(HAVE_FRONTEND, test x$cs_have_frontend = xyes)
 AC_SUBST(cs_have_frontend)
 
 #------------------------------------------------------------------------------
+# Enables Code_Saturne back-end
+#------------------------------------------------------------------------------
+
+AC_ARG_ENABLE(backend, [AS_HELP_STRING([--disable-backend],
+                                        [disable back-end elements])],
+  [
+    case "${enableval}" in
+      yes) cs_have_backend=yes ;;
+      no)  cs_have_backend=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-backend]) ;;
+    esac
+  ],
+  [ cs_have_backend=yes ]
+)
+AM_CONDITIONAL(HAVE_BACKEND, test x$cs_have_backend = xyes)
+AC_SUBST(cs_have_backend)
+
+#------------------------------------------------------------------------------
 # Enables Code_Saturne graphical user interface
 #------------------------------------------------------------------------------
 
@@ -1206,6 +1224,9 @@ if test x$cs_have_frontend = xno ; then
   echo " use frontend: no"
 else
   echo " use graphical user interface: "$cs_have_gui""
+fi
+if test x$cs_have_backend = xno ; then
+  echo " use backend: no"
 fi
 echo " use long global numbers: "$cs_have_long_gnum""
 echo " Zlib (gzipped file) support: "$cs_have_zlib""

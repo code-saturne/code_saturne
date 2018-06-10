@@ -91,6 +91,8 @@ endif
 
 # Main part
 
+if HAVE_BACKEND
+
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
@@ -185,6 +187,8 @@ $(LTLIBINTL) \
 $(FCLIBS)
 libcs_solver_la_LDFLAGS = -no-undefined -version-info 5:2:0
 
+endif
+
 # Main program
 #pkglibexecdir = $(libexecdir)/$(PACKAGE)
 pkglibexec_PROGRAMS =
@@ -201,9 +205,11 @@ if HAVE_FRONTEND
 pkglibexec_PROGRAMS += cs_check_syntax
 endif
 
+if HAVE_BACKEND
 cs_solver$(EXEEXT): libcs_solver.la
 	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py
+endif
 
 # Code_Saturne IO utility (minimal dependencies)
 
