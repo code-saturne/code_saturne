@@ -11876,6 +11876,79 @@ msgstr "actif"
 
 msgid ""
 "\n"
+"  Lagrangian particle injection\n"
+"  -----------------------------\n"
+"\n"
+msgstr ""
+"\n"
+"  Injection de particules (Lagrangien)\n"
+"  -----------------------\n"
+"\n"
+
+#, c-format
+msgid "  zone: %d (%s), set:  %d\n"
+msgstr "  zone : %d (%s), ensemble :  %d\n"
+
+#, c-format
+msgid "    n particles to inject: %llu\n"
+msgstr "    nb. particules à injecter : %llu\n"
+
+msgid "    velocity from fluid\n"
+msgstr "    vitesse à partir du fluide\n"
+
+#, c-format
+msgid "    velocity magnitude: %g (normal to boundary)\n"
+msgstr "    vitesse d'amplitude : %g (normale à la frontière)\n"
+
+#, c-format
+msgid "    velocity: [%g, %g, %g]"
+msgstr "    vitesse : [%g, %g, %g]"
+
+#, c-format
+msgid ""
+"    diameter: %g; (variance: %g)\n"
+"    density: %g\n"
+msgstr ""
+"    diamètre : %g ; (variance : %g)\n"
+"    densité : %g\n"
+
+#, c-format
+msgid "    flow rate: %g\n"
+msgstr "    débit : %g\n"
+
+#, c-format
+msgid ""
+"    statistical cluster id: %d\n"
+"    statistical weight: %g\n"
+msgstr ""
+"    classe statistique : %d\n"
+"    poids statistique : %g\n"
+
+#, c-format
+msgid "    fouling index: %g\n"
+msgstr "    indice d'encrassement : %g\n"
+
+msgid "    temperature from fluid\n"
+msgstr "    température à partir du fluide\n"
+
+#, c-format
+msgid "    temperature: %g\n"
+msgstr "    température : %g\n"
+
+#, c-format
+msgid "    Cp: %g\n"
+msgstr "    Cp : %g\n"
+
+#, c-format
+msgid "    emissivity: %g\n"
+msgstr "    émissivité: %g\n"
+
+#, c-format
+msgid "    coal number: %d\n"
+msgstr "    numéro de charbon : %d\n"
+
+msgid ""
+"\n"
 "Lagrangian model options\n"
 "------------------------\n"
 msgstr ""
@@ -12050,7 +12123,7 @@ msgstr ""
 msgid "%% of lost particles (restart(s) included): %13.4E\n"
 msgstr ""
 
-msgid "   Zone     Mass flow rate(kg/s)      Boundary type\n"
+msgid "   Zone  Class  Mass flow rate(kg/s)      Name (type)\n"
 msgstr ""
 
 msgid "rebound"

@@ -478,7 +478,7 @@ typedef struct {
 
   /*! velocity condition type:
     - -1 imposed fluid velocity (from cell velocity)
-    -  0 imposed fluid velocity along the normal of the boundary face
+    -  0 imposed velocity along the normal of the boundary face
     -  1 imposed velocity: \ref velocity must be set. */
   int         velocity_profile;
 

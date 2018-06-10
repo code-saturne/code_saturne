@@ -64,6 +64,8 @@
 
 #include "cs_lagr_prototypes.h"
 
+#include "cs_time_step.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -207,6 +209,135 @@ _lagstf(int         ivar,
 
     *gmax     = 0.0;
     *gmin     = 0.0;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Log Lagrangian module injection info.
+ *
+ * \param[in]  log  associated log file
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_log_setup_injection(cs_log_t  log)
+{
+  /* Check if this call is needed */
+
+  if (cs_glob_lagr_time_scheme == NULL)
+    return;
+
+  if (cs_glob_lagr_time_scheme->iilagr < 1)
+    return;
+
+  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+
+  cs_log_printf(log,
+                _("\n"
+                  "  Lagrangian particle injection\n"
+                  "  -----------------------------\n\n"));
+
+  for (int i_loc = 0; i_loc < 2; i_loc++) {
+
+    cs_lagr_zone_data_t *zd = NULL;
+
+    int n_zones = 0;
+
+    if (i_loc == 0) {
+      zd = cs_lagr_get_boundary_conditions();
+      n_zones = cs_boundary_zone_n_zones();
+    }
+    else {
+      zd = cs_lagr_get_volume_conditions();
+      n_zones = cs_volume_zone_n_zones();
+    }
+
+    for (int z_id = 0; z_id < n_zones; z_id++) {
+
+      const cs_zone_t  *z;
+      if (i_loc == 0)
+        z = cs_boundary_zone_by_id(z_id);
+      else
+        z = cs_volume_zone_by_id(z_id);
+
+      for (int set_id = 0;
+           set_id < zd->n_injection_sets[z_id];
+           set_id++) {
+
+        const cs_lagr_injection_set_t
+          *zis = cs_lagr_get_injection_set(zd, z_id, set_id);
+
+        cs_log_printf(log,
+                      _("  zone: %d (%s), set:  %d\n"),
+                      z->id, z->name, set_id);
+
+        if (zis->n_inject > 0)
+          cs_log_printf(log,
+                        _("    n particles to inject: %llu\n"),
+                        (unsigned long long)(zis->n_inject));
+
+        if (zis->velocity_profile == -1)
+          cs_log_printf(log,
+                        _("    velocity from fluid\n"));
+        else if (zis->velocity_profile == 0)
+          cs_log_printf(log,
+                        _("    velocity magnitude: %g (normal to boundary)\n"),
+                        zis->velocity_magnitude);
+        else if (zis->velocity_profile == 1)
+          cs_log_printf(log,
+                        _("    velocity: [%g, %g, %g]"),
+                        zis->velocity[0], zis->velocity[1], zis->velocity[2]);
+
+        cs_log_printf(log,
+                      _("    diameter: %g; (variance: %g)\n"
+                        "    density: %g\n"),
+                      zis->diameter, zis->diameter_variance, zis->density);
+
+        if (zis->flow_rate > 0)
+          cs_log_printf(log,
+                        _("    flow rate: %g\n"),
+                        zis->flow_rate);
+
+        cs_log_printf(log,
+                      _("    statistical cluster id: %d\n"
+                        "    statistical weight: %g\n"),
+                      zis->cluster,
+                      zis->stat_weight);
+
+        if (cs_glob_lagr_model->deposition > 0)
+          cs_log_printf(log,
+                        _("    fouling index: %g\n"),
+                        zis->fouling_index);
+
+        if (   cs_glob_lagr_model->physical_model == 1
+            && cs_glob_lagr_specific_physics->itpvar == 1) {
+          if (zis->temperature_profile == 0)
+            cs_log_printf(log,
+                          _("    temperature from fluid\n"));
+          else if (zis->temperature_profile == 1)
+            cs_log_printf(log,
+                          _("    temperature: %g\n"),
+                          zis->temperature);
+          cs_log_printf(log,
+                        _("    Cp: %g\n"),
+                        zis->cp);
+          if (extra->radiative_model > 0)
+            cs_log_printf(log,
+                          _("    emissivity: %g\n"),
+                          zis->emissivity);
+        }
+        else if (cs_glob_lagr_model->physical_model == 2) {
+          cs_log_printf(log,
+                        _("    coal number: %d\n"),
+                        zis->coal_number);
+        }
+
+        cs_log_printf(log, "\n");
+      }
+
+    }
 
   }
 }
@@ -411,6 +542,7 @@ cs_lagr_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, "\n");
 
   }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -435,6 +567,13 @@ cs_lagr_log_iteration(void)
   cs_log_printf(CS_LOG_DEFAULT,
                 _("   ** INFORMATION ON THE LAGRANGIAN CALCULATION\n"));
   cs_log_separator(CS_LOG_DEFAULT);
+
+  /* Log injection setup info on the first iteration.
+     TODO this should be in the setup definition, but would require defining
+     injections earlier in the setup phase, including with user functions */
+
+  if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1)
+    _log_setup_injection(CS_LOG_DEFAULT);
 
   /* Make sure counters are up-to-date */
 
@@ -491,7 +630,7 @@ cs_lagr_log_iteration(void)
 
   /* Flow rate for each zone   */
   cs_log_printf(CS_LOG_DEFAULT,
-                _("   Zone     Mass flow rate(kg/s)      Boundary type\n"));
+                _("   Zone  Class  Mass flow rate(kg/s)      Name (type)\n"));
 
   cs_lagr_zone_data_t *bdy_cond = cs_lagr_get_boundary_conditions();
 
@@ -515,6 +654,7 @@ cs_lagr_log_iteration(void)
 
     if (CS_ABS(flow_rate[z_id*n_stats]) > 0.) {
 
+      const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
       const char *chcond;
 
       if (bdy_cond->zone_type[z_id] == CS_LAGR_INLET)
@@ -543,18 +683,17 @@ cs_lagr_log_iteration(void)
         chcond = _("user");
 
       cs_log_printf(CS_LOG_DEFAULT,
-                    "  %3d          %12.5e         %s\n",
+                    "   %3d         %12.5e               %s (%s)\n",
                     z_id,
                     flow_rate[z_id*n_stats]/cs_glob_lagr_time_step->dtp,
-                    chcond);
+                    z->name, chcond);
 
       for (int j = 1; j < n_stats; j++) {
         if (CS_ABS(flow_rate[z_id*n_stats + j]) > 0)
           cs_log_printf(CS_LOG_DEFAULT,
-                        "    class %3d  %12.5e         %s\n",
+                        "         %3d   %12.5e\n",
                         j,
-                        flow_rate[z_id*n_stats + j]/cs_glob_lagr_time_step->dtp,
-                        chcond);
+                        flow_rate[z_id*n_stats + j]/cs_glob_lagr_time_step->dtp);
       }
 
     }
