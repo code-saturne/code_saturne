@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-05-11 19:20+0200\n"
+"POT-Creation-Date: 2018-06-10 21:06+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7485,9 +7485,6 @@ msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-msgid "displacement"
-msgstr "déplacement"
-
 msgid ""
 " Invalid type of mesh for the generic postprocessing of fields.\n"
 " Requested mesh is neither volumic nor surfacic."
@@ -9530,6 +9527,9 @@ msgid ""
 " of the flux across faces.\n"
 msgstr ""
 
+msgid " Computing the flux across all interior faces is not managed yet."
+msgstr ""
+
 msgid ""
 " Computing the flux across all interior or border faces is not managed yet."
 msgstr ""
@@ -9589,7 +9589,7 @@ msgid " Incompatible type of variable for equation %s."
 msgstr ""
 
 #, c-format
-msgid " Incompatible way to initialize the field %s.\n"
+msgid " %s: Invalid way to initialize equation %s.\n"
 msgstr ""
 
 msgid ""
@@ -9645,7 +9645,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Cellwise computation of the diffusive flux is not\n"
+" %s: Cellwise computation of the diffusive flux is not\n"
 " available for equation %s\n"
 msgstr ""
 
@@ -9658,78 +9658,6 @@ msgstr ""
 msgid ""
 " %s: The current equation is not modifiable anymore.\n"
 " Please check your settings."
-msgstr ""
-
-#, c-format
-msgid " Invalid val %s related to key CS_EQKEY_SPACE_SCHEME\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid val %s related to key CS_EQKEY_DOF_REDUCTION\n"
-" Choice between \"derham\" or \"average\"."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid val %s related to key CS_EQKEY_HODGE_DIFF_ALGO\n"
-" Choice between cost, wbs, auto or voronoi"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid val %s related to key CS_EQKEY_HODGE_TIME_ALGO\n"
-" Choice between cost, wbs, voronoi"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid val %s related to key CS_EQKEY_SOLVER_FAMILY\n"
-" Choice between cs or petsc"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid val %s related to key CS_EQKEY_PRECOND\n"
-" Choice between jacobi, block_jacobi, poly1, ssor, ilu0,\n"
-" icc0, amg or as"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid val %s related to key CS_EQKEY_ITSOL\n"
-" Choice between cg, bicg, bicgstab2, cr3, gmres or amg"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid value %s related to key CS_EQKEY_BC_ENFORCEMENT\n"
-" Choice between strong, penalization, weak or weak_sym."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid value \"%s\" for key CS_EQKEY_BC_QUADRATURE\n"
-" Valid choices are \"bary\", \"bary_subdiv\", \"higher\" and \"highest\"."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid value \"%s\" for CS_EQKEY_ADV_FORMULATION\n"
-" Valid keys are \"conservative\" or \"non_conservative\"."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid value \"%s\" for CS_EQKEY_ADV_SCHEME\n"
-" Valid choices are \"upwind\", \"samarskii\", \"sg\" or \"centered\"."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
-" Valid choices are \"implicit\", \"explicit\", \"crank_nicolson\", and "
-"\"theta_scheme\"."
 msgstr ""
 
 msgid " Invalid key for setting an equation."
@@ -9753,14 +9681,15 @@ msgid ""
 " Please modify your settings."
 msgstr ""
 
-msgid "Invalid quadrature type.\n"
-msgstr ""
-
 #, c-format
 msgid ""
 " %s: Stop evaluating a potential from 'quantity over volume'.\n"
 " This situation is not handled yet."
 msgstr ""
+
+#, c-format
+msgid " %s: Invalid dimension.\n"
+msgstr " %s : Dimension invalide.\n"
 
 #, c-format
 msgid " %s: Invalid dimension of analytical function.\n"
@@ -9829,7 +9758,36 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid ""
+" Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
+" Valid choices are \"implicit\", \"explicit\", \"crank_nicolson\", and "
+"\"theta_scheme\"."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
+" Valid choices are \"bary\", \"bary_subdiv\", \"higher\" and \"highest\"."
+msgstr ""
+
+#, c-format
 msgid " %s: Invalid key for setting the Navier-Stokes system."
+msgstr ""
+
+#, c-format
+msgid " %s: Incompatible reduction.\n"
+msgstr ""
+
+#, c-format
+msgid " %s: Incompatible initialization.\n"
+msgstr ""
+
+#, c-format
+msgid " Incompatible reduction for the field %s.\n"
+msgstr " Réduction incompatible pour le champ %s.\n"
+
+#, c-format
+msgid " Incompatible way to initialize the field %s.\n"
 msgstr ""
 
 msgid "Legacy Finite Volume"
@@ -9967,9 +9925,6 @@ msgid " Invalid case. Not able to compute the source term.\n"
 msgstr ""
 
 msgid " Invalid type of description."
-msgstr ""
-
-msgid " Invalid dimension of the analytical fucntion.\n"
 msgstr ""
 
 msgid "vertices"
@@ -10669,6 +10624,21 @@ msgstr ""
 msgid "CCMIO error %d closing file."
 msgstr "Erreur CCMIO %d à la fermeture d'un fichier."
 
+msgid "Empty CGNS filename."
+msgstr "Nom de fichier CGNS vide."
+
+#, c-format
+msgid ""
+"cg_open() failed to open file \"%s\" : \n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"cg_close() failed to close file \"%s\" :\n"
+"%s"
+msgstr ""
+
 #, c-format
 msgid ""
 "cg_base_write() failed to create a new base:\n"
@@ -10681,6 +10651,22 @@ msgstr ""
 msgid ""
 "No CGNS base with index %d defined:\n"
 "Associated writer: \"%s\"\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"cg_goto() failed access requested Zone_t node:\n"
+"Associated writer: \"%s\"\n"
+"Associated mesh: \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"cg_link_write() failed to create link %s\n"
+"Associated writer: \"%s\"\n"
+"Associated mesh: \"%s\"\n"
+"%s"
 msgstr ""
 
 #, c-format
@@ -10721,15 +10707,6 @@ msgid ""
 "\"%s\"\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
-"%s"
-msgstr ""
-
-#, c-format
-msgid ""
-"%s() failed to write coords:\n"
-"Associated writer: \"%s\"\n"
-"Associated base: \"%s\"\n"
-"Associated zone index: \"%i\"\n"
 "%s"
 msgstr ""
 
@@ -10824,21 +10801,6 @@ msgid ""
 "cg_simulation_type_write() failed\n"
 "Associated writer:\"%s\" :\n"
 "Associated base:\"%s\"\n"
-"%s"
-msgstr ""
-
-msgid "Empty CGNS filename."
-msgstr "Nom de fichier CGNS vide."
-
-#, c-format
-msgid ""
-"cg_open() failed to open file \"%s\" : \n"
-"%s"
-msgstr ""
-
-#, c-format
-msgid ""
-"cg_close() failed to close file \"%s\" :\n"
 "%s"
 msgstr ""
 
@@ -15436,3 +15398,4 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
