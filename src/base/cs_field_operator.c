@@ -132,11 +132,16 @@ cs_f_field_gradient_vector(int                     f_id,
                            int                     inc,
                            cs_real_33_t  *restrict grad);
 
-void cs_f_field_gradient_tensor(int                     f_id,
-                                int                     use_previous_t,
-                                int                     imrgra,
-                                int                     inc,
-                                cs_real_63_t  *restrict grad);
+void
+cs_f_field_gradient_tensor(int                     f_id,
+                           int                     use_previous_t,
+                           int                     imrgra,
+                           int                     inc,
+                           cs_real_63_t  *restrict grad);
+
+void
+cs_f_field_set_volume_average(int       f_id,
+                              cs_real_t va);
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -459,22 +464,41 @@ cs_f_field_gradient_vector(int                     f_id,
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
-void cs_f_field_gradient_tensor(int                     f_id,
-                                int                     use_previous_t,
-                                int                     imrgra,
-                                int                     inc,
-                                cs_real_63_t  *restrict grad)
+void
+cs_f_field_gradient_tensor(int                     f_id,
+                           int                     use_previous_t,
+                           int                     imrgra,
+                           int                     inc,
+                           cs_real_63_t  *restrict grad)
 {
   bool _use_previous_t = use_previous_t ? true : false;
 
   const cs_field_t *f = cs_field_by_id(f_id);
-
 
   cs_field_gradient_tensor(f,
                            _use_previous_t,
                            inc,
                            grad);
 }
+
+/*----------------------------------------------------------------------------
+ * Shift field values in order to set its spatial average to a given value.
+ *
+ * parameters:
+ *   f_id           <-- field id
+ *   va             <-- real value of volume average to be set
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_set_volume_average(int       f_id,
+                              cs_real_t va)
+{
+  cs_field_t *f = cs_field_by_id(f_id);
+
+  cs_field_set_volume_average(f,
+                              va);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -884,6 +908,45 @@ cs_field_local_extrema_scalar(int              f_id,
   for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
     local_max[ii] = CS_MIN(local_max[ii], scalar_max);
     local_min[ii] = CS_MAX(local_min[ii], scalar_min);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Shift field values in order to set its spatial average (fluid volume
+ * average) to a given value.
+ *
+ * \param[in]   f   pointer to field
+ * \param[in]   va  real value of fluid volume average to be set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_set_volume_average(cs_field_t     *f,
+                            const cs_real_t va)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
+  const cs_real_t *cell_f_vol = mq->cell_f_vol;
+  const cs_real_t tot_f_vol = mq->tot_f_vol;
+
+  cs_real_t *restrict val = f->val;
+  cs_real_t p_va = 0.;
+
+# pragma omp parallel for
+  for (cs_lnum_t c_id = 0 ; c_id < n_cells ; c_id++) {
+    p_va += cell_f_vol[c_id]*val[c_id];
+  }
+
+  cs_parall_sum(1, CS_DOUBLE, &p_va);
+  p_va = p_va / tot_f_vol;
+
+  cs_real_t shift = va - p_va;
+
+# pragma omp parallel for
+  for (cs_lnum_t c_id = 0 ; c_id < n_cells ; c_id++) {
+    val[c_id] += shift;
   }
 }
 

@@ -2446,6 +2446,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function computing total, min, and max cell fluid volumes
+
+    subroutine cs_f_mesh_quantities_fluid_vol_reductions()  &
+      bind(C, name='cs_f_mesh_quantities_fluid_vol_reductions')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_mesh_quantities_fluid_vol_reductions
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

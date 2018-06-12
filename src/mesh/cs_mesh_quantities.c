@@ -130,25 +130,8 @@ static int _n_computations = 0;
 void
 cs_f_mesh_quantities_get_pointers(int   **iporos);
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to global variables.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   iporos  --> pointer to cs_glob_porous_model
- *----------------------------------------------------------------------------*/
-
 void
-cs_f_mesh_quantities_get_pointers(int   **iporos)
-{
-  *iporos = &(cs_glob_porous_model);
-}
+cs_f_mesh_quantities_fluid_vol_reductions(void);
 
 /*=============================================================================
  * Private function definitions
@@ -2580,6 +2563,44 @@ CS_PROCF (comcoc, COMCOC) (const cs_int_t  *const imrgra)
   cs_mesh_quantities_set_cocg_options(*imrgra);
 }
 
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*----------------------------------------------------------------------------
+ * Get pointers to global variables.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   iporos  --> pointer to cs_glob_porous_model
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_mesh_quantities_get_pointers(int   **iporos)
+{
+  *iporos = &(cs_glob_porous_model);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the total, min, and max fluid volumes of cells
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_mesh_quantities_fluid_vol_reductions(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_mesh_quantities_fluid_vol_reductions(m,
+                                          mq);
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -3119,6 +3140,10 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   else {
     mesh_quantities->cell_f_vol = mesh_quantities->cell_vol;
 
+    mesh_quantities->min_f_vol = mesh_quantities->min_vol;
+    mesh_quantities->max_f_vol = mesh_quantities->max_vol;
+    mesh_quantities->tot_f_vol = mesh_quantities->tot_vol;
+
     if (mesh_quantities->c_solid_flag == NULL) {
       BFT_MALLOC(mesh_quantities->c_solid_flag, 1, cs_int_t);
       mesh_quantities->c_solid_flag[0] = 0;
@@ -3254,7 +3279,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Compute fluid mesh quantities
+ * Compute min, max, and total
  *
  * parameters:
  *   mesh            <-- pointer to a cs_mesh_t structure
@@ -3267,6 +3292,46 @@ cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
 {
   CS_UNUSED(mesh);
   CS_UNUSED(mesh_quantities);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the total, min, and max fluid volumes of cells
+ *
+ * parameters:
+ *   mesh            <-- pointer to mesh structure
+ *   mesh_quantities <-> pointer to a mesh quantities structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_fluid_vol_reductions(const cs_mesh_t       *mesh,
+                                        cs_mesh_quantities_t  *mesh_quantities)
+{
+  _cell_volume_reductions(mesh,
+                          mesh_quantities->cell_f_vol,
+                          &(mesh_quantities->min_f_vol),
+                          &(mesh_quantities->max_f_vol),
+                          &(mesh_quantities->tot_f_vol));
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+
+    cs_real_t  _min_f_vol, _max_f_vol, _tot_f_vol;
+
+    MPI_Allreduce(&(mesh_quantities->min_f_vol), &_min_f_vol, 1, CS_MPI_REAL,
+                  MPI_MIN, cs_glob_mpi_comm);
+
+    MPI_Allreduce(&(mesh_quantities->max_f_vol), &_max_f_vol, 1, CS_MPI_REAL,
+                  MPI_MAX, cs_glob_mpi_comm);
+
+    MPI_Allreduce(&(mesh_quantities->tot_f_vol), &_tot_f_vol, 1, CS_MPI_REAL,
+                  MPI_SUM, cs_glob_mpi_comm);
+
+    mesh_quantities->min_f_vol = _min_f_vol;
+    mesh_quantities->max_f_vol = _max_f_vol;
+    mesh_quantities->tot_f_vol = _tot_f_vol;
+
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------

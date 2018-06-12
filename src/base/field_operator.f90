@@ -127,6 +127,21 @@ module field_operator
       real(kind=c_double), dimension(6,3,*) :: grad
     end subroutine field_gradient_tensor
 
+    !---------------------------------------------------------------------------
+
+    !> \brief  Shift field values in order to set its spatial average to a given
+    !>         value.
+
+    !> \param[in]   f_id  field id
+    !> \param[in]   va    real value of volume average to be set
+
+    subroutine field_set_volume_average(f_id, va)                              &
+      bind(C, name='cs_f_field_set_volume_average')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value      :: f_id
+      real(kind=c_double), value :: va
+    end subroutine field_set_volume_average
 
     !---------------------------------------------------------------------------
 

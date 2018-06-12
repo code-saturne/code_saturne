@@ -180,6 +180,20 @@ cs_field_local_extrema_scalar(int              f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Shift field values in order to set its spatial average to a given
+ * value.
+ *
+ * \param[in]   f   pointer to field
+ * \param[in]   va  real value of volume average to be set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_set_volume_average(cs_field_t     *f,
+                            const cs_real_t mean);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Synchronize current parallel and periodic field values.
  *
  * This function currently only upates fields based on CS_MESH_LOCATION_CELLS.

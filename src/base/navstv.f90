@@ -89,6 +89,7 @@ use rotation
 use turbomachinery
 use ptrglo
 use field
+use field_operator
 use cavitation
 use vof
 use cs_c_bindings
@@ -1444,10 +1445,11 @@ if (nterup.gt.1) then
 
 endif
 
-! ---> RECALAGE DE LA PRESSION SUR UNE PRESSION A MOYENNE NULLE
-!  On recale si on n'a pas de Dirichlet. Or le nombre de Dirichlets
-!  calcule dans typecl.f90 est NDIRCL si IDIRCL=1 et NDIRCL-1 si IDIRCL=0
-!  (ISTAT vaut toujours 0 pour la pression)
+! Shift pressure field to set its spatial mean value to zero
+! if there is no boundary faces with a Dirichlet condition on the pressure.
+! Number of faces with Dirichlet condition for the pressure is:
+! - ndircl if idiricl = 1
+! - ndircl-1 if idircl = 0
 
 if (vcopt_p%idircl.eq.1) then
   ndircp = vcopt_p%ndircl
@@ -1455,8 +1457,7 @@ else
   ndircp = vcopt_p%ndircl-1
 endif
 if (ndircp.le.0) then
-  call prmoy0 &
-( ncelet , ncel   , cell_f_vol , cvar_pr )
+  call field_set_volume_average(ivarfl(ipr), pred0)
 endif
 
 ! Compute the total pressure (defined as a post-processed property).
