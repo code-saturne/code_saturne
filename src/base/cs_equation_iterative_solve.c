@@ -1152,8 +1152,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   /* Matrix block size */
   ibsize = 3;
-  if (idftnp & CS_ISOTROPIC_DIFFUSION) iesize = 1;
-  if (idftnp & CS_ANISOTROPIC_DIFFUSION) iesize = 1;
+  iesize = 1; /* CS_ISOTROPIC_DIFFUSION or CS_ANISOTROPIC_RIGHT_DIFFUSION */
+  if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) iesize = 3;
 
   db_size[0] = ibsize;
   db_size[1] = ibsize;
@@ -1942,8 +1942,8 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   /* Matrix block size */
   ibsize = 6;
-  if (idftnp & CS_ISOTROPIC_DIFFUSION) iesize = 1;
-  if (idftnp & CS_ANISOTROPIC_RIGHT_DIFFUSION) iesize = 1; //TODO:IESIZE=1 Vt ?
+  iesize = 1; /* CS_ISOTROPIC_DIFFUSION or CS_ANISOTROPIC_RIGHT_DIFFUSION */
+  if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) iesize = 6;
 
   db_size[0] = ibsize;
   db_size[1] = ibsize;
