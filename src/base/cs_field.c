@@ -1164,7 +1164,7 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
       if (coupled) {
 
         if (pointer_type == 1 || pointer_type == 3 || pointer_type == 5
-            || pointer_type == 7) {
+            || pointer_type == 7 || pointer_type == 9 || pointer_type == 10) {
           dim[0] = f->dim;
           dim[1] = _n_elts;
           cur_p_rank = 2;

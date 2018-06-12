@@ -2917,7 +2917,7 @@ do ifac = 1, nfabor
     hext = rcodcl(ifac,ivar,2)
 
     if (vcopt%icoupl.gt.0.and.cpl_faces(ifac)) then
-        hext = hextp(ifac)/surfbn(ifac)
+      hext = hextp(ifac)/surfbn(ifac)
     endif
 
     hflui = hbnd(ifac)
@@ -2953,8 +2953,6 @@ do ifac = 1, nfabor
 
       ! To be coherent with a wall function, clip it to 0
       cofimp = max(cofimp, 0.d0)
-
-      ! Coupled solving of the velocity components
 
       ! Gradient boundary conditions
       !-----------------------------
