@@ -77,6 +77,7 @@ class TimeStepModel(Model):
         default['time_step_ref']     = 0.1
         default['max_courant_num']   = 1.0
         default['max_fourier_num']   = 10.0
+        default['relaxation_coefficient'] = 0.7
         default['time_step_min_factor'] = 0.1
         default['time_step_max_factor'] = 1000.0
         default['time_step_var']     = 0.1
@@ -142,7 +143,7 @@ class TimeStepModel(Model):
         Get value of time_passing (IDTVAR) for node "time_parameters"
         Used also by TurbulenceModel
         """
-        self.isIntInList(val, [0, 1, 2])
+        self.isIntInList(val, [0, 1, 2, -1])
         self.node_time.xmlSetData('time_passing', val)
 
         from code_saturne.Pages.GroundwaterModel import GroundwaterModel
@@ -175,6 +176,30 @@ class TimeStepModel(Model):
                         'time_step_max_factor',
                         'time_step_var'):
                 self.node_time.xmlRemoveChild(tag)
+
+
+    @Variables.noUndo
+    def getRelaxCoefficient(self):
+        """
+        Get value of coefficient of relaxation from xml file.
+        """
+        tag = 'relaxation_coefficient'
+        v = self.node_time.xmlGetDouble(tag)
+        if v == None:
+            v = self.defaultValues()[tag]
+            self.setTimeStep(v)
+
+        return v
+
+
+    @Variables.undoLocal
+    def setRelaxCoefficient(self, value):
+        """
+        Set value of coefficient of relaxation into xml file.
+        """
+        self.isGreater(value, 0.)
+        self.isLowerOrEqual(value, 1.)
+        self.node_time.xmlSetData('relaxation_coefficient', value)
 
 
     @Variables.noUndo

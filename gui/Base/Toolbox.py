@@ -209,14 +209,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.TimeStepView as Page
         thisPage = Page.TimeStepView(root, case)
 
-    elif page_name == tr("Pseudo-Time step"):
-        import code_saturne.Pages.TimeStepView as Page
-        thisPage = Page.TimeStepView(root, case)
-
-    elif page_name == tr("Steady flow management"):
-        import code_saturne.Pages.SteadyManagementView as Page
-        thisPage = Page.SteadyManagementView(root, case)
-
     elif page_name == tr("Output control"):
         import code_saturne.Pages.OutputControlView as Page
         thisPage = Page.OutputControlView(root, case, tree)

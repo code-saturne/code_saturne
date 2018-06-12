@@ -1293,7 +1293,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # Hide time frequency (in s) when calculation is steady
         if self.case['prepro'] == False:
-            if self.isSteady() != 1:
+            if self.isSteady() != 0:
                 self.modelTimePlot.disableItem(3)
 
         # Model for QTableView
@@ -2722,15 +2722,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
     def isSteady(self):
         """
         """
-        steady = 1
-        from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
+        steady = 0
 
-        if SteadyManagementModel(self.case).getSteadyFlowManagement() == 'on':
-            steady = 0
-        else:
-            from code_saturne.Pages.TimeStepModel import TimeStepModel
-            if TimeStepModel(self.case).getTimePassing() == 2:
-                steady = 0
+        from code_saturne.Pages.TimeStepModel import TimeStepModel
+        idtvar = TimeStepModel(self.case).getTimePassing()
+        if idtvar in [-1, 2]:
+            steady = 1
 
         return steady
 

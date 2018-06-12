@@ -4,6 +4,8 @@ Master (not on release branches yet)
 
 User changes:
 
+- GUI: steady/unsteady computation type now handled with time step.
+
 - Allow joining of meshes including isolated faces.
 
 - Add postprocessing of temperature and flux at internal coupling interface.

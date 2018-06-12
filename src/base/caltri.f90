@@ -125,14 +125,11 @@ double precision, pointer, dimension(:,:) :: disale => null()
 
 interface
 
-  subroutine tridim &
-  ( itrale , nvar   , nscal  ,                                     &
-    dt     )
+  subroutine tridim(itrale, nvar, nscal, dt)
 
     implicit none
 
     integer                                   :: itrale, nvar, nscal
-
     double precision, pointer, dimension(:)   :: dt
 
   end subroutine tridim
@@ -146,8 +143,6 @@ interface
   end subroutine turbulence_model_free_bc_ids
 
 end interface
-
-!===============================================================================
 
 !===============================================================================
 ! Initialization
@@ -831,9 +826,8 @@ call tridim                                                       &
 
 if (inpdt0.eq.0 .and. itrale.gt.0) then
 
-  !===============================================================================
   ! Lagrangian module
-  !===============================================================================
+  !==================
 
   if (iilagr.gt.0) then
 
@@ -845,9 +839,9 @@ if (inpdt0.eq.0 .and. itrale.gt.0) then
 
   endif
 
-  !===============================================================================
   ! Compute temporal means (accumulation)
-  !===============================================================================
+  !======================================
+
   call time_moment_update_all
 
 endif
@@ -860,16 +854,14 @@ if (itrale.gt.0) then
 
   call timer_stats_start(post_stats_id)
 
-  ! Sortie postprocessing de profils 1D
+  ! 1D profiles postprocessing output
 
   if (iihmpr.eq.1) then
     call uiprof()
     call uiexop()
   endif
 
-  call cs_f_user_extra_operations &
- ( nvar   , nscal  ,                                              &
-   dt     )
+  call cs_f_user_extra_operations(nvar, nscal, dt)
 
   call user_extra_operations()
 
@@ -885,9 +877,7 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
 
   if (itrale.eq.0 .or. itrale.gt.nalinf) then
 
-    call alemav &
-  ( itrale ,                                               &
-    xyzno0 )
+    call alemav(itrale, xyzno0)
 
   endif
 
@@ -915,7 +905,7 @@ endif
 
 call reqsui(iisuit)
 
-if(ntcabs.lt.ntmabs .and.itrale.eq.0) iisuit = 0
+if (ntcabs.lt.ntmabs .and.itrale.eq.0) iisuit = 0
 
 if (iisuit.eq.1) then
 
@@ -1059,24 +1049,15 @@ endif
 
 write(nfecra,4000)
 
-! Ici on sauve les historiques (si on en a stocke)
-
 call timer_stats_start(post_stats_id)
 
 modhis = 2
-
-! if (iilagr.gt.0) then
-!   call laghis
-! endif
 
 if (ihistr.eq.1) then
   call strhis(modhis)
 endif
 
 call timer_stats_stop(post_stats_id)
-
-!     LE CAS ECHEANT, ON LIBERE LES STRUCTURES C DU MODULE THERMIQUE 1D
-!     ET/OU ON FERME LE LISTING LAGRANGIEN
 
 if (nfpt1d.gt.0) then
   call cs_1d_wall_thermal_free

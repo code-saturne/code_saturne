@@ -743,31 +743,6 @@ _scalar_diffusion_value(int      num_sca,
   BFT_FREE(path);
 }
 
-/*-----------------------------------------------------------------------------
- * Get the status of steady management.
- *
- * parameter:
- *   keyword         -->  if 1 unsteady management else steady management
- *----------------------------------------------------------------------------*/
-
-static void
-_get_steady_status(int *keyword)
-{
-  char *path = NULL;
-  int   result;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "steady_management");
-  cs_xpath_add_attribute(&path, "status");
-
-  if (cs_gui_get_status(path, &result))
-    *keyword = result;
-  else
-    *keyword = 1;
-
-  BFT_FREE(path);
-}
-
 /*----------------------------------------------------------------------------
  * Return the initialization choice of the turbulence variables.
  *----------------------------------------------------------------------------*/
@@ -789,37 +764,6 @@ _velocity_pressure_algo_choice(void)
   BFT_FREE(path);
 
   return algo_choice;
-}
-
-/*-----------------------------------------------------------------------------
- * Return  parameters for steady management.
- *
- * parameter:
- *   param           <--  steady parameter
- *   keyword         -->  new value for the steady parameter
- *----------------------------------------------------------------------------*/
-
-static void
-_steady_parameters(const char  *param,
-                   double      *keyword)
-{
-  char   *path   = NULL;
-  double  result = 0.0;
-  int     status = 0;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "analysis_control", "steady_management", param);
-
-  if (cs_gui_strcmp(param,"zero_iteration")) {
-    cs_xpath_add_attribute(&path, "status");
-    if(cs_gui_get_status(path, &status))
-      *keyword = status;
-  } else {
-    cs_xpath_add_function_text(&path);
-    if (cs_gui_get_double(path, &result))
-      *keyword = result;
-  }
-  BFT_FREE(path);
 }
 
 /*-----------------------------------------------------------------------------
@@ -2589,19 +2533,9 @@ void CS_PROCF (csidtv, CSIDTV) (void)
   int steady = 0;
   cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
 
-  _get_steady_status(&steady);
-  if (steady) {
-    char *algo_choice = _velocity_pressure_algo_choice();
-    if (cs_gui_strcmp(algo_choice, "simple"))
-      time_opt->idtvar = -1;
-    else
-      time_opt->idtvar = 2;
-    BFT_FREE(algo_choice);
-  } else {
-    param = (double) time_opt->idtvar;
-    _time_parameters("time_passing", &param);
-    time_opt->idtvar = (int) param;
-  }
+  param = (double) time_opt->idtvar;
+  _time_parameters("time_passing", &param);
+  time_opt->idtvar = (int) param;
 
 #if _XML_DEBUG_
   bft_printf("==>CSIDTV\n");
@@ -2718,61 +2652,46 @@ void CS_PROCF (cstime, CSTIME) (void)
   cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
   cs_time_step_t *time_stp = cs_get_glob_time_step();
 
-  if (time_opt->idtvar == -1) {
-    _steady_parameters("relaxation_coefficient", &(time_opt->relxst));
+  _time_parameters("time_step_ref", &(time_opt->dtref));
+  _time_parameters("time_step_min_factor", &cdtmin);
+  _time_parameters("time_step_max_factor", &cdtmax);
+  _time_parameters("max_courant_num", &(time_opt->coumax));
+  _time_parameters("max_fourier_num", &(time_opt->foumax));
+  _time_parameters("time_step_var", &(time_opt->varrdt));
+  _time_parameters("relaxation_coefficient", &(time_opt->relxst));
 
-    value =(double) time_opt->inpdt0;
-    _steady_parameters("zero_iteration", &value);
-    time_opt->inpdt0 = (int) value;
+  time_opt->dtmin = cdtmin * time_opt->dtref;
+  time_opt->dtmax = cdtmax * time_opt->dtref;
 
-    value =(double) time_stp->nt_max;
-    _steady_parameters("iterations", &value);
-    time_stp->nt_max = (int) value;
-  } else {
-    _time_parameters("time_step_ref", &(time_opt->dtref));
-    _time_parameters("time_step_min_factor", &cdtmin);
-    _time_parameters("time_step_max_factor", &cdtmax);
-    _time_parameters("max_courant_num", &(time_opt->coumax));
-    _time_parameters("max_fourier_num", &(time_opt->foumax));
-    _time_parameters("time_step_var", &(time_opt->varrdt));
+  /* We keep these two lines in case we read an old XML file... */
+  _time_parameters("time_step_min", &(time_opt->dtmin));
+  _time_parameters("time_step_max", &(time_opt->dtmax));
 
-    time_opt->dtmin = cdtmin * time_opt->dtref;
-    time_opt->dtmax = cdtmax * time_opt->dtref;
+  value =(double) time_stp->nt_max;
+  _time_parameters("iterations", &value);
+  time_stp->nt_max = (int) value;
 
-    /* We keep these two lines in case we read an old XML file... */
-    _time_parameters("time_step_min", &(time_opt->dtmin));
-    _time_parameters("time_step_max", &(time_opt->dtmax));
+  value =(double) time_opt->inpdt0;
+  _time_parameters("zero_time_step", &value);
+  time_opt->inpdt0 = (int) value;
 
-    value =(double) time_stp->nt_max;
-    _time_parameters("iterations", &value);
-    time_stp->nt_max = (int) value;
-
-    value =(double) time_opt->inpdt0;
-    _time_parameters("zero_time_step", &value);
-    time_opt->inpdt0 = (int) value;
-
-    value =(double) time_opt->iptlro;
-    _time_parameters("thermal_time_step", &value);
-    time_opt->iptlro = (int) value;
-  }
+  value =(double) time_opt->iptlro;
+  _time_parameters("thermal_time_step", &value);
+  time_opt->iptlro = (int) value;
 
 #if _XML_DEBUG_
   bft_printf("==>CSTIME\n");
   bft_printf("--idtvar = %i\n", time_opt->idtvar);
-  if (time_opt->idtvar == -1) {
-    bft_printf("--inpdt0 = %i\n", time_opt->inpdt0);
-    bft_printf("--relxst = %f\n", time_opt->relxst);
-  } else {
-    bft_printf("--inpdt0 = %i\n", time_opt->inpdt0);
-    bft_printf("--iptlro = %i\n", time_opt->iptlro);
-    bft_printf("--ntmabs = %i\n", time_stp->nt_max);
-    bft_printf("--dtref = %f\n",  time_opt->dtref);
-    bft_printf("--dtmin = %f\n",  time_opt->dtmin);
-    bft_printf("--dtmax = %f\n",  time_opt->dtmax);
-    bft_printf("--coumax = %f\n", time_opt->coumax);
-    bft_printf("--foumax = %f\n", time_opt->foumax);
-    bft_printf("--varrdt = %f\n", time_opt->varrdt);
-  }
+  bft_printf("--inpdt0 = %i\n", time_opt->inpdt0);
+  bft_printf("--iptlro = %i\n", time_opt->iptlro);
+  bft_printf("--ntmabs = %i\n", time_stp->nt_max);
+  bft_printf("--dtref = %f\n",  time_opt->dtref);
+  bft_printf("--dtmin = %f\n",  time_opt->dtmin);
+  bft_printf("--dtmax = %f\n",  time_opt->dtmax);
+  bft_printf("--coumax = %f\n", time_opt->coumax);
+  bft_printf("--foumax = %f\n", time_opt->foumax);
+  bft_printf("--varrdt = %f\n", time_opt->varrdt);
+  bft_printf("--relxst = %f\n", time_opt->relxst);
 #endif
 }
 

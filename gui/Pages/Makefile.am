@@ -125,8 +125,6 @@ SourceTermsModel.py \
 SourceTermsView.py \
 StartRestartModel.py \
 StartRestartView.py \
-SteadyManagementModel.py \
-SteadyManagementView.py \
 ThermalRadiationModel.py \
 ThermalRadiationView.py \
 ThermalScalarModel.py \
@@ -211,7 +209,6 @@ SolutionDomainForm.ui \
 SourceTermsForm.ui \
 StartRestartAdvancedDialogForm.ui \
 StartRestartForm.ui \
-SteadyManagementForm.ui \
 ThermalRadiationAdvancedDialogForm.ui \
 ThermalRadiationForm.ui \
 ThermalScalarForm.ui \

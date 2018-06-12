@@ -81,13 +81,16 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
        # Combo model
 
-        self.modelTimeOptions = ComboModel(self.comboBoxOptions,2,1)
+        self.modelTimeOptions = ComboModel(self.comboBoxOptions,4,1)
         self.modelTimeOptions.addItem(self.tr("Constant"), '0')
-        self.modelTimeOptions.addItem(self.tr("Variable"), '1')
+        self.modelTimeOptions.addItem(self.tr("Time varying (adaptive)"), '1')
+        self.modelTimeOptions.addItem(self.tr("Space & time varying (pseudo-steady)"), '2')
+        self.modelTimeOptions.addItem(self.tr("Steady"), '-1')
 
         # Connections
         self.comboBoxOptions.activated[str].connect(self.slotTimePassing)
         self.lineEditDTREF.textChanged[str].connect(self.slotTimeStep)
+        self.lineEditRELXST.textChanged[str].connect(self.slotRelaxCoef)
         self.lineEditNTMABS.textChanged[str].connect(self.slotIter)
         self.lineEditCOUMAX.textChanged[str].connect(self.slotTimeOptionCOUMAX)
         self.lineEditFOUMAX.textChanged[str].connect(self.slotTimeOptionFOUMAX)
@@ -101,6 +104,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         validatorDTREF = DoubleValidator(self.lineEditDTREF, min=0.0)
         validatorDTREF.setExclusiveMin(True)
+        validatorRELXST = DoubleValidator(self.lineEditRELXST, min=0.0, max=1.0)
+        validatorRELXST.setExclusiveMin(True)
         validatorNTMABS = IntValidator(self.lineEditNTMABS, min=1)
         validatorCOUMAX = DoubleValidator(self.lineEditCOUMAX, min=0.0)
         validatorCOUMAX.setExclusiveMin(True)
@@ -113,6 +118,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         validatorVARRDT.setExclusiveMin(True)
 
         self.lineEditDTREF.setValidator(validatorDTREF)
+        self.lineEditRELXST.setValidator(validatorRELXST)
         self.lineEditNTMABS.setValidator(validatorNTMABS)
         self.lineEditCOUMAX.setValidator(validatorCOUMAX)
         self.lineEditFOUMAX.setValidator(validatorFOUMAX)
@@ -122,47 +128,60 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         # Initialization
 
-        status = SteadyManagementModel(self.case).getSteadyFlowManagement()
-        if status == 'on':
-            self.comboBoxOptions.hide()
+        idtvar = self.mdl.getTimePassing()
+        idtvar_p = idtvar
 
-            self.mdl.setTimePassing(2)
+        # Constraints on time step from Turbulence model
 
-            courant_max   = self.mdl.getOptions('max_courant_num')
-            fourier_max   = self.mdl.getOptions('max_fourier_num')
-            time_step_min_factor = self.mdl.getOptions('time_step_min_factor')
-            time_step_max_factor = self.mdl.getOptions('time_step_max_factor')
-            time_step_var = self.mdl.getOptions('time_step_var')
+        from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+        model = TurbulenceModel(self.case).getTurbulenceModel()
+        del TurbulenceModel
 
-            self.lineEditCOUMAX.setText(str(courant_max))
-            self.lineEditFOUMAX.setText(str(fourier_max))
-            self.lineEditCDTMIN.setText(str(time_step_min_factor))
-            self.lineEditCDTMAX.setText(str(time_step_max_factor))
-            self.lineEditVARRDT.setText(str(time_step_var))
+        if model in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
+            idtvar = 0
+            self.modelTimeOptions.disableItem(str_model='1')
+            self.modelTimeOptions.disableItem(str_model='2')
+            self.modelTimeOptions.disableItem(str_model='-1')
 
-            self.groupBoxLabels.show()
+        # Constraints on time step from Lagrangian model
 
-        else:
-            self.comboBoxOptions.show()
-
-            idtvar = self.mdl.getTimePassing()
-            self.modelTimeOptions.setItem(str_model=str(idtvar))
-
-            from code_saturne.Pages.TurbulenceModel import TurbulenceModel
-            model = TurbulenceModel(self.case).getTurbulenceModel()
-            del TurbulenceModel
-
-            if model in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
+        from code_saturne.Pages.LagrangianModel import LagrangianModel
+        model = LagrangianModel(self.case).getLagrangianModel()
+        if model in ['one_way', 'two_way']:
+            if idtvar not in [0, 1]:
                 idtvar = 0
-                self.modelTimeOptions.setItem(str_model=str(idtvar))
-                self.modelTimeOptions.disableItem(str_model='0')
+            self.modelTimeOptions.disableItem(str_model='2')
+            self.modelTimeOptions.disableItem(str_model='-1')
+            if model == 'two_way':
+                idtvar = 0
                 self.modelTimeOptions.disableItem(str_model='1')
 
-            text = self.comboBoxOptions.currentText()
-            self.slotTimePassing(text)
+        # Constraints on time step from compressible model
 
-        dtref = self.mdl.getTimeStep()
-        self.lineEditDTREF.setText(str(dtref))
+        from code_saturne.Pages.CompressibleModel import CompressibleModel
+        model = CompressibleModel(self.case).getCompressibleModel()
+        if model != 'off':
+            if idtvar not in [0, 1]:
+                idtvar = 0
+            self.modelTimeOptions.disableItem(str_model='1')
+            self.modelTimeOptions.disableItem(str_model='2')
+            self.modelTimeOptions.disableItem(str_model='-1')
+
+        # Constraints on time step from groundwater model
+
+        from code_saturne.Pages.GroundwaterModel import GroundwaterModel
+        model = GroundwaterModel(self.case).getGroundwaterModel()
+        if model != 'off':
+            if idtvar not in [0, 1]:
+                idtvar = 0
+            self.modelTimeOptions.disableItem(str_model='1')
+            self.modelTimeOptions.disableItem(str_model='2')
+            self.modelTimeOptions.disableItem(str_model='-1')
+
+        # Change time step option if required by model constraints
+
+        if idtvar_p != idtvar:
+            self.mdl.setTimePassing(idtvar)
 
         ntmabs = self.mdl.getIterationsNumber()
         self.lineEditNTMABS.setText(str(ntmabs))
@@ -183,17 +202,35 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         else:
             self.checkBoxINPDT0.setChecked(False)
 
+        self.__setTimePassingDisplay(idtvar)
+
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot(str)
-    def slotTimePassing(self, text):
+    def __setTimePassingDisplay(self, idtvar):
         """
-        Input IDTVAR.
+        Choices based on IDTVAR.
         """
-        idtvar = int(self.modelTimeOptions.dicoV2M[str(text)])
 
-        self.mdl.setTimePassing(idtvar)
+        self.modelTimeOptions.setItem(str_model=str(idtvar))
+
+        if idtvar == -1:
+            self.labelRELXST.show()
+            self.lineEditRELXST.show()
+            self.labelDTREF.hide()
+            self.labelDTREFunit.hide()
+            self.lineEditDTREF.hide()
+            relax_coef = self.mdl.getRelaxCoefficient()
+            self.lineEditRELXST.setText(str(relax_coef))
+
+        else:
+            self.labelRELXST.hide()
+            self.lineEditRELXST.hide()
+            self.labelDTREF.show()
+            self.labelDTREFunit.show()
+            self.lineEditDTREF.show()
+            dtref = self.mdl.getTimeStep()
+            self.lineEditDTREF.setText(str(dtref))
 
         if idtvar in (1, 2):
             courant_max   = self.mdl.getOptions('max_courant_num')
@@ -214,6 +251,18 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
 
     @pyqtSlot(str)
+    def slotTimePassing(self, text):
+        """
+        Input IDTVAR.
+        """
+        idtvar = int(self.modelTimeOptions.dicoV2M[str(text)])
+
+        self.mdl.setTimePassing(idtvar)
+
+        self.__setTimePassingDisplay(idtvar)
+
+
+    @pyqtSlot(str)
     def slotTimeStep(self, text):
         """
         Input DTREF.
@@ -221,6 +270,16 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         if self.lineEditDTREF.validator().state == QValidator.Acceptable:
             time_step = from_qvariant(text, float)
             self.mdl.setTimeStep(time_step)
+
+
+    @pyqtSlot(str)
+    def slotRelaxCoef(self, text):
+        """
+        Input relaxation coefficient.
+        """
+        if self. lineEditRELXST.validator().state == QValidator.Acceptable:
+            relax_coef = from_qvariant(text, float)
+            self.mdl.setRelaxCoefficient(relax_coef)
 
 
     @pyqtSlot(str)

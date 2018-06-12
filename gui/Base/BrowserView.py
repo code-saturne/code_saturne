@@ -447,8 +447,6 @@ Numerical parameters
     Global parameters
     Equation parameters
     Time step
-    Pseudo-Time step
-    Steady flow management
 Calculation control
     Time averages
     Output control
@@ -665,7 +663,6 @@ Calculation management
         self.setRowClose(self.tr('Conjugate heat transfer'))
         self.setRowClose(self.tr('Atmospheric flows'))
         self.setRowClose(self.tr('Particles boundary conditions'))
-        self.setRowClose(self.tr('Steady flow management'))
         # self.setRowClose(self.tr('Surface solution control'))
         self.setRowClose(self.tr('Time step'))
         self.setRowClose(self.tr('Pseudo-Time step'))
@@ -711,33 +708,9 @@ Calculation management
             self.setRowOpen(self.tr('Balance by zone'))
             self.setRowOpen(self.tr('Fans'))
 
-        # Steady flow management
+        # Time step management
 
-        nodeanal = case.xmlGetNode('analysis_control')
-        nodeSteady = nodeanal.xmlGetNode('steady_management')
-        node_np = case.xmlGetNode('numerical_parameters')
-        nodeCouplingAlgo = node_np.xmlGetNode('velocity_pressure_algo')
-
-        if nodeSteady['status'] == 'on':
-            if nodeCouplingAlgo:
-                value = nodeCouplingAlgo['choice']
-                if value == 'simple':
-                    self.setRowClose(self.tr('Time step'))
-                    self.setRowClose(self.tr('Pseudo-Time step'))
-                    self.setRowOpen(self.tr('Steady flow management'))
-                else:
-                    self.setRowClose(self.tr('Time step'))
-                    self.setRowOpen(self.tr('Pseudo-Time step'))
-                    self.setRowClose(self.tr('Steady flow management'))
-            else:
-                self.setRowClose(self.tr('Time step'))
-                self.setRowOpen(self.tr('Pseudo-Time step'))
-                self.setRowClose(self.tr('Steady flow management'))
-        else:
-            nodeSteady['status'] = 'off'
-            self.setRowClose(self.tr('Steady flow management'))
-            self.setRowOpen(self.tr('Time step'))
-            self.setRowClose(self.tr('Pseudo-Time step'))
+        self.setRowOpen(self.tr('Time step'))
 
         # Multi-phase flow
 

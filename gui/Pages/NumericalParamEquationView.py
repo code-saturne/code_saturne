@@ -937,7 +937,9 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         elif QT_API == "PYQT5":
             self.tableViewSolver.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        if self.SM.getSteadyFlowManagement() == 'on':
+        from code_saturne.Pages.TimeStepModel import TimeStepModel
+        idtvar = TimeStepModel(self.case).getTimePassing()
+        if idtvar in [-1, 2]:
             self.tableViewSolver.setColumnHidden(5, True)
 
         delegate = SolverDelegate(self.tableViewSolver)

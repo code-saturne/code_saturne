@@ -50,7 +50,6 @@ from code_saturne.Pages.MobileMeshModel import MobileMeshModel
 from code_saturne.Pages.TurbulenceModel import TurbulenceModel
 from code_saturne.Pages.InitializationModel import InitializationModel
 from code_saturne.Pages.TimeStepModel import TimeStepModel
-from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
@@ -154,7 +153,6 @@ class XMLinit(Variables):
 
             # Calculation features
 
-            SteadyManagementModel(self.case).getSteadyFlowManagement()
             ThermalScalarModel(self.case).getThermalScalarModel()
             CoalCombustionModel(self.case).getCoalCombustionModel()
             GasCombustionModel(self.case).getGasCombustionModel()
@@ -306,6 +304,14 @@ class XMLinit(Variables):
                 self.__backwardCompatibilityFrom_4_2()
             if from_vers[:3] < "5.0.0":
                 self.__backwardCompatibilityFrom_4_3()
+
+        if from_vers[:3] < "6.0.0":
+            if from_vers[:3] < "5.1.0":
+                self.__backwardCompatibilityFrom_5_0()
+            if from_vers[:3] < "5.2.0":
+                self.__backwardCompatibilityFrom_5_1()
+            if from_vers[:3] < "5.3.0":
+                self.__backwardCompatibilityFrom_5_2()
 
 
     def __backwardCompatibilityBefore_3_0(self):
@@ -1336,7 +1342,6 @@ class XMLinit(Variables):
                 if node:
                     node.xmlRemoveNode()
 
-        XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
         node_joule = XMLThermoPhysicalModelNode.xmlGetNode('joule_effect', 'model')
         if node_joule:
             if node_joule['model'] != 'off':
@@ -1399,20 +1404,20 @@ class XMLinit(Variables):
                 if not node['name']:
                     node['name'] = node['label']
 
-
-    def __backwardCompatibilityCurrentVersion(self):
-        """
-        Change XML in order to ensure backward compatibility.
-        """
-
-        XMLThermoPhysicalModelNode = self.case.xmlInitNode('thermophysical_models')
-
         # fix name of thermal conductivity in radiative transfer node
         npr = XMLThermoPhysicalModelNode.xmlGetNode('radiative_transfer')
         if npr:
             node = npr.xmlGetNode('property', name="thermal_conductivity")
             if node:
                 node['name'] = "wall_thermal_conductivity"
+
+
+    def __backwardCompatibilityFrom_5_0(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+
+        XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
 
         nch = XMLThermoPhysicalModelNode.xmlGetNode('solid_fuels')
         if nch:
@@ -1524,6 +1529,44 @@ class XMLinit(Variables):
                         if node:
                             node.xmlRemoveNode()
         return
+
+    def __backwardCompatibilityFrom_5_1(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+
+    def __backwardCompatibilityFrom_5_2(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+
+        XMLAnaControl = self.case.xmlGetNode('analysis_control')
+        node_steady = XMLAnaControl.xmlGetNode('steady_management')
+        if node_steady:
+            if node_steady['status'] == "on":
+                node_time = XMLAnaControl.xmlGetNode('time_parameters')
+                idtvar = 2
+                n = self.case.xmlGetNode('numerical_parameters')
+                if n:
+                    n = n.xmlGetNode('velocity_pressure_algo', 'choice')
+                    if n:
+                        if n['choice'] == 'simple':
+                            idtvar = -1
+                if idtvar == -1:
+                    iterations = node_steady.xmlGetString('iterations')
+                    if iterations != None:
+                        node_time.xmlSetData('iterations', iterations)
+                    relax_c = node_steady.xmlGetString('relaxation_coefficient')
+                    if relax_c != None:
+                        node_time.xmlSetData('relaxation_coefficient', relax_c)
+                node_time.xmlSetData('time_passing', idtvar)
+            node_steady.xmlRemoveNode()
+
+
+    def __backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

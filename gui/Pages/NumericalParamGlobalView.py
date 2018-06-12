@@ -156,8 +156,10 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.line_5.show()
 
         algo = self.model.getVelocityPressureAlgorithm()
-        status = SteadyManagementModel(self.case).getSteadyFlowManagement()
-        if status == 'on':
+
+        from code_saturne.Pages.TimeStepModel import TimeStepModel
+        idtvar = TimeStepModel(self.case).getTimePassing()
+        if idtvar in [-1, 2]:
             self.modelNTERUP.enableItem(str_model = 'simple')
             self.modelNTERUP.disableItem(str_model = 'piso')
         else:

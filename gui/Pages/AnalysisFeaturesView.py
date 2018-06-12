@@ -61,7 +61,6 @@ from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 from code_saturne.Pages.ElectricalModel import ElectricalModel
 from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
-from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 
@@ -101,14 +100,12 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.pcoal = CoalCombustionModel(self.case)
         self.elect = ElectricalModel(self.case)
         self.scal  = DefineUserScalarsModel(self.case)
-        self.std   = SteadyManagementModel(self.case)
         self.atmo  = AtmosphericFlowsModel(self.case)
         self.comp  = CompressibleModel(self.case)
         self.darc  = GroundwaterModel(self.case)
 
         # Set models and number of elements for combo boxes
 
-        self.modelSteadyFlow         = QtPage.ComboModel(self.comboBoxSteadyFlow,2,1)
         self.modelLagrangian         = QtPage.ComboModel(self.comboBoxLagrangian,4,1)
         self.modelAtmospheric        = QtPage.ComboModel(self.comboBoxAtmospheric,4,1)
         self.modelGasCombustionModel = QtPage.ComboModel(self.comboBoxGasCombustionModel,3,1)
@@ -116,9 +113,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelJouleEffect        = QtPage.ComboModel(self.comboBoxJouleEffect,3,1)
         self.modelCompressible       = QtPage.ComboModel(self.comboBoxCompressible,3,1)
         self.modelGroundwater        = QtPage.ComboModel(self.comboBoxGroundwater,2,1)
-
-        self.modelSteadyFlow.addItem(self.tr("steady flow"), "on")
-        self.modelSteadyFlow.addItem(self.tr("unsteady flow"), "off")
 
         self.modelLagrangian.addItem(self.tr("off"),                 "off")
         self.modelLagrangian.addItem(self.tr("One-way coupling"),    "one_way")
@@ -155,7 +149,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         # Connect signals to slots
 
-        self.comboBoxSteadyFlow.activated[str].connect(self.slotSteadyFlow)
         self.comboBoxLagrangian.activated[str].connect(self.slotLagrangian)
         self.comboBoxAtmospheric.activated[str].connect(self.slotAtmospheric)
         self.comboBoxGasCombustionModel.activated[str].connect(self.slotGasCombustionModel)
@@ -166,24 +159,16 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         # Initialize Widgets
 
-        val = self.std.getSteadyFlowManagement()
-        if val == 'on':
-            self.modelSteadyFlow.setItem(str_model='on')
-            self.modelLagrangian.disableItem(str_model='one_way')
-            self.modelLagrangian.disableItem(str_model='two_way')
-            self.modelLagrangian.disableItem(str_model='frozen')
-        else:
-            self.modelSteadyFlow.setItem(str_model='off')
-            self.modelLagrangian.enableItem(str_model='one_way')
-            self.modelLagrangian.enableItem(str_model='two_way')
-            self.modelLagrangian.enableItem(str_model='frozen')
+        from code_saturne.Pages.TimeStepModel import TimeStepModel
+        idtvar = TimeStepModel(self.case).getTimePassing()
+        idtvar_p = idtvar
 
         mdl = self.lagr.getLagrangianModel()
-        if mdl == 'off':
-            self.modelSteadyFlow.enableItem(str_model='on')
-        else:
-            self.modelSteadyFlow.disableItem(str_model='on')
         self.modelLagrangian.setItem(str_model=mdl)
+
+        if mdl != 'off':
+            if idtvar not in [0, 1]:
+                idtvar = 0
 
         val = self.atmo.getAtmosphericFlowsModel()
         self.modelAtmospheric.setItem(str_model=val)
@@ -199,12 +184,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelCompressible.disableItem(str_model='variable_gamma')
 
         if compressible != 'off':
-            self.modelSteadyFlow.setItem(str_model='off')
-            self.comboBoxSteadyFlow.setEnabled(False)
+            if idtvar not in [0, 1]:
+                idtvar = 0
             self.comboBoxLagrangian.setEnabled(False)
-
-        if self.std.getSteadyFlowManagement() == 'on':
-            self.comboBoxCompressible.setEnabled(False)
 
         # Multi-phase flow and coal combustion
         coal = self.pcoal.getCoalCombustionModel()
@@ -216,10 +198,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         lagr = self.lagr.getLagrangianModel()
         self.modelLagrangian.setItem(str_model=lagr)
         if lagr == 'off':
-            self.modelSteadyFlow.enableItem(str_model='on')
             self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel')
         else:
-            self.modelSteadyFlow.disableItem(str_model='on')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
 
         # Compatibility between turbulence model and multi-phases flow model
@@ -295,8 +275,14 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                 self.comboBoxGroundwater.setEnabled(False)
 
         if darcy != 'off':
-            self.comboBoxSteadyFlow.setEnabled(False)
+            if idtvar not in [0, 1]:
+                idtvar = 0
             self.comboBoxLagrangian.setEnabled(False)
+
+        # Update time step model if needed
+
+        if idtvar_p != idtvar:
+            TimeStepModel(self.case).setTimePassing(idtvar)
 
         # Update the Tree files and folders
 
@@ -310,7 +296,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         Private Method.
         Change to NORMAL the state of the reactive flow OptionMenu buttons.
         """
-        self.comboBoxSteadyFlow.setEnabled(True)
         self.comboBoxLagrangian.setEnabled(True)
         self.comboBoxGasCombustionModel.setEnabled(True)
         self.comboBoxPulverizedCoal.setEnabled(True)
@@ -338,7 +323,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         Private Method.
         Change to DISABLED the state of the reactive flow OptionMenu buttons.
         """
-        #self.comboBoxSteadyFlow.setEnabled(False)
         #self.comboBoxLagrangian.setEnabled(False)
         self.comboBoxGasCombustionModel.setEnabled(False)
         self.comboBoxPulverizedCoal.setEnabled(False)
@@ -357,8 +341,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         Method to get the current item from a QComboBox and returns
         the correct string for the model
         """
-        if not name in ['SteadyFlow',
-                        'Lagrangian',
+        if not name in ['Lagrangian',
                         'Atmospheric',
                         'GasCombustionModel',
                         'PulverizedCoal',
@@ -376,30 +359,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
 
     @pyqtSlot(str)
-    def slotSteadyFlow(self, text):
-        """
-        Private slot.
-        Configure tree and update xmlfile beyond the steady or unsteady flow type.
-        """
-        log.debug("slotSteadyFlow")
-        steady = self.__stringModelFromCombo('SteadyFlow')
-
-        if steady == 'on':
-            self.modelLagrangian.disableItem(str_model='one_way')
-            self.modelLagrangian.disableItem(str_model='two_way')
-            self.modelLagrangian.disableItem(str_model='frozen')
-            self.comboBoxCompressible.setEnabled(False)
-        else:
-            self.modelLagrangian.enableItem(str_model='one_way')
-            self.modelLagrangian.enableItem(str_model='two_way')
-            self.modelLagrangian.enableItem(str_model='frozen')
-            self.comboBoxCompressible.setEnabled(True)
-
-        self.std.setSteadyFlowManagement(steady)
-        self.browser.configureTree(self.case)
-
-
-    @pyqtSlot(str)
     def slotLagrangian(self, text):
         """
         Private slot.
@@ -409,10 +368,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('Lagrangian')
         if str(model) == 'off':
-            self.modelSteadyFlow.enableItem(str_model='on')
             self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel')
         else:
-            self.modelSteadyFlow.disableItem(str_model='on')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
 
         self.lagr.setLagrangianModel(model)
@@ -512,12 +469,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         if model != 'off':
             self.__disableComboBox()
-            self.modelSteadyFlow.setItem(str_model='off')
-            self.comboBoxSteadyFlow.setEnabled(False)
             self.comboBoxLagrangian.setEnabled(False)
             self.comboBoxCompressible.setEnabled(True)
         else:
-            self.comboBoxSteadyFlow.setEnabled(True)
             self.comboBoxLagrangian.setEnabled(True)
 
             if self.turb.getTurbulenceModel() not in ('k-epsilon',
@@ -547,7 +501,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         if model != 'off':
             self.__disableComboBox()
             self.comboBoxGroundwater.setEnabled(True)
-            self.comboBoxSteadyFlow.setEnabled(False)
             self.comboBoxLagrangian.setEnabled(False)
         else:
             self.comboBoxCompressible.setEnabled(True)
