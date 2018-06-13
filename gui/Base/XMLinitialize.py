@@ -224,7 +224,8 @@ class XMLinit(Variables):
         """
         known_versions = ["3.0", "3.1", "3.2", "3.3",
                           "4.0", "4.1", "4.2", "4.3",
-                          "5.0", "5.1"]
+                          "5.0", "5.1", "5.2", "5.3",
+                          "6.0"]
         j = -2
         for i in range(0, len(known_versions)):
             if vers.find(known_versions[i]) == 0:
@@ -245,12 +246,12 @@ class XMLinit(Variables):
         """
         Change XML in order to ensure backward compatibility.
         """
-        cur_vers = self.__clean_version(self.case['package'].version)
+        cur_vers = self.case['package'].version
 
         if self.case.root()["solver_version"]:
             his_r = self.case.root()["solver_version"]
             history = his_r.split(";")
-            last_vers = history[len(history) - 1]
+            last_vers = self.__clean_version(history[len(history) - 1])
             if last_vers == cur_vers:
                 self.__backwardCompatibilityCurrentVersion()
             else:
@@ -273,7 +274,8 @@ class XMLinit(Variables):
             vers = cur_vers
             self.case.root().xmlSetAttribute(solver_version = vers)
 
-            # apply all backwardCompatibility we don't know when it was created
+            # apply all backwardCompatibilities as we don't know
+            # when it was created
             self.__backwardCompatibilityOldVersion("-1")
             self.__backwardCompatibilityCurrentVersion()
 
