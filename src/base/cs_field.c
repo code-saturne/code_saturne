@@ -1084,10 +1084,11 @@ cs_f_field_var_ptr_by_id(int          id,
  *
  * parameters:
  *   id           <-- field id
- *   pointer_type <-- 1: bc_coeffs->a;   2: bc_coeffs->b
- *                    3: bc_coeffs->af;  4: bc_coeffs->bf
- *                    5: bc_coeffs->ad;  6: bc_coeffs->bd
- *                    7: bc_coeffs->ac;  8: bc_coeffs->bc
+ *   pointer_type <-- 1: bc_coeffs->a;     2: bc_coeffs->b
+ *                    3: bc_coeffs->af;    4: bc_coeffs->bf
+ *                    5: bc_coeffs->ad;    6: bc_coeffs->bd
+ *                    7: bc_coeffs->ac;    8: bc_coeffs->bc
+ *                    9: bc_coeffs->hext; 10: bc_coeffs->hint
  *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
  *   dim          <-- dimensions (indexes in Fortran order,
  *                    dim[i] = 0 if i unused)
@@ -1150,7 +1151,7 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
     if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
       _n_elts = 0;
 
-    if (f->dim == 1)
+    if (f->dim == 1 || pointer_type == 9 || pointer_type == 10)
       dim[0] = _n_elts;
 
     else {
