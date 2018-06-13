@@ -121,10 +121,11 @@ typedef struct {
   cs_time_step_options_t    time_options;     // time step options
 
   /* Output options */
-  int        output_nt;  /* Log information every nt iteration(s) */
-  int        verbosity;  /* Level of details given in log */
-  bool       profiling;  /* Activate a set of timer statistics (details differ
-                            according to the verbosity level) */
+  int        output_nt;   /* Log information every nt iterations */
+  int        restart_nt;  /* Write a restart every nt iterations */
+  int        verbosity;   /* Level of details given in log */
+  bool       profiling;   /* Activate a set of timer statistics (details
+                             differ according to the verbosity level) */
 
   /* Specific context structure related to the numerical schemes */
   cs_domain_cdo_context_t   *cdo_context;
@@ -200,17 +201,18 @@ cs_domain_get_cdo_mode(const cs_domain_t   *domain);
 /*!
  * \brief  Set auxiliary parameters related to the way output is done
  *
- * \param[in, out]  domain      pointer to a cs_domain_t structure
- * \param[in]       nt_list     output frequency into the listing
- * \param[in]       verbosity   level of information displayed
+ * \param[in, out]  domain       pointer to a cs_domain_t structure
+ * \param[in]       nt_interval  frequency for the restart process
+ * \param[in]       nt_list      output frequency into the listing
+ * \param[in]       verbosity    level of information displayed
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_set_output_param(cs_domain_t       *domain,
+                           int                nt_interval,
                            int                nt_list,
                            int                verbosity);
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -376,17 +378,6 @@ cs_domain_increment_time_step(cs_domain_t  *domain);
 
 void
 cs_domain_cdo_log(const cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Summary of a cs_domain_t structure
- *
- * \param[in]   domain    pointer to the cs_domain_t structure to summarize
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_summary(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 

@@ -39,6 +39,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_equation_param.h"
+#include "cs_restart.h"
 #include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
@@ -336,6 +337,38 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
                               cs_equation_builder_t   *eqb,
                               void                    *data,
                               cs_real_t               *v_gradient);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read additional arrays (not defined as fields) but useful for the
+ *         checkpoint/restart process
+ *
+ * \param[in, out]  restart         pointer to \ref cs_restart_t structure
+ * \param[in]       eqname          name of the related equation
+ * \param[in]       scheme_context  pointer to a data structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_read_restart(cs_restart_t    *restart,
+                              const char      *eqname,
+                              void            *scheme_context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write additional arrays (not defined as fields) but useful for the
+ *         checkpoint/restart process
+ *
+ * \param[in, out]  restart         pointer to \ref cs_restart_t structure
+ * \param[in]       eqname          name of the related equation
+ * \param[in]       scheme_context  pointer to a data structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_write_restart(cs_restart_t    *restart,
+                               const char      *eqname,
+                               void            *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -137,7 +137,8 @@ cs_user_cdo_init_setup(cs_domain_t   *domain)
      ========================= */
 
   cs_domain_set_output_param(domain,
-                             100,     // output log frequency
+                             -1,     // restart frequency
+                             100,    // output log frequency
                              3);     // verbosity (-1: no, 0, ...)
 
   /* ====================

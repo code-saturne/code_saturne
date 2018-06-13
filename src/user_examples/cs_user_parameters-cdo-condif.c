@@ -447,6 +447,7 @@ cs_user_model(void)
     cs_domain_t  *domain = cs_glob_domain;
 
     cs_domain_set_output_param(domain,
+                               -1,     // restart frequency
                                10,     // output log frequency
                                2);     // verbosity (-1: no, 0, ...)
 

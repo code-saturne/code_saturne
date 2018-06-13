@@ -510,6 +510,8 @@ _set_scal_hho_function_pointers(cs_equation_t  *eq)
   eq->compute_flux_across_plane = NULL;
   eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = cs_hho_scaleq_extra_op;
+  eq->read_restart = cs_hho_scaleq_read_restart;
+  eq->write_restart = cs_hho_scaleq_write_restart;
 
   /* Function pointers to retrieve values at mesh locations */
   eq->get_vertex_values = NULL;
@@ -541,6 +543,8 @@ _set_vect_hho_function_pointers(cs_equation_t  *eq)
   eq->compute_flux_across_plane = NULL;
   eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = cs_hho_vecteq_extra_op;
+  eq->read_restart = cs_hho_vecteq_read_restart;
+  eq->write_restart = cs_hho_vecteq_write_restart;
 
   /* Function pointers to retrieve values at mesh locations */
   eq->get_vertex_values = NULL;
@@ -1126,6 +1130,8 @@ cs_equation_add(const char            *eqname,
   eq->compute_flux_across_plane = NULL;
   eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = NULL;
+  eq->read_restart = NULL;
+  eq->write_restart = NULL;
 
   /* Function pointers to retrieve values at mesh locations */
   eq->get_vertex_values = NULL;
@@ -1390,6 +1396,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
           cs_cdovb_scaleq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
         eq->postprocess = cs_cdovb_scaleq_extra_op;
+        eq->read_restart = NULL;
+        eq->write_restart = NULL;
 
         /* Function pointers to retrieve values at mesh locations */
         eq->get_vertex_values = cs_cdovb_scaleq_get_vertex_values;
@@ -1417,6 +1425,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
           cs_cdovb_vecteq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovb_vecteq_cellwise_diff_flux;
         eq->postprocess = cs_cdovb_vecteq_extra_op;
+        eq->read_restart = NULL;
+        eq->write_restart = NULL;
 
         /* Function pointers to retrieve values at mesh locations */
         eq->get_vertex_values = cs_cdovb_vecteq_get_vertex_values;
@@ -1451,6 +1461,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
           cs_cdovcb_scaleq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
         eq->postprocess = cs_cdovcb_scaleq_extra_op;
+        eq->read_restart = cs_cdovcb_scaleq_read_restart;
+        eq->write_restart = cs_cdovcb_scaleq_write_restart;
 
         /* Function pointers to retrieve values at mesh locations */
         eq->get_vertex_values = cs_cdovcb_scaleq_get_vertex_values;
@@ -1484,6 +1496,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->compute_cellwise_diff_flux = NULL;
         eq->compute_balance = cs_cdofb_scaleq_balance;
         eq->postprocess = cs_cdofb_scaleq_extra_op;
+        eq->read_restart = cs_cdofb_scaleq_read_restart;
+        eq->write_restart = cs_cdofb_scaleq_write_restart;
 
         /* Function pointers to retrieve values at mesh locations */
         eq->get_vertex_values = NULL;
@@ -1510,6 +1524,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->compute_flux_across_plane = NULL;
         eq->compute_cellwise_diff_flux = NULL;
         eq->postprocess = cs_cdofb_vecteq_extra_op;
+        eq->read_restart = cs_cdofb_vecteq_read_restart;
+        eq->write_restart = cs_cdofb_vecteq_write_restart;
 
         /* Function pointers to retrieve values at mesh locations */
         eq->get_vertex_values = NULL;
@@ -2196,6 +2212,52 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
 
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write into the restart file additionnal arrays (not defined as
+ *         fields) but useful for the checkpoint/restart process
+ *
+ * \param[in, out]  restart    pointer to a \ref cs_restart_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_read_extra_restart(cs_restart_t   *restart)
+{
+  for (int i = 0; i < _n_equations; i++) {
+
+    cs_equation_t  *eq = _equations[i];
+    assert(eq != NULL); /* Sanity check */
+
+    if (eq->read_restart != NULL)
+      eq->read_restart(restart, eq->param->name, eq->scheme_context);
+
+  } /* Loop on equations */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write into the restart file additionnal arrays (not defined as
+ *         fields) but useful for the checkpoint/restart process
+ *
+ * \param[in, out]  restart    pointer to a \ref cs_restart_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_write_extra_restart(cs_restart_t   *restart)
+{
+  for (int i = 0; i < _n_equations; i++) {
+
+    cs_equation_t  *eq = _equations[i];
+    assert(eq != NULL); /* Sanity check */
+
+    if (eq->write_restart != NULL)
+      eq->write_restart(restart, eq->param->name, eq->scheme_context);
+
+  } /* Loop on equations */
 }
 
 /*----------------------------------------------------------------------------*/

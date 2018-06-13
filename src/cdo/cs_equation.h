@@ -36,6 +36,7 @@
 #include "cs_field.h"
 #include "cs_param.h"
 #include "cs_mesh.h"
+#include "cs_restart.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
@@ -590,6 +591,30 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
 void
 cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
                                        cs_real_t             *v_gradient);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write into the restart file additionnal arrays (not defined as
+ *         fields) but useful for the checkpoint/restart process
+ *
+ * \param[in, out]  restart    pointer to a \ref cs_restart_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_read_extra_restart(cs_restart_t   *restart);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write into the restart file additionnal arrays (not defined as
+ *         fields) but useful for the checkpoint/restart process
+ *
+ * \param[in, out]  restart    pointer to a \ref cs_restart_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_write_extra_restart(cs_restart_t   *restart);
 
 /*----------------------------------------------------------------------------*/
 /*!

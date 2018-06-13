@@ -1294,5 +1294,147 @@ cs_cdofb_scaleq_get_face_values(void    *context)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read additional arrays (not defined as fields) but useful for the
+ *         checkpoint/restart process
+ *
+ * \param[in, out]  restart         pointer to \ref cs_restart_t structure
+ * \param[in]       eqname          name of the related equation
+ * \param[in]       scheme_context  pointer to a data structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_read_restart(cs_restart_t    *restart,
+                             const char      *eqname,
+                             void            *scheme_context)
+{
+  /* Only the face values are handled. Cell values are stored in a cs_field_t
+     structure and thus are handled automatically. */
+  if (restart == NULL)
+    return;
+  if (eqname == NULL)
+    bft_error(__FILE__, __LINE__, 0, " %s: Name is NULL", __func__);
+  if (scheme_context == NULL)
+    bft_error(__FILE__, __LINE__, 0, " %s: Scheme context is NULL", __func__);
+
+  int retcode = CS_RESTART_SUCCESS;
+  cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t  *)scheme_context;
+
+  char sec_name[128];
+
+  /* Handle interior faces */
+  /* ===================== */
+
+  const int  i_ml_id = cs_mesh_location_get_id_by_name(N_("interior_faces"));
+
+  /* Define the section name */
+  snprintf(sec_name, 127, "%s::i_face_vals", eqname);
+
+  /* Check section */
+  retcode = cs_restart_check_section(restart,
+                                     sec_name,
+                                     i_ml_id,
+                                     1, /* scalar-valued */
+                                     CS_TYPE_cs_real_t);
+
+  /* Read section */
+  if (retcode == CS_RESTART_SUCCESS)
+    retcode = cs_restart_read_section(restart,
+                                      sec_name,
+                                      i_ml_id,
+                                      1, /* scalar-valued */
+                                      CS_TYPE_cs_real_t,
+                                      eqc->face_values);
+
+  /* Handle boundary faces */
+  /* ===================== */
+
+  const int  b_ml_id = cs_mesh_location_get_id_by_name(N_("boundary_faces"));
+  cs_real_t  *b_values = eqc->face_values + cs_shared_quant->n_i_faces;
+
+  /* Define the section name */
+  snprintf(sec_name, 127, "%s::b_face_vals", eqname);
+
+  /* Check section */
+  retcode = cs_restart_check_section(restart,
+                                     sec_name,
+                                     b_ml_id,
+                                     1, /* scalar-valued */
+                                     CS_TYPE_cs_real_t);
+
+  /* Read section */
+  if (retcode == CS_RESTART_SUCCESS)
+    retcode = cs_restart_read_section(restart,
+                                      sec_name,
+                                      b_ml_id,
+                                      1, /* scalar-valued */
+                                      CS_TYPE_cs_real_t,
+                                      b_values);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write additional arrays (not defined as fields) but useful for the
+ *         checkpoint/restart process
+ *
+ * \param[in, out]  restart         pointer to \ref cs_restart_t structure
+ * \param[in]       eqname          name of the related equation
+ * \param[in]       scheme_context  pointer to a data structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_write_restart(cs_restart_t    *restart,
+                              const char      *eqname,
+                              void            *scheme_context)
+{
+  /* Only the face values are handled. Cell values are stored in a cs_field_t
+     structure and thus are handled automatically. */
+  if (restart == NULL)
+    return;
+  if (eqname == NULL)
+    bft_error(__FILE__, __LINE__, 0, " %s: Name is NULL", __func__);
+
+  const cs_cdofb_scaleq_t  *eqc = (const cs_cdofb_scaleq_t  *)scheme_context;
+
+  char sec_name[128];
+
+  /* Handle interior faces */
+  /* ===================== */
+
+  const int  i_ml_id = cs_mesh_location_get_id_by_name(N_("interior_faces"));
+
+  /* Define the section name */
+  snprintf(sec_name, 127, "%s::i_face_vals", eqname);
+
+  /* Write interior face section */
+  cs_restart_write_section(restart,
+                           sec_name,
+                           i_ml_id,
+                           1,   /* scalar-valued */
+                           CS_TYPE_cs_real_t,
+                           eqc->face_values);
+
+  /* Handle boundary faces */
+  /* ===================== */
+
+  const int  b_ml_id = cs_mesh_location_get_id_by_name(N_("boundary_faces"));
+  const cs_real_t  *b_values = eqc->face_values + cs_shared_quant->n_i_faces;
+
+  /* Define the section name */
+  snprintf(sec_name, 127, "%s::b_face_vals", eqname);
+
+  /* Write boundary face section */
+  cs_restart_write_section(restart,
+                           sec_name,
+                           b_ml_id,
+                           1,   /* scalar-valued */
+                           CS_TYPE_cs_real_t,
+                           b_values);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

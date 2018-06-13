@@ -33,6 +33,7 @@
 #include "cs_equation_common.h"
 #include "cs_field.h"
 #include "cs_param.h"
+#include "cs_restart.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -291,6 +292,22 @@ typedef void
 typedef cs_real_t *
 (cs_equation_get_values_t)(void      *scheme_context);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Generic prototype dedicated to read or write additional arrays (not
+ *         defined as fields) useful for the checkpoint/restart process
+ *
+ * \param[in, out]  restart         pointer to \ref cs_restart_t structure
+ * \param[in]       eqname          name of the related equation
+ * \param[in, out]  scheme_context  pointer to a data structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_restart_t)(cs_restart_t    *restart,
+                        const char      *eqname,
+                        void            *scheme_context);
+
 /*----------------------------------------------------------------------------
  * Structure type
  *----------------------------------------------------------------------------*/
@@ -360,6 +377,8 @@ struct _cs_equation_t {
   cs_equation_flux_plane_t         *compute_flux_across_plane;
   cs_equation_cell_difflux_t       *compute_cellwise_diff_flux;
   cs_equation_extra_op_t           *postprocess;
+  cs_equation_restart_t            *read_restart;
+  cs_equation_restart_t            *write_restart;
 
   cs_equation_get_values_t         *get_face_values;
   cs_equation_get_values_t         *get_cell_values;

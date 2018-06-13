@@ -1602,6 +1602,96 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Read additional arrays (not defined as fields) but useful for the
+ *         checkpoint/restart process
+ *
+ * \param[in, out]  restart         pointer to \ref cs_restart_t structure
+ * \param[in]       eqname          name of the related equation
+ * \param[in]       scheme_context  pointer to a data structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_read_restart(cs_restart_t    *restart,
+                              const char      *eqname,
+                              void            *scheme_context)
+{
+  /* Only the cell values are handled. Vertex values are stored in a cs_field_t
+     structure and thus are handled automatically. */
+  if (restart == NULL)
+    return;
+  if (eqname == NULL)
+    bft_error(__FILE__, __LINE__, 0, " %s: Name is NULL", __func__);
+  if (scheme_context == NULL)
+    bft_error(__FILE__, __LINE__, 0, " %s: Scheme context is NULL", __func__);
+
+  int retcode = CS_RESTART_SUCCESS;
+  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)scheme_context;
+
+  const int  cell_loc_id = cs_mesh_location_get_id_by_name("cells");
+
+  /* Define the section name */
+  char sec_name[128];
+  snprintf(sec_name, 127, "%s::cell_vals", eqname);
+
+  /* Check section */
+  retcode = cs_restart_check_section(restart,
+                                     sec_name,
+                                     cell_loc_id,
+                                     1, /* scalar-valued */
+                                     CS_TYPE_cs_real_t);
+
+  if (retcode == CS_RESTART_SUCCESS)
+    retcode = cs_restart_read_section(restart,
+                                      sec_name,
+                                      cell_loc_id,
+                                      1, /* scalar-valued */
+                                      CS_TYPE_cs_real_t,
+                                      eqc->cell_values);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write additional arrays (not defined as fields) but useful for the
+ *         checkpoint/restart process
+ *
+ * \param[in, out]  restart         pointer to \ref cs_restart_t structure
+ * \param[in]       eqname          name of the related equation
+ * \param[in]       scheme_context  pointer to a data structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_write_restart(cs_restart_t    *restart,
+                               const char      *eqname,
+                               void            *scheme_context)
+{
+  /* Only the cell values are handled. Vertex values are stored in a cs_field_t
+     structure and thus are handled automatically. */
+  if (restart == NULL)
+    return;
+  if (eqname == NULL)
+    bft_error(__FILE__, __LINE__, 0, " %s: Name is NULL", __func__);
+
+  const cs_cdovcb_scaleq_t  *eqc = (const cs_cdovcb_scaleq_t  *)scheme_context;
+  const int  cell_loc_id = cs_mesh_location_get_id_by_name("cells");
+
+  /* Define the section name */
+  char sec_name[128];
+  snprintf(sec_name, 127, "%s::cell_vals", eqname);
+
+  /* Write section */
+  cs_restart_write_section(restart,
+                           sec_name,
+                           cell_loc_id,
+                           1,   /* scalar-valued */
+                           CS_TYPE_cs_real_t,
+                           eqc->cell_values);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation

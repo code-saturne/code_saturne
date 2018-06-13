@@ -40,7 +40,6 @@
 #include "bft_mem.h"
 
 #include "cs_boundary_zone.h"
-#include "cs_domain_post.h"
 #include "cs_evaluate.h"
 #include "cs_equation.h"
 #include "cs_equation_common.h"
@@ -449,6 +448,13 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
     bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
   if (domain->cdo_context == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_cdo_context);
+
+  /* Manage checkpoint/restart settings
+   * Use the same default values for t_interval and wt_interval as the FV */
+  double  t_interval = -1.0, wt_interval = -1.0;
+  cs_restart_checkpoint_set_defaults(domain->restart_nt,
+                                     t_interval,
+                                     wt_interval);
 
   domain->mesh = mesh;
   domain->mesh_quantities = mesh_quantities;

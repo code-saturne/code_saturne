@@ -1,8 +1,9 @@
-#ifndef __CS_DOMAIN_POST_H__
-#define __CS_DOMAIN_POST_H__
+#ifndef __CS_DOMAIN_OP_H__
+#define __CS_DOMAIN_OP_H__
 
 /*============================================================================
- * Manage specific post-processing related to a computational domain
+ * Manage specific post-processing related to a computational domain and
+ * restart files
  *============================================================================*/
 
 /*
@@ -75,7 +76,29 @@ void
 cs_domain_post(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a restart file for the CDO/HHO module
+ *
+ * \param[in, out]  domain     pointer to a \ref cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_read_restart(cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write a restart file for the CDO/HHO module
+ *
+ * \param[in]  domain     pointer to a \ref cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_write_restart(const cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_DOMAIN_POST_H__ */
+#endif /* __CS_DOMAIN_OP_H__ */

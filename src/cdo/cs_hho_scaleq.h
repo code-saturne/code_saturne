@@ -42,6 +42,7 @@
 #include "cs_hho_builder.h"
 #include "cs_matrix.h"
 #include "cs_matrix_assembler.h"
+#include "cs_restart.h"
 #include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
@@ -242,6 +243,38 @@ cs_hho_scaleq_get_face_values(void          *data);
 
 cs_real_t *
 cs_hho_scaleq_get_cell_values(void          *data);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read additional arrays (not defined as fields) but useful for the
+ *         checkpoint/restart process
+ *
+ * \param[in, out]  restart         pointer to \ref cs_restart_t structure
+ * \param[in]       eqname          name of the related equation
+ * \param[in]       scheme_context  pointer to a data structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hho_scaleq_read_restart(cs_restart_t    *restart,
+                           const char      *eqname,
+                           void            *scheme_context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write additional arrays (not defined as fields) but useful for the
+ *         checkpoint/restart process
+ *
+ * \param[in, out]  restart         pointer to \ref cs_restart_t structure
+ * \param[in]       eqname          name of the related equation
+ * \param[in]       scheme_context  pointer to a data structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hho_scaleq_write_restart(cs_restart_t    *restart,
+                            const char      *eqname,
+                            void            *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!

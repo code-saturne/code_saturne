@@ -47,6 +47,7 @@
 #include "cs_field.h"
 #include "cs_matrix.h"
 #include "cs_mesh.h"
+#include "cs_restart.h"
 #include "cs_source_term.h"
 #include "cs_time_step.h"
 
@@ -317,6 +318,38 @@ cs_cdofb_scaleq_get_cell_values(void      *context);
 
 cs_real_t *
 cs_cdofb_scaleq_get_face_values(void    *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read additional arrays (not defined as fields) but useful for the
+ *         checkpoint/restart process
+ *
+ * \param[in, out]  restart         pointer to \ref cs_restart_t structure
+ * \param[in]       eqname          name of the related equation
+ * \param[in]       scheme_context  pointer to a data structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_read_restart(cs_restart_t    *restart,
+                             const char      *eqname,
+                             void            *scheme_context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write additional arrays (not defined as fields) but useful for the
+ *         checkpoint/restart process
+ *
+ * \param[in, out]  restart         pointer to \ref cs_restart_t structure
+ * \param[in]       eqname          name of the related equation
+ * \param[in]       scheme_context  pointer to a data structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_write_restart(cs_restart_t    *restart,
+                              const char      *eqname,
+                              void            *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 

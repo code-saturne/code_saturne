@@ -57,6 +57,7 @@
 #include "cs_mesh_location.h"
 #include "cs_prototypes.h"
 #include "cs_quadrature.h"
+#include "cs_restart.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
@@ -194,6 +195,7 @@ cs_domain_create(void)
   domain->time_options.relxst = 0.7; // Not useful in CDO schemes
 
   /* Other options */
+  domain->restart_nt = 0;
   domain->output_nt = -1;
   domain->verbosity = 1;
   domain->profiling = false;
@@ -415,19 +417,22 @@ cs_domain_set_time_param(cs_domain_t       *domain,
 /*!
  * \brief  Set auxiliary parameters related to the way output is done
  *
- * \param[in, out]  domain      pointer to a cs_domain_t structure
- * \param[in]       nt_list     output frequency into the listing
- * \param[in]       verbosity   level of information displayed
+ * \param[in, out]  domain       pointer to a cs_domain_t structure
+ * \param[in]       nt_interval  frequency for the restart process
+ * \param[in]       nt_list      output frequency into the listing
+ * \param[in]       verbosity    level of information displayed
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_set_output_param(cs_domain_t       *domain,
+                           int                nt_interval,
                            int                nt_list,
                            int                verbosity)
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
+  domain->restart_nt = nt_interval;
   domain->output_nt = nt_list;
   if (domain->output_nt == 0)
     domain->output_nt = -1;
