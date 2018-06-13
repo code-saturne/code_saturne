@@ -764,11 +764,14 @@ def run_debug(cmds):
             return p.returncode
 
     elif 'valgrind' in cmds.keys():
+        debugger_opts = None
+        if 'debugger' in cmds.keys():
+            debugger_opts = cmds['debugger'][1:]
         return run_valgrind(path = cmds['program'][0],
                             args = cmds['program'][1:],
                             valgrind = cmds['valgrind'][0],
                             valgrind_opts = cmds['valgrind'][1:],
-                            debugger_opts = cmds['debugger'][1:])
+                            debugger_opts = debugger_opts)
 
     # We should not reach this area.
 
