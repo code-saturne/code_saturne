@@ -898,8 +898,6 @@ do ifac = 1, nfabor
       hint = (visclc + visctc)/distbf
     endif
 
-    ! Coupled solving of the velocity components
-
     ! Gradient boundary conditions
     !-----------------------------
     rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
@@ -2916,8 +2914,10 @@ do ifac = 1, nfabor
 
     hext = rcodcl(ifac,ivar,2)
 
-    if (vcopt%icoupl.gt.0.and.cpl_faces(ifac)) then
+    if (vcopt%icoupl.gt.0) then
+      if (cpl_faces(ifac)) then
         hext = hextp(ifac)/surfbn(ifac)
+      endif
     endif
 
     hflui = hbnd(ifac)
