@@ -460,7 +460,9 @@ if (idtvar.ge.0) then
 
 !   - Coefficient de relaxation de la masse volumique
 
-  if (ippmod(iphpar).ge.2) write(nfecra,3050) srrom
+  if (ippmod(iphpar).ge.2.and.ippmod(ieljou).lt.0.and.ippmod(ielarc).lt.0) then
+    write(nfecra,3050) srrom
+  endif
 
 !   - Ordre du schema en temps
 
