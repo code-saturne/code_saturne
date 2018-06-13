@@ -42,6 +42,7 @@
 
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
+#include "cs_control.h"
 #include "cs_defs.h"
 #include "cs_domain.h"
 #include "cs_domain_post.h"
@@ -840,6 +841,9 @@ cs_cdo_main(cs_domain_t   *domain)
 
     /* Increment time */
     cs_domain_increment_time_step(domain);
+
+    /* Read a control file if present */
+    cs_control_check_file();
 
     cs_timer_stats_increment_time_step();
 
