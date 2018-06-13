@@ -122,7 +122,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         validatorRELAXP = DoubleValidator(self.lineEditRELAXP, min=0., max=1.)
         validatorRELAXP.setExclusiveMin(True)
         validatorSRROM = DoubleValidator(self.lineEditSRROM, min=0., max=1.)
-        validatorSRROM.setExclusiveMin(True)
+        validatorSRROM.setExclusiveMax(True)
         self.lineEditRELAXP.setValidator(validatorRELAXP)
         self.lineEditSRROM.setValidator(validatorSRROM)
 

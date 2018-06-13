@@ -295,8 +295,8 @@ class NumericalParamGlobalModel(Model):
         """
         Put value of density_relaxation
         """
-        self.isGreater(value, 0.0)
-        self.isLowerOrEqual(value, 1.0)
+        self.isGreaterOrEqual(value, 0.0)
+        self.isLower(value, 1.0)
         self.node_np.xmlSetData('density_relaxation', value)
 
 
