@@ -171,6 +171,17 @@ cs_flag_test(cs_flag_t    flag_to_check,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the label associated to a location flag
+ *
+ * \return a string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_flag_str_location(cs_flag_t  loc);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

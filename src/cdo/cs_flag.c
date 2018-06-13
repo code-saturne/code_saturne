@@ -70,5 +70,36 @@ const cs_flag_t  cs_flag_dual_closure_byf =
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the label associated to a location flag
+ *
+ * \return a string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_flag_str_location(cs_flag_t  loc)
+{
+  if (cs_flag_test(loc, cs_flag_primal_vtx))
+    return "vertices";
+  else if (cs_flag_test(loc, cs_flag_primal_face))
+    return "faces";
+  else if (cs_flag_test(loc, cs_flag_primal_cell))
+    return "cells";
+  else if (cs_flag_test(loc, cs_flag_dual_vtx))
+    return "dual vertices";
+  else if (cs_flag_test(loc, cs_flag_dual_face))
+    return "dual faces";
+  else if (cs_flag_test(loc, cs_flag_dual_cell))
+    return "dual cells";
+  else if (cs_flag_test(loc, cs_flag_dual_face_byc))
+    return "dual face (cellwise)";
+  else if (cs_flag_test(loc, cs_flag_dual_closure_byf))
+    return "dual cell closure (facewise)";
+  else
+    return "";
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

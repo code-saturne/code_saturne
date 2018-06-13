@@ -793,6 +793,8 @@ cs_gwf_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, "  <GW> Force to resolve Richards equation\n");
   if (gw->flag & CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE)
     cs_log_printf(CS_LOG_SETUP, "  <GW> Rescale head w.r.t zero mean value\n");
+  cs_log_printf(CS_LOG_SETUP, "  <GW/Darcy location> %s\n",
+                cs_flag_str_location(gw->flux_location));
 
   /* Tracers */
   cs_log_printf(CS_LOG_SETUP,
