@@ -3345,8 +3345,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     secvif        secondary viscosity at interior faces
- * \param[in]     secvib        secondary viscosity at boundary faces
+ * \param[in]     i_secvis      secondary viscosity at interior faces
+ * \param[in]     b_secvis      secondary viscosity at boundary faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -3370,8 +3370,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
                                const cs_real_t             b_visc[],
-                               const cs_real_t             secvif[],
-                               const cs_real_t             secvib[],
+                               const cs_real_t             i_secvis[],
+                               const cs_real_t             b_secvis[],
                                cs_real_3_t       *restrict rhs)
 {
   const int iconvp = var_cal_opt.iconv;
@@ -4788,8 +4788,8 @@ cs_convection_diffusion_vector(int                         idtvar,
           cs_lnum_t jj = i_face_cells[face_id][1];
 
           double pnd = weight[face_id];
-          double secvis = secvif[face_id];
-          double visco = i_visc[face_id];
+          double secvis = i_secvis[face_id]; /* - 2/3 * mu */
+          double visco = i_visc[face_id]; /* mu S_ij / d_ij */
 
           double grdtrv =      pnd*(grad[ii][0][0]+grad[ii][1][1]+grad[ii][2][2])
                  + (1.-pnd)*(grad[jj][0][0]+grad[jj][1][1]+grad[jj][2][2]);
@@ -4808,8 +4808,8 @@ cs_convection_diffusion_vector(int                         idtvar,
 
             double flux = visco*tgrdfl + secvis*grdtrv*i_f_face_normal[face_id][isou];
 
-            rhs[ii][isou] = rhs[ii][isou] + flux*bndcel[ii];
-            rhs[jj][isou] = rhs[jj][isou] - flux*bndcel[jj];
+            rhs[ii][isou] += flux*bndcel[ii];
+            rhs[jj][isou] -= flux*bndcel[jj];
 
           }
 
@@ -4822,6 +4822,23 @@ cs_convection_diffusion_vector(int                         idtvar,
        (so, no corresponding term in forbr)
        TODO in theory we should take the normal component into account (the
        tangential one is modeled by the wall law) */
+
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+      cs_lnum_t ii = b_face_cells[face_id];
+
+      /* Trace of velocity gradient */
+      double grdtrv = (grad[ii][0][0]+grad[ii][1][1]+grad[ii][2][2]);
+      double secvis = b_secvis[face_id]; /* - 2/3 * mu */
+
+      for (int isou = 0; isou < 3; isou++) {
+
+        double flux = secvis*grdtrv*b_f_face_normal[face_id][isou];
+        rhs[ii][isou] += flux;
+
+      }
+
+    }
 
     /*Free memory */
     BFT_FREE(bndcel);
@@ -7723,7 +7740,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     secvif        secondary viscosity at interior faces
+ * \param[in]     i_secvis      secondary viscosity at interior faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -7742,7 +7759,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                      const cs_real_33_t          cofbfv[],
                                      const cs_real_33_t          i_visc[],
                                      const cs_real_t             b_visc[],
-                                     const cs_real_t             secvif[],
+                                     const cs_real_t             i_secvis[],
                                      cs_real_3_t       *restrict rhs)
 {
   const int nswrgp = var_cal_opt.nswrgr;
@@ -8039,36 +8056,37 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id];
+          cs_lnum_t cell_id = b_face_cells[face_id];
 
           cs_real_t diipbv[3];
+          cs_real_t pipr[3];
 
-          for (int jsou = 0; jsou < 3; jsou++)
-            diipbv[jsou] = diipb[face_id][jsou];
+          for (int k = 0; k < 3; k++) {
+            diipbv[k] = diipb[face_id][k];
+            cs_real_t pir  =   _pvar[cell_id][k]/relaxp
+                             - (1.-relaxp)/relaxp*pvara[cell_id][k];
+
+            pipr[k] = pir +ircflp*(  gradv[cell_id][k][0]*diipbv[0]
+                                   + gradv[cell_id][k][1]*diipbv[1]
+                                   + gradv[cell_id][k][2]*diipbv[2]);
+
+          }
 
           /*-----------------
             X-Y-Z components, p = u, v, w */
-          for (int isou = 0; isou < 3; isou++) {
+          for (int i = 0; i < 3; i++) {
 
-            cs_real_t pfacd = inc*cofafv[face_id][isou];
+            cs_real_t pfacd = inc*cofafv[face_id][i];
 
-            cs_real_t pipr[3];
+            /*coefu and cofuf and b_visc are matrices */
+            for (int j = 0; j < 3; j++) {
 
-            /*coefu and cofuf are matrices */
-            for (int jsou = 0; jsou < 3; jsou++) {
-              cs_real_t pir  =   _pvar[ii][jsou]/relaxp
-                               - (1.-relaxp)/relaxp*pvara[ii][jsou];
-
-              pipr[jsou] = pir +ircflp*(  gradv[ii][jsou][0]*diipbv[0]
-                                        + gradv[ii][jsou][1]*diipbv[1]
-                                        + gradv[ii][jsou][2]*diipbv[2]);
-              pfacd += cofbfv[face_id][jsou][isou]*pipr[jsou];
+              pfacd += cofbfv[face_id][i][j]*pipr[j];
             }
 
-            cs_real_t flux = b_visc[face_id]*pfacd;
-            rhs[ii][isou] = rhs[ii][isou] - flux;
+            rhs[cell_id][i] -= b_visc[face_id] * pfacd;
 
-          } /* isou */
+          } /* i */
 
         }
       }
@@ -8084,32 +8102,31 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id];
+          cs_lnum_t cell_id = b_face_cells[face_id];
 
           cs_real_t diipbv[3];
 
-          for (int jsou = 0; jsou < 3; jsou++)
-            diipbv[jsou] = diipb[face_id][jsou];
+          for (int k = 0; k < 3; k++)
+            diipbv[k] = diipb[face_id][k];
 
           /*-----------------
             X-Y-Z components, p = u, v, w */
-          for (int isou = 0; isou < 3; isou++) {
+          for (int i = 0; i < 3; i++) {
 
-            cs_real_t pfacd = inc*cofafv[face_id][isou];
+            cs_real_t pfacd = inc*cofafv[face_id][i];
 
             /*coefu and cofuf are matrices */
-            for (int jsou = 0; jsou < 3; jsou++) {
-              cs_real_t pir =   _pvar[ii][jsou]
-                              + ircflp*(  gradv[ii][jsou][0]*diipbv[0]
-                                        + gradv[ii][jsou][1]*diipbv[1]
-                                        + gradv[ii][jsou][2]*diipbv[2]);
-              pfacd += cofbfv[face_id][jsou][isou]*pir;
+            for (int j = 0; j < 3; j++) {
+              cs_real_t pir =   _pvar[cell_id][j]
+                              + ircflp*(  gradv[cell_id][j][0]*diipbv[0]
+                                        + gradv[cell_id][j][1]*diipbv[1]
+                                        + gradv[cell_id][j][2]*diipbv[2]);
+              pfacd += cofbfv[face_id][j][i]*pir;
             }
 
-            cs_real_t flux = b_visc[face_id]*pfacd;
-            rhs[ii][isou] -= thetap * flux;
+            rhs[cell_id][i] -= thetap * b_visc[face_id] * pfacd;
 
-          } /* isou */
+          } /* i */
 
         }
       }
@@ -8160,7 +8177,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
           cs_lnum_t jj = i_face_cells[face_id][1];
 
           cs_real_t pnd = weight[face_id];
-          cs_real_t secvis = secvif[face_id];
+          cs_real_t secvis = i_secvis[face_id];
 
           cs_real_t grdtrv
             =        pnd*(gradv[ii][0][0]+gradv[ii][1][1]+gradv[ii][2][2])
@@ -8168,7 +8185,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
           for (int i = 0; i < 3; i++) {
 
-            cs_real_t flux = secvis*grdtrv*i_f_face_normal[ face_id][i];
+            cs_real_t flux = secvis*grdtrv*i_f_face_normal[face_id][i];
 
             /* We need to compute (K grad(u)^T) .IJ
                which is equal to IJ . (grad(u) . K^T)
@@ -8177,14 +8194,14 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
             for (int j = 0; j < 3; j++) {
               for (int k = 0; k < 3; k++) {
-                flux = flux + dijpf[face_id][k]
+                flux += dijpf[face_id][k]
                             *(pnd*gradv[ii][k][j]+(1-pnd)*gradv[jj][k][j])
                             *i_visc[face_id][i][j];
               }
             }
 
-            rhs[ii][i] = rhs[ii][i] + flux*bndcel[ii];
-            rhs[jj][i] = rhs[jj][i] - flux*bndcel[jj];
+            rhs[ii][i] += flux*bndcel[ii];
+            rhs[jj][i] -= flux*bndcel[jj];
 
           }
 
@@ -8245,7 +8262,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     secvif        secondary viscosity at interior faces
+ * \param[in]     i_secvis      secondary viscosity at interior faces
  * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
@@ -8268,7 +8285,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
                                       const cs_real_33_t          cofbfv[],
                                       const cs_real_t             i_visc[],
                                       const cs_real_t             b_visc[],
-                                      const cs_real_t             secvif[],
+                                      const cs_real_t             i_secvis[],
                                       cs_real_6_t     *restrict   viscel,
                                       const cs_real_2_t           weighf[],
                                       const cs_real_t             weighb[],

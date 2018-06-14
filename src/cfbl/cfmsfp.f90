@@ -214,6 +214,14 @@ enddo
 itsqdm = 0
 if (itsqdm.ne.0) then
 
+  if (ivisse.eq.1) then
+
+    call visecv &
+ ( secvif , secvib )
+
+  endif
+
+
   ! --- User source term
   call ustsnv &
   !==========
@@ -294,7 +302,6 @@ if (itsqdm.ne.0) then
         enddo
 
         call vistnv (imvisf, viscce, viscf, viscb)
-        !==========
 
      endif
 
@@ -307,13 +314,6 @@ if (itsqdm.ne.0) then
      do ifac = 1, nfabor
        viscb(ifac) = 0.d0
      enddo
-
-  endif
-
-  if (ivisse.eq.1) then
-
-    call visecv &
- ( secvif , secvib )
 
   endif
 

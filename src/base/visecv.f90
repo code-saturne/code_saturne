@@ -114,7 +114,7 @@ if (ippmod(icompf).ge.0) then
 endif
 
 !===============================================================================
-! 2. COMPUTATION OF THE SECOND VISCOSITY: LAMBDA = K -2/3 MU
+! 2. Computation of the second viscosity: lambda = K -2/3 mu
 !===============================================================================
 
 !  Ici pour l'ordre 2 en temps, il faudrait tout prendre en n...
@@ -169,11 +169,10 @@ if (iporos.eq.1.or.iporos.eq.2) then
 endif
 
 
-! ---> PARALLELISM AND PERIODICITY TREATMENT
+! ---> Parallelism and periodicity treatmenT
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(secvis)
-  !==========
 endif
 
 ! --- Interior faces
