@@ -809,7 +809,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
                         csys, cb);                                   // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-      if (_test_debug_cellwise(cm))
+      if (cs_dbg_cw_test(cm))
         cs_cell_mesh_dump(cm);
 #endif
 
@@ -840,7 +840,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
         } // Border cell
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-        if (_test_debug_cellwise(cm))
+        if (cs_dbg_cw_test(cm))
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
       } /* END OF DIFFUSION */
@@ -861,7 +861,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
           eqc->add_advection_bc(cm, eqp, t_eval_pty, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-        if (_test_debug_cellwise(cm))
+        if (cs_dbg_cw_test(cm))
           cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
 #endif
       } /* END OF ADVECTION */
@@ -952,7 +952,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
       } /* END OF TIME CONTRIBUTION */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (_test_debug_cellwise(cm))
+      if (cs_dbg_cw_test(cm))
         cs_cell_sys_dump(">> Local system matrix before condensation",
                          c_id, csys);
 #endif
@@ -987,7 +987,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
-      if (_test_debug_cellwise(cm))
+      if (cs_dbg_cw_test(cm))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 

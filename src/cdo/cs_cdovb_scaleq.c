@@ -861,7 +861,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
                         csys, cb);                                   // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-      if (_test_debug_cellwise(cm)) cs_cell_mesh_dump(cm);
+      if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
 #endif
 
       /* DIFFUSION TERM */
@@ -889,7 +889,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
                                  fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-        if (_test_debug_cellwise(cm))
+        if (cs_dbg_cw_test(cm))
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
       } /* END OF DIFFUSION */
@@ -910,7 +910,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
           eqc->add_advection_bc(cm, eqp, t_eval_pty, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-        if (_test_debug_cellwise(cm))
+        if (cs_dbg_cw_test(cm))
           cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
 #endif
 
@@ -920,7 +920,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
         eqc->get_mass_matrix(eqc->hdg_mass, cm, cb); // stored in cb->hdg
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-        if (_test_debug_cellwise(cm)) {
+        if (cs_dbg_cw_test(cm)) {
           cs_log_printf(CS_LOG_DEFAULT, ">> Local mass matrix");
           cs_sdm_dump(c_id, csys->dof_ids, csys->dof_ids, cb->hdg);
         }
@@ -1016,7 +1016,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-      if (_test_debug_cellwise(cm))
+      if (cs_dbg_cw_test(cm))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
@@ -1756,8 +1756,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      if (_test_debug_cellwise(cm))
-        cs_cell_mesh_dump(cm);
+      if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
 #endif
 
       if (!eqb->diff_pty_uniform) {

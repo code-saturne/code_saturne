@@ -1060,7 +1060,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
                         hhob, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 2
-      if (_test_debug_cellwise(cm)) cs_cell_mesh_dump(cm);
+      if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
 #endif
 
       const short int  face_offset = cm->n_fc*eqc->n_face_dofs;
@@ -1084,7 +1084,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
         cs_sdm_block_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 1
-        if (_test_debug_cellwise(cm))
+        if (cs_dbg_cw_test(cm))
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
       } /* END OF DIFFUSION */
@@ -1132,7 +1132,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       } /* End of term source contribution */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 1
-      if (_test_debug_cellwise(cm))
+      if (cs_dbg_cw_test(cm))
         cs_cell_sys_dump(">> Local system matrix before condensation",
                          c_id, csys);
 #endif
@@ -1162,7 +1162,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 0
-      if (_test_debug_cellwise(cm)) {
+      if (cs_dbg_cw_test(cm)) {
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
         printf(" (FINAL STATE) HHO local system for cell_id = 0\n");
         cs_sdm_block_fprintf(NULL, NULL, 1e-16, csys->mat);
@@ -1301,6 +1301,15 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
 
   /* Set the computed solution in field array */
   memcpy(eqc->face_values, solu, sizeof(cs_real_t)*eqc->n_dofs);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 2
+  cs_dbg_darray_to_listing("FINAL FACE_VALUES",
+                           eqc->n_dofs, eqc->face_values, eqc->n_face_dofs);
+  cs_dbg_darray_to_listing("FINAL CELL_VALUES", quant->n_cells,
+                             eqc->cell_values, eqc->n_cell_dofs);
+  cs_dbg_darray_to_listing("FINAL CELL_CENTER_VALUES", quant->n_cells,
+                             field_val, 1);
+#endif
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

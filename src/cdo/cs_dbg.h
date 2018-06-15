@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_H__
-#define __CS_CDO_H__
+#ifndef __CS_DBG_H__
+#define __CS_DBG_H__
 
 /*============================================================================
  * General functions or variables for the INNOV module
@@ -29,7 +29,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include <float.h>
+
 #include "cs_base.h"
+#include "cs_cdo_bc.h"
 #include "cs_cdo_local.h"
 #include "cs_defs.h"
 #include "cs_math.h"
@@ -50,9 +53,22 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+/*============================================================================
+ * Static inline function prototypes
+ *============================================================================*/
+
 #if defined(DEBUG) && !defined(NDEBUG)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Function used to select which element deserves a dump or specific
+ *          treatment during a debugging stage
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t  structure
+ */
+/*----------------------------------------------------------------------------*/
+
 static inline bool
-_test_debug_cellwise(const cs_cell_mesh_t  *cm)
+cs_dbg_cw_test(const cs_cell_mesh_t  *cm)
 {
   if (cm->xc[0] > 0.75 && cm->xc[2] > 0.75 && cm->xc[1] > 0.85)
     return true;
@@ -60,9 +76,27 @@ _test_debug_cellwise(const cs_cell_mesh_t  *cm)
     return false;
 }
 
-/*============================================================================
- * Static inline function prototypes
- *============================================================================*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Check if there is no invalid setting for a homogeneous Dirichlet
+ *
+ * \param[in]  fname      name of the calling function
+ * \param[in]  csys       pointer to a cs_cell_mesh_t  structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_dbg_check_hmg_dirichlet_cw(const char           *fname,
+                              const cs_cell_sys_t  *csys)
+{
+  for (short int i = 0; i < csys->n_dofs; i++) {
+    if (csys->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
+      if (fabs(csys->dir_values[i]) > 100*DBL_MIN)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid value for a homogeneous Dirichlet condition",
+                  fname);
+  }
+}
 
 /*============================================================================
  * Public function prototypes
@@ -158,4 +192,4 @@ cs_dbg_dump_linear_system(const char        *eqname,
 
 END_C_DECLS
 
-#endif /* __CS_CDO_H__ */
+#endif /* __CS_DBG_H__ */
