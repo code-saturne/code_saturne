@@ -247,6 +247,7 @@ cs_cell_sys_create(int          n_max_dofbyc,
   BFT_MALLOC(csys, 1, cs_cell_sys_t);
 
   /* Metadata about DoFs */
+  csys->cell_flag = 0;
   csys->c_id = -1;
   csys->n_dofs = 0;
   csys->dof_ids = NULL;
@@ -259,6 +260,7 @@ cs_cell_sys_create(int          n_max_dofbyc,
   csys->val_n = NULL;
 
   /* Boundary conditions */
+  csys->face_shift = -1;
   csys->n_bc_faces = 0;
   csys->_f_ids = NULL;
   csys->bf_ids = NULL;
@@ -426,7 +428,7 @@ cs_cell_sys_dump(const char             msg[],
     cs_log_printf(CS_LOG_DEFAULT, "\n>> %-10s | %-10s | %-10s | %-10s\n",
                   "IDS", "RHS", "TS", "VAL_PREV");
     for (int i = 0; i < csys->n_dofs; i++)
-      cs_log_printf(CS_LOG_DEFAULT, ">> %10d | % .3e | % .3e | % .3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, ">> %10d | % -.3e | % -.3e | % -.3e\n",
                     csys->dof_ids[i], csys->rhs[i], csys->source[i],
                     csys->val_n[i]);
   }

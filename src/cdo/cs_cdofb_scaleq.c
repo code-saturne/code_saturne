@@ -176,14 +176,17 @@ _init_cell_system(const cs_flag_t               cell_flag,
   /* Initialize the local system */
   cs_cell_sys_reset(cell_flag, n_dofs, cm->n_fc, csys);
 
+  csys->cell_flag = cell_flag;
+  csys->face_shift = cs_shared_connect->n_faces[2]; /* shift = n_i_faces */
   csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
+
   cs_sdm_square_init(n_dofs, csys->mat);
+
   for (short int f = 0; f < cm->n_fc; f++) {
     csys->dof_ids[f] = cm->f_ids[f];
     csys->val_n[f] = eqc->face_values[cm->f_ids[f]];
   }
-
   csys->dof_ids[cm->n_fc] = cm->c_id;
   csys->val_n[cm->n_fc] = field_tn[cm->c_id];
 
@@ -208,36 +211,22 @@ _init_cell_system(const cs_flag_t               cell_flag,
      has at least one border face */
   if (cell_flag & CS_FLAG_BOUNDARY) {
 
-    const cs_cdo_connect_t  *connect = cs_shared_connect;
+    /* Set the generic part */
+    cs_equation_init_cell_sys_bc(eqb, cm, csys);
 
-    /* Identify which face is a boundary face */
-    for (short int f = 0; f < cm->n_fc; f++) {
-
-      const cs_lnum_t  bf_id = cm->f_ids[f] - connect->n_faces[2]; // n_i_faces
-      if (bf_id > -1) // Border face
-        cs_equation_fb_set_cell_bc(bf_id, f,
-                                   eqb->face_bc->flag[bf_id],
-                                   cm,
-                                   connect,
-                                   cs_shared_quant,
-                                   eqp,
-                                   dir_values,
-                                   neu_tags,
-                                   t_eval,
-                                   csys,
-                                   cb);
-
-    } // Loop on cell faces
+    cs_equation_fb_set_cell_bc(cm,
+                               cs_shared_connect,
+                               cs_shared_quant,
+                               eqp,
+                               dir_values,
+                               neu_tags,
+                               t_eval,
+                               csys,
+                               cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
-    for (short int f = 0; f < cm->n_fc; f++) {
-      if (csys->dof_flag[f] & CS_CDO_BC_HMG_DIRICHLET)
-        if (fabs(csys->dir_values[f]) > 10*DBL_MIN)
-          bft_error(__FILE__, __LINE__, 0,
-                    "Invalid enforcement of Dirichlet BCs on faces");
-    }
+    cs_dbg_check_hmg_dirichlet_cw(__func__, csys);
 #endif
-
   } /* Border cell */
 
 }

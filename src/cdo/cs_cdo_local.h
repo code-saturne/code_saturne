@@ -93,35 +93,40 @@ typedef struct {
 /* Structure used to store a local system (cell-wise for instance) */
 typedef struct {
 
-  cs_lnum_t      c_id;     // cell id
+  cs_lnum_t      c_id;       /* cell id */
+  cs_flag_t      cell_flag;  /* matadata related to the cell */
 
-  int            n_dofs;   // Number of Degrees of Freedom (DoFs) in this cell
-  cs_lnum_t     *dof_ids;  // DoF ids
-  cs_flag_t     *dof_flag; // size = number of DoFs
+  /* Number of Degrees of Freedom (DoFs) in this cell */
+  int            n_dofs;
 
-  cs_sdm_t      *mat;      // cellwise view of the system matrix
-  double        *rhs;      // cellwise view of the right-hand side
-  double        *source;   // cellwise view of the source term array
+  cs_lnum_t     *dof_ids;  /* DoF ids */
+  cs_flag_t     *dof_flag; /* size = number of DoFs */
+
+  cs_sdm_t      *mat;      /* cellwise view of the system matrix */
+  double        *rhs;      /* cellwise view of the right-hand side */
+  double        *source;   /* cellwise view of the source term array */
   double        *val_n;    /* values of the unkown at the time t_n (the
                               last computed) */
 
   /* Boundary conditions for the local system */
-  short int   n_bc_faces;    // Number of border faces associated to a cell
-  short int  *_f_ids;        // List of face ids in the cell numbering
-  cs_lnum_t  *bf_ids;        // List of face ids in the border face numbering
-  cs_flag_t  *bf_flag;       // size n_bc_faces
+  cs_lnum_t   face_shift;    /* value of the shift related to the border face
+                                numbering */
+  short int   n_bc_faces;    /* Number of border faces associated to a cell */
+  short int  *_f_ids;        /* List of face ids in the cell numbering */
+  cs_lnum_t  *bf_ids;        /* List of face ids in the border face numbering */
+  cs_flag_t  *bf_flag;       /* size n_bc_faces */
 
   /* Dirichlet BCs */
   bool        has_dirichlet;
-  double     *dir_values;    // Values of the Dirichlet BCs (size = n_dofs)
+  double     *dir_values;    /* Values of the Dirichlet BCs (size = n_dofs) */
 
   /* Neumann BCs */
   bool        has_nhmg_neumann; /* Non-homogeneous Neumann BCs */
-  double     *neu_values;       // Values of the Neumann BCs (size = n_dofs)
+  double     *neu_values;       /* Values of the Neumann BCs (size = n_dofs) */
 
   /* Robin BCs */
   bool        has_robin;
-  double     *rob_values;    // Values of the Robin BCs (size = 2*n_dofs)
+  double     *rob_values;    /* Values of the Robin BCs (size = 2*n_dofs) */
 
 } cs_cell_sys_t;
 

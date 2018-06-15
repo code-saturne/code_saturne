@@ -78,9 +78,6 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                   t_eval,
  * \brief   Set the BC into a cellwise view of the current system.
  *          Case of vertex-based schemes
  *
- * \param[in]      bf_id       id of the border face
- * \param[in]      f           id of the current face in a cellwise numbering
- * \param[in]      face_flag   metadata about the current face
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
@@ -94,10 +91,7 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                   t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
-                           short int                     f,
-                           cs_flag_t                     face_flag,
-                           const cs_cell_mesh_t         *cm,
+cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            const cs_cdo_connect_t       *connect,
                            const cs_cdo_quantities_t    *quant,
                            const cs_equation_param_t    *eqp,
@@ -112,9 +106,6 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
  * \brief   Set the BC into a cellwise view of the current system.
  *          Case of Face-based schemes
  *
- * \param[in]      bf_id       id of the border face
- * \param[in]      f           id of the current face in a cellwise numbering
- * \param[in]      face_flag   metadata about the current face
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
@@ -128,10 +119,7 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
-                           short int                     f,
-                           cs_flag_t                     face_flag,
-                           const cs_cell_mesh_t         *cm,
+cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            const cs_cdo_connect_t       *connect,
                            const cs_cdo_quantities_t    *quant,
                            const cs_equation_param_t    *eqp,

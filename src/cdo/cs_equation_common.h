@@ -282,6 +282,23 @@ cs_equation_write_monitoring(const char                    *eqname,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set members of the cs_cell_sys_t structure related to the boundary
+ *         conditions. Only the generic part is done here. The remaining part
+ *         is performed in _init_cell_system() for each scheme
+ *
+ * \param[in]      eqb       pointer to a cs_equation_builder_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in, out] csys      pointer to a cs_cell_system_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_init_cell_sys_bc(const cs_equation_builder_t   *eqb,
+                             const cs_cell_mesh_t          *cm,
+                             cs_cell_sys_t                 *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize all properties for an algebraic system
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure

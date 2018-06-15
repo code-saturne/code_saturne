@@ -225,9 +225,6 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
  * \brief   Set the BC into a cellwise view of the current system.
  *          Case of vertex-based schemes
  *
- * \param[in]      bf_id       id of the border face
- * \param[in]      f           id of the current face in a cellwise numbering
- * \param[in]      face_flag   metadata about the current face
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
@@ -241,10 +238,7 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
-                           short int                     f,
-                           cs_flag_t                     face_flag,
-                           const cs_cell_mesh_t         *cm,
+cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            const cs_cdo_connect_t       *connect,
                            const cs_cdo_quantities_t    *quant,
                            const cs_equation_param_t    *eqp,
@@ -259,52 +253,61 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
   /* Sanity check */
   assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
-  /* Identify which face is a boundary face */
+  const int  d = eqp->dim;
   short int  n_vf;
 
-  csys->bf_flag[csys->n_bc_faces] = face_flag;
-  csys->bf_ids[csys->n_bc_faces] = bf_id;
-  csys->_f_ids[csys->n_bc_faces++] = f;
+  /* Identify which face is a boundary face */
+  for (short int f = 0; f < cm->n_fc; f++) {
+    if (csys->bf_ids[f] > -1) { /* This a boundary face */
 
-  cs_cell_mesh_get_f2v(f, cm, &n_vf, cb->ids);
-  assert(n_vf == cm->f2e_idx[f+1] - cm->f2e_idx[f]);
+      short int  *_v_ids = cb->ids;
+      cs_cell_mesh_get_f2v(f, cm, &n_vf, _v_ids);
+      assert(n_vf == cm->f2e_idx[f+1] - cm->f2e_idx[f]);
 
-  if (face_flag & CS_CDO_BC_HMG_DIRICHLET) {
+      if (csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
 
-    csys->has_dirichlet = true;
-    for (short int i = 0; i < n_vf; i++)
-      csys->dof_flag[cb->ids[i]] |= CS_CDO_BC_HMG_DIRICHLET;
+        csys->has_dirichlet = true;
+        for (short int i = 0; i < n_vf; i++)
+          for (int k = 0; k < d; k++)
+            csys->dof_flag[d*_v_ids[i]+k] |= CS_CDO_BC_HMG_DIRICHLET;
 
-  }
-  else if (face_flag & CS_CDO_BC_DIRICHLET) {
+      }
+      else if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
 
-    csys->has_dirichlet = true;
-    for (short int i = 0; i < n_vf; i++) {
-      short int  v = cb->ids[i];
-      csys->dir_values[v] = dir_values[cm->v_ids[v]];
-      csys->dof_flag[v] |= CS_CDO_BC_DIRICHLET;
-    }
+        csys->has_dirichlet = true;
+        for (short int i = 0; i < n_vf; i++) {
+          short int v = _v_ids[i];
+          for (int k = 0; k < d; k++) {
+            csys->dir_values[d*v+k] = dir_values[d*cm->v_ids[v]+k];
+            csys->dof_flag[d*v+k] |= CS_CDO_BC_DIRICHLET;
+          }
+        }
 
-  }
-  else if (face_flag & CS_CDO_BC_NEUMANN) {
+      }
+      else if (csys->bf_flag[f] & CS_CDO_BC_NEUMANN) {
 
-    csys->has_nhmg_neumann = true;
-    for (short int i = 0; i < n_vf; i++)
-      csys->dof_flag[cb->ids[i]] |= CS_CDO_BC_NEUMANN;
+        csys->has_nhmg_neumann = true;
+        for (short int i = 0; i < n_vf; i++)
+          for (int k = 0; k < d; k++)
+            csys->dof_flag[d*_v_ids[i]+k] |= CS_CDO_BC_NEUMANN;
 
-    cs_equation_compute_neumann_sv(neu_tags[bf_id],
-                                   f,
-                                   quant,
-                                   eqp,
-                                   cm,
-                                   cb->ids,
-                                   t_eval,
-                                   csys->neu_values);
+        cs_equation_compute_neumann_sv(neu_tags[csys->bf_ids[f]],
+                                       f,
+                                       quant,
+                                       eqp,
+                                       cm,
+                                       cb->ids,
+                                       t_eval,
+                                       csys->neu_values);
 
-  }
-  else if (face_flag & CS_CDO_BC_ROBIN) {
-    csys->has_robin = true;
-  }
+      }
+      else if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
+        csys->has_robin = true;
+        /* TODO */
+      }
+
+    } /* Boundary face */
+  } /* Loop on cell faces */
 
 }
 
@@ -313,9 +316,6 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
  * \brief   Set the BC into a cellwise view of the current system.
  *          Case of Face-based schemes
  *
- * \param[in]      bf_id       id of the border face
- * \param[in]      f           id of the current face in a cellwise numbering
- * \param[in]      face_flag   metadata about the current face
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
@@ -329,10 +329,7 @@ cs_equation_vb_set_cell_bc(cs_lnum_t                     bf_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
-                           short int                     f,
-                           cs_flag_t                     face_flag,
-                           const cs_cell_mesh_t         *cm,
+cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            const cs_cdo_connect_t       *connect,
                            const cs_cdo_quantities_t    *quant,
                            const cs_equation_param_t    *eqp,
@@ -345,45 +342,51 @@ cs_equation_fb_set_cell_bc(cs_lnum_t                     bf_id,
   CS_UNUSED(connect);
   CS_UNUSED(cb);
 
-  csys->bf_flag[csys->n_bc_faces] = face_flag;
-  csys->bf_ids[csys->n_bc_faces] = bf_id;
-  csys->_f_ids[csys->n_bc_faces++] = f;
+  const int  d = eqp->dim;
 
-  if (face_flag & CS_CDO_BC_HMG_DIRICHLET) {
+  /* Identify which face is a boundary face */
+  for (short int f = 0; f < cm->n_fc; f++) {
+    if (csys->bf_ids[f] > -1) { /* This a boundary face */
 
-    csys->has_dirichlet = true;
-    for (int k = 0; k < eqp->dim; k++)
-      csys->dof_flag[eqp->dim*f + k] |= CS_CDO_BC_HMG_DIRICHLET;
+      if (csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
 
-  }
-  else if (face_flag & CS_CDO_BC_DIRICHLET) {
+        csys->has_dirichlet = true;
+        for (int k = 0; k < d; k++)
+          csys->dof_flag[d*f + k] |= CS_CDO_BC_HMG_DIRICHLET;
 
-    csys->has_dirichlet = true;
-    for (int k = 0; k < eqp->dim; k++) {
-      csys->dof_flag[eqp->dim*f + k] |= CS_CDO_BC_DIRICHLET;
-      csys->dir_values[eqp->dim*f + k] = dir_values[eqp->dim*bf_id + k];
-    }
+      }
+      else if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
 
-  }
-  else if (face_flag & CS_CDO_BC_NEUMANN) {
+        csys->has_dirichlet = true;
+        for (int k = 0; k < d; k++) {
+          csys->dof_flag[d*f + k] |= CS_CDO_BC_DIRICHLET;
+          csys->dir_values[d*f + k] = dir_values[d*csys->bf_ids[f] + k];
+        }
 
-    csys->has_nhmg_neumann = true;
-    for (int k = 0; k < eqp->dim; k++)
-      csys->dof_flag[eqp->dim*f + k] |= CS_CDO_BC_NEUMANN;
+      }
+      else if (csys->bf_flag[f] & CS_CDO_BC_NEUMANN) {
 
-    cs_equation_compute_neumann_fb(neu_tags[bf_id], f,
-                                   quant,
-                                   eqp, cm,
-                                   t_eval,
-                                   csys->neu_values);
+        csys->has_nhmg_neumann = true;
+        for (int k = 0; k < d; k++)
+          csys->dof_flag[d*f + k] |= CS_CDO_BC_NEUMANN;
 
-  }
-  else if (face_flag & CS_CDO_BC_ROBIN) {
-    csys->has_robin = true;
-    /* TODO */
-    bft_error(__FILE__, __LINE__, 0, "%s: TODO", __func__);
-  }
+        cs_equation_compute_neumann_fb(neu_tags[csys->bf_ids[f]],
+                                       f,
+                                       quant,
+                                       eqp,
+                                       cm,
+                                       t_eval,
+                                       csys->neu_values);
 
+      }
+      else if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
+        csys->has_robin = true;
+        /* TODO */
+        bft_error(__FILE__, __LINE__, 0, "%s: TODO", __func__);
+      }
+
+    } /* Boundary face */
+  } /* Loop on cell faces */
 }
 
 /*----------------------------------------------------------------------------*/
