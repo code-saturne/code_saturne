@@ -99,7 +99,7 @@ _assign_vb_dirichlet_values(int                dim,
                             _Bool              is_constant,
                             cs_real_t         *vvals,
                             cs_flag_t          flag[],
-                            cs_flag_t          counter[])
+                            int                counter[])
 {
   switch (dim) {
 
@@ -422,10 +422,11 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
   const cs_lnum_t  *bf2v_idx = mesh->b_face_vtx_idx;
   const cs_lnum_t  *bf2v_lst = mesh->b_face_vtx_lst;
 
-  cs_flag_t  *flag = NULL, *counter = NULL;
+  cs_flag_t  *flag = NULL;
+  int  *counter = NULL;
 
   /* Initialization */
-  BFT_MALLOC(counter, quant->n_vertices, cs_flag_t);
+  BFT_MALLOC(counter, quant->n_vertices, int);
   BFT_MALLOC(flag, quant->n_vertices, cs_flag_t);
 
 # pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
@@ -465,7 +466,9 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
       _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
                                   (const cs_real_t *)def->input,
                                   true, /* is constant for all vertices ? */
-                                  values, flag, counter);
+                                  values,
+                                  flag,
+                                  counter);
       break;
 
     case CS_XDEF_BY_ARRAY:
@@ -486,7 +489,9 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
         _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
                                     eval,
                                     false, /* is constant for all vertices ? */
-                                    values, flag, counter);
+                                    values,
+                                    flag,
+                                    counter);
 
       }
       break; /* By array */
@@ -509,7 +514,9 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
         _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
                                     eval,
                                     false, /* is constant for all vertices ? */
-                                    values, flag, counter);
+                                    values,
+                                    flag,
+                                    counter);
       }
       break;
 
@@ -537,24 +544,26 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 
+    assert(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL);
+
     cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          quant->n_vertices,
-                         1,            // stride
-                         false,        // interlace (not useful here)
-                         CS_FLAG_TYPE, // unsigned short int
+                         1,             /* stride */
+                         false,         /* interlace (not useful here) */
+                         CS_FLAG_TYPE,  /* unsigned short int */
                          flag);
 
     cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          quant->n_vertices,
-                         1,            // stride
-                         false,        // interlace (not useful here)
-                         CS_FLAG_TYPE, // unsigned short int
+                         1,             /* stride */
+                         false,         /* interlace (not useful here) */
+                         CS_INT_TYPE,   /* int */
                          counter);
 
     cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          quant->n_vertices,
-                         eqp->dim,     // stride
-                         false,        // interlace (not useful here)
+                         eqp->dim,       /* stride */
+                         true,           /* interlace */
                          CS_REAL_TYPE,
                          values);
 
@@ -591,7 +600,7 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
       else if (flag[v_id] & CS_CDO_BC_DIRICHLET) {
         assert(counter[v_id] > 0);
         if (counter[v_id] > 1) {
-          const cs_real_t  inv_count = counter[v_id];
+          const cs_real_t  inv_count = 1./counter[v_id];
           for (int j = 0; j < eqp->dim; j++)
             values[eqp->dim*v_id + j] *= inv_count;
         }

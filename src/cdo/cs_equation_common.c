@@ -377,57 +377,95 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
   const cs_lnum_t  n_vertices = connect->n_vertices;
 
   /* Allocate shared buffer and initialize shared structures */
-  size_t  cwb_size = 2*n_cells; // initial cell-wise buffer size
+  size_t  cwb_size = n_cells; // initial cell-wise buffer size
 
   /* Allocate and initialize matrix assembler and matrix structures */
-  if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
-      cc->vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
+  if (cc->vb_scheme_flag > 0 || cc->vcb_scheme_flag > 0) {
 
     cs_timer_t t0 = cs_timer_time();
 
     /* Build the "v2v" connectivity index */
     cs_connect_v2v = _get_v2v(connect);
 
-    /* Monitoring */
-    cs_timer_t t1 = cs_timer_time();
-    cs_timer_counter_add_diff(&tcc, &t0, &t1);
+    if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
+        cc->vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
-    const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+      /* Monitoring */
+      cs_timer_t t1 = cs_timer_time();
+      cs_timer_counter_add_diff(&tcc, &t0, &t1);
 
-    cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices,
-                                                         1,
-                                                         cs_connect_v2v,
-                                                         rs);
-    cs_matrix_structure_t  *ms =
-      cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
 
+      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices,
+                                                           1,
+                                                           cs_connect_v2v,
+                                                           rs);
+      cs_matrix_structure_t  *ms =
+        cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
-    /* Monitoring */
-    cs_timer_t t2 = cs_timer_time();
-    cs_timer_counter_add_diff(&tca, &t1, &t2);
+      /* Monitoring */
+      cs_timer_t t2 = cs_timer_time();
+      cs_timer_counter_add_diff(&tca, &t1, &t2);
 
-    cs_equation_common_ma[CS_CDO_CONNECT_VTX_SCAL] = ma;
-    cs_equation_common_ms[CS_CDO_CONNECT_VTX_SCAL] = ms;
+      cs_equation_common_ma[CS_CDO_CONNECT_VTX_SCAL] = ma;
+      cs_equation_common_ms[CS_CDO_CONNECT_VTX_SCAL] = ms;
 
-    if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
+      if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
-      cwb_size = CS_MAX(cwb_size, (size_t)3*n_vertices);
+        cwb_size = CS_MAX(cwb_size, (size_t)n_vertices);
 
-      /* Initialize additional structures */
-      cs_cdovb_scaleq_init_common(quant, connect, time_step, ms);
+        /* Initialize additional structures */
+        cs_cdovb_scaleq_init_common(quant, connect, time_step, ms);
 
-    }
+      }
 
-    if (cc->vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
+      if (cc->vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
-      cwb_size = CS_MAX(cwb_size, (size_t)2*(n_vertices + n_cells));
+        cwb_size = CS_MAX(cwb_size, (size_t)(n_vertices + n_cells));
 
-      /* Initialize additional structures */
-      cs_cdovcb_scaleq_init_common(quant, connect, time_step, ms);
+        /* Initialize additional structures */
+        cs_cdovcb_scaleq_init_common(quant, connect, time_step, ms);
 
-    }
+      }
 
-  } // Vertex-based schemes and related ones
+    } /* scalar-valued equations */
+
+    if (cc->vb_scheme_flag & CS_FLAG_SCHEME_VECTOR ||
+        cc->vcb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
+
+      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
+
+      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices,
+                                                           3,
+                                                           cs_connect_v2v,
+                                                           rs);
+      cs_matrix_structure_t  *ms =
+        cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+
+      cs_equation_common_ma[CS_CDO_CONNECT_VTX_VECT] = ma;
+      cs_equation_common_ms[CS_CDO_CONNECT_VTX_VECT] = ms;
+
+      if (cc->vb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
+
+        cwb_size = CS_MAX(cwb_size, (size_t)3*n_vertices);
+
+        /* Initialize additional structures */
+        cs_cdovb_vecteq_init_common(quant, connect, time_step, ms);
+
+      }
+
+      if (cc->vcb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
+
+        cwb_size = CS_MAX(cwb_size, (size_t)3*(n_vertices + n_cells));
+
+        /* Initialize additional structures */
+        /* cs_cdovcb_vecteq_init_common(quant, connect, time_step, ms); */
+
+      }
+
+    } /* vector-valued equations */
+
+  } /* Vertex-based schemes and related ones */
 
   if (cc->fb_scheme_flag > 0 || cc->hho_scheme_flag > 0) {
 
@@ -459,7 +497,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       if (cc->fb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
         assert(n_faces > n_cells);
-        cwb_size = CS_MAX(cwb_size, (size_t)3*n_faces);
+        cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
 
         /* Initialize additional structures */
         cs_cdofb_scaleq_init_common(quant, connect, time_step, ms0);
@@ -635,6 +673,9 @@ cs_equation_common_free(const cs_domain_cdo_context_t   *cc)
     /* Free common structures specific to a numerical scheme */
   if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_cdovb_scaleq_finalize_common();
+
+  if (cc->vb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+    cs_cdovb_vecteq_finalize_common();
 
   if (cc->vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_cdovcb_scaleq_finalize_common();

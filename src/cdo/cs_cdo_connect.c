@@ -849,13 +849,13 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
 
   switch (n_vtx_dofs) {
 
-  case 1:                       /* Scalar-valued */
-    ifs = mesh->vtx_interfaces;
+  case 1: /* Scalar-valued */
+    ifs = *p_ifs;               /* Should be already set */
     rs = cs_range_set_create(ifs,
                              NULL,
                              n_vertices,
-                             false,   // TODO: Ask Yvan
-                             0);      // g_id_base
+                             false,    /* TODO: Ask Yvan */
+                             0);       /* g_id_base */
     break;
 
   default:
@@ -892,8 +892,8 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
       rs = cs_range_set_create(ifs,
                                NULL,
                                n_elts,
-                               false,  //TODO: Ask Yvan
-                               0);     // g_id_base
+                               false,  /* TODO: Ask Yvan */
+                               0);      /* g_id_base */
 
       /* Free memory */
       BFT_FREE(v_gnum);
@@ -1010,6 +1010,9 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
     connect->interfaces[i] = NULL;
   }
 
+  /* Already defined. */
+  connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] = mesh->vtx_interfaces;
+
   /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
   if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
       vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
@@ -1111,12 +1114,14 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   BFT_FREE(connect->cell_flag);
 
   /* Structures for parallelism */
+  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_VTX_VECT);
   cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP0);
   cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP1);
   cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP2);
   cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_VHP1);
   cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_VHP2);
 
+  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_VTX_VECT);
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP0);
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP1);
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP2);
