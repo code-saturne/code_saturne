@@ -781,6 +781,9 @@ cs_cdo_finalize(cs_domain_t    *domain)
   /* Free common structures relatated to equations */
   cs_equation_common_free(domain->cdo_context);
 
+  /* Set flag to OFF */
+  cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
+
   cs_log_printf(CS_LOG_DEFAULT,
                 "\n  Finalize and free CDO-related structures.\n");
 
@@ -798,7 +801,8 @@ cs_cdo_finalize(cs_domain_t    *domain)
 void
 cs_cdo_main(cs_domain_t   *domain)
 {
-  assert(cs_domain_get_cdo_mode(domain) != CS_DOMAIN_CDO_MODE_OFF);
+  if (cs_domain_get_cdo_mode(domain) == CS_DOMAIN_CDO_MODE_OFF)
+    return;
 
   cs_timer_t t0 = cs_timer_time();
 

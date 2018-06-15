@@ -201,6 +201,10 @@ _domain_post(void                      *input,
     return;
 
   cs_domain_t  *d = (cs_domain_t *)input;
+
+  if (cs_domain_get_cdo_mode(d) == CS_DOMAIN_CDO_MODE_OFF)
+    return;
+
   assert(time_step == d->time_step);
 
   /* Post-processing related to advection fields */
