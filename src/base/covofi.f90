@@ -157,6 +157,7 @@ integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imucpp, idftnp, iswdyp
 integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
+integer          f_id_al
 integer          icvflb, f_dim, iflwgr
 integer          icla
 integer          icrom_scal
@@ -171,6 +172,7 @@ double precision thetv , thets , thetap, thetp1
 double precision smbexp, dvar, cprovol, prod, expkdt
 double precision temp, idifftp, roskpl, kplskm, ctot_tmp
 double precision turb_schmidt
+double precision xR, prdtl, alpha_theta
 
 double precision rvoid(1)
 
@@ -196,7 +198,8 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:,:), pointer :: cvara_rij
-double precision, dimension(:), pointer :: visct, cpro_cp, cproa_scal_st
+double precision, dimension(:), pointer :: cvar_al
+double precision, dimension(:), pointer :: visct, viscl, cpro_cp, cproa_scal_st
 double precision, dimension(:), pointer :: cpro_scal_st
 double precision, dimension(:), pointer :: cpro_viscls, cpro_visct
 double precision, dimension(:), pointer :: cpro_tsscal
@@ -300,6 +303,7 @@ if (lprev) then
   call field_get_val_prev_s(icrom_scal, croma)
 endif
 call field_get_val_s(ivisct, visct)
+call field_get_val_s(iviscl, viscl)
 
 call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
 if (ifcvsl.ge.0) then
@@ -881,6 +885,14 @@ if (itspdv.eq.1) then
         call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
         call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
       endif
+      ! EB- AFM or EB-DFM or EB-GGDH
+      if (iturt(iiscav).eq.11 .or. iturt(iiscav).eq.21 .or. iturt(iiscav).eq.31) then
+        ! Name of the scalar corresponding to the current variance
+        call field_get_name(ivarfl(ivarsc), fname)
+        ! Index of the corresponding alpha
+        call field_get_id(trim(fname)//'_alpha', f_id_al)
+        call field_get_val_s(f_id_al, cvar_al)
+      endif
     elseif(iturb.eq.60) then
       call field_get_val_prev_s(ivarfl(ik), cvara_k)
       call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
@@ -907,10 +919,23 @@ if (itspdv.eq.1) then
       !  with
       ! Rh = R = 0.8 for SGDH
       ! Rh = (1-alpha_T) * Pr + R * alpha_T
-      !  and R = 0.5
+      ! with - R = 0.5
+      !      - alpha_T = 1.0 for GGDH/DFM/AFM
+      if(iturt(iiscav).eq.11.or.iturt(iiscav).eq.21.or.iturt(iiscav).eq.31) then  
+        alpha_theta = cvar_al(iel)
+      else
+        alpha_theta = 1.d0
+      endif
 
-      rhovst = xcpp(iel)*crom(iel)*xe/(xk * rvarfl(iscal))       &
-             *cell_f_vol(iel) ! FIXME wrong time scale for EBDFM and the others... R simeq 0.5...
+      if (ifcvsl.ge.0) then
+        prdtl = viscl(iel)*xcpp(iel)/cpro_viscls(iel)
+      else
+        prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
+      endif
+      xR = ( 1.d0 - alpha_theta ) * prdtl + alpha_theta * rvarfl(iscal)
+
+      rhovst = xcpp(iel)*crom(iel)*xe/(xk * xR)       &
+             *cell_f_vol(iel) 
 
       ! La diagonale recoit eps/Rk, (*theta eventuellement)
       rovsdt(iel) = rovsdt(iel) + rhovst*thetap
