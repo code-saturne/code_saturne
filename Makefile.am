@@ -32,7 +32,7 @@ DOCS = docs
 endif
 
 if HAVE_BACKEND
-TESTS = tests
+TSTS = tests
 endif
 
 if HAVE_INTERNAL_PLE
@@ -43,7 +43,7 @@ if HAVE_SALOME
 SALOME = salome
 endif
 
-SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po $(DOCS) $(GUI) $(TESTS) $(NEPTUNE_CFD)
+SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po $(DOCS) $(GUI) $(TSTS) $(NEPTUNE_CFD)
 
 AUX_DIST = \
 build-aux/catalyst \
