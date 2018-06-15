@@ -72,7 +72,7 @@ AM_GNU_GETTEXT_VERSION([0.19])
 AM_INIT_AUTOMAKE([foreign tar-pax subdir-objects])
 
 # Enable maintainer mode by default for a developer checkout
-AS_IF([${srcdir}/.git],
+AS_IF([test -d ${srcdir}/.git],
       [AM_MAINTAINER_MODE([enable])],
       [AM_MAINTAINER_MODE([disable])])
 
