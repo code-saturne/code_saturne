@@ -1589,6 +1589,28 @@ cs_turbomachinery_rotation_matrix(int        rotor_num,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return number of rotors.
+ *
+ * Note that the number of associated rotations is n_rotors + 1, as the
+ * first rotation id is reserved for the fixed portion of the domain.
+ *
+ * \return  number of rotors
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_turbomachinery_n_rotors(void)
+{
+  int retval = 1;
+
+  if (_turbomachinery != NULL)
+    retval = _turbomachinery->n_rotors;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return cell rotor number.
  *
  * Each cell may be associated with a given rotor, or rotation, with 0
@@ -1661,6 +1683,38 @@ cs_turbomachinery_set_rotation_retry(int     n_max_join_retries,
 
   tbm->n_max_join_tries = n_max_join_retries;
   tbm->dt_retry = dt_retry_multiplier;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build rotation matrices for a given time interval.
+ *
+ * The caller is responsible for freeing the array when not needed.
+ *
+ * \param[in]  dt  associated time delta (0 for current, unmodified time)
+ *
+ * \return  array of rotation matrices.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_34_t *
+cs_turbomachinery_get_rotation_matrices(double dt)
+{
+  const cs_turbomachinery_t *tbm = _turbomachinery;
+  cs_real_34_t  *m;
+
+  BFT_MALLOC(m, tbm->n_rotors+1, cs_real_34_t);
+
+  for (int j = 0; j < tbm->n_rotors+1; j++) {
+    cs_rotation_t *r = tbm->rotation + j;
+
+    cs_rotation_matrix(r->omega*dt,
+                       r->axis,
+                       r->invariant,
+                       m[j]);
+  }
+
+  return m;
 }
 
 /*----------------------------------------------------------------------------*/

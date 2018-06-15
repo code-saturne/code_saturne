@@ -722,7 +722,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
       ! Resize other arrays, depending on user options
 
-      if (iilagr.gt.0) &
+      if (iilagr.gt.0 .and. ntersl.gt.0) &
         call resize_n_sca_real_arrays(ntersl, tslagr)
 
       if (iphydr.eq.1) then

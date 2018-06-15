@@ -1231,7 +1231,6 @@ cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *particles)
     bft_printf_flush();
 
     for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
-      bft_printf("  dump_particle_set i = %d \n", i);
       _dump_particle(particles, i);
     }
 

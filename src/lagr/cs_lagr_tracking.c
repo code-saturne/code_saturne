@@ -67,8 +67,10 @@
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_random.h"
+#include "cs_rotation.h"
 #include "cs_search.h"
 #include "cs_timer_stats.h"
+#include "cs_turbomachinery.h"
 
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -215,7 +217,7 @@ typedef struct {
   cs_lnum_t  *cell_face_idx;
   cs_lnum_t  *cell_face_lst;
 
-  cs_lagr_halo_t    *halo;   /* Lagrangian halo structure */
+  cs_lagr_halo_t      *halo;   /* Lagrangian halo structure */
 
   cs_interface_set_t  *face_ifs;
 
@@ -229,7 +231,7 @@ typedef struct {
 
 static  cs_lagr_track_builder_t  *_particle_track_builder = NULL;
 
-static  int                 _max_propagation_loops = 100;
+static  int            _max_propagation_loops = 100;
 
 /* MPI datatype associated to each particle "structure" */
 
@@ -2280,6 +2282,8 @@ _local_propagation(void                           *particle,
 
       if (move_particle != CS_LAGR_PART_MOVE_OFF) {
 
+        /* Now update cell */
+
         if (cur_cell_id == c_id1) {
           cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
                                     c_id2 + 1);
@@ -3012,7 +3016,29 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
 
   const cs_real_t  *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
+  /* Initialize builder if needed */
+
+  if (_particle_track_builder == NULL)
+    _particle_track_builder
+      = _init_track_builder(particles->n_particles_max,
+                            particles->p_am->extents);
+
   assert(am->lb >= sizeof(cs_lagr_tracking_info_t));
+
+  /* Info for rotor-stator cases; the time step should actually
+     be based on the global (non-Lagrangian) time step in case
+     the two differ. Currently both are in lock-step; if one
+     becomes a mutiplier of the other, the rotor-movement update
+     would need to be done at a frequency matching that multiplier. */
+
+  const int *cell_rotor_num = NULL;
+  cs_real_34_t  *rot_m = NULL;
+
+  if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
+    cell_rotor_num = cs_turbomachinery_get_cell_rotor_num();
+    cs_real_t dt = cs_glob_lagr_time_step->dtp;
+    rot_m = cs_turbomachinery_get_rotation_matrices(-1.0 * dt);
+  }
 
   /* Prepare tracking info */
 
@@ -3054,11 +3080,20 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
     _tracking_info(particles, i)->start_coords[1] = prv_part_coord[1];
     _tracking_info(particles, i)->start_coords[2] = prv_part_coord[2];
 
+    if (cell_rotor_num != NULL) {
+      cs_lnum_t  cur_cell_id = CS_ABS(cur_part_cell_num) - 1;
+      int r_num = cell_rotor_num[cur_cell_id];
+      if (r_num > 0) {
+        _apply_vector_transfo((const cs_real_t (*)[4])rot_m[r_num],
+                              _tracking_info(particles, i)->start_coords);
+      }
+    }
+
     /* Just after injection, reduce displacment so as to simulate
        continuous injection */
 
     cs_real_t res_time = cs_lagr_particles_get_real(particles, i,
-                                                   CS_LAGR_RESIDENCE_TIME);
+                                                    CS_LAGR_RESIDENCE_TIME);
 
     if (res_time < 0) {
       cs_real_t fraction =   (cs_glob_lagr_time_step->dtp + res_time)
@@ -3091,6 +3126,8 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
                            part_b_mass_flux);
 
   }
+
+  BFT_FREE(rot_m);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n Particle set after %s\n", __func__);
@@ -3207,6 +3244,9 @@ _finalize_displacement(cs_lagr_particle_set_t  *particles,
   bft_printf("\n Particle set after %s\n", __func__);
   cs_lagr_particle_set_dump(particles);
 #endif
+
+  if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT)
+    _particle_track_builder = _destroy_track_builder(_particle_track_builder);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -3247,12 +3287,6 @@ cs_lagr_tracking_initialize(void)
     _cs_mpi_particle_type = _define_particle_datatype(p_set->p_am);
   }
 #endif
-
-  /* Initialize builder */
-
-  _particle_track_builder
-    = _init_track_builder(p_set->n_particles_max,
-                          p_set->p_am->extents);
 }
 
 /*----------------------------------------------------------------------------*/

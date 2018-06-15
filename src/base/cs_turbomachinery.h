@@ -214,6 +214,19 @@ cs_turbomachinery_rotation_matrix(int        rotor_num,
                                   cs_real_t  matrix[3][4]);
 
 /*----------------------------------------------------------------------------
+ * Return number of rotors.
+ *
+ * Note that the number of associated rotations is n_rotors + 1, as the
+ * first rotation id is reserved for the fixed portion of the domain.
+ *
+ * return:
+ *   number of rotors
+ *----------------------------------------------------------------------------*/
+
+int
+cs_turbomachinery_n_rotors(void);
+
+/*----------------------------------------------------------------------------
  * Return cell rotor number.
  *
  * Each cell may be associated with a given rotor, or rotation, with 0
@@ -249,6 +262,21 @@ cs_turbomachinery_get_rotation_velocity(int  rotor_num);
 void
 cs_turbomachinery_set_rotation_velocity(int     rotor_num,
                                         double  omega);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build rotation matrices for a given time interval.
+ *
+ * The caller is responsible for freeing the array when not needed.
+ *
+ * \param[in]  dt  associated time delta (0 for current, unmodified time)
+ *
+ * \return  array of rotation matrices.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_34_t *
+cs_turbomachinery_get_rotation_matrices(double dt);
 
 /*----------------------------------------------------------------------------*/
 /*!

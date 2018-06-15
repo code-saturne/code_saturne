@@ -2038,16 +2038,6 @@ cs_parameters_check(void)
      module */
   int model = cs_turbomachinery_get_model();
 
-  if (model == CS_TURBOMACHINERY_TRANSIENT) {
-    cs_parameters_is_equal_int(CS_ABORT_DELAYED,
-                               _("transient turbomachinery module not "
-                                 "compatible "
-                                 "with the lagrangian module"),
-                               "cs_glob_lagr_time_scheme->iilagr",
-                               cs_glob_lagr_time_scheme->iilagr,
-                               0);
-  }
-
   if (model > CS_TURBOMACHINERY_NONE) {
     cs_parameters_is_equal_int(CS_ABORT_DELAYED,
                                _("turbomachinery module not compatible "
