@@ -98,8 +98,8 @@ cs_geom_closest_point(cs_lnum_t         n_points,
  *                             [0: in; 1: out]
  *
  * \return
- *   1 if the segment does not go through the face's plane, or minimum
- *   relative distance (in terms of barycentric coordinates)
+ *   2 if the segment does not go through the face's plane, or minimum
+ *   relative distance (in terms of segment length)
  *   of intersection point to face.
  */
 /*----------------------------------------------------------------------------*/

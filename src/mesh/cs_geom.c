@@ -235,6 +235,7 @@ cs_geom_segment_intersect_face(int              orient,
                             sx0[2] - face_center[2]};
 
   int n_intersects = 0;
+  int face_orient = (orient < 0) ? -1 : 1;
 
   /* Principle:
    *  - loop on sub-triangles of the face
@@ -289,8 +290,16 @@ cs_geom_segment_intersect_face(int              orient,
                               e1[2]*e0[0] - e1[0]*e0[2],
                               e1[0]*e0[1] - e1[1]*e0[0]};
 
-    double det = cs_math_3_dot_product(disp, pvec);
+    /* Reorient before computing the sign regarding the face so that
+       we are sure that it the test is true for one side of the face,
+       it is false on the other side (important for particle tracking) */
+
+    double det = cs_math_3_dot_product(disp, pvec) * face_orient;
+
     int sign_det = det > 0 ? 1 : -1;
+
+    sign_det *= face_orient;
+    det *= face_orient;
 
     /* 2nd edge: vector ei+1, pi+1 = ei+1 ^ vgo */
 
@@ -332,8 +341,15 @@ cs_geom_segment_intersect_face(int              orient,
      * u_sign >= 0, v_sign <= 0 and w_sign <= 0
      * If det is nearly 0, consider that the particle does not cross the face */
 
-    double go_p = - cs_math_3_dot_product(vgo, pvec);
-    int sign_go_p = (go_p > 0 ? 1 : -1);
+    /* Also reorient before computing the sign regarding the face so that
+       we are sure that if the test is true for one side of the face,
+       it is false on the other side */
+
+    double go_p = - cs_math_3_dot_product(vgo, pvec) * face_orient;
+
+    int sign_go_p = (go_p > 0 ? 1 : -1) * face_orient;
+
+    go_p = face_orient * go_p;
 
     /* We check the direction of displacement and the triangle normal
      *  to see if the directed segment enters or leaves the half-space */
@@ -341,8 +357,8 @@ cs_geom_segment_intersect_face(int              orient,
     bool dir_move;
     if (orient) {
       int sign_face_orient
-        = (cs_math_3_dot_product(pvec, face_normal) > 0 ? 1 : -1 );
-      dir_move = (sign_face_orient * orient * sign_det > 0);
+        = (cs_math_3_dot_product(pvec, face_normal) > 0 ? 1 : -1);
+      dir_move = (sign_face_orient * face_orient * sign_det > 0);
     }
     else
       dir_move = true;
@@ -385,7 +401,7 @@ cs_geom_segment_intersect_face(int              orient,
 
     /* In case intersections were removed due to non-convex cases
      *  (i.e.  n_intersects < 1, but retval < 1),
-     *  the retval value is forced to 1 (no intersection). */
+     *  the retval value is forced to 2 (no intersection). */
 
     if (n_intersects < 1 && retval < 1.) {
       retval = 2.;
