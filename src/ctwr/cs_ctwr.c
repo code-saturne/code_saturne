@@ -472,14 +472,14 @@ cs_ctwr_define(const char           zone_criteria[],
     f = fopen(ct->file_name, "a");
 
     fprintf(f, "# Balance for the exchange zone %02d\n", ct->num);
-    fprintf(f, "# ==========================================================\n");
-    fprintf(f, "\tTime\tFlux air/liq");
+    fprintf(f, "# ================================\n");
+    fprintf(f, "# Time  Flux air/liq");
     fprintf(f, "\tTemp liq in");
     fprintf(f, "\tTemp liq out");
     fprintf(f, "\tTemp air in");
     fprintf(f, "\tTemp air out");
-    fprintf(f, "\tDeb liq in\tDeb liq out");
-    fprintf(f, "\tDeb air in\tDeb air out\n");
+    fprintf(f, "\tFlow liq in\tFlow liq out");
+    fprintf(f, "\tFlow air in\tFlow air out\n");
     fclose(f);
   }
 
