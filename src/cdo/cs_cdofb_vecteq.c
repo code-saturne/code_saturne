@@ -269,6 +269,24 @@ _init_cell_system(const cs_flag_t               cell_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief    Check if the generic structures for building a CDO-Fb scheme are
+ *           allocated
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_cdofb_vecteq_is_initialized(void)
+{
+  if (cs_cdofb_cell_sys == NULL || cs_cdofb_cell_bld == NULL)
+    return false;
+  else
+    return true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate work buffer and general structures related to CDO
  *         vector-valued face-based schemes.
  *         Set shared pointers from the main domain members
@@ -407,7 +425,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Sanity checks */
   assert(eqp != NULL && eqb != NULL);
 
-  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOFB && eqp->dim != 1)
+  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOFB || eqp->dim != 3)
     bft_error(__FILE__, __LINE__, 0, " Invalid type of equation.\n"
               " Expected: scalar-valued CDO face-based equation.");
 

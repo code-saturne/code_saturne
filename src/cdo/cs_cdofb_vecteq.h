@@ -70,6 +70,18 @@ typedef struct _cs_cdofb_t cs_cdofb_vecteq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief    Check if the generic structures for building a CDO-Fb scheme are
+ *           allocated
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_cdofb_vecteq_is_initialized(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate work buffer and general structures related to CDO
  *         vector-valued face-based schemes.
  *         Set shared pointers from the main domain members
