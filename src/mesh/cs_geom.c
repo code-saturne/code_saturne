@@ -240,7 +240,7 @@ cs_geom_segment_intersect_face(int              orient,
   /* Principle:
    *  - loop on sub-triangles of the face
    *    and test for each triangle if the intersection is inside the triangle
-   *  - use of a geometric algorithm:x
+   *  - use of a geometric algorithm:
    *    the intersection is in the triangle if it is on the proper side of all
    *    three edges defining the triangle (e0, e1 and e_out)
    *    This is measured calculating the sign u, v and w
