@@ -763,23 +763,16 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
       if (cs_equation_param_has_diffusion(eqp)) {
 
         /* Define the local stiffness matrix */
-        if (!(eqb->diff_pty_uniform)) {
-          cs_property_tensor_in_cell(cm,
-                                     eqp->diffusion_property,
-                                     t_eval_pty,
-                                     eqp->diffusion_hodge.inv_pty,
-                                     cb->pty_mat);
-
-          if (eqp->diffusion_hodge.is_iso)
-            cb->pty_val = cb->pty_mat[0][0];
-        }
+        if (!(eqb->diff_pty_uniform))
+          cs_equation_set_diffusion_property_cw(eqp, cm, t_eval_pty, cell_flag,
+                                                cb);
 
         /* local matrix owned by the cellwise builder (store in cb->loc) */
         eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
 
         if (eqp->diffusion_hodge.is_iso == false)
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Case not handle yet\n", __func__);
+          bft_error(__FILE__, __LINE__, 0, " %s: Case not handle yet\n",
+                    __func__);
 
         /* Add the local diffusion operator to the local system */
         const cs_real_t  *sval = cb->loc->val;
@@ -875,13 +868,19 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
-      /* Assemble the local system (related to vertices only since one applies
-         a static condensation) to the global system */
-      cs_equation_assemble_f(csys,
-                             connect->range_sets[CS_CDO_CONNECT_FACE_VP0],
-                             eqp,
-                             3, /* n_face_dofs */
-                             rhs, mav);
+      /* ASSEMBLY */
+      /* ======== */
+
+      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+
+      /* Matrix assembly */
+      cs_equation_assemble_block_matrix(csys, rs, 3, mav);
+
+      /* Assemble RHS */
+      for (short int i = 0; i < 3*cm->n_fc; i++) {
+#       pragma omp atomic
+        rhs[csys->dof_ids[i]] += csys->rhs[i];
+      }
 
     } /* Main loop on cells */
 

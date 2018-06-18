@@ -1315,13 +1315,21 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
         cs_sdm_block_fprintf(NULL, NULL, 1e-16, csys->mat);
       }
 #endif
-      /* Assemble the local system (related to vertices only since one applies
-         a static condensation) to the global system */
-      cs_equation_assemble_f(csys,
-                             eqc->rs,
-                             eqp,
-                             eqc->n_face_dofs,
-                             rhs, mav);
+
+      /* ASSEMBLY */
+      /* ======== */
+
+      /* Matrix assembly */
+      cs_equation_assemble_block_matrix(csys,
+                                        eqc->rs,
+                                        eqc->n_face_dofs,
+                                        mav);
+
+      /* Assemble RHS */
+      for (short int i = 0; i < eqc->n_face_dofs*cm->n_fc; i++) {
+#       pragma omp atomic
+        rhs[csys->dof_ids[i]] += csys->rhs[i];
+      }
 
     } /* Main loop on cells */
 

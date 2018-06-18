@@ -903,6 +903,9 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       } /* END OF ADVECTION */
 
+      /* MASS MATRIX */
+      /* =========== */
+
       if (eqb->sys_flag & CS_FLAG_SYS_HLOC_CONF) {
         eqc->get_mass_matrix(eqc->hdg_mass, cm, cb); // stored in cb->hdg
 
@@ -1007,15 +1010,28 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
-      /* Assemble the local system to the global system */
-      cs_equation_assemble_v(csys,
-                             connect->range_sets[CS_CDO_CONNECT_VTX_SCAL],
-                             eqp,
-                             rhs, eqc->source_terms, mav); // out
+      /* ASSEMBLY */
+      /* ======== */
 
-    } // Main loop on cells
+      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
 
-  } // OPENMP Block
+      /* Matrix assembly */
+      cs_equation_assemble_matrix(csys, rs, mav);
+
+      /* Assemble RHS */
+      for (short int v = 0; v < cm->n_vc; v++)
+#       pragma omp atomic
+        rhs[cm->v_ids[v]] += csys->rhs[v];
+
+      if (eqc->source_terms != NULL) {
+        for (short int v = 0; v < cm->n_vc; v++)
+#         pragma omp atomic
+          eqc->source_terms[cm->v_ids[v]] += csys->source[v];
+      }
+
+    } /* Main loop on cells */
+
+  } /* OPENMP Block */
 
   cs_matrix_assembler_values_done(mav); // optional
 

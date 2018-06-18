@@ -847,17 +847,22 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
-      /* Assemble the local system (related to vertices only since one applies
-         a static condensation) to the global system */
-      cs_equation_assemble_f(csys,
-                             connect->range_sets[CS_CDO_CONNECT_FACE_SP0],
-                             eqp,
-                             1, /* n_face_dofs */
-                             rhs, mav);
+      /* ASSEMBLY */
+      /* ======== */
 
-    } // Main loop on cells
+      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
 
-  } // OPENMP Block
+      /* Matrix assembly */
+      cs_equation_assemble_matrix(csys, rs, mav);
+
+      /* Assemble RHS */
+      for (short int f = 0; f < cm->n_fc; f++)
+#       pragma omp atomic
+        rhs[cm->f_ids[f]] += csys->rhs[f];
+
+    } /* Main loop on cells */
+
+  } /* OPENMP Block */
 
   cs_matrix_assembler_values_done(mav); // optional
 

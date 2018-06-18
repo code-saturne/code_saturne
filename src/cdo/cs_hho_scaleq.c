@@ -1077,7 +1077,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 
         cs_hho_builder_compute_grad_reco(cm, cb, hhob);
 
-        /* local matrix owned by the cellwise builder (store in cb->loc) */
+        /* Local matrix owned by the cellwise builder (store in cb->loc) */
         cs_hho_builder_diffusion(cm, cb, hhob);
 
         /* Add the local diffusion operator to the local system */
@@ -1164,22 +1164,25 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(cm)) {
         cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
-        printf(" (FINAL STATE) HHO local system for cell_id = 0\n");
         cs_sdm_block_fprintf(NULL, NULL, 1e-16, csys->mat);
       }
 #endif
 
-      /* Assemble the local system (related to vertices only since one applies
-         a static condensation) to the global system */
-      cs_equation_assemble_f(csys,
-                             eqc->rs,
-                             eqp,
-                             eqc->n_face_dofs,
-                             rhs, mav);
+      /* ASSEMBLY */
+      /* ======== */
 
-    } // Main loop on cells
+      /* Matrix assembly */
+      cs_equation_assemble_block_matrix(csys, eqc->rs, eqc->n_face_dofs, mav);
 
-  } // OPENMP Block
+      /* Assemble RHS */
+      for (short int i = 0; i < eqc->n_face_dofs*cm->n_fc; i++) {
+#       pragma omp atomic
+        rhs[csys->dof_ids[i]] += csys->rhs[i];
+      }
+
+    } /* Main loop on cells */
+
+  } /* OPENMP Block */
 
   cs_matrix_assembler_values_done(mav); // optional
 
