@@ -657,8 +657,6 @@ cs_hho_stokes_compute_source(const cs_equation_param_t  *eqp,
   if (cs_equation_param_has_sourceterm(eqp) == false)
     return;
 
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-
   cs_timer_t  t0 = cs_timer_time();
 
   /* TODO */

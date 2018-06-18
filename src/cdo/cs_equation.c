@@ -393,7 +393,7 @@ _prepare_fb_solving(void              *eq_to_cast,
                     cs_real_t         *p_rhs[])
 {
   cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
-  const cs_field_t  *fld = cs_field_by_id(eq->field_id);
+
   const cs_real_t  *f_values = eq->get_extra_values(eq->scheme_context);
   const int  stride = 1;  /* Since the global numbering is adapted in each
                              case (scalar-, vector-valued equations) */
@@ -2098,6 +2098,10 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
                            const cs_time_step_t       *ts,
                            double                      dt_cur)
 {
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+  CS_UNUSED(cdoq);
+
   for (int i = 0; i < _n_equations; i++) {
 
     cs_equation_t  *eq = _equations[i];
@@ -2225,7 +2229,7 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
         cs_equation_balance_destroy(&b);
 
       } /* compute_balance is defined */
-    }   /* do the analysis */
+    } /* do the analysis */
 
     /* Perform post-processing specific to a numerical scheme */
     eq->postprocess(eq->name,
@@ -2237,7 +2241,7 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
 
-  } // Loop on equations
+  } /* Loop on equations */
 
 }
 

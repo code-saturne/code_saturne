@@ -355,7 +355,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
       if (bf_id > -1) {        /*  Border face */
 
         const cs_flag_t  face_flag = eqb->face_bc->flag[bf_id];
-        const int _f_shift = eqc->n_face_dofs*f;
+        const int  _f_shift = eqc->n_face_dofs*f;
 
         csys->bf_flag[csys->n_bc_faces] = face_flag;
         csys->_f_ids[csys->n_bc_faces] = f;
@@ -1077,10 +1077,10 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 
         cs_hho_builder_compute_grad_reco(cm, cb, hhob);
 
-        // local matrix owned by the cellwise builder (store in cb->loc)
+        /* local matrix owned by the cellwise builder (store in cb->loc) */
         cs_hho_builder_diffusion(cm, cb, hhob);
 
-        // Add the local diffusion operator to the local system
+        /* Add the local diffusion operator to the local system */
         cs_sdm_block_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 1

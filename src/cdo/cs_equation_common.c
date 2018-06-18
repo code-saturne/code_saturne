@@ -852,9 +852,9 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
         cs_property_t  *r_pty = eqp->reaction_properties[r];
         rpty_vals[r] = cs_property_get_cell_value(0, t_eval, r_pty);
       }
-    } // Loop on reaction properties
+    } /* Loop on reaction properties */
 
-  } // Reaction properties
+  } /* Reaction properties */
 
 }
 

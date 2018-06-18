@@ -712,10 +712,10 @@ cs_sles_solve_native(int                  f_id,
 
     /* If context has not been defined yet, temporarily set
        matrix coefficients (using native matrix, which has lowest
-       overhead as coefficients ae provided in that form)
+       overhead as coefficients are provided in that form)
        to define the required context.
 
-       The matrix type might be modifie later based on solver
+       The matrix type might be modified later based on solver
        constraints. */
 
     if (cs_sles_get_context(sc) == NULL) {
