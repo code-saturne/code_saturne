@@ -3668,6 +3668,8 @@ cs_lagr_get_cell_face_connectivity(cs_lnum_t  **cell_face_idx,
   cs_lagr_track_builder_t  *builder = _particle_track_builder;
 
   if (builder != NULL) {
+    if (builder->cell_face_idx == NULL)
+      _define_cell_face_connect(builder);
     *cell_face_idx = builder->cell_face_idx;
     *cell_face_lst = builder->cell_face_lst;
   }
