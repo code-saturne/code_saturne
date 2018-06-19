@@ -1773,15 +1773,6 @@ cs_parameters_check(void)
                                      "number of coupled scalar",
                                      cs_field_get_key_int(f, keysca),
                                      cs_glob_thermal_model->iscalt);
-
-          cs_parameters_is_equal_int(CS_ABORT_DELAYED,
-                                     _("Inconsistency in SYRTHES coupling "
-                                       "settings,\n"
-                                       "the thermal scalar must be "
-                                       "the temperature"),
-                                     "cs_glob_thermal_model->itherm",
-                                     cs_glob_thermal_model->itherm,
-                                     CS_THERMAL_MODEL_TEMPERATURE);
         }
       }
     }
