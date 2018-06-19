@@ -344,6 +344,73 @@ else
   c_st_vel => null()
 endif
 
+!-------------------------------------------------------------------------------
+! ---> Get user source terms
+
+do iel = 1, ncel
+  do isou = 1, 3
+    tsexp(isou,iel) = 0.d0
+    do jsou = 1, 3
+      tsimp(jsou,isou,iel) = 0.d0
+    enddo
+  enddo
+enddo
+
+! The computation of explicit and implicit source terms is performed
+! at the first iteration only.
+if (iterns.eq.1) then
+
+  if (iihmpr.eq.1) then
+    call uitsnv (vel, tsexp, tsimp)
+  endif
+
+  call ustsnv &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   iu   ,                                                         &
+   icepdc , icetsm , itypsm ,                                     &
+   dt     ,                                                       &
+   ckupdc , smacel , tsexp  , tsimp  )
+
+  n_fans = cs_fan_n_fans()
+  if (n_fans .gt. 0) then
+    if (ntcabs.eq.ntpabs+1) then
+      call debvtl(flumas, flumab, crom, brom)
+    endif
+    call tsvvtl(tsexp)
+  endif
+
+  ! Skip first time step after restart if previous values have not been read.
+  if (vcopt_u%ibdtso.lt.0) then
+    vcopt_u%ibdtso = iabs(vcopt_u%ibdtso)
+    call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+  endif
+
+  ! Nudging towards optimal interpolation for velocity
+  if (ippmod(iatmos).ge.0) then
+    call field_get_key_int(ivarfl(iu), kopint, f_oi_id)
+    if (f_oi_id.ge.0) then
+      call cs_at_data_assim_source_term(ivarfl(iu), tsexp, tsimp)
+    endif
+    if (iatmst.eq.1) then
+      call cs_at_source_term_for_inlet(tsexp)
+    endif
+  endif
+
+  ! Coupling between two Code_Saturne
+  if (nbrcpl.gt.0) then
+    !vectorial interleaved exchange
+    call csccel(iu, vela, coefav, coefbv, tsexp)
+  endif
+
+  if (vcopt_u%ibdtso.gt.1.and.ntcabs.gt.ntinit &
+      .and.(idtvar.eq.0.or.idtvar.eq.1)) then
+    ! TODO: remove test on ntcabs and implemente a "proper" condition for
+    ! initialization.
+    f_id = ivarfl(iu)
+    call cs_backward_differentiation_in_time(f_id, tsexp, tsimp)
+  endif
+endif
+
 !===============================================================================
 ! 2. Potential forces (pressure gradient and gravity)
 !===============================================================================
@@ -1183,6 +1250,19 @@ if (iappel.eq.1.and.iphydr.eq.1.and.iterns.eq.1) then
     enddo
   endif
 
+  ! ---> Use user source terms
+
+  if (igpust.eq.1) then
+    do iel = 1, ncel
+      !FIXME when using porosity
+      dvol = 1.d0/cell_f_vol(iel)
+      do isou = 1, 3
+        dfrcxt(isou, iel) = dfrcxt(isou, iel) + tsexp(isou, iel)*dvol
+      enddo
+    enddo
+
+  endif
+
   if (irangp.ge.0.or.iperio.eq.1) then
     call synvin(dfrcxt)
   endif
@@ -1219,85 +1299,7 @@ if (iappel.eq.2) then
 endif
 
 !-------------------------------------------------------------------------------
-! ---> User source terms
-
-do iel = 1, ncel
-  do isou = 1, 3
-    tsexp(isou,iel) = 0.d0
-    do jsou = 1, 3
-      tsimp(jsou,isou,iel) = 0.d0
-    enddo
-  enddo
-enddo
-
-! The computation of explicit and implicit source terms is performed
-! at the first iteration only.
-if (iterns.eq.1) then
-
-  if (iihmpr.eq.1) then
-    call uitsnv (vel, tsexp, tsimp)
-  endif
-
-  n_fans = cs_fan_n_fans()
-  if (n_fans .gt. 0) then
-    if (ntcabs.eq.ntpabs+1) then
-      call debvtl(flumas, flumab, crom, brom)
-    endif
-    call tsvvtl(tsexp)
-  endif
-
-  call ustsnv &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iu   ,                                                         &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel , tsexp  , tsimp  )
-
-  if (vcopt_u%ibdtso.gt.1.and.ntcabs.gt.ntinit &
-      .and.(idtvar.eq.0.or.idtvar.eq.1)) then
-    ! TODO: remove test on ntcabs and implemente a "proper" condition for
-    ! initialization.
-    f_id = ivarfl(iu)
-    call cs_backward_differentiation_in_time(f_id, tsexp, tsimp)
-  endif
-  ! Skip first time step after restart if previous values have not been read.
-  if (vcopt_u%ibdtso.lt.0) then
-    vcopt_u%ibdtso = iabs(vcopt_u%ibdtso)
-    call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
-  endif
-
-  ! Nudging towards optimal interpolation for velocity
-  if (ippmod(iatmos).ge.0) then
-    call field_get_key_int(ivarfl(iu), kopint, f_oi_id)
-    if (f_oi_id.ge.0) then
-      call cs_at_data_assim_source_term(ivarfl(iu), tsexp, tsimp)
-    endif
-    if (iatmst.eq.1) then
-      call cs_at_source_term_for_inlet(tsexp)
-    endif
-  endif
-
-  ! Coupling between two Code_Saturne
-  if (nbrcpl.gt.0) then
-    !vectorial interleaved exchange
-    call csccel(iu, vela, coefav, coefbv, tsexp)
-  endif
-
-  if (iphydr.eq.1.and.igpust.eq.1) then
-    do iel = 1, ncel
-      !FIXME when using porosity
-      dvol = 1.d0/cell_f_vol(iel)
-      do isou = 1, 3
-        dfrcxt(isou, iel) = dfrcxt(isou, iel) + tsexp(isou, iel)*dvol
-      enddo
-    enddo
-
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synvin(dfrcxt)
-    endif
-  endif
-
-endif
+! ---> Use user source terms
 
 ! if PISO sweeps are expected, implicit user sources terms are stored in ximpa
 if (iterns.eq.1.and.nterup.gt.1) then
