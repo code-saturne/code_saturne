@@ -5,6 +5,8 @@ Release 5.0.9 (unreleased)
 Bug fixes
 ---------
 
+- Fix in sever accident (mass source terms for metal modelling).
+
 - Fix crash in some polygon triangulation cases.
 
 - Fix incorrect GUI-defined DOF locking for coupling with code_aster.
