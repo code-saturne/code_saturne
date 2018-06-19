@@ -49,7 +49,6 @@ from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, from_qvariant
 from code_saturne.Pages.NumericalParamGlobalForm import Ui_NumericalParamGlobalForm
 from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
-from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 
 #-------------------------------------------------------------------------------
 # log config

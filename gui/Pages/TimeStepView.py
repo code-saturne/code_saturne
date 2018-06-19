@@ -49,7 +49,6 @@ from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
 from code_saturne.Pages.TimeStepForm import Ui_TimeStepForm
 from code_saturne.Pages.TimeStepModel import TimeStepModel
-from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 
 #-------------------------------------------------------------------------------
 # log config

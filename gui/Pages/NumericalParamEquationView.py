@@ -53,7 +53,6 @@ from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.NumericalParamEquationForm import Ui_NumericalParamEquationForm
 from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquationModel
 from code_saturne.Pages.TurbulenceModel import TurbulenceModel
-from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 
 #-------------------------------------------------------------------------------
 # log config
