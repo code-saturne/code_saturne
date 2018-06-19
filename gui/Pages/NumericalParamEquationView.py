@@ -492,12 +492,11 @@ class StandardItemModelSolver(QStandardItemModel):
     """
     Model associated with a QTableView.
     """
-    def __init__(self, NPE, SM):
+    def __init__(self, NPE):
         """
         """
         QStandardItemModel.__init__(self)
         self.NPE = NPE
-        self.SM = SM
         self.setColumnCount(6)
         self.dataSolver = []
         # list of items to be disabled in the view
@@ -896,7 +895,6 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.case = case
         self.case.undoStopGlobal()
         self.NPE = NumericalParamEquationModel(self.case)
-        self.SM  = SteadyManagementModel(self.case)
         self.turb = TurbulenceModel(self.case)
 
         # Scheme
@@ -923,7 +921,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.tableViewScheme.setItemDelegateForColumn(5, delegateNSWRSM)
 
         # Solver
-        self.modelSolver = StandardItemModelSolver(self.NPE, self.SM)
+        self.modelSolver = StandardItemModelSolver(self.NPE)
         self.tableViewSolver.setModel(self.modelSolver)
         self.tableViewSolver.setAlternatingRowColors(True)
         self.tableViewSolver.resizeColumnToContents(0)
