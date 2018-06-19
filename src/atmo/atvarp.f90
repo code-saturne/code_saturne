@@ -296,6 +296,7 @@ if (ifilechemistry.ge.1) then
     call add_model_scalar_field('species_ror',   'ROR',   isca_chem(36))
     call add_model_scalar_field('species_eth',   'ETH',   isca_chem(37))
     call add_model_scalar_field('species_ole',   'OLE',   isca_chem(38))
+    call add_model_scalar_field('species_iole',  'IOLE',  isca_chem(39))
     call add_model_scalar_field('species_isop',  'ISOP',  isca_chem(40))
     call add_model_scalar_field('species_ispd',  'ISPD',  isca_chem(41))
     call add_model_scalar_field('species_terp',  'TERP',  isca_chem(42))
