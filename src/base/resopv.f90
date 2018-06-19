@@ -90,13 +90,10 @@
 !>                              composing the hydrostatic pressure
 !> \param[in]     tpucou        non scalar time step in case of
 !>                               velocity pressure coupling
-!> \param[in]     trav          right hand side for the normalizing
-!>                               the residual
 !> \param[in]     viscf         visc*surface/dist aux faces internes
 !> \param[in]     viscb         visc*surface/dist aux faces de bord
 !> \param[in]     phi           potential to be solved (pressure increment)
 !> \param[in]     tslagr        coupling term for the Lagrangian module
-!> \param[in]     trava         tableau de travail pour couplage
 !_______________________________________________________________________________
 
 subroutine resopv &
@@ -105,10 +102,9 @@ subroutine resopv &
    dt     , vel    ,                                              &
    coefav , coefbv , coefa_dp        , coefb_dp ,                 &
    smacel , spcond , svcond ,                                     &
-   frcxt  , dfrcxt , tpucou , trav   ,                            &
+   frcxt  , dfrcxt , tpucou ,                                     &
    viscf  , viscb  ,                                              &
-   phi    , tslagr ,                                              &
-   trava  )
+   phi    , tslagr )
 
 !===============================================================================
 
@@ -158,11 +154,9 @@ double precision smacel(ncesmp,nvar), spcond(nfbpcd,nvar)
 double precision svcond(ncelet,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision, dimension (1:6,1:ncelet), target :: tpucou
-double precision trav(3,ncelet)
 double precision viscf(nfac), viscb(nfabor)
 double precision phi(ncelet)
 double precision tslagr(ncelet,*)
-double precision trava(ndim,ncelet)
 double precision coefav(3  ,nfabor)
 double precision coefbv(3,3,nfabor)
 double precision vel   (3  ,ncelet)
@@ -243,6 +237,7 @@ double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: c_estim_der
 double precision, dimension(:), pointer :: cpro_tsrho
 double precision, allocatable, dimension(:) :: surfbm, dphi
+double precision, allocatable, dimension(:,:) :: trav
 
 !===============================================================================
 
@@ -263,6 +258,7 @@ allocate(res(ncelet), phia(ncelet))
 allocate(rhs(ncelet), rovsdt(ncelet))
 allocate(iflux(nfac), bflux(ndimfb))
 allocate(dphi(ncelet))
+allocate(trav(3, ncelet))
 iswdyp = vcopt_p%iswdyn
 if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
                           dphim1(ncelet), rhs0(ncelet))
@@ -386,153 +382,7 @@ if (ivofmt.ge.0.or.idilat.eq.4) then
 endif
 
 !===============================================================================
-! 2. Norm residual
-!===============================================================================
-
-!     Test d'un residu de normalisation de l'etape de pression
-!       plus comprehensible = div(rho u* + dt gradP^(n))-Gamma
-!       i.e. second membre du systeme en pression hormis la partie
-!       pression (sinon a convergence, on tend vers 0)
-!       Represente les termes que la pression doit equilibrer
-!     On calcule ici div(rho dt/rho gradP^(n)) et on complete a la fin
-!       avec  div(rho u*)
-!     Pour grad P^(n) on suppose que des CL de Neumann homogenes
-!       s'appliquent partout : on peut donc utiliser les CL de la
-!       vitesse pour u*+dt/rho gradP^(n). Comme on calcule en deux fois,
-!       on utilise les CL de vitesse homogenes pour dt/rho gradP^(n)
-!       ci-dessous et les CL de vitesse completes pour u* a la fin.
-
-if (iphydr.eq.1) then
-  do iel = 1, ncel
-    unsvom = -1.d0/volume(iel)
-    trav(1,iel) = trav(1,iel)*unsvom + frcxt(1 ,iel) + dfrcxt(1 ,iel)
-    trav(2,iel) = trav(2,iel)*unsvom + frcxt(2 ,iel) + dfrcxt(2 ,iel)
-    trav(3,iel) = trav(3,iel)*unsvom + frcxt(3 ,iel) + dfrcxt(3 ,iel)
-  enddo
-else
-  if (isno2t.gt.0 .and. nterup.gt.1) then
-    do iel = 1, ncel
-      unsvom = -1.d0/volume(iel)
-      romro0 = crom(iel)-ro0
-      trav(1,iel) = (trav(1,iel)+trava(1,iel))*unsvom + romro0*gx
-      trav(2,iel) = (trav(2,iel)+trava(2,iel))*unsvom + romro0*gy
-      trav(3,iel) = (trav(3,iel)+trava(3,iel))*unsvom + romro0*gz
-    enddo
-  else
-    do iel = 1, ncel
-      unsvom = -1.d0/volume(iel)
-      romro0 = crom(iel)-ro0
-      trav(1,iel) = trav(1,iel)*unsvom + romro0*gx
-      trav(2,iel) = trav(2,iel)*unsvom + romro0*gy
-      trav(3,iel) = trav(3,iel)*unsvom + romro0*gz
-    enddo
-  endif
-endif
-do iel = 1, ncel
-  dtsrom = dt(iel)/crom(iel)
-  do isou = 1, 3
-    trav(isou,iel) = vel(isou,iel) +dtsrom*trav(isou,iel)
-  enddo
-enddo
-
-!---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
-
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synvin(trav)
-endif
-
-! To save time, no space reconstruction
-init   = 1
-inc    = 1
-iflmb0 = 1
-if (iale.eq.1) iflmb0 = 0
-nswrgp = 1
-imligp = vcopt_u%imligr
-iwarnp = vcopt_p%iwarni
-epsrgp = vcopt_u%epsrgr
-climgp = vcopt_u%climgr
-itypfl = 1
-! VOF algorithm: the pressure step corresponds to the
-! correction of the volumetric flux, not the mass flux
-if (idilat.ge.4.or.ivofmt.ge.0) itypfl = 0
-
-call inimav &
-(f_id0  , itypfl ,                                              &
- iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
- iwarnp ,                                                       &
- epsrgp , climgp ,                                              &
- crom, brom   ,                                                 &
- trav   ,                                                       &
- coefav , coefbv ,                                              &
- iflux  , bflux  )
-
-init = 1
-call divmas(init, iflux, bflux, res)
-
-! --- Weakly compressible algorithm: semi analytic scheme
-if (idilat.ge.4) then
-  do iel = 1, ncel
-    res(iel) = res(iel)*crom(iel)
-  enddo
-endif
-
-! --- Volumic Gamma source term adding for volumic mass flow rate
-if (ncesmp.gt.0) then
-  do ii = 1, ncesmp
-    iel = icetsm(ii)
-    res(iel) = res(iel) - cell_f_vol(iel)*smacel(ii,ipr)
-  enddo
-endif
-
-! --- Surface Gamma source term adding for surface condensation modelling
-if (nfbpcd.gt.0) then
-  do ii = 1, nfbpcd
-    ifac= ifbpcd(ii)
-    iel = ifabor(ifac)
-    res(iel) = res(iel) - surfbn(ifac)*spcond(ii,ipr)
-  enddo
-endif
-
-! --- volume Gamma source term adding for volume condensation modelling
-if (icondv.eq.0) then
-  allocate(surfbm(ncelet))
-  surfbm(:) = 0.d0
-
-  do ii = 1, ncmast
-    iel= ltmast(ii)
-    surfbm(iel) = s_metal*volume(iel)/voltot
-    res(iel) = res(iel) - surfbm(iel)*svcond(iel,ipr)
-  enddo
-
-  deallocate(surfbm)
-endif
-
-
-! Cavitation source term
-if (icavit.gt.0) then
-  do iel = 1, ncel
-    res(iel) = res(iel) -cell_f_vol(iel)*gamcav(iel)*(1.d0/rho2 - 1.d0/rho1)
-  enddo
-endif
-
-! Lagrangian: coupling
-if (iilagr.eq.2 .and. ltsmas.eq.1) then
-
-  do iel = 1, ncel
-    res(iel) = res(iel) -tslagr(iel,itsmas)
-  enddo
-
-endif
-
-rnormp = sqrt(cs_gdot(ncel,res,res))
-
-if (vcopt_p%iwarni.ge.2) then
-  write(nfecra,1300)chaine(1:16) ,rnormp
-endif
-sinfo%nbivar = 0
-
-!===============================================================================
-! 3. Compute an approximated pressure increment if needed
+! 2. Compute an approximated pressure increment if needed
 !    that is when there are buoyancy terms (gravity and variable density)
 !    with a free outlet.
 !===============================================================================
@@ -819,7 +669,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
 endif
 
 !===============================================================================
-! 4. Building of the linear system to solve
+! 3. Building of the linear system to solve
 !===============================================================================
 
 ! ---> Implicit term
@@ -923,7 +773,7 @@ call matrix &
 deallocate(iflux, bflux)
 
 !===============================================================================
-! 5. Mass flux initialization
+! 4. Mass flux initialization
 !===============================================================================
 
 ! --- Flux de masse predit et premiere composante Rhie et Chow
@@ -1333,7 +1183,7 @@ if (arak.gt.0.d0) then
 endif
 
 !===============================================================================
-! 6. Solving (Loop over the non-orthogonalities)
+! 5. Solving (Loop over the non-orthogonalities)
 !===============================================================================
 
 ! --- Number of sweeps
@@ -1504,11 +1354,78 @@ do iel = 1, ncel
   rhs(iel) = - cpro_divu(iel) - rovsdt(iel)*phi(iel)
 enddo
 
-
 ! --- Right hand side residual
 residu = sqrt(cs_gdot(ncel,rhs,rhs))
 
 sinfo%rnsmbr = residu
+
+! --- Norm resiudal
+! Historical norm for the pressure step:
+!       div(rho u* + dt gradP^(n))-Gamma
+!       i.e.  RHS of the pressure + div(dt gradP^n) (otherwise there is a risk
+!       a 0 norm at steady states...). Represents terms that pressure has to
+!       balance.
+
+do iel = 1, ncel
+  dtsrom = dt(iel) / crom(iel)
+  do isou = 1, 3
+    trav(isou, iel) = dtsrom * gradp(isou,iel)
+  enddo
+enddo
+
+!---> Parallelism
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synvin(trav)
+endif
+
+! To save time, no space reconstruction
+init   = 1
+inc    = 1
+iflmb0 = 1
+if (iale.eq.1) iflmb0 = 0
+nswrgp = 1
+imligp = vcopt_u%imligr
+iwarnp = vcopt_p%iwarni
+epsrgp = vcopt_u%epsrgr
+climgp = vcopt_u%climgr
+itypfl = 1
+! VOF algorithm: the pressure step corresponds to the
+! correction of the volumetric flux, not the mass flux
+if (idilat.ge.4.or.ivofmt.ge.0) itypfl = 0
+
+call inimav &
+(f_id0  , itypfl ,                                              &
+ iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+ iwarnp ,                                                       &
+ epsrgp , climgp ,                                              &
+ crom   , brom   ,                                              &
+ trav   ,                                                       &
+ coefav , coefbv ,                                              &
+ iflux  , bflux  )
+
+init = 1
+call divmas(init, iflux, bflux, res)
+
+! --- Weakly compressible algorithm: semi analytic scheme
+if (idilat.ge.4) then
+  do iel = 1, ncel
+    res(iel) = res(iel)*crom(iel)
+  enddo
+endif
+
+! It is: div(dt/rho*rho grad P) + div(rho u*) - Gamma
+! NB: if iphydr=1, div(rho u*) contains div(d fext).
+do iel = 1, ncel
+  res(iel) = res(iel) + cpro_divu(iel)
+enddo
+
+! --- Pressure norm
+rnormp = sqrt(cs_gdot(ncel,res,res))
+
+if (vcopt_p%iwarni.ge.2) then
+  write(nfecra,1300)chaine(1:16) ,rnormp
+endif
+sinfo%nbivar = 0
 
 ! Pressure derive for the log
 if (rnormp.lt.epzero) then
@@ -1956,13 +1873,13 @@ else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 endif
 
 !===============================================================================
-! 8. Suppression of the mesh hierarchy
+! 6. Suppression of the mesh hierarchy
 !===============================================================================
 
 call sles_free_native(ivarfl(ipr), '')
 
 !===============================================================================
-! 9. Weakly compressible algorithm: semi analytic scheme
+! 7. Weakly compressible algorithm: semi analytic scheme
 !    2nd step solving a convection diffusion equation
 !===============================================================================
 
@@ -2313,7 +2230,7 @@ if (idilat.eq.5) then
 endif
 
 !===============================================================================
-! 10. Update the pressure field
+! 8. Update the pressure field
 !===============================================================================
 
 if (idtvar.lt.0) then
@@ -2345,6 +2262,7 @@ endif
 
 ! Free memory
 deallocate(dam, xam)
+deallocate(trav)
 deallocate(res, phia, dphi)
 if (allocated(divu)) deallocate(divu)
 deallocate(gradp)

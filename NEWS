@@ -5,6 +5,13 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+-  Major Fix: change the computation of the RHS for pressure.
+   The form is back to the one before a1bed6b "div(rho u* +dt grad P^n)".
+   Commit a1bed6b could introduced "big" terms if user momentum source
+   terms were added. The new form takes Rhie & Chow and terms comming from
+   the improved hydrostatic pressure into account (contrary to the former
+   form) and also all mass source terms (this part is merged).
+
 - Fix crash in some polygon triangulation cases.
 
 - Fix incorrect GUI-defined DOF locking for coupling with code_aster.

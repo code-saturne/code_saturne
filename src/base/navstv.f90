@@ -189,10 +189,9 @@ interface
      dt     , vel    ,                                            &
      coefav , coefbv , coefa_dp        , coefb_dp ,               &
      smacel , spcond , svcond ,                                   &
-     frcxt  , dfrcxt , tpucou , trav   ,                          &
+     frcxt  , dfrcxt , tpucou ,                                   &
      viscf  , viscb  ,                                            &
-     phi    , tslagr ,                                            &
-     trava  )
+     phi    , tslagr )
 
     use dimens, only: ndimfb
     use mesh
@@ -213,11 +212,9 @@ interface
     double precision svcond(ncelet,nvar)
     double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
     double precision, dimension (1:6,1:ncelet), target :: tpucou
-    double precision trav(3,ncelet)
     double precision viscf(nfac), viscb(ndimfb)
     double precision phi(ncelet)
     double precision tslagr(ncelet,*)
-    double precision trava(ndim,ncelet)
     double precision coefav(3  ,ndimfb)
     double precision coefbv(3,3,ndimfb)
     double precision vel   (3  ,ncelet)
@@ -836,10 +833,9 @@ if (ippmod(icompf).lt.0) then
   dt     , vel    ,                                              &
   coefau , coefbu , coefa_dp        , coefb_dp ,                 &
   smacel , spcond , svcond ,                                     &
-  frcxt  , dfrcxt , dttens , trav   ,                            &
+  frcxt  , dfrcxt , dttens ,                                     &
   viscf  , viscb  ,                                              &
-  phi    , tslagr ,                                              &
-  trava  )
+  phi    , tslagr )
 
 endif
 
