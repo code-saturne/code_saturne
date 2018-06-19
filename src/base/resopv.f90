@@ -1320,7 +1320,7 @@ if (icondv.eq.0) then
   do ii = 1, ncmast
     iel= ltmast(ii)
     surfbm(iel) = s_metal*volume(iel)/voltot
-    res(iel) = res(iel) - surfbm(iel)*svcond(iel,ipr)
+    cpro_divu(iel) = cpro_divu(iel) - surfbm(iel)*svcond(iel,ipr)
   enddo
 
   deallocate(surfbm)
