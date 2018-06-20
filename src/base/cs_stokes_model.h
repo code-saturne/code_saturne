@@ -61,7 +61,6 @@ typedef struct {
                                  continuity equation
                                  - 1: true (default)
                                  - 0: false */
-  double        rnormp;       /* normed residual for the pressure step */
   double        arak;         /* Arakawa multiplicator for the Rhie and Chow
                                  filter (1 by default) */
   int           ipucou;       /* pseudo coupled pressure-velocity solver

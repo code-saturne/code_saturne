@@ -99,8 +99,6 @@ BEGIN_C_DECLS
         compute the pressure step thanks to the continuity equation
         - 1: true (default)
         - 0: false
-  \var  cs_stokes_model_t::rnormp
-        normed residual for the pressure step
   \var  cs_stokes_model_t::arak
         <a name="arak"></a>
         Arakawa multiplicator for the Rhie and Chow filter (1 by default).\n\n
@@ -232,7 +230,6 @@ static cs_stokes_model_t  _stokes_model = {
   .ivisse = 1,
   .irevmc = 0,
   .iprco  = 1,
-  .rnormp = 0,
   .arak   = 1.0,
   .ipucou = 0,
   .iccvfg = 0,
@@ -257,7 +254,6 @@ void
 cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
-                                 double  **rnormp,
                                  double  **arak,
                                  int     **ipucou,
                                  int     **iccvfg,
@@ -289,7 +285,6 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  *   ivisse  --> pointer to cs_glob_stokes_model->ivisse
  *   irevmc  --> pointer to cs_glob_stokes_model->irevmc
  *   iprco   --> pointer to cs_glob_stokes_model->iprco
- *   rnormp  --> pointer to cs_glob_stokes_model->rnormp
  *   arak    --> pointer to cs_glob_stokes_model->arak
  *   ipucou  --> pointer to cs_glob_stokes_model->ipucou
  *   iccvfg  --> pointer to cs_glob_stokes_model->iccvfg
@@ -308,7 +303,6 @@ void
 cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
-                                 double  **rnormp,
                                  double  **arak,
                                  int     **ipucou,
                                  int     **iccvfg,
@@ -325,7 +319,6 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
   *ivisse = &(_stokes_model.ivisse);
   *irevmc = &(_stokes_model.irevmc);
   *iprco  = &(_stokes_model.iprco);
-  *rnormp = &(_stokes_model.rnormp);
   *arak   = &(_stokes_model.arak);
   *ipucou = &(_stokes_model.ipucou);
   *iccvfg = &(_stokes_model.iccvfg);

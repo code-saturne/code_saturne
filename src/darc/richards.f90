@@ -123,7 +123,7 @@ integer iflid , iflwgr, f_dim, f_id0, iwgrp, iprev, iitsm
 
 double precision epsrgp, climgp, extrap
 double precision thetap, xdu, xdv, xdw, xnrmul
-double precision relaxp, residu, ressol, epsilp
+double precision relaxp, residu, ressol, epsilp, rnormp
 
 character(len=80) :: chaine
 

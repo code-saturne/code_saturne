@@ -187,7 +187,7 @@ integer          f_id
 integer          icvflb
 integer          ivoid(1)
 
-double precision residu, phydr0
+double precision residu, phydr0, rnormp
 double precision ardtsr, arsr  , thetap
 double precision dtsrom, unsvom, romro0
 double precision epsrgp, climgp, extrap, epsilp

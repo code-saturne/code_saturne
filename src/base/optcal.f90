@@ -921,9 +921,6 @@ module optcal
   !>    - 0: false
   integer(c_int), pointer, save ::          iprco
 
-  !> normed residual for the pressure step
-  real(c_double), pointer, save :: rnormp
-
   !> Arakawa multiplicator for the Rhie and Chow filter (1 by default)
   real(c_double), pointer, save :: arak
 
@@ -1516,14 +1513,14 @@ module optcal
     ! Stokes options structure
 
     subroutine cs_f_stokes_options_get_pointers(ivisse, irevmc, iprco,         &
-                                                rnormp, arak  ,ipucou, iccvfg, &
+                                                arak  ,ipucou, iccvfg,         &
                                                 idilat, epsdp ,itbrrb, iphydr, &
                                                 igprij, igpust,                &
                                                 iifren, icalhy, irecmf)        &
       bind(C, name='cs_f_stokes_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ivisse, irevmc, iprco, rnormp, arak
+      type(c_ptr), intent(out) :: ivisse, irevmc, iprco, arak
       type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
       type(c_ptr), intent(out) :: igprij, igpust, iifren, icalhy, irecmf
     end subroutine cs_f_stokes_options_get_pointers
@@ -1809,20 +1806,19 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ivisse, c_irevmc, c_iprco, c_rnormp, c_arak
+    type(c_ptr) :: c_ivisse, c_irevmc, c_iprco, c_arak
     type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
 
 
     call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
-                                          c_rnormp, c_arak  , c_ipucou, c_iccvfg, &
+                                          c_arak  , c_ipucou, c_iccvfg, &
                                           c_idilat, c_epsdp , c_itbrrb, c_iphydr, c_igprij, &
                                           c_igpust, c_iifren, c_icalhy, c_irecmf)
 
     call c_f_pointer(c_ivisse, ivisse)
     call c_f_pointer(c_irevmc, irevmc)
     call c_f_pointer(c_iprco , iprco )
-    call c_f_pointer(c_rnormp, rnormp)
     call c_f_pointer(c_arak  , arak  )
     call c_f_pointer(c_ipucou, ipucou)
     call c_f_pointer(c_iccvfg, iccvfg)
