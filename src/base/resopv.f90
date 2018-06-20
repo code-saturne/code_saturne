@@ -769,9 +769,6 @@ call matrix &
    imasfl , bmasfl , viscf  , viscb  ,                            &
    rvoid  , dam    , xam    )
 
-! Free memory
-deallocate(iflux, bflux)
-
 !===============================================================================
 ! 4. Mass flux initialization
 !===============================================================================
@@ -1405,6 +1402,9 @@ call inimav &
 
 init = 1
 call divmas(init, iflux, bflux, res)
+
+! Free memory
+deallocate(iflux, bflux)
 
 ! --- Weakly compressible algorithm: semi analytic scheme
 if (idilat.ge.4) then
