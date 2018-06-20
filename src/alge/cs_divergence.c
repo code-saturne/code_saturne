@@ -1625,11 +1625,10 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
-  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict dijpf
@@ -1690,15 +1689,14 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
       cs_lnum_t ii = b_face_cells[face_id];
-      double surfn = b_f_face_surf[face_id];
-      double distbf = b_dist[face_id];
 
-      b_massflux[face_id] =  b_massflux[face_id]
-                           +  b_visc[face_id]*distbf/surfn
-                             *cofbfp[face_id]
-                             *( frcxt[ii][0]*b_f_face_normal[face_id][0]
-                               +frcxt[ii][1]*b_f_face_normal[face_id][1]
-                               +frcxt[ii][2]*b_f_face_normal[face_id][2] );
+      /* To avoid division by 0, no division by the fluid surface */
+      cs_real_3_t normal;
+      cs_math_3_normalise(b_face_normal[face_id], normal);
+
+      b_massflux[face_id] += b_visc[face_id] * b_dist[face_id]
+                            * cofbfp[face_id]
+                            * cs_math_3_dot_product(frcxt[ii], normal);
 
     }
 
@@ -1733,8 +1731,7 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       double djjpy = i_face_cog[face_id][1]-cell_cen[jj][1]+pnd*dijpfy;
       double djjpz = i_face_cog[face_id][2]-cell_cen[jj][2]+pnd*dijpfz;
 
-      i_massflux[face_id] =  i_massflux[face_id]
-                           + i_visc[face_id]*(
+      i_massflux[face_id] += i_visc[face_id]*(
                                                ( i_face_cog[face_id][0]
                                                 -cell_cen[ii][0] )*frcxt[ii][0]
                                               +( i_face_cog[face_id][1]
@@ -1765,15 +1762,14 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
       cs_lnum_t ii = b_face_cells[face_id];
-      double surfn = b_f_face_surf[face_id];
-      double distbf = b_dist[face_id];
 
-      b_massflux[face_id] = b_massflux[face_id]
-                           + b_visc[face_id]*distbf/surfn
-                            *cofbfp[face_id]
-                            *( frcxt[ii][0]*b_f_face_normal[face_id][0]
-                              +frcxt[ii][1]*b_f_face_normal[face_id][1]
-                              +frcxt[ii][2]*b_f_face_normal[face_id][2] );
+      /* To avoid division by 0, no division by the fluid surface */
+      cs_real_3_t normal;
+      cs_math_3_normalise(b_face_normal[face_id], normal);
+
+      b_massflux[face_id] += b_visc[face_id] * b_dist[face_id]
+                            * cofbfp[face_id]
+                            * cs_math_3_dot_product(frcxt[ii], normal);
 
     }
   }
@@ -1831,13 +1827,12 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict b_dist = fvq->b_dist;
-  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict i_f_face_normal
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
 
@@ -1900,15 +1895,15 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
       cs_lnum_t ii = b_face_cells[face_id];
-      double surfn = b_f_face_surf[face_id];
-      double distbf = b_dist[face_id];
 
-      b_massflux[face_id] =  b_massflux[face_id]
-                           + b_visc[face_id]*distbf/surfn
-                            *cofbfp[face_id]
-                            *( frcxt[ii][0]*b_f_face_normal[face_id][0]
-                              +frcxt[ii][1]*b_f_face_normal[face_id][1]
-                              +frcxt[ii][2]*b_f_face_normal[face_id][2] );
+      /* To avoid division by 0, no division by the fluid surface */
+      cs_real_3_t normal;
+      cs_math_3_normalise(b_face_normal[face_id], normal);
+
+
+      b_massflux[face_id] += b_visc[face_id] * b_dist[face_id]
+                            * cofbfp[face_id]
+                            * cs_math_3_dot_product(frcxt[ii], normal);
 
     }
 
@@ -2001,15 +1996,14 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
       cs_lnum_t ii = b_face_cells[face_id];
 
-      double surfn = b_f_face_surf[face_id]; //FIXME when 0
-      double distbf = b_dist[face_id];
+      /* To avoid division by 0, no division by the fluid surface */
+      cs_real_3_t normal;
+      cs_math_3_normalise(b_face_normal[face_id], normal);
 
       /* FIXME: wrong if dirichlet and viscel is really a tensor */
-      b_massflux[face_id] =  b_massflux[face_id]
-                            + b_visc[face_id]*distbf/surfn*cofbfp[face_id]
-                             *(  frcxt[ii][0]*b_f_face_normal[face_id][0]
-                               + frcxt[ii][1]*b_f_face_normal[face_id][1]
-                               + frcxt[ii][2]*b_f_face_normal[face_id][2] );
+      b_massflux[face_id] += b_visc[face_id] * b_dist[face_id]
+                            * cofbfp[face_id]
+                            * cs_math_3_dot_product(frcxt[ii], normal);
 
     }
   }

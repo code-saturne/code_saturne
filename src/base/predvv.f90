@@ -1254,8 +1254,10 @@ if (iappel.eq.1.and.iphydr.eq.1.and.iterns.eq.1) then
 
   if (igpust.eq.1) then
     do iel = 1, ncel
-      !FIXME when using porosity
-      dvol = 1.d0/cell_f_vol(iel)
+      dvol = 0.d0
+      ! If it is not a solid cell
+      if (isolid_0(iel) .eq. 0) dvol = 1.d0 / cell_f_vol(iel)
+
       do isou = 1, 3
         dfrcxt(isou, iel) = dfrcxt(isou, iel) + tsexp(isou, iel)*dvol
       enddo
