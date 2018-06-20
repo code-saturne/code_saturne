@@ -188,7 +188,7 @@ integer          icvflb
 integer          ivoid(1)
 
 double precision residu, phydr0
-double precision ardtsr, arsr  , unsara, thetap
+double precision ardtsr, arsr  , thetap
 double precision dtsrom, unsvom, romro0
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , dronm1, relaxp
@@ -237,6 +237,9 @@ double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: c_estim_der
 double precision, dimension(:), pointer :: cpro_tsrho
 double precision, allocatable, dimension(:) :: surfbm, dphi
+double precision, allocatable, dimension(:) :: ipro_visc, bpro_visc
+double precision, allocatable, dimension(:) :: cpro_visc
+double precision, allocatable, dimension(:,:) :: cpro_vitenp
 double precision, allocatable, dimension(:,:) :: trav
 
 !===============================================================================
@@ -966,13 +969,16 @@ iccocg = 1
 !----------------------
 if (arak.gt.0.d0) then
 
-  ! --- Prise en compte de Arak : la viscosite face est multipliee
-  !       Le pas de temps aussi. On retablit plus bas.
+  allocate(ipro_visc(nfac))
+  allocate(bpro_visc(nfabor))
+
+  ! --- Prise en compte de Arak: la viscosite face est multipliee
+  !       Le pas de temps aussi.
   do ifac = 1, nfac
-    viscf(ifac) = arak*viscf(ifac)
+    ipro_visc(ifac) = arak*viscf(ifac)
   enddo
   do ifac = 1, nfabor
-    viscb(ifac) = arak*viscb(ifac)
+    bpro_visc(ifac) = arak*viscb(ifac)
   enddo
 
   ! On annule la viscosite facette pour les faces couplees pour ne pas modifier
@@ -981,7 +987,7 @@ if (arak.gt.0.d0) then
   if (nbrcpl.gt.0) then
     do ifac = 1, nfabor
       if (itypfb(ifac).eq.icscpd) then
-        viscb(ifac) = 0.d0
+        bpro_visc(ifac) = 0.d0
       endif
     enddo
   endif
@@ -989,8 +995,11 @@ if (arak.gt.0.d0) then
   ! Scalar diffusivity
   !-------------------
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
+
+    allocate(cpro_visc(ncelet))
+
     do iel = 1, ncel
-      viscap(iel) = arak*viscap(iel)
+      cpro_visc(iel) = arak*viscap(iel)
     enddo
 
     nswrgp = vcopt_p%nswrgr
@@ -1007,8 +1016,8 @@ if (arak.gt.0.d0) then
    frcxt  ,                                                                    &
    cvar_pr,                                                                    &
    coefa_p, coefb_p, coefaf_p        , coefbf_p        ,                       &
-   viscf  , viscb  ,                                                           &
-   viscap ,                                                                    &
+   ipro_visc      , bpro_visc      ,                                           &
+   cpro_visc ,                                                                 &
    imasfl , bmasfl )
 
     ! Projection du terme source pour oter la partie hydrostat de la pression
@@ -1035,30 +1044,27 @@ if (arak.gt.0.d0) then
    frcxt  ,                                                       &
    cofbfp ,                                                       &
    imasfl , bmasfl ,                                              &
-   viscf  , viscb  ,                                              &
-   viscap     , viscap     , viscap     )
+   ipro_visc       , bpro_visc  ,                                 &
+   cpro_visc, cpro_visc, cpro_visc    )
 
       deallocate(cofbfp)
 
     endif
 
-    ! --- Correction du pas de temps
-    unsara = 1.d0/arak
-    do iel = 1, ncel
-      viscap(iel) = viscap(iel)*unsara
-    enddo
+    deallocate(cpro_visc)
 
   ! Tensor diffusivity
   !-------------------
   else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
+    allocate(cpro_vitenp(6, ncelet))
     do iel = 1, ncel
-      vitenp(1,iel) = arak*vitenp(1,iel)
-      vitenp(2,iel) = arak*vitenp(2,iel)
-      vitenp(3,iel) = arak*vitenp(3,iel)
-      vitenp(4,iel) = arak*vitenp(4,iel)
-      vitenp(5,iel) = arak*vitenp(5,iel)
-      vitenp(6,iel) = arak*vitenp(6,iel)
+      cpro_vitenp(1,iel) = arak*vitenp(1,iel)
+      cpro_vitenp(2,iel) = arak*vitenp(2,iel)
+      cpro_vitenp(3,iel) = arak*vitenp(3,iel)
+      cpro_vitenp(4,iel) = arak*vitenp(4,iel)
+      cpro_vitenp(5,iel) = arak*vitenp(5,iel)
+      cpro_vitenp(6,iel) = arak*vitenp(6,iel)
     enddo
 
     nswrgp = vcopt_p%nswrgr
@@ -1077,8 +1083,8 @@ if (arak.gt.0.d0) then
    frcxt  ,                                                                &
    cvar_pr,                                                                &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                               &
-   viscf  , viscb  ,                                                       &
-   vitenp ,                                                                &
+   ipro_visc        , bpro_visc ,                                          &
+   cpro_vitenp      ,                                                      &
    weighf , weighb ,                                                       &
    imasfl , bmasfl )
 
@@ -1104,8 +1110,8 @@ if (arak.gt.0.d0) then
    ( init   , nswrgp , ircflp ,                                     &
      frcxt  ,                                                       &
      cofbfp ,                                                       &
-     viscf  , viscb  ,                                              &
-     vitenp ,                                                       &
+     ipro_visc  , bpro_visc ,                                       &
+     cpro_vitenp ,                                                  &
      weighf ,                                                       &
      imasfl, bmasfl )
 
@@ -1113,69 +1119,12 @@ if (arak.gt.0.d0) then
 
     endif
 
-    ! --- Correction du pas de temps
-    unsara = 1.d0/arak
-    do iel = 1, ncel
-      vitenp(1,iel) = unsara*vitenp(1,iel)
-      vitenp(2,iel) = unsara*vitenp(2,iel)
-      vitenp(3,iel) = unsara*vitenp(3,iel)
-      vitenp(4,iel) = unsara*vitenp(4,iel)
-      vitenp(5,iel) = unsara*vitenp(5,iel)
-      vitenp(6,iel) = unsara*vitenp(6,iel)
-    enddo
+    deallocate(cpro_vitenp)
 
   endif
 
-  ! --- Correction de la viscosite aux faces
-  do ifac = 1, nfac
-    viscf(ifac) = viscf(ifac)*unsara
-  enddo
-  do ifac = 1, nfabor
-    viscb(ifac) = viscb(ifac)*unsara
-  enddo
-
-  ! If Saturne/Saturne coupling, re-set the boundary face viscosity to
-  ! the non-zero value
-  if (nbrcpl.gt.0) then
-    if (vcopt_p%idiff.ge.1) then
-
-      !Scalar diffusivity
-      if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
-
-        if (ivofmt.lt.0) then
-          imvisp = imvisf
-        else
-          imvisp = 1
-        endif
-
-        call viscfa &
-        !==========
-      ( imvisp ,            &
-        viscap ,            &
-        viscf  , viscb  )
-
-      ! Tensor diffusivity
-      else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-
-        iwarnp = vcopt_p%iwarni
-
-        call vitens &
-        !==========
-       ( vitenp , iwarnp ,             &
-         weighf , weighb ,             &
-         viscf  , viscb  )
-
-      endif
-    else
-      do ifac = 1, nfac
-        viscf(ifac) = 0.d0
-      enddo
-      do ifac = 1, nfabor
-        viscb(ifac) = 0.d0
-      enddo
-    endif
-
-  endif
+  deallocate(ipro_visc)
+  deallocate(bpro_visc)
 
 endif
 
