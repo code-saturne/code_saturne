@@ -20,11 +20,11 @@ dnl Street, Fifth Floor, Boston, MA 02110-1301, USA.
 dnl
 dnl--------------------------------------------------------------------------------
 
-# CS_AC_TEST_SALOME
-#------------------
-# Macro function grouping the different tests
+# CS_AC_SALOME_ENV
+#-----------------
+# Macro determining the presence of a Salome environment
 
-AC_DEFUN([CS_AC_TEST_SALOME], [
+AC_DEFUN([CS_AC_SALOME_ENV], [
 
 AC_ARG_WITH(salome,
             [AS_HELP_STRING([--with-salome=PATH],
@@ -59,7 +59,7 @@ if test "x$with_salome" != "xno" ; then
   if test "x$SALOMEENVCMD" = "x"; then
     salome_env=$(find $with_salome -maxdepth 2 -name salome.sh | tail -1 2>/dev/null)
     if test "x$salome_env" != "x"; then
-      SALOMEENVCMD=". $salome_env"
+      SALOMEENVCMD="source $salome_env"
     fi
   fi
 
@@ -70,7 +70,7 @@ if test "x$with_salome" != "xno" ; then
     if test "x$salome_env" != "x"; then
       salome_pre=$(find $with_salome -maxdepth 1 -name salome_prerequisites.sh 2>/dev/null)
       if test "x$salome_pre" != "x"; then
-        SALOMEENVCMD=". $salome_pre; export ROOT_SALOME=$with_salome; . $salome_env"
+        SALOMEENVCMD="source $salome_pre; export ROOT_SALOME=$with_salome; source $salome_env"
         SALOMEPRE="$salome_pre"
       fi
     fi
@@ -85,11 +85,45 @@ if test "x$with_salome" != "xno" ; then
   unset salome_pre
   unset salome_env
 
-  KERNEL_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $KERNEL_ROOT_DIR)
-  GUI_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $GUI_ROOT_DIR)
-  YACS_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $YACS_ROOT_DIR)
+fi
 
-  OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
+# Paths for libraries provided by SALOME distibution, for automatic checks
+
+if test -z "$MEDCOUPLING_ROOT_DIR" ; then
+  MEDCOUPLING_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $MEDCOUPLING_ROOT_DIR)
+fi
+
+if test -z "$HDF5HOME" ; then
+  HDF5HOME=$(eval $SALOMEENVCMD ; echo $HDF5HOME)
+fi
+
+if test -z "$MED3HOME" ; then
+  MED3HOME=$(eval $SALOMEENVCMD ; echo $MED3HOME)
+fi
+
+if test -z "$CGNSHOME" ; then
+  CGNSHOME=$(eval $SALOMEENVCMD ; echo $CGNSHOME)
+fi
+
+])dnl
+
+# CS_AC_TEST_SALOME
+#------------------
+# Macro function grouping the different tests
+# Requires CS_AC_TEST_SALOME_ENV be called first
+
+AC_DEFUN([CS_AC_TEST_SALOME], [
+
+AC_REQUIRE([CS_AC_SALOME_ENV])
+
+if test x$with_salome != xno ; then
+
+  if test x$SALOMEENVCMD != x ; then
+    KERNEL_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $KERNEL_ROOT_DIR)
+    GUI_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $GUI_ROOT_DIR)
+    YACS_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $YACS_ROOT_DIR)
+    OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
+  fi
 
   # Paths for libraries provided by SALOME distibution, for automatic checks
 
@@ -113,11 +147,20 @@ if test "x$with_salome" != "xno" ; then
   # Note that we must ensure we are using SALOME's python here, so use "python"
   # with the sourced environment and PATH rather than $PYTHON here.
 
-  if test "x$OMNIIDLPYTHONPATH" = "x"; then
-   OMNIIDLPYTHONPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/build-aux/cs_config_test.py" pythonpath_filter _omniidlmodule.so _omniidlmodule.so)
-  fi
-  if test "x$OMNIIDLLDLIBPATH" = "x"; then
-    OMNIIDLLDLIBPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/build-aux/cs_config_test.py" ld_library_path_filter libpython*)
+  if test x$SALOMEENVCMD != x ; then
+    if test "x$OMNIIDLPYTHONPATH" = "x"; then
+     OMNIIDLPYTHONPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/build-aux/cs_config_test.py" pythonpath_filter _omniidlmodule.so _omniidlmodule.so)
+    fi
+    if test "x$OMNIIDLLDLIBPATH" = "x"; then
+      OMNIIDLLDLIBPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/build-aux/cs_config_test.py" ld_library_path_filter libpython*)
+    fi
+  else
+    if test "x$OMNIIDLPYTHONPATH" = "x"; then
+     OMNIIDLPYTHONPATH=$(python -B "$srcdir/build-aux/cs_config_test.py" pythonpath_filter _omniidlmodule.so _omniidlmodule.so)
+    fi
+    if test "x$OMNIIDLLDLIBPATH" = "x"; then
+      OMNIIDLLDLIBPATH=$(python -B "$srcdir/build-aux/cs_config_test.py" ld_library_path_filter libpython*)
+    fi
   fi
 
 fi

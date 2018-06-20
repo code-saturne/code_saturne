@@ -96,17 +96,17 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH
         cspath = os.path.join(pkg.get_dir('pythondir'), 'code_saturne')
         path = path+":"+cspath
 
-        # Test if EOS modules could be imported
-        if pkg.config.libs['eos'].have == "yes":
-            eosprefix = pkg.config.libs['eos'].prefix
-            try:
-                from distutils import sysconfig
-                eospath = os.path.join(sysconfig.get_python_lib(0, 0, prefix=eosprefix), 'eos')
-            except Exception:
-                eospath = ''
-            if eospath:
-                if os.path.isdir(eospath) and not eospath in sys.path:
-                    path = path+":"+eospath
+    # Test if EOS modules could be imported
+    if pkg.config.libs['eos'].have == "yes":
+        eosprefix = pkg.config.libs['eos'].prefix
+        try:
+            from distutils import sysconfig
+            eospath = os.path.join(sysconfig.get_python_lib(0, 0, prefix=eosprefix), 'eos')
+        except Exception:
+            eospath = ''
+        if eospath:
+            if os.path.isdir(eospath) and not eospath in sys.path:
+                path = path+":"+eospath
 
     prefix = pkg.get_dir('prefix')
     pythondir = pkg.get_dir('pythondir')

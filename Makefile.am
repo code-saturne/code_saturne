@@ -209,8 +209,8 @@ bin/code_saturne: Makefile
 	rm -f $@ $@.tmp
 	$(MKDIR_P) bin
 	srcdir=''; \
-	test -f ./$@.in || srcdir=$(srcdir)/; \
-	$(edit_python) $${srcdir}$@.in >$@.tmp
+	test -f ./$@.py.in || srcdir=$(srcdir)/; \
+	$(edit_python) $${srcdir}$@.py.in >$@.tmp
 	mv $@.tmp $@
 
 bin/cs_package.py: Makefile
@@ -221,7 +221,7 @@ bin/cs_package.py: Makefile
 	$(edit_package) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
 
-bin/code_saturne: $(srcdir)/bin/code_saturne.in
+bin/code_saturne: $(srcdir)/bin/code_saturne.py.in
 bin/cs_package.py: $(srcdir)/bin/cs_package.py.in
 
 BUILT_SOURCES = bin/cs_package.py

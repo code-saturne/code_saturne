@@ -88,6 +88,8 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 
 CS_AC_TEST_ENV_MODULES
 
+CS_AC_SALOME_ENV
+
 # Check for C and Fortran compilers
 #----------------------------------
 
