@@ -377,58 +377,57 @@ _convergence_test(cs_sles_it_t              *c,
 
   }
 
-  /* If not converged */
-
-  if (residue > convergence->precision * convergence->r_norm) {
-
-    if (n_iter < convergence->n_iterations_max) {
-      int diverges = 0;
-      if (residue > s->initial_residue * 10000.0 && residue > 100.)
-        diverges = 1;
-#if (__STDC_VERSION__ >= 199901L)
-      else if (isnan(residue) || isinf(residue))
-        diverges = 1;
-#endif
-      if (diverges) {
-        bft_printf(_("\n\n"
-                     "%s [%s]: divergence after %u iterations:\n"
-                     "  initial residual: %11.4e; current residual: %11.4e\n"),
-                   cs_sles_it_type_name[c->type], convergence->name,
-                   convergence->n_iterations,
-                   s->initial_residue, convergence->residue);
-        return CS_SLES_DIVERGED;
-      }
-      else
-        return CS_SLES_ITERATING;
-    }
-    else {
-      if (verbosity > 0) {
-        if (verbosity == 1) /* Already output if verbosity > 1 */
-          bft_printf("%s [%s]:\n", cs_sles_it_type_name[c->type],
-                     convergence->name);
-        else {
-          if (convergence->r_norm > 0.)
-            bft_printf(_(final_fmt),
-                       n_iter, residue, residue/convergence->r_norm);
-          else
-            bft_printf(_("  n_iter : %5d, res_abs : %11.4e\n"),
-                       n_iter, residue);
-        }
-        if (convergence->precision > 0.)
-          bft_printf(_(" @@ Warning: non convergence\n"));
-      }
-      return CS_SLES_MAX_ITERATION;
-    }
-
-  }
-
   /* If converged */
 
-  else {
+  if (residue < convergence->precision * convergence->r_norm) {
     if (verbosity > 1)
       bft_printf(final_fmt, n_iter, residue, residue/convergence->r_norm);
     return CS_SLES_CONVERGED;
   }
+
+  /* If not converged */
+  else if (n_iter >= convergence->n_iterations_max) {
+    if (verbosity > 0) {
+      if (verbosity == 1) /* Already output if verbosity > 1 */
+        bft_printf("%s [%s]:\n", cs_sles_it_type_name[c->type],
+            convergence->name);
+      else {
+        if (convergence->r_norm > 0.)
+          bft_printf(_(final_fmt),
+              n_iter, residue, residue/convergence->r_norm);
+        else
+          bft_printf(_("  n_iter : %5d, res_abs : %11.4e\n"),
+              n_iter, residue);
+      }
+      if (convergence->precision > 0.)
+        bft_printf(_(" @@ Warning: non convergence\n"));
+    }
+    return CS_SLES_MAX_ITERATION;
+  }
+
+  /* If diverged */
+  else {
+    int diverges = 0;
+    if (residue > s->initial_residue * 10000.0 && residue > 100.)
+      diverges = 1;
+#if (__STDC_VERSION__ >= 199901L)
+    else if (isnan(residue) || isinf(residue)) {
+      diverges = 1;
+    }
+#endif
+    if (diverges == 1) {
+      bft_printf(_("\n\n"
+            "%s [%s]: divergence after %u iterations:\n"
+            "  initial residual: %11.4e; current residual: %11.4e\n"),
+          cs_sles_it_type_name[c->type], convergence->name,
+          convergence->n_iterations,
+          s->initial_residue, convergence->residue);
+      return CS_SLES_DIVERGED;
+    }
+  }
+
+  return CS_SLES_ITERATING;
+
 }
 
 /*----------------------------------------------------------------------------
