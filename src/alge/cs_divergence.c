@@ -1633,6 +1633,10 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict dijpf
     = (const cs_real_3_t *restrict)fvq->dijpf;
+  const cs_real_3_t *restrict diipf
+    = (const cs_real_3_t *restrict)fvq->diipf;
+  const cs_real_3_t *restrict djjpf
+    = (const cs_real_3_t *restrict)fvq->djjpf;
 
   /*==========================================================================*/
 
@@ -1722,15 +1726,6 @@ cs_ext_force_flux(const cs_mesh_t          *m,
 
       double surfn = i_f_face_surf[face_id];
 
-      /* Recompute II' and JJ' at this level */
-
-      double diipx = i_face_cog[face_id][0]-cell_cen[ii][0]-(1.-pnd)*dijpfx;
-      double diipy = i_face_cog[face_id][1]-cell_cen[ii][1]-(1.-pnd)*dijpfy;
-      double diipz = i_face_cog[face_id][2]-cell_cen[ii][2]-(1.-pnd)*dijpfz;
-      double djjpx = i_face_cog[face_id][0]-cell_cen[jj][0]+pnd*dijpfx;
-      double djjpy = i_face_cog[face_id][1]-cell_cen[jj][1]+pnd*dijpfy;
-      double djjpz = i_face_cog[face_id][2]-cell_cen[jj][2]+pnd*dijpfz;
-
       i_massflux[face_id] += i_visc[face_id]*(
                                                ( i_face_cog[face_id][0]
                                                 -cell_cen[ii][0] )*frcxt[ii][0]
@@ -1746,12 +1741,12 @@ cs_ext_force_flux(const cs_mesh_t          *m,
                                                 -cell_cen[jj][2] )*frcxt[jj][2]
                                               )
                             + surfn/i_dist[face_id]*0.5
-                             *( (djjpx-diipx)*( viselx[ii]*frcxt[ii][0]
-                                               +viselx[jj]*frcxt[jj][0] )
-                               +(djjpy-diipy)*( visely[ii]*frcxt[ii][1]
-                                               +visely[jj]*frcxt[jj][1] )
-                               +(djjpz-diipz)*( viselz[ii]*frcxt[ii][2]
-                                               +viselz[jj]*frcxt[jj][2] )
+                             *( (djjpf[face_id][0]-diipf[face_id][0])*( viselx[ii]*frcxt[ii][0]
+                                                                       +viselx[jj]*frcxt[jj][0] )
+                               +(djjpf[face_id][1]-diipf[face_id][1])*( visely[ii]*frcxt[ii][1]
+                                                                       +visely[jj]*frcxt[jj][1] )
+                               +(djjpf[face_id][2]-diipf[face_id][2])*( viselz[ii]*frcxt[ii][2]
+                                                                       +viselz[jj]*frcxt[jj][2] )
                               );
 
     }
