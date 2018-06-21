@@ -665,8 +665,16 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
     /* list of faces building */
 
-    const cs_lnum_t *faces_list
-      = cs_gui_get_boundary_faces(boundaries->label[izone], &faces);
+    /* Test for when boundaries are not initialized when only the radiation module
+     * is called */
+    const cs_lnum_t *faces_list;
+    if (boundaries != NULL) {
+      faces_list
+        = cs_gui_get_boundary_faces(boundaries->label[izone], &faces);
+    } else {
+      faces_list
+        = cs_gui_get_boundary_faces(cs_gui_boundary_zone_label(izone+1), &faces);
+    }
 
     if (cs_gui_strcmp(_boundary->nature[izone], "wall")) {
       for (cs_lnum_t i = 0; i < faces; i++) {

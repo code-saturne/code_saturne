@@ -1080,7 +1080,9 @@ cs_rad_transfer_solve(int               bc_type[],
 
   if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
 
-    cs_real_t *cvara_scalt = CS_F_(t)->vals[1];
+    /* val index to access, necessary for compatibility with neptune */
+    int tval_id = CS_F_(t)->n_time_vals - 1;
+    cs_real_t *cvara_scalt = CS_F_(t)->vals[tval_id];
 
     /* temperature is in Celsius */
     if (cs_glob_thermal_model->itpscl == 2) {

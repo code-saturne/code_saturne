@@ -922,8 +922,10 @@ cs_rad_transfer_bcs(int         nvar,
     }
     else if (cs_glob_thermal_model->itpscl == 1) {
 
+      /* val index to access, necessary for compatibility with neptune */
+      int tval_id = f_temp->n_time_vals - 1;
       for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
-        tempk[iel] = f_temp->vals[1][iel];
+        tempk[iel] = f_temp->vals[tval_id][iel];
 
     }
 
