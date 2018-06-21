@@ -223,6 +223,29 @@ typedef struct {
 } cs_basis_func_t;
 
 /*============================================================================
+ * Static inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the polynomial order of the given basis
+ *
+ * \param[in]  bf  set of basis functions
+ *
+ * \return the polynomial order
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline short int
+cs_basis_func_get_poly_order(const cs_basis_func_t   *bf)
+{
+  if (bf == NULL)
+    return -1;
+  else
+    return bf->poly_order;
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
