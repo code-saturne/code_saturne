@@ -1,4 +1,3 @@
-
 Master (not on release branches yet)
 ------------------------------------
 
@@ -16,6 +15,8 @@ Numerics:
   * When using multiple threads and multigrid preconditioning with a
     Gauss-Seidel smoother, this choice is set by default over the
     standard preconditioned congugate gradient.
+
+- Add vector-valued Laplacian HHO scheme (case k=1)
 
 Architectural changes:
 
@@ -2827,4 +2828,3 @@ version of Code_Saturne 1.3.
 
 This version of the code is also the first version of Code_Saturne distributed
 under a free software (GPL + LGPL) licence.
-
