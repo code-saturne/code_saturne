@@ -1703,8 +1703,8 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
       case CS_SPACE_SCHEME_CDOFB:
         values = cs_equation_get_face_values(eq);
-        values = values + connect->n_faces[2]; /* Point only on the boundary
-                                                  faces */
+        /* Point only on the boundary faces */
+        values = values + eqp->dim *connect->n_faces[2];
         break;
 
       default:
