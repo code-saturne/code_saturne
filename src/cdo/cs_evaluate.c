@@ -812,6 +812,7 @@ _pcva_by_value(const cs_real_t     const_vec[3],
  * \param[in]      input       NULL or pointer to a structure cast on-the-fly
  * \param[in]      n_elts      number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      dim         dimension of the variable to handle
  * \param[in, out] values      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -822,6 +823,7 @@ _pfp_by_analytic(cs_real_t              time_eval,
                  void                  *input,
                  const cs_lnum_t        n_elts,
                  const cs_lnum_t       *elt_ids,
+                 int                    dim,
                  cs_real_t              values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
@@ -844,13 +846,13 @@ _pfp_by_analytic(cs_real_t              time_eval,
       cs_lnum_t  f_id = c2f->ids[j];
       if (todo[f_id]) {
         const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
-        ana(time_eval, 1, NULL, xf, false,  input, values + f_id);
+        ana(time_eval, 1, NULL, xf, false,  input, values + dim*f_id);
         todo[f_id] = false;
       }
 
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
-  } // Loop on selected cells
+  } /* Loop on selected cells */
 
   BFT_FREE(todo);
 }
@@ -1785,7 +1787,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
     }
     else
       _pfp_by_analytic(time_eval,
-                       anai->func, anai->input, z->n_elts, z->elt_ids,
+                       anai->func, anai->input, z->n_elts, z->elt_ids, def->dim,
                        retval);
 
     if (cs_glob_n_ranks > 1)
