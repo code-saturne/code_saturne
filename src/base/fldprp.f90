@@ -72,7 +72,7 @@ implicit none
 
 character(len=80) :: f_label, f_name, s_name, s_label
 integer           :: ii, ivar, isorb, keysrb, igwfpr, keypre, ischcp
-integer           :: idim1, idim3, idim6, iflid
+integer           :: idim1, idim3, idim6, iflid, k_restart_id
 integer           :: type_flag, post_flag, location_id
 logical           :: has_previous
 
@@ -191,6 +191,10 @@ if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
 else if (ippmod(idarcy).ge.0.and.darcy_gravity.ge.1) then
   call add_property_field_1d('total_pressure', 'Pressure head', iprtot)
 endif
+
+! Save total pressure in auxiliary restart file
+call field_get_key_id("restart_file", k_restart_id)
+call field_set_key_int(iprtot, k_restart_id, 1)
 
 ! Cs^2 si on est en LES dynamique
 if (iturb.eq.41) then
