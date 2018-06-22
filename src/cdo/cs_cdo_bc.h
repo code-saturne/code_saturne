@@ -94,14 +94,14 @@ typedef struct {
 
 typedef struct {
 
-  cs_lnum_t          n_elts;    // Number of elements
+  cs_lnum_t          n_elts;    /* Number of elements */
   cs_flag_t         *flag;      /* Type of boundary conditions associated to
                                    an element. For a face, one (and only one)
                                    type is set. For an edge and a vertex,
                                    several BCs can be set.
                                    size = n_elts */
 
-  // List of faces by type of boundary conditions
+  /* List of faces by type of boundary conditions */
   cs_cdo_bc_list_t  *dir;
   cs_cdo_bc_list_t  *neu;
   cs_cdo_bc_list_t  *rob;

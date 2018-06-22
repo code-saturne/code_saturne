@@ -121,9 +121,9 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t            *cm,
       compute_integral(time_eval, xv2, xe, xf, cm->xc, vol*cm->wvc[v2],
                        ana, input, values + v2);
 
-    } // Loop on face edges
+    } /* Loop on face edges */
 
-  } // Loop on cell faces
+  } /* Loop on cell faces */
 
 }
 
@@ -183,11 +183,12 @@ _dcsd_by_analytic(cs_real_t                        time_eval,
                          ana, input, values + v1);
         compute_integral(time_eval, xv2, xe, xf, xc, quant->dcell_vol[v2],
                          ana, input, values + v2);
-      } // Loop on edges
 
-    } // Loop on faces
+      } /* Loop on edges */
 
-  } // Loop on cells
+    } /* Loop on faces */
+
+  } /* Loop on cells */
 
 }
 
@@ -230,7 +231,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
       const short int  n_ef  = cm->f2e_idx[f+1] - start;
       const short int *e_ids = cm->f2e_ids + cm->f2e_idx[f];
 
-      if (n_ef == 3) { // Current face is a triangle --> simpler
+      if (n_ef == 3) { /* Current face is a triangle --> simpler */
 
         short int  v0, v1, v2;
         cs_cell_mesh_get_next_3_vertices(e_ids, cm->e2v_ids, &v0, &v1, &v2);
@@ -257,13 +258,13 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
                            hf_coef*tef[i],
                            ana, input, &retval);
 
-        } // Loop on face edges
+        } /* Loop on face edges */
 
-      } // Current face is triangle or not ?
+      } /* Current face is triangle or not ? */
 
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
-  } // Not a tetrahedron
+  } /* Not a tetrahedron */
 
   return retval;
 }
@@ -348,15 +349,15 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
                              hfco*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                              ana, input, values + c_id);
 
-          } // Loop on edges
+          } /* Loop on edges */
 
-        } // Current face is triangle or not ?
+        } /* Current face is triangle or not ? */
 
-      } // Loop on faces
+      } /* Loop on faces */
 
     } /* Not a tetrahedron */
 
-  } // Loop on cells
+  } /* Loop on cells */
 
 }
 
@@ -439,18 +440,18 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
                              hfco*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                              ana, input, values + c_id);
 
-          } // Loop on edges
+          } /* Loop on edges */
 
-        } // Current face is triangle or not ?
+        } /* Current face is triangle or not ? */
 
-      } // Loop on faces
+      } /* Loop on faces */
 
     } /* Not a tetrahedron */
 
     /* Average */
     values[c_id] /= quant->cell_vol[c_id];
 
-  } // Loop on cells
+  } /* Loop on cells */
 
 }
 
@@ -540,18 +541,18 @@ _pcva_by_analytic(cs_real_t                        time_eval,
                              hfco*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                              ana, input, val_i);
 
-          } // Loop on edges
+          } /* Loop on edges */
 
-        } // Current face is triangle or not ?
+        } /* Current face is triangle or not ? */
 
-      } // Loop on faces
+      } /* Loop on faces */
 
     } /* Not a tetrahedron */
 
     const double _overvol = 1./quant->cell_vol[c_id];
     for (int k = 0; k < 3; k++) val_i[k] *= _overvol;
 
-  } // Loop on cells
+  } /* Loop on cells */
 
 }
 
@@ -929,7 +930,7 @@ _pfsa_by_analytic(cs_real_t                       time_eval,
       /* Average */
       val_i[0] /= pfq.meas;
 
-    } // Loop on faces
+    } /* Loop on faces */
 
   }
   else {
@@ -942,7 +943,7 @@ _pfsa_by_analytic(cs_real_t                       time_eval,
     for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
       todo[f_id] = true;
 
-    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+    for (cs_lnum_t i = 0; i < n_elts; i++) { /* Loop on selected cells */
 
       cs_lnum_t  c_id = elt_ids[i];
 
@@ -992,9 +993,9 @@ _pfsa_by_analytic(cs_real_t                       time_eval,
 
         } /* TODO == true */
 
-      } // Loop on cell faces
+      } /* Loop on cell faces */
 
-    } // Loop on selected cells
+    } /* Loop on selected cells */
 
     BFT_FREE(todo);
 
@@ -1090,7 +1091,7 @@ _pfva_by_analytic(cs_real_t                       time_eval,
     for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
       todo[f_id] = true;
 
-    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+    for (cs_lnum_t i = 0; i < n_elts; i++) { /* Loop on selected cells */
 
       cs_lnum_t  c_id = elt_ids[i];
 
@@ -1140,11 +1141,11 @@ _pfva_by_analytic(cs_real_t                       time_eval,
           for (short int xyz = 0; xyz < 3; xyz++)
             val_i[xyz] *= _oversurf;
 
-        } // If todo
+        } /* If todo */
 
-      } // Loop on cell faces
+      } /* Loop on cell faces */
 
-    } // Loop on selected cells
+    } /* Loop on selected cells */
 
     BFT_FREE(todo);
 
@@ -1185,19 +1186,19 @@ _pvp_by_analytic(cs_real_t              time_eval,
   BFT_MALLOC(vtx_lst, quant->n_vertices, cs_lnum_t);
 # pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
   for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
-    vtx_lst[v_id] = -1; // No flag
+    vtx_lst[v_id] = -1; /* No flag */
 
-  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+  for (cs_lnum_t i = 0; i < n_elts; i++) { /* Loop on selected cells */
 
     const cs_lnum_t  c_id = elt_ids[i];
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
       cs_lnum_t  v_id = c2v->ids[j];
-      if (vtx_lst[v_id] == -1) // Not encountered yet
+      if (vtx_lst[v_id] == -1) /* Not encountered yet */
         vtx_lst[v_id] = v_id;
 
-    } // Loop on cell vertices
-  } // Loop on selected cells
+    } /* Loop on cell vertices */
+  } /* Loop on selected cells */
 
   /* Count number of selected vertices */
   cs_lnum_t  n_selected_vertices = 0;
@@ -1208,7 +1209,7 @@ _pvp_by_analytic(cs_real_t              time_eval,
 
   /* One call for all selected vertices */
   ana(time_eval, n_selected_vertices, vtx_lst, quant->vtx_coord,
-      false,  // compacted output ?
+      false,  /* compacted output ? */
       input,
       values);
 
@@ -1253,9 +1254,9 @@ _pfsp_by_value(const cs_real_t    const_val,
       if (todo[f_id])
         values[f_id] = const_val, todo[f_id] = false;
 
-    } // Loop on cell vertices
+    } /* Loop on cell vertices */
 
-  } // Loop on selected cells
+  } /* Loop on selected cells */
 
   BFT_FREE(todo);
 }
@@ -1297,12 +1298,12 @@ _pfvp_by_value(const cs_real_t    const_vec[3],
       cs_lnum_t  f_id = c2f->ids[j];
       if (todo[f_id]) {
         todo[f_id] = false;
-        memcpy(values+3*f_id,const_vec,3*sizeof(cs_real_t));
+        memcpy(values + 3*f_id, const_vec, 3*sizeof(cs_real_t));
       }
 
-    } // Loop on cell vertices
+    } /* Loop on cell vertices */
 
-  } // Loop on selected cells
+  } /* Loop on selected cells */
 
   BFT_FREE(todo);
 }
@@ -1339,9 +1340,9 @@ _untag_frontier_vertices(cs_lnum_t      c_id,
           vtx_tag[f2v_lst[i]] = 0; // untag
 
       }
-    } // This face belongs to the frontier of the selection (only interior)
+    } /* This face belongs to the frontier of the selection (only interior) */
 
-  } // Loop on cell faces
+  } /* Loop on cell faces */
 
 }
 
@@ -1385,16 +1386,16 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
     for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++)
       cell_tag[c_id] = false;
 
-  /* First pass: flag cells and vertices */
+    /* First pass: flag cells and vertices */
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+    for (cs_lnum_t i = 0; i < n_elts; i++) { /* Loop on selected cells */
 
       const cs_lnum_t  c_id = elt_ids[i];
       cell_tag[c_id] = true;
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-        vtx_tag[c2v->ids[j]] = -1; // activated
+        vtx_tag[c2v->ids[j]] = -1; /* activated */
 
-    } // Loop on selected cells
+    } /* Loop on selected cells */
 
   }
   else { /* All cells are selected */
@@ -1434,8 +1435,8 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
   if (cs_glob_n_ranks > 1)
     cs_interface_set_max(cs_cdo_connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          n_vertices,
-                         1,           // stride
-                         true,        // interlace, not useful here
+                         1,           /* stride */
+                         true,        /* interlace, not useful here */
                          CS_LNUM_TYPE,
                          (void *)vtx_tag);
 
@@ -1445,14 +1446,14 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
   if (elt_ids != NULL) { /* Only some cells are selected */
 
 #   pragma omp parallel for reduction(+:volume_marked) if (n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+    for (cs_lnum_t i = 0; i < n_elts; i++) { /* Loop on selected cells */
 
       const cs_lnum_t  c_id = elt_ids[i];
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-        if (vtx_tag[c2v->ids[j]] == -1) // activated
-          volume_marked += dc_vol[j]; // | dual_cell cap cell |
+        if (vtx_tag[c2v->ids[j]] == -1) /* activated */
+          volume_marked += dc_vol[j];   /* | dual_cell cap cell | */
 
-    } // Loop on selected cells
+    } /* Loop on selected cells */
 
   }
   else { /* elt_ids == NULL => all cells are selected */
@@ -1460,8 +1461,8 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
 #   pragma omp parallel for reduction(+:volume_marked) if (n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-        if (vtx_tag[c2v->ids[j]] == -1) // activated
-          volume_marked += dc_vol[j]; // | dual_cell cap cell |
+        if (vtx_tag[c2v->ids[j]] == -1) /* activated */
+          volume_marked += dc_vol[j];   /* | dual_cell cap cell | */
     }
 
   }
@@ -1523,7 +1524,7 @@ _pvsp_by_value(cs_real_t          const_val,
   for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
     todo[v_id] = true;
 
-  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+  for (cs_lnum_t i = 0; i < n_elts; i++) { /* Loop on selected cells */
 
     cs_lnum_t  c_id = elt_ids[i];
 
@@ -1533,9 +1534,9 @@ _pvsp_by_value(cs_real_t          const_val,
       if (todo[v_id])
         values[v_id] = const_val, todo[v_id] = false;
 
-    } // Loop on cell vertices
+    } /* Loop on cell vertices */
 
-  } // Loop on selected cells
+  } /* Loop on selected cells */
 
   BFT_FREE(todo);
 }
@@ -1734,12 +1735,12 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
     if (def->meta & CS_FLAG_FULL_LOC)
       anai->func(time_eval,
                  quant->n_vertices, NULL, quant->vtx_coord,
-                 false,  // compacted output ?
+                 false,  /* compacted output ? */
                  anai->input,
                  retval);
     else
       _pvp_by_analytic(time_eval,
-                       anai->func, anai->input, z->n_elts, z->elt_ids,
+                       anai->func, anai->input, z->n_elts, z->elt_ids, def->dim,
                        retval);
 
     if (cs_glob_n_ranks > 1)

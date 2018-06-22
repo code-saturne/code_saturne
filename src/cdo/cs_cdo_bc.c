@@ -120,16 +120,16 @@ _add_def_to_bc(const short int    def_id,
   short int  *defs = bc_defs + shift;
   cs_lnum_t  *ids = bc_list + shift;
 
-  if (elt_ids == NULL) { // This definition encompasses all the border faces
+  if (elt_ids == NULL) { /* This definition encompasses all the border faces */
 
-    assert(shift == 0); // Sanity check
+    assert(shift == 0); /* Sanity check */
     for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
       ids[f_id] = f_id;
       defs[f_id] = def_id;
     }
 
   }
-  else { // List of faces related to a mesh location
+  else { /* List of faces related to a mesh location */
 
     for (cs_lnum_t i = 0; i < n_faces; i++) {
       const cs_lnum_t  f_id = elt_ids[i];
@@ -245,7 +245,7 @@ cs_cdo_bc_define(cs_param_bc_type_t    default_bc,
 
   cs_cdo_bc_t  *bc = _cdo_bc_create(n_b_faces);
 
-  if (n_b_faces == 0) { // In parallel run this situation may occur
+  if (n_b_faces == 0) { /* In parallel run this situation may occur */
 
     bc->dir = cs_cdo_bc_list_create(0, 0);
     bc->neu = cs_cdo_bc_list_create(0, 0);
@@ -263,7 +263,7 @@ cs_cdo_bc_define(cs_param_bc_type_t    default_bc,
     for (cs_lnum_t i = 0; i < z->n_elts; i++)
       bc->flag[z->elt_ids[i]] |= d->meta;
 
-  } // Loop on definitions of boundary conditions
+  } /* Loop on definitions of boundary conditions */
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++)
     if (bc->flag[i] == 0)
@@ -320,7 +320,7 @@ cs_cdo_bc_define(cs_param_bc_type_t    default_bc,
       shift[CS_PARAM_BC_HMG_NEUMANN] += 1;
     }
 
-  } // Loop on border faces
+  } /* Loop on border faces */
 
   /* Loop on the definition of each boundary condition */
   for (short int def_id = 0; def_id < n_desc; def_id++) {
@@ -359,7 +359,7 @@ cs_cdo_bc_define(cs_param_bc_type_t    default_bc,
 
     }
 
-  } // Loop on definitions of boundary conditions
+  } /* Loop on definitions of boundary conditions */
 
   return bc;
 }

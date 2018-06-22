@@ -134,9 +134,10 @@ _set_mask(const cs_xdef_t     *st,
   if (st == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
 
-  const cs_mask_t  mask = (1 << st_id); // value of the mask for the source term
+  /* value of the mask for the source term */
+  const cs_mask_t  mask = (1 << st_id);
 
-  if (st->meta & CS_FLAG_FULL_LOC) // All cells are selected
+  if (st->meta & CS_FLAG_FULL_LOC) /* All cells are selected */
 #   pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < cs_cdo_quant->n_cells; i++) cell_mask[i] |= mask;
 
@@ -405,7 +406,7 @@ cs_source_term_set_reduction(cs_xdef_t     *st,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
 
   if (st->meta & flag)
-    return; // Nothing to do
+    return; /* Nothing to do */
 
   cs_flag_t  save_meta = st->meta;
 
@@ -513,7 +514,8 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
       }
     }
 
-    if ((st_def->meta & CS_FLAG_FULL_LOC) == 0) // Not defined on the whole mesh
+    /* Not defined on the whole mesh */
+    if ((st_def->meta & CS_FLAG_FULL_LOC) == 0)
       need_mask = true;
 
     switch (space_scheme) {
@@ -563,7 +565,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
             bft_error(__FILE__, __LINE__, 0,
                       " Invalid type of quadrature for computing a source term"
                       " with CDOVB schemes");
-          } // quad_type
+          } /* quad_type */
           break;
 
         case CS_XDEF_BY_ARRAY:
@@ -575,7 +577,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           bft_error(__FILE__, __LINE__, 0,
                     " Invalid type of definition for a source term in CDOVB");
           break;
-        } // switch def_type
+        } /* switch def_type */
 
       }
       else {
@@ -598,10 +600,10 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
                     " Invalid type of definition for a source term in CDOVB");
           break;
 
-        } // switch def_type
+        } /* switch def_type */
 
-      } // flag PRIMAL or DUAL
-      break; // CDOVB
+      } /* flag PRIMAL or DUAL */
+      break; /* CDOVB */
 
     case CS_SPACE_SCHEME_CDOVCB:
       if (st_def->meta & CS_FLAG_DUAL) {
@@ -640,10 +642,10 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
                     " Invalid type of definition for a source term in CDOVB");
           break;
 
-        } // switch def_type
+        } /* switch def_type */
 
       }
-      break; // CDOVCB
+      break; /* CDOVCB */
 
     case CS_SPACE_SCHEME_CDOFB:
     case CS_SPACE_SCHEME_HHO_P0:
@@ -672,7 +674,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
                   " Invalid type of definition for a source term in CDOFB");
         break;
 
-      } // switch def_type
+      } /* switch def_type */
       break;
 
     case CS_SPACE_SCHEME_HHO_P1:
@@ -701,7 +703,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
                   __func__);
         break;
 
-      } // switch def_type
+      } /* switch def_type */
       break;
 
     default:
@@ -709,9 +711,9 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
                 "Invalid space scheme for setting the source term.");
       break;
 
-    } // Switch on space scheme
+    } /* Switch on space scheme */
 
-  } // Loop on source terms
+  } /* Loop on source terms */
 
   if (need_mask) {
 
@@ -880,7 +882,7 @@ cs_source_term_compute_from_potential(cs_flag_t                loc,
                                       cs_real_t                time_eval,
                                       double                  *p_values[])
 {
-  const int  stride = 1; // Only this case is managed up to now
+  const int  stride = 1; /* Only this case is managed up to now */
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
 
   double  *values = *p_values;
@@ -1017,7 +1019,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
   /* Retrieve the values of the potential at each cell vertices */
   double  *eval = cb->values;
   anai->func(time_eval, cm->n_vc, NULL, cm->xv,
-             true, // compacted output ?
+             true, /* compacted output ? */
              anai->input,
              eval);
 
@@ -1213,17 +1215,17 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
       const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
       const double  tet_vol = cm->tef[i]*hf_coef;
 
-      // xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
+      /* xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2) */
       for (int k = 0; k < 3; k++)
         xgv[v1][k] += tet_vol*(xfc[k] + 0.375*xv1[k] + 0.125*xv2[k]);
 
-      // xg = 0.25(xv2 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
+      /* xg = 0.25(xv2 + xe + xf + xc) where xe = 0.5*(xv1 + xv2) */
       for (int k = 0; k < 3; k++)
         xgv[v2][k] += tet_vol*(xfc[k] + 0.375*xv2[k] + 0.125*xv1[k]);
 
-    } // Loop on face edges
+    } /* Loop on face edges */
 
-  } // Loop on cell faces
+  } /* Loop on cell faces */
 
   /* Compute the source term contribution for each vertex */
   double  *vol_vc = cb->values;
@@ -1236,7 +1238,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
   /* Call the analytic function to evaluate the function at xgv */
   double  *eval_xgv = vol_vc + cm->n_vc;
   anai->func(time_eval, cm->n_vc, NULL, (const cs_real_t *)xgv,
-             true, // compacted output ?
+             true, /* compacted output ? */
              anai->input,
              eval_xgv);
 
@@ -1302,25 +1304,25 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
       const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
       const double  half_pef_vol = cm->tef[i]*hf_coef;
 
-      // xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
+      /* xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2) */
       for (int k = 0; k < 3; k++)
         xg[0][k] = xfc[k] + 0.375*xv1[k] + 0.125*xv2[k];
 
-      // xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
+      /* xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2) */
       for (int k = 0; k < 3; k++)
         xg[1][k] = xfc[k] + 0.375*xv2[k] + 0.125*xv1[k];
 
       anai->func(time_eval, 2, NULL, (const cs_real_t *)xg,
-                 true, // compacted output ?
+                 true, /* compacted output ? */
                  anai->input,
                  eval_xg);
 
       values[v1] += half_pef_vol * eval_xg[0];
       values[v2] += half_pef_vol * eval_xg[1];
 
-    } // Loop on face edges
+    } /* Loop on face edges */
 
-  } // Loop on cell faces
+  } /* Loop on cell faces */
 
 }
 
@@ -1373,14 +1375,14 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   /* Cell evaluation */
   double  eval_c;
   anai->func(time_eval, 1, NULL, cm->xc,
-             true, // compacted output ?
+             true, /* compacted output ? */
              anai->input,
              &eval_c);
 
   /* Contributions related to vertices */
-  double  *eval_v = cb->values + cm->n_vc; // size n_vc
+  double  *eval_v = cb->values + cm->n_vc; /* size n_vc */
   anai->func(time_eval, cm->n_vc, NULL, cm->xv,
-             true,  // compacted output ?
+             true,  /* compacted output ? */
              anai->input,
              eval_v);
 
@@ -1390,9 +1392,9 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
     for (int k = 0; k < 3; k++) xvc[v][k] = 0.5*(cm->xc[k] + xv[k]);
   }
 
-  double  *eval_vc = cb->values + 2*cm->n_vc; // size n_vc
+  double  *eval_vc = cb->values + 2*cm->n_vc; /* size n_vc */
   anai->func(time_eval, cm->n_vc, NULL, (const cs_real_t *)xvc,
-             true,  // compacted output ?
+             true,  /* compacted output ? */
              anai->input,
              eval_vc);
 
@@ -1403,12 +1405,12 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       contrib[v] = cm->wvc[v]*cm->vol_c
       * (-0.05*(eval_c + eval_v[v]) + 0.2*eval_vc[v]);
 
-  } // Loop on vertices
+  } /* Loop on vertices */
 
   /* 2) Compute the contribution related to edge
      The portion of dual cell seen by each vertex is 1/2 |pec| */
   cs_real_3_t  *x_e = cb->vectors;
-  cs_real_3_t  *xec = cb->vectors + cm->n_ec; // size = n_ec (overwrite xvc)
+  cs_real_3_t  *xec = cb->vectors + cm->n_ec; /* size = n_ec (overwrite xvc) */
 
   for (short int e = 0; e < cm->n_ec; e++) {
     for (int k = 0; k < 3; k++) {
@@ -1417,16 +1419,16 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
     }
   }
 
-  // Evaluate the analytic function at xe and xec
-  double  *eval_e = cb->values + cm->n_vc; // size=n_ec (overwrite eval_v)
-  double  *eval_ec = eval_e + cm->n_ec;    // size=n_ec (overwrite eval_vc)
+  /* Evaluate the analytic function at xe and xec */
+  double  *eval_e = cb->values + cm->n_vc; /* size=n_ec (overwrite eval_v) */
+  double  *eval_ec = eval_e + cm->n_ec;    /* size=n_ec (overwrite eval_vc) */
   anai->func(time_eval, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
-             true,  // compacted output ?
+             true,  /* compacted output ? */
              anai->input,
              eval_e);
 
-  // xev (size = 2*n_ec)
-  cs_real_3_t  *xve = cb->vectors;         // size=2*n_ec (overwrite xe and xec)
+  /* xev (size = 2*n_ec) */
+  cs_real_3_t  *xve = cb->vectors; /* size=2*n_ec (overwrite xe and xec) */
   for (short int e = 0; e < cm->n_ec; e++) {
 
     const cs_real_t  *xe = cm->edge[e].center;
@@ -1440,16 +1442,16 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       xve[2*e+1][k] = 0.5*(xv2[k] + xe[k]);
     }
 
-  } // Loop on edges
+  } /* Loop on edges */
 
-  double  *eval_ve = eval_ec + cm->n_ec; // size = 2*n_ec
+  double  *eval_ve = eval_ec + cm->n_ec; /* size = 2*n_ec */
   anai->func(time_eval, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
-             true,  // compacted output ?
+             true,  /* compacted output ? */
              anai->input,
              eval_ve);
 
   /* 3) Main loop on faces */
-  double  *pvf_vol = eval_ve + 2*cm->n_ec;  // size n_vc
+  double  *pvf_vol = eval_ve + 2*cm->n_ec;  /* size n_vc */
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -1473,24 +1475,24 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       cs_real_t  eval_ef;
       for (int k = 0; k < 3; k++) xef[k] = 0.5*(cm->edge[e].center[k] + xf[k]);
       anai->func(time_eval, 1, NULL, xef,
-                 true,  // compacted output ?
+                 true,  /* compacted output ? */
                  anai->input,
                  &eval_ef);
 
-      // 1/5 (EF + EC) -1/20 * (E)
+      /* 1/5 (EF + EC) -1/20 * (E) */
       const double  common_ef_contrib =
         0.2*(eval_ef + eval_ec[e]) -0.05*eval_e[e];
 
       contrib[v1] += half_pef_vol*(common_ef_contrib + 0.2*eval_ve[2*e]);
       contrib[v2] += half_pef_vol*(common_ef_contrib + 0.2*eval_ve[2*e+1]);
 
-    } // Loop on face edges
+    } /* Loop on face edges */
 
     /* Contributions related to this face */
-    cs_real_3_t  *xvfc = cb->vectors;  // size=2+n_vc (overwrite xev)
+    cs_real_3_t  *xvfc = cb->vectors;  /* size=2+n_vc (overwrite xev) */
     for (int k = 0; k < 3; k++) {
-      xvfc[0][k] = xf[k];                    // xf
-      xvfc[1][k] = 0.5*(xf[k] + cm->xc[k]);  // xfc
+      xvfc[0][k] = xf[k];                    /* xf */
+      xvfc[1][k] = 0.5*(xf[k] + cm->xc[k]);  /* xfc */
     }
 
     short int  n_vf = 0;
@@ -1503,9 +1505,9 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       }
     }
 
-    double  *eval_vfc = pvf_vol + cm->n_vc; // size=n_vf + 2
+    double  *eval_vfc = pvf_vol + cm->n_vc; /* size=n_vf + 2 */
     anai->func(time_eval, 2+n_vf, NULL, (const cs_real_t *)xvfc,
-               true,  // compacted output ?
+               true,  /* compacted output ? */
                anai->input,
                eval_vfc);
 
@@ -1515,7 +1517,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       contrib[v] += pvf_vol[v] * (val_vfc + 0.2*eval_vfc[2+i]);
     }
 
-  } // Loop on cell faces
+  } /* Loop on cell faces */
 
   /* Add the computed contributions to the return values */
   for (short int v = 0; v < cm->n_vc; v++)
@@ -1593,7 +1595,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                              gauss_pts, weights);
 
       anai->func(time_eval, 5, NULL, (const cs_real_t *)gauss_pts,
-                 true,  // compacted output ?
+                 true,  /* compacted output ? */
                  anai->input,
                  results);
 
@@ -1607,7 +1609,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                              gauss_pts, weights);
 
       anai->func(time_eval, 5, NULL, (const cs_real_t *)gauss_pts,
-                 true,  // compacted output ?
+                 true,  /* compacted output ? */
                  anai->input,
                  results);
 
@@ -1615,9 +1617,9 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
       for (int p = 0; p < 5; p++) sum += results[p] * weights[p];
       contrib[v2] += sum;
 
-    } // Loop on face edges
+    } /* Loop on face edges */
 
-  } // Loop on cell faces
+  } /* Loop on cell faces */
 
   /* Add the computed contributions to the return values */
   for (short int v = 0; v < cm->n_vc; v++)
@@ -1718,12 +1720,12 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
   double  *eval = cb->values;
 
   anai->func(time_eval, cm->n_vc, NULL, cm->xv,
-             true,  // compacted output ?
+             true,  /* compacted output ? */
              anai->input,
              eval);
 
   anai->func(time_eval, 1, NULL, cm->xc,
-             true,  // compacted output ?
+             true,  /* compacted output ? */
              anai->input,
              eval + cm->n_vc);
 
@@ -1855,7 +1857,7 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
   /* Call the analytic function to evaluate the function at xc */
   double  eval_xc;
   anai->func(time_eval, 1, NULL, (const cs_real_t *)cm->xc,
-             true,  // compacted output ?
+             true,  /* compacted output ? */
              anai->input,
              &eval_xc);
 
@@ -1904,7 +1906,7 @@ cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
   /* Call the analytic function to evaluate the function at xc */
   double  eval_xc[3];
   anai->func(time_eval, 1, NULL, (const cs_real_t *)cm->xc,
-             true,  // compacted output ?
+             true,  /* compacted output ? */
              anai->input,
              eval_xc);
 
@@ -1987,7 +1989,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
           const double  hf_coef = cs_math_onethird * cm->hfc[f];
           const int  start = cm->f2e_idx[f];
           const int  end = cm->f2e_idx[f+1];
-          const short int n_vf = end - start; // #vertices (=#edges)
+          const short int n_vf = end - start; /* #vertices (=#edges) */
           const short int *f2e_ids = cm->f2e_ids + start;
 
           assert(n_vf > 2);
@@ -2013,7 +2015,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
 
               for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-                // Edge-related variables
+                /* Edge-related variables */
                 const short int e0  = f2e_ids[e];
                 const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
                 const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
@@ -2112,7 +2114,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
       const double  hf_coef = cs_math_onethird * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int n_vf = end - start; /* #vertices (=#edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
 
       assert(n_vf > 2);
@@ -2137,7 +2139,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
 
           for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-            // Edge-related variables
+            /* Edge-related variables */
             const short int e0  = f2e_ids[e];
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
@@ -2234,7 +2236,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
       const double  hf_coef = cs_math_onethird * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int n_vf = end - start; /* #vertices (=#edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
 
       assert(n_vf > 2);
@@ -2258,7 +2260,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
 
           for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-            // Edge-related variables
+            /* Edge-related variables */
             const short int e0  = f2e_ids[e];
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];

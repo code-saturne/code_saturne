@@ -484,7 +484,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
       bft_error(__FILE__, __LINE__, 0,
                 (" Invalid type of algorithm to build the diffusion term."));
 
-    } // Switch on Hodge algo.
+    } /* Switch on Hodge algo. */
 
     switch (eqp->enforcement) {
 
@@ -500,7 +500,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     }
 
-  } // Diffusion part
+  } /* Diffusion part */
 
   /* Advection part */
 
@@ -779,7 +779,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
           bft_error(__FILE__, __LINE__, 0,
                     " %s: Case not handle yet\n", __func__);
 
-        // Add the local diffusion operator to the local system
+        /* Add the local diffusion operator to the local system */
         const cs_real_t  *sval = cb->loc->val;
         for (int bi = 0; bi < cm->n_fc + 1; bi++) {
           for (int bj = 0; bj < cm->n_fc + 1; bj++) {
@@ -881,11 +881,11 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
                              3, /* n_face_dofs */
                              rhs, mav);
 
-    } // Main loop on cells
+    } /* Main loop on cells */
 
-  } // OPENMP Block
+  } /* OpenMP Block */
 
-  cs_matrix_assembler_values_done(mav); // optional
+  cs_matrix_assembler_values_done(mav);    /* optional */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
   cs_dbg_darray_to_listing("FINAL RHS_FACE", quant->n_faces, rhs, 9);
@@ -961,7 +961,7 @@ cs_cdofb_vecteq_extra_op(const char                 *eqname,
                          cs_equation_builder_t      *eqb,
                          void                       *data)
 {
-  CS_UNUSED(eqname); // avoid a compilation warning
+  CS_UNUSED(eqname);    /* avoid a compilation warning */
   CS_UNUSED(eqp);
 
   char *postlabel = NULL;

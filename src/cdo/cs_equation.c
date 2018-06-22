@@ -209,11 +209,11 @@ _initialize_field_from_ic(cs_real_t         t_eval,
                   _(" %s: Invalid way to initialize equation %s.\n"),
                   __func__, eq->name);
 
-      } // Switch on possible type of definition
+      } /* Switch on possible type of definition */
 
-    } // Loop on definitions
+    } /* Loop on definitions */
 
-  } // VB or VCB schemes --> initialize on vertices
+  } /* VB or VCB schemes --> initialize on vertices */
 
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB ||
       eqp->space_scheme == CS_SPACE_SCHEME_HHO_P0) {
@@ -243,11 +243,11 @@ _initialize_field_from_ic(cs_real_t         t_eval,
                   _(" %s: Invalid way to initialize equation %s.\n"),
                   __func__, eq->name);
 
-      } // Switch on possible type of definition
+      } /* Switch on possible type of definition */
 
-    } // Loop on definitions
+    } /* Loop on definitions */
 
-  } // FB schemes --> initialize on faces
+  } /* FB schemes --> initialize on faces */
 
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB ||
       eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB ||
@@ -283,11 +283,11 @@ _initialize_field_from_ic(cs_real_t         t_eval,
                   _(" %s: Invalid way to initialize equation %s.\n"),
                   __func__, eq->name);
 
-      } // Switch on possible type of definition
+      } /* Switch on possible type of definition */
 
-    } // Loop on definitions
+    } /* Loop on definitions */
 
-  } // FB or VCB schemes --> initialize on cells
+  } /* FB or VCB schemes --> initialize on cells */
 
 }
 
@@ -1151,7 +1151,7 @@ cs_equation_destroy_all(void)
     BFT_FREE(eq->varname);
     BFT_FREE(eq);
 
-  } // Loop on equations
+  } /* Loop on equations */
 
   BFT_FREE(_equations);
 
@@ -1183,7 +1183,7 @@ cs_equation_log_monitoring(void)
        before deleting the structure */
     cs_equation_write_monitoring(eq->name, eq->builder);
 
-  } // Loop on equations
+  } /* Loop on equations */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1223,7 +1223,7 @@ cs_equation_log_setup(void)
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
 
-  } // Loop on equations
+  } /* Loop on equations */
 
 }
 
