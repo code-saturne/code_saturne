@@ -921,7 +921,7 @@ if (itspdv.eq.1) then
       ! Rh = (1-alpha_T) * Pr + R * alpha_T
       ! with - R = 0.5
       !      - alpha_T = 1.0 for GGDH/DFM/AFM
-      if(iturt(iiscav).eq.11.or.iturt(iiscav).eq.21.or.iturt(iiscav).eq.31) then  
+      if(iturt(iiscav).eq.11.or.iturt(iiscav).eq.21.or.iturt(iiscav).eq.31) then
         alpha_theta = cvar_al(iel)
       else
         alpha_theta = 1.d0
@@ -935,7 +935,7 @@ if (itspdv.eq.1) then
       xR = ( 1.d0 - alpha_theta ) * prdtl + alpha_theta * rvarfl(iscal)
 
       rhovst = xcpp(iel)*crom(iel)*xe/(xk * xR)       &
-             *cell_f_vol(iel) 
+             *cell_f_vol(iel)
 
       ! La diagonale recoit eps/Rk, (*theta eventuellement)
       rovsdt(iel) = rovsdt(iel) + rhovst*thetap
