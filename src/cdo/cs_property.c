@@ -401,7 +401,7 @@ cs_property_destroy_all(void)
 
     BFT_FREE(pty);
 
-  } // Loop on properties
+  } /* Loop on properties */
 
   BFT_FREE(_properties);
   _n_properties = 0;
@@ -436,7 +436,7 @@ cs_property_finalize_setup(void)
 
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t j = 0; j < n_cells; j++)
-        pty->def_ids[j] = -1; // Unset by default
+        pty->def_ids[j] = -1; /* Unset by default */
 
       for (int id = 0; id < pty->n_definitions; id++) {
 
@@ -453,7 +453,14 @@ cs_property_finalize_setup(void)
         for (cs_lnum_t j = 0; j < z->n_elts; j++)
           pty->def_ids[z->elt_ids[j]] = id;
 
-      } // Loop on definitions
+      } /* Loop on definitions */
+
+      /* Check if the property is defined everywhere */
+      for (cs_lnum_t j = 0; j < n_cells; j++)
+        if (pty->def_ids[j] == -1)
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: cell%d is unset for property %s\n",
+                    __func__, j, pty->name);
 
     }
     else if (pty->n_definitions == 1) {
@@ -467,7 +474,7 @@ cs_property_finalize_setup(void)
                 " %s: Property \"%s\" exists with no definition.",
                 __func__, pty->name);
 
-  } // Loop on properties
+  } /* Loop on properties */
 
 }
 
@@ -500,9 +507,9 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
   int  new_id = _add_new_def(pty);
   int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
-  cs_flag_t  meta_flag = 0; // metadata
+  cs_flag_t  meta_flag = 0; /* metadata */
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        1, // dim
+                                        1, /* dim */
                                         z_id,
                                         state_flag,
                                         meta_flag,
@@ -544,9 +551,9 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
   int  new_id = _add_new_def(pty);
   int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
-  cs_flag_t  meta_flag = 0; // metadata
+  cs_flag_t  meta_flag = 0; /* metadata */
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        3, // dim
+                                        3, /* dim */
                                         z_id,
                                         state_flag,
                                         meta_flag,
@@ -596,9 +603,9 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
   int  new_id = _add_new_def(pty);
   int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
-  cs_flag_t  meta_flag = 0; // metadata
+  cs_flag_t  meta_flag = 0; /* metadata */
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        9, // dim
+                                        9, /* dim */
                                         z_id,
                                         state_flag,
                                         meta_flag,
@@ -638,7 +645,7 @@ cs_property_def_by_analytic(cs_property_t        *pty,
   int  new_id = _add_new_def(pty);
   int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = 0;
-  cs_flag_t  meta_flag = 0; // metadata
+  cs_flag_t  meta_flag = 0; /* metadata */
   cs_xdef_analytic_input_t  anai = {.func = func,
                                     .input = input };
 
@@ -689,7 +696,7 @@ cs_property_def_by_func(cs_property_t         *pty,
   int  def_id = _add_new_def(pty);
   int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = 0;
-  cs_flag_t  meta_flag = 0; // metadata
+  cs_flag_t  meta_flag = 0; /* metadata */
 
   int dim = 1;
   if (pty->type == CS_PROPERTY_ORTHO)
@@ -748,8 +755,8 @@ cs_property_def_by_array(cs_property_t    *pty,
               " Please modify your settings.",
               pty->n_definitions, pty->name);
 
-  cs_flag_t  state_flag = 0; // Will be updated during the creation
-  cs_flag_t  meta_flag = 0;  // metadata
+  cs_flag_t  state_flag = 0; /* Will be updated during the creation */
+  cs_flag_t  meta_flag = 0;  /* metadata */
   cs_xdef_array_input_t  input = {.stride = dim,
                                   .loc = loc,
                                   .values = array,
@@ -757,7 +764,7 @@ cs_property_def_by_array(cs_property_t    *pty,
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
                                         dim,
-                                        0, // zone_id
+                                        0, /* zone_id */
                                         state_flag,
                                         meta_flag,
                                         &input);
@@ -821,11 +828,11 @@ cs_property_def_by_field(cs_property_t    *pty,
               pty->n_definitions, pty->name);
 
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
-  cs_flag_t  meta_flag = 0; // metadata
+  cs_flag_t  meta_flag = 0; /* metadata */
 
   pty->defs[id] = cs_xdef_volume_create(CS_XDEF_BY_FIELD,
                                         dim,
-                                        0, // zone_id
+                                        0, /* zone_id */
                                         state_flag,
                                         meta_flag,
                                         field);
@@ -859,7 +866,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
     pty->get_eval_at_cell[i](z->n_elts,
                              z->elt_ids,
-                             false, // without compact output
+                             false, /* without compact output */
                              cs_glob_mesh,
                              cs_cdo_connect,
                              cs_cdo_quant,
@@ -899,9 +906,10 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
   tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
 
   int  def_id = 0;
-  if (pty->n_definitions > 1)
+  if (pty->n_definitions > 1) {
     def_id = pty->def_ids[c_id];
-
+    assert(def_id > -1);
+  }
   assert(pty->get_eval_at_cell[def_id] != NULL);
 
   cs_xdef_t  *def = pty->defs[def_id];
@@ -914,7 +922,7 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
 
       pty->get_eval_at_cell[def_id](1,
                                     &c_id,
-                                    true,  // compact output
+                                    true,  /* compact output */
                                     cs_glob_mesh,
                                     cs_cdo_connect,
                                     cs_cdo_quant,
@@ -932,7 +940,7 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
 
       pty->get_eval_at_cell[def_id](1,
                                     &c_id,
-                                    true,  // compact output
+                                    true,  /* compact output */
                                     cs_glob_mesh,
                                     cs_cdo_connect,
                                     cs_cdo_quant,
@@ -948,7 +956,7 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
   case CS_PROPERTY_ANISO:
     pty->get_eval_at_cell[def_id](1,
                                   &c_id,
-                                  true,  // compact output
+                                  true,  /* compact output */
                                   cs_glob_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
@@ -999,8 +1007,10 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
               " Invalid type of property for this function.\n"
               " Property %s has to be isotropic.", pty->name);
 
-  if (pty->n_definitions > 1)
+  if (pty->n_definitions > 1) {
     def_id = pty->def_ids[c_id];
+    assert(def_id > -1);
+  }
 
   assert(pty->get_eval_at_cell[def_id] != NULL);
 
@@ -1008,7 +1018,7 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
 
   pty->get_eval_at_cell[def_id](1,
                                 &c_id,
-                                true, // compact output
+                                true, /* compact output */
                                 cs_glob_mesh,
                                 cs_cdo_connect,
                                 cs_cdo_quant,
@@ -1048,9 +1058,10 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
   tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
 
   int  def_id = 0;
-  if (pty->n_definitions > 1)
+  if (pty->n_definitions > 1) {
     def_id = pty->def_ids[cm->c_id];
-
+    assert(def_id > -1);
+  }
   assert(pty->get_eval_at_cell_cw[def_id] != NULL);
 
   cs_xdef_t  *def = pty->defs[def_id];
@@ -1127,8 +1138,10 @@ cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
               " Property %s has to be isotropic.", pty->name);
 
   int  def_id = 0;
-  if (pty->n_definitions > 1)
+  if (pty->n_definitions > 1) {
     def_id = pty->def_ids[cm->c_id];
+    assert(def_id > -1);
+  }
   cs_xdef_t  *def = pty->defs[def_id];
 
   assert(pty->get_eval_at_cell_cw[def_id] != NULL);
@@ -1154,7 +1167,7 @@ cs_property_get_fourier(const cs_property_t    *pty,
                         double                  dt,
                         cs_real_t               fourier[])
 {
-  assert(fourier != NULL); // Sanity check
+  assert(fourier != NULL); /* Sanity check */
   assert(dt > 0.);
 
   const bool  pty_uniform = cs_property_is_uniform(pty);
