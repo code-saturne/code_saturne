@@ -176,7 +176,7 @@ _update_saturated_iso_soil(const cs_mesh_t             *mesh,
     /* Set the moisture content (Se = 1 in this case)*/
     moisture_values[c_id] = law->saturated_moisture;
 
-  } // Loop on selected cells
+  } /* Loop on selected cells */
 
 }
 
@@ -235,7 +235,7 @@ _update_saturated_aniso_soil(const cs_mesh_t             *mesh,
     /* Set the moisture content (Se = 1 in this case)*/
     moisture_values[c_id] = law->saturated_moisture;
 
-  } // Loop on selected cells
+  } /* Loop on selected cells */
 
 }
 
@@ -353,7 +353,7 @@ _update_genuchten_iso_soil(const cs_mesh_t             *mesh,
 
     }
 
-  } // Loop on selected cells
+  } /* Loop on selected cells */
 
 }
 
@@ -433,13 +433,13 @@ cs_gwf_soil_add(const char                      *z_name,
     break;
 
   case CS_GWF_SOIL_USER:
-    // cs_user_cdo_gwf_init_soil(z_name);
+    /* cs_user_cdo_gwf_init_soil(z_name); */
     break;
 
   default:
-    break; // Nothing to do
+    break; /* Nothing to do */
 
-  } // Switch on soil modeling
+  } /* Switch on soil modeling */
 
   /* Store the new soils in the soil array */
   _n_soils++;
@@ -471,7 +471,7 @@ cs_gwf_soil_free_all(void)
 
     BFT_FREE(soil);
 
-  } // Loop on soils
+  } /* Loop on soils */
 
   BFT_FREE(_soils);
   BFT_FREE(_cell2soil_ids);
@@ -859,7 +859,7 @@ cs_gwf_soil_set_all_saturated(cs_property_t         *permeability,
                                  z->name,
                                  param->saturated_moisture);
 
-  } // Loop on soils
+  } /* Loop on soils */
 
 }
 
@@ -888,7 +888,7 @@ cs_gwf_build_cell2soil(cs_lnum_t    n_cells)
     assert(_n_soils > 1);
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t j = 0; j < n_cells; j++)
-      _cell2soil_ids[j] = -1; // unset by default
+      _cell2soil_ids[j] = -1; /* unset by default */
 
     for (int soil_id = 0; soil_id < _n_soils; soil_id++) {
 
@@ -901,7 +901,7 @@ cs_gwf_build_cell2soil(cs_lnum_t    n_cells)
       for (cs_lnum_t j = 0; j < z->n_elts; j++)
         _cell2soil_ids[z->elt_ids[j]] = soil_id;
 
-    } // Loop on soils
+    } /* Loop on soils */
 
   } // n_soils > 1
 
@@ -1036,9 +1036,9 @@ cs_gwf_soil_log_setup(void)
                 " Invalid model for groundwater module.\n"
                 " Please check your settings.");
 
-    } // Switch model
+    } /* Switch model */
 
-  } // Loop on soils
+  } /* Loop on soils */
 
 }
 

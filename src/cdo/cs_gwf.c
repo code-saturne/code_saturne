@@ -127,17 +127,17 @@ struct _gwf_t {
 
   /* Moisture content: not constant for unsaturated soils */
   cs_property_t   *moisture_content;
-  cs_field_t      *moisture_field;   // Related cs_field_t structure at cells
+  cs_field_t      *moisture_field;   /* Related cs_field_t structure at cells */
 
   /* Soil capacity: property attached to the unsteady term in the Richards
      equation */
   cs_property_t   *soil_capacity;
-  cs_field_t      *capacity_field;   // Related cs_field_t structure at cells
+  cs_field_t      *capacity_field;   /* Related cs_field_t structure at cells */
 
   /* Permeability is the diffusion property related to Richards equation but
      this property plays also a role in the diffusion of tracer equations */
   cs_property_t   *permeability;
-  cs_field_t      *permea_field;     // Related cs_field_t structure at cells
+  cs_field_t      *permea_field;     /* Related cs_field_t structure at cells */
 
   /* Settings related to the advection field stemming from the darcian flux */
   cs_flag_t        flux_location; /* indicate where the array is defined */
@@ -250,8 +250,8 @@ _vb_enforce_boundary_divergence(const cs_cdo_connect_t        *connect,
   if (cs_glob_n_ranks > 1)
     cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          cdoq->n_vertices,
-                         1,            // stride
-                         false,        // interlace (not useful here)
+                         1,            /* stride */
+                         false,        /* interlace (not useful here) */
                          CS_REAL_TYPE,
                          divergence);
 
@@ -300,8 +300,8 @@ _vb_enforce_boundary_divergence(const cs_cdo_connect_t        *connect,
   if (cs_glob_n_ranks > 1)
     cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          cdoq->n_vertices,
-                         1,            // stride
-                         false,        // interlace (not useful here)
+                         1,            /* stride */
+                         false,        /* interlace (not useful here) */
                          CS_REAL_TYPE,
                          correction);
 
@@ -496,7 +496,7 @@ _update_head(cs_gwf_t                    *gw,
       break;
 
     default:
-      break; // Nothing to do for CDO-Fb schemes and HHO schemes
+      break; /* Nothing to do for CDO-Fb schemes and HHO schemes */
 
     }  /* Switch on the space scheme related to the Richards equation */
 
@@ -589,7 +589,7 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
   default:
     bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
 
-  } // End of switch
+  } /* End of switch */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
   cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL", 3*cdoq->n_cells, vel->val, 3);
@@ -1046,7 +1046,7 @@ cs_gwf_init_setup(void)
       break;
     }
 
-  } // Loop on soils
+  } /* Loop on soils */
 
   if (soil_id == n_soils)
     gw->flag |= CS_GWF_SOIL_ALL_SATURATED;
@@ -1056,7 +1056,7 @@ cs_gwf_init_setup(void)
   gw->moisture_field = cs_field_create("moisture_content",
                                        pty_mask,
                                        c_loc_id,
-                                       1,   // dimension
+                                       1,   /* dimension */
                                        pty_has_previous);
 
   cs_field_set_key_int(gw->moisture_field, log_key, 1);
@@ -1092,7 +1092,7 @@ cs_gwf_init_setup(void)
     gw->permea_field = cs_field_create("permeability",
                                        pty_mask,
                                        c_loc_id,
-                                       permeability_dim,   // dimension
+                                       permeability_dim,   /* dimension */
                                        pty_has_previous);
 
     cs_field_set_key_int(gw->permea_field, log_key, 1);
@@ -1105,7 +1105,7 @@ cs_gwf_init_setup(void)
       gw->capacity_field = cs_field_create("soil_capacity",
                                            pty_mask,
                                            c_loc_id,
-                                           1,   // dimension
+                                           1,   /* dimension */
                                            pty_has_previous);
 
       cs_field_set_key_int(gw->capacity_field, log_key, 1);
@@ -1481,7 +1481,7 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
 
     cs_gwf_tracer_t  *tracer = gw->tracers[i];
 
-    if (!cs_equation_is_steady(tracer->eq)) { // unsteady ?
+    if (!cs_equation_is_steady(tracer->eq)) { /* unsteady ? */
 
       /* Define the algebraic system */
       cs_equation_build_system(mesh, time_step, dt_cur, tracer->eq);
