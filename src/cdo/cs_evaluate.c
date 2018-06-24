@@ -1740,7 +1740,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                  retval);
     else
       _pvp_by_analytic(time_eval,
-                       anai->func, anai->input, z->n_elts, z->elt_ids, def->dim,
+                       anai->func, anai->input, z->n_elts, z->elt_ids,
                        retval);
 
     if (cs_glob_n_ranks > 1)
