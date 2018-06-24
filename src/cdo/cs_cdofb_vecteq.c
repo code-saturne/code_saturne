@@ -185,6 +185,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
   /* Initialize the local system */
   cs_cell_sys_reset(cell_flag, n_dofs, cm->n_fc, csys);
 
+  csys->cell_flag = cell_flag;
   csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
   csys->face_shift = cs_shared_connect->n_faces[2]; /* shift = n_i_faces */
