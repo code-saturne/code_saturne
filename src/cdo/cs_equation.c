@@ -147,19 +147,21 @@ _post_balance_at_vertices(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the initial values for the variable related to an equation
+ * \brief  Set the initial values for the variable(s) related to an equation
  *
  * \param[in]       t_eval   time at which one performs the evaluation
  * \param[in, out]  eq       pointer to a cs_equation_t structure
- * \param[in, out]  values   pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _initialize_field_from_ic(cs_real_t         t_eval,
-                          cs_equation_t    *eq,
-                          cs_real_t        *values)
+                          cs_equation_t    *eq)
 {
+  cs_real_t  *v_vals = NULL;    /* values at vertices */
+  cs_real_t  *f_vals = NULL;    /* values at faces */
+  cs_real_t  *c_vals = NULL;    /* values at cells */
+
   assert(eq != NULL);
   const cs_equation_param_t  *eqp = eq->param;
 
@@ -180,115 +182,84 @@ _initialize_field_from_ic(cs_real_t         t_eval,
      break;
   }
 
+  /* Update dof_flag according to the space scheme */
+  switch (eqp->space_scheme) {
 
-  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB ||
-      eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB) {
+  case CS_SPACE_SCHEME_CDOVB:
+    v_vals = eq->get_vertex_values(eq->scheme_context);
+    break;
+  case CS_SPACE_SCHEME_CDOVCB:
+    v_vals = eq->get_vertex_values(eq->scheme_context);
+    c_vals = eq->get_cell_values(eq->scheme_context);
+    break;
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
+    f_vals = eq->get_face_values(eq->scheme_context);
+    c_vals = eq->get_cell_values(eq->scheme_context);
+    break;
 
-    cs_flag_t  v_flag = dof_flag | cs_flag_primal_vtx;
+  case CS_SPACE_SCHEME_HHO_P1:  /* Not handled yet */
+  case CS_SPACE_SCHEME_HHO_P2:  /* Not handled yet */
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Invalid space scheme for the equation %s."),
+              __func__, eq->name);
+    break;
 
-    for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
+  } /* Switch on space discretization scheme */
 
-      /* Get and then set the definition of the initial condition */
-      const cs_xdef_t  *def = eqp->ic_defs[def_id];
+  for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 
-      switch(def->type) {
+    /* Get and then set the definition of the initial condition */
+    const cs_xdef_t  *def = eqp->ic_defs[def_id];
 
-      case CS_XDEF_BY_VALUE:
-        cs_evaluate_potential_by_value(v_flag, def, values);
-        break;
+    switch(def->type) {
 
-      case CS_XDEF_BY_QOV:
-        cs_evaluate_potential_by_qov(v_flag, def, values);
-        break;
+    case CS_XDEF_BY_VALUE:
+      if (v_vals != NULL) /* Initialize values at mesh vertices */
+        cs_evaluate_potential_by_value(dof_flag | cs_flag_primal_vtx, def,
+                                       v_vals);
+      if (f_vals != NULL) /* Initialize values at mesh faces */
+        cs_evaluate_potential_by_value(dof_flag | cs_flag_primal_face, def,
+                                       f_vals);
+      if (c_vals != NULL) /* Initialize values at mesh cells */
+        cs_evaluate_potential_by_value(dof_flag | cs_flag_primal_cell, def,
+                                       c_vals);
+      break;
 
-      case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        cs_evaluate_potential_by_analytic(v_flag, def, t_eval, values);
-        break;
+    case CS_XDEF_BY_QOV:
+      if (v_vals != NULL && c_vals != NULL) /* VCb schemes */
+        cs_evaluate_potential_by_qov(dof_flag
+                                     | cs_flag_primal_vtx
+                                     | cs_flag_primal_cell,
+                                     def,
+                                     v_vals, c_vals);
 
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" %s: Invalid way to initialize equation %s.\n"),
-                  __func__, eq->name);
+      else if (v_vals != NULL) /* Initialize values at mesh vertices */
+        cs_evaluate_potential_by_qov(dof_flag | cs_flag_primal_vtx, def,
+                                     v_vals, NULL);
+      break;
 
-      } /* Switch on possible type of definition */
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+      if (v_vals != NULL) /* Initialize values at mesh vertices */
+        cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_vtx, def,
+                                          t_eval, v_vals);
+      if (f_vals != NULL) /* Initialize values at mesh faces */
+        cs_evaluate_potential_by_value(dof_flag | cs_flag_primal_face, def,
+                                       f_vals);
+      if (c_vals != NULL) /* Initialize values at mesh cells */
+        cs_evaluate_potential_by_value(dof_flag | cs_flag_primal_cell, def,
+                                       c_vals);
+      break;
 
-    } /* Loop on definitions */
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Invalid way to initialize equation %s.\n"),
+                __func__, eq->name);
 
-  } /* VB or VCB schemes --> initialize on vertices */
+    } /* Switch on possible type of definition */
 
-  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB ||
-      eqp->space_scheme == CS_SPACE_SCHEME_HHO_P0) {
-
-    cs_flag_t  f_flag = dof_flag | cs_flag_primal_face;
-    cs_real_t  *f_values = eq->get_extra_values(eq->builder);
-    assert(f_values != NULL);
-
-    for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
-
-      /* Get and then set the definition of the initial condition */
-      const cs_xdef_t  *def = eqp->ic_defs[def_id];
-
-      /* Initialize face-based array */
-      switch(def->type) {
-
-      case CS_XDEF_BY_VALUE:
-        cs_evaluate_potential_by_value(f_flag, def, f_values);
-        break;
-
-      case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        cs_evaluate_potential_by_analytic(f_flag, def, t_eval, f_values);
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" %s: Invalid way to initialize equation %s.\n"),
-                  __func__, eq->name);
-
-      } /* Switch on possible type of definition */
-
-    } /* Loop on definitions */
-
-  } /* FB schemes --> initialize on faces */
-
-  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB ||
-      eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB ||
-      eqp->space_scheme == CS_SPACE_SCHEME_HHO_P0) {
-
-    /* TODO: HHO */
-
-    /* Initialize cell-based array */
-    cs_flag_t  c_flag = dof_flag | cs_flag_primal_cell;
-    cs_real_t  *c_values = values;
-    if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
-      c_values = eq->get_extra_values(eq->scheme_context);
-    assert(c_values != NULL);
-
-    for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
-
-      /* Get and then set the definition of the initial condition */
-      const cs_xdef_t  *def = eqp->ic_defs[def_id];
-
-      /* Initialize cell-based array */
-      switch(def->type) {
-
-      case CS_XDEF_BY_VALUE:
-        cs_evaluate_potential_by_value(c_flag, def, c_values);
-        break;
-
-      case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        cs_evaluate_potential_by_analytic(c_flag, def, t_eval, c_values);
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" %s: Invalid way to initialize equation %s.\n"),
-                  __func__, eq->name);
-
-      } /* Switch on possible type of definition */
-
-    } /* Loop on definitions */
-
-  } /* FB or VCB schemes --> initialize on cells */
+  } /* Loop on definitions */
 
 }
 
@@ -1763,7 +1734,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
        for vertex-based schemes
     */
     if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
-      _initialize_field_from_ic(ts->t_cur, eq, var_field->val);
+      _initialize_field_from_ic(ts->t_cur, eq);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);

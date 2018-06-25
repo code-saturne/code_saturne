@@ -124,18 +124,21 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
 /*!
  * \brief  Define a value to each DoF in the case of a potential field in order
  *         to put a given quantity inside the volume associated to the zone
- *         attached to the given definition
+ *         related to the given definition
+ *         wvals may be NULL.
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      def       pointer to a cs_xdef_t pointer
- * \param[in, out] retval    pointer to the computed values
+ * \param[in, out] vvals     pointer to the first array of computed values
+ * \param[in, out] wvals     pointer to the second array of computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
                              const cs_xdef_t   *def,
-                             cs_real_t          retval[]);
+                             cs_real_t          vvals[],
+                             cs_real_t          wvals[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
