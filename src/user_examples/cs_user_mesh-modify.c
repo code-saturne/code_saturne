@@ -173,37 +173,62 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   }
   /*! [mesh_modify_extrude_1] */
 
-  /* Add groups to given cells */
-
-  /*! [mesh_modify_extrude_1] */
-
   /* Add a group to cells in a given region */
 
   /*! [mesh_modify_groups_1] */
   {
-    cs_lnum_t   n_selected_cells = 0;
-    cs_lnum_t  *selected_cells = NULL;
+    cs_lnum_t   n_selected_elts = 0;
+    cs_lnum_t  *selected_elts = NULL;
 
     const char criteria[] = "box[0.5, 0.5, 0, 1, 1, 0.05]";
 
-    BFT_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
+    BFT_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(criteria,
-                              &n_selected_cells,
-                              selected_cells);
+                              &n_selected_elts,
+                              selected_elts);
 
     cs_mesh_group_cells_add(mesh,
                             "source_region",
-                            n_selected_cells,
-                            selected_cells);
+                            n_selected_elts,
+                            selected_elts);
 
-    BFT_FREE(selected_cells);
+    BFT_FREE(selected_elts);
 
     /* Mark mesh as modified to save it */
 
     mesh->modified = 1;
   }
   /*! [mesh_modify_groups_1] */
+
+  /* Add a group to boundary faces in a given region */
+
+  /*! [mesh_modify_groups_2] */
+  {
+    cs_lnum_t   n_selected_elts = 0;
+    cs_lnum_t  *selected_elts = NULL;
+
+    const char criteria[] = "box[0.5, 0.5, 0, 1, 1, 0.05]";
+
+    BFT_MALLOC(selected_elts, mesh->n_b_faces, cs_lnum_t);
+
+    cs_selector_get_b_face_list(criteria,
+                                &n_selected_elts,
+                                selected_elts);
+
+    cs_mesh_group_b_faces_add(mesh,
+                              "source_region",
+                              n_selected_elts,
+                              selected_elts);
+
+    BFT_FREE(selected_elts);
+
+    /* Mark mesh as modified to save it */
+
+    mesh->modified = 1;
+  }
+  /*! [mesh_modify_groups_2] */
+
 
   /* Insert boundary layers on selected zones.
    *

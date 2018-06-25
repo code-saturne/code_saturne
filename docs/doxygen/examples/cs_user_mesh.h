@@ -84,6 +84,10 @@
 
   \snippet cs_user_mesh-modify.c mesh_modify_groups_1
 
+  The user can also add groups for boundary faces:
+
+  \snippet cs_user_mesh-modify.c mesh_modify_groups_2
+
   \subsection  cs_user_mesh_h_cs_user_mesh_input Mesh reading and modification
 
   The user function \ref cs_user_mesh_input allows a detailed selection of imported
