@@ -188,13 +188,12 @@ call add_property_field_1d('fourier_number', 'Fourier Number', ifour)
 
 if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
   call add_property_field_1d('total_pressure', 'Total Pressure', iprtot)
+  ! Save total pressure in auxiliary restart file
+  call field_get_key_id("restart_file", k_restart_id)
+  call field_set_key_int(iprtot, k_restart_id, 1)
 else if (ippmod(idarcy).ge.0.and.darcy_gravity.ge.1) then
   call add_property_field_1d('total_pressure', 'Pressure head', iprtot)
 endif
-
-! Save total pressure in auxiliary restart file
-call field_get_key_id("restart_file", k_restart_id)
-call field_set_key_int(iprtot, k_restart_id, 1)
 
 ! Cs^2 si on est en LES dynamique
 if (iturb.eq.41) then
