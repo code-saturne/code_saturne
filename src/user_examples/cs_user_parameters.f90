@@ -1395,7 +1395,7 @@ nalinf = 75
 
 ! Maximum number of iterations in case of implicit Fluid Structure Coupling
 ! with structural calculations (internal and/or external
-! (i.e. using Code_Aster)).
+! (i.e. using code_aster)).
 ! nalimx = 1, in case of explicit FSI algorithm.
 
 nalimx = 15
@@ -1406,7 +1406,7 @@ nalimx = 15
 epalim = 1.d-5
 
 
-! Mesh viscosity modeling (cf. usvima)
+! Mesh viscosity modeling
 !   0: isotropic
 !   1: orthotropic
 

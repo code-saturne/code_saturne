@@ -108,6 +108,18 @@ double precision, dimension(:), pointer :: mix_mol_mas
 double precision, dimension(:,:), pointer :: cpro_visma_v
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_gui_mesh_viscosity()  &
+    bind(C, name='cs_gui_mesh_viscosity')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_mesh_viscosity
+
+end interface
 
 !===============================================================================
 ! 1.  INITIALISATION
@@ -259,12 +271,13 @@ do iscal = 1, nscal
   endif
 enddo
 
-!     Viscosite de maillage en ALE
+! Mesh viscosity for ALE
 if (iale.eq.1) then
+
   if (iortvm.eq.1) then
     call field_get_val_v(ivisma, cpro_visma_v)
-    do ii = 1, 3
-      do iel = 1, ncel
+    do iel = 1, ncel
+      do ii = 1, 3
         cpro_visma_v(ii,iel) = 1.d0
       enddo
     enddo
@@ -274,6 +287,10 @@ if (iale.eq.1) then
       cpro_visma_s(iel) = 1.d0
     enddo
   endif
+
+  call cs_gui_mesh_viscosity
+  call usvima
+
 endif
 
 ! Porosity

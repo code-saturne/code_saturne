@@ -843,72 +843,6 @@ _get_external_coupling_dof(const char *const label,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  uivima
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uivima, UIVIMA) (void)
-{
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
-  const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
-  cs_lnum_t    iel            = 0;
-  const char * symbols[3]     = { "x", "y", "z" };
-  const char * variables[3]   = { "mesh_viscosity_1",
-                                  "mesh_viscosity_2",
-                                  "mesh_viscosity_3" };
-  int variable_nbr   = 1;
-  int ivar           = 0;
-
-  /* Get formula */
-  mei_tree_t *ev;
-  char *aleFormula    =_get_ale_formula();
-  char *viscosityType =_get_ale_mesh_viscosity();
-  int isOrthotrop = cs_gui_strcmp(viscosityType, "orthotrop");
-
-  if (isOrthotrop)
-    variable_nbr = 3;
-
-  if (!aleFormula) {
-    bft_printf("Warning : Formula is null for ale. Use constant value\n");
-    for (iel = 0; iel < n_cells; iel++) {
-      for (ivar = 0; ivar < variable_nbr; ivar++) {
-        CS_F_(vism)->val[variable_nbr*iel + ivar] = 1.;
-      }
-    }
-  }
-  else {
-
-    /* Init mei */
-    ev = _init_mei_tree(aleFormula, variables,
-                        variable_nbr, symbols, 0, 3,
-                        cs_glob_time_step_options->dtref,
-                        cs_glob_time_step->t_cur,
-                        cs_glob_time_step->nt_cur);
-
-    /* for each cell, update the value of the table of symbols for each scalar
-       (including the thermal scalar), and evaluate the interpreter */
-    for (iel = 0; iel < n_cells; iel++) {
-      /* insert symbols */
-      mei_tree_insert(ev, "x", cell_cen[iel][0]);
-      mei_tree_insert(ev, "y", cell_cen[iel][1]);
-      mei_tree_insert(ev, "z", cell_cen[iel][2]);
-
-      mei_evaluate(ev);
-
-      /* Set mesh_u components */
-      CS_F_(vism)->val[variable_nbr*iel] = mei_tree_lookup(ev, "mesh_viscosity_1");
-      if (isOrthotrop) {
-        CS_F_(vism)->val[variable_nbr*iel + 1] = mei_tree_lookup(ev, "mesh_viscosity_2");
-        CS_F_(vism)->val[variable_nbr*iel + 2] = mei_tree_lookup(ev, "mesh_viscosity_3");
-      }
-    }
-    mei_tree_destroy(ev);
-    BFT_FREE(aleFormula);
-    BFT_FREE(viscosityType);
-  }
-}
-
-/*----------------------------------------------------------------------------
  * ALE related keywords
  *
  * Fortran Interface:
@@ -1271,6 +1205,65 @@ cs_gui_get_ale_viscosity_type(int  * type)
 
   BFT_FREE(path);
   BFT_FREE(buff);
+}
+
+/*----------------------------------------------------------------------------
+ * Mesh viscosity setting.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_viscosity(void)
+{
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  /* Get formula */
+  char *mvisc_expr =_get_ale_formula();
+
+  if (mvisc_expr == NULL)
+    return;
+
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+  const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
+  const char * symbols[3]     = {"x", "y", "z" };
+  const char * variables[3]   = {"mesh_viscosity_1",
+                                 "mesh_viscosity_2",
+                                 "mesh_viscosity_3" };
+
+  char *mvisc_type =_get_ale_mesh_viscosity();
+  int orthotropic = cs_gui_strcmp(mvisc_type, "orthotrop");
+
+  cs_lnum_t nd = (orthotropic) ? 3 : 1;
+
+  /* Init mei */
+  mei_tree_t *ev = _init_mei_tree(mvisc_expr, variables,
+                                  nd, symbols, 0, 3,
+                                  cs_glob_time_step_options->dtref,
+                                  cs_glob_time_step->t_cur,
+                                  cs_glob_time_step->nt_cur);
+
+  /* for each cell, update the value of the table of symbols for each scalar
+     (including the thermal scalar), and evaluate the interpreter */
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    /* insert symbols */
+    mei_tree_insert(ev, "x", cell_cen[c_id][0]);
+    mei_tree_insert(ev, "y", cell_cen[c_id][1]);
+    mei_tree_insert(ev, "z", cell_cen[c_id][2]);
+
+    mei_evaluate(ev);
+
+    /* Set mesh_u components */
+    CS_F_(vism)->val[nd*c_id] = mei_tree_lookup(ev, "mesh_viscosity_1");
+    if (orthotropic) {
+      CS_F_(vism)->val[nd*c_id + 1] = mei_tree_lookup(ev, "mesh_viscosity_2");
+      CS_F_(vism)->val[nd*c_id + 2] = mei_tree_lookup(ev, "mesh_viscosity_3");
+    }
+  }
+  mei_tree_destroy(ev);
+  BFT_FREE(mvisc_expr);
+  BFT_FREE(mvisc_type);
 }
 
 /*----------------------------------------------------------------------------*/

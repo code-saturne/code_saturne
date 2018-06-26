@@ -648,28 +648,7 @@ if (iturb.eq.41) then
 endif
 
 !===============================================================================
-! 9. User modification of the mesh viscosity in ALE
-!===============================================================================
-
-if (iale.eq.1.and.ntcabs.eq.0) then
-
-  ! - Interface Code_Saturne
-  !   ======================
-
-  if (iihmpr.eq.1) then
-
-    call uivima
-
-  endif
-
-  call usvima &
- ( nvar   , nscal  ,                                              &
-   dt     )
-
-endif
-
-!===============================================================================
-! 10. Checking of the user values
+! 9. Checking of the user values
 !===============================================================================
 
 ! ---> Calcul des bornes des variables et impressions
@@ -863,7 +842,7 @@ endif
 
 ! ---> Calcul des bornes de viscosite de maillage en ALE
 
-if (iale.eq.1.and.ntcabs.eq.0) then
+if (iale.eq.1 .and. ntcabs.eq.ntpabs+1) then
 
   call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
   iok1 = 0
@@ -1127,9 +1106,8 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
-'@  Le minimum atteint est', e12.4                             ,/,&
-'@  Verifier le cas echeant la modification de la viscosite',   /,&
-'@    dans usvima ou dans l''interface graphique.',             /,&
+'@  Le minimum atteint est', e12.4,                             /,&
+'@  Verifier le cas echeant la definition de la viscosite.',    /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1325,9 +1303,8 @@ endif
 '@',                                                            /,&
 '@  The calculation will not be run.',                          /,&
 '@',                                                            /,&
-'@  The  minimum reached is', e12.4                            ,/,&
-'@  Verify that this property has been defined in usvima and',  /,&
-'@    that the chosen law leads to correct values.',            /,&
+'@  The  minimum reached is', e12.4,                            /,&
+'@  Verify the definition of this property.',                   /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

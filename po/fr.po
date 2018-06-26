@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-06-10 21:06+0200\n"
+"POT-Creation-Date: 2018-06-26 16:50+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3941,6 +3941,13 @@ msgid "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"
 msgstr "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"
 
 #, c-format
+msgid "  n_iter : %5d, res_abs : %11.4e\n"
+msgstr "  n_iter : %5d, res_abs : %11.4e\n"
+
+msgid " @@ Warning: non convergence\n"
+msgstr " @@ Attention : non convergence\n"
+
+#, c-format
 msgid ""
 "\n"
 "\n"
@@ -3951,13 +3958,6 @@ msgstr ""
 "\n"
 "%s [%s] : divergence après %u itérations :\n"
 "  résidu initial : %11.4e ; résidu courant : %11.4e\n"
-
-#, c-format
-msgid "  n_iter : %5d, res_abs : %11.4e\n"
-msgstr "  n_iter : %5d, res_abs : %11.4e\n"
-
-msgid " @@ Warning: non convergence\n"
-msgstr " @@ Attention : non convergence\n"
 
 #, c-format
 msgid ""
@@ -5553,6 +5553,12 @@ msgstr ""
 msgid ""
 "Fortran pointer of rank %d requested for values of field \"%s\",\n"
 "which have rank %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"Fortran pointer with %d previous values of field \"%s\",\n"
+"requests the %d previous values."
 msgstr ""
 
 #, c-format
@@ -7274,13 +7280,6 @@ msgstr ""
 "le scalaire couplé doit obligatoirement être le scalaire thermique \n"
 "(utilisez le numéro de scalaire thermique cs_glob_thermal_model->iscalt)"
 
-msgid ""
-"Inconsistency in SYRTHES coupling settings,\n"
-"the thermal scalar must be the temperature"
-msgstr ""
-"Incohérence dans le paramétrage du couplage SYRTHES,\n"
-"le scalaire thermique doit obligatoirement être la température"
-
 msgid "The calculation continues with nswrsm = 20.\n"
 msgstr "Le calcul se poursuit avec nswrsm = 20.\n"
 
@@ -7317,12 +7316,6 @@ msgstr "Constante du modèle de LES dynamique"
 
 msgid "flag for consideration of rotation"
 msgstr "indicateur de prise en compte de la rotation"
-
-msgid ""
-"transient turbomachinery module not compatible with the lagrangian module"
-msgstr ""
-"le module de turbomachine instationnaire n'est pas compatible avec le module "
-"lagrangien"
 
 msgid ""
 "turbomachinery module not compatible with computation in relative reference "
@@ -9703,6 +9696,10 @@ msgstr ""
 
 msgid " Unknown cell-type.\n"
 msgstr "type de cellule inconnu.\n"
+
+#, c-format
+msgid " %s: Unknown cell-type.\n"
+msgstr " %s : type de cellule inconnu.\n"
 
 #, c-format
 msgid ""
@@ -15471,4 +15468,3 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
-

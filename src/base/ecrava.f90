@@ -608,17 +608,6 @@ if (iecaux.eq.1) then
     rubriq = 'vertex_displacement'
     call restart_write_section_real_t(rp,rubriq,itysup,nbval,disale)
 
-!     Viscosite de maillage (elle est souvent definie geometriquement sur le
-!       maillage initial ... il est donc plus facile de la relire ensuite)
-
-    rubriq = 'type_visc_mail'
-    itysup = 0
-    nbval  = 1
-    ival(1) = iortvm
-    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
-
-    call restart_write_field_vals(rp, ivisma, 0)
-
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des donnees ALE    '
 #else

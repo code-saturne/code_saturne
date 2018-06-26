@@ -339,25 +339,14 @@ end subroutine ussmag
 !> \brief User subroutine dedicated the use of ALE
 !>  (Arbitrary Lagrangian Eulerian Method): fills mesh viscosity arrays.
 !>
-!> This subroutine is called at the beginning of each time step.
-!>
 !> Here one can modify mesh viscosity value to prevent cells and nodes
 !> from huge displacements in awkward areas, such as boundary layer for example.
 !>
-!> IF variable IORTVM = 0, mesh viscosity modeling is isotropic therefore VISCMX
-!> array only needs to be filled.
-!> IF variable IORTVM = 1, mesh viscosity modeling is orthotropic therefore
-!> all arrays VISCMX, VISCMY and VISCMZ need to be filled.
+!> This subroutine is called once per computation, before restart files
+!> are read, so the mesh is always in the initial position at this stage.
 !>
-!> Note that VISCMX, VISCMY and VISCMZ arrays are initialized at the first time step
-!> to the value of 1.
-!>
-!> \section usvima_cell_id Cells identification
-!>
-!> Cells may be identified using the \ref getcel subroutine.
-!> The syntax of this subroutine is described in the
-!> \ref cs_user_boundary_conditions subroutine,
-!> but a more thorough description can be found in the user guide.
+!> Note that by default, the mesh viscosity is initialized to a uniform
+!> value of 1.
 !
 !-------------------------------------------------------------------------------
 
@@ -366,14 +355,9 @@ end subroutine ussmag
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     dt            time step (per cell)
 !_______________________________________________________________________________
 
-subroutine usvima &
- ( nvar   , nscal  ,                                              &
-   dt     )
+subroutine usvima
 
 !===============================================================================
 
@@ -398,10 +382,6 @@ use mesh
 implicit none
 
 ! Arguments
-
-integer          nvar   , nscal
-
-double precision dt(ncelet)
 
 ! Local
 
