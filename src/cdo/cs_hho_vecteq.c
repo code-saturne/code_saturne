@@ -1327,7 +1327,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); // optional
+  cs_matrix_assembler_values_done(mav); /* optional */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_VECTEQ_DBG > 2
   cs_dbg_darray_to_listing("FINAL RHS_FACE",
@@ -1336,6 +1336,9 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
     cs_dbg_darray_to_listing("FINAL RHS_CELL", 3*quant->n_cells,
                              eqc->source_terms, eqc->n_cell_dofs);
 #endif
+
+  /* Free temporary buffers and structures */
+  cs_matrix_assembler_values_finalize(&mav);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);

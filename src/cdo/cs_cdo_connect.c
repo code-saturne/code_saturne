@@ -1114,10 +1114,14 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP0);
   cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP1);
   cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP2);
+  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_VHP1);
+  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_VHP2);
 
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP0);
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP1);
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP2);
+  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_VHP1);
+  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_VHP2);
 
   BFT_FREE(connect);
 

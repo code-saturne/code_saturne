@@ -648,6 +648,9 @@ cs_equation_common_free(const cs_domain_cdo_context_t   *cc)
   if (cc->hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_hho_scaleq_finalize_common();
 
+  if (cc->hho_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+    cs_hho_vecteq_finalize_common();
+
   BFT_FREE(cs_equation_common_work_buffer);
 
   /* Monitoring */

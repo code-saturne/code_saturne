@@ -48,7 +48,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Main categories to consider for high-level structures
-   Remark: HHO-P1 and CDO-Fb vector-valued shares the same structures
+   Remark: scalar-valued HHO-P1 and vector-valued CDO-Fb shares the same
+   structures
 */
 #define CS_CDO_CONNECT_VTX_SCAL   0 /* Vb or VCb scalar-valued eq. */
 #define CS_CDO_CONNECT_VTX_VECT   1 /* Vb or VCb vector-valued eq. */
