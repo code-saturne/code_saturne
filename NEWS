@@ -5,7 +5,9 @@ Release 5.0.9 (unreleased)
 Bug fixes
 ---------
 
-- Fix in sever accident (mass source terms for metal modelling).
+- Fix missing handling of isotropic mesh viscosity for ALE restart.
+
+- Fix in severe accident (mass source terms for metal modelling).
 
 - Fix crash in some polygon triangulation cases.
 
