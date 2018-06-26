@@ -400,6 +400,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
           cs_hho_builder_compute_dirichlet_v(eqp->bc_defs[def_id],
                                              f,
                                              cm,
+                                             t_eval,
                                              cb,
                                              hhob,
                                              dir_reduction);
@@ -888,12 +889,13 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
 
     const cs_xdef_t  *def = eqp->bc_defs[def_id];
-    const cs_boundary_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
+    const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
 
-#   pragma omp parallel for if (bz->n_faces > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < bz->n_faces; i++){
-      eqc->bf2def_ids[bz->face_ids[i] ] = def_id;
+#   pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < bz->n_elts; i++){
+      eqc->bf2def_ids[bz->elt_ids[i]] = def_id;
     }
+
   } /* Loop on BC definitions */
 
   return eqc;
@@ -1010,7 +1012,7 @@ cs_hho_vecteq_compute_source(const cs_equation_param_t  *eqp,
                                       t_cur,
                                       hhob,
                                       cb,
-                                      csys); // Fill csys->source
+                                      csys->source);
 
       cs_real_t  *st = eqc->source_terms + eqc->n_cell_dofs * cm->c_id;
       const cs_real_t  *_st = csys->source + cm->n_fc*eqc->n_face_dofs;
@@ -1200,8 +1202,6 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
         cs_hho_builder_diffusion(cm, cb, hhob);
 
         /* Add the local diffusion operator to the local system */
-        const cs_real_t  *sval = cb->loc->val;
-
         int n_blocks = cb->loc->block_desc->n_col_blocks;
 
         for (int bi = 0; bi < n_blocks ; bi++) {
@@ -1215,7 +1215,6 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
 
             const int  sc_n_rows = scalar_bij->n_rows;
             const int  sc_n_cols = scalar_bij->n_cols;
-            const int  vec_n_rows = vector_bij->n_rows;
             const int  vec_n_cols = vector_bij->n_cols;
 
             for (int row_k = 0; row_k < sc_n_rows ; row_k++) {
@@ -1324,9 +1323,9 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
                              eqc->n_face_dofs,
                              rhs, mav);
 
-    } // Main loop on cells
+    } /* Main loop on cells */
 
-  } // OPENMP Block
+  } /* OPENMP Block */
 
   cs_matrix_assembler_values_done(mav); // optional
 
