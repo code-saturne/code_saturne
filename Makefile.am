@@ -355,7 +355,7 @@ update-po:
 
 # Generate and install documentation
 
-doc_dirs = $(PLE) docs
+doc_dirs = $(PLE) docs $(NEPTUNE_CFD)
 
 doc:
 	for p in $(doc_dirs); do \
