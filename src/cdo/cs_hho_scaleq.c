@@ -1191,6 +1191,9 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
                              eqc->source_terms, eqc->n_cell_dofs);
 #endif
 
+  /* Free temporary buffers and structures */
+  cs_matrix_assembler_values_finalize(&mav);
+
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 }
