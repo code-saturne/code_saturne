@@ -699,7 +699,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " Invalid type of definition for a source term in HHO",
+                  " %s: Invalid type of definition for a source term in HHO",
                   __func__);
         break;
 
