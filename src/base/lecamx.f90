@@ -124,7 +124,7 @@ logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
 type(c_ptr) :: rp
 
 double precision, dimension(:), pointer :: sval
-double precision, dimension(:), pointer :: voidfl
+double precision, dimension(:), pointer :: voidfl, cpro_visma_s
 double precision, dimension(:,:), pointer :: disale, cpro_visma_v
 
 double precision, allocatable, dimension(:,:) :: tmurbf
@@ -831,6 +831,7 @@ if (iale.eq.1 .and. jale.eq.1) then
   jortvm = ival(1)
 
   if (iortvm.eq.1) then
+
     if (jortvm.ne.1) then
       call field_get_name(ivisma, fname)
       rubriq = trim(fname)//'::vals::0'
@@ -850,6 +851,29 @@ if (iale.eq.1 .and. jale.eq.1) then
     else
       call restart_read_field_vals(rp, ivisma, 0, ierror)
     endif
+
+  else
+
+    if (jortvm.eq.1) then
+      call field_get_name(ivisma, fname)
+      rubriq = trim(fname)//'::vals::0'
+      itysup = 1
+      nbval  = 3
+      allocate(vismbf(ncelet*3))
+      call restart_read_section_real_t(rp,rubriq,itysup,nbval,   &
+                                       vismbf,ierror)
+
+      call field_get_val_s(ivisma, cpro_visma_s)
+      do iel = 1, ncel
+        cpro_visma_s(iel) = (  vismbf((iel-1)*3 + 1) &
+                             + vismbf((iel-1)*3 + 2) &
+                             + vismbf((iel-1)*3 + 3)) / 3.
+      enddo
+      deallocate(vismbf)
+    else
+      call restart_read_field_vals(rp, ivisma, 0, ierror)
+    endif
+
   endif
 
   car54 =' Fin de la lecture des donnees ALE                    '

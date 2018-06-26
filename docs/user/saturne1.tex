@@ -7094,19 +7094,23 @@ words \texttt{ivimpo\index{ivimpo}}, \texttt{igliss\index{igliss}},
 }
 
 %==================================
-\subsubsection{Modification of the viscosity}
+\subsubsection{Modification of the mesh viscosity}
 %==================================
 
 The user subroutine \texttt{usvima} is used along the ALE (Arbitrary Lagrangian Eulerian
- Method) module, and fills mesh viscosity arrays. It is called at each time step.
+ Method) module, and allows modifying the mesh viscosity.
+ It is called at the first ALE time step only, and read (not computed) in
+ case of restarts.
 The user can modify mesh viscosity values to prevent cells and nodes from huge
  displacements in awkward areas, such as boundary layer for example.
 If \texttt{iortvm} = 0, the mesh viscosity modelling is considered as isotropic and
- therefore only the \texttt{viscmx} array must be filled.
-If \texttt{iortvm} = 1, mesh viscosity modelling is orthotropic therefore all arrays
- \texttt{viscmy}, \texttt{viscmx}, and \texttt{viscmz} need to be filled.
-Note that \texttt{viscmx}, \texttt{viscmy} and \texttt{viscmz} arrays are initialized
- at the first time step with the value 1.
+ therefore the \texttt{ivisma} field is scalar.
+If \texttt{iortvm} = 1, mesh viscosity modelling is orthotropic therefore that
+ field is a vector field.
+
+Note that for more complex settings, the mesh viscosity could be modified in
+ \texttt{cs\_user\_initialization} or \texttt{cs\_user\_extra\_operations}.
+ The matching field's name is \texttt{mesh\_viscosity}.
 
 %==================================
 \subsubsection{Fluid - Structure internal coupling}\label{sec:ALE}
