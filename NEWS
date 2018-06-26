@@ -5,7 +5,9 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
-- Fix in sever accident (mass source terms for metal modelling).
+- Fix missing handling of isotropic mesh viscosity for ALE restart.
+
+- Fix in severe accident (mass source terms for metal modelling).
 
 - Major Fix: change the computation of the RHS for pressure.
   The form is back to the one before a1bed6b "div(rho u* +dt grad P^n)".
