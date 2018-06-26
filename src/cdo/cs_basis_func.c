@@ -786,7 +786,10 @@ _k0_compute_facto(void       *pbf)
   assert(bf->projector->val[0] > 0);
 
   /* Mass matrix is a 1x1 matrix ! */
-  BFT_MALLOC(bf->facto, 1, cs_real_t);
+  if (bf->facto_max_size < 1) {
+    BFT_REALLOC(bf->facto, 1, cs_real_t);
+    bf->facto_max_size = 1;
+  }
   bf->facto[0] = 1/bf->projector->val[0];
 }
 
@@ -1022,8 +1025,10 @@ _ck1_compute_facto(void       *pbf)
   assert(bf->projector != NULL);
 
   /* Mass matrix is a 4x4 matrix */
-  BFT_MALLOC(bf->facto, 10, cs_real_t);
-
+  if (bf->facto_max_size < 10) {
+    bf->facto_max_size = 10;
+    BFT_REALLOC(bf->facto, 10, cs_real_t);
+  }
   cs_sdm_44_ldlt_compute(bf->projector, bf->facto);
 }
 
@@ -1373,6 +1378,14 @@ _cka_compute_projector(void                    *pbf,
     break;
   }
 
+  /* Free allocated buffers */
+  if (n_rows > CKA_SIZE)
+    BFT_FREE(phi_eval);
+  if (n_gpts > CKA_SIZE) {
+    BFT_FREE(weights);
+    BFT_FREE(gpts);
+  }
+
   /* Projection matrix is symmetric by construction */
   _symmetrize_and_clean(n_rows, pval);
 }
@@ -1397,8 +1410,10 @@ _ka_compute_facto(void       *pbf)
      greater than the one requested in order to store a temporary buffer
      used for building the factorization */
   const int facto_size = ((bf->size + 1)*bf->size)/2;
-  BFT_MALLOC(bf->facto, facto_size + bf->size, cs_real_t);
-
+  if (bf->facto_max_size < facto_size + bf->size) {
+    bf->facto_max_size = facto_size + bf->size;
+    BFT_REALLOC(bf->facto, facto_size + bf->size, cs_real_t);
+  }
   cs_sdm_ldlt_compute(bf->projector, bf->facto, bf->facto + facto_size);
 }
 
@@ -1914,9 +1929,11 @@ _fk1_compute_facto(void       *pbf)
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;
   assert(bf->projector != NULL);
 
-  /* Mass matrix is a 3x3 matrix */
-  BFT_MALLOC(bf->facto, 6, cs_real_t);
-
+  /* Mass matrix is a 3x3 matrix. Factorization is stored with 6 values */
+  if (bf->facto_max_size < 6) {
+    bf->facto_max_size = 6;
+    BFT_REALLOC(bf->facto, 6, cs_real_t);
+  }
   cs_sdm_33_ldlt_compute(bf->projector, bf->facto);
 }
 
@@ -2048,7 +2065,10 @@ _fk2_compute_facto(void       *pbf)
   assert(bf->projector != NULL);
 
   /* Mass matrix is a 6x6 matrix */
-  BFT_MALLOC(bf->facto, 21, cs_real_t);
+  if (bf->facto_max_size < 21) {
+    bf->facto_max_size = 21;
+    BFT_REALLOC(bf->facto, 21, cs_real_t);
+  }
 
   cs_sdm_66_ldlt_compute(bf->projector, bf->facto);
 }
@@ -2257,6 +2277,14 @@ _fka_compute_projector(void                    *pbf,
 
   } /* End of switch on n_ef */
 
+  /* Free allocated buffers */
+  if (n_rows > FKA_SIZE)
+    BFT_FREE(phi_eval);
+  if (n_gpts > FKA_SIZE) {
+    BFT_FREE(weights);
+    BFT_FREE(gpts);
+  }
+
   /* Projection matrix is symmetric by construction */
   _symmetrize_and_clean(n_rows, pval);
 }
@@ -2393,6 +2421,7 @@ cs_basis_func_create(cs_flag_t      flag,
   pbf->dump_projector = NULL;
   pbf->compute_projector = NULL;
   pbf->compute_factorization = NULL;
+  pbf->facto_max_size = 0;
   pbf->facto = NULL;  /* array storing the matrix factorization */
   pbf->project = NULL;
 
@@ -2576,6 +2605,7 @@ cs_basis_func_grad_create(const cs_basis_func_t   *ref)
   gbf->dump_projector = NULL;
   gbf->compute_projector = NULL;
   gbf->compute_factorization = NULL;
+  gbf->facto_max_size = 0;
   gbf->facto = NULL;  /* array storing the matrix factorization */
   gbf->project = NULL;
   gbf->n_gpts_tria = ref->n_gpts_tria;
@@ -2646,6 +2676,7 @@ cs_basis_func_free(cs_basis_func_t  *pbf)
 
   if (pbf->projector != NULL)
     pbf->projector = cs_sdm_free(pbf->projector);
+  pbf->facto_max_size = 0;
   BFT_FREE(pbf->facto);
 
   BFT_FREE(pbf);

@@ -210,8 +210,9 @@ typedef struct {
   /* Modified Cholesky factorization. To perform the inversion agains a set
      of right-hand sides */
   cs_basis_func_compute_facto_t       *compute_factorization;
-  cs_real_t                           *facto;
   cs_basis_func_project_t             *project;
+  cs_real_t                           *facto;
+  int                                  facto_max_size;
 
   /* Quadrature function to use for computing integral over o volume (tet) or
      on a surface (tria) */
