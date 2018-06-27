@@ -354,7 +354,7 @@ class case:
                and n_passes < 5):
 
             mult = (n_procs - n_fixed_procs) *1.0 \
-                / (n_procs_tot - n_fixed_procs)
+                // (n_procs_tot - n_fixed_procs)
 
             n_procs_tot = 0
 
@@ -385,7 +385,7 @@ class case:
                and n_passes < 5):
 
             delta = int(round(  (n_procs_tot - n_procs)*1.0
-                              / (len(np_list) - n_fixed_apps)))
+                              // (len(np_list) - n_fixed_apps)))
 
             if delta == 0:
                 if n_procs_tot < n_procs:
