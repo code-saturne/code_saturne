@@ -145,18 +145,19 @@ cs_head_losses_compute(cs_real_6_t cku[])
     if (z->type & CS_VOLUME_ZONE_HEAD_LOSS) {
 
       const cs_lnum_t n_z_cells = z->n_elts;
+      cs_real_6_t *_cku = cku + n_p_cells;
 
       /* Initialize */
 
       for (cs_lnum_t j = 0; j < n_z_cells; j++) {
         for (cs_lnum_t k = 0; k < 6; k++)
-          cku[j][k] = 0.;
+          _cku[j][k] = 0.;
       }
 
       /* GUI definitions go first, then user function definitions */
 
-      cs_gui_head_losses(z, cku);
-      cs_user_head_losses(z, cku);
+      cs_gui_head_losses(z, _cku);
+      cs_user_head_losses(z, _cku);
 
       /* update previous cells accumulator */
 
