@@ -314,13 +314,13 @@ class batch:
                 elif kw == '--time=' or kw == '-t':
                     wt = self.params['job_walltime']
                     if wt > 86400: # 3600*24
-                        val = '%d-%d:%02d:%02d' % (wt/86400,
-                                                   (wt%86400)/3600,
-                                                   (wt%3600)/60,
+                        val = '%d-%d:%02d:%02d' % (wt//86400,
+                                                   (wt%86400)//3600,
+                                                   (wt%3600)//60,
                                                    wt%60)
                     else:
-                        val = '%d:%02d:%02d' % (wt/3600,
-                                                (wt%3600)/60,
+                        val = '%d:%02d:%02d' % (wt//3600,
+                                                (wt%3600)//60,
                                                 wt%60)
                 elif kw == '--partition=' or kw == '-p':
                     val = self.params['job_class']
@@ -460,8 +460,8 @@ class batch:
                             val = self.params['job_threads']
                         elif kw == 'wall_clock_limit':
                             wt = self.params['job_walltime']
-                            val = '%d:%02d:%02d' % (wt/3600,
-                                                    (wt%3600)/60,
+                            val = '%d:%02d:%02d' % (wt//3600,
+                                                    (wt%3600)//60,
                                                     wt%60)
                         elif kw == 'class':
                             val = self.params['job_class']
@@ -520,7 +520,7 @@ class batch:
                     val = str(self.params['job_procs'])
                 elif kw == '-W' or kw == '-wt' or kw == '-We':
                     wt = self.params['job_walltime']
-                    val = '%d:%02d' % (wt/3600, (wt%3600)/60)
+                    val = '%d:%02d' % (wt//3600, (wt%3600)//60)
                 elif kw == '-q':
                     val = self.params['job_class']
                 else:
@@ -628,8 +628,8 @@ class batch:
                         ch = ch1 + ch
                     elif arg[0:12] == '-l walltime=':
                         wt = self.params['job_walltime']
-                        s_wt = '%d:%02d:%02d' % (wt/3600,
-                                                 (wt%3600)/60,
+                        s_wt = '%d:%02d:%02d' % (wt//3600,
+                                                 (wt%3600)//60,
                                                  wt%60)
                         ch = ' -l walltime=' + s_wt + ch
                     elif arg[0:2] == '-q':
@@ -704,8 +704,8 @@ class batch:
                             pass
                     elif arg[0:8] == '-l h_rt=':
                         wt = self.params['job_walltime']
-                        s_wt = '%d:%02d:%02d' % (wt/3600,
-                                                 (wt%3600)/60,
+                        s_wt = '%d:%02d:%02d' % (wt//3600,
+                                                 (wt%3600)//60,
                                                  wt%60)
                         ch = ' -l h_rt=' + s_wt + ch
                     elif arg[0:2] == '-q':

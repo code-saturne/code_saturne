@@ -5,6 +5,9 @@ Release 5.0.9 (unreleased)
 Bug fixes
 ---------
 
+- Fix Python 3 integer divison issues for code-code coupling process count
+  distribution and batch duration conversions.
+
 - Fix missing handling of isotropic mesh viscosity for ALE restart.
 
 - Fix in severe accident (mass source terms for metal modelling).
