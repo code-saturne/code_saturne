@@ -92,7 +92,7 @@ BEGIN_C_DECLS
  * Local variables
  *============================================================================*/
 
-// Advanced developper parameters (weakly enforced the boundary conditions)
+/* Advanced developper parameters (weakly enforced the boundary conditions) */
 static const double  cs_nitsche_pena_coef = 500;
 static const double  cs_big_pena_coef = 1e13;
 
@@ -141,20 +141,20 @@ _enforce_nitsche(const double              pcoef,
 
       const short int  vi = fm->v_ids[v];
 
-      // Set the penalty diagonal coefficient
+      /* Set the penalty diagonal coefficient */
       const double  pcoef_v = pcoef * fm->wvf[v];
 
       ntrgrd->val[vi + vi*ntrgrd->n_rows] += pcoef_v;
       csys->rhs[vi] += pcoef_v * csys->dir_values[vi];
 
-    } // Dirichlet or homogeneous Dirichlet
+    }  /* Dirichlet or homogeneous Dirichlet */
     break;
 
   case CS_PARAM_HODGE_ALGO_WBS:
     { /* Build the related border Hodge operator */
       cs_sdm_t  *hloc = cb->aux;
 
-      cs_hodge_compute_wbs_surfacic(fm, hloc); // hloc is of size n_vf
+      cs_hodge_compute_wbs_surfacic(fm, hloc);  /* hloc is of size n_vf */
 
       /* Add the border Hodge op. to the normal trace op.
          Update RHS whith H*p^{dir} */
@@ -173,9 +173,9 @@ _enforce_nitsche(const double              pcoef,
           ntrg_i[vj] += pcoef_ij;
           csys->rhs[vi] += pcoef_ij * csys->dir_values[vj];
 
-        } // Loop on face vertices vj
+        }  /* Loop on face vertices vj */
 
-      } // Loop on face vertices vi
+      }  /* Loop on face vertices vi */
 
     }
     break;
@@ -246,7 +246,7 @@ cs_cdovcb_diffusion_flux_op(const cs_face_mesh_t     *fm,
      constant inside p_{f,c} */
   cs_compute_grdfc(fm->f_sgn, pfq, deq, grd_c);
 
-  const cs_real_t  mng_cf = _dp3(pty_nuf, grd_c); // (pty_tensor * nu_f).grd_c
+  const cs_real_t  mng_cf = _dp3(pty_nuf, grd_c); /* (pty_tensor*nu_f).grd_c */
 
   /* Compute xc --> xv length and unit vector for all face vertices */
   for (short int v = 0; v < fm->n_vf; v++)
@@ -303,13 +303,13 @@ cs_cdovcb_diffusion_flux_op(const cs_face_mesh_t     *fm,
 
         entry_ij += coef_i * coef_j;
 
-      } // Loop on face edges
+      }  /* Loop on face edges */
 
       ntrgrd_i[fm->v_ids[vfj]] += entry_ij;
 
-    } // Loop on face vertices (vj)
+    }  /* Loop on face vertices (vj) */
 
-  } // Loop on face vertices (vi)
+  }  /* Loop on face vertices (vi) */
 
 }
 
@@ -355,7 +355,7 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
 
   cs_compute_grdfc(fm->f_sgn, pfq, deq, grd_c);
 
-  const cs_real_t  mng_cf = _dp3(pty_nuf, grd_c); // (pty_tensor * nu_f).grd_c
+  const cs_real_t  mng_cf = _dp3(pty_nuf, grd_c); /* (pty_tensor*nu_f).grd_c */
 
   /* Compute xc --> xv length and unit vector for all face vertices */
   for (short int v = 0; v < fm->n_vf; v++)
@@ -394,7 +394,7 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
     /* Default contribution for this line */
     const double  default_coef = pfq.meas * fm->wvf[vfi] * mng_cf;
     for (short int vj = 0; vj < cm->n_vc; vj++)
-      ntrgrd_i[vj] = default_coef * cm->wvc[vj]; // two contributions
+      ntrgrd_i[vj] = default_coef * cm->wvc[vj];  /* two contributions */
 
     /* Block Vf x Vf */
     for (short int vfj = 0; vfj < fm->n_vf; vfj++) {
@@ -421,13 +421,13 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
             entry_ij += mng_ef[e][1];
         }
 
-      } // Loop on face edges
+      }  /* Loop on face edges */
 
       ntrgrd_i[vj] += entry_ij;
 
-    } // Loop on face vertices (vj)
+    }  /* Loop on face vertices (vj) */
 
-  } // Loop on face vertices (vi)
+  }  /* Loop on face vertices (vi) */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
   cs_log_printf(CS_LOG_DEFAULT,
@@ -474,10 +474,10 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
     const cs_quant_t  peq_i = fm->edge[e];
     const short int  vi1 = fm->v_ids[fm->e2v_ids[2*e]];
     const short int  vi2 = fm->v_ids[fm->e2v_ids[2*e+1]];
-    const short int  ei = fm->e_ids[e]; // edge id in the cell mesh
+    const short int  ei = fm->e_ids[e];  /* edge id in the cell mesh */
     const cs_nvec3_t  dfq_i = cm->dface[ei];
     const double  dp = _dp3(peq_i.unitv, dfq_i.unitv);
-    const double  tmp_val = peq_i.meas * dfq_i.meas * dp; // 3*pec_vol
+    const double  tmp_val = peq_i.meas * dfq_i.meas * dp;  /* 3*pec_vol */
     const double  beta_pec_vol = 3. * beta/tmp_val;
     const double  coef_ei = 3. * beta/dp;
 
@@ -490,7 +490,7 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
     for (short int ek = 0; ek < cm->n_ec; ek++) {
 
       const short int  vj1 = cm->e2v_ids[2*ek], vj2 = cm->e2v_ids[2*ek+1];
-      const short int  sgn_vj1 = cm->e2v_sgn[ek]; // sgn_vj2 = - sgn_vj1
+      const short int  sgn_vj1 = cm->e2v_sgn[ek];  /* sgn_vj2 = - sgn_vj1 */
       const cs_nvec3_t  dfq_k = cm->dface[ek];
 
       /* Compute l_(ek,c)|p(ei,f,c) */
@@ -509,7 +509,7 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
         le_grd[vj2][k] -= sgn_vj1 * lek[k];
       }
 
-    } // Loop on cell edges
+    }  /* Loop on cell edges */
 
     for (short int v = 0; v < cm->n_vc; v++) {
 
@@ -519,7 +519,7 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
 
     }
 
-  } // Loop on face edges
+  }  /* Loop on face edges */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
   cs_log_printf(CS_LOG_DEFAULT,
@@ -556,7 +556,7 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
-    return; // Nothing to do
+    return;  /* Nothing to do */
 
   const double chi = cs_nitsche_pena_coef * fabs(cb->eig_ratio) * cb->eig_max;
 
@@ -582,12 +582,12 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
       flux_op(fm, cm, pty_nuf, h_info.coef, cb, cb->loc);
 
       /* Update the RHS and the local system matrix */
-      _enforce_nitsche(chi/sqrt(fm->face.meas), // Penalization coeff.
+      _enforce_nitsche(chi/sqrt(fm->face.meas),  /* Penalization coeff. */
                        h_info,
                        fm,
                        cb->loc, cb, csys);
 
-    } // Dirichlet face
+    }  /* Dirichlet face */
   } /* Loop on boundary faces */
 
 }
@@ -619,7 +619,7 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
-    return; // Nothing to do
+    return;  /* Nothing to do */
 
   const double chi = cs_nitsche_pena_coef * cb->eig_ratio * cb->eig_max;
 
@@ -653,7 +653,7 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
-      _enforce_nitsche(chi/sqrt(fm->face.meas), // Penalization coeff.
+      _enforce_nitsche(chi/sqrt(fm->face.meas),  /* Penalization coeff. */
                        h_info,
                        fm,
                        cb->loc, cb, csys);
@@ -685,7 +685,9 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys)
 {
-  CS_UNUSED(h_info); // Prototype common to cs_cdo_diffusion_enforce_dir_t
+  /* Prototype common to cs_cdo_diffusion_enforce_dir_t.
+     Hence the unused parameters*/
+  CS_UNUSED(h_info);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(cb);
@@ -696,11 +698,11 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
-    return; // Nothing to do
+    return;  /* Nothing to do */
 
   const short int n_dofs = csys->mat->n_rows;
 
-  // Penalize diagonal entry (and its rhs if needed)
+  /* Penalize diagonal entry (and its rhs if needed) */
   for (short int i = 0; i < csys->n_dofs; i++) {
 
     if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) {
@@ -737,7 +739,9 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys)
 {
-  CS_UNUSED(h_info); // Prototype common to cs_cdo_diffusion_enforce_dir_t
+  /* Prototype common to cs_cdo_diffusion_enforce_dir_t
+     Hence the unused parameters */
+  CS_UNUSED(h_info);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(cb);
@@ -748,13 +752,13 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
-    return; // Nothing to do
+    return;  /* Nothing to do */
 
   cs_sdm_t  *m = csys->mat;
   cs_sdm_block_t  *bd = m->block_desc;
   assert(bd != NULL);
 
-  // Penalize diagonal entry (and its rhs if needed)
+  /* Penalize diagonal entry (and its rhs if needed) */
   int  shift = 0;
   for (short int bi = 0; bi < bd->n_row_blocks; bi++) {
 
@@ -809,10 +813,10 @@ cs_cdo_diffusion_vcost_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
   for (short int e = 0; e < cm->n_ec; e++) {
 
     const short int  *v = cm->e2v_ids + 2*e;
-    // sgn_v2 = -sgn_v1; flux = - HDG * GRAD(P)
+    /* sgn_v2 = -sgn_v1; flux = - HDG * GRAD(P) */
     gec[e] = cm->e2v_sgn[e]*(pot[v[1]] - pot[v[0]]);
 
-  } // Loop on cell edges
+  }  /* Loop on cell edges */
 
   /* Store the local fluxes. flux = -Hdg * grd_c(pdi_c)
      cb->hdg has been computed just before the call to this function */
@@ -849,13 +853,13 @@ cs_cdo_diffusion_vcost_get_pc_flux(const cs_cell_mesh_t      *cm,
 
     const short int  *v = cm->e2v_ids + 2*e;
 
-    // sgn_v1 = -sgn_v0; flux = - Kc * GRAD(P)
+    /* sgn_v1 = -sgn_v0; flux = - Kc * GRAD(P) */
     const double  ge = cm->e2v_sgn[e]*(pot[v[1]] - pot[v[0]]);
     const double  contrib = ge * cm->dface[e].meas;
     for (int k = 0; k < 3; k++)
       grd[k] += contrib * cm->dface[e].unitv[k];
 
-  } // Loop on cell edges
+  }  /* Loop on cell edges */
 
   cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, grd, flx);
   const double  invvol = 1/cm->vol_c;
@@ -922,8 +926,8 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
 
       const short int  e = cm->f2e_ids[i];
 
-      p_f += cm->tef[i]*(  p_v[cm->e2v_ids[2*e]]      // p_v1
-                         + p_v[cm->e2v_ids[2*e+1]] ); // p_v2
+      p_f += cm->tef[i]*(  p_v[cm->e2v_ids[2*e]]       /* p_v1 */
+                         + p_v[cm->e2v_ids[2*e+1]] );  /* p_v2 */
     }
     p_f *= 0.5/pfq.meas;
 
@@ -958,9 +962,9 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
         flx[e] -= cm->sefc[ee+1].meas * _dp3(cm->sefc[ee+1].unitv, mgrd);
       }
 
-    } // Loop on face edges
+    }  /* Loop on face edges */
 
-  } // Loop on cell faces
+  }  /* Loop on cell faces */
 
 }
 
@@ -995,7 +999,7 @@ cs_cdo_diffusion_wbs_get_pc_flux(const cs_cell_mesh_t   *cm,
   cs_reco_cw_cgrd_wbs_from_pvc(cm, pot, cb, cgrd);
 
   cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, cgrd, flx);
-  for (int k = 0; k < 3; k++) flx[k] *= -1; // Flux = - tensor * grd
+  for (int k = 0; k < 3; k++) flx[k] *= -1;  /* Flux = - tensor * grd */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1117,7 +1121,7 @@ cs_cdo_diffusion_face_wbs_flux(const cs_face_mesh_t      *fm,
     /* Area of the triangle defined by the base e and the apex f */
     f_flux -= fm->tef[e] * _dp3(mnuf, grd_pef);
 
-  } // Loop on face edges
+  }  /* Loop on face edges */
 
   return f_flux;
 }

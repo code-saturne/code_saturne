@@ -134,7 +134,7 @@ typedef void
  * Private constant variables
  *============================================================================*/
 
-// Advanced developper parameters (stabilization coefficient)
+/* Advanced developper parameters (stabilization coefficient) */
 static double  cs_cip_stab_coef = 1e-2;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -167,8 +167,8 @@ _assemble_face(const cs_cell_mesh_t     *cm,
 
     double  *aci = ac->val + ac->n_rows*fm->v_ids[vi];
     for (short int vj = 0; vj < fm->n_vf; vj++)
-      aci[fm->v_ids[vj]] += afi[vj];  // (i,j) face --> cell
-    aci[cm->n_vc] += afi[fm->n_vf];   // (i,c) face --> cell
+      aci[fm->v_ids[vj]] += afi[vj];   /* (i,j) face --> cell */
+    aci[cm->n_vc] += afi[fm->n_vf];    /* (i,c) face --> cell */
 
   }
 
@@ -176,8 +176,8 @@ _assemble_face(const cs_cell_mesh_t     *cm,
 
   double  *acc = ac->val + ac->n_rows*cm->n_vc;
   for (short int vj = 0; vj < fm->n_vf; vj++)
-    acc[fm->v_ids[vj]] += afc[vj];     // (c,j) face --> cell
-  acc[cm->n_vc] += afc[fm->n_vf];      // (c,c)
+    acc[fm->v_ids[vj]] += afc[vj];      /* (c,j) face --> cell */
+  acc[cm->n_vc] += afc[fm->n_vf];       /* (c,c) */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -270,7 +270,7 @@ _assign_weight_func(const cs_param_advection_scheme_t    scheme)
   case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
     return _get_samarskii_weight;
 
-  case CS_PARAM_ADVECTION_SCHEME_SG: // Sharfetter-Gummel
+  case CS_PARAM_ADVECTION_SCHEME_SG:  /* Sharfetter-Gummel */
     return _get_sg_weight;
 
   default:
@@ -278,9 +278,9 @@ _assign_weight_func(const cs_param_advection_scheme_t    scheme)
               " Incompatible type of algorithm to compute the weight of"
               " upwind.");
 
-  } // Switch on the type of function to return
+  }  /* Switch on the type of function to return */
 
-  return NULL; // Avoid warning
+  return NULL;  /* Avoid warning */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -322,7 +322,7 @@ _set_fquant(const cs_cell_mesh_t    *cm,
 
     if (eab == e)  ef = ee;
 
-  } // Loop on edges of f1
+  }  /* Loop on edges of f1 */
 
   const double  invf = 0.5/cm->face[f].meas;
   for (short int v = 0; v < cm->n_vc; v++)
@@ -373,7 +373,7 @@ _update_vcb_system_with_bc(const double                 beta_nf,
     for (short int vfi = 0; vfi < fm->n_vf; vfi++)
       csys->rhs[fm->v_ids[vfi]] += rhsf[vfi];
 
-  } // There is at least one dirichlet
+  }  /* There is at least one dirichlet */
 
   /* Update cellwise matrix */
   const int  n_cell_dofs = csys->mat->n_rows;
@@ -387,7 +387,7 @@ _update_vcb_system_with_bc(const double                 beta_nf,
     for (short int vfj = 0; vfj < fm->n_vf; vfj++)
       mi[fm->v_ids[vfj]] += beta_nf * mfi[vfj];
 
-  } // Loop on face vertices
+  }  /* Loop on face vertices */
 
   if (dirf != _dirf)
     BFT_FREE(dirf);
@@ -430,7 +430,7 @@ _build_cell_epcd_upw(const cs_cell_mesh_t      *cm,
          Remember that sgn_v2 = -sgn_v1 */
       short int  v1 = cm->e2v_ids[2*e];
       short int  v2 = cm->e2v_ids[2*e+1];
-      assert(v1 != -1 && v2 != -1); // Sanity check
+      assert(v1 != -1 && v2 != -1);  /* Sanity check */
 
       /* Update for the vertex v1 */
       double  *m1 = adv->val + v1*adv->n_rows;
@@ -475,7 +475,7 @@ _build_cell_epcd_cen(const cs_cell_mesh_t          *cm,
       /* Update local convection matrix */
       short int  v1 = cm->e2v_ids[2*e];
       short int  v2 = cm->e2v_ids[2*e+1];
-      assert(v1 != -1 && v2 != -1);        // Sanity check
+      assert(v1 != -1 && v2 != -1); /* Sanity check */
 
       /* Update for the vertex v1 */
       double  *adv1 = adv->val + v1*adv->n_rows;
@@ -531,7 +531,7 @@ _build_cell_vpfd_upw(const cs_cell_mesh_t          *cm,
       /* Update local convection matrix */
       short int  v1 = cm->e2v_ids[2*e];
       short int  v2 = cm->e2v_ids[2*e+1];
-      assert(v1 != -1 && v2 != -1); // Sanity check
+      assert(v1 != -1 && v2 != -1);  /* Sanity check */
 
       /* Update for the vertex v1 */
       double  *m1 = adv->val + v1*adv->n_rows;
@@ -574,7 +574,7 @@ _build_cell_vpfd_cen(const cs_cell_mesh_t          *cm,
 
       short int  v1 = cm->e2v_ids[2*e];
       short int  v2 = cm->e2v_ids[2*e+1];
-      assert(v1 != -1 && v2 != -1);        // Sanity check
+      assert(v1 != -1 && v2 != -1);  /* Sanity check */
 
       /* Update for the vertex v1 */
       double  *adv1 = adv->val + v1*adv->n_rows;
@@ -644,7 +644,7 @@ _vcb_cellwise_consistent_part(const cs_nvec3_t            adv_cell,
   const double  bgc = _dp3(grd_c, adv_cell.unitv);
   const double  pfc_bgc = adv_cell.meas * pfc_vol * bgc;
 
-  bgc_save[fm->f_id] = bgc; // Store it for a future use
+  bgc_save[fm->f_id] = bgc;  /* Store it for a future use */
 
   af->val[n_sysf*fm->n_vf + fm->n_vf] = 0.25 * pfc_bgc;         // (c,c)
   for (short int v = 0; v < fm->n_vf; v++)
@@ -690,11 +690,11 @@ _vcb_cellwise_consistent_part(const cs_nvec3_t            adv_cell,
         else if (vj == v2)
           glj += bgv2;
 
-        afi[vj] += glj * lvci; // consistent part (i,j) face mat.
+        afi[vj] += glj * lvci;  /* consistent part (i,j) face mat. */
 
-      } // Loop on vj in Vf
+      }  /* Loop on vj in Vf */
 
-    } // Loop on vi in Vf
+    }  /* Loop on vi in Vf */
 
     /* (c,j) entries */
     double  *afc = af->val + n_sysf*fm->n_vf;
@@ -706,16 +706,16 @@ _vcb_cellwise_consistent_part(const cs_nvec3_t            adv_cell,
       else if (vj == v2)
         glj += bgv2;
 
-      afc[vj] += glj * pef_coef; // consistent part (c,j) face mat.
+      afc[vj] += glj * pef_coef;  /* consistent part (c,j) face mat. */
 
-    } // Loop on vj in Vf
+    }  /* Loop on vj in Vf */
 
     /* Store bgv1, bgv2, bgf */
     bgvf[e][0] = bgv1;
     bgvf[e][1] = bgv2;
     bgvf[e][2] = bgf;
 
-  } // Loop on face edges
+  }  /* Loop on face edges */
 
 }
 
@@ -770,7 +770,7 @@ _vcb_consistent_part(const cs_adv_field_t     *adv_field,
 
   const double  bgcc = _dp3(grd_c, adv_cell.unitv);
 
-  bgc_save[fm->f_id] = bgcc; // Store it for a future use in the stanilization
+  bgc_save[fm->f_id] = bgcc;  /* Store it for using it in the stabilization */
 
   /* Compute xc --> xv length and unit vector for all face vertices */
   for (short int v = 0; v < fm->n_vf; v++)
@@ -818,14 +818,14 @@ _vcb_consistent_part(const cs_adv_field_t     *adv_field,
         else if (vj == v2)
           glj += bgv2;
 
-        afi[vj] += glj * lvci; // consistent part (i,j) face mat.
+        afi[vj] += glj * lvci;  /* consistent part (i,j) face mat. */
 
-      } // Loop on vj in Vf
+      }  /* Loop on vj in Vf */
 
       /* (i, c) entries */
       afi[fm->n_vf] += lvci * bgc;
 
-    } // Loop on vi in Vf
+    }  /* Loop on vi in Vf */
 
     /* (c,j) entries */
     double  *afc = af->val + n_sysf*fm->n_vf;
@@ -837,9 +837,9 @@ _vcb_consistent_part(const cs_adv_field_t     *adv_field,
       else if (vj == v2)
         glj += bgv2;
 
-      afc[vj] += glj * pef_coef; // consistent part (c,j) face mat.
+      afc[vj] += glj * pef_coef;  /* consistent part (c,j) face mat. */
 
-    } // Loop on vj in Vf
+    }  /* Loop on vj in Vf */
 
     /* (c,c) entries */
     afc[fm->n_vf] += pef_coef * bgc;
@@ -851,7 +851,7 @@ _vcb_consistent_part(const cs_adv_field_t     *adv_field,
        grd_f = -( grd_c + grd_v1 + grd_v2) */
     bgvf[e][2] =  -(bgcc + bgvf[e][0] + bgvf[e][1]);
 
-  } // Loop on face edges
+  }  /* Loop on face edges */
 
 }
 
@@ -884,12 +884,12 @@ _vcb_stabilization_part1(const cs_cell_mesh_t     *cm,
 
     short int  e2 = e1 - 1;
     if (e1 == 0)
-      e2 = fm->n_ef - 1; // Last edge face
+      e2 = fm->n_ef - 1;  /* Last edge face */
 
     short int  v1e1 = fm->e2v_ids[2*e1];
     short int  v2e1 = fm->e2v_ids[2*e1+1];
-    short int  v1e2 = fm->e2v_ids[2*e2];    // v1_prev
-    short int  v2e2 = fm->e2v_ids[2*e2+1];  // v2_prev
+    short int  v1e2 = fm->e2v_ids[2*e2];     /* v1_prev */
+    short int  v2e2 = fm->e2v_ids[2*e2+1];   /* v2_prev */
 
     const double  jump_bgf = bgvf[e1][2] - bgvf[e2][2];
 
@@ -919,7 +919,7 @@ _vcb_stabilization_part1(const cs_cell_mesh_t     *cm,
 
       const double  coef_i = svfc * jump_i;
 
-      afi[vi] += coef_i * jump_i; // Stab. (i,i) face mat.
+      afi[vi] += coef_i * jump_i;  /* Stab. (i,i) face mat. */
 
       for (short int vj = vi + 1; vj < fm->n_vf; vj++) {
 
@@ -937,13 +937,13 @@ _vcb_stabilization_part1(const cs_cell_mesh_t     *cm,
 
         const double  coef_ij = coef_i * jump_j;
 
-        afi[vj] += coef_ij;                 // Stab. (i,j) face mat.
-        af->val[vj*n_sysf + vi] += coef_ij; // Stab. (j,i) face mat. symmetric
+        afi[vj] += coef_ij;                 /* Stab. (i,j) face mat. */
+        af->val[vj*n_sysf + vi] += coef_ij; /* Stab. (j,i) face mat. symm. */
 
-      } // Loop on vj in Vf
-    } // Loop on vi in Vf
+      }  /* Loop on vj in Vf */
+    }  /* Loop on vi in Vf */
 
-  } // Loop on edge faces
+  }  /* Loop on edge faces */
 
 }
 
@@ -968,7 +968,7 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
   cs_sdm_t  *a = cb->loc;
 
   /* Temporary buffers used to store pre-computed data */
-  double  *bgc_save, *tef_save, *wvf1, *wvf2; // scalar-valued buffers
+  double  *bgc_save, *tef_save, *wvf1, *wvf2;  /* scalar-valued buffers */
   int  m_shft = 0;
 
   bgc_save = cb->values, m_shft = cm->n_fc;             // size = n_fc
@@ -976,7 +976,7 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
   wvf1 = cb->values + m_shft, m_shft += cm->n_vc;       // size = n_vc
   wvf2 = cb->values + m_shft, m_shft += cm->n_vc;       // size = n_vc
 
-  cs_real_3_t  *bgvf_save = cb->vectors;     // size = 2*n_ec
+  cs_real_3_t  *bgvf_save = cb->vectors;      /* size = 2*n_ec */
 
   for (short int e = 0; e < cm->n_ec; e++) {
 
@@ -990,7 +990,7 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
     const short int  f2 = cm->e2f_ids[eshift+1];
     const double  jump_c = bgc_save[f2] - bgc_save[f1];
 
-    // (c, c) contrib
+    /* (c, c) contrib */
     double  *ac = a->val + cm->n_vc*n_sysc;
     ac[cm->n_vc] += tec * jump_c * jump_c;
 
@@ -998,7 +998,7 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
     const short int ef2 = _set_fquant(cm, e, f2, tef_save, wvf2);
 
     for (short int vi = 0; vi < cm->n_vc; vi++) {
-      if (wvf2[vi] + wvf1[vi] > 0) { // vi belongs at least to f1 or f2
+      if (wvf2[vi] + wvf1[vi] > 0) {  /* vi belongs at least to f1 or f2 */
 
         double  *ai = a->val + vi*n_sysc;
         double  jump_i =
@@ -1011,11 +1011,11 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
 
         const double  coef_i = tec * jump_i;
 
-        // (i, i) contrib
+        /* (i, i) contrib */
         ai[vi] += jump_i * coef_i;
 
         for (short int vj = vi + 1; vj < cm->n_vc; vj++) {
-          if (wvf2[vj] + wvf1[vj] > 0) { // vj belongs at least to f1 or f2
+          if (wvf2[vj] + wvf1[vj] > 0) {  /* vj belongs at least to f1 or f2 */
 
             double  jump_j =
               wvf2[vj]*bgvf_save[ef2][2] - wvf1[vj]*bgvf_save[ef1][2];
@@ -1026,20 +1026,20 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
 
             const double coef_ij = coef_i * jump_j;
             ai[vj] += coef_ij;
-            a->val[vj*n_sysc + vi] += coef_ij;  // symmetric
+            a->val[vj*n_sysc + vi] += coef_ij;   /* symmetric */
 
-          } // vj belongs to f1 or f2
-        } // vj loop
+          }  /* vj belongs to f1 or f2 */
+        }  /* vj loop */
 
-        // (i, c) contrib
+        /* (i, c) contrib */
         const double coef_ic = coef_i * jump_c;
         ai[cm->n_vc] += coef_ic;
-        ac[vi] += coef_ic;                 // symmetric
+        ac[vi] += coef_ic;  /* symmetric */
 
-      } // vi belongs to f1 or f2
-    } // vi loop
+      }  /* vi belongs to f1 or f2 */
+    }  /* vi loop */
 
-  } // End of loop on cell edges
+  }  /* End of loop on cell edges */
 
 }
 
@@ -1113,7 +1113,7 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
   cs_sdm_square_init(cm->n_vc, adv);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
-  cs_real_t  *fluxes = cb->values; // size n_ec
+  cs_real_t  *fluxes = cb->values;  /* size n_ec */
   cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
@@ -1133,9 +1133,9 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
     if (diff_contrib > cs_math_zero_threshold)
       upwcoef[e] = cm->edge[e].meas * mean_flux / diff_contrib;
     else
-      upwcoef[e] = mean_flux * cs_math_big_r; // dominated by convection
+      upwcoef[e] = mean_flux * cs_math_big_r;  /* dominated by convection */
 
-  } // Loop on cell edges
+  }  /* Loop on cell edges */
 
   /* Set the function to compute the weight of upwinding */
   _upwind_weight_t  *get_weight = _assign_weight_func(adv_scheme);
@@ -1187,7 +1187,7 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
   cs_sdm_square_init(cm->n_vc, adv);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
-  cs_real_t  *fluxes = cb->values; // size n_ec
+  cs_real_t  *fluxes = cb->values;  /* size n_ec */
   cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
@@ -1235,7 +1235,7 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
   CS_UNUSED(fm);
 
   /* Sanity check */
-  assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB); // Sanity check
+  assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);  /* Sanity check */
   assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_EV));
 
 
@@ -1244,7 +1244,7 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
   cs_sdm_square_init(cm->n_vc, adv);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
-  cs_real_t  *fluxes = cb->values; // size n_ec
+  cs_real_t  *fluxes = cb->values;  /* size n_ec */
   cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Define the local operator for advection */
@@ -1294,7 +1294,7 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
   cs_sdm_square_init(cm->n_vc, adv);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
-  cs_real_t  *fluxes = cb->values; // size n_ec
+  cs_real_t  *fluxes = cb->values;  /* size n_ec */
   cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
@@ -1314,9 +1314,9 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
     if (diff_contrib > cs_math_zero_threshold)
       upwcoef[e] = cm->edge[e].meas * mean_flux / diff_contrib;
     else
-      upwcoef[e] = mean_flux * cs_math_big_r; // dominated by convection
+      upwcoef[e] = mean_flux * cs_math_big_r;  /* dominated by convection */
 
-  } // Loop on cell edges
+  }  /* Loop on cell edges */
 
   /* Set the function to compute the weight of upwinding */
   _upwind_weight_t  *get_weight = _assign_weight_func(adv_scheme);
@@ -1357,7 +1357,7 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
   CS_UNUSED(fm);
 
   /* Sanity checks */
-  assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB); // Sanity check
+  assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);  /* Sanity check */
   assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV));
 
@@ -1368,7 +1368,7 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
   cs_sdm_square_init(cm->n_vc, adv);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
-  cs_real_t  *fluxes = cb->values; // size n_ec
+  cs_real_t  *fluxes = cb->values;  /* size n_ec */
   cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
@@ -1424,7 +1424,7 @@ cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
   cs_sdm_square_init(cm->n_vc, adv);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
-  cs_real_t  *fluxes = cb->values; // size n_ec
+  cs_real_t  *fluxes = cb->values;  /* size n_ec */
   cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Define the local operator for advection */
@@ -1502,9 +1502,9 @@ cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
      bgvf stored in cb->vectors (size: 2*n_ec)
   */
   cs_sdm_t  *af = cb->aux;
-  double  *tef_save = cb->values + cm->n_fc; // size = 2*n_ec
+  double  *tef_save = cb->values + cm->n_fc;  /* size = 2*n_ec */
 
-  for (short int f = 0; f < cm->n_fc; f++) { // Loop on cell faces
+  for (short int f = 0; f < cm->n_fc; f++) {  /* Loop on cell faces */
 
     /* Build a facewise view of the mesh */
     cs_face_mesh_build_from_cell_mesh(cm, f, fm);
@@ -1543,15 +1543,15 @@ cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
       double  *aci = a->val + n_sysc*fm->v_ids[vi];
       const double *afi = af->val + n_sysf*vi;
       for (short int vj = 0; vj < fm->n_vf; vj++)
-        aci[fm->v_ids[vj]] += afi[vj];  // (i,j) face --> cell
-      aci[cm->n_vc] += afi[fm->n_vf];   // (i,c) face --> cell
+        aci[fm->v_ids[vj]] += afi[vj];   /* (i,j) face --> cell */
+      aci[cm->n_vc] += afi[fm->n_vf];    /* (i,c) face --> cell */
 
     }
 
     double  *acc = a->val + n_sysc*cm->n_vc;
     const double  *afc = af->val + n_sysf*fm->n_vf;
     for (short int vj = 0; vj < fm->n_vf; vj++)
-      acc[fm->v_ids[vj]] += afc[vj];     // (c,j) face --> cell
+      acc[fm->v_ids[vj]] += afc[vj];      /* (c,j) face --> cell */
     acc[cm->n_vc] += afc[fm->n_vf];
 
   } /* Loop on cell faces */
@@ -1632,9 +1632,9 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
      bgvf stored in cb->vectors (size: 2*n_ec)
   */
   cs_sdm_t  *af = cb->aux;
-  double  *tef_save = cb->values + cm->n_fc; // size = 2*n_ec
+  double  *tef_save = cb->values + cm->n_fc;  /* size = 2*n_ec */
 
-  for (short int f = 0; f < cm->n_fc; f++) { // Loop on cell faces
+  for (short int f = 0; f < cm->n_fc; f++) {  /* Loop on cell faces */
 
     /* Build a facewise view of the mesh */
     cs_face_mesh_build_from_cell_mesh(cm, f, fm);
@@ -1732,7 +1732,7 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
 
   /* Add diagonal term for vertices attached to a boundary face where
      the advection field points inward. */
-  for (short int i = 0; i < csys->n_bc_faces; i++) { // Loop on border faces
+  for (short int i = 0; i < csys->n_bc_faces; i++) {  /* Loop on border faces */
 
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
@@ -1843,9 +1843,9 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
 
       _update_vcb_system_with_bc(beta_nf/fm->face.meas, fm, cb->aux, csys);
 
-    } // beta_nf > 0
+    }  /* beta_nf > 0 */
 
-  } // Loop on border faces
+  }  /* Loop on border faces */
 
 }
 

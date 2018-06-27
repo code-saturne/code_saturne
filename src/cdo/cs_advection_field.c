@@ -364,7 +364,7 @@ cs_advection_field_destroy_all(void)
 
     /* All other pointers are shared */
 
-  } // Loop on advection fields
+  }  /* Loop on advection fields */
 
   BFT_FREE(_adv_fields);
   _n_adv_fields = 0;
@@ -552,7 +552,7 @@ cs_advection_field_log_setup(void)
 
     cs_xdef_log(adv->definition);
 
-  } // Loop on advection fields
+  }  /* Loop on advection fields */
 
 }
 
@@ -612,8 +612,8 @@ cs_advection_field_def_by_value(cs_adv_field_t    *adv,
   cs_flag_t  meta_flag = CS_FLAG_FULL_LOC;
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                          3, // dim.
-                                          0, // zone_id = 0 => all cells
+                                          3,  /* dim. */
+                                          0,  /* zone_id = 0 => all cells */
                                           state_flag,
                                           meta_flag,
                                           vector);
@@ -644,8 +644,8 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
                                     .input = input };
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                          3, // dim.
-                                          0, // zone_id = 0 => all cells
+                                          3,  /* dim. */
+                                          0,  /* zone_id = 0 => all cells */
                                           state_flag,
                                           meta_flag,
                                           &anai);
@@ -680,8 +680,8 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                   .index = index };
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
-                                          3, // dim
-                                          0, // zone_id
+                                          3,  /* dim */
+                                          0,  /* zone_id */
                                           state_flag,
                                           meta_flag,
                                           &input);
@@ -711,7 +711,7 @@ cs_advection_field_def_by_field(cs_adv_field_t    *adv,
                               or at cells in this case */
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_FIELD,
                                           3,
-                                          0, // zone_id
+                                          0,  /* zone_id */
                                           state_flag,
                                           meta_flag,
                                           field);
@@ -741,7 +741,7 @@ cs_advection_field_def_boundary_flux_by_value(cs_adv_field_t    *adv,
   cs_flag_t  meta_flag = 0;
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                          1, // dim.
+                                          1,  /* dim. */
                                           cs_get_bdy_zone_id(zname),
                                           state_flag,
                                           meta_flag,
@@ -780,7 +780,7 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
                                     .input = input };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                          1, // dim.
+                                          1,  /* dim. */
                                           cs_get_bdy_zone_id(zname),
                                           state_flag,
                                           meta_flag,
@@ -827,7 +827,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
     meta_flag  |= CS_FLAG_FULL_LOC;
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
-                                          1, // dim.
+                                          1,  /* dim. */
                                           z_id,
                                           state_flag,
                                           meta_flag,
@@ -872,7 +872,7 @@ cs_advection_field_create_fields(void)
       cs_field_t  *fld = cs_field_create(field_name,
                                          field_mask,
                                          CS_MESH_LOCATION_BOUNDARY_FACES,
-                                         1,  // always a scalar-valued field
+                                         1,   /* always a scalar-valued field */
                                          has_previous);
 
       cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
@@ -895,7 +895,7 @@ cs_advection_field_create_fields(void)
       cs_field_t  *fld = cs_field_create(field_name,
                                          field_mask,
                                          CS_MESH_LOCATION_CELLS,
-                                         3,    // always a vector-valued field
+                                         3,  /* always a vector-valued field */
                                          has_previous);
 
       cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
@@ -917,7 +917,7 @@ cs_advection_field_create_fields(void)
       cs_field_t  *fld = cs_field_create(field_name,
                                          field_mask,
                                          CS_MESH_LOCATION_VERTICES,
-                                         3,    // always a vector-valued field
+                                         3,  /* always a vector-valued field */
                                          has_previous);
 
       cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
@@ -958,7 +958,7 @@ cs_advection_field_finalize_setup(void)
       BFT_MALLOC(adv->bdy_def_ids, n_b_faces, short int);
 #     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
       for (cs_lnum_t j = 0; j < n_b_faces; j++)
-        adv->bdy_def_ids[j] = -1; // Unset by default
+        adv->bdy_def_ids[j] = -1;  /* Unset by default */
 
       for (short int def_id = 0; def_id < adv->n_bdy_flux_defs; def_id++) {
 
@@ -1545,7 +1545,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
           anai->func(time_eval,
                      z->n_elts, z->elt_ids, cdoq->b_face_center,
-                     false,  // compacted output ?
+                     false,   /* compacted output ? */
                      anai->input,
                      flx_values);
 
@@ -1917,7 +1917,7 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
         const cs_quant_t  edge = cm->edge[e];
 
-        // Two triangles composing the dual face inside a cell
+        /* Two triangles composing the dual face inside a cell */
         const short int  f0 = cm->e2f_ids[2*e];
         const cs_nvec3_t  sef0 = cm->sefc[2*e];
         const cs_quant_t  qf0 = cm->face[f0];
@@ -1959,7 +1959,7 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
             cs_real_t  w[2];
             cs_real_3_t  gpts[6], eval[6];
 
-            // Two triangles composing the dual face inside a cell
+            /* Two triangles composing the dual face inside a cell */
             cs_quadrature_tria_3pts(edge.center, qf0.center, cm->xc,
                                     sef0.meas,
                                     gpts, w);
@@ -1985,16 +1985,16 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
           }
           break;
 
-        case CS_QUADRATURE_HIGHEST: // Not implemented yet
+        case CS_QUADRATURE_HIGHEST:  /* Not implemented yet */
         default:
           bft_error(__FILE__, __LINE__, 0, " Invalid type of quadrature.");
           break;
 
-        } // switch type of quadrature
+        }  /* switch type of quadrature */
 
-      } // Loop on cell edges
+      }  /* Loop on cell edges */
 
-    } // definition by analytic function
+    }  /* definition by analytic function */
     break;
 
   case CS_XDEF_BY_ARRAY:
@@ -2160,7 +2160,7 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
   const bool  pty_uniform = cs_property_is_uniform(diff);
   const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
 
-  assert(peclet != NULL); // Sanity check
+  assert(peclet != NULL);  /* Sanity check */
 
   /* Get the value of the material property at the first cell center */
   if (pty_uniform)
@@ -2180,7 +2180,7 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
 
     peclet[c_id] = hc * adv_c.meas / _dp3(adv_c.unitv, ptydir);
 
-  } // Loop on cells
+  }  /* Loop on cells */
 
 }
 
@@ -2366,8 +2366,8 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
   if (cs_glob_n_ranks > 1)
     cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          cdoq->n_vertices,
-                         1,            // stride
-                         false,        // interlace (not useful here)
+                         1,             /* stride */
+                         false,         /* interlace (not useful here) */
                          CS_REAL_TYPE,
                          divergence);
 #endif  /* MPI */

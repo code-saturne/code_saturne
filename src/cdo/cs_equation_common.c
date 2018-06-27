@@ -849,9 +849,7 @@ cs_equation_init_cell_sys_bc(const cs_equation_builder_t   *eqb,
     csys->bf_ids[f] = bf_id;
 
     if (bf_id > -1) { /* This is a boundary face */
-
       csys->bf_flag[f] = face_bc->flag[bf_id];
-
       csys->_f_ids[csys->n_bc_faces] = f;
       csys->n_bc_faces++;
     }
