@@ -351,7 +351,11 @@ const cs_turb_rans_model_t  *cs_glob_turb_rans_model = &_turb_rans_model;
 
 /* LES turbulence model structure and associated pointer */
 
-static cs_turb_les_model_t  _turb_les_model = {-1, 0};
+static cs_turb_les_model_t  _turb_les_model =
+{
+  .idries = -1,
+  .ivrtex = 0
+};
 
 const cs_turb_les_model_t  *cs_glob_turb_les_model = &_turb_les_model;
 
