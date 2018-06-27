@@ -428,10 +428,8 @@ cs_sles_petsc_define(int                          f_id,
                                  cs_sles_petsc_copy,
                                  cs_sles_petsc_destroy);
 
-#if 0
   cs_sles_set_error_handler(sc,
                             cs_sles_petsc_error_post_and_abort);
-#endif
 
   return c;
 }
@@ -1364,6 +1362,52 @@ cs_sles_petsc_free(void  *context)
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(c->t_setup), &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Error handler for PETSc solver.
+ *
+ * In case of divergence or breakdown, this error handler outputs an error
+ * message
+ * It does nothing in case the maximum iteration count is reached.
+
+ * \param[in, out]  sles           pointer to solver object
+ * \param[in]       state          convergence state
+ * \param[in]       a              matrix
+ * \param[in]       rotation_mode  halo update option for rotational periodicity
+ * \param[in]       rhs            right hand side
+ * \param[in, out]  vx             system solution
+ *
+ * \return  false (do not attempt new solve)
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_sles_petsc_error_post_and_abort(cs_sles_t                    *sles,
+                                   cs_sles_convergence_state_t   state,
+                                   const cs_matrix_t            *a,
+                                   cs_halo_rotation_t            rotation_mode,
+                                   const cs_real_t              *rhs,
+                                   cs_real_t                    *vx)
+{
+  if (state >= CS_SLES_BREAKDOWN)
+    return false;
+
+  const cs_sles_petsc_t  *c = cs_sles_get_context(sles);
+  const char *name = cs_sles_get_name(sles);
+
+  const char *error_type[] = {N_("divergence"), N_("breakdown")};
+  int err_id = (state == CS_SLES_BREAKDOWN) ? 1 : 0;
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("%s and %s preconditioner with PETSc: error (%s) solving for %s"),
+            _(c->ksp_type),
+            _(c->pc_type),
+            _(error_type[err_id]),
+            name);
+
+  return false;
 }
 
 /*----------------------------------------------------------------------------*/
