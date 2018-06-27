@@ -1734,10 +1734,12 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
      the advection field points inward. */
   for (short int i = 0; i < csys->n_bc_faces; i++) { // Loop on border faces
 
-    cs_advection_field_get_f2v_boundary_flux(cm, adv, csys->_f_ids[i], t_eval,
-                                             v_nflx);
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
 
-    cs_cell_mesh_get_f2v(csys->_f_ids[i], cm, &n_vf, v_ids);
+    cs_advection_field_get_f2v_boundary_flux(cm, adv, f, t_eval, v_nflx);
+
+    cs_cell_mesh_get_f2v(f, cm, &n_vf, v_ids);
 
     if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV) {
 
@@ -1747,7 +1749,7 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
 
         if (v_nflx[v_id] < 0) {
           /* advection field is inward w.r.t. the face normal */
-          if (cs_flag_test(csys->bf_flag[i], CS_CDO_BC_DIRICHLET))
+          if (cs_flag_test(csys->bf_flag[f], CS_CDO_BC_DIRICHLET))
             /* Homogoneous Dirichlet don't contribute. Other Bcs are invalid */
             tmp_rhs[v_id] -= v_nflx[v_id] * csys->dir_values[v_id];
         }
@@ -1766,7 +1768,7 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
         if (v_nflx[v_id] < 0) {
 
           /* advection field is inward w.r.t. the face normal */
-          if (cs_flag_test(csys->bf_flag[i], CS_CDO_BC_DIRICHLET))
+          if (cs_flag_test(csys->bf_flag[f], CS_CDO_BC_DIRICHLET))
             /* Homogoneous Dirichlet don't contribute. Other Bcs are invalid */
             tmp_rhs[v_id] -= v_nflx[v_id] * csys->dir_values[v_id];
 
@@ -1828,12 +1830,14 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
   /* Loop on border faces */
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
-    const cs_real_t  nflx = normal_bdy_flux->val[csys->bf_ids[i]];
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+    const cs_real_t  nflx = normal_bdy_flux->val[csys->bf_ids[f]];
     const double  beta_nf = 0.5 * (fabs(nflx) - nflx);
 
     if (beta_nf > 0) {
 
-      cs_face_mesh_build_from_cell_mesh(cm, csys->_f_ids[i], fm);
+      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       cs_hodge_compute_wbs_surfacic(fm, cb->aux);
 

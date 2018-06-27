@@ -561,11 +561,15 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
   const double chi = cs_nitsche_pena_coef * fabs(cb->eig_ratio) * cb->eig_max;
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
-    if (csys->bf_flag[i] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
+        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
 
       /* Compute the face-view of the mesh */
-      cs_face_mesh_build_from_cell_mesh(cm, csys->_f_ids[i], fm);
+      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
@@ -620,11 +624,14 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
   const double chi = cs_nitsche_pena_coef * cb->eig_ratio * cb->eig_max;
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
-    if (csys->bf_flag[i] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
+        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
 
       /* Compute the face-view of the mesh */
-      cs_face_mesh_build_from_cell_mesh(cm, csys->_f_ids[i], fm);
+      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
