@@ -101,7 +101,7 @@ if test "x$with_medcoupling" != "xno" ; then
   MEDCouplingFieldDouble *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
                     ],
                     [ cs_have_medcoupling_loader=yes ],
-                    [ AC_MSG_WARN([no MEDCoupling support]) ],
+                    [ AC_MSG_WARN([no MEDCoupling file support]) ],
                   )
 
   cs_medcoupling_l0=
@@ -202,7 +202,7 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
                        [ AC_DEFINE([HAVE_PARAMEDMEM], 1, [ParaMEDMEM support])
                          cs_have_paramedmem=yes
                        ],
-                       [ AC_MSG_WARN([no ParaMEDMEM support]) ],
+                       [ ],
                       )
 
         if test "x$cs_have_paramedmem" = "xyes"; then
@@ -215,6 +215,10 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
       fi
 
     done
+
+    if test "x$cs_have_paramedmem" != "xyes"; then
+      AC_MSG_WARN([no ParaMEDMEM support])
+    fi
 
   fi
 
