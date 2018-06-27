@@ -62,6 +62,18 @@ typedef struct _cs_cdovcb_scaleq_t cs_cdovcb_scaleq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief    Check if the generic structures for building a CDO-vertex+cell
+ *           based scheme are allocated
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_cdovcb_scaleq_is_initialized(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief    Allocate work buffer and general structures related to CDO
  *           vertex+cell-based schemes
  *           Set shared pointers.

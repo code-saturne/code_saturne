@@ -319,6 +319,24 @@ _set_cip_coef(const cs_equation_param_t  *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief    Check if the generic structures for building a CDO-vertex+cell
+ *           based scheme are allocated
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_cdovcb_scaleq_is_initialized(void)
+{
+  if (cs_cdovcb_cell_sys == NULL || cs_cdovcb_cell_bld == NULL)
+    return false;
+  else
+    return true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief    Allocate work buffer and general structures related to CDO
  *           vertex+cell-based schemes
  *           Set shared pointers.
@@ -420,6 +438,8 @@ cs_cdovcb_scaleq_finalize_common(void)
 
   BFT_FREE(cs_cdovcb_cell_sys);
   BFT_FREE(cs_cdovcb_cell_bld);
+  cs_cdovcb_cell_bld = NULL;
+  cs_cdovcb_cell_sys = NULL;
 }
 
 /*----------------------------------------------------------------------------*/

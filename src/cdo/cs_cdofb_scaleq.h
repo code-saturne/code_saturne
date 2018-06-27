@@ -71,6 +71,18 @@ typedef struct _cs_cdofb_t cs_cdofb_scaleq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief    Check if the generic structures for building a CDO-Fb scheme are
+ *           allocated
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_cdofb_scaleq_is_initialized(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate work buffer and general structures related to CDO
  *         scalar-valued face-based schemes.
  *         Set shared pointers from the main domain members

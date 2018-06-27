@@ -393,6 +393,8 @@ cs_cdofb_vecteq_finalize_common(void)
 
   BFT_FREE(cs_cdofb_cell_sys);
   BFT_FREE(cs_cdofb_cell_bld);
+  cs_cdofb_cell_bld = NULL;
+  cs_cdofb_cell_sys = NULL;
 }
 
 /*----------------------------------------------------------------------------*/

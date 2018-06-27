@@ -395,6 +395,8 @@ cs_cdovb_scaleq_finalize_common(void)
 
   BFT_FREE(cs_cdovb_cell_sys);
   BFT_FREE(cs_cdovb_cell_bld);
+  cs_cdovb_cell_sys = NULL;
+  cs_cdovb_cell_bld = NULL;
 }
 
 /*----------------------------------------------------------------------------*/

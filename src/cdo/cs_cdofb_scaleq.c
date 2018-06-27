@@ -237,6 +237,24 @@ _init_cell_system(const cs_flag_t               cell_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief    Check if the generic structures for building a CDO-Fb scheme are
+ *           allocated
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_cdofb_scaleq_is_initialized(void)
+{
+  if (cs_cdofb_cell_sys == NULL || cs_cdofb_cell_bld == NULL)
+    return false;
+  else
+    return true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate work buffer and general structures related to CDO
  *         scalar-valued face-based schemes.
  *         Set shared pointers from the main domain members
@@ -338,6 +356,8 @@ cs_cdofb_scaleq_finalize_common(void)
 
   BFT_FREE(cs_cdofb_cell_sys);
   BFT_FREE(cs_cdofb_cell_bld);
+  cs_cdofb_cell_bld = NULL;
+  cs_cdofb_cell_sys = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
