@@ -26,6 +26,12 @@ Architectural changes:
 - Add CGNS writer "links" option to write mesh data in a separate file,
   mapped transparently in the main file through CGNS links.
 
+Bug fixes:
+
+- Fix face external force projection with tensorial diffusion and porous models 1, 2.
+  This was impacting cases with head losses, improved pressure interpolation, and
+  scalar or tensorial volume porosity models (iporos=1, 2).
+
 Release 5.2.0 - March 30, 2018
 ------------------------------
 
