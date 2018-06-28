@@ -1718,12 +1718,6 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
-      double pnd = weight[face_id];
-
-      double dijpfx = dijpf[face_id][0];
-      double dijpfy = dijpf[face_id][1];
-      double dijpfz = dijpf[face_id][2];
-
       double surfn = i_f_face_surf[face_id];
 
       i_massflux[face_id] += i_visc[face_id]*(

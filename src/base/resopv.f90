@@ -189,7 +189,7 @@ integer          ivoid(1)
 
 double precision residu, phydr0, rnormp
 double precision ardtsr, arsr  , thetap
-double precision dtsrom, unsvom, romro0
+double precision dtsrom
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , dronm1, relaxp
 double precision hint, qimp, qimpv(3), epsrsp, blencp
