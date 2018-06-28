@@ -5,6 +5,9 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix boundary value optional post-processing for scalars for other
+  boundary conditions than walls.
+
 - Fix face external force projection with tensorial diffusion
   and porous models 1, 2.
   This was impacting cases with head losses, improved pressure interpolation,
