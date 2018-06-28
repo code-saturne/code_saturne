@@ -58,6 +58,7 @@
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
 #include "cs_ext_neighborhood.h"
+#include "cs_math.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
@@ -244,7 +245,7 @@ void CS_PROCF (projtv, PROJTV)
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- const cs_real_6_t        viscel[],
+ cs_real_6_t              viscel[],
  const cs_real_2_t        weighf[],
  cs_real_t                i_massflux[],
  cs_real_t                b_massflux[])
@@ -1320,11 +1321,16 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
                               const cs_real_t           cofbfp[],
                               const cs_real_t           i_visc[],
                               const cs_real_t           b_visc[],
-                              const cs_real_6_t         viscel[],
+                              cs_real_6_t               viscel[],
                               const cs_real_2_t         weighf[],
                               cs_real_t       *restrict i_massflux,
                               cs_real_t       *restrict b_massflux)
 {
+  const cs_halo_t  *halo = m->halo;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
@@ -1344,6 +1350,20 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
   double diippf[3], djjppf[3];
   double visci[3][3], viscj[3][3];
+
+  /* Porosity fields */
+  cs_field_t *fporo = cs_field_by_name_try("porosity");
+  cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
+
+  cs_real_t *porosi = NULL;
+  cs_real_6_t *porosf = NULL;
+
+  if (fporo != NULL) {
+    porosi = fporo->val;
+    if (ftporo != NULL) {
+      porosf = (cs_real_6_t *)ftporo->val;
+    }
+  }
 
   /*==========================================================================*/
 
@@ -1417,6 +1437,48 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
   } else {
 
+    cs_real_6_t *viscce;
+    cs_real_6_t *w2;
+
+    viscce = NULL;
+    w2 = NULL;
+
+    /* Without porosity */
+    if (porosi == NULL) {
+      viscce = viscel;
+
+      /* With porosity */
+    } else if (porosi != NULL && porosf == NULL) {
+      BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (int isou = 0; isou < 6; isou++) {
+          w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
+        }
+      }
+      viscce = w2;
+
+      /* With tensorial porosity */
+    } else if (porosi != NULL && porosf != NULL) {
+      BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        cs_math_sym_33_product(porosf[cell_id],
+                               viscel[cell_id],
+                               w2[cell_id]);
+      }
+      viscce = w2;
+    }
+
+    /* ---> Periodicity and parallelism treatment of symmetric tensors */
+
+    if (halo != NULL) {
+      cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, (cs_real_t *)viscce, 6);
+
+      if (m->n_init_perio > 0)
+        cs_halo_perio_sync_var_sym_tens(halo,
+                                        CS_HALO_STANDARD,
+                                        (cs_real_t *)viscce);
+    }
+
     /* ---> Contribution from interior faces */
 
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
@@ -1426,15 +1488,15 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
       /* Recompute II' and JJ' at this level */
 
-      visci[0][0] = viscel[ii][0];
-      visci[1][1] = viscel[ii][1];
-      visci[2][2] = viscel[ii][2];
-      visci[1][0] = viscel[ii][3];
-      visci[0][1] = viscel[ii][3];
-      visci[2][1] = viscel[ii][4];
-      visci[1][2] = viscel[ii][4];
-      visci[2][0] = viscel[ii][5];
-      visci[0][2] = viscel[ii][5];
+      visci[0][0] = viscce[ii][0];
+      visci[1][1] = viscce[ii][1];
+      visci[2][2] = viscce[ii][2];
+      visci[1][0] = viscce[ii][3];
+      visci[0][1] = viscce[ii][3];
+      visci[2][1] = viscce[ii][4];
+      visci[1][2] = viscce[ii][4];
+      visci[2][0] = viscce[ii][5];
+      visci[0][2] = viscce[ii][5];
 
       /* IF.Ki.S / ||Ki.S||^2 */
       double fikdvi = weighf[face_id][0];
@@ -1447,15 +1509,15 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
                              + visci[2][i]*i_face_normal[face_id][2] );
       }
 
-      viscj[0][0] = viscel[jj][0];
-      viscj[1][1] = viscel[jj][1];
-      viscj[2][2] = viscel[jj][2];
-      viscj[1][0] = viscel[jj][3];
-      viscj[0][1] = viscel[jj][3];
-      viscj[2][1] = viscel[jj][4];
-      viscj[1][2] = viscel[jj][4];
-      viscj[2][0] = viscel[jj][5];
-      viscj[0][2] = viscel[jj][5];
+      viscj[0][0] = viscce[jj][0];
+      viscj[1][1] = viscce[jj][1];
+      viscj[2][2] = viscce[jj][2];
+      viscj[1][0] = viscce[jj][3];
+      viscj[0][1] = viscce[jj][3];
+      viscj[2][1] = viscce[jj][4];
+      viscj[1][2] = viscce[jj][4];
+      viscj[2][0] = viscce[jj][5];
+      viscj[0][2] = viscce[jj][5];
 
       /* FJ.Kj.S / ||Kj.S||^2 */
       double fjkdvi = weighf[face_id][1];
@@ -1503,7 +1565,7 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
       double surfn = b_face_surf[face_id];
       double distbf = b_dist[face_id];
 
-      /* FIXME: wrong if dirichlet and viscel is really a tensor */
+      /* FIXME: wrong if dirichlet and viscce is really a tensor */
       b_massflux[face_id] =  b_massflux[face_id]
                             + b_visc[face_id]*distbf/surfn*cofbfp[face_id]
                              *(  frcxt[ii][0]*b_face_normal[face_id][0]
