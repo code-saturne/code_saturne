@@ -195,6 +195,7 @@ double precision flumbf, visclc, visctc, distbf, srfbn2
 double precision xxp0, xyp0, xzp0
 double precision srfbnf, normal(3)
 double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
+double precision b_pvari(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision temp, exchange_coef
 double precision turb_schmidt
@@ -2353,6 +2354,8 @@ if (nscal.ge.1) then
 
     call field_get_key_double(ivarfl(isca(ii)), ksigmas, turb_schmidt)
 
+    ! Get boundary value (for post-processing)
+    call field_get_key_int(ivarfl(ivar), kbfid, b_f_id)
     call field_get_dim(ivarfl(isca(iscal)), f_dim)
 
     ! Scalar transported quantity
@@ -2361,6 +2364,8 @@ if (nscal.ge.1) then
       call field_get_coefb_s(ivarfl(ivar), coefbp)
       call field_get_coefaf_s(ivarfl(ivar), cofafp)
       call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
+      if (b_f_id .ge. 0) call field_get_val_s(b_f_id, bvar_s)
 
       do ifac = 1, nfabor
 
@@ -2461,6 +2466,10 @@ if (nscal.ge.1) then
                coefbp(ifac), cofbfp(ifac),                         &
                pimp              , hint              , hext )
 
+          ! Store boundary value
+          if (b_f_id .ge. 0) then
+            bvar_s(ifac) = coefap(ifac) + coefbp(ifac) * bvar_s(ifac)
+          endif
         endif
 
         ! Neumann Boundary Conditions
@@ -2475,6 +2484,11 @@ if (nscal.ge.1) then
                coefbp(ifac), cofbfp(ifac),                         &
                qimp              , hint )
 
+          ! Store boundary value
+          if (b_f_id .ge. 0) then
+            bvar_s(ifac) = coefap(ifac) + coefbp(ifac) * bvar_s(ifac)
+          endif
+
         ! Convective Boundary Conditions
         !-------------------------------
 
@@ -2487,6 +2501,11 @@ if (nscal.ge.1) then
              ( coefap(ifac), cofafp(ifac),                         &
                coefbp(ifac), cofbfp(ifac),                         &
                pimp              , cfl               , hint )
+
+          ! Store boundary value
+          if (b_f_id .ge. 0) then
+            bvar_s(ifac) = coefap(ifac) + coefbp(ifac) * bvar_s(ifac)
+          endif
 
         ! Set total flux as a Robin condition
         !------------------------------------
@@ -2501,8 +2520,10 @@ if (nscal.ge.1) then
                coefbp(ifac), cofbfp(ifac),                         &
                hext              , qimp )
 
-
-
+          ! Store boundary value
+          if (b_f_id .ge. 0) then
+            bvar_s(ifac) = coefap(ifac) + coefbp(ifac) * bvar_s(ifac)
+          endif
 
         ! Imposed value for the convection operator, imposed flux for diffusion
         !----------------------------------------------------------------------
@@ -2517,6 +2538,10 @@ if (nscal.ge.1) then
                coefbp(ifac), cofbfp(ifac),                         &
                pimp              , qimp )
 
+          ! Store boundary value
+          if (b_f_id .ge. 0) then
+            bvar_s(ifac) = coefap(ifac) + coefbp(ifac) * bvar_s(ifac)
+          endif
 
         endif
 
@@ -2688,6 +2713,8 @@ if (nscal.ge.1) then
     ! Vector transported quantity (dimension may be greater than 3)
     else
 
+      if (b_f_id .ge. 0) call field_get_val_v(b_f_id, bvar_v)
+
       call field_get_coefa_v(ivarfl(ivar), coefav)
       call field_get_coefb_v(ivarfl(ivar), coefbv)
       call field_get_coefaf_v(ivarfl(ivar), cofafv)
@@ -2767,6 +2794,19 @@ if (nscal.ge.1) then
                coefbv(:,:,ifac), cofbfv(:,:,ifac),             &
                pimpv             , hintt             , hextv)
 
+          ! Store boundary value
+          if (b_f_id .ge. 0) then
+            ! B_ij. Pj(I)
+            do isou = 1, 3
+              b_pvari(isou) = 0.d0
+              do jsou = 1, 3
+                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+              enddo
+            enddo
+            do isou = 1, 3
+              bvar_v(isou, ifac) = coefav(isou, ifac) + b_pvari(isou)
+            enddo
+          endif
         endif
 
         ! Neumann Boundary Conditions
@@ -2782,6 +2822,20 @@ if (nscal.ge.1) then
              ( coefav(:,ifac), cofafv(:,ifac),                 &
                coefbv(:,:,ifac), cofbfv(:,:,ifac),             &
                qimpv             , hintt )
+
+          ! Store boundary value
+          if (b_f_id .ge. 0) then
+            ! B_ij. Pj(I)
+            do isou = 1, 3
+              b_pvari(isou) = 0.d0
+              do jsou = 1, 3
+                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+              enddo
+            enddo
+            do isou = 1, 3
+              bvar_v(isou, ifac) = coefav(isou, ifac) + b_pvari(isou)
+            enddo
+          endif
 
         ! Convective Boundary Conditions
         !-------------------------------
@@ -2800,6 +2854,20 @@ if (nscal.ge.1) then
                coefbv(:,:,ifac), cofbfv(:,:,ifac),             &
                pimpv             , cflv              , hintt)
 
+          ! Store boundary value
+          if (b_f_id .ge. 0) then
+            ! B_ij. Pj(I)
+            do isou = 1, 3
+              b_pvari(isou) = 0.d0
+              do jsou = 1, 3
+                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+              enddo
+            enddo
+            do isou = 1, 3
+              bvar_v(isou, ifac) = coefav(isou, ifac) + b_pvari(isou)
+            enddo
+          endif
+
         ! Imposed value for the convection operator, imposed flux for diffusion
         !----------------------------------------------------------------------
 
@@ -2816,6 +2884,20 @@ if (nscal.ge.1) then
              ( coefav(:,ifac)  , cofafv(:,ifac)  ,          &
                coefbv(:,:,ifac), cofbfv(:,:,ifac),          &
                pimpv           , qimpv )
+
+          ! Store boundary value
+          if (b_f_id .ge. 0) then
+            ! B_ij. Pj(I)
+            do isou = 1, 3
+              b_pvari(isou) = 0.d0
+              do jsou = 1, 3
+                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+              enddo
+            enddo
+            do isou = 1, 3
+              bvar_v(isou, ifac) = coefav(isou, ifac) + b_pvari(isou)
+            enddo
+          endif
 
         ! convective boundary for marangoni effects (generalized symmetry condition)
         !---------------------------------------------------------------------------
@@ -2840,6 +2922,20 @@ if (nscal.ge.1) then
              ( coefav(:,ifac)  , cofafv(:,ifac)  ,             &
                coefbv(:,:,ifac), cofbfv(:,:,ifac),             &
                pimpv           , qimpv            , hintt, normal )
+
+          ! Store boundary value
+          if (b_f_id .ge. 0) then
+            ! B_ij. Pj(I)
+            do isou = 1, 3
+              b_pvari(isou) = 0.d0
+              do jsou = 1, 3
+                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+              enddo
+            enddo
+            do isou = 1, 3
+              bvar_v(isou, ifac) = coefav(isou, ifac) + b_pvari(isou)
+            enddo
+          endif
 
         ! Neumann on the normal component, Dirichlet on tangential components
         !--------------------------------------------------------------------
@@ -2867,6 +2963,19 @@ if (nscal.ge.1) then
                coefbv(:,:,ifac), cofbfv(:,:,ifac),             &
                pimpv           , qimpv            , hintt, normal )
 
+          ! Store boundary value
+          if (b_f_id .ge. 0) then
+            ! B_ij. Pj(I)
+            do isou = 1, 3
+              b_pvari(isou) = 0.d0
+              do jsou = 1, 3
+                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+              enddo
+            enddo
+            do isou = 1, 3
+              bvar_v(isou, ifac) = coefav(isou, ifac) + b_pvari(isou)
+            enddo
+          endif
 
         endif
 
