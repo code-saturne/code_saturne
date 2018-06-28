@@ -219,7 +219,9 @@ void cs_gwf_sorbed_concentration_update(const int f_id)
  * \brief Update liquid concentration according to precipitation phenomenon.
  *
  * If liquid concentration exceeds solubility index, then it is clipped and
- * transferred in precipitated concentration
+ * transferred in precipitated concentration.
+ *
+ * Note that the decay rate is applied before the clipping.
  *
  * \param[in]   f_id    field index of scalar which properties are updated
  */
@@ -229,6 +231,7 @@ void cs_gwf_precipitation(const int f_id)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
+  cs_real_t *dt = CS_F_(dt)->val;
   cs_real_t ctot_tmp = 0.;
   cs_field_t *sca, *precip, *solub;
   cs_gwf_soilwater_partition_t sorption_scal;
@@ -242,11 +245,20 @@ void cs_gwf_precipitation(const int f_id)
   precip = cs_field_by_id(cs_field_get_key_int(sca, key_pre));
   solub = cs_field_by_id(sorption_scal.imxsol);
 
-  /* Clipping of solute concentration, update of precipitation concentration */
+  /* Get first-order decay rate */
+  const int dr_id =  cs_field_key_id("fo_decay_rate");
+  cs_real_t decay_rate = cs_field_get_key_double(sca, dr_id);
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      ctot_tmp          = sca->val[c_id] + precip->val[c_id];
-      sca->val[c_id]    = CS_MIN(ctot_tmp, solub->val[c_id]);
-      precip->val[c_id] = CS_MAX(0., ctot_tmp - solub->val[c_id]);
+    /* Apply the radioactive decay rate to precipitation concentration before
+       clipping. To be consistent with decay treatment of liquid concentration,
+       an implicit scheme is applied. */
+    precip->val[c_id] *= 1. / (1. + decay_rate * dt[c_id]);
+
+    /* Clipping of solute concentration, update of precip. concentration */
+    ctot_tmp          = sca->val[c_id] + precip->val[c_id];
+    sca->val[c_id]    = CS_MIN(ctot_tmp, solub->val[c_id]);
+    precip->val[c_id] = CS_MAX(0., ctot_tmp - solub->val[c_id]);
   }
 }
 
