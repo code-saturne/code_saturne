@@ -136,7 +136,7 @@ void CS_PROCF (projtv, PROJTV)
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- const cs_real_6_t        viscel[],
+ cs_real_6_t              viscel[],
  const cs_real_2_t        weighf[],
  cs_real_t                i_massflux[],
  cs_real_t                b_massflux[]
@@ -411,7 +411,7 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
                               const cs_real_t           cofbfp[],
                               const cs_real_t           i_visc[],
                               const cs_real_t           b_visc[],
-                              const cs_real_6_t         viscel[],
+                              cs_real_6_t               viscel[],
                               const cs_real_2_t         weighf[],
                               cs_real_t       *restrict i_massflux,
                               cs_real_t       *restrict b_massflux);

@@ -5,6 +5,11 @@ Release 5.0.9 (unreleased)
 Bug fixes
 ---------
 
+- Fix face external force projection with tensorial diffusion
+  and porous models 1, 2.
+  This was impacting cases with head losses, improved pressure interpolation,
+  and scalar or tensorial volume porosity models (iporos=1, 2).
+
 - Fix Python 3 integer divison issues for code-code coupling process count
   distribution and batch duration conversions.
 
