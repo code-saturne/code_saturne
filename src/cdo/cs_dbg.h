@@ -70,7 +70,7 @@ BEGIN_C_DECLS
 static inline bool
 cs_dbg_cw_test(const cs_cell_mesh_t  *cm)
 {
-  if (cm->xc[0] > 0.75 && cm->xc[2] > 0.75 && cm->xc[1] > 0.85)
+  if (cm->c_id == 0)
     return true;
   else
     return false;
