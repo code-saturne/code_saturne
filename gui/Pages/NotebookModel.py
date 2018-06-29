@@ -223,8 +223,8 @@ class NotebookModel(Model):
     @Variables.noUndo
     def getVariableOt(self, idx):
         """
-        Return 'Yes' or 'No' as answer to the question, whether the variable
-        is used for an OpenTurns study
+        Return 'Yes' or 'No' as an answer to the question, is the variable
+        used for an OpenTurns study.
         """
         node = self.node_note.xmlInitChildNode("var", id = idx)
         otval = node['oturns']

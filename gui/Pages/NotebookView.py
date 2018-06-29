@@ -223,7 +223,8 @@ class OTVariableDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         editor.addItem("No")
-        editor.addItem("Yes")
+        editor.addItem("Yes: Input")
+        editor.addItem("Yes: Output")
         editor.installEventFilter(self)
         return editor
 
