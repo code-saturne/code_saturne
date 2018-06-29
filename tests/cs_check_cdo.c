@@ -74,7 +74,6 @@ static FILE  *hexa_hho2 = NULL;
 static FILE  *tetra_hho0 = NULL;
 static FILE  *tetra_hho1 = NULL;
 static FILE  *tetra_hho2 = NULL;
-static FILE  *sdm = NULL;
 
 static cs_cdo_connect_t  *connect = NULL;
 static cs_cdo_quantities_t  *quant = NULL;
@@ -739,127 +738,6 @@ _define_cm_tetra_ref(double            a,
 
   const double  invvol = 1/cm->vol_c;
   for (short int v = 0; v < cm->n_vc; v++) cm->wvc[v] *= invvol;
-}
-
-/*============================================================================
- * Private function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Perform several basic tests/operations on cs_sdm_t structures
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_test_sdm(FILE  *out)
-{
-  cs_real_33_t  mpty = {{1.0, 0.5, 0.0},
-                        {0.5, 1.0, 0.5},
-                        {0.0, 0.5, 1.0}};
-  cs_real_t  eigen_ratio, eigen_max;
-
-  // Useful for a weak enforcement of the BC */
-  cs_math_33_eigen((const cs_real_t (*)[3])mpty,
-                   &eigen_ratio, &eigen_max);
-
-  fprintf(out, " Matrix property eig: ratio % .4e max. % .4e\n",
-          eigen_ratio, eigen_max);
-
-  const int  max_size = 6;
-  cs_sdm_t  *m = cs_sdm_square_create(max_size);
-
-  cs_sdm_square_init(3, m);
-  m->val[0] = 2, m->val[1] = -1, m->val[2] = 0;
-  m->val[3] =-1, m->val[4] =  2, m->val[5] =-1;
-  m->val[6] = 0, m->val[7] = -1, m->val[8] = 1;
-
-  cs_real_6_t  b = {1, 0, 0, 0, 0, 0};
-
-  /* Compute the L.D.L^T decomposition and then solve */
-  cs_real_6_t  sol, tmp;
-  cs_real_t  facto[21];
-
-  cs_sdm_33_ldlt_compute(m, facto);
-  cs_sdm_33_ldlt_solve(facto, b, sol);
-
-  fprintf(out, " Solution l.d.l^T 33: % .4e % .4e % .4e\n",
-          sol[0], sol[1], sol[2]);
-
-  cs_sdm_ldlt_compute(m, facto, tmp);
-  cs_sdm_ldlt_solve(3, facto, b, sol);
-
-  fprintf(out, " Solution l.d.l^T:    % .4e % .4e % .4e\n",
-          sol[0], sol[1], sol[2]);
-
-  cs_sdm_square_init(4, m);
-  m->val[ 0] = 2, m->val[ 1] = -1, m->val[ 2] = 0, m->val[ 3] = 0;
-  m->val[ 4] =-1, m->val[ 5] =  2, m->val[ 6] =-1, m->val[ 7] = 0;
-  m->val[ 8] = 0, m->val[ 9] = -1, m->val[10] = 2, m->val[11] =-1;
-  m->val[12] = 0, m->val[13] =  0, m->val[14] =-1, m->val[15] = 1;
-
-  cs_sdm_44_ldlt_compute(m, facto);
-  cs_sdm_44_ldlt_solve(facto, b, sol);
-
-  fprintf(out, " Solution l.d.l^T 44: % .4e % .4e % .4e % .4e\n",
-          sol[0], sol[1], sol[2], sol[3]);
-
-  cs_sdm_ldlt_compute(m, facto, tmp);
-  cs_sdm_ldlt_solve(4, facto, b, sol);
-
-  fprintf(out, " Solution l.d.l^T   : % .4e % .4e % .4e % .4e\n",
-          sol[0], sol[1], sol[2], sol[3]);
-
-  cs_sdm_square_init(6, m);
-  cs_real_t *a = m->val;
-  a[ 0] = 2, a[ 1] = -1, a[ 2] = 0, a[ 3] = 0, a[ 4] =  0, a[ 5] =  0;
-  a[ 6] =-1, a[ 7] =  2, a[ 8] =-1, a[ 9] = 0, a[10] =  0, a[11] =  0;
-  a[12] = 0, a[13] = -1, a[14] = 2, a[15] =-1, a[16] =  0, a[17] =  0;
-  a[18] = 0, a[19] =  0, a[20] =-1, a[21] = 2, a[22] = -1, a[23] =  0;
-  a[24] = 0, a[25] =  0, a[26] = 0, a[27] =-1, a[28] =  2, a[29] = -1;
-  a[30] = 0, a[31] =  0, a[32] = 0, a[33] = 0, a[34] = -1, a[35] =  1;
-
-  cs_sdm_66_ldlt_compute(m, facto);
-  cs_sdm_66_ldlt_solve(facto, b, sol);
-
-  fprintf(out, " Solution l.d.l^T 66: % .4e % .4e % .4e % .4e % .4e % .4e\n",
-          sol[0], sol[1], sol[2], sol[3], sol[4], sol[5]);
-
-  cs_sdm_ldlt_compute(m, facto, tmp);
-  cs_sdm_ldlt_solve(6, facto, b, sol);
-
-  fprintf(out, " Solution l.d.l^T   : % .4e % .4e % .4e % .4e % .4e % .4e\n",
-          sol[0], sol[1], sol[2], sol[3], sol[4], sol[5]);
-
-  m = cs_sdm_free(m);
-
-  /* Use block-matrix */
-  short int  bsize[3] = {1, 2, 3};
-  int  row_ids[6] = {0, 1, 2, 3, 4, 5};
-
-  cs_sdm_t  *mb = cs_sdm_block_create(3, 3, bsize, bsize);
-
-  cs_sdm_block_init(mb, 3, 3, bsize, bsize);
-  cs_sdm_block_dump(0, mb);
-
-  cs_sdm_t  *b22 = cs_sdm_get_block(mb, 2, 2);
-  cs_sdm_dump(22, NULL, NULL, b22);
-
-  bsize[0] = 3, bsize[1] = 2, bsize[2] = 1;
-  cs_sdm_block_init(mb, 3, 3, bsize, bsize);
-  cs_sdm_block_dump(1, mb);
-
-  cs_sdm_t  *b21 = cs_sdm_get_block(mb, 2, 1);
-  cs_sdm_dump(21, row_ids + 3, row_ids + 1, b21);
-
-  bsize[0] = 3, bsize[1] = 3;
-  cs_sdm_block_init(mb, 2, 2, bsize, bsize);
-  cs_sdm_block_dump(2, mb);
-
-  cs_sdm_t  *b12 = cs_sdm_get_block(mb, 1, 1);
-  cs_sdm_simple_dump(b12);
-
-  mb = cs_sdm_free(mb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2093,15 +1971,6 @@ main(int    argc,
   tetra_hho0 = fopen("HHO0_Tetra_tests.log", "w");
   tetra_hho1 = fopen("HHO1_Tetra_tests.log", "w");
   tetra_hho2 = fopen("HHO2_Tetra_tests.log", "w");
-  sdm = fopen("SDM_tests.log", "w");
-
-  /* ==================================== */
-  /* TEST Basic functions used in CDO/HHO
-   *  - Small Dense Matrices operations
-   *  - Eigenvalues computations
-   * ==================================== */
-
-  _test_sdm(sdm);
 
   /* =========================== */
   /* TEST DISCRETIZATION SCHEMES */
@@ -2176,7 +2045,6 @@ main(int    argc,
   fclose(tetra_hho1);
   fclose(hexa_hho2);
   fclose(tetra_hho2);
-  fclose(sdm);
 
   printf(" --> CDO Tests (Done)\n");
   exit (EXIT_SUCCESS);
