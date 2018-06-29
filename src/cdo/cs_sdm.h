@@ -424,6 +424,20 @@ cs_sdm_copy(cs_sdm_t        *recv,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Allocate and initialize a cs_sdm_t structure w.r.t. to a given
+ *          matrix
+ *
+ * \param[in]  mref       pointer to a matrix to copy
+ *
+ * \return  a new allocated cs_sdm_t structure which is a copy of mref
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sdm_t *
+cs_sdm_block_create_copy(const cs_sdm_t   *mref);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Get a specific block in a cs_sdm_t structure defined by block
  *
  * \param[in]       m              pointer to a cs_sdm_t struct.
@@ -824,6 +838,17 @@ cs_sdm_square_asymm(cs_sdm_t   *mat);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Set the given block matrix into its anti-symmetric part
+ *
+ * \param[in, out] mat   small dense matrix defined by block to transform
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block_square_asymm(cs_sdm_t   *mat);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Decompose a matrix into the matrix product Q.R
  *         Case of a 3x3 symmetric matrix
  *
@@ -998,6 +1023,21 @@ cs_sdm_ldlt_solve(int                n_rows,
                   const cs_real_t   *facto,
                   const cs_real_t   *rhs,
                   cs_real_t         *sol);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Test if a matrix is symmetric. Return 0. if the extradiagonal
+ *          differences are lower thann the machine precision.
+ *
+ * \param[in]  mat         pointer to the cs_sdm_t structure to test
+ *
+ * \return  0 if the matrix is symmetric at the machine tolerance otherwise
+ *          the absolute max. value between two transposed terms
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_sdm_test_symmetry(const cs_sdm_t     *mat);
 
 /*----------------------------------------------------------------------------*/
 /*!

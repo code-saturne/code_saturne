@@ -365,6 +365,78 @@ cs_sdm_block_init(cs_sdm_t          *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Allocate and initialize a cs_sdm_t structure w.r.t. to a given
+ *          matrix
+ *
+ * \param[in]  mref       pointer to a matrix to copy
+ *
+ * \return  a new allocated cs_sdm_t structure which is a copy of mref
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sdm_t *
+cs_sdm_block_create_copy(const cs_sdm_t   *mref)
+{
+  cs_sdm_t  *m = NULL;
+
+  if (mref == NULL)
+    return m;
+
+  if (mref->n_max_rows < 1 || mref->n_max_cols < 1)
+    return m;
+
+  const cs_sdm_block_t  *bd_ref = mref->block_desc;
+
+  int  row_size = 0, col_size = 0;
+  for (int bi = 0; bi < bd_ref->n_row_blocks; bi++) {
+    const cs_sdm_t  *bI0 = cs_sdm_get_block(mref, bi, 0);
+    row_size += bI0->n_max_rows;
+  }
+  for (int bj = 0; bj < bd_ref->n_col_blocks; bj++) {
+    const cs_sdm_t  *b0J = cs_sdm_get_block(mref, 0, bj);
+    col_size += b0J->n_max_cols;
+  }
+
+  m = _create_sdm(CS_SDM_BY_BLOCK, row_size, col_size);
+
+  /* Copy values */
+  memcpy(m->val, mref->val, sizeof(cs_real_t)*m->n_max_rows*m->n_max_cols);
+
+  /* Define the block description */
+  cs_sdm_block_t  *bd = m->block_desc;
+
+  bd->n_max_blocks_by_row = bd_ref->n_max_blocks_by_row;
+  bd->n_max_blocks_by_col = bd_ref->n_max_blocks_by_col;
+  bd->n_row_blocks = bd_ref->n_row_blocks;
+  bd->n_col_blocks = bd_ref->n_col_blocks;
+
+  BFT_MALLOC(bd->blocks,
+             bd_ref->n_max_blocks_by_row*bd_ref->n_max_blocks_by_col,
+             cs_sdm_t);
+
+  cs_real_t  *p_val = m->val;
+  int  shift = 0;
+  for (int bi = 0; bi < bd_ref->n_row_blocks; bi++) {
+    for (int bj = 0; bj < bd_ref->n_col_blocks; bj++) {
+
+      const cs_sdm_t  *ref_IJ = cs_sdm_get_block(mref, bi, bj);
+
+      /* Set the block (i,j) */
+      cs_sdm_t  *b_ij = bd->blocks + shift;
+      int  _size = ref_IJ->n_rows*ref_IJ->n_cols;
+
+      cs_sdm_map_array(ref_IJ->n_rows, ref_IJ->n_cols, b_ij, p_val);
+      shift++;
+      p_val += _size;
+
+    } /* Column blocks */
+  }   /* Row blocks */
+
+  return m;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute a local dense matrix-product c = a*b
  *          c has been previously allocated
  *
@@ -1007,10 +1079,67 @@ cs_sdm_square_asymm(cs_sdm_t   *mat)
       int  ji = j*mat->n_rows + i;
 
       mi[j] = 0.5*(mi[j] - mat->val[ji]);
-      mat->val[ji] = mi[j];
+      mat->val[ji] = -mi[j];
 
     }
   }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the given block matrix into its anti-symmetric part
+ *
+ * \param[in, out] mat   small dense matrix defined by block to transform
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block_square_asymm(cs_sdm_t   *mat)
+{
+  /* Sanity check */
+  assert(mat != NULL);
+  assert(mat->flag & CS_SDM_BY_BLOCK);
+  assert(mat->n_rows == mat->n_cols);
+
+  if (mat->n_rows < 1)
+    return;
+
+  const cs_sdm_block_t  *matb = mat->block_desc;
+  if (matb->n_row_blocks < 1)
+    return;
+  assert(matb->n_row_blocks == matb->n_col_blocks);
+
+  for (int bi = 0; bi < matb->n_row_blocks; bi++) {
+
+    /* Diagonal block */
+    cs_sdm_t  *bII = cs_sdm_get_block(mat, bi, bi);
+
+    cs_sdm_square_asymm(bII);
+
+    for (int bj = bi+1; bj < matb->n_col_blocks; bj++) {
+
+      cs_sdm_t  *bIJ = cs_sdm_get_block(mat, bi, bj);
+      cs_sdm_t  *bJI = cs_sdm_get_block(mat, bj, bi);
+
+      assert(bIJ->n_rows == bJI->n_cols);
+      assert(bIJ->n_cols == bJI->n_rows);
+
+      for (short int i = 0; i < bIJ->n_rows; i++) {
+        cs_real_t  *bIJ_i = bIJ->val + i*bIJ->n_cols;
+        for (short int j = 0; j < bIJ->n_cols; j++) {
+
+          int  ji = j*bIJ->n_rows + i;
+
+          bIJ_i[j] = 0.5*(bIJ_i[j] - bJI->val[ji]);
+          bJI->val[ji] = -bIJ_i[j];
+
+        } /* bIJ columns */
+      } /* bIJ rows */
+
+    } /* Loop on column blocks */
+
+  } /* Loop on row blocks */
 
 }
 
@@ -1568,6 +1697,66 @@ cs_sdm_ldlt_solve(int                n_rows,
 
   } /* backward substitution */
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Test if a matrix is symmetric. Return 0. if the extradiagonal
+ *          differences are lower thann the machine precision.
+ *
+ * \param[in]  mat         pointer to the cs_sdm_t structure to test
+ *
+ * \return  0 if the matrix is symmetric at the machine tolerance otherwise
+ *          the absolute max. value between two transposed terms
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_sdm_test_symmetry(const cs_sdm_t     *mat)
+{
+  double  sym_eval = 0.;
+
+  if (mat == NULL)
+    return sym_eval;
+
+  if (mat->flag & CS_SDM_BY_BLOCK) {
+
+    cs_sdm_t  *copy = cs_sdm_block_create_copy(mat);
+
+    cs_sdm_block_square_asymm(copy);
+
+    const cs_sdm_block_t  *bd = copy->block_desc;
+    for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+      for (int bj = bi; bj < bd->n_col_blocks; bj++) {
+
+        cs_sdm_t  *bIJ = cs_sdm_get_block(copy, bi, bj);
+
+        for (int i = 0; i < bIJ->n_rows*bIJ->n_cols; i++)
+          if (fabs(bIJ->val[i]) > sym_eval)
+            sym_eval = fabs(bIJ->val[i]);
+
+      } /* Loop on column blocks */
+
+    } /* Loop on row blocks */
+
+    copy = cs_sdm_free(copy);
+
+  }
+  else {
+
+    cs_sdm_t  *copy = cs_sdm_create_copy(mat);
+
+    cs_sdm_square_asymm(copy);
+
+    for (int i = 0; i < copy->n_rows*copy->n_cols; i++)
+      if (fabs(copy->val[i]) > sym_eval)
+        sym_eval = fabs(copy->val[i]);
+
+    copy = cs_sdm_free(copy);
+
+  }
+
+  return 2*sym_eval;
 }
 
 /*----------------------------------------------------------------------------*/
