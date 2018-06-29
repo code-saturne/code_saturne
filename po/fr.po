@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-06-26 16:50+0200\n"
+"POT-Creation-Date: 2018-06-29 16:01+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4115,6 +4115,10 @@ msgstr ""
 msgid ""
 "Rotation mode %d with block size %d for system \"%s\"\n"
 "is not usable by PETSc."
+msgstr ""
+
+#, c-format
+msgid "%s and %s preconditioner with PETSc: error (%s) solving for %s"
 msgstr ""
 
 msgid "not instanciated"
@@ -13626,12 +13630,17 @@ msgstr ""
 " [%12.3g, %12.3g, %12.3g] et\n"
 " [%12.3g, %12.3g, %12.3g] a %d faces adjacentes."
 
+#, c-format
 msgid ""
 "\n"
-"Extrusion: no faces selected, so nothing to do.\n"
+" Extrusion: %llu boundary faces selected.\n"
 msgstr ""
 "\n"
-"Extrusion : aucune face sélectionnée, donc rien à effectuer.\n"
+" Extrusion : %llu faces de bord sélectionnées.\n"
+
+#, c-format
+msgid "            %llu cells added.\n"
+msgstr "             %llu cellules ajoutées\n"
 
 #, c-format
 msgid ""

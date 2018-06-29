@@ -573,8 +573,13 @@ _build_face_edges(cs_mesh_t         *m,
   for (cs_lnum_t i = 0; i < _n_edges; i++) {
     if (e_nf[i] == 2)
       _n_i_edges += 1;
-    else if (e_nf[i] == 1)
-      _n_b_edges += 1;
+    else if (e_nf[i] == 1) {
+      /* Ignore boundary edge on rank not owning the adjacent face */
+      if (e2sf[i][0] + e2sf[i][1] < -1)
+        e_nf[i] = 0;
+      else
+        _n_b_edges += 1;
+    }
     else if (e_nf[i] > 2) {
       cs_real_t *cv0 = m->vtx_coord + (e2v[i][0] * 3);
       cs_real_t *cv1 = m->vtx_coord + (e2v[i][1] * 3);
@@ -1928,10 +1933,12 @@ cs_mesh_extrude(cs_mesh_t                        *m,
   cs_gnum_t n_g_sel_faces = e->n_faces;
   cs_parall_counter(&n_g_sel_faces, 1);
 
-  if (n_g_sel_faces < 1) {
-    bft_printf(_("\nExtrusion: no faces selected, so nothing to do.\n"));
+  bft_printf(_("\n"
+               " Extrusion: %llu boundary faces selected.\n"),
+             (unsigned long long)n_g_sel_faces);
+
+  if (n_g_sel_faces < 1)
     return;
-  }
 
   cs_mesh_free_rebuildable(m, false);
 
@@ -2010,6 +2017,9 @@ cs_mesh_extrude(cs_mesh_t                        *m,
                                              n_v_sub);
 
   BFT_FREE(n_v_sub);
+
+  bft_printf(_("            %llu cells added.\n"),
+             (unsigned long long)(m->n_g_cells - n_g_cells_ini));
 
   /* Add faces whose normals are parallel to the extrusion direction */
 
