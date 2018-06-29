@@ -255,7 +255,7 @@ cs_static_condensation_vector_eq(const cs_adjacency_t    *c2x,
     /* Update RHS: RHS_x = RHS_x - mxc*mcc^-1*RHS_c */
     for (int k = 0; k < stride; k++)
       csys->rhs[3*bfi+k] -= _rc_tilda[k] * axc_i[k];
-      
+
   } /* Loop on blocks for face fi */
 
   /* Reshape matrix */
