@@ -66,8 +66,10 @@ class NotebookModel(Model):
         Return in a dictionnary which contains default values
         """
         default = {}
-        default['val']  = 0.0
-        default['name'] = "var"
+        default['val']         = 0.0
+        default['name']        = "var"
+        default['oturns']      = "No"
+        default['description'] = ""
 
         return default
 
@@ -142,18 +144,33 @@ class NotebookModel(Model):
             else:
                 content = line.split(',')
 
-            if len(content) == 2:
-                var = content[0]
-                value = content[1]
+            if len(content) >= 2:
+                var    = content[0]
+                value  = content[1]
+                oturns = None
+                descr  = None
+
+                if len(content) >= 3:
+                    oturns = content[2]
+                else:
+                    oturns = "No"
+
+                if len(content) >= 4:
+                    descr = content[3]
+                else:
+                    descr = ""
 
                 if var in self.getVarNameList():
                     node = self.node_note.xmlGetNode("var", name = var)
-                    node['value'] = value
+                    node['value']       = value
+                    node['oturns']      = oturns
+                    node['description'] = descr
                 else:
                     self.addVariable()
                     idx = len(self.getVarList())
                     self.setVariableValue(idx-1, value)
                     self.setVariableName(idx-1, var)
+                    self.setVariableOt(idx-1, oturns)
 
 
     @Variables.noUndo
@@ -201,6 +218,54 @@ class NotebookModel(Model):
         """
         node = self.node_note.xmlInitChildNode("var", id = idx)
         node['value'] = val
+
+
+    @Variables.noUndo
+    def getVariableOt(self, idx):
+        """
+        Return 'Yes' or 'No' as answer to the question, whether the variable
+        is used for an OpenTurns study
+        """
+        node = self.node_note.xmlInitChildNode("var", id = idx)
+        otval = node['oturns']
+        if not otval:
+            otval = self.defaultNotebookValues()['oturns']
+            self.setVariableValue(idx, otval)
+
+        return otval
+
+
+    @Variables.undoGlobal
+    def setVariableOt(self, idx, otval):
+        """
+        Sets the flag for OpenTurns variable or not
+        """
+        node = self.node_note.xmlInitChildNode("var", id = idx)
+        node['oturns'] = otval
+
+
+    @Variables.noUndo
+    def getVariableDescription(self, idx):
+        """
+        Return variable's description
+        """
+        descr = self.defaultNotebookValues()['description'] + str(idx)
+        node = self.node_note.xmlInitChildNode("var", id = idx)
+        if node:
+            descr = node['description']
+        else:
+            self.setVariableDescription(idx, name)
+
+        return descr
+
+
+    @Variables.undoGlobal
+    def setVariableDescription(self, idx, description):
+        """
+        Set the variable description
+        """
+        node = self.node_note.xmlInitChildNode("var", id = idx)
+        node['description'] = description
 
 
 #-------------------------------------------------------------------------------
