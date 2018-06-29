@@ -5,6 +5,9 @@ Release 5.0.9 (unreleased)
 Bug fixes
 ---------
 
+- Fix for missing legacy (Fortran) cs_user_head_losses.f90 file from
+  installed reference files.
+
 - Fix face external force projection with tensorial diffusion
   and porous models 1, 2.
   This was impacting cases with head losses, improved pressure interpolation,
