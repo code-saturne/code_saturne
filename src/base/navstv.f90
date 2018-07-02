@@ -174,6 +174,7 @@ double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
+double precision, dimension(:), pointer :: cvara_k
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
@@ -1419,8 +1420,9 @@ if (ndircp.le.0) then
 ( ncelet , ncel   , cell_f_vol , cvar_pr )
 endif
 
-! Calcul de la pression totale IPRTOT : (definie comme propriete )
-! En compressible, la pression resolue est deja la pression totale
+! Compute the total pressure (defined as a post-processed property).
+! For the compressible module, the solved pressure is already the total pressure.
+! NB: for Eddy Viscosity Models, TKE might be included in the solved pressure.
 
 if (ippmod(icompf).lt.0) then
   call field_get_val_s(iprtot, cpro_prtot)
@@ -1448,6 +1450,13 @@ if (ippmod(icompf).lt.0) then
            - cpro_momst(1,iel)*(xyzcen(1,iel)-xxp0)      &
            - cpro_momst(2,iel)*(xyzcen(2,iel)-xyp0)      &
            - cpro_momst(3,iel)*(xyzcen(3,iel)-xzp0)
+    enddo
+  endif
+  ! For Eddy Viscosity Models, "2/3 rho k" is included in the solved pressure
+  if ((itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60).and. igrhok.ne.1) then
+    call field_get_val_s(ivarfl(ik), cvara_k)
+    do iel = 1, ncel
+      cpro_prtot(iel) = cpro_prtot(iel) - 2.d0 / 3.d0 * crom(iel) * cvara_k(iel)
     enddo
   endif
 endif
