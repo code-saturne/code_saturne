@@ -5414,7 +5414,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
       for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
         for (int i = 0; i < 6; i++) {
           for (int j = 0; j < 3; j++)
-            rhs[cell_id][i][j] = -grad[cell_id][i][j];
+            rhs[cell_id][i][j] = - cell_f_vol[cell_id] * grad[cell_id][i][j];
         }
       }
 
