@@ -348,27 +348,6 @@ class VariableStandardItemModel(QAbstractItemModel):
 
 
     def headerData(self, section, orientation, role):
-
-        # Display
-        if role == Qt.DisplayRole:
-            return item.data(index.column(), role)
-
-        return to_qvariant()
-
-
-    def flags(self, index):
-        if not index.isValid():
-            return Qt.ItemIsEnabled
-
-        # disable item
-        if (index.row(), index.column()) in self.disabledItem:
-            return Qt.ItemIsEnabled
-
-        itm = index.internalPointer()
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-
-
-    def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
                 return to_qvariant(self.tr("variable name"))
