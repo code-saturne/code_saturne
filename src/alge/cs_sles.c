@@ -2020,6 +2020,8 @@ cs_sles_post_output_var(const char      *name,
       char type_name[32];
       size_t l = strlen(name);
 
+      l += strlen("_fp_type");
+
       if (l > 31)
         l = 31;
 
