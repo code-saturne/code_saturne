@@ -5,6 +5,9 @@ Release 5.1.5 (unreleased)
 Bug fixes
 ---------
 
+- GUI: fix default time stepping type (unsteady) when information missing
+  from the XML file.
+
 - Fix for missing legacy (Fortran) cs_user_head_losses.f90 file from
   installed reference files.
 

@@ -746,7 +746,7 @@ _scalar_diffusion_value(int      num_sca,
  * Get the status of steady management.
  *
  * parameter:
- *   keyword         -->  if 1 unsteady management else steady management
+ *   keyword         -->  if 1 steady management else steady management
  *----------------------------------------------------------------------------*/
 
 static void
@@ -762,7 +762,7 @@ _get_steady_status(int *keyword)
   if (cs_gui_get_status(path, &result))
     *keyword = result;
   else
-    *keyword = 1;
+    *keyword = 0;
 
   BFT_FREE(path);
 }
