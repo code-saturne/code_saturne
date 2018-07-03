@@ -454,7 +454,9 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
 
     term = os.getenv('TERM')
     if not term:
-        term = xterm
+        term = 'xterm'
+    elif term[:5] == 'xterm':
+        term = 'xterm'
 
     if debugger_opts:
         file_next = False
