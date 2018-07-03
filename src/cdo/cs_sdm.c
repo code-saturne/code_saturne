@@ -1913,8 +1913,9 @@ cs_sdm_block_dump(cs_lnum_t           parent_id,
   cs_log_printf(CS_LOG_DEFAULT, "\n << BLOCK MATRIX parent id: %d >>\n",
                 parent_id);
 
-  int  n_b_rows = mat->block_desc->n_row_blocks;
-  int  n_b_cols = mat->block_desc->n_col_blocks;
+  const int  n_b_rows = mat->block_desc->n_row_blocks;
+  const int  n_b_cols = mat->block_desc->n_col_blocks;
+  const cs_sdm_t  *blocks = mat->block_desc->blocks;
 
   if (n_b_rows < 1 || n_b_cols < 1) {
     cs_log_printf(CS_LOG_DEFAULT, " No block\n");
@@ -1923,16 +1924,30 @@ cs_sdm_block_dump(cs_lnum_t           parent_id,
   cs_log_printf(CS_LOG_DEFAULT, " n_row_blocks: %d; n_col_blocks: %d\n",
                 n_b_rows, n_b_cols);
 
-  cs_sdm_t  *blocks = mat->block_desc->blocks;
-
+  const char _sep[] = ".............";
   for (short int bi = 0; bi < n_b_rows; bi++) {
-    for (short int bj = 0; bj < n_b_cols; bj++) {
 
-      cs_sdm_t  *bij = blocks + bi*n_b_cols + bj;
-      cs_log_printf(CS_LOG_DEFAULT, "<< BLOCK (%2d, %2d) >>\n", bi, bj);
-      cs_sdm_simple_dump(bij);
+    const cs_sdm_t  *bi0 = blocks + bi*n_b_cols;
+    const int n_rows = bi0->n_rows;
 
-    } /* Block j */
+    for (int i = 0; i < n_rows; i++) {
+
+      for (short int bj = 0; bj < n_b_cols; bj++) {
+
+        const cs_sdm_t  *bij = blocks + bi*n_b_cols + bj;
+        const int  n_cols = bij->n_cols;
+        const cs_real_t  *mval_i = bij->val + i*n_cols;
+
+        for (int j = 0; j < n_cols; j++)
+          cs_log_printf(CS_LOG_DEFAULT, " % -6.3e", mval_i[j]);
+        cs_log_printf(CS_LOG_DEFAULT, " |");
+
+      } /* Block j */
+      cs_log_printf(CS_LOG_DEFAULT, "\n");
+
+    } /* Loop on rows */
+    cs_log_printf(CS_LOG_DEFAULT, "%s%s%s\n", _sep, _sep, _sep);
+
   } /* Block i */
 
 }
