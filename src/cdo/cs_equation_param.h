@@ -1040,6 +1040,21 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define and initialize a new structure to set a sliding boundary
+ *         condition related to the given equation structure
+ *         z_name corresponds to the name of a pre-existing cs_zone_t
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the related boundary zone
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_sliding_condition(cs_equation_param_t     *eqp,
+                                  const char              *z_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define and initialize a new structure to store parameters related
  *         to a diffusion term
  *

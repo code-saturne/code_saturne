@@ -101,9 +101,8 @@ _assign_vb_dirichlet_values(int                dim,
                             cs_flag_t          flag[],
                             int                counter[])
 {
-  switch (dim) {
+  if (dim == 1) {
 
-  case 1:
     for (short int v = 0; v < n_vf; v++) {
 
       const cs_lnum_t  v_id = lst[v];
@@ -113,9 +112,9 @@ _assign_vb_dirichlet_values(int                dim,
       counter[v_id] += 1;
       vvals[v_id] += eval[_v];
     }
-    break;
+  }
+  else { /* Not a scalar-valued quantity */
 
-  default:
     for (short int v = 0; v < n_vf; v++) {
 
       const cs_lnum_t  v_id = lst[v];
@@ -126,9 +125,40 @@ _assign_vb_dirichlet_values(int                dim,
       for (int k = 0; k < dim; k++)
         vvals[dim*v_id + k] += eval[dim*_v + k];
     }
-    break;
 
-  } /* End of switch */
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set members of the cs_cell_sys_t structure related to the boundary
+ *         conditions. Only the generic part is done here. The remaining part
+ *         is performed specifically for each scheme
+ *
+ * \param[in]      face_bc   pointer to a cs_cdo_bc_face_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in, out] csys      pointer to a cs_cell_system_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_init_cell_sys_bc(const cs_cdo_bc_face_t     *face_bc,
+                  const cs_cell_mesh_t       *cm,
+                  cs_cell_sys_t              *csys)
+{
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    const cs_lnum_t  bf_id = cm->f_ids[f] - csys->face_shift;
+
+    csys->bf_ids[f] = bf_id;
+
+    if (bf_id > -1) { /* This is a boundary face */
+      csys->bf_flag[f] = face_bc->flag[bf_id];
+      csys->_f_ids[csys->n_bc_faces] = f;
+      csys->n_bc_faces++;
+    }
+
+  } /* Loop on cell faces */
 }
 
 /*============================================================================
@@ -229,8 +259,8 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
  * \param[in]      dir_values  Dirichlet values associated to each vertex
- * \param[in]      neu_tags    definition id related to each Neumann face
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
@@ -242,8 +272,8 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            const cs_cdo_connect_t       *connect,
                            const cs_cdo_quantities_t    *quant,
                            const cs_equation_param_t    *eqp,
+                           const cs_cdo_bc_face_t       *face_bc,
                            const cs_real_t               dir_values[],
-                           const short int               neu_tags[],
                            cs_real_t                     t_eval,
                            cs_cell_sys_t                *csys,
                            cs_cell_builder_t            *cb)
@@ -253,27 +283,32 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
   /* Sanity check */
   assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
+  /* Initialize the common part */
+  _init_cell_sys_bc(face_bc, cm, csys);
+
   const int  d = eqp->dim;
+
+  /* Build the face --> vertices in the cell numbering */
   short int  n_vf;
+  short int  *_v_ids = cb->ids;
 
   /* Identify which face is a boundary face */
   for (short int f = 0; f < cm->n_fc; f++) {
     if (csys->bf_ids[f] > -1) { /* This a boundary face */
 
-      short int  *_v_ids = cb->ids;
       cs_cell_mesh_get_f2v(f, cm, &n_vf, _v_ids);
       assert(n_vf == cm->f2e_idx[f+1] - cm->f2e_idx[f]);
 
-      if (csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+      switch(csys->bf_flag[f]) {
 
+      case CS_CDO_BC_HMG_DIRICHLET:
         csys->has_dirichlet = true;
         for (short int i = 0; i < n_vf; i++)
           for (int k = 0; k < d; k++)
             csys->dof_flag[d*_v_ids[i]+k] |= CS_CDO_BC_HMG_DIRICHLET;
+        break;
 
-      }
-      else if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
-
+      case CS_CDO_BC_DIRICHLET:
         csys->has_dirichlet = true;
         for (short int i = 0; i < n_vf; i++) {
           short int v = _v_ids[i];
@@ -282,16 +317,21 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
             csys->dof_flag[d*v+k] |= CS_CDO_BC_DIRICHLET;
           }
         }
+        break;
 
-      }
-      else if (csys->bf_flag[f] & CS_CDO_BC_NEUMANN) {
+      case CS_CDO_BC_HMG_NEUMANN:
+        for (short int i = 0; i < n_vf; i++)
+          for (int k = 0; k < d; k++)
+            csys->dof_flag[d*_v_ids[i]+k] |= CS_CDO_BC_HMG_NEUMANN;
+        break;
 
+      case CS_CDO_BC_NEUMANN:
         csys->has_nhmg_neumann = true;
         for (short int i = 0; i < n_vf; i++)
           for (int k = 0; k < d; k++)
             csys->dof_flag[d*_v_ids[i]+k] |= CS_CDO_BC_NEUMANN;
 
-        cs_equation_compute_neumann_sv(neu_tags[csys->bf_ids[f]],
+        cs_equation_compute_neumann_sv(face_bc->def_ids[csys->bf_ids[f]],
                                        f,
                                        quant,
                                        eqp,
@@ -299,12 +339,20 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
                                        cb->ids,
                                        t_eval,
                                        csys->neu_values);
+        break;
 
-      }
-      else if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
+      case CS_CDO_BC_ROBIN:
         csys->has_robin = true;
-        /* TODO */
-      }
+        for (short int i = 0; i < n_vf; i++)
+          for (int k = 0; k < d; k++)
+            csys->dof_flag[d*_v_ids[i]+k] |= CS_CDO_BC_ROBIN;
+        break;
+
+      default:
+        /* Nothing to do for instance in case of homogeneous Neumann */
+        break;
+
+      } /* End of switch */
 
     } /* Boundary face */
   } /* Loop on cell faces */
@@ -320,8 +368,8 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
  * \param[in]      dir_values  Dirichlet values associated to each vertex
- * \param[in]      neu_tags    definition id related to each Neumann face
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
@@ -333,8 +381,8 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            const cs_cdo_connect_t       *connect,
                            const cs_cdo_quantities_t    *quant,
                            const cs_equation_param_t    *eqp,
+                           const cs_cdo_bc_face_t       *face_bc,
                            const cs_real_t               dir_values[],
-                           const short int               neu_tags[],
                            cs_real_t                     t_eval,
                            cs_cell_sys_t                *csys,
                            cs_cell_builder_t            *cb)
@@ -342,48 +390,58 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
   CS_UNUSED(connect);
   CS_UNUSED(cb);
 
+  /* Initialize the common part */
+  _init_cell_sys_bc(face_bc, cm, csys);
+
   const int  d = eqp->dim;
 
   /* Identify which face is a boundary face */
   for (short int f = 0; f < cm->n_fc; f++) {
     if (csys->bf_ids[f] > -1) { /* This a boundary face */
 
-      if (csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+      switch(csys->bf_flag[f]) {
 
+      case CS_CDO_BC_HMG_DIRICHLET:
         csys->has_dirichlet = true;
         for (int k = 0; k < d; k++)
           csys->dof_flag[d*f + k] |= CS_CDO_BC_HMG_DIRICHLET;
+        break;
 
-      }
-      else if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
-
+      case CS_CDO_BC_DIRICHLET:
         csys->has_dirichlet = true;
         for (int k = 0; k < d; k++) {
           csys->dof_flag[d*f + k] |= CS_CDO_BC_DIRICHLET;
           csys->dir_values[d*f + k] = dir_values[d*csys->bf_ids[f] + k];
         }
+        break;
 
-      }
-      else if (csys->bf_flag[f] & CS_CDO_BC_NEUMANN) {
-
+      case CS_CDO_BC_NEUMANN:
         csys->has_nhmg_neumann = true;
         for (int k = 0; k < d; k++)
           csys->dof_flag[d*f + k] |= CS_CDO_BC_NEUMANN;
 
-        cs_equation_compute_neumann_fb(neu_tags[csys->bf_ids[f]],
+        cs_equation_compute_neumann_fb(face_bc->def_ids[csys->bf_ids[f]],
                                        f,
                                        quant,
                                        eqp,
                                        cm,
                                        t_eval,
                                        csys->neu_values);
+        break;
 
-      }
-      else if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
+      case CS_CDO_BC_ROBIN:
         csys->has_robin = true;
+        for (int k = 0; k < d; k++)
+          csys->dof_flag[d*f + k] |= CS_CDO_BC_ROBIN;
         /* TODO */
         bft_error(__FILE__, __LINE__, 0, "%s: TODO", __func__);
-      }
+        break;
+
+      default:
+        /* Nothing to do for instance in case of homogeneous Neumann */
+        break;
+
+      } /* End of switch */
 
     } /* Boundary face */
   } /* Loop on cell faces */
@@ -398,7 +456,7 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      eqp         pointer to a cs_equation_param_t
- * \param[in]      face_bc     pointer to a cs_cdo_bc_t structure
+ * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] values      pointer to the array of values to set
@@ -410,15 +468,13 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
                                  const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_t          *face_bc,
+                                 const cs_cdo_bc_face_t     *face_bc,
                                  cs_real_t                   t_eval,
                                  cs_cell_builder_t          *cb,
                                  cs_real_t                  *values)
 {
   assert(face_bc != NULL);
-  assert(face_bc->n_elts == quant->n_b_faces);
 
-  const cs_cdo_bc_list_t  *dir = face_bc->dir;
   const cs_lnum_t  *bf2v_idx = mesh->b_face_vtx_idx;
   const cs_lnum_t  *bf2v_lst = mesh->b_face_vtx_lst;
 
@@ -427,11 +483,11 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
   cs_real_t  *bc_vals = NULL;
 
   /* Initialization */
+  BFT_MALLOC(bc_vals, eqp->dim*quant->n_vertices, cs_real_t);
+  memset(bc_vals, 0, eqp->dim*quant->n_vertices*sizeof(cs_real_t));
+
   BFT_MALLOC(counter, quant->n_vertices, int);
   BFT_MALLOC(flag, quant->n_vertices, cs_flag_t);
-  BFT_MALLOC(bc_vals, eqp->dim*quant->n_vertices, cs_real_t);
-
-  memset(bc_vals, 0, eqp->dim*quant->n_vertices*sizeof(cs_real_t));
 
 # pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
   for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
@@ -440,14 +496,14 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
   }
 
   /* Define array storing the Dirichlet values */
-  for (cs_lnum_t i = 0; i < dir->n_nhmg_elts; i++) {
+  for (cs_lnum_t i = 0; i < face_bc->n_nhmg_dir_faces; i++) {
 
-    const cs_lnum_t  bf_id = dir->elt_ids[i];
+    const cs_lnum_t  bf_id = face_bc->nhmg_dir_ids[i];
+    const short int  def_id = face_bc->def_ids[bf_id];
+    const cs_xdef_t  *def = eqp->bc_defs[def_id];
     const cs_lnum_t  *idx = bf2v_idx + bf_id;
     const cs_lnum_t  *lst = bf2v_lst + idx[0];
     const int  n_vf = idx[1] - idx[0];
-    const short int  def_id = dir->def_ids[i];
-    const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
     switch(def->type) {
 
@@ -518,16 +574,17 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
 
   } /* Loop on faces with a non-homogeneous Dirichlet BC */
 
-  /* Define array storing the Dirichlet values */
-  for (cs_lnum_t i = dir->n_nhmg_elts; i < dir->n_elts; i++) {
+  /* Define array storing the Dirichlet values. Loop on faces with a homogeneous
+     Dirichlet BC. No need to retrieve the definition in this case */
+  for (cs_lnum_t i = 0; i < face_bc->n_hmg_dir_faces; i++) {
 
-    const cs_lnum_t  f_id = dir->elt_ids[i];
+    const cs_lnum_t  f_id = face_bc->hmg_dir_ids[i];
     const cs_lnum_t  *idx = bf2v_idx + f_id;
     const int  n_vf = idx[1] - idx[0];
     const cs_lnum_t  *lst = bf2v_lst + idx[0];
 
     for (short int v = 0; v < n_vf; v++)
-      flag[lst[v]] |= CS_CDO_BC_HMG_DIRICHLET;
+      flag[lst[v]] |= CS_CDO_BC_DIRICHLET | CS_CDO_BC_HOMOGENEOUS;
 
   } /* Loop on faces with a non-homogeneous Dirichlet BC */
 
@@ -566,9 +623,9 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
 #   pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
     for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
 
-      if (flag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
-        values[v_id] = 0.;
-      else if (flag[v_id] & CS_CDO_BC_DIRICHLET) {
+      if (bcflag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
+        bcvals[v_id] = 0.;
+      else if (bcflag[v_id] & CS_CDO_BC_DIRICHLET) {
         assert(counter[v_id] > 0);
         if (counter[v_id] > 1)
           values[v_id] = bc_vals[v_id]/counter[v_id];
@@ -584,7 +641,8 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
 #   pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
     for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
 
-      if (flag[v_id] & CS_CDO_BC_HMG_DIRICHLET) {
+      if (bcflag[v_id] & CS_CDO_BC_HMG_DIRICHLET) {
+
         for (int j = 0; j < eqp->dim; j++)
           values[eqp->dim*v_id + j] = 0.;
       }
@@ -625,7 +683,7 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]      eqp        pointer to a cs_equation_param_t
- * \param[in]      face_bc    pointer to a cs_cdo_bc_t structure
+ * \param[in]      face_bc    pointer to a cs_cdo_bc_face_t structure
  * \param[in]      t_eval     time at which one evaluates the boundary cond.
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] values     pointer to the array of values to set
@@ -637,13 +695,12 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
                                  const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_t          *face_bc,
+                                 const cs_cdo_bc_face_t     *face_bc,
                                  cs_real_t                   t_eval,
                                  cs_cell_builder_t          *cb,
                                  cs_real_t                  *values)
 {
   assert(face_bc != NULL);
-  assert(face_bc->n_elts == quant->n_b_faces);
 
   CS_UNUSED(cb);
 
@@ -751,7 +808,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
     } /* Definition based on Dirichlet BC */
   } /* Loop on definitions */
 
-  /* Set the values to zero for all vertices attached to a homogeneous
+  /* Set the values to zero for all faces attached to a homogeneous
      Diriclet BC */
 # pragma omp parallel for if (quant->n_b_faces > CS_THR_MIN)
   for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++)
@@ -780,7 +837,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
 cs_flag_t *
 cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
-                               const cs_cdo_bc_t          *face_bc)
+                               const cs_cdo_bc_face_t     *face_bc)
 {
   assert(connect->bf2v != NULL);
 
@@ -803,49 +860,6 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
   } /* Loop on border faces */
 
   return vflag;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Tag each face related to a Neumann BC with its definition id.
- *          Default tag is -1 (not a Neumann face)
- *
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]      eqp        pointer to a cs_equation_param_t
-
- * \return an array with prescribed tags
- */
-/*----------------------------------------------------------------------------*/
-
-short int *
-cs_equation_tag_neumann_face(const cs_cdo_quantities_t    *quant,
-                             const cs_equation_param_t    *eqp)
-{
-  short int  *face_tag = NULL;
-
-  /* Initialization */
-  BFT_MALLOC(face_tag, quant->n_b_faces, short int);
-
-# pragma omp parallel for if (quant->n_b_faces > CS_THR_MIN)
-  for (cs_lnum_t f_id = 0; f_id < quant->n_b_faces; f_id++)
-    face_tag[f_id] = -1;
-
-  /* Tag faces with Neumann BCs */
-  for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
-
-    const cs_xdef_t  *def = eqp->bc_defs[def_id];
-    if (def->meta & CS_CDO_BC_NEUMANN) {
-
-      const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
-
-#     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < bz->n_elts; i++)
-        face_tag[bz->elt_ids[i]] = def_id;
-
-    }
-  }
-
-  return face_tag;
 }
 
 /*----------------------------------------------------------------------------*/

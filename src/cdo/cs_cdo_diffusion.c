@@ -718,8 +718,7 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
       _cdofb_normal_flux_reco(f, cm, cb, h_info,
@@ -741,8 +740,7 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* chi * \meas{f} / h_f  */
       const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
@@ -815,8 +813,7 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
       _cdofb_normal_flux_reco(f, cm, cb, h_info,
@@ -838,8 +835,7 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* chi * \meas{f} / h_f  */
       const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
@@ -926,8 +922,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
       _cdofb_normal_flux_reco(f, cm, cb, h_info,
@@ -962,8 +957,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* chi * \meas{f} / h_f  */
       const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
@@ -1036,8 +1030,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
       _cdofb_normal_flux_reco(f, cm, cb, h_info,
@@ -1084,8 +1077,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* chi * \meas{f} / h_f  */
       const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
@@ -1159,8 +1151,7 @@ cs_cdo_diffusion_vbcost_weak_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
@@ -1243,8 +1234,7 @@ cs_cdo_diffusion_vbcost_wsym_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
@@ -1332,8 +1322,7 @@ cs_cdo_diffusion_vbwbs_weak_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
@@ -1404,8 +1393,7 @@ cs_cdo_diffusion_vbwbs_wsym_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
@@ -1484,8 +1472,7 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
@@ -1556,8 +1543,7 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
@@ -1636,12 +1622,13 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
   /* Penalize diagonal entry (and its rhs if needed) */
   for (short int i = 0; i < csys->n_dofs; i++) {
 
-    if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) {
+    if (csys->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
+      csys->mat->val[i + csys->n_dofs*i] += eqp->bc_penalization_coeff;
+    }
+    else if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) {
       csys->mat->val[i + csys->n_dofs*i] += eqp->bc_penalization_coeff;
       csys->rhs[i] += csys->dir_values[i] * eqp->bc_penalization_coeff;
     }
-    else if (csys->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
-      csys->mat->val[i + csys->n_dofs*i] += eqp->bc_penalization_coeff;
 
   } /* Loop on degrees of freedom */
 
@@ -1697,12 +1684,13 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
 
     for (int i = 0; i < mII->n_rows; i++) {
 
-      if (_flag[i] & CS_CDO_BC_DIRICHLET) {
+      if (_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
+        mII->val[i + mII->n_rows*i] += eqp->bc_penalization_coeff;
+      }
+      else if (_flag[i] & CS_CDO_BC_DIRICHLET) {
         mII->val[i + mII->n_rows*i] += eqp->bc_penalization_coeff;
         _rhs[i] += _dir_val[i] * eqp->bc_penalization_coeff;
       }
-      else if (_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
-        mII->val[i + mII->n_rows*i] += eqp->bc_penalization_coeff;
 
     }
 
@@ -1758,7 +1746,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
 
   /* Build x_dir */
   for (short int i = 0; i < csys->n_dofs; i++)
-    if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
+    if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) /* Only non-homogeneous */
       x_dir[i] = csys->dir_values[i];
 
   /* Contribution of the Dirichlet conditions */
@@ -1767,8 +1755,8 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
   /* Second pass: Replace the Dirichlet block by a diagonal block */
   for (short int i = 0; i < csys->n_dofs; i++) {
 
-    if (csys->dof_flag[i] & (CS_CDO_BC_DIRICHLET | CS_CDO_BC_HMG_DIRICHLET)) {
-
+    if (cs_cdo_bc_is_dirichlet(csys->dof_flag[i])) { /* All Dirichlet:
+                                                        homogeneous or not */
       /* Reset row i */
       memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
       /* Reset column i */
@@ -1837,7 +1825,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
 
   /* Build x_dir */
   for (short int i = 0; i < csys->n_dofs; i++)
-    if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
+    if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) /* Only non-homogeneous */
       x_dir[i] = csys->dir_values[i];
 
   /* Contribution of the Dirichlet conditions */
@@ -1856,7 +1844,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
     /* Is the current block associated to a Dirichlet BC ? */
     int  n_dir = 0;
     for (int i = 0; i < mII->n_rows; i++)
-      if (_flg[i] & (CS_CDO_BC_DIRICHLET | CS_CDO_BC_HMG_DIRICHLET))
+      if (cs_cdo_bc_is_dirichlet(_flg[i]))
         n_dir += 1;
 
     if (n_dir > 0) {

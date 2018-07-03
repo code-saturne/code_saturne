@@ -2131,7 +2131,7 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
 
         if (v_nflx[v_id] < 0) {
           /* advection field is inward w.r.t. the face normal */
-          if (cs_flag_test(csys->bf_flag[f], CS_CDO_BC_DIRICHLET))
+          if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET)
             /* Homogoneous Dirichlet don't contribute. Other Bcs are invalid */
             tmp_rhs[v_id] -= v_nflx[v_id] * csys->dir_values[v_id];
         }
@@ -2150,7 +2150,7 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
         if (v_nflx[v_id] < 0) {
 
           /* advection field is inward w.r.t. the face normal */
-          if (cs_flag_test(csys->bf_flag[f], CS_CDO_BC_DIRICHLET))
+          if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET)
             /* Homogoneous Dirichlet don't contribute. Other Bcs are invalid */
             tmp_rhs[v_id] -= v_nflx[v_id] * csys->dir_values[v_id];
 

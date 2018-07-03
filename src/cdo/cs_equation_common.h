@@ -116,10 +116,11 @@ typedef struct {
    * The case of a definition of the BCs which changes of type during the
    * simulation is possible but not implemented.
    * You just have to call the initialization step each time the type of BCs
-   * is modified to define an updated \ref cs_cdo_bc_t structure.
+   * is modified to define an updated \ref cs_cdo_bc_face_t structure.
    */
 
-  cs_cdo_bc_t           *face_bc; /*!< list of faces sorted by type of BCs */
+  cs_cdo_bc_face_t   *face_bc;  /*!< Information about boundary conditions
+                                   applied to faces */
 
   /*!
    * @}
@@ -309,23 +310,6 @@ cs_equation_prepare_system(int                   stride,
 void
 cs_equation_write_monitoring(const char                    *eqname,
                              const cs_equation_builder_t   *eqb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set members of the cs_cell_sys_t structure related to the boundary
- *         conditions. Only the generic part is done here. The remaining part
- *         is performed in _init_cell_system() for each scheme
- *
- * \param[in]      eqb       pointer to a cs_equation_builder_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in, out] csys      pointer to a cs_cell_system_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_init_cell_sys_bc(const cs_equation_builder_t   *eqb,
-                             const cs_cell_mesh_t          *cm,
-                             cs_cell_sys_t                 *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

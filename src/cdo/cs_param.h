@@ -280,6 +280,14 @@ typedef enum {
  * \var CS_PARAM_BC_NEUMANN
  * Neumann conditions. The value of the flux of variable is set to the user
  * requirements.
+ *
+ * \var CS_PARAM_BC_ROBIN
+ * Robin conditions.
+ *
+ * \var CS_PARAM_BC_SLIDING
+ * Sliding conditions. Homogeneous Dirichlet for the normal componenent and
+ * homogeneous Neumann for the tangential components. Only available for
+ * vector-valued equations.
  */
 
 typedef enum {
@@ -289,6 +297,7 @@ typedef enum {
   CS_PARAM_BC_HMG_NEUMANN,
   CS_PARAM_BC_NEUMANN,
   CS_PARAM_BC_ROBIN,
+  CS_PARAM_BC_SLIDING,
   CS_PARAM_N_BC_TYPES
 
 } cs_param_bc_type_t;

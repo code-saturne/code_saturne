@@ -1784,15 +1784,17 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
   int  dim = eqp->dim;
   if (bc_type == CS_PARAM_BC_NEUMANN||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
-    dim *= 3; // vector if scalar eq, tensor if vector eq.
+    dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
   else if (bc_type == CS_PARAM_BC_ROBIN)
     dim *= 4;
+
+  cs_flag_t  bc_flag = cs_cdo_bc_get_flag(bc_type);
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           dim,
                                           cs_get_bdy_zone_id(z_name),
                                           CS_FLAG_STATE_UNIFORM, // state flag
-                                          cs_cdo_bc_get_flag(bc_type), // meta
+                                          bc_flag, // meta
                                           (void *)values);
 
   int  new_id = eqp->n_bc_defs;
@@ -1847,7 +1849,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
   int dim = eqp->dim;
   if (bc_type == CS_PARAM_BC_NEUMANN||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
-    dim *= 3; // vector if scalar eq, tensor if vector eq.
+    dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
   else if (bc_type == CS_PARAM_BC_ROBIN)
     dim *= 4;
 
@@ -1900,7 +1902,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
   int dim = eqp->dim;
   if (bc_type == CS_PARAM_BC_NEUMANN||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
-    dim *= 3; // vector if scalar eq, tensor if vector eq.
+    dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
   else if (bc_type == CS_PARAM_BC_ROBIN)
     dim *= 4;
 
@@ -1917,6 +1919,46 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
   eqp->bc_defs[new_id] = d;
 
   return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a sliding boundary
+ *         condition related to the given equation structure
+ *         z_name corresponds to the name of a pre-existing cs_zone_t
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the related boundary zone
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_sliding_condition(cs_equation_param_t     *eqp,
+                                  const char              *z_name)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  if (eqp->dim < 3)
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid dimension of equation\n",
+              __func__);
+
+  /* Add two definitions: one for the normal component and one for the
+     tangential component */
+  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs + 1, cs_xdef_t *);
+
+  cs_xdef_t  *d = NULL;
+  cs_real_t  val = 0;
+
+  /* Add the homogeneous Dirichlet on the normal component */
+  d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                              1,
+                              cs_get_bdy_zone_id(z_name),
+                              CS_FLAG_STATE_UNIFORM,  /* state flag */
+                              CS_CDO_BC_SLIDING,      /* meta */
+                              (void *)&val);
+
+  eqp->bc_defs[eqp->n_bc_defs] = d;
+  eqp->n_bc_defs += 1;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -79,7 +79,6 @@ typedef struct _cs_cdofb_t cs_cdofb_vecteq_t;
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         pointer to a cs_cdofb_vecteq_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
- * \param[in]      neu_tags    definition id related to each Neumann face
  * \param[in]      field_tn    values of the field at the last computed time
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -94,7 +93,6 @@ cs_cdofb_vecteq_init_cell_system(const cs_flag_t               cell_flag,
                                  const cs_equation_builder_t  *eqb,
                                  const cs_cdofb_vecteq_t      *eqc,
                                  const cs_real_t               dir_values[],
-                                 const short int               neu_tags[],
                                  const cs_real_t               field_tn[],
                                  cs_real_t                     t_eval,
                                  cs_cell_sys_t                *csys,

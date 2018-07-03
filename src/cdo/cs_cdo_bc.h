@@ -2,8 +2,7 @@
 #define __CS_CDO_BC_H__
 
 /*============================================================================
- * Manage boundary conditions. Produce ready-to-use BC structure from the
- * user definition.
+ * Manage the low-level structure dedicated to boundary conditions
  *============================================================================*/
 
 /*
@@ -45,23 +44,31 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+#define CS_CDO_BC_DEFAULT_DEF    -1
+
 /*!
  * @defgroup cdo_bc_flags Flags specifying the type of boundary conditions
  *  associated to an element
  *
+ * Homogeneous conditions are defined separately since a flag
+ * CS_CDO_BC_HOMOGENEOUS would not enable to identify if it is associated to a
+ * Dirichlet or a Neumann boundary condition
+ *
  * @{
  */
 
-/*!  1: (non-homogeneous) Dirichlet boundary conditions */
-#define CS_CDO_BC_DIRICHLET      (1 << 0)
-/*!  2: Homogeneous Dirichlet boundary conditions */
-#define CS_CDO_BC_HMG_DIRICHLET  (1 << 1)
-/*!  4: (non-homogeneous) Neumann boundary conditions */
-#define CS_CDO_BC_NEUMANN        (1 << 2)
-/*!  8: Homogeneous Neumann boundary conditions */
-#define CS_CDO_BC_HMG_NEUMANN    (1 << 3)
+/*!  1: Neumann boundary conditions */
+#define CS_CDO_BC_NEUMANN          (1 << 0)
+/*!  2: Homogeneous Neumann boundary conditions */
+#define CS_CDO_BC_HMG_NEUMANN      (1 << 1)
+/*!  4: Dirichlet boundary conditions */
+#define CS_CDO_BC_DIRICHLET        (1 << 2)
+/*!  8: Homogeneous Dirichlet boundary conditions */
+#define CS_CDO_BC_HMG_DIRICHLET    (1 << 3)
 /*! 16: Robin boundary conditions */
-#define CS_CDO_BC_ROBIN          (1 << 4)
+#define CS_CDO_BC_ROBIN            (1 << 4)
+/*! 32: Apply a sliding condition (for vector-valued equations) */
+#define CS_CDO_BC_SLIDING          (1 << 5)
 
 /*! @} */
 
@@ -69,47 +76,54 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* List of entities attached to a type of BC (for instance Dirichlet or Neumann)
-   Two categories are considered
-   First, the entities attached to a non-homogeneous BC, then those attached
-   to a homogeneous BC.
-*/
+/* Structure specific to store data related to the definition of boundary
+ * conditions on boundary faces.
+ *
+ * For of scalar-valued equations, only some the classical (Dirichlet, Neumann
+ * and Robin types are available. Other types of boundary conditions are
+ * possible for vector-valued equations
+ */
 
 typedef struct {
 
-  cs_lnum_t   n_elts;
-  cs_lnum_t   n_nhmg_elts; /* number of non-homogeneous elements */
+  cs_lnum_t   n_b_faces;    /* Number of boundary faces */
 
-  cs_lnum_t  *elt_ids;     /* size = n_elts (first elements are those associated
-                              to non-homogeneous BC then the homogeneous one */
-  short int  *def_ids;     /* id related to the associated BC definition
-                              Only for non homogeneous BCs (i.e. size is equal
-                              to the number elements associated to a
-                              non-homogeneous BC */
+  /* Type of boundary conditions associated to a face. Size: n_b_faces */
+  cs_flag_t  *flag;
 
-} cs_cdo_bc_list_t;
+  /* Id of the boundary condition definition or CS_BC_DEFAULT (=-1) if this face
+     is related to the default boundary condition. Size = n_b_faces */
+  short int  *def_ids;
 
-/* Translation of the user-defined BCs setup into a computable-oriented
-   structure */
+  /* List of face ids by type of boundary conditions. Homogeneous types don't
+   * need to rely on a definition since it can be the default bc. Moreover, some
+   * optimizations can be performed that's why they are stored separately
+   */
 
-typedef struct {
+  /* Dirichlet */
+  cs_lnum_t   n_hmg_dir_faces;
+  cs_lnum_t  *hmg_dir_ids;
+  cs_lnum_t   n_nhmg_dir_faces;
+  cs_lnum_t  *nhmg_dir_ids;
 
-  cs_lnum_t          n_elts;    /* Number of elements */
-  cs_flag_t         *flag;      /* Type of boundary conditions associated to
-                                   an element. For a face, one (and only one)
-                                   type is set. For an edge and a vertex,
-                                   several BCs can be set.
-                                   size = n_elts */
+  /* Neumann */
+  cs_lnum_t   n_hmg_neu_faces;
+  cs_lnum_t  *hmg_neu_ids;
+  cs_lnum_t   n_nhmg_neu_faces;
+  cs_lnum_t  *nhmg_neu_ids;
 
-  /* List of faces by type of boundary conditions */
-  cs_cdo_bc_list_t  *dir;
-  cs_cdo_bc_list_t  *neu;
-  cs_cdo_bc_list_t  *rob;
+  /* Robin */
+  cs_lnum_t   n_robin_faces;
+  cs_lnum_t  *robin_ids;
 
-} cs_cdo_bc_t;
+  /* Sliding wall */
+  cs_lnum_t   n_sliding_faces;
+  cs_lnum_t  *sliding_ids;
+
+} cs_cdo_bc_face_t;
 
 /*============================================================================
- * Public function prototypes
+ * Global variables
  *============================================================================*/
 
 /*============================================================================
@@ -148,8 +162,12 @@ cs_cdo_bc_get_flag(cs_param_bc_type_t   bc_type)
   case CS_PARAM_BC_ROBIN:
     ret_flag = CS_CDO_BC_ROBIN;
     break;
+  case CS_PARAM_BC_SLIDING:
+    ret_flag = CS_CDO_BC_SLIDING;
+    break;
+
   default:
-    ret_flag = 0;
+    ret_flag = 0;               /* Not handle automatically */
     break;
   }
   return ret_flag;
@@ -157,65 +175,61 @@ cs_cdo_bc_get_flag(cs_param_bc_type_t   bc_type)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Create a cs_cdo_bc_list_t structure
+ * \brief   Check if a flag is associated to a Dirichlet BC (homogeneous or
+ *          not)
  *
- * \param[in]  n_elts      number of entries of the list
- * \param[in]  n_nhmg_elts  number of elements attached to a homogeneous BC
+ * \param[in] flag     flag to test
  *
- * \return  a new allocated pointer to a cs_cdo_bc_list_t structure
+ * \return  true or false
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdo_bc_list_t *
-cs_cdo_bc_list_create(cs_lnum_t   n_elts,
-                      cs_lnum_t   n_nhmg_elts);
+static inline bool
+cs_cdo_bc_is_dirichlet(cs_flag_t    flag)
+{
+  if (flag & CS_CDO_BC_DIRICHLET)
+    return true;
+  else if (flag &CS_CDO_BC_HMG_DIRICHLET)
+    return true;
+  else
+    return false;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Free a cs_cdo_bc_list_t structure
- *
- * \param[in]  bcl     pointer to the cs_cdo_bc_list_t structure to free
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cdo_bc_list_t *
-cs_cdo_bc_list_free(cs_cdo_bc_list_t   *bcl);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the structure which translates the BC definition from the
+ * \brief  Define the structure which translates the BC definitions from the
  *         user viewpoint into a ready-to-use structure for setting the arrays
  *         keeping the values of the boundary condition to set.
  *
  * \param[in] default_bc   type of boundary condition to set by default
- * \param[in] n_desc       number of boundary definitions
- * \param[in] desc         list of boundary condition definition
+ * \param[in] dim          dimension of the related equation
+ * \param[in] n_defs       number of boundary definitions
+ * \param[in] defs         list of boundary condition definition
  * \param[in] n_b_faces    number of border faces
  *
- * \return a pointer to a new allocated cs_cdo_bc_t structure
+ * \return a pointer to a new allocated cs_cdo_bc_face_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdo_bc_t *
-cs_cdo_bc_define(cs_param_bc_type_t    default_bc,
-                 int                   n_desc,
-                 cs_xdef_t           **desc,
-                 cs_lnum_t             n_b_faces);
+cs_cdo_bc_face_t *
+cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
+                      int                   dim,
+                      int                   n_defs,
+                      cs_xdef_t           **defs,
+                      cs_lnum_t             n_b_faces);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_cdo_bc_t structure
+ * \brief  Free a cs_cdo_bc_face_t structure
  *
- * \param[in, out]  face_bc   pointer to a cs_cdo_bc_t structure
+ * \param[in, out]  face_bc   pointer to a cs_cdo_bc_face_t structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdo_bc_t *
-cs_cdo_bc_free(cs_cdo_bc_t   *face_bc);
+cs_cdo_bc_face_t *
+cs_cdo_bc_free(cs_cdo_bc_face_t   *face_bc);
 
 /*----------------------------------------------------------------------------*/
 

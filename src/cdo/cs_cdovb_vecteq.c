@@ -174,7 +174,6 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      dir_values  Dirichlet values associated to each vertex
- * \param[in]      neu_tags    definition id related to each Neumann face
  * \param[in]      field_tn    values of the field at the last computed time
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -188,7 +187,6 @@ _init_vb_cell_system(const cs_flag_t               cell_flag,
                      const cs_equation_param_t    *eqp,
                      const cs_equation_builder_t  *eqb,
                      const cs_real_t               dir_values[],
-                     const short int               neu_tags[],
                      const cs_real_t               field_tn[],
                      cs_real_t                     t_eval,
                      cs_cell_sys_t                *csys,
@@ -223,16 +221,13 @@ _init_vb_cell_system(const cs_flag_t               cell_flag,
      has at least one border face */
   if (cell_flag & CS_FLAG_BOUNDARY) {
 
-    /* Set the generic part */
-    cs_equation_init_cell_sys_bc(eqb, cm, csys);
-
     /* Set the bc (specific part) */
     cs_equation_vb_set_cell_bc(cm,
                                cs_shared_connect,
                                cs_shared_quant,
                                eqp,
+                               eqb->face_bc,
                                dir_values,
-                               neu_tags,
                                t_eval,
                                csys,
                                cb);
@@ -728,12 +723,9 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
 
   cs_cdovb_vecteq_set_dir_bc(mesh, eqp, eqb, t_cur + dt_cur, dir_values);
 
-  /* Tag faces with a non-homogeneous Neumann BC */
-  short int  *neu_tags = cs_equation_tag_neumann_face(quant, eqp);
-
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, neu_tags, field_val, cs_cdovb_cell_sys, cs_cdovb_cell_bld)
+         dir_values, field_val, cs_cdovb_cell_sys, cs_cdovb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -773,8 +765,8 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vb_cell_system(cell_flag, cm, eqp, eqb,
-                           dir_values, neu_tags, field_val, time_eval, // in
-                           csys, cb);                                  // out
+                           dir_values, field_val, time_eval,
+                           csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 2
       if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
@@ -883,9 +875,7 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
 
   cs_matrix_assembler_values_done(mav); // optional
 
-  /* TODO */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   cs_matrix_assembler_values_finalize(&mav);
 
   cs_timer_t  t1 = cs_timer_time();

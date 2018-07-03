@@ -262,8 +262,7 @@ _vb_enforce_boundary_divergence(const cs_cdo_connect_t        *connect,
 
   for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
 
-    if (eqb->face_bc->flag[bf_id] & CS_CDO_BC_DIRICHLET ||
-        eqb->face_bc->flag[bf_id] & CS_CDO_BC_HMG_DIRICHLET) {
+    if (cs_cdo_bc_is_dirichlet(eqb->face_bc->flag[bf_id])) {
 
       const cs_lnum_t  f_id = cdoq->n_i_faces + bf_id;
       const cs_nvec3_t  pfq = cs_quant_set_face_nvec(f_id, cdoq);

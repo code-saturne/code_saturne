@@ -788,10 +788,11 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
      Translate user-defined information about BC into a structure well-suited
      for computation. We make the distinction between homogeneous and
      non-homogeneous BCs.  */
-  eqb->face_bc = cs_cdo_bc_define(eqp->default_bc,
-                                  eqp->n_bc_defs,
-                                  eqp->bc_defs,
-                                  mesh->n_b_faces);
+  eqb->face_bc = cs_cdo_bc_face_define(eqp->default_bc,
+                                       eqp->dim,
+                                       eqp->n_bc_defs,
+                                       eqp->bc_defs,
+                                       mesh->n_b_faces);
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(eqb->tcb); /* build system */
@@ -994,41 +995,6 @@ cs_equation_write_monitoring(const char                    *eqname,
                   msg, t[0], t[1], t[2], t[3], t[4], t[5]);
     BFT_FREE(msg);
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set members of the cs_cell_sys_t structure related to the boundary
- *         conditions. Only the generic part is done here. The remaining part
- *         is performed in _init_cell_system() for each scheme
- *
- * \param[in]      eqb       pointer to a cs_equation_builder_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in, out] csys      pointer to a cs_cell_system_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_init_cell_sys_bc(const cs_equation_builder_t   *eqb,
-                             const cs_cell_mesh_t          *cm,
-                             cs_cell_sys_t                 *csys)
-{
-  const cs_cdo_bc_t  *face_bc = eqb->face_bc;
-
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_lnum_t  bf_id = cm->f_ids[f] - csys->face_shift;
-
-    csys->bf_ids[f] = bf_id;
-
-    if (bf_id > -1) { /* This is a boundary face */
-      csys->bf_flag[f] = face_bc->flag[bf_id];
-      csys->_f_ids[csys->n_bc_faces] = f;
-      csys->n_bc_faces++;
-    }
-
-  } /* Loop on cell faces */
-
 }
 
 /*----------------------------------------------------------------------------*/

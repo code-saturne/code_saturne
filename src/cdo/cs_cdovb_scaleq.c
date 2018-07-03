@@ -169,7 +169,6 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
  * \param[in]      eqp             pointer to a cs_equation_param_t structure
  * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
  * \param[in, out] p_dir_values    pointer to the Dirichlet values to set
- * \param[in, out] p_neu_tags      pointer to the Neumann tags to set
  * \param[in, out] p_enforced_ids  pointer to the Neumann tags to set
  */
 /*----------------------------------------------------------------------------*/
@@ -180,7 +179,6 @@ _setup(cs_real_t                     t_eval,
        const cs_equation_param_t    *eqp,
        cs_equation_builder_t        *eqb,
        cs_real_t                    *p_dir_values[],
-       short int                    *p_neu_tags[],
        cs_lnum_t                    *p_enforced_ids[])
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -201,9 +199,6 @@ _setup(cs_real_t                     t_eval,
                                    cs_cdovb_cell_bld[0], /* static variable */
                                    dir_values);
   *p_dir_values = dir_values;
-
-  /* Tag faces with a non-homogeneous Neumann BC */
-  *p_neu_tags = cs_equation_tag_neumann_face(quant, eqp);
 
   /* Internal enforcement of DoFs  */
   if (cs_equation_param_has_internal_enforcement(eqp)) {
@@ -234,7 +229,6 @@ _setup(cs_real_t                     t_eval,
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
  * \param[in]      eqb          pointer to a cs_equation_builder_t structure
  * \param[in]      dir_values   Dirichlet values associated to each vertex
- * \param[in]      neu_tags     definition id related to each Neumann face
  * \param[in]      forced_ids   indirection in case of internal enforcement
  * \param[in]      field_tn     values of the field at the last computed time
  * \param[in]      t_eval       time at which one performs the evaluation
@@ -249,7 +243,6 @@ _init_vb_cell_system(const cs_flag_t                cell_flag,
                      const cs_equation_param_t     *eqp,
                      const cs_equation_builder_t   *eqb,
                      const cs_real_t                dir_values[],
-                     const short int                neu_tags[],
                      const cs_lnum_t                forced_ids[],
                      const cs_real_t                field_tn[],
                      cs_real_t                      t_eval,
@@ -275,16 +268,13 @@ _init_vb_cell_system(const cs_flag_t                cell_flag,
      has at least one border face */
   if (cell_flag & CS_FLAG_BOUNDARY) {
 
-    /* Set the generic part */
-    cs_equation_init_cell_sys_bc(eqb, cm, csys);
-
     /* Set the bc (specific part) */
     cs_equation_vb_set_cell_bc(cm,
                                cs_shared_connect,
                                cs_shared_quant,
                                eqp,
+                               eqb->face_bc,
                                dir_values,
-                               neu_tags,
                                t_eval,
                                csys,
                                cb);
@@ -304,8 +294,7 @@ _init_vb_cell_system(const cs_flag_t                cell_flag,
 
       /* In case of a Dirichlet BC, this BC is applied and the enforcement
          is ignored */
-      if (csys->dof_flag[v] & CS_CDO_BC_DIRICHLET ||
-          csys->dof_flag[v] & CS_CDO_BC_HMG_DIRICHLET)
+      if (cs_cdo_bc_is_dirichlet(csys->dof_flag[v]))
         csys->intern_forced_ids[v] = -1;
       else {
         csys->intern_forced_ids[v] = id;
@@ -839,7 +828,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ;
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
     if (cs_equation_param_has_diffusion(eqp)) {
 
       switch (eqp->diffusion_hodge.algo) {
@@ -855,7 +844,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  (" %s: Invalid type of algorithm to build the diffusion term."),
+                  " %s: Invalid type of algorithm to build the diffusion term.",
                   __func__);
 
       } /* Switch on Hodge algo. */
@@ -868,7 +857,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ;
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
     if (cs_equation_param_has_diffusion(eqp)) {
 
       switch (eqp->diffusion_hodge.algo) {
@@ -980,7 +969,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     }
 
     /* Boundary conditions for advection */
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ;
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_PEQ;
     eqc->add_advection_bc = cs_cdo_advection_add_vb_bc;
 
   }
@@ -995,8 +984,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
-      eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ |
-        CS_CDO_LOCAL_HFQ;
+      eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_HFQ;
       eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     }
     else
@@ -1203,10 +1191,9 @@ cs_cdovb_scaleq_solve_steady_state(double                      dt_cur,
      with a tags to detect vertices related to a Neumann BC (dt_cur is a dummy
      argument) */
   cs_real_t  *dir_values = NULL;
-  short int  *neu_tags = NULL;
   cs_lnum_t  *forced_ids = NULL;
 
-  _setup(dt_cur, mesh, eqp, eqb, &dir_values, &neu_tags, &forced_ids);
+  _setup(dt_cur, mesh, eqp, eqb, &dir_values, &forced_ids);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1226,7 +1213,7 @@ cs_cdovb_scaleq_solve_steady_state(double                      dt_cur,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, neu_tags, forced_ids, fld, rs, cs_cdovb_cell_sys,  \
+         dir_values, forced_ids, fld, rs, cs_cdovb_cell_sys,            \
          cs_cdovb_cell_bld)
   {
     /* Set variables and structures inside the OMP section so that each thread
@@ -1270,8 +1257,7 @@ cs_cdovb_scaleq_solve_steady_state(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vb_cell_system(cell_flag, cm, eqp, eqb,
-                           dir_values, neu_tags, forced_ids,
-                           fld->val, time_eval,
+                           dir_values, forced_ids, fld->val, time_eval,
                            csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1332,7 +1318,6 @@ cs_cdovb_scaleq_solve_steady_state(double                      dt_cur,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   BFT_FREE(forced_ids);
 
   cs_matrix_assembler_values_finalize(&mav);
@@ -1410,10 +1395,9 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
   /* Build an array storing the Dirichlet values at vertices and another one
      with a tags to detect vertices related to a Neumann BC */
   cs_real_t  *dir_values = NULL;
-  short int  *neu_tags = NULL;
   cs_lnum_t  *forced_ids = NULL;
 
-  _setup(t_cur + dt_cur, mesh, eqp, eqb, &dir_values, &neu_tags, &forced_ids);
+  _setup(t_cur + dt_cur, mesh, eqp, eqb, &dir_values, &forced_ids);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1433,7 +1417,7 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, neu_tags, forced_ids, fld, rs, cs_cdovb_cell_sys,  \
+         dir_values, forced_ids, fld, rs, cs_cdovb_cell_sys,            \
          cs_cdovb_cell_bld)
   {
     /* Set variables and structures inside the OMP section so that each thread
@@ -1475,8 +1459,7 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vb_cell_system(cell_flag, cm, eqp, eqb,
-                           dir_values, neu_tags, forced_ids,
-                           fld->val, time_eval,
+                           dir_values, forced_ids, fld->val, time_eval,
                            csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1585,7 +1568,6 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   BFT_FREE(forced_ids);
   cs_matrix_assembler_values_finalize(&mav);
 
@@ -1664,10 +1646,9 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
      and another one with a tags to detect vertices related to a
      Neumann BC */
   cs_real_t  *dir_values = NULL;
-  short int  *neu_tags = NULL;
   cs_lnum_t  *forced_ids = NULL;
 
-  _setup(t_cur + dt_cur, mesh, eqp, eqb, &dir_values, &neu_tags, &forced_ids);
+  _setup(t_cur + dt_cur, mesh, eqp, eqb, &dir_values, &forced_ids);
 
   /* Initialize the local system: rhs */
   cs_real_t  *rhs = NULL;
@@ -1693,9 +1674,7 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
 
         assert(eqc->vtx_bc_flag != NULL);
         for (cs_lnum_t v = 0; v < n_vertices; v++) {
-          if (eqc->vtx_bc_flag[v] & CS_CDO_BC_HMG_DIRICHLET)
-            rhs[v] = 0.;
-          else if (eqc->vtx_bc_flag[v] & CS_CDO_BC_DIRICHLET)
+          if (cs_cdo_bc_is_dirichlet(eqc->vtx_bc_flag[v]))
             rhs[v] = 0.;
         }
 
@@ -1715,7 +1694,7 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values, \
-         neu_tags, fld, forced_ids, rs, cs_cdovb_cell_sys, cs_cdovb_cell_bld, \
+         fld, forced_ids, rs, cs_cdovb_cell_sys, cs_cdovb_cell_bld,           \
          compute_initial_source)
   {
     /* Set variables and structures inside the OMP section so that each thread
@@ -1759,8 +1738,7 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vb_cell_system(cell_flag, cm, eqp, eqb,
-                           dir_values, neu_tags, forced_ids,
-                           fld->val, time_eval,
+                           dir_values, forced_ids, fld->val, time_eval,
                            csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1910,7 +1888,6 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   BFT_FREE(forced_ids);
   cs_matrix_assembler_values_finalize(&mav);
 
@@ -1996,9 +1973,6 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 
   cs_cdovb_scaleq_set_dir_bc(mesh, eqp, eqb, t_cur + dt_cur, dir_values);
 
-  /* Tag faces with a non-homogeneous Neumann BC */
-  short int  *neu_tags = cs_equation_tag_neumann_face(quant, eqp);
-
   cs_lnum_t  *forced_ids = NULL;
   if (cs_equation_param_has_internal_enforcement(eqp))
     bft_error(__FILE__, __LINE__, 0,
@@ -2007,7 +1981,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)      \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,        \
-         dir_values, neu_tags, forced_ids, field_val,                    \
+         dir_values, forced_ids, field_val,                              \
          cs_cdovb_cell_sys, cs_cdovb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -2048,8 +2022,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vb_cell_system(cell_flag, cm, eqp, eqb,
-                           dir_values, neu_tags, forced_ids,
-                           field_val, time_eval,
+                           dir_values, forced_ids, field_val, time_eval,
                            csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
@@ -2246,7 +2219,6 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   cs_matrix_assembler_values_finalize(&mav);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
@@ -2614,7 +2586,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
       /* BOUNDARY CONDITIONS */
       if (cell_flag &  CS_FLAG_BOUNDARY) {
 
-        const cs_cdo_bc_t  *face_bc = eqb->face_bc;
+        const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
 
         /* Identify which face is a boundary face */
         for (short int f = 0; f < cm->n_fc; f++) {
@@ -2640,8 +2612,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
             /* Diffusive flux */
             if (cs_equation_param_has_diffusion(eqp)) {
-              if (face_bc->flag[bf_id] & CS_CDO_BC_DIRICHLET ||
-                  face_bc->flag[bf_id] & CS_CDO_BC_HMG_DIRICHLET) {
+              if (cs_cdo_bc_is_dirichlet(face_bc->flag[bf_id])) {
                 cs_cdovb_diffusion_p0_face_flux(cm,
                         (const cs_real_t (*)[3])cb->dpty_mat,
                                                 p_cur,
@@ -2662,7 +2633,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
           } /* Is a boundary face */
         } /* Loop on cell faces */
 
-      } /* BOUNDARY CONDITIONS */
+      } /* Boundary conditions */
 
     } /* Main loop on cells */
 

@@ -91,7 +91,9 @@ cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_BASE_STRING_LEN] =
     N_("Dirichlet"),
     N_("Homogeneous Neumann"),
     N_("Neumann"),
-    N_("Robin") };
+    N_("Robin"),
+    N_("Sliding")
+  };
 
 static const char
 cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =

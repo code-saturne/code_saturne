@@ -82,8 +82,8 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                   t_eval,
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
  * \param[in]      dir_values  Dirichlet values associated to each vertex
- * \param[in]      neu_tags    definition id related to each Neumann face
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
@@ -95,8 +95,8 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            const cs_cdo_connect_t       *connect,
                            const cs_cdo_quantities_t    *quant,
                            const cs_equation_param_t    *eqp,
+                           const cs_cdo_bc_face_t       *face_bc,
                            const cs_real_t               dir_values[],
-                           const short int               neu_tags[],
                            cs_real_t                     t_eval,
                            cs_cell_sys_t                *csys,
                            cs_cell_builder_t            *cb);
@@ -110,8 +110,8 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      dir_values  Dirichlet values associated to each vertex
- * \param[in]      neu_tags    definition id related to each Neumann face
+ * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
+ * \param[in]      dir_values  Dirichlet values associated to each face
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
@@ -123,8 +123,8 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            const cs_cdo_connect_t       *connect,
                            const cs_cdo_quantities_t    *quant,
                            const cs_equation_param_t    *eqp,
+                           const cs_cdo_bc_face_t       *face_bc,
                            const cs_real_t               dir_values[],
-                           const short int               neu_tags[],
                            cs_real_t                     t_eval,
                            cs_cell_sys_t                *csys,
                            cs_cell_builder_t            *cb);
@@ -138,7 +138,7 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      eqp         pointer to a cs_equation_param_t
- * \param[in]      face_bc     pointer to a cs_cdo_bc_t structure
+ * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] values      pointer to the array of values to set
@@ -150,7 +150,7 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
                                  const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_t          *face_bc,
+                                 const cs_cdo_bc_face_t     *face_bc,
                                  cs_real_t                   t_eval,
                                  cs_cell_builder_t          *cb,
                                  cs_real_t                  *values);
@@ -164,7 +164,7 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]      eqp        pointer to a cs_equation_param_t
- * \param[in]      face_bc    pointer to a cs_cdo_bc_t structure
+ * \param[in]      face_bc    pointer to a cs_cdo_bc_face_t structure
  * \param[in]      t_eval     time at which one evaluates the boundary cond.
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  * \param[in, out] values     pointer to the array of values to set
@@ -176,7 +176,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
                                  const cs_equation_param_t  *eqp,
-                                 const cs_cdo_bc_t          *face_bc,
+                                 const cs_cdo_bc_face_t     *face_bc,
                                  cs_real_t                   t_eval,
                                  cs_cell_builder_t          *cb,
                                  cs_real_t                  *values);
@@ -196,23 +196,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
 cs_flag_t *
 cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
-                               const cs_cdo_bc_t          *face_bc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Tag each face related to a Neumann BC with its definition id.
- *          Default tag is -1 (not a Neumann face)
- *
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]      eqp        pointer to a cs_equation_param_t
-
- * \return an array with prescribed tags
- */
-/*----------------------------------------------------------------------------*/
-
-short int *
-cs_equation_tag_neumann_face(const cs_cdo_quantities_t    *quant,
-                             const cs_equation_param_t    *eqp);
+                               const cs_cdo_bc_face_t     *face_bc);
 
 /*----------------------------------------------------------------------------*/
 /*!

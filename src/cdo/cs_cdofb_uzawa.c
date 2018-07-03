@@ -417,12 +417,9 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
                                             not used*/
                                    dir_values);
 
-  /* Tag faces with a non-homogeneous Neumann BC */
-  short int  *neu_tags = cs_equation_tag_neumann_face(quant, eqp);
-
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)   \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,      \
-         dir_values, neu_tags, zeta, vel_vals, pr_vals, sc)
+         dir_values, zeta, vel_vals, pr_vals, sc)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -476,9 +473,8 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       cs_cdofb_vecteq_init_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                                       dir_values, neu_tags,
-                                       vel_vals, time_eval,  /* in */
-                                       csys, cb);            /* out */
+                                       dir_values, vel_vals, time_eval, /* in */
+                                       csys, cb);                      /* out */
 
       const short int  n_fc = cm->n_fc, f_dofs = 3*n_fc;
 
@@ -682,7 +678,6 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   cs_matrix_assembler_values_finalize(&mav);
 
   cs_timer_t  t1 = cs_timer_time();
@@ -745,12 +740,11 @@ _update_pr_div_rhs(const cs_property_t          *relax,
       const cs_lnum_t f_id  = c2f->ids[f];
       const cs_lnum_t bf_id = f_id - quant->n_i_faces;
 
-      /* If Dirichlet (hmg or nhmg) boundary face, we should leave the rhs
+      /* If (hmg or nhmg) Dirichlet boundary face, we should leave the rhs
        * null --> velocity is already known and thus increment is zero */
       if ((bf_id > -1) && /* Boundary face and... */
-          (bc_flag[bf_id] & (CS_CDO_BC_HMG_DIRICHLET |
-                             CS_CDO_BC_DIRICHLET)))
-        continue;
+          cs_cdo_bc_is_dirichlet(bc_flag[bf_id]))
+          continue;
 
       const cs_nvec3_t pfq = cs_quant_set_face_nvec(f_id, quant);
 

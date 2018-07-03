@@ -217,7 +217,6 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
  * \param[in]      eqp           pointer to a cs_equation_param_t structure
  * \param[in, out] eqb           pointer to a cs_equation_builder_t structure
  * \param[in, out] p_dir_values  pointer to the Dirichlet values to set
- * \param[in, out] p_neu_tags    pointer to the Neumann tags to set
  */
 /*----------------------------------------------------------------------------*/
 
@@ -226,8 +225,7 @@ _setup_bc(cs_real_t                     t_eval,
           const cs_mesh_t              *mesh,
           const cs_equation_param_t    *eqp,
           cs_equation_builder_t        *eqb,
-          cs_real_t                    *p_dir_values[],
-          short int                    *p_neu_tags[])
+          cs_real_t                    *p_dir_values[])
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
@@ -247,9 +245,6 @@ _setup_bc(cs_real_t                     t_eval,
                                    cs_cdovcb_cell_bld[0], /* static variable */
                                    dir_values);
   *p_dir_values = dir_values;
-
-  /* Tag faces with a non-homogeneous Neumann BC */
-  *p_neu_tags = cs_equation_tag_neumann_face(quant, eqp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -262,7 +257,6 @@ _setup_bc(cs_real_t                     t_eval,
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         pointer to a cs_cdovcb_scaleq_t structure
  * \param[in]      dir_values  Dirichlet values associated to each vertex
- * \param[in]      neu_tags    Definition id related to each Neumann face
  * \param[in]      field_tn    values of the field at the last computed time
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -277,7 +271,6 @@ _init_vcb_cell_system(const cs_flag_t                 cell_flag,
                       const cs_equation_builder_t    *eqb,
                       const cs_cdovcb_scaleq_t       *eqc,
                       const cs_real_t                 dir_values[],
-                      const short int                 neu_tags[],
                       const cs_real_t                 field_tn[],
                       cs_real_t                       t_eval,
                       cs_cell_sys_t                  *csys,
@@ -306,16 +299,12 @@ _init_vcb_cell_system(const cs_flag_t                 cell_flag,
      has at least one border face */
   if (cell_flag & CS_FLAG_BOUNDARY) {
 
-    /* Set the generic part */
-    cs_equation_init_cell_sys_bc(eqb, cm, csys);
-
-    /* Set the bc (specific part) */
     cs_equation_vb_set_cell_bc(cm,
                                cs_shared_connect,
                                cs_shared_quant,
                                eqp,
+                               eqb->face_bc,
                                dir_values,
-                               neu_tags,
                                t_eval,
                                csys,
                                cb);
@@ -1149,9 +1138,8 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
      with a tags to detect vertices related to a Neumann BC (dt_cur is a dummy
      argument) */
   cs_real_t  *dir_values = NULL;
-  short int  *neu_tags = NULL;
 
-  _setup_bc(dt_cur, mesh, eqp, eqb, &dir_values, &neu_tags);
+  _setup_bc(dt_cur, mesh, eqp, eqb, &dir_values);
 
     /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1171,7 +1159,7 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, neu_tags, fld, rs, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
+         dir_values, fld, rs, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1212,8 +1200,8 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vcb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                            dir_values, neu_tags, fld->val, time_eval, /* in */
-                            csys, cb);                                 /* out */
+                            dir_values, fld->val, time_eval, /* in */
+                            csys, cb);                       /* out */
       /* Build and add the diffusion/advection/reaction term to the local
          system. A mass matrix is also built if needed (stored it cb->hdg) */
       _vcb_advection_diffusion_reaction(time_eval,
@@ -1271,7 +1259,6 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
@@ -1342,9 +1329,8 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
      with a tags to detect vertices related to a Neumann BC (dt_cur is a dummy
      argument) */
   cs_real_t  *dir_values = NULL;
-  short int  *neu_tags = NULL;
 
-  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values, &neu_tags);
+  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values);
 
     /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1364,7 +1350,7 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, neu_tags, fld, rs, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
+         dir_values, fld, rs, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1405,8 +1391,8 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vcb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                            dir_values, neu_tags, fld->val, time_eval, /* in */
-                            csys, cb);                                 /* out */
+                            dir_values, fld->val, time_eval, /* in */
+                            csys, cb);                       /* out */
       /* Build and add the diffusion/advection/reaction term to the local
          system. A mass matrix is also built if needed (stored it cb->hdg) */
       _vcb_advection_diffusion_reaction(time_eval,
@@ -1517,7 +1503,6 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
@@ -1591,9 +1576,8 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
      with a tags to detect vertices related to a Neumann BC (dt_cur is a dummy
      argument) */
   cs_real_t  *dir_values = NULL;
-  short int  *neu_tags = NULL;
 
-  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values, &neu_tags);
+  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1626,9 +1610,7 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
 
         assert(eqc->vtx_bc_flag != NULL);
         for (cs_lnum_t v = 0; v < n_vertices; v++) {
-          if (eqc->vtx_bc_flag[v] & CS_CDO_BC_HMG_DIRICHLET)
-            rhs[v] = 0.;
-          else if (eqc->vtx_bc_flag[v] & CS_CDO_BC_DIRICHLET)
+          if (cs_cdo_bc_is_dirichlet(eqc->vtx_bc_flag[v]))
             rhs[v] = 0.;
         }
 
@@ -1642,7 +1624,7 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, neu_tags, fld, rs, cs_cdovcb_cell_sys,             \
+         dir_values, fld, rs, cs_cdovcb_cell_sys,                       \
          cs_cdovcb_cell_bld, compute_initial_source)
   {
     /* Set variables and structures inside the OMP section so that each thread
@@ -1685,8 +1667,8 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vcb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                            dir_values, neu_tags, fld->val, time_eval, /* in */
-                            csys, cb);                                 /* out */
+                            dir_values, fld->val, time_eval, /* in */
+                            csys, cb);                       /* out */
       /* Build and add the diffusion/advection/reaction term to the local
          system. A mass matrix is also built if needed (stored it cb->hdg) */
       _vcb_advection_diffusion_reaction(time_eval,
@@ -1843,7 +1825,6 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
@@ -1923,12 +1904,9 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
   cs_cdovcb_scaleq_set_dir_bc(mesh, eqp, eqb, t_cur + dt_cur, dir_values);
 
-  /* Tag faces with a non-homogeneous Neumann BC */
-  short int  *neu_tags = cs_equation_tag_neumann_face(quant, eqp);
-
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)          \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values, \
-         neu_tags, field_val, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
+         field_val, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1970,8 +1948,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vcb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                            dir_values, neu_tags, field_val, time_eval, // in
-                            csys, cb);                                  // out
+                            dir_values, field_val, time_eval, /* in */
+                            csys, cb);                        /* out */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
       if (cs_dbg_cw_test(cm))
@@ -2209,7 +2187,6 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   cs_matrix_assembler_values_finalize(&mav);
 
   cs_timer_t  t1 = cs_timer_time();
