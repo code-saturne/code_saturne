@@ -744,29 +744,6 @@ _scalar_diffusion_value(int      num_sca,
   BFT_FREE(path);
 }
 
-/*----------------------------------------------------------------------------
- * Return the initialization choice of the turbulence variables.
- *----------------------------------------------------------------------------*/
-
-static char *
-_velocity_pressure_algo_choice(void)
-{
-  char *path = NULL;
-  char *algo_choice;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2,
-                        "numerical_parameters",
-                        "velocity_pressure_algo");
-  cs_xpath_add_attribute(&path, "choice");
-
-  algo_choice = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return algo_choice;
-}
-
 /*-----------------------------------------------------------------------------
  * Modify time parameters.
  *
@@ -2531,7 +2508,6 @@ void CS_PROCF (csivis, CSIVIS) (void)
 void CS_PROCF (csidtv, CSIDTV) (void)
 {
   double param;
-  int steady = 0;
   cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
 
   param = (double) time_opt->idtvar;
