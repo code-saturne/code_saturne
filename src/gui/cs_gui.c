@@ -74,6 +74,7 @@
 #include "cs_gui_boundary_conditions.h"
 #include "cs_gui_specific_physics.h"
 #include "cs_gui_mobile_mesh.h"
+#include "cs_geom.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_multigrid.h"
@@ -4635,7 +4636,8 @@ void CS_PROCF (uiprof, UIPROF) (void)
   const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  const cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
+  const cs_real_3_t *cell_cen
+    = (const cs_real_3_t *)(cs_glob_mesh_quantities->cell_cen);
 
   FILE *file = NULL;
   char *filename = NULL;
@@ -4648,8 +4650,7 @@ void CS_PROCF (uiprof, UIPROF) (void)
   int output_format = 0;
   int fic_nbr = 0;
   int i, ii, iii, idim;
-  int irang1, irangv;
-  cs_lnum_t npoint, iel1, iel;
+  cs_lnum_t npoint;
   int output_frequency = 0;
   int nvar_prop, nvar_prop4;
   double time_output;
@@ -4796,8 +4797,8 @@ void CS_PROCF (uiprof, UIPROF) (void)
         bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
       BFT_FREE(path);
 
-      iel1   = -999;
-      irang1 = -999;
+      cs_lnum_t  c_id1 = -999, c_id = -999;
+      int        rank1 = -999, c_rank = -999;
 
       a = 1. / (double) (npoint-1);
 
@@ -4817,20 +4818,18 @@ void CS_PROCF (uiprof, UIPROF) (void)
           z1 = xyz[2];
         }
 
-        CS_PROCF(findpt, FINDPT)(&n_cells_ext, &n_cells, cell_cen,
-                                &xyz[0], &xyz[1], &xyz[2],
-                                &iel,    &irangv);
+        cs_geom_closest_point(n_cells, cell_cen, xyz,
+                              &c_id, &c_rank);
 
-        if ((iel != iel1) || (irangv != irang1)) {
-          iel1 = iel;
-          irang1 = irangv;
+        if ((c_id != c_id1) || (c_rank != rank1)) {
+          c_id1 = c_id;
+          rank1 = c_rank;
 
-          if (cs_glob_rank_id == irangv) {
+          if (cs_glob_rank_id == c_rank) {
 
-            iel--;
-            xx = cell_cen[3 * iel + 0];
-            yy = cell_cen[3 * iel + 1];
-            zz = cell_cen[3 * iel + 2];
+            xx = cell_cen[c_id][0];
+            yy = cell_cen[c_id][1];
+            zz = cell_cen[c_id][2];
             array[1] = xx;
             array[2] = yy;
             array[3] = zz;
@@ -4849,12 +4848,12 @@ void CS_PROCF (uiprof, UIPROF) (void)
               if (f != NULL) {
                 if (f->type & CS_FIELD_VARIABLE) {
                   if (f->dim > 1)
-                    array[iii+4] = f->val[f->dim * iel + idim];
+                    array[iii+4] = f->val[f->dim * c_id + idim];
                   else
-                    array[iii+4] = f->val[iel + idim * n_cells_ext];
+                    array[iii+4] = f->val[c_id + idim * n_cells_ext];
                 }
                 else
-                  array[iii+4] = f->val[iel];
+                  array[iii+4] = f->val[c_id];
               }
               else {
                 char *label = _get_profile_label_name(i, iii);
@@ -4863,7 +4862,7 @@ void CS_PROCF (uiprof, UIPROF) (void)
                   f = cs_field_by_id(f_id);
                   const char *flab = cs_field_get_key_str(f, keylbl);
                   if (cs_gui_strcmp(label, flab))
-                    array[iii+4] = f->val[iel];
+                    array[iii+4] = f->val[c_id];
                 }
               }
 
@@ -4882,7 +4881,7 @@ void CS_PROCF (uiprof, UIPROF) (void)
             MPI_Bcast(array,
                       nvar_prop4,
                       CS_MPI_REAL,
-                      irangv,
+                      c_rank,
                       cs_glob_mpi_comm);
           }
 #endif
