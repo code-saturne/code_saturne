@@ -5,6 +5,9 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- GUI: fix default time stepping type (unsteady) when information missing
+  from the XML file.
+
 - Fix boundary value optional post-processing for scalars for other
   boundary conditions than walls.
 
