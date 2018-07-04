@@ -221,6 +221,9 @@ cs_rad_transfer_bcs(int         nvar,
 
   /* Map field arrays     */
   cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
+  if (f_b_temp == NULL)
+    f_b_temp = cs_field_by_name_try("wall_temperature");
+
   cs_field_t *f_bqinci = cs_field_by_name_try("rad_incident_flux");
   cs_field_t *f_bxlam  = cs_field_by_name_try("wall_thermal_conductivity");
   cs_field_t *f_bepa   = cs_field_by_name_try("wall_thickness");

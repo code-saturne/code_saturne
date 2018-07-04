@@ -288,6 +288,10 @@ cs_rad_transfer_prp(void)
 
     {
       f = cs_field_by_name_try("boundary_temperature");
+      if (f == NULL) {
+        f = cs_field_by_name_try("wall_temperature");
+      }
+
       if (f == NULL)
         f = cs_parameters_add_boundary_temperature();
 
