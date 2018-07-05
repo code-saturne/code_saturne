@@ -6827,7 +6827,9 @@ void CS_PROCF (grdpor, GRDPOR)
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict i_f_face_surf = mq->i_f_face_surf;
+  const cs_real_t *restrict i_face_surf = mq->i_face_surf;
   const cs_real_t *restrict b_f_face_surf = mq->b_f_face_surf;
+  const cs_real_t *restrict b_face_surf = mq->b_face_surf;
 
   const cs_int_t *restrict c_solid_flag = mq->c_solid_flag;
   int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
@@ -6875,7 +6877,8 @@ void CS_PROCF (grdpor, GRDPOR)
       cs_real_t d_f_surf = 0.;
       if (  c_solid_flag[is_p * ii] == 0
           &&c_solid_flag[is_p * jj] == 0)
-        d_f_surf = 1. / i_f_face_surf[face_id];
+        d_f_surf = 1.
+          / CS_MAX(i_f_face_surf[face_id], cs_math_epzero * i_face_surf[face_id]);
 
       i_poro_duq_0[face_id] = veli_dot_n * i_massflux[face_id] * d_f_surf;
       i_poro_duq_1[face_id] = velj_dot_n * i_massflux[face_id] * d_f_surf;
@@ -6902,7 +6905,8 @@ void CS_PROCF (grdpor, GRDPOR)
 
       cs_real_t d_f_surf = 0.;
       if (c_solid_flag[is_p * ii] == 0)
-        d_f_surf = 1. / b_f_face_surf[face_id];
+        d_f_surf = 1.
+          / CS_MAX(b_f_face_surf[face_id], cs_math_epzero * b_face_surf[face_id]);
 
       b_poro_duq[face_id] = veli_dot_n * b_massflux[face_id] * d_f_surf;
 
