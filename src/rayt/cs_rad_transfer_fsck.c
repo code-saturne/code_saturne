@@ -952,9 +952,6 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
   BFT_MALLOC(kloctmp, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
 
   cs_field_t *f_bound_t = cs_field_by_name_try("boundary_temperature");
-  if (f_bound_t == NULL)
-    f_bound_t = cs_field_by_name_try("wall_temperature");
-
   cs_real_t *tpfsck = f_bound_t->val;
 
   /* Read the data base files */

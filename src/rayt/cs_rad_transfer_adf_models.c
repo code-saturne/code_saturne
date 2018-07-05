@@ -177,8 +177,6 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
 
   cs_real_t *y, *tpaadf;
   cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
-  if (f_b_temp == NULL)
-    f_b_temp = cs_field_by_name_try("wall_temperature");
   BFT_MALLOC(y, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
 
   if (cs_glob_thermal_model->itpscl == 2) {
@@ -449,8 +447,6 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
 
   cs_real_t *tpaadf;
   cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
-  if (f_b_temp == NULL)
-    f_b_temp = cs_field_by_name_try("wall_temperature");
 
   if (cs_glob_thermal_model->itpscl == 2) {
 
