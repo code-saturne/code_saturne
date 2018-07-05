@@ -5,6 +5,9 @@ Release 5.0.9 (unreleased)
 Bug fixes
 ---------
 
+- GUI: fix bug for RSM coupled solver in the initilization of turbulent 
+  variables by formula.
+
 - GUI: fix default time stepping type (unsteady) when information missing
   from the XML file.
 

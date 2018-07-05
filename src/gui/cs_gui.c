@@ -3956,7 +3956,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                           _("Error: can not find the required symbol: %s\n"),
                           "r11, r22, r33, r12, r13, r23 or epsilon");
 
-              cs_field_t *c_r11 = cs_field_by_name("r11");
+              cs_field_t *c_r11 = cs_field_by_name_try("r11");
               cs_field_t *c_eps = cs_field_by_name("epsilon");
 
               if (c_r11 == NULL) {
@@ -4008,7 +4008,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                           _("Error: can not find the required symbol: %s\n"),
                           "r11, r22, r33, r12, r13, r23, epsilon or alpha");
 
-              cs_field_t *c_r11 = cs_field_by_name("r11");
+              cs_field_t *c_r11 = cs_field_by_name_try("r11");
               cs_field_t *c_eps = cs_field_by_name("epsilon");
               cs_field_t *c_alp = cs_field_by_name("alpha");
 
