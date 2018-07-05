@@ -136,7 +136,7 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t            *cm,
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
  * \param[in]      n_elts            number of elements to consider
- * \param[in]      elt_ids           pointer to the list od selected ids
+ * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
  * \param[in, out] values            pointer to the computed values
  */
@@ -278,7 +278,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
  * \param[in]      n_elts            number of elements to consider
- * \param[in]      elt_ids           pointer to the list od selected ids
+ * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
  * \param[in, out] values            pointer to the computed values
  */
@@ -370,7 +370,7 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
  * \param[in]      n_loc_elts        number of elements to consider
- * \param[in]      elt_ids           pointer to the list od selected ids
+ * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
  * \param[in, out] values            pointer to the computed values
  */
@@ -464,7 +464,7 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
  * \param[in]      n_loc_elts        number of elements to consider
- * \param[in]      elt_ids           pointer to the list od selected ids
+ * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
  * \param[in, out] values            pointer to the computed values
  */
@@ -564,7 +564,7 @@ _pcva_by_analytic(cs_real_t                        time_eval,
  *
  * \param[in]      const_val   constant value
  * \param[in]      n_elts      number of elements to consider
- * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      elt_ids     pointer to the list of selected ids
  * \param[in, out] values      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -606,7 +606,7 @@ _dcsd_by_value(const cs_real_t    const_val,
  *
  * \param[in]      const_vec   constant vector
  * \param[in]      n_elts      number of elements to consider
- * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      elt_ids     pointer to the list of selected ids
  * \param[in, out] values      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -660,7 +660,7 @@ _dcvd_by_value(const cs_real_t    const_vec[3],
  *
  * \param[in]      const_val   constant value
  * \param[in]      n_elts      number of elements to consider
- * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      elt_ids     pointer to the list of selected ids
  * \param[in, out] values      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -695,7 +695,7 @@ _pcsd_by_value(const cs_real_t    const_val,
  *
  * \param[in]      const_val   constant value
  * \param[in]      n_loc_elts  number of elements to consider
- * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      elt_ids     pointer to the list of selected ids
  * \param[in, out] values      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -731,7 +731,7 @@ _pcsa_by_value(const cs_real_t    const_val,
  *
  * \param[in]      const_vec   constant values
  * \param[in]      n_elts      number of elements to consider
- * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      elt_ids     pointer to the list of selected ids
  * \param[in, out] values      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -773,7 +773,7 @@ _pcvd_by_value(const cs_real_t     const_vec[3],
  *
  * \param[in]      const_vec   constant values
  * \param[in]      n_loc_elts  number of elements to consider
- * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      elt_ids     pointer to the list of selected ids
  * \param[in, out] values      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -812,7 +812,7 @@ _pcva_by_value(const cs_real_t     const_vec[3],
  * \param[in]      ana         pointer to the analytic function
  * \param[in]      input       NULL or pointer to a structure cast on-the-fly
  * \param[in]      n_elts      number of elements to consider
- * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      elt_ids     pointer to the list of selected ids
  * \param[in]      dim         dimension of the variable to handle
  * \param[in, out] values      pointer to the computed values
  */
@@ -838,7 +838,7 @@ _pfp_by_analytic(cs_real_t              time_eval,
   for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
     todo[f_id] = true;
 
-  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+  for (cs_lnum_t i = 0; i < n_elts; i++) {  /* Loop on selected cells */
 
     cs_lnum_t  c_id = elt_ids[i];
 
@@ -867,7 +867,7 @@ _pfp_by_analytic(cs_real_t              time_eval,
  * \param[in]      ana               pointer to the analytic function
  * \param[in]      input             NULL or pointer cast on-the-fly
  * \param[in]      n_loc_elts        number of elements to consider
- * \param[in]      elt_ids           pointer to the list od selected ids
+ * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
  * \param[in, out] values            pointer to the computed values
  */
@@ -1012,7 +1012,7 @@ _pfsa_by_analytic(cs_real_t                       time_eval,
  * \param[in]      ana                 pointer to the analytic function
  * \param[in]      input               NULL or pointer cast on-the-fly
  * \param[in]      n_loc_elts          number of elements to consider
- * \param[in]      elt_ids             pointer to the list od selected ids
+ * \param[in]      elt_ids             pointer to the list of selected ids
  * \param[in]      compute_integral    function pointer
  * \param[in, out] values              pointer to the computed values
  */
@@ -1164,7 +1164,7 @@ _pfva_by_analytic(cs_real_t                       time_eval,
  * \param[in]      ana         pointer to the analytic function
  * \param[in]      input       NULL or pointer to a structure cast on-the-fly
  * \param[in]      n_elts      number of elements to consider
- * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      elt_ids     pointer to the list of selected ids
  * \param[in, out] values      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -1218,11 +1218,11 @@ _pvp_by_analytic(cs_real_t              time_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the values at each primal faces for a scalar potential
+ * \brief  Get the values at each primal faces for a scalar-valued potential
  *
  * \param[in]      const_val   constant value
  * \param[in]      n_elts      number of elements to consider
- * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      elt_ids     pointer to the list of selected ids
  * \param[in, out] values      pointer to the array storing the values
  */
 /*----------------------------------------------------------------------------*/
@@ -1244,7 +1244,7 @@ _pfsp_by_value(const cs_real_t    const_val,
   for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
     todo[f_id] = true;
 
-  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+  for (cs_lnum_t i = 0; i < n_elts; i++) {  /* Loop on selected cells */
 
     cs_lnum_t  c_id = elt_ids[i];
 
@@ -1254,7 +1254,7 @@ _pfsp_by_value(const cs_real_t    const_val,
       if (todo[f_id])
         values[f_id] = const_val, todo[f_id] = false;
 
-    } /* Loop on cell vertices */
+    } /* Loop on cell faces */
 
   } /* Loop on selected cells */
 
@@ -1263,11 +1263,11 @@ _pfsp_by_value(const cs_real_t    const_val,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the values at each primal faces for a scalar potential
+ * \brief  Get the values at each primal faces for a vector-valued potential
  *
  * \param[in]      const_vec   constant value
  * \param[in]      n_elts      number of elements to consider
- * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      elt_ids     pointer to the list of selected ids
  * \param[in, out] values      pointer to the array storing the values
  */
 /*----------------------------------------------------------------------------*/
@@ -1284,13 +1284,12 @@ _pfvp_by_value(const cs_real_t    const_vec[3],
 
   /* Initialize todo array */
   bool  *todo = NULL;
-
   BFT_MALLOC(todo, quant->n_faces, bool);
 # pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
     todo[f_id] = true;
 
-  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+  for (cs_lnum_t i = 0; i < n_elts; i++) {  /* Loop on selected cells */
 
     cs_lnum_t  c_id = elt_ids[i];
 
@@ -1302,7 +1301,7 @@ _pfvp_by_value(const cs_real_t    const_vec[3],
         memcpy(values + 3*f_id, const_vec, _3real);
       }
 
-    } /* Loop on cell vertices */
+    } /* Loop on cell faces */
 
   } /* Loop on selected cells */
 
@@ -1338,7 +1337,7 @@ _untag_frontier_vertices(cs_lnum_t      c_id,
           cell_tag[m->i_face_cells[f_id][1]] == false) {
 
         for (cs_lnum_t i = f2v_idx[f_id]; i < f2v_idx[f_id+1]; i++)
-          vtx_tag[f2v_lst[i]] = 0; // untag
+          vtx_tag[f2v_lst[i]] = 0;  /* untag */
 
       }
     } /* This face belongs to the frontier of the selection (only interior) */
@@ -1354,7 +1353,7 @@ _untag_frontier_vertices(cs_lnum_t      c_id,
  *
  * \param[in]      quantity_val  amount of quantity to distribute
  * \param[in]      n_elts        number of elements to consider
- * \param[in]      elt_ids       pointer to the list od selected ids
+ * \param[in]      elt_ids       pointer to the list of selected ids
  * \param[in, out] values        pointer to the array storing the values
  */
 /*----------------------------------------------------------------------------*/
@@ -1502,7 +1501,7 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
  *
  * \param[in]      const_val   constant value
  * \param[in]      n_elts      number of elements to consider
- * \param[in]      elt_ids     pointer to the list od selected ids
+ * \param[in]      elt_ids     pointer to the list of selected ids
  * \param[in, out] values      pointer to the array storing the values
  */
 /*----------------------------------------------------------------------------*/
@@ -1803,13 +1802,13 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
     if (def->meta & CS_FLAG_FULL_LOC) /* All cells are selected */
       anai->func(time_eval,
                  quant->n_cells, NULL, quant->cell_centers,
-                 false, // compacted output
+                 false,  /* compacted output */
                  anai->input,
                  retval);
     else
       anai->func(time_eval,
                  z->n_elts, z->elt_ids, quant->cell_centers,
-                 false, // compacted output
+                 false,  /* compacted output */
                  anai->input,
                  retval);
 
@@ -1928,7 +1927,7 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
           retval[c_id] = const_val;
       }
       else
-        for (cs_lnum_t i = 0; i < z->n_elts; i++) // Loop on selected cells
+        for (cs_lnum_t i = 0; i < z->n_elts; i++)  /* Loop on selected cells */
           retval[z->elt_ids[i]] = const_val;
 
     } /* Located at primal cells or dual vertices */
@@ -1937,7 +1936,7 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
 
   }
-  else if (dof_flag & CS_FLAG_VECTOR) { /* DoF is scalar-valued */
+  else if (dof_flag & CS_FLAG_VECTOR) { /* DoF is vector-valued */
 
     const size_t _3real = 3*sizeof(cs_real_t);
 

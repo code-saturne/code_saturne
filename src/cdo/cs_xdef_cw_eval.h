@@ -1011,25 +1011,26 @@ cs_xdef_eval_int_on_cell_faces(const cs_cell_mesh_t            *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer for evaluating a the reduction by averages of a
+ * \brief  Function pointer for evaluating the reduction by averages of a
  *         analytic function by a cellwise process (usage of a
  *         cs_cell_mesh_t structure) which is hinged on integrals
- *         (faces first, then cell DoFs)
+ *         (faces first, then cell).
+ *         Vector-valued case
  *
- * \param[in]  cm       pointer to a cs_cell_mesh_t structure
- * \param[in]  t_eval   physical time at which one evaluates the term
- * \param[in]  qtype    quadrature type
- * \param[in]  input    pointer to an input structure
- * \param[out] eval     result of the evaluation
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval   physical time at which one evaluates the term
+ * \param[in]      qtype    quadrature type
+ * \param[in]      input    pointer to an input structure
+ * \param[in, out] eval     result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_vect_avg_reduction_by_analytic(const cs_cell_mesh_t    *cm,
-                                               cs_real_t                t_eval,
-                                               void                    *input,
-                                               cs_quadrature_type_t     qtype,
-                                               cs_real_t               *eval);
+cs_xdef_cw_eval_vect_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
+                                               cs_real_t                 t_eval,
+                                               void                     *input,
+                                               cs_quadrature_type_t      qtype,
+                                               cs_real_t                *eval);
 
 /*----------------------------------------------------------------------------*/
 

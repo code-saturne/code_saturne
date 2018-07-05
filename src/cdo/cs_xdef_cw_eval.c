@@ -132,7 +132,7 @@ cs_xdef_cw_eval_face_int(const cs_cell_mesh_t            *cm,
         }
       }
 
-  } // Switch
+  } /* Switch */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1447,16 +1447,19 @@ cs_xdef_eval_int_on_cell_faces(const cs_cell_mesh_t             *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer for evaluating a the reduction by averages of a
- *         analytic function by a cellwise process (usage of a
- *         cs_cell_mesh_t structure) which is hinged on integrals
- *         (faces first, then cell DoFs)
  *
- * \param[in]  cm       pointer to a cs_cell_mesh_t structure
- * \param[in]  t_eval   physical time at which one evaluates the term
- * \param[in]  qtype    quadrature type
- * \param[in]  input    pointer to an input structure
- * \param[out] eval     result of the evaluation
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the reduction by averages of a
+ *         analytic function by a cellwise process (usage of a cs_cell_mesh_t
+ *         structure) which is hinged on integrals  (faces first, then cell)
+ *         Vector-valued case
+ *
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval   physical time at which one evaluates the term
+ * \param[in]      qtype    quadrature type
+ * \param[in]      input    pointer to an input structure
+ * \param[in, out] eval     result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1475,24 +1478,26 @@ cs_xdef_cw_eval_vect_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
+  const int  dim = 3;
+  const short int nf = cm->n_fc;
+
   cs_quadrature_tetra_integral_t
     *q_tet = cs_quadrature_get_tetra_integral(3, qtype);
   cs_quadrature_tria_integral_t
     *q_tri = cs_quadrature_get_tria_integral(3, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_real_t *c_eval = eval + dim*nf;
 
-  const short int nf = cm->n_fc;
-  cs_real_t *c_eval = eval + 3*nf;
   cs_xdef_eval_int_on_cell_faces(cm, t_eval,
                                  anai->func, anai->input,
-                                 3, //dimension
+                                 dim,
                                  q_tet, q_tri,
                                  c_eval, eval);
 
   /* Compute the averages */
   for (short int f = 0; f < nf; f++) {
     const cs_real_t _os = 1. / cm->face[f].meas;
-    cs_real_t *f_eval = eval + 3*f;
+    cs_real_t *f_eval = eval + dim*f;
     f_eval[0] *= _os, f_eval[1] *= _os, f_eval[2] *= _os;
   }
 
