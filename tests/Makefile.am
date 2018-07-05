@@ -111,6 +111,7 @@ check_PROGRAMS += \
 cs_all_to_all_test \
 cs_blas_test \
 cs_check_cdo \
+cs_check_quadrature \
 cs_check_sdm \
 cs_core_test \
 cs_file_test \
@@ -155,6 +156,11 @@ cs_check_cdo$(EXEEXT):
 	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_check_cdo $(top_srcdir)/tests/cs_check_cdo.c
+
+cs_check_quadrature$(EXEEXT):
+	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	-o cs_check_quadrature $(top_srcdir)/tests/cs_check_quadrature.c
 
 cs_check_sdm$(EXEEXT):
 	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \

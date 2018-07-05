@@ -38,8 +38,10 @@
 #include "cs_cdo_diffusion.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
+#include "cs_cdofb_scaleq.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_equation_param.h"
+#include "cs_evaluate.h"
 #include "cs_hho_builder.h"
 #include "cs_hho_scaleq.h"
 #include "cs_hodge.h"
@@ -51,6 +53,9 @@
 #include "cs_source_term.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
+#include "cs_xdef_cw_eval.h"
+#include "cs_xdef_eval.h"
+
 
 /*----------------------------------------------------------------------------*/
 
@@ -79,11 +84,22 @@ static cs_cdo_connect_t  *connect = NULL;
 static cs_cdo_quantities_t  *quant = NULL;
 static cs_time_step_t  *time_step = NULL;
 
+static const double non_poly_int[] = { 1.1319870772271508,  /* Hexa */
+                                       0.0801351697078868}; /* Tetra */
+static double non_poly_int_f[2][6] = {
+  {0.6587901114231911, 0.6587901114231911, 1.7907771886504419,
+   1.7907771886504419, 0.6587901114231911, 1.7907771886504419},
+  {0.2231301601484198, 0.2231301601484198, 0.2231301601484198,
+   0.5252709594852753, 0., 0.}
+};
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
 
-/* Test functions */
+/* Test function based on analytic definition
+ * Fill array with 1
+ */
 static void
 _unity(cs_real_t         time,
        cs_lnum_t         n_pts,
@@ -97,12 +113,40 @@ _unity(cs_real_t         time,
   CS_UNUSED(xyz);
   CS_UNUSED(input);
 
-  if (pt_ids != NULL && !compact)
-    for (cs_lnum_t i = 0; i < n_pts; i++) retval[pt_ids[i]] = 1.0;
-  else
-    for (cs_lnum_t i = 0; i < n_pts; i++) retval[i] = 1.0;
+  for (cs_lnum_t i = 0; i < n_pts; i++) {
+    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  r = compact ? i : p;
+    retval[r] = 1.0;
+  }
 }
 
+/* Test function based on analytic definition
+ * Fill array with [1, 1, 1]
+ */
+static void
+_unity_vect(cs_real_t         time,
+            cs_lnum_t         n_pts,
+            const cs_lnum_t  *pt_ids,
+            const cs_real_t  *xyz,
+            bool              compact,
+            void             *input,
+            cs_real_t         retval[])
+{
+  CS_UNUSED(time);
+  CS_UNUSED(xyz);
+  CS_UNUSED(input);
+
+  for (cs_lnum_t i = 0; i < n_pts; i++) {
+    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  r = compact ? i : p;
+    for (int j = 0; j < 3; j++)
+      retval[3*r+j] = 1.0;
+  }
+}
+
+/* Test function based on analytic definition
+ * Fill array with x+y+z
+ */
 static void
 _linear_xyz(cs_real_t          time,
             cs_lnum_t          n_pts,
@@ -115,29 +159,40 @@ _linear_xyz(cs_real_t          time,
   CS_UNUSED(time);
   CS_UNUSED(input);
 
-  if (pt_ids != NULL && !compact) {
-
-    for (cs_lnum_t i = 0; i < n_pts; i++) {
-      cs_lnum_t id = pt_ids[i];
-      retval[id] = xyz[3*id] + xyz[3*id+1] + xyz[3*id+2];
-    }
-
+  for (cs_lnum_t i = 0; i < n_pts; i++) {
+    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  r = compact ? i : p;
+    retval[r] = xyz[3*p] + xyz[3*p+1] + xyz[3*p+2];
   }
-  else if (pt_ids != NULL && compact) {
+}
 
-    for (cs_lnum_t i = 0; i < n_pts; i++) {
-      cs_lnum_t id = pt_ids[i];
-      retval[i] = xyz[3*id] + xyz[3*id+1] + xyz[3*id+2];
-    }
+/* Test function based on analytic definition
+ * Fill array with [x, 2*y, 3*z]
+ */
+static void
+_linear_xyz_vect(cs_real_t          time,
+                 cs_lnum_t          n_pts,
+                 const cs_lnum_t   *pt_ids,
+                 const cs_real_t   *xyz,
+                 bool               compact,
+                 void              *input,
+                 cs_real_t          retval[])
+{
+  CS_UNUSED(time);
+  CS_UNUSED(input);
 
-  }
-  else {
-    for (cs_lnum_t i = 0; i < n_pts; i++)
-      retval[i] = xyz[3*i] + xyz[3*i+1] + xyz[3*i+2];
+  for (cs_lnum_t i = 0; i < n_pts; i++) {
+    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  r = compact ? 3*i : p;
+    for (int j = 0; j < 3; j++)
+      retval[r+j] = (j+1) * xyz[p+j];
   }
 
 }
 
+/* Test function based on analytic definition
+ * Fill array with x*x
+ */
 static void
 _quadratic_x2(cs_real_t          time,
               cs_lnum_t          n_pts,
@@ -150,62 +205,107 @@ _quadratic_x2(cs_real_t          time,
   CS_UNUSED(input);
   CS_UNUSED(time);
 
-  if (pt_ids != NULL && !compact) {
-
-    for (cs_lnum_t i = 0; i < n_pts; i++) {
-      cs_lnum_t id = pt_ids[i];
-      retval[id] = xyz[3*id]*xyz[3*id];
-    }
-
-  }
-  else if (pt_ids != NULL && compact) {
-
-    for (cs_lnum_t i = 0; i < n_pts; i++) {
-      cs_lnum_t id = pt_ids[i];
-      retval[i] = xyz[3*id]*xyz[3*id];
-    }
-
-  }
-  else {
-
-    for (cs_lnum_t i = 0; i < n_pts; i++)
-      retval[i] = xyz[3*i]*xyz[3*i];
-
+  for (cs_lnum_t i = 0; i < n_pts; i++) {
+    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  r = compact ? i : p;
+    retval[r] = xyz[3*p]*xyz[3*p];
   }
 }
 
+/* Test function based on analytic definition
+ * Fill array with [x*x, x*x, x*x]
+ */
 static void
-_nonpoly(cs_real_t         time,
-         cs_lnum_t         n_pts,
-         const cs_lnum_t  *pt_ids,
-         const cs_real_t  *xyz,
-         bool              compact,
-         void             *input,
-         cs_real_t         retval[])
+_quadratic_x2_vect(cs_real_t          time,
+                   cs_lnum_t          n_pts,
+                   const cs_lnum_t   *pt_ids,
+                   const cs_real_t   *xyz,
+                   bool               compact,
+                   void              *input,
+                   cs_real_t          retval[])
+{
+  CS_UNUSED(time);
+  CS_UNUSED(input);
+
+  for (cs_lnum_t i = 0; i < n_pts; i++) {
+    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  r = compact ? 3*i : p;
+    const cs_real_t  x2 = xyz[p]*xyz[p];
+    for (int j = 0; j < 3; j++)
+      retval[r+j] = x2;
+  }
+
+}
+
+/* Test function based on analytic definition
+ * Fill array with x*x + y*y + z*z
+ */
+static void
+_quadratic_xyz2(cs_real_t          time,
+                cs_lnum_t          n_pts,
+                const cs_lnum_t   *pt_ids,
+                const cs_real_t   *xyz,
+                bool               compact,
+                void              *input,
+                cs_real_t          retval[])
 {
   CS_UNUSED(input);
   CS_UNUSED(time);
 
-  if (pt_ids != NULL && !compact) {
-
-    for (cs_lnum_t i = 0; i < n_pts; i++) {
-      cs_lnum_t id = pt_ids[i];
-      retval[id] = exp(xyz[3*id]+xyz[3*id+1]+xyz[3*id+1]-1.5);
-    }
-
+  for (cs_lnum_t i = 0; i < n_pts; i++) {
+    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  r = compact ? i : p;
+    retval[r] = cs_math_3_square_norm(xyz + 3*p);
   }
-  else if (pt_ids != NULL && compact) {
 
-    for (cs_lnum_t i = 0; i < n_pts; i++) {
-      cs_lnum_t id = pt_ids[i];
-      retval[i] = exp(xyz[3*id]+xyz[3*id+1]+xyz[3*id+1]-1.5);
-    }
+}
 
+
+/* Test function based on analytic definition
+ * Fill array with [x*x*x, y*y*y, z*z*z]
+ */
+static void
+_cubic_xyz3_vect(cs_real_t          time,
+                 cs_lnum_t          n_pts,
+                 const cs_lnum_t   *pt_ids,
+                 const cs_real_t   *xyz,
+                 bool               compact,
+                 void              *input,
+                 cs_real_t          retval[])
+{
+  CS_UNUSED(time);
+  CS_UNUSED(input);
+
+  for (cs_lnum_t i = 0; i < n_pts; i++) {
+    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  r = compact ? 3*i : p;
+    for (short int j = 0; j < 3; j++)
+      retval[r+j] = cs_math_pow3(xyz[p+j]);
   }
-  else {
 
-    for (cs_lnum_t i = 0; i < n_pts; i++)
-      retval[i] = exp(xyz[3*i]+xyz[3*i+1]+xyz[3*i+1]-1.5);
+}
+
+/* Test function based on analytic definition
+ * Fill array with [exp(x+y+z-1.5), exp(x+y+z-1.5), exp(x+y+z-1.5)]
+ */
+static void
+_nonpoly_vect(cs_real_t          time,
+              cs_lnum_t          n_pts,
+              const cs_lnum_t   *pt_ids,
+              const cs_real_t   *xyz,
+              bool               compact,
+              void              *input,
+              cs_real_t          retval[])
+{
+  CS_UNUSED(time);
+  CS_UNUSED(input);
+
+  for (cs_lnum_t i = 0; i < n_pts; i++) {
+    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  r = compact ? 3*i : p;
+    const cs_real_t  eval = exp(xyz[p]+xyz[p+1]+xyz[p+2]-1.5);
+    for (int j = 0; j < 3; j++)
+      retval[r+j] = eval;
   }
 
 }
@@ -699,8 +799,6 @@ _define_cm_tetra_ref(double            a,
     for (short int vj = vi+1; vj < cm->n_vc; vj++, shift++) {
       double  l = dbuf[shift] = cs_math_3_distance(xvi, cm->xv + 3*vj);
       if (l > cm->diam_c) cm->diam_c = l;
-      fprintf(tetra_hho1, "(%d, %d) l = %.5e --> diam = %.5e\n",
-              vi, vj, l, cm->diam_c);
 
     } /* Loop on vj > vi */
   }   /* Loop on vi */
@@ -877,8 +975,6 @@ _test_cdovb_schemes(FILE                *out,
                     cs_cell_sys_t       *csys,
                     cs_cell_builder_t   *cb)
 {
-  const double  tcur = 0.;
-
   /* Initialize a cell view of the algebraic system */
   csys->n_dofs = cm->n_vc;
   cs_sdm_square_init(csys->n_dofs, csys->mat);
@@ -1060,241 +1156,6 @@ _test_cdovb_schemes(FILE                *out,
 
   /* ADVECTION: BOUNDARY FLUX OPERATOR */
   /* ================================= */
-
-  /* SOURCE TERM */
-  /* =========== */
-
-  const int  n_runs = 1000;
-  cs_real_t  st0_values[8], st1_values[8], st2_values[8], st3_values[8];
-  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
-  cs_flag_t  meta_flag = cs_source_term_set_default_flag(CS_SPACE_SCHEME_CDOVB);
-
-  /* Evaluate the performance */
-  cs_timer_counter_t  tc0, tc1, tc2, tc3;
-  CS_TIMER_COUNTER_INIT(tc0); // build system
-  CS_TIMER_COUNTER_INIT(tc1); // build system
-  CS_TIMER_COUNTER_INIT(tc2); // build system
-  CS_TIMER_COUNTER_INIT(tc3); // build system
-
-  {
-    cs_xdef_analytic_input_t  anai = {.func = _unity,
-                                      .input = NULL };
-
-    cs_xdef_t  *stu = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                            1,
-                                            0, // z_id
-                                            state_flag,
-                                            meta_flag,
-                                            &anai);
-
-    // Loop on runs to evaluate the performance of each quadrature
-    for (int r = 0; r < n_runs; r++) {
-
-      /* Reset */
-      for (int v = 0; v < cm->n_vc; v++)
-        st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
-
-      cs_timer_t  t0 = cs_timer_time();
-      cs_source_term_dcsd_bary_by_analytic(stu, cm, tcur, cb, NULL,
-                                           st0_values);
-      cs_timer_t  t1 = cs_timer_time();
-      cs_source_term_dcsd_q1o1_by_analytic(stu, cm, tcur, cb, NULL,
-                                           st1_values);
-      cs_timer_t  t2 = cs_timer_time();
-      cs_source_term_dcsd_q10o2_by_analytic(stu, cm, tcur, cb, NULL,
-                                            st2_values);
-      cs_timer_t  t3 = cs_timer_time();
-      cs_source_term_dcsd_q5o3_by_analytic(stu, cm, tcur, cb, NULL,
-                                           st3_values);
-      cs_timer_t  t4 = cs_timer_time();
-
-      cs_timer_counter_add_diff(&(tc0), &t0, &t1);
-      cs_timer_counter_add_diff(&(tc1), &t1, &t2);
-      cs_timer_counter_add_diff(&(tc2), &t2, &t3);
-      cs_timer_counter_add_diff(&(tc3), &t3, &t4);
-
-    }
-
-    fprintf(out, "\nCDO.VB; SOURCE_TERM P0\n");
-    fprintf(out, " V %12s %12s %12s %12s\n",
-            "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
-    for (int i = 0; i < cm->n_vc; i++)
-      fprintf(out, "%2d %10.6e %10.6e %10.6e %10.6e\n",
-              i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
-
-    stu = cs_xdef_free(stu);
-  }
-
-
-  /* Test with a linear function */
-  {
-    cs_xdef_analytic_input_t  anai = {.func = _linear_xyz,
-                                      .input = NULL };
-
-    cs_xdef_t  *stl = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                            1,
-                                            0, // z_id
-                                            state_flag,
-                                            meta_flag,
-                                            &anai);
-
-    // Loop on runs to evaluate the performance of each quadrature
-    for (int r = 0; r < n_runs; r++) {
-
-      /* Reset */
-      for (int v = 0; v < cm->n_vc; v++)
-        st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
-
-      cs_timer_t  t0 = cs_timer_time();
-      cs_source_term_dcsd_bary_by_analytic(stl, cm, tcur, cb, NULL,
-                                           st0_values);
-      cs_timer_t  t1 = cs_timer_time();
-      cs_source_term_dcsd_q1o1_by_analytic(stl, cm, tcur, cb, NULL,
-                                           st1_values);
-      cs_timer_t  t2 = cs_timer_time();
-      cs_source_term_dcsd_q10o2_by_analytic(stl, cm, tcur, cb, NULL,
-                                            st2_values);
-      cs_timer_t  t3 = cs_timer_time();
-      cs_source_term_dcsd_q5o3_by_analytic(stl, cm, tcur, cb, NULL,
-                                           st3_values);
-      cs_timer_t  t4 = cs_timer_time();
-
-      cs_timer_counter_add_diff(&(tc0), &t0, &t1);
-      cs_timer_counter_add_diff(&(tc1), &t1, &t2);
-      cs_timer_counter_add_diff(&(tc2), &t2, &t3);
-      cs_timer_counter_add_diff(&(tc3), &t3, &t4);
-
-    }
-
-    fprintf(out, "\nCDO.VB; SOURCE_TERM P1\n");
-    fprintf(out, " V %12s %12s %12s %12s\n",
-            "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
-    for (int i = 0; i < cm->n_vc; i++)
-      fprintf(out, "%2d %10.6e %10.6e %10.6e %10.6e\n",
-              i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
-
-    stl = cs_xdef_free(stl);
-  }
-
-  {  /* Test with a quadratic (x*x) function */
-    cs_xdef_analytic_input_t  anai = {.func = _quadratic_x2,
-                                      .input = NULL };
-
-    cs_xdef_t  *stq = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                            1,
-                                            0, // z_id
-                                            state_flag,
-                                            meta_flag,
-                                            &anai);
-
-    // Loop on runs to evaluate the performance of each quadrature
-    for (int r = 0; r < n_runs; r++) {
-
-      /* Reset */
-      for (int v = 0; v < cm->n_vc; v++)
-        st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
-
-      cs_timer_t  t0 = cs_timer_time();
-      cs_source_term_dcsd_bary_by_analytic(stq, cm, tcur, cb, NULL,
-                                           st0_values);
-      cs_timer_t  t1 = cs_timer_time();
-      cs_source_term_dcsd_q1o1_by_analytic(stq, cm, tcur, cb, NULL,
-                                           st1_values);
-      cs_timer_t  t2 = cs_timer_time();
-      cs_source_term_dcsd_q10o2_by_analytic(stq, cm, tcur, cb, NULL,
-                                            st2_values);
-      cs_timer_t  t3 = cs_timer_time();
-      cs_source_term_dcsd_q5o3_by_analytic(stq, cm, tcur, cb, NULL,
-                                           st3_values);
-      cs_timer_t  t4 = cs_timer_time();
-
-      cs_timer_counter_add_diff(&(tc0), &t0, &t1);
-      cs_timer_counter_add_diff(&(tc1), &t1, &t2);
-      cs_timer_counter_add_diff(&(tc2), &t2, &t3);
-      cs_timer_counter_add_diff(&(tc3), &t3, &t4);
-
-    }
-
-    fprintf(out, "\nCDO.VB; SOURCE_TERM P2\n");
-    fprintf(out, " V %12s %12s %12s %12s\n",
-            "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
-    for (int i = 0; i < cm->n_vc; i++)
-      fprintf(out, "%2d %10.6e %10.6e %10.6e %10.6e\n",
-              i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
-
-    stq = cs_xdef_free(stq);
-  }
-
-  {  /* Test with a non-polynomial function */
-    cs_xdef_analytic_input_t  anai = {.func = _nonpoly,
-                                      .input = NULL };
-
-    cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                           1,
-                                           0, // z_id
-                                           state_flag,
-                                           meta_flag,
-                                           &anai);
-    cs_real_t  exact_result[8] = {0.0609162, // V (0.0,0.0,0.0)
-                                  0.100434,  // V (1.0,0.0,0.0)
-                                  0.165587,  // V (1.0,1.0,0.0)
-                                  0.100434,  // V (0.0,1.0,0.0)
-                                  0.100434,  // V (0.0,0.0,1.0)
-                                  0.165587,  // V (1.0,0.0,1.0)
-                                  0.273007,  // V (1.0,1.0,1.0)
-                                  0.165587}; // V (0.0,1.0,1.0)
-    // Loop on runs to evaluate the performance of each quadrature
-    for (int r = 0; r < n_runs; r++) {
-
-      /* Reset */
-      for (int v = 0; v < cm->n_vc; v++)
-        st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
-
-      cs_timer_t  t0 = cs_timer_time();
-      cs_source_term_dcsd_bary_by_analytic(st, cm, tcur, cb, NULL,
-                                           st0_values);
-      cs_timer_t  t1 = cs_timer_time();
-      cs_source_term_dcsd_q1o1_by_analytic(st, cm, tcur, cb, NULL,
-                                           st1_values);
-      cs_timer_t  t2 = cs_timer_time();
-      cs_source_term_dcsd_q10o2_by_analytic(st, cm, tcur, cb, NULL,
-                                            st2_values);
-      cs_timer_t  t3 = cs_timer_time();
-      cs_source_term_dcsd_q5o3_by_analytic(st, cm, tcur, cb, NULL,
-                                           st3_values);
-      cs_timer_t  t4 = cs_timer_time();
-
-      cs_timer_counter_add_diff(&(tc0), &t0, &t1);
-      cs_timer_counter_add_diff(&(tc1), &t1, &t2);
-      cs_timer_counter_add_diff(&(tc2), &t2, &t3);
-      cs_timer_counter_add_diff(&(tc3), &t3, &t4);
-
-    }
-
-    fprintf(out, "\nCDO.VB; SOURCE_TERM NON-POLY\n");
-    fprintf(out, " V %12s %12s %12s %12s\n",
-            "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
-    for (int i = 0; i < cm->n_vc; i++)
-      fprintf(out, "%2d % 10.6e % 10.6e % 10.6e % 10.6e\n",
-              i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
-    if (cm->n_vc == 8) {
-      fprintf(out, " V %12s %12s %12s %12s (ERROR)\n",
-              "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
-      for (int i = 0; i < cm->n_vc; i++)
-        fprintf(out, "%2d % 10.6e % 10.6e % 10.6e % 10.6e\n",
-                i, st0_values[i]-exact_result[i], st1_values[i]-exact_result[i],
-                st2_values[i]-exact_result[i], st3_values[i]-exact_result[i]);
-    }
-
-    st = cs_xdef_free(st);
-  }
-
-  fprintf(out, "\nCDO.VB; PERFORMANCE OF SOURCE TERMS\n");
-  fprintf(out, " %12s %12s %12s %12s\n",
-          "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
-  fprintf(out, " %10.6e %10.6e %10.6e %10.6e\n",
-          tc0.wall_nsec*1e-9, tc1.wall_nsec*1e-9,
-          tc2.wall_nsec*1e-9, tc3.wall_nsec*1e-9);
 
 }
 
@@ -1715,10 +1576,12 @@ _test_hho_schemes(FILE                *out,
       for (int i = 0; i < 3*cm->n_fc+4; i++)
         reduction_uni[i] = reduction_xyz[i] = reduction_x2[i] = 0.0;
 
-      /* cs_hho_builder_reduction_from_analytic(uni, cm, tcur, cb, hhob, reduction_uni); */
+      /* cs_hho_builder_reduction_from_analytic(uni, cm, tcur,
+                                                cb, hhob, reduction_uni); */
       cs_hho_builder_reduction_from_analytic(lin, cm, tcur, cb, hhob,
                                              reduction_xyz);
-      /* cs_hho_builder_reduction_from_analytic(x2 , cm, tcur, cb, hhob, reduction_x2); */
+      /* cs_hho_builder_reduction_from_analytic(x2 , cm, tcur,
+                                                cb, hhob, reduction_x2); */
 
       fprintf(out, "\n Reduction of polynomial functions.\n"
               "    const   |   linear   | quadratic\n");
@@ -1853,7 +1716,7 @@ _main_hho_schemes(FILE             *out_hho,
           inertia[1][0], inertia[1][1], inertia[1][2],
           inertia[2][0], inertia[2][1], inertia[2][2]);
 
-  /* _test_basis_functions(out_hho, order, cm, cb); */
+  _test_basis_functions(out_hho, order, cm, cb);
   _test_hho_schemes(out_hho, order, cm, fm, csys, cb, hhob);
 
   cs_hho_scaleq_finalize_common();
@@ -1927,6 +1790,185 @@ _main_cdovb_schemes(FILE             *out,
   _test_cdovb_schemes(out, cm, fm, csys, cb);
 
   cs_cdovb_scaleq_finalize_common();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the divergence matrix associated to the current cell.
+ *
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] div        divergence
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_compute_divergence(const cs_cell_mesh_t  *cm,
+                    cs_real_t              div[])
+{
+  /* D(\hat{u}) = \frac{1}{|c|} \sum_{f_c} \iota_{fc} u_f.f
+   * But, when integrating [[ p, q ]]_{P_c} = |c| p_c q_c
+   * Thus, the volume in the divergence drops
+   */
+  /* It is copied from cdfb_stokes */
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    cs_real_t *_div_f = div + 3 * f;
+    const cs_quant_t pfq = cm->face[f];
+    const cs_real_t i_f = cm->f_sgn[f] * pfq.meas;
+
+    _div_f[0] = i_f * pfq.unitv[0];
+    _div_f[1] = i_f * pfq.unitv[1];
+    _div_f[2] = i_f * pfq.unitv[2];
+
+  } /* End for f */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Test quadrature functions on scalar, vector or tensor valued
+ *          analytic functions
+ *
+ * \param[in]    out       output file
+ * \param[in]    cm        pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_test_divergence(FILE                     *out,
+                 const cs_cell_mesh_t     *cm,
+                 cs_cell_builder_t        *cb)
+{
+  const short int nf = cm->n_fc, totdof = 3*(nf+1);
+  const cs_real_t ov = 1. / cm->vol_c;
+
+  cs_real_t *red;
+  BFT_MALLOC(red, totdof, cs_real_t);
+
+  cs_real_t *const  div = cb->aux->val;
+  _compute_divergence(cm, div);
+
+  /* No cell contribution */
+  memset(div + 3* nf, 0, 3*sizeof(cs_real_t));
+
+  /* Error valid only for a unitary cube */
+  memset(red, 0, totdof*sizeof(cs_real_t));
+
+  { /* Constant */
+    cs_xdef_analytic_input_t  anai = {.func = _unity_vect, .input = NULL };
+
+    cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
+                                                   (void*)(&anai),
+                                                   CS_QUADRATURE_HIGHEST, red);
+
+    fprintf(out, "\n CDO.FB; DIVERGENCE; P0; |ERR(Div_c)| = %10.6e\n",
+            fabs(ov*cs_sdm_dot(totdof, red, div)) );
+  }
+
+  { /* Linear */
+    cs_xdef_analytic_input_t  anai = {.func = _linear_xyz_vect, .input = NULL };
+    cs_real_t  ex_div = 0.0;
+
+    cs_xdef_cw_eval_c_int_by_analytic(cm, time_step->t_cur,
+                                         _unity, NULL,
+                                         cs_quadrature_tet_1pt_scal,
+                                         &ex_div);
+    ex_div *= 6. * ov;
+    cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
+                                                   (void*)(&anai),
+                                                   CS_QUADRATURE_HIGHEST, red);
+
+    fprintf(out, "\n CDO.FB; DIVERGENCE; P1; |ERR(Div_c)| = %10.6e\n",
+            fabs(ov*cs_sdm_dot(totdof, red, div) - ex_div) );
+  }
+
+  { /* Quadratic */
+    cs_xdef_analytic_input_t  anai = {.func = _quadratic_x2_vect,
+                                      .input = NULL };
+    cs_real_t ex_div = 0.0;
+
+    cs_xdef_cw_eval_c_int_by_analytic(cm, time_step->t_cur,
+                                         _linear_xyz, NULL,
+                                         cs_quadrature_tet_5pts_scal,
+                                         &ex_div);
+    ex_div *= 2. *ov;
+    cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
+                                                   (void*)(&anai),
+                                                   CS_QUADRATURE_HIGHEST, red);
+
+    fprintf(out, "\n CDO.FB; DIVERGENCE; P2; |ERR(Div_c)| = %10.6e\n",
+            fabs(ov*cs_sdm_dot(totdof, red, div) - ex_div) );
+  }
+
+  { /* Cubic */
+    cs_xdef_analytic_input_t  anai = {.func = _cubic_xyz3_vect, .input = NULL };
+    cs_real_t ex_div = 0.0;
+
+    cs_xdef_cw_eval_c_int_by_analytic(cm, time_step->t_cur,
+                                         _quadratic_xyz2, NULL,
+                                         cs_quadrature_tet_5pts_scal, &ex_div);
+    ex_div *= 3. * ov;
+    cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
+                                                   (void*)(&anai),
+                                                   CS_QUADRATURE_HIGHEST, red);
+
+    fprintf(out, "\n CDO.FB; DIVERGENCE; P3; |ERR(Div_c)| = %10.6e\n",
+            fabs(ov*cs_sdm_dot(totdof, red, div) - ex_div) );
+  }
+
+  { /* Non pol */
+    cs_xdef_analytic_input_t  anai = {.func = _nonpoly_vect, .input = NULL };
+
+    memset(red, 0, totdof*sizeof(cs_real_t));
+    cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
+                                                   (void*)(&anai),
+                                                   CS_QUADRATURE_HIGHEST, red);
+
+    const short int  type = (cm->type == FVM_CELL_TETRA);
+    const double  inte = non_poly_int[type] * ov;
+    const cs_real_t  ex_div = 3*inte;
+    for (short int f = 0; f < nf; f++) {
+      const double  val = non_poly_int_f[type][f] / cm->face[f].meas;
+      red[3*f] = red[3*f+1] = red[3*f+2] = val;
+    }
+    red[3*nf] = red[3*nf+1] = red[3*nf+2] = inte;
+
+    fprintf(out, "\n CDO.FB; DIVERGENCE; NP; |ERR(Div_c)| = %10.6e\n",
+            fabs(ov*cs_sdm_dot(totdof, red, div) - ex_div) );
+  }
+
+  BFT_FREE(red);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Test quadrature functions on scalar, vector and tensor valued
+ *          analytic functions
+ *
+ * \param[in]    out    output file
+ * \param[in]    cm     pointer to a cs_cell_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_main_cdofb_schemes(FILE             *out,
+                    cs_cell_mesh_t   *cm)
+{
+  cs_cell_builder_t  *cb = NULL;
+  cs_cell_sys_t  *csys = NULL;
+
+  cs_cdofb_scaleq_init_common(quant, connect, time_step, NULL);
+  cs_cdofb_scaleq_get(&csys, &cb);
+
+  fprintf(out, "\nWORKING ON ");
+  if (cm->type == FVM_CELL_HEXA) fprintf(out, "** HEXA **\n");
+  else                           fprintf(out, "** TETRA **\n");
+
+  /* Test divergence / gradient */
+  _test_divergence(out, cm, cb);
+
+  cs_cdofb_scaleq_finalize_common();
 }
 
 /*============================================================================
@@ -2011,8 +2053,11 @@ main(int    argc,
   /* Operate several basic tests on CDO-Vb schemes */
   _main_cdovb_schemes(hexa, 0, cm, fm);
 
+  /* Operate several basic tests on CDO-Fb schemes */
+  _main_cdofb_schemes(hexa, cm);
+
   /* _main_hho_schemes(hexa_hho0, CS_FLAG_SCHEME_POLY0, cm, fm); */
-  /* _main_hho_schemes(hexa_hho1, CS_FLAG_SCHEME_POLY1, cm, fm); */
+  _main_hho_schemes(hexa_hho1, CS_FLAG_SCHEME_POLY1, cm, fm);
   /* _main_hho_schemes(hexa_hho2, CS_FLAG_SCHEME_POLY2, cm, fm); */
 
   /* ========== */
@@ -2025,6 +2070,9 @@ main(int    argc,
   cs_face_mesh_build_from_cell_mesh(cm, 2, fm);
 
   _main_cdovb_schemes(tetra, 1, cm, fm);
+
+  /* Operate several basic tests on CDO-Fb schemes */
+  _main_cdofb_schemes(tetra, cm);
 
   /* _main_hho_schemes(tetra_hho0, CS_FLAG_SCHEME_POLY0, cm, fm); */
   _main_hho_schemes(tetra_hho1, CS_FLAG_SCHEME_POLY1, cm, fm);
