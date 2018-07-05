@@ -302,7 +302,7 @@ cs_rad_transfer_read(void)
 
   /* Boundary faces    */
   {
-    cs_field_t *f_btemp = cs_field_by_name_try("boundary_temperature");
+    cs_field_t *f_btemp = CS_F_(t_b);
     char rubriq[64];
     snprintf(rubriq, 63, "boundary_temperature::vals::0");
     rubriq[63] = '\0';
