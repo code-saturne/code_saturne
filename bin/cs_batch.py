@@ -789,7 +789,7 @@ class batch:
         if rm_type == 'SLURM':
             cmd_prefix = 'sbatch '
         elif rm_type == 'CCC':
-            cmd_prefix = 'msub '
+            cmd_prefix = 'ccc_msub '
         elif rm_type == 'LOADL':
             cmd_prefix = 'llsubmit '
         elif rm_type == 'LSF':
