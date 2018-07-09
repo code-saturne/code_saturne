@@ -604,13 +604,61 @@ cs_xdef_cw_eval_tensor_face_avg_by_array(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_face_int(const cs_cell_mesh_t            *cm,
-                         double                           t_eval,
-                         short int                        f,
-                         cs_analytic_func_t              *ana,
-                         void                            *input,
-                         cs_quadrature_tria_integral_t   *qfunc,
-                         cs_real_t                       *eval);
+cs_xdef_cw_eval_f_int_by_analytic(const cs_cell_mesh_t            *cm,
+                                  double                           t_eval,
+                                  short int                        f,
+                                  cs_analytic_func_t              *ana,
+                                  void                            *input,
+                                  cs_quadrature_tria_integral_t   *qfunc,
+                                  cs_real_t                       *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Integrate an analytic function over a cell
+ *
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval   time at which the function is evaluated
+ * \param[in]      ana      analytic function to integrate
+ * \param[in]      input    pointer to an input structure
+ * \param[in]      qfunc    quadrature function to use
+ * \param[in, out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_cw_eval_c_int_by_analytic(const cs_cell_mesh_t            *cm,
+                                  double                           t_eval,
+                                  cs_analytic_func_t              *ana,
+                                  void                            *input,
+                                  cs_quadrature_tetra_integral_t  *qfunc,
+                                  cs_real_t                       *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Routine to integrate an analytic function over a cell and its faces
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  t_eval   physical time at which one evaluates the term
+ * \param[in]  ana      analytic function to integrate
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  dim      dimension of the function
+ * \param[in]  q_tet    quadrature function to use on tetrahedra
+ * \param[in]  q_tri    quadrature function to use on triangles
+ * \param[out] c_int    result of the evaluation on the cell
+ * \param[out] f_int    result of the evaluation on the faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t            *cm,
+                                   cs_real_t                        t_eval,
+                                   cs_analytic_func_t              *ana,
+                                   void                            *input,
+                                   const short int                  dim,
+                                   cs_quadrature_tetra_integral_t  *q_tet,
+                                   cs_quadrature_tria_integral_t   *q_tri,
+                                   cs_real_t                       *c_int,
+                                   cs_real_t                       *f_int);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -683,27 +731,6 @@ cs_xdef_cw_eval_tensor_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Integrate an analytic function over a cell
- *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval   time at which the function is evaluated
- * \param[in]      ana      analytic function to integrate
- * \param[in]      input    pointer to an input structure
- * \param[in]      qfunc    quadrature function to use
- * \param[in, out] eval     result of the evaluation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_cw_eval_cell_int_by_analytic(const cs_cell_mesh_t            *cm,
-                                     double                           t_eval,
-                                     cs_analytic_func_t              *ana,
-                                     void                            *input,
-                                     cs_quadrature_tetra_integral_t  *qfunc,
-                                     cs_real_t                       *eval);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Function pointer for evaluating a quantity defined through a
  *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
  *         cs_cell_mesh_t structure) which is hinged on integrals
@@ -727,7 +754,8 @@ cs_xdef_cw_eval_scalar_avg_by_analytic(const cs_cell_mesh_t     *cm,
 /*!
  * \brief  Function pointer for evaluating a quantity defined through a
  *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
- *         cs_cell_mesh_t structure) which is hinged on integrals
+ *         cs_cell_mesh_t structure) which is hinged on integrals.
+ *         Vector-valued case.
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
@@ -738,7 +766,7 @@ cs_xdef_cw_eval_scalar_avg_by_analytic(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_avg_vector_by_analytic(const cs_cell_mesh_t     *cm,
+cs_xdef_cw_eval_vector_avg_by_analytic(const cs_cell_mesh_t     *cm,
                                        cs_real_t                 t_eval,
                                        void                     *input,
                                        cs_quadrature_type_t      qtype,
@@ -749,6 +777,7 @@ cs_xdef_cw_eval_avg_vector_by_analytic(const cs_cell_mesh_t     *cm,
  * \brief  Function pointer for evaluating a quantity defined through a
  *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
  *         cs_cell_mesh_t structure) which is hinged on integrals
+ *         Tensor-valued case.
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
@@ -759,7 +788,7 @@ cs_xdef_cw_eval_avg_vector_by_analytic(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_avg_tensor_by_analytic(const cs_cell_mesh_t     *cm,
+cs_xdef_cw_eval_tensor_avg_by_analytic(const cs_cell_mesh_t     *cm,
                                        cs_real_t                 t_eval,
                                        void                     *input,
                                        cs_quadrature_type_t      qtype,
@@ -981,33 +1010,6 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                         void                      *input,
                                         cs_quadrature_type_t       qtype,
                                         cs_real_t                 *eval);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Routine to integrate an analytic function over a cell and its faces
- *
- * \param[in]  cm       pointer to a cs_cell_mesh_t structure
- * \param[in]  t_eval   physical time at which one evaluates the term
- * \param[in]  ana      analytic function to integrate
- * \param[in]  input    pointer to an input structure
- * \param[in]  dim      dimension of the function
- * \param[in]  q_tet    quadrature function to use on tetrahedra
- * \param[in]  q_tri    quadrature function to use on triangles
- * \param[out] c_int    result of the evaluation on the cell
- * \param[out] f_int    result of the evaluation on the faces
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_eval_int_on_cell_faces(const cs_cell_mesh_t            *cm,
-                               cs_real_t                        t_eval,
-                               cs_analytic_func_t              *ana,
-                               void                            *input,
-                               const short int                  dim,
-                               cs_quadrature_tetra_integral_t  *q_tet,
-                               cs_quadrature_tria_integral_t   *q_tri,
-                               cs_real_t                       *c_int,
-                               cs_real_t                       *f_int);
 
 /*----------------------------------------------------------------------------*/
 /*!

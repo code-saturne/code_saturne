@@ -653,17 +653,17 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
       case CS_XDEF_BY_VALUE:
         if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
-          compute_source[st_id] = cs_source_term_fbvd_by_value;
+          compute_source[st_id] = cs_source_term_pcvd_by_value;
         else
-          compute_source[st_id] = cs_source_term_fbsd_by_value;
+          compute_source[st_id] = cs_source_term_pcsd_by_value;
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
         msh_flag |= CS_CDO_LOCAL_PV;
         if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
-          compute_source[st_id] = cs_source_term_fbvd_bary_by_analytic;
+          compute_source[st_id] = cs_source_term_pcvd_bary_by_analytic;
         else
-          compute_source[st_id] = cs_source_term_fbsd_bary_by_analytic;
+          compute_source[st_id] = cs_source_term_pcsd_bary_by_analytic;
         break;
 
       case CS_XDEF_BY_ARRAY:
@@ -1754,7 +1754,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
+cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
                              cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
@@ -1794,7 +1794,7 @@ cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
+cs_source_term_pcvd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
                              cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
@@ -1836,7 +1836,7 @@ cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
+cs_source_term_pcsd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
                                      cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
@@ -1884,7 +1884,7 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
+cs_source_term_pcvd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
                                      cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,

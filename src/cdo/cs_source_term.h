@@ -517,7 +517,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
+cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
                              cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
@@ -542,7 +542,7 @@ cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
+cs_source_term_pcvd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
                              cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,
@@ -569,7 +569,7 @@ cs_source_term_fbvd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
+cs_source_term_pcsd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
                                      cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,
@@ -596,7 +596,7 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_fbvd_bary_by_analytic(const cs_xdef_t           *source,
+cs_source_term_pcvd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
                                      cs_real_t                  time_eval,
                                      cs_cell_builder_t         *cb,

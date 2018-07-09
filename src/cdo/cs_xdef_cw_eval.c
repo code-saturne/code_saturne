@@ -94,45 +94,256 @@ static const char _err_empty_array[] =
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_face_int(const cs_cell_mesh_t            *cm,
-                         double                           t_eval,
-                         short int                        f,
-                         cs_analytic_func_t              *ana,
-                         void                            *input,
-                         cs_quadrature_tria_integral_t   *qfunc,
-                         cs_real_t                       *eval)
+cs_xdef_cw_eval_f_int_by_analytic(const cs_cell_mesh_t            *cm,
+                                  double                           t_eval,
+                                  short int                        f,
+                                  cs_analytic_func_t              *ana,
+                                  void                            *input,
+                                  cs_quadrature_tria_integral_t   *qfunc,
+                                  cs_real_t                       *eval)
 {
   const cs_quant_t  pfq = cm->face[f];
   const int  start = cm->f2e_idx[f];
   const int  end = cm->f2e_idx[f+1];
-  const short int n_vf = end - start; // #vertices (=#edges)
+  const short int n_vf = end - start;  /* #vertices (=#edges) */
   const short int *f2e_ids = cm->f2e_ids + start;
 
   switch (n_vf) {
-    case CS_TRIANGLE_CASE:
-      {
-        short int  v0, v1, v2;
-        cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+  case CS_TRIANGLE_CASE:
+    {
+      short int  v0, v1, v2;
+      cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-        qfunc(t_eval, cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
-              ana, input, eval);
+      qfunc(t_eval, cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
+            ana, input, eval);
+    }
+    break;
+
+  default:
+    {
+      const double *tef = cm->tef + start;
+      for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+        /* Edge-related variables */
+        const short int e0  = f2e_ids[e];
+        const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
+        const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+
+        qfunc(t_eval, xv0, xv1, pfq.center, tef[e], ana, input, eval);
       }
-      break;
-    default:
-      {
-        const double *tef = cm->tef + start;
-        for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
-
-          // Edge-related variables
-          const short int e0  = f2e_ids[e];
-          const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
-          const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
-
-          qfunc(t_eval, xv0, xv1, pfq.center, tef[e], ana, input, eval);
-        }
-      }
+    }
 
   } /* Switch */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Integrate an analytic function over a cell
+ *
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval   time at which the function is evaluated
+ * \param[in]      ana      analytic function to integrate
+ * \param[in]      input    pointer to an input structure
+ * \param[in]      qfunc    quadrature function to use
+ * \param[in, out] eval     result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_cw_eval_c_int_by_analytic(const cs_cell_mesh_t            *cm,
+                                  double                           t_eval,
+                                  cs_analytic_func_t              *ana,
+                                  void                            *input,
+                                  cs_quadrature_tetra_integral_t  *qfunc,
+                                  cs_real_t                       *eval)
+{
+  switch (cm->type) {
+
+  case FVM_CELL_TETRA:
+    {
+      assert(cm->n_fc == 4 && cm->n_vc == 4);
+      qfunc(t_eval, cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
+            ana, input, eval);
+    }
+    break;
+
+  case FVM_CELL_PYRAM:
+  case FVM_CELL_PRISM:
+  case FVM_CELL_HEXA:
+  case FVM_CELL_POLY:
+    {
+      for (short int f = 0; f < cm->n_fc; ++f) {
+
+        const cs_quant_t  pfq = cm->face[f];
+        const double  hf_coef = cs_math_onethird * cm->hfc[f];
+        const int  start = cm->f2e_idx[f];
+        const int  end = cm->f2e_idx[f+1];
+        const short int n_vf = end - start; /* #vertices (=#edges) */
+        const short int *f2e_ids = cm->f2e_ids + start;
+
+        assert(n_vf > 2);
+        switch(n_vf){
+
+        case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
+          {
+            short int  v0, v1, v2;
+            cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+
+            const double  *xv0 = cm->xv + 3*v0;
+            const double  *xv1 = cm->xv + 3*v1;
+            const double  *xv2 = cm->xv + 3*v2;
+
+            qfunc(t_eval, xv0, xv1, xv2, cm->xc, hf_coef * pfq.meas,
+                  ana, input, eval);
+          }
+          break;
+
+        default:
+          {
+            const double  *tef = cm->tef + start;
+
+            for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+              /* Edge-related variables */
+              const short int e0  = f2e_ids[e];
+              const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
+              const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+
+              qfunc(t_eval, xv0, xv1, pfq.center, cm->xc, hf_coef * tef[e],
+                    ana, input, eval);
+            }
+          }
+          break;
+
+        } /* End of switch */
+      } /* End of loop on faces */
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,  _(" Unknown cell-type.\n"));
+    break;
+
+  } /* End of switch on the cell-type */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Routine to integrate an analytic function over a cell and its faces
+ *
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  t_eval   physical time at which one evaluates the term
+ * \param[in]  ana      analytic function to integrate
+ * \param[in]  input    pointer to an input structure
+ * \param[in]  dim      dimension of the function
+ * \param[in]  q_tet    quadrature function to use on tetrahedra
+ * \param[in]  q_tri    quadrature function to use on triangles
+ * \param[out] c_int    result of the evaluation on the cell
+ * \param[out] f_int    result of the evaluation on the faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
+                                   cs_real_t                         t_eval,
+                                   cs_analytic_func_t               *ana,
+                                   void                             *input,
+                                   const short int                   dim,
+                                   cs_quadrature_tetra_integral_t   *q_tet,
+                                   cs_quadrature_tria_integral_t    *q_tri,
+                                   cs_real_t                        *c_int,
+                                   cs_real_t                        *f_int)
+{
+  short int  v0, v1, v2;
+
+  const short int  nf = cm->n_fc;
+
+  /* Switch on the cell-type: optimised version for tetra */
+  switch (cm->type) {
+
+  case FVM_CELL_TETRA:
+    {
+      assert(cm->n_fc == 4 && cm->n_vc == 4);
+      q_tet(t_eval, cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
+            ana, input, c_int);
+
+      for (short int f = 0; f < nf; ++f) {
+
+        const cs_quant_t  pfq = cm->face[f];
+        const short int  *f2e_ids = cm->f2e_ids + cm->f2e_idx[f];
+
+        cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+        q_tri(t_eval, cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
+              ana, input, f_int + dim*f);
+      }
+    }
+    break;
+
+  case FVM_CELL_PYRAM:
+  case FVM_CELL_PRISM:
+  case FVM_CELL_HEXA:
+  case FVM_CELL_POLY:
+  {
+    for (short int f = 0; f < nf; ++f) {
+
+      const cs_quant_t  pfq = cm->face[f];
+      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const int  start = cm->f2e_idx[f];
+      const int  end = cm->f2e_idx[f+1];
+      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int *f2e_ids = cm->f2e_ids + start;
+
+      assert(n_vf > 2);
+      switch(n_vf){
+
+      case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
+        {
+          cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+
+          const double  *xv0 = cm->xv + 3*v0;
+          const double  *xv1 = cm->xv + 3*v1;
+          const double  *xv2 = cm->xv + 3*v2;
+
+          q_tet(t_eval, xv0, xv1, xv2, cm->xc,  hf_coef * pfq.meas,
+                ana, input, c_int);
+          q_tri(t_eval, cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
+                ana, input, f_int + dim*f);
+        }
+        break;
+
+      default:
+        {
+          const double  *tef = cm->tef + start;
+
+          for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+            // Edge-related variables
+            const short int e0  = f2e_ids[e];
+            const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
+            const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
+
+            q_tet(t_eval, xv0, xv1, pfq.center, cm->xc, hf_coef*tef[e],
+                  ana, input, c_int);
+            q_tri(t_eval, xv0, xv1, pfq.center, tef[e],
+                  ana, input, f_int + dim*f);
+
+          }
+        }
+        break;
+
+      } /* End of switch */
+
+    } /* End of loop on faces */
+
+  }
+  break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,  _(" Unknown cell-type.\n"));
+    break;
+
+  } /* End of switch on the cell-type */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -170,8 +381,8 @@ cs_xdef_cw_eval_scalar_face_avg_by_analytic(const cs_cell_mesh_t   *cm,
     *qfunc = cs_quadrature_get_tria_integral(1, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
-  cs_xdef_cw_eval_face_int(cm, time_eval, f,
-                           anai->func, anai->input, qfunc, eval);
+  cs_xdef_cw_eval_f_int_by_analytic(cm, time_eval, f,
+                                    anai->func, anai->input, qfunc, eval);
 
   /* Average */
   eval[0] /= cm->face[f].meas;
@@ -212,8 +423,8 @@ cs_xdef_cw_eval_vector_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
     *qfunc = cs_quadrature_get_tria_integral(3, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
-  cs_xdef_cw_eval_face_int(cm, t_eval, f,
-                           anai->func, anai->input, qfunc, eval);
+  cs_xdef_cw_eval_f_int_by_analytic(cm, t_eval, f,
+                                    anai->func, anai->input, qfunc, eval);
 
   /* Average */
   const double _oversurf = 1./cm->face[f].meas;
@@ -256,105 +467,13 @@ cs_xdef_cw_eval_tensor_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
     *qfunc = cs_quadrature_get_tria_integral(9, qtype);;
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
-  cs_xdef_cw_eval_face_int(cm, t_eval, f,
-                           anai->func, anai->input, qfunc, eval);
+  cs_xdef_cw_eval_f_int_by_analytic(cm, t_eval, f,
+                                    anai->func, anai->input, qfunc, eval);
 
   /* Average */
   const double _oversurf = 1./cm->face[f].meas;
   for (short int i = 0; i < 9; i++)
     eval[i] *= _oversurf;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Integrate an analytic function over a cell
- *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval   time at which the function is evaluated
- * \param[in]      ana      analytic function to integrate
- * \param[in]      input    pointer to an input structure
- * \param[in]      qfunc    quadrature function to use
- * \param[in, out] eval     result of the evaluation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_cw_eval_cell_int_by_analytic(const cs_cell_mesh_t            *cm,
-                                     double                           t_eval,
-                                     cs_analytic_func_t              *ana,
-                                     void                            *input,
-                                     cs_quadrature_tetra_integral_t  *qfunc,
-                                     cs_real_t                       *eval)
-{
-  switch (cm->type) {
-
-  case FVM_CELL_TETRA:
-    {
-      assert(cm->n_fc == 4 && cm->n_vc == 4);
-      qfunc(t_eval, cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
-            ana, input, eval);
-    }
-    break;
-
-  case FVM_CELL_PYRAM:
-  case FVM_CELL_PRISM:
-  case FVM_CELL_HEXA:
-  case FVM_CELL_POLY:
-  {
-    for (short int f = 0; f < cm->n_fc; ++f) {
-
-      const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
-      const int  start = cm->f2e_idx[f];
-      const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; /* #vertices (=#edges) */
-      const short int *f2e_ids = cm->f2e_ids + start;
-
-      assert(n_vf > 2);
-      switch(n_vf){
-
-      case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
-        {
-          short int  v0, v1, v2;
-          cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
-
-          const double  *xv0 = cm->xv + 3*v0;
-          const double  *xv1 = cm->xv + 3*v1;
-          const double  *xv2 = cm->xv + 3*v2;
-
-          qfunc(t_eval, xv0, xv1, xv2, cm->xc, hf_coef * pfq.meas,
-                ana, input, eval);
-        }
-        break;
-
-      default:
-        {
-          const double  *tef = cm->tef + start;
-
-          for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
-
-            // Edge-related variables
-            const short int e0  = f2e_ids[e];
-            const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
-            const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
-
-            qfunc(t_eval, xv0, xv1, pfq.center, cm->xc, hf_coef * tef[e],
-                  ana, input, eval);
-          }
-        }
-        break;
-
-      } /* End of switch */
-    } /* End of loop on faces */
-
-  }
-  break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,  _(" Unknown cell-type.\n"));
-    break;
-
-  } /* End of switch on the cell-type */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -390,9 +509,9 @@ cs_xdef_cw_eval_scalar_avg_by_analytic(const cs_cell_mesh_t     *cm,
     *qfunc = cs_quadrature_get_tetra_integral(1, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
-  cs_xdef_cw_eval_cell_int_by_analytic(cm, t_eval,
-                                       anai->func, anai->input, qfunc,
-                                       eval);
+  cs_xdef_cw_eval_c_int_by_analytic(cm, t_eval,
+                                    anai->func, anai->input, qfunc,
+                                    eval);
 
   /* Average */
   eval[0] /= cm->vol_c;
@@ -403,6 +522,7 @@ cs_xdef_cw_eval_scalar_avg_by_analytic(const cs_cell_mesh_t     *cm,
  * \brief  Function pointer for evaluating a quantity defined through a
  *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
  *         cs_cell_mesh_t structure) which is hinged on integrals
+ *         Vector-valued case.
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
@@ -413,7 +533,7 @@ cs_xdef_cw_eval_scalar_avg_by_analytic(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_avg_vector_by_analytic(const cs_cell_mesh_t     *cm,
+cs_xdef_cw_eval_vector_avg_by_analytic(const cs_cell_mesh_t     *cm,
                                        cs_real_t                 t_eval,
                                        void                     *input,
                                        cs_quadrature_type_t      qtype,
@@ -431,7 +551,9 @@ cs_xdef_cw_eval_avg_vector_by_analytic(const cs_cell_mesh_t     *cm,
     *qfunc = cs_quadrature_get_tetra_integral(3, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
-  cs_xdef_cw_eval_cell_int_by_analytic(cm, t_eval, anai->func, anai->input, qfunc, eval);
+  cs_xdef_cw_eval_c_int_by_analytic(cm, t_eval,
+                                    anai->func, anai->input,
+                                    qfunc, eval);
 
   /* Average */
   const double _overvol = 1./cm->vol_c;
@@ -444,6 +566,7 @@ cs_xdef_cw_eval_avg_vector_by_analytic(const cs_cell_mesh_t     *cm,
  * \brief  Function pointer for evaluating a quantity defined through a
  *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
  *         cs_cell_mesh_t structure) which is hinged on integrals
+ *         Tensor-valued case.
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
@@ -454,7 +577,7 @@ cs_xdef_cw_eval_avg_vector_by_analytic(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_avg_tensor_by_analytic(const cs_cell_mesh_t     *cm,
+cs_xdef_cw_eval_tensor_avg_by_analytic(const cs_cell_mesh_t     *cm,
                                        cs_real_t                 t_eval,
                                        void                     *input,
                                        cs_quadrature_type_t      qtype,
@@ -472,9 +595,9 @@ cs_xdef_cw_eval_avg_tensor_by_analytic(const cs_cell_mesh_t     *cm,
     *qfunc = cs_quadrature_get_tetra_integral(9, qtype);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
-  cs_xdef_cw_eval_cell_int_by_analytic(cm, t_eval,
-                                       anai->func, anai->input, qfunc,
-                                       eval);
+  cs_xdef_cw_eval_c_int_by_analytic(cm, t_eval,
+                                    anai->func, anai->input, qfunc,
+                                    eval);
 
   /* Average */
   const double _overvol = 1./cm->vol_c;
@@ -1329,124 +1452,6 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Routine to integrate an analytic function over a cell and its faces
- *
- * \param[in]  cm       pointer to a cs_cell_mesh_t structure
- * \param[in]  t_eval   physical time at which one evaluates the term
- * \param[in]  ana      analytic function to integrate
- * \param[in]  input    pointer to an input structure
- * \param[in]  dim      dimension of the function
- * \param[in]  q_tet    quadrature function to use on tetrahedra
- * \param[in]  q_tri    quadrature function to use on triangles
- * \param[out] c_int    result of the evaluation on the cell
- * \param[out] f_int    result of the evaluation on the faces
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_xdef_eval_int_on_cell_faces(const cs_cell_mesh_t             *cm,
-                               cs_real_t                         t_eval,
-                               cs_analytic_func_t               *ana,
-                               void                             *input,
-                               const short int                   dim,
-                               cs_quadrature_tetra_integral_t   *q_tet,
-                               cs_quadrature_tria_integral_t    *q_tri,
-                               cs_real_t                        *c_int,
-                               cs_real_t                        *f_int)
-{
-  short int  v0, v1, v2;
-
-  const short int  nf = cm->n_fc;
-
-  /* Switch on the cell-type: optimised version for tetra */
-  switch (cm->type) {
-
-  case FVM_CELL_TETRA:
-    {
-      assert(cm->n_fc == 4 && cm->n_vc == 4);
-      q_tet(t_eval, cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
-            ana, input, c_int);
-
-      for (short int f = 0; f < nf; ++f) {
-
-        const cs_quant_t  pfq = cm->face[f];
-        const short int  *f2e_ids = cm->f2e_ids + cm->f2e_idx[f];
-
-        cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
-        q_tri(t_eval, cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
-              ana, input, f_int + dim*f);
-      }
-    }
-    break;
-
-  case FVM_CELL_PYRAM:
-  case FVM_CELL_PRISM:
-  case FVM_CELL_HEXA:
-  case FVM_CELL_POLY:
-  {
-    for (short int f = 0; f < nf; ++f) {
-
-      const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
-      const int  start = cm->f2e_idx[f];
-      const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; // #vertices (=#edges)
-      const short int *f2e_ids = cm->f2e_ids + start;
-
-      assert(n_vf > 2);
-      switch(n_vf){
-
-      case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
-        {
-          cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
-
-          const double  *xv0 = cm->xv + 3*v0;
-          const double  *xv1 = cm->xv + 3*v1;
-          const double  *xv2 = cm->xv + 3*v2;
-
-          q_tet(t_eval, xv0, xv1, xv2, cm->xc,  hf_coef * pfq.meas,
-                ana, input, c_int);
-          q_tri(t_eval, cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
-                ana, input, f_int + dim*f);
-        }
-        break;
-
-      default:
-        {
-          const double  *tef = cm->tef + start;
-
-          for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
-
-            // Edge-related variables
-            const short int e0  = f2e_ids[e];
-            const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
-            const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
-
-            q_tet(t_eval, xv0, xv1, pfq.center, cm->xc, hf_coef*tef[e],
-                  ana, input, c_int);
-            q_tri(t_eval, xv0, xv1, pfq.center, tef[e],
-                  ana, input, f_int + dim*f);
-
-          }
-        }
-        break;
-
-      } /* End of switch */
-
-    } /* End of loop on faces */
-
-  }
-  break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,  _(" Unknown cell-type.\n"));
-    break;
-
-  } /* End of switch on the cell-type */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Function pointer for evaluating the reduction by averages of a
  *         analytic function by a cellwise process (usage of a cs_cell_mesh_t
  *         structure) which is hinged on integrals (faces first, then cell)
@@ -1485,11 +1490,11 @@ cs_xdef_cw_eval_scal_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
   cs_real_t *c_eval = eval + nf;
 
-  cs_xdef_eval_int_on_cell_faces(cm, t_eval,
-                                 anai->func, anai->input,
-                                 dim,
-                                 q_tet, q_tri,
-                                 c_eval, eval);
+  cs_xdef_cw_eval_fc_int_by_analytic(cm, t_eval,
+                                     anai->func, anai->input,
+                                     dim,
+                                     q_tet, q_tri,
+                                     c_eval, eval);
 
   /* Compute the averages */
   for (short int f = 0; f < nf; f++)
@@ -1537,11 +1542,11 @@ cs_xdef_cw_eval_vect_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
   cs_real_t *c_eval = eval + dim*nf;
 
-  cs_xdef_eval_int_on_cell_faces(cm, t_eval,
-                                 anai->func, anai->input,
-                                 dim,
-                                 q_tet, q_tri,
-                                 c_eval, eval);
+  cs_xdef_cw_eval_fc_int_by_analytic(cm, t_eval,
+                                     anai->func, anai->input,
+                                     dim,
+                                     q_tet, q_tri,
+                                     c_eval, eval);
 
   /* Compute the averages */
   for (short int f = 0; f < nf; f++) {
