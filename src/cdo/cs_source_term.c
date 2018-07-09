@@ -575,7 +575,8 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
         default:
           bft_error(__FILE__, __LINE__, 0,
-                    " Invalid type of definition for a source term in CDOVB");
+                    "%s: Invalid type of definition for a source term in CDOVB",
+                    __func__);
           break;
         } /* switch def_type */
 
@@ -597,7 +598,8 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
         default:
           bft_error(__FILE__, __LINE__, 0,
-                    " Invalid type of definition for a source term in CDOVB");
+                    "%s: Invalid type of definition for a source term in CDOVB",
+                    __func__);
           break;
 
         } /* switch def_type */
@@ -609,7 +611,8 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
       if (st_def->meta & CS_FLAG_DUAL) {
 
         bft_error(__FILE__, __LINE__, 0,
-                  " Invalid type of definition for a source term in CDOVB");
+                  "%s: Invalid type of definition for a source term in CDOVB",
+                  __func__);
 
         /* TODO:
            case CS_XDEF_BY_VALUE:
@@ -660,18 +663,54 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
         msh_flag |= CS_CDO_LOCAL_PV;
-        if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
-          compute_source[st_id] = cs_source_term_pcvd_bary_by_analytic;
-        else
-          compute_source[st_id] = cs_source_term_pcsd_bary_by_analytic;
+        if ((*sys_flag) & CS_FLAG_SYS_VECTOR) {
+
+          /* Switch only to allow more precise quadratures */
+          if (st_def->qtype == CS_QUADRATURE_BARY)
+            compute_source[st_id] = cs_source_term_pcvd_bary_by_analytic;
+
+          else {
+
+            /* TODO: Are all these flags really necessary? Check in the */
+            /* integration */
+            msh_flag |= CS_CDO_LOCAL_EV  |CS_CDO_LOCAL_EF |CS_CDO_LOCAL_PFQ |
+                        CS_CDO_LOCAL_FEQ |CS_CDO_LOCAL_HFQ|CS_CDO_LOCAL_PEQ |
+                        CS_CDO_LOCAL_FE;
+            compute_source[st_id] = cs_source_term_pcvd_by_analytic;
+
+          }
+        }
+        else { /* Scalar-valued case */
+
+          /* Switch only to allow more precise quadratures */
+          if (st_def->qtype == CS_QUADRATURE_BARY)
+            compute_source[st_id] = cs_source_term_pcsd_bary_by_analytic;
+
+          else {
+
+            /* TODO: Are all these flags really necessary? Check in the */
+            /* integration */
+            msh_flag |= CS_CDO_LOCAL_EV  |CS_CDO_LOCAL_EF |CS_CDO_LOCAL_PFQ |
+                        CS_CDO_LOCAL_FEQ |CS_CDO_LOCAL_HFQ|CS_CDO_LOCAL_PEQ |
+                        CS_CDO_LOCAL_FE;
+            compute_source[st_id] = cs_source_term_pcsd_by_analytic;
+
+          }
+
+        }
         break;
 
       case CS_XDEF_BY_ARRAY:
-        compute_source[st_id] = cs_source_term_pcsd_by_array;
+        if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
+          compute_source[st_id] = cs_source_term_pcvd_by_array;
+        else
+          compute_source[st_id] = cs_source_term_pcsd_by_array;
         break;
+
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " Invalid type of definition for a source term in CDOFB");
+                  "%s: Invalid type of definition for a source term in CDOFB",
+                  __func__);
         break;
 
       } /* switch def_type */
@@ -708,7 +747,8 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                "Invalid space scheme for setting the source term.");
+                "%s: Invalid space scheme for setting the source term.",
+                __func__);
       break;
 
     } /* Switch on space scheme */
@@ -1112,46 +1152,6 @@ cs_source_term_dcsd_by_array(const cs_xdef_t           *source,
   assert(cs_flag_test(ai->loc, cs_flag_primal_vtx));
   for (int v = 0; v < cm->n_vc; v++)
     values[v] += ai->values[cm->v_ids[v]] * cm->wvc[v] * cm->vol_c;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the contribution for a cell related to a source term and
- *         add it the given array of values.
- *         Case of a scalar density defined at primal cells by an array.
- *
- * \param[in]      source     pointer to a cs_xdef_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
- * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
- * \param[in, out] values     pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_source_term_pcsd_by_array(const cs_xdef_t           *source,
-                             const cs_cell_mesh_t      *cm,
-                             cs_real_t                  time_eval,
-                             cs_cell_builder_t         *cb,
-                             void                      *input,
-                             double                    *values)
-{
-  CS_UNUSED(cb);
-  CS_UNUSED(input);
-  CS_UNUSED(time_eval);
-
-  if (source == NULL)
-    return;
-
-  /* Sanity checks */
-  assert(values != NULL && cm != NULL);
-
-  const cs_xdef_array_input_t  *ai =
-    (const cs_xdef_array_input_t *)source->input;
-
-  assert(cs_flag_test(ai->loc, cs_flag_primal_cell));
-  values[cm->c_id] += ai->values[cm->c_id];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1861,7 +1861,174 @@ cs_source_term_pcsd_bary_by_analytic(const cs_xdef_t           *source,
              anai->input,
              &eval_xc);
 
-  values[cm->n_fc] = cm->vol_c * eval_xc;
+  values[cm->n_fc] += cm->vol_c * eval_xc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution of a source term for a cell and add it to
+ *         the given array of values.
+ *         Case of a scalar density (sd) defined on primal cells by an analytic
+ *         function.
+ *         Case of face-based schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+
+  assert(source->dim == 1);
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+
+  if (source->qtype == CS_QUADRATURE_BARY)
+    cs_source_term_pcsd_bary_by_analytic(source, cm, time_eval, cb, input,
+                                         values);
+
+  else {
+
+    const cs_real_t *xv = cm->xv;
+
+    double  cell_values  = 0.0;
+    cs_quadrature_tetra_integral_t  *qfunc =
+      cs_quadrature_get_tetra_integral(1, source->qtype);
+
+    /* Switch according to the cell type: optimised version for tetra */
+    switch (cm->type) {
+
+    case FVM_CELL_TETRA:
+      {
+        assert(cm->n_fc == 4 && cm->n_vc == 4);
+        qfunc(time_eval, xv, xv+3, xv+6, xv+9, cm->vol_c,
+              anai->func, anai->input,
+              &cell_values);
+      }
+      break;
+
+    case FVM_CELL_PYRAM:
+    case FVM_CELL_PRISM:
+    case FVM_CELL_HEXA:
+    case FVM_CELL_POLY:
+    {
+      for (short int f = 0; f < cm->n_fc; f++) {
+
+        const cs_quant_t  pfq = cm->face[f];
+        const double  hf_coef = cs_math_onethird * cm->hfc[f];
+        const int  start = cm->f2e_idx[f];
+        const int  end = cm->f2e_idx[f+1];
+        const short int  n_vf = end - start;  /* #vertices (=#edges) */
+        const short int  *f2e_ids = cm->f2e_ids + start;
+
+        assert(n_vf > 2);
+        switch(n_vf){
+
+        case 3: /* triangle (optimized version, no subdivision) */
+          {
+            short int  v0, v1, v2;
+            cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids,
+                                             &v0, &v1, &v2);
+
+            qfunc(time_eval, cm->xc, xv+3*v0, xv+3*v1, xv+3*v2,
+                  hf_coef*pfq.meas,
+                  anai->func, anai->input,
+                  &cell_values);
+          }
+          break;
+
+        default:
+          {
+            const double  *tef = cm->tef + start;
+
+            for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+              /* Edge-related variables */
+              const short int e0  = f2e_ids[e];
+              const double  *xv0 = xv + 3*cm->e2v_ids[2*e0];
+              const double  *xv1 = xv + 3*cm->e2v_ids[2*e0+1];
+
+              qfunc(time_eval, cm->xc, pfq.center, xv0, xv1,
+                    hf_coef*tef[e], anai->func, anai->input, &cell_values);
+            }
+          }
+          break;
+
+        } /* End of switch */
+
+      } /* End of loop on faces */
+
+    }
+    break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, "%s: Unknown cell-type.\n", __func__);
+      break;
+
+    } /* End of switch on the cell-type */
+
+    values[cm->n_fc] += cell_values;
+
+  }  /* If not a barycentric quadrature */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar density defined at primal cells by an array.
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_pcsd_by_array(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
+                             cs_cell_builder_t         *cb,
+                             void                      *input,
+                             double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+
+  const cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)source->input;
+
+  assert(cs_flag_test(ai->loc, cs_flag_primal_cell));
+  values[cm->n_fc] += ai->values[cm->c_id];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1899,7 +2066,7 @@ cs_source_term_pcvd_bary_by_analytic(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(source->dim < 4);
+  assert(source->dim == 3);
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1910,8 +2077,189 @@ cs_source_term_pcvd_bary_by_analytic(const cs_xdef_t           *source,
              anai->input,
              eval_xc);
 
+  cs_real_t  *c_val = values + 3*cm->n_fc;
   for (int k = 0; k < source->dim; k++)
-    values[source->dim*cm->n_fc + k] = cm->vol_c * eval_xc[k];
+    c_val[k] += cm->vol_c * eval_xc[k];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution of a source term for a cell and add it to
+ *         the given array of values.
+ *         Case of a vector density (vd) defined on primal cells by an analytic
+ *         function.
+ *         Case of face-based schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+  assert(source->dim == 3);
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+
+  if (source->qtype == CS_QUADRATURE_BARY)
+    cs_source_term_pcvd_bary_by_analytic(source, cm, time_eval, cb, input,
+                                         values);
+
+  else {
+
+    const cs_real_t *xv = cm->xv;
+    const double  vol = cm->vol_c;
+
+    cs_real_3_t  cell_values = {0.0, 0.0, 0.0};
+    cs_quadrature_tetra_integral_t  *qfunc =
+      cs_quadrature_get_tetra_integral(3, source->qtype);
+
+    /* Switch according to the cell type: optimized version for tetra */
+    switch (cm->type) {
+
+    case FVM_CELL_TETRA:
+      {
+        assert(cm->n_fc == 4 && cm->n_vc == 4);
+        qfunc(time_eval, xv, xv+3, xv+6, xv+9, cm->vol_c,
+              anai->func, anai->input,
+              cell_values);
+      }
+      break;
+
+    case FVM_CELL_PYRAM:
+    case FVM_CELL_PRISM:
+    case FVM_CELL_HEXA:
+    case FVM_CELL_POLY:
+    {
+      for (short int f = 0; f < cm->n_fc; f++) {
+
+        const cs_quant_t  pfq = cm->face[f];
+        const double  hf_coef = cs_math_onethird * cm->hfc[f];
+        const int  start = cm->f2e_idx[f];
+        const int  end = cm->f2e_idx[f+1];
+        const short int  n_vf = end - start; // #vertices (=#edges)
+        const short int  *f2e_ids = cm->f2e_ids + start;
+
+        assert(n_vf > 2);
+        switch(n_vf){
+
+        case 3: /* triangle (optimized version, no subdivision) */
+          {
+            short int  v0, v1, v2;
+            cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids,
+                                             &v0, &v1, &v2);
+
+            qfunc(time_eval, cm->xc, xv+3*v0, xv+3*v1, xv+3*v2,
+                  hf_coef*pfq.meas,
+                  anai->func, anai->input,
+                  cell_values);
+          }
+          break;
+
+        default:
+          {
+            const double  *tef = cm->tef + start;
+
+            for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+              /* Edge-related variables */
+              const short int e0  = f2e_ids[e];
+              const double  *xv0 = xv + 3*cm->e2v_ids[2*e0];
+              const double  *xv1 = xv + 3*cm->e2v_ids[2*e0+1];
+
+              qfunc(time_eval, cm->xc, pfq.center, xv0, xv1,
+                    hf_coef*tef[e],
+                    anai->func, anai->input,
+                    cell_values);
+            }
+          }
+          break;
+
+        } /* End of switch */
+
+      } /* End of loop on faces */
+
+    }
+    break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, "%s: Unknown cell-type.\n", __func__);
+      break;
+
+    } /* End of switch on the cell-type */
+
+    cs_real_t *c_val = values + 3*cm->n_fc;
+    c_val[0] += cell_values[0];
+    c_val[1] += cell_values[1];
+    c_val[2] += cell_values[2];
+
+  }  /* If not a barycentric quadrature */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution of a source term for a cell and add it to
+ *         the given array of values.
+ *         Case of a vector density (vd) defined on primal cells by an array
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_pcvd_by_array(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
+                             cs_cell_builder_t         *cb,
+                             void                      *input,
+                             double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(source->dim == 3);
+
+  const cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)source->input;
+  const double  *arr = ai->values + 3*cm->c_id;
+  assert(cs_flag_test(ai->loc, cs_flag_primal_cell));
+
+  double  *val_c = values + 3*cm->n_fc;
+  val_c[0] += arr[0];
+  val_c[1] += arr[1];
+  val_c[2] += arr[2];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1983,7 +2331,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
     case FVM_CELL_HEXA:
     case FVM_CELL_POLY:
       {
-        for (short int f = 0; f < cm->n_fc; ++f) {
+        for (short int f = 0; f < cm->n_fc; f++) {
 
           const cs_quant_t  pfq = cm->face[f];
           const double  hf_coef = cs_math_onethird * cm->hfc[f];
@@ -2108,7 +2456,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
   case FVM_CELL_HEXA:
   case FVM_CELL_POLY:
   {
-    for (short int f = 0; f < cm->n_fc; ++f) {
+    for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
       const double  hf_coef = cs_math_onethird * cm->hfc[f];
@@ -2230,7 +2578,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
   case FVM_CELL_HEXA:
   case FVM_CELL_POLY:
   {
-    for (short int f = 0; f < cm->n_fc; ++f) {
+    for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
       const double  hf_coef = cs_math_onethird * cm->hfc[f];
