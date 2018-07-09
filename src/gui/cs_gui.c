@@ -4797,6 +4797,8 @@ void CS_PROCF (uiprof, UIPROF) (void)
         cs_geom_closest_point(n_cells, cell_cen, xyz,
                               &c_id, &c_rank);
 
+        cs_parall_bcast(c_rank, 1, CS_LNUM_TYPE, &c_id);
+
         if ((c_id != c_id1) || (c_rank != rank1)) {
           c_id1 = c_id;
           rank1 = c_rank;
