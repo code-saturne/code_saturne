@@ -1949,7 +1949,7 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
           memcpy(retval + 3*f_id, input, _3real);
       }
       else
-        _pfvp_by_value(input, z->n_cells, z->cell_ids, retval);
+        _pfvp_by_value(input, z->n_elts, z->elt_ids, retval);
 
     } /* Located at primal faces */
 
@@ -1962,8 +1962,8 @@ cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
           memcpy(retval + 3*c_id, input, _3real);
       }
       else
-        for (cs_lnum_t i = 0; i < z->n_cells; i++) /* Loop on selected cells */
-          memcpy(retval + 3*z->cell_ids[i], input, _3real);
+        for (cs_lnum_t i = 0; i < z->n_elts; i++) /* Loop on selected cells */
+          memcpy(retval + 3*z->elt_ids[i], input, _3real);
 
     } /* Located at primal cells or dual vertices */
 
