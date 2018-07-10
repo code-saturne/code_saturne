@@ -5,6 +5,9 @@ Release 5.0.9 (unreleased)
 Bug fixes
 ---------
 
+- Fix an uninitialised option (reconstruction flag) if arakawa coef. is 0 and
+  there is anisotropic diffusion on pressure increment.
+
 - GUI: fix bug for RSM coupled solver in the initilization of turbulent 
   variables by formula.
 
