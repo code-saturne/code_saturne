@@ -5,6 +5,9 @@ Release 5.1.5 (unreleased)
 Bug fixes
 ---------
 
+- Fix an uninitialised option (reconstruction flag) if arakawa coef. is 0 and
+  there is anisotropic diffusion on pressure increment.
+
 - GUI: fix default time stepping type (unsteady) when information missing
   from the XML file.
 

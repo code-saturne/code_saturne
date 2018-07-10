@@ -1633,6 +1633,8 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
 
     else if (vcopt_p%idften.eq.6) then
 
+      ircflp = vcopt_p%ircflu
+
       call itrgrv &
       !==========
    ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
@@ -1763,6 +1765,8 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
    rhs    )
 
   else if (vcopt_p%idften.eq.6) then
+
+    ircflp = vcopt_p%ircflu
 
     call itrgrv &
     !==========
@@ -1897,6 +1901,8 @@ if (vcopt_p%idften.eq.1) then
    imasfl , bmasfl )
 
 else if (vcopt_p%idften.eq.6) then
+
+  ircflp = vcopt_p%ircflu
 
   call itrmav &
   !==========
