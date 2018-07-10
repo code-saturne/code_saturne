@@ -1535,6 +1535,8 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
 
     else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
+      ircflp = vcopt_p%ircflu
+
       call itrgrv &
       !==========
    ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
@@ -1665,6 +1667,8 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
    rhs    )
 
   else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+
+    ircflp = vcopt_p%ircflu
 
     call itrgrv &
     !==========
@@ -1798,6 +1802,8 @@ if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
    imasfl , bmasfl )
 
 else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+
+  ircflp = vcopt_p%ircflu
 
   call itrmav &
   !==========
