@@ -5,6 +5,9 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- GUI : "rij" (coupled) field must return a NULL pointer for uncoupled RSM 
+  if initilization of turbulent variables is set by formula.
+
 - Fix an uninitialised option (reconstruction flag) if arakawa coef. is 0 and
   there is anisotropic diffusion on pressure increment.
 
