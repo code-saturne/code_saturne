@@ -196,13 +196,9 @@ static void
 test_3 (void)
 {
   int ii;
-  int criteria_id, n_missing;
 
   fvm_group_class_set_t *gcset = NULL;
   fvm_selector_t *s = NULL;
-
-  cs_lnum_t n_se = 0;
-  cs_lnum_t se[12];
 
   const int f_gc_id[] = {5, 1, 2, 7, 7, 7, 3, 3, 4, 4, 8, 6};
 
@@ -457,11 +453,7 @@ test_3 (void)
   int n_gc;
   int gc[205];
 
-  criteria_id
-    = fvm_selector_get_gc_list(s,
-                               criteria,
-                               &n_gc,
-                               gc);
+  int criteria_id = fvm_selector_get_gc_list(s, criteria, &n_gc, gc);
 
   bft_printf("groups selection:\n");
   for (ii = 0; ii < n_gc; ii++)
@@ -474,6 +466,9 @@ test_3 (void)
 int
 main (int argc, char *argv[])
 {
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
+
   bft_mem_init(getenv("CS_MEM_LOG"));
 
   test_1();

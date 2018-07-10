@@ -31,6 +31,8 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------*/
 /* Return Kahan sum of array values                                           */
 /*----------------------------------------------------------------------------*/
@@ -62,6 +64,9 @@ _sum_kahan(size_t         n,
 int
 main (int argc, char *argv[])
 {
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
+
   double m_ref, m_y_ref, v_ref, c_ref;
   double *xr = NULL, *yr = NULL, *wr = NULL;
 

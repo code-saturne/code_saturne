@@ -60,6 +60,9 @@ bft_printf_flush_test(void)
 int
 main (int argc, char *argv[])
 {
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
+
   bft_printf_proxy_t *printf_proxy_save;
   bft_printf_flush_proxy_t *printf_flush_proxy_save;
 
@@ -69,13 +72,13 @@ main (int argc, char *argv[])
   bft_printf_proxy_set(bft_printf_test);
   bft_printf_flush_proxy_set(bft_printf_flush_test);
 
-  bft_printf("replacement printf(): %p\n", bft_printf_proxy_get());
+  bft_printf("replacement printf(): %p\n", (void *)bft_printf_proxy_get());
   bft_printf_flush();
 
   bft_printf_proxy_set(printf_proxy_save);
   bft_printf_flush_proxy_set(printf_flush_proxy_save);
 
-  bft_printf("saved printf(): %p\n", bft_printf_proxy_get());
+  bft_printf("saved printf(): %p\n", (void *)bft_printf_proxy_get());
   bft_printf_flush();
 
   exit (EXIT_SUCCESS);

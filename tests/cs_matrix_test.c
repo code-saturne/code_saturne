@@ -525,9 +525,8 @@ _free_base_data(void)
 int
 main (int argc, char *argv[])
 {
-  int sub_id;
-  double t_measure = 1.0;
-  double test_sum = 0.0;
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
 
   /* Internationalization */
 

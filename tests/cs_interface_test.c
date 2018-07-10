@@ -279,6 +279,9 @@ _bft_error_handler(const char  *filename,
                    const char  *format,
                    va_list      arg_ptr)
 {
+  CS_UNUSED(filename);
+  CS_UNUSED(line_num);
+
   bft_printf_flush();
 
   if (sys_err_code != 0)

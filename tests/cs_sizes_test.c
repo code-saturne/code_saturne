@@ -42,6 +42,9 @@
 int
 main (int argc, char *argv[])
 {
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
+
   int i, j;
   int rank_id[] = {0, 1024, 2048, 4095};
   int n_ranks = 4096;

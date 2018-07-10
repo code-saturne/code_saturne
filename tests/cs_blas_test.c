@@ -104,6 +104,9 @@ static int
 _bft_printf_null(const char  *format,
                  va_list      arg_ptr)
 {
+  CS_UNUSED(format);
+  CS_UNUSED(arg_ptr);
+
   return 0;
 }
 
@@ -2213,16 +2216,7 @@ _dense_3_3_sv_c(const cs_real_t   a[restrict 3][3],
                 const cs_real_t   b[restrict 3],
                 cs_real_t         x[restrict 3])
 {
-  double _a[3][3];
   cs_real_t t[12], di;
-
-  /* Copy array */
-
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      _a[i][j] = a[i][j];
-    }
-  }
 
   t[0]  = a[0][0] * (a[1][1]*a[2][2] - a[2][1]*a[1][2]);
   t[1]  = a[1][0] * (a[2][1]*a[0][2] - a[0][1]*a[2][2]);
@@ -2722,6 +2716,9 @@ _solve_33_test(double  t_measure)
 int
 main (int argc, char *argv[])
 {
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
+
   int sub_id;
   double t_measure = 1.0;
   double test_sum = 0.0;

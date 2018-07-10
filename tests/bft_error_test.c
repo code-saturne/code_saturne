@@ -52,6 +52,9 @@ bft_error_handler_test(const char  *const file_name,
 int
 main (int argc, char *argv[])
 {
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
+
   bft_error_handler_t *errhandler_save;
 
   errhandler_save = bft_error_handler_get();
@@ -59,7 +62,7 @@ main (int argc, char *argv[])
   bft_error_handler_set(bft_error_handler_test);
 
   bft_error(__FILE__, __LINE__, 1, "fake error, handler = %p",
-            bft_error_handler_get());
+            (void *)bft_error_handler_get());
 
   bft_error_handler_set(errhandler_save);
 

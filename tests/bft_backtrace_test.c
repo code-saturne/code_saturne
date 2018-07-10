@@ -75,6 +75,9 @@ level_2(void)
 int
 main (int argc, char *argv[])
 {
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
+
   level_1();
 
   exit (EXIT_SUCCESS);

@@ -39,12 +39,21 @@ bft_mem_error_handler_test(const char     *const file_name,
                            const char     *const format,
                            va_list               arg_ptr)
 {
+  CS_UNUSED(file_name);
+  CS_UNUSED(line_num);
+  CS_UNUSED(sys_error_code);
+  CS_UNUSED(format);
+  CS_UNUSED(arg_ptr);
+
   fprintf(stderr, "test memory error handler (empty).\n");
 }
 
 int
 main (int argc, char *argv[])
 {
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
+
   bft_error_handler_t *errhandler_save;
 
   void *p1, *p2, *p3, *p4;

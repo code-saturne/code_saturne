@@ -61,6 +61,9 @@
 int
 main (int argc, char *argv[])
 {
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
+
   int n_groups = 6;
   int n_attributes = 6;
 
@@ -107,4 +110,3 @@ main (int argc, char *argv[])
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-

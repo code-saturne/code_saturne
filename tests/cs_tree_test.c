@@ -55,8 +55,8 @@ main (int argc, char *argv[])
   /* Build a small tree */
   cs_tree_node_t  *root = cs_tree_node_create("code_saturne");
   cs_tree_node_set_string_val(root, CS_APP_VERSION);
-  cs_tree_node_t  *nfields = cs_tree_add_child(root, "fields");
-  cs_tree_node_t  *nproperties = cs_tree_add_child(root, "properties");
+  cs_tree_add_child(root, "fields");
+  cs_tree_add_child(root, "properties");
   cs_tree_node_t  *neqs = cs_tree_add_child(root, "equations");
 
   /* Set the first equation */

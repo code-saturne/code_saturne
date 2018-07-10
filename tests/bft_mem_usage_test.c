@@ -34,6 +34,9 @@
 int
 main (int argc, char *argv[])
 {
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
+
   size_t count[3];
 
   void *p1, *p2, *p3;

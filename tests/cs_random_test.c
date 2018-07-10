@@ -289,6 +289,9 @@ _poisson_test(cs_lnum_t   n,
 int
 main (int argc, char *argv[])
 {
+  CS_UNUSED(argc);
+  CS_UNUSED(argv);
+
   int p[NPTS];
   double a[NPTS];
   double wt0, wt1;
