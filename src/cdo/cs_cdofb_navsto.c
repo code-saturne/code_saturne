@@ -57,6 +57,7 @@
 #include "cs_navsto_param.h"
 #include "cs_post.h"
 #include "cs_source_term.h"
+#include "cs_static_condensation.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -565,6 +566,41 @@ cs_cdofb_navsto_proj_compute(const cs_mesh_t              *mesh,
   cs_timer_counter_add_diff(&(nssc->timer), &t0, &t1);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the values of the velocity on the faces
+ *
+ * \return a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdofb_navsto_get_face_velocity(void)
+{
+  if (cs_cdofb_navsto_context == NULL)
+    return NULL;
+  else
+    return cs_cdofb_navsto_context->face_velocity;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the values of the pressure on the faces
+ *
+ * \return a pointer to an array of  \ref cs_real_t. (warning: may be NULL)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdofb_navsto_get_face_pressure(void)
+{
+  if (cs_cdofb_navsto_context == NULL)
+    return NULL;
+  else
+    return cs_cdofb_navsto_context->face_pressure;
+}
+
+/*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Store solution(s) of the linear system into a field structure

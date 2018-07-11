@@ -31,6 +31,7 @@
 
 #include "cs_param.h"
 #include "cs_quadrature.h"
+#include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -182,8 +183,8 @@ typedef struct {
   cs_navsto_param_coupling_t    coupling;
 
   /*! \var gd_scale_coef
-   *  Default value to set to the scaling of the grad-div term when an
-   *  artificial compressibility algorithm or an Uzawa - Augmented Lagrangian
+   *  Default value to set the scaling of the grad-div term when an
+   *  artificial compressibility algorithm or an Uzawa-Augmented Lagrangian
    *  method is used
    */
   cs_real_t                     gd_scale_coef;
@@ -325,6 +326,66 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a new source term structure defined by an analytical function
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]      ana       pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
+                                      const char           *z_name,
+                                      cs_analytic_func_t   *ana,
+                                      void                 *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a new source term structure defined by a constant value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]      val       pointer to the value to set
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_source_term_by_val(cs_navsto_param_t    *nsp,
+                                 const char           *z_name,
+                                 cs_real_t            *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a new source term structure defined by an array
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]      loc       information to know where are located values
+ * \param[in]      array     pointer to an array
+ * \param[in]      index     optional pointer to the array index
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
+                                   const char           *z_name,
+                                   cs_flag_t             loc,
+                                   cs_real_t            *array,
+                                   cs_lnum_t            *index);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Summary of the main cs_navsto_param_t structure
  *
  * \param[in]  nsp    pointer to a cs_navsto_param_t structure
@@ -336,7 +397,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retreive the name of the coupling algorithm
+ * \brief  Retrieve the name of the coupling algorithm
  *
  * \param[in]     coupling    A \ref cs_navsto_param_coupling_t
  *

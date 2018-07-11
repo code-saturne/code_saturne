@@ -47,6 +47,7 @@
 #include <bft_printf.h>
 
 #include "cs_base.h"
+#include "cs_equation.h"
 #include "cs_log.h"
 
 /*----------------------------------------------------------------------------
@@ -104,7 +105,39 @@ static const char _err_empty_nsp[] =
  * Private function prototypes
  *============================================================================*/
 
-  /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the \ref cs_equation_param_t structure related to the
+ *         momentum equation according to the type of coupling
+ *
+ * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
+ *
+ * \return a pointer to the corresponding \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_equation_param_t *
+_get_momentum_param(cs_navsto_param_t    *nsp)
+{
+  switch (nsp->coupling) {
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+  case CS_NAVSTO_COUPLING_UZAWA:
+    return cs_equation_param_by_name("Momentum");
+
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    return cs_equation_param_by_name("Velocity_Prediction");
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid coupling.", __func__);
+    return NULL;
+
+  }  /* Switch */
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes
@@ -211,7 +244,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       cs_base_warn(__FILE__, __LINE__);
       bft_printf(" Trying to set the zeta parameter with the %s\n "
                  " although this will not have use in the algorithm.\n",
-                 cs_navsto_param_get_coupling_name(nsp->coupling));
+                 cs_navsto_param_coupling_name[nsp->coupling]);
 
     default:
       break;
@@ -321,6 +354,84 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a new source term structure defined by an analytical function
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]      ana       pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
+                                      const char           *z_name,
+                                      cs_analytic_func_t   *ana,
+                                      void                 *input)
+{
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  cs_xdef_t  *d = cs_equation_add_source_term_by_analytic(eqp,
+                                                          z_name, ana, input);
+  cs_xdef_set_quadrature(d, nsp->qtype);
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a new source term structure defined by a constant value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]      val       pointer to the value to set
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_source_term_by_val(cs_navsto_param_t    *nsp,
+                                 const char           *z_name,
+                                 cs_real_t            *val)
+{
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+
+  return cs_equation_add_source_term_by_val(eqp, z_name, val);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a new source term structure defined by an array
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]      loc       information to know where are located values
+ * \param[in]      array     pointer to an array
+ * \param[in]      index     optional pointer to the array index
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
+                                   const char           *z_name,
+                                   cs_flag_t             loc,
+                                   cs_real_t            *array,
+                                   cs_lnum_t            *index)
+{
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+
+  return cs_equation_add_source_term_by_array(eqp, z_name, loc, array, index);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Summary of the main cs_navsto_param_t structure
  *
  * \param[in]  nsp    pointer to a cs_navsto_param_t structure
@@ -384,7 +495,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retreive the name of the coupling algorithm
+ * \brief  Retrieve the name of the coupling algorithm
  *
  * \param[in]     coupling    A \ref cs_navsto_param_coupling_t
  *

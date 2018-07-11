@@ -70,6 +70,37 @@ typedef struct _cs_cdofb_t cs_cdofb_vecteq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Initialize the local structure for the current cell
+ *
+ * \param[in]      cell_flag   flag related to the current cell
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
+ * \param[in]      eqc         pointer to a cs_cdofb_vecteq_t structure
+ * \param[in]      dir_values  Dirichlet values associated to each face
+ * \param[in]      neu_tags    definition id related to each Neumann face
+ * \param[in]      field_tn    values of the field at the last computed time
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_init_cell_system(const cs_flag_t               cell_flag,
+                                 const cs_cell_mesh_t         *cm,
+                                 const cs_equation_param_t    *eqp,
+                                 const cs_equation_builder_t  *eqb,
+                                 const cs_cdofb_vecteq_t      *eqc,
+                                 const cs_real_t               dir_values[],
+                                 const short int               neu_tags[],
+                                 const cs_real_t               field_tn[],
+                                 cs_real_t                     t_eval,
+                                 cs_cell_sys_t                *csys,
+                                 cs_cell_builder_t            *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief    Check if the generic structures for building a CDO-Fb scheme are
  *           allocated
  *

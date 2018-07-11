@@ -233,6 +233,28 @@ cs_cdofb_navsto_proj_compute(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the values of the velocity on the faces
+ *
+ * \return a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdofb_navsto_get_face_velocity(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the values of the pressure on the faces
+ *
+ * \return a pointer to an array of  \ref cs_real_t. (warning: may be NULL)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdofb_navsto_get_face_pressure(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Store solution(s) of the linear system into a field structure
  *         Update extra-field values if required (for hybrid discretization)
  *

@@ -141,6 +141,10 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   return cb;
 }
 
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Initialize the local structure for the current cell
@@ -159,18 +163,18 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_init_cell_system(const cs_flag_t               cell_flag,
-                  const cs_cell_mesh_t         *cm,
-                  const cs_equation_param_t    *eqp,
-                  const cs_equation_builder_t  *eqb,
-                  const cs_cdofb_vecteq_t      *eqc,
-                  const cs_real_t               dir_values[],
-                  const short int               neu_tags[],
-                  const cs_real_t               field_tn[],
-                  cs_real_t                     t_eval,
-                  cs_cell_sys_t                *csys,
-                  cs_cell_builder_t            *cb)
+void
+cs_cdofb_vecteq_init_cell_system(const cs_flag_t               cell_flag,
+                                 const cs_cell_mesh_t         *cm,
+                                 const cs_equation_param_t    *eqp,
+                                 const cs_equation_builder_t  *eqb,
+                                 const cs_cdofb_vecteq_t      *eqc,
+                                 const cs_real_t               dir_values[],
+                                 const short int               neu_tags[],
+                                 const cs_real_t               field_tn[],
+                                 cs_real_t                     t_eval,
+                                 cs_cell_sys_t                *csys,
+                                 cs_cell_builder_t            *cb)
 {
   CS_UNUSED(cb);
 
@@ -251,10 +255,6 @@ _init_cell_system(const cs_flag_t               cell_flag,
   } /* Border cell */
 
 }
-
-/*============================================================================
- * Public function prototypes
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -749,9 +749,10 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _init_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                        dir_values, neu_tags, field_val, t_eval_pty,  // in
-                        csys, cb);                                    // out
+      cs_cdofb_vecteq_init_cell_system(cell_flag, cm, eqp, eqb, eqc,
+                                       dir_values, neu_tags,
+                                       field_val, t_eval_pty,
+                                       csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
       if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);

@@ -1331,9 +1331,9 @@ cs_navsto_add_velocity_ic_by_value(const char    *z_name,
     meta_flag |= CS_FLAG_FULL_LOC;
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        3, // dim
+                                        3,  /* dim */
                                         z_id,
-                                        CS_FLAG_STATE_UNIFORM, // state flag
+                                        CS_FLAG_STATE_UNIFORM,
                                         meta_flag,
                                         val);
 
@@ -1373,9 +1373,9 @@ cs_navsto_add_pressure_ic_by_value(const char    *z_name,
     meta_flag |= CS_FLAG_FULL_LOC;
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        1, // dim
+                                        1,  /* dim */
                                         z_id,
-                                        CS_FLAG_STATE_UNIFORM, // state flag
+                                        CS_FLAG_STATE_UNIFORM,
                                         meta_flag,
                                         val);
 
@@ -1420,9 +1420,9 @@ cs_navsto_add_velocity_ic_by_analytic(const char             *z_name,
                                     .input = input };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                        3, // dim
+                                        3,  /* dim */
                                         z_id,
-                                        0, // state flag
+                                        0,  /* state flag */
                                         meta_flag,
                                         &anai);
 
@@ -1467,9 +1467,9 @@ cs_navsto_add_pressure_ic_by_analytic(const char             *z_name,
                                     .input = input };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                        1, // dim
+                                        1,  /* dim */
                                         z_id,
-                                        0, // state flag
+                                        0,  /* state flag */
                                         meta_flag,
                                         &anai);
 
@@ -1497,6 +1497,10 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
                             const cs_cdo_quantities_t   *quant,
                             const cs_time_step_t        *ts)
 {
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+  CS_UNUSED(quant);
+
   cs_navsto_system_t  *navsto = cs_navsto_system;
   const cs_navsto_param_t *nsp = navsto->param;
 
@@ -1547,7 +1551,7 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
                     _(" Incompatible reduction for the field %s.\n"),
                     field->name);
 
-        } // Switch on possible reduction types
+        }  /* Switch on possible reduction types */
         break;
 
       default:
@@ -1555,15 +1559,15 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
                   _(" Incompatible way to initialize the field %s.\n"),
                   field->name);
 
-      } // Switch on possible type of definition
+      }  /* Switch on possible type of definition */
 
-    } // Loop on definitions
+    }  /* Loop on definitions */
 
     /* Initialize face-based array */
     if (true) /* DEBUG */
       _init_face_velocity_values(t_cur);
 
-  } // If velocity IC
+  }  /* If velocity IC */
 
   /* Initial conditions for the pressure */
   if (navsto->n_pressure_ic_defs > 0) {
@@ -1600,7 +1604,7 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
                     _(" Incompatible reduction for the field %s.\n"),
                     field->name);
 
-        } // Switch on possible reduction types
+        }  /* Switch on possible reduction types */
         break;
 
       default:
@@ -1609,11 +1613,11 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
                   field->name);
         break;
 
-      } // Switch on possible type of definition
+      }  /* Switch on possible type of definition */
 
-    } // Loop on definitions
+    }  /* Loop on definitions */
 
-  } // If pressure IC
+  } /* If pressure IC */
 
   /* TODO: Set the initial condition for variables not directly related
      to an equation */
@@ -1721,6 +1725,7 @@ cs_navsto_system_extra_post(void                      *input,
   cs_navsto_system_t  *navsto = (cs_navsto_system_t *)input;
 
   /* TODO */
+  CS_UNUSED(navsto);
 }
 
 /*----------------------------------------------------------------------------*/
