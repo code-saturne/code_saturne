@@ -510,7 +510,7 @@ cs_equation_get_cell_values(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the diffusive and convective flux accross a plane defined
+ * \brief  Compute the diffusive and convective flux across a plane defined
  *         by a mesh location structure attached to the name ml_name.
  *
  * \param[in]      eq          pointer to a cs_equation_t structure

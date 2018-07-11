@@ -93,29 +93,26 @@ BEGIN_C_DECLS
 
 /*! \struct cs_cdofb_navsto_t
  *  \brief Context related to CDO face-based discretization when dealing with
- *  vector-valued unknows
+ *         vector-valued unknowns
  */
 
 typedef struct {
 
   /*!
-   * @}
    * @name Main field variables
-   * @{
-   *
    * Fields for every main variable of the equation. Got from cs_navsto_system_t
    */
 
-  /* \var velocity
-   * Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
-   * the cell DoFs of the velocity
+  /*! \var velocity
+   *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
+   *  the cell DoFs of the velocity
    */
 
   cs_field_t *velocity;
 
-  /* \var pressure
-   * Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
-   * the cell DoFs of the pressure
+  /*! \var pressure
+   *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
+   *  the cell DoFs of the pressure
    */
 
   cs_field_t *pressure;
@@ -124,19 +121,18 @@ typedef struct {
    * @}
    * @name Arrays storing face unknowns
    * @{
-   *
    */
 
-  /* \var face_velocity
-   * Degrees of freedom for the velocity at faces
+  /*! \var face_velocity
+   *  Degrees of freedom for the velocity at faces
    */
 
   cs_real_t  *face_velocity;
 
-  /* \var face_pressure
-   * Degrees of freedom for the pressure at faces. Not always allocated.
-   * It depends on the type of algorithm used to couple the Navier-Stokes
-   * system.
+  /*! \var face_pressure
+   *  Degrees of freedom for the pressure at faces. Not always allocated.
+   *  It depends on the type of algorithm used to couple the Navier-Stokes
+   *  system.
    */
 
   cs_real_t  *face_pressure;
@@ -144,14 +140,13 @@ typedef struct {
   /*!
    * @}
    * @name Parameters of the algorithm
-   *
    * Easy access to useful features and parameters of the algorithm
    * @{
    */
 
-  /* \var is_zeta_uniform
-   * Bool telling if the auxiliary parameter zeta is uniform. Not always
-   * necessary: zeta is tipically used in Artificial Compressibility algos
+  /*! \var is_zeta_uniform
+   *  Bool telling if the auxiliary parameter zeta is uniform. Not always
+   *  necessary: zeta is tipically used in Artificial Compressibility algos
    */
 
   bool is_zeta_uniform;
@@ -159,14 +154,15 @@ typedef struct {
   /*!
    * @}
    * @name Performance monitoring
-   * @{
-   *
    * Monitoring the efficiency of the algorithm used to solve the Navier-Stokes
    * system
+   * @{
    */
 
-  cs_timer_counter_t  timer; /*!< Cumulated elapsed time for building and
-                              *   solving the Navier--Stokes system */
+  /*! \var timer
+   *  Cumulated elapsed time for building and solving the Navier--Stokes system
+   */
+  cs_timer_counter_t  timer;
 
   /*! @} */
 
@@ -180,9 +176,7 @@ typedef struct {
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
-static const cs_matrix_assembler_t  *cs_shared_scal_ma;
 static const cs_matrix_structure_t  *cs_shared_scal_ms;
-static const cs_matrix_assembler_t  *cs_shared_vect_ma;
 static const cs_matrix_structure_t  *cs_shared_vect_ms;
 
 static cs_cdofb_navsto_t  *cs_cdofb_navsto_context = NULL;
@@ -601,7 +595,6 @@ cs_cdofb_navsto_get_face_pressure(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Store solution(s) of the linear system into a field structure
  *         Update extra-field values if required (for hybrid discretization)
@@ -652,7 +645,7 @@ cs_cdofb_navsto_extra_op(const char                 *eqname,
                          cs_equation_builder_t      *eqb,
                          void                       *data)
 {
-  CS_UNUSED(eqname); // avoid a compilation warning
+  CS_UNUSED(eqname);  /* avoid a compilation warning */
   CS_UNUSED(eqp);
 
   char *postlabel = NULL;

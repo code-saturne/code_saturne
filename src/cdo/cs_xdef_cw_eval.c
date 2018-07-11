@@ -57,6 +57,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local macro definition (unset at the end of file)
  *============================================================================*/
@@ -76,6 +78,8 @@ static const char _err_empty_array[] =
  * Private function prototypes
  *============================================================================*/
 
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -84,7 +88,7 @@ static const char _err_empty_array[] =
 /*!
  * \brief  Integrate an analytic function over a face
  *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   time at which the function is evaluated
  * \param[in]      ana      analytic function to integrate
  * \param[in]      input    pointer to an input structure
@@ -140,7 +144,7 @@ cs_xdef_cw_eval_f_int_by_analytic(const cs_cell_mesh_t            *cm,
 /*!
  * \brief  Integrate an analytic function over a cell
  *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   time at which the function is evaluated
  * \param[in]      ana      analytic function to integrate
  * \param[in]      input    pointer to an input structure
@@ -184,10 +188,11 @@ cs_xdef_cw_eval_c_int_by_analytic(const cs_cell_mesh_t            *cm,
         assert(n_vf > 2);
         switch(n_vf){
 
-        case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
+        case CS_TRIANGLE_CASE: /* Optimized version, no subdivision */
           {
             short int  v0, v1, v2;
-            cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
+            cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids,
+                                             &v0, &v1, &v2);
 
             const double  *xv0 = cm->xv + 3*v0;
             const double  *xv1 = cm->xv + 3*v1;
@@ -232,7 +237,7 @@ cs_xdef_cw_eval_c_int_by_analytic(const cs_cell_mesh_t            *cm,
 /*!
  * \brief  Routine to integrate an analytic function over a cell and its faces
  *
- * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]  t_eval   physical time at which one evaluates the term
  * \param[in]  ana      analytic function to integrate
  * \param[in]  input    pointer to an input structure
@@ -349,10 +354,10 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function pointer for evaluating the average on a face of a scalar
- *         function defined through a descriptor (cs_xdef_t structure) by a
- *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *         function defined through a descriptor (\ref cs_xdef_t structure) by
+ *         a cellwise process (usage of a \ref cs_cell_mesh_t structure)
  *
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f          local face id
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      input      pointer to an input structure
@@ -390,11 +395,11 @@ cs_xdef_cw_eval_scalar_face_avg_by_analytic(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer for evaluating the average on a face of a scalar
- *         function defined through a descriptor (cs_xdef_t structure) by a
- *         cellwise process (usage of a cs_cell_mesh_t structure)
+ * \brief  Function pointer for evaluating the average on a face of a vector
+ *         function defined through a descriptor (\ref cs_xdef_t structure) by
+ *         a cellwise process (usage of a \ref cs_cell_mesh_t structure)
  *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f        local face id
  * \param[in]      t_eval   physical time at which one evaluates the term
  * \param[in]      input    pointer to an input structure
@@ -434,11 +439,11 @@ cs_xdef_cw_eval_vector_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer for evaluating the average on a face of a scalar
- *         function defined through a descriptor (cs_xdef_t structure) by a
- *         cellwise process (usage of a cs_cell_mesh_t structure)
+ * \brief  Function pointer for evaluating the average on a face of a tensor
+ *         function defined through a descriptor (\ref cs_xdef_t structure) by
+ *         a cellwise process (usage of a \ref cs_cell_mesh_t structure)
  *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f        local face id
  * \param[in]      t_eval   physical time at which one evaluates the term
  * \param[in]      input    pointer to an input structure
@@ -479,10 +484,11 @@ cs_xdef_cw_eval_tensor_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function pointer for evaluating a quantity defined through a
- *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
- *         cs_cell_mesh_t structure) which is hinged on integrals
+ *         descriptor (\ref cs_xdef_t structure) by a cellwise process (usage
+ *         of a \ref cs_cell_mesh_t structure).
+ *         This evaluation hinges on the computation of integrals
  *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
  * \param[in]      qtype    quadrature type
  * \param[in]      input    pointer to an input structure
@@ -520,11 +526,12 @@ cs_xdef_cw_eval_scalar_avg_by_analytic(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function pointer for evaluating a quantity defined through a
- *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
- *         cs_cell_mesh_t structure) which is hinged on integrals
+ *         descriptor (\ref cs_xdef_t structure) by a cellwise process (usage
+ *         of a \ref cs_cell_mesh_t structure).
+ *         This evaluation hinges on the computation of integrals
  *         Vector-valued case.
  *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
  * \param[in]      qtype    quadrature type
  * \param[in]      input    pointer to an input structure
@@ -564,11 +571,12 @@ cs_xdef_cw_eval_vector_avg_by_analytic(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function pointer for evaluating a quantity defined through a
- *         descriptor (cs_xdef_t structure) by a cellwise process (usage of a
- *         cs_cell_mesh_t structure) which is hinged on integrals
+ *         descriptor (\ref cs_xdef_t structure) by a cellwise process (usage
+ *         of a \ref cs_cell_mesh_t structure).
+ *         This evaluation hinges on the computation of integrals
  *         Tensor-valued case.
  *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
  * \param[in]      qtype    quadrature type
  * \param[in]      input    pointer to an input structure
@@ -608,9 +616,9 @@ cs_xdef_cw_eval_tensor_avg_by_analytic(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Evaluate a quantity defined using an analytic function by a
- *         cellwise process (usage of a cs_cell_mesh_t structure)
+ *         cellwise process (usage of a \ref cs_cell_mesh_t structure)
  *
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      input      pointer to an input structure
  * \param[in, out] eval       result of the evaluation at cell center
@@ -637,9 +645,9 @@ cs_xdef_cw_eval_by_analytic(const cs_cell_mesh_t       *cm,
 /*!
  * \brief  Evaluate a quantity at cells defined by an array.
  *         Array is assumed to be interlaced.
- *         Variation using a cs_cell_mesh_t structure
+ *         Variation using a \ref cs_cell_mesh_t structure
  *
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      input      pointer to an input structure
  * \param[in, out] eval       result of the evaluation at cell center
@@ -696,9 +704,9 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Evaluate a quantity inside a cell defined using a field
- *         Variation using a cs_cell_mesh_t structure
+ *         Variation using a \ref cs_cell_mesh_t structure
  *
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      input      pointer to an input structure
  * \param[in, out] eval       value of the property at the cell center
@@ -747,9 +755,9 @@ cs_xdef_cw_eval_by_field(const cs_cell_mesh_t        *cm,
 /*!
  * \brief  Function pointer for evaluating a quantity defined by analytic
  *         function at a precise location (x, y, z) inside a cell
- *         Use of a cs_cell_mesh_t structure.
+ *         Use of a \ref cs_cell_mesh_t structure.
  *
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      n_points   number of points where to compute the evaluation
  * \param[in]      xyz        where to compute the evaluation
  * \param[in]      time_eval  physical time at which one evaluates the term
@@ -782,9 +790,10 @@ cs_xdef_cw_eval_at_xyz_by_analytic(const cs_cell_mesh_t       *cm,
 /*!
  * \brief  Function pointer for evaluating a quantity defined by analytic
  *         function at a precise location inside a cell
- *         Use of a cs_cell_mesh_t structure.
+ *         Use of a \ref cs_cell_mesh_t structure.
+ *         Vector-valued case.
  *
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      n_points   number of points where to compute the evaluation
  * \param[in]      xyz        where to compute the evaluation
  * \param[in]      time_eval  physical time at which one evaluates the term
@@ -866,9 +875,10 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t       *cm,
 /*!
  * \brief  Function pointer for evaluating a quantity defined by a field
  *         at a precise location inside a cell
- *         Use of a cs_cell_mesh_t structure.
+ *         Use of a \ref cs_cell_mesh_t structure.
+ *         Vector-valued case.
  *
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      n_points   number of points where to compute the evaluation
  * \param[in]      xyz        where to compute the evaluation
  * \param[in]      time_eval  physical time at which one evaluates the term
@@ -936,9 +946,9 @@ cs_xdef_cw_eval_vector_at_xyz_by_field(const cs_cell_mesh_t    *cm,
  * \brief  Function pointer for evaluating the normal flux of a quantity
  *         defined by values. The normal flux is then added to each portion of
  *         face related to a vertex.
- *         Use of a cs_cell_mesh_t structure.
+ *         Use of a \ref cs_cell_mesh_t structure.
  *
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f          local face id
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      input      pointer to an input structure
@@ -996,7 +1006,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
  * \brief  Function pointer for evaluating the normal flux of a quantity
  *         defined by analytic function. The normal flux is then added to each
  *         portion of face related to a vertex.
- *         Use of a cs_cell_mesh_t structure.
+ *         Use of a \ref cs_cell_mesh_t structure.
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in]      f          local face id
@@ -1188,12 +1198,12 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
     }
     break;
 
-  case CS_QUADRATURE_HIGHEST: // Not yet implemented
+  case CS_QUADRATURE_HIGHEST:  /* Not yet implemented */
   default:
     bft_error(__FILE__, __LINE__, 0, " Invalid type of quadrature.");
     break;
 
-  } // switch type of quadrature
+  }  /* switch type of quadrature */
 
 }
 
@@ -1201,9 +1211,9 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 /*!
  * \brief  Function pointer for evaluating the normal flux of a quantity
  *         defined by analytic function.
- *         Use of a cs_cell_mesh_t structure.
+ *         Use of a \ref cs_cell_mesh_t structure.
  *
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f          local face id
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      input      pointer to an input structure
@@ -1298,7 +1308,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
         /* Evaluate the function for this time at the given coordinates */
         anai->func(time_eval, 3, NULL,
-                   (const cs_real_t *)gpts, true, // compacted output ?
+                   (const cs_real_t *)gpts, true,  /* compacted output ? */
                    anai->input,
                    (cs_real_t *)_val);
 
@@ -1312,12 +1322,12 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
     }
     break;
 
-  case CS_QUADRATURE_HIGHEST: // Not yet implemented
+  case CS_QUADRATURE_HIGHEST:  /* Not yet implemented */
   default:
     bft_error(__FILE__, __LINE__, 0, " Invalid type of quadrature.");
     break;
 
-  } // switch type of quadrature
+  }  /* switch type of quadrature */
 
 }
 
@@ -1325,10 +1335,10 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
 /*!
  * \brief  Function pointer for evaluating the normal flux of a quantity
  *         defined by analytic function.
- *         Case of vector-valued quantities.
- *         Use of a cs_cell_mesh_t structure.
+ *         Use of a \ref cs_cell_mesh_t structure.
+ *         Case of tensor-valued quantities.
  *
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f          local face id
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      input      pointer to an input structure
@@ -1355,7 +1365,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
       cs_real_33_t  flux_xc = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
       /* Evaluate the function for this time at the given coordinates */
-      anai->func(time_eval, 1, NULL, cm->xc, true, // compacted output ?
+      anai->func(time_eval, 1, NULL, cm->xc, true,  /* compacted output ? */
                  anai->input,
                  (cs_real_t *)flux_xc);
 
@@ -1387,7 +1397,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
         /* Evaluate the function for this time at the given coordinates */
         anai->func(time_eval, 1, NULL,
-                   (const cs_real_t *)_xyz, true, // compacted output ?
+                   (const cs_real_t *)_xyz, true,  /* compacted output ? */
                    anai->input,
                    (cs_real_t *)_eval);
 
@@ -1424,7 +1434,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
         /* Evaluate the function for this time at the given coordinates */
         anai->func(time_eval, 3, NULL,
-                   (const cs_real_t *)gpts, true, // compacted output ?
+                   (const cs_real_t *)gpts, true,  /* compacted output ? */
                    anai->input,
                    (cs_real_t *)_eval);
 
@@ -1441,23 +1451,25 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
     }
     break;
 
-  case CS_QUADRATURE_HIGHEST: // Not yet implemented
+  case CS_QUADRATURE_HIGHEST:  /* Not yet implemented */
   default:
     bft_error(__FILE__, __LINE__, 0, " Invalid type of quadrature.");
     break;
 
-  } // switch type of quadrature
+  }  /* switch type of quadrature */
 
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function pointer for evaluating the reduction by averages of a
- *         analytic function by a cellwise process (usage of a cs_cell_mesh_t
- *         structure) which is hinged on integrals (faces first, then cell)
- *         Scalar-valued case
+ *         analytic function by a cellwise process (usage of a
+ *         \ref cs_cell_mesh_t structure).
+ *         This evaluation hinges on the computation of integrals (faces first,
+ *         then cell)
+ *         Scalar-valued case.
  *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
  * \param[in]      qtype    quadrature type
  * \param[in]      input    pointer to an input structure
@@ -1505,11 +1517,13 @@ cs_xdef_cw_eval_scal_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function pointer for evaluating the reduction by averages of a
- *         analytic function by a cellwise process (usage of a cs_cell_mesh_t
- *         structure) which is hinged on integrals  (faces first, then cell)
- *         Vector-valued case
+ *         analytic function by a cellwise process (usage of a
+ *         \ref cs_cell_mesh_t structure).
+ *         This evaluation hinges on the computation of integrals (faces first,
+ *         then cell)
+ *         Vector-valued case.
  *
- * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
  * \param[in]      qtype    quadrature type
  * \param[in]      input    pointer to an input structure

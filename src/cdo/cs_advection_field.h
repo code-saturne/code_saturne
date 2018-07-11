@@ -139,7 +139,7 @@ typedef struct {
    *
    * \var bdy_field_id
    * id to retrieve the related cs_field_t structure corresponding to
-   * the value of the normal flux accross boundary faces. It's always
+   * the value of the normal flux across boundary faces. It's always
    * defined since it's used for dealing with the boundary conditions.
    *
    * \var definition

@@ -478,7 +478,7 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
         /* Evaluate the boundary condition at each boundary vertex */
         cs_xdef_eval_at_vertices_by_array(n_vf,
                                           lst,
-                                          true, // compact ouput
+                                          true, /* compact ouput */
                                           mesh,
                                           connect,
                                           quant,
@@ -503,7 +503,7 @@ cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
         /* Evaluate the boundary condition at each boundary vertex */
         cs_xdef_eval_at_vertices_by_analytic(n_vf,
                                              lst,
-                                             true, // compact output
+                                             true, /* compact output */
                                              mesh,
                                              connect,
                                              quant,
@@ -696,7 +696,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
           cs_xdef_array_input_t  *array_input =
             (cs_xdef_array_input_t *)def->input;
 
-          assert(eqp->n_bc_defs == 1); // Only one definition allowed
+          assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
           assert(bz->n_elts == quant->n_b_faces);
           assert(array_input->stride == eqp->dim);
           assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
@@ -725,10 +725,10 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                   _(" Invalid type of definition.\n"
                     " Stop computing the Dirichlet value.\n"));
 
-      } // switch def_type
+      } /* switch on def_type */
 
-    } // Definition based on Dirichlet BC
-  } // Loop on definitions
+    } /* Definition based on Dirichlet BC */
+  } /* Loop on definitions */
 
   /* Set the values to zero for all vertices attached to a homogeneous
      Diriclet BC */
@@ -819,8 +819,8 @@ cs_equation_compute_neumann_sv(short int                   def_id,
 
   const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
-  assert(def->dim == 3);                 // flux is a vector in the scalar case
-  assert(def->meta & CS_CDO_BC_NEUMANN); // Neuman BC
+  assert(def->dim == 3); /* flux is a vector in the scalar case */
+  assert(def->meta & CS_CDO_BC_NEUMANN); /* Neuman BC */
 
   /* Evaluate the boundary condition at each boundary vertex */
   switch(def->type) {
@@ -843,7 +843,7 @@ cs_equation_compute_neumann_sv(short int                   def_id,
       cs_xdef_array_input_t  *array_input =
         (cs_xdef_array_input_t *)def->input;
 
-      assert(eqp->n_bc_defs == 1); // Only one definition allowed
+      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(array_input->stride == 3);
 
       cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
@@ -877,7 +877,7 @@ cs_equation_compute_neumann_sv(short int                   def_id,
               _(" Invalid type of definition.\n"
                 " Stop computing the Neumann value.\n"));
 
-  } // switch def_type
+  } /* switch def_type */
 
 }
 
@@ -913,7 +913,7 @@ cs_equation_compute_neumann_fb(short int                    def_id,
 
   /* Flux is a vector in the scalar-valued case and a tensor in the
      vector-valued case */
-  assert(def->meta & CS_CDO_BC_NEUMANN); // Neuman BC
+  assert(def->meta & CS_CDO_BC_NEUMANN); /* Neuman BC */
 
   /* Evaluate the boundary condition at each boundary vertex */
   switch(def->type) {
@@ -947,7 +947,7 @@ cs_equation_compute_neumann_fb(short int                    def_id,
       cs_xdef_array_input_t  *array_input =
         (cs_xdef_array_input_t *)def->input;
 
-      assert(eqp->n_bc_defs == 1); // Only one definition allowed
+      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(array_input->stride == 3);
       assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
 
@@ -965,7 +965,7 @@ cs_equation_compute_neumann_fb(short int                    def_id,
               _(" Invalid type of definition.\n"
                 " Stop computing the Neumann value.\n"));
 
-  } // switch def_type
+  } /* switch def_type */
 
 }
 

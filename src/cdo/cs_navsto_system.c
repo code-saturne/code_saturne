@@ -810,7 +810,7 @@ _projection_last_setup(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize the face values for the velocity unknows (in case of
+ * \brief Initialize the face values for the velocity unknowns (in case of
  *        CDO Face-based scheme) in order to have a initial guess in accordance
  *        with the user requirements when solving the momentum equation
  *

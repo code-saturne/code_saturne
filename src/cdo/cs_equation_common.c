@@ -43,6 +43,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_cdo_local.h"
 #include "cs_cdovb_scaleq.h"
+#include "cs_cdovb_vecteq.h"
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_navsto.h"
 #include "cs_cdofb_scaleq.h"

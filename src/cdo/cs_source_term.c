@@ -2130,7 +2130,6 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
   else {
 
     const cs_real_t *xv = cm->xv;
-    const double  vol = cm->vol_c;
 
     cs_real_3_t  cell_values = {0.0, 0.0, 0.0};
     cs_quadrature_tetra_integral_t  *qfunc =

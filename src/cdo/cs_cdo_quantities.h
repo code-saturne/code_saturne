@@ -69,7 +69,7 @@ typedef enum {
 
 } cs_cdo_quantities_algo_ccenter_t;
 
-/* Structure storing information about variation of entities accros the
+/* Structure storing information about variation of entities across the
    mesh for a given type of entity (cell, face and edge) */
 typedef struct {
 

@@ -75,6 +75,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Local Macro definitions and structure definitions
  *============================================================================*/
@@ -140,6 +142,8 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 
   return cb;
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes
@@ -437,11 +441,6 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
   eqb->bd_msh_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ;
-
-  /* Set members and structures related to the management of the BCs
-     Translate user-defined information about BC into a structure well-suited
-     for computation. We make the distinction between homogeneous and
-     non-homogeneous BCs.  */
 
   /* Values at each face (interior and border) i.e. take into account BCs */
   BFT_MALLOC(eqc->face_values, 3*n_faces, cs_real_t);

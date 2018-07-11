@@ -109,7 +109,7 @@ typedef double
  *
  * \param[in]      csys        pointer to a cellwise view of the system
  * \param[in]      bf          local face number id (0..n_bc_faces)
- * \param[in]      flx         advective flux accros the triangle "tef"
+ * \param[in]      flx         advective flux across the triangle "tef"
  * \param[in]      v1          first vertex to consider in the cell numbering
  * \param[in]      v2          second vertex to consider in the cell numbering
  * \param[in, out] rhs         rhs of the local system

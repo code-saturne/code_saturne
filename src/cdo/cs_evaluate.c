@@ -816,7 +816,7 @@ _pcva_by_value(const cs_real_t     const_vec[3],
   if (elt_ids == NULL) { /* All the support entities are selected */
 #   pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++) {
-      memcpy(values+3*c_id,const_vec,3*sizeof(cs_real_t));
+      memcpy(values + 3*c_id, const_vec, 3*sizeof(cs_real_t));
     }
   }
 
@@ -824,7 +824,7 @@ _pcva_by_value(const cs_real_t     const_vec[3],
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       const cs_lnum_t  c_id = elt_ids[i];
-      memcpy(values+3*c_id,const_vec,3*sizeof(cs_real_t));
+      memcpy(values+3*c_id, const_vec, 3*sizeof(cs_real_t));
     }
   }
 

@@ -1854,9 +1854,8 @@ cs_equation_solve(cs_equation_t   *eq)
 
     cs_gnum_t  nnz = row_index[size];
     if (cs_glob_n_ranks > 1) cs_parall_counter(&nnz, 1);
-
-    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code  %d n_iters  %d"
-                  " residual  % -8.4e nnz %lu\n",
+    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d n_iters %d"
+                  " residual % -8.4e nnz %lu\n",
                   eq->name, code, n_iters, residual, nnz);
 
   }
@@ -1998,7 +1997,7 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
         bft_error(__FILE__, __LINE__, 0,
                   _(" %s: No function defined for this operation in eq. %s"),
                   __func__, eq->name);
-      return NULL; // Avoid aa warning
+      return NULL; /* Avoid a warning */
     }
     break;
 
@@ -2008,7 +2007,7 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the diffusive and convective flux accross a plane defined
+ * \brief  Compute the diffusive and convective flux across a plane defined
  *         by a mesh location structure attached to the name ml_name.
  *
  * \param[in]      eq          pointer to a cs_equation_t structure

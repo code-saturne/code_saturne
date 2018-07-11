@@ -633,7 +633,7 @@ cs_xdef_log(cs_xdef_t     *d)
 
   if (d->support == CS_XDEF_SUPPORT_VOLUME) {
 
-    const cs_volume_zone_t  *z = cs_volume_zone_by_id(d->z_id);
+    const cs_zone_t  *z = cs_volume_zone_by_id(d->z_id);
     assert(z != NULL);
     cs_log_printf(CS_LOG_SETUP,
                   " <Definition> support: volume, zone: %d, %s,"
@@ -643,7 +643,7 @@ cs_xdef_log(cs_xdef_t     *d)
   }
   else if (d->support == CS_XDEF_SUPPORT_BOUNDARY) {
 
-    const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
+    const cs_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
     assert(z != NULL);
     cs_log_printf(CS_LOG_SETUP,
                   " <Definition> support: boundary, zone: %d, %s,"

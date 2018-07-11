@@ -1043,7 +1043,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   /* HHO schemes with k=1,
      CDO-Fb schemes with vector-valued unknowns
-     HHO schemes with k=0 and vector-valued unknows */
+     HHO schemes with k=0 and vector-valued unknowns */
   if ((fb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
       || cs_flag_test(hho_scheme_flag,
                       CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY1)
