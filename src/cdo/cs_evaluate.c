@@ -80,56 +80,7 @@ static const char _err_quad[] = " %s: Invalid quadrature type.";
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the integral over dual cells of a scalar density field
- *         defined by an analytical function on a cell
- *
- * \param[in]      cm                  pointer to a cs_cell_mesh_t structure
- * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      ana                 pointer to the analytic function
- * \param[in]      input               NULL or pointer cast on-the-fly
- * \param[in]      compute_integral    function pointer
- * \param[in, out] values              pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_cellwise_dcsd_by_analytic(const cs_cell_mesh_t            *cm,
-                           cs_real_t                        time_eval,
-                           cs_analytic_func_t              *ana,
-                           void                            *input,
-                           cs_quadrature_tetra_integral_t  *compute_integral,
-                           cs_real_t                        values[])
-{
-  const cs_real_t  vol = cm->vol_c;
-
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const double  *xf = cm->face[f].center;
-    const short int  n_ef = cm->f2e_idx[f+1] - cm->f2e_idx[f];
-    const short int  *e_ids = cm->f2e_ids + cm->f2e_idx[f];
-
-    for (short int i = 0; i < n_ef; i++) {
-
-      const short int  e = e_ids[i];
-      const short int  v1 = cm->e2v_ids[2*e];
-      const short int  v2 = cm->e2v_ids[2*e+1];
-      const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
-      const double  *xe = cm->edge[e].center;
-
-      compute_integral(time_eval, xv1, xe, xf, cm->xc, vol*cm->wvc[v1],
-                       ana, input, values + v1);
-      compute_integral(time_eval, xv2, xe, xf, cm->xc, vol*cm->wvc[v2],
-                       ana, input, values + v2);
-
-    } /* Loop on face edges */
-
-  } /* Loop on cell faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the integral over dual cells of a scalar density field
+ * \brief  Compute the integral over dual cells of a scalar-valued density field
  *         defined by an analytical function on a selection of (primal) cells
  *
  * \param[in]      time_eval      physical time at which one evaluates the term
@@ -156,7 +107,7 @@ _dcsd_by_analytic(cs_real_t                        time_eval,
   const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
 
-  /* Compute dual volumes */
+  /* Computation over dual volumes */
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
     const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
@@ -169,15 +120,14 @@ _dcsd_by_analytic(cs_real_t                        time_eval,
 
       for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
-        const cs_lnum_t  e_id = f2e->ids[j];
-        const cs_lnum_t  v1 = connect->e2v->ids[2*e_id];
-        const cs_lnum_t  v2 = connect->e2v->ids[2*e_id+1];
+        const cs_lnum_t  _2e = 2*f2e->ids[j];
+        const cs_lnum_t  v1 = connect->e2v->ids[_2e];
+        const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
         const cs_real_t  *xv1 = quant->vtx_coord + 3*v1;
         const cs_real_t  *xv2 = quant->vtx_coord + 3*v2;
 
         cs_real_3_t  xe;
-        for (int k = 0; k < 3; k++)
-          xe[k] = 0.5 * (xv1[k] + xv2[k]);
+        for (int k = 0; k < 3; k++) xe[k] = 0.5 * (xv1[k] + xv2[k]);
 
         compute_integral(time_eval, xv1, xe, xf, xc, quant->dcell_vol[v1],
                          ana, input, values + v1);
@@ -194,85 +144,74 @@ _dcsd_by_analytic(cs_real_t                        time_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the integral over primal cells of a scalar density field
- *         defined by an analytical function on a cell
+ * \brief  Compute the integral over dual cells of a vector-valued density field
+ *         defined by an analytical function on a selection of (primal) cells
  *
- * \param[in]      cm                  pointer to a cs_cell_mesh_t structure
- * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      ana                 pointer to the analytic function
- * \param[in]      input               NULL or pointer cast on-the-fly
- * \param[in]      compute_integral    function pointer
- *
- * \return the value of the corresponding integral
+ * \param[in]      time_eval      physical time at which one evaluates the term
+ * \param[in]      ana               pointer to the analytic function
+ * \param[in]      input             NULL or pointer cast on-the-fly
+ * \param[in]      n_elts            number of elements to consider
+ * \param[in]      elt_ids           pointer to the list of selected ids
+ * \param[in]      compute_integral  function pointer
+ * \param[in, out] values            pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_real_t
-_cellwise_pcsd_by_analytic(const cs_cell_mesh_t            *cm,
-                           cs_real_t                        time_eval,
-                           cs_analytic_func_t              *ana,
-                           void                            *input,
-                           cs_quadrature_tetra_integral_t  *compute_integral)
+static void
+_dcvd_by_analytic(cs_real_t                        time_eval,
+                  cs_analytic_func_t              *ana,
+                  void                            *input,
+                  const cs_lnum_t                  n_elts,
+                  const cs_lnum_t                 *elt_ids,
+                  cs_quadrature_tetra_integral_t  *compute_integral,
+                  cs_real_t                        values[])
 {
-  cs_real_t  retval = 0.;
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_cdo_connect_t  *connect = cs_cdo_connect;
+  const cs_adjacency_t  *c2f = connect->c2f;
+  const cs_adjacency_t  *f2e = connect->f2e;
+  const int  dim = 3;
 
-  if (cs_cdo_connect->cell_type[cm->c_id] == FVM_CELL_TETRA) {
+  /* Computation over dual volumes */
+  for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
-    compute_integral(time_eval, cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
-                     cm->vol_c, ana, input, &retval);
+    const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
+    const cs_real_t  *xc = quant->cell_centers + 3*c_id;
 
-  }
-  else {
+    for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
-    for (short int f = 0; f < cm->n_fc; f++) {
+      const cs_lnum_t  f_id = c2f->ids[i];
+      const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
 
-      const cs_real_t  hf_coef = cs_math_onethird * cm->hfc[f];
-      const short int  start = cm->f2e_idx[f];
-      const short int  n_ef  = cm->f2e_idx[f+1] - start;
-      const short int *e_ids = cm->f2e_ids + cm->f2e_idx[f];
+      for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
-      if (n_ef == 3) { /* Current face is a triangle --> simpler */
+        const cs_lnum_t  _2e = 2*f2e->ids[j];
+        const cs_lnum_t  v1 = connect->e2v->ids[_2e];
+        const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
+        const cs_real_t  *xv1 = quant->vtx_coord + 3*v1;
+        const cs_real_t  *xv2 = quant->vtx_coord + 3*v2;
 
-        short int  v0, v1, v2;
-        cs_cell_mesh_get_next_3_vertices(e_ids, cm->e2v_ids, &v0, &v1, &v2);
+        cs_real_3_t  xe;
+        for (int k = 0; k < 3; k++) xe[k] = 0.5 * (xv1[k] + xv2[k]);
 
-        const double *xv0 = cm->xv+3*v0, *xv1 = cm->xv+3*v1, *xv2 = cm->xv+3*v2;
+        compute_integral(time_eval, xv1, xe, xf, xc, quant->dcell_vol[v1],
+                         ana, input, values + dim*v1);
+        compute_integral(time_eval, xv2, xe, xf, xc, quant->dcell_vol[v2],
+                         ana, input, values + dim*v2);
 
-        compute_integral(time_eval, xv0, xv1, xv2, cm->xc,
-                         hf_coef*cm->face[f].meas,
-                         ana, input, &retval);
+      }  /* Loop on edges */
 
-      }
-      else {
+    }  /* Loop on faces */
 
-        const double  *xf = cm->face[f].center;
-        const double  *tef = cm->tef + start;
+  }  /* Loop on cells */
 
-        for (short int i = 0; i < n_ef; i++) {
-
-          const short int  _2e = 2*e_ids[i];
-          const double  *xv1 = cm->xv + 3*cm->e2v_ids[_2e];
-          const double  *xv2 = cm->xv + 3*cm->e2v_ids[_2e+1];
-
-          compute_integral(time_eval, xv1, xv2, xf, cm->xc,
-                           hf_coef*tef[i],
-                           ana, input, &retval);
-
-        } /* Loop on face edges */
-
-      } /* Current face is triangle or not ? */
-
-    } /* Loop on cell faces */
-
-  } /* Not a tetrahedron */
-
-  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the integral over primal cells of a scalar density field
- *         defined by an analytical function on a selection of (primal) cells
+ * \brief  Compute the integral over primal cells of a scalar-valued density
+ *         field defined by an analytical function on a selection of (primal)
+ *         cells
  *
  * \param[in]      time_eval     physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
@@ -299,18 +238,18 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
   const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
 
-  for (cs_lnum_t  id = 0; id < n_elts; id++) {
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+  for (cs_lnum_t id = 0; id < n_elts; id++) {
 
     const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
     if (connect->cell_type[c_id] == FVM_CELL_TETRA) {
 
-      const cs_lnum_t  *v_ids = connect->c2v->ids + connect->c2v->idx[c_id];
+      const cs_lnum_t  *v = connect->c2v->ids + connect->c2v->idx[c_id];
 
       compute_integral(time_eval,
-                    xv+3*v_ids[0], xv+3*v_ids[1], xv+3*v_ids[2], xv+3*v_ids[3],
+                       xv+3*v[0], xv+3*v[1], xv+3*v[2], xv+3*v[3],
                        quant->cell_vol[c_id],
                        ana, input, values + c_id);
-
 
     }
     else {
@@ -321,14 +260,12 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
 
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
-        const double hfco =
+        const double  hfco =
           cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
                                                    quant->dedge_vector+3*i);
-        const cs_lnum_t start = f2e->idx[f_id],
-                          end = f2e->idx[f_id+1],
-                         n_ef = end - start;
+        const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
-        if (n_ef == 3) {
+        if (end - start == 3) {
 
           cs_lnum_t v0, v1, v2;
           cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
@@ -348,6 +285,97 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
             compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center, xc,
                              hfco*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
                              ana, input, values + c_id);
+
+          } /* Loop on edges */
+
+        } /* Current face is triangle or not ? */
+
+      } /* Loop on faces */
+
+    } /* Not a tetrahedron */
+
+  } /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over primal cells of a vector-valued density
+ *         field defined by an analytical function on a selection of (primal)
+ *         cells
+ *
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      ana               pointer to the analytic function
+ * \param[in]      input             NULL or pointer cast on-the-fly
+ * \param[in]      n_elts            number of elements to consider
+ * \param[in]      elt_ids           pointer to the list of selected ids
+ * \param[in]      compute_integral  function pointer
+ * \param[in, out] values            pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pcvd_by_analytic(cs_real_t                        time_eval,
+                  cs_analytic_func_t              *ana,
+                  void                            *input,
+                  const cs_lnum_t                  n_elts,
+                  const cs_lnum_t                 *elt_ids,
+                  cs_quadrature_tetra_integral_t  *compute_integral,
+                  cs_real_t                        values[])
+{
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_real_t  *xv = quant->vtx_coord;
+  const cs_cdo_connect_t  *connect = cs_cdo_connect;
+  const cs_adjacency_t  *c2f = connect->c2f;
+  const cs_adjacency_t  *f2e = connect->f2e;
+  const int  dim = 3;
+
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+  for (cs_lnum_t  id = 0; id < n_elts; id++) {
+
+    const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
+    if (connect->cell_type[c_id] == FVM_CELL_TETRA) {
+
+      const cs_lnum_t  *v = connect->c2v->ids + connect->c2v->idx[c_id];
+
+      compute_integral(time_eval,
+                       xv+3*v[0], xv+3*v[1], xv+3*v[2], xv+3*v[3],
+                       quant->cell_vol[c_id],
+                       ana, input, values + dim*c_id);
+
+    }
+    else {
+
+      const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+
+      for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+
+        const cs_lnum_t  f_id = c2f->ids[i];
+        const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
+        const double hfc = cs_math_onethird *
+                cs_math_3_dot_product(pfq.unitv, quant->dedge_vector+3*i);
+        const cs_lnum_t start = f2e->idx[f_id], end = f2e->idx[f_id+1];
+
+        if (end - start == 3) {
+
+          cs_lnum_t v0, v1, v2;
+          cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
+                                         start, &v0, &v1, &v2);
+          compute_integral(time_eval,xv + 3*v0, xv + 3*v1, xv + 3*v2, xc,
+                           hfc * pfq.meas,
+                           ana, input, values + 3*c_id);
+        }
+        else {
+
+          for (cs_lnum_t j = start; j < end; j++) {
+
+            const cs_lnum_t  _2e = 2*f2e->ids[j];
+            const cs_lnum_t  v1 = connect->e2v->ids[_2e];
+            const cs_lnum_t  v2 = connect->e2v->ids[_2e+1];
+
+            compute_integral(time_eval, xv + 3*v1, xv + 3*v2, pfq.center, xc,
+                             hfc*cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                             ana, input, values + 3*c_id);
 
           } /* Loop on edges */
 
@@ -391,15 +419,16 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
   const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
 
-  for (cs_lnum_t  id = 0; id < n_elts; id++) {
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+  for (cs_lnum_t id = 0; id < n_elts; id++) {
 
     const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
     if (connect->cell_type[c_id] == FVM_CELL_TETRA) {
 
-      const cs_lnum_t  *v_ids = connect->c2v->ids + connect->c2v->idx[c_id];
+      const cs_lnum_t  *v = connect->c2v->ids + connect->c2v->idx[c_id];
 
       compute_integral(time_eval,
-                    xv+3*v_ids[0], xv+3*v_ids[1], xv+3*v_ids[2], xv+3*v_ids[3],
+                       xv+3*v[0], xv+3*v[1], xv+3*v[2], xv+3*v[3],
                        quant->cell_vol[c_id],
                        ana, input, values + c_id);
 
@@ -412,14 +441,12 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
 
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
-        const double hfco =
+        const double  hfco =
           cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
                                                    quant->dedge_vector+3*i);
-        const cs_lnum_t start = f2e->idx[f_id],
-                          end = f2e->idx[f_id+1],
-                         n_ef = end - start;
+        const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
-        if (n_ef == 3) {
+        if (end - start == 3) {
 
           cs_lnum_t v0, v1, v2;
           cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
@@ -489,6 +516,7 @@ _pcva_by_analytic(cs_real_t                        time_eval,
   const cs_adjacency_t  *c2f = connect->c2f;
   const cs_adjacency_t  *f2e = connect->f2e;
 
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
     const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
@@ -496,10 +524,10 @@ _pcva_by_analytic(cs_real_t                        time_eval,
 
     if (connect->cell_type[c_id] == FVM_CELL_TETRA) {
 
-      const cs_lnum_t  *v_ids = connect->c2v->ids + connect->c2v->idx[c_id];
+      const cs_lnum_t  *v = connect->c2v->ids + connect->c2v->idx[c_id];
 
       compute_integral(time_eval,
-                    xv+3*v_ids[0], xv+3*v_ids[1], xv+3*v_ids[2], xv+3*v_ids[3],
+                       xv+3*v[0], xv+3*v[1], xv+3*v[2], xv+3*v[3],
                        quant->cell_vol[c_id],
                        ana, input, val_i);
 
@@ -515,11 +543,9 @@ _pcva_by_analytic(cs_real_t                        time_eval,
         const double hfco =
           cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
                                                    quant->dedge_vector+3*i);
-        const cs_lnum_t start = f2e->idx[f_id],
-                          end = f2e->idx[f_id+1],
-                         n_ef = end - start;
+        const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
-        if (n_ef == 3) {
+        if (end - start == 3) {
 
           cs_lnum_t v0, v1, v2;
           cs_connect_get_next_3_vertices(connect->f2e->ids, connect->e2v->ids,
@@ -555,7 +581,6 @@ _pcva_by_analytic(cs_real_t                        time_eval,
   } /* Loop on cells */
 
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -748,9 +773,11 @@ _pcvd_by_value(const cs_real_t     const_vec[3],
 #   pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++) {
       const cs_real_t  vol_c = vol[c_id];
-      values[3*c_id]   = vol_c*const_vec[0];
-      values[3*c_id+1] = vol_c*const_vec[1];
-      values[3*c_id+2] = vol_c*const_vec[2];
+      cs_real_t  *val_c = values + 3*c_id;
+
+      val_c[0] = vol_c * const_vec[0];
+      val_c[1] = vol_c * const_vec[1];
+      val_c[2] = vol_c * const_vec[2];
     }
   }
 
@@ -759,9 +786,11 @@ _pcvd_by_value(const cs_real_t     const_vec[3],
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       const cs_lnum_t  c_id = elt_ids[i];
       const cs_real_t  vol_c = vol[c_id];
-      values[3*c_id  ] = vol_c*const_vec[0];
-      values[3*c_id+1] = vol_c*const_vec[1];
-      values[3*c_id+2] = vol_c*const_vec[2];
+      cs_real_t  *val_c = values + 3*c_id;
+
+      val_c[0] = vol_c * const_vec[0];
+      val_c[1] = vol_c * const_vec[1];
+      val_c[2] = vol_c * const_vec[2];
     }
   }
 
@@ -1593,33 +1622,42 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
     /* Retrieve information from mesh location structures */
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
   cs_quadrature_tetra_integral_t
     *qfunc = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
 
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
-    cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
-
-    if (cs_flag_test(dof_flag, cs_flag_primal_cell)) {
-
+    if (cs_flag_test(dof_flag, cs_flag_primal_cell))
       _pcsd_by_analytic(time_eval, anai->func, anai->input,
-                        z->n_elts, z->elt_ids, qfunc, retval);
-
-    }
-    else if (cs_flag_test(dof_flag, cs_flag_dual_cell)) {
-
+                        z->n_elts, z->elt_ids, qfunc,
+                        retval);
+    else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
       _dcsd_by_analytic(time_eval, anai->func, anai->input,
                         z->n_elts, z->elt_ids, qfunc,
                         retval);
+    else
+      bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
 
-    }
+  }
+  else if (dof_flag & CS_FLAG_VECTOR) { /* DoF is vector-valued */
+
+    if (cs_flag_test(dof_flag, cs_flag_primal_cell))
+      _pcvd_by_analytic(time_eval, anai->func, anai->input,
+                        z->n_elts, z->elt_ids, qfunc,
+                        retval);
+    else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
+      _dcvd_by_analytic(time_eval, anai->func, anai->input,
+                        z->n_elts, z->elt_ids, qfunc,
+                        retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
 
   }
   else
     bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
+
 }
 
 /*----------------------------------------------------------------------------*/
