@@ -607,7 +607,7 @@ _get_internal_coupling_string(const char *label,
 
 
 /*-----------------------------------------------------------------------------
- * Retreive internal coupling x, y and z XML values
+ * Retrieve internal coupling x, y and z XML values
  *
  * parameters:
  *   label      <-- boundary label
@@ -626,7 +626,7 @@ _get_internal_coupling_xyz_values(const char *label,
 }
 
 /*-----------------------------------------------------------------------------
- * Retreive internal coupling advanced windows double value
+ * Retrieve internal coupling advanced windows double value
  *
  * parameters:
  *   node_name  <-- xml node name ("displacement_prediction_alpha")
@@ -648,7 +648,7 @@ _get_uistr1_advanced_double(const char *const keyword,
 }
 
 /*-----------------------------------------------------------------------------
- * Retreive internal coupling advanced windows checkbox value
+ * Retrieve internal coupling advanced windows checkbox value
  *
  * parameters:
  *   node_name  <-- xml node name ("monitor_point_synchronisation")
@@ -670,7 +670,7 @@ _get_uistr1_advanced_checkbox(const char *const keyword,
 }
 
 /*-----------------------------------------------------------------------------
- * Retreive data the internal coupling matrices
+ * Retrieve data the internal coupling matrices
  *
  * parameters:
  *   label            <-- boundary label
@@ -725,7 +725,7 @@ _get_internal_coupling_matrix(const char    *label,
 }
 
 /*-----------------------------------------------------------------------------
- * Retreive data for internal coupling for a specific boundary
+ * Retrieve data for internal coupling for a specific boundary
  *
  * parameters:
  *   label    <-- boundary label
@@ -996,7 +996,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
 }
 
 /*-----------------------------------------------------------------------------
- * Retreive data for internal coupling. Called once at initialization
+ * Retrieve data for internal coupling. Called once at initialization
  *
  * parameters:
  *   idfstr   --> Structure definition

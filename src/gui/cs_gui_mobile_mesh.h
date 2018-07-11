@@ -101,7 +101,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
                                 double *const       rcodcl);
 
 /*-----------------------------------------------------------------------------
- * Retreive data for internal coupling. Called once at initialization
+ * Retrieve data for internal coupling. Called once at initialization
  *
  * Fortran Interface:
  *
@@ -131,7 +131,7 @@ void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
                                 double           *vstr0);
 
 /*-----------------------------------------------------------------------------
- * Retreive data for internal coupling. Called at each step
+ * Retrieve data for internal coupling. Called at each step
  *
  * Fortran Interface:
  *
@@ -157,7 +157,7 @@ void CS_PROCF (uistr2, UISTR2) ( double *const  xmstru,
                                  int *const     ntcabs);
 
 /*-----------------------------------------------------------------------------
- * Retreive data for external coupling
+ * Retrieve data for external coupling
  *
  * parameters:
  *   nfabor    <-- Number of boundary faces
