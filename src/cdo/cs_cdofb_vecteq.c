@@ -404,17 +404,21 @@ cs_cdofb_vecteq_finalize_common(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize a cs_cdofb_vecteq_t structure storing data useful for
- *         managing such a scheme
+ *         building and managing such a scheme
  *
- * \param[in]      eqp    pointer to a cs_equation_param_t structure
- * \param[in, out] eqb    pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id     id of the variable field
+ * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated cs_cdofb_vecteq_t structure
+ * \return a pointer to a new allocated \ref cs_cdofb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
 cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
+                             int                          var_id,
+                             int                          bflux_id,
                              cs_equation_builder_t       *eqb)
 {
   /* Sanity checks */
@@ -431,6 +435,9 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   cs_cdofb_vecteq_t  *eqc = NULL;
 
   BFT_MALLOC(eqc, 1, cs_cdofb_vecteq_t);
+
+  eqc->var_field_id = var_id;
+  eqc->bflux_field_id = bflux_id;
 
   /* Dimensions of the algebraic system */
   eqc->n_dofs = 3*(n_faces + n_cells);
@@ -506,7 +513,6 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   } /* Diffusion part */
 
   /* Advection part */
-
   eqc->get_advection_matrix = NULL;
   eqc->add_advection_bc = NULL;
   // TODO
@@ -1000,23 +1006,48 @@ cs_cdofb_vecteq_extra_op(const char                 *eqname,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the computed values at each face
+ * \brief  Get the computed values at mesh cells from the inverse operation
+ *         w.r.t. the static condensation (DoF used in the linear system are
+ *         located at primal faces)
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
  *
- * \param[in] data       pointer to cs_cdofb_vecteq_t structure
+ * \param[in]  context  pointer to a data structure cast on-the-fly
  *
- * \return  a pointer to an array of double (size n_faces)
+ * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-double *
-cs_cdofb_vecteq_get_face_values(const void    *data)
+cs_real_t *
+cs_cdofb_vecteq_get_cell_values(const void      *context)
 {
-  const cs_cdofb_vecteq_t  *eqc = (const cs_cdofb_vecteq_t *)data;
+  cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)context;
+  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+
+  return  pot->val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve an array of values at mesh faces for the current context.
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in] context       pointer to \ref cs_cdofb_vecteq_t structure
+ *
+ * \return  a pointer to an array of cs_real_t (size n_faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdofb_vecteq_get_face_values(const void    *context)
+{
+  const cs_cdofb_vecteq_t  *eqc = (const cs_cdofb_vecteq_t *)context;
 
   if (eqc == NULL)
     return NULL;
   else
-    return eqc->face_values;
+    return  eqc->face_values;
 }
 
 /*----------------------------------------------------------------------------*/

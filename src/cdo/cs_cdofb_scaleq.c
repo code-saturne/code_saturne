@@ -362,18 +362,22 @@ cs_cdofb_scaleq_finalize_common(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdofb_scaleq_t structure storing data useful for
- *         managing such a scheme
+ * \brief  Initialize a \ref cs_cdofb_scaleq_t structure storing data useful
+ *         for building and managing such a scheme
  *
- * \param[in]      eqp    pointer to a cs_equation_param_t structure
- * \param[in, out] eqb    pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id     id of the variable field
+ * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated cs_cdofb_scaleq_t structure
+ * \return a pointer to a new allocated \ref cs_cdofb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
 cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
+                             int                          var_id,
+                             int                          bflux_id,
                              cs_equation_builder_t       *eqb)
 {
   /* Sanity checks */
@@ -390,6 +394,9 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   cs_cdofb_scaleq_t  *eqc = NULL;
 
   BFT_MALLOC(eqc, 1, cs_cdofb_scaleq_t);
+
+  eqc->var_field_id = var_id;
+  eqc->bflux_field_id = bflux_id;
 
   /* Dimensions of the algebraic system */
   eqc->n_dofs = n_faces + n_cells;
@@ -930,14 +937,12 @@ cs_cdofb_scaleq_update_field(const cs_real_t              *solu,
  *         domain between time t_cur and t_cur + dt_cur
  *         Case of scalar-valued CDO face-based scheme
  *
- * \param[in]      eqp             pointer to a cs_equation_param_t structure
- * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
- * \param[in, out] context         pointer to a scheme builder structure
- * \param[in]      var_field_id    id of the variable field
- * \param[in]      bflux_field_id  id of the variable field
- * \param[in]      dt_cur          current value of the time step
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb       pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] context   pointer to a scheme builder structure
+ * \param[in]      dt_cur    current value of the time step
  *
- * \return a pointer to a cs_equation_balance_t structure
+ * \return a pointer to a \ref cs_equation_balance_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -945,8 +950,6 @@ cs_equation_balance_t *
 cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
                         cs_equation_builder_t         *eqb,
                         void                          *context,
-                        int                            var_field_id,
-                        int                            bflux_field_id,
                         cs_real_t                      dt_cur)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -956,9 +959,9 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  cs_field_t  *pot = cs_field_by_id(var_field_id);
-  cs_field_t  *bflux = cs_field_by_id(bflux_field_id);
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
+  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+  cs_field_t  *bflux = cs_field_by_id(eqc->bflux_field_id);
 
   /* Allocate and initialize the structure storing the balance evaluation */
   cs_equation_balance_t  *eb = cs_equation_balance_create(cs_flag_primal_cell,
@@ -1218,18 +1221,43 @@ cs_cdofb_scaleq_extra_op(const char                 *eqname,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the computed values at each face
+ * \brief  Get the computed values at mesh cells from the inverse operation
+ *         w.r.t. the static condensation (DoF used in the linear system are
+ *         located at primal faces)
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
  *
- * \param[in] data       pointer to cs_cdofb_scaleq_t structure
+ * \param[in]  context  pointer to a data structure cast on-the-fly
  *
- * \return  a pointer to an array of double (size n_faces)
+ * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-double *
-cs_cdofb_scaleq_get_face_values(const void    *data)
+cs_real_t *
+cs_cdofb_scaleq_get_cell_values(const void      *context)
 {
-  const cs_cdofb_scaleq_t  *eqc = (const cs_cdofb_scaleq_t *)data;
+  cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
+  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+
+  return pot->val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve an array of values at mesh faces for the current context.
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in] context       pointer to \ref cs_cdofb_scaleq_t structure
+ *
+ * \return  a pointer to an array of cs_real_t (size n_faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdofb_scaleq_get_face_values(const void    *context)
+{
+  const cs_cdofb_scaleq_t  *eqc = (const cs_cdofb_scaleq_t *)context;
 
   if (eqc == NULL)
     return NULL;

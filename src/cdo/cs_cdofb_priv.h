@@ -50,6 +50,10 @@ BEGIN_C_DECLS
 /* Algebraic system for CDO face-based discretization */
 struct  _cs_cdofb_t {
 
+  /* Ids related to the variable field and to the boundary flux field */
+  int          var_field_id;
+  int          bflux_field_id;
+
   /* System size (n_faces + n_cells) */
   cs_lnum_t                        n_dofs;
 

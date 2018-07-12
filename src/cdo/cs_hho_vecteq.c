@@ -1,5 +1,5 @@
 /*============================================================================
- * Build an algebraic system for scalar conv./diff. eq. with Hybrid High Order
+ * Build an algebraic system for vector conv./diff. eq. with Hybrid High Order
  * space discretization
  *============================================================================*/
 
@@ -89,7 +89,11 @@ BEGIN_C_DECLS
 
 struct _cs_hho_vecteq_t {
 
-  /*Global System size      (n_faces * n_face_dofs) */
+  /* Ids related to the variable field and to the boundary flux field */
+  int          var_field_id;
+  int          bflux_field_id;
+
+  /* Global System size      (n_faces * n_face_dofs) */
   cs_lnum_t                      n_dofs;
   int                            n_max_loc_dofs;
   int                            n_cell_dofs;
@@ -305,7 +309,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         pointer to a cs_cdofb_scaleq_t structure
+ * \param[in]      eqc         pointer to a cs_hho_vecteq_t structure
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] hhob        pointer to a cs_hho_builder_t structure
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -770,15 +774,19 @@ cs_hho_vecteq_finalize_common(void)
  * \brief  Initialize a cs_hho_vecteq_t structure storing data useful for
  *         managing such a scheme
  *
- * \param[in] eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb   pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id     id of the variable field
+ * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated cs_hho_vecteq_t structure
+ * \return a pointer to a new allocated \ref cs_hho_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
 cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
+                           int                          var_id,
+                           int                          bflux_id,
                            cs_equation_builder_t       *eqb)
 {
   /* Sanity checks */
@@ -793,6 +801,9 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   cs_hho_vecteq_t  *eqc = NULL;
 
   BFT_MALLOC(eqc, 1, cs_hho_vecteq_t);
+
+  eqc->var_field_id = var_id;
+  eqc->bflux_field_id = bflux_id;
 
   /* Mesh flag to know what to build */
   eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ |
@@ -1041,7 +1052,7 @@ cs_hho_vecteq_compute_source(const cs_equation_param_t  *eqp,
  * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
  * \param[in, out] data           pointer to generic data structure
  * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
+ * \param[in, out] system_rhs     pointer of pointer to an array of cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1490,11 +1501,11 @@ cs_hho_vecteq_update_field(const cs_real_t            *solu,
  *
  * \param[in]  data    pointer to a data structure
  *
- * \return  a pointer to an array of double
+ * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-double *
+cs_real_t *
 cs_hho_vecteq_get_face_values(const void          *data)
 {
   const cs_hho_vecteq_t  *eqc = (const cs_hho_vecteq_t  *)data;
@@ -1512,11 +1523,11 @@ cs_hho_vecteq_get_face_values(const void          *data)
  *
  * \param[in]  data    pointer to a data structure
  *
- * \return  a pointer to an array of double
+ * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-double *
+cs_real_t *
 cs_hho_vecteq_get_cell_values(const void          *data)
 {
   const cs_hho_vecteq_t  *eqc = (const cs_hho_vecteq_t  *)data;

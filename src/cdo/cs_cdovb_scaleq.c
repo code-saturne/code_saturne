@@ -102,12 +102,17 @@ BEGIN_C_DECLS
 
 struct _cs_cdovb_scaleq_t {
 
+  /* Ids related to the variable field and to the boundary flux field */
+  int          var_field_id;
+  int          bflux_field_id;
+
   /* System size */
   cs_lnum_t    n_dofs;
 
-  /* Array storing the value arising from the contribution of all source
+  /* Array storing the value stemming from the contribution of all source
      terms */
   cs_real_t   *source_terms;
+  cs_real_t   *cell_values;     /* NULL if not requested */
 
   /* Pointer of function to build the diffusion term */
   cs_hodge_t                      *get_stiffness_matrix;
@@ -401,18 +406,22 @@ cs_cdovb_scaleq_finalize_common(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdovb_scaleq_t structure storing data useful for
- *         managing such a scheme
+ * \brief  Initialize a \ref cs_cdovb_scaleq_t structure storing data useful
+ *         for building and managing such a scheme
  *
- * \param[in]      eqp   pointer to a cs_equation_param_t structure
- * \param[in, out] eqb   pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id      id of the variable field
+ * \param[in]      bflux__id   id of the boundary flux field
+ * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t struct.
  *
- * \return a pointer to a new allocated cs_cdovb_scaleq_t structure
+ * \return a pointer to a new allocated \ref cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
 cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
+                             int                          var_id,
+                             int                          bflux_id,
                              cs_equation_builder_t       *eqb)
 {
   /* Sanity checks */
@@ -429,6 +438,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   cs_cdovb_scaleq_t  *eqc = NULL;
 
   BFT_MALLOC(eqc, 1, cs_cdovb_scaleq_t);
+
+  eqc->var_field_id = var_id;
+  eqc->bflux_field_id = bflux_id;
 
   eqc->n_dofs = n_vertices;
 
@@ -540,8 +552,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       default:
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid advection scheme for vertex-based discretization");
-      } // Scheme
-      break; // Formulation
+      } /* Scheme */
+      break; /* Formulation */
 
     case CS_PARAM_ADVECTION_FORM_NONCONS:
 
@@ -563,8 +575,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       default:
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid advection scheme for vertex-based discretization");
-      } // Scheme
-      break; // Formulation
+      } /* Scheme */
+      break; /* Formulation */
 
     default:
       bft_error(__FILE__, __LINE__, 0,
@@ -579,7 +591,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   else {
 
     if (eqp->enforcement != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
-      eqb->sys_flag |= CS_FLAG_SYS_SYM; // Algebraic system is symmetric
+      eqb->sys_flag |= CS_FLAG_SYS_SYM; /* Algebraic system is symmetric */
 
   }
 
@@ -638,9 +650,12 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->hdg_mass.inv_pty  = false;
   eqc->hdg_mass.type = CS_PARAM_HODGE_TYPE_VPCD;
   eqc->hdg_mass.algo = CS_PARAM_HODGE_ALGO_WBS;
-  eqc->hdg_mass.coef = 1.0; // not useful in this case
+  eqc->hdg_mass.coef = 1.0; /* not useful in this case */
 
   eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
+
+  /* Array used for extra-operations */
+  eqc->cell_values = NULL;
 
   return eqc;
 }
@@ -663,7 +678,9 @@ cs_cdovb_scaleq_free_context(void   *builder)
   if (eqc == NULL)
     return eqc;
 
+  /* These arrays may have not been allocated */
   BFT_FREE(eqc->source_terms);
+  BFT_FREE(eqc->cell_values);
 
   /* Last free */
   BFT_FREE(eqc);
@@ -1089,18 +1106,74 @@ cs_cdovb_scaleq_update_field(const cs_real_t            *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve an array of values at mesh vertices for the variable field
+ *         associated to the given context
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in]  context  pointer to a data structure cast on-the-fly
+ *
+ * \return  a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_scaleq_get_vertex_values(const void      *context)
+{
+  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
+  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+
+  return pot->val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute an array of values at mesh cells by interpolating the
+ *         variable field associated to the given context located at mesh
+ *         vertices
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in]  context  pointer to a data structure cast on-the-fly
+ *
+ * \return  a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_scaleq_get_cell_values(const void      *context)
+{
+  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
+  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  /* Reset buffer of values */
+  if (eqc->cell_values == NULL)
+    BFT_MALLOC(eqc->cell_values, quant->n_cells, cs_real_t);
+  memset(eqc->cell_values, 0, quant->n_cells*sizeof(cs_real_t));
+
+  /* Compute the values at cell centers from an interpolation of the field
+     values defined at vertices */
+  cs_reco_pv_at_cell_centers(connect->c2v, quant, pot->val,
+                             eqc->cell_values);
+
+  return eqc->cell_values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the balance for an equation over the full computational
  *         domain between time t_cur and t_cur + dt_cur
  *         Case of scalar-valued CDO vertex-based scheme
  *
- * \param[in]      eqp             pointer to a cs_equation_param_t structure
- * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
- * \param[in, out] context         pointer to a scheme builder structure
- * \param[in]      var_field_id    id of the variable field
- * \param[in]      bflux_field_id  id of the variable field
- * \param[in]      dt_cur          current value of the time step
+ * \param[in]      eqp      pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb      pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] context  pointer to a scheme builder structure
+ * \param[in]      dt_cur   current value of the time step
  *
- * \return a pointer to a cs_equation_balance_t structure
+ * \return a pointer to a \ref cs_equation_balance_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1108,8 +1181,6 @@ cs_equation_balance_t *
 cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
                         cs_equation_builder_t         *eqb,
                         void                          *context,
-                        int                            var_field_id,
-                        int                            bflux_field_id,
                         cs_real_t                      dt_cur)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -1120,9 +1191,9 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  cs_field_t  *pot = cs_field_by_id(var_field_id);
-  cs_field_t  *bflux = cs_field_by_id(bflux_field_id);
   cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
+  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+  cs_field_t  *bflux = cs_field_by_id(eqc->bflux_field_id);
 
   /* Assign the boundary flux for faces where Neumann is defined */
   cs_equation_init_boundary_flux_from_bc(t_cur, quant, eqp, bflux->val);

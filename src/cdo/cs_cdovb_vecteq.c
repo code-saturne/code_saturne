@@ -1,6 +1,6 @@
 /*============================================================================
  * Build an algebraic CDO vertex-based system for unsteady convection diffusion
- * reaction of scalar-valued equations with source terms
+ * reaction of vector-valued equations with source terms
  *============================================================================*/
 
 /*
@@ -394,17 +394,21 @@ cs_cdovb_vecteq_finalize_common(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize a cs_cdovb_vecteq_t structure storing data useful for
- *         managing such a scheme
+ *         building and managing such a scheme
  *
- * \param[in]      eqp   pointer to a cs_equation_param_t structure
- * \param[in, out] eqb   pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id     id of the variable field
+ * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated cs_cdovb_vecteq_t structure
+ * \return a pointer to a new allocated \ref cs_cdovb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
 cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
+                             int                          var_id,
+                             int                          bflux_id,
                              cs_equation_builder_t       *eqb)
 {
   /* Sanity checks */
@@ -421,6 +425,9 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   cs_cdovb_vecteq_t  *eqc = NULL;
 
   BFT_MALLOC(eqc, 1, cs_cdovb_vecteq_t);
+
+  eqc->var_field_id = var_id;
+  eqc->bflux_field_id = bflux_id;
 
   eqc->n_dofs = 3*n_vertices;
 
@@ -470,7 +477,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
       bft_error(__FILE__, __LINE__, 0,
                 (" Invalid type of algorithm to build the diffusion term."));
 
-    } // Switch on Hodge algo.
+    } /* Switch on Hodge algo. */
 
     switch (eqp->enforcement) {
 
@@ -486,7 +493,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     }
 
-  } // Has diffusion
+  } /* Has diffusion */
 
   /* Advection part */
   /* -------------- */
@@ -553,9 +560,12 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->hdg_mass.inv_pty  = false;
   eqc->hdg_mass.type = CS_PARAM_HODGE_TYPE_VPCD;
   eqc->hdg_mass.algo = CS_PARAM_HODGE_ALGO_WBS;
-  eqc->hdg_mass.coef = 1.0; // not useful in this case
+  eqc->hdg_mass.coef = 1.0; /* not useful in this case */
 
   eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
+
+  /* Array used for extra-operations */
+  eqc->cell_values = NULL;
 
   return eqc;
 }
@@ -579,6 +589,7 @@ cs_cdovb_vecteq_free_context(void   *builder)
     return eqc;
 
   BFT_FREE(eqc->source_terms);
+  BFT_FREE(eqc->cell_values);
 
   /* Last free */
   BFT_FREE(eqc);
@@ -918,6 +929,64 @@ cs_cdovb_vecteq_update_field(const cs_real_t            *solu,
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve an array of values at mesh vertices for the variable field
+ *         associated to the given context
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in]  context  pointer to a data structure cast on-the-fly
+ *
+ * \return  a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_vecteq_get_vertex_values(const void      *context)
+{
+  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
+  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+
+  return pot->val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute an array of values at mesh cells by interpolating the
+ *         variable field associated to the given context located at mesh
+ *         vertices
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in]  context  pointer to a data structure cast on-the-fly
+ *
+ * \return  a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_vecteq_get_cell_values(const void      *context)
+{
+  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
+  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  /* Reset buffer of values */
+  if (eqc->cell_values == NULL)
+    BFT_MALLOC(eqc->cell_values, 3*quant->n_cells, cs_real_t);
+  memset(eqc->cell_values, 0, 3*quant->n_cells*sizeof(cs_real_t));
+
+  /* Compute the values at cell centers from an interpolation of the field
+     values defined at vertices */
+  cs_reco_vect_pv_at_cell_centers(connect->c2v, quant, pot->val,
+                                  eqc->cell_values);
+
+  return eqc->cell_values;
 }
 
 /*----------------------------------------------------------------------------*/

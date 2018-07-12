@@ -62,12 +62,19 @@ BEGIN_C_DECLS
 
 struct _cs_cdovb_t {
 
+  /* Ids related to the variable field and to the boundary flux field */
+  int          var_field_id;
+  int          bflux_field_id;
+
   /* System size */
   cs_lnum_t    n_dofs;
 
   /* Array storing the value arising from the contribution of all source
      terms */
   cs_real_t   *source_terms;
+
+  /* Array for extra-operations */
+  cs_real_t   *cell_values;     /* NULL if not requested */
 
   /* Pointer of function to build the diffusion term */
   cs_hodge_t                      *get_stiffness_matrix;

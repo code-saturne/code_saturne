@@ -89,6 +89,10 @@ BEGIN_C_DECLS
 
 struct _cs_hho_scaleq_t {
 
+  /* Ids related to the variable field and to the boundary flux field */
+  int          var_field_id;
+  int          bflux_field_id;
+
   /* System size (n_faces * n_face_dofs + n_cells * n_cell_dofs) */
   cs_lnum_t                      n_dofs;
   int                            n_max_loc_dofs;
@@ -275,7 +279,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
   default:
     bft_error(__FILE__, __LINE__, 0, _("Invalid space scheme."));
 
-  } // End of switch on space scheme
+  } /* End of switch on space scheme */
 
   return cb;
 }
@@ -288,7 +292,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         pointer to a cs_cdofb_scaleq_t structure
+ * \param[in]      eqc         pointer to a cs_hho_scaleq_t structure
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] hhob        pointer to a cs_hho_builder_t structure
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -749,17 +753,21 @@ cs_hho_scaleq_finalize_common(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize a cs_hho_scaleq_t structure storing data useful for
- *         managing such a scheme
+ *         building and managing such a scheme
  *
- * \param[in] eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb   pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id     id of the variable field
+ * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated cs_hho_scaleq_t structure
+ * \return a pointer to a new allocated \ref cs_hho_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
 cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
+                           int                          var_id,
+                           int                          bflux_id,
                            cs_equation_builder_t       *eqb)
 {
   /* Sanity checks */
@@ -774,6 +782,9 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
   cs_hho_scaleq_t  *eqc = NULL;
 
   BFT_MALLOC(eqc, 1, cs_hho_scaleq_t);
+
+  eqc->var_field_id = var_id;
+  eqc->bflux_field_id = bflux_id;
 
   /* Mesh flag to know what to build */
   eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ |
@@ -1328,11 +1339,11 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
  *
  * \param[in]  data    pointer to a data structure
  *
- * \return  a pointer to an array of double
+ * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-double *
+cs_real_t *
 cs_hho_scaleq_get_face_values(const void          *data)
 {
   const cs_hho_scaleq_t  *eqc = (const cs_hho_scaleq_t  *)data;
@@ -1350,11 +1361,11 @@ cs_hho_scaleq_get_face_values(const void          *data)
  *
  * \param[in]  data    pointer to a data structure
  *
- * \return  a pointer to an array of double
+ * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-double *
+cs_real_t *
 cs_hho_scaleq_get_cell_values(const void          *data)
 {
   const cs_hho_scaleq_t  *eqc = (const cs_hho_scaleq_t  *)data;

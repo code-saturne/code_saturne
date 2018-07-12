@@ -482,12 +482,12 @@ cs_equation_get_type(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the values at each face of the mesh for the field unknowns
- *         related to this equation.
+ * \brief  For a given equation, retrieve an array of values related to each
+ *         face of the mesh for the unknowns
  *
- * \param[in]   eq        pointer to a cs_equation_t structure
+ * \param[in]   eq        pointer to a \ref cs_equation_t structure
  *
- * \return a pointer to the face values
+ * \return a pointer to an array of face values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -499,7 +499,7 @@ cs_equation_get_face_values(const cs_equation_t    *eq);
  * \brief  Get the values at each cell centers for the field unknowns
  *         related to this equation.
  *
- * \param[in]   eq        pointer to a cs_equation_t structure
+ * \param[in]   eq        pointer to a \ref cs_equation_t structure
  *
  * \return a pointer to the cell values
  */
@@ -507,6 +507,20 @@ cs_equation_get_face_values(const cs_equation_t    *eq);
 
 cs_real_t *
 cs_equation_get_cell_values(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  For a given equation, retrieve an array of values related to each
+ *         vertex of the mesh for the unknowns
+ *
+ * \param[in]   eq        pointer to a \ref cs_equation_t structure
+ *
+ * \return a pointer to an array of vertex values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_equation_get_vertex_values(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -3,7 +3,7 @@
 
 /*============================================================================
  * Build an algebraic CDO vertex-based system for unsteady convection diffusion
- * reaction of scalar-valued equations with source terms
+ * reaction of vector-valued equations with source terms
  *============================================================================*/
 
 /*
@@ -119,17 +119,21 @@ cs_cdovb_vecteq_finalize_common(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize a cs_cdovb_vecteq_t structure storing data useful for
- *         managing such a scheme
+ *         building and managing such a scheme
  *
- * \param[in]      eqp   pointer to a cs_equation_param_t structure
- * \param[in, out] eqb   pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id     id of the variable field
+ * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated cs_cdovb_vecteq_t structure
+ * \return a pointer to a new allocated \ref cs_cdovb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
 cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
+                             int                          var_id,
+                             int                          bflux_id,
                              cs_equation_builder_t       *eqb);
 
 /*----------------------------------------------------------------------------*/
@@ -234,6 +238,39 @@ cs_cdovb_vecteq_update_field(const cs_real_t            *solu,
                              cs_equation_builder_t      *eqb,
                              void                       *data,
                              cs_real_t                  *field_val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve an array of values at mesh vertices for the variable field
+ *         associated to the given context
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in]  context  pointer to a data structure cast on-the-fly
+ *
+ * \return  a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_vecteq_get_vertex_values(const void      *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute an array of values at mesh cells by interpolating the
+ *         variable field associated to the given context located at mesh
+ *         vertices
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in]  context  pointer to a data structure cast on-the-fly
+ *
+ * \return  a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_vecteq_get_cell_values(const void      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!

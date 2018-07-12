@@ -118,18 +118,22 @@ cs_cdovb_scaleq_finalize_common(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdovb_scaleq_t structure storing data useful for
- *         managing such a scheme
+ * \brief  Initialize a \ref cs_cdovb_scaleq_t structure storing data useful
+ *         for building and managing such a scheme
  *
- * \param[in]      eqp   pointer to a cs_equation_param_t structure
- * \param[in, out] eqb   pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id      id of the variable field
+ * \param[in]      bflux__id   id of the boundary flux field
+ * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t struct.
  *
- * \return a pointer to a new allocated cs_cdovb_scaleq_t structure
+ * \return a pointer to a new allocated \ref cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
 cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
+                             int                          var_id,
+                             int                          bflux_id,
                              cs_equation_builder_t       *eqb);
 
 /*----------------------------------------------------------------------------*/
@@ -237,18 +241,49 @@ cs_cdovb_scaleq_update_field(const cs_real_t            *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve an array of values at mesh vertices for the variable field
+ *         associated to the given context
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in]  context  pointer to a data structure cast on-the-fly
+ *
+ * \return  a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_scaleq_get_vertex_values(const void      *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute an array of values at mesh cells by interpolating the
+ *         variable field associated to the given context located at mesh
+ *         vertices
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in]  context  pointer to a data structure cast on-the-fly
+ *
+ * \return  a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_scaleq_get_cell_values(const void      *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the balance for an equation over the full computational
  *         domain between time t_cur and t_cur + dt_cur
  *         Case of scalar-valued CDO vertex-based scheme
  *
- * \param[in]      eqp             pointer to a cs_equation_param_t structure
- * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
- * \param[in, out] context         pointer to a scheme builder structure
- * \param[in]      var_field_id    id of the variable field
- * \param[in]      bflux_field_id  id of the variable field
- * \param[in]      dt_cur          current value of the time step
+ * \param[in]      eqp      pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb      pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] context  pointer to a scheme builder structure
+ * \param[in]      dt_cur   current value of the time step
  *
- * \return a pointer to a cs_equation_balance_t structure
+ * \return a pointer to a \ref cs_equation_balance_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -256,8 +291,6 @@ cs_equation_balance_t *
 cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
                         cs_equation_builder_t         *eqb,
                         void                          *context,
-                        int                            var_field_id,
-                        int                            bflux_field_id,
                         cs_real_t                      dt_cur);
 
 /*----------------------------------------------------------------------------*/

@@ -180,6 +180,7 @@ _initialize_field_from_ic(cs_real_t         t_eval,
      break;
   }
 
+
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB ||
       eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB) {
 
@@ -395,7 +396,7 @@ _prepare_fb_solving(void              *eq_to_cast,
 {
   cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
 
-  const cs_real_t  *f_values = eq->get_extra_values(eq->scheme_context);
+  const cs_real_t  *f_values = eq->get_face_values(eq->scheme_context);
   const int  stride = 1;  /* Since the global numbering is adapted in each
                              case (scalar-, vector-valued equations) */
 
@@ -490,7 +491,11 @@ _set_scal_hho_function_pointers(cs_equation_t  *eq)
   eq->compute_flux_across_plane = NULL;
   eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = cs_hho_scaleq_extra_op;
-  eq->get_extra_values = cs_hho_scaleq_get_face_values;
+
+  /* Function pointers to retrieve values at mesh locations */
+  eq->get_vertex_values = NULL;
+  eq->get_cell_values = cs_hho_scaleq_get_cell_values;
+  eq->get_face_values = cs_hho_scaleq_get_face_values;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -517,7 +522,11 @@ _set_vect_hho_function_pointers(cs_equation_t  *eq)
   eq->compute_flux_across_plane = NULL;
   eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = cs_hho_vecteq_extra_op;
-  eq->get_extra_values = cs_hho_vecteq_get_face_values;
+
+  /* Function pointers to retrieve values at mesh locations */
+  eq->get_vertex_values = NULL;
+  eq->get_cell_values = cs_hho_vecteq_get_cell_values;
+  eq->get_face_values = cs_hho_vecteq_get_face_values;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1068,7 +1077,11 @@ cs_equation_add(const char            *eqname,
   eq->compute_flux_across_plane = NULL;
   eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = NULL;
-  eq->get_extra_values = NULL;
+
+  /* Function pointers to retrieve values at mesh locations */
+  eq->get_vertex_values = NULL;
+  eq->get_cell_values = NULL;
+  eq->get_face_values = NULL;
 
   return  eq;
 }
@@ -1328,7 +1341,11 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
           cs_cdovb_scaleq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
         eq->postprocess = cs_cdovb_scaleq_extra_op;
-        eq->get_extra_values = NULL;
+
+        /* Function pointers to retrieve values at mesh locations */
+        eq->get_vertex_values = cs_cdovb_scaleq_get_vertex_values;
+        eq->get_cell_values = cs_cdovb_scaleq_get_cell_values;
+        eq->get_face_values = NULL;
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
@@ -1351,7 +1368,11 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
           cs_cdovb_vecteq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovb_vecteq_cellwise_diff_flux;
         eq->postprocess = cs_cdovb_vecteq_extra_op;
-        eq->get_extra_values = NULL;
+
+        /* Function pointers to retrieve values at mesh locations */
+        eq->get_vertex_values = cs_cdovb_vecteq_get_vertex_values;
+        eq->get_cell_values = cs_cdovb_vecteq_get_cell_values;
+        eq->get_face_values = NULL;
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
@@ -1381,7 +1402,11 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
           cs_cdovcb_scaleq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
         eq->postprocess = cs_cdovcb_scaleq_extra_op;
-        eq->get_extra_values = cs_cdovcb_scaleq_get_cell_values;
+
+        /* Function pointers to retrieve values at mesh locations */
+        eq->get_vertex_values = cs_cdovcb_scaleq_get_vertex_values;
+        eq->get_cell_values = cs_cdovcb_scaleq_get_cell_values;
+        eq->get_face_values = NULL;
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
@@ -1410,7 +1435,11 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->compute_cellwise_diff_flux = NULL;
         eq->compute_balance = cs_cdofb_scaleq_balance;
         eq->postprocess = cs_cdofb_scaleq_extra_op;
-        eq->get_extra_values = cs_cdofb_scaleq_get_face_values;
+
+        /* Function pointers to retrieve values at mesh locations */
+        eq->get_vertex_values = NULL;
+        eq->get_cell_values = cs_cdofb_scaleq_get_cell_values;
+        eq->get_face_values = cs_cdofb_scaleq_get_face_values;
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
@@ -1432,7 +1461,12 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->compute_flux_across_plane = NULL;
         eq->compute_cellwise_diff_flux = NULL;
         eq->postprocess = cs_cdofb_vecteq_extra_op;
-        eq->get_extra_values = cs_cdofb_vecteq_get_face_values;
+
+        /* Function pointers to retrieve values at mesh locations */
+        eq->get_vertex_values = NULL;
+        eq->get_cell_values = cs_cdofb_vecteq_get_cell_values;
+        eq->get_face_values = cs_cdofb_vecteq_get_face_values;
+
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
@@ -1684,7 +1718,10 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
     /* Allocate and initialize a system builder */
     eq->builder = cs_equation_init_builder(eqp, mesh);
-    eq->scheme_context = eq->init_context(eqp, eq->builder);
+    eq->scheme_context = eq->init_context(eqp,
+                                          eq->field_id,
+                                          eq->boundary_flux_id,
+                                          eq->builder);
 
     /* Retrieve the associated fields */
     cs_field_t  *var_field = cs_field_by_id(eq->field_id);
@@ -1903,12 +1940,12 @@ cs_equation_solve(cs_equation_t   *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the values at each face of the mesh for the field unknowns
- *         related to this equation.
+ * \brief  For a given equation, retrieve an array of values related to each
+ *         face of the mesh for the unknowns
  *
- * \param[in]   eq        pointer to a cs_equation_t structure
+ * \param[in]   eq        pointer to a \ref cs_equation_t structure
  *
- * \return a pointer to the face values
+ * \return a pointer to an array of face values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1918,44 +1955,21 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
   if (eq == NULL)
     return NULL;
 
-  if (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB)
-    return eq->get_extra_values(eq->scheme_context);
+  cs_real_t  *f_values = NULL;
+  if (eq->get_cell_values != NULL)
+    f_values = eq->get_face_values(eq->scheme_context);
 
-  else if (eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P0 ||
-           eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P1 ||
-           eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P2) {
-
-    if (eq->param->dim == 1)    /* scalar-valued unknown */
-      return cs_hho_scaleq_get_face_values(eq->scheme_context);
-    else if (eq->param->dim == 3) /* vector-valued unknown */
-      return cs_hho_vecteq_get_face_values(eq->scheme_context);
-    else
-      return NULL;               /* TODO */
-
-  }
-  else {
-
-    if (eq->get_extra_values == NULL) {
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %s: No function defined for this operation in eq. %s"),
-                __func__, eq->name);
-      return NULL;                /* TODO */
-
-    }
-
-  }
-
-  return NULL; /* Avoid a warning */
+  return f_values;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the values at each cell centers for the field unknowns
- *         related to this equation.
+ * \brief  For a given equation, retrieve an array of values related to each
+ *         cell of the mesh for the unknowns
  *
- * \param[in]   eq        pointer to a cs_equation_t structure
+ * \param[in]   eq        pointer to a \ref cs_equation_t structure
  *
- * \return a pointer to the cell values
+ * \return a pointer to an array of cell values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1965,44 +1979,35 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
   if (eq == NULL)
     return NULL;
 
-  switch (eq->param->space_scheme) {
-  case CS_SPACE_SCHEME_CDOFB:
-    {
-      cs_field_t  *fld = cs_field_by_id(eq->field_id);
+  cs_real_t  *c_values = NULL;
+  if (eq->get_cell_values != NULL)
+    c_values = eq->get_cell_values(eq->scheme_context);
 
-      return fld->val;
-    }
-    break;
+  return c_values;
+}
 
-  case CS_SPACE_SCHEME_HHO_P0:
-  case CS_SPACE_SCHEME_HHO_P1:
-  case CS_SPACE_SCHEME_HHO_P2:
-    {
-      if (eq->param->dim == 1)    /* scalar-valued unknown */
-        return cs_hho_scaleq_get_cell_values(eq->scheme_context);
-      else  if (eq->param->dim == 3)    /* vector-valued unknown */
-        return cs_hho_vecteq_get_cell_values(eq->scheme_context);
-      else
-        return NULL;               /* TODO */
-    }
-    break;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  For a given equation, retrieve an array of values related to each
+ *         vertex of the mesh for the unknowns
+ *
+ * \param[in]   eq        pointer to a \ref cs_equation_t structure
+ *
+ * \return a pointer to an array of vertex values
+ */
+/*----------------------------------------------------------------------------*/
 
-  case CS_SPACE_SCHEME_CDOVCB:
-    return eq->get_extra_values(eq->scheme_context);
-    break;
+cs_real_t *
+cs_equation_get_vertex_values(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
 
-  default:
-    {
-      if (eq->get_extra_values == NULL)
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" %s: No function defined for this operation in eq. %s"),
-                  __func__, eq->name);
-      return NULL; /* Avoid a warning */
-    }
-    break;
+  cs_real_t  *v_values = NULL;
+  if (eq->get_vertex_values != NULL)
+    v_values = eq->get_vertex_values(eq->scheme_context);
 
-  }
-
+  return v_values;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2218,8 +2223,6 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
         cs_equation_balance_t  *b = eq->compute_balance(eqp,
                                                         eq->builder,
                                                         eq->scheme_context,
-                                                        eq->field_id,
-                                                        eq->boundary_flux_id,
                                                         dt_cur);
 
         char *postlabel = NULL;

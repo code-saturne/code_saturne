@@ -55,15 +55,19 @@ BEGIN_C_DECLS
  * \brief  Initialize a scheme data structure used during the building of the
  *         algebraic system
  *
- * \param[in]      eqp    pointer to a cs_equation_param_t structure
- * \param[in, out] eqb    pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id      id of the variable field
+ * \param[in]      bflux__id   id of the boundary flux field
+ * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t struct.
  *
- * \return a pointer to a new allocated scheme builder structure
+ * \return a pointer to a new allocated scheme context structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void *
 (cs_equation_init_context_t)(const cs_equation_param_t  *eqp,
+                             int                         var_id,
+                             int                         bflux_id,
                              cs_equation_builder_t      *eqb);
 
 /*----------------------------------------------------------------------------*/
@@ -123,14 +127,14 @@ typedef void
 /*!
  * \brief  Build a linear system within the CDO framework
  *
- * \param[in]      m          pointer to a cs_mesh_t structure
+ * \param[in]      m          pointer to a \ref cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      dt_cur     current value of the time step
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data      pointer to a scheme builder structure
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] data       pointer to a scheme builder structure
  * \param[in, out] rhs        right-hand side to compute
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
+ * \param[in, out] matrix     pointer to \ref cs_matrix_t structure to compute
  */
 /*----------------------------------------------------------------------------*/
 
@@ -168,8 +172,8 @@ typedef void
  *
  * \param[in]      solu       solution array
  * \param[in]      rhs        rhs associated to this solution array
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  * \param[in, out] data       pointer to a data structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
@@ -188,11 +192,9 @@ typedef void
  * \brief  Compute the balance for an equation over the full computational
  *         domain between time t_cur and t_cur + dt_cur
  *
- * \param[in]      eqp             pointer to a cs_equation_param_t structure
- * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp             pointer to a \ref cs_equation_param_t
+ * \param[in, out] eqb             pointer to a \ref cs_equation_builder_t
  * \param[in, out] context         pointer to a scheme builder structure
- * \param[in]      var_field_id    id of the variable field
- * \param[in]      bflux_field_id  id of the variable field
  * \param[in]      dt_cur          current value of the time step
  *
  * \return a pointer to a cs_equation_balance_t structure
@@ -203,8 +205,6 @@ typedef cs_equation_balance_t *
 (cs_equation_get_balance_t)(const cs_equation_param_t    *eqp,
                             cs_equation_builder_t        *eqb,
                             void                         *context,
-                            int                           var_field_id,
-                            int                           bflux_field_id,
                             cs_real_t                     dt_cur);
 
 /*----------------------------------------------------------------------------*/
@@ -277,17 +277,19 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the computed values at a different location than that of the
- *         field associated to this equation
+ * \brief  Compute or retrieve an array of values at a given mesh location
+ *         Currently, vertices, cells or faces are possible locations
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
  *
  * \param[in]  scheme_context  pointer to a data structure cast on-the-fly
  *
- * \return  a pointer to an array of double
+ * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-typedef double *
-(cs_equation_get_extra_values_t)(const void      *scheme_context);
+typedef cs_real_t *
+(cs_equation_get_values_t)(const void      *scheme_context);
 
 /*----------------------------------------------------------------------------
  * Structure type
@@ -360,7 +362,9 @@ struct _cs_equation_t {
   cs_equation_cell_difflux_t       *compute_cellwise_diff_flux;
   cs_equation_extra_op_t           *postprocess;
 
-  cs_equation_get_extra_values_t   *get_extra_values;
+  cs_equation_get_values_t         *get_face_values;
+  cs_equation_get_values_t         *get_cell_values;
+  cs_equation_get_values_t         *get_vertex_values;
 
   /* Timer statistic for a "light" profiling */
   int     main_ts_id;   /* Id of the main timer states structure related

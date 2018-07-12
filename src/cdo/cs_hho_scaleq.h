@@ -115,17 +115,21 @@ cs_hho_scaleq_finalize_common(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize a cs_hho_scaleq_t structure storing data useful for
- *         managing such a scheme
+ *         building and managing such a scheme
  *
- * \param[in] eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb   pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id     id of the variable field
+ * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated cs_hho_scaleq_t structure
+ * \return a pointer to a new allocated \ref cs_hho_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
 cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
+                           int                          var_id,
+                           int                          bflux_id,
                            cs_equation_builder_t       *eqb);
 
 /*----------------------------------------------------------------------------*/
@@ -151,7 +155,7 @@ cs_hho_scaleq_free_context(void   *data);
  * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
  * \param[in, out] data           pointer to generic data structure
  * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
+ * \param[in, out] system_rhs     pointer of pointer to an array of cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
@@ -218,11 +222,11 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
  *
  * \param[in]  data    pointer to a data structure
  *
- * \return  a pointer to an array of double
+ * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-double *
+cs_real_t *
 cs_hho_scaleq_get_face_values(const void          *data);
 
 /*----------------------------------------------------------------------------*/
@@ -232,11 +236,11 @@ cs_hho_scaleq_get_face_values(const void          *data);
  *
  * \param[in]  data    pointer to a data structure
  *
- * \return  a pointer to an array of double
+ * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-double *
+cs_real_t *
 cs_hho_scaleq_get_cell_values(const void          *data);
 
 /*----------------------------------------------------------------------------*/

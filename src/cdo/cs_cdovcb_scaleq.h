@@ -116,18 +116,22 @@ cs_cdovcb_scaleq_finalize_common(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdovb_scaleq_t structure storing data useful for
- *         managing such a scheme
+ * \brief  Initialize a \ref cs_cdovcb_scaleq_t structure storing data useful
+ *         for building and  managing such a scheme
  *
- * \param[in] eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb   pointer to a cs_equation_builder_t structure
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in]      var_id     id of the variable field
+ * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated cs_cdovb_scaleq_t structure
+ * \return a pointer to a new allocated \ref cs_cdovcb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
 cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
+                              int                          var_id,
+                              int                          bflux_id,
                               cs_equation_builder_t       *eqb);
 
 /*----------------------------------------------------------------------------*/
@@ -236,17 +240,36 @@ cs_cdovcb_scaleq_update_field(const cs_real_t            *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the computed values at cell centers (DoF used in the linear
- *         system are located at primal vertices and field related to the
- *         structure equation is also attached to primal vertices
+ * \brief  Retrieve an array of values at mesh vertices for the variable field
+ *         associated to the given context
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
  *
- * \param[in]  data    pointer to a data structure
+ * \param[in]  context  pointer to a data structure cast on-the-fly
  *
- * \return  a pointer to an array of double
+ * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-double *
+cs_real_t *
+cs_cdovcb_scaleq_get_vertex_values(const void      *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the computed values at mesh cells from the inverse operation
+ *         w.r.t. the static condensation (DoF used in the linear system are
+ *         located at primal vertices and field related to the structure
+ *         equation is also attached to primal vertices)
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in]  data    pointer to a data structure
+ *
+ * \return  a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
 cs_cdovcb_scaleq_get_cell_values(const void          *data);
 
 /*----------------------------------------------------------------------------*/
@@ -322,7 +345,7 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
  * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out]  data       pointer to cs_cdovcb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
