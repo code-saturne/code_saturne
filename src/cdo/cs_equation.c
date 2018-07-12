@@ -178,7 +178,8 @@ _initialize_field_from_ic(cs_real_t         t_eval,
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Incompatible type of variable for equation %s."), eq->name);
+              _("%s: Incompatible type of variable for the equation %s."),
+              __func__, eq->name);
      break;
   }
 
@@ -1230,7 +1231,7 @@ cs_equation_set_timer_stats(cs_equation_t  *eq)
   /* Set timer statistics */
   if (eqp->verbosity > 0) {
 
-    eq->main_ts_id = cs_timer_stats_create(NULL, // new root
+    eq->main_ts_id = cs_timer_stats_create(NULL, /* new root */
                                            eq->name,
                                            eq->name);
 
@@ -1247,9 +1248,9 @@ cs_equation_set_timer_stats(cs_equation_t  *eq)
 
       BFT_FREE(label);
 
-    } // verbosity > 1
+    } /* verbosity > 1 */
 
-  } // verbosity > 0
+  } /* verbosity > 0 */
 
 }
 
@@ -1813,7 +1814,7 @@ cs_equation_solve(cs_equation_t   *eq)
     cs_timer_stats_start(eq->solve_ts_id);
 
   const cs_equation_param_t  *eqp = eq->param;
-  const double  r_norm = 1.0; // No renormalization by default (TODO)
+  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
   const cs_param_itsol_t  itsol_info = eqp->itsol_info;
 
   /* Sanity checks (up to now, only scalar field are handled) */

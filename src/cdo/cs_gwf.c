@@ -784,21 +784,21 @@ cs_gwf_log_setup(void)
 
   if (gw->flag & CS_GWF_GRAVITATION)
     cs_log_printf(CS_LOG_SETUP,
-                  "  <GW/Gravitation> true -- Axis = [%.2f %.2f %.2f]\n",
+                  "  <GWF/Gravitation> true -- Axis = [%.2f %.2f %.2f]\n",
                   gw->gravity[0], gw->gravity[1], gw->gravity[2]);
   else
-    cs_log_printf(CS_LOG_SETUP, "  <GW/Gravitation> false\n");
+    cs_log_printf(CS_LOG_SETUP, "  <GWF/Gravitation> false\n");
 
   if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
-    cs_log_printf(CS_LOG_SETUP, "  <GW> Force to resolve Richards equation\n");
+    cs_log_printf(CS_LOG_SETUP, "  <GWF> Force to resolve Richards equation\n");
   if (gw->flag & CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE)
-    cs_log_printf(CS_LOG_SETUP, "  <GW> Rescale head w.r.t zero mean value\n");
-  cs_log_printf(CS_LOG_SETUP, "  <GW/Darcy location> %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  <GWF> Rescale head w.r.t zero mean value\n");
+  cs_log_printf(CS_LOG_SETUP, "  <GWF/Darcy location> %s\n",
                 cs_flag_str_location(gw->flux_location));
 
   /* Tracers */
   cs_log_printf(CS_LOG_SETUP,
-                "  <GW/Tracer> n_tracer_equations %d\n", gw->n_tracers);
+                "  <GWF/Tracer> n_tracer_equations %d\n", gw->n_tracers);
 
   /* Soils */
   cs_gwf_soil_log_setup();

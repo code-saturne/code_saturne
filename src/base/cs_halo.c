@@ -1102,8 +1102,8 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
-    const size_t send_buffer_size =   CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
-                                             halo->n_elts[CS_HALO_EXTENDED])
+    const size_t send_buffer_size = CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
+                                           halo->n_elts[CS_HALO_EXTENDED])
                                     * size;
 
     if (send_buffer_size > _cs_glob_halo_send_buffer_size) {
@@ -1436,9 +1436,9 @@ cs_halo_sync_var(const cs_halo_t  *halo,
 
     }
 
-    /* Assemble buffers for halo exchange;
-       avoid threading for now, as dynamic scheduling led to slightly higher cost here,
-       and even static scheduling might lead to false sharing for small halos. */
+    /* Assemble buffers for halo exchange; avoid threading for now, as dynamic
+       scheduling led to slightly higher cost here, and even static scheduling
+       might lead to false sharing for small halos. */
 
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
@@ -1585,9 +1585,9 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
 
     }
 
-    /* Assemble buffers for halo exchange;
-       avoid threading for now, as dynamic scheduling led to slightly higher cost here,
-       and even static scheduling might lead to false sharing for small halos. */
+    /* Assemble buffers for halo exchange; avoid threading for now, as dynamic
+       scheduling led to slightly higher cost here, and even static scheduling
+       might lead to false sharing for small halos. */
 
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 

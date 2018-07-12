@@ -970,7 +970,7 @@ void
 cs_gwf_soil_log_setup(void)
 {
   const char  *meta = "  <GWF/Hydraulic Model>";
-  cs_log_printf(CS_LOG_SETUP, "  <GW/Soils>  n_soils %d", _n_soils);
+  cs_log_printf(CS_LOG_SETUP, "  <GWF/Soils>  n_soils %d", _n_soils);
 
   for (int i = 0; i < _n_soils; i++) {
 

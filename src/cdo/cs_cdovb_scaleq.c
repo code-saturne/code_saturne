@@ -98,47 +98,6 @@ BEGIN_C_DECLS
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
 
-/* Algebraic system for CDO vertex-based discretization */
-
-struct _cs_cdovb_scaleq_t {
-
-  /* Ids related to the variable field and to the boundary flux field */
-  int          var_field_id;
-  int          bflux_field_id;
-
-  /* System size */
-  cs_lnum_t    n_dofs;
-
-  /* Array storing the value stemming from the contribution of all source
-     terms */
-  cs_real_t   *source_terms;
-  cs_real_t   *cell_values;     /* NULL if not requested */
-
-  /* Pointer of function to build the diffusion term */
-  cs_hodge_t                      *get_stiffness_matrix;
-
-  /* Pointer of function to build the advection term */
-  cs_cdo_advection_t              *get_advection_matrix;
-
-  /* Pointer of function to apply the time scheme */
-  cs_cdo_time_scheme_t            *apply_time_scheme;
-
-  /* If one needs to build a local hodge op. for time and reaction */
-  cs_param_hodge_t                 hdg_mass;
-  cs_hodge_t                      *get_mass_matrix;
-
-  /* Boundary conditions */
-  /* =================== */
-
-  /* Diffusion part */
-  cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
-  cs_cdo_diffusion_flux_trace_t   *boundary_flux_op;
-
-  /* Advection part */
-  cs_cdo_advection_bc_t           *add_advection_bc;
-
-};
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================

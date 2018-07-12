@@ -297,6 +297,42 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct at the cell center a field of edge-based DoFs
+ *
+ *  \param[in]      cid     cell id
+ *  \param[in]      c2e     cell -> edges connectivity
+ *  \param[in]      quant   pointer to the additional quantities struct.
+ *  \param[in]      dof     pointer to the field of edge-based DoFs
+ *  \param[in, out] reco    value of the reconstructed field at cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_ccen_edge_dof(cs_lnum_t                   cid,
+                      const cs_adjacency_t       *c2e,
+                      const cs_cdo_quantities_t  *quant,
+                      const double               *dof,
+                      double                      reco[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct at each cell center a field of edge-based DoFs
+ *
+ *  \param[in]      connect   pointer to the connectivity struct.
+ *  \param[in]      quant     pointer to the additional quantities struct.
+ *  \param[in]      dof       pointer to the field of edge-based DoFs
+ *  \param[in, out] p_ccrec   pointer to the reconstructed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
+                       const cs_cdo_quantities_t  *quant,
+                       const double               *dof,
+                       double                     *p_ccrec[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct the value at the cell center of the gradient of a field
  *         defined on primal vertices.
  *
@@ -332,43 +368,6 @@ void
 cs_reco_cw_cell_grad_from_scalar_pv(const cs_cell_mesh_t    *cm,
                                     const cs_real_t          pdi[],
                                     cs_real_t               *cell_gradient);
-
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct at the cell center a field of edge-based DoFs
- *
- *  \param[in]      cid     cell id
- *  \param[in]      c2e     cell -> edges connectivity
- *  \param[in]      quant   pointer to the additional quantities struct.
- *  \param[in]      dof     pointer to the field of edge-based DoFs
- *  \param[in, out] reco    value of the reconstructed field at cell center
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_ccen_edge_dof(cs_lnum_t                   cid,
-                      const cs_adjacency_t       *c2e,
-                      const cs_cdo_quantities_t  *quant,
-                      const double               *dof,
-                      double                      reco[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct at each cell center a field of edge-based DoFs
- *
- *  \param[in]      connect   pointer to the connectivity struct.
- *  \param[in]      quant     pointer to the additional quantities struct.
- *  \param[in]      dof       pointer to the field of edge-based DoFs
- *  \param[in, out] p_ccrec   pointer to the reconstructed values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
-                       const cs_cdo_quantities_t  *quant,
-                       const double               *dof,
-                       double                     *p_ccrec[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
