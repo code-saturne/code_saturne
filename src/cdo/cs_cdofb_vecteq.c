@@ -442,19 +442,21 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
      Only activated on boundary cells */
   eqb->bd_msh_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ;
 
-  /* Values at each face (interior and border) i.e. take into account BCs */
   BFT_MALLOC(eqc->face_values, 3*n_faces, cs_real_t);
-# pragma omp parallel for if (3*n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < 3*n_faces; i++) eqc->face_values[i] = 0;
-
-  /* Store the last computed values of the field at cell centers and the data
-     needed to compute the cell values from the face values.
-     No need to synchronize all these quantities since they are only cellwise
-     quantities. */
   BFT_MALLOC(eqc->rc_tilda, 3*n_cells, cs_real_t);
-# pragma omp parallel for if (3*n_cells > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < 3*n_cells; i++)
-    eqc->rc_tilda[i] = 0;
+# pragma omp parallel if (3*n_cells > CS_THR_MIN)
+  {
+    /* Values at each face (interior and border) i.e. take into account BCs */
+#   pragma omp for nowait
+    for (cs_lnum_t i = 0; i < 3*n_faces; i++) eqc->face_values[i] = 0;
+
+    /* Store the last computed values of the field at cell centers and the data
+       needed to compute the cell values from the face values.
+       No need to synchronize all these quantities since they are only cellwise
+       quantities. */
+#   pragma omp for
+    for (cs_lnum_t i = 0; i < 3*n_cells; i++) eqc->rc_tilda[i] = 0;
+  }
 
   /* Assume the 3x3 matrix is diagonal */
   BFT_MALLOC(eqc->acf_tilda, 3*connect->c2f->idx[n_cells], cs_real_t);
