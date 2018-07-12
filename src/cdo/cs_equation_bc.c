@@ -708,22 +708,47 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        /* Evaluate the boundary condition at each boundary vertex */
-        cs_xdef_eval_at_b_faces_by_analytic(bz->n_elts,
-                                            bz->elt_ids,
-                                            false, // compact output
-                                            mesh,
-                                            connect,
-                                            quant,
-                                            t_eval,
-                                            def->input,
-                                            values);
+        /* Evaluate the boundary condition at each boundary face */
+        switch(eqp->dof_reduction) {
+
+        case CS_PARAM_REDUCTION_DERHAM:
+          cs_xdef_eval_at_b_faces_by_analytic(bz->n_elts,
+                                              bz->elt_ids,
+                                              false, /* compact output */
+                                              mesh,
+                                              connect,
+                                              quant,
+                                              t_eval,
+                                              def->input,
+                                              values);
+          break;
+
+        case CS_PARAM_REDUCTION_AVERAGE:
+          cs_xdef_eval_avg_at_b_faces_by_analytic(bz->n_elts,
+                                                  bz->elt_ids,
+                                                  false, /* compact output */
+                                                  mesh,
+                                                  connect,
+                                                  quant,
+                                                  t_eval,
+                                                  def->input,
+                                                  def->qtype,
+                                                  def->dim,
+                                                  values);
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    _(" %s: Invalid type of reduction.\n"
+                      " Stop computing the Dirichlet value.\n"), __func__);
+
+        } /* switch on reduction */
         break;
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  _(" Invalid type of definition.\n"
-                    " Stop computing the Dirichlet value.\n"));
+                  _(" %s: Invalid type of definition.\n"
+                    " Stop computing the Dirichlet value.\n"), __func__);
 
       } /* switch on def_type */
 

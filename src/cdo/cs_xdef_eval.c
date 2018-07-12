@@ -360,11 +360,10 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
                                         cs_real_t                    time_eval,
                                         void                        *input,
                                         cs_quadrature_type_t         qtype,
-                                        const short int              dim,
+                                        const int                    dim,
                                         cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
-  CS_UNUSED(compact);
 
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(dim, qtype);
@@ -374,21 +373,22 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
   const cs_adjacency_t  *e2v = connect->e2v;
   const cs_real_t  *xv = quant->vtx_coord;
 
-  if (elt_ids == NULL) {
-#   pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
-    for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
+  if (elt_ids == NULL) { /* All boundary faces are selected */
 
+#   pragma omp parallel for if (quant->n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
+
+      const cs_lnum_t f_id = quant->n_i_faces + bf_id;
       const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
-      double *val_i = eval + dim*f_id;
-      const cs_lnum_t  start_idx = f2e->idx[f_id],
-                       end_idx   = f2e->idx[f_id+1];
+      const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
+      double *val_i = eval + dim*bf_id;
 
-      switch (end_idx - start_idx) {
+      switch (end - start) {
 
       case CS_TRIANGLE_CASE:
         {
           cs_lnum_t v1, v2, v3;
-          cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
+          cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start,
                                          &v1, &v2, &v3);
           qfunc(time_eval, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
                 anai->func, anai->input, val_i);
@@ -396,7 +396,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
         break;
 
       default:
-        for (cs_lnum_t j = start_idx; j < end_idx; j++) {
+        for (cs_lnum_t j = start; j < end; j++) {
 
           const cs_lnum_t  _2e = 2*f2e->ids[j];
           const cs_lnum_t  v1 = e2v->ids[_2e];
@@ -412,29 +412,31 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
       /* Compute the average */
       const double _os = 1./pfq.meas;
-      for (short int xyz = 0; xyz < dim; xyz++)
-        val_i[xyz] *= _os;
+      for (int k = 0; k < dim; k++)
+        val_i[k] *= _os;
 
     } /* Loop on faces */
 
   }
   else { /* There is an indirection list */
 
-    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected faces
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) { /* Loop on selected faces */
 
-      cs_lnum_t  f_id = elt_ids[i];
-      const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
-      double *val_i = eval + dim*f_id;
-      const cs_lnum_t  start_idx = f2e->idx[f_id],
-                       end_idx   = f2e->idx[f_id+1];
+      const cs_lnum_t  bf_id = elt_ids[i];
+      const cs_lnum_t  f_id = quant->n_i_faces + bf_id;
+      const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
+      const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
-      switch (end_idx - start_idx) {
+      double  *val_i = compact ? eval + dim*i : eval + dim*bf_id;
+
+      switch (end - start) {
 
       case CS_TRIANGLE_CASE:
         {
           /* If triangle, one-shot computation */
           cs_lnum_t v1, v2, v3;
-          cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start_idx,
+          cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start,
                                          &v1, &v2, &v3);
           qfunc(time_eval, xv + 3*v1, xv + 3*v2, xv + 3*v3,
                 pfq.meas, anai->func, anai->input, val_i);
@@ -442,14 +444,14 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
         break;
 
       default:
-        for (cs_lnum_t k = start_idx; k < end_idx; k++) {
+        for (cs_lnum_t j = start; j < end; j++) {
 
-          const cs_lnum_t  _2e = 2*f2e->ids[k];
+          const cs_lnum_t  _2e = 2*f2e->ids[j];
           const cs_lnum_t  v1 = e2v->ids[_2e];
           const cs_lnum_t  v2 = e2v->ids[_2e+1];
 
           qfunc(time_eval, xv + 3*v1, xv + 3*v2, pfq.center,
-                cs_math_surftri(xv+3*v1, xv+3*v2, pfq.center),
+                cs_math_surftri(xv + 3*v1, xv + 3*v2, pfq.center),
                 anai->func, anai->input, val_i);
 
         } /* Loop on edges */
@@ -458,8 +460,8 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
       /* Compute the average */
       const double _os = 1./pfq.meas;
-      for (short int xyz = 0; xyz < dim; xyz++)
-        val_i[xyz] *= _os;
+      for (int k = 0; k < dim; k++)
+        val_i[k] *= _os;
 
     } /* Loop on selected faces */
 

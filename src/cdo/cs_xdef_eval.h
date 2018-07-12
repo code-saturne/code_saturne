@@ -242,7 +242,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
                                         cs_real_t                    time_eval,
                                         void                        *input,
                                         cs_quadrature_type_t         qtype,
-                                        const short int              dim,
+                                        const int                    dim,
                                         cs_real_t                   *eval);
 
 /*----------------------------------------------------------------------------*/
