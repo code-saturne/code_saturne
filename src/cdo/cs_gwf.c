@@ -1521,24 +1521,23 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
   const cs_zone_t  *z = cs_volume_zone_by_id(z_id);
   const short int  *cell2soil = cs_gwf_get_cell2soil();
 
-  const cs_field_t  *f = cs_field_by_name("moisture_content");
-  if (f == NULL)
+  const cs_field_t  *moist = cs_field_by_name("moisture_content");
+  if (moist == NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: \"moisture_content\" not defined",
               __func__);
   assert(tracer != NULL);
 
-  const cs_real_t  *moisture_val = f->val;
+  const cs_real_t  *moisture_val = moist->val;
   const cs_equation_param_t  *tr_eqp = cs_equation_get_param(tracer->eq);
-  const cs_field_t  *tr_f = cs_equation_get_field(tracer->eq);
-  const cs_real_t  *fvals = tr_f->val;
 
   cs_gwf_std_tracer_input_t  *sti = (cs_gwf_std_tracer_input_t *)tracer->input;
-  cs_real_t int_value = 0.0;
+  cs_real_t  int_value = 0.0;
 
   switch (tr_eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
     {
+      const cs_real_t  *v_vals = cs_equation_get_vertex_values(tracer->eq);
       const cs_adjacency_t  *c2v = connect->c2v;
 
       for (cs_lnum_t i = 0; i < z->n_elts; i++) {
@@ -1547,7 +1546,7 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
 
         cs_real_t  _int_value = 0.;
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
-          _int_value += cdoq->dcell_vol[j] * fvals[c2v->ids[j]];
+          _int_value += cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
         }
 
         int_value +=
@@ -1557,6 +1556,33 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
 
     }
     break; /* CS_SPACE_SCHEME_CDOVB */
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    {
+      const cs_real_t  *v_vals = cs_equation_get_vertex_values(tracer->eq);
+      const cs_real_t  *c_vals = cs_equation_get_cell_values(tracer->eq);
+      const cs_adjacency_t  *c2v = connect->c2v;
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
+
+        /* Shares between cell and vertex unknows:
+           - the cell unknown stands for 1/4 of the cell volume
+           - the vertex unknown stands for 3/4 of the dual cell volume
+         */
+        cs_real_t  _int_value = 0.25*c_vals[c_id];
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+          _int_value += 0.75 * cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
+        }
+
+        int_value +=
+          (moisture_val[c_id] + sti->rho_kd[cell2soil[c_id]]) * _int_value;
+
+      } /* Loop on selected cells */
+
+    }
+    break; /* CS_SPACE_SCHEME_CDOVCB */
 
   default:
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme", __func__);
