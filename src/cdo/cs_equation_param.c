@@ -513,7 +513,6 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_VC;
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
     }
     else if (strcmp(val, "cdo_fb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
@@ -770,8 +769,11 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
     else if (strcmp(val, "centered") == 0)
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
-    else if (strcmp(val, "cip") == 0)
+    else if (strcmp(val, "cip") == 0) {
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
+      /* Automatically switch to a non-conservative formulation */
+      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
+    }
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
