@@ -445,7 +445,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       bft_error(__FILE__, __LINE__, 0,
                 (" Invalid type of algorithm to build the diffusion term."));
 
-    } // Switch on Hodge algo.
+    } /* Switch on Hodge algo. */
 
     switch (eqp->enforcement) {
 
@@ -560,7 +560,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
       eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ |
         CS_CDO_LOCAL_HFQ;
-      eqb->sys_flag |= CS_FLAG_SYS_HLOC_CONF;
+      eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     }
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -582,7 +582,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       else {
         eqb->msh_flag |= CS_CDO_LOCAL_PVQ|CS_CDO_LOCAL_DEQ|CS_CDO_LOCAL_PFQ |
           CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
-        eqb->sys_flag |= CS_FLAG_SYS_HLOC_CONF;
+        eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
       }
     }
 
@@ -850,7 +850,6 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
                                  cm,
                                  eqc->boundary_flux_op,
                                  fm, cb, csys);
-
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
         if (cs_dbg_cw_test(cm))
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
@@ -876,14 +875,13 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
         if (cs_dbg_cw_test(cm))
           cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
 #endif
-
       } /* END OF ADVECTION */
 
       /* MASS MATRIX */
       /* =========== */
 
-      if (eqb->sys_flag & CS_FLAG_SYS_HLOC_CONF) {
-        eqc->get_mass_matrix(eqc->hdg_mass, cm, cb); // stored in cb->hdg
+      if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) {
+        eqc->get_mass_matrix(eqc->hdg_mass, cm, cb); /* stored in cb->hdg */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
         if (cs_dbg_cw_test(cm)) {
@@ -973,6 +971,10 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
         eqc->apply_time_scheme(eqp, tpty_val, mass_mat, eqb->sys_flag, cb,
                                csys);
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+        if (cs_dbg_cw_test(cm))
+          cs_cell_sys_dump("\n>> Local system after time", c_id, csys);
+#endif
       } /* END OF TIME CONTRIBUTION */
 
       /* Neumann boundary conditions */
@@ -1220,8 +1222,8 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
       for (short int v = 0; v < cm->n_vc; v++)
         p_cur[v] = pot->val[cm->v_ids[v]];
 
-      if (eqb->sys_flag & CS_FLAG_SYS_HLOC_CONF)
-        eqc->get_mass_matrix(eqc->hdg_mass, cm, cb); // stored in cb->hdg
+      if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX)
+        eqc->get_mass_matrix(eqc->hdg_mass, cm, cb); /* stored in cb->hdg */
 
       /* UNSTEADY TERM */
       if (cs_equation_param_has_time(eqp)) {

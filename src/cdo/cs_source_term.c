@@ -510,7 +510,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           space_scheme == CS_SPACE_SCHEME_CDOVCB) {
         msh_flag |= CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
           CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
-        *sys_flag |= CS_FLAG_SYS_HLOC_CONF | CS_FLAG_SYS_SOURCES_HLOC;
+        *sys_flag |= CS_FLAG_SYS_MASS_MATRIX | CS_FLAG_SYS_SOURCES_HLOC;
       }
     }
 

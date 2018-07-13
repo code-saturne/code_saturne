@@ -509,7 +509,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
       eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ |
         CS_CDO_LOCAL_HFQ;
-      eqb->sys_flag |= CS_FLAG_SYS_HLOC_CONF;
+      eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     }
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -532,7 +532,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
       else {
         eqb->msh_flag |= CS_CDO_LOCAL_PVQ|CS_CDO_LOCAL_DEQ|CS_CDO_LOCAL_PFQ |
           CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
-        eqb->sys_flag |= CS_FLAG_SYS_HLOC_CONF;
+        eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
       }
     }
 

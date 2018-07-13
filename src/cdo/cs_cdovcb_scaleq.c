@@ -560,13 +560,13 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
     default:
       bft_error(__FILE__, __LINE__, 0,
                 " Invalid advection scheme for vertex-based discretization");
-    } // Scheme
+    } /* Scheme */
 
   }
   else {
 
     if (eqp->enforcement != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
-      eqb->sys_flag |= CS_FLAG_SYS_SYM; // Algebraic system is symmetric
+      eqb->sys_flag |= CS_FLAG_SYS_SYM; /* Algebraic system is symmetric */
 
   }
 
@@ -574,7 +574,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_WBS)
-      eqb->sys_flag |= CS_FLAG_SYS_HLOC_CONF;
+      eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     else
       bft_error(__FILE__, __LINE__, 0,
                 " Invalid choice of algorithm for the reaction term.");
@@ -590,7 +590,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
       if (eqp->do_lumping)
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
       else
-        eqb->sys_flag |= CS_FLAG_SYS_HLOC_CONF;
+        eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     }
 
   }
@@ -885,7 +885,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 #endif
       } /* END OF ADVECTION */
 
-      if (eqb->sys_flag & CS_FLAG_SYS_HLOC_CONF)
+      if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX)
         eqc->get_mass_matrix(eqc->hdg_mass, cm, cb); // stored in cb->hdg
 
       /* REACTION TERM */

@@ -55,7 +55,7 @@ BEGIN_C_DECLS
  * @{
  */
 
-#define CS_FLAG_SYS_HLOC_CONF    (1 << 0) /*!<  1: build conforming Hodge op. */
+#define CS_FLAG_SYS_MASS_MATRIX  (1 << 0) /*!<  1: build a mass matrix */
 #define CS_FLAG_SYS_SYM          (1 << 1) /*!<  2: system matrix is symmetric */
 #define CS_FLAG_SYS_TIME_DIAG    (1 << 2) /*!<  4: lumping by construction */
 #define CS_FLAG_SYS_SOURCES_HLOC (1 << 3) /*!<  8: Hodge op. for source terms */
