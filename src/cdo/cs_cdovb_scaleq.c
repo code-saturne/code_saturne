@@ -449,7 +449,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     switch (eqp->enforcement) {
 
-    case CS_PARAM_BC_ENFORCE_WEAK_PENA:
+    case CS_PARAM_BC_ENFORCE_PENALIZED:
       eqc->enforce_dirichlet = cs_cdo_diffusion_pena_dirichlet;
       break;
 

@@ -999,7 +999,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
   /* Sanity checks */
   assert(rhs != NULL && matrix != NULL && eqp != NULL && eqb != NULL);
   /* The only way to set a Dirichlet up to now */
-  assert(eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_PENA);
+  assert(eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED);
 
   /* Test to remove */
   if (cs_equation_param_has_convection(eqp))
@@ -1158,7 +1158,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 
       /* TODO: Neumann boundary conditions */
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_PENA) {
+      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs)

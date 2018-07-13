@@ -456,7 +456,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     switch (eqp->enforcement) {
 
-    case CS_PARAM_BC_ENFORCE_WEAK_PENA:
+    case CS_PARAM_BC_ENFORCE_PENALIZED:
       eqc->enforce_dirichlet = cs_cdo_diffusion_pena_dirichlet;
       break;
 
@@ -838,7 +838,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
       /* ======================================================= */
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_PENA) {
+      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs) */

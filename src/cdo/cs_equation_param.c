@@ -398,7 +398,7 @@ cs_equation_create_param(cs_equation_type_t     type,
   /* Boundary conditions structure.
      One assigns a boundary condition by default */
   eqp->default_bc = default_bc;
-  eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
+  eqp->enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
   eqp->n_bc_defs = 0;
   eqp->bc_defs = NULL;
 
@@ -698,7 +698,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     if (strcmp(val, "strong") == 0)
       eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
     else if (strcmp(val, "penalization") == 0)
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
     else if (strcmp(val, "weak_sym") == 0)
       eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
     else if (strcmp(val, "weak") == 0)
