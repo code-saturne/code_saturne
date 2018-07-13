@@ -686,7 +686,7 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
                                 cs_cell_sys_t                   *csys)
 {
   /* Prototype common to cs_cdo_diffusion_enforce_dir_t.
-     Hence the unused parameters*/
+     Hence the unused parameters */
   CS_UNUSED(h_info);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
@@ -700,17 +700,15 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const short int n_dofs = csys->mat->n_rows;
-
   /* Penalize diagonal entry (and its rhs if needed) */
   for (short int i = 0; i < csys->n_dofs; i++) {
 
     if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) {
-      csys->mat->val[i + n_dofs*i] += cs_big_pena_coef;
+      csys->mat->val[i + csys->n_dofs*i] += cs_big_pena_coef;
       csys->rhs[i] += csys->dir_values[i] * cs_big_pena_coef;
     }
     else if (csys->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
-      csys->mat->val[i + n_dofs*i] += cs_big_pena_coef;
+      csys->mat->val[i + csys->n_dofs*i] += cs_big_pena_coef;
 
   } /* Loop on degrees of freedom */
 
@@ -780,6 +778,204 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
     }
 
     shift += mII->n_rows;
+
+  } /* Block bi */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
+ *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
+ *          The corresponding DoFs are algebraically "removed" of the system
+ *
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
+ *          |------------| --> |------------| and |--| --> |----------|
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
+ *
+ * where xd is the value of the Dirichlet BC
+ *
+ * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux trace operator
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_alge_dirichlet(const cs_param_hodge_t           h_info,
+                                const cs_cell_mesh_t            *cm,
+                                cs_cdo_diffusion_flux_trace_t   *flux_op,
+                                cs_face_mesh_t                  *fm,
+                                cs_cell_builder_t               *cb,
+                                cs_cell_sys_t                   *csys)
+{
+  /* Prototype common to cs_cdo_diffusion_enforce_dir_t
+     Hence the unused parameters */
+  CS_UNUSED(h_info);
+  CS_UNUSED(fm);
+  CS_UNUSED(cm);
+  CS_UNUSED(flux_op);
+
+  /* Enforcement of the Dirichlet BCs */
+  if (csys->has_dirichlet == false)
+    return;  /* Nothing to do */
+
+  double  *x_dir = cb->values;
+  double  *ax_dir = cb->values + csys->n_dofs;
+
+  memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
+
+  /* Build x_dir */
+  for (short int i = 0; i < csys->n_dofs; i++)
+    if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
+      x_dir[i] = csys->dir_values[i];
+
+  /* Contribution of the Dirichlet conditions */
+  cs_sdm_matvec(csys->mat, x_dir, ax_dir);
+
+  /* Second pass: Replace the Dirichlet block by a diagonal block*/
+  for (short int i = 0; i < csys->n_dofs; i++) {
+
+    if (csys->dof_flag[i] & (CS_CDO_BC_DIRICHLET | CS_CDO_BC_HMG_DIRICHLET)) {
+
+      /* Reset row i */
+      memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
+      /* Reset column i */
+      for (short int j = 0; j < csys->n_dofs; j++)
+        csys->mat->val[i + csys->n_dofs*j] = 0;
+      csys->mat->val[i + csys->n_dofs*i] = 1;
+
+      /* Set the RHS */
+      csys->rhs[i] = csys->dir_values[i];
+
+    } /* DoF associated to a Dirichlet BC */
+    else
+      csys->rhs[i] -= ax_dir[i];  /* Update RHS */
+
+  } /* Loop on degrees of freedom */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
+ *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
+ *          The corresponding DoFs are algebraically "removed" of the system
+ *          Block version.
+ *
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
+ *          |------------| --> |------------| and |--| --> |----------|
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
+ *
+ * where xd is the value of the Dirichlet BC
+ *
+ * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux trace operator
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_alge_block_dirichlet(const cs_param_hodge_t           h_info,
+                                      const cs_cell_mesh_t            *cm,
+                                      cs_cdo_diffusion_flux_trace_t   *flux_op,
+                                      cs_face_mesh_t                  *fm,
+                                      cs_cell_builder_t               *cb,
+                                      cs_cell_sys_t                   *csys)
+{
+  /* Prototype common to cs_cdo_diffusion_enforce_dir_t
+     Hence the unused parameters */
+  CS_UNUSED(h_info);
+  CS_UNUSED(fm);
+  CS_UNUSED(cm);
+  CS_UNUSED(flux_op);
+
+  /* Enforcement of the Dirichlet BCs */
+  if (csys->has_dirichlet == false)
+    return;  /* Nothing to do */
+
+  double  *x_dir = cb->values;
+  double  *ax_dir = cb->values + csys->n_dofs;
+  cs_sdm_t  *m = csys->mat;
+  cs_sdm_block_t  *bd = m->block_desc;
+  assert(bd != NULL);
+
+  memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
+
+  /* Build x_dir */
+  for (short int i = 0; i < csys->n_dofs; i++)
+    if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
+      x_dir[i] = csys->dir_values[i];
+
+  /* Contribution of the Dirichlet conditions */
+  cs_sdm_block_matvec(csys->mat, x_dir, ax_dir);
+
+  /* Second pass: Replace the Dirichlet block by a diagonal block*/
+  int  s = 0;
+  for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+    cs_real_t  *_rhs = csys->rhs + s;
+    cs_real_t  *_dir = csys->dir_values + s;
+    cs_flag_t  *_flg = csys->dof_flag + s;
+    cs_sdm_t  *mII = cs_sdm_get_block(m, bi, bi);
+    assert(mII->n_rows == mII->n_cols);
+
+    /* Is the current block associated to a Dirichlet BC ? */
+    int  n_dir = 0;
+    for (int i = 0; i < mII->n_rows; i++)
+      if (_flg[i] & (CS_CDO_BC_DIRICHLET | CS_CDO_BC_HMG_DIRICHLET))
+        n_dir += 1;
+
+    if (n_dir > 0) {
+
+      if (n_dir != mII->n_rows)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Partial Dirichlet block not yet implemented", __func__);
+
+      /* Reset block row bi and block colum bi */
+      for (int bj = 0; bj < bd->n_col_blocks; bj++) {
+
+        if (bj != bi) {
+
+          cs_sdm_t  *mIJ = cs_sdm_get_block(m, bi, bj);
+          cs_sdm_t  *mJI = cs_sdm_get_block(m, bj, bi);
+
+          memset(mIJ->val, 0, mIJ->n_rows*mIJ->n_cols*sizeof(double));
+          memset(mJI->val, 0, mJI->n_rows*mJI->n_cols*sizeof(double));
+
+        }
+        else { /* mII block --> diagonal */
+
+          memset(mII->val, 0, mII->n_rows*mII->n_rows*sizeof(double));
+
+          for (int i = 0; i < mII->n_rows; i++) {
+            mII->val[i + mII->n_rows*i] = 1;
+            _rhs[i] = _dir[i]; /* Set the RHS */
+          }
+
+        }
+
+      } /* Loop on row/columnn blocks */
+
+    } /* DoF associated to a Dirichlet BC */
+    else {
+
+      for (int i = 0; i < mII->n_rows; i++)
+        _rhs[i] -= ax_dir[s+i];  /* Update RHS */
+
+    } /* Not a Dirichlet block */
+
+    s += mII->n_rows;
 
   } /* Block bi */
 

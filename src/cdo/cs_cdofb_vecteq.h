@@ -229,7 +229,7 @@ cs_cdofb_vecteq_set_dir_bc(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the linear system arising from a scalar convection/diffusion
+ * \brief  Build the linear system arising from a vector convection/diffusion
  *         equation with a CDO face-based scheme.
  *         One works cellwise and then process to the assembly
  *

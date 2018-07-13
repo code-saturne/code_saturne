@@ -118,6 +118,9 @@ struct _cs_hho_scaleq_t {
   /* Handle the definition of the BCs */
   short int                     *bf2def_ids;
 
+  /* Pointer of function to build the diffusion term */
+  cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
+
   /* Static condensation members */
   /* =========================== */
 
@@ -887,6 +890,30 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Loop on BC definitions */
 
+  /* DIFFUSION */
+  eqc->enforce_dirichlet = NULL;
+
+  if (cs_equation_param_has_diffusion(eqp)) {
+
+    switch (eqp->enforcement) {
+
+    case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+      eqc->enforce_dirichlet = cs_cdo_diffusion_alge_block_dirichlet;
+      break;
+
+    case CS_PARAM_BC_ENFORCE_PENALIZED:
+      eqc->enforce_dirichlet = cs_cdo_diffusion_pena_block_dirichlet;
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                (" %s Invalid type of algorithm to enforce Dirichlet BC."),
+                __func__);
+
+    }
+
+  } /* Has diffusion term to handle */
+
   return eqc;
 }
 
@@ -999,7 +1026,8 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
   /* Sanity checks */
   assert(rhs != NULL && matrix != NULL && eqp != NULL && eqb != NULL);
   /* The only way to set a Dirichlet up to now */
-  assert(eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED);
+  assert(eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+         eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC);
 
   /* Test to remove */
   if (cs_equation_param_has_convection(eqp))
@@ -1158,17 +1186,14 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 
       /* TODO: Neumann boundary conditions */
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
+      if (cell_flag & CS_FLAG_BOUNDARY) {
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs)
-           eqp->diffusion_hidge is a dummy parameter (not used)
+           eqp->diffusion_hodge is a dummy parameter (not used)
         */
-        if (cell_flag & CS_FLAG_BOUNDARY)
-          cs_cdo_diffusion_pena_block_dirichlet(eqp->diffusion_hodge,
-                                                cm,
-                                                NULL, NULL,
-                                                cb, csys);
+          eqc->enforce_dirichlet(eqp->diffusion_hodge, cm, NULL,
+                                 NULL, cb, csys);
 
       }
 

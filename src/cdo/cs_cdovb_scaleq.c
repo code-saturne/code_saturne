@@ -388,8 +388,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOVB && eqp->dim != 1)
     bft_error(__FILE__, __LINE__, 0,
-              " Invalid type of equation.\n"
-              " Expected: scalar-valued CDO vertex-based equation.");
+              " %s: Invalid type of equation.\n"
+              " Expected: scalar-valued CDO vertex-based equation.", __func__);
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_lnum_t  n_vertices = connect->n_vertices;
@@ -416,8 +416,6 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* DIFFUSION */
   eqc->get_stiffness_matrix = NULL;
   eqc->boundary_flux_op = NULL;
-  eqc->enforce_dirichlet = NULL;
-
   if (cs_equation_param_has_diffusion(eqp)) {
 
     switch (eqp->diffusion_hodge.algo) {
@@ -443,33 +441,48 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                (" Invalid type of algorithm to build the diffusion term."));
+                (" %s: Invalid type of algorithm to build the diffusion term."),
+                __func__);
 
     } /* Switch on Hodge algo. */
 
-    switch (eqp->enforcement) {
-
-    case CS_PARAM_BC_ENFORCE_PENALIZED:
-      eqc->enforce_dirichlet = cs_cdo_diffusion_pena_dirichlet;
-      break;
-
-    case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-      eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ|CS_CDO_LOCAL_DEQ|CS_CDO_LOCAL_FEQ;
-      eqc->enforce_dirichlet = cs_cdovb_diffusion_weak_dirichlet;
-      break;
-
-    case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-      eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ|CS_CDO_LOCAL_DEQ|CS_CDO_LOCAL_FEQ;
-      eqc->enforce_dirichlet = cs_cdovb_diffusion_wsym_dirichlet;
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                (" Invalid type of algorithm to enforce Dirichlet BC."));
-
-    }
-
   } /* DIFFUSION */
+
+  eqc->enforce_dirichlet = NULL;
+  switch (eqp->enforcement) {
+
+  case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+    eqc->enforce_dirichlet = cs_cdo_diffusion_alge_dirichlet;
+    break;
+
+  case CS_PARAM_BC_ENFORCE_PENALIZED:
+    eqc->enforce_dirichlet = cs_cdo_diffusion_pena_dirichlet;
+    break;
+
+  case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ;
+    eqc->enforce_dirichlet = cs_cdovb_diffusion_weak_dirichlet;
+    if (cs_equation_param_has_diffusion(eqp) == false)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid choice of Dirichlet enforcement.\n"
+                " Diffusion term should be active.", __func__);
+    break;
+
+  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ;
+    eqc->enforce_dirichlet = cs_cdovb_diffusion_wsym_dirichlet;
+    if (cs_equation_param_has_diffusion(eqp) == false)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid choice of Dirichlet enforcement.\n"
+                " Diffusion term should be active.", __func__);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid type of algorithm to enforce Dirichlet BC.",
+              __func__);
+
+  }
 
   /* ADVECTION */
   eqc->get_advection_matrix = NULL;
@@ -843,13 +856,6 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
         /* Add the local diffusion operator to the local system */
         cs_sdm_add(csys->mat, cb->loc);
 
-        /* Weakly enforced Dirichlet BCs for cells attached to the boundary
-           csys is updated inside (matrix and rhs) */
-        if (cell_flag & CS_FLAG_BOUNDARY)
-          eqc->enforce_dirichlet(eqp->diffusion_hodge,
-                                 cm,
-                                 eqc->boundary_flux_op,
-                                 fm, cb, csys);
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
         if (cs_dbg_cw_test(cm))
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
@@ -865,11 +871,6 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
         eqc->get_advection_matrix(eqp, cm, t_eval_pty, fm, cb);
 
         cs_sdm_add(csys->mat, cb->loc);
-
-        /* Last treatment for the advection term: Apply boundary conditions
-           csys is updated inside (matrix and rhs) */
-        if (cell_flag & CS_FLAG_BOUNDARY)
-          eqc->add_advection_bc(cm, eqp, t_eval_pty, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
         if (cs_dbg_cw_test(cm))
@@ -977,11 +978,38 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
 #endif
       } /* END OF TIME CONTRIBUTION */
 
-      /* Neumann boundary conditions */
-      if ((cell_flag & CS_FLAG_BOUNDARY) && csys->has_nhmg_neumann) {
-        for (short int v  = 0; v < cm->n_vc; v++)
-          csys->rhs[v] += csys->neu_values[v];
-      }
+      /* BOUNDARY CONDITIONS */
+      /* =================== */
+
+      if (cell_flag & CS_FLAG_BOUNDARY) {
+
+        /* Neumann boundary conditions */
+        if (csys->has_nhmg_neumann) {
+          for (short int v  = 0; v < cm->n_vc; v++)
+            csys->rhs[v] += csys->neu_values[v];
+        }
+
+        /* Contribution for the advection term: csys is updated inside
+           (matrix and rhs) */
+        if (cs_equation_param_has_convection(eqp))
+          eqc->add_advection_bc(cm, eqp, t_eval_pty, fm, cb, csys);
+
+        /* The enforcement of the Dirichlet has to be done after all
+           other contributions */
+        if (csys->has_dirichlet) {
+          /* csys is updated inside (matrix and rhs) */
+          eqc->enforce_dirichlet(eqp->diffusion_hodge,
+                                 cm,
+                                 eqc->boundary_flux_op,
+                                 fm, cb, csys);
+
+        }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+        if (cs_dbg_cw_test(cm))
+          cs_cell_sys_dump("\n>> Local system after BC treatment", c_id, csys);
+#endif
+      } /* END OF BOUNDARY CONDITIONS */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(cm))

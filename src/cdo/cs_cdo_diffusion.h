@@ -188,6 +188,69 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
+ *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
+ *          The corresponding DoFs are algebraically "removed" of the system
+ *
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
+ *          |------------| --> |------------| and |--| --> |----------|
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
+ *
+ * where xd is the value of the Dirichlet BC
+ *
+ * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux trace operator
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_alge_dirichlet(const cs_param_hodge_t           h_info,
+                                const cs_cell_mesh_t            *cm,
+                                cs_cdo_diffusion_flux_trace_t   *flux_op,
+                                cs_face_mesh_t                  *fm,
+                                cs_cell_builder_t               *cb,
+                                cs_cell_sys_t                   *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
+ *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
+ *          The corresponding DoFs are algebraically "removed" of the system
+ *          Block version.
+ *
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
+ *          |------------| --> |------------| and |--| --> |----------|
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
+ *
+ * where xd is the value of the Dirichlet BC
+ *
+ * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux trace operator
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_alge_block_dirichlet(const cs_param_hodge_t           h_info,
+                                      const cs_cell_mesh_t            *cm,
+                                      cs_cdo_diffusion_flux_trace_t   *flux_op,
+                                      cs_face_mesh_t                  *fm,
+                                      cs_cell_builder_t               *cb,
+                                      cs_cell_sys_t                   *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique (symmetrized or not) or penalization
  *

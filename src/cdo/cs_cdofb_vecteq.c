@@ -425,8 +425,8 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   assert(eqp != NULL && eqb != NULL);
 
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOFB || eqp->dim != 3)
-    bft_error(__FILE__, __LINE__, 0, " Invalid type of equation.\n"
-              " Expected: scalar-valued CDO face-based equation.");
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid type of equation.\n"
+              " Expected: vector-valued CDO face-based equation.", __func__);
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_lnum_t  n_cells = connect->n_cells;
@@ -474,7 +474,6 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   eqc->get_stiffness_matrix = NULL;
   eqc->boundary_flux_op = NULL;
-  eqc->enforce_dirichlet = NULL;
 
   if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -482,35 +481,41 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_PARAM_HODGE_ALGO_COST:
       eqc->get_stiffness_matrix = cs_hodge_fb_cost_get_stiffness;
-      eqc->boundary_flux_op = NULL; //cs_cdovb_diffusion_cost_flux_op;
+      eqc->boundary_flux_op = NULL; //cs_cdofb_diffusion_cost_flux_op;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
       eqc->get_stiffness_matrix = cs_hodge_fb_voro_get_stiffness;
-      eqc->boundary_flux_op = NULL; //cs_cdovb_diffusion_cost_flux_op;
+      eqc->boundary_flux_op = NULL; //cs_cdofb_diffusion_cost_flux_op;
       break;
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                (" Invalid type of algorithm to build the diffusion term."));
+                " %s: Invalid type of algorithm to build the diffusion term.",
+                __func__);
 
     } /* Switch on Hodge algo. */
 
-    switch (eqp->enforcement) {
-
-    case CS_PARAM_BC_ENFORCE_PENALIZED:
-      eqc->enforce_dirichlet = cs_cdo_diffusion_pena_block_dirichlet;
-      break;
-
-    case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                (" Invalid type of algorithm to enforce Dirichlet BC."));
-
-    }
-
   } /* Diffusion part */
+
+  eqc->enforce_dirichlet = NULL;
+  switch (eqp->enforcement) {
+
+  case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+    eqc->enforce_dirichlet = cs_cdo_diffusion_alge_block_dirichlet;
+    break;
+  case CS_PARAM_BC_ENFORCE_PENALIZED:
+    eqc->enforce_dirichlet = cs_cdo_diffusion_pena_block_dirichlet;
+    break;
+
+  case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid type of algorithm to enforce Dirichlet BC.",
+              __func__);
+
+  }
 
   /* Advection part */
   eqc->get_advection_matrix = NULL;
@@ -648,7 +653,7 @@ cs_cdofb_vecteq_set_dir_bc(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the linear system arising from a scalar convection/diffusion
+ * \brief  Build the linear system arising from a vector convection/diffusion
  *         equation with a CDO face-based scheme.
  *         One works cellwise and then process to the assembly
  *
@@ -836,17 +841,24 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
 
       } /* End of term source contribution */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
+      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
+       * Operations that have to be performed BEFORE the static condensation
+       */
+      if (cell_flag & CS_FLAG_BOUNDARY) {
+
+        /* Neumann boundary conditions */
+        if (csys->has_nhmg_neumann) {
+          for (short int f = 0; f < 3*cm->n_fc; f++)
+            csys->rhs[f] += csys->neu_values[f];
+        }
+
+      } /* Boundary cell */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
       if (cs_dbg_cw_test(cm))
         cs_cell_sys_dump(">> Local system matrix before condensation",
                          c_id, csys);
 #endif
-
-      /* Neumann boundary conditions */
-      if ((cell_flag & CS_FLAG_BOUNDARY) && csys->has_nhmg_neumann) {
-        for (short int f = 0; f < 3*cm->n_fc; f++)
-          csys->rhs[f] += csys->neu_values[f];
-      }
 
       /* Static condensation of the local system stored inside a block matrix of
          size n_fc + 1 into a block matrix of size n_fc.
@@ -857,19 +869,28 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
                                        eqc->rc_tilda, eqc->acf_tilda,
                                        cb, csys);
 
-      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ======================================================= */
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
+      if (cs_dbg_cw_test(cm))
+        cs_cell_sys_dump(">> Local system matrix after condensation",
+                         c_id, csys);
+#endif
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
+      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
+       * Operations that have to be performed AFTER the static condensation
+       */
+      if (cell_flag & CS_FLAG_BOUNDARY) {
 
-        /* Weakly enforced Dirichlet BCs for cells attached to the boundary
-           csys is updated inside (matrix and rhs) */
-        if (cell_flag & CS_FLAG_BOUNDARY)
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
+
+          /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+             csys is updated inside (matrix and rhs) */
           eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   // in
                                  eqc->boundary_flux_op,      // function
                                  fm, cb, csys);              // in/out
 
-      }
+        }
+
+      } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(cm))

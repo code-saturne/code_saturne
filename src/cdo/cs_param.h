@@ -285,32 +285,41 @@ typedef enum {
  * Type of method for enforcing the boundary conditions. According to the type
  * of numerical scheme, some enforcements are not available.
  *
- * \var CS_PARAM_BC_ENFORCE_STRONG
- * Strong enforcement of the boundary conditions. Degrees of freedom related
- * to this boundary condition are removed from the algebraic system.
+ * \var CS_PARAM_BC_ENFORCE_ALGEBRAIC
+ * Weak enforcement of the boundary conditions (i.e. one keeps the degrees of
+ * freedom in the algebraic system) with an algebraic manipulation of the
+ * linear system
  *
  * \var CS_PARAM_BC_ENFORCE_PENALIZED
  * Weak enforcement of the boundary conditions (i.e. one keeps the degrees of
  * freedom in the algebraic system) with a penalization technique using a huge
  * value.
  *
+ * \var CS_PARAM_BC_ENFORCE_STRONG
+ * Strong enforcement of the boundary conditions. Degrees of freedom related
+ * to this boundary condition are removed from the algebraic system.
+ * Deprecated. Do not use this option.
+ *
  * \var CS_PARAM_BC_ENFORCE_WEAK_NITSCHE
  * Weak enforcement of the boundary conditions (i.e. one keeps the degrees of
  * freedom in the algebraic system) with a Nitsche-like penalization technique.
  * This technique does not increase the conditioning number as much as
  * \ref CS_PARAM_BC_ENFORCE_PENALIZED but is more computationally intensive.
+ * The computation of the diffusion term should be activated with this choice.
  *
  * \var CS_PARAM_BC_ENFORCE_WEAK_SYM
  * Weak enforcement of the boundary conditions (i.e. one keeps the degrees of
  * freedom in the algebraic system) with a Nitsche-like penalization technique.
  * This variant enables to keep the symmetry of the algebraic contrary to
  * \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE.
+ * The computation of the diffusion term should be activated with this choice.
  */
 
 typedef enum {
 
-  CS_PARAM_BC_ENFORCE_STRONG,
+  CS_PARAM_BC_ENFORCE_ALGEBRAIC,
   CS_PARAM_BC_ENFORCE_PENALIZED,
+  CS_PARAM_BC_ENFORCE_STRONG,
   CS_PARAM_BC_ENFORCE_WEAK_NITSCHE,
   CS_PARAM_BC_ENFORCE_WEAK_SYM,
 

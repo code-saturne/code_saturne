@@ -686,17 +686,19 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       eqp->itsol_info.resid_normalized = false;
     break;
 
-  case CS_EQKEY_VERBOSITY: // "verbosity"
+  case CS_EQKEY_VERBOSITY: /* "verbosity" */
     eqp->verbosity = atoi(val);
     break;
 
-  case CS_EQKEY_SLES_VERBOSITY: // "verbosity" for SLES structures
+  case CS_EQKEY_SLES_VERBOSITY: /* "verbosity" for SLES structures */
     eqp->sles_verbosity = atoi(val);
     break;
 
   case CS_EQKEY_BC_ENFORCEMENT:
     if (strcmp(val, "strong") == 0)
       eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+    else if (strcmp(val, "algebraic") == 0)
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
     else if (strcmp(val, "penalization") == 0)
       eqp->enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
     else if (strcmp(val, "weak_sym") == 0)

@@ -81,7 +81,7 @@ BEGIN_C_DECLS
  *  \file cs_cdovb_vecteq.c
  *
  * \brief Build an algebraic CDO vertex-based system for unsteady
- *        convection-diffusion-reaction of scalar-valued equations with
+ *        convection-diffusion-reaction of vector-valued equations with
  *        source terms
  *
 */
@@ -416,8 +416,8 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOVB || eqp->dim != 3)
     bft_error(__FILE__, __LINE__, 0,
-              " Invalid type of equation.\n"
-              " Expected: vector-valued CDO vertex-based equation.");
+              " %s: Invalid type of equation.\n"
+              " Expected: vector-valued CDO vertex-based equation.", __func__);
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_lnum_t  n_vertices = connect->n_vertices;
@@ -448,8 +448,6 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   eqc->get_stiffness_matrix = NULL;
   eqc->boundary_flux_op = NULL;
-  eqc->enforce_dirichlet = NULL;
-
   if (cs_equation_param_has_diffusion(eqp)) {
 
     switch (eqp->diffusion_hodge.algo) {
@@ -475,25 +473,31 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                (" Invalid type of algorithm to build the diffusion term."));
+                " %s: Invalid type of algorithm to build the diffusion term.",
+                __func__);
 
     } /* Switch on Hodge algo. */
 
-    switch (eqp->enforcement) {
-
-    case CS_PARAM_BC_ENFORCE_PENALIZED:
-      eqc->enforce_dirichlet = cs_cdo_diffusion_pena_block_dirichlet;
-      break;
-
-    case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                (" Invalid type of algorithm to enforce Dirichlet BC."));
-
-    }
-
   } /* Has diffusion */
+
+  eqc->enforce_dirichlet = NULL;
+  switch (eqp->enforcement) {
+
+  case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+    eqc->enforce_dirichlet = cs_cdo_diffusion_alge_block_dirichlet;
+    break;
+  case CS_PARAM_BC_ENFORCE_PENALIZED:
+    eqc->enforce_dirichlet = cs_cdo_diffusion_pena_block_dirichlet;
+    break;
+
+  case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid type of algorithm to enforce Dirichlet BC.",
+              __func__);
+
+  }
 
   /* Advection part */
   /* -------------- */
@@ -513,7 +517,8 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     }
     else
       bft_error(__FILE__, __LINE__, 0,
-                " Invalid choice of algorithm for the reaction term.");
+                " %s: Invalid choice of algorithm for the reaction term.",
+                __func__);
 
   } /* Reaction */
 
@@ -680,7 +685,7 @@ cs_cdovb_vecteq_set_dir_bc(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the linear system arising from a scalar convection/diffusion
+ * \brief  Build the linear system arising from a vector convection/diffusion
  *         equation with a CDO vertex-based scheme.
  *         One works cellwise and then process to the assembly
  *
@@ -849,16 +854,16 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
       /* ======================================================= */
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
+      if (cell_flag & CS_FLAG_BOUNDARY) {
 
-        /* Weakly enforced Dirichlet BCs for cells attached to the boundary
-           csys is updated inside (matrix and rhs) */
-        if (cell_flag & CS_FLAG_BOUNDARY)
-          eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   // in
-                                 eqc->boundary_flux_op,      // function
-                                 fm, cb, csys);              // in/out
+        if (csys->has_dirichlet)
+          /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+             csys is updated inside (matrix and rhs) */
+          eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   /* in */
+                                 eqc->boundary_flux_op,      /* function */
+                                 fm, cb, csys);              /* in/out */
 
-      }
+      } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(cm))

@@ -450,25 +450,33 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                (" Invalid type of algorithm to build the diffusion term."));
+                " %s: Invalid type of algorithm to build the diffusion term.",
+                __func__);
 
-    } // Switch on Hodge algo.
+    } /* Switch on Hodge algo. */
 
-    switch (eqp->enforcement) {
+  } /* Diffusion part */
 
-    case CS_PARAM_BC_ENFORCE_PENALIZED:
-      eqc->enforce_dirichlet = cs_cdo_diffusion_pena_dirichlet;
-      break;
+  /* Dirichlet boundary condition enforcement */
+  eqc->enforce_dirichlet = NULL;
+  switch (eqp->enforcement) {
 
-    case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                (" Invalid type of algorithm to enforce Dirichlet BC."));
+  case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+    eqc->enforce_dirichlet = cs_cdo_diffusion_alge_dirichlet;
+    break;
 
-    }
+  case CS_PARAM_BC_ENFORCE_PENALIZED:
+    eqc->enforce_dirichlet = cs_cdo_diffusion_pena_dirichlet;
+    break;
 
-  } // Diffusion part
+  case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid type of algorithm to enforce Dirichlet BC.",
+              __func__);
+
+  }
 
   /* Advection part */
 
@@ -814,17 +822,23 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       } /* END OF TIME CONTRIBUTION */
 
+      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
+       * Operations that have to be performed BEFORE the static condensation
+       */
+      if (cell_flag & CS_FLAG_BOUNDARY) {
+
+        /* Neumann boundary conditions */
+        if (csys->has_nhmg_neumann)
+          for (short int f  = 0; f < cm->n_fc; f++)
+            csys->rhs[f] += csys->neu_values[f];
+
+      } /* Boundary cell */
+
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
       if (cs_dbg_cw_test(cm))
         cs_cell_sys_dump(">> Local system matrix before condensation",
                          c_id, csys);
 #endif
-
-      /* Neumann boundary conditions */
-      if ((cell_flag & CS_FLAG_BOUNDARY) && csys->has_nhmg_neumann) {
-        for (short int f  = 0; f < cm->n_fc; f++)
-          csys->rhs[f] += csys->neu_values[f];
-      }
 
       /* Static condensation of the local system matrix of size n_fc + 1 into
          a matrix of size n_fc.
@@ -835,19 +849,29 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
                                        eqc->acf_tilda,
                                        cb, csys);
 
-      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-      /* ======================================================= */
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+      if (cs_dbg_cw_test(cm))
+        cs_cell_sys_dump(">> Local system matrix after condensation",
+                         c_id, csys);
+#endif
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
+      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
+       * Operations that have to be performed AFTER the static condensation
+       */
+      if (cell_flag & CS_FLAG_BOUNDARY) {
 
-        /* Weakly enforced Dirichlet BCs for cells attached to the boundary
-           csys is updated inside (matrix and rhs) */
-        if (cell_flag & CS_FLAG_BOUNDARY)
-          eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   // in
-                                 eqc->boundary_flux_op,      // function
-                                 fm, cb, csys);              // in/out
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
 
-      }
+          /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+             csys is updated inside (matrix and rhs) */
+          eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   /* in */
+                                 eqc->boundary_flux_op,      /* function */
+                                 fm, cb, csys);              /* in/out */
+
+        }
+
+      } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(cm))
