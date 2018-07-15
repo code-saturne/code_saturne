@@ -89,8 +89,14 @@ BEGIN_C_DECLS
  *===========================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute whether the projection point of a segment is inside or outside
- * the a given edge of a sub triangle
+ * Compute wether the (signed) volume of the parallelepiped defined by the
+ * three vectors (a,b,c) is positive or not. Its is compulted with the triple
+ * vector product (a x b) . c.
+ *
+ * Here:
+ *  a = [vtx0, vtx1]
+ *  b = [vtx0, sx0]
+ *  c = [sx0, sx1]
  *
  * parameters:
  *   sx0    <-- Previous location of the particle
@@ -99,7 +105,7 @@ BEGIN_C_DECLS
  *   vtx_1  <-- Second vertex of the edge (sorted by index)
  *
  * returns:
- *   1 if point is inside, -1 if outside
+ *   1 if positive, -1 otherwise
  *----------------------------------------------------------------------------*/
 
 static int
@@ -184,25 +190,36 @@ cs_geom_closest_point(cs_lnum_t         n_points,
 /*!
  * \brief Test if a line segment intersects a face.
  *
+ *                               |
+ *      x------------------------|--------x D: end coordinates
+ *   O: start coordiantes        |
+ *                               x G: Face (Center of Gravity)
+ *             x current         |
+ *               cell center     |
+ *                               |
+ *                           Face number
+
  * If the orient parameter is set to -1 or 1, intersection is only
  * considered when (sx1-sx0).normal.orient > 0.
  * If set to 0, intersection is considered in both cases.
  *
- * \param[in]   orient         if -1 or 1, multiplies face_normal to check
- *                             for segment
- * \param[in]   n_vertices     number of face vertices
- * \param[in]   vertex_ids     ids of face vertices
- * \param[in]   vertex_coords  vertex coordinates
- * \param[in]   face_center    coordinates of face center
- * \param[in]   face_normal    face normal vector
- * \param[in]   sx0            segment start coordinates
- * \param[in]   sx1            segment end coordinates
- * \param[out]  n_crossings    number sub_face crossings
- *                             [0: in; 1: out]
+ * \param[in]      orient         if -1 or 1, multiplies face_normal to check
+ *                                for segment
+ * \param[in]      n_vertices     number of face vertices
+ * \param[in]      vertex_ids     ids of face vertices
+ * \param[in]      vtx_coord      vertex coordinates
+ * \param[in]      face_cog       coordinates of face center
+ * \param[in]      sx0            segment start coordinates
+ * \param[in]      sx1            segment end coordinates
+ * \param[out]     n_crossings    number sub_face crossings
+ *                                 [0: in; 1: out]
+ * \param[in, out] face_norm      local face unite noraml of the crossed sub
+ *                                 triangle (if entering with something
+ *                                 different from NULL)
  *
  * \return
  *   2 if the segment does not go through the face's plane, or minimum
- *   relative distance (in terms of barycentric coordinates)
+ *   relative distance (in terms of segment length)
  *   of intersection point to face.
  */
 /*----------------------------------------------------------------------------*/
@@ -211,12 +228,12 @@ double
 cs_geom_segment_intersect_face(int              orient,
                                cs_lnum_t        n_vertices,
                                const cs_lnum_t  vertex_ids[],
-                               const cs_real_t  vertex_coords[][3],
-                               const cs_real_t  face_center[3],
-                               const cs_real_t  face_normal[3],
+                               const cs_real_t  vtx_coord[][3],
+                               const cs_real_t  face_cog[3],
                                const cs_real_t  sx0[3],
                                const cs_real_t  sx1[3],
-                               int              n_crossings[2])
+                               int              n_crossings[2],
+                               cs_real_t        *face_norm)
 {
   const double epsilon = 1.e-15;
 
@@ -230,12 +247,11 @@ cs_geom_segment_intersect_face(int              orient,
   const cs_real_t disp[3] = {sx1[0] - sx0[0],
                              sx1[1] - sx0[1],
                              sx1[2] - sx0[2]};
-  const cs_real_t vgo[3] = {sx0[0] - face_center[0],
-                            sx0[1] - face_center[1],
-                            sx0[2] - face_center[2]};
+  const cs_real_t vgo[3] = {sx0[0] - face_cog[0],
+                            sx0[1] - face_cog[1],
+                            sx0[2] - face_cog[2]};
 
   int n_intersects = 0;
-  int face_orient = (orient < 0) ? -1 : 1;
 
   /* Principle:
    *  - loop on sub-triangles of the face
@@ -257,18 +273,24 @@ cs_geom_segment_intersect_face(int              orient,
    *          |/     \|
    *          ---------
    *        e1
+   *
+   *   Note that t belongs to [0,1] if there OD crosses the sub-triangle,
+   *   t is negative if the line (OD) enters the volume,
+   *   t is positive if the line (OD) leaves the volume (and though there is
+   *    a risk of getting out)
+   *   t is given by the formula:
+   *    t = (OG . e1^e0) / (OD . e1^e0)
    */
 
   /* Initialization of triangle points and edges (vectors) */
-  cs_real_3_t  e0, e1;
-  int pi, pip1, p0;
+  cs_real_3_t e0, e1;
+  int pip1, p0;
 
   /* 1st vertex: vector e0, p0 = e0 ^ vgo  */
   cs_lnum_t vtx_id_0 = vertex_ids[0];
-  const cs_real_t *vtx_0 = vertex_coords[vtx_id_0];
+  const cs_real_t *vtx_0 = vtx_coord[vtx_id_0];
 
-  p0 = _test_edge(sx0, sx1, face_center, vtx_0);
-  pi = p0;
+  p0 = _test_edge(sx0, sx1, face_cog, vtx_0);
   pip1 = p0;
 
   /* Loop on vertices of the face */
@@ -277,136 +299,120 @@ cs_geom_segment_intersect_face(int              orient,
     vtx_id_0 = vertex_ids[i];
     cs_lnum_t vtx_id_1 = vertex_ids[(i+1)%n_vertices];
 
-    vtx_0 = vertex_coords[vtx_id_0];
-    const cs_real_t *vtx_1 = vertex_coords[vtx_id_1];
+    vtx_0 = vtx_coord[vtx_id_0];
+    const cs_real_t *vtx_1 = vtx_coord[vtx_id_1];
     for (int j = 0; j < 3; j++) {
-      e0[j] = vtx_0[j] - face_center[j];
-      e1[j] = vtx_1[j] - face_center[j];
+      e0[j] = vtx_0[j] - face_cog[j];
+      e1[j] = vtx_1[j] - face_cog[j];
     }
 
-    /* P = e1^e0 */
+    /* P = e1^e0: same value for the two neighbooring cells */
 
     const cs_real_3_t pvec = {e1[1]*e0[2] - e1[2]*e0[1],
                               e1[2]*e0[0] - e1[0]*e0[2],
                               e1[0]*e0[1] - e1[1]*e0[0]};
 
-    /* Reorient before computing the sign regarding the face so that
-       we are sure that it the test is true for one side of the face,
-       it is false on the other side (important for particle tracking) */
+    double od_p = cs_math_3_dot_product(disp, pvec);
 
-    double det = cs_math_3_dot_product(disp, pvec) * face_orient;
-
-    int sign_det = det > 0 ? 1 : -1;
-
-    sign_det *= face_orient;
-    det *= face_orient;
+    /* This sign is absolute (ie same result is obtained if the face is seen i
+     * from the other neighbooring cell).
+     */
+    int sign_od_p = (od_p > 0 ? 1 : -1);
 
     /* 2nd edge: vector ei+1, pi+1 = ei+1 ^ vgo */
 
-    pi = - pip1;
+    int pi = pip1;
     if (i == n_vertices - 1)
       pip1 = p0;
     else
-      pip1 = _test_edge(sx0, sx1, face_center, vtx_1);
+      pip1 = _test_edge(sx0, sx1, face_cog, vtx_1);
 
-    const int u_sign = pip1 * sign_det;
+    const int u_sign = pip1 * sign_od_p;
 
     /* 1st edge: vector ei, pi = ei ^ vgo */
-    const int v_sign = pi * sign_det;
+    const int v_sign = - pi * sign_od_p;
 
     /* 3rd edge: vector e_out */
 
     /* Check the orientation of the edge */
     int reorient_edge = (vtx_id_0 < vtx_id_1 ? 1 : -1);
 
-    /* Sort the vertices of the edges so that it is easier to find it after */
+    /* Sort the vertices of the edges so that it gives the same
+     * answer for the same edge for another face */
     cs_lnum_2_t edge_id = {vtx_id_0, vtx_id_1};
     if (reorient_edge == -1) {
       edge_id[0] = vtx_id_1;
       edge_id[1] = vtx_id_0;
     }
 
-    vtx_0 = vertex_coords[edge_id[0]];
-    vtx_1 = vertex_coords[edge_id[1]];
+    vtx_0 = vtx_coord[edge_id[0]];
+    vtx_1 = vtx_coord[edge_id[1]];
 
     int w_sign = _test_edge(sx0, sx1, vtx_0, vtx_1)
-                 * reorient_edge * sign_det;
+                 * reorient_edge * sign_od_p;
 
-    /* The projection of point O along displacement is outside of the triangle
-     * then no intersection */
+    /* The projection of point O along displacement (OD) is outside of the
+     * triangle then no intersection */
     if (w_sign > 0 || u_sign  < 0 || v_sign < 0)
       continue;
 
-    /* We have an intersection if
-     * u_sign >= 0, v_sign <= 0 and w_sign <= 0
-     * If det is nearly 0, consider that the particle does not cross the face */
+    /* Line (OD) intersects the triangle because
+     * u_sign >= 0, v_sign >= 0 and w_sign <= 0
+     */
 
-    /* Also reorient before computing the sign regarding the face so that
-       we are sure that if the test is true for one side of the face,
-       it is false on the other side */
+    double og_p = - cs_math_3_dot_product(vgo, pvec);
 
-    double go_p = - cs_math_3_dot_product(vgo, pvec) * face_orient;
-
-    int sign_go_p = (go_p > 0 ? 1 : -1) * face_orient;
-
-    go_p = face_orient * go_p;
-
-    /* We check the direction of displacement and the triangle normal
-     *  to see if the directed segment enters or leaves the half-space */
-
-    bool dir_move;
-    if (orient) {
-      int sign_face_orient
-        = (cs_math_3_dot_product(pvec, face_normal) > 0 ? 1 : -1);
-      dir_move = (sign_face_orient * face_orient * sign_det > 0);
-    }
-    else
-      dir_move = true;
+    /* This sign is absolute (ie same result is obtained if the face is seen from
+     * the other neighbooring cell.
+     */
+    int sign_og_p = (og_p > 0 ? 1 : -1);
 
     /* Same sign (meaning there is a possible intersection with t > 0). */
-    if (sign_det == sign_go_p) {
+    if (sign_od_p == sign_og_p) {
+      /* The line (OD) enters (n_crossings[0]++)
+       * or leaves (n_crossings[1]++) the cell */
+      if (orient != sign_od_p) {
+        n_crossings[1]++;
+        if (fabs(og_p) < fabs(od_p)) {
+          /* There is a real intersection (outward) with 0 <= t < 1 */
+          double t = 0.;
+          n_intersects++;
 
-      /* The segment enters or leaves the half-space */
-      if (dir_move) {
-        if (fabs(go_p) < fabs(det)) {
-          /* There is a real intersection (outward)
-             with 0 < t < 1 (n_intersect ++) */
-          double t = 0.99;
-
-          const double det_cen = cs_math_3_norm(e0)*cs_math_3_norm(e1);
-          if (fabs(det/det_cen) > epsilon) {
-            t = go_p / det;
+          const double det = cs_math_3_norm(e0)*cs_math_3_norm(pvec);
+          if (fabs(od_p) > epsilon * fabs(det)) {
+            t = og_p / od_p;
           }
 
-          n_crossings[1] += 1;
-          n_intersects += 1;
-          if (t < retval)
+          if (t < retval) {
             retval = t;
-        } else {
-          n_crossings[1] += 1;
+            /* Store the normal if needed */
+            if (face_norm != NULL)
+              cs_math_3_normalise(pvec, face_norm);
+          }
         }
       } else {
-        n_crossings[0] += 1;
-        if (fabs(go_p) < fabs(det))
-          n_intersects -= 1;
-        /* There is a real intersection (inward) with 0 < t < 1 (n_intersect -) */
+        n_crossings[0]++;
+        /* Incomming intersection on segment [OD] */
+        if (fabs(og_p) < fabs(od_p))
+          n_intersects--;
       }
+
     } else {
-      /* Opposite sign (meaning there is a possible intersection with t < 0). */
-      if (dir_move)
-        n_crossings[1] += 1;
+      /* Opposite sign (meaning there is a possible intersection of the line
+       * with t<0).  */
+      if (orient != sign_od_p)
+        n_crossings[1]++;
       else
-        n_crossings[0] += 1;
+        n_crossings[0]++;
     }
 
-    /* In case intersections were removed due to non-convex cases
-     *  (i.e.  n_intersects < 1, but retval < 1),
-     *  the retval value is forced to 2 (no intersection). */
-
-    if (n_intersects < 1 && retval < 1.) {
-      retval = 2.;
-    }
-
+  }
+  /* In case intersections were removed due to non-convex cases
+   *  (i.e.  n_intersects < 1 , but retval < 1),
+   *  the retval value is forced to 2
+   *  (no intersection since the particle entered and left from this face). */
+  if ((n_intersects < 1) && retval < 1.) {
+    retval = 2.;
   }
 
   return retval;

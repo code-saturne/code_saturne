@@ -81,21 +81,32 @@ cs_geom_closest_point(cs_lnum_t         n_points,
 /*!
  * \brief Test if a line segment intersects a face.
  *
+ *                               |
+ *      x------------------------|--------x D: end coordinates
+ *   O: start coordiantes        |
+ *                               x G: Face (Center of Gravity)
+ *             x current         |
+ *               cell center     |
+ *                               |
+ *                           Face number
+
  * If the orient parameter is set to -1 or 1, intersection is only
  * considered when (sx1-sx0).normal.orient > 0.
  * If set to 0, intersection is considered in both cases.
  *
- * \param[in]   orient         if -1 or 1, multiplies face_normal to check
- *                             for segment
- * \param[in]   n_vertices     number of face vertices
- * \param[in]   vertex_ids     ids of face vertices
- * \param[in]   vertex_coords  vertex coordinates
- * \param[in]   face_center    coordinates of face center
- * \param[in]   face_normal    face normal vector
- * \param[in]   sx0            segment start coordinates
- * \param[in]   sx1            segment end coordinates
- * \param[out]  n_crossings    number sub_face crossings
- *                             [0: in; 1: out]
+ * \param[in]      orient         if -1 or 1, multiplies face_normal to check
+ *                                for segment
+ * \param[in]      n_vertices     number of face vertices
+ * \param[in]      vertex_ids     ids of face vertices
+ * \param[in]      vtx_coord      vertex coordinates
+ * \param[in]      face_cog       coordinates of face center
+ * \param[in]      sx0            segment start coordinates
+ * \param[in]      sx1            segment end coordinates
+ * \param[out]     n_crossings    number sub_face crossings
+ *                                 [0: in; 1: out]
+ * \param[in, out] face_norm      local face unite noraml of the crossed sub
+ *                                 triangle (if entering with something
+ *                                 different from NULL)
  *
  * \return
  *   2 if the segment does not go through the face's plane, or minimum
@@ -108,12 +119,12 @@ double
 cs_geom_segment_intersect_face(int              orient,
                                cs_lnum_t        n_vertices,
                                const cs_lnum_t  vertex_ids[],
-                               const cs_real_t  vertex_coords[][3],
-                               const cs_real_t  face_center[3],
-                               const cs_real_t  face_normal[3],
+                               const cs_real_t  vtx_coord[][3],
+                               const cs_real_t  face_cog[3],
                                const cs_real_t  sx0[3],
                                const cs_real_t  sx1[3],
-                               int              n_crossings[2]);
+                               int              n_crossings[2],
+                               cs_real_t        *face_norm);
 
 /*---------------------------------------------------------------------------*/
 

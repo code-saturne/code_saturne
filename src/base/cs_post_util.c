@@ -197,17 +197,16 @@ cs_cell_segment_intersect_select(void        *input,
         const cs_lnum_t *vertex_ids = m->i_face_vtx_lst + vtx_start;
 
         const cs_real_t *face_center = fvq->i_face_cog + (3*face_id);
-        const cs_real_t *face_normal = fvq->i_face_normal + (3*face_id);
 
         double t = cs_geom_segment_intersect_face(0,
                                                   n_vertices,
                                                   vertex_ids,
                                                   vtx_coord,
                                                   face_center,
-                                                  face_normal,
                                                   sx0,
                                                   sx1,
-                                                  n_crossings);
+                                                  n_crossings,
+                                                  NULL);
 
         if (t >= 0 && t <= 1) {
           cs_lnum_t  c_id0 = m->i_face_cells[face_id][0];
@@ -243,17 +242,16 @@ cs_cell_segment_intersect_select(void        *input,
         const cs_lnum_t *vertex_ids = m->b_face_vtx_lst + vtx_start;
 
         const cs_real_t *face_center = fvq->b_face_cog + (3*face_id);
-        const cs_real_t *face_normal = fvq->b_face_normal + (3*face_id);
 
         double t = cs_geom_segment_intersect_face(0,
                                                   n_vertices,
                                                   vertex_ids,
                                                   vtx_coord,
                                                   face_center,
-                                                  face_normal,
                                                   sx0,
                                                   sx1,
-                                                  n_crossings);
+                                                  n_crossings,
+                                                  NULL);
 
         if (t >= 0 && t <= 1) {
           cs_lnum_t  c_id = m->b_face_cells[face_id];
