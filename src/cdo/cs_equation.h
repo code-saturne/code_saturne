@@ -111,12 +111,12 @@ cs_equation_get_param(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Find the cs_equation_t structure with name eqname
+ * \brief  Find the \ref cs_equation_t structure with id eq_id
  *         Return NULL if not find
  *
  * \param[in]  eq_id    id of the equation to find
  *
- * \return a pointer to a cs_equation_t structure or NULL if not found
+ * \return a pointer to a \ref cs_equation_t structure or NULL if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -412,7 +412,8 @@ cs_equation_get_time_property(const cs_equation_t    *eq);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return a pointer to the cs_property_t structure associated to the
- *         reaction term called r_name and related to this equation
+ *         reaction term with id equal to reaction_id and related to this
+ *         equation
  *
  *
  * \param[in]  eq            pointer to a cs_equation_t structure

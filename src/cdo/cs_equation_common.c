@@ -101,8 +101,8 @@ static const cs_cdo_connect_t  *cs_shared_connect;
 static const cs_time_step_t  *cs_shared_time_step;
 
 /* Monitoring */
-static cs_timer_counter_t  tca; // assembling process
-static cs_timer_counter_t  tcc; // connectivity building
+static cs_timer_counter_t  tca; /* assembling process */
+static cs_timer_counter_t  tcc; /* connectivity building */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -145,13 +145,13 @@ _get_v2v(const cs_cdo_connect_t     *connect)
       if (v2v->ids[j] != i)
         v2v->ids[shift++] = v2v->ids[j];
 
-    if (i != n_vertices - 1) { // Update prev_start and prev_end
+    if (i != n_vertices - 1) { /* Update prev_start and prev_end */
       prev_start = v2v->idx[i+1];
       prev_end = v2v->idx[i+2];
     }
     v2v->idx[i+1] = shift;
 
-  } // Loop on vertices
+  } /* Loop on vertices */
 
   BFT_REALLOC(v2v->ids, v2v->idx[n_vertices], cs_lnum_t);
 
@@ -194,13 +194,13 @@ _get_f2f(const cs_cdo_connect_t     *connect)
       if (f2f->ids[j] != i)
         f2f->ids[shift++] = f2f->ids[j];
 
-    if (i != n_faces - 1) { // Update prev_start and prev_end
+    if (i != n_faces - 1) { /* Update prev_start and prev_end */
       prev_start = f2f->idx[i+1];
       prev_end = f2f->idx[i+2];
     }
     f2f->idx[i+1] = shift;
 
-  } // Loop on faces
+  } /* Loop on faces */
 
   BFT_REALLOC(f2f->ids, f2f->idx[n_faces], cs_lnum_t);
 
@@ -227,6 +227,9 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
                         const cs_range_set_t    *rs)
 {
   cs_gnum_t  *grows = NULL, *gcols = NULL;
+
+  /* The second paramter is set to "true" meaning that the diagonal is stored
+     separately --> MSR storage */
   cs_matrix_assembler_t  *ma = cs_matrix_assembler_create(rs->l_range, true);
 
   /* First loop to count max size of the buffer */
@@ -258,7 +261,7 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
 
       cs_matrix_assembler_add_g_ids(ma, end - start + 1, grows, gcols);
 
-    } // Loop on entities
+    } /* Loop on entities */
 
   }
   else {
@@ -297,12 +300,12 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
           }
         }
 
-      } // Loop on number of DoFs by entity
+      } /* Loop on number of DoFs by entity */
 
       assert(shift == n_entries);
       cs_matrix_assembler_add_g_ids(ma, n_entries, grows, gcols);
 
-    } // Loop on entities
+    } /* Loop on entities */
 
   }
 
@@ -345,7 +348,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
                             const cs_time_step_t           *time_step,
                             const cs_domain_cdo_context_t  *cc)
 {
-  assert(connect != NULL); // Sanity check
+  assert(connect != NULL); /* Sanity check */
 
   if (cc == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -353,8 +356,8 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
               __func__);
 
   /* Monitoring */
-  CS_TIMER_COUNTER_INIT(tca); // assembling system
-  CS_TIMER_COUNTER_INIT(tcc); // connectivity
+  CS_TIMER_COUNTER_INIT(tca); /* assembling system */
+  CS_TIMER_COUNTER_INIT(tcc); /* connectivity */
 
   /* Two types of mat. ass. are considered:
      - The one related to matrix based on vertices
@@ -378,7 +381,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
   const cs_lnum_t  n_vertices = connect->n_vertices;
 
   /* Allocate shared buffer and initialize shared structures */
-  size_t  cwb_size = n_cells; // initial cell-wise buffer size
+  size_t  cwb_size = n_cells; /* initial cell-wise buffer size */
 
   /* Allocate and initialize matrix assembler and matrix structures */
   if (cc->vb_scheme_flag > 0 || cc->vcb_scheme_flag > 0) {
@@ -629,7 +632,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
   }
 
   /* TODO: Solve Navier--Stokes with HHO schemes */
-  //  if (cs_flag_test(cc->hho_scheme_flag, CS_FLAG_SCHEME_NAVSTO))
+  /* if (cs_flag_test(cc->hho_scheme_flag, CS_FLAG_SCHEME_NAVSTO)) */
 
   /* Assign static const pointers: shared pointers with a cs_domain_t */
   cs_shared_quant = quant;
@@ -789,12 +792,12 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
                                   mesh->n_b_faces);
 
   /* Monitoring */
-  CS_TIMER_COUNTER_INIT(eqb->tcb); // build system
-  CS_TIMER_COUNTER_INIT(eqb->tcd); // build diffusion terms
-  CS_TIMER_COUNTER_INIT(eqb->tca); // build advection terms
-  CS_TIMER_COUNTER_INIT(eqb->tcr); // build reaction terms
-  CS_TIMER_COUNTER_INIT(eqb->tcs); // build source terms
-  CS_TIMER_COUNTER_INIT(eqb->tce); // extra operations
+  CS_TIMER_COUNTER_INIT(eqb->tcb); /* build system */
+  CS_TIMER_COUNTER_INIT(eqb->tcd); /* build diffusion terms */
+  CS_TIMER_COUNTER_INIT(eqb->tca); /* build advection terms */
+  CS_TIMER_COUNTER_INIT(eqb->tcr); /* build reaction terms */
+  CS_TIMER_COUNTER_INIT(eqb->tcs); /* build source terms */
+  CS_TIMER_COUNTER_INIT(eqb->tce); /* extra operations */
 
   return eqb;
 }
@@ -926,9 +929,9 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
   if (cs_equation_param_has_diffusion(eqp))
     if (eqb->diff_pty_uniform)
       cs_equation_set_diffusion_property(eqp,
-                                         0,                // cell_id
+                                         0,                /* cell_id */
                                          t_eval,
-                                         CS_FLAG_BOUNDARY, // force boundary
+                                         CS_FLAG_BOUNDARY, /* force boundary */
                                          cb);
 
   /* Preparatory step for unsteady term */
