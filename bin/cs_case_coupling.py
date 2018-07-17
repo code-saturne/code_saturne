@@ -50,6 +50,7 @@ def coupling(package,
     use_saturne = False
     use_syrthes = False
     use_neptune = False
+    use_cathare = False
 
     # Use alternate compute (back-end) package if defined
 
@@ -63,6 +64,7 @@ def coupling(package,
     sat_domains = []
     syr_domains = []
     nep_domains = []
+    cat_domains = []
     ast_domain = None
     fsi_coupler = None
 
@@ -176,6 +178,41 @@ def coupling(package,
                 err_str += '  epsilon = ' + d.get('epsilon') + '\n'
                 raise RunCaseError(err_str)
 
+        elif (d.get('solver') == 'CATHARE'):
+            # Current version using Cathare2: the cathare case is converted to a
+            # .so library which is opened and launched by a NEPTUNE_CFD executable
+
+            script = d.get('script')
+
+            if script[-4:] == '.xml':
+                param = script
+
+            else:
+                runcase_path = os.path.join(os.getcwd(),
+                                            d.get('domain'),
+                                            'SCRIPTS',
+                                            script)
+                try:
+                    runcase = cs_runcase.runcase(runcase_path)
+                    param = runcase.get_parameters()
+
+                except Exception:
+                    err_str = 'Cannot read ' + d.get('solver') \
+                              + ' script: ' + runcase_path
+                    raise RunCaseError(err_str)
+                d['script'] = param
+
+            dom = domain(package,
+                         package_compute = package_compute,
+                         name = d.get('domain'),
+                         param = param,
+                         n_procs_weight = d.get('n_procs_weight'),
+                         n_procs_min = d.get('n_procs_min'),
+                         n_procs_max = d.get('n_procs_max'))
+
+            use_cathare = True
+            cat_domains.append(dom)
+
         else:
             err_str = 'Unknown code type : ' + d.get('solver') + '.\n'
             raise RunCaseError(err_str)
@@ -219,7 +256,7 @@ domains = [
              case_dir = casedir,
              staging_dir = staging_dir,
              coupling_parameters = coupling_parameters,
-             domains = sat_domains + nep_domains,
+             domains = sat_domains + nep_domains + cat_domains,
              syr_domains = syr_domains,
              ast_domain = ast_domain,
              fsi_coupler = fsi_coupler)
@@ -235,6 +272,8 @@ domains = [
         if ast_domain or fsi_coupler:
             msg += '   o Code_Aster   [1 domain(s)];\n'
             msg += '                  [1 coupler(s)];\n'
+        if use_cathare == True:
+            msg += '   o CATHARE2     [' + str(len(cat_domains)) + ' domain(s)];\n'
         sys.stdout.write(msg+'\n')
 
     return c

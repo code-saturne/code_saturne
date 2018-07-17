@@ -106,6 +106,10 @@ def process_cmd_line(argv, pkg):
                       metavar="<ast_case>",
                       help="create a new Code_Aster case.")
 
+    parser.add_option("--cathare", dest="cat_case_name", type="string",
+                      metavar="<cat_case>",
+                      help="create a new Cathare2 case.")
+
     parser.set_defaults(use_ref=True)
     parser.set_defaults(study_name=os.path.basename(os.getcwd()))
     parser.set_defaults(case_names=[])
@@ -115,6 +119,7 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(n_sat=1)
     parser.set_defaults(syr_case_names=[])
     parser.set_defaults(ast_case_name=None)
+    parser.set_defaults(cat_case_name=None)
 
     (options, args) = parser.parse_args(argv)
 
@@ -132,6 +137,7 @@ def process_cmd_line(argv, pkg):
                  options.case_names,
                  options.syr_case_names,
                  options.ast_case_name,
+                 options.cat_case_name,
                  options.copy,
                  options.import_only,
                  options.use_ref,
@@ -211,7 +217,7 @@ def syrthes_path_line(pkg):
 class Study:
 
     def __init__(self, package, name, cases, syr_case_names, ast_case_name,
-                 copy, import_only, use_ref, verbose):
+                 cat_case_name, copy, import_only, use_ref, verbose):
         """
         Initialize the structure for a study.
         """
@@ -238,6 +244,8 @@ class Study:
             self.syr_case_names.append(c)
 
         self.ast_case_name = ast_case_name
+
+        self.cat_case_name = cat_case_name
 
         if self.import_only:
             self.use_ref = False
@@ -285,8 +293,17 @@ class Study:
                 sys.stderr.write("Cannot locate Code_Aster installation.")
                 sys.exit(1)
 
+        if self.cat_case_name is not None:
+            config = configparser.ConfigParser()
+            config.read(self.package.get_configfiles())
+            if config.has_option('install', 'cathare'):
+                self.create_cathare_case(repbase, config.get('install', 'cathare'))
+            else:
+                sys.stderr.write("Cannot locate Cathare installation.")
+                sys.exit(1)
+
         # Creating coupling structure
-        if len(self.cases) + len(self.syr_case_names) > 1 or self.ast_case_name:
+        if len(self.cases) + len(self.syr_case_names) > 1 or self.ast_case_name or self.cat_case_name:
             self.create_coupling(repbase)
 
 
@@ -334,6 +351,44 @@ class Study:
         except:
             sys.stderr.write("Cannot copy fsi.export file: " + \
                              os.path.join(datadir, 'salome', 'fsi.export') + ".\n")
+            sys.exit(1)
+
+
+    def create_cathare_case(self, repbase, cathare_path):
+        """
+        Create and initialize Cathare case directory for coupling.
+        """
+
+        os.chdir(repbase)
+        self.create_case(self.cat_case_name)
+
+        # Copying the Cathare coupling necessary files for the cases
+        datadir = os.path.join(self.package.get_dir("datadir"),
+                               self.package.name)
+
+        if os.path.isdir(os.path.join(datadir, 'cathare_coupling')):
+
+            cathare_cpl_dir = os.path.join(datadir, 'cathare_coupling')
+            for src_file in os.listdir(os.path.join(cathare_cpl_dir, 'user_sources')):
+                shutil.copy(os.path.join(cathare_cpl_dir, 'user_sources', src_file),
+                            os.path.join(repbase, self.cat_case_name, 'SRC'))
+
+                shutil.copy(os.path.join(cathare_cpl_dir, 'user_sources', src_file),
+                            os.path.join(repbase, self.cases[0], 'SRC'))
+
+            # Script which converts the Cathare JDD file to a .so library
+            fin  = open(os.path.join(cathare_cpl_dir, 'user_scripts', 'cathare_jdd_to_lib.sh'))
+            fout = open(os.path.join(repbase, self.cat_case_name, 'SCRIPTS', 'cathare_jdd_to_lib.sh'), 'wt')
+            for line in fin:
+                fout.write(line.replace('#path_to_v25_3=',
+                                        'path_to_v25_3='+cathare_path))
+            fin.close()
+            fout.close()
+
+
+        else:
+            sys.stderr.write("Cannot find the directory: " + \
+                             os.path.join(datadir, 'cathare_coupling') + "\n")
             sys.exit(1)
 
 
@@ -441,6 +496,27 @@ domains = [
      'start_time': 0.0,
      'epsilon': 0.00001}
 """
+            dict_str += template
+
+        if self.cat_case_name is not None:
+
+            c = os.path.normpath(self.cat_case_name)
+            base_c = os.path.basename(c)
+
+            template = \
+"""
+    ,
+    {'solver': 'CATHARE',
+     'domain': 'DOMAIN',
+     'script': 'runcase',
+     'n_procs_weight': None,
+     'n_procs_min': 1,
+     'n_procs_max': 1}
+"""
+
+            template = re.sub(e_pkg, solver_name, template)
+            template = re.sub(e_dom, base_c, template)
+
             dict_str += template
 
         # Now finish building dictionnary string

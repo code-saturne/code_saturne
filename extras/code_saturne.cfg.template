@@ -25,6 +25,10 @@
 ### (e.g. <salome_meca_home>/V2015_1/tools/Code_aster_testing_1230).
 # aster =
 ###
+### Set the location to the Cathare installation directory
+### (e.g. <cathare_home>/mod5.1).
+# cathare =
+###
 ### Optional path to sourcable shell environment initialization file
 ### (similar to .profile or .bashrc, specific to Code_Saturne).
 # rcfile =

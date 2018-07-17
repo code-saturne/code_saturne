@@ -136,10 +136,10 @@ _code_saturne() {
             case ${prev} in
                 -c|--case)     COMPREPLY=( ); return 0;;
                 -s|--study)    COMPREPLY=( ); return 0;;
-                --syrthes|--aster) COMPREPLY=( ); return 0;;
+                --syrthes|--aster|--cathare) COMPREPLY=( ); return 0;;
                 --copy-from)   _filedir -d; return 0;;
                 *) cmdOpts="-s --study -c --case --noref --copy-from \
-                     --syrthes --aster --import-only -q --quiet -v --verbose";;
+                     --syrthes --aster --cathare --import-only -q --quiet -v --verbose";;
             esac
             ;;
         gui)
@@ -221,6 +221,7 @@ _code_saturne() {
         # Take out alternatives and mutually exclusives
         case $optBase in
             --aster)         cmdOpts=${cmdOpts/ --syrthes / } ;;
+            --cathare)       cmdOpts=${cmdOpts/ --syrthes / } ;;
             -c)              cmdOpts=${cmdOpts/ --case / }; isOptcase=1 ;;
             --case)          cmdOpts=${cmdOpts/ -c / }; isOptcase=1 ;;
             -d)              cmdOpts=${cmdOpts/ --dest / } ;;
@@ -252,7 +253,7 @@ _code_saturne() {
             --syrthes)
                 case ${cmd} in
                     compile) cmdOpts=${cmdOpts/ --opt-libs / } ;;
-                    create)  cmdOpts=${cmdOpts/ --aster / } ;;
+                    create)  cmdOpts=${cmdOpts/ --aster / -- cathare / } ;;
                 esac ;;
             -t)              cmdOpts=${cmdOpts/ --test / } ;;
             --test)          cmdOpts=${cmdOpts/ -t / } ;;
