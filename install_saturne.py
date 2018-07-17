@@ -390,20 +390,6 @@ class Package:
 
         os.chdir(os.path.join(build_dir, 'src'))
 
-        # Work around Ubuntu Metis build bug
-        ldflags_add = ''
-        try:
-            p = subprocess.Popen(self.cc + ' -Xlinker --help',
-                                 shell=True,
-                                 universal_newlines=True,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            output = p.communicate()[0]
-            if output.find("--no-as-needed") > -1:
-                ldflags_add = ' -Wl,--no-as-needed\n'
-        except Exception:
-            pass
-
         if self.shared:
             fdr = open('Make.inc/Makefile.inc.x86-64_pc_linux2.shlib')
         else:
@@ -672,17 +658,17 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="6.0.4",
-                    archive="scotch_6.0.4.tar.gz",
-                    url="https://gforge.inria.fr/frs/download.php/file/34618/%s")
+                    version="6.0.6",
+                    archive="scotch_6.0.6.tar.gz",
+                    url="https://gforge.inria.fr/frs/download.php/file/37622/%s")
 
     #---------------------------------------------------------------------------
 
     def setup_defaults(self):
 
-        self.cc = find_executable(['cc', 'gcc', 'icc', 'xlc'], 'CC')
+        self.cc = find_executable(['cc', 'gcc', 'icc', 'xlc', 'clang'], 'CC')
         self.fc = find_executable(['f95', 'gfortran', 'ifort'], 'FC')
-        self.cxx = find_executable(['c++', 'g++', 'icpc', 'xlc++'], 'CXX')
+        self.cxx = find_executable(['c++', 'g++', 'icpc', 'xlc++', 'clang++'], 'CXX')
         self.mpicc = find_executable(['mpicc', 'mpicc.openmpi', 'mpicc.mpich'])
         self.mpicxx = find_executable(['mpicxx', 'mpicxx.openmpi', 'mpicxx.mpich'])
         self.python = find_executable(['python'], 'PYTHON')
