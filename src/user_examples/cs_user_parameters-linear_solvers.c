@@ -64,6 +64,7 @@
 
 #include "cs_base.h"
 #include "cs_ctwr.h"
+#include "cs_equation_param.h"
 #include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -250,6 +251,47 @@ _petsc_p_setup_hook_view(const void  *context,
   }
 }
 /*! [sles_petsc_hook_view] */
+
+/*----------------------------------------------------------------------------
+ * Function pointer for user settings of a PETSc KSP solver setup.
+ *
+ * This function is called the end of the setup stage for a KSP solver.
+ *
+ * Note that using the advanced KSPSetPostSolve and KSPSetPreSolve functions,
+ * this also allows setting furthur function pointers for pre and post-solve
+ * operations (see the PETSc documentation).
+ *
+ * Note: if the context pointer is non-NULL, it must point to valid data
+ * when the selection function is called so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * parameters:
+ *   context <-> pointer to optional (untyped) value or structure
+ *   ksp     <-> pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_sles_petsc_hook(void               *context,
+                        KSP                 ksp)
+{
+  /*! [sles_petsc_cdo_hook] */
+  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+
+  if (cs_equation_param_has_name(eqp, "Name_Of_The_Equation")) {
+
+    /* Assume a PETSc version greater or equal to 3.7.0 */
+    if (eqp->itsol_info.precond == CS_PARAM_PRECOND_AMG) {
+      if (eqp->itsol_info.amg_type == CS_PARAM_AMG_BOOMER) {
+
+        PetscOptionsSetValue(NULL,
+                             "-pc_hypre_boomeramg_strong_threshold", "0.7");
+
+      }
+    }
+
+  }
+  /*! [sles_petsc_cdo_hook] */
+}
 
 #endif /* defined(HAVE_PETSC) */
 

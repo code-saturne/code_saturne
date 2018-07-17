@@ -48,7 +48,6 @@
 #include "cs_blas.h"
 #include "cs_domain.h"
 #include "cs_equation.h"
-#include "cs_equation_param.h"
 #include "cs_evaluate.h"
 #include "cs_field.h"
 #include "cs_hodge.h"

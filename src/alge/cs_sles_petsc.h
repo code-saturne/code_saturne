@@ -85,6 +85,32 @@ typedef struct _cs_sles_petsc_t  cs_sles_petsc_t;
  *============================================================================*/
 
 /*=============================================================================
+ * User function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Function pointer for user settings of a PETSc KSP solver setup.
+ *
+ * This function is called the end of the setup stage for a KSP solver.
+ *
+ * Note that using the advanced KSPSetPostSolve and KSPSetPreSolve functions,
+ * this also allows setting furthur function pointers for pre and post-solve
+ * operations (see the PETSc documentation).
+ *
+ * Note: if the context pointer is non-NULL, it must point to valid data
+ * when the selection function is called so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * parameters:
+ *   context <-> pointer to optional (untyped) value or structure
+ *   ksp     <-> pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_sles_petsc_hook(void               *context,
+                        KSP                 ksp);
+
+/*=============================================================================
  * Public function prototypes
  *============================================================================*/
 

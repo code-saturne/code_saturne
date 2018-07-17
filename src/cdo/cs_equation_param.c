@@ -40,7 +40,7 @@
 #include <petscversion.h>
 #include <petscdraw.h>
 #include <petscviewer.h>
-#include <petscksp.h>
+
 #endif
 
 /*----------------------------------------------------------------------------
@@ -55,6 +55,7 @@
 #include "cs_log.h"
 #include "cs_mesh_location.h"
 #include "cs_multigrid.h"
+#include "cs_sles.h"
 #include "cs_source_term.h"
 #include "cs_volume_zone.h"
 
@@ -321,6 +322,10 @@ _petsc_setup_hook(void   *context,
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
   _add_view(ksp);
+
+  /* User function for additional settings */
+  cs_user_sles_petsc_hook((void *)eqp, ksp);
+
 }
 
 #endif /* defined(HAVE_PETSC) */
