@@ -36,6 +36,7 @@
 #include <string.h>
 
 #if defined(HAVE_PETSC)
+
 #include <petscversion.h>
 #include <petscdraw.h>
 #include <petscviewer.h>
@@ -79,13 +80,16 @@ BEGIN_C_DECLS
  * Local private variables
  *============================================================================*/
 
+/* Default settings for the linear algebra when a cs_equation_param_t
+   structure is created */
 static cs_param_itsol_t _itsol_info_by_default = {
 
-  CS_PARAM_PRECOND_DIAG,  // preconditioner
-  CS_PARAM_ITSOL_GMRES,   // iterative solver
-  2500,                   // max. number of iterations
-  1e-10,                  // stopping criterion on the accuracy
-  false                   // normalization of the residual (true or false)
+  CS_PARAM_PRECOND_DIAG,  /* preconditioner */
+  CS_PARAM_ITSOL_GMRES,   /* iterative solver */
+  CS_PARAM_AMG_NONE,      /* No predefined AMG type */
+  2500,                   /* max. number of iterations */
+  1e-10,                  /* stopping criterion on the accuracy */
+  false                   /* normalization of the residual (true or false) */
 
 };
 
@@ -160,7 +164,6 @@ _petsc_setup_hook(void   *context,
 
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_itsol_t  info = eqp->itsol_info;
-  cs_param_precond_type_t  precond = info.precond;
 
   /* Set the solver */
   switch (info.solver) {
@@ -205,20 +208,21 @@ _petsc_setup_hook(void   *context,
   KSPGetPC(ksp, &pc);
 
   if (cs_glob_n_ranks > 1) {
-    if (precond == CS_PARAM_PRECOND_SSOR ||
-        precond == CS_PARAM_PRECOND_ILU0) {
-      precond = CS_PARAM_PRECOND_BJACOB;
+    if (info.precond == CS_PARAM_PRECOND_SSOR ||
+        info.precond == CS_PARAM_PRECOND_ILU0) {
+
+      info.precond = CS_PARAM_PRECOND_BJACOB;
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_DEFAULT,
-                    " Modify the requested preconditioner to able a parallel"
-                    " computation with PETSC.\n"
+                    " %s: Modify the requested preconditioner to enable a"
+                    " parallel computation with PETSC.\n"
                     " Switch to a block jacobi preconditioner.\n"
-                    " Please check your settings.");
+                    " Please check your settings.", __func__);
+
     }
-  }
+  } /* Advanced check for parallel run */
 
-
-  switch (precond) {
+  switch (info.precond) {
 
   case CS_PARAM_PRECOND_DIAG:
     PCSetType(pc, PCJACOBI);  /* Jacobi (diagonal) preconditioning */
@@ -250,9 +254,9 @@ _petsc_setup_hook(void   *context,
 
   case CS_PARAM_PRECOND_AMG:
     {
-      int  amg_type = 1;
+      switch (info.amg_type) {
 
-      if (amg_type == 0) { // GAMG
+      case CS_PARAM_AMG_GAMG:
 #if PETSC_VERSION_GE(3,7,0)
         PetscOptionsSetValue(NULL, "-pc_gamg_agg_nsmooths", "1");
         PetscOptionsSetValue(NULL, "-mg_levels_ksp_type", "richardson");
@@ -271,8 +275,9 @@ _petsc_setup_hook(void   *context,
         PetscOptionsSetValue("-pc_gamg_square_graph", "4");
 #endif
         PCSetType(pc, PCGAMG);
-      }
-      else if (amg_type == 1) { // Boomer AMG (hypre)
+        break;
+
+      case CS_PARAM_AMG_BOOMER:
 #if PETSC_VERSION_GE(3,7,0)
         PetscOptionsSetValue(NULL,"-pc_type", "hypre");
         PetscOptionsSetValue(NULL,"-pc_hypre_type","boomeramg");
@@ -292,16 +297,24 @@ _petsc_setup_hook(void   *context,
         PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
         PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
 #endif
-
         PCSetType(pc, PCHYPRE);
-      }
+        break;
 
-    }
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid AMG type with PETSc library for equation %s.",
+                  __func__, eqp->name);
+        break;
+
+      } /* End of switch on the AMG type */
+
+    } /* AMG as preconditioner */
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              " Preconditioner not interfaced with PETSc.");
+              " %s: Preconditioner not interfaced with PETSc for equation %s.",
+              __func__, eqp->name);
   }
 
   /* Try to have "true" norm */
@@ -632,6 +645,32 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     }
     break;
 
+  case CS_EQKEY_AMG_TYPE:
+    if (strcmp(val, "none") == 0 || strcmp(val, "") == 0)
+      eqp->itsol_info.amg_type = CS_PARAM_AMG_NONE;
+    else if (strcmp(val, "v_cycle") == 0) {
+      eqp->itsol_info.amg_type = CS_PARAM_AMG_HOUSE_V;
+      assert(eqp->solver_class == CS_EQUATION_SOLVER_CLASS_CS);
+    }
+    else if (strcmp(val, "k_cycle") == 0) {
+      eqp->itsol_info.amg_type = CS_PARAM_AMG_HOUSE_K;
+      assert(eqp->solver_class == CS_EQUATION_SOLVER_CLASS_CS);
+    }
+    else if (strcmp(val, "boomer") == 0) {
+      eqp->itsol_info.amg_type = CS_PARAM_AMG_BOOMER;
+      assert(eqp->solver_class == CS_EQUATION_SOLVER_CLASS_PETSC);
+    }
+    else if (strcmp(val, "gamg") == 0) {
+      eqp->itsol_info.amg_type = CS_PARAM_AMG_GAMG;
+      assert(eqp->solver_class == CS_EQUATION_SOLVER_CLASS_PETSC);
+    }
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_AMG_TYPE");
+    }
+    break;
+
   case CS_EQKEY_PRECOND:
     if (strcmp(val, "none") == 0)
       eqp->itsol_info.precond = CS_PARAM_PRECOND_NONE;
@@ -641,14 +680,21 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       eqp->itsol_info.precond = CS_PARAM_PRECOND_BJACOB;
     else if (strcmp(val, "poly1") == 0)
       eqp->itsol_info.precond = CS_PARAM_PRECOND_POLY1;
+    else if (strcmp(val, "poly2") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_POLY2;
     else if (strcmp(val, "ssor") == 0)
       eqp->itsol_info.precond = CS_PARAM_PRECOND_SSOR;
     else if (strcmp(val, "ilu0") == 0)
       eqp->itsol_info.precond = CS_PARAM_PRECOND_ILU0;
     else if (strcmp(val, "icc0") == 0)
       eqp->itsol_info.precond = CS_PARAM_PRECOND_ICC0;
-    else if (strcmp(val, "amg") == 0)
+    else if (strcmp(val, "amg") == 0) {
       eqp->itsol_info.precond = CS_PARAM_PRECOND_AMG;
+      if (eqp->solver_class == CS_EQUATION_SOLVER_CLASS_CS)
+        eqp->itsol_info.amg_type = CS_PARAM_AMG_HOUSE_K; /* Default choice */
+      if (eqp->solver_class == CS_EQUATION_SOLVER_CLASS_PETSC)
+        eqp->itsol_info.amg_type = CS_PARAM_AMG_GAMG; /* Default choice */
+    }
     else if (strcmp(val, "as") == 0)
       eqp->itsol_info.precond = CS_PARAM_PRECOND_AS;
     else {
@@ -663,6 +709,8 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       eqp->itsol_info.solver = CS_PARAM_ITSOL_JACOBI;
     else if (strcmp(val, "cg") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_CG;
+    else if (strcmp(val, "fcg") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_FCG;
     else if (strcmp(val, "bicg") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_BICG;
     else if (strcmp(val, "bicgstab2") == 0)
@@ -673,8 +721,6 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       eqp->itsol_info.solver = CS_PARAM_ITSOL_GMRES;
     else if (strcmp(val, "amg") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_AMG;
-    else if (strcmp(val, "fcg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_FCG;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -844,98 +890,178 @@ void
 cs_equation_param_set_sles(cs_equation_param_t      *eqp,
                            int                       field_id)
 {
-  const cs_param_itsol_t  itsol = eqp->itsol_info;
+  cs_param_itsol_t  itsol = eqp->itsol_info;
 
   switch (eqp->solver_class) {
-  case CS_EQUATION_SOLVER_CLASS_CS:
+  case CS_EQUATION_SOLVER_CLASS_CS: /* Code_Saturne solvers */
     {
-      int  poly_degree = 0; /* by default: Jacobi preconditioner */
+      /* Define the preconditioner */
+      int  poly_degree;
+      cs_sles_pc_t *pc = NULL;
 
-      if (itsol.precond == CS_PARAM_PRECOND_POLY1)
+      switch (itsol.precond) {
+
+      case CS_PARAM_PRECOND_DIAG:
+        poly_degree = 0;
+
+      case CS_PARAM_PRECOND_POLY1:
         poly_degree = 1;
-      if (itsol.precond == CS_PARAM_PRECOND_NONE)
+        break;
+
+      case CS_PARAM_PRECOND_POLY2:
+        poly_degree = 2;
+        break;
+
+      case CS_PARAM_PRECOND_AMG:
         poly_degree = -1;
+        switch (itsol.amg_type) {
 
-      if (itsol.precond != CS_PARAM_PRECOND_POLY1 &&
-          itsol.precond != CS_PARAM_PRECOND_DIAG &&
-          itsol.precond != CS_PARAM_PRECOND_NONE)
-        bft_error(__FILE__, __LINE__, 0,
-                  " Incompatible preconditioner with Code_Saturne solvers.\n"
-                  " Please change your settings (try PETSc ?)");
+        case CS_PARAM_AMG_HOUSE_V:
+          pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
+          break;
+        case CS_PARAM_AMG_HOUSE_K:
+          if (itsol.solver == CS_PARAM_ITSOL_CG)
+            itsol.solver = CS_PARAM_ITSOL_FCG;
+          pc = cs_multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
+          break;
 
-      switch (itsol.solver) { /* Type of iterative solver */
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s; eq: %s -- Invalid AMG type with Code_Saturne"
+                    " solvers.", __func__, eqp->name);
+          break;
+
+        } /* Switch on the type of AMG */
+        break; /* AMG as preconditioner */
+
+      case CS_PARAM_PRECOND_NONE:
+      default:
+        poly_degree = -1;       /* None or other */
+
+      } /* Switch on the preconditioner type */
+
+      /* Define the iterative solver */
+      cs_sles_it_t  *it = NULL;
+      cs_multigrid_t  *mg = NULL;
+
+      switch (itsol.solver) {
 
       case CS_PARAM_ITSOL_JACOBI:
-        assert(poly_degree == -1);
-        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
-                          NULL,
-                          CS_SLES_JACOBI,
-                          poly_degree,
-                          itsol.n_max_iter);
+        it = cs_sles_it_define(field_id,
+                               NULL,
+                               CS_SLES_JACOBI,
+                               -1, /* Not useful to apply a preconditioner */
+                               itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_GAUSS_SEIDEL:
+        it = cs_sles_it_define(field_id,
+                               NULL,
+                               CS_SLES_P_GAUSS_SEIDEL,
+                               -1, /* Not useful to apply a preconditioner */
+                               itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
+        it = cs_sles_it_define(field_id,
+                               NULL,
+                               CS_SLES_P_SYM_GAUSS_SEIDEL,
+                               -1, /* Not useful to apply a preconditioner */
+                               itsol.n_max_iter);
         break;
       case CS_PARAM_ITSOL_CG:
-        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
-                          NULL,
-                          CS_SLES_PCG,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_BICG:
-        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
-                          NULL,
-                          CS_SLES_BICGSTAB,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_BICGSTAB2:
-        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
-                          NULL,
-                          CS_SLES_BICGSTAB2,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_CR3:
-        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
-                          NULL,
-                          CS_SLES_PCR3,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_GMRES:
-        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
-                          NULL,
-                          CS_SLES_GMRES,
-                          poly_degree,
-                          itsol.n_max_iter);
+        it = cs_sles_it_define(field_id,
+                               NULL,
+                               CS_SLES_PCG,
+                               poly_degree,
+                               itsol.n_max_iter);
         break;
       case CS_PARAM_ITSOL_FCG:
-        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
-                          NULL,
-                          CS_SLES_IPCG,
-                          poly_degree,
-                          itsol.n_max_iter);
+        it = cs_sles_it_define(field_id,
+                               NULL,
+                               CS_SLES_IPCG,
+                               poly_degree,
+                               itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_BICG:
+        it = cs_sles_it_define(field_id,
+                               NULL,
+                               CS_SLES_BICGSTAB,
+                               poly_degree,
+                               itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_BICGSTAB2:
+        it = cs_sles_it_define(field_id,
+                               NULL,
+                               CS_SLES_BICGSTAB2,
+                               poly_degree,
+                               itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_CR3:
+        it = cs_sles_it_define(field_id,
+                               NULL,
+                               CS_SLES_PCR3,
+                               poly_degree,
+                               itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_GMRES:
+        it = cs_sles_it_define(field_id,
+                               NULL,
+                               CS_SLES_GMRES,
+                               poly_degree,
+                               itsol.n_max_iter);
         break;
       case CS_PARAM_ITSOL_AMG:
         {
-          cs_multigrid_t  *mg = cs_multigrid_define(field_id, NULL,
-                                                    CS_MULTIGRID_V_CYCLE);
+          switch (itsol.amg_type) {
 
-          /* Advanced setup (default is specified inside the brackets) */
-          cs_multigrid_set_solver_options
-            (mg,
-             CS_SLES_JACOBI,   // descent smoother type (CS_SLES_PCG)
-             CS_SLES_JACOBI,   // ascent smoother type (CS_SLES_PCG)
-             CS_SLES_PCG,      // coarse solver type (CS_SLES_PCG)
-             itsol.n_max_iter, // n max cycles (100)
-             5,                // n max iter for descent (10)
-             5,                // n max iter for asscent (10)
-             1000,             // n max iter coarse solver (10000)
-             0,                // polynomial precond. degree descent (0)
-             0,                // polynomial precond. degree ascent (0)
-             -1,               // polynomial precond. degree coarse (0)
-             1.0,    // precision multiplier descent (< 0 forces max iters)
-             1.0,    // precision multiplier ascent (< 0 forces max iters)
-             1);     // requested precision multiplier coarse (default 1)
+          case CS_PARAM_AMG_HOUSE_V:
+            mg = cs_multigrid_define(field_id, NULL, CS_MULTIGRID_V_CYCLE);
+
+            /* Advanced setup (default is specified inside the brackets) */
+            cs_multigrid_set_solver_options
+              (mg,
+               CS_SLES_JACOBI,   /* descent smoother type (CS_SLES_PCG) */
+               CS_SLES_JACOBI,   /* ascent smoother type (CS_SLES_PCG) */
+               CS_SLES_PCG,      /* coarse solver type (CS_SLES_PCG) */
+               itsol.n_max_iter, /* n max cycles (100) */
+               5,                /* n max iter for descent (10) */
+               5,                /* n max iter for asscent (10) */
+               1000,             /* n max iter coarse solver (10000) */
+               0,                /* polynomial precond. degree descent (0) */
+               0,                /* polynomial precond. degree ascent (0) */
+               -1,               /* polynomial precond. degree coarse (0) */
+               1.0,    /* precision multiplier descent (< 0 forces max iters) */
+               1.0,    /* precision multiplier ascent (< 0 forces max iters) */
+               1);     /* requested precision multiplier coarse (default 1) */
+            break;
+
+          case CS_PARAM_AMG_HOUSE_K:
+            mg = cs_multigrid_define(field_id, NULL, CS_MULTIGRID_K_CYCLE);
+
+            cs_multigrid_set_solver_options
+              (mg,
+               CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
+               CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
+               CS_SLES_PCG,                /* coarse smoothe */
+               itsol.n_max_iter,           /* n_max_cycles */
+               2,                          /* n_max_iter_descent, */
+               2,                          /* n_max_iter_ascent */
+               100,                        /* n_max_iter_coarse */
+               0,                          /* poly_degree_descent */
+               0,                          /* poly_degree_ascent */
+               0,                          /* poly_degree_coarse */
+               -1.0,                       /* precision_mult_descent */
+               -1.0,                       /* precision_mult_ascent */
+               1);                         /* precision_mult_coarse */
+            break;
+
+          default:
+            bft_error(__FILE__, __LINE__, 0,
+                      " %s; eq: %s -- Invalid AMG type with Code_Saturne"
+                      " solvers.", __func__, eqp->name);
+            break;
+
+          } /* End of switch on the AMG type */
+
           break;
         }
 
@@ -946,6 +1072,33 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
         break;
 
       } /* end of switch */
+
+      /* Set the preconditioner if needed */
+      if (pc != NULL && it != NULL) {
+        if (CS_PARAM_PRECOND_AMG) {
+
+          mg = cs_sles_pc_get_context(pc);
+          cs_sles_it_transfer_pc(it, &pc);
+
+          /* Default settings for CDO/HHO */
+          cs_multigrid_set_solver_options
+            (mg,
+             CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
+             CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
+             CS_SLES_PCG,                /* coarse smoothe */
+             itsol.n_max_iter,           /* n_max_cycles */
+             2,                          /* n_max_iter_descent, */
+             2,                          /* n_max_iter_ascent */
+             100,                        /* n_max_iter_coarse */
+             -1,                         /* poly_degree_descent */
+             -1,                         /* poly_degree_ascent */
+             -1,                         /* poly_degree_coarse */
+             -1.0,                       /* precision_mult_descent */
+             -1.0,                       /* precision_mult_ascent */
+             1);                         /* precision_mult_coarse */
+
+        }
+      }
 
       /* Define the level of verbosity for SLES structure */
       if (eqp->sles_verbosity > 3) {
@@ -962,7 +1115,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
     } /* Solver provided by Code_Saturne */
     break;
 
-  case CS_EQUATION_SOLVER_CLASS_PETSC:
+  case CS_EQUATION_SOLVER_CLASS_PETSC: /* PETSc solvers */
     {
 #if defined(HAVE_PETSC)
 
@@ -979,9 +1132,9 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
         PetscInitializeNoArguments();
       }
 
-      if (eqp->itsol_info.precond == CS_PARAM_PRECOND_SSOR ||
-          eqp->itsol_info.precond == CS_PARAM_PRECOND_ILU0 ||
-          eqp->itsol_info.precond == CS_PARAM_PRECOND_ICC0) {
+      if (itsol.precond == CS_PARAM_PRECOND_SSOR ||
+          itsol.precond == CS_PARAM_PRECOND_ILU0 ||
+          itsol.precond == CS_PARAM_PRECOND_ICC0) {
 
         if (cs_glob_n_ranks > 1)
           bft_error(__FILE__, __LINE__, 0,
@@ -990,7 +1143,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
 
         cs_sles_petsc_define(field_id,
                              NULL,
-                             MATSEQAIJ, // Warning SEQ not MPI
+                             MATSEQAIJ, /* Warning SEQ not MPI */
                              _petsc_setup_hook,
                              (void *)eqp);
 
@@ -1259,8 +1412,15 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                 eqname, itsol.n_max_iter);
   cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Name        %s\n",
                 eqname, cs_param_get_solver_name(itsol.solver));
+  if (itsol.precond == CS_PARAM_ITSOL_AMG)
+    cs_log_printf(CS_LOG_SETUP, "    <%s/sla> AMG.Type           %s\n",
+                  eqname, cs_param_get_amg_type_name(itsol.amg_type));
   cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Precond     %s\n",
                 eqname, cs_param_get_precond_name(itsol.precond));
+  if (itsol.precond == CS_PARAM_PRECOND_AMG)
+    cs_log_printf(CS_LOG_SETUP, "    <%s/sla> AMG.Type           %s\n",
+                  eqname, cs_param_get_amg_type_name(itsol.amg_type));
+
   cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Eps        % -10.6e\n",
                 eqname, itsol.eps);
   cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Normalized  %s\n",

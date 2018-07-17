@@ -206,8 +206,17 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_JACOBI:
     return  "Jacobi";
     break;
+  case CS_PARAM_ITSOL_GAUSS_SEIDEL:
+    return  "Gauss.Seidel";
+    break;
+  case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
+    return  "Symmetric.Gauss.Seidel";
+    break;
   case CS_PARAM_ITSOL_CG:
     return  "CG";
+    break;
+  case CS_PARAM_ITSOL_FCG:
+    return  "Flexible.CG";
     break;
   case CS_PARAM_ITSOL_BICG:
     return "BiCG";
@@ -221,18 +230,15 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_GMRES:
     return "GMRES";
     break;
-  case CS_PARAM_ITSOL_FCG:
-    return  "FCG";
-    break;
   case CS_PARAM_ITSOL_AMG:
     return "Algebraic.Multigrid";
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid solver. Stop execution."));
+              _(" %s: Invalid solver. Stop execution."), __func__);
   }
 
-  return "NULL";
+  return "";
 }
 
 /*----------------------------------------------------------------------------*/
@@ -262,6 +268,9 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
   case CS_PARAM_PRECOND_POLY1:
     return  "Neumann.Poly.O1";
     break;
+  case CS_PARAM_PRECOND_POLY2:
+    return  "Neumann.Poly.O2";
+    break;
   case CS_PARAM_PRECOND_SSOR:
     return  "SSOR";
     break;
@@ -279,10 +288,48 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid preconditioner. Stop execution."));
+              _(" %s: Invalid preconditioner. Stop execution."), __func__);
   }
 
-  return "NULL";
+  return "";
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of algebraic multigrid (AMG)
+ *
+ * \param[in] type     type of AMG
+ *
+ * \return the associated type name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_amg_type_name(cs_param_amg_type_t   type)
+{
+  switch (type) {
+
+  case CS_PARAM_AMG_NONE:
+    return  "None";
+    break;
+  case CS_PARAM_AMG_BOOMER:
+    return  "Boomer (Hypre)";
+    break;
+  case CS_PARAM_AMG_GAMG:
+    return  "GAMG (PETSc)";
+    break;
+  case CS_PARAM_AMG_HOUSE_V:
+    return  "In-house (V-cycle)";
+    break;
+  case CS_PARAM_AMG_HOUSE_K:
+    return  "In-house (K-cycle)";
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Invalid type of AMG. Stop execution."), __func__);
+  }
+
+  return "";
 }
 
 /*----------------------------------------------------------------------------*/

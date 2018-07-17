@@ -431,18 +431,34 @@ typedef struct {
  * - "gcr"  corresponds to the value \f$1\f$.
  * - or "1.5", "9" for instance
  *
- *
  * \var CS_EQKEY_SOLVER_FAMILY
- * Specify which class of solver are possible. Available choises are:
- * - "cs" --> (default) List of possible iterative solvers are those of
+ * Specify which class of solver are possible. Available choices are:
+ * - "none" --> (default) List of possible iterative solvers are those of
  *   Code_Saturne,
  * - "petsc" --> List of possible iterative solvers are those of the PETSc
  *   library. WARNING: one needs to install Code_Saturne with PETSc in this case
  *
+ * \var CS_EQKEY_AMG_TYPE
+ * Specify which type of algebraic multigrid (AMG) to choose.
+ * Available choices are:
+ * - "none" --> (default) No predefined AMG solver
+ * - "boomer" --> Boomer AMG multigrid from the Hypre library
+ * - "gamg" --> GAMG multigrid from the PETSc library
+ * - "v_cycle" --> Code_Saturne's in house multigrid with a V-cycle strategy
+ * - "k_cycle" --> Code_Saturne's in house multigrid with a K-cycle strategy
+ * WARNING: For "boomer" and "gamg",one needs to install Code_Saturne with
+ * PETSc in this case
+ *
  * \var CS_EQKEY_ITSOL
- * Specify the iterative solver for solvinf the linear system related to an
+ * Specify the iterative solver for solving the linear system related to an
  * equation. Avalaible choices are:
+ * - "jacobi" --> simpliest algorithm
+ * - "gauss_seidel" --> Gauss-Seidel algorithm
+ * - "sym_gauss_seidel" --> Symmetric version of Gauss-Seidel algorithm;
+ *                          one backward and forward sweep
  * - "cg" --> (default) the standard conjuguate gradient algorithm
+ * - "fcg" --> flexible version of the conjuguate gradient algorithm used
+ *             when the preconditioner can change iteration by iteration
  * - "bicg" --> Bi-CG algorithm (for non-symmetric linear systems)
  * - "bicgstab2" --> BiCG-Stab2 algorithm (for non-symmetric linear systems)
  * - "cr3" --> a 3-layer conjugate residual solver (when "cs" is chosen as the
@@ -458,6 +474,7 @@ typedef struct {
  * - "jacobi" --> diagonal preconditoner
  * - "block_jacobi" --> Only with PETSc
  * - "poly1" --> Neumann polynomial of order 1 (only with Code_Saturne)
+ * - "poly2" --> Neumann polynomial of order 2 (only with Code_Saturne)
  * - "ssor" --> symmetric successive over-relaxation (only with PETSC)
  * - "ilu0" --> incomplete LU factorization (only with PETSc)
  * - "icc0" --> incomplete Cholesky factorization (for symmetric matrices and
@@ -545,6 +562,7 @@ typedef enum {
 
   CS_EQKEY_ADV_FORMULATION,
   CS_EQKEY_ADV_SCHEME,
+  CS_EQKEY_AMG_TYPE,
   CS_EQKEY_BC_ENFORCEMENT,
   CS_EQKEY_BC_QUADRATURE,
   CS_EQKEY_DOF_REDUCTION,

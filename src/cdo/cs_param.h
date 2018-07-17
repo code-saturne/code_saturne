@@ -332,6 +332,23 @@ typedef enum {
  * @name Settings for the linear solvers
  * @{
  *
+ * \enum cs_param_amg_type_t
+ * Type of AMG (Algebraic MultiGrid) algorithm to use (either as a
+ * preconditionnerwith or a solver).
+ */
+
+typedef enum {
+
+  CS_PARAM_AMG_NONE,      /*!< No specified algorithm */
+  CS_PARAM_AMG_BOOMER,    /*!< Boomer algorithm from Hypre library */
+  CS_PARAM_AMG_GAMG  ,    /*!< GAMG algorithm from PETSc */
+  CS_PARAM_AMG_HOUSE_V,   /*!< In-house algorithm with V-cycle */
+  CS_PARAM_AMG_HOUSE_K,   /*!< In-house algorithm with K-cycle */
+  CS_PARAM_N_AMG_TYPES
+
+} cs_param_amg_type_t;
+
+/*!
  * \enum cs_param_precond_type_t
  * Type of preconditionner to use with the iterative solver. Some
  * preconditionners as \ref CS_PARAM_PRECOND_ILU0, \ref CS_PARAM_PRECOND_ICC0 or
@@ -344,6 +361,7 @@ typedef enum {
   CS_PARAM_PRECOND_DIAG,    /*!< Diagonal (or Jacobi) preconditioning */
   CS_PARAM_PRECOND_BJACOB,  /*!< Block Jacobi */
   CS_PARAM_PRECOND_POLY1,   /*!< Neumann polynomial preconditioning (Order 1) */
+  CS_PARAM_PRECOND_POLY2,   /*!< Neumann polynomial preconditioning (Order 2) */
   CS_PARAM_PRECOND_SSOR,    /*!< Symmetric Successive OverRelaxations */
   CS_PARAM_PRECOND_ILU0,    /*!< Incomplete LU factorization */
   CS_PARAM_PRECOND_ICC0,    /*!< Incomplete Cholesky factorization */
@@ -361,14 +379,16 @@ typedef enum {
 
 typedef enum {
 
-  CS_PARAM_ITSOL_JACOBI,    /*!< Jacobi */
-  CS_PARAM_ITSOL_CG,        /*!< Conjuguate Gradient */
-  CS_PARAM_ITSOL_BICG,      /*!< Bi-Conjuguate gradient */
-  CS_PARAM_ITSOL_BICGSTAB2, /*!< Stabilized Bi-Conjuguate gradient */
-  CS_PARAM_ITSOL_CR3,       /*!< 3-layer conjugate residual*/
-  CS_PARAM_ITSOL_GMRES,     /*!< Generalized Minimal RESidual */
-  CS_PARAM_ITSOL_FCG,       /*!< Flexible Conjuguate Gradient */
-  CS_PARAM_ITSOL_AMG,       /*!< Algebraic MultiGrid */
+  CS_PARAM_ITSOL_JACOBI,           /*!< Jacobi */
+  CS_PARAM_ITSOL_GAUSS_SEIDEL,     /*!< Gauss-Seidel */
+  CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL, /*!< Symetric Gauss-Seidel */
+  CS_PARAM_ITSOL_CG,               /*!< Conjuguate Gradient */
+  CS_PARAM_ITSOL_BICG,             /*!< Bi-Conjuguate gradient */
+  CS_PARAM_ITSOL_BICGSTAB2,        /*!< Stabilized Bi-Conjuguate gradient */
+  CS_PARAM_ITSOL_CR3,              /*!< 3-layer conjugate residual*/
+  CS_PARAM_ITSOL_GMRES,            /*!< Generalized Minimal RESidual */
+  CS_PARAM_ITSOL_FCG,              /*!< Flexible Conjuguate Gradient */
+  CS_PARAM_ITSOL_AMG,              /*!< Algebraic MultiGrid */
   CS_PARAM_N_ITSOL_TYPES
 
 } cs_param_itsol_type_t;
@@ -381,11 +401,11 @@ typedef enum {
 
 typedef struct {
 
-  cs_param_precond_type_t  precond; /*!< type of preconditioner */
-  cs_param_itsol_type_t    solver;  /*!< type of solver */
-
-  int          n_max_iter;          /*!< max. number of iterations */
-  double       eps;                 /*!< stopping criterion on accuracy */
+  cs_param_precond_type_t  precond;    /*!< type of preconditioner */
+  cs_param_itsol_type_t    solver;     /*!< type of solver */
+  cs_param_amg_type_t      amg_type;   /*!< type of AMG algorithm if needed  */
+  int                      n_max_iter; /*!< max. number of iterations */
+  double                   eps;        /*!< stopping criterion on accuracy */
 
   /*! \var resid_normalized
    *  normalized or not the norm of the residual used for the stopping criterion
@@ -430,6 +450,32 @@ cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Get the name of the type of boundary condition
+ *
+ * \param[in] type     type of boundary condition
+ *
+ * \return the associated bc name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_bc_name(cs_param_bc_type_t  bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of enforcement of the boundary condition
+ *
+ * \param[in] type          type of enforcement of boundary conditions
+ *
+ * \return the associated name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Get the name of the solver
  *
  * \param[in] solver     type of iterative solver
@@ -456,29 +502,16 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the name of the type of boundary condition
+ * \brief   Get the name of the type of algebraic multigrid (AMG)
  *
- * \param[in] type     type of boundary condition
+ * \param[in] type     type of AMG
  *
- * \return the associated bc name
+ * \return the associated type name
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_param_get_bc_name(cs_param_bc_type_t  bc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of the type of enforcement of the boundary condition
- *
- * \param[in] type          type of enforcement of boundary conditions
- *
- * \return the associated name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type);
+cs_param_get_amg_type_name(cs_param_amg_type_t   type);
 
 /*----------------------------------------------------------------------------*/
 
