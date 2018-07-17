@@ -398,7 +398,7 @@ cs_equation_create_param(cs_equation_type_t     type,
   /* Boundary conditions structure.
      One assigns a boundary condition by default */
   eqp->default_bc = default_bc;
-  eqp->enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
+  eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
   eqp->n_bc_defs = 0;
   eqp->bc_defs = NULL;
 
