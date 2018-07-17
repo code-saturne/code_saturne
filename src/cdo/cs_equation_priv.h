@@ -303,7 +303,6 @@ typedef cs_real_t *
 
 struct _cs_equation_t {
 
-  char *restrict         name;    /* Short description */
   int                    id;
 
   cs_equation_param_t   *param;   /* Set of parameters related to an equation */

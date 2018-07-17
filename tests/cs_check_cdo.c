@@ -1135,7 +1135,8 @@ _test_cdovb_schemes(FILE                *out,
   /* ================== */
 
   cs_adv_field_t  *beta = cs_advection_field_add_user("Adv.Field");
-  cs_equation_param_t  *eqp = cs_equation_create_param(CS_EQUATION_TYPE_USER,
+  cs_equation_param_t  *eqp = cs_equation_create_param("CheckEq",
+                                                       CS_EQUATION_TYPE_USER,
                                                        1,
                                                        CS_PARAM_BC_HMG_NEUMANN);
 

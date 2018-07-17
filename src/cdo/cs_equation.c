@@ -132,7 +132,7 @@ _post_balance_at_vertices(const cs_equation_t   *eq,
                           const cs_real_t       *values)
 
 {
-  sprintf(label, "%s.Balance.%s", eq->name, tag);
+  sprintf(label, "%s.Balance.%s", eq->param->name, tag);
 
   cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                            CS_POST_WRITER_DEFAULT,
@@ -179,7 +179,7 @@ _initialize_field_from_ic(cs_real_t         t_eval,
   default:
     bft_error(__FILE__, __LINE__, 0,
               _("%s: Incompatible type of variable for the equation %s."),
-              __func__, eq->name);
+              __func__, eqp->name);
      break;
   }
 
@@ -204,7 +204,7 @@ _initialize_field_from_ic(cs_real_t         t_eval,
   default:
     bft_error(__FILE__, __LINE__, 0,
               _("%s: Invalid space scheme for the equation %s."),
-              __func__, eq->name);
+              __func__, eqp->name);
     break;
 
   } /* Switch on space discretization scheme */
@@ -256,7 +256,7 @@ _initialize_field_from_ic(cs_real_t         t_eval,
     default:
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Invalid way to initialize equation %s.\n"),
-                __func__, eq->name);
+                __func__, eqp->name);
 
     } /* Switch on possible type of definition */
 
@@ -543,8 +543,11 @@ cs_equation_by_name(const char    *eqname)
   for (int i = 0; i < _n_equations; i++) {
 
     cs_equation_t  *_eq = _equations[i];
-    if (strlen(_eq->name) == len_in)
-      if (strcmp(eqname, _eq->name) == 0)
+    assert(_eq != NULL);
+    cs_equation_param_t  *eqp = _eq->param;
+    assert(eqp != NULL);
+    if (strlen(eqp->name) == len_in)
+      if (strcmp(eqname, eqp->name) == 0)
         return _eq;
 
   }
@@ -635,10 +638,11 @@ cs_equation_by_id(int   eq_id)
 const char *
 cs_equation_get_name(const cs_equation_t    *eq)
 {
-  if (eq == NULL)
+  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+  if (eqp == NULL)
     return NULL;
   else
-    return eq->name;
+    return eqp->name;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1012,17 +1016,12 @@ cs_equation_add(const char            *eqname,
 
   eq->id = eq_id;
 
-  /* Store eqname */
-  int  len = strlen(eqname)+1;
-  BFT_MALLOC(eq->name, len, char);
-  strncpy(eq->name, eqname, len);
-
   /* Store varname */
-  len = strlen(varname)+1;
+  int  len = strlen(varname)+1;
   BFT_MALLOC(eq->varname, len, char);
   strncpy(eq->varname, varname, len);
 
-  eq->param = cs_equation_create_param(eqtype, dim, default_bc);
+  eq->param = cs_equation_create_param(eqname, eqtype, dim, default_bc);
 
   eq->field_id = -1;    /* field is created in a second step */
 
@@ -1133,7 +1132,6 @@ cs_equation_destroy_all(void)
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
 
-    BFT_FREE(eq->name);
     BFT_FREE(eq->varname);
     BFT_FREE(eq);
 
@@ -1167,7 +1165,7 @@ cs_equation_log_monitoring(void)
 
     /* Display high-level timer counter related to the current equation
        before deleting the structure */
-    cs_equation_write_monitoring(eq->name, eq->builder);
+    cs_equation_write_monitoring(eq->param->name, eq->builder);
 
   } /* Loop on equations */
 }
@@ -1194,6 +1192,7 @@ cs_equation_log_setup(void)
   for (int  eq_id = 0; eq_id < _n_equations; eq_id++) {
 
     cs_equation_t  *eq = _equations[eq_id];
+    assert(eq->param != NULL);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
@@ -1201,10 +1200,10 @@ cs_equation_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
     cs_log_printf(CS_LOG_SETUP,
                   "\tSummary of settings for %s eq. (variable %s)\n",
-                  eq->name, eq->varname);
+                  eq->param->name, eq->varname);
     cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
-    cs_equation_summary_param(eq->name, eq->param);
+    cs_equation_summary_param(eq->param);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
@@ -1233,8 +1232,8 @@ cs_equation_set_timer_stats(cs_equation_t  *eq)
   if (eqp->verbosity > 0) {
 
     eq->main_ts_id = cs_timer_stats_create(NULL, /* new root */
-                                           eq->name,
-                                           eq->name);
+                                           eqp->name,
+                                           eqp->name);
 
     cs_timer_stats_start(eq->main_ts_id);
 
@@ -1242,10 +1241,10 @@ cs_equation_set_timer_stats(cs_equation_t  *eq)
 
       char *label = NULL;
 
-      int  len = strlen("_solve") + strlen(eq->name) + 1;
+      int  len = strlen("_solve") + strlen(eqp->name) + 1;
       BFT_MALLOC(label, len, char);
-      sprintf(label, "%s_solve", eq->name);
-      eq->solve_ts_id = cs_timer_stats_create(eq->name, label, label);
+      sprintf(label, "%s_solve", eqp->name);
+      eq->solve_ts_id = cs_timer_stats_create(eqp->name, label, label);
 
       BFT_FREE(label);
 
@@ -1553,7 +1552,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       eq->n_sles_gather_elts = eq->rset->n_elts[0];
 
     /* Initialize cs_sles_t structure */
-    cs_equation_param_set_sles(eq->name, eqp, eq->field_id);
+    cs_equation_param_set_sles(eqp, eq->field_id);
 
     /* Flag this equation such that parametrization is not modifiable anymore */
     eqp->flag |= CS_EQUATION_LOCKED;
@@ -1609,7 +1608,7 @@ cs_equation_create_fields(void)
     default:
       bft_error(__FILE__, __LINE__, 0,
                 _(" Space scheme for eq. %s is incompatible with a field.\n"
-                  " Stop adding a cs_field_t structure.\n"), eq->name);
+                  " Stop adding a cs_field_t structure.\n"), eqp->name);
       break;
     }
 
@@ -1866,7 +1865,7 @@ cs_equation_solve(cs_equation_t   *eq)
     if (cs_glob_n_ranks > 1) cs_parall_counter(&nnz, 1);
     cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d n_iters %d"
                   " residual % -8.4e nnz %lu\n",
-                  eq->name, code, n_iters, residual, nnz);
+                  eqp->name, code, n_iters, residual, nnz);
 
   }
 
@@ -2005,12 +2004,14 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+  assert(eq->param != NULL);
 
   if (eq->compute_flux_across_plane == NULL) {
     bft_error(__FILE__, __LINE__, 0,
-              _(" Computation of the diffusive and convective flux across\n"
-                " a plane is not available for equation %s\n"), eq->name);
-    return; // Avoid a warning
+              _(" %s: Computation of the diffusive and convective flux across\n"
+                " a plane is not available for equation %s\n"),
+              __func__, eq->param->name);
+    return; /* Avoid a warning */
   }
 
   /* Get the mesh location id from its name */
@@ -2018,8 +2019,9 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 
   if (ml_id == -1)
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid mesh location name %s.\n"
-                " This mesh location is not already defined.\n"), ml_name);
+              _(" %s: Invalid mesh location name %s.\n"
+                " This mesh location is not already defined.\n"),
+              __func__, ml_name);
 
   /* Retrieve the field from its id */
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
@@ -2054,11 +2056,12 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+  assert(eq->param != NULL);
 
   if (eq->compute_cellwise_diff_flux == NULL) {
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Cellwise computation of the diffusive flux is not\n"
-                " available for equation %s\n"), __func__, eq->name);
+                " available for equation %s\n"), __func__, eq->param->name);
     return; // Avoid a warning
   }
 
@@ -2110,7 +2113,8 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              " Invalid type of scheme for compting the gradient at vertices");
+              " %s: Invalid type of scheme for equation %s when computing"
+              " the gradient at vertices", __func__, eqp->name);
     break;
 
   }
@@ -2160,9 +2164,9 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
     if (eqp->process_flag & CS_EQUATION_POST_PECLET) {
 
       char *postlabel = NULL;
-      int len = strlen(eq->name) + 7 + 1;
+      int len = strlen(eqp->name) + 7 + 1;
       BFT_MALLOC(postlabel, len, char);
-      sprintf(postlabel, "%s.Peclet", eq->name);
+      sprintf(postlabel, "%s.Peclet", eqp->name);
 
       /* Compute the Peclet number in each cell */
       double  *peclet = cs_equation_get_tmpbuf();
@@ -2199,14 +2203,14 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
                                                         dt_cur);
 
         char *postlabel = NULL;
-        int len = strlen(eq->name) + 13 + 1;
+        int len = strlen(eqp->name) + 13 + 1;
         BFT_MALLOC(postlabel, len, char);
 
         switch (eqp->space_scheme) {
 
         case CS_SPACE_SCHEME_CDOVB:
           {
-            sprintf(postlabel, "%s.Balance", eq->name);
+            sprintf(postlabel, "%s.Balance", eqp->name);
 
             cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                                      CS_POST_WRITER_DEFAULT,
@@ -2245,7 +2249,7 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
           break;
         }
 
-        sprintf(postlabel, "%s.BdyFlux", eq->name);
+        sprintf(postlabel, "%s.BdyFlux", eqp->name);
 
         /* Post-process the boundary fluxes (diffusive and convective) */
         cs_post_write_var(CS_POST_MESH_BOUNDARY,
@@ -2268,7 +2272,7 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
     } /* do the analysis */
 
     /* Perform post-processing specific to a numerical scheme */
-    eq->postprocess(eq->name,
+    eq->postprocess(eqp->name,
                     field,
                     eq->param,
                     eq->builder,

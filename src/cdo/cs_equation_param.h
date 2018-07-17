@@ -157,7 +157,7 @@ typedef struct {
    * @name General settings
    * @{
    */
-
+  char *restrict       name;           /*!< name of the equation */
   cs_equation_type_t   type;           /*!< type of equation: predefined... */
   int                  dim;            /*!< Dimension of the unknown */
   int                  verbosity;      /*!< Level of detail for output */
@@ -578,7 +578,7 @@ typedef enum {
 /*!
  * \brief  Ask if the parameters of the equation needs a diffusion term
  *
- * \param[in] eqp          pointer to a cs_equation_param_t
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
@@ -599,7 +599,7 @@ cs_equation_param_has_diffusion(const cs_equation_param_t     *eqp)
 /*!
  * \brief  Ask if the parameters of the equation needs a convection term
  *
- * \param[in] eqp          pointer to a cs_equation_param_t
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
@@ -620,7 +620,7 @@ cs_equation_param_has_convection(const cs_equation_param_t     *eqp)
 /*!
  * \brief  Ask if the parameters of the equation needs a reaction term
  *
- * \param[in] eqp          pointer to a cs_equation_param_t
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
@@ -641,7 +641,7 @@ cs_equation_param_has_reaction(const cs_equation_param_t     *eqp)
 /*!
  * \brief  Ask if the parameters of the equation needs an unsteady term
  *
- * \param[in] eqp          pointer to a cs_equation_param_t
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
@@ -662,7 +662,7 @@ cs_equation_param_has_time(const cs_equation_param_t     *eqp)
 /*!
  * \brief  Ask if the parameters of the equation needs a source term
  *
- * \param[in] eqp          pointer to a cs_equation_param_t
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
@@ -679,32 +679,62 @@ cs_equation_param_has_sourceterm(const cs_equation_param_t     *eqp)
     return false;
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if a \ref cs_equation_param_t structure has its name member
+ *         equal to the given name
+ *
+ * \apram[in] eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in] name       name of the equation
+ *
+ * \return true if the given eqp has the same name the one given as parameter
+ *         otherwise false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_name(cs_equation_param_t   *eqp,
+                           const char            *name)
+{
+  if (eqp == NULL)
+    return false;
+  if (eqp->name == NULL)
+    return false;
+  if (strcmp(eqp->name, name) == 0)
+    return true;
+  else
+    return false;
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a cs_equation_param_t
+ * \brief  Create a \ref cs_equation_param_t structure
  *
- * \param[in] type             type of equation
- * \param[in] dim              dimension of the variable associated to this eq.
- * \param[in] default_bc       type of boundary condition set by default
+ * \param[in] name          name of the equation
+ * \param[in] type          type of equation
+ * \param[in] dim           dim of the variable associated to this equation
+ * \param[in] default_bc    type of boundary condition set by default
  *
- * \return a pointer to a new allocated cs_equation_param_t structure
+ * \return a pointer to a new allocated \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_create_param(cs_equation_type_t     type,
+cs_equation_create_param(const char            *name,
+                         cs_equation_type_t     type,
                          int                    dim,
                          cs_param_bc_type_t     default_bc);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_equation_param_t
+ * \brief  Free a \ref cs_equation_param_t
  *
- * \param[in] eqp          pointer to a cs_equation_param_t
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
  *
  * \return a NULL pointer
  */
@@ -715,10 +745,10 @@ cs_equation_free_param(cs_equation_param_t     *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a parameter attached to a keyname in a cs_equation_param_t
+ * \brief  Set a parameter attached to a keyname in a \ref cs_equation_param_t
  *         structure
  *
- * \param[in, out]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
  * \param[in]       key      key related to the member of eq to set
  * \param[in]       keyval   accessor to the value to set
  */
@@ -734,30 +764,26 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
  * \brief Set parameters for initializing SLES structures used for the
  *        resolution of the linear system.
  *        Settings are related to this equation.
- *
- * \param[in]   eqname       pointer to an cs_equation_t structure
- * \param[in]   eqp          pointer to a cs_equation_param_t struct.
+
+ * \param[in]   eqp          pointer to a \ref cs_equation_param_t struct.
  * \param[in]   field_id     id of the cs_field_t struct. for this equation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_set_sles(const char              *eqname,
-                           cs_equation_param_t     *eqp,
+cs_equation_param_set_sles(cs_equation_param_t     *eqp,
                            int                      field_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary of a cs_equation_param_t structure
+ * \brief  Summary of a \ref cs_equation_param_t structure
  *
- * \param[in]  eqname   name of the related equation
- * \param[in]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in]  eqp      pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_summary_param(const char                 *eqname,
-                          const cs_equation_param_t  *eqp);
+cs_equation_summary_param(const cs_equation_param_t  *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!

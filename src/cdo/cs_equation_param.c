@@ -318,18 +318,20 @@ _petsc_setup_hook(void   *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a cs_equation_param_t
+ * \brief  Create a \ref cs_equation_param_t structure
  *
- * \param[in] type             type of equation
- * \param[in] dim              dim of the variable associated to this equation
- * \param[in] default_bc       type of boundary condition set by default
+ * \param[in] name          name of the equation
+ * \param[in] type          type of equation
+ * \param[in] dim           dim of the variable associated to this equation
+ * \param[in] default_bc    type of boundary condition set by default
  *
- * \return a pointer to a new allocated cs_equation_param_t structure
+ * \return a pointer to a new allocated \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_create_param(cs_equation_type_t     type,
+cs_equation_create_param(const char            *name,
+                         cs_equation_type_t     type,
                          int                    dim,
                          cs_param_bc_type_t     default_bc)
 {
@@ -337,8 +339,23 @@ cs_equation_create_param(cs_equation_type_t     type,
 
   BFT_MALLOC(eqp, 1, cs_equation_param_t);
 
+  /* Store the name of the equation */
+  int  len = strlen(name)+1;
+  BFT_MALLOC(eqp->name, len, char);
+  strncpy(eqp->name, name, len);
+
+  /* Set additional members */
   eqp->type = type;
   eqp->dim = dim;
+
+  /* Boundary conditions structure.
+     One assigns a boundary condition by default */
+  eqp->default_bc = default_bc;
+  eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
+  eqp->n_bc_defs = 0;
+  eqp->bc_defs = NULL;
+
+  /* Other default settings */
   eqp->verbosity = 0;
   eqp->sles_verbosity = 0;
   eqp->process_flag = 0;
@@ -371,10 +388,10 @@ cs_equation_create_param(cs_equation_type_t     type,
   eqp->diffusion_property = NULL;
   eqp->diffusion_hodge.is_unity = false;
   eqp->diffusion_hodge.is_iso = true;
-  eqp->diffusion_hodge.inv_pty = false; // inverse property ?
+  eqp->diffusion_hodge.inv_pty = false; /* inverse property ? */
   eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
   eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
-  eqp->diffusion_hodge.coef = 1./3.; // DGA algo.
+  eqp->diffusion_hodge.coef = 1./3.; /* DGA algo. */
 
   /* Advection term */
   eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
@@ -395,13 +412,6 @@ cs_equation_create_param(cs_equation_type_t     type,
   eqp->n_source_terms = 0;
   eqp->source_terms = NULL;
 
-  /* Boundary conditions structure.
-     One assigns a boundary condition by default */
-  eqp->default_bc = default_bc;
-  eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
-  eqp->n_bc_defs = 0;
-  eqp->bc_defs = NULL;
-
   /* Settings for driving the linear algebra */
   eqp->solver_class = CS_EQUATION_SOLVER_CLASS_CS;
   eqp->itsol_info = _itsol_info_by_default;
@@ -411,9 +421,9 @@ cs_equation_create_param(cs_equation_type_t     type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_equation_param_t
+ * \brief  Free a \ref cs_equation_param_t
  *
- * \param[in, out] eqp          pointer to a cs_equation_param_t
+ * \param[in, out] eqp          pointer to a \ref cs_equation_param_t
  *
  * \return a NULL pointer
  */
@@ -461,6 +471,7 @@ cs_equation_free_param(cs_equation_param_t     *eqp)
 
   }
 
+  BFT_FREE(eqp->name);
   BFT_FREE(eqp);
 
   return NULL;
@@ -468,10 +479,10 @@ cs_equation_free_param(cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a parameter attached to a keyname in a cs_equation_param_t
+ * \brief  Set a parameter attached to a keyname in a \ref cs_equation_param_t
  *         structure
  *
- * \param[in, out]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
  * \param[in]       key      key related to the member of eq to set
  * \param[in]       keyval   accessor to the value to set
  */
@@ -487,10 +498,10 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
 
   if (eqp->flag & CS_EQUATION_LOCKED)
     bft_error(__FILE__, __LINE__, 0,
-              _(" %s: The current equation is not modifiable anymore.\n"
-                " Please check your settings."), __func__);
+              _(" %s: Equation %s is not modifiable anymore.\n"
+                " Please check your settings."), eqp->name, __func__);
 
-  const char  emsg[] = " %s: Invalid key value %s for keyword %s.\n";
+  const char  emsg[] = " %s: Eq. %s --> Invalid key value %s for keyword %s.\n";
 
   /* Conversion of the string to lower case */
   char val[CS_BASE_STRING_LEN];
@@ -541,7 +552,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_SPACE_SCHEME");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_SPACE_SCHEME");
     }
     break;
 
@@ -553,7 +564,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_DOF_REDUCTION");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_DOF_REDUCTION");
     }
     break;
 
@@ -569,7 +580,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_HODGE_DIFF_ALGO");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_HODGE_DIFF_ALGO");
     }
     break;
 
@@ -583,7 +594,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_HODGE_TIME_ALGO");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_HODGE_TIME_ALGO");
     }
     break;
 
@@ -617,7 +628,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_SOLVER_FAMILY");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_SOLVER_FAMILY");
     }
     break;
 
@@ -643,7 +654,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_PRECOND");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_PRECOND");
     }
     break;
 
@@ -667,7 +678,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_ITSOL");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_ITSOL");
     }
     break;
 
@@ -708,7 +719,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_BC_ENFORCEMENT");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_BC_ENFORCEMENT");
     }
     break;
 
@@ -727,7 +738,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       else {
         const char *_val = val;
         bft_error(__FILE__, __LINE__, 0,
-                  emsg, __func__, _val, "CS_EQKEY_BC_QUADRATURE");
+                  emsg, __func__, eqp->name, _val, "CS_EQKEY_BC_QUADRATURE");
       }
 
       for (int i = 0; i < eqp->n_bc_defs; i++)
@@ -746,7 +757,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_EXTRA_OP");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_EXTRA_OP");
     }
     break;
 
@@ -758,7 +769,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_ADV_FORMULATION");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_ADV_FORMULATION");
     }
     break;
 
@@ -779,7 +790,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_ADV_SCHEME");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_ADV_SCHEME");
     }
     break;
 
@@ -801,7 +812,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, _val, "CS_EQKEY_TIME_SCHEME");
+                emsg, __func__, eqp->name, _val, "CS_EQKEY_TIME_SCHEME");
     }
     break;
 
@@ -811,7 +822,8 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting an equation."));
+              _(" %s: Invalid key for setting the equation %s."),
+              __func__, eqp->name);
 
   } /* Switch on keys */
 
@@ -823,15 +835,13 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
  *        resolution of the linear system.
  *        Settings are related to this equation.
  *
- * \param[in]   eqname       pointer to an cs_equation_t structure
- * \param[in]   eqp          pointer to a cs_equation_param_t struct.
+ * \param[in]   eqp          pointer to a \ref cs_equation_param_t struct.
  * \param[in]   field_id     id of the cs_field_t struct. for this equation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_set_sles(const char               *eqname,
-                           cs_equation_param_t      *eqp,
+cs_equation_param_set_sles(cs_equation_param_t      *eqp,
                            int                       field_id)
 {
   const cs_param_itsol_t  itsol = eqp->itsol_info;
@@ -839,7 +849,7 @@ cs_equation_param_set_sles(const char               *eqname,
   switch (eqp->solver_class) {
   case CS_EQUATION_SOLVER_CLASS_CS:
     {
-      int  poly_degree = 0; // by default: Jacobi preconditioner
+      int  poly_degree = 0; /* by default: Jacobi preconditioner */
 
       if (itsol.precond == CS_PARAM_PRECOND_POLY1)
         poly_degree = 1;
@@ -853,53 +863,53 @@ cs_equation_param_set_sles(const char               *eqname,
                   " Incompatible preconditioner with Code_Saturne solvers.\n"
                   " Please change your settings (try PETSc ?)");
 
-      switch (itsol.solver) { // Type of iterative solver
+      switch (itsol.solver) { /* Type of iterative solver */
 
       case CS_PARAM_ITSOL_JACOBI:
         assert(poly_degree == -1);
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
                           NULL,
                           CS_SLES_JACOBI,
                           poly_degree,
                           itsol.n_max_iter);
         break;
       case CS_PARAM_ITSOL_CG:
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
                           NULL,
                           CS_SLES_PCG,
                           poly_degree,
                           itsol.n_max_iter);
         break;
       case CS_PARAM_ITSOL_BICG:
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
                           NULL,
                           CS_SLES_BICGSTAB,
                           poly_degree,
                           itsol.n_max_iter);
         break;
       case CS_PARAM_ITSOL_BICGSTAB2:
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
                           NULL,
                           CS_SLES_BICGSTAB2,
                           poly_degree,
                           itsol.n_max_iter);
         break;
       case CS_PARAM_ITSOL_CR3:
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
                           NULL,
                           CS_SLES_PCR3,
                           poly_degree,
                           itsol.n_max_iter);
         break;
       case CS_PARAM_ITSOL_GMRES:
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
                           NULL,
                           CS_SLES_GMRES,
                           poly_degree,
                           itsol.n_max_iter);
         break;
       case CS_PARAM_ITSOL_FCG:
-        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+        cs_sles_it_define(field_id,  /* give the field id (future: eq_id ?) */
                           NULL,
                           CS_SLES_IPCG,
                           poly_degree,
@@ -928,12 +938,14 @@ cs_equation_param_set_sles(const char               *eqname,
              1);     // requested precision multiplier coarse (default 1)
           break;
         }
+
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  _(" Undefined iterative solver for solving %s equation.\n"
-                    " Please modify your settings."), eqname);
+                  _(" %s: Undefined iterative solver for solving %s equation.\n"
+                    " Please modify your settings."), __func__, eqp->name);
         break;
-      } // end of switch
+
+      } /* end of switch */
 
       /* Define the level of verbosity for SLES structure */
       if (eqp->sles_verbosity > 3) {
@@ -941,13 +953,13 @@ cs_equation_param_set_sles(const char               *eqname,
         cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
         cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
 
-        cs_sles_it_set_plot_options(sles_it, eqname,
+        cs_sles_it_set_plot_options(sles_it, eqp->name,
                                     true);    /* use_iteration instead of
                                                  wall clock time */
 
       }
 
-    } // Solver provided by Code_Saturne
+    } /* Solver provided by Code_Saturne */
     break;
 
   case CS_EQUATION_SOLVER_CLASS_PETSC:
@@ -973,7 +985,8 @@ cs_equation_param_set_sles(const char               *eqname,
 
         if (cs_glob_n_ranks > 1)
           bft_error(__FILE__, __LINE__, 0,
-                    " Incompatible PETSc settings for parallel run.\n");
+                    " %s: Incompatible PETSc settings for parallel run.\n",
+                    __func__);
 
         cs_sles_petsc_define(field_id,
                              NULL,
@@ -990,20 +1003,21 @@ cs_equation_param_set_sles(const char               *eqname,
                              (void *)eqp);
 #else
       bft_error(__FILE__, __LINE__, 0,
-                _(" PETSC algorithms used to solve %s are not linked.\n"
-                  " Please install Code_Saturne with PETSc."), eqname);
+                _(" %s: PETSC algorithms used to solve %s are not linked.\n"
+                  " Please install Code_Saturne with PETSc."),
+                __func__, eqp->name);
 
-#endif // HAVE_PETSC
-    } // Solver provided by PETSc
+#endif /* HAVE_PETSC */
+    } /* Solver provided by PETSc */
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Algorithm requested to solve %s is not implemented yet.\n"
-                " Please modify your settings."), eqname);
+              _(" %s: Algorithm requested to solve %s is not implemented yet.\n"
+                " Please modify your settings."), __func__, eqp->name);
     break;
 
-  } // end switch on algorithms
+  } /* end switch on algorithms */
 
   /* Define the level of verbosity for SLES structure */
   if (eqp->sles_verbosity > 1) {
@@ -1019,19 +1033,19 @@ cs_equation_param_set_sles(const char               *eqname,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary of a cs_equation_param_t structure
+ * \brief  Summary of a \ref cs_equation_param_t structure
  *
- * \param[in]  eqname   name of the related equation
- * \param[in]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in]  eqp      pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_summary_param(const char                  *eqname,
-                          const cs_equation_param_t   *eqp)
+cs_equation_summary_param(const cs_equation_param_t   *eqp)
 {
   if (eqp == NULL)
     return;
+
+  const char *eqname = eqp->name;
 
   switch (eqp->type) {
   case CS_EQUATION_TYPE_USER:
@@ -1198,9 +1212,9 @@ cs_equation_summary_param(const char                  *eqname,
                   " Invalid weight algorithm for advection.");
       }
 
-    } // verbosity > 0
+    } /* verbosity > 0 */
 
-  } // Advection term
+  } /* Advection term */
 
   if (reaction) {
 
@@ -1221,7 +1235,7 @@ cs_equation_summary_param(const char                  *eqname,
 
     }
 
-  } // Reaction terms
+  } /* Reaction terms */
 
   if (source_term) {
 
@@ -1229,7 +1243,7 @@ cs_equation_summary_param(const char                  *eqname,
     for (int s_id = 0; s_id < eqp->n_source_terms; s_id++)
       cs_xdef_log(eqp->source_terms[s_id]);
 
-  } // Source terms
+  } /* Source terms */
 
   /* Iterative solver information */
   const cs_param_itsol_t   itsol = eqp->itsol_info;
