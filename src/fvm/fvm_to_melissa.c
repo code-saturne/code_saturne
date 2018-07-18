@@ -102,7 +102,8 @@ typedef struct {
   int          simu_id;            /* simulation ID */
 
   int          nt_cur;             /* current time step */
-  int          time_stamp;         /* current time step */
+  int          time_stamp;         /* current time stamp */
+  int          is_init;            /* Melissa field initialization */
 
 #if defined(HAVE_MPI)
   int          min_rank_step;      /* Minimum rank step */
@@ -147,13 +148,10 @@ _write_block_doubles_l(size_t             n_values,
                       const double        values[],
                       _melissa_context_t *c)
 {
-  /* TODO send(values, n_values); */
-
-  static int is_init = 0;
   int n = (int)n_values;
   int coupling = 1;
 
-  if (is_init == 0) {
+  if (c->writer->is_init == 0 && c->writer->time_stamp > 0) {
 #if defined(HAVE_MPI)
     melissa_init(c->name,
                  &n,
@@ -165,9 +163,10 @@ _write_block_doubles_l(size_t             n_values,
 #else
     melissa_init_no_mpi(c->name,
                         &n,
-                        &c->writer->simu_id);
+                        &c->writer->simu_id,
+                        &coupling);
 #endif
-    is_init = 1;
+    c->writer->is_init = 1;
   }
 
   if (c->writer->time_stamp > 0) {
@@ -221,10 +220,9 @@ _field_output_g(void           *context,
 
   assert(datatype == CS_DOUBLE);
 
-  static int is_init = 0;
   int coupling = 1;
 
-  if (is_init == 0) {
+  if (c->writer->is_init == 0 && c->writer->time_stamp > 0) {
     melissa_init(c->name,
                  &local_vect_size,
                  &c->writer->n_ranks,
@@ -232,7 +230,7 @@ _field_output_g(void           *context,
                  &c->writer->simu_id,
                  &c->writer->comm,
                  &coupling);
-    is_init = 1;
+    c->writer->is_init = 1;
   }
 
   if (c->writer->time_stamp > 0) {
@@ -516,7 +514,8 @@ fvm_to_melissa_init_writer(const char             *name,
   }
 
   w->nt_cur = -1;
-  w->time_stamp = -1;
+  w->time_stamp = 0;
+  w->is_init = 0;
 
   /* Return writer */
   return w;
@@ -678,7 +677,6 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
 
   _melissa_context_t c;
   c.writer = w;
-  c.writer->time_stamp = time_step;
   c.name = name;
 
   /* Per node variable */

@@ -36,6 +36,8 @@ Architectural changes:
 
 Bug fixes:
 
+- Minor bug fix updates to Melissa writer.
+
 - Fix face external force projection with tensorial diffusion and porous models 1, 2.
   This was impacting cases with head losses, improved pressure interpolation, and
   scalar or tensorial volume porosity models (iporos=1, 2).
