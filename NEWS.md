@@ -34,6 +34,10 @@ Architectural changes:
 - Add CGNS writer "links" option to write mesh data in a separate file,
   mapped transparently in the main file through CGNS links.
 
+- Add the possibility to create a CFD/Cathare2 coupled case using the
+  "--cathare <name>" similarly to CFD/Syrthes coupling. This coupling
+  is only functionnal for NEPTUNE_CFD at the moment.
+
 Bug fixes:
 
 - Minor bug fix updates to Melissa writer.
