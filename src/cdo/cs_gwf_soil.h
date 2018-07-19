@@ -176,6 +176,23 @@ typedef struct {
 } cs_gwf_soil_t;
 
 /*============================================================================
+ * User-defined function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the bulk density related to a soil structure
+ *
+ * \param[in]  soil      pointer to a cs_gwf_soil_t structure
+ * \param[out] density   return value for the density
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
+                             cs_real_t             *density);
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 

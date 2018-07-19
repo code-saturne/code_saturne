@@ -33,8 +33,6 @@
 
 #include "cs_base.h"
 #include "cs_domain.h"
-#include "cs_gwf_tracer.h"
-#include "cs_gwf_soil.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
@@ -745,19 +743,6 @@ cs_user_cdo_extra_op(cs_domain_t     *domain);
 
 void
 cs_user_cdo_end_extra_op(cs_domain_t     *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the bulk density related to a soil structure
- *
- * \param[in]  soil      pointer to a cs_gwf_soil_t structure
- * \param[out] density   return value for the density
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
-                             cs_real_t             *density);
 
 /*----------------------------------------------------------------------------*/
 /*!
