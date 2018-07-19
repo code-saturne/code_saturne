@@ -46,6 +46,7 @@
 #include "cs_log.h"
 #include "cs_order.h"
 #include "cs_parall.h"
+#include "cs_param_cdo.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
