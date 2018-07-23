@@ -1634,18 +1634,27 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
       /* Initialize face-based array */
       switch(def->type) {
 
+      /* Evaluating the integrals: the averages will be taken care of at the
+       * end when ensuring zero-mean valuedness */
       case CS_XDEF_BY_VALUE:
-        cs_evaluate_potential_by_value(dof_flag, def, values);
+        /*cs_evaluate_potential_by_value(dof_flag, def, values);*/
+        cs_evaluate_density_by_value(dof_flag, def, values);
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        cs_xdef_set_quadrature(def, nsp->qtype);
         switch (red) {
         case CS_PARAM_REDUCTION_DERHAM:
-          cs_evaluate_potential_by_analytic(dof_flag, def, t_cur, values);
+          /*cs_evaluate_potential_by_analytic(dof_flag, def, t_cur, values);*/
+          /* Forcing BARY so that it is equivalent to DERHAM */
+          cs_xdef_set_quadrature(def, CS_QUADRATURE_BARY);
+          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
+          /* Restoring the original */
+          cs_xdef_set_quadrature(def, nsp->qtype);
           break;
         case CS_PARAM_REDUCTION_AVERAGE:
-          cs_evaluate_average_on_cells_by_analytic(def, t_cur, values);
+          /*cs_evaluate_average_on_cells_by_analytic(def, t_cur, values);*/
+          cs_xdef_set_quadrature(def, nsp->qtype);
+          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
           break;
 
         default:
@@ -1665,6 +1674,16 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
       }  /* Switch on possible type of definition */
 
     }  /* Loop on definitions */
+
+    /* We should ensure that the mean of the pressure is zero. Thus we compute
+     * it and subtract it from every value.
+     * NOTES:
+     *  - It could be useful to stored this average somewhere
+     *  - The procedure is not optimized (we can avoid setting the average if
+     *    it's a value), but it is the only way to allow multiple definitions
+     *    and definitions that do not cover all the domain. Moreover, we need
+     *    information (e.g. cs_cdo_quant) which we do not know here */
+    cs_cdofb_navsto_ensure_zero_mean_and_avg(values, 1);
 
   } /* If initial conditions dor the pressure */
 

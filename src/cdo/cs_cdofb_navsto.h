@@ -295,6 +295,20 @@ cs_cdofb_navsto_extra_op(const char                 *eqname,
                          void                       *data);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Make \p values of zero-mean and compute averages on each cells
+ *
+ * \param[in,out]  values    vector of cell DoFs which should be of zero mean
+ * \param[in]      dim       dimension
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_ensure_zero_mean_and_avg(cs_real_t values[],
+                                         short int dim);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
