@@ -235,6 +235,7 @@ static void *
 _create_uzawa_context(cs_navsto_param_t    *nsp)
 {
   assert(nsp != NULL);
+  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
 
   cs_navsto_coupling_uzawa_t  *nsc = NULL;
 
@@ -281,6 +282,7 @@ _free_uzawa_context(const cs_navsto_param_t    *nsp,
                     void                       *context)
 {
   assert(nsp != NULL);
+  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
 
   cs_navsto_coupling_uzawa_t  *nsc = (cs_navsto_coupling_uzawa_t *)context;
 
@@ -311,6 +313,15 @@ _uzawa_init_setup(cs_navsto_system_t          *ns)
 
   /* Handle the momentum equation */
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
+
+  cs_field_t *fld = ns->velocity;
+  /* Set default value for default keys */
+  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
+  fld = ns->pressure;
+  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
 
   _apply_param(nsp, mom_eqp);
 
@@ -384,6 +395,7 @@ static void *
 _create_ac_context(cs_navsto_param_t    *nsp)
 {
   assert(nsp != NULL);
+  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
 
   cs_navsto_coupling_ac_t  *nsc = NULL;
 
@@ -426,6 +438,7 @@ _free_ac_context(const cs_navsto_param_t    *nsp,
                  void                       *context)
 {
   assert(nsp != NULL);
+  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
 
   cs_navsto_coupling_ac_t  *nsc = (cs_navsto_coupling_ac_t *)context;
 
@@ -455,6 +468,12 @@ _ac_init_setup(cs_navsto_system_t     *ns)
   assert(nsp != NULL && nsc != NULL);
 
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
+
+  cs_field_t *fld = ns->pressure;
+  /* Set default value for default keys */
+  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
 
   /* Navier-Stokes parameters induce numerical settings for the related
    equations */
@@ -524,6 +543,7 @@ static void *
 _create_ac_vpp_context(cs_navsto_param_t    *nsp)
 {
   assert(nsp != NULL);
+  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
 
   cs_navsto_coupling_ac_vpp_t  *nsc = NULL;
 
@@ -578,6 +598,7 @@ _free_ac_vpp_context(const cs_navsto_param_t    *nsp,
                      void                       *context)
 {
   assert(nsp != NULL);
+  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
 
   cs_navsto_coupling_ac_vpp_t  *nsc = (cs_navsto_coupling_ac_vpp_t *)context;
 
@@ -610,11 +631,20 @@ _ac_vpp_init_setup(cs_navsto_system_t     *ns)
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
   cs_equation_param_t  *gd_eqp = cs_equation_get_param(nsc->graddiv);
 
+  cs_field_t *fld = ns->velocity;
+  /* Set default value for default keys */
+  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
+  fld = ns->pressure;
+  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
+
   /* Navier-Stokes parameters induce numerical settings for the related
      equations */
   _apply_param(nsp, mom_eqp);
 
-  // TODO: Is this good? Should we force BC or alikes?
+  /* TODO: Is this good? Should we force BC or alikes? */
   _apply_param(nsp, gd_eqp);
 
   /* Link the time property to the momentum equation */
@@ -685,6 +715,7 @@ static void *
 _create_projection_context(cs_navsto_param_t    *nsp)
 {
   assert(nsp != NULL);
+  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
 
   cs_navsto_coupling_projection_t  *nsc = NULL;
 
@@ -737,6 +768,7 @@ _free_projection_context(const cs_navsto_param_t    *nsp,
                          void                       *context)
 {
   assert(nsp != NULL);
+  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
 
   cs_navsto_coupling_projection_t  *nsc =
     (cs_navsto_coupling_projection_t *)context;
@@ -806,6 +838,8 @@ _projection_last_setup(const cs_cdo_connect_t     *connect,
   assert(nsp != NULL && nsc != NULL);
 
   /* TODO */
+  CS_UNUSED(nsp);
+  CS_UNUSED(nsc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -902,12 +936,12 @@ _init_face_velocity_values(cs_real_t    t_eval)
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Incompatible initialization.\n"), __func__);
 
-    } // Switch on possible type of definition
+    } /* Switch on possible type of definition */
 
     /* Resetting */
     def->meta = meta_cpy;
 
-  } // Loop on definitions
+  } /* Loop on definitions */
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -971,6 +1005,22 @@ cs_navsto_system_activate(cs_navsto_param_model_t        model,
   navsto->adv_field = cs_advection_field_add("velocity_field",
                                              CS_ADVECTION_FIELD_NAVSTO);
 
+  cs_param_bc_type_t p_bc_type = CS_PARAM_N_BC_TYPES;
+  switch (bndr_default) {
+  case CS_DOMAIN_BOUNDARY_WALL:
+    p_bc_type = CS_PARAM_BC_HMG_DIRICHLET;
+    break;
+  case CS_DOMAIN_BOUNDARY_SYMMETRY:
+    p_bc_type = CS_PARAM_BC_HMG_NEUMANN;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid boundary default type\n",
+              __func__);
+    return NULL;
+  } /* Switch */
+
+
   /* Additional initialization fitting the choice of model */
   switch (navsto->param->coupling) {
 
@@ -1022,7 +1072,7 @@ cs_navsto_system_destroy(void)
     BFT_FREE(navsto->velocity_ic_defs);
     navsto->velocity_ic_defs = NULL;
 
-  } // Velocity IC
+  } /* Velocity IC */
 
   if (navsto->n_pressure_ic_defs > 0) {
 
@@ -1031,7 +1081,7 @@ cs_navsto_system_destroy(void)
     BFT_FREE(navsto->pressure_ic_defs);
     navsto->pressure_ic_defs = NULL;
 
-  } // Pressure IC
+  } /* Pressure IC */
 
   /*
     Properties, advection fields, equations and fields are all destroyed
@@ -1113,7 +1163,7 @@ cs_navsto_system_init_setup(void)
 
   /* Create if needed velocity and pressure fields */
 
-  int  location_id = -1; // initialize values to avoid a warning
+  int  location_id = -1; /* initialize values to avoid a warning */
   int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
 
   const bool has_previous = cs_navsto_param_is_steady(nsp) ? false:true;
@@ -1262,7 +1312,7 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
   case CS_SPACE_SCHEME_HHO_P1:
   case CS_SPACE_SCHEME_HHO_P2:
     {
-      //TODO: set function pointers
+      /* TODO: set function pointers */
 
       /* Setup data according to the type of coupling */
       switch (nsp->coupling) {
@@ -1563,11 +1613,13 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
     }  /* Loop on definitions */
 
-    /* Initialize face-based array */
+    /* Initialize face-based array:
+     * It may overwrite the extra_values related to the boundary faces, since
+     * BCs have already been copied there */
     if (true) /* DEBUG */
       _init_face_velocity_values(t_cur);
 
-  }  /* If velocity IC */
+  }  /* If initial conditions for the velocity */
 
   /* Initial conditions for the pressure */
   if (navsto->n_pressure_ic_defs > 0) {
@@ -1617,7 +1669,7 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
     }  /* Loop on definitions */
 
-  } /* If pressure IC */
+  } /* If initial conditions dor the pressure */
 
   /* TODO: Set the initial condition for variables not directly related
      to an equation */

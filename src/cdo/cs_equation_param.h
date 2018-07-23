@@ -113,7 +113,7 @@ BEGIN_C_DECLS
  * Equation related to the groundwater flow module
  *
  * \var CS_EQUATION_TYPE_PREDEFINED
- * Predefined equationn (most part of the setting is already done)
+ * Predefined equation (most part of the setting is already done)
  * - Example: equation for the wall distance
  */
 

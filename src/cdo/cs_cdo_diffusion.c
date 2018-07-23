@@ -535,10 +535,10 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
  *          technique
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
@@ -598,10 +598,10 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
  *          technique plus a symmetric treatment
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/

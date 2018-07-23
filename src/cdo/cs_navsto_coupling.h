@@ -112,7 +112,7 @@ typedef struct {
                                  where the grad-div operator is used
                                  (vector-valued) */
 
-  cs_property_t  *zeta;    /*!< Parameter (Artifical Compressibility) VPP
+  cs_property_t  *zeta;    /*!< Parameter (Artificial Compressibility) VPP
                                 algorithm attached to the grad-div stabilization
                                 term */
 
@@ -128,9 +128,9 @@ typedef struct {
 typedef struct {
 
   cs_equation_t  *prediction; /*!< Velocity prediction step related to the
-                               * momentum balance equation (vector-valued) */
+                                   momentum balance equation (vector-valued) */
   cs_equation_t  *correction; /*!< Pressure correction step related to the mass
-                               * balance equation (scalar-valued) */
+                                   balance equation (scalar-valued) */
 
 } cs_navsto_coupling_projection_t;
 

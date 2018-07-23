@@ -126,9 +126,28 @@ typedef struct {
    * @{
    */
 
+  /*! \var adv_field
+   *  Advection field, pointer to \ref cs_adv_field_t
+   */
+
   cs_adv_field_t     *adv_field;
+
+  /*! \var velocity
+   *  Velocity, 3D, pointer to \ref cs_field_t
+   */
+
   cs_field_t         *velocity;
+
+  /*! \var pressure
+   *  Pressure, 1D, pointer to \ref cs_field_t
+   */
+
   cs_field_t         *pressure;
+
+  /*! \var temperature
+   *  Temperature, 1D, pointer to \ref cs_field_t
+   */
+
   cs_field_t         *temperature;
 
   /*!
@@ -139,7 +158,16 @@ typedef struct {
    * @{
    */
 
+  /*! \var density
+   *  Density of the fluid, pointer to \ref cs_property_t
+   */
+
   cs_property_t      *density;
+
+  /*! \var lami_viscosity
+   *  Laminar viscosity, pointer to \ref cs_property_t
+   */
+
   cs_property_t      *lami_viscosity;
 
   /*! \var context
@@ -177,7 +205,7 @@ typedef struct {
 
   /*!
    * @}
-   * @name Initial conditions
+   * @name Initial conditions(IC)
    *
    * Set of parameters used to take into account the initial condition on the
    * pressure and/or the velocity.
@@ -197,13 +225,17 @@ typedef struct {
 
   /*! \var velocity_ic_defs
    *  Pointers to the definitions of the initial conditions associated to the
-   *  velocity
+   *  velocity.
+   *  The code does not check if the resulting initial velocity satisfies the
+   *  divergence constraint.
    */
    cs_xdef_t  **velocity_ic_defs;
 
   /*! \var pressure_ic_defs
    *  Pointers to the definitions of the initial conditions associated to the
-   *  pressure
+   *  pressure.
+   *  In order to force a zero-mean pressure, the code can compute the average
+   *  of the resulting pressure and subtract it
    */
    cs_xdef_t  **pressure_ic_defs;
 

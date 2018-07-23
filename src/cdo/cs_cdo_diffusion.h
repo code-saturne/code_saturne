@@ -96,10 +96,10 @@ typedef void
  *          technique (symmetrized or not) or penalization
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
@@ -255,10 +255,10 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_param_hodge_t           h_info,
  *          technique (symmetrized or not) or penalization
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
@@ -278,10 +278,10 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
  *          Case of a cellwise system defined by block.
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
@@ -300,10 +300,10 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
  *          technique plus a symmetric treatment
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
@@ -322,10 +322,10 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
  *          technique
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
