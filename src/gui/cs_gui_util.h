@@ -37,24 +37,6 @@
 
 BEGIN_C_DECLS
 
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-/*-----------------------------------------------------------------------------
- * Return the information if the requested xml file is missing
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSIHMP (IIHMPR)
- * *****************
- *
- * INTEGER          IIHMPR   <--   1 if the file exists, 0 otherwise
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (csihmp, CSIHMP) (int *const iihmpr);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -397,20 +379,6 @@ cs_gui_characters_number(int num);
 int
 cs_gui_strcmp(const char  *s1,
               const char  *s2);
-
-/*-----------------------------------------------------------------------------
- * Copy a C string into a Fortran string.
- *
- * parameters:
- *   chainef <-> Fortran string
- *   chainc  <-- C string
- *   lstrF   <-- maximum length of the Fortran string
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_strcpy_c2f(char        *chainef,
-                  const char  *chainec,
-                  const int    lstrF);
 
 /*-----------------------------------------------------------------------------
  * Test if 2 real values are equal (avoiding compiler warnings)

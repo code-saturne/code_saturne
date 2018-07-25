@@ -31,6 +31,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -75,15 +77,62 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 static const int _any_type
-  = (CS_TREE_NODE_INTEGER | CS_TREE_NODE_REAL | CS_TREE_NODE_BOOL);
+  = (  CS_TREE_NODE_CHAR | CS_TREE_NODE_INT
+     | CS_TREE_NODE_REAL | CS_TREE_NODE_BOOL);
+
+static const int _no_char_type
+  = (CS_TREE_NODE_INT | CS_TREE_NODE_REAL | CS_TREE_NODE_BOOL);
 
 /*============================================================================
- * Private function prototypes
+ * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Normalize a string, converting it to lowercase and
+ *         transforming all line control/tab characters to single whitespace.
+ *
+ * \param[in, out]  s  string to normalize
+ *
+ * \return  normalized string length
+ */
+/*----------------------------------------------------------------------------*/
+
+static size_t
+_normalize_string(char *s)
+{
+  size_t l = strlen(s);
+  size_t j = 0;
+
+  for (size_t i = 0; i < l; i++)
+    s[i] = tolower(s[i]);
+
+  for (size_t i = 0; i < l; i++) {
+    if (s[i] == '\t' || s[i] == '\n' || s[i] == '\r') {
+      if (j > 0) {
+        if (s[j] != ' ')
+          s[j++] = ' ';
+      }
+    }
+    else
+      s[j++] = s[i];
+  }
+
+  if (j > 0) {
+    if (s[j-1] == ' ')
+      j -= 1;
+  }
+
+  s[j] = '\0';
+
+  return j;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Search for a node located at path from root
+ *
+ * If the node does not exist, it is created.
  *
  * \param[in] root   pointer to the root node where we start searching
  * \param[in] path   string describing the path access
@@ -154,22 +203,24 @@ _find_or_create_node(cs_tree_node_t   *root,
 /*!
  * \brief  Search for a node located at path from root
  *
+ * If the node does not exist, NULL is returned.
+ *
  * \param[in] root   pointer to the root node where we start searching
  * \param[in] path   string describing the path access
  *
- * \return a pointer to the node
+ * \return a pointer to the node, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_tree_node_t *
-_find_node(const cs_tree_node_t   *root,
-           const char             *path)
+_find_node(cs_tree_node_t   *root,
+           const char       *path)
 {
   cs_tree_node_t  *nodes = (cs_tree_node_t *)root;
   cs_tree_node_t  *node = NULL;
 
   const size_t  path_len = strlen(path);
-  char  _name[128];
+  char  _name[256];
   char *name = NULL;
   size_t  start = 0, level_len = 0;
 
@@ -187,11 +238,9 @@ _find_node(const cs_tree_node_t   *root,
     /* Search for the node with the given name */
     nodes = nodes->children;
     if (nodes == NULL)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Fail to reach the requested node located at %s\n",
-                __func__, path);
+      return nodes;
 
-    if (level_len > 128) {
+    if (level_len > 256) {
       BFT_MALLOC(name, level_len, char);
       strncpy(name, p, level_len);
     }
@@ -210,9 +259,7 @@ _find_node(const cs_tree_node_t   *root,
     if (name != _name)
       BFT_FREE(name);
     if (nodes == NULL)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: failed to reach the requested node located at %s\n",
-                __func__, path);
+      return NULL;
 
     start += level_len + 1;
 
@@ -347,26 +394,226 @@ cs_tree_node_set_name(cs_tree_node_t  *node,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the value member of a node and assign to it a string.
+ * \brief  Return a child node with a given name.
+*
+ * The child node must be located directly under the given node (i.e. it is
+ * a child, not a grand-child or beyond).
  *
- * \param[in, out]  node  pointer to a cs_tree_node_t to modify
- * \param[in]       val   value of the string
+ * This function is similar to \ref cs_tree_get_node, but is simpler
+ * (albeit more restricted in scope) and may be faster in cases where
+ * one level of the tree sis searched at a time.
+ *
+ * In case of multiple children sharing the given name, the first such node
+ * is returned.
+ *
+ * \param[in]  node  pointer to the given node
+ * \param[in]  name  name of child node
+ *
+ * \return string value associated to tag if found, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_tree_node_t *
+cs_tree_node_get_child(cs_tree_node_t  *node,
+                       const char      *name)
+{
+  cs_tree_node_t  *child = NULL;
+  if (node != NULL) {
+
+    child = node->children;
+    while (child != NULL) { /* Search for the node with the given name */
+      if (strcmp(child->name, name) == 0)
+        break;
+      else
+        child = child->next;
+    }
+
+  }
+  return child;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the next sibling node with the same name (type)
+ *         as a given node.
+ *
+ * The first node of a series is obtained using \ref cs_tree_get_node.
+ *
+ * \param[in]  node  pointer to the starting node
+ *
+ * \return pointer to next sibling node with same name, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_tree_node_t *
+cs_tree_node_get_next_of_name(cs_tree_node_t  *node)
+{
+  cs_tree_node_t  *sibling = NULL;
+  if (node != NULL) {
+
+    sibling = node->next;
+    while (sibling != NULL) { /* Search for the node with the given name */
+      if (strcmp(sibling->name, node->name) == 0)
+        break;
+      else
+        sibling = sibling->next;
+    }
+
+  }
+  return sibling;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Search for a child node (used as a tag) with a given name,
+ *         and return its associated string value.
+ *
+ * The child node must be located directly under the given node (i.e. it is
+ * a child, not a grand-child or beyond).
+ *
+ * If the child "tag" node does not exist, NULL is returned.
+ *
+ * The CS_TREE_NODE_TAG flag is set for child nodes accessed by this function.
+ * It is currently only relevant for possible mapping to XML.
+ *
+ * \param[in]  node  pointer to the given node
+ * \param[in]  tag   name of child node used as tag
+ *
+ * \return string value associated to tag if found, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_tree_node_get_tag(cs_tree_node_t  *node,
+                     const char      *tag)
+{
+  const char *retval = NULL;
+
+  if (node != NULL) {
+
+    cs_tree_node_t  *child = node->children;
+    while (child != NULL) { /* Search for the node with the given name */
+      if (strcmp(child->name, tag) != 0)
+        child = child->next;
+      else
+        break;
+    }
+
+    if (child != NULL) {
+      if (child->flag & CS_TREE_NODE_CHAR)
+        retval = (const char *)(child->value);
+
+      else if (child->flag & _no_char_type)
+        bft_error(__FILE__, __LINE__, 0,
+                  "Tree node %s accessed as type %d (string),\n"
+                  "but previously accessed as type %d.",
+                  child->name, CS_TREE_NODE_CHAR, (child->flag & _no_char_type));
+
+      else {
+        retval = (const char *)(child->value);
+        child->flag =   ((child->flag | _any_type) - _any_type)
+                      | CS_TREE_NODE_CHAR;
+      }
+      if (! (child->flag &CS_TREE_NODE_TAG))
+        child->flag = child->flag | CS_TREE_NODE_TAG;
+    }
+
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a tag to a given node.
+ *
+ * A tag is simply a string-valued child node.
+ *
+ * The CS_TREE_NODE_TAG flag is also set for this child.
+ * It is currently only relevant for possible mapping to XML.
+ *
+ * \param[in, out]  node     pointer to the given node
+ * \param[in]       tag      name of child node used as tag
+ * \param[in]       tag_str  character string to be copied to tag
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_tree_node_set_val_string(cs_tree_node_t  *node,
-                            const char      *val)
+cs_tree_node_set_tag(cs_tree_node_t  *node,
+                     const char      *tag,
+                     const char      *tag_str)
 {
-  node->flag = node->flag | _any_type;
-  node->flag -= _any_type;
+  cs_tree_node_t  *child = cs_tree_node_get_child(node, tag);
+  if (child == NULL)
+    child = cs_tree_add_child(node, tag);
+
+  cs_tree_node_set_value_str(child, tag_str);
+  child->flag |= CS_TREE_NODE_TAG;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a character string value associated to a node if present.
+ *
+ * If the node was never accessed before and the value type was not defined,
+ * it is set to CS_TREE_NODE_CHAR. If it was previously converted to
+ * a different type, an error is returned.
+ *
+ * \param[in]  node  pointer to a cs_tree_node_t to access, or NULL
+ *
+ * \return  associated string, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_tree_node_get_value_str(cs_tree_node_t  *node)
+{
+  const char *retval = NULL;
+
+  if (node != NULL) {
+
+    if (node->flag & CS_TREE_NODE_CHAR)
+      retval = (const char *)(node->value);
+
+    else if (node->flag & _no_char_type)
+      bft_error(__FILE__, __LINE__, 0,
+                "Tree node %s accessed as type %d (string),\n"
+                "but previously accessed as type %d.",
+                node->name, CS_TREE_NODE_CHAR, (node->flag & _no_char_type));
+
+    else {
+      retval = (const char *)(node->value);
+      node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_CHAR;
+    }
+
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a character string value to a node.
+ *
+ * The assigned string is copied to the node.
+ *
+ * \param[in, out]  node  pointer to a cs_tree_node_t to modify
+ * \param[in]       val   pointer to character string
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_tree_node_set_value_str(cs_tree_node_t  *node,
+                           const char      *val)
+{
+  assert(node != NULL);
+
+  node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_CHAR;
 
   if (val == NULL) {
     BFT_FREE(node->value);
     return;
   }
-  if (node == NULL)
-    node = cs_tree_node_create(NULL);
 
   node->size = 1;
   BFT_REALLOC(node->value, strlen(val) + 1, char);
@@ -375,103 +622,494 @@ cs_tree_node_set_val_string(cs_tree_node_t  *node,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the value member of a node and assign to it a boolean.
+ * \brief  Return array of boolean values associated to a node if present.
  *
- * \param[in, out]  node  pointer to a cs_tree_node_t to modify
- * \param[in]       val   boolean
+ * If the value type was not defined, or defined as a string, values are
+ * converted and the type flag set to CS_TREE_NODE_BOOL. If it was previously
+ * accessed (and converted) using  a different type, an error is returned.
+ *
+ * The following strings (case-independent) are converted to "true":
+ *   "true", "yes", "on", "1".
+ * All other strings are converted to "false".
+ *
+ * \param[in]  node  pointer to a cs_tree_node_t to access, or NULL
+ *
+ * \return  pointer to associated array, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_tree_node_set_bool(cs_tree_node_t  *node,
-                      bool             val)
+const bool *
+cs_tree_node_get_values_bool(cs_tree_node_t  *node)
 {
-  if (node == NULL)
-    node = cs_tree_node_create(NULL);
+  const bool *retval = NULL;
 
-  node->size = 1;
-  node->flag |= CS_TREE_NODE_BOOL;
-  BFT_REALLOC(node->value, 1, bool);
-  ((bool *)node->value)[0] = val;
+  if (node != NULL) {
+
+    if (node->flag & CS_TREE_NODE_BOOL)
+      retval = (const bool *)(node->value);
+
+    else if (node->flag & _no_char_type)
+      bft_error(__FILE__, __LINE__, 0,
+                "Tree node %s accessed as type %d (boolean),\n"
+                "but previously accessed as type %d.",
+                node->name, CS_TREE_NODE_BOOL, (node->flag & _no_char_type));
+
+    else {
+      char *s = node->value;
+      size_t l = _normalize_string(s);
+      bool *v = NULL;
+      if (l > 0) {
+        node->size = 1;
+        for (size_t i = 0; i < l; i++) {
+          if (s[i] == ' ')
+            node->size += 1;
+        }
+        BFT_MALLOC(v, node->size, bool);
+        int n = 0;
+        size_t i = 0;
+        while (i < l) {
+          size_t j;
+          for (j = i; j < l+1; j++) {
+            if (s[j] == ' ' || s[j] == '\0') {
+              s[j] = '\0';
+              break;
+            }
+          }
+          const char *_s = s + i;
+          if (   strcmp(_s, "true") == 0
+              || strcmp(_s, "yes") == 0
+              || strcmp(_s, "on") == 0
+              || strcmp(s, "1") == 0)
+            v[n] = true;
+          else
+            v[n] = false;
+          n++;
+          i = j;
+        }
+        assert(node->size == n);
+      }
+      BFT_FREE(node->value);
+      node->value = v;
+      node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_BOOL;
+      retval = (const bool *)(node->value);
+    }
+
+  }
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the value member of a node and assign to it a boolean.
+ * \brief  Assign an array of boolean values to node.
  *
  * \param[in, out]  node  pointer to a cs_tree_node_t to modify
- * \param[in]       size  number of elements in val
+ * \param[in]       n     number of elements in val
  * \param[in]       val   array of boolean
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_tree_node_set_bool_val(cs_tree_node_t  *node,
-                          int              size,
-                          const bool      *val)
+cs_tree_node_set_values_bool(cs_tree_node_t  *node,
+                             int              n,
+                             const bool      *val)
 {
-  if (val == NULL)
-    return;
-  if (node == NULL)
-    node = cs_tree_node_create(NULL);
+  assert(node != NULL);
 
-  node->size = size;
-  node->flag |= CS_TREE_NODE_BOOL;
-  BFT_REALLOC(node->value, size, bool);
-  memcpy(node->value, val, size*sizeof(bool));
+  if (val == NULL)
+    n = 0;
+
+  node->size = n;
+  node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_BOOL;
+  BFT_REALLOC(node->value, node->size, bool);
+
+  if (node->size > 0)
+    memcpy(node->value, val, node->size*sizeof(bool));
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the value member of a node and assign to it an integer
+ * \brief  Return an array of integer values associated to a node if present.
+ *
+ * If the value type was not defined, or defined as a string, values are
+ * converted and the type flag set to CS_TREE_NODE_INT. If it was previously
+ * accessed (and converted) using  a different type, an error is returned.
+ *
+ * \param[in]  node  pointer to a cs_tree_node_t to access, or NULL
+ *
+ * \return  pointer to associated array, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const int *
+cs_tree_node_get_values_int(cs_tree_node_t  *node)
+{
+  const int *retval = NULL;
+
+  if (node != NULL) {
+
+    if (node->flag & CS_TREE_NODE_INT)
+      retval = (const int *)(node->value);
+
+    else if (node->flag & _no_char_type)
+      bft_error(__FILE__, __LINE__, 0,
+                "Tree node %s accessed as type %d (integer),\n"
+                "but previously accessed as type %d.",
+                node->name, CS_TREE_NODE_INT, (node->flag & _no_char_type));
+
+    else {
+      char *s = node->value;
+      size_t l = _normalize_string(s);
+      int *v = NULL;
+      if (l > 0) {
+        node->size = 1;
+        for (size_t i = 0; i < l; i++) {
+          if (s[i] == ' ')
+            node->size += 1;
+        }
+        BFT_MALLOC(v, node->size, int);
+        int n = 0;
+        size_t i = 0;
+        while (i < l) {
+          size_t j;
+          for (j = i; j < l+1; j++) {
+            if (s[j] == ' ' || s[j] == '\0') {
+              s[j] = '\0';
+              break;
+            }
+          }
+          errno = 0;
+          v[n] = strtol(s+i, NULL, 10);
+          if (errno != 0)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error parsing \"%s\" as integer:\n\n"
+                        "  %s"), s+i, strerror(errno));
+          n++;
+          i = j;
+        }
+        assert(node->size == n);
+      }
+      BFT_FREE(node->value);
+      node->value = v;
+      node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_INT;
+      retval = (const int *)(node->value);
+    }
+
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign an array of integer values to a node.
+ *
+ * The array values are copied to the node.
  *
  * \param[in, out]  node  pointer to a cs_tree_node_t to modify
- * \param[in]       size  number of integers in val
+ * \param[in]       n     number of elements in val
  * \param[in]       val   array of integers
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_tree_node_set_int_val(cs_tree_node_t  *node,
-                         int              size,
-                         const int       *val)
+cs_tree_node_set_values_int(cs_tree_node_t  *node,
+                            int              n,
+                            const int       *val)
 {
-  if (val == NULL)
-    return;
-  if (node == NULL)
-    node = cs_tree_node_create(NULL);
+  assert(node != NULL);
 
-  node->size = size;
-  node->flag |= CS_TREE_NODE_INTEGER;
-  BFT_MALLOC(node->value, size, int);
-  memcpy(node->value, val, size*sizeof(int));
+  if (val == NULL)
+    n = 0;
+
+  node->size = n;
+  node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_INT;
+  BFT_REALLOC(node->value, node->size, int);
+
+  if (node->size > 0)
+    memcpy(node->value, val, node->size*sizeof(int));
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the value member of a node and assign to it an array of
- *         real values
+ * \brief  Return an array of real values associated to a node if present.
+ *
+ * If the value type was not defined, or defined as a string, values are
+ * converted and the type flag set to CS_TREE_NODE_REAL. If it was previously
+ * accessed (and converted) using  a different type, an error is returned.
+ *
+ * \param[in]  node  pointer to a cs_tree_node_t to access, or NULL
+ *
+ * \return  pointer to associated array, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_tree_node_get_values_real(cs_tree_node_t  *node)
+{
+  const cs_real_t *retval = NULL;
+
+  if (node != NULL) {
+
+    if (node->flag & CS_TREE_NODE_REAL)
+      retval = (const cs_real_t *)(node->value);
+
+    else if (node->flag & _no_char_type)
+      bft_error(__FILE__, __LINE__, 0,
+                "Tree node %s accessed as type %d (real),\n"
+                "but previously accessed as type %d.",
+                node->name, CS_TREE_NODE_REAL, (node->flag & _no_char_type));
+
+    else {
+      char *s = node->value;
+      size_t l = _normalize_string(s);
+      cs_real_t *v = NULL;
+      if (l > 0) {
+        node->size = 1;
+        for (size_t i = 0; i < l; i++) {
+          if (s[i] == ' ')
+            node->size += 1;
+        }
+        BFT_MALLOC(v, node->size, cs_real_t);
+        int n = 0;
+        size_t i = 0;
+        while (i < l) {
+          size_t j;
+          for (j = i; j < l+1; j++) {
+            if (s[j] == ' ' || s[j] == '\0') {
+              s[j] = '\0';
+              break;
+            }
+          }
+          errno = 0;
+          v[n] = strtod(s+i, NULL);
+          if (errno != 0)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error parsing \"%s\" as real:\n\n"
+                        "  %s"), s+i, strerror(errno));
+          n++;
+          i = j;
+        }
+        assert(node->size == n);
+      }
+      BFT_FREE(node->value);
+      node->value = v;
+      node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_REAL;
+      retval = (const cs_real_t *)(node->value);
+    }
+
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign an array of real values to a node.
+ *
+ * The array values are copied to the node.
  *
  * \param[in, out]  node  pointer to a cs_tree_node_t to modify
- * \param[in]       size  number of elements in val
+ * \param[in]       n     number of elements in val
  * \param[in]       val   array of real values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_tree_node_set_real_val(cs_tree_node_t   *node,
-                          int               size,
-                          const cs_real_t  *val)
+cs_tree_node_set_values_real(cs_tree_node_t   *node,
+                             int               n,
+                             const cs_real_t  *val)
 {
-  if (val == NULL)
-    return;
-  if (node == NULL)
-    node = cs_tree_node_create(NULL);
+  assert(node != NULL);
 
-  node->size = size;
-  node->flag |= CS_TREE_NODE_REAL;
-  BFT_REALLOC(node->value, size, cs_real_t);
-  memcpy(node->value, val, size*sizeof(cs_real_t));
+  if (val == NULL)
+    n = 0;
+
+  node->size = n;
+  node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_REAL;
+  BFT_REALLOC(node->value, node->size, cs_real_t);
+
+  if (node->size > 0)
+    memcpy(node->value, val, node->size*sizeof(cs_real_t));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a string value associated to a child node if present.
+ *
+ * The behavior is similar to that of \ref cs_tree_node_get_value_str.
+
+ * \param[in]  node         pointer to a cs_tree_node_t to access, or NULL
+ * \param[in]  child_name  name of child node
+ *
+ * \return  pointer to associated values, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_tree_node_get_child_value_str(cs_tree_node_t  *node,
+                                 const char      *child_name)
+{
+  const char *retval = NULL;
+
+  cs_tree_node_t *child = cs_tree_node_get_child(node, child_name);
+  if (child != NULL)
+    retval = cs_tree_node_get_value_str(child);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return array of boolean values associated to a child node if present.
+ *
+ * The behavior is similar to that of \ref cs_tree_node_get_values_bool.
+ *
+ * \param[in]  node         pointer to a cs_tree_node_t to access, or NULL
+ * \param[in]  child_name  name of child node
+ *
+ * \return  pointer to associated values, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const bool *
+cs_tree_node_get_child_values_bool(cs_tree_node_t  *node,
+                                   const char      *child_name)
+{
+  const bool *retval = NULL;
+
+  cs_tree_node_t *child = cs_tree_node_get_child(node, child_name);
+  if (child != NULL)
+    retval = cs_tree_node_get_values_bool(child);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return an array of integer values associated to a child node
+ *         if present.
+ *
+ * The behavior is similar to that of \ref cs_tree_node_get_values_int.
+ *
+ * \param[in]  node        pointer to a cs_tree_node_t to access, or NULL
+ * \param[in]  child_name  name of child node
+ *
+ * \return  pointer to associated array, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const int *
+cs_tree_node_get_child_values_int(cs_tree_node_t  *node,
+                                  const char      *child_name)
+{
+  const int *retval = NULL;
+
+  cs_tree_node_t *child = cs_tree_node_get_child(node, child_name);
+  if (child != NULL)
+    retval = cs_tree_node_get_values_int(child);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return an array of real values associated to a child node if present.
+ *
+ * The behavior is similar to that of \ref cs_tree_node_get_values_real.
+ *
+ * \param[in]  node         pointer to a cs_tree_node_t to access, or NULL
+ * \param[in]  child_name  name of child node
+ *
+ * \return  pointer to associated array, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_tree_node_get_child_values_real(cs_tree_node_t  *node,
+                                   const char      *child_name)
+{
+  const cs_real_t *retval = NULL;
+
+  cs_tree_node_t *child = cs_tree_node_get_child(node, child_name);
+  if (child != NULL)
+    retval = cs_tree_node_get_values_real(child);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to a node with a child having a given
+ *         (character string) tag value.
+ *
+ * This node is searched for among siblings of a given node sharing the
+ * same path (i.e. the same name).
+ *
+ * Using the following example tree:
+ *
+ * /
+ *   section1
+ *   section2
+ *     entry
+ *       label
+ *         (value = a)
+ *     entry
+ *       label
+ *         (value = b)
+ *
+ * Using \ref cs_tree_get_node(root, "section2/entry") will return
+ * the first node with path "section2/entry" (which has a child named
+ * "label" with value a).
+ *
+ * Using \ref cs_tree_get_sibling_with_tag(node, "label", "a") from that
+ * node will return the same node, while
+ * \ref cs_tree_get_sibling_with_tag(node, "label", "b") will return
+ * the second "section2/entry" node.
+ *
+ * This function can be called from any sibling (not necessarily the
+ * first).
+ *
+ * \param[in]  node       pointer to the starting node
+ * \param[in]  tag        name of the required "tag" child
+ * \param[in]  tag_value  value of the required "tag" child
+ *
+ * \return  pointer to the node, or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_tree_node_t *
+cs_tree_node_get_sibling_with_tag(cs_tree_node_t  *node,
+                                  const char      *tag,
+                                  const char      *tag_value)
+{
+  if (node != NULL) {
+
+    cs_tree_node_t *sn = node;
+    cs_tree_node_t *cn = sn;
+
+    do {
+
+      if (strcmp(cn->name, node->name) == 0) {
+        const char *s = cs_tree_node_get_tag(cn, tag);
+        if (s != NULL) {
+          if (strcmp(s, tag_value) == 0)
+            return cn;
+        }
+      }
+
+      cn = cn->next;
+      if (cn == NULL) {
+        cn = sn;
+        while (cn->prev != NULL)
+          cn = cn->prev;
+      }
+
+    } while (cn != sn);
+
+  }
+
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -523,7 +1161,7 @@ cs_tree_node_dump(cs_log_t                log,
       break;
 
     case 1:
-      if (node->flag & CS_TREE_NODE_INTEGER)
+      if (node->flag & CS_TREE_NODE_INT)
         cs_log_printf(log, "%svalue: %d\n", shift, ((int *)node->value)[0]);
       else if (node->flag & CS_TREE_NODE_REAL)
         cs_log_printf(log, "%svalue: %-6.4e\n", shift,
@@ -541,7 +1179,7 @@ cs_tree_node_dump(cs_log_t                log,
         const int  n_last = node->size - n_pass*n_element_by_line;
         cs_log_printf(log, "%svalue: >\n", shift);
 
-        if (node->flag & CS_TREE_NODE_INTEGER) {
+        if (node->flag & CS_TREE_NODE_INT) {
 
           int  *v = (int *)node->value;
           for (int i = 0; i < n_pass; i++) {
@@ -615,62 +1253,60 @@ cs_tree_node_dump(cs_log_t                log,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to the value member of the node.
- *
- * This node can be modified.
+ * \brief  Add a node to a tree.
  *
  * This node is located at "path" from the given root node
  * level switch is indicated by a "/" in path
  *
- * Exits on error if not found.
+ * Exits on error if a node already exists on this path.
  *
  * \param[in, out]  root  pointer to the root node where we start searching
  * \param[in]       path  string describing the path access
  *
- * \return  pointer to the node
+ * \return  pointer to the new node
  */
 /*----------------------------------------------------------------------------*/
 
 cs_tree_node_t *
-cs_tree_get_node_rw(cs_tree_node_t     *root,
-                    const char         *path)
+cs_tree_add_node(cs_tree_node_t  *root,
+                 const char      *path)
 {
-  if (path == NULL)
-    return root;
-  if (strlen(path) == 0)
-    return root;
-  if (root == NULL)
-    bft_error(__FILE__, __LINE__, 0, " %s: root is NULL\n", __func__);
+  cs_tree_node_t *node = cs_tree_get_node(root, path);
+
+  if (node != NULL)
+    bft_error(__FILE__, __LINE__, 0, " %s: node %s already exists.",
+              __func__, path);
 
   return _find_or_create_node(root, path);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to a node with read-only access.
+ * \brief  Retrieve the pointer to a node.
  *
  * This node is located at "path" from the given root node
  * level switch is indicated by a "/" in path.
  *
- * Exits on error if not found.
+ * In case of multiple nodes sharing the given path, the first such node
+ * is returned.
  *
  * \param[in]  root  pointer to the root node where we start searching
  * \param[in]  path  string describing the path access
  *
- * \return  pointer to the node
+ * \return  pointer to the node, or NULL if not found
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_tree_node_t *
-cs_tree_get_node(const cs_tree_node_t   *root,
-                 const char             *path)
+cs_tree_node_t *
+cs_tree_get_node(cs_tree_node_t  *root,
+                 const char      *path)
 {
+  if (root == NULL)
+    return NULL;
   if (path == NULL)
     return root;
   if (strlen(path) == 0)
     return root;
-  if (root == NULL)
-    bft_error(__FILE__, __LINE__, 0, " %s: root is NULL\n", __func__);
 
   return _find_node(root, path);
 }

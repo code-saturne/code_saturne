@@ -1,5 +1,5 @@
 /*============================================================================
- * Management of the GUI parameters file: xpath request and utilities
+ * Management of the GUI parameters file: utility functions
  *============================================================================*/
 
 /*
@@ -61,6 +61,9 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_parameters.h"
+#include "cs_tree.h"
+#include "cs_tree_xml.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -94,34 +97,9 @@ const char *xmlRootName     = NULL;   /* Name of the root node        */
 
 double _cs_gui_mei_time = 0.;
 
+static bool _setup_read = false;
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public Fortran function definitions
- *============================================================================*/
-
-/*-----------------------------------------------------------------------------
- * Return the information if the requested xml file is missing or not.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSIHMP (IIHMPR)
- * *****************
- *
- * INTEGER          IIHMPR   <--   1 if the file exists, 0 otherwise
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csihmp, CSIHMP) (int *const iihmpr)
-{
-#if defined(HAVE_LIBXML2)
-  if (docxml == NULL)
-    *iihmpr = 0;
-  else
-    *iihmpr = 1;
-#else
-  *iihmpr = 0;
-#endif
-}
 
 /*============================================================================
  * Public function definitions
@@ -138,10 +116,8 @@ int
 cs_gui_file_is_loaded(void)
 {
   int retval = 0;
-#if defined(HAVE_LIBXML2)
-  if (docxml != NULL)
+  if (_setup_read)
     retval = 1;
-#endif
   return retval;
 }
 
@@ -158,10 +134,16 @@ cs_gui_file_is_loaded(void)
 int
 cs_gui_load_file(const char  *filename)
 {
+  int argerr = 0;
+
+  if (cs_glob_tree == NULL)
+    cs_glob_tree = cs_tree_node_create(NULL);
+
+  cs_tree_xml_read(cs_glob_tree, filename);
+
 #if defined(HAVE_LIBXML2)
 
   int file_descriptor = 0;
-  int argerr = 0;
 
   assert(filename);
 
@@ -171,8 +153,8 @@ cs_gui_load_file(const char  *filename)
 
   if (file_descriptor ==  -1) {
 
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf( _("Unable to open the file: %s\n"), filename);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Unable to open the file: %s\n"), filename);
     argerr = 2;
     return argerr;
 
@@ -191,11 +173,10 @@ cs_gui_load_file(const char  *filename)
   /* Loading the xml file */
   docxml = xmlParseFile(filename);
 
-
   if (docxml == NULL) {
 
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf (_("Unable to parse the file: %s\n"), filename);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Unable to parse the file: %s\n"), filename);
     argerr = 2;
 
   }
@@ -214,16 +195,19 @@ cs_gui_load_file(const char  *filename)
   /* Check the Interface version */
   cs_gui_check_version();
 
-  return argerr;
-
 #else
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without XML support."));
+            _("%s was built without XML support,\n"
+              "so parameter file \"%s\" may not be loaded.\n"),
+            "Code_Saturne", filename);
 
-  return -1;
+  argerr = 1;
 
 #endif
+
+  _setup_read = true;
+  return argerr;
 }
 
 /*-----------------------------------------------------------------------------
@@ -233,21 +217,20 @@ cs_gui_load_file(const char  *filename)
 void
 cs_gui_check_version(void)
 {
-  char *path;
-  char *version;
-  double version_number;
   double version_sat = XML_READER_VERSION;
-  double major, minus;
-  double maj_sat, min_sat;
+  double major, maj_sat;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_attribute(&path, "version");
+  cs_tree_node_t *tn = cs_glob_tree;
+  tn = cs_tree_get_node(tn, "/Code_Saturne_GUI");
+  if (tn == NULL)
+    tn = cs_tree_get_node(cs_glob_tree, "/NEPTUNE_CFD_GUI");
 
-  version = cs_gui_get_attribute_value(path);
-  version_number = atof(version);
+  const char *version = cs_tree_node_get_tag(tn, "version");
 
-  minus = modf(version_number, &major);
-  min_sat = modf(version_sat, &maj_sat);
+  double version_number = (version != NULL) ? atof(version) : 0.0;
+
+  double minus = modf(version_number, &major);
+  double min_sat = modf(version_sat, &maj_sat);
 
   if (!cs_gui_is_equal_real(major, maj_sat))
     bft_error(__FILE__, __LINE__, 0,
@@ -271,9 +254,6 @@ cs_gui_check_version(void)
                  "========================================================\n"),
                version_number, version_sat);
   }
-
-  BFT_FREE(version);
-  BFT_FREE(path);
 }
 
 /*----------------------------------------------------------------------------
@@ -537,7 +517,7 @@ cs_xpath_add_function_text(char  **path)
  *   size --> array size
  *----------------------------------------------------------------------------*/
 
-char**
+char **
 cs_gui_get_attribute_values(char  *path,
                             int   *size)
 {
@@ -1117,31 +1097,6 @@ cs_gui_strcmp(const char  *s1,
   if ( strlen(s1) != strlen(s2)) return 0;
   if (!strncmp(s1, s2, strlen(s1))) return 1;
   return 0;
-}
-
-/*-----------------------------------------------------------------------------
- * Copy a C string into a Fortran string.
- *
- * parameters:
- *   chainef <-> Fortran string
- *   chainc  <-- C string
- *   lstrF   <-- maximum length of the Fortran string
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_strcpy_c2f(char        *chainef,
-                  const char  *chainec,
-                  const int    lstrF)
-{
-  int i;
-
-  assert(chainec != NULL);
-  assert(lstrF > 0);
-
-  strncpy(chainef, chainec, strlen(chainec));
-
-  for (i = strlen(chainec); i < lstrF ; i++)
-    chainef[i] = ' ';
 }
 
 /*-----------------------------------------------------------------------------

@@ -56,8 +56,6 @@
 #include "cs_gui_util.h"
 #include "cs_parameters.h"
 #include "cs_partition.h"
-#include "cs_tree.h"
-#include "cs_tree_xml.h"
 #include "cs_system_info.h"
 
 /*----------------------------------------------------------------------------
@@ -425,29 +423,8 @@ cs_opts_define(int         argc,
       cs_exit(EXIT_SUCCESS);
   }
 
-  if (s_param != NULL) {
-
-    if (cs_glob_tree == NULL)
-      cs_glob_tree = cs_tree_node_create(NULL);
-
-    cs_tree_xml_read(cs_glob_tree, s_param);
-
-#if !defined(HAVE_LIBXML2)
-        fprintf(stderr, _("%s was built without XML support,\n"
-                          "so parameter file \"%s\" may not be loaded.\n"),
-                argv[0], s_param);
-        cs_exit(EXIT_FAILURE);
-#else
-    if (cs_gui_load_file(s_param) != 0) {
-      fprintf(stderr, _("Error loading parameter file \"%s\".\n"),
-              s_param);
-      bft_mem_end();
-      bft_mem_usage_end();
-      cs_exit(EXIT_FAILURE);
-    }
-#endif /* !defined(HAVE_LIBXML2) */
-
-  }
+  if (s_param != NULL)
+    cs_gui_load_file(s_param);
 
   /* If application name has not been defined, use working directory
      base name as default. */

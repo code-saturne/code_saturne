@@ -97,8 +97,15 @@ type(var_cal_opt) :: vcopt
 
 interface
 
+  function cs_gui_file_is_loaded() result(iihmpr)  &
+       bind(C, name='cs_gui_file_is_loaded')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int) :: iihmpr
+  end function cs_gui_file_is_loaded
+
   subroutine cs_gui_radiative_transfer_parameters()  &
-      bind(C, name='cs_gui_radiative_transfer_parameters')
+       bind(C, name='cs_gui_radiative_transfer_parameters')
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_gui_radiative_transfer_parameters
@@ -111,19 +118,9 @@ end interface
 
 call parameters_read_restart_info
 
-!===============================================================================
-! 0. INITIALISATION DE L'INFORMATION "FICHIER XML (IHM) REQUIS & EXISTE"
-!===============================================================================
+! Check whether a parameters file has been read
 
-
-!   - Interface Code_Saturne
-!     ======================
-
-!     Avec Xml, on regarde si le fichier a ete ouvert (requis et existe,
-!       selon les tests realises dans cs_main)
-!     IIHMPR a ete initialise a 0 juste avant (INIINI)
-
-call csihmp(iihmpr)
+iihmpr = cs_gui_file_is_loaded()
 
 !===============================================================================
 ! 1. INITIALISATION DE PARAMETRES POUR LA PHASE CONTINUE

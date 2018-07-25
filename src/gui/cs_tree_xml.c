@@ -131,7 +131,7 @@ _handle_element(cs_xml_t    *doc,
 {
   if (is_attr) {
     assert(doc->node != NULL);
-    cs_tree_add_child_str(doc->node, name, value);
+    cs_tree_node_set_tag(doc->node, name, value);
   }
   else {
     if (doc->node == NULL) {
@@ -156,7 +156,7 @@ _handle_element(cs_xml_t    *doc,
       if (name != NULL)
         cs_tree_node_set_name(doc->node, name);
       if (value != NULL)
-        cs_tree_node_set_string_val(doc->node, value);
+        cs_tree_node_set_value_str(doc->node, value);
     }
   }
 
