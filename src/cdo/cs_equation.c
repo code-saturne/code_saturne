@@ -247,10 +247,10 @@ _initialize_field_from_ic(cs_real_t         t_eval,
                                           t_eval, v_vals);
       if (f_vals != NULL) /* Initialize values at mesh faces */
         cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_face, def,
-                                          f_vals);
+                                          t_eval, f_vals);
       if (c_vals != NULL) /* Initialize values at mesh cells */
         cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_cell, def,
-                                          c_vals);
+                                          t_eval, c_vals);
       break;
 
     default:

@@ -982,6 +982,7 @@ cs_navsto_system_activate(cs_navsto_param_model_t        model,
                                              CS_ADVECTION_FIELD_NAVSTO);
 
   cs_param_bc_type_t p_bc_type = CS_PARAM_N_BC_TYPES;
+#if 0 /* TODO fix compilation */
   switch (bndr_default) {
   case CS_DOMAIN_BOUNDARY_WALL:
     p_bc_type = CS_PARAM_BC_HMG_DIRICHLET;
@@ -995,7 +996,7 @@ cs_navsto_system_activate(cs_navsto_param_model_t        model,
               __func__);
     return NULL;
   } /* Switch */
-
+#endif
 
   /* Additional initialization fitting the choice of model */
   switch (navsto->param->coupling) {
@@ -1139,8 +1140,10 @@ cs_navsto_system_init_setup(void)
 
   /* Set field metadata */
   int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
+#if 0 /* TODO fix compilation */
   if (!has_previous)
     field_mask |= CS_FIELD_STEADY;
+#endif
 
   /* Set the location id to define a mesh location support */
   int  location_id = -1;
