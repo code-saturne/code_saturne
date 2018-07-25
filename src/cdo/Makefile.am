@@ -68,6 +68,7 @@ cs_cdovb_vecteq.h \
 cs_cdovcb_scaleq.h \
 cs_dbg.h \
 cs_domain.h \
+cs_domain_boundary.h \
 cs_domain_op.h \
 cs_domain_setup.h \
 cs_equation.h \
@@ -126,6 +127,7 @@ cs_cdovb_vecteq.c \
 cs_cdovcb_scaleq.c \
 cs_dbg.c \
 cs_domain.c \
+cs_domain_boundary.c \
 cs_domain_op.c \
 cs_domain_setup.c \
 cs_equation.c \

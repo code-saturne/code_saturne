@@ -226,13 +226,15 @@ _apply_param(const cs_navsto_param_t    *nsp,
  *         system is coupled using an Uzawa-Augmented Lagrangian approach
  *
  * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
  *
  * \return a pointer to the context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void *
-_create_uzawa_context(cs_navsto_param_t    *nsp)
+_create_uzawa_context(cs_navsto_param_t    *nsp,
+                      cs_param_bc_type_t    bc)
 {
   assert(nsp != NULL);
   CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
@@ -246,9 +248,9 @@ _create_uzawa_context(cs_navsto_param_t    *nsp)
                                   "velocity",
                                   CS_EQUATION_TYPE_PREDEFINED,
                                   3,
-                                  CS_PARAM_BC_HMG_DIRICHLET);
+                                  bc);
 
-  /* Set the default settings */
+  /* Set the default settings for the momentum equation */
   {
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->momentum);
 
@@ -377,13 +379,15 @@ _uzawa_last_setup(const cs_cdo_connect_t      *connect,
  *         system is coupled using an Artificial Compressibility approach
  *
  * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
  *
  * \return a pointer to the context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void *
-_create_ac_context(cs_navsto_param_t    *nsp)
+_create_ac_context(cs_navsto_param_t    *nsp,
+                   cs_param_bc_type_t    bc)
 {
   assert(nsp != NULL);
   CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
@@ -396,7 +400,7 @@ _create_ac_context(cs_navsto_param_t    *nsp)
                                   "velocity",
                                   CS_EQUATION_TYPE_PREDEFINED,
                                   3,
-                                  CS_PARAM_BC_HMG_DIRICHLET);
+                                  bc);
 
   /* Set the default solver settings */
   {
@@ -519,13 +523,15 @@ _ac_last_setup(const cs_cdo_connect_t      *connect,
  *         system is coupled using an Artificial Compressibility - VPP approach
  *
  * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
  *
  * \return a pointer to the context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void *
-_create_ac_vpp_context(cs_navsto_param_t    *nsp)
+_create_ac_vpp_context(cs_navsto_param_t    *nsp,
+                       cs_param_bc_type_t    bc)
 {
   assert(nsp != NULL);
   CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
@@ -538,7 +544,8 @@ _create_ac_vpp_context(cs_navsto_param_t    *nsp)
                                   "Utilde",
                                   CS_EQUATION_TYPE_PREDEFINED,
                                   3,
-                                  CS_PARAM_BC_HMG_DIRICHLET);
+                                  bc);
+  /* The grad-div equation is usually always hmg Dirichlet */
   nsc->graddiv = cs_equation_add("Graddiv",
                                   "Uhat",
                                   CS_EQUATION_TYPE_PREDEFINED,
@@ -682,13 +689,15 @@ _ac_vpp_last_setup(const cs_cdo_connect_t      *connect,
  *         the rotational form (see Minev & Guermond, 2006, JCP)
  *
  * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
  *
  * \return a pointer to the context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void *
-_create_projection_context(cs_navsto_param_t    *nsp)
+_create_projection_context(cs_navsto_param_t    *nsp,
+                           cs_param_bc_type_t    bc)
 {
   assert(nsp != NULL);
   CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
@@ -701,7 +710,7 @@ _create_projection_context(cs_navsto_param_t    *nsp)
                                     "velocity",
                                     CS_EQUATION_TYPE_PREDEFINED,
                                     3,
-                                    CS_PARAM_BC_HMG_DIRICHLET);
+                                    bc);
 
   /* Set the default solver settings */
   {
@@ -981,28 +990,45 @@ cs_navsto_system_activate(cs_navsto_param_model_t        model,
   navsto->adv_field = cs_advection_field_add("velocity_field",
                                              CS_ADVECTION_FIELD_NAVSTO);
 
+  /* Set the default boundary condition for the equations of the Navier-Stokes
+     system according to the default domain boundary */
+  cs_param_bc_type_t  p_bc_type = CS_PARAM_N_BC_TYPES;
+  switch (cs_domain_boundary_get_default()) {
+
+  case CS_DOMAIN_BOUNDARY_WALL:
+    p_bc_type = CS_PARAM_BC_HMG_DIRICHLET;
+    break;
+  case CS_DOMAIN_BOUNDARY_SYMMETRY:
+    p_bc_type = CS_PARAM_BC_HMG_NEUMANN;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid boundary default type\n",
+              __func__);
+    break;
+
+  } /* Switch */
+
   /* Additional initialization fitting the choice of model */
   switch (navsto->param->coupling) {
 
   case CS_NAVSTO_COUPLING_UZAWA:
-    navsto->context = _create_uzawa_context(navsto->param);
+    navsto->context = _create_uzawa_context(navsto->param, p_bc_type);
     break;
-
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    navsto->context = _create_ac_context(navsto->param);
+    navsto->context = _create_ac_context(navsto->param, p_bc_type);
     break;
-
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    navsto->context = _create_ac_vpp_context(navsto->param);
+    navsto->context = _create_ac_vpp_context(navsto->param, p_bc_type);
     break;
-
   case CS_NAVSTO_COUPLING_PROJECTION:
-    navsto->context = _create_projection_context(navsto->param);
+    navsto->context = _create_projection_context(navsto->param, p_bc_type);
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-    return NULL;
+    break;
+
   }
 
   /* Set the static variable */

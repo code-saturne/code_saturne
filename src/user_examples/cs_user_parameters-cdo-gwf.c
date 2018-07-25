@@ -184,21 +184,21 @@ get_tracer_sol(cs_real_t          time,
 void
 cs_user_model(void)
 {
-  /* Activate CDO/HHO module so that main additional structure are built */
-  cs_domain_t  *domain = cs_glob_domain;
-
-  cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_ONLY);
-
   /* ======================
      Boundary of the domain
      ====================== */
 
   /* Choose a boundary by default */
-  cs_domain_set_default_boundary(domain, CS_DOMAIN_BOUNDARY_SYMMETRY);
+  cs_domain_boundary_set_default(CS_DOMAIN_BOUNDARY_SYMMETRY);
 
   /* Add new boundaries */
-  cs_domain_add_boundary(domain, CS_DOMAIN_BOUNDARY_INLET, "left");
-  cs_domain_add_boundary(domain, CS_DOMAIN_BOUNDARY_OUTLET, "right");
+  cs_domain_boundary_add(CS_DOMAIN_BOUNDARY_INLET, "left");
+  cs_domain_boundary_add(CS_DOMAIN_BOUNDARY_OUTLET, "right");
+
+  /* Activate CDO/HHO module so that main additional structure are built */
+  cs_domain_t  *domain = cs_glob_domain;
+
+  cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_ONLY);
 
   /* =========================
      Generic output management

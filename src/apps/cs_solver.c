@@ -238,9 +238,6 @@ cs_run(void)
   /* Create a new structure for the computational domain */
   cs_glob_domain = cs_domain_create();
 
-  /* Update mesh zones */
-  cs_domain_update_wall_zones(cs_glob_domain);
-
   /* Define MPI-based Couplings if applicable */
 
   cs_gui_syrthes_coupling();

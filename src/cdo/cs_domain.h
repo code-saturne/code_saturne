@@ -3,8 +3,7 @@
 
 /*============================================================================
  * Manage a computational domain
- *  - Physical boundary conditions attached to a domain
- *  - Equations
+ *  - equations, settings, fields, connectivities and geometrical quantities
  *============================================================================*/
 
 /*
@@ -33,6 +32,7 @@
 
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
+#include "cs_domain_boundary.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_time_step.h"
@@ -48,33 +48,13 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Flag related to the activation (or not) of the CDO schemes */
-#define CS_DOMAIN_CDO_MODE_OFF     -1 // CDO schemes are not used
-#define CS_DOMAIN_CDO_MODE_WITH_FV  1 // CDO and legacy FV schemes are used
-#define CS_DOMAIN_CDO_MODE_ONLY     2 // CDO schemes are exclusively used
+#define CS_DOMAIN_CDO_MODE_OFF     -1  /* CDO schemes are not used */
+#define CS_DOMAIN_CDO_MODE_WITH_FV  1  /* CDO and legacy FV schemes are used */
+#define CS_DOMAIN_CDO_MODE_ONLY     2  /* CDO schemes are exclusively used */
 
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/* Physic-driven boundary */
-typedef enum {
-
-  CS_DOMAIN_BOUNDARY_WALL,
-  CS_DOMAIN_BOUNDARY_INLET,
-  CS_DOMAIN_BOUNDARY_OUTLET,
-  CS_DOMAIN_BOUNDARY_SYMMETRY,
-  CS_DOMAIN_N_BOUNDARY_TYPES
-
-} cs_domain_boundary_type_t;
-
-typedef struct {
-
-  cs_domain_boundary_type_t    default_type; /* boundary set by default */
-  int                          n_zones;
-  int                         *zone_ids;     /* List of boundary zone ids */
-  cs_domain_boundary_type_t   *zone_type;    /* Type of boundary by zone */
-
-} cs_domain_boundary_t;
 
 typedef struct {
 
@@ -106,11 +86,6 @@ typedef struct {
   */
   cs_cdo_connect_t              *connect;
   cs_cdo_quantities_t           *cdo_quantities;
-
-  /* Physical boundary conditions on the computational domain:
-     inlet, outmet, wall, symmetry...
-     Store the type of boundary set on each boundary face */
-  cs_domain_boundary_t          *boundary;
 
   /* Time step management */
   bool                      only_steady;
@@ -267,47 +242,6 @@ cs_domain_def_time_step_by_function(cs_domain_t          *domain,
 void
 cs_domain_def_time_step_by_value(cs_domain_t   *domain,
                                  double         dt);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of the domain boundary condition
- *
- * \param[in] type     type of domain boundary
- *
- * \return the associated boundary name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_domain_get_boundary_name(cs_domain_boundary_type_t  type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the default boundary related to this domain
- *
- * \param[in, out]   domain       pointer to a cs_domain_t structure
- * \param[in]        type         type of boundary to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_default_boundary(cs_domain_t                 *domain,
-                               cs_domain_boundary_type_t    type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add a boundary type defined on a mesh location
- *
- * \param[in, out]  domain       pointer to a cs_domain_t structure
- * \param[in]       type         type of boundary to set
- * \param[in]       zone_name    name of the zone related to this boundary
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_add_boundary(cs_domain_t                 *domain,
-                       cs_domain_boundary_type_t    type,
-                       const char                  *zone_name);
 
 /*----------------------------------------------------------------------------*/
 /*!

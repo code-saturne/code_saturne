@@ -419,27 +419,21 @@ cs_walldistance_activate(void)
   assert(cs_wd_poisson_eq == NULL);
 
   cs_equation_t  *eq =
-    cs_equation_add("WallDistance",              // equation name
-                    "WallDistance",              // variable name
-                    CS_EQUATION_TYPE_PREDEFINED, // type of the equation
-                    1,                           // dimension of the variable
-                    CS_PARAM_BC_HMG_NEUMANN);    // default BC
+    cs_equation_add("WallDistance",              /* equation name */
+                    "WallDistance",              /* variable name */
+                    CS_EQUATION_TYPE_PREDEFINED, /* type of the equation */
+                    1,                           /* dimension of the variable */
+                    CS_PARAM_BC_HMG_NEUMANN);    /* default BC */
 
   /* Set now the default numerical parameters for this equation */
   cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
   /* Enforcement of the Dirichlet boundary conditions */
-  cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
+  cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
 
   /* System to solve is SPD by construction */
   cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-
-#if defined(HAVE_PETSC)  /* Modify the default settings */
-  cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
   cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
-#else
-  cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-#endif
 
   /* Set the static pointer */
   cs_wd_poisson_eq = eq;
@@ -482,8 +476,8 @@ cs_walldistance_setup(void)
   cs_real_t  unity = 1.0;
 
   cs_equation_add_source_term_by_val(eqp,
-                                     st_zone_name,   // zone name
-                                     &unity);        // value to set
+                                     st_zone_name,   /* zone name */
+                                     &unity);        /* value to set */
 }
 
 /*----------------------------------------------------------------------------*/

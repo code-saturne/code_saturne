@@ -417,13 +417,11 @@ cs_user_model(void)
 
   /*! [param_cdo_domain_boundary] */
   {
-    cs_domain_t  *domain = cs_glob_domain;
-
     /* Choose a boundary by default */
-    cs_domain_set_default_boundary(domain, CS_DOMAIN_BOUNDARY_WALL);
+    cs_domain_boundary_set_default(CS_DOMAIN_BOUNDARY_WALL);
 
     /* Add a new boundary
-     *  >> cs_domain_add_boundary(domain, type_of_boundary, zone_name);
+     *  >> cs_domain_add_boundary(type_of_boundary, zone_name);
      *
      * zone_name is either a predefined one or user-defined one
      * type_of_boundary is one of the following keywords:
@@ -433,8 +431,8 @@ cs_user_model(void)
      *   CS_DOMAIN_BOUNDARY_SYMMETRY
      */
 
-    cs_domain_add_boundary(domain, CS_DOMAIN_BOUNDARY_INLET, "in");
-    cs_domain_add_boundary(domain, CS_DOMAIN_BOUNDARY_OUTLET, "out");
+    cs_domain_boundary_add(CS_DOMAIN_BOUNDARY_INLET, "in");
+    cs_domain_boundary_add(CS_DOMAIN_BOUNDARY_OUTLET, "out");
   }
   /*! [param_cdo_domain_boundary] */
 

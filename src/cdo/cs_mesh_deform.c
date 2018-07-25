@@ -53,6 +53,7 @@
 
 #include "cs_boundary_zone.h"
 #include "cs_domain.h"
+#include "cs_domain_boundary.h"
 #include "cs_domain_setup.h"
 #include "cs_equation.h"
 #include "cs_mesh_builder.h"
@@ -257,6 +258,8 @@ cs_mesh_deform_define_dirichlet_bc_zones(cs_lnum_t  n_boundary_zones,
 void
 cs_mesh_deform_setup(cs_domain_t  *domain)
 {
+  CS_UNUSED(domain);
+
   cs_property_t  *conductivity = cs_property_by_name("unity");
 
   /* Retrieve the equation to set
@@ -266,7 +269,7 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
 
   /* TODO implement a finer control to make mesh deformation
      compatible with other CDO modules */
-  cs_domain_set_default_boundary(domain, CS_DOMAIN_BOUNDARY_SYMMETRY);
+  cs_domain_boundary_set_default(CS_DOMAIN_BOUNDARY_SYMMETRY);
 
   for (int i = 0; i < 3; i++) {
 

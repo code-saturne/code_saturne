@@ -1,6 +1,5 @@
 /*============================================================================
  * Manage a computational domain within the CDO framework
- *  - Physical boundary conditions attached to a domain
  *  - Properties and advection fields attached to this domain
  *  - Equations to solve on this domain
  *============================================================================*/
@@ -52,6 +51,7 @@
 #include <bft_mem.h>
 
 #include "cs_boundary_zone.h"
+#include "cs_domain_boundary.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
@@ -73,8 +73,8 @@ BEGIN_C_DECLS
 /*!
   \file cs_domain.c
 
-  \brief  Manage a computational domain within the CDO framework
-    - Physical boundary conditions attached to a domain
+  \brief  Manage a computational domain
+    - Settings, fields, connectivities and geometrical quantities
     - Properties and advection fields attached to this domain
     - Equations to solve on this domain
 */
@@ -99,14 +99,6 @@ static const char _err_empty_domain[] =
   " Please check your settings.\n";
 
 static double  cs_domain_kahan_time_compensation = 0.0;
-
-static const char
-cs_domain_boundary_name[CS_DOMAIN_N_BOUNDARY_TYPES][CS_BASE_STRING_LEN] =
-  { N_("wall"),
-    N_("inlet"),
-    N_("outlet"),
-    N_("symmetry")
-  };
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -182,9 +174,9 @@ cs_domain_create(void)
   domain->time_step = cs_get_glob_time_step();
 
   /* Time options () */
-  domain->time_options.inpdt0 = 0; // standard calculation
+  domain->time_options.inpdt0 = 0; /* standard calculation */
   domain->time_options.iptlro = 0;
-  domain->time_options.idtvar = 0; // constant time step by default
+  domain->time_options.idtvar = 0; /* constant time step by default */
   domain->time_options.coumax = 1.;
   domain->time_options.cflmmx = 0.99;
   domain->time_options.foumax = 10.;
@@ -192,7 +184,7 @@ cs_domain_create(void)
   domain->time_options.dtref = default_time_step;
   domain->time_options.dtmin = default_time_step;
   domain->time_options.dtmax = default_time_step;
-  domain->time_options.relxst = 0.7; // Not useful in CDO schemes
+  domain->time_options.relxst = 0.7; /* Not useful in CDO schemes */
 
   /* Other options */
   domain->restart_nt = 0;
@@ -200,21 +192,15 @@ cs_domain_create(void)
   domain->verbosity = 1;
   domain->profiling = false;
 
-  /* Allocate the domain boundary structure */
-  BFT_MALLOC(domain->boundary, 1, cs_domain_boundary_t);
-
-  /* Default choice for the boundary of the domain */
-  domain->boundary->default_type = CS_DOMAIN_BOUNDARY_WALL;
-  domain->boundary->n_zones = 0;
-  domain->boundary->zone_ids = NULL;
-  domain->boundary->zone_type = NULL;
-
   /* By default: CDO-HHO schemes are not activated */
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
 
+  /* By default a wall is defined for the whole boundary of the domain */
+  cs_domain_boundary_set_default(CS_DOMAIN_BOUNDARY_WALL);
+
   /* Monitoring */
-  CS_TIMER_COUNTER_INIT(domain->tcp); // domain post
-  CS_TIMER_COUNTER_INIT(domain->tcs); // domain setup
+  CS_TIMER_COUNTER_INIT(domain->tcp); /* domain post */
+  CS_TIMER_COUNTER_INIT(domain->tcs); /* domain setup */
 
   /* Initialization of several modules */
   cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
@@ -244,15 +230,14 @@ cs_domain_free(cs_domain_t   **p_domain)
   domain->mesh = NULL;
   domain->mesh_quantities = NULL;
 
-  BFT_FREE(domain->boundary->zone_ids);
-  BFT_FREE(domain->boundary->zone_type);
-  BFT_FREE(domain->boundary);
-
   domain->time_step_def = cs_xdef_free(domain->time_step_def);
   domain->time_step = NULL;
 
   if (domain->cdo_context != NULL)
     BFT_FREE(domain->cdo_context);
+
+  /* Free arrays related to the domain boundary */
+  cs_domain_boundary_free();
 
   /* Free CDO structures related to geometric quantities and connectivity */
   domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);
@@ -307,88 +292,6 @@ cs_domain_get_cdo_mode(const cs_domain_t   *domain)
     return CS_DOMAIN_CDO_MODE_OFF;
 
   return domain->cdo_context->mode;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of the domain boundary condition
- *          This name is also used as a name for zone definition
- *
- * \param[in] type     type of boundary
- *
- * \return the associated boundary name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_domain_get_boundary_name(cs_domain_boundary_type_t  type)
-{
-  if (type == CS_DOMAIN_N_BOUNDARY_TYPES)
-    return NULL;
-  else
-    return cs_domain_boundary_name[type];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the default boundary related to this domain
- *
- * \param[in, out]   domain       pointer to a cs_domain_t structure
- * \param[in]        type         type of boundary to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_default_boundary(cs_domain_t                 *domain,
-                               cs_domain_boundary_type_t    type)
-{
-  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-
-  if (type == CS_DOMAIN_BOUNDARY_WALL ||
-      type == CS_DOMAIN_BOUNDARY_SYMMETRY)
-    domain->boundary->default_type = type;
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Invalid type of boundary by default.\n"
-                " Valid choice is CS_DOMAIN_BOUNDARY_WALL or"
-                " CS_DOMAIN_BOUNDARY_SYMMETRY."), __func__);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add a boundary type defined on a mesh location
- *
- * \param[in, out]  domain       pointer to a cs_domain_t structure
- * \param[in]       type         type of boundary to set
- * \param[in]       zone_name    name of the zone related to this boundary
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_add_boundary(cs_domain_t                 *domain,
-                       cs_domain_boundary_type_t    type,
-                       const char                  *zone_name)
-{
-  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-
-  const cs_zone_t  *zone = cs_boundary_zone_by_name(zone_name);
-
-  if (zone == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid zone name %s.\n"
-                " This zone is not already defined.\n"), zone_name);
-
-  int  new_id = domain->boundary->n_zones;
-
-  domain->boundary->n_zones++;
-
-  BFT_REALLOC(domain->boundary->zone_ids,
-              domain->boundary->n_zones, int);
-  domain->boundary->zone_ids[new_id] = zone->id;
-
-  BFT_REALLOC(domain->boundary->zone_type,
-              domain->boundary->n_zones, cs_domain_boundary_type_t);
-  domain->boundary->zone_type[new_id] = type;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -45,6 +45,7 @@
 #include "cs_control.h"
 #include "cs_defs.h"
 #include "cs_domain.h"
+#include "cs_domain_boundary.h"
 #include "cs_domain_op.h"
 #include "cs_domain_setup.h"
 #include "cs_equation.h"
@@ -286,23 +287,7 @@ _log_setup(const cs_domain_t   *domain)
   cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
   /* Boundaries of the domain */
-  cs_domain_boundary_t  *bdy = domain->boundary;
-  cs_log_printf(CS_LOG_SETUP, "\n  Domain boundary by default: %s\n",
-                cs_domain_get_boundary_name(bdy->default_type));
-
-  for (int i = 0; i < bdy->n_zones; i++) {
-
-    const cs_zone_t  *z = cs_boundary_zone_by_id(bdy->zone_ids[i]);
-
-    cs_gnum_t  n_g_elts = (cs_gnum_t)z->n_elts;
-    if (cs_glob_n_ranks > 1)
-      cs_parall_counter(&n_g_elts, 1);
-
-    cs_log_printf(CS_LOG_SETUP, " %s: %s: %u boundary faces,",
-                  z->name, cs_domain_get_boundary_name(bdy->zone_type[i]),
-                  (unsigned int)n_g_elts);
-
-  }
+  cs_domain_boundary_log_setup();
 
   /* Time step summary */
   cs_log_printf(CS_LOG_SETUP, "\n  Time step information\n");
@@ -385,6 +370,11 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
   cs_property_def_iso_by_value(pty, "cells", 1.0);
 
   cs_timer_t t0 = cs_timer_time();
+
+  /* Add a boundary zone gathering all "wall" boundaries */
+  if (cs_navsto_system_is_activated() ||
+      cs_walldistance_is_activated())
+    cs_domain_boundary_def_wall_zones();
 
   /* According to the settings, add or not predefined equations:
       >> Wall distance
