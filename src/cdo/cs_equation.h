@@ -83,6 +83,23 @@ cs_equation_by_name(const char    *eqname);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check if the asociated field to a \ref cs_equation_t structure
+ *         has name equal to fld_name
+ *
+ * \param[in]  eq          pointer to a \ref cs_equation_t structure to test
+ * \param[in]  fldname     name of the field
+ *
+ * \return true if the \ref cs_equation_t structure has an associated field
+ *         named fld_name, otherwise false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_has_field_name(const cs_equation_t  *eq,
+                           const char           *fld_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the cs_equation_param_t structure associated to a
  *         cs_equation_t structure thanks to the equation name
  *

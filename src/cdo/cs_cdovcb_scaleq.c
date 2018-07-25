@@ -1131,14 +1131,14 @@ cs_cdovcb_scaleq_update_field(const cs_real_t            *solu,
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
  *
- * \param[in]  context  pointer to a data structure cast on-the-fly
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
  *
  * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovcb_scaleq_get_vertex_values(const void      *context)
+cs_cdovcb_scaleq_get_vertex_values(void      *context)
 {
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
@@ -1155,16 +1155,16 @@ cs_cdovcb_scaleq_get_vertex_values(const void      *context)
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
  *
- * \param[in]  data    pointer to a data structure
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
  *
  * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovcb_scaleq_get_cell_values(const void          *data)
+cs_cdovcb_scaleq_get_cell_values(void     *context)
 {
-  const cs_cdovcb_scaleq_t  *eqc = (const cs_cdovcb_scaleq_t  *)data;
+  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
 
   if (eqc == NULL)
     return NULL;

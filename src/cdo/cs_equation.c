@@ -242,15 +242,62 @@ _initialize_field_from_ic(cs_real_t         t_eval,
       break;
 
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
-      if (v_vals != NULL) /* Initialize values at mesh vertices */
-        cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_vtx, def,
-                                          t_eval, v_vals);
-      if (f_vals != NULL) /* Initialize values at mesh faces */
-        cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_face, def,
-                                          t_eval, f_vals);
-      if (c_vals != NULL) /* Initialize values at mesh cells */
-        cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_cell, def,
-                                          t_eval, c_vals);
+      {
+        const cs_param_dof_reduction_t  red = eqp->dof_reduction;
+
+        if (v_vals != NULL) { /* Initialize values at mesh vertices */
+          assert(red == CS_PARAM_REDUCTION_DERHAM);
+          cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_vtx,
+                                            def, t_eval,
+                                            v_vals);
+        }
+
+        if (f_vals != NULL) { /* Initialize values at mesh faces */
+
+          switch (red) {
+
+          case CS_PARAM_REDUCTION_DERHAM:
+            cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_face,
+                                              def, t_eval,
+                                              f_vals);
+            break;
+          case CS_PARAM_REDUCTION_AVERAGE:
+            cs_evaluate_average_on_faces_by_analytic(def, t_eval, f_vals);
+            break;
+
+          default:
+            bft_error(__FILE__, __LINE__, 0,
+                      _(" Incompatible reduction for equation %s.\n"),
+                      eqp->name);
+
+          } /* Switch on possible reduction types */
+          break;
+
+        } /* face values */
+
+        if (c_vals != NULL) { /* Initialize values at mesh cells */
+
+          switch (red) {
+          case CS_PARAM_REDUCTION_DERHAM:
+            cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_cell,
+                                              def, t_eval,
+                                              c_vals);
+            break;
+          case CS_PARAM_REDUCTION_AVERAGE:
+            cs_evaluate_average_on_cells_by_analytic(def, t_eval, c_vals);
+            break;
+
+          default:
+            bft_error(__FILE__, __LINE__, 0,
+                      _(" Incompatible reduction for equation %s.\n"),
+                      eqp->name);
+
+          } /* Switch on possible reduction types */
+          break;
+
+        } /* cell values */
+
+      } /* Definition by an analytic function */
       break;
 
     default:
@@ -553,6 +600,36 @@ cs_equation_by_name(const char    *eqname)
   }
 
   return eq;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if the asociated field to a \ref cs_equation_t structure
+ *         has name equal to fld_name
+ *
+ * \param[in]  eq          pointer to a \ref cs_equation_t structure to test
+ * \param[in]  fldname     name of the field
+ *
+ * \return true if the \ref cs_equation_t structure has an associated field
+ *         named fld_name, otherwise false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_has_field_name(const cs_equation_t  *eq,
+                           const char           *fld_name)
+{
+  if (eq == NULL)
+    return false;
+
+  cs_field_t  *fld = cs_field_by_id(eq->field_id);
+  if (fld == NULL)
+    return false;
+
+  if (strcmp(fld->name, fld_name) == 0)
+    return true;
+  else
+    return false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1699,6 +1776,15 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     cs_field_t  *var_field = cs_field_by_id(eq->field_id);
     cs_field_t  *bflux = cs_field_by_id(eq->boundary_flux_id);
 
+    /* By default, 0 is set as initial condition for the computational domain.
+
+       Warning: This operation has to be done after the settings of the
+       Dirichlet boundary conditions where an interface sum is performed
+       for vertex-based schemes
+    */
+    if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
+      _initialize_field_from_ic(ts->t_cur, eq);
+
     /* Enforce initial boundary condition if there is Dirichlet values */
     if (eq->set_dir_bc != NULL) {
 
@@ -1727,15 +1813,6 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
     /* Assign the initial boundary flux where Neumann is defined */
     cs_equation_init_boundary_flux_from_bc(ts->t_cur, quant, eqp, bflux->val);
-
-    /* By default, 0 is set as initial condition for the computational domain.
-
-       Warning: This operation has to be done after the settings of the
-       Dirichlet boundary conditions where an interface sum is performed
-       for vertex-based schemes
-    */
-    if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
-      _initialize_field_from_ic(ts->t_cur, eq);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);

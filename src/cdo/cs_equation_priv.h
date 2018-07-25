@@ -282,14 +282,14 @@ typedef void
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
  *
- * \param[in]  scheme_context  pointer to a data structure cast on-the-fly
+ * \param[in, out]  scheme_context  pointer to a data structure cast on-the-fly
  *
  * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
 typedef cs_real_t *
-(cs_equation_get_values_t)(const void      *scheme_context);
+(cs_equation_get_values_t)(void      *scheme_context);
 
 /*----------------------------------------------------------------------------
  * Structure type

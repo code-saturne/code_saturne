@@ -294,14 +294,14 @@ cs_cdofb_scaleq_extra_op(const char                 *eqname,
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
  *
- * \param[in]  context  pointer to a data structure cast on-the-fly
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
  *
  * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdofb_scaleq_get_cell_values(const void      *context);
+cs_cdofb_scaleq_get_cell_values(void      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -309,14 +309,14 @@ cs_cdofb_scaleq_get_cell_values(const void      *context);
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
  *
- * \param[in] context       pointer to \ref cs_cdofb_scaleq_t structure
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
  *
  * \return  a pointer to an array of cs_real_t (size n_faces)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdofb_scaleq_get_face_values(const void    *context);
+cs_cdofb_scaleq_get_face_values(void    *context);
 
 /*----------------------------------------------------------------------------*/
 

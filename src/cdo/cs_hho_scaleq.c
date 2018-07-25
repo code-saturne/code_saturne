@@ -1362,16 +1362,16 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
  * \brief  Get the computed values at faces (DoF used in the linear system are
  *         located at primal faces)
  *
- * \param[in]  data    pointer to a data structure
+ * \param[in, out]  data    pointer to a data structure cast on-the-fly
  *
  * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_hho_scaleq_get_face_values(const void          *data)
+cs_hho_scaleq_get_face_values(void          *data)
 {
-  const cs_hho_scaleq_t  *eqc = (const cs_hho_scaleq_t  *)data;
+  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t  *)data;
 
   if (eqc == NULL)
     return NULL;
@@ -1384,16 +1384,16 @@ cs_hho_scaleq_get_face_values(const void          *data)
  * \brief  Get the computed values at cells (DoF used in the linear system are
  *         located at primal faces)
  *
- * \param[in]  data    pointer to a data structure
+ * \param[in, out]  data    pointer to a data structure cast on the fly
  *
  * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_hho_scaleq_get_cell_values(const void          *data)
+cs_hho_scaleq_get_cell_values(void          *data)
 {
-  const cs_hho_scaleq_t  *eqc = (const cs_hho_scaleq_t  *)data;
+  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t  *)data;
 
   if (eqc == NULL)
     return NULL;

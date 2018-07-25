@@ -943,14 +943,14 @@ cs_cdovb_vecteq_update_field(const cs_real_t            *solu,
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
  *
- * \param[in]  context  pointer to a data structure cast on-the-fly
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
  *
  * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_vecteq_get_vertex_values(const void      *context)
+cs_cdovb_vecteq_get_vertex_values(void      *context)
 {
   cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
@@ -966,14 +966,14 @@ cs_cdovb_vecteq_get_vertex_values(const void      *context)
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
  *
- * \param[in]  context  pointer to a data structure cast on-the-fly
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
  *
  * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_vecteq_get_cell_values(const void      *context)
+cs_cdovb_vecteq_get_cell_values(void      *context)
 {
   cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
