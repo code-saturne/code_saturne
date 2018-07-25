@@ -1354,7 +1354,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                     smbrp);
 
   if (CS_F_(u)->id == f_id) {
-    cs_field_t *f = cs_field_by_name_try("velocity_explicit_balance");
+    f = cs_field_by_name_try("velocity_explicit_balance");
 
     if (f != NULL) {
       cs_real_3_t *cpro_cv_df_v = (cs_real_3_t *)f->val;
