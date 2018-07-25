@@ -246,11 +246,11 @@ _initialize_field_from_ic(cs_real_t         t_eval,
         cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_vtx, def,
                                           t_eval, v_vals);
       if (f_vals != NULL) /* Initialize values at mesh faces */
-        cs_evaluate_potential_by_value(dof_flag | cs_flag_primal_face, def,
-                                       f_vals);
+        cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_face, def,
+                                          f_vals);
       if (c_vals != NULL) /* Initialize values at mesh cells */
-        cs_evaluate_potential_by_value(dof_flag | cs_flag_primal_cell, def,
-                                       c_vals);
+        cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_cell, def,
+                                          c_vals);
       break;
 
     default:
