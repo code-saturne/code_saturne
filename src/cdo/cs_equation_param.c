@@ -1446,10 +1446,12 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
  * \param[in]       z_name    name of the associated zone (if NULL or
  *                            "" all cells are considered)
  * \param[in]       val       pointer to the value
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
                             const char             *z_name,
                             cs_real_t              *val)
@@ -1475,6 +1477,8 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
   eqp->n_ic_defs += 1;
   BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
   eqp->ic_defs[new_id] = d;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1490,10 +1494,12 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
  * \param[in]       z_name    name of the associated zone (if NULL or
  *                            "" all cells are considered)
  * \param[in]       quantity  quantity to distribute over the mesh location
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
                           const char             *z_name,
                           double                  quantity)
@@ -1519,6 +1525,8 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
   eqp->n_ic_defs += 1;
   BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
   eqp->ic_defs[new_id] = d;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1533,10 +1541,12 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
  *                           all cells are considered)
  * \param[in]      analytic  pointer to an analytic function
  * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
                                const char             *z_name,
                                cs_analytic_func_t     *analytic,
@@ -1565,6 +1575,8 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
   eqp->n_ic_defs += 1;
   BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
   eqp->ic_defs[new_id] = d;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1577,10 +1589,12 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
  * \param[in]       bc_type   type of boundary condition to add
  * \param[in]       z_name    name of the related boundary zone
  * \param[in]       values    pointer to a array storing the values
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
                             const cs_param_bc_type_t     bc_type,
                             const char                  *z_name,
@@ -1608,6 +1622,8 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
   eqp->n_bc_defs += 1;
   BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = d;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1622,10 +1638,12 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
  * \param[in]       index     optional pointer to the array index
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                             const cs_param_bc_type_t    bc_type,
                             const char                 *z_name,
@@ -1667,6 +1685,8 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
   eqp->n_bc_defs += 1;
   BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = d;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1681,10 +1701,12 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
  *                           all cells are considered)
  * \param[in]      analytic  pointer to an analytic function defining the value
  * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- */
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+*/
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
                                const cs_param_bc_type_t    bc_type,
                                const char                 *z_name,
@@ -1716,6 +1738,8 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
   eqp->n_bc_defs += 1;
   BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = d;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
