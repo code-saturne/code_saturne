@@ -314,15 +314,6 @@ _uzawa_init_setup(cs_navsto_system_t          *ns)
   /* Handle the momentum equation */
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
 
-  cs_field_t *fld = ns->velocity;
-  /* Set default value for default keys */
-  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
-  fld = ns->pressure;
-  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
-
   _apply_param(nsp, mom_eqp);
 
   /* Link the time property to the momentum equation */
@@ -468,12 +459,6 @@ _ac_init_setup(cs_navsto_system_t     *ns)
   assert(nsp != NULL && nsc != NULL);
 
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
-
-  cs_field_t *fld = ns->pressure;
-  /* Set default value for default keys */
-  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
 
   /* Navier-Stokes parameters induce numerical settings for the related
    equations */
@@ -630,15 +615,6 @@ _ac_vpp_init_setup(cs_navsto_system_t     *ns)
 
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
   cs_equation_param_t  *gd_eqp = cs_equation_get_param(nsc->graddiv);
-
-  cs_field_t *fld = ns->velocity;
-  /* Set default value for default keys */
-  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
-  fld = ns->pressure;
-  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
 
   /* Navier-Stokes parameters induce numerical settings for the related
      equations */
@@ -1155,22 +1131,19 @@ cs_navsto_system_get_param(void)
 void
 cs_navsto_system_init_setup(void)
 {
-  cs_navsto_system_t  *navsto = cs_navsto_system;
+  cs_navsto_system_t  *ns = cs_navsto_system;
 
-  if (navsto == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_navsto_param_t  *nsp = navsto->param;
+  cs_navsto_param_t  *nsp = ns->param;
 
-  /* Create if needed velocity and pressure fields */
-
-  int  location_id = -1; /* initialize values to avoid a warning */
+  /* Set field metadata */
   int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
-
-  const bool has_previous = cs_navsto_param_is_steady(nsp) ? false:true;
-
   if (!has_previous)
     field_mask |= CS_FIELD_STEADY;
 
+  /* Set the location id to define a mesh location support */
+  int  location_id = -1;
   switch (nsp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOFB:
@@ -1185,19 +1158,31 @@ cs_navsto_system_init_setup(void)
               "%s: Invalid space discretization scheme.", __func__);
   }
 
-  /* Nothing to do if the velocity or pressure fields have been already
-     created */
-  navsto->velocity = cs_field_find_or_create("velocity",
-                                             field_mask,
-                                             location_id,
-                                             3, /* dimension */
-                                             has_previous);
+  /* Create if needed velocity and pressure fields */
+  const int  post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+  const bool  has_previous = cs_navsto_param_is_steady(nsp) ? false:true;
 
-  navsto->pressure = cs_field_find_or_create("pressure",
-                                             field_mask,
-                                             location_id,
-                                             1, /* dimension */
-                                             has_previous);
+  /* Handle the velocity field */
+  ns->velocity = cs_field_find_or_create("velocity",
+                                         field_mask,
+                                         location_id,
+                                         3, /* dimension */
+                                         has_previous);
+
+  /* Set default value for keys related to log and post-processing */
+  cs_field_set_key_int(ns->velocity, cs_field_key_id("log"), 1);
+  cs_field_set_key_int(ns->velocity, cs_field_key_id("post_vis"), post_flag);
+
+  /* Handle the pressure field */
+  ns->pressure = cs_field_find_or_create("pressure",
+                                         field_mask,
+                                         location_id,
+                                         1, /* dimension */
+                                         has_previous);
+
+  /* Set default value for keys related to log and post-processing */
+  cs_field_set_key_int(ns->pressure, cs_field_key_id("log"), 1);
+  cs_field_set_key_int(ns->pressure, cs_field_key_id("post_vis"), post_flag);
 
   /* TODO: temperature for the energy equation */
 
@@ -1205,19 +1190,19 @@ cs_navsto_system_init_setup(void)
   switch (nsp->coupling) {
 
   case CS_NAVSTO_COUPLING_UZAWA:
-    _uzawa_init_setup(navsto);
+    _uzawa_init_setup(ns);
     break;
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    _ac_init_setup(navsto);
+    _ac_init_setup(ns);
     break;
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    _ac_vpp_init_setup(navsto);
+    _ac_vpp_init_setup(ns);
     break;
 
   case CS_NAVSTO_COUPLING_PROJECTION:
-    _projection_init_setup(navsto);
+    _projection_init_setup(ns);
     break;
 
   default:
@@ -1241,23 +1226,23 @@ void
 cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
                                 const cs_cdo_quantities_t  *quant)
 {
-  cs_navsto_system_t  *navsto = cs_navsto_system;
+  cs_navsto_system_t  *ns = cs_navsto_system;
 
   assert(connect != NULL && quant != NULL);
-  if (navsto == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_navsto_param_t  *nsp = navsto->param;
+  cs_navsto_param_t  *nsp = ns->param;
 
   /* Avoid an error if no definition is given for the mandatory physical
      properties */
   cs_real_t  one = 1.0;
-  if (navsto->density->n_definitions == 0) /* Not set by the user */
-    cs_property_def_iso_by_value(navsto->density,
+  if (ns->density->n_definitions == 0) /* Not set by the user */
+    cs_property_def_iso_by_value(ns->density,
                                  NULL, /* all cells */
                                  one);
 
-  if (navsto->lami_viscosity->n_definitions == 0) /* Not set by the user */
-    cs_property_def_iso_by_value(navsto->lami_viscosity,
+  if (ns->lami_viscosity->n_definitions == 0) /* Not set by the user */
+    cs_property_def_iso_by_value(ns->lami_viscosity,
                                  NULL, /* all cells */
                                  one);
 
@@ -1271,31 +1256,31 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
       switch (nsp->coupling) {
 
       case CS_NAVSTO_COUPLING_UZAWA:
-        navsto->init = cs_cdofb_navsto_init_uzawa_context;
-        navsto->compute = cs_cdofb_navsto_uzawa_compute;
+        ns->init = cs_cdofb_navsto_init_uzawa_context;
+        ns->compute = cs_cdofb_navsto_uzawa_compute;
 
-        _uzawa_last_setup(connect, quant, navsto);
+        _uzawa_last_setup(connect, quant, ns);
         break;
 
       case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-        navsto->init = cs_cdofb_navsto_init_ac_context;
-        navsto->compute = cs_cdofb_navsto_ac_compute;
+        ns->init = cs_cdofb_navsto_init_ac_context;
+        ns->compute = cs_cdofb_navsto_ac_compute;
 
-        _ac_last_setup(connect, quant, navsto);
+        _ac_last_setup(connect, quant, ns);
         break;
 
       case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-        navsto->init = cs_cdofb_navsto_init_ac_vpp_context;
-        navsto->compute = cs_cdofb_navsto_ac_vpp_compute;
+        ns->init = cs_cdofb_navsto_init_ac_vpp_context;
+        ns->compute = cs_cdofb_navsto_ac_vpp_compute;
 
-        _ac_vpp_last_setup(connect, quant, navsto);
+        _ac_vpp_last_setup(connect, quant, ns);
         break;
 
       case CS_NAVSTO_COUPLING_PROJECTION:
-        navsto->init = cs_cdofb_navsto_init_proj_context;
-        navsto->compute = cs_cdofb_navsto_proj_compute;
+        ns->init = cs_cdofb_navsto_init_proj_context;
+        ns->compute = cs_cdofb_navsto_proj_compute;
 
-        _projection_last_setup(connect, quant, navsto);
+        _projection_last_setup(connect, quant, ns);
         break;
 
       default:
@@ -1304,7 +1289,7 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
 
       }
 
-      navsto->free = cs_cdofb_navsto_free_context;
+      ns->free = cs_cdofb_navsto_free_context;
 
     }
     break; /* Lowest-order face-based schemes */
@@ -1318,19 +1303,19 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
       switch (nsp->coupling) {
 
       case CS_NAVSTO_COUPLING_UZAWA:
-        _uzawa_last_setup(connect, quant, navsto);
+        _uzawa_last_setup(connect, quant, ns);
         break;
 
       case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-        _ac_last_setup(connect, quant, navsto);
+        _ac_last_setup(connect, quant, ns);
         break;
 
       case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-        _ac_vpp_last_setup(connect, quant, navsto);
+        _ac_vpp_last_setup(connect, quant, ns);
         break;
 
       case CS_NAVSTO_COUPLING_PROJECTION:
-        _projection_last_setup(connect, quant, navsto);
+        _projection_last_setup(connect, quant, ns);
         break;
 
       default:
@@ -1348,7 +1333,7 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
   }
 
   /* Add default post-processing related to the Navier-Stokes system */
-  cs_post_add_time_mesh_dep_output(cs_navsto_system_extra_post, navsto);
+  cs_post_add_time_mesh_dep_output(cs_navsto_system_extra_post, ns);
 }
 
 /*----------------------------------------------------------------------------*/
