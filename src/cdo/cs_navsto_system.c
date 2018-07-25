@@ -981,23 +981,6 @@ cs_navsto_system_activate(cs_navsto_param_model_t        model,
   navsto->adv_field = cs_advection_field_add("velocity_field",
                                              CS_ADVECTION_FIELD_NAVSTO);
 
-  cs_param_bc_type_t p_bc_type = CS_PARAM_N_BC_TYPES;
-#if 0 /* TODO fix compilation */
-  switch (bndr_default) {
-  case CS_DOMAIN_BOUNDARY_WALL:
-    p_bc_type = CS_PARAM_BC_HMG_DIRICHLET;
-    break;
-  case CS_DOMAIN_BOUNDARY_SYMMETRY:
-    p_bc_type = CS_PARAM_BC_HMG_NEUMANN;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, " %s: Invalid boundary default type\n",
-              __func__);
-    return NULL;
-  } /* Switch */
-#endif
-
   /* Additional initialization fitting the choice of model */
   switch (navsto->param->coupling) {
 
@@ -1139,6 +1122,7 @@ cs_navsto_system_init_setup(void)
   cs_navsto_param_t  *nsp = ns->param;
 
   /* Set field metadata */
+  const bool  has_previous = cs_navsto_param_is_steady(nsp) ? false:true;
   int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
 #if 0 /* TODO fix compilation */
   if (!has_previous)
@@ -1163,7 +1147,6 @@ cs_navsto_system_init_setup(void)
 
   /* Create if needed velocity and pressure fields */
   const int  post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-  const bool  has_previous = cs_navsto_param_is_steady(nsp) ? false:true;
 
   /* Handle the velocity field */
   ns->velocity = cs_field_find_or_create("velocity",
