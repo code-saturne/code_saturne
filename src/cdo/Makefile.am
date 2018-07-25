@@ -58,9 +58,11 @@ cs_cdo_local.h \
 cs_cdo_main.h \
 cs_cdo_quantities.h \
 cs_cdo_time.h \
+cs_cdofb_ac.h \
 cs_cdofb_navsto.h \
 cs_cdofb_priv.h \
 cs_cdofb_scaleq.h \
+cs_cdofb_uzawa.h \
 cs_cdofb_vecteq.h \
 cs_cdovb_priv.h \
 cs_cdovb_scaleq.h \
@@ -119,8 +121,10 @@ cs_cdo_local.c \
 cs_cdo_main.c \
 cs_cdo_quantities.c \
 cs_cdo_time.c \
+cs_cdofb_ac.c \
 cs_cdofb_navsto.c \
 cs_cdofb_scaleq.c \
+cs_cdofb_uzawa.c \
 cs_cdofb_vecteq.c \
 cs_cdovb_scaleq.c \
 cs_cdovb_vecteq.c \
@@ -145,6 +149,7 @@ cs_hho_vecteq.c \
 cs_hho_stokes.c \
 cs_hodge.c \
 cs_mesh_deform.c \
+cs_navsto_coupling.c \
 cs_navsto_param.c \
 cs_navsto_system.c \
 cs_param.c \

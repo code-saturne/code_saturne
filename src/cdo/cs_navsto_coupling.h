@@ -33,22 +33,24 @@
 
 #include "cs_equation.h"
 #include "cs_field.h"
-#include "cs_param.h"
-#include "cs_mesh.h"
 #include "cs_navsto_param.h"
-#include "cs_time_step.h"
-#include "cs_xdef.h"
+#include "cs_param.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*!
- * \file cs_navsto_coupling.h
- *
- * \brief  Routines to handle structures used as a context when solving the
- * Navier-Stokes equations. Structures are cast on-the-fly according to the
- * type of coupling.
+  \file cs_navsto_coupling.h
+
+  \brief  Routines to handle structures used as a context when solving the
+          Navier-Stokes equations.
+          Structures are cast on-the-fly according to the type of coupling.
+          Routines to handle the settings of coupling algorithms
+          - Uzawa-Augmented Lagrangian algorithm
+          - Artificial Compressibility algorithm
+          - Its variant VVP (Vector Projection Penalty) algorithm
+          - Projection algorithm
  */
 
 /*============================================================================
@@ -62,7 +64,7 @@ BEGIN_C_DECLS
 /* Predefined context structures depending on the settings */
 /* ======================================================= */
 
-/*! \struct cs_navsto_coupling_uzawa_t
+/*! \struct cs_navsto_uzawa_t
  *  \brief Set of parameters specific for solving the Navier-Stokes system with
  *         a fully coupled algorithm using a Uzawa algorithm and an Augmented
  *         Lagrangian approach inside each sub-iteration.
@@ -80,9 +82,9 @@ typedef struct {
   cs_real_t       relax;    /*!< Coefficient for the Uzawa algorithm attacehd
                                  to the update of the multiplier */
 
-} cs_navsto_coupling_uzawa_t;
+} cs_navsto_uzawa_t;
 
-/*! \struct cs_navsto_coupling_ac_t
+/*! \struct cs_navsto_ac_t
  *  \brief Set of parameters specific for solving the Navier-Stokes system with
  *         the "artificial compressibility" algorithm
  *
@@ -96,9 +98,9 @@ typedef struct {
   cs_property_t  *zeta;     /*!< Coefficient for the artificial compressibility
                                  attached to the grad-div stabilization term */
 
-} cs_navsto_coupling_ac_t;
+} cs_navsto_ac_t;
 
-/*! \struct cs_navsto_coupling_ac_vpp_t
+/*! \struct cs_navsto_ac_vpp_t
  *  \brief Set of parameters specific for solving the Navier-Stokes system with
  *         the "artificial compressibility" solved by the VPP_eps algorithm
  *
@@ -116,9 +118,9 @@ typedef struct {
                                 algorithm attached to the grad-div stabilization
                                 term */
 
-} cs_navsto_coupling_ac_vpp_t;
+} cs_navsto_ac_vpp_t;
 
-/*! \struct cs_navsto_coupling_projection_t
+/*! \struct cs_navsto_projection_t
  *  \brief Set of parameters specific for solving the Navier-Stokes system with
  *         an incremental projection algorithm
  *
@@ -132,11 +134,275 @@ typedef struct {
   cs_equation_t  *correction; /*!< Pressure correction step related to the mass
                                    balance equation (scalar-valued) */
 
-} cs_navsto_coupling_projection_t;
+} cs_navsto_projection_t;
 
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a context structure when the Navier-Stokes
+ *         system is coupled using an Uzawa-Augmented Lagrangian approach
+ *
+ * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
+ *
+ * \return a pointer to the context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_navsto_uzawa_create_context(cs_navsto_param_t    *nsp,
+                               cs_param_bc_type_t    bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free the context structure related to an Uzawa-Augmented Lagrangian
+ *         approach
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_navsto_uzawa_free_context(const cs_navsto_param_t    *nsp,
+                             void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Start setting-up the Navier-Stokes equations when a Uzawa
+ *         Augmented Lagrangian algorithm is used to coupled the system
+ *         No mesh information is available at this stage
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_uzawa_init_setup(const cs_navsto_param_t    *nsp,
+                           void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize the setup for the Navier-Stokes equations when an Uzawa
+ *         Augmented Lagrangian algorithm is used to coupled the system.
+ *         Connectivity and geometric quantities are available at this stage.
+ *
+ * \param[in]      connect  pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_uzawa_last_setup(const cs_cdo_connect_t      *connect,
+                           const cs_cdo_quantities_t   *quant,
+                           const cs_navsto_param_t     *nsp,
+                           void                        *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a context structure when the Navier-Stokes
+ *         system is coupled using an Artificial Compressibility approach
+ *
+ * \param[in]  nsp    pointer to \ref a cs_navsto_param_t structure
+ * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
+ *
+ * \return a pointer to the context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_navsto_ac_create_context(cs_navsto_param_t    *nsp,
+                            cs_param_bc_type_t    bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free the context structure related to an Artificial Compressibility
+ *         approach
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_navsto_ac_free_context(const cs_navsto_param_t    *nsp,
+                          void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Start setting-up the Navier-Stokes equations when an
+ *         Artificial Compressibility algorithm is used to coupled the system.
+ *         No mesh information is available at this stage.
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
+                        void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize the setup for the Navier-Stokes equations when an
+ *         Artificial Compressibility algorithm is used to coupled the system.
+ *         Connectivity and geometric quantities are available at this stage.
+ *
+ * \param[in]      connect  pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_ac_last_setup(const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *quant,
+                        const cs_navsto_param_t     *nsp,
+                        void                        *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a context structure when the Navier-Stokes
+ *         system is coupled using an Artificial Compressibility - VPP approach
+ *
+ * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
+ *
+ * \return a pointer to the context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_navsto_ac_vpp_create_context(cs_navsto_param_t    *nsp,
+                                cs_param_bc_type_t    bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free the context structure related to an Artificial Compressibility
+ *         with the VPP approach
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_navsto_ac_vpp_free_context(const cs_navsto_param_t    *nsp,
+                              void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Start setting-up the Navier-Stokes equations when an Artificial
+ *         Compressibility with VPP algorithm is used to coupled the system.
+ *         No mesh information is available at this stage.
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_ac_vpp_init_setup(const cs_navsto_param_t    *nsp,
+                            void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize the setup for the Navier-Stokes equations when an
+ *         Artificial Compressibility algorithm is used to coupled the system.
+ *         Connectivity and geometric quantities are available at this stage.
+ *
+ * \param[in]      connect  pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_ac_vpp_last_setup(const cs_cdo_connect_t      *connect,
+                            const cs_cdo_quantities_t   *quant,
+                            const cs_navsto_param_t     *nsp,
+                            void                        *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a context structure when the Navier-Stokes
+ *         system is coupled using an incremental Projection approach in the
+ *         the rotational form (see Minev & Guermond, 2006, JCP)
+ *
+ * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
+ *
+ * \return a pointer to the context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
+                                    cs_param_bc_type_t    bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free the context structure related to a Projection approach
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_navsto_projection_free_context(const cs_navsto_param_t    *nsp,
+                                  void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Start setting-up the Navier-Stokes equations when a projection
+ *         algorithm is used to coupled the system.
+ *         No mesh information is available at this stage.
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
+                                void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize the setup for the Navier-Stokes equations when a
+ *         projection algorithm is used to coupled the system.
+ *         Connectivity and geometric quantities are available at this stage.
+ *
+ * \param[in]      connect  pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_projection_last_setup(const cs_cdo_connect_t     *connect,
+                                const cs_cdo_quantities_t  *quant,
+                                const cs_navsto_param_t    *nsp,
+                                void                       *context);
 
 /*----------------------------------------------------------------------------*/
 

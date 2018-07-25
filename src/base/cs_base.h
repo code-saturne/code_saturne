@@ -71,7 +71,7 @@
 #define CS_MEM_ALIGN 0
 #endif
 
-#define CS_BASE_STRING_LEN                             64
+#define CS_BASE_STRING_LEN                             80
 
 /*----------------------------------------------------------------------------*/
 

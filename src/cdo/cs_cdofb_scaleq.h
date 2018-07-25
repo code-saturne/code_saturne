@@ -103,6 +103,17 @@ cs_cdofb_scaleq_init_common(const cs_cdo_quantities_t     *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the pointer to the related cs_matrix_structure_t
+ *
+ * \return a  pointer to a cs_matrix_structure_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_matrix_structure_t *
+cs_cdofb_scaleq_matrix_structure(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve work buffers used for building a CDO system cellwise
  *
  * \param[out]  csys   pointer to a pointer on a cs_cell_sys_t structure

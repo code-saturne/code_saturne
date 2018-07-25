@@ -270,74 +270,10 @@ cs_cdofb_navsto_init_common(const cs_cdo_quantities_t     *quant,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
- *         a Uzawa-Augmented Lagrangian approach
- *
- * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
- * \param[in] nsc_input  pointer to a \ref cs_navsto_coupling_uzawa_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_init_uzawa_context(const cs_navsto_param_t     *nsp,
-                                   const void                  *nsc_input)
-{
-  /* Sanity checks */
-  assert(nsp != NULL && nsc_input != NULL);
-
-  /* Navier-Navsto scheme context (NSSC) */
-  cs_cdofb_navsto_t  *nssc = _create_navsto_context(nsp);
-
-  const cs_navsto_coupling_uzawa_t  *nsc =
-    (const cs_navsto_coupling_uzawa_t  *)nsc_input;
-
-  /* TODO */
-  CS_UNUSED(nsc);
-
-  cs_cdofb_navsto_context = nssc;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
- *         an Artificial Compressibility approach
- *
- * \param[in] nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in] nsc    pointer to a \ref cs_navsto_coupling_uzawa_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_init_ac_context(const cs_navsto_param_t   *nsp,
-                                const void                *nsc_input)
-{
-  /* Sanity checks */
-  assert(nsp != NULL && nsc_input != NULL);
-
-  /* Navier-Navsto scheme context (NSSC) */
-  cs_cdofb_navsto_t  *nssc = _create_navsto_context(nsp);
-
-  const cs_navsto_coupling_ac_t  *nsc =
-    (const cs_navsto_coupling_ac_t *)nsc_input;
-
-  cs_cdofb_navsto_context = nssc;
-
-  /* Only one vector equation */
-  cs_equation_t *mom_eq = nsc->momentum;
-
-  nssc->face_velocity =
-    ((cs_cdofb_vecteq_t *)mom_eq->scheme_context)->face_values;
-
-  nssc->is_zeta_uniform = cs_property_is_uniform(nsc->zeta);
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
  *         an Artificial Compressibility - VPP approach
  *
  * \param[in] nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in] nsc    pointer to a \ref cs_navsto_coupling_uzawa_t structure
+ * \param[in] nsc    pointer to a \ref cs_navsto_uzawa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -348,17 +284,15 @@ cs_cdofb_navsto_init_ac_vpp_context(const cs_navsto_param_t   *nsp,
   /* Sanity checks */
   assert(nsp != NULL && nsc_input != NULL);
 
-  /* Navier-Navsto scheme context (NSSC) */
+  /* Navier-Stokes scheme context (NSSC) */
   cs_cdofb_navsto_t  *nssc = _create_navsto_context(nsp);
 
-  const cs_navsto_coupling_ac_vpp_t  *nsc =
-    (const cs_navsto_coupling_ac_vpp_t *)nsc_input;
+  const cs_navsto_ac_vpp_t  *nsc = (const cs_navsto_ac_vpp_t *)nsc_input;
 
   cs_cdofb_navsto_context = nssc;
 
   /* No scalar equation */
-  cs_equation_t *mom_eq = nsc->momentum,
-                *grd_eq = nsc->graddiv;
+  cs_equation_t *mom_eq = nsc->momentum, *grd_eq = nsc->graddiv;
 
   nssc->is_zeta_uniform = cs_property_is_uniform(nsc->zeta);
 
@@ -375,7 +309,7 @@ cs_cdofb_navsto_init_ac_vpp_context(const cs_navsto_param_t   *nsp,
  *         an incremental Projection approach
  *
  * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
- * \param[in] nsc_input  pointer to a \ref cs_navsto_coupling_uzawa_t structure
+ * \param[in] nsc_input  pointer to a \ref cs_navsto_uzawa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -386,18 +320,17 @@ cs_cdofb_navsto_init_proj_context(const cs_navsto_param_t    *nsp,
   /* Sanity checks */
   assert(nsp != NULL && nsc_input != NULL);
 
-  /* Navier-Navsto scheme context (NSSC) */
+  /* Navier-Stokes scheme context (NSSC) */
   cs_cdofb_navsto_t  *nssc = _create_navsto_context(nsp);
 
-  const cs_navsto_coupling_projection_t  *nsc =
-    (const cs_navsto_coupling_projection_t  *)nsc_input;
+  const cs_navsto_projection_t *nsc = (const cs_navsto_projection_t *)nsc_input;
 
   cs_cdofb_navsto_context = nssc;
 
   /* No auxiliary vector equation */
-  cs_equation_t *pre_eq = nsc->prediction,
-                *cor_eq = nsc->correction;
+  cs_equation_t *pre_eq = nsc->prediction, *cor_eq = nsc->correction;
 
+  /* Set pointers to face values */
   nssc->face_velocity =
     ((cs_cdofb_vecteq_t *)pre_eq->scheme_context)->face_values;
   nssc->face_pressure =
@@ -433,72 +366,6 @@ cs_cdofb_navsto_free_context(const cs_navsto_param_t      *nsp)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
- *         a Uzawa-Lagrangian Augmented approach.
- *
- * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
- * \param[in]      dt_cur      current value of the time step
- * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
- *                             structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_uzawa_compute(const cs_mesh_t              *mesh,
-                              double                        dt_cur,
-                              const cs_navsto_param_t      *nsp,
-                              void                         *nsc_input)
-{
-  CS_UNUSED(dt_cur);
-
-  cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
-  cs_navsto_coupling_uzawa_t  *nscc = (cs_navsto_coupling_uzawa_t  *)nsc_input;
-
-  cs_timer_t  t0 = cs_timer_time();
-
-  /* TODO */
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(nssc->timer), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
- *         an Artificial Compressibility approach.
- *
- * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
- * \param[in]      dt_cur      current value of the time step
- * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
- *                             structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_ac_compute(const cs_mesh_t              *mesh,
-                           double                        dt_cur,
-                           const cs_navsto_param_t      *nsp,
-                           void                         *nsc_input)
-{
-  CS_UNUSED(nsp);
-
-  cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
-  cs_navsto_coupling_ac_t  *nscc = (cs_navsto_coupling_ac_t *)nsc_input;
-
-  cs_equation_t *mom_eq = nscc->momentum;
-
-  cs_timer_t  t0 = cs_timer_time();
-
-  /* TODO */
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(nssc->timer), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
  *         an Artificial Compressibility - VPP approach.
  *
  * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
@@ -518,7 +385,7 @@ cs_cdofb_navsto_ac_vpp_compute(const cs_mesh_t              *mesh,
   CS_UNUSED(nsp);
 
   cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
-  cs_navsto_coupling_ac_vpp_t  *nscc = (cs_navsto_coupling_ac_vpp_t *)nsc_input;
+  cs_navsto_ac_vpp_t  *nscc = (cs_navsto_ac_vpp_t *)nsc_input;
 
   cs_equation_t *mom_eq = nscc->momentum;
 
@@ -552,12 +419,13 @@ cs_cdofb_navsto_proj_compute(const cs_mesh_t              *mesh,
   CS_UNUSED(dt_cur);
 
   cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
-  cs_navsto_coupling_projection_t  *nscc =
-    (cs_navsto_coupling_projection_t  *)nsc_input;
+  cs_navsto_projection_t  *nscc = (cs_navsto_projection_t *)nsc_input;
 
   cs_timer_t  t0 = cs_timer_time();
 
   /* TODO */
+  CS_UNUSED(nssc);
+  CS_UNUSED(nscc);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(nssc->timer), &t0, &t1);
@@ -612,7 +480,7 @@ cs_cdofb_navsto_get_face_pressure(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_update_field(const cs_real_t              *solu,
+cs_cdofb_navsto_update_fields(const cs_real_t              *solu,
                              const cs_real_t              *rhs,
                              const cs_equation_param_t    *eqp,
                              cs_equation_builder_t        *eqb,
@@ -624,38 +492,6 @@ cs_cdofb_navsto_update_field(const cs_real_t              *solu,
   cs_cdofb_navsto_t  *eqc = (cs_cdofb_navsto_t *)data;
   cs_timer_t  t0 = cs_timer_time();
 
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined extra-operations related to this equation
- *
- * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field structure
- * \param[in]       eqp        pointer to a \ref cs_equation_param_t structure
- * \param[in, out]  eqb        pointer to a \ref cs_equation_builder_t structure
- * \param[in, out]  data       pointer to \ref cs_cdofb_navsto_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_extra_op(const char                 *eqname,
-                         const cs_field_t           *field,
-                         const cs_equation_param_t  *eqp,
-                         cs_equation_builder_t      *eqb,
-                         void                       *data)
-{
-  CS_UNUSED(eqname);  /* avoid a compilation warning */
-  CS_UNUSED(eqp);
-
-  char *postlabel = NULL;
-  cs_timer_t  t0 = cs_timer_time();
-
-
-  // TODO
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

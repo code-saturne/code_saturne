@@ -44,10 +44,13 @@
 
 #include <bft_mem.h>
 
+#include "cs_cdofb_ac.h"
 #include "cs_cdofb_navsto.h"
+#include "cs_cdofb_uzawa.h"
 #include "cs_hho_stokes.h"
 #include "cs_equation.h"
 #include "cs_log.h"
+#include "cs_navsto_coupling.h"
 #include "cs_post.h"
 #include "cs_flag.h"
 #include "cs_volume_zone.h"
@@ -57,7 +60,6 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_navsto_coupling.h"
 #include "cs_navsto_system.h"
 
 /*----------------------------------------------------------------------------*/
@@ -93,40 +95,6 @@ static const char _err_empty_ns[] =
 static const char _err_invalid_coupling[] =
   " %s: Invalid case for the coupling algorithm.\n";
 
-static const char
-_space_scheme_key[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
-  { "fv",
-    "cdo_vb",
-    "cdo_vcb",
-    "cdo_fb",
-    "hho_p0",
-    "hho_p1",
-    "hho_p2"
-  };
-
-static const char
-_time_scheme_key[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
-  { "implicit",
-    "explicit",
-    "crank_nicolson",
-    "theta_scheme"
-  };
-
-static const char
-_dof_reduction_key[CS_PARAM_N_REDUCTIONS][CS_BASE_STRING_LEN] =
-  { "derham",
-    "average"
-  };
-
-static const char
-_quad_type_key[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
-  { "none",
-    "bary",
-    "bary_subdiv",
-    "higher",
-    "highest"
-  };
-
 static cs_navsto_system_t  *cs_navsto_system = NULL;
 
 /*============================================================================
@@ -150,6 +118,8 @@ _allocate_navsto_system(void)
 
   navsto->param = NULL;
 
+  /* Velocity in the case of Navier-Stokes or Stokes,
+     Wind or advection field in the case of the Oseen problem */
   navsto->adv_field = NULL;
 
   /* Main set of variables */
@@ -157,776 +127,18 @@ _allocate_navsto_system(void)
   navsto->pressure = NULL;
   navsto->temperature = NULL;
 
-  /* Main set of properties */
-  navsto->density = NULL;
-  navsto->lami_viscosity = NULL;
-
-  /* Additional data fitting the choice of model */
-  navsto->context = NULL;
+  /* Additional data fitting the choice of the coupling model */
+  navsto->coupling_context = NULL;
+  navsto->scheme_context = NULL;
 
   /* Function pointers */
-  navsto->init = NULL;
-  navsto->free = NULL;
+  navsto->init_scheme_context = NULL;
+  navsto->free_scheme_context = NULL;
+  navsto->init_velocity = NULL;
+  navsto->init_pressure = NULL;
   navsto->compute = NULL;
 
-  /* Initial conditions */
-  navsto->n_velocity_ic_defs = 0;
-  navsto->n_pressure_ic_defs = 0;
-  navsto->velocity_ic_defs = NULL;
-  navsto->pressure_ic_defs = NULL;
-
   return navsto;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Apply the numerical settings defined for the Navier-Stokes system
- *         to an equation related to this system.
- *
- * \param[in]       nsp    pointer to a cs_navsto_param_t structure
- * \param[in, out]  eqp    pointer to a cs_equation_param_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_apply_param(const cs_navsto_param_t    *nsp,
-             cs_equation_param_t        *eqp)
-{
-  assert(nsp != NULL && eqp != NULL);
-
-  /*  Set the space discretization scheme */
-  const char  *ss_key = _space_scheme_key[nsp->space_scheme];
-
-  cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, ss_key);
-
-  /*  Set the time discretization scheme */
-  const char  *ts_key = _time_scheme_key[nsp->time_scheme];
-
-  cs_equation_set_param(eqp, CS_EQKEY_TIME_SCHEME, ts_key);
-  if (nsp->time_scheme == CS_TIME_SCHEME_THETA) {
-    char  cvalue[36]; /* include '\0' */
-    snprintf(cvalue, 35*sizeof(char), "%g", nsp->theta);
-    cs_equation_set_param(eqp, CS_EQKEY_TIME_THETA, cvalue);
-  }
-
-  /*  Set the way DoFs are defined */
-  const char  *dof_key = _dof_reduction_key[nsp->dof_reduction_mode];
-
-  cs_equation_set_param(eqp, CS_EQKEY_DOF_REDUCTION, dof_key);
-
-  /*  Set quadratures type */
-  const char  *quad_key = _quad_type_key[nsp->qtype];
-
-  cs_equation_set_param(eqp, CS_EQKEY_BC_QUADRATURE, quad_key);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize a context structure when the Navier-Stokes
- *         system is coupled using an Uzawa-Augmented Lagrangian approach
- *
- * \param[in]  nsp    pointer to a cs_navsto_param_t structure
- * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
- *
- * \return a pointer to the context structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void *
-_create_uzawa_context(cs_navsto_param_t    *nsp,
-                      cs_param_bc_type_t    bc)
-{
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
-
-  cs_navsto_coupling_uzawa_t  *nsc = NULL;
-
-  BFT_MALLOC(nsc, 1, cs_navsto_coupling_uzawa_t);
-
-  /* Add an equation for the momentum conservation */
-  nsc->momentum = cs_equation_add("Momentum",
-                                  "velocity",
-                                  CS_EQUATION_TYPE_PREDEFINED,
-                                  3,
-                                  bc);
-
-  /* Set the default settings for the momentum equation */
-  {
-    cs_equation_param_t  *eqp = cs_equation_get_param(nsc->momentum);
-
-    /* Solver settings */
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
-  }
-
-  nsc->energy = NULL;   /* Not used up to now */
-
-  nsc->zeta = cs_property_add("graddiv_coef", CS_PROPERTY_ISO);
-  nsc->relax  = 1.0;
-
-  return nsc;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free the context structure related to an Uzawa-Augmented Lagrangian
- *         approach
- *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-static void *
-_free_uzawa_context(const cs_navsto_param_t    *nsp,
-                    void                       *context)
-{
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
-
-  cs_navsto_coupling_uzawa_t  *nsc = (cs_navsto_coupling_uzawa_t *)context;
-
-  BFT_FREE(nsc);
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Start setting-up the Navier-Stokes equations when an Uzawa
- *         Augmented Lagrangian algorithm is used to coupled the system
- *         No mesh information is available
- *
- * \param[in, out] ns       pointer to a cs_navsto_system_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_uzawa_init_setup(cs_navsto_system_t          *ns)
-{
-  assert(ns != NULL);
-
-  cs_navsto_param_t  *nsp = ns->param;
-  cs_navsto_coupling_uzawa_t  *nsc = (cs_navsto_coupling_uzawa_t *)ns->context;
-
-  assert(nsp != NULL && nsc != NULL);
-
-  /* Handle the momentum equation */
-  cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
-
-  _apply_param(nsp, mom_eqp);
-
-  /* Link the time property to the momentum equation */
-  switch (nsp->time_state) {
-
-  case CS_NAVSTO_TIME_STATE_UNSTEADY:
-  case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
-    cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid choice for the time state", __func__);
-  }
-
-  /* All considered models needs a viscous term */
-  cs_equation_add_diffusion(mom_eqp, ns->lami_viscosity);
-
-  /* Handle the energy equation */
-  if (nsc->energy != NULL)
-    _apply_param(nsp, cs_equation_get_param(nsc->energy));
-
-  /* TODO */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Finalize the setup for the Navier-Stokes equations when an Uzawa
- *         Augmented Lagrangian algorithm is used to coupled the system
- *
- * \param[in]      connect  pointer to a cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a cs_cdo_quantities_t structure
- * \param[in, out] ns       pointer to a cs_navsto_system_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_uzawa_last_setup(const cs_cdo_connect_t      *connect,
-                  const cs_cdo_quantities_t   *quant,
-                  cs_navsto_system_t          *ns)
-{
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
-  assert(ns != NULL);
-
-  cs_navsto_param_t  *nsp = ns->param;
-  cs_navsto_coupling_uzawa_t  *nsc = (cs_navsto_coupling_uzawa_t *)ns->context;
-
-  assert(nsp != NULL && nsc != NULL);
-
-  /* Avoid no definition of the zeta coefficient */
-  if (nsc->zeta->n_definitions == 0)
-    cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
-
-  /* TODO */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize a context structure when the Navier-Stokes
- *         system is coupled using an Artificial Compressibility approach
- *
- * \param[in]  nsp    pointer to a cs_navsto_param_t structure
- * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
- *
- * \return a pointer to the context structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void *
-_create_ac_context(cs_navsto_param_t    *nsp,
-                   cs_param_bc_type_t    bc)
-{
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
-
-  cs_navsto_coupling_ac_t  *nsc = NULL;
-
-  BFT_MALLOC(nsc, 1, cs_navsto_coupling_ac_t);
-
-  nsc->momentum = cs_equation_add("Momentum",
-                                  "velocity",
-                                  CS_EQUATION_TYPE_PREDEFINED,
-                                  3,
-                                  bc);
-
-  /* Set the default solver settings */
-  {
-    cs_equation_param_t  *eqp = cs_equation_get_param(nsc->momentum);
-
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
-  }
-
-  /* Additional property */
-  nsc->zeta = cs_property_add("graddiv_coef", CS_PROPERTY_ISO);
-
-  return nsc;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free the context structure related to an Artificial Compressibility
- *         approach
- *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-static void *
-_free_ac_context(const cs_navsto_param_t    *nsp,
-                 void                       *context)
-{
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
-
-  cs_navsto_coupling_ac_t  *nsc = (cs_navsto_coupling_ac_t *)context;
-
-  BFT_FREE(nsc);
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Start setting-up the Navier-Stokes equations when an
- *         Artificial Compressibility algorithm is used to coupled the system
- *         No mesh information is available
- *
- * \param[in, out] ns       pointer to a cs_navsto_system_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_ac_init_setup(cs_navsto_system_t     *ns)
-{
-  assert(ns != NULL);
-
-  cs_navsto_param_t  *nsp = ns->param;
-  cs_navsto_coupling_ac_t  *nsc = (cs_navsto_coupling_ac_t *)ns->context;
-
-  assert(nsp != NULL && nsc != NULL);
-
-  cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
-
-  /* Navier-Stokes parameters induce numerical settings for the related
-   equations */
-  _apply_param(nsp, mom_eqp);
-
-  /* Link the time property to the momentum equation */
-  switch (nsp->time_state) {
-
-  case CS_NAVSTO_TIME_STATE_UNSTEADY:
-  case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
-    cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid choice for the time state", __func__);
-  }
-
-  /* All considered models needs a viscous term */
-  cs_equation_add_diffusion(mom_eqp, ns->lami_viscosity);
-
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Finalize the setup for the Navier-Stokes equations when an
- *         Artificial Compressibility algorithm is used to coupled the system
- *
- * \param[in]      connect  pointer to a cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a cs_cdo_quantities_t structure
- * \param[in, out] ns       pointer to a cs_navsto_system_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_ac_last_setup(const cs_cdo_connect_t      *connect,
-               const cs_cdo_quantities_t   *quant,
-               cs_navsto_system_t          *ns)
-{
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
-  assert(ns != NULL);
-
-  cs_navsto_param_t  *nsp = ns->param;
-  cs_navsto_coupling_ac_t  *nsc = (cs_navsto_coupling_ac_t *)ns->context;
-
-  assert(nsp != NULL && nsc != NULL);
-
-  /* Avoid no definition of the zeta coefficient */
-  if (nsc->zeta->n_definitions == 0)
-    cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize a context structure when the Navier-Stokes
- *         system is coupled using an Artificial Compressibility - VPP approach
- *
- * \param[in]  nsp    pointer to a cs_navsto_param_t structure
- * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
- *
- * \return a pointer to the context structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void *
-_create_ac_vpp_context(cs_navsto_param_t    *nsp,
-                       cs_param_bc_type_t    bc)
-{
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
-
-  cs_navsto_coupling_ac_vpp_t  *nsc = NULL;
-
-  BFT_MALLOC(nsc, 1, cs_navsto_coupling_ac_vpp_t);
-
-  nsc->momentum = cs_equation_add("Momentum",
-                                  "Utilde",
-                                  CS_EQUATION_TYPE_PREDEFINED,
-                                  3,
-                                  bc);
-  /* The grad-div equation is usually always hmg Dirichlet */
-  nsc->graddiv = cs_equation_add("Graddiv",
-                                  "Uhat",
-                                  CS_EQUATION_TYPE_PREDEFINED,
-                                  3,
-                                  CS_PARAM_BC_HMG_DIRICHLET);
-
-  /* Set the default solver settings for "Momentum" */
-  {
-    cs_equation_param_t  *eqp = cs_equation_get_param(nsc->momentum);
-
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-  }
-
-  /* Set the default solver settings for "Graddiv" */
-  {
-    cs_equation_param_t  *eqp = cs_equation_get_param(nsc->graddiv);
-
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-  }
-
-  nsc->zeta = cs_property_add("graddiv_coef", CS_PROPERTY_ISO);
-
-  return nsc;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free the context structure related to an Artificial Compressibility
- *          - VPP approach
- *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-static void *
-_free_ac_vpp_context(const cs_navsto_param_t    *nsp,
-                     void                       *context)
-{
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
-
-  cs_navsto_coupling_ac_vpp_t  *nsc = (cs_navsto_coupling_ac_vpp_t *)context;
-
-  BFT_FREE(nsc);
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Start setting-up the Navier-Stokes equations when an
- *         Artificial Compressibility with VPP algorithm is used to coupled the
- *         system
- *         No mesh information is available
- *
- * \param[in, out] ns       pointer to a cs_navsto_system_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_ac_vpp_init_setup(cs_navsto_system_t     *ns)
-{
-  assert(ns != NULL);
-
-  cs_navsto_param_t  *nsp = ns->param;
-  cs_navsto_coupling_ac_vpp_t *nsc = (cs_navsto_coupling_ac_vpp_t *)ns->context;
-
-  assert(nsp != NULL && nsc != NULL);
-
-  cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
-  cs_equation_param_t  *gd_eqp = cs_equation_get_param(nsc->graddiv);
-
-  /* Navier-Stokes parameters induce numerical settings for the related
-     equations */
-  _apply_param(nsp, mom_eqp);
-
-  /* TODO: Is this good? Should we force BC or alikes? */
-  _apply_param(nsp, gd_eqp);
-
-  /* Link the time property to the momentum equation */
-  switch (nsp->time_state) {
-
-  case CS_NAVSTO_TIME_STATE_UNSTEADY:
-  case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
-    cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
-    cs_equation_add_time(gd_eqp, cs_property_by_name("unity"));
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid choice for the time state", __func__);
-  }
-
-  /* All considered models needs a viscous term */
-  cs_equation_add_diffusion(mom_eqp, ns->lami_viscosity);
-  cs_equation_add_diffusion(gd_eqp, ns->lami_viscosity);
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Finalize the setup for the Navier-Stokes equations when an
- *         Artificial Compressibility algorithm is used to coupled the system
- *
- * \param[in]      connect  pointer to a cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a cs_cdo_quantities_t structure
- * \param[in, out] ns       pointer to a cs_navsto_system_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_ac_vpp_last_setup(const cs_cdo_connect_t      *connect,
-                   const cs_cdo_quantities_t   *quant,
-                   cs_navsto_system_t          *ns)
-{
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
-  assert(ns != NULL);
-
-  cs_navsto_param_t  *nsp = ns->param;
-  cs_navsto_coupling_ac_vpp_t *nsc = (cs_navsto_coupling_ac_vpp_t *)ns->context;
-
-  assert(nsp != NULL && nsc != NULL);
-
-  /* Avoid no definition of the zeta coefficient */
-  if (nsc->zeta->n_definitions == 0)
-    cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
-
-  /* TODO: Setting quadrature for the source terms */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize a context structure when the Navier-Stokes
- *         system is coupled using an incremental Projection approach in the
- *         the rotational form (see Minev & Guermond, 2006, JCP)
- *
- * \param[in]  nsp    pointer to a cs_navsto_param_t structure
- * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
- *
- * \return a pointer to the context structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void *
-_create_projection_context(cs_navsto_param_t    *nsp,
-                           cs_param_bc_type_t    bc)
-{
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
-
-  cs_navsto_coupling_projection_t  *nsc = NULL;
-
-  BFT_MALLOC(nsc, 1, cs_navsto_coupling_projection_t);
-
-  nsc->prediction = cs_equation_add("Velocity_Prediction",
-                                    "velocity",
-                                    CS_EQUATION_TYPE_PREDEFINED,
-                                    3,
-                                    bc);
-
-  /* Set the default solver settings */
-  {
-    cs_equation_param_t  *eqp = cs_equation_get_param(nsc->prediction);
-
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
-  }
-
-  nsc->correction = cs_equation_add("Pressure_Correction",
-                                    "phi",
-                                    CS_EQUATION_TYPE_PREDEFINED,
-                                    1,
-                                    CS_PARAM_BC_HMG_NEUMANN);
-
-  /* Set the default solver settings */
-  {
-    cs_equation_param_t  *eqp = cs_equation_get_param(nsc->correction);
-
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-  }
-
-  return nsc;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free the context structure related to a Projection approach
- *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-static void *
-_free_projection_context(const cs_navsto_param_t    *nsp,
-                         void                       *context)
-{
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
-
-  cs_navsto_coupling_projection_t  *nsc =
-    (cs_navsto_coupling_projection_t *)context;
-
-  BFT_FREE(nsc);
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Start setting-up the Navier-Stokes equations when a
- *         projection algorithm is used to coupled the system
- *         No mesh information is available
- *
- * \param[in, out] ns       pointer to a cs_navsto_system_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_projection_init_setup(cs_navsto_system_t         *ns)
-{
-  assert(ns != NULL);
-
-  cs_navsto_param_t  *nsp = ns->param;
-  cs_navsto_coupling_projection_t  *nsc =
-    (cs_navsto_coupling_projection_t *)ns->context;
-
-  assert(nsp != NULL && nsc != NULL);
-
-  /* Prediction step: Approximate the velocity */
-  cs_equation_param_t *p_eqp = cs_equation_get_param(nsc->prediction);
-
-  _apply_param(nsp, p_eqp);
-
-  cs_equation_add_time(p_eqp, cs_property_by_name("unity"));
-
-  /* Correction step: Approximate the pressure */
-  _apply_param(nsp, cs_equation_get_param(nsc->correction));
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Finalize the setup for the Navier-Stokes equations when a
- *         projection algorithm is used to coupled the system
- *
- * \param[in]      connect  pointer to a cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a cs_cdo_quantities_t structure
- * \param[in, out] ns       pointer to a cs_navsto_system_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_projection_last_setup(const cs_cdo_connect_t     *connect,
-                       const cs_cdo_quantities_t  *quant,
-                       cs_navsto_system_t         *ns)
-{
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
-  assert(ns != NULL);
-
-  cs_navsto_param_t  *nsp = ns->param;
-  cs_navsto_coupling_projection_t  *nsc =
-    (cs_navsto_coupling_projection_t *)ns->context;
-
-  assert(nsp != NULL && nsc != NULL);
-
-  /* TODO */
-  CS_UNUSED(nsp);
-  CS_UNUSED(nsc);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize the face values for the velocity unknowns (in case of
- *        CDO Face-based scheme) in order to have a initial guess in accordance
- *        with the user requirements when solving the momentum equation
- *
- * \param[in]      t_eval  time at which one performs the evaluation
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_init_face_velocity_values(cs_real_t    t_eval)
-{
-  cs_navsto_system_t  *navsto = cs_navsto_system;
-
-  const cs_navsto_param_t *nsp = navsto->param;
-  const cs_flag_t f_dof_flag = CS_FLAG_VECTOR | cs_flag_primal_face;
-  const cs_param_dof_reduction_t red = nsp->dof_reduction_mode;
-
-  cs_equation_t *first_eq = NULL;
-
-  /* Switching on coupling in order to set the values on the faces which will
-   * be used as initial guess in the first solve */
-  switch (nsp->coupling) {
-  case CS_NAVSTO_COUPLING_UZAWA:
-    first_eq = ((cs_navsto_coupling_uzawa_t*)navsto->context)->momentum;
-    break;
-
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    first_eq = ((cs_navsto_coupling_ac_t*)navsto->context)->momentum;
-    break;
-
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    first_eq = ((cs_navsto_coupling_ac_vpp_t*)navsto->context)->momentum;
-    break;
-
-  case CS_NAVSTO_COUPLING_PROJECTION:
-    first_eq =
-      ((cs_navsto_coupling_projection_t*)navsto->context)->prediction;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-    break;
-
-  } /* Switch on coupling algorithm */
-
-  cs_real_t  *f_values = NULL;
-  f_values = cs_equation_get_face_values(first_eq);
-
-  for (int def_id = 0; def_id < navsto->n_velocity_ic_defs; def_id++) {
-
-    /* Get and then set the definition of the initial condition */
-    cs_xdef_t  *def = navsto->velocity_ic_defs[def_id];
-
-    /* Forcing definition on all faces
-       TODO: enable multiple definitions */
-    const cs_flag_t meta_cpy = def->meta;
-    def->meta = CS_FLAG_FULL_LOC;
-
-    /* Initialize face-based array */
-    switch(def->type) {
-
-    case CS_XDEF_BY_VALUE:
-      cs_evaluate_potential_by_value(f_dof_flag, def, f_values);
-      break;
-
-    case CS_XDEF_BY_ANALYTIC_FUNCTION:
-
-      /* An evaluation at the barycenter will be enough */
-      cs_xdef_set_quadrature(def, CS_QUADRATURE_BARY);
-
-      switch (red) {
-      case CS_PARAM_REDUCTION_DERHAM:
-        cs_evaluate_potential_by_analytic(f_dof_flag, def, t_eval, f_values);
-        break;
-      case CS_PARAM_REDUCTION_AVERAGE:
-        cs_evaluate_average_on_faces_by_analytic(def, t_eval, f_values);
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" %s: Incompatible reduction.\n"), __func__);
-
-      } /* Switch on possible reduction types */
-
-      /* Switch to the initial setting */
-      cs_xdef_set_quadrature(def, nsp->qtype);
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Incompatible initialization.\n"), __func__);
-
-    } /* Switch on possible type of definition */
-
-    /* Resetting */
-    def->meta = meta_cpy;
-
-  } /* Loop on definitions */
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -981,25 +193,20 @@ cs_navsto_system_activate(cs_navsto_param_model_t        model,
   /* Initialize the set of parameters */
   navsto->param = cs_navsto_param_create(model, time_state, algo_coupling);
 
-  /* Main set of properties */
-  navsto->density = cs_property_add("density", CS_PROPERTY_ISO);
-  navsto->lami_viscosity = cs_property_add("laminar_viscosity",
-                                           CS_PROPERTY_ISO);
-
   /* Advection field related to the resolved velocity */
   navsto->adv_field = cs_advection_field_add("velocity_field",
                                              CS_ADVECTION_FIELD_NAVSTO);
 
   /* Set the default boundary condition for the equations of the Navier-Stokes
      system according to the default domain boundary */
-  cs_param_bc_type_t  p_bc_type = CS_PARAM_N_BC_TYPES;
+  cs_param_bc_type_t  default_bc = CS_PARAM_N_BC_TYPES;
   switch (cs_domain_boundary_get_default()) {
 
   case CS_DOMAIN_BOUNDARY_WALL:
-    p_bc_type = CS_PARAM_BC_HMG_DIRICHLET;
+    default_bc = CS_PARAM_BC_HMG_DIRICHLET;
     break;
   case CS_DOMAIN_BOUNDARY_SYMMETRY:
-    p_bc_type = CS_PARAM_BC_HMG_NEUMANN;
+    default_bc = CS_PARAM_BC_HMG_NEUMANN;
     break;
 
   default:
@@ -1013,16 +220,20 @@ cs_navsto_system_activate(cs_navsto_param_model_t        model,
   switch (navsto->param->coupling) {
 
   case CS_NAVSTO_COUPLING_UZAWA:
-    navsto->context = _create_uzawa_context(navsto->param, p_bc_type);
+    navsto->coupling_context = cs_navsto_uzawa_create_context(navsto->param,
+                                                              default_bc);
     break;
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    navsto->context = _create_ac_context(navsto->param, p_bc_type);
+    navsto->coupling_context = cs_navsto_ac_create_context(navsto->param,
+                                                           default_bc);
     break;
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    navsto->context = _create_ac_vpp_context(navsto->param, p_bc_type);
+    navsto->coupling_context = cs_navsto_ac_vpp_create_context(navsto->param,
+                                                               default_bc);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
-    navsto->context = _create_projection_context(navsto->param, p_bc_type);
+    navsto->coupling_context =
+      cs_navsto_projection_create_context(navsto->param, default_bc);
     break;
 
   default:
@@ -1051,24 +262,6 @@ cs_navsto_system_destroy(void)
   if (navsto == NULL)
     return;
 
-  if (navsto->n_velocity_ic_defs > 0) {
-
-    for (short int i = 0; i < navsto->n_velocity_ic_defs; i++)
-      navsto->velocity_ic_defs[i] = cs_xdef_free(navsto->velocity_ic_defs[i]);
-    BFT_FREE(navsto->velocity_ic_defs);
-    navsto->velocity_ic_defs = NULL;
-
-  } /* Velocity IC */
-
-  if (navsto->n_pressure_ic_defs > 0) {
-
-    for (short int i = 0; i < navsto->n_pressure_ic_defs; i++)
-      navsto->pressure_ic_defs[i] = cs_xdef_free(navsto->pressure_ic_defs[i]);
-    BFT_FREE(navsto->pressure_ic_defs);
-    navsto->pressure_ic_defs = NULL;
-
-  } /* Pressure IC */
-
   /*
     Properties, advection fields, equations and fields are all destroyed
     respectively inside cs_property_destroy_all(),
@@ -1082,19 +275,23 @@ cs_navsto_system_destroy(void)
   switch (nsp->coupling) {
 
   case CS_NAVSTO_COUPLING_UZAWA:
-    navsto->context = _free_uzawa_context(nsp, navsto->context);
+    navsto->coupling_context =
+      cs_navsto_uzawa_free_context(nsp, navsto->coupling_context);
     break;
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    navsto->context = _free_ac_context(nsp, navsto->context);
+    navsto->coupling_context =
+      cs_navsto_ac_free_context(nsp, navsto->coupling_context);
     break;
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    navsto->context = _free_ac_vpp_context(nsp, navsto->context);
+    navsto->coupling_context =
+      cs_navsto_ac_vpp_free_context(nsp, navsto->coupling_context);
     break;
 
   case CS_NAVSTO_COUPLING_PROJECTION:
-    navsto->context = _free_projection_context(nsp, navsto->context);
+    navsto->coupling_context =
+      cs_navsto_projection_free_context(nsp, navsto->coupling_context);
     break;
 
   default:
@@ -1103,7 +300,7 @@ cs_navsto_system_destroy(void)
   }
 
   /* Destroy the context related to the discretization scheme */
-  navsto->free(nsp);
+  navsto->free_scheme_context(navsto->scheme_context);
 
   /* Set of numerical parameters */
   navsto->param = cs_navsto_param_free(nsp);
@@ -1148,12 +345,10 @@ cs_navsto_system_init_setup(void)
   cs_navsto_param_t  *nsp = ns->param;
 
   /* Set field metadata */
-  const bool  has_previous = cs_navsto_param_is_steady(nsp) ? false:true;
+  const bool  has_previous = cs_navsto_param_is_steady(nsp) ? false : true;
   int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
-#if 0 /* TODO fix compilation */
   if (!has_previous)
     field_mask |= CS_FIELD_STEADY;
-#endif
 
   /* Set the location id to define a mesh location support */
   int  location_id = -1;
@@ -1202,19 +397,19 @@ cs_navsto_system_init_setup(void)
   switch (nsp->coupling) {
 
   case CS_NAVSTO_COUPLING_UZAWA:
-    _uzawa_init_setup(ns);
+    cs_navsto_uzawa_init_setup(nsp, ns->coupling_context);
     break;
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    _ac_init_setup(ns);
+    cs_navsto_ac_init_setup(nsp, ns->coupling_context);
     break;
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    _ac_vpp_init_setup(ns);
+    cs_navsto_ac_vpp_init_setup(nsp, ns->coupling_context);
     break;
 
   case CS_NAVSTO_COUPLING_PROJECTION:
-    _projection_init_setup(ns);
+    cs_navsto_projection_init_setup(nsp, ns->coupling_context);
     break;
 
   default:
@@ -1231,12 +426,14 @@ cs_navsto_system_init_setup(void)
  *
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_step  pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
-                                const cs_cdo_quantities_t  *quant)
+                                const cs_cdo_quantities_t  *quant,
+                                const cs_time_step_t       *time_step)
 {
   cs_navsto_system_t  *ns = cs_navsto_system;
 
@@ -1248,95 +445,88 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
   /* Avoid an error if no definition is given for the mandatory physical
      properties */
   cs_real_t  one = 1.0;
-  if (ns->density->n_definitions == 0) /* Not set by the user */
-    cs_property_def_iso_by_value(ns->density,
+  if (nsp->density->n_definitions == 0) /* Not set by the user */
+    cs_property_def_iso_by_value(nsp->density,
                                  NULL, /* all cells */
                                  one);
 
-  if (ns->lami_viscosity->n_definitions == 0) /* Not set by the user */
-    cs_property_def_iso_by_value(ns->lami_viscosity,
+  if (nsp->lami_viscosity->n_definitions == 0) /* Not set by the user */
+    cs_property_def_iso_by_value(nsp->lami_viscosity,
                                  NULL, /* all cells */
                                  one);
+
+  /* Last setup stage according to the type of coupling (not related to
+     space discretization scheme */
+  switch (nsp->coupling) {
+
+  case CS_NAVSTO_COUPLING_UZAWA:
+    cs_navsto_uzawa_last_setup(connect, quant, nsp, ns->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    cs_navsto_ac_last_setup(connect, quant, nsp, ns->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+    cs_navsto_ac_vpp_last_setup(connect, quant, nsp, ns->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    cs_navsto_projection_last_setup(connect, quant, nsp, ns->coupling_context);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+    break;
+
+  }
 
   /* Set functions according to the discretization scheme */
   switch (nsp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOFB:
   case CS_SPACE_SCHEME_HHO_P0:
-    {
-      /* Setup data according to the type of coupling */
-      switch (nsp->coupling) {
 
-      case CS_NAVSTO_COUPLING_UZAWA:
-        ns->init = cs_cdofb_navsto_init_uzawa_context;
-        ns->compute = cs_cdofb_navsto_uzawa_compute;
+    /* Setup data according to the type of coupling */
+    switch (nsp->coupling) {
 
-        _uzawa_last_setup(connect, quant, ns);
-        break;
+    case CS_NAVSTO_COUPLING_UZAWA:
+      ns->init_scheme_context = cs_cdofb_uzawa_init_scheme_context;
+      ns->free_scheme_context = cs_cdofb_uzawa_free_scheme_context;
+      ns->init_velocity = cs_cdofb_uzawa_init_velocity;
+      ns->init_pressure = cs_cdofb_uzawa_init_pressure;
+      ns->compute = cs_cdofb_uzawa_compute;
 
-      case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-        ns->init = cs_cdofb_navsto_init_ac_context;
-        ns->compute = cs_cdofb_navsto_ac_compute;
+      cs_cdofb_uzawa_init_common(quant, connect, time_step);
+      break;
 
-        _ac_last_setup(connect, quant, ns);
-        break;
+    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+      ns->init_scheme_context = cs_cdofb_ac_init_scheme_context;
+      ns->free_scheme_context = cs_cdofb_ac_free_scheme_context;
+      ns->init_velocity = cs_cdofb_ac_init_velocity;
+      ns->init_pressure = cs_cdofb_ac_init_pressure;
+      ns->compute = cs_cdofb_ac_compute;
 
-      case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-        ns->init = cs_cdofb_navsto_init_ac_vpp_context;
-        ns->compute = cs_cdofb_navsto_ac_vpp_compute;
+      cs_cdofb_ac_init_common(quant, connect, time_step);
+      break;
 
-        _ac_vpp_last_setup(connect, quant, ns);
-        break;
+    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+      /* ns->init = cs_cdofb_navsto_init_ac_vpp_context; */
+      /* ns->compute = cs_cdofb_navsto_ac_vpp_compute; */
+      break;
 
-      case CS_NAVSTO_COUPLING_PROJECTION:
-        ns->init = cs_cdofb_navsto_init_proj_context;
-        ns->compute = cs_cdofb_navsto_proj_compute;
+    case CS_NAVSTO_COUPLING_PROJECTION:
+      /* ns->init = cs_cdofb_navsto_init_proj_context; */
+      /* ns->compute = cs_cdofb_navsto_proj_compute; */
+      break;
 
-        _projection_last_setup(connect, quant, ns);
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-        break;
-
-      }
-
-      ns->free = cs_cdofb_navsto_free_context;
+    default:
+      bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+      break;
 
     }
     break; /* Lowest-order face-based schemes */
 
   case CS_SPACE_SCHEME_HHO_P1:
   case CS_SPACE_SCHEME_HHO_P2:
-    {
-      /* TODO: set function pointers */
-
-      /* Setup data according to the type of coupling */
-      switch (nsp->coupling) {
-
-      case CS_NAVSTO_COUPLING_UZAWA:
-        _uzawa_last_setup(connect, quant, ns);
-        break;
-
-      case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-        _ac_last_setup(connect, quant, ns);
-        break;
-
-      case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-        _ac_vpp_last_setup(connect, quant, ns);
-        break;
-
-      case CS_NAVSTO_COUPLING_PROJECTION:
-        _projection_last_setup(connect, quant, ns);
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-        break;
-
-      }
-
-    }
+    /* TODO: set function pointers */
     break; /* HHO schemes */
 
   default:
@@ -1346,184 +536,6 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
 
   /* Add default post-processing related to the Navier-Stokes system */
   cs_post_add_time_mesh_dep_output(cs_navsto_system_extra_post, ns);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the velocity unknowns.
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set to a constant value
- *
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      val       pointer to the value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_add_velocity_ic_by_value(const char    *z_name,
-                                   cs_real_t     *val)
-{
-  assert(cs_navsto_system != NULL);
-  cs_navsto_system_t *nss = cs_navsto_system;
-
-  /* Add a new cs_xdef_t structure */
-  int z_id = 0;
-  if (z_name != NULL && strlen(z_name) > 0)
-    z_id = (cs_volume_zone_by_name(z_name))->id;
-
-  cs_flag_t  meta_flag = 0;
-  if (z_id == 0)
-    meta_flag |= CS_FLAG_FULL_LOC;
-
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        3,  /* dim */
-                                        z_id,
-                                        CS_FLAG_STATE_UNIFORM,
-                                        meta_flag,
-                                        val);
-
-  int  new_id = nss->n_velocity_ic_defs;
-  nss->n_velocity_ic_defs += 1;
-  BFT_REALLOC(nss->velocity_ic_defs, nss->n_velocity_ic_defs, cs_xdef_t *);
-  nss->velocity_ic_defs[new_id] = d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the pressure unknowns.
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set to a constant value
- *
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      val       pointer to the value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_add_pressure_ic_by_value(const char    *z_name,
-                                   cs_real_t     *val)
-{
-  assert(cs_navsto_system != NULL);
-  cs_navsto_system_t *nss = cs_navsto_system;
-
-  /* Add a new cs_xdef_t structure */
-  int z_id = 0;
-  if (z_name != NULL && strlen(z_name) > 0)
-    z_id = (cs_volume_zone_by_name(z_name))->id;
-
-  cs_flag_t  meta_flag = 0;
-  if (z_id == 0)
-    meta_flag |= CS_FLAG_FULL_LOC;
-
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        1,  /* dim */
-                                        z_id,
-                                        CS_FLAG_STATE_UNIFORM,
-                                        meta_flag,
-                                        val);
-
-  int  new_id = nss->n_pressure_ic_defs;
-  nss->n_pressure_ic_defs += 1;
-  BFT_REALLOC(nss->pressure_ic_defs, nss->n_pressure_ic_defs, cs_xdef_t *);
-  nss->pressure_ic_defs[new_id] = d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the velocity unkowns.
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set according to an analytical function
- *
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_add_velocity_ic_by_analytic(const char             *z_name,
-                                      cs_analytic_func_t     *analytic,
-                                      void                   *input)
-{
-  assert(cs_navsto_system != NULL);
-  cs_navsto_system_t *nss = cs_navsto_system;
-
-  /* Add a new cs_xdef_t structure */
-  int z_id = 0;
-  if (z_name != NULL && strlen(z_name) > 0)
-    z_id = (cs_volume_zone_by_name(z_name))->id;
-
-  cs_flag_t  meta_flag = 0;
-  if (z_id == 0)
-    meta_flag |= CS_FLAG_FULL_LOC;
-
-  cs_xdef_analytic_input_t  anai = {.func = analytic,
-                                    .input = input };
-
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                        3,  /* dim */
-                                        z_id,
-                                        0,  /* state flag */
-                                        meta_flag,
-                                        &anai);
-
-  int  new_id = nss->n_velocity_ic_defs;
-  nss->n_velocity_ic_defs += 1;
-  BFT_REALLOC(nss->velocity_ic_defs, nss->n_velocity_ic_defs, cs_xdef_t *);
-  nss->velocity_ic_defs[new_id] = d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the pressure unkowns.
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set according to an analytical function
- *
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_add_pressure_ic_by_analytic(const char             *z_name,
-                                      cs_analytic_func_t     *analytic,
-                                      void                   *input)
-{
-  assert(cs_navsto_system != NULL);
-  cs_navsto_system_t *nss = cs_navsto_system;
-
-  /* Add a new cs_xdef_t structure */
-  int z_id = 0;
-  if (z_name != NULL && strlen(z_name) > 0)
-    z_id = (cs_volume_zone_by_name(z_name))->id;
-
-  cs_flag_t  meta_flag = 0;
-  if (z_id == 0)
-    meta_flag |= CS_FLAG_FULL_LOC;
-
-  cs_xdef_analytic_input_t  anai = {.func = analytic,
-                                    .input = input };
-
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                        1,  /* dim */
-                                        z_id,
-                                        0,  /* state flag */
-                                        meta_flag,
-                                        &anai);
-
-  int  new_id = nss->n_pressure_ic_defs;
-  nss->n_pressure_ic_defs += 1;
-  BFT_REALLOC(nss->pressure_ic_defs, nss->n_pressure_ic_defs, cs_xdef_t *);
-  nss->pressure_ic_defs[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1547,148 +559,27 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
+  CS_UNUSED(ts);
 
-  cs_navsto_system_t  *navsto = cs_navsto_system;
-  const cs_navsto_param_t *nsp = navsto->param;
+  cs_navsto_system_t  *ns = cs_navsto_system;
+  const cs_navsto_param_t *nsp = ns->param;
 
-  if (navsto == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
   assert(nsp != NULL);
   if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid space discretization scheme.", __func__);
 
-  navsto->init(nsp, navsto->context);
-
-  const cs_param_dof_reduction_t  red = nsp->dof_reduction_mode;
-  const cs_real_t  t_cur = ts->t_cur;
+  /* Allocate and initialize the scheme context structure */
+  ns->scheme_context = ns->init_scheme_context(nsp, ns->coupling_context);
 
   /* Initial conditions for the velocity */
-  if (navsto->n_velocity_ic_defs > 0) {
-
-    assert(navsto->velocity_ic_defs != NULL);
-
-    /* Initialize cell-based array */
-    const cs_flag_t c_dof_flag = CS_FLAG_VECTOR | cs_flag_primal_cell;
-    cs_field_t *field  = cs_field_by_name("velocity");
-    cs_real_t  *c_values = field->val;
-
-    for (int def_id = 0; def_id < navsto->n_velocity_ic_defs; def_id++) {
-
-      /* Get and then set the definition of the initial condition */
-      cs_xdef_t  *def = navsto->velocity_ic_defs[def_id];
-
-      switch(def->type) {
-
-      case CS_XDEF_BY_VALUE:
-        cs_evaluate_potential_by_value(c_dof_flag, def, c_values);
-        break;
-
-      case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        cs_xdef_set_quadrature(def, nsp->qtype);
-        switch (red) {
-        case CS_PARAM_REDUCTION_DERHAM:
-          cs_evaluate_potential_by_analytic(c_dof_flag, def, t_cur, c_values);
-          break;
-        case CS_PARAM_REDUCTION_AVERAGE:
-          cs_evaluate_average_on_cells_by_analytic(def, t_cur, c_values);
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    _(" Incompatible reduction for the field %s.\n"),
-                    field->name);
-
-        }  /* Switch on possible reduction types */
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Incompatible way to initialize the field %s.\n"),
-                  field->name);
-
-      }  /* Switch on possible type of definition */
-
-    }  /* Loop on definitions */
-
-    /* Initialize face-based array:
-     * It may overwrite the extra_values related to the boundary faces, since
-     * BCs have already been copied there */
-    if (true) /* DEBUG */
-      _init_face_velocity_values(t_cur);
-
-  }  /* If initial conditions for the velocity */
+  if (ns->init_velocity != NULL)
+    ns->init_velocity(nsp, ns->scheme_context);
 
   /* Initial conditions for the pressure */
-  if (navsto->n_pressure_ic_defs > 0) {
-
-    assert(navsto->pressure_ic_defs != NULL);
-    cs_field_t *field  = cs_field_by_name("pressure");
-    cs_real_t  *values = field->val;
-    const cs_flag_t   dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
-
-    for (int def_id = 0; def_id < navsto->n_pressure_ic_defs; def_id++) {
-
-      /* Get and then set the definition of the initial condition */
-      cs_xdef_t  *def = navsto->pressure_ic_defs[def_id];
-
-      /* Initialize face-based array */
-      switch(def->type) {
-
-      /* Evaluating the integrals: the averages will be taken care of at the
-       * end when ensuring zero-mean valuedness */
-      case CS_XDEF_BY_VALUE:
-        /*cs_evaluate_potential_by_value(dof_flag, def, values);*/
-        cs_evaluate_density_by_value(dof_flag, def, values);
-        break;
-
-      case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        switch (red) {
-        case CS_PARAM_REDUCTION_DERHAM:
-          /*cs_evaluate_potential_by_analytic(dof_flag, def, t_cur, values);*/
-          /* Forcing BARY so that it is equivalent to DERHAM */
-          cs_xdef_set_quadrature(def, CS_QUADRATURE_BARY);
-          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
-          /* Restoring the original */
-          cs_xdef_set_quadrature(def, nsp->qtype);
-          break;
-        case CS_PARAM_REDUCTION_AVERAGE:
-          /*cs_evaluate_average_on_cells_by_analytic(def, t_cur, values);*/
-          cs_xdef_set_quadrature(def, nsp->qtype);
-          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    _(" Incompatible reduction for the field %s.\n"),
-                    field->name);
-
-        }  /* Switch on possible reduction types */
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Incompatible way to initialize the field %s.\n"),
-                  field->name);
-        break;
-
-      }  /* Switch on possible type of definition */
-
-    }  /* Loop on definitions */
-
-    /* We should ensure that the mean of the pressure is zero. Thus we compute
-     * it and subtract it from every value.
-     * NOTES:
-     *  - It could be useful to stored this average somewhere
-     *  - The procedure is not optimized (we can avoid setting the average if
-     *    it's a value), but it is the only way to allow multiple definitions
-     *    and definitions that do not cover all the domain. Moreover, we need
-     *    information (e.g. cs_cdo_quant) which we do not know here */
-    cs_cdofb_navsto_ensure_zero_mean_and_avg(values, 1);
-
-  } /* If initial conditions dor the pressure */
-
-  /* TODO: Set the initial condition for variables not directly related
-     to an equation */
+  if (ns->init_pressure != NULL)
+    ns->init_pressure(nsp, ns->scheme_context);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1703,16 +594,16 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 void
 cs_navsto_system_compute_steady_state(const cs_mesh_t      *mesh)
 {
-  cs_navsto_system_t  *navsto = cs_navsto_system;
+  cs_navsto_system_t  *ns = cs_navsto_system;
   double  dt_cur = 0.;  /* Useless for steady-state system */
 
-  if (navsto == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_navsto_param_t  *nsp = navsto->param;
+  cs_navsto_param_t  *nsp = ns->param;
 
   /* Build and solve the Navier-Stokes system */
   if (nsp->time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
-    navsto->compute(mesh, dt_cur, navsto->param, navsto->context);
+    ns->compute(mesh, ns->param, dt_cur, ns->scheme_context);
 
   /* TODO: Update the variable states */
 
@@ -1731,12 +622,12 @@ void
 cs_navsto_system_compute(const cs_mesh_t              *mesh,
                          double                        dt_cur)
 {
-  cs_navsto_system_t  *navsto = cs_navsto_system;
+  cs_navsto_system_t  *ns = cs_navsto_system;
 
-  if (navsto == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   /* Build and solve the Navier-Stokes system */
-  navsto->compute(mesh, dt_cur, navsto->param, navsto->context);
+  ns->compute(mesh, ns->param, dt_cur, ns->scheme_context);
 
   /* TODO: Update the variable states */
 
@@ -1790,10 +681,10 @@ cs_navsto_system_extra_post(void                      *input,
   CS_UNUSED(b_face_ids);
   CS_UNUSED(time_step);
 
-  cs_navsto_system_t  *navsto = (cs_navsto_system_t *)input;
+  cs_navsto_system_t  *ns = (cs_navsto_system_t *)input;
 
   /* TODO */
-  CS_UNUSED(navsto);
+  CS_UNUSED(ns);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1805,9 +696,9 @@ cs_navsto_system_extra_post(void                      *input,
 void
 cs_navsto_system_log_setup(void)
 {
-  cs_navsto_system_t  *navsto = cs_navsto_system;
+  cs_navsto_system_t  *ns = cs_navsto_system;
 
-  if (navsto == NULL)
+  if (ns == NULL)
     return;
 
   cs_log_printf(CS_LOG_SETUP, "\n");
@@ -1816,7 +707,7 @@ cs_navsto_system_log_setup(void)
   cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
   /* Main set of numerical parameters */
-  cs_navsto_param_log(navsto->param);
+  cs_navsto_param_log(ns->param);
 
 }
 

@@ -79,7 +79,9 @@ BEGIN_C_DECLS
 static const char
 cs_navsto_param_model_name[CS_NAVSTO_N_MODELS][CS_BASE_STRING_LEN] =
   { N_("Stokes velocity-pressure system"),
-    N_("Incompressible Navier-Stokes velocity-pressure system")
+    N_("Oseen velocity-pressure system"),
+    N_("Incompressible Navier-Stokes velocity-pressure system"),
+    N_("Navier-Stokes with velocity-pressure unknowns and Boussinesq model")
   };
 
 static const char
@@ -98,8 +100,42 @@ cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS][CS_BASE_STRING_LEN] =
   };
 
 static const char _err_empty_nsp[] =
-  N_(" Stop setting an empty cs_navsto_param_t structure.\n"
+  N_(" %s: Stop setting an empty cs_navsto_param_t structure.\n"
      " Please check your settings.\n");
+
+static const char
+_space_scheme_key[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
+  { "fv",
+    "cdo_vb",
+    "cdo_vcb",
+    "cdo_fb",
+    "hho_p0",
+    "hho_p1",
+    "hho_p2"
+  };
+
+static const char
+_time_scheme_key[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
+  { "implicit",
+    "explicit",
+    "crank_nicolson",
+    "theta_scheme"
+  };
+
+static const char
+_dof_reduction_key[CS_PARAM_N_REDUCTIONS][CS_BASE_STRING_LEN] =
+  { "derham",
+    "average"
+  };
+
+static const char
+_quad_type_key[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
+  { "none",
+    "bary",
+    "bary_subdiv",
+    "higher",
+    "highest"
+  };
 
 /*============================================================================
  * Private function prototypes
@@ -131,7 +167,6 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid coupling.", __func__);
     return NULL;
 
   }  /* Switch */
@@ -181,14 +216,27 @@ cs_navsto_param_create(cs_navsto_param_model_t        model,
   param->gd_scale_coef = 1.0;    /* Default value if not set by the user */
   param->qtype = CS_QUADRATURE_BARY;
 
+  /* Main set of properties */
+  param->density = cs_property_add("density", CS_PROPERTY_ISO);
+  param->lami_viscosity = cs_property_add("laminar_viscosity", CS_PROPERTY_ISO);
+
+  /* Initial conditions for the velocity */
+  param->velocity_ic_owner = false;
+  param->n_velocity_ic_defs = 0;
+  param->velocity_ic_defs = NULL;
+
+  /* Initial conditions for the pressure */
+  param->n_pressure_ic_defs = 0;
+  param->pressure_ic_defs = NULL;
+
   return param;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_navsto_param_t structure
+ * \brief  Free a \ref cs_navsto_param_t structure
  *
- * \param[in, out]  param    pointer to a cs_navsto_param_t structure
+ * \param[in, out]  param    pointer to a \ref cs_navsto_param_t structure
  *
  * \return a NULL pointer
  */
@@ -200,6 +248,27 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
   if (param == NULL)
     return param;
 
+  if (param->n_velocity_ic_defs > 0) {
+
+    /* Otherwise this is freed inside the related equation */
+    if (param->velocity_ic_owner) {
+      for (int i = 0; i < param->n_velocity_ic_defs; i++)
+        param->velocity_ic_defs[i] = cs_xdef_free(param->velocity_ic_defs[i]);
+    }
+    BFT_FREE(param->velocity_ic_defs);
+    param->velocity_ic_defs = NULL;
+
+  } /* Velocity initial conditions */
+
+  if (param->n_pressure_ic_defs > 0) {
+
+    for (int i = 0; i < param->n_pressure_ic_defs; i++)
+      param->pressure_ic_defs[i] = cs_xdef_free(param->pressure_ic_defs[i]);
+    BFT_FREE(param->pressure_ic_defs);
+    param->pressure_ic_defs = NULL;
+
+  } /* Pressure initial conditions */
+
   BFT_FREE(param);
 
   return NULL;
@@ -207,10 +276,10 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a parameter attached to a keyname in a cs_navsto_param_t
+ * \brief  Set a parameter attached to a keyname in a \ref cs_navsto_param_t
  *         structure
  *
- * \param[in, out] nsp      pointer to a cs_navsto_param_t structure to set
+ * \param[in, out] nsp      pointer to a \ref cs_navsto_param_t structure to set
  * \param[in]      key      key related to the member of eq to set
  * \param[in]      keyval   accessor to the value to set
  */
@@ -222,7 +291,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
                     const char           *keyval)
 {
   if (nsp == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_nsp);
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
   /* Conversion of the string to lower case */
   char val[CS_BASE_STRING_LEN];
@@ -354,80 +423,44 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a new source term structure defined by an analytical function
+ * \brief  Apply the numerical settings defined for the Navier-Stokes system
+ *         to an equation related to this system.
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" all
- *                           cells are considered)
- * \param[in]      ana       pointer to an analytical function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- *
- * \return a pointer to the new \ref cs_xdef_t structure
+ * \param[in]       nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out]  eqp    pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_xdef_t *
-cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
-                                      const char           *z_name,
-                                      cs_analytic_func_t   *ana,
-                                      void                 *input)
+void
+cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
+                         cs_equation_param_t        *eqp)
 {
-  cs_equation_param_t *eqp = _get_momentum_param(nsp);
-  cs_xdef_t  *d = cs_equation_add_source_term_by_analytic(eqp,
-                                                          z_name, ana, input);
-  cs_xdef_set_quadrature(d, nsp->qtype);
+  assert(nsp != NULL && eqp != NULL);
 
-  return d;
-}
+  /*  Set the space discretization scheme */
+  const char  *ss_key = _space_scheme_key[nsp->space_scheme];
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a new source term structure defined by a constant value
- *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" all
- *                           cells are considered)
- * \param[in]      val       pointer to the value to set
- *
- * \return a pointer to the new \ref cs_xdef_t structure
- */
-/*----------------------------------------------------------------------------*/
+  cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, ss_key);
 
-cs_xdef_t *
-cs_navsto_add_source_term_by_val(cs_navsto_param_t    *nsp,
-                                 const char           *z_name,
-                                 cs_real_t            *val)
-{
-  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  /*  Set the time discretization scheme */
+  const char  *ts_key = _time_scheme_key[nsp->time_scheme];
 
-  return cs_equation_add_source_term_by_val(eqp, z_name, val);
-}
+  cs_equation_set_param(eqp, CS_EQKEY_TIME_SCHEME, ts_key);
+  if (nsp->time_scheme == CS_TIME_SCHEME_THETA) {
+    char  cvalue[36]; /* include '\0' */
+    snprintf(cvalue, 35*sizeof(char), "%g", nsp->theta);
+    cs_equation_set_param(eqp, CS_EQKEY_TIME_THETA, cvalue);
+  }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a new source term structure defined by an array
- *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" all
- *                           cells are considered)
- * \param[in]      loc       information to know where are located values
- * \param[in]      array     pointer to an array
- * \param[in]      index     optional pointer to the array index
- *
- * \return a pointer to the new \ref cs_xdef_t structure
- */
-/*----------------------------------------------------------------------------*/
+  /*  Set the way DoFs are defined */
+  const char  *dof_key = _dof_reduction_key[nsp->dof_reduction_mode];
 
-cs_xdef_t *
-cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
-                                   const char           *z_name,
-                                   cs_flag_t             loc,
-                                   cs_real_t            *array,
-                                   cs_lnum_t            *index)
-{
-  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  cs_equation_set_param(eqp, CS_EQKEY_DOF_REDUCTION, dof_key);
 
-  return cs_equation_add_source_term_by_array(eqp, z_name, loc, array, index);
+  /*  Set quadratures type */
+  const char  *quad_key = _quad_type_key[nsp->qtype];
+
+  cs_equation_set_param(eqp, CS_EQKEY_BC_QUADRATURE, quad_key);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -491,6 +524,20 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
   }
 
+  /* Initial conditions for the velocity */
+  cs_log_printf(CS_LOG_SETUP,
+                "  <NavSto/Velocity.Init.Cond> number of definitions %d\n",
+                nsp->n_velocity_ic_defs);
+  for (int i = 0; i < nsp->n_velocity_ic_defs; i++)
+    cs_xdef_log(nsp->velocity_ic_defs[i]);
+
+  /* Initial conditions for the pressure */
+  cs_log_printf(CS_LOG_SETUP,
+                "  <NavSto/Pressure.Init.Cond> number of definitions %d\n",
+                nsp->n_pressure_ic_defs);
+  for (int i = 0; i < nsp->n_pressure_ic_defs; i++)
+    cs_xdef_log(nsp->pressure_ic_defs[i]);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -522,6 +569,324 @@ cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling)
 
   return NULL;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the velocity unknowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set to a constant value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
+                                   const char           *z_name,
+                                   cs_real_t            *val)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  cs_xdef_t  *d = NULL;
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+
+  if (eqp != NULL) { /* An equation related to the velocity is defined */
+
+    d = cs_equation_add_ic_by_value(eqp, z_name, val);
+
+  }
+  else { /* No momentum equation available with the choice of velocity-pressure
+            coupling */
+
+    nsp->velocity_ic_owner = true;
+
+    /* Add a new cs_xdef_t structure */
+    int z_id = 0;
+    if (z_name != NULL && strlen(z_name) > 0)
+      z_id = (cs_volume_zone_by_name(z_name))->id;
+
+    cs_flag_t  meta_flag = 0;
+    if (z_id == 0)
+      meta_flag |= CS_FLAG_FULL_LOC;
+
+    d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                              3,  /* dim */
+                              z_id,
+                              CS_FLAG_STATE_UNIFORM,
+                              meta_flag,
+                              val);
+  }
+
+  int  new_id = nsp->n_velocity_ic_defs;
+  nsp->n_velocity_ic_defs += 1;
+  BFT_REALLOC(nsp->velocity_ic_defs, nsp->n_velocity_ic_defs, cs_xdef_t *);
+  nsp->velocity_ic_defs[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the velocity unkowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set according to an analytical function
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t      *nsp,
+                                      const char             *z_name,
+                                      cs_analytic_func_t     *analytic,
+                                      void                   *input)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  cs_xdef_t  *d = NULL;
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+
+  if (eqp != NULL) { /* An equation related to the velocity is defined */
+
+    d = cs_equation_add_ic_by_analytic(eqp, z_name, analytic, input);
+
+  }
+  else { /* No momentum equation available with the choice of velocity-pressure
+            coupling */
+
+    nsp->velocity_ic_owner = true;
+
+    /* Add a new cs_xdef_t structure */
+    int z_id = 0;
+    if (z_name != NULL && strlen(z_name) > 0)
+      z_id = (cs_volume_zone_by_name(z_name))->id;
+
+    cs_flag_t  meta_flag = 0;
+    if (z_id == 0)
+      meta_flag |= CS_FLAG_FULL_LOC;
+
+    cs_xdef_analytic_input_t  anai = {.func = analytic,
+                                      .input = input };
+
+    d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                              3,  /* dim */
+                              z_id,
+                              0,  /* state flag */
+                              meta_flag,
+                              &anai);
+  }
+
+  int  new_id = nsp->n_velocity_ic_defs;
+  nsp->n_velocity_ic_defs += 1;
+  BFT_REALLOC(nsp->velocity_ic_defs, nsp->n_velocity_ic_defs, cs_xdef_t *);
+  nsp->velocity_ic_defs[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the pressure unknowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set to a constant value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t    *nsp,
+                                   const char           *z_name,
+                                   cs_real_t            *val)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = 0;
+  if (z_name != NULL && strlen(z_name) > 0)
+    z_id = (cs_volume_zone_by_name(z_name))->id;
+
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        1,  /* dim */
+                                        z_id,
+                                        CS_FLAG_STATE_UNIFORM,
+                                        meta_flag,
+                                        val);
+
+  int  new_id = nsp->n_pressure_ic_defs;
+  nsp->n_pressure_ic_defs += 1;
+  BFT_REALLOC(nsp->pressure_ic_defs, nsp->n_pressure_ic_defs, cs_xdef_t *);
+  nsp->pressure_ic_defs[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the pressure unkowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set according to an analytical function
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
+                                      const char             *z_name,
+                                      cs_analytic_func_t     *analytic,
+                                      void                   *input)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = 0;
+  if (z_name != NULL && strlen(z_name) > 0)
+    z_id = (cs_volume_zone_by_name(z_name))->id;
+
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_analytic_input_t  anai = {.func = analytic,
+                                    .input = input };
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                        1,  /* dim */
+                                        z_id,
+                                        0,  /* state flag */
+                                        meta_flag,
+                                        &anai);
+
+  int  new_id = nsp->n_pressure_ic_defs;
+  nsp->n_pressure_ic_defs += 1;
+  BFT_REALLOC(nsp->pressure_ic_defs, nsp->n_pressure_ic_defs, cs_xdef_t *);
+  nsp->pressure_ic_defs[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a new source term structure defined by an analytical function
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]      ana       pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
+                                      const char           *z_name,
+                                      cs_analytic_func_t   *ana,
+                                      void                 *input)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  cs_xdef_t  *d = cs_equation_add_source_term_by_analytic(eqp,
+                                                          z_name, ana, input);
+  cs_xdef_set_quadrature(d, nsp->qtype);
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a new source term structure defined by a constant value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]      val       pointer to the value to set
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_source_term_by_val(cs_navsto_param_t    *nsp,
+                                 const char           *z_name,
+                                 cs_real_t            *val)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+
+  return cs_equation_add_source_term_by_val(eqp, z_name, val);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a new source term structure defined by an array
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]      loc       information to know where are located values
+ * \param[in]      array     pointer to an array
+ * \param[in]      index     optional pointer to the array index
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
+                                   const char           *z_name,
+                                   cs_flag_t             loc,
+                                   cs_real_t            *array,
+                                   cs_lnum_t            *index)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+
+  return cs_equation_add_source_term_by_array(eqp, z_name, loc, array, index);
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

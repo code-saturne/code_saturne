@@ -627,7 +627,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
     /* Solve Navier--Stokes with CDO-Fb schemes */
     cs_cdofb_navsto_init_common(quant, connect, time_step,
                                 cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP0],
-                                cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP1]);
+                                cs_equation_common_ms[CS_CDO_CONNECT_FACE_VP0]);
 
   }
 

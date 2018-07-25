@@ -512,7 +512,9 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
     cs_gwf_finalize_setup(domain->connect, domain->cdo_quantities);
 
   if (cs_navsto_system_is_activated())
-    cs_navsto_system_finalize_setup(domain->connect, domain->cdo_quantities);
+    cs_navsto_system_finalize_setup(domain->connect,
+                                    domain->cdo_quantities,
+                                    domain->time_step);
 
   /* Last stage to define properties (when complex definition is requested) */
   cs_property_finalize_setup();

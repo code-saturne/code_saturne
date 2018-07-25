@@ -30,6 +30,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_param.h"
+#include "cs_property.h"
 #include "cs_quadrature.h"
 #include "cs_xdef.h"
 
@@ -52,6 +53,11 @@ BEGIN_C_DECLS
  * Stokes equations (mass and momentum) with the classical choice of variables
  * i.e. velocity and pressure
  *
+ * \var CS_NAVSTO_MODEL_OSEEN
+ * Like the incompressible Navier-Stokes equations (mass and momentum) but with
+ * a velocity field which is given. Thus the advection term in the momentum
+ * equation is linear. Unknowns: velocity and pressure
+ *
  * \var CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
  * Navier-Stokes equations: mass and momentum with a constant mass density
  *
@@ -65,6 +71,7 @@ BEGIN_C_DECLS
 typedef enum {
 
   CS_NAVSTO_MODEL_STOKES,
+  CS_NAVSTO_MODEL_OSEEN,
   CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES,
   CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES,
 
@@ -195,6 +202,78 @@ typedef struct {
    */
   cs_quadrature_type_t          qtype;
 
+  /*!
+   * @}
+   * @name Physical properties
+   * Set of properties: properties and their related fields are allocated
+   * according to the choice of model for Navier-Stokes
+   * @{
+   */
+
+  /*! \var density
+   *  Density of the fluid, pointer to \ref cs_property_t used in several
+   *  terms in the Navier-Stokes equations
+   */
+
+  cs_property_t      *density;
+
+  /*! \var lami_viscosity
+   *  Laminar viscosity, pointer to \ref cs_property_t associated to the
+   *  diffusion term for the momentum equation
+   */
+
+  cs_property_t      *lami_viscosity;
+
+  /*!
+   * @}
+   * @name Initial conditions(IC)
+   *
+   * Set of parameters used to take into account the initial condition on the
+   * pressure and/or the velocity.
+   * CAUTION: so far, there is no check if the different IC are compatible
+   * with the boundary conditions for instance
+   * @{
+   */
+
+  /*! \var velocity_ic_owner
+   *  True if the definitions are stored inside this structure, otherwise
+   *  the definitions are stored inside the a \ref cs_equation_param_t
+   *  structure dedicated to the momentum equation.
+   */
+  bool  velocity_ic_owner;
+
+  /*! \var n_velocity_ic_defs
+   *  Number of initial conditions associated to the velocity
+   */
+  int  n_velocity_ic_defs;
+
+  /*! \var velocity_ic_defs
+   *  Pointers to the definitions of the initial conditions associated to the
+   *  velocity.
+   *  The code does not check if the resulting initial velocity satisfies the
+   *  divergence constraint.
+   */
+  cs_xdef_t  **velocity_ic_defs;
+
+
+  /*! \var n_pressure_ic_defs
+   *  Number of initial conditions associated to the pressure
+   */
+  int  n_pressure_ic_defs;
+
+
+
+  /*! \var pressure_ic_defs
+   *  Pointers to the definitions of the initial conditions associated to the
+   *  pressure.
+   *  In order to force a zero-mean pressure, the code can compute the average
+   *  of the resulting pressure and subtract it
+   */
+   cs_xdef_t  **pressure_ic_defs;
+
+  bool  pressure_ic_is_owner;
+
+  /*! @} */
 
 } cs_navsto_param_t;
 
@@ -297,9 +376,9 @@ cs_navsto_param_create(cs_navsto_param_model_t        model,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_navsto_param_t structure
+ * \brief  Free a \ref cs_navsto_param_t structure
  *
- * \param[in, out]  param    pointer to a cs_navsto_param_t structure
+ * \param[in, out]  param    pointer to a \ref cs_navsto_param_t structure
  *
  * \return a NULL pointer
  */
@@ -310,10 +389,10 @@ cs_navsto_param_free(cs_navsto_param_t    *param);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a parameter attached to a keyname in a cs_navsto_param_t
+ * \brief  Set a parameter attached to a keyname in a \ref cs_navsto_param_t
  *         structure
  *
- * \param[in, out] nsp      pointer to a cs_navsto_param_t structure to set
+ * \param[in, out] nsp      pointer to a \ref cs_navsto_param_t structure to set
  * \param[in]      key      key related to the member of eq to set
  * \param[in]      keyval   accessor to the value to set
  */
@@ -323,6 +402,132 @@ void
 cs_navsto_param_set(cs_navsto_param_t    *nsp,
                     cs_navsto_key_t       key,
                     const char           *keyval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Apply the numerical settings defined for the Navier-Stokes system
+ *         to an equation related to this system.
+ *
+ * \param[in]       nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out]  eqp    pointer to a \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
+                         cs_equation_param_t        *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Summary of the main cs_navsto_param_t structure
+ *
+ * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_param_log(const cs_navsto_param_t    *nsp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the name of the coupling algorithm
+ *
+ * \param[in]     coupling    A \ref cs_navsto_param_coupling_t
+ *
+ * \return the name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the velocity unknowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set to a constant value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
+                                   const char           *z_name,
+                                   cs_real_t            *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the velocity unkowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set according to an analytical function
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t      *nsp,
+                                      const char             *z_name,
+                                      cs_analytic_func_t     *analytic,
+                                      void                   *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the pressure unknowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set to a constant value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t    *nsp,
+                                   const char           *z_name,
+                                   cs_real_t            *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the pressure unkowns.
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set according to an analytical function
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
+                                      const char             *z_name,
+                                      cs_analytic_func_t     *analytic,
+                                      void                   *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -383,30 +588,6 @@ cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
                                    cs_flag_t             loc,
                                    cs_real_t            *array,
                                    cs_lnum_t            *index);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Summary of the main cs_navsto_param_t structure
- *
- * \param[in]  nsp    pointer to a cs_navsto_param_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_param_log(const cs_navsto_param_t    *nsp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the name of the coupling algorithm
- *
- * \param[in]     coupling    A \ref cs_navsto_param_coupling_t
- *
- * \return the name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling);
 
 /*----------------------------------------------------------------------------*/
 

@@ -60,28 +60,48 @@ BEGIN_C_DECLS
 /*!
  * \brief  Allocate and initialize the context structure related to a given
  *         discretization scheme for the resolution of the Navier-Stokes system
+ *         with a specified coupling algorithm
  *
- * \param[in]      nsp        pointer to a cs_navsto_param_t structure
+ * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] nscc       Navier-Stokes coupling context: pointer to a
  *                            structure cast on-the-fly
+ *
+ * \return a pointer to a new allocated \ref cs_cdofb_uzawa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-typedef void
+typedef void *
 (cs_navsto_init_scheme_context_t)(const cs_navsto_param_t    *nsp,
-                                  const void                 *nscc);
+                                  void                       *nscc);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize the context structure related to a given
- *         discretization scheme for the resolution of the Navier-Stokes system
+ * \brief  Free the context structure related to a given discretization scheme
+ *         for the resolution of the Navier-Stokes system with a specified
+ *         coupling algorithm
  *
- * \param[in]      nsp        pointer to a cs_navsto_param_t structure
+ * \param[in, out]  scheme_context   pointer to a structure cast on-the-fly
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void *
+(cs_navsto_free_scheme_context_t)(void     *scheme_context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize field values (pressure, velocity or temperature)
+ *         according to the model, the space discretization or the model
+ *
+ * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
+ * \param[in] scheme_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_navsto_free_scheme_context_t)(const cs_navsto_param_t      *nsp);
+(cs_navsto_init_values_t)(const cs_navsto_param_t     *nsp,
+                          void                        *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -89,19 +109,18 @@ typedef void
  *         Navier-Stokes system. This means that equations are built and then
  *         solved.
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      dt_cur     current value of the time step
- * \param[in]      nsp        pointer to a cs_navsto_param_t structure
- * \param[in, out] nscc       Navier-Stokes coupling context: pointer to a
- *                            structure cast on-the-fly
+ * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
+ * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      dt_cur          current value of the time step
+ * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_navsto_compute_t)(const cs_mesh_t              *mesh,
-                      double                        dt_cur,
                       const cs_navsto_param_t      *nsp,
-                      void                         *nscc);
+                      double                        dt_cur,
+                      void                         *scheme_context);
 
 /*=============================================================================
  * Local Macro definitions and structure definitions
@@ -133,49 +152,36 @@ typedef struct {
   cs_adv_field_t     *adv_field;
 
   /*! \var velocity
-   *  Velocity, 3D, pointer to \ref cs_field_t
+   *  Velocity, vector-valued, pointer to \ref cs_field_t
    */
 
   cs_field_t         *velocity;
 
   /*! \var pressure
-   *  Pressure, 1D, pointer to \ref cs_field_t
+   *  Pressure, scalar-valued, pointer to \ref cs_field_t
    */
 
   cs_field_t         *pressure;
 
   /*! \var temperature
-   *  Temperature, 1D, pointer to \ref cs_field_t
+   *  Temperature, scalar-var, pointer to \ref cs_field_t. NULL if no
+   *  energy-like equation is defined
    */
 
   cs_field_t         *temperature;
 
-  /*!
-   * @}
-   * @name Physical properties
-   * Set of properties: properties and their related fields are allocated
-   * according to the choice of model for Navier-Stokes
-   * @{
+  /*! \var coupling_context
+   * Additional structure storing information according to the way equations
+   * of model for the Navier-Stokes system are coupled and thus solved
    */
+  void               *coupling_context;
 
-  /*! \var density
-   *  Density of the fluid, pointer to \ref cs_property_t
+  /*! \var scheme_context
+   * Additional structure storing information according to the space
+   * discretization scheme used for solving the model for the Navier-Stokes
+   * system
    */
-
-  cs_property_t      *density;
-
-  /*! \var lami_viscosity
-   *  Laminar viscosity, pointer to \ref cs_property_t
-   */
-
-  cs_property_t      *lami_viscosity;
-
-  /*! \var context
-   * Additional structure allocated if needed i.e. according to the choice
-   * of model for the Navier-Stokes system and the way the equations are
-   * solved
-   */
-  void               *context;
+  void               *scheme_context;
 
   /*!
    * @}
@@ -188,58 +194,32 @@ typedef struct {
    *  structure related to a given discretization scheme for the resolution
    *  of the Navier-Stokes system
    */
-  cs_navsto_init_scheme_context_t   *init;
+  cs_navsto_init_scheme_context_t   *init_scheme_context;
 
   /*! \var free
    *  Pointer of functions related to the destruction of the context
    *  structure related to a given discretization scheme for the resolution
    *  of the Navier-Stokes system
    */
-  cs_navsto_free_scheme_context_t   *free;
+  cs_navsto_free_scheme_context_t   *free_scheme_context;
+
+  /*! \var init_velocity
+   *  Pointer of functions related to the initialization of variable values
+   *  Case of the velocity
+   */
+  cs_navsto_init_values_t           *init_velocity;
+
+  /*! \var init_pressure
+   *  Pointer of functions related to the initialization of variable values
+   *  Case of the pressure
+   */
+  cs_navsto_init_values_t           *init_pressure;
 
   /*! \var compute
    *  Pointer of functions related to resolution of the Navier-Stokes system
    *  Handle the build of the system and its resolution
    */
   cs_navsto_compute_t               *compute;
-
-  /*!
-   * @}
-   * @name Initial conditions(IC)
-   *
-   * Set of parameters used to take into account the initial condition on the
-   * pressure and/or the velocity.
-   * CAUTION: so far, there is no check if the different IC are compatible
-   * @{
-   */
-
-  /*! \var n_velocity_ic_defs
-   *  Number of initial conditions associated to the velocity
-   */
-   int  n_velocity_ic_defs;
-
-  /*! \var n_pressure_ic_defs
-   *  Number of initial conditions associated to the pressure
-   */
-   int  n_pressure_ic_defs;
-
-  /*! \var velocity_ic_defs
-   *  Pointers to the definitions of the initial conditions associated to the
-   *  velocity.
-   *  The code does not check if the resulting initial velocity satisfies the
-   *  divergence constraint.
-   */
-   cs_xdef_t  **velocity_ic_defs;
-
-  /*! \var pressure_ic_defs
-   *  Pointers to the definitions of the initial conditions associated to the
-   *  pressure.
-   *  In order to force a zero-mean pressure, the code can compute the average
-   *  of the resulting pressure and subtract it
-   */
-   cs_xdef_t  **pressure_ic_defs;
-
-  /*! @} */
 
 } cs_navsto_system_t;
 
@@ -312,84 +292,14 @@ cs_navsto_system_init_setup(void);
  *
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_step  pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
-                                const cs_cdo_quantities_t  *quant);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the velocity unknowns..
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set to a constant value
- *
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      val       pointer to the value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_add_velocity_ic_by_value(const char    *z_name,
-                                   cs_real_t     *val);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the pressure unknowns..
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set to a constant value
- *
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      val       pointer to the value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_add_pressure_ic_by_value(const char    *z_name,
-                                   cs_real_t     *val);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the velocity unkowns.
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set according to an analytical function
- *
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_add_velocity_ic_by_analytic(const char             *z_name,
-                                      cs_analytic_func_t     *analytic,
-                                      void                   *input);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the initial condition for the pressure unkowns.
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set according to an analytical function
- *
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_add_pressure_ic_by_analytic(const char             *z_name,
-                                      cs_analytic_func_t     *analytic,
-                                      void                   *input);
+                                const cs_cdo_quantities_t  *quant,
+                                const cs_time_step_t       *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
