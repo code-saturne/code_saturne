@@ -353,8 +353,10 @@ void CS_PROCF (perinr, PERINR)
 
     f = cs_field_by_name_try(r_name[i]);
 
-    if (f == NULL)
+    if (f == NULL) {
+      BFT_FREE(grad);
       return;
+    }
 
     /* We do not reconstruct and do not limit as we do not know the gradient of
        neighbors (we are trying to compute it here). Starting from the second
