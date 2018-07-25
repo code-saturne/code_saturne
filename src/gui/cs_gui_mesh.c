@@ -106,141 +106,93 @@ _get_face_joining(const char  *keyword,
 }
 
 /*-----------------------------------------------------------------------------
- * Return the value to a face periodicity markup
- *
- * parameters:
- *   keyword <-- label of the markup
- *   number  <-- joining number
- *----------------------------------------------------------------------------*/
-
-static char *
-_get_periodicity(const char  *keyword,
-                 int          number)
-{
-  char* value = NULL;
-  char *path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "solution_domain", "periodicity");
-  cs_xpath_add_element_num(&path, "face_periodicity", number);
-  cs_xpath_add_element(&path, keyword);
-  cs_xpath_add_function_text(&path);
-  value = cs_gui_get_text_value(path);
-  BFT_FREE(path);
-  return value;
-}
-
-/*-----------------------------------------------------------------------------
  * Get transformation parameters associated with a translational periodicity
  *
  * parameter:
- *   number <-- number of the syrthes coupling
+ *   node   <-- pointer to a periodic faces definition node
  *   trans  --> translation values
  *----------------------------------------------------------------------------*/
 
 static void
-_get_periodicity_translation(int     number,
-                             double  trans[3])
+_get_periodicity_translation(cs_tree_node_t  *node,
+                             double           trans[3])
 {
-  size_t dir_id = 0;
-  char *path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "solution_domain", "periodicity");
-  cs_xpath_add_element_num(&path, "face_periodicity", number);
-  cs_xpath_add_elements(&path, 2, "translation", "translation_x");
-  dir_id = strlen(path) - 1;
-  cs_xpath_add_function_text(&path);
+  cs_tree_node_t  *tn = cs_tree_node_get_child(node, "translation");
 
-  if (!cs_gui_get_double(path, trans + 0))
-    trans[0] = 0.0;
+  if (tn != NULL) {
 
-  path[dir_id] = 'y';
-  if (!cs_gui_get_double(path, trans + 1))
-    trans[1] = 0.0;
+    const char *names[] = {"translation_x", "translation_y", "translation_z"};
 
-  path[dir_id] = 'z';
-  if (!cs_gui_get_double(path, trans + 2))
-    trans[2] = 0.0;
+    for (int i = 0; i < 3; i++) {
+      const cs_real_t *v = cs_tree_node_get_child_values_real(tn, names[i]);
+      if (v != NULL)
+        trans[i] = v[0];
+    }
 
-  BFT_FREE(path);
+  }
 
 #if _XML_DEBUG_
   bft_printf("==> _get_periodicity_translation\n");
   bft_printf("--translation = [%f %f %f]\n",
              trans[0], trans[1], trans[2]);
 #endif
-
-  return;
 }
 
 /*-----------------------------------------------------------------------------
  * Get transformation parameters associated with a rotational periodicity
  *
  * parameter:
- *   number    <-- number of the syrthes coupling
+ *   node      <-- pointer to a periodic faces definition node
  *   angle     --> rotation angle
  *   axis      --> rotation axis
  *   invariant --> invariant point
  *----------------------------------------------------------------------------*/
 
 static void
-_get_periodicity_rotation(int      number,
-                          double  *angle,
-                          double   axis[3],
-                          double   invariant[3])
+_get_periodicity_rotation(cs_tree_node_t  *node,
+                          double          *angle,
+                          double           axis[3],
+                          double           invariant[3])
 {
-  size_t coo_id = 0;
-  char *path = NULL;
-  char *path_0 = cs_xpath_init_path();
-  cs_xpath_add_elements(&path_0, 2, "solution_domain", "periodicity");
-  cs_xpath_add_element_num(&path_0, "face_periodicity", number);
-  cs_xpath_add_element(&path_0, "rotation");
+  cs_tree_node_t  *tn = cs_tree_node_get_child(node, "rotation");
 
-  BFT_MALLOC(path, strlen(path_0) + 1, char);
-  strcpy(path, path_0);
+  if (tn != NULL) {
 
-  /* Angle */
+    const cs_real_t *v;
 
-  cs_xpath_add_element(&path, "angle");
-  cs_xpath_add_function_text(&path);
-  if (!cs_gui_get_double(path, angle))
-    *angle = 0.0;
+    /* Angle */
 
-  /* Axis */
+    v = cs_tree_node_get_child_values_real(tn, "angle");
+    if (v != NULL)
+      *angle =  v[0];
+    else
+      *angle = 0.0;
 
-  strcpy(path, path_0);
-  cs_xpath_add_element(&path, "axis_x");
-  coo_id = strlen(path) - 1;
-  cs_xpath_add_function_text(&path);
+    /* Axis */
 
-  if (!cs_gui_get_double(path, axis + 0))
-    axis[0] = 0.0;
+    const char *a_names[] = {"axis_x", "axis_y", "axis_z"};
 
-  path[coo_id] = 'y';
-  if (!cs_gui_get_double(path, axis + 1))
-    axis[1] = 0.0;
+    for (int i = 0; i < 3; i++) {
+      v = cs_tree_node_get_child_values_real(tn, a_names[i]);
+      if (v != NULL)
+        axis[i] = v[0];
+      else
+        axis[i] = 0;
+    }
 
-  path[coo_id] = 'z';
-  if (!cs_gui_get_double(path, axis + 2))
-    axis[2] = 0.0;
+    /* Invariant */
 
-  /* Invariant */
+    const char *i_names[] = {"invariant_x", "invariant_y", "invariant_z"};
 
-  strcpy(path, path_0);
-  cs_xpath_add_element(&path, "invariant_x");
-  coo_id = strlen(path) - 1;
-  cs_xpath_add_function_text(&path);
+    for (int i = 0; i < 3; i++) {
+      v = cs_tree_node_get_child_values_real(tn, i_names[i]);
+      if (v != NULL)
+        invariant[i] = v[0];
+      else
+        invariant[i] = 0;
+    }
 
-  if (!cs_gui_get_double(path, invariant + 0))
-    invariant[0] = 0.0;
-
-  path[coo_id] = 'y';
-  if (!cs_gui_get_double(path, invariant + 1))
-    invariant[1] = 0.0;
-
-  path[coo_id] = 'z';
-  if (!cs_gui_get_double(path, invariant + 2))
-    invariant[2] = 0.0;
-
-  BFT_FREE(path);
-  BFT_FREE(path_0);
+  }
 
 #if _XML_DEBUG_
   bft_printf("==> _get_periodicity_translation\n");
@@ -251,49 +203,49 @@ _get_periodicity_rotation(int      number,
   bft_printf("--invariant = [%f %f %f]\n",
              invariant[0], invariant[1], invariant[2]);
 #endif
-
-  return;
 }
 
 /*-----------------------------------------------------------------------------
  * Get transformation parameters associated with a mixed periodicity
  *
  * parameter:
- *   number <-- number of the syrthes coupling
+ *   node   <-- pointer to a periodic faces definition node
  *   matrix --> translation values (m11, m12, m13, m14, ..., m33, m34)
  *----------------------------------------------------------------------------*/
 
 static void
-_get_periodicity_mixed(int     number,
-                       double  matrix[3][4])
+_get_periodicity_mixed(cs_tree_node_t  *node,
+                       double           matrix[3][4])
 {
-  int i, j;
-  size_t coeff_id = 0;
-  char *path = cs_xpath_init_path();
-  const char id_str[] = {'1', '2', '3','4'};
+  cs_tree_node_t  *tn = cs_tree_node_get_child(node, "mixed");
 
-  cs_xpath_add_elements(&path, 2, "solution_domain", "periodicity");
-  cs_xpath_add_element_num(&path, "face_periodicity", number);
-  cs_xpath_add_elements(&path, 2, "mixed", "matrix_11");
-  coeff_id = strlen(path) - 2;
-  cs_xpath_add_function_text(&path);
+  if (tn != NULL) {
 
-  for (i = 0; i < 3; i++) {
-    path[coeff_id] = id_str[i];
+    char c_name[] = "matrix_11";
 
-    for (j = 0; j < 4; j++) {
-      path[coeff_id + 1] = id_str[j];
+    size_t coeff_id = strlen("matrix_");
+    const char id_str[] = {'1', '2', '3','4'};
 
-      if (!cs_gui_get_double(path, &(matrix[i][j]))) {
-        if (i != j)
-          matrix[i][j] = 0.0;
-        else
-          matrix[i][j] = 1.0;
+    for (int i = 0; i < 3; i++) {
+      c_name[coeff_id] = id_str[i];
+
+      for (int j = 0; j < 4; j++) {
+        c_name[coeff_id + 1] = id_str[j];
+
+        const cs_real_t *v = cs_tree_node_get_child_values_real(tn, c_name);
+        if (v != NULL)
+          matrix[i][j] = v[0];
+        else {
+          if (i != j)
+            matrix[i][j] = 0.0;
+          else
+            matrix[i][j] = 1.0;
+        }
+
       }
     }
-  }
 
-  BFT_FREE(path);
+  }
 
 #if _XML_DEBUG_
   bft_printf("==> _get_periodicity_translation\n");
@@ -304,8 +256,6 @@ _get_periodicity_mixed(int     number,
              matrix[1][0], matrix[1][1] ,matrix[1][2], matrix[1][3],
              matrix[2][0], matrix[2][1] ,matrix[2][2], matrix[2][3]);
 #endif
-
-  return;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -426,56 +376,44 @@ cs_gui_mesh_define_joinings(void)
 void
 cs_gui_mesh_define_periodicities(void)
 {
-  int perio_id;
-  double angle, trans[3], axis[3], invariant[3], matrix[3][4];
-
-  int  n_perio = 0;
-  int  n_modes = 0;
-  char  **modes = NULL;
-  char  *path = NULL;
-
   if (!cs_gui_file_is_loaded())
     return;
 
-  n_perio
-    = cs_gui_get_tag_count("/solution_domain/periodicity/face_periodicity",
-                           1);
-  if (n_perio == 0)
-    return;
+  /* Loop on periodicity definitions */
 
-  /* Get modes associated with each periodicity */
+  cs_tree_node_t *pn
+    = cs_tree_get_node(cs_glob_tree,
+                       "/solution_domain/periodicity/face_periodicity");
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3,
-                        "solution_domain",
-                        "periodicity", "face_periodicity");
-  cs_xpath_add_attribute(&path, "mode");
-  modes = cs_gui_get_attribute_values(path, &n_modes);
+  int perio_id = 0;
 
-  if (n_modes != n_perio)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Number of periodicities (%d) and modes (%d) do not match."),
-              n_perio, n_modes);
+  while (pn != NULL) {
 
-  BFT_FREE(path);
+    double angle, trans[3], axis[3], invariant[3], matrix[3][4];
 
-  /* loop on periodicities */
+    /* Get mode associated with each periodicity */
 
-  for (perio_id = 0; perio_id < n_perio; perio_id++) {
+    const char *mode = cs_tree_node_get_tag(pn, "mode");
 
-    char *selector_s  =  _get_periodicity("selector", perio_id+1);
-    char *fraction_s  =  _get_periodicity("fraction", perio_id+1);
-    char *plane_s     =  _get_periodicity("plane", perio_id+1);
-    char *verbosity_s =  _get_periodicity("verbosity", perio_id+1);
-    char *visu_s      =  _get_periodicity("visualization", perio_id+1);
+    if (mode == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                _("\"%s\" node %d is missing a \"%s\" tag/child."),
+                pn->name, perio_id, "mode");
+
+    const char *selector_s  =  cs_tree_node_get_child_value_str(pn, "selector");
+    const char *fraction_s  =  cs_tree_node_get_child_value_str(pn, "fraction");
+    const char *plane_s     =  cs_tree_node_get_child_value_str(pn, "plane");
+    const char *verbosity_s =  cs_tree_node_get_child_value_str(pn, "verbosity");
+    const char *visu_s      =  cs_tree_node_get_child_value_str(pn,
+                                                                "visualization");
 
     double fraction = (fraction_s != NULL) ? atof(fraction_s) : 0.1;
     double plane = (plane_s != NULL) ? atof(plane_s) : 25.0;
     int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 1;
     int visualization = (visu_s != NULL) ? atoi(visu_s) : 1;
 
-    if (!strcmp(modes[perio_id], "translation")) {
-      _get_periodicity_translation(perio_id+1, trans);
+    if (!strcmp(mode, "translation")) {
+      _get_periodicity_translation(pn, trans);
       cs_join_perio_add_translation(selector_s,
                                     fraction,
                                     plane,
@@ -484,8 +422,8 @@ cs_gui_mesh_define_periodicities(void)
                                     trans);
     }
 
-    else if (!strcmp(modes[perio_id], "rotation")) {
-      _get_periodicity_rotation(perio_id+1, &angle, axis, invariant);
+    else if (!strcmp(mode, "rotation")) {
+      _get_periodicity_rotation(pn, &angle, axis, invariant);
       cs_join_perio_add_rotation(selector_s,
                                  fraction,
                                  plane,
@@ -496,8 +434,8 @@ cs_gui_mesh_define_periodicities(void)
                                  invariant);
     }
 
-    else if (!strcmp(modes[perio_id], "mixed")) {
-      _get_periodicity_mixed(perio_id+1, matrix);
+    else if (!strcmp(mode, "mixed")) {
+      _get_periodicity_mixed(pn, matrix);
       cs_join_perio_add_mixed(selector_s,
                               fraction,
                               plane,
@@ -508,7 +446,7 @@ cs_gui_mesh_define_periodicities(void)
 
     else
       bft_error(__FILE__, __LINE__, 0,
-                _("Periodicity mode \"%s\" unknown."), modes[perio_id]);
+                _("Periodicity mode \"%s\" unknown."), mode);
 
 #if _XML_DEBUG_
     bft_printf("==> cs_gui_mesh_define_periodicities\n");
@@ -519,16 +457,11 @@ cs_gui_mesh_define_periodicities(void)
     bft_printf("--visualization = %s\n", visu_s);
 #endif
 
-    BFT_FREE(selector_s);
-    BFT_FREE(fraction_s);
-    BFT_FREE(plane_s);
-    BFT_FREE(verbosity_s);
-    BFT_FREE(visu_s);
-  }
+    /* Next node */
 
-  for (perio_id = 0; perio_id < n_perio; perio_id++)
-    BFT_FREE(modes[perio_id]);
-  BFT_FREE(modes);
+    pn = cs_tree_node_get_next_of_name(pn);
+    perio_id += 1;
+  }
 }
 
 /*----------------------------------------------------------------------------
