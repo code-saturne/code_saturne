@@ -143,6 +143,7 @@ static int _restart_present = 0;
 
 static int    _checkpoint_nt_interval = -1;  /* time step interval */
 static int    _checkpoint_nt_next = -1;      /* next forced time step */
+static int    _checkpoint_nt_last = -1;      /* last checkpoint time step */
 static double _checkpoint_t_interval = -1.;  /* physical time interval */
 static double _checkpoint_t_next = -1.;      /* next forced time value */
 static double _checkpoint_t_last = 0.;       /* last forced time value */
@@ -1071,6 +1072,19 @@ cs_restart_checkpoint_set_defaults(int     nt_interval,
 }
 
 /*----------------------------------------------------------------------------
+ * Define last forced checkpoint time step
+ *
+ * parameters
+ *   nt_last <-- last time step for forced checkpoint
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_last_ts(int  nt_last)
+{
+  _checkpoint_nt_last = nt_last;
+}
+
+/*----------------------------------------------------------------------------
  * Define next forced checkpoint time step
  *
  * parameters
@@ -1146,6 +1160,12 @@ cs_restart_checkpoint_required(const cs_time_step_t  *ts)
 
     else if (_checkpoint_nt_interval > 0 && nt % _checkpoint_nt_interval == 0)
       retval = true;
+
+    else if (_checkpoint_nt_interval > 0 && _checkpoint_nt_last > -1) {
+      if (ts->nt_cur >= _checkpoint_nt_interval + _checkpoint_nt_last)
+        retval = true;
+    }
+
   }
 
   if (_checkpoint_t_interval > 0
@@ -1187,6 +1207,8 @@ cs_restart_checkpoint_done(const cs_time_step_t  *ts)
   assert(ts != NULL);
 
   double t = ts->t_cur - ts->t_prev;
+
+  _checkpoint_nt_last = ts->nt_cur;
 
   if (_checkpoint_nt_next >= 0 && _checkpoint_nt_next <= ts->nt_cur)
     _checkpoint_nt_next = -1;

@@ -201,6 +201,16 @@ cs_restart_checkpoint_set_defaults(int     nt_interval,
                                    double  wt_interval);
 
 /*----------------------------------------------------------------------------
+ * Define last forced checkpoint time step
+ *
+ * parameters
+ *   nt_last <-- last time step for forced checkpoint
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_last_ts(int  nt_last);
+
+/*----------------------------------------------------------------------------
  * Define next forced checkpoint time step
  *
  * parameters

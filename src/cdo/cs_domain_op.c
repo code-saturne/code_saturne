@@ -310,8 +310,13 @@ cs_domain_post(cs_domain_t  *domain)
 void
 cs_domain_read_restart(cs_domain_t  *domain)
 {
-  if (cs_restart_present() == false)
+  if (cs_restart_present() == false) {
+
+    /* Initialize time step if a restart frequency is set */
+    cs_restart_checkpoint_set_last_ts(domain->time_step->t_cur);
+
     return;
+  }
 
   cs_restart_t  *restart = cs_restart_create("main", /* restart file name */
                                              NULL,   /* directory name */
@@ -495,6 +500,9 @@ cs_domain_read_restart(cs_domain_t  *domain)
   /* Read additional arrays of values according to the type of
      equation and the discretization scheme */
   cs_equation_read_extra_restart(restart);
+
+  /* Initialize time step if a restart frequency is set */
+  cs_restart_checkpoint_set_last_ts(nt_cur);
 
   /* Finalize restart process */
   cs_restart_destroy(&restart);
