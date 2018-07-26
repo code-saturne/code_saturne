@@ -55,6 +55,7 @@
 #include "cs_mesh.h"
 #include "cs_parall.h"
 #include "cs_mesh_location.h"
+#include "cs_time_step.h"
 #include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
@@ -1728,8 +1729,9 @@ cs_restart_write_field_info(cs_restart_t  *r)
   BFT_FREE(name_buf);
   BFT_FREE(type_buf);
 
-  bft_printf(_("  Wrote field names and types to checkpoint: %s\n"),
-             cs_restart_get_name(r));
+  bft_printf(_("  Wrote field names and types to checkpoint"
+               " at iteration %d: %s\n"),
+             cs_glob_time_step->nt_cur, cs_restart_get_name(r));
 }
 
 /*----------------------------------------------------------------------------*/
