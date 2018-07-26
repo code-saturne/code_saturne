@@ -854,7 +854,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
 
       } /* Boundary cell */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
       if (cs_dbg_cw_test(cm))
         cs_cell_sys_dump(">> Local system matrix before condensation",
                          c_id, csys);
@@ -869,7 +869,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
                                        eqc->rc_tilda, eqc->acf_tilda,
                                        cb, csys);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
       if (cs_dbg_cw_test(cm))
         cs_cell_sys_dump(">> Local system matrix after condensation",
                          c_id, csys);
