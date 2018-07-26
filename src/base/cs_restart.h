@@ -127,7 +127,7 @@ void CS_PROCF (dflsui, DFLSUI)
  * integer          iisuit      : --> : 0 if no restart required, 1 otherwise
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (reqsui, RESSUI)
+void CS_PROCF (reqsui, REQSUI)
 (
  cs_int_t   *iisuit
 );
