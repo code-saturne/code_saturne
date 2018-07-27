@@ -117,15 +117,15 @@ cs_cdovcb_scaleq_finalize_common(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a \ref cs_cdovcb_scaleq_t structure storing data useful
+ * \brief  Initialize a cs_cdovcb_scaleq_t structure storing data useful
  *         for building and  managing such a scheme
  *
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
  * \param[in]      var_id     id of the variable field
- * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in]      bflux_id   id of the boundary flux field
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated \ref cs_cdovcb_scaleq_t structure
+ * \return a pointer to a new allocated cs_cdovcb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -306,7 +306,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
  * \param[in]       eqp         pointer to a cs_equation_param_t structure
  * \param[in]       t_eval      time at which one performs the evaluation
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  data        pointer to data specific for this scheme
+ * \param[in, out]  context     pointer to data structure cast on-the-fly
  * \param[in, out]  location    where the flux is defined
  * \param[in, out]  diff_flux   value of the diffusive flux
   */
@@ -317,7 +317,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
                                     const cs_equation_param_t   *eqp,
                                     cs_real_t                    t_eval,
                                     cs_equation_builder_t       *eqb,
-                                    void                        *data,
+                                    void                        *context,
                                     cs_flag_t                    location,
                                     cs_real_t                   *diff_flux);
 
@@ -327,7 +327,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
  *
  * \param[in]       v_values    discrete values for the potential at vertices
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  data        pointer to data structure
+ * \param[in, out]  context     pointer to data structure cast on-the-fly
  * \param[in, out]  v_gradient  gradient at vertices
   */
 /*----------------------------------------------------------------------------*/
@@ -335,7 +335,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
 void
 cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
                               cs_equation_builder_t   *eqb,
-                              void                    *data,
+                              void                    *context,
                               cs_real_t               *v_gradient);
 
 /*----------------------------------------------------------------------------*/
@@ -378,7 +378,7 @@ cs_cdovcb_scaleq_write_restart(cs_restart_t    *restart,
  * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdovcb_scaleq_t structure
+ * \param[in, out]  context    pointer to cs_cdovcb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -387,7 +387,7 @@ cs_cdovcb_scaleq_extra_op(const char                 *eqname,
                           const cs_field_t           *field,
                           const cs_equation_param_t  *eqp,
                           cs_equation_builder_t      *eqb,
-                          void                       *data);
+                          void                       *context);
 
 /*----------------------------------------------------------------------------*/
 

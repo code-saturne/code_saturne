@@ -547,7 +547,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 
   /* Set the initial condition for all advection fields */
   cs_advection_field_update(domain->time_step->t_cur,
-                            false); // operate current to previous ?
+                            false); /* operate current to previous ? */
 
   /* Set the initial state for the groundawater flow module */
   if (cs_navsto_system_is_activated())
@@ -563,7 +563,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                   domain->cdo_quantities,
                   domain->time_step,
                   domain->dt_cur,
-                  false); // operate current to previous ?
+                  false); /* operate current to previous ? */
 }
 
 /*----------------------------------------------------------------------------*/

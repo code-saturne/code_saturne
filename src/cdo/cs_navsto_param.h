@@ -329,14 +329,12 @@ typedef enum {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new structure to store all numerical parameters related
- *         to the resolution of the Navier-Stokes (NS) system
+ * \brief  Ask \ref cs_navsto_param_t structure if the settings correspond to
+ *         a steady computation
  *
- * \param[in]  model          model related to the NS system to solve
- * \param[in]  time_state     state of the time for the NS equations
- * \param[in]  algo_coupling  algorithm used for solving the NS system
+ * \param[in]  nsp     pointer to a \ref cs_navsto_param_t structure
 *
- * \return a pointer to a new allocated structure
+ * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 

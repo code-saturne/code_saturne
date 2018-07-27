@@ -82,14 +82,9 @@ BEGIN_C_DECLS
  *
  */
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*=============================================================================
- * Local Macro definitions and structure definitions
+ * Local structure definitions
  *============================================================================*/
-
-#define CS_CDOFB_NAVSTO_DBG      0
-#define CS_CDOFB_NAVSTO_MODULO  10
 
 /*! \struct cs_cdofb_navsto_t
  *  \brief Context related to CDO face-based discretization when dealing with
@@ -168,6 +163,15 @@ typedef struct {
 
 } cs_cdofb_navsto_t;
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*=============================================================================
+ * Local Macro definitions and structure definitions
+ *============================================================================*/
+
+#define CS_CDOFB_NAVSTO_DBG      0
+#define CS_CDOFB_NAVSTO_MODULO  10
+
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -236,7 +240,7 @@ _create_navsto_context(const cs_navsto_param_t  *nsp)
  *
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a time step structure
+ * \param[in]  time_step   pointer to a \ref cs_time_step_t structure
  * \param[in]  sms         pointer to a \ref cs_matrix_structure_t structure
  *                         (scalar)
  * \param[in]  vms         pointer to a \ref cs_matrix_structure_t structure
@@ -272,8 +276,8 @@ cs_cdofb_navsto_init_common(const cs_cdo_quantities_t     *quant,
  * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
  *         an Artificial Compressibility - VPP approach
  *
- * \param[in] nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in] nsc    pointer to a \ref cs_navsto_uzawa_t structure
+ * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in] nsc_input  pointer to a \ref cs_navsto_uzawa_t structure
  */
 /*----------------------------------------------------------------------------*/
 

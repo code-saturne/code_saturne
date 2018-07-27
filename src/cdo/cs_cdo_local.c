@@ -123,10 +123,10 @@ static short int  **cs_cdo_local_kbuf = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate global structures related to cs_cell_mesh_t and
+ * \brief  Allocate global structures related to a cs_cell_mesh_t and
  *         cs_face_mesh_t structures
  *
- * \param[in]   connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]   connect   pointer to a \ref cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -181,8 +181,8 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free global structures related to cs_cell_mesh_t and cs_face_mesh_t
- *         structures
+ * \brief  Free global structures related to \ref cs_cell_mesh_t and
+ *         \ref cs_face_mesh_t structures
  */
 /*----------------------------------------------------------------------------*/
 
@@ -225,14 +225,14 @@ cs_cdo_local_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a cs_cell_sys_t structure
+ * \brief  Allocate a \ref cs_cell_sys_t structure
  *
  * \param[in]   n_max_dofbyc    max number of entries
  * \param[in]   n_max_fbyc      max number of faces in a cell
  * \param[in]   n_blocks        number of blocks in a row/column
  * \param[in]   block_sizes     size of each block or NULL if n_blocks = 1
  *
- * \return a pointer to a new allocated cs_cell_sys_t structure
+ * \return a pointer to a new allocated \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -324,12 +324,12 @@ cs_cell_sys_create(int          n_max_dofbyc,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Reset all members related to BC and some other ones in a
- *         cs_cell_sys_t structure
+ *         \ref cs_cell_sys_t structure
  *
  * \param[in]      cell_flag  metadata about the cell to treat
  * \param[in]      n_dofbyc   number of DoFs in a cell
  * \param[in]      n_fbyc     number of faces in a cell
- * \param[in, out] csys       pointer to the cs_cell_sys_t structure to reset
+ * \param[in, out] csys       pointer to the \ref cs_cell_sys_t struct to reset
  */
 /*----------------------------------------------------------------------------*/
 
@@ -367,9 +367,9 @@ cs_cell_sys_reset(cs_flag_t        cell_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_cell_sys_t structure
+ * \brief  Free a \ref cs_cell_sys_t structure
  *
- * \param[in, out]  p_csys   pointer of pointer to a cs_cell_sys_t structure
+ * \param[in, out]  p_csys   pointer of pointer to a \ref cs_cell_sys_t struct
  */
 /*----------------------------------------------------------------------------*/
 
@@ -407,7 +407,7 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
  *
  * \param[in]       msg     associated message to print
  * \param[in]       c_id    id related to the cell
- * \param[in]       csys    pointer to a cs_cell_sys_t structure
+ * \param[in]       csys    pointer to a \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -436,9 +436,9 @@ cs_cell_sys_dump(const char             msg[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate cs_cell_builder_t structure
+ * \brief  Allocate \ref cs_cell_builder_t structure
  *
- * \return a pointer to the new allocated cs_cell_builder_t structure
+ * \return a pointer to the new allocated \ref cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -469,9 +469,9 @@ cs_cell_builder_create(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_cell_builder_t structure
+ * \brief  Free a \ref cs_cell_builder_t structure
  *
- * \param[in, out]  p_cb   pointer of pointer to a cs_cell_builder_t structure
+ * \param[in, out]  p_cb  pointer of pointer to a \ref cs_cell_builder_t struct
  */
 /*----------------------------------------------------------------------------*/
 

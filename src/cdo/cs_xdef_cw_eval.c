@@ -90,6 +90,7 @@ static const char _err_empty_array[] =
  *
  * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   time at which the function is evaluated
+ * \param[in]      f        face id in the local cell numbering
  * \param[in]      ana      analytic function to integrate
  * \param[in]      input    pointer to an input structure
  * \param[in]      qfunc    quadrature function to use

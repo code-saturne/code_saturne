@@ -330,9 +330,9 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
  *         to a tracer equation. This integral turns out to be exact for linear
  *         functions.
  *
- * \param[in]    connect   pointer to a cs_cdo_connect_t structure
- * \param[in]    quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]    tracer    pointer to a cs_gwf_tracer_t structure
+ * \param[in]    connect   pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]    cdoq      pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]    tracer    pointer to a \ref cs_gwf_tracer_t structure
  * \param[in]    z_name    name of the volumic zone where the integral is done
  *                         (if NULL or "" all cells are considered)
  *

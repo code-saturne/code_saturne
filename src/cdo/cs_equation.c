@@ -612,7 +612,7 @@ cs_equation_by_name(const char    *eqname)
  *         has name equal to fld_name
  *
  * \param[in]  eq          pointer to a \ref cs_equation_t structure to test
- * \param[in]  fldname     name of the field
+ * \param[in]  fld_name    name of the field
  *
  * \return true if the \ref cs_equation_t structure has an associated field
  *         named fld_name, otherwise false
@@ -2268,7 +2268,7 @@ cs_equation_write_extra_restart(cs_restart_t   *restart)
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
  * \param[in]  ts        pointer to a cs_time_step_t struct.
- * \param[in]  dtcur     value of the current time step
+ * \param[in]  dt_cur    value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 

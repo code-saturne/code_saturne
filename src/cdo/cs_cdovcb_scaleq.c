@@ -448,15 +448,15 @@ cs_cdovcb_scaleq_finalize_common(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a \ref cs_cdovcb_scaleq_t structure storing data useful
+ * \brief  Initialize a cs_cdovcb_scaleq_t structure storing data useful
  *         for building and  managing such a scheme
  *
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
  * \param[in]      var_id     id of the variable field
- * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in]      bflux_id   id of the boundary flux field
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated \ref cs_cdovcb_scaleq_t structure
+ * \return a pointer to a new allocated cs_cdovcb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1369,7 +1369,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
  * \param[in]       eqp         pointer to a cs_equation_param_t structure
  * \param[in]       t_eval      time at which one performs the evaluation
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  context     pointer to data specific for this scheme
+ * \param[in, out]  context     pointer to data structure cast on-the-fly
  * \param[in, out]  location    where the flux is defined
  * \param[in, out]  diff_flux   value of the diffusive flux
   */
@@ -1486,7 +1486,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
  *
  * \param[in]       v_values    discrete values for the potential at vertices
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  context     pointer to data structure
+ * \param[in, out]  context     pointer to data structure cast on-the-fly
  * \param[in, out]  v_gradient  gradient at vertices
   */
 /*----------------------------------------------------------------------------*/

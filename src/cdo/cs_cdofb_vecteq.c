@@ -422,7 +422,7 @@ cs_cdofb_vecteq_finalize_common(void)
  *
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
  * \param[in]      var_id     id of the variable field
- * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in]      bflux_id   id of the boundary flux field
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
  * \return a pointer to a new allocated \ref cs_cdofb_vecteq_t structure

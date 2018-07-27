@@ -300,7 +300,8 @@ typedef struct {
    * Numerical scheme used for the discretization of the advection term
    *
    * \var adv_field
-   * Pointer to the \cs_adv_field_t structure associated to the advection term
+   * Pointer to the \ref cs_adv_field_t structure associated to the advection
+   * term
    */
 
   cs_param_advection_form_t     adv_formulation;
@@ -703,7 +704,7 @@ cs_equation_param_has_sourceterm(const cs_equation_param_t     *eqp)
  * \brief  Check if a \ref cs_equation_param_t structure has its name member
  *         equal to the given name
  *
- * \apram[in] eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in] eqp        pointer to a \ref cs_equation_param_t structure
  * \param[in] name       name of the equation
  *
  * \return true if the given eqp has the same name the one given as parameter

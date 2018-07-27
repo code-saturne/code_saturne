@@ -118,15 +118,15 @@ cs_cdovb_scaleq_finalize_common(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a \ref cs_cdovb_scaleq_t structure storing data useful
+ * \brief  Initialize a cs_cdovb_scaleq_t structure storing data useful
  *         for building and managing such a scheme
  *
  * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
  * \param[in]      var_id      id of the variable field
- * \param[in]      bflux__id   id of the boundary flux field
+ * \param[in]      bflux_id    id of the boundary flux field
  * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t struct.
  *
- * \return a pointer to a new allocated \ref cs_cdovb_scaleq_t structure
+ * \return a pointer to a new allocated cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -349,7 +349,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
  * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out]  context    pointer to cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -358,7 +358,7 @@ cs_cdovb_scaleq_extra_op(const char                 *eqname,
                          const cs_field_t           *field,
                          const cs_equation_param_t  *eqp,
                          cs_equation_builder_t      *eqb,
-                         void                       *data);
+                         void                       *context);
 
 /*----------------------------------------------------------------------------*/
 

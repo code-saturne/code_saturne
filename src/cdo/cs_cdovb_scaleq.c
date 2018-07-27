@@ -98,8 +98,6 @@ BEGIN_C_DECLS
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -113,8 +111,6 @@ static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
 static const cs_matrix_structure_t  *cs_shared_ms;
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Private function prototypes
@@ -365,15 +361,15 @@ cs_cdovb_scaleq_finalize_common(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a \ref cs_cdovb_scaleq_t structure storing data useful
+ * \brief  Initialize a cs_cdovb_scaleq_t structure storing data useful
  *         for building and managing such a scheme
  *
  * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
  * \param[in]      var_id      id of the variable field
- * \param[in]      bflux__id   id of the boundary flux field
+ * \param[in]      bflux_id    id of the boundary flux field
  * \param[in, out] eqb         pointer to a \ref cs_equation_builder_t struct.
  *
- * \return a pointer to a new allocated \ref cs_cdovb_scaleq_t structure
+ * \return a pointer to a new allocated cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 

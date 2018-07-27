@@ -211,7 +211,7 @@ cs_navsto_uzawa_last_setup(const cs_cdo_connect_t      *connect,
  * \brief  Allocate and initialize a context structure when the Navier-Stokes
  *         system is coupled using an Artificial Compressibility approach
  *
- * \param[in]  nsp    pointer to \ref a cs_navsto_param_t structure
+ * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
  * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
  *
  * \return a pointer to the context structure

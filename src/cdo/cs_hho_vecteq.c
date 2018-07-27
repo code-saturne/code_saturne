@@ -597,28 +597,25 @@ _condense_and_store(const cs_adjacency_t    *c2f,
  * \brief  Allocate work buffer and general structures related to HHO schemes
  *         Set shared pointers
  *
- * \param[in]  scheme_flag  flag to identify which kind of numerical scheme is
- *                          requested to solve the computational domain
- * \param[in]  quant        additional mesh quantities struct.
- * \param[in]  connect      pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step    pointer to a time step structure
- * \param[in]  ma0          pointer to a cs_matrix_assembler_t structure (P0)
- * \param[in]  ma1          pointer to a cs_matrix_assembler_t structure (P1)
- * \param[in]  ma2          pointer to a cs_matrix_assembler_t structure (P2)
- * \param[in]  ms0          pointer to a cs_matrix_structure_t structure (P0)
- * \param[in]  ms1          pointer to a cs_matrix_structure_t structure (P1)
- * \param[in]  ms2          pointer to a cs_matrix_structure_t structure (P2)
+ * \param[in] scheme_flag  flag to identify which kind of numerical scheme is
+ *                         requested to solve the computational domain
+ * \param[in] quant        pointer to a \ref cs_cdi_quantities_t struct.
+ * \param[in] connect      pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in] time_step    pointer to a \ref cs_time_step_t struct.
+ * \param[in] ms0          pointer to a \ref cs_matrix_structure_t struct. (P0)
+ * \param[in] ms1          pointer to a \ref cs_matrix_structure_t struct. (P1)
+ * \param[in] ms2          pointer to a \ref cs_matrix_structure_t struct. (P2)
 */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_hho_vecteq_init_common(cs_flag_t                      scheme_flag,
-                         const cs_cdo_quantities_t     *quant,
-                         const cs_cdo_connect_t        *connect,
-                         const cs_time_step_t          *time_step,
-                         const cs_matrix_structure_t   *ms0,
-                         const cs_matrix_structure_t   *ms1,
-                         const cs_matrix_structure_t   *ms2)
+                          const cs_cdo_quantities_t     *quant,
+                          const cs_cdo_connect_t        *connect,
+                          const cs_time_step_t          *time_step,
+                          const cs_matrix_structure_t   *ms0,
+                          const cs_matrix_structure_t   *ms1,
+                          const cs_matrix_structure_t   *ms2)
 {
   /* Assign static const pointers */
   cs_shared_quant = quant;
@@ -776,10 +773,10 @@ cs_hho_vecteq_finalize_common(void)
  *
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
  * \param[in]      var_id     id of the variable field
- * \param[in]      bflux__id  id of the boundary flux field
+ * \param[in]      bflux_id   id of the boundary flux field
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated \ref cs_hho_vecteq_t structure
+ * \return a pointer to a new allocated cs_hho_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 

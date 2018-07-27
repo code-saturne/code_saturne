@@ -730,12 +730,13 @@ cs_quadrature_tria_4pts_scal(double                tcur,
  *         Case of a vector-valued function.
  *
  * \param[in]      tcur         current physical time of the simulation
- * \param[in]      v1           first point of the triangle
- * \param[in]      v2           second point of the triangle
- * \param[in]      v3           third point of the triangle
+ * \param[in]      v1           1st point of the triangle
+ * \param[in]      v2           2nd point of the triangle
+ * \param[in]      v3           3rd point of the triangle
+ * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
  * \param[in]      input        NULL or pointer to a structure cast on-the-fly
- * \param[in, out] results  array of double
+ * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
 

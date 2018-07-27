@@ -67,79 +67,88 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Structure which belongs to one thread */
+/*! \struct cs_cell_builder_t
+ *  \brief Set of local and temporary buffers useful for building the algebraic
+ *  system with a cellwise process. This structure belongs to one thread.
+ */
 typedef struct {
 
-  /* Temporary buffers */
-  short int    *ids;     // local ids
-  double       *values;  // local values
-  cs_real_3_t  *vectors; // local 3-dimensional vectors
-
-  /* Structures used to build specific terms composing the algebraic system */
-  cs_sdm_t     *hdg;   // local hodge matrix for diffusion (may be NULL)
-  cs_sdm_t     *loc;   // local square matrix of size n_cell_dofs;
-  cs_sdm_t     *aux;   // auxiliary local square matrix of size n_cell_dofs;
-
   /* Specific members for the weakly enforcement of Dirichlet BCs (diffusion) */
-  double        eig_ratio; // ratio of the eigenvalues of the diffusion tensor
-  double        eig_max;   // max. value among eigenvalues
+  double     eig_ratio; /*!< ratio of the eigenvalues of the diffusion tensor */
+  double     eig_max;   /*!< max. value among eigenvalues */
 
   /* Store the cellwise value for the diffusion, time and reaction properties */
-  cs_real_33_t  pty_mat; // If not isotropic
-  double        pty_val; // If isotropic
+  cs_real_33_t  pty_mat; /*!< Property tensor if not isotropic */
+  double        pty_val; /*!< Propety value if isotropic */
+
+  /* Temporary buffers */
+  short int    *ids;     /*!< local ids */
+  double       *values;  /*!< local values */
+  cs_real_3_t  *vectors; /*!< local 3-dimensional vectors */
+
+  /* Structures used to build specific terms composing the algebraic system */
+  cs_sdm_t     *hdg;   /*!< local hodge matrix for diffusion (may be NULL) */
+  cs_sdm_t     *loc;   /*!< local square matrix of size n_cell_dofs */
+  cs_sdm_t     *aux;   /*!< auxiliary local square matrix of size n_cell_dofs */
 
 } cs_cell_builder_t;
 
-/* Structure used to store a local system (cell-wise for instance) */
+/*! \struct cs_cell_sys_t
+ *  \brief Set of arrays and local (small) dense matrices related to a mesh cell
+ *  This is a key structure for building the local algebraic system.
+ *  This structure belongs to one thread and only.
+ */
 typedef struct {
 
-  cs_lnum_t      c_id;       /* cell id */
-  cs_flag_t      cell_flag;  /* matadata related to the cell */
+  cs_lnum_t   c_id;       /*!< cell id  */
+  cs_flag_t   cell_flag;  /*!< matadata related to the cell */
 
-  /* Number of Degrees of Freedom (DoFs) in this cell */
-  int            n_dofs;
+  int         n_dofs;   /*!< Number of Degrees of Freedom (DoFs) in this cell */
 
-  cs_lnum_t     *dof_ids;  /* DoF ids */
-  cs_flag_t     *dof_flag; /* size = number of DoFs */
+  cs_lnum_t  *dof_ids;  /*!< DoF ids */
+  cs_flag_t  *dof_flag; /*!< size = number of DoFs */
 
-  cs_sdm_t      *mat;      /* cellwise view of the system matrix */
-  double        *rhs;      /* cellwise view of the right-hand side */
-  double        *source;   /* cellwise view of the source term array */
-  double        *val_n;    /* values of the unkown at the time t_n (the
-                              last computed) */
+  cs_sdm_t   *mat;      /*!< cellwise view of the system matrix */
+  double     *rhs;      /*!< cellwise view of the right-hand side */
+  double     *source;   /*!< cellwise view of the source term array */
+  double     *val_n;    /*!< values of the unkown at previous time t_n */
 
   /* Boundary conditions for the local system */
-  cs_lnum_t   face_shift;    /* value of the shift related to the border face
-                                numbering */
-  short int   n_bc_faces;    /* Number of border faces associated to a cell */
-  short int  *_f_ids;        /* List of face ids in the cell numbering */
-  cs_lnum_t  *bf_ids;        /* List of face ids in the border face numbering */
-  cs_flag_t  *bf_flag;       /* size n_bc_faces */
+  cs_lnum_t   face_shift;  /*!< shift related to the border face numbering */
+  short int   n_bc_faces;  /*!< Number of border faces associated to a cell */
+  short int  *_f_ids;      /*!< List of face ids in the cell numbering */
+  cs_lnum_t  *bf_ids;      /*!< List of face ids in the border face numbering */
+  cs_flag_t  *bf_flag;     /*!< Boundary face flag; size n_bc_faces */
 
   /* Dirichlet BCs */
   bool        has_dirichlet;
   double     *dir_values;    /* Values of the Dirichlet BCs (size = n_dofs) */
 
   /* Neumann BCs */
-  bool        has_nhmg_neumann; /* Non-homogeneous Neumann BCs */
-  double     *neu_values;       /* Values of the Neumann BCs (size = n_dofs) */
+  bool        has_nhmg_neumann; /*!< Non-homogeneous Neumann BCs */
+  double     *neu_values;       /*!< Neumann BCs values; size = n_dofs */
 
   /* Robin BCs */
   bool        has_robin;
-  double     *rob_values;    /* Values of the Robin BCs (size = 2*n_dofs) */
+  double     *rob_values;    /*!< Robin BCs values; size = 2*n_dofs */
 
 } cs_cell_sys_t;
 
-/* Structure used to get a better memory locality. Map existing structure
-   into a more compact one dedicated to a cell.
-   Arrays are allocated to n_max_vbyc or to n_max_ebyc.
-   Cell-wise numbering is based on the c2e and c2v connectivity.
+/*! \struct cs_cell_mesh_t
+ *  \brief Set of local quantities and connectivities related to a mesh cell
+ *  This is a key structure for all cellwise processes. This structure belongs
+ *  to one thread and only.
+ *  This structure used allows one to get a better memory locality.
+ *  It maps the existing global mesh and other related structures into a more
+ *  compact one dedicated to a cell. Arrays are allocated to the max number of
+ *  related entities (e.g. n_max_vbyc or to n_max_ebyc).
+ *  The cell-wise numbering is based on the c2v, c2e and c2f connectivity.
 */
 
 typedef struct {
 
-  cs_flag_t      flag;    // indicate which quantities have to be defined
-  fvm_element_t  type;    // type of element related to this cell
+  cs_flag_t      flag;    /*!< indicate which quantities have to be defined */
+  fvm_element_t  type;    /*!< type of element related to this cell */
 
   /* Sizes used to allocate buffers */
   short int      n_max_vbyc;
@@ -147,80 +156,82 @@ typedef struct {
   short int      n_max_fbyc;
 
   /* Cell information */
-  cs_lnum_t      c_id;    // id of related cell
-  cs_real_3_t    xc;      // coordinates of the cell center
-  double         vol_c;   // volume of the current cell
-  double         diam_c;  // diameter of the current cell
+  cs_lnum_t      c_id;    /*!< id of related cell */
+  cs_real_3_t    xc;      /*!< coordinates of the cell center */
+  double         vol_c;   /*!< volume of the current cell */
+  double         diam_c;  /*!< diameter of the current cell */
 
   /* Vertex information */
-  short int    n_vc;    // local number of vertices in a cell
-  cs_lnum_t   *v_ids;   // vertex ids on this rank
-  double      *xv;      // local vertex coordinates (copy)
-  double      *wvc;     // weight |vol_dc(v) cap vol_c|/|vol_c for each cell vtx
+  short int    n_vc;  /*!< local number of vertices in a cell */
+  cs_lnum_t   *v_ids; /*!< vertex ids on this rank */
+  double      *xv;    /*!< local vertex coordinates (copy) */
+  double      *wvc;   /*!< weight |dualvol(v) cap vol_c|/|vol_c|, size: n_vc */
 
   /* Edge information */
-  short int    n_ec;    // local number of edges in a cell
-  cs_lnum_t   *e_ids;   // edge ids on this rank
-  cs_quant_t  *edge;    // local edge quantities (xe, length and unit vector)
-  cs_nvec3_t  *dface;   // local dual face quantities (area and unit normal)
+  short int    n_ec;  /*!< local number of edges in a cell */
+  cs_lnum_t   *e_ids; /*!< edge ids on this rank */
+  cs_quant_t  *edge;  /*!< local edge quantities (xe, length and unit vector) */
+  cs_nvec3_t  *dface; /*!< local dual face quantities (area and unit normal) */
 
   /* Face information */
-  short int    n_fc;    // local number of faces in a cell
-  cs_lnum_t   *f_ids;   // face ids on this rank
-  short int   *f_sgn;   // incidence number between f and c
-  double      *f_diam;  // diameters of local faces
-  double      *hfc;     // height of the pyramid of basis f and apex c
-  cs_quant_t  *face;    // local face quantities (xf, area and unit normal)
-  cs_nvec3_t  *dedge;   // local dual edge quantities (length and unit vector)
+  short int    n_fc;    /*!< local number of faces in a cell */
+  cs_lnum_t   *f_ids;   /*!< face ids on this rank */
+  short int   *f_sgn;   /*!< incidence number between f and c */
+  double      *f_diam;  /*!< diameters of local faces */
+  double      *hfc;     /*!< height of the pyramid of basis f and apex c */
+  cs_quant_t  *face;    /*!< face quantities (xf, area and unit normal) */
+  cs_nvec3_t  *dedge;   /*!< dual edge quantities (length and unit vector) */
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
-  short int   *e2v_ids; // cell-wise edge -> vertices connectivity
-  short int   *e2v_sgn; // cell-wise edge -> vertices orientation (-1 or +1)
+  short int   *e2v_ids; /*!< cell-wise edge->vertices connectivity */
+  short int   *e2v_sgn; /*!< cell-wise edge->vertices orientation (-1 or +1) */
 
   /* Local f2e connectivity: size = 2*n_max_ebyc */
-  short int   *f2e_idx; // size n_fc + 1
-  short int   *f2e_ids; // size 2*n_max_ebyc
-  double      *tef;     // |tef| area of the triangle of base |e| and apex xf
+  short int   *f2e_idx; /*!< size n_fc + 1 */
+  short int   *f2e_ids; /*!< size 2*n_max_ebyc */
+  double      *tef;     /*!< area of the triangle of base |e| and apex xf */
 
   /* Local e2f connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
-  short int   *e2f_ids; // cell-wise edge -> faces connectivity
-  cs_nvec3_t  *sefc;    // portion of dual faces (2 triangles by edge)
+  short int   *e2f_ids; /*!< cell-wise edge -> faces connectivity */
+  cs_nvec3_t  *sefc;    /*!< portion of dual faces (2 triangles by edge) */
 
 } cs_cell_mesh_t;
 
-/* Structure used to get a better memory locality. Map existing structure
-   into a more compact one dedicated to a face.
-   Arrays are allocated to n_max_vbyf (= n_max_ebyf).
-   Face-wise numbering is based on the f2e connectivity.
+/*! \struct cs_face_mesh_t
+    \brief Set of local quantities and connectivities related to a mesh face
+    Structure used to get a better memory locality. Map existing structure
+    into a more compact one dedicated to a face.
+    Arrays are allocated to n_max_vbyf (= n_max_ebyf).
+    Face-wise numbering is based on the f2e connectivity.
 */
 
 typedef struct {
 
-  short int    n_max_vbyf; // = n_max_ebyf
+  short int    n_max_vbyf; /*!< = n_max_ebyf */
 
-  cs_lnum_t    c_id;    // id of related cell
-  cs_real_3_t  xc;      // pointer to the coordinates of the cell center
+  cs_lnum_t    c_id;    /*!< id of related cell */
+  cs_real_3_t  xc;      /*!< pointer to the coordinates of the cell center */
 
   /* Face information */
-  cs_lnum_t    f_id;    // local mesh face id
-  short int    f_sgn;   // incidence number between f and c
-  cs_quant_t   face;    // local face quantities (xf, area and unit normal)
-  cs_nvec3_t   dedge;   // local dual edge quantities (length and unit vector)
+  cs_lnum_t    f_id;   /*!< local mesh face id */
+  short int    f_sgn;  /*!< incidence number between f and c */
+  cs_quant_t   face;   /*!< face quantities (xf, area and unit normal) */
+  cs_nvec3_t   dedge;  /*!< its dual edge quantities (length and unit vector) */
 
   /* Vertex information */
-  short int    n_vf;    // local number of vertices on this face
-  cs_lnum_t   *v_ids;   // vertex ids on this rank or in the cellwise numbering
-  double      *xv;      // local vertex coordinates (copy)
-  double      *wvf;     // weight related to each vertex
+  short int    n_vf;    /*!< local number of vertices on this face */
+  cs_lnum_t   *v_ids;   /*!< vertex ids (in the mesh or cellwise numbering) */
+  double      *xv;      /*!< local vertex coordinates (copy) */
+  double      *wvf;     /*!< weight related to each vertex */
 
   /* Edge information */
-  short int    n_ef;    // local number of edges in on this face (= n_vf)
-  cs_lnum_t   *e_ids;   // edge ids on this rank or in the cellwise numbering
-  cs_quant_t  *edge;    // local edge quantities (xe, length and unit vector)
-  double      *tef;     // area of the triangle of base e and apex xf
+  short int    n_ef;    /*!< local number of edges in on this face (= n_vf) */
+  cs_lnum_t   *e_ids;   /*!< edge ids (in the mesh or cellwise numbering) */
+  cs_quant_t  *edge;    /*!< edge quantities (xe, length and unit vector) */
+  double      *tef;     /*!< area of the triangle of base e and apex xf */
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyf) */
-  short int   *e2v_ids;  // face-wise edge -> vertices connectivity
+  short int   *e2v_ids;  /*!< face-wise edge -> vertices connectivity */
 
 } cs_face_mesh_t;
 
@@ -267,7 +278,7 @@ extern cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light;
  * \brief  Allocate global structures related to a cs_cell_mesh_t and
  *         cs_face_mesh_t structures
  *
- * \param[in]   connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]   connect   pointer to a \ref cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -276,8 +287,8 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free global structures related to cs_cell_mesh_t and cs_face_mesh_t
- *         structures
+ * \brief  Free global structures related to \ref cs_cell_mesh_t and
+ *         \ref cs_face_mesh_t structures
  */
 /*----------------------------------------------------------------------------*/
 
@@ -286,14 +297,14 @@ cs_cdo_local_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a cs_cell_sys_t structure
+ * \brief  Allocate a \ref cs_cell_sys_t structure
  *
  * \param[in]   n_max_dofbyc    max number of entries
  * \param[in]   n_max_fbyc      max number of faces in a cell
  * \param[in]   n_blocks        number of blocks in a row/column
  * \param[in]   block_sizes     size of each block or NULL if n_blocks = 1
  *
- * \return a pointer to a new allocated cs_cell_sys_t structure
+ * \return a pointer to a new allocated \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -306,12 +317,12 @@ cs_cell_sys_create(int          n_max_dofbyc,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Reset all members related to BC and some other ones in a
- *         cs_cell_sys_t structure
+ *         \ref cs_cell_sys_t structure
  *
  * \param[in]      cell_flag  metadata about the cell to treat
  * \param[in]      n_dofbyc   number of DoFs in a cell
  * \param[in]      n_fbyc     number of faces in a cell
- * \param[in, out] csys       pointer to the cs_cell_sys_t structure to reset
+ * \param[in, out] csys       pointer to the \ref cs_cell_sys_t struct to reset
  */
 /*----------------------------------------------------------------------------*/
 
@@ -323,9 +334,9 @@ cs_cell_sys_reset(cs_flag_t        cell_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_cell_sys_t structure
+ * \brief  Free a \ref cs_cell_sys_t structure
  *
- * \param[in, out]  p_csys   pointer of pointer to a cs_cell_sys_t structure
+ * \param[in, out]  p_csys   pointer of pointer to a \ref cs_cell_sys_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -338,7 +349,7 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys);
  *
  * \param[in]       msg     associated message to print
  * \param[in]       c_id    id related to the cell
- * \param[in]       csys    pointer to a cs_cell_sys_t structure
+ * \param[in]       csys    pointer to a \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -349,9 +360,9 @@ cs_cell_sys_dump(const char              msg[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate cs_cell_builder_t structure
+ * \brief  Allocate \ref cs_cell_builder_t structure
  *
- * \return a pointer to the new allocated cs_cell_builder_t structure
+ * \return a pointer to the new allocated \ref cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -360,9 +371,9 @@ cs_cell_builder_create(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_cell_builder_t structure
+ * \brief  Free a \ref cs_cell_builder_t structure
  *
- * \param[in, out]  p_cb   pointer of pointer to a cs_cell_builder_t structure
+ * \param[in, out]  p_cb  pointer of pointer to a \ref cs_cell_builder_t struct
  */
 /*----------------------------------------------------------------------------*/
 
