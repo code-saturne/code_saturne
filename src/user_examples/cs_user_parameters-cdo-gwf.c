@@ -56,7 +56,7 @@
 
 #include "cs_advection_field.h"
 #include "cs_base.h"
-#include "cs_domain.h"
+#include "cs_domain_setup.h"
 #include "cs_field.h"
 #include "cs_gwf.h"
 #include "cs_math.h"

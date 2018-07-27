@@ -65,7 +65,7 @@ BEGIN_C_DECLS
 /*!
  * \brief  Set to true the automatic update of all advection fields
  *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in, out]  domain    pointer to a \ref cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -74,14 +74,65 @@ cs_domain_update_advfield(cs_domain_t       *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new zone gathering all CS_DOMAIN_BOUNDARY_WALL zone type
+ * \brief  Set to true the automatic update of all advection fields
+ * \brief  Set auxiliary parameters related to the way output is done
  *
- * \param[in]   domain    pointer to a cs_domain_t structure
+ * \param[in, out]  domain       pointer to a cs_domain_t structure
+ * \param[in]       nt_interval  frequency for the restart process
+ * \param[in]       nt_list      output frequency into the listing
+ * \param[in]       verbosity    level of information displayed
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_update_wall_zones(cs_domain_t   *domain);
+cs_domain_set_output_param(cs_domain_t       *domain,
+                           int                nt_interval,
+                           int                nt_list,
+                           int                verbosity);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set parameters for unsteady computations: the max number of time
+ *         steps or the final physical time of the simulation
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in]       nt_max    max. number of time step iterations
+ * \param[in]       t_max     final physical time of the simulation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_time_param(cs_domain_t       *domain,
+                         int                nt_max,
+                         double             t_max);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the value of the time step thanks to a predefined function
+ *
+ * \param[in, out] domain      pointer to a cs_domain_t structure
+ * \param[in]      func        pointer to a cs_timestep_func_t function
+ * \param[in]      func_input  pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_def_time_step_by_function(cs_domain_t          *domain,
+                                    cs_timestep_func_t   *func,
+                                    void                 *func_input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the value of the time step.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * \param[in]        dt        value of the constant time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_def_time_step_by_value(cs_domain_t   *domain,
+                                 double         dt);
 
 /*----------------------------------------------------------------------------*/
 /*!

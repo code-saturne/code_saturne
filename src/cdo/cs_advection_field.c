@@ -2090,12 +2090,13 @@ cs_advection_field_update(cs_real_t    t_eval,
 
     /* Sanity checks */
     assert(adv != NULL);
-    assert(adv->bdy_field_id > -1 && adv->cell_field_id > -1);
 
     /* GWF and NAVSTO type advection fields are updated elsewhere
        except if there is a field defined at vertices */
 
     if (adv->type == CS_ADVECTION_FIELD_USER) {
+
+      assert(adv->bdy_field_id > -1 && adv->cell_field_id > -1);
 
       /* Field storing the boundary normal flux */
       cs_field_t  *bfld = cs_field_by_id(adv->bdy_field_id);

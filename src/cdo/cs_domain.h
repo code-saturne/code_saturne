@@ -56,6 +56,10 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*! \struct cs_domain_cdo_context_t
+ *  \brief  High-level metadata for handling CDO/HHO schemes
+ */
+
 typedef struct {
 
   /* Mode for CDO: activated, switched off... */
@@ -73,7 +77,10 @@ typedef struct {
 
 } cs_domain_cdo_context_t;
 
-/* Structure storing the main feature */
+/*! \struct cs_domain_t
+ *  \brief  Structure storing the main features of the computational domain
+ *  and pointers to the main geometrical structures
+ */
 typedef struct {
 
   /* Code_Saturne mesh and mesh quantities structures already computed */
@@ -171,77 +178,6 @@ cs_domain_set_cdo_mode(cs_domain_t    *domain,
 
 int
 cs_domain_get_cdo_mode(const cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set auxiliary parameters related to the way output is done
- *
- * \param[in, out]  domain       pointer to a cs_domain_t structure
- * \param[in]       nt_interval  frequency for the restart process
- * \param[in]       nt_list      output frequency into the listing
- * \param[in]       verbosity    level of information displayed
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_output_param(cs_domain_t       *domain,
-                           int                nt_interval,
-                           int                nt_list,
-                           int                verbosity);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Activate profiling output
- *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_activate_profiling(cs_domain_t       *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set parameters for unsteady computations: the max number of time
- *         steps or the final physical time of the simulation
- *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
- * \param[in]       nt_max    max. number of time step iterations
- * \param[in]       t_max     final physical time of the simulation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_time_param(cs_domain_t       *domain,
-                         int                nt_max,
-                         double             t_max);
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the value of the time step thanks to a predefined function
- *
- * \param[in, out] domain      pointer to a cs_domain_t structure
- * \param[in]      func        pointer to a cs_timestep_func_t function
- * \param[in]      func_input  pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_def_time_step_by_function(cs_domain_t          *domain,
-                                    cs_timestep_func_t   *func,
-                                    void                 *func_input);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the value of the time step.
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- * \param[in]        dt        value of the constant time step
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_def_time_step_by_value(cs_domain_t   *domain,
-                                 double         dt);
 
 /*----------------------------------------------------------------------------*/
 /*!
