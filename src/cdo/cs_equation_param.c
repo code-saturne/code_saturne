@@ -1414,22 +1414,24 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   else if (eqp->solver_class == CS_EQUATION_SOLVER_CLASS_PETSC)
     cs_log_printf(CS_LOG_SETUP, " PETSc iterative solvers\n");
 
-  cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.MaxIter     %d\n",
+  cs_log_printf(CS_LOG_SETUP, "    <%s/SLA> Solver.MaxIter     %d\n",
                 eqname, itsol.n_max_iter);
-  cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Name        %s\n",
+
+  cs_log_printf(CS_LOG_SETUP, "    <%s/SLA> Solver.Name        %s\n",
                 eqname, cs_param_get_solver_name(itsol.solver));
-  if (itsol.precond == CS_PARAM_ITSOL_AMG)
-    cs_log_printf(CS_LOG_SETUP, "    <%s/sla> AMG.Type           %s\n",
-                  eqname, cs_param_get_amg_type_name(itsol.amg_type));
-  cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Precond     %s\n",
-                eqname, cs_param_get_precond_name(itsol.precond));
-  if (itsol.precond == CS_PARAM_PRECOND_AMG)
-    cs_log_printf(CS_LOG_SETUP, "    <%s/sla> AMG.Type           %s\n",
+  if (itsol.solver == CS_PARAM_ITSOL_AMG)
+    cs_log_printf(CS_LOG_SETUP, "    <%s/SLA> AMG.Type           %s\n",
                   eqname, cs_param_get_amg_type_name(itsol.amg_type));
 
-  cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Eps        % -10.6e\n",
+  cs_log_printf(CS_LOG_SETUP, "    <%s/SLA> Solver.Precond     %s\n",
+                eqname, cs_param_get_precond_name(itsol.precond));
+  if (itsol.precond == CS_PARAM_PRECOND_AMG)
+    cs_log_printf(CS_LOG_SETUP, "    <%s/SLA> AMG.Type           %s\n",
+                  eqname, cs_param_get_amg_type_name(itsol.amg_type));
+
+  cs_log_printf(CS_LOG_SETUP, "    <%s/SLA> Solver.Eps        % -10.6e\n",
                 eqname, itsol.eps);
-  cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Normalized  %s\n",
+  cs_log_printf(CS_LOG_SETUP, "    <%s/SLA> Solver.Normalized  %s\n",
                 eqname, cs_base_strtf(itsol.resid_normalized));
 
 }
