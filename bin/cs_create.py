@@ -369,16 +369,10 @@ class Study:
         if os.path.isdir(os.path.join(datadir, 'cathare_coupling')):
 
             cathare_cpl_dir = os.path.join(datadir, 'cathare_coupling')
-            for src_file in os.listdir(os.path.join(cathare_cpl_dir, 'user_sources')):
-                shutil.copy(os.path.join(cathare_cpl_dir, 'user_sources', src_file),
-                            os.path.join(repbase, self.cat_case_name, 'SRC'))
-
-                shutil.copy(os.path.join(cathare_cpl_dir, 'user_sources', src_file),
-                            os.path.join(repbase, self.cases[0], 'SRC'))
 
             # Script which converts the Cathare JDD file to a .so library
             fin  = open(os.path.join(cathare_cpl_dir, 'user_scripts', 'cathare_jdd_to_lib.sh'))
-            fout = open(os.path.join(repbase, self.cat_case_name, 'SCRIPTS', 'cathare_jdd_to_lib.sh'), 'wt')
+            fout = open(os.path.join(repbase, self.cat_case_name, 'DATA', 'cathare_jdd_to_lib.sh'), 'wt')
             for line in fin:
                 fout.write(line.replace('#path_to_v25_3=',
                                         'path_to_v25_3='+cathare_path))
@@ -509,6 +503,9 @@ domains = [
     {'solver': 'CATHARE',
      'domain': 'DOMAIN',
      'script': 'runcase',
+     'paramfile': 'setup.xml',
+     'cathare_case_file': 'jdd_case.dat',
+     'neptune_cfd_domain': 'NEPTUNE',
      'n_procs_weight': None,
      'n_procs_min': 1,
      'n_procs_max': 1}
@@ -546,9 +543,17 @@ domains = [
 
         fd.write(dict_str)
 
+        if self.cat_case_name is not None:
+            config = configparser.ConfigParser()
+            config.read(self.package.get_configfiles())
+            cathare_libpath=os.path.join(config.get('install', 'cathare'), 'lib')
+        else:
+            cathare_libpath=None
+
         self.build_batch_file(distrep = repbase,
                               casename = 'coupling',
-                              coupling = coupling_base)
+                              coupling = coupling_base,
+                              cathare_path = cathare_libpath)
 
 
     def create_case(self, casename):
@@ -715,7 +720,7 @@ domains = [
                               casename = casename)
 
 
-    def build_batch_file(self, distrep, casename, coupling=None):
+    def build_batch_file(self, distrep, casename, coupling=None, cathare_path=None):
         """
         Retrieve batch file for the current system
         Update batch file for the study
@@ -744,6 +749,18 @@ domains = [
 
         if coupling:
             runcase.set_coupling(coupling)
+
+        # If a cathare LIBPATH is given, it is added to LD_LIBRARY_PATH.
+        # This modification is needed for the dlopen of the cathare .so file
+        if cathare_path:
+            new_line="export LD_PATH_LIBRARY="+cathare_path+":$LD_LIBRARY_PATH"
+            il=0
+            for line in runcase.lines:
+                il+=1
+                if 'export PATH' in line:
+                    runcase.lines.insert(il, new_line)
+                    runcase.run_cmd_line_id += 1
+                    break
 
         runcase.save()
 

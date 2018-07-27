@@ -202,13 +202,15 @@ def coupling(package,
                     raise RunCaseError(err_str)
                 d['script'] = param
 
-            dom = domain(package,
-                         package_compute = package_compute,
-                         name = d.get('domain'),
-                         param = param,
-                         n_procs_weight = d.get('n_procs_weight'),
-                         n_procs_min = d.get('n_procs_min'),
-                         n_procs_max = d.get('n_procs_max'))
+            dom = cathare_domain(package,
+                                 package_compute = package_compute,
+                                 name = d.get('domain'),
+                                 param = d.get('paramfile'),
+                                 n_procs_weight = d.get('n_procs_weight'),
+                                 n_procs_min = d.get('n_procs_min'),
+                                 n_procs_max = d.get('n_procs_max'),
+                                 cathare_case_file=d.get('cathare_case_file'),
+                                 neptune_cfd_dom=d.get('neptune_cfd_domain'))
 
             use_cathare = True
             cat_domains.append(dom)
