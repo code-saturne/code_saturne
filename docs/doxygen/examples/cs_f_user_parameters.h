@@ -71,9 +71,9 @@
   \subsection cs_f_user_parameters_h_usipsu_1 Special fields
 
   Enforce existence of 'tplus' and 'tstar' fields, so that
-  a boundary temperature or Nusselt number may be computed using the
-  \ref post_boundary_temperature or \ref post_boundary_nusselt subroutines.
-  When postprocessing of these quantities is activated, those fields
+  a Nusselt number may be computed using the
+  \ref post_boundary_nusselt subroutine.
+  When postprocessing this quantity is activated, those fields
   are present, but if we need to compute them in the
   \ref cs_user_extra_operations user subroutine without postprocessing them,
   forcing the definition of these fields to save the values computed

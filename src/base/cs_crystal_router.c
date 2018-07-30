@@ -1429,7 +1429,6 @@ cs_crystal_router_create_s(size_t            n_elts,
  * source rank metadata is added.
  *
  * \param[in]  n_elts            number of elements
- * \param[in]  stride            number of values per entity (interlaced)
  * \param[in]  datatype          type of data considered
  * \param[in]  flags             add destination id ?
  * \param[in]  elt_idx           element values start and past-the-last index

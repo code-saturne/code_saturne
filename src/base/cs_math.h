@@ -83,7 +83,7 @@ extern const cs_real_t cs_math_pi;
  * \param[in] n      first argument
  * \param[in] k      second argument
  *
- * \return the value of \binom(n)(k)
+ * \return the value of binom(n)(k)
  */
 /*----------------------------------------------------------------------------*/
 

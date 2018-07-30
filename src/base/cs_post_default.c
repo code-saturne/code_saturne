@@ -141,22 +141,17 @@ _write_additional_vars(void                  *input,
 {
   /* Local variables */
   CS_UNUSED(ts);
+  CS_UNUSED(n_i_faces);
+  CS_UNUSED(i_face_ids);
 
   cs_post_default_input_t  *_input = input;
 
-  int i;
-  cs_int_t   itypps[4];
   cs_int_t   nummai = mesh_id;
   cs_int_t   numtyp = cat_id;
 
   cs_real_t  *var_trav = NULL;
   cs_real_t  *cel_vals = NULL;
   cs_real_t  *b_face_vals = NULL;
-
-  /* Basic initialization */
-
-  for (i = 0; i < 4; i++)
-    itypps[i] = ent_flag[i];
 
  /* Allocate work array to build variables */
 

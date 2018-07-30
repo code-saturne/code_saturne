@@ -181,10 +181,10 @@ cs_field_interpolate(cs_field_t              *f,
  *
  * This assumes the field values have been synchronized.
  *
- * \param[in]      field id    The scalar field id
- * \param[in]      halo_type   Halo type
- * \param[in,out]  local_max   The local maximum value
- * \param[in,out]  local_min   The local minimum value
+ * \param[in]       f id        scalar field id
+ * \param[in]       halo_type   halo type
+ * \param[in, out]  local_max   local maximum value
+ * \param[in, out]  local_min   local minimum value
  */
 /*----------------------------------------------------------------------------*/
 

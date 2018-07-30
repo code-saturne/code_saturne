@@ -1039,7 +1039,7 @@ cs_lagr_finalize(void)
  *
  * \param[in]  zone_data  pointer to boundary or volume conditions structure
  * \param[in]  zone_id    zone id
- * \param[in]  set id     injection set id
+ * \param[in]  set_id     injection set id
  *
  * \return pointer to injection set data structure
  */

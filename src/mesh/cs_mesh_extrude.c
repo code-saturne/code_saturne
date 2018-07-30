@@ -2201,7 +2201,7 @@ cs_mesh_extrude_face_info_create(const cs_mesh_t  *m)
 /*!
  * \brief Destroy a mesh extrusion face information structure.
  *
- * \param[in, out]  e  pointer to pointer to mesh extrusion face information.
+ * \param[in, out]  efi  pointer to pointer to mesh extrusion face information.
  */
 /*----------------------------------------------------------------------------*/
 

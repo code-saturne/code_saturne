@@ -1283,11 +1283,9 @@ cs_f_field_clear_key_int_bits(int  f_id,
                               int  k_id,
                               int  mask)
 {
-  int retval = 0;
-
   cs_field_t *f = cs_field_by_id(f_id);
 
-  retval = cs_field_clear_key_int_bits(f, k_id, mask);
+  cs_field_clear_key_int_bits(f, k_id, mask);
 }
 
 /*----------------------------------------------------------------------------

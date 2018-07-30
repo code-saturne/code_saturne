@@ -2145,10 +2145,6 @@ _check_i_face_cells(cs_mesh_t  *mesh)
 {
   int  i;
 
-  cs_halo_t  *halo = mesh->halo;
-
-  const cs_lnum_t n_c_domains = halo->n_c_domains;
-
   for (i = 0; i < mesh->n_i_faces; i++) {
 
     if (mesh->i_face_cells[i][0] < 0) {

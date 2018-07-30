@@ -696,7 +696,7 @@ _build_sd_desc(int        n_fields,
     }
     else {
       s = desc + desc_size - 4;
-      snprintf(s, 3, "...");
+      snprintf(s, 4, "...");
     }
     desc[desc_size - 1] = '\0';
     c_size = strlen(desc);

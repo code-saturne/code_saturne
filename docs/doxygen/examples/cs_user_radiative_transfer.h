@@ -32,7 +32,7 @@
 
   The module can be activated in the \ref usppmo routine in
   \ref cs_user_parameters.f90. The corresponding keyword is \c iirayo in the
-  \ref cs_glob_rad_transfer_options structure.
+  \ref cs_glob_rad_transfer_params structure.
 
   This member can take the values:
    - \ref radiat::iirayo "iirayo" = 0: module desactivated.

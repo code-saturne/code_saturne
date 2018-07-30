@@ -158,7 +158,7 @@ cs_user_extra_operations(void)
     cs_balance_term_t  mass_in_idx = CS_BALANCE_MASS_IN;
     cs_balance_term_t  mass_out_idx = CS_BALANCE_MASS_OUT;
 
-    bft_printf("inlet mass flow  (scalar 1): %g\n",
+    bft_printf("inlet mass flow  (scalar 1): %g\n"
                "outlet mass flow (scalar 1): %g\n",
                balance[mass_in_idx],
                balance[mass_out_idx]);
@@ -196,7 +196,7 @@ cs_user_extra_operations(void)
     cs_balance_p_term_t  rhou_in_idx = CS_BALANCE_P_RHOU_IN;
     cs_balance_p_term_t  rhou_out_idx = CS_BALANCE_P_RHOU_OUT;
 
-    bft_printf("inlet mass flow  (rho.u): %g\n",
+    bft_printf("inlet mass flow  (rho.u): %g\n"
                "outlet mass flow (rho.u): %g\n",
                balance[rhou_in_idx],
                balance[rhou_out_idx]);

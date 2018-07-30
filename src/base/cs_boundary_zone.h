@@ -131,7 +131,7 @@ cs_boundary_zone_n_zones_time_varying(void);
  *
  * For time-varying zones, the associated mesh location is updated.
  *
- * \param[in]  mesh_modified  indicate if mesh has been modified
+ * \param[in]  id  zone id
  */
 /*----------------------------------------------------------------------------*/
 

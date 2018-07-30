@@ -227,9 +227,9 @@ contains
   !>\f]
   !>
 
-  !> \param[in]      crom   Density array
-  !> \param[in]      voidf  Void fraction array
-  !> \param[in,out]  voidf  turbulent viscosity
+  !> \param[in]      crom   density array
+  !> \param[in]      voidf  void fraction array
+  !> \param[in,out]  visct  turbulent viscosity
 
   subroutine cavitation_correct_visc_turb (crom, voidf, visct)
 

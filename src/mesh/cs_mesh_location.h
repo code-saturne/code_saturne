@@ -329,7 +329,7 @@ cs_mesh_location_get_elt_ids_try(int id);
 /*!
  * \brief  Get a mesh location's element ids.
  *
- * \This function may only be used with a given location if
+ * This function may only be used with a given location if
  * \ref cs_mesh_location_set_explicit_ids has been used to indicate
  * explicit ids are needed for this location.
  *

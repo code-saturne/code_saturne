@@ -116,17 +116,17 @@ cs_get_glob_ctwr_option(void);
 /*!
  * \brief  Define a cooling tower exchange zone
  *
- * \param[in]   zone_criteria   Zone selection criteria
- * \param[in]   zone_type       exchange zone type
- * \param[in]   delta_t         Imposed delta temperature delta between inlet
- *                              and oulet of the zone
- * \param[in]   relax           Relaxation of the imposed delta temperature
- * \param[in]   t_l_bc          Liquid water temperature at the inlet
- * \param[in]   q_l_bc          Mass flow rate at the inlet
- * \param[in]   xap             Beta_x_0 of the exchange law
- * \param[in]   xnp             Exponent n of the exchange law
- * \param[in]   surface         Total Surface of ingoing water
- * \param[in]   xleak_fact      Leakage factor (ratio of outlet/inlet flow rate)
+ * \param[in]  zone_criteria  zone selection criteria
+ * \param[in]  zone_type      exchange zone type
+ * \param[in]  delta_t        imposed delta temperature delta between inlet
+ *                            and oulet of the zone
+ * \param[in]  relax          relaxation of the imposed delta temperature
+ * \param[in]  t_l_bc         liquid water temperature at the inlet
+ * \param[in]  q_l_bc         mass flow rate at the inlet
+ * \param[in]  xap            beta_x_0 of the exchange law
+ * \param[in]  xnp            exponent n of the exchange law
+ * \param[in]  surface        total Surface of ingoing water
+ * \param[in]  xleak_fac      leakage factor (ratio of outlet/inlet flow rate)
  */
 /*----------------------------------------------------------------------------*/
 

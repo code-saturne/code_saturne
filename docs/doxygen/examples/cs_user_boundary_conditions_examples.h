@@ -604,43 +604,43 @@ TODO : Verifier la traduction
 
   \section elec2_loc_var Local variables to be added
 
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 loc_var_dec
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c loc_var_dec
 
   \section elec2_init Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 init
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c init
 
   \section elec2_step1 Computation of intensity (A/m2) for each electrode
 
   Pre initialisation
 
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 pre_init
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c pre_init
 
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 step_1
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_1
 
   \section elec2_step2 Definition of Voltage on each termin of transformers
 
   Computation of Intensity on each termin of transformers:
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 step_2_1
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_2_1
 
   RVoltage on each termin:
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 step_2_2
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_2_2
 
   Total intensity for a transformer (zero valued WHEN Offset established):
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 step_2_3
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_2_3
 
   Take in account of Offset:
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 step_2_4
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_2_4
 
   Take in account of Boundary Conditions
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 step_2_5
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_2_5
 
   \section elec2_step3 Finalization step
 
   Test, if not any reference transformer a piece of wall may be at ground:
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 step_3
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_3
 
 */
 // __________________________________________________________________________________

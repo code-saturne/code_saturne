@@ -48,11 +48,16 @@
   Most definitions should be done in the \ref cs_user_parameters
   function, which is the C equivalent of the \ref usipsu Fortran routine.
 
+  For example, to force the presence of a boundary temperature field, which
+  may be useful for postprocessing:
+
+  \snippet cs_user_parameters-base.c param_force_b_temperature
+
   For example, to change limiters for the convective scheme for a given scalar:
 
   \snippet cs_user_parameters-base.c param_var_limiter_choice
 
-  One can also choose the pourcentage of upwind blending when using the slope test
+  One can also choose the percentage of upwind blending when using the slope test
 
   \snippet cs_user_parameters-base.c param_var_blend_st
 

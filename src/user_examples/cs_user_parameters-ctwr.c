@@ -72,9 +72,10 @@
 #include "cs_log.h"
 #include "cs_multigrid.h"
 #include "cs_parameters.h"
-#include "cs_physical_constants.h"
 #include "cs_post.h"
 #include "cs_post_util.h"
+#include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_sles.h"
@@ -108,6 +109,22 @@ BEGIN_C_DECLS
 /*============================================================================
  * User function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Activate cooling tower model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_model(void)
+{
+  /* Activate cooling tower model */
+
+  /*! [ctwr_user_model_1] */
+  cs_glob_physical_model_flag[CS_COOLING_TOWERS] = 0;
+  /*! [ctwr_user_model_1] */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

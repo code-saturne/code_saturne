@@ -75,6 +75,7 @@
 #include "cs_physical_constants.h"
 #include "cs_post.h"
 #include "cs_post_util.h"
+#include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_sles.h"

@@ -225,6 +225,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     iterns        external sub-iteration number
  * \param[in]     f_id          field id (or -1)
+ * \param[in]     name          associated name if f_id < 0, or NULL
  * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
  * \param[in]     ivisep        indicator to take \f$ \divv
  *                               \left(\mu \gradt \transpose{\vect{a}} \right)
@@ -259,8 +260,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at boundary faces for the r.h.s.
- * \param[in]     secvif        secondary viscosity at interior faces
- * \param[in]     secvib        secondary viscosity at boundary faces
+ * \param[in]     i_secvis      secondary viscosity at interior faces
+ * \param[in]     b_secvis      secondary viscosity at boundary faces
  * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion

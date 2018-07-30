@@ -1878,9 +1878,9 @@ void CS_PROCF (mxicpl, MXICPL)
  *                                  faces, or NULL
  * \param[in] volume_cpl_criteria   cell selection criteria for coupled cells, or
                                     NULL
- * \param[in] boundary_sup_criteria boundary face selection criteria for support
+ * \param[in] boundary_loc_criteria boundary face selection criteria for location
  *                                  (not functional)
- * \param[in] volume_sup_criteria   cell selection criteria for support
+ * \param[in] volume_loc_criteria   cell selection criteria for location
  * \param[in] verbosity             verbosity level
  *
  * In the case of only 2 Code_Saturne instances, the 'saturne_name' argument

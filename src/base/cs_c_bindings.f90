@@ -4528,15 +4528,15 @@ contains
   !>                               of the variable (Explicit part)
   !> \param[in]     cofbfv        boundary condition array for the diffusion
   !>                               of the variable (Implicit part)
-  !> \param[in]     flumas        mass flux at interior faces
-  !> \param[in]     flumab        mass flux at boundary faces
-  !> \param[in]     viscfm        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+  !> \param[in]     i_massflux    mass flux at interior faces
+  !> \param[in]     b_massflux    mass flux at boundary faces
+  !> \param[in]     i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
   !>                               at interior faces for the matrix
-  !> \param[in]     viscbm        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+  !> \param[in]     b_viscm       \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
   !>                               at boundary faces for the matrix
-  !> \param[in]     viscfs        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+  !> \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
   !>                               at interior faces for the r.h.s.
-  !> \param[in]     viscbs        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+  !> \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
   !>                               at boundary faces for the r.h.s.
   !> \param[in]     secvif        secondary viscosity at interior faces
   !> \param[in]     secvib        secondary viscosity at boundary faces
@@ -4757,15 +4757,15 @@ contains
   !>                               of the variable (Explicit part)
   !> \param[in]     cofbfts        boundary condition array for the diffusion
   !>                               of the variable (Implicit part)
-  !> \param[in]     flumas        mass flux at interior faces
-  !> \param[in]     flumab        mass flux at boundary faces
-  !> \param[in]     viscfm        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+  !> \param[in]     i_massflux    mass flux at interior faces
+  !> \param[in]     b_massflux    mass flux at boundary faces
+  !> \param[in]     i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
   !>                               at interior faces for the matrix
-  !> \param[in]     viscbm        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+  !> \param[in]     b_viscm       \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
   !>                               at boundary faces for the matrix
-  !> \param[in]     viscfs        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+  !> \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
   !>                               at interior faces for the r.h.s.
-  !> \param[in]     viscbs        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+  !> \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
   !>                               at boundary faces for the r.h.s.
   !> \param[in]     viscce        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
   !> \param[in]     weighf        internal face weight between cells i j in case
@@ -4933,6 +4933,7 @@ contains
   !> \param[in]     idftnp        indicator
   !>                               - 1 scalar diffusivity
   !>                               - 6 symmetric tensor diffusivity
+  !> \param[in]     imasac        take mass accumulation into account?
   !> \param[in]     blencp        fraction of upwinding
   !> \param[in]     epsrgp        relative precision for the gradient
   !>                               reconstruction
@@ -5119,6 +5120,7 @@ contains
   !> \param[in]     idftnp        indicator
   !>                               - 1 scalar diffusivity
   !>                               - 6 symmetric tensor diffusivity
+  !> \param[in]     imasac        take mass accumulation into account?
   !> \param[in]     blencp        fraction of upwinding
   !> \param[in]     epsrgp        relative precision for the gradient
   !>                               reconstruction

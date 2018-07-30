@@ -1242,15 +1242,13 @@ _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
  *   0 in case of success, 1 otherwise
  *----------------------------------------------------------------------------*/
 
-int
+static int
 _sync_after_location(cs_syr4_coupling_t  *syr_coupling)
 {
   int retval = 1;
 
   char op_name_send[32 + 1];
   char op_name_recv[32 + 1];
-
-  const cs_lnum_t verbosity = syr_coupling->verbosity;
 
   /* Communication with SYRTHES */
   /*----------------------------*/
@@ -1565,9 +1563,6 @@ cs_syr4_coupling_init_comm(cs_syr4_coupling_t *syr_coupling,
 void
 cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling)
 {
-  char op_name_send[32 + 1];
-  char op_name_recv[32 + 1];
-
   const cs_lnum_t verbosity = syr_coupling->verbosity;
 
   if (verbosity > 0)

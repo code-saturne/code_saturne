@@ -68,7 +68,7 @@ BEGIN_C_DECLS
   \file fvm_nodal.c
         Main structure for a nodal representation associated with a mesh.
 
-  The \ref fvm_nodal_t structure is mostly used to handle post-processing
+  The \c fvm_nodal_t structure is mostly used to handle post-processing
   output in external formats, usually running in parallel using MPI.
   This implies reconstructing a nodal connectivity (cells -> vertices) from
   the main faces -> cells connectivity (using an intermediate

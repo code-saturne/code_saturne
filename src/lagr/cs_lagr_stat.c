@@ -1576,9 +1576,9 @@ _vv_mesh_location_cells(int              location_id_y,
  * When not applicable (i.e. when no mesh-based weight computation function
  * is defined), NULL is returned.
  *
- * \parameter[in, out]  mwa       moment weight accumulator
- * \parameter[in]       dt        cell time step values
- * \parameter[in, out]  w0        pointer to buffer in case weight values
+ * \param[in, out]  mwa       moment weight accumulator
+ * \param[in]       dt        cell time step values
+ * \param[in, out]  w0        pointer to buffer in case weight values
  *                                is of size 1
  *
  * \return  pointer to weight array (w0 or allocated array), or NULL

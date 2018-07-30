@@ -27,17 +27,18 @@
 /*!
   \page cs_user_cooling_towers Cooling tower parameters definition
 
-  \section cs_user_cooling_towers_h_fluid Define fluid parameters
+  \section cs_user_cooling_towers_h_model Activate the cooling tower module
 
-  Fluid properties are defined in \ref cs_user_parameters.f90 in routine
-  \ref cs_user_cooling_towers:
+  As with other predefined physical models, the cooling tower module may
+  be activated by setting the matching value in \ref cs_glob_physical_model_flag,
+  in the \ref cs_user_model function (cs_user_parameters.c):
 
-  \snippet cs_user_parameters.f90 cs_user_cooling_towers
+  \snippet cs_user_parameters-ctwr.c ctwr_user_model_1
 
-  \section cs_user_cooling_towers_h_ex Define an evaporation zone
+  \section cs_user_cooling_towers_h_ex Define exchange zones
 
-  The \ref cs_user_paramters.c function allows one to define parameters
-  for cooling towers.
+  Cooling tower exchange zones and their parameters may be defined in the
+  general \ref cs_user_parameters function  (cs_user_parameters.c).
 
   The following code block shows an example of definition of a cooling tower
   exchange zone.

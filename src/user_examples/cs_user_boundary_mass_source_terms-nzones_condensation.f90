@@ -203,6 +203,7 @@ if (iappel.eq.1) then
   nfbpcd = ieltcd
   nzones = izone
 endif
+!< [zones_definition]
 
 !< [model_settings]
 !===============================================================================

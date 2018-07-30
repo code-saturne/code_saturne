@@ -74,6 +74,7 @@
 #include "cs_multigrid.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_post.h"
 #include "cs_post_util.h"
 #include "cs_prototypes.h"
@@ -180,6 +181,7 @@ cs_user_model(void)
   cs_parameters_add_property("user_b_property_1",
                              1,
                              CS_MESH_LOCATION_BOUNDARY_FACES);
+
   /*--------------------------------------------------------------------------*/
 
   /* Example: add variables to post-process the predicted-velocity divergence
@@ -208,6 +210,16 @@ cs_user_model(void)
 void
 cs_user_parameters(void)
 {
+  /* Example: force presence of boundary temperature field */
+  /*-------------------------------------------------------*/
+
+  /*! [param_force_b_temperature] */
+  {
+    cs_parameters_add_boundary_temperature();
+  }
+
+  /*! [param_force_b_temperature] */
+
   /* Example: set options for Stokes solving */
   /*-----------------------------------------*/
 

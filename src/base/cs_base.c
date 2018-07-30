@@ -2083,7 +2083,7 @@ cs_base_dlopen(const char *filename)
  * the base plugin file name (with no extension) needs to be given.
  * It is assumed the file is available in the code's "pkglibdir" directory,
  *
- * \param[in]  filename  path to shared library file
+ * \param[in]  name  path to shared library file
  *
  * \return  handle to shared library
  */

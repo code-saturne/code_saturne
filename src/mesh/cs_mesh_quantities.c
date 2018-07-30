@@ -276,9 +276,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t        *m,
     coupled_faces = ce->coupled_faces;
   }
 
-  cs_real_t  udbfs;
-  cs_real_3_t  dddij;
-
   if (ce == NULL) {
     if (cocg == NULL) {
       BFT_MALLOC(cocg, n_cells_ext, cs_real_33_t);
@@ -1949,7 +1946,6 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
   cs_lnum_t  fac_id;
 
   const cs_real_t  a_third = 1.0/3.0;
-  const cs_lnum_t  dim = mesh->dim;
 
   /* Initialization */
 

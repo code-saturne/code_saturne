@@ -262,8 +262,6 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
  * \param[in]   rho_f  fluid density at  particle position
  * \param[in]   rho_p  particle density
  * \param[in]   nu_f   kinematic viscosity of the fluid at particle position
- * \param[in]   cp_f   specific heat of the fluid at particle position
- * \param[in]   k_f    diffusion coefficient of the fluid at particle position
  * \param[out]  taup   thermal relaxation time
  * \param[in]   dt     time step (per cell)
  */
