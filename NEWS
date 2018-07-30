@@ -5,6 +5,9 @@ Release 5.1.5 (unreleased)
 Bug fixes
 ---------
 
+- GUI: fix crash when using the notebook on some systems (mostly recent
+  using systems using PyQt5, as these default to the concerned API).
+
 - GUI: fixes for addition and handling of coal classes.
 
 - GUI: "rij" (coupled) field must return a NULL pointer for uncoupled RSM 
