@@ -130,23 +130,23 @@ _normalize_string(char *s)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Search for a node located at path from root
+ * \brief  Search for a node located at path from node
  *
  * If the node does not exist, it is created.
  *
- * \param[in] root   pointer to the root node where we start searching
- * \param[in] path   string describing the path access
+ * \param[in] node  pointer to the node where we start searching
+ * \param[in] path  string describing the path access
  *
  * \return a pointer to the node
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_tree_node_t *
-_find_or_create_node(cs_tree_node_t   *root,
+_find_or_create_node(cs_tree_node_t   *node,
                      const char       *path)
 {
-  cs_tree_node_t  *nodes = root;
-  cs_tree_node_t  *node = NULL;
+  cs_tree_node_t  *_nodes = node;
+  cs_tree_node_t  *_node = NULL;
 
   const size_t  path_len = strlen(path);
   char  _name[128];
@@ -175,19 +175,19 @@ _find_or_create_node(cs_tree_node_t   *root,
     }
 
     /* Search for the node with the given name */
-    if (nodes->children == NULL)
-      nodes = cs_tree_add_child(nodes, name);
+    if (_nodes->children == NULL)
+      _nodes = cs_tree_add_child(_nodes, name);
     else
-      nodes = nodes->children;
+      _nodes = _nodes->children;
 
-    for (node = nodes; node != NULL; node = node->next)
-      if (strcmp(node->name, name) == 0)
+    for (_node = _nodes; _node != NULL; _node = _node->next)
+      if (strcmp(_node->name, name) == 0)
         break;
 
-    if (node == NULL)
-      nodes = cs_tree_add_sibling(nodes, name);
+    if (_node == NULL)
+      _nodes = cs_tree_add_sibling(_nodes, name);
     else
-      nodes = node;
+      _nodes = _node;
 
     if (name != _name)
       BFT_FREE(name);
@@ -196,28 +196,28 @@ _find_or_create_node(cs_tree_node_t   *root,
 
   } /* Manipulate the path */
 
-  return node;
+  return _node;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Search for a node located at path from root
+ * \brief  Search for a node located at path from node
  *
  * If the node does not exist, NULL is returned.
  *
- * \param[in] root   pointer to the root node where we start searching
- * \param[in] path   string describing the path access
+ * \param[in] parent  pointer to the node where we start searching
+ * \param[in] path    string describing the path access
  *
  * \return a pointer to the node, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_tree_node_t *
-_find_node(cs_tree_node_t   *root,
+_find_node(cs_tree_node_t   *parent,
            const char       *path)
 {
-  cs_tree_node_t  *nodes = (cs_tree_node_t *)root;
-  cs_tree_node_t  *node = NULL;
+  cs_tree_node_t  *_nodes = (cs_tree_node_t *)parent;
+  cs_tree_node_t  *_node = NULL;
 
   const size_t  path_len = strlen(path);
   char  _name[256];
@@ -236,9 +236,9 @@ _find_node(cs_tree_node_t   *root,
       level_len += 1;
 
     /* Search for the node with the given name */
-    nodes = nodes->children;
-    if (nodes == NULL)
-      return nodes;
+    _nodes = _nodes->children;
+    if (_nodes == NULL)
+      return _nodes;
 
     if (level_len > 256) {
       BFT_MALLOC(name, level_len, char);
@@ -250,22 +250,22 @@ _find_node(cs_tree_node_t   *root,
       name = _name;
     }
 
-    for (node = nodes; node != NULL; node = node->next)
-      if (strcmp(node->name, name) == 0)
+    for (_node = _nodes; _node != NULL; _node = _node->next)
+      if (strcmp(_node->name, name) == 0)
         break;
 
-    nodes = node;
+    _nodes = _node;
 
     if (name != _name)
       BFT_FREE(name);
-    if (nodes == NULL)
+    if (_nodes == NULL)
       return NULL;
 
     start += level_len + 1;
 
   } /* Manipulate the path */
 
-  return node;
+  return _node;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1058,7 +1058,7 @@ cs_tree_node_get_child_values_real(cs_tree_node_t  *node,
  *       label
  *         (value = b)
  *
- * Using \ref cs_tree_get_node(root, "section2/entry") will return
+ * Using \ref cs_tree_get_node(node, "section2/entry") will return
  * the first node with path "section2/entry" (which has a child named
  * "label" with value a).
  *
@@ -1255,12 +1255,12 @@ cs_tree_node_dump(cs_log_t                log,
 /*!
  * \brief  Add a node to a tree.
  *
- * This node is located at "path" from the given root node
+ * This node is located at "path" from the given node
  * level switch is indicated by a "/" in path
  *
  * Exits on error if a node already exists on this path.
  *
- * \param[in, out]  root  pointer to the root node where we start searching
+ * \param[in, out]  node  pointer to the node where we start searching
  * \param[in]       path  string describing the path access
  *
  * \return  pointer to the new node
@@ -1268,29 +1268,29 @@ cs_tree_node_dump(cs_log_t                log,
 /*----------------------------------------------------------------------------*/
 
 cs_tree_node_t *
-cs_tree_add_node(cs_tree_node_t  *root,
+cs_tree_add_node(cs_tree_node_t  *node,
                  const char      *path)
 {
-  cs_tree_node_t *node = cs_tree_get_node(root, path);
+  cs_tree_node_t *_node = cs_tree_get_node(node, path);
 
-  if (node != NULL)
+  if (_node != NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: node %s already exists.",
               __func__, path);
 
-  return _find_or_create_node(root, path);
+  return _find_or_create_node(_node, path);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve the pointer to a node.
  *
- * This node is located at "path" from the given root node
+ * This node is located at "path" from the given node
  * level switch is indicated by a "/" in path.
  *
  * In case of multiple nodes sharing the given path, the first such node
  * is returned.
  *
- * \param[in]  root  pointer to the root node where we start searching
+ * \param[in]  node  pointer to the node where we start searching
  * \param[in]  path  string describing the path access
  *
  * \return  pointer to the node, or NULL if not found
@@ -1298,17 +1298,50 @@ cs_tree_add_node(cs_tree_node_t  *root,
 /*----------------------------------------------------------------------------*/
 
 cs_tree_node_t *
-cs_tree_get_node(cs_tree_node_t  *root,
+cs_tree_get_node(cs_tree_node_t  *node,
                  const char      *path)
 {
-  if (root == NULL)
+  if (node == NULL)
     return NULL;
   if (path == NULL)
-    return root;
+    return node;
   if (strlen(path) == 0)
-    return root;
+    return node;
 
-  return _find_node(root, path);
+  return _find_node(node, path);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Count number of nodes sharing a given path.
+ *
+ * \param[in]  node  pointer to the node where we start searching
+ * \param[in]  path  string describing the path access
+ *
+ * \return  number of nodes sharing path
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_tree_get_node_count(cs_tree_node_t  *node,
+                       const char      *path)
+{
+  int retval = 0;
+
+  if (node != NULL && path != NULL) {
+    cs_tree_node_t  *tn = node;
+
+    if (strlen(path) != 0)
+      tn = cs_tree_get_node(node, path);
+
+    while (tn != NULL) {
+      retval += 1;
+      tn = cs_tree_node_get_next_of_name(tn);
+    }
+
+  }
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

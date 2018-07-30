@@ -487,7 +487,7 @@ cs_tree_node_get_child_values_real(cs_tree_node_t  *node,
  *       label
  *         (value = b)
  *
- * Using \ref cs_tree_get_node(root, "section2/entry") will return
+ * Using \ref cs_tree_get_node(node, "section2/entry") will return
  * the first node with path "section2/entry" (which has a child named
  * "label" with value a).
  *
@@ -531,12 +531,12 @@ cs_tree_node_dump(cs_log_t                log,
 /*!
  * \brief  Add a node to a tree.
  *
- * This node is located at "path" from the given root node
+ * This node is located at "path" from the given node
  * level switch is indicated by a "/" in path
  *
  * Exits on error if a node already exists on this path.
  *
- * \param[in, out]  root  pointer to the root node where we start searching
+ * \param[in, out]  node  pointer to the node where we start searching
  * \param[in]       path  string describing the path access
  *
  * \return  pointer to the new node
@@ -544,20 +544,20 @@ cs_tree_node_dump(cs_log_t                log,
 /*----------------------------------------------------------------------------*/
 
 cs_tree_node_t *
-cs_tree_add_node(cs_tree_node_t  *root,
+cs_tree_add_node(cs_tree_node_t  *node,
                  const char      *path);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve the pointer to a node.
  *
- * This node is located at "path" from the given root node
+ * This node is located at "path" from the given node
  * level switch is indicated by a "/" in path.
  *
  * In case of multiple nodes sharing the given path, the first such node
  * is returned.
  *
- * \param[in]  root  pointer to the root node where we start searching
+ * \param[in]  node  pointer to the node where we start searching
  * \param[in]  path  string describing the path access
  *
  * \return  pointer to the node, or NULL if not found
@@ -565,18 +565,33 @@ cs_tree_add_node(cs_tree_node_t  *root,
 /*----------------------------------------------------------------------------*/
 
 cs_tree_node_t *
-cs_tree_get_node(cs_tree_node_t   *root,
+cs_tree_get_node(cs_tree_node_t   *node,
                  const char       *path);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Count number of nodes sharing a given path.
+ *
+ * \param[in]  node  pointer to the node where we start searching
+ * \param[in]  path  string describing the path access
+ *
+ * \return  number of nodes sharing path
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_tree_get_node_count(cs_tree_node_t  *node,
+                       const char      *path);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve the pointer to a node with a child having a given
  *         (character string) tag value.
  *
- * This node is located at "path" from the given root node
+ * This node is located at "path" from the given node
  * level switch is indicated by a "/" in path.
  *
- * \param[in]  root       pointer to the root node where we start searching
+ * \param[in]  node       pointer to the node where we start searching
  * \param[in]  path       string describing the path access
  * \param[in]  tag        name of the required "tag" child
  * \param[in]  tag_value  value of the required "tag" child
@@ -586,29 +601,29 @@ cs_tree_get_node(cs_tree_node_t   *root,
 /*----------------------------------------------------------------------------*/
 
 static inline cs_tree_node_t *
-cs_tree_get_node_with_tag(cs_tree_node_t   *root,
+cs_tree_get_node_with_tag(cs_tree_node_t   *node,
                           const char       *path,
                           const char       *tag,
                           const char       *tag_value)
 {
-  cs_tree_node_t *node = cs_tree_get_node(root, path);
-  if (node != NULL)
-    node = cs_tree_node_get_sibling_with_tag(node, tag, tag_value);
+  cs_tree_node_t *_node = cs_tree_get_node(node, path);
+  if (_node != NULL)
+    _node = cs_tree_node_get_sibling_with_tag(_node, tag, tag_value);
 
-  return node;
+  return _node;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve the pointer to a node, adding it if not present.
  *
- * This node is located at "path" from the given root node
+ * This node is located at "path" from the given node
  * level switch is indicated by a "/" in path.
  *
  * In case of multiple nodes sharing the given path, the first such node
  * is returned.
  *
- * \param[in]  root  pointer to the root node where we start searching
+ * \param[in]  node  pointer to the node where we start searching
  * \param[in]  path  string describing the path access
  *
  * \return  pointer to the node, or NULL if not found
@@ -616,14 +631,14 @@ cs_tree_get_node_with_tag(cs_tree_node_t   *root,
 /*----------------------------------------------------------------------------*/
 
 static inline cs_tree_node_t *
-cs_tree_get_or_add_node(cs_tree_node_t   *root,
+cs_tree_get_or_add_node(cs_tree_node_t   *node,
                         const char       *path)
 {
-  cs_tree_node_t  *node = cs_tree_get_node(root, path);
-  if (node == NULL)
-    node = cs_tree_add_node(root, path);
+  cs_tree_node_t  *_node = cs_tree_get_node(node, path);
+  if (_node == NULL)
+    node = cs_tree_add_node(_node, path);
 
-  return node;
+  return _node;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -752,18 +767,18 @@ cs_tree_add_sibling(cs_tree_node_t  *sibling,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Dump a cs_tree_node_t structure starting from the node "root".
+ * \brief  Dump a cs_tree_node_t structure starting from a given node
  *
  * \param[in] log    indicate which log file to use
  * \param[in] depth  starting depth in the tree
- * \param[in] root   pointer to a cs_tree_node_t to dump
+ * \param[in] node   pointer to a cs_tree_node_t to dump
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_tree_dump(cs_log_t                log,
              int                     depth,
-             const cs_tree_node_t   *root);
+             const cs_tree_node_t   *node);
 
 /*----------------------------------------------------------------------------*/
 
