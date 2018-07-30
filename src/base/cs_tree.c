@@ -1062,9 +1062,9 @@ cs_tree_node_get_child_values_real(cs_tree_node_t  *node,
  * the first node with path "section2/entry" (which has a child named
  * "label" with value a).
  *
- * Using \ref cs_tree_get_sibling_with_tag(node, "label", "a") from that
+ * Using \ref cs_tree_node_get_sibling_with_tag(node, "label", "a") from that
  * node will return the same node, while
- * \ref cs_tree_get_sibling_with_tag(node, "label", "b") will return
+ * \ref cs_tree_node_get_sibling_with_tag(node, "label", "b") will return
  * the second "section2/entry" node.
  *
  * This function can be called from any sibling (not necessarily the
@@ -1427,23 +1427,23 @@ cs_tree_add_sibling(cs_tree_node_t  *sibling,
  *
  * \param[in] log    indicate which log file to use
  * \param[in] depth  starting depth in the tree
- * \param[in] root   pointer to a cs_tree_node_t to dump
+ * \param[in] node   pointer to a cs_tree_node_t to dump
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_tree_dump(cs_log_t                log,
              int                     depth,
-             const cs_tree_node_t   *root)
+             const cs_tree_node_t   *node)
 {
   if (depth < 0)
     depth = 0;
-  cs_tree_node_dump(log, depth, root);
-  if (root == NULL)
+  cs_tree_node_dump(log, depth, node);
+  if (node == NULL)
     return;
 
-  if (root->children != NULL) { /* There is at least one child */
-    cs_tree_node_t  *next_child = root->children;
+  if (node->children != NULL) { /* There is at least one child */
+    cs_tree_node_t  *next_child = node->children;
     while (next_child != NULL) {
       cs_tree_dump(log, depth+1, next_child);
       next_child = next_child->next;

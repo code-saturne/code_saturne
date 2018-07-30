@@ -34,6 +34,8 @@
 #include "cs_base.h"
 #include "cs_volume_zone.h"
 
+#include "mei_evaluate.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -468,6 +470,17 @@ cs_gui_init(void);
 
 void
 cs_gui_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add notebook variable to a formula.
+ *
+ * \param[in, out]  ev_law  pointer to MEI formula structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_add_notebook_variables(mei_tree_t  *ev_law);
 
 /*----------------------------------------------------------------------------*/
 /*!

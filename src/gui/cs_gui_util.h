@@ -78,7 +78,7 @@ cs_gui_check_version(void);
  *   the root path
  *----------------------------------------------------------------------------*/
 
-char*
+char *
 cs_xpath_init_path(void);
 
 /*----------------------------------------------------------------------------
@@ -88,7 +88,7 @@ cs_xpath_init_path(void);
  *   the short path.
  *----------------------------------------------------------------------------*/
 
-char*
+char *
 cs_xpath_short_path(void);
 
 /*----------------------------------------------------------------------------
@@ -178,20 +178,6 @@ void
 cs_xpath_add_function_text(char  **path);
 
 /*----------------------------------------------------------------------------
- * Return a list of attribute node names from the xpath request in an array.
- *
- * Example: from <a attr="c"/><b attr="d"/> return {c,d}
- *
- * parameters:
- *   path <-- path for the xpath request
- *   size --> array size
- *----------------------------------------------------------------------------*/
-
-char**
-cs_gui_get_attribute_values(char  *path,
-                            int   *size);
-
-/*----------------------------------------------------------------------------
  * Return the value of an element's attribute.
  *
  * Example: from <a b="c"/> return c
@@ -200,25 +186,8 @@ cs_gui_get_attribute_values(char  *path,
  *   path <-- path for the xpath request
  *----------------------------------------------------------------------------*/
 
-char*
+char *
 cs_gui_get_attribute_value(char  *path);
-
-/*----------------------------------------------------------------------------
- * Return a list of children nodes name from the xpath request in an array.
- *
- * Example: from <a>3<\a><b>4<\b> return {a,b}
- *
- * parameters:
- *   path <-- path for the xpath request
- *   size --> array size
- *
- * returns:
- *   node's names
- *----------------------------------------------------------------------------*/
-
-char**
-cs_gui_get_nodes_name(char  *path,
-                      int   *size);
 
 /*----------------------------------------------------------------------------
  * Return a single node's name from the xpath request.
@@ -230,22 +199,8 @@ cs_gui_get_nodes_name(char  *path,
  *   node's name
  *----------------------------------------------------------------------------*/
 
-char*
+char *
 cs_gui_get_node_name(char  *path);
-
-/*----------------------------------------------------------------------------
- * Return a list of children text nodes from the xpath request in an array.
- *
- * Example: from <a>3<\a><a>4<\a> return {3,4}
- *
- * parameters:
- *   path <-- path for the xpath request
- *   size --> array size
- *----------------------------------------------------------------------------*/
-
-char**
-cs_gui_get_text_values(char  *path,
-                       int   *size);
 
 /*----------------------------------------------------------------------------
  * Return a single child text node from the xpath request.
@@ -257,7 +212,7 @@ cs_gui_get_text_values(char  *path,
  *   child node based on request
  *----------------------------------------------------------------------------*/
 
-char*
+char *
 cs_gui_get_text_value(char  *path);
 
 /*----------------------------------------------------------------------------
@@ -305,21 +260,6 @@ cs_gui_get_int(char  *path,
 
 int
 cs_gui_get_nb_element(char  *path);
-
-/*----------------------------------------------------------------------------
- * Query the maximum integer value from an xpath request result list.
- *
- * Example: from <a>3<\a><a>4<\a> return 4
- *
- * parameters:
- *   path <-- path for the xpath request
- *
- * returns:
- *   the maximum integer value in the list
- *----------------------------------------------------------------------------*/
-
-int
-cs_gui_get_max_value(char  *path);
 
 /*-----------------------------------------------------------------------------
  * Evaluate the "status" attribute value.

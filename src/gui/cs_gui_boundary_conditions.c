@@ -123,6 +123,36 @@ cs_boundary_t *boundaries = NULL;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Return a string value associated with a "tag" child node and
+ * whose presence should be guaranteed.
+ *
+ * If the matching child node is not present, an error is produced
+ *
+ * parameters:
+ *   tn <-- tree node associated with profile
+ *
+ * return:
+ *   pointer to matching child string
+ *----------------------------------------------------------------------------*/
+
+static const char *
+_tree_node_get_tag(cs_tree_node_t  *tn,
+                   const char      *tag)
+{
+  const char *name = cs_tree_node_get_tag(tn, tag);
+
+  if (name == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Incorrect setup tree definition for the following node:\n"));
+    cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Missing child (tag) node: %s"), tag);
+  }
+
+  return name;
+}
+
 /*-----------------------------------------------------------------------------
  * Return the choice for the scalar of boundary condition type
  *
@@ -331,43 +361,6 @@ _wall_roughness(const char  *label,
 }
 
 /*-----------------------------------------------------------------------------
- * add notebook variable to formula
- *----------------------------------------------------------------------------*/
-
-static void
-_add_notebook_variables(mei_tree_t *ev_law)
-{
-  char *path = NULL;
-
-  /* number of variable */
-  int nbvar = cs_gui_get_tag_count("/physical_properties/notebook/var\n", 1);
-
-  if (nbvar == 0)
-    return;
-
-  for (int ivar = 0; ivar < nbvar; ivar++) {
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "physical_properties", "notebook");
-    cs_xpath_add_element_num(&path, "var", ivar +1);
-    cs_xpath_add_attribute(&path, "name");
-    char *name = cs_gui_get_attribute_value(path);
-    BFT_FREE(path);
-
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "physical_properties", "notebook");
-    cs_xpath_add_element_num(&path, "var", ivar +1);
-    cs_xpath_add_attribute(&path, "value");
-    char *value = cs_gui_get_attribute_value(path);
-    double val = atof(value);
-    BFT_FREE(path);
-
-    mei_tree_insert(ev_law, name, val);
-    BFT_FREE(name);
-    BFT_FREE(value);
-  }
-}
-
-/*-----------------------------------------------------------------------------
  * Get value of data for inlet velocity.
  *
  * parameters:
@@ -531,7 +524,7 @@ _boundary_scalar_init_mei_tree(const char   *formula,
   mei_tree_insert(tree, "iter", ntcabs);
 
   /* add variable from notebook */
-  _add_notebook_variables(tree);
+  cs_gui_add_notebook_variables(tree);
 
   /* try to build the interpreter */
   if (mei_tree_builder(tree))
@@ -678,7 +671,7 @@ _boundary_scalar(const char   *nature,
 
 /*-----------------------------------------------------------------------------
  * Get coal's data for inlet. Check if the current zone is an inlet only
- * for an oxydant, of for oxydant and coal.
+ * for an oxydant, or for oxydant and coal.
  *
  * parameters:
  *   izone       <--  number of the current zone
@@ -687,116 +680,78 @@ _boundary_scalar(const char   *nature,
  *----------------------------------------------------------------------------*/
 
 static void
-_inlet_coal(const int         izone,
-            const int  *const ncharb,
-            const int  *const nclpch)
+_inlet_coal(int         izone,
+            const int  *ncharb,
+            const int  *nclpch)
 {
-  int    icoal;
-  int    iclass;
-  int    _n_coals = 0;
-  double value;
-  char  *path0 = NULL;
-  char  *path1 = NULL;
-  char  *path2 = NULL;
-  char  *path3 = NULL;
-  char  *path4 = NULL;
-  char  *path5 = NULL;
-  char  **list_of_coals = NULL;
-  char  **list_of_classes = NULL;
+  int  _n_coals = 0;
+  const  cs_real_t *v = NULL;
 
-  path0 = cs_xpath_init_path();
-  cs_xpath_add_elements(&path0, 2, "boundary_conditions", "inlet");
-  cs_xpath_add_test_attribute(&path0, "label", boundaries->label[izone]);
-  cs_xpath_add_elements(&path0, 2, "velocity_pressure", "coal");
+  cs_tree_node_t *tn0 = cs_tree_get_node(cs_glob_tree,
+                                         "boundary_conditions/inlet");
+  tn0 = cs_tree_node_get_sibling_with_tag(tn0, "label",
+                                          boundaries->label[izone]);
+  tn0 = cs_tree_get_node(tn0, "velocity_pressure/coal");
 
-  BFT_MALLOC(path1, strlen(path0) + 1, char);
-  strcpy(path1, path0);
-  cs_xpath_add_attribute(&path1, "name");
-  list_of_coals = cs_gui_get_attribute_values(path1, &_n_coals);
-  BFT_FREE(path1);
+  /* Count coal definitions */
+
+  while (tn0 != NULL) {
+
+    const char *name = cs_tree_node_get_tag(tn0, "name");
+    if (name == NULL)
+      continue;
+
+    int icoal = -1;
+    if (sscanf(name + strlen("coal"), "%d", &icoal) != 1)
+      continue;
+    icoal -= 1;
+    if (icoal +1 > *ncharb)
+      continue;
+
+    /* mass flow rate of coal */
+    v = cs_tree_node_get_child_values_real(tn0, "flow1");
+    if (v != NULL)
+      boundaries->qimpcp[izone][icoal] = v[0];
+
+    /* temperature of coal */
+    v = cs_tree_node_get_child_values_real(tn0, "temperature");
+    if (v != NULL)
+      boundaries->timpcp[izone][icoal] = v[0];
+
+    /* loop on number of class by coal for ratio (%) stored in distch */
+
+    for (int iclass = 0; iclass < nclpch[icoal]; iclass++) {
+
+      char classname[32];
+      snprintf(classname, 31, "class%2.2i", iclass+1);
+
+      cs_tree_node_t *tn1
+        = cs_tree_get_node_with_tag(tn0, "ratio", "name", classname);
+      v = cs_tree_node_get_values_real(tn1);
+      if (v != NULL)
+        boundaries->distch[izone][icoal][iclass] = v[0];
+
+    }
+
+    _n_coals += 1;
+
+    tn0 = cs_tree_node_get_next_of_name(tn0);
+
+  }
 
   /* if there is no coal, it is an inlet only for oxydant */
   if (_n_coals == 0) {
     boundaries->ientat[izone] = 1;
     boundaries->ientcp[izone] = 0;
-    BFT_FREE(path0);
   }
   else {
-    if (_n_coals != *ncharb)
-      bft_error(__FILE__, __LINE__, 0,
-          _("Invalid number of coal-> dp_FCP: %i xml: %i\n"),
-          *ncharb, _n_coals);
-
     boundaries->ientat[izone] = 0;
     boundaries->ientcp[izone] = 1;
-
-    /* loop on number of coals */
-
-    for (icoal = 0; icoal < *ncharb; icoal++) {
-      BFT_MALLOC(path2, strlen(path0) + 1, char);
-      strcpy(path2, path0);
-      /* sprintf(coalname, "%.4s%2.2i", "coal", icoal+1); */
-      cs_xpath_add_test_attribute(&path2, "name", list_of_coals[icoal]);
-
-      BFT_MALLOC(path3, strlen(path2) + 1, char);
-      strcpy(path3, path2);
-
-      BFT_MALLOC(path4, strlen(path2) + 1, char);
-      strcpy(path4, path2);
-
-      /* mass flow rate of coal */
-
-      cs_xpath_add_element(&path3, "flow1");
-      cs_xpath_add_function_text(&path3);
-      if (cs_gui_get_double(path3, &value))
-        boundaries->qimpcp[izone][icoal] = value;
-
-      /* temperature of coal */
-
-      cs_xpath_add_element(&path4, "temperature");
-      cs_xpath_add_function_text(&path4);
-      if (cs_gui_get_double(path4, &value))
-        boundaries->timpcp[izone][icoal] = value;
-
-      /* loop on number of class by coal for ratio (%) stored in distch */
-
-      cs_xpath_add_element(&path2, "ratio");
-      BFT_MALLOC(path1, strlen(path2) + 1, char);
-      strcpy(path1, path2);
-      cs_xpath_add_attribute(&path1, "name");
-      int _n_classes = 0;
-      list_of_classes = cs_gui_get_attribute_values(path1, &_n_classes);
-      BFT_FREE(path1);
-
-      for (iclass = 0; iclass < nclpch[icoal]; iclass++) {
-        BFT_MALLOC(path5, strlen(path2) + 1, char);
-        strcpy(path5, path2);
-
-        /* sprintf(classname, "%.5s%2.2i", "class", iclass+1); */
-        cs_xpath_add_test_attribute(&path5, "name", list_of_classes[iclass]);
-        cs_xpath_add_function_text(&path5);
-
-        if (cs_gui_get_double(path5, &value))
-          boundaries->distch[izone][icoal][iclass] = value;
-
-        BFT_FREE(path5);
-      }
-
-      for (iclass = 0; iclass < _n_classes; iclass++)
-        BFT_FREE(list_of_classes[iclass]);
-      BFT_FREE(list_of_classes);
-
-      BFT_FREE(path2);
-      BFT_FREE(path3);
-      BFT_FREE(path4);
-    }
-
-    BFT_FREE(path0);
+    if (_n_coals != *ncharb)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Invalid number of coal-> dp_FCP: %i xml: %i\n"),
+                *ncharb, _n_coals);
   }
-
-  for (icoal = 0; icoal < _n_coals; icoal++)
-    BFT_FREE(list_of_coals[icoal]);
-  BFT_FREE(list_of_coals);
 }
 
 /*-----------------------------------------------------------------------------
@@ -1051,7 +1006,7 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
   mei_tree_insert(tree, "z",    0.0);
 
   /* add variable from notebook */
-  _add_notebook_variables(tree);
+  cs_gui_add_notebook_variables(tree);
 
   /* try to build the interpreter */
   if (mei_tree_builder(tree))
@@ -1226,8 +1181,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
   BFT_MALLOC(boundaries->scalar,    n_fields,   mei_tree_t** );
   BFT_MALLOC(boundaries->preout,    zones,      double);
 
-  if (cs_gui_strcmp(vars->model, "solid_fuels"))
-  {
+  if (cs_gui_strcmp(vars->model, "solid_fuels")) {
     BFT_MALLOC(boundaries->ientat, zones, int      );
     BFT_MALLOC(boundaries->inmoxy, zones, int      );
     BFT_MALLOC(boundaries->timpat, zones, double   );
@@ -1236,8 +1190,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     BFT_MALLOC(boundaries->timpcp, zones, double*  );
     BFT_MALLOC(boundaries->distch, zones, double** );
 
-    for (izone=0; izone < zones; izone++)
-    {
+    for (izone=0; izone < zones; izone++) {
       BFT_MALLOC(boundaries->qimpcp[izone], *ncharb, double );
       BFT_MALLOC(boundaries->timpcp[izone], *ncharb, double );
       BFT_MALLOC(boundaries->distch[izone], *ncharb, double*);
@@ -1359,8 +1312,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
 
     if (f->type & CS_FIELD_VARIABLE) {
       i = f->id;
-      for (izone = 0; izone < zones; izone++)
-      {
+      for (izone = 0; izone < zones; izone++) {
         boundaries->type_code[i][izone] = -1;
         for (int ii = 0; ii < f->dim; ii++) {
           boundaries->values[i][izone * f->dim + ii].val1 = 1.e30;
@@ -1519,8 +1471,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
       if (_head_loss_formula(label) != NULL)
         boundaries->headLoss[izone] =
             _boundary_init_mei_tree(_head_loss_formula(label), sym, 1);
-      else
-      {
+      else {
         bft_printf("Warning : free inlet outlet boundary conditions\n");
         bft_printf("          without external head loss definition\n");
       }
@@ -1552,22 +1503,15 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
 
       /* Meteo scalars */
       if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
-        char *path_meteo = cs_xpath_init_path();
-        int size = -1;
-        cs_xpath_add_elements(&path_meteo, 3,
-                               "thermophysical_models",
-                               "atmospheric_flows",
-                               "variable");
-        size = cs_gui_get_nb_element(path_meteo);
-        BFT_FREE(path_meteo);
-
         if (boundaries->meteo[izone].read_data == 0) {
-          for (int j = 0; j < size; j++)
-          {
-            path_meteo = cs_xpath_init_path();
+          int n = cs_tree_get_node_count
+                    (cs_glob_tree,
+                     "thermophysical_models/atmospheric_flows/variable");
+          for (int j = 0; j < n; j++) {
+            char *path_meteo = cs_xpath_init_path();
             cs_xpath_add_elements(&path_meteo, 2,
-                                   "thermophysical_models",
-                                   "atmospheric_flows");
+                                  "thermophysical_models",
+                                  "atmospheric_flows");
             cs_xpath_add_element_num(&path_meteo, "variable", j +1);
             cs_xpath_add_element(&path_meteo, "name");
             cs_xpath_add_function_text(&path_meteo);
@@ -1585,28 +1529,17 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
 
       /* Electric arc scalars */
       if (cs_gui_strcmp(vars->model, "joule_effect")) {
-        char *path_elec = cs_xpath_init_path();
-        int size = -1;
-        cs_xpath_add_elements(&path_elec, 3,
-                               "thermophysical_models",
-                               "joule_effect",
-                               "variable");
-        size = cs_gui_get_nb_element(path_elec);
-        BFT_FREE(path_elec);
 
-        for (int j = 0; j < size; j++)
-        {
-          path_elec = cs_xpath_init_path();
-          cs_xpath_add_elements(&path_elec, 2,
-                                 "thermophysical_models",
-                                 "joule_effect");
-          cs_xpath_add_element_num(&path_elec, "variable", j +1);
-          cs_xpath_add_attribute(&path_elec, "name");
-          char *name = cs_gui_get_attribute_value(path_elec);
+        const char path0[] = "/thermophysical_models/joule_effect/variable";
+
+        for (cs_tree_node_t *tn_v = cs_tree_get_node(cs_glob_tree, path0);
+             tn_v != NULL;
+             tn_v = cs_tree_node_get_next_of_name(tn_v)) {
+
+          const char *name = _tree_node_get_tag(tn_v, "name");
 
           cs_field_t *c = cs_field_by_name_try(name);
 
-          BFT_FREE(path_elec);
           _boundary_scalar(nature,
                            izone,
                            c->id);
@@ -1900,7 +1833,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                 mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
 
                 /* add variable from notebook */
-                _add_notebook_variables(ev_formula);
+                cs_gui_add_notebook_variables(ev_formula);
 
                 icodcl[(ivar + i) *n_b_faces + ifbr] = 1;
                 mei_evaluate(ev_formula);
@@ -1931,7 +1864,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                 mei_tree_insert(ev_formula, "iter", ts->nt_cur);
 
                 /* add variable from notebook */
-                _add_notebook_variables(ev_formula);
+                cs_gui_add_notebook_variables(ev_formula);
 
                 mei_evaluate(ev_formula);
                 rcodcl[2 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + ifbr]
@@ -1951,7 +1884,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                 mei_tree_insert(ev_formula, "iter", ts->nt_cur);
 
                 /* add variable from notebook */
-                _add_notebook_variables(ev_formula);
+                cs_gui_add_notebook_variables(ev_formula);
 
                 mei_evaluate(ev_formula);
                 if (f->dim > 1)
@@ -2081,7 +2014,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
-          _add_notebook_variables(boundaries->velocity[izone]);
+          cs_gui_add_notebook_variables(boundaries->velocity[izone]);
 
           mei_evaluate(boundaries->velocity[izone]);
 
@@ -2132,7 +2065,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
-          _add_notebook_variables(boundaries->velocity[izone]);
+          cs_gui_add_notebook_variables(boundaries->velocity[izone]);
 
           mei_evaluate(boundaries->velocity[izone]);
 
@@ -2221,7 +2154,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
-          _add_notebook_variables(boundaries->velocity[izone]);
+          cs_gui_add_notebook_variables(boundaries->velocity[izone]);
 
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = face_ids[ifac];
@@ -2301,7 +2234,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
-          _add_notebook_variables(boundaries->velocity[izone]);
+          cs_gui_add_notebook_variables(boundaries->velocity[izone]);
 
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = face_ids[ifac];
@@ -2343,7 +2276,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         mei_tree_insert(boundaries->direction[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
-          _add_notebook_variables(boundaries->direction[izone]);
+          cs_gui_add_notebook_variables(boundaries->direction[izone]);
 
         if (cs_gui_strcmp(choice_v, "norm")) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
@@ -2504,7 +2437,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
 
             /* add variable from notebook */
-            _add_notebook_variables(ev_formula);
+            cs_gui_add_notebook_variables(ev_formula);
 
             mei_evaluate(ev_formula);
             rcodcl[ivar1 * n_b_faces + ifbr]
@@ -2533,7 +2466,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(ev_formula, "iter", ts->nt_cur);
 
           /* add variable from notebook */
-          _add_notebook_variables(ev_formula);
+          cs_gui_add_notebook_variables(ev_formula);
 
           /* try to build the interpreter */
 
@@ -2821,7 +2754,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
 
             /* add variable from notebook */
-            _add_notebook_variables(ev_formula);
+            cs_gui_add_notebook_variables(ev_formula);
 
             mei_evaluate(ev_formula);
             rcodcl[ivar1 * n_b_faces + ifbr]
@@ -2881,7 +2814,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         mei_tree_insert(boundaries->headLoss[izone], "iter", ts->nt_cur);
 
         /* add variable from notebook */
-        _add_notebook_variables(boundaries->headLoss[izone]);
+        cs_gui_add_notebook_variables(boundaries->headLoss[izone]);
 
         for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = face_ids[ifac];
@@ -2960,7 +2893,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
 
           /* add variable from notebook */
-          _add_notebook_variables(ev_formula);
+          cs_gui_add_notebook_variables(ev_formula);
 
           mei_evaluate(ev_formula);
           rcodcl[ivar1 * n_b_faces + ifbr]
@@ -3312,18 +3245,10 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
 int
 cs_gui_boundary_zones_number(void)
 {
-  int zones = 0;
-  char *path = NULL;
+  int n_zones = cs_tree_get_node_count(cs_glob_tree,
+                                       "boundary_conditions/boundary");
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "boundary_conditions");
-  cs_xpath_add_element(&path, "boundary");
-
-  zones = cs_gui_get_nb_element(path);
-
-  BFT_FREE(path);
-
-  return zones;
+  return n_zones;
 }
 
 /*-----------------------------------------------------------------------------

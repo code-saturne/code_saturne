@@ -102,15 +102,185 @@ static bool _setup_read = false;
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+#if defined(HAVE_LIBXML2)
+
+/*----------------------------------------------------------------------------
+ * Return a list of attribute node names from the xpath request in an array.
+ *
+ * Example: from <a attr="c"/><b attr="d"/> return {c,d}
+ *
+ * parameters:
+ *   path <-- path for the xpath request
+ *   size --> array size
+ *----------------------------------------------------------------------------*/
+
+static char **
+_get_attribute_values(char  *path,
+                      int   *size)
+{
+  char             **nodes_name = NULL;
+  xmlNodeSetPtr      nodes;
+  xmlNodePtr         cur;
+  xmlXPathObjectPtr  xpathObj;
+  int                i;
+
+  assert(path);
+
+  xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);
+
+  if (xpathObj == NULL)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  nodes = xpathObj->nodesetval;
+  *size  = (nodes) ? nodes->nodeNr : 0;
+
+  if (*size != 0) {
+
+    BFT_MALLOC(nodes_name, *size, char*);
+
+    for (i =0; i < *size; i++) {
+      assert(nodes->nodeTab[0]);
+
+      if (nodes->nodeTab[i]->type == XML_ATTRIBUTE_NODE) {
+        cur = nodes->nodeTab[i];
+        BFT_MALLOC(nodes_name[i],
+                   strlen((char *) cur->children->content)+1,
+                   char);
+        strcpy(nodes_name[i], (char*) cur->children->content);
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The node type is not XML_ATTRIBUTE_NODE.\nXpath: %s\n"),
+                  path);
+    }
+  }
+
+  xmlXPathFreeObject(xpathObj);
+  return nodes_name;
+}
+
+/*----------------------------------------------------------------------------
+ * Return a list of children text nodes from the xpath request in an array.
+ *
+ * Example: from <a>3<\a><a>4<\a> return {3,4}
+ *
+ * parameters:
+ *   path <-- path for the xpath request
+ *   size --> array size
+ *----------------------------------------------------------------------------*/
+
+static char **
+_get_text_values(char  *path,
+                 int   *size)
+{
+  char             **text_name = NULL;
+  xmlXPathObjectPtr  xpathObj;
+  xmlNodeSetPtr      nodes;
+  xmlNodePtr         cur;
+  int                i;
+
+  assert(path);
+
+  xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);
+
+  if (xpathObj == NULL)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  nodes = xpathObj->nodesetval;
+  *size = (nodes) ? nodes->nodeNr : 0;
+
+  if (*size != 0) {
+
+    BFT_MALLOC(text_name, *size, char*);
+
+    for (i =0; i < *size; i++) {
+
+      assert(nodes->nodeTab[0]);
+
+      if (nodes->nodeTab[i]->type == XML_TEXT_NODE) {
+        cur = nodes->nodeTab[i];
+        BFT_MALLOC(text_name[i], strlen((char *) cur->content)+1, char);
+        strcpy(text_name[i], (char*) cur->content);
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The node type is not XML_TEXT_NODE.\nXpath: %s\n"),
+                  path);
+    }
+  }
+
+  xmlXPathFreeObject(xpathObj);
+  return text_name;
+}
+
+/*----------------------------------------------------------------------------
+ * Return a list of children nodes name from the xpath request in an array.
+ *
+ * Example: from <a>3<\a><b>4<\b> return {a,b}
+ *
+ * parameters:
+ *   path <-- path for the xpath request
+ *   size --> array size
+ *----------------------------------------------------------------------------*/
+
+static char **
+_get_nodes_name(char  *path,
+                int   *size)
+{
+  char             **nodes_name = NULL;
+  xmlXPathObjectPtr  xpathObj;
+  xmlNodeSetPtr      nodes;
+  xmlNodePtr         cur;
+  int                i;
+
+  assert(path);
+
+  xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);
+
+  if (xpathObj == NULL)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  nodes = xpathObj->nodesetval;
+  *size = (nodes) ? nodes->nodeNr : 0;
+
+  if (*size != 0) {
+
+    BFT_MALLOC(nodes_name, *size, char*);
+
+    for (i =0; i < *size; i++) {
+      assert(nodes->nodeTab[0]);
+
+      if (nodes->nodeTab[i]->type == XML_ELEMENT_NODE) {
+        cur = nodes->nodeTab[i];
+        BFT_MALLOC(nodes_name[i], strlen((const char *) cur->name)+1, char);
+        strcpy(nodes_name[i], (const char*) cur->name);
+      } else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The node type is not XML_ELEMENT_NODE.\nXpath: %s\n"),
+                  path);
+    }
+  }
+
+  xmlXPathFreeObject(xpathObj);
+  return nodes_name;
+}
+
+#endif /* defined(HAVE_LIBXML2) */
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
-/*-----------------------------------------------------------------------------
- * Indicate if an XML file has been loaded
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Indicate if an XML file has been loaded.
  *
- * returns:
- *    1 if an XML file has been loaded, 0 otherwise
- *----------------------------------------------------------------------------*/
+ * \return  1 if an XML file has been loaded, 0 otherwise
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_gui_file_is_loaded(void)
@@ -121,15 +291,15 @@ cs_gui_file_is_loaded(void)
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Load the XML file in memory.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Load the XML file in memory.
  *
- * parameter:
- *   filename <-- XML file containing the parameters
+ * \param[in]  filename  XML file containing the parameters
  *
- * returns:
- *   error code (0 in case of success)
- *----------------------------------------------------------------------------*/
+ * \return  error code (0 in case of success)
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_gui_load_file(const char  *filename)
@@ -210,9 +380,11 @@ cs_gui_load_file(const char  *filename)
   return argerr;
 }
 
-/*-----------------------------------------------------------------------------
- * Check the xml file version.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check the XML file version.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_gui_check_version(void)
@@ -263,27 +435,25 @@ cs_gui_check_version(void)
  *   the root path
  *----------------------------------------------------------------------------*/
 
-char*
+char *
 cs_xpath_init_path(void)
 {
-#if defined(HAVE_LIBXML2)
-
   char *path = NULL;
+
+#if defined(HAVE_LIBXML2)
 
   BFT_MALLOC(path, strlen("/") + strlen(xmlRootName) + 1, char);
   strcpy(path, "/");
   strcat(path, xmlRootName);
-
-  return path;
 
 #else
 
   bft_error(__FILE__, __LINE__, 0,
             _("Code_Saturne has been compiled without XML support."));
 
-  return NULL;
-
 #endif
+
+  return path;
 }
 
 /*----------------------------------------------------------------------------
@@ -508,72 +678,6 @@ cs_xpath_add_function_text(char  **path)
 }
 
 /*----------------------------------------------------------------------------
- * Return a list of attribute node names from the xpath request in an array.
- *
- * Example: from <a attr="c"/><b attr="d"/> return {c,d}
- *
- * parameters:
- *   path <-- path for the xpath request
- *   size --> array size
- *----------------------------------------------------------------------------*/
-
-char **
-cs_gui_get_attribute_values(char  *path,
-                            int   *size)
-{
-#if defined(HAVE_LIBXML2)
-
-  char             **nodes_name = NULL;
-  xmlNodeSetPtr      nodes;
-  xmlNodePtr         cur;
-  xmlXPathObjectPtr  xpathObj;
-  int                i;
-
-  assert(path);
-
-  xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);
-
-  if (xpathObj == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  nodes = xpathObj->nodesetval;
-  *size  = (nodes) ? nodes->nodeNr : 0;
-
-  if (*size != 0) {
-
-    BFT_MALLOC(nodes_name, *size, char*);
-
-    for (i =0; i < *size; i++) {
-      assert(nodes->nodeTab[0]);
-
-      if (nodes->nodeTab[i]->type == XML_ATTRIBUTE_NODE) {
-        cur = nodes->nodeTab[i];
-        BFT_MALLOC(nodes_name[i],
-                   strlen((char *) cur->children->content)+1,
-                   char);
-        strcpy(nodes_name[i], (char*) cur->children->content);
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  _("The node type is not XML_ATTRIBUTE_NODE.\nXpath: %s\n"),
-                  path);
-    }
-  }
-
-  xmlXPathFreeObject(xpathObj);
-  return nodes_name;
-
-#else
-
-  bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without XML support."));
-
-  return NULL;
-
-#endif
-}
-
-/*----------------------------------------------------------------------------
  * Return the value of an element's attribute.
  *
  * Example: from <a b="c"/> return c
@@ -582,14 +686,14 @@ cs_gui_get_attribute_values(char  *path,
  *   path <-- path for the xpath request
  *----------------------------------------------------------------------------*/
 
-char*
+char *
 cs_gui_get_attribute_value(char  *path)
 {
   char **array = NULL;
   char  *attr = NULL;
   int    size;
 
-  array = cs_gui_get_attribute_values(path, &size);
+  array = _get_attribute_values(path, &size);
 
   if ((array == NULL) || (size == 0))
     return NULL;
@@ -611,84 +715,23 @@ cs_gui_get_attribute_value(char  *path)
 }
 
 /*----------------------------------------------------------------------------
- * Return a list of children nodes name from the xpath request in an array.
- *
- * Example: from <a>3<\a><b>4<\b> return {a,b}
- *
- * parameters:
- *   path <-- path for the xpath request
- *   size --> array size
- *----------------------------------------------------------------------------*/
-
-char**
-cs_gui_get_nodes_name(char  *path,
-                      int   *size)
-{
-#if defined(HAVE_LIBXML2)
-
-  char             **nodes_name = NULL;
-  xmlXPathObjectPtr  xpathObj;
-  xmlNodeSetPtr      nodes;
-  xmlNodePtr         cur;
-  int                i;
-
-  assert(path);
-
-  xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);
-
-  if (xpathObj == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  nodes = xpathObj->nodesetval;
-  *size = (nodes) ? nodes->nodeNr : 0;
-
-  if (*size != 0) {
-
-    BFT_MALLOC(nodes_name, *size, char*);
-
-    for (i =0; i < *size; i++) {
-      assert(nodes->nodeTab[0]);
-
-      if (nodes->nodeTab[i]->type == XML_ELEMENT_NODE) {
-        cur = nodes->nodeTab[i];
-        BFT_MALLOC(nodes_name[i], strlen((const char *) cur->name)+1, char);
-        strcpy(nodes_name[i], (const char*) cur->name);
-      } else
-        bft_error(__FILE__, __LINE__, 0,
-                  _("The node type is not XML_ELEMENT_NODE.\nXpath: %s\n"),
-                  path);
-    }
-  }
-
-  xmlXPathFreeObject(xpathObj);
-  return nodes_name;
-
-#else
-
-  bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without XML support."));
-
-  return NULL;
-
-#endif
-}
-
-
-/*----------------------------------------------------------------------------
  * Return a single node's name from the xpath request.
  *
  * parameter:
  *   path <-- path for the xpath request
  *----------------------------------------------------------------------------*/
 
-char*
+char *
 cs_gui_get_node_name(char  *path)
 {
-  char **array = NULL;
   char  *name = NULL;
+
+#if defined(HAVE_LIBXML2)
+
+  char **array = NULL;
   int    size;
 
-  array = cs_gui_get_nodes_name(path, &size);
+  array = _get_nodes_name(path, &size);
 
   if ((array == NULL) || (size == 0))
     return NULL;
@@ -705,72 +748,14 @@ cs_gui_get_node_name(char  *path)
   BFT_FREE(array[0]);
   BFT_FREE(array);
 
-  return name;
-}
-
-/*----------------------------------------------------------------------------
- * Return a list of children text nodes from the xpath request in an array.
- *
- * Example: from <a>3<\a><a>4<\a> return {3,4}
- *
- * parameters:
- *   path <-- path for the xpath request
- *   size --> array size
- *----------------------------------------------------------------------------*/
-
-char**
-cs_gui_get_text_values(char  *path,
-                       int   *size)
-{
-#if defined(HAVE_LIBXML2)
-
-  char             **text_name = NULL;
-  xmlXPathObjectPtr  xpathObj;
-  xmlNodeSetPtr      nodes;
-  xmlNodePtr         cur;
-  int                i;
-
-  assert(path);
-
-  xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);
-
-  if (xpathObj == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  nodes = xpathObj->nodesetval;
-  *size = (nodes) ? nodes->nodeNr : 0;
-
-  if (*size != 0) {
-
-    BFT_MALLOC(text_name, *size, char*);
-
-    for (i =0; i < *size; i++) {
-
-      assert(nodes->nodeTab[0]);
-
-      if (nodes->nodeTab[i]->type == XML_TEXT_NODE) {
-        cur = nodes->nodeTab[i];
-        BFT_MALLOC(text_name[i], strlen((char *) cur->content)+1, char);
-        strcpy(text_name[i], (char*) cur->content);
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  _("The node type is not XML_TEXT_NODE.\nXpath: %s\n"),
-                  path);
-    }
-  }
-
-  xmlXPathFreeObject(xpathObj);
-  return text_name;
-
 #else
 
   bft_error(__FILE__, __LINE__, 0,
             _("Code_Saturne has been compiled without XML support."));
 
-  return NULL;
-
 #endif
+
+  return name;
 }
 
 /*----------------------------------------------------------------------------
@@ -783,14 +768,17 @@ cs_gui_get_text_values(char  *path,
  *   child node based on request
  *----------------------------------------------------------------------------*/
 
-char*
+char *
 cs_gui_get_text_value(char  *path)
 {
-  char **array = NULL;
   char  *text = NULL;
+
+#if defined(HAVE_LIBXML2)
+
+  char **array = NULL;
   int    size;
 
-  array = cs_gui_get_text_values(path, &size);
+  array = _get_text_values(path, &size);
 
   if ((array == NULL) || (size == 0))
     return NULL;
@@ -806,6 +794,13 @@ cs_gui_get_text_value(char  *path)
 
   BFT_FREE(array[0]);
   BFT_FREE(array);
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without XML support."));
+
+#endif
 
   return text;
 }
@@ -825,8 +820,11 @@ int
 cs_gui_get_double(char    *path,
                   double  *value)
 {
+  int   test = 0;
+
+#if defined(HAVE_LIBXML2)
+
   char *text_name = NULL;
-  int   test;
 
   text_name = cs_gui_get_text_value(path);
 
@@ -837,6 +835,14 @@ cs_gui_get_double(char    *path,
     BFT_FREE(text_name);
     test = 1;
   }
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without XML support."));
+
+#endif
+
   return test;
 }
 
@@ -855,8 +861,11 @@ int
 cs_gui_get_int(char  *path,
                int   *value)
 {
+  int   test = 0;
+
+#if defined(HAVE_LIBXML2)
+
   char *text_name = NULL;
-  int   test;
 
   text_name = cs_gui_get_text_value(path);
 
@@ -867,6 +876,14 @@ cs_gui_get_int(char  *path,
     BFT_FREE(text_name);
     test = 1;
   }
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without XML support."));
+
+#endif
+
   return test;
 }
 
@@ -886,10 +903,11 @@ cs_gui_get_int(char  *path,
 int
 cs_gui_get_nb_element(char  *path)
 {
+  int nb = 0;
+
 #if defined(HAVE_LIBXML2)
 
   xmlXPathObjectPtr xpathObj;
-  int nb;
 
   assert(path);
 
@@ -902,81 +920,14 @@ cs_gui_get_nb_element(char  *path)
 
   xmlXPathFreeObject(xpathObj);
 
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without XML support."));
+
+#endif
+
   return nb;
-
-#else
-
-  bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without XML support."));
-
-  return 0;
-
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Query the maximum integer value from an xpath request result list.
- *
- * Example: from <a>3<\a><a>4<\a> return 4
- *
- * parameters:
- *   path <-- path for the xpath request
- *
- * returns:
- *   the maximum integer value in the list
- *----------------------------------------------------------------------------*/
-
-int
-cs_gui_get_max_value(char  *path)
-{
-#if defined(HAVE_LIBXML2)
-
-  xmlXPathObjectPtr xpathObj;
-  xmlNodeSetPtr     nodes;
-  xmlNodePtr        cur;
-  int               max_val=0;
-  int               size;
-  int               i;
-
-  assert(path);
-
-  xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);
-
-  if (xpathObj == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  nodes=xpathObj->nodesetval;
-  size = (nodes) ? nodes->nodeNr : 0;
-
-  if (size == 0)
-    bft_error (__FILE__, __LINE__, 0, _("No markup found: %s \n"), path);
-
-  else {
-    for (i=0; i <size; i++) {
-      assert(nodes->nodeTab[i]);
-      if(nodes->nodeTab[i]->type == XML_TEXT_NODE) {
-        cur = nodes->nodeTab[i];
-        max_val = CS_MAX(max_val, atoi((char*) cur->content));
-      }
-      else {
-        bft_error(__FILE__, __LINE__, 0,
-                  _("The node type is not XML_TEXT_NODE.\nXpath: %s\n"), path);
-      }
-    }
-  }
-
-  xmlXPathFreeObject(xpathObj);
-
-  return max_val;
-
-#else
-
-  bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without XML support."));
-
-  return 0;
-
-#endif
 }
 
 /*-----------------------------------------------------------------------------
@@ -994,8 +945,11 @@ int
 cs_gui_get_status(char  *path,
                   int   *result)
 {
+  int   istatus = 0;
+
+#if defined(HAVE_LIBXML2)
+
   char *status;
-  int   istatus;
 
   status = cs_gui_get_attribute_value(path);
 
@@ -1014,6 +968,13 @@ cs_gui_get_status(char  *path,
 
     BFT_FREE(status);
   }
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without XML support."));
+
+#endif
 
   return istatus;
 }
@@ -1034,8 +995,11 @@ int
 cs_gui_get_tag_count(const char  *markup,
                      int          flag)
 {
-  char *path = NULL;
   int   number = 0;
+
+#if defined(HAVE_LIBXML2)
+
+  char *path = NULL;
 
   if (flag) {
     path = cs_xpath_init_path();
@@ -1047,6 +1011,13 @@ cs_gui_get_tag_count(const char  *markup,
   number = cs_gui_get_nb_element(path);
 
   BFT_FREE(path);
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without XML support."));
+
+#endif
 
   return number;
 }
@@ -1094,7 +1065,7 @@ cs_gui_strcmp(const char  *s1,
               const char  *s2)
 {
   if (s1 == NULL || s2 == NULL) return 0;
-  if ( strlen(s1) != strlen(s2)) return 0;
+  if (strlen(s1) != strlen(s2)) return 0;
   if (!strncmp(s1, s2, strlen(s1))) return 1;
   return 0;
 }

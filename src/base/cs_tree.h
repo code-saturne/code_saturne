@@ -491,9 +491,9 @@ cs_tree_node_get_child_values_real(cs_tree_node_t  *node,
  * the first node with path "section2/entry" (which has a child named
  * "label" with value a).
  *
- * Using \ref cs_tree_get_sibling_with_tag(node, "label", "a") from that
+ * Using \ref cs_tree_node_get_sibling_with_tag(node, "label", "a") from that
  * node will return the same node, while
- * \ref cs_tree_get_sibling_with_tag(node, "label", "b") will return
+ * \ref cs_tree_node_get_sibling_with_tag(node, "label", "b") will return
  * the second "section2/entry" node.
  *
  * This function can be called from any sibling (not necessarily the

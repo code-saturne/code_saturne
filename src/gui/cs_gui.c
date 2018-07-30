@@ -156,6 +156,36 @@ cs_var_t    *cs_glob_var = NULL;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Return a string value associated with a "tag" child node and
+ * whose presence should be guaranteed.
+ *
+ * If the matching child node is not present, an error is produced
+ *
+ * parameters:
+ *   tn <-- tree node associated with profile
+ *
+ * return:
+ *   pointer to matching child string
+ *----------------------------------------------------------------------------*/
+
+static const char *
+_tree_node_get_tag(cs_tree_node_t  *tn,
+                   const char      *tag)
+{
+  const char *name = cs_tree_node_get_tag(tn, tag);
+
+  if (name == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Incorrect setup tree definition for the following node:\n"));
+    cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Missing child (tag) node: %s"), tag);
+  }
+
+  return name;
+}
+
+/*----------------------------------------------------------------------------
  * Turbulence model parameters.
  *
  * parameters:
@@ -276,43 +306,6 @@ _thermal_table_needed(const char *name)
 }
 
 /*-----------------------------------------------------------------------------
- * add notebook variable to formula
- *----------------------------------------------------------------------------*/
-
-static void
-_add_notebook_variables(mei_tree_t *ev_law)
-{
-  char *path = NULL;
-
-  /* number of variable */
-  int nbvar = cs_gui_get_tag_count("/physical_properties/notebook/var\n", 1);
-
-  if (nbvar == 0)
-    return;
-
-  for (int ivar = 0; ivar < nbvar; ivar++) {
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "physical_properties", "notebook");
-    cs_xpath_add_element_num(&path, "var", ivar +1);
-    cs_xpath_add_attribute(&path, "name");
-    char *name = cs_gui_get_attribute_value(path);
-    BFT_FREE(path);
-
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "physical_properties", "notebook");
-    cs_xpath_add_element_num(&path, "var", ivar +1);
-    cs_xpath_add_attribute(&path, "value");
-    char *value = cs_gui_get_attribute_value(path);
-    double val = atof(value);
-    BFT_FREE(path);
-
-    mei_tree_insert(ev_law, name, val);
-    BFT_FREE(name);
-    BFT_FREE(value);
-  }
-}
-
-/*-----------------------------------------------------------------------------
  * use MEI for physical property
  *----------------------------------------------------------------------------*/
 
@@ -395,7 +388,7 @@ _physical_property(const char       *param,
       }
 
       /* add variable from notebook */
-      _add_notebook_variables(ev_law);
+      cs_gui_add_notebook_variables(ev_law);
 
       for (int f_id2 = 0; f_id2 < cs_field_n_fields(); f_id2++) {
         const cs_field_t  *f2 = cs_field_by_id(f_id2);
@@ -621,7 +614,7 @@ _compressible_physical_property(const char       *param,
       }
 
       /* add variable from notebook */
-      _add_notebook_variables(ev_law);
+      cs_gui_add_notebook_variables(ev_law);
 
       /* try to build the interpreter */
 
@@ -1612,7 +1605,7 @@ _init_mei_tree(const char  *formula,
   mei_tree_insert(tree, "z",    0.0);
 
   /* add variable from notebook */
-  _add_notebook_variables(tree);
+  cs_gui_add_notebook_variables(tree);
 
   /* try to build the interpreter */
   if (mei_tree_builder(tree))
@@ -1627,137 +1620,44 @@ _init_mei_tree(const char  *formula,
 }
 
 /*----------------------------------------------------------------------------
- * Get label of 1D profile file name
- *
- * parameters:
- *   id           <--  number of order in list of 1D profile
- *----------------------------------------------------------------------------*/
-
-static char
-*_get_profile(const char  *kw,
-              int          id)
-{
-  char *path = NULL;
-  char *label = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-  cs_xpath_add_element_num(&path, "profile", id+1);
-  cs_xpath_add_attribute(&path, kw);
-
-  label = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return label;
-}
-
-/*----------------------------------------------------------------------------
  * Return the component of variables or properties or scalar for 1D profile
  *
  * parameters:
- *   id           <--  number of 1D profile
- *   nm           <--  number of the variable name of the idst 1D profile
+ *   tn <-- tree node associated with profile variable
  *----------------------------------------------------------------------------*/
 
 static int
-_get_profile_component(int  id,
-                       int  nm)
+_get_profile_v_component(cs_tree_node_t  *tn)
 {
-  char *path = NULL;
-  char *comp = NULL;
+  int comp_id = -1;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-  cs_xpath_add_element_num(&path, "profile", id + 1);
-  cs_xpath_add_element_num(&path, "var_prop", nm + 1);
-  cs_xpath_add_attribute(&path, "component");
+  const char *c_name = cs_tree_node_get_tag(tn, "component");
 
-  comp = cs_gui_get_attribute_value(path);
-  if (comp == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Invalid xpath: %s\n component not found"), path);
-  BFT_FREE(path);
+  if (c_name != NULL) {
+    int n = sscanf(c_name, "%d", &comp_id);
+    if (n != 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error converting profile component tag %s to integer."),
+                c_name);
+  }
 
-  int compId = atoi(comp);
-
-  BFT_FREE(comp);
-
-  return compId;
-}
-
-/*----------------------------------------------------------------------------
- * Get number of variables or properties or scalar for 1D profile
- *
- * parameters:
- *   id           <--  number of 1D profile
- *----------------------------------------------------------------------------*/
-
-static int
-_get_profile_names_number(int id)
-{
-  char *path = NULL;
-  int   number = 0;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-  cs_xpath_add_element_num(&path, "profile", id+1);
-  cs_xpath_add_element(&path, "var_prop");
-  number = cs_gui_get_nb_element(path);
-
-  BFT_FREE(path);
-
-  return number;
-}
-
-/*----------------------------------------------------------------------------
- * Return the name of variables or properties or scalar for 1D profile
- *
- * parameters:
- *   id           <--  number of 1D profile
- *   nm           <--  number of the variable name of the idst 1D profile
- *----------------------------------------------------------------------------*/
-
-static char *
-_get_profile_name(int  id,
-                  int  nm)
-{
-  char *path = NULL;
-  char *name = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-  cs_xpath_add_element_num(&path, "profile", id+1);
-  cs_xpath_add_element_num(&path, "var_prop", nm+1);
-  cs_xpath_add_attribute(&path, "name");
-
-  name = cs_gui_get_attribute_value(path);
-  if (name == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Invalid xpath: %s\n name not found"), path);
-  BFT_FREE(path);
-
-  return name;
+  return comp_id;
 }
 
 /*----------------------------------------------------------------------------
  * Return the label of variables or properties or scalar for 1D profile
  *
  * parameters:
- *   id           <--  number of 1D profile
- *   nm           <--  number of the variable name of the idst 1D profile
+ *   tn_vp <-- tree node associated with profile variable
  *----------------------------------------------------------------------------*/
 
 static char *
-_get_profile_label_name(int   id,
-                        int   nm)
+_build_profile_v_label_name(cs_tree_node_t  *tn_vp)
 {
-  char *path = NULL;
-  char *name = NULL;
   char *label = NULL;
 
-  name = _get_profile_name(id, nm);
-  int idim = _get_profile_component(id, nm);
+  const char *name = _tree_node_get_tag(tn_vp, "name");
+  int idim = _get_profile_v_component(tn_vp);
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     const cs_field_t *f = cs_field_by_id(f_id);
@@ -1813,89 +1713,83 @@ _get_profile_label_name(int   id,
     bft_error(__FILE__, __LINE__, 0,
               _("Invalid markup name: %s\n label not found"), name);
 
-  BFT_FREE(path);
-  BFT_FREE(name);
-
   return label;
 }
 
 /*----------------------------------------------------------------------------
- * Get coordinates or output frequency for 1D profile
+ * Return a string value associated with a child node for a profile.
+ *
+ * If the matching child node is not present, an error is produced
  *
  * parameters:
- *   id           <--  number of 1D profile
- *    x          -->   name of the coordinate (x1, y1, z1, x2, y2, z2)
- *                     or the output frequency
+ *   tn <-- tree node associated with profile
+ *
+ * return:
+ *   pointer to matching child string
  *----------------------------------------------------------------------------*/
 
-static double
-_get_profile_coordinate(int          id,
-                        const char  *x)
+static const char *
+_get_profile_child_str(cs_tree_node_t  *tn,
+                       const char      *child_name)
 {
-  char *path = NULL;
-  double coordinate = 0.0;
+  const char *name = cs_tree_node_get_child_value_str(tn, child_name);
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-  cs_xpath_add_element_num(&path, "profile", id+1);
-  cs_xpath_add_element(&path, x);
-  cs_xpath_add_function_text(&path);
+  if (name == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Incorrect setup tree definition for the following node:\n"));
+    cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Missing child node: %s"), child_name);
+  }
 
-  if (!cs_gui_get_double(path, &coordinate))
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  BFT_FREE(path);
-
-  return coordinate;
+  return name;
 }
 
 /*----------------------------------------------------------------------------
- * Return the type of output frequency for 1D profile
+ * Return an array of integers associated with a child node for a profile.
+ *
+ * If the matching child node is not present, an error is produced
  *
  * parameters:
- *   id           <--  number of average
+ *   tn <-- tree node associated with profile
+ *
+ * return:
+ *   pointer to matching child values
  *----------------------------------------------------------------------------*/
 
-static char *
-_get_profile_output_type(int  id)
+static const int *
+_get_profile_child_int(cs_tree_node_t  *tn,
+                       const char      *child_name)
 {
-  char *path = NULL;
-  char *name = NULL;
+  const int *v = cs_tree_node_get_child_values_int(tn, child_name);
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-  cs_xpath_add_element_num(&path, "profile", id + 1);
-  cs_xpath_add_element(&path, "output_type");
-  cs_xpath_add_function_text(&path);
-
-  name = cs_gui_get_text_value(path);
-  if (name == NULL)
+  if (v == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Incorrect setup tree definition for the following node:\n"));
+    cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
     bft_error(__FILE__, __LINE__, 0,
-              _("Invalid xpath: %s\n name not found"), path);
-  BFT_FREE(path);
+              _("Missing child node: %s"), child_name);
+  }
 
-  return name;
+  return v;
 }
 
 /*----------------------------------------------------------------------------
  * Get output format for 1D profile
  *
  * parameters:
- *   id           <--  number of 1D profile
+ *   tn <-- tree node associated with profile
+ *
+ * return:
+ *   1 for CSV, 0 for DAT
  *----------------------------------------------------------------------------*/
 
 static int
-_get_profile_format(int id)
+_get_profile_format(cs_tree_node_t  *tn)
 {
-  char *path = NULL, *format_s = NULL;
-  int   format = 0;
+  int format = 0;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-  cs_xpath_add_element_num(&path, "profile", id+1);
-  cs_xpath_add_element(&path, "format");
-  cs_xpath_add_attribute(&path, "name");
-  format_s = cs_gui_get_attribute_value(path);
+  const char *format_s = cs_tree_node_get_tag(tn, "format");
 
   if (format_s != NULL) {
     if (cs_gui_strcmp(format_s, "CSV"))
@@ -1904,11 +1798,8 @@ _get_profile_format(int id)
       format = 0;
     else
       bft_error(__FILE__, __LINE__, 0,
-                _("Invalid attribute value: %s \nXpath: %s\n"), format_s, path);
-    BFT_FREE(format_s);
+                _("Invalid profile format: %s"), format_s);
   }
-
-  BFT_FREE(path);
 
   return format;
 }
@@ -3276,7 +3167,7 @@ void CS_PROCF(uiporo, UIPORO)(void)
         mei_tree_insert(ev_formula,"z",0.0);
 
         /* add variable from notebook */
-        _add_notebook_variables(ev_formula);
+        cs_gui_add_notebook_variables(ev_formula);
 
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
@@ -3394,7 +3285,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
         mei_tree_insert(ev_formula, "rho", 0.0);
 
         /* add variable from notebook */
-        _add_notebook_variables(ev_formula);
+        cs_gui_add_notebook_variables(ev_formula);
 
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
@@ -3536,7 +3427,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
           mei_tree_insert(ev_formula, f->name, 0.0);
 
           /* add variable from notebook */
-          _add_notebook_variables(ev_formula);
+          cs_gui_add_notebook_variables(ev_formula);
 
           /* try to build the interpreter */
           if (mei_tree_builder(ev_formula))
@@ -3635,7 +3526,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
         mei_tree_insert(ev_formula, f->name, 0.0);
 
         /* add variable from notebook */
-        _add_notebook_variables(ev_formula);
+        cs_gui_add_notebook_variables(ev_formula);
 
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
@@ -3729,7 +3620,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           mei_tree_insert(ev_formula_uvw, "uref", cs_glob_turb_ref_values->uref);
 
           /* add variable from notebook */
-          _add_notebook_variables(ev_formula_uvw);
+          cs_gui_add_notebook_variables(ev_formula_uvw);
 
           /* try to build the interpreter */
           if (mei_tree_builder(ev_formula_uvw))
@@ -3824,7 +3715,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             mei_tree_insert(ev_formula_turb, "z", 0.0);
 
             /* add variable from notebook */
-            _add_notebook_variables(ev_formula_turb);
+            cs_gui_add_notebook_variables(ev_formula_turb);
 
             /* try to build the interpreter */
 
@@ -4074,7 +3965,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           mei_tree_insert(ev_formula_sca, "z", 0.);
 
           /* add variable from notebook */
-          _add_notebook_variables(ev_formula_sca);
+          cs_gui_add_notebook_variables(ev_formula_sca);
 
           /* try to build the interpreter */
           if (mei_tree_builder(ev_formula_sca))
@@ -4136,7 +4027,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             mei_tree_insert(ev_formula_sca, "z", 0.);
 
             /* add variable from notebook */
-            _add_notebook_variables(ev_formula_sca);
+            cs_gui_add_notebook_variables(ev_formula_sca);
 
             /* try to build the interpreter */
             if (mei_tree_builder(ev_formula_sca))
@@ -4205,7 +4096,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             mei_tree_insert(ev_formula_meteo, "z", 0.);
 
             /* add variable from notebook */
-            _add_notebook_variables(ev_formula_meteo);
+            cs_gui_add_notebook_variables(ev_formula_meteo);
 
             /* try to build the interpreter */
             if (mei_tree_builder(ev_formula_meteo))
@@ -4497,7 +4388,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
           mei_tree_insert(ev_law,tmp2, scal_diff_ref);
 
           /* add variable from notebook */
-          _add_notebook_variables(ev_law);
+          cs_gui_add_notebook_variables(ev_law);
 
           BFT_FREE(tmp2);
 
@@ -4604,7 +4495,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
  *
  * SUBROUTINE UIPROF
  * *****************
- *
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiprof, UIPROF) (void)
@@ -4615,76 +4505,73 @@ void CS_PROCF (uiprof, UIPROF) (void)
   const cs_real_3_t *cell_cen
     = (const cs_real_3_t *)(cs_glob_mesh_quantities->cell_cen);
 
-  FILE *file = NULL;
-  char *filename = NULL;
-  char *title = NULL;
-  char *name = NULL;
-  char *path = NULL;
-  char *formula = NULL;
-  char *output_type = NULL;
-
-  int output_format = 0;
-  int fic_nbr = 0;
-  int i, ii, iii, idim;
-  cs_lnum_t npoint;
-  int output_frequency = 0;
-  int nvar_prop, nvar_prop4;
-  double time_output;
-  double x1 = 0., y1 = 0., z1 = 0.;
-  double xx, yy, zz, xyz[3];
-  double a, aa;
-  double *array;
   static int ipass = 0;
-  bool status;
 
-  mei_tree_t *ev_formula  = NULL;
+  /* Loop on 1D profile definitions */
 
-  /* get the number of 1D profile file to write*/
+  const char path0[] = "/analysis_control/profiles/profile";
 
-  fic_nbr = cs_gui_get_tag_count("/analysis_control/profiles/profile", 1);
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
-  if (!fic_nbr) return;
+    const char *label = cs_tree_node_get_tag(tn, "label");
 
-  for (i = 0 ; i < fic_nbr ; i++) {
+    if (label == NULL)
+      continue;
 
     /* for each profile, check the output frequency */
 
-    output_format = _get_profile_format(i);
-    output_type = _get_profile_output_type(i);
-    time_output = 0.;
-    status = false;
+    int output_format = _get_profile_format(tn);
+    const char *output_type = _get_profile_child_str(tn, "output_type");
+    int output_frequency = -1;
+    cs_real_t time_output = -1.;
+    bool active = false;
+
+    const cs_time_step_t *ts = cs_glob_time_step;
 
     if (cs_gui_strcmp(output_type, "time_value")) {
-      time_output = _get_profile_coordinate(i, "output_frequency");
-      int ifreqs = (int)((cs_glob_time_step->t_cur - cs_glob_time_step->t_prev) / time_output);
-      if ((ifreqs > ipass) || (cs_glob_time_step->t_cur >= cs_glob_time_step->t_max &&
-                               cs_glob_time_step->t_max > 0.))
-        status = true;
-    } else {
-      output_frequency = (int) _get_profile_coordinate(i, "output_frequency");
-      if (   (cs_glob_time_step->nt_max == cs_glob_time_step->nt_cur)
-          || (output_frequency > 0 && (cs_glob_time_step->nt_cur % output_frequency) == 0))
-        status = true;
+      const cs_real_t *v
+        = cs_tree_node_get_child_values_real(tn, "output_frequency");
+      if (v != NULL)
+        time_output = v[0];
+      int ifreqs = (int)(   (ts->t_cur - ts->t_prev)
+                          / time_output);
+      if ((ifreqs > ipass) || (ts->t_cur >= ts->t_max &&
+                               ts->t_max > 0.))
+        active = true;
     }
-    BFT_FREE(output_type);
+    else if (cs_gui_strcmp(output_type, "frequency")) {
+      const int *v
+        = cs_tree_node_get_child_values_int(tn, "output_frequency");
+      if (v != NULL)
+        output_frequency = v[0];
+      else
+        output_frequency = 1;
+      if (   (ts->nt_max == ts->nt_cur)
+          || (output_frequency > 0 && (ts->nt_cur % output_frequency) == 0))
+        active = true;
+    }
+    else if (cs_gui_strcmp(output_type, "end")) {
+      if (ts->nt_max == ts->nt_cur)
+        active = true;
+    }
 
-    if (status) {
+    if (active) {
 
       ipass++;
-      path = cs_xpath_init_path();
-      cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-      cs_xpath_add_element_num(&path, "profile", i+1);
-      cs_xpath_add_element(&path, "formula");
-      cs_xpath_add_function_text(&path);
-      formula = cs_gui_get_text_value(path);
-      ev_formula = mei_tree_new(formula);
+
+      FILE *file = NULL;
+
+      cs_real_t *array = NULL;
+
+      const char *formula = _get_profile_child_str(tn, "formula");
+      mei_tree_t *ev_formula  = mei_tree_new(formula);
+
       mei_tree_insert(ev_formula, "s", 0.0);
 
       /* add variable from notebook */
-      _add_notebook_variables(ev_formula);
-
-      BFT_FREE(formula);
-      BFT_FREE(path);
+      cs_gui_add_notebook_variables(ev_formula);
 
       /* try to build the interpreter */
 
@@ -4693,43 +4580,39 @@ void CS_PROCF (uiprof, UIPROF) (void)
                   _("Error: can not interpret expression: %s\n %i"),
                   ev_formula->string, mei_tree_builder(ev_formula));
 
-      const char *coord[] = {"x","y","z"};
+      const char *coord[] = {"x", "y", "z"};
 
       if (mei_tree_find_symbols(ev_formula, 3, coord))
         bft_error(__FILE__, __LINE__, 0,
                   _("Error: can not find the required symbol: %s\n"),
                   "x, y or z");
 
-      nvar_prop = _get_profile_names_number(i);
-      nvar_prop4 = nvar_prop + 4;
-      BFT_MALLOC(array, nvar_prop4, double);
+      int nvar_prop = cs_tree_get_node_count(tn, "var_prop");
+      int nvar_prop4 = nvar_prop + 4;
+      BFT_MALLOC(array, nvar_prop4, cs_real_t);
 
       /* Only the first processor rank opens the file */
 
       if (cs_glob_rank_id <= 0) {
 
-        filename = _get_profile("label", i);
-        title    = _get_profile("title", i);
+        char ts_str[16] = "";
+        char fmt_str[8] = "";
 
         if (output_frequency > 0 || time_output > 0.) {
-
-          char buf1[16];
-
-          /* Extension creation : format stored in 'buffer' */
-
-          sprintf(buf1, "_%.4i", cs_glob_time_step->nt_cur);
-
-          BFT_REALLOC(filename, strlen(filename) + strlen(buf1) + 1, char);
-
-          strcat(filename, buf1);
-
+          snprintf(ts_str, 15, "_%.4i", ts->nt_cur); ts_str[15] = '\0';
         }
-
-        BFT_REALLOC(filename, strlen(filename) + 4 + 1, char);
         if (output_format == 0)
-          strcat(filename, ".dat");
+          strncpy(fmt_str, ".dat", 7);
         else
-          strcat(filename, ".csv");
+          strncpy(fmt_str, ".csv", 7);
+
+        char *filename;
+        BFT_MALLOC(filename,
+                   strlen(label) + strlen(ts_str) + strlen(fmt_str) + 1,
+                   char);
+
+        sprintf(filename, "%s%s%s", label, ts_str, fmt_str);
+
         file = fopen(filename, "w");
 
         if (file ==  NULL) {
@@ -4740,53 +4623,53 @@ void CS_PROCF (uiprof, UIPROF) (void)
 
         if (output_format == 0) {
           fprintf(file, "# Code_Saturne results 1D profile\n#\n");
-          fprintf(file, "# Iteration output: %i\n", cs_glob_time_step->nt_cur);
-          fprintf(file, "# Time output:     %12.5e\n#\n", cs_glob_time_step->t_cur);
-          fprintf(file, "#TITLE: %s\n", title);
+          fprintf(file, "# Iteration output: %i\n", ts->nt_cur);
+          fprintf(file, "# Time output:     %12.5e\n#\n", ts->t_cur);
+          fprintf(file, "#TITLE: %s\n", label);
           fprintf(file, "#COLUMN_TITLES: Distance | X | Y | Z");
-          for (ii = 0 ; ii < nvar_prop ; ii++) {
-            char *buffer = _get_profile_label_name(i, ii);
-            fprintf(file, " | %s", buffer);
-            BFT_FREE(buffer);
-          }
-          fprintf(file, "\n");
         }
         else {
           fprintf(file, "s, x, y, z");
-          for (ii = 0 ; ii < nvar_prop ; ii++) {
-            char *buffer = _get_profile_label_name(i, ii);
-            fprintf(file, ", %s", buffer);
-            BFT_FREE(buffer);
-          }
-          fprintf(file, "\n");
         }
+
+        for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
+             tn_vp != NULL;
+             tn_vp = cs_tree_node_get_next_of_name(tn_vp)) {
+          char *buffer = _build_profile_v_label_name(tn_vp);
+          if (output_format == 0)
+            fprintf(file, " | %s", buffer);
+          else
+            fprintf(file, ", %s", buffer);
+          BFT_FREE(buffer);
+        }
+
+        fprintf(file, "\n");
+
         BFT_FREE(filename);
-        BFT_FREE(title);
       }
 
-      path = cs_xpath_init_path();
-      cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-      cs_xpath_add_element_num(&path, "profile", i+1);
-      cs_xpath_add_element(&path, "points");
-      cs_xpath_add_function_text(&path);
-      if (!cs_gui_get_int(path, &npoint))
-        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-      BFT_FREE(path);
+      cs_lnum_t npoint = 0;
+      const int *v_np = _get_profile_child_int(tn, "points");
+      if (v_np != NULL)
+        npoint = v_np[0];
 
       cs_lnum_t  c_id1 = -999, c_id = -999;
       int        rank1 = -999, c_rank = -999;
+      double x1 = 0., y1 = 0., z1 = 0.;
 
-      a = 1. / (double) (npoint-1);
+      cs_real_t a = 1. / (double) (npoint-1);
 
-      for (ii = 0; ii < npoint; ii++) {
+      for (int ii = 0; ii < npoint; ii++) {
 
-        aa = ii*a;
+        double xx, yy, zz, xyz[3];
+
+        cs_real_t aa = ii*a;
         mei_tree_insert(ev_formula,"s",aa);
         mei_evaluate(ev_formula);
 
-        xyz[0] = mei_tree_lookup(ev_formula,"x");
-        xyz[1] = mei_tree_lookup(ev_formula,"y");
-        xyz[2] = mei_tree_lookup(ev_formula,"z");
+        xyz[0] = mei_tree_lookup(ev_formula, "x");
+        xyz[1] = mei_tree_lookup(ev_formula, "y");
+        xyz[2] = mei_tree_lookup(ev_formula, "z");
 
         if (ii == 0) {
           x1 = xyz[0];
@@ -4816,12 +4699,15 @@ void CS_PROCF (uiprof, UIPROF) (void)
             zz = zz - z1;
             array[0] = sqrt(xx*xx + yy*yy + zz*zz);
 
-            for (iii=0; iii < nvar_prop; iii++) {
+            int iii = 0;
+            for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
+                 tn_vp != NULL;
+                 tn_vp = cs_tree_node_get_next_of_name(tn_vp), iii++) {
 
-              name = _get_profile_name(i, iii);
-              idim = _get_profile_component(i, iii);
+              const char *f_name = _tree_node_get_tag(tn_vp, "name");
+              int idim = _get_profile_v_component(tn_vp);
 
-              cs_field_t *f = cs_field_by_name_try(name);
+              cs_field_t *f = cs_field_by_name_try(f_name);
 
               if (f != NULL) {
                 if (f->type & CS_FIELD_VARIABLE) {
@@ -4834,22 +4720,22 @@ void CS_PROCF (uiprof, UIPROF) (void)
                   array[iii+4] = f->val[c_id];
               }
               else {
-                char *label = _get_profile_label_name(i, iii);
+                char *_label = _build_profile_v_label_name(tn_vp);
                 const int keylbl = cs_field_key_id("label");
                 for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
                   f = cs_field_by_id(f_id);
                   const char *flab = cs_field_get_key_str(f, keylbl);
-                  if (cs_gui_strcmp(label, flab))
+                  if (cs_gui_strcmp(_label, flab))
                     array[iii+4] = f->val[c_id];
                 }
+                BFT_FREE(_label);
               }
 
-              BFT_FREE(name);
             }
 
-          } else {
-
-            for (iii=0; iii < nvar_prop4; iii++)
+          }
+          else {
+            for (int iii = 0; iii < nvar_prop4; iii++)
               array[iii] = 0.0;
           }
 
@@ -4866,13 +4752,13 @@ void CS_PROCF (uiprof, UIPROF) (void)
 
           if (cs_glob_rank_id <= 0) {
             if (output_format == 0) {
-              for (iii=0; iii < nvar_prop4; iii++)
+              for (int iii = 0; iii < nvar_prop4; iii++)
                 fprintf(file, "%12.5e ", array[iii]);
               fprintf(file, "\n");
             }
             else {
               if (nvar_prop > 0) {
-                for (iii=0; iii < nvar_prop4 - 1; iii++)
+                for (int iii = 0; iii < nvar_prop4 - 1; iii++)
                   fprintf(file, "%12.5e, ", array[iii]);
                 fprintf(file, "%12.5e ", array[nvar_prop4 - 1]);
               }
@@ -4887,6 +4773,7 @@ void CS_PROCF (uiprof, UIPROF) (void)
 
       BFT_FREE(array);
     }
+
   }
 }
 
@@ -5126,7 +5013,7 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
           mei_tree_insert(ev_formula,"z",0.0);
 
           /* add variable from notebook */
-          _add_notebook_variables(ev_formula);
+          cs_gui_add_notebook_variables(ev_formula);
 
           /* try to build the interpreter */
           if (mei_tree_builder(ev_formula))
@@ -5531,6 +5418,36 @@ cs_gui_finalize(void)
   xmlCleanupParser();
   xmlMemoryDump();
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add notebook variable to a formula.
+ *
+ * \param[in, out]  ev_law  pointer to MEI formula structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_add_notebook_variables(mei_tree_t  *ev_law)
+{
+  const char path0[] = "/physical_properties/notebook/var";
+
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
+
+    const char *name = cs_tree_node_get_tag(tn, "name");
+    const char *c_value = cs_tree_node_get_tag(tn, "value");
+
+    assert(name != NULL);
+    assert(c_value != NULL);
+
+    if (name != NULL && c_value != NULL) {
+      cs_real_t val = atof(c_value);
+      mei_tree_insert(ev_law, name, val);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6870,4 +6787,5 @@ cs_gui_error_estimator(int *iescal,
 }
 
 /*----------------------------------------------------------------------------*/
+
 END_C_DECLS

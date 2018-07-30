@@ -161,56 +161,26 @@ _set_thermal_scalar_name_label(cs_field_t  *f,
  * Return an integer for class number.
  *
  * parameters:
- *    icha    -->   char number
- *    type    -->   type of diameter definition
+ *   tn   <-- tree node associated with solid fuel
+ *   type -->   type of diameter definition
  *
  * returns:
  *    number of class
  *----------------------------------------------------------------------------*/
 
 static int
-_cs_gui_get_nb_class(const int icha,
-                     const int type)
+_cs_gui_get_nb_class(cs_tree_node_t  *tn,
+                     int              type)
 {
-  char *path;
   int value = 0;
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2,"thermophysical_models", "solid_fuels");
-  cs_xpath_add_element_num(&path, "solid_fuel", icha);
+
+  cs_tree_node_t  *tn_c = cs_tree_node_get_child(tn, "class");
   if (type == 1)
-    cs_xpath_add_elements(&path, 2, "class", "diameter");
+    value = cs_tree_get_node_count(tn_c, "diameter");
   else if (type == 2)
-    cs_xpath_add_elements(&path, 2, "class", "mass_percent");
-  value = cs_gui_get_nb_element(path);
-  BFT_FREE(path);
+    value = cs_tree_get_node_count(tn_c, "mass_percent");
 
   return value;
-}
-
-/*-----------------------------------------------------------------------------
- * Return an integer for the refusal number.
- *
- * parameters:
- *    icha    -->   char number
- *
- * returns:
- *    number of refusal
- *----------------------------------------------------------------------------*/
-
-static int
-_cs_gui_get_nb_refusal(const int icha)
-{
-  char *path;
-  int value = 0;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2,"thermophysical_models", "solid_fuels");
-  cs_xpath_add_element_num(&path, "solid_fuel", icha);
-  cs_xpath_add_element(&path, "refusal");
-  value = cs_gui_get_nb_element(path);
-  BFT_FREE(path);
-
-  return value ;
 }
 
 /*-----------------------------------------------------------------------------
@@ -1657,7 +1627,6 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
 #endif
 }
 
-
 /*----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one
  * for physical properties of the activated specific physics
@@ -1734,7 +1703,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
   int idecal;
   int itypdp;
   int itypoxy;
-  int icha;
   int iclapc;
   int icla;
   int ii;
@@ -1767,10 +1735,17 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
   iclag  = 0;
   idecal = 0;
 
-  for (icha = 0; icha < *ncharb; icha++) {
-    /* ---- Nb de classes */
+  int icha = 0;
+
+  const char path0[] = "/thermophysical_models/solid_fuels/solid_fuel";
+
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), icha++) {
+
+    /* Nb de classes */
     itypdp = _get_diameter_type(icha+1);
-    nclpch[icha] = _cs_gui_get_nb_class(icha+1, itypdp);
+    nclpch[icha] = _cs_gui_get_nb_class(tn, itypdp);
     if (nclpch[icha] > *ncpcmx) {
       bft_error(__FILE__, __LINE__, 0,
                 _("class number by coal is limited.\n"
@@ -1792,7 +1767,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
       for (icla = 0; icla < nclpch[icha]; icla++)
         diam20[icla + iclag] = _get_solid_fuel_diameter(icha+1,icla+1);
     } else if (itypdp == 2) {
-      nbrf = _cs_gui_get_nb_refusal(icha+1);
+      nbrf = cs_tree_get_node_count(tn, "refusal");
 
       BFT_MALLOC(dprefus, nbrf,         double);
       BFT_MALLOC(refus,   nbrf,         double);
@@ -1869,7 +1844,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     och[icha] = _get_solid_fuel_composition_on_dry(icha+1,"O_composition_on_dry");
     nch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"N_composition_on_dry");
     sch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"S_composition_on_dry");
-
 
     /* ---- Composition elementaire en C, H , O , N , S du coke (% en masse) */
     cck[icha] = _get_solid_fuel_composition_on_dry(icha+1,"C_coke_composition_on_dry");
