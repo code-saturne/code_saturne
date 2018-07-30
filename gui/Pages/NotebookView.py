@@ -190,7 +190,7 @@ class ValueDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        editor.setText(value)
+        editor.setText(str(value))
 
     def setModelData(self, editor, model, index):
         if not editor.isModified():
