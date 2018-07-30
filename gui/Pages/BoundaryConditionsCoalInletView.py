@@ -227,6 +227,8 @@ class StandardItemModelCoalMass(QStandardItemModel):
             return
         classe = index.row()
         coal   = index.column()
+        if not value:
+            return False
         v = from_qvariant(value, float)
         self.ratio[coal][classe] = v
         log.debug("setData v = %f "%v)

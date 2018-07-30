@@ -5,7 +5,9 @@ Release 5.1.5 (unreleased)
 Bug fixes
 ---------
 
-- GUI : "rij" (coupled) field must return a NULL pointer for uncoupled RSM 
+- GUI: fixes for addition and handling of coal classes.
+
+- GUI: "rij" (coupled) field must return a NULL pointer for uncoupled RSM 
   if initilization of turbulent variables is set by formula.
 
 - Fix an uninitialised option (reconstruction flag) if arakawa coef. is 0 and
