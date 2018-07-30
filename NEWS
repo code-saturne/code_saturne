@@ -5,6 +5,8 @@ Release 5.0.9 (unreleased)
 Bug fixes
 ---------
 
+- GUI: fixes for addition and handling of coal classes.
+
 - Fix an uninitialised option (reconstruction flag) if arakawa coef. is 0 and
   there is anisotropic diffusion on pressure increment.
 

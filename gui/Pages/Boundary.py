@@ -1911,12 +1911,13 @@ class CoalInletBoundary(InletBoundary) :
 
         n = self.boundNode.xmlGetNode('velocity_pressure')
         if n:
-            num = '%2.2i' % (coal+1)
+            num = '%2.2i' % (coal)
             n2 = n.xmlGetNode('coal', name="coal"+num)
             if n2:
                 n2.xmlRemoveChild('ratio')
 
-            self.getCoalRatios(coal)
+            coal_idx = coal-1
+            self.getCoalRatios(coal_idx)
 
 
     def deleteCoals(self):
