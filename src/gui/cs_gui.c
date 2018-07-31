@@ -1352,56 +1352,6 @@ _get_time_average_variable_name(int  id,
 }
 
 /*-----------------------------------------------------------------------------
- * Return label of variable
- *
- * parameters:
- *   variable   <-- name of variable
- *----------------------------------------------------------------------------*/
-
-static char *
-_variable_label(const char *variable)
-{
-  char *path = NULL;
-  char *label = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "variable");
-  cs_xpath_add_test_attribute(&path, "name", variable);
-  cs_xpath_add_attribute(&path, "label");
-
-  label = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return label;
-}
-
-/*-----------------------------------------------------------------------------
- * Return the label attribute of a property markup.
- *
- * parameters:
- *   property_name        <--  name of the property
- *----------------------------------------------------------------------------*/
-
-static char *
-_properties_label(const char *property_name)
-{
-  char *path = NULL;
-  char *label = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", property_name);
-  cs_xpath_add_attribute(&path, "label");
-
-  label = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return label;
-}
-
-/*-----------------------------------------------------------------------------
  * Return the label or the name from a scalar.
  *
  * parameters:
@@ -1645,6 +1595,60 @@ _get_profile_v_component(cs_tree_node_t  *tn)
 }
 
 /*----------------------------------------------------------------------------
+ * Return associated field for a node referring to a field.
+ *
+ * A node referring to a field must have a "name" tag (i.e. child with a
+ * string value).
+ *
+ * In the case of NEPTUNE_CFD, an additional "field_id" tag requiring
+ * addition of the "_<field_id>" extension to match the field's name
+ * may be present, so this is tested also.
+ *
+ * parameters:
+ *   tn   <-- tree node associated with profile variable
+ *   name <-- value of node's "name" tag (already determined)
+ *
+ * return:
+ *   pointer to field if match, NULL otherwise
+ *----------------------------------------------------------------------------*/
+
+static const cs_field_t *
+_tree_node_get_field(cs_tree_node_t  *tn)
+{
+  const cs_field_t *f = NULL;
+
+  const char *name = _tree_node_get_tag(tn, "name");
+  const char *id_name = cs_tree_node_get_tag(tn, "field_id");
+
+  /* Special case for NEPTUNE_CFD field with multiple phases */
+
+  if (id_name != NULL) {
+    if (strcmp(id_name, "none") != 0) {
+      char buffer[128];
+      snprintf(buffer, 127, "%s_%s", name, id_name);
+      buffer[127] = '\0';
+      if (strlen(buffer) >= 127)
+        bft_error(__FILE__, __LINE__, 0,
+                  "Local buffer too small to assemble field name with:\n"
+                  "name: %s\n"
+                  "field_id: %s\n", name, id_name);
+      f = cs_field_by_name_try(buffer);
+    }
+  }
+
+  /* General case */
+
+  if (f == NULL)
+    f = cs_field_by_name_try(name);
+
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field with name \"%s\" not found"), name);
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------
  * Return the label of variables or properties or scalar for 1D profile
  *
  * parameters:
@@ -1656,62 +1660,31 @@ _build_profile_v_label_name(cs_tree_node_t  *tn_vp)
 {
   char *label = NULL;
 
-  const char *name = _tree_node_get_tag(tn_vp, "name");
+  const cs_field_t *f = _tree_node_get_field(tn_vp);
   int idim = _get_profile_v_component(tn_vp);
 
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    const cs_field_t *f = cs_field_by_id(f_id);
-    if (cs_gui_strcmp(name,  f->name)) {
-      if (f->type & CS_FIELD_VARIABLE) {
-        label = _variable_label(name);
-        if (f->dim > 1) {
-          int len = strlen(label) + 4;
-          char *tmp = NULL;
-          char *snumpp = NULL;
-          BFT_MALLOC(snumpp, 2, char);
-          sprintf(snumpp, "%1.1i", idim);
-          BFT_MALLOC(tmp, len, char);
-          strcpy(tmp, label);
-          strcat(tmp, "[");
-          strcat(tmp, snumpp);
-          strcat(tmp, "]");
-          BFT_FREE(label);
-          BFT_MALLOC(label, len, char);
-          strcpy(label, tmp);
-          BFT_FREE(snumpp);
-          BFT_FREE(tmp);
-        }
-      }
-      else if (f->type & CS_FIELD_PROPERTY) {
-        label = _properties_label(name);
-        if (f->dim > 1) {
-          int len = strlen(label) + 4;
-          char *tmp = NULL;
-          char *snumpp = NULL;
-          BFT_MALLOC(snumpp, 2, char);
-          sprintf(snumpp, "%1.1i", idim);
-          BFT_MALLOC(tmp, len, char);
-          strcpy(tmp, label);
-          strcat(tmp, "[");
-          strcat(tmp, snumpp);
-          strcat(tmp, "]");
-          BFT_FREE(label);
-          BFT_MALLOC(label, len, char);
-          strcpy(label, tmp);
-          BFT_FREE(snumpp);
-          BFT_FREE(tmp);
-        }
-      }
-      else {
-        BFT_MALLOC(label, strlen(name)+1, char);
-        strcpy(label, name);
+  if (f != NULL) {
+    const char *f_label = cs_field_get_label(f);
+    char buf[16] = "";
+    if (f->dim > 1 && idim > -1) {
+      switch(f->dim) {
+      case 3:
+        strncpy(buf, cs_glob_field_comp_name_3[idim], 15);
+        break;
+      case 6:
+        strncpy(buf, cs_glob_field_comp_name_6[idim], 15);
+        break;
+      case 9:
+        strncpy(buf, cs_glob_field_comp_name_9[idim], 15);
+        break;
+      default:
+        snprintf(buf, 15, "[%d]", idim); buf[15] = '\0';
       }
     }
+    size_t len = strlen(f_label) + strlen(buf);
+    BFT_MALLOC(label, len+1, char);
+    sprintf(label, "%s%s", f_label, buf);
   }
-
-  if (label == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Invalid markup name: %s\n label not found"), name);
 
   return label;
 }
@@ -4489,295 +4462,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
 }
 
 /*----------------------------------------------------------------------------
- * 1D profile postprocessing
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIPROF
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiprof, UIPROF) (void)
-{
-  const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-
-  const cs_real_3_t *cell_cen
-    = (const cs_real_3_t *)(cs_glob_mesh_quantities->cell_cen);
-
-  static int ipass = 0;
-
-  /* Loop on 1D profile definitions */
-
-  const char path0[] = "/analysis_control/profiles/profile";
-
-  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
-       tn != NULL;
-       tn = cs_tree_node_get_next_of_name(tn)) {
-
-    const char *label = cs_tree_node_get_tag(tn, "label");
-
-    if (label == NULL)
-      continue;
-
-    /* for each profile, check the output frequency */
-
-    int output_format = _get_profile_format(tn);
-    const char *output_type = _get_profile_child_str(tn, "output_type");
-    int output_frequency = -1;
-    cs_real_t time_output = -1.;
-    bool active = false;
-
-    const cs_time_step_t *ts = cs_glob_time_step;
-
-    if (cs_gui_strcmp(output_type, "time_value")) {
-      const cs_real_t *v
-        = cs_tree_node_get_child_values_real(tn, "output_frequency");
-      if (v != NULL)
-        time_output = v[0];
-      int ifreqs = (int)(   (ts->t_cur - ts->t_prev)
-                          / time_output);
-      if ((ifreqs > ipass) || (ts->t_cur >= ts->t_max &&
-                               ts->t_max > 0.))
-        active = true;
-    }
-    else if (cs_gui_strcmp(output_type, "frequency")) {
-      const int *v
-        = cs_tree_node_get_child_values_int(tn, "output_frequency");
-      if (v != NULL)
-        output_frequency = v[0];
-      else
-        output_frequency = 1;
-      if (   (ts->nt_max == ts->nt_cur)
-          || (output_frequency > 0 && (ts->nt_cur % output_frequency) == 0))
-        active = true;
-    }
-    else if (cs_gui_strcmp(output_type, "end")) {
-      if (ts->nt_max == ts->nt_cur)
-        active = true;
-    }
-
-    if (active) {
-
-      ipass++;
-
-      FILE *file = NULL;
-
-      cs_real_t *array = NULL;
-
-      const char *formula = _get_profile_child_str(tn, "formula");
-      mei_tree_t *ev_formula  = mei_tree_new(formula);
-
-      mei_tree_insert(ev_formula, "s", 0.0);
-
-      /* add variable from notebook */
-      cs_gui_add_notebook_variables(ev_formula);
-
-      /* try to build the interpreter */
-
-      if (mei_tree_builder(ev_formula))
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Error: can not interpret expression: %s\n %i"),
-                  ev_formula->string, mei_tree_builder(ev_formula));
-
-      const char *coord[] = {"x", "y", "z"};
-
-      if (mei_tree_find_symbols(ev_formula, 3, coord))
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Error: can not find the required symbol: %s\n"),
-                  "x, y or z");
-
-      int nvar_prop = cs_tree_get_node_count(tn, "var_prop");
-      int nvar_prop4 = nvar_prop + 4;
-      BFT_MALLOC(array, nvar_prop4, cs_real_t);
-
-      /* Only the first processor rank opens the file */
-
-      if (cs_glob_rank_id <= 0) {
-
-        char ts_str[16] = "";
-        char fmt_str[8] = "";
-
-        if (output_frequency > 0 || time_output > 0.) {
-          snprintf(ts_str, 15, "_%.4i", ts->nt_cur); ts_str[15] = '\0';
-        }
-        if (output_format == 0)
-          strncpy(fmt_str, ".dat", 7);
-        else
-          strncpy(fmt_str, ".csv", 7);
-
-        char *filename;
-        BFT_MALLOC(filename,
-                   strlen(label) + strlen(ts_str) + strlen(fmt_str) + 1,
-                   char);
-
-        sprintf(filename, "%s%s%s", label, ts_str, fmt_str);
-
-        file = fopen(filename, "w");
-
-        if (file ==  NULL) {
-          cs_base_warn(__FILE__, __LINE__);
-          bft_printf( _("Unable to open the file: %s\n"), filename);
-          break;
-        }
-
-        if (output_format == 0) {
-          fprintf(file, "# Code_Saturne results 1D profile\n#\n");
-          fprintf(file, "# Iteration output: %i\n", ts->nt_cur);
-          fprintf(file, "# Time output:     %12.5e\n#\n", ts->t_cur);
-          fprintf(file, "#TITLE: %s\n", label);
-          fprintf(file, "#COLUMN_TITLES: Distance | X | Y | Z");
-        }
-        else {
-          fprintf(file, "s, x, y, z");
-        }
-
-        for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
-             tn_vp != NULL;
-             tn_vp = cs_tree_node_get_next_of_name(tn_vp)) {
-          char *buffer = _build_profile_v_label_name(tn_vp);
-          if (output_format == 0)
-            fprintf(file, " | %s", buffer);
-          else
-            fprintf(file, ", %s", buffer);
-          BFT_FREE(buffer);
-        }
-
-        fprintf(file, "\n");
-
-        BFT_FREE(filename);
-      }
-
-      cs_lnum_t npoint = 0;
-      const int *v_np = _get_profile_child_int(tn, "points");
-      if (v_np != NULL)
-        npoint = v_np[0];
-
-      cs_lnum_t  c_id1 = -999, c_id = -999;
-      int        rank1 = -999, c_rank = -999;
-      double x1 = 0., y1 = 0., z1 = 0.;
-
-      cs_real_t a = 1. / (double) (npoint-1);
-
-      for (int ii = 0; ii < npoint; ii++) {
-
-        double xx, yy, zz, xyz[3];
-
-        cs_real_t aa = ii*a;
-        mei_tree_insert(ev_formula,"s",aa);
-        mei_evaluate(ev_formula);
-
-        xyz[0] = mei_tree_lookup(ev_formula, "x");
-        xyz[1] = mei_tree_lookup(ev_formula, "y");
-        xyz[2] = mei_tree_lookup(ev_formula, "z");
-
-        if (ii == 0) {
-          x1 = xyz[0];
-          y1 = xyz[1];
-          z1 = xyz[2];
-        }
-
-        cs_geom_closest_point(n_cells, cell_cen, xyz,
-                              &c_id, &c_rank);
-
-        cs_parall_bcast(c_rank, 1, CS_LNUM_TYPE, &c_id);
-
-        if ((c_id != c_id1) || (c_rank != rank1)) {
-          c_id1 = c_id;
-          rank1 = c_rank;
-
-          if (cs_glob_rank_id == c_rank) {
-
-            xx = cell_cen[c_id][0];
-            yy = cell_cen[c_id][1];
-            zz = cell_cen[c_id][2];
-            array[1] = xx;
-            array[2] = yy;
-            array[3] = zz;
-            xx = xx - x1;
-            yy = yy - y1;
-            zz = zz - z1;
-            array[0] = sqrt(xx*xx + yy*yy + zz*zz);
-
-            int iii = 0;
-            for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
-                 tn_vp != NULL;
-                 tn_vp = cs_tree_node_get_next_of_name(tn_vp), iii++) {
-
-              const char *f_name = _tree_node_get_tag(tn_vp, "name");
-              int idim = _get_profile_v_component(tn_vp);
-
-              cs_field_t *f = cs_field_by_name_try(f_name);
-
-              if (f != NULL) {
-                if (f->type & CS_FIELD_VARIABLE) {
-                  if (f->dim > 1)
-                    array[iii+4] = f->val[f->dim * c_id + idim];
-                  else
-                    array[iii+4] = f->val[c_id + idim * n_cells_ext];
-                }
-                else
-                  array[iii+4] = f->val[c_id];
-              }
-              else {
-                char *_label = _build_profile_v_label_name(tn_vp);
-                const int keylbl = cs_field_key_id("label");
-                for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-                  f = cs_field_by_id(f_id);
-                  const char *flab = cs_field_get_key_str(f, keylbl);
-                  if (cs_gui_strcmp(_label, flab))
-                    array[iii+4] = f->val[c_id];
-                }
-                BFT_FREE(_label);
-              }
-
-            }
-
-          }
-          else {
-            for (int iii = 0; iii < nvar_prop4; iii++)
-              array[iii] = 0.0;
-          }
-
-          /* Send to other processors if parallel */
-#if defined(HAVE_MPI)
-          if (cs_glob_rank_id >= 0) {
-            MPI_Bcast(array,
-                      nvar_prop4,
-                      CS_MPI_REAL,
-                      c_rank,
-                      cs_glob_mpi_comm);
-          }
-#endif
-
-          if (cs_glob_rank_id <= 0) {
-            if (output_format == 0) {
-              for (int iii = 0; iii < nvar_prop4; iii++)
-                fprintf(file, "%12.5e ", array[iii]);
-              fprintf(file, "\n");
-            }
-            else {
-              if (nvar_prop > 0) {
-                for (int iii = 0; iii < nvar_prop4 - 1; iii++)
-                  fprintf(file, "%12.5e, ", array[iii]);
-                fprintf(file, "%12.5e ", array[nvar_prop4 - 1]);
-              }
-              fprintf(file, "\n");
-            }
-          }
-        }
-      }
-      mei_tree_destroy(ev_formula);
-
-      if (cs_glob_rank_id <= 0) fclose(file);
-
-      BFT_FREE(array);
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
  * extra operations
  *
  * Fortran Interface:
@@ -5983,6 +5667,278 @@ cs_gui_partition(void)
   if (n_add_parts > 0) {
     cs_partition_add_partitions(n_add_parts, add_parts);
     BFT_FREE(add_parts);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * 1D profile postprocessing
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_profile_output(void)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  const cs_real_3_t *cell_cen
+    = (const cs_real_3_t *)(cs_glob_mesh_quantities->cell_cen);
+
+  const cs_time_step_t *ts = cs_glob_time_step;
+
+  static cs_real_t *t_prev = NULL;
+
+  /* Loop on 1D profile definitions */
+
+  int profile_id = 0;
+
+  const char path0[] = "/analysis_control/profiles/profile";
+
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), profile_id++) {
+
+    const char *label = _tree_node_get_tag(tn, "label");
+
+    /* for each profile, check the output frequency */
+
+    int output_format = _get_profile_format(tn);
+    const char *output_type = _get_profile_child_str(tn, "output_type");
+    int output_frequency = -1;
+    cs_real_t time_output = -1.;
+    bool active = false;
+
+    if (ts->nt_cur == ts->nt_prev + 1) {
+      BFT_REALLOC(t_prev, profile_id+1, cs_real_t);
+      t_prev[profile_id] = ts->t_prev;
+    }
+
+    if (cs_gui_strcmp(output_type, "time_value")) {
+      const cs_real_t *v
+        = cs_tree_node_get_child_values_real(tn, "output_frequency");
+      if (v != NULL)
+        time_output = v[0];
+      if (   (ts->t_cur >= t_prev[profile_id] + time_output)
+          || (ts->t_cur >= ts->t_max && ts->t_max > 0.)) {
+        t_prev[profile_id] = ts->t_cur;
+        active = true;
+      }
+    }
+    else if (cs_gui_strcmp(output_type, "frequency")) {
+      const int *v
+        = cs_tree_node_get_child_values_int(tn, "output_frequency");
+      if (v != NULL)
+        output_frequency = v[0];
+      else
+        output_frequency = 1;
+      if (   (ts->nt_max == ts->nt_cur)
+          || (output_frequency > 0 && (ts->nt_cur % output_frequency) == 0))
+        active = true;
+    }
+    else if (cs_gui_strcmp(output_type, "end")) {
+      if (ts->nt_max == ts->nt_cur)
+        active = true;
+    }
+
+    if (active) {
+
+      FILE *file = NULL;
+
+      cs_real_t *array = NULL;
+
+      const char *formula = _get_profile_child_str(tn, "formula");
+      mei_tree_t *ev_formula  = mei_tree_new(formula);
+
+      mei_tree_insert(ev_formula, "s", 0.0);
+
+      /* add variable from notebook */
+      cs_gui_add_notebook_variables(ev_formula);
+
+      /* try to build the interpreter */
+
+      if (mei_tree_builder(ev_formula))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error: can not interpret expression: %s\n %i"),
+                  ev_formula->string, mei_tree_builder(ev_formula));
+
+      const char *coord[] = {"x", "y", "z"};
+
+      if (mei_tree_find_symbols(ev_formula, 3, coord))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error: can not find the required symbol: %s\n"),
+                  "x, y or z");
+
+      int nvar_prop = cs_tree_get_node_count(tn, "var_prop");
+      int nvar_prop4 = nvar_prop + 4;
+      BFT_MALLOC(array, nvar_prop4, cs_real_t);
+
+      /* Only the first processor rank opens the file */
+
+      if (cs_glob_rank_id <= 0) {
+
+        char ts_str[16] = "";
+        char fmt_str[8] = "";
+
+        if (output_frequency > 0 || time_output > 0.) {
+          snprintf(ts_str, 15, "_%.4i", ts->nt_cur); ts_str[15] = '\0';
+        }
+        if (output_format == 0)
+          strncpy(fmt_str, ".dat", 7);
+        else
+          strncpy(fmt_str, ".csv", 7);
+
+        char *filename;
+        BFT_MALLOC(filename,
+                   strlen(label) + strlen(ts_str) + strlen(fmt_str) + 1,
+                   char);
+
+        sprintf(filename, "%s%s%s", label, ts_str, fmt_str);
+
+        file = fopen(filename, "w");
+
+        if (file ==  NULL) {
+          cs_base_warn(__FILE__, __LINE__);
+          bft_printf( _("Unable to open the file: %s\n"), filename);
+          break;
+        }
+
+        if (output_format == 0) {
+          fprintf(file, "# Code_Saturne plot output (1D profile)\n#\n");
+          fprintf(file, "# Iteration output: %i\n", ts->nt_cur);
+          fprintf(file, "# Time output:     %12.5e\n#\n", ts->t_cur);
+          fprintf(file, "#COLUMN_TITLES: Distance | X | Y | Z");
+        }
+        else {
+          fprintf(file, "s, x, y, z");
+        }
+
+        for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
+             tn_vp != NULL;
+             tn_vp = cs_tree_node_get_next_of_name(tn_vp)) {
+          char *buffer = _build_profile_v_label_name(tn_vp);
+          if (output_format == 0)
+            fprintf(file, " | %s", buffer);
+          else
+            fprintf(file, ", %s", buffer);
+          BFT_FREE(buffer);
+        }
+
+        fprintf(file, "\n");
+
+        BFT_FREE(filename);
+      }
+
+      cs_lnum_t npoint = 0;
+      const int *v_np = _get_profile_child_int(tn, "points");
+      if (v_np != NULL)
+        npoint = v_np[0];
+
+      cs_lnum_t  c_id1 = -999, c_id = -999;
+      int        rank1 = -999, c_rank = -999;
+      double x1 = 0., y1 = 0., z1 = 0.;
+
+      cs_real_t a = 1. / (double) (npoint-1);
+
+      for (int ii = 0; ii < npoint; ii++) {
+
+        double xx, yy, zz, xyz[3];
+
+        cs_real_t aa = ii*a;
+        mei_tree_insert(ev_formula, "s", aa);
+        mei_evaluate(ev_formula);
+
+        xyz[0] = mei_tree_lookup(ev_formula, "x");
+        xyz[1] = mei_tree_lookup(ev_formula, "y");
+        xyz[2] = mei_tree_lookup(ev_formula, "z");
+
+        if (ii == 0) {
+          x1 = xyz[0];
+          y1 = xyz[1];
+          z1 = xyz[2];
+        }
+
+        cs_geom_closest_point(n_cells, cell_cen, xyz,
+                              &c_id, &c_rank);
+
+        cs_parall_bcast(c_rank, 1, CS_LNUM_TYPE, &c_id);
+
+        if ((c_id != c_id1) || (c_rank != rank1)) {
+          c_id1 = c_id;
+          rank1 = c_rank;
+
+          if (cs_glob_rank_id == c_rank) {
+
+            xx = cell_cen[c_id][0];
+            yy = cell_cen[c_id][1];
+            zz = cell_cen[c_id][2];
+            array[1] = xx;
+            array[2] = yy;
+            array[3] = zz;
+            xx = xx - x1;
+            yy = yy - y1;
+            zz = zz - z1;
+            array[0] = sqrt(xx*xx + yy*yy + zz*zz);
+
+            int vp_id = 0;
+            for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
+                 tn_vp != NULL;
+                 tn_vp = cs_tree_node_get_next_of_name(tn_vp), vp_id++) {
+
+              const cs_field_t *f = _tree_node_get_field(tn_vp);
+
+              if (f->dim > 1) {
+                int idim = _get_profile_v_component(tn_vp);
+                array[vp_id + 4] = f->val[f->dim * c_id + idim];
+              }
+              else
+                array[vp_id + 4] = f->val[c_id];
+
+            }
+
+          }
+          else {
+            for (int vp_id = 0; vp_id < nvar_prop4; vp_id++)
+              array[vp_id] = 0.0;
+          }
+
+          /* Send to other processors if parallel */
+#if defined(HAVE_MPI)
+          if (cs_glob_rank_id >= 0) {
+            MPI_Bcast(array,
+                      nvar_prop4,
+                      CS_MPI_REAL,
+                      c_rank,
+                      cs_glob_mpi_comm);
+          }
+#endif
+
+          if (cs_glob_rank_id <= 0) {
+            if (output_format == 0) {
+              for (int vp_id = 0; vp_id < nvar_prop4; vp_id++)
+                fprintf(file, "%12.5e ", array[vp_id]);
+              fprintf(file, "\n");
+            }
+            else {
+              if (nvar_prop > 0) {
+                for (int vp_id = 0; vp_id < nvar_prop4 - 1; vp_id++)
+                  fprintf(file, "%12.5e, ", array[vp_id]);
+                fprintf(file, "%12.5e ", array[nvar_prop4 - 1]);
+              }
+              fprintf(file, "\n");
+            }
+          }
+        }
+      }
+      mei_tree_destroy(ev_formula);
+
+      if (cs_glob_rank_id <= 0) fclose(file);
+
+      BFT_FREE(array);
+    }
+
+  }
+
+  if (   (ts->nt_max == ts->nt_cur)
+      || (ts->t_cur >= ts->t_max && ts->t_max > 0.)) {
+    BFT_FREE(t_prev);
   }
 }
 

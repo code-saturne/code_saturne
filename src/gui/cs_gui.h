@@ -365,18 +365,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
                               const cs_real_t *viscv0);
 
 /*----------------------------------------------------------------------------
- * 1D profile postprocessing
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIPROF
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiprof, UIPROF)(void);
-
-/*----------------------------------------------------------------------------
  * extra operations
  *
  * Fortran Interface:
@@ -518,6 +506,13 @@ cs_gui_parallel_io(void);
 
 void
 cs_gui_partition(void);
+
+/*----------------------------------------------------------------------------
+ * 1D profile postprocessing
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_profile_output(void);
 
 /*-----------------------------------------------------------------------------
  * Get initial value from property markup.

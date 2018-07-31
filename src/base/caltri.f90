@@ -142,6 +142,14 @@ interface
     implicit none
   end subroutine turbulence_model_free_bc_ids
 
+  !=============================================================================
+
+  subroutine cs_gui_profile_output()  &
+    bind(C, name='cs_gui_profile_output')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_profile_output
+
 end interface
 
 !===============================================================================
@@ -859,7 +867,7 @@ if (itrale.gt.0) then
   ! 1D profiles postprocessing output
 
   if (iihmpr.eq.1) then
-    call uiprof()
+    call cs_gui_profile_output()
     call uiexop()
   endif
 
