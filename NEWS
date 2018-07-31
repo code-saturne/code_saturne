@@ -5,6 +5,8 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix minor memory leak in histogram output.
+
 - GUI: fix crash when using the notebook on some systems (mostly recent
   using systems using PyQt5, as these default to the concerned API).
 
