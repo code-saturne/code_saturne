@@ -801,6 +801,8 @@ fvm_to_histogram_export_field(void                  *writer,
                                    field_values,
                                    _field_output);
 
+  BFT_FREE(export_list);
+
   /* Free helper structures */
 
   fvm_writer_field_helper_destroy(&helper);
