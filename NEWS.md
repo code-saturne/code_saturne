@@ -40,6 +40,9 @@ Architectural changes:
   "--cathare <name>" similarly to CFD/Syrthes coupling. This coupling
   is only functionnal for NEPTUNE_CFD at the moment.
 
+- Add "--with-vofi=path_to_vofi_build" configure option to build and install
+  with the VOFI (VoF initialization) library
+
 Bug fixes:
 
 - Minor bug fix updates to Melissa writer.
