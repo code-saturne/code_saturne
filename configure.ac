@@ -667,6 +667,7 @@ CS_AC_TEST_MEDCOUPLING
 CS_AC_TEST_CATALYST
 CS_AC_TEST_MELISSA
 CS_AC_TEST_PETSC
+CS_AC_TEST_VOFI
 
 CS_AC_TEST_DOCS
 
@@ -1274,6 +1275,7 @@ echo " Melissa (in-situ statistics) support: "$cs_have_melissa""
 if (test x$cs_have_melissa = xyes) ; then
   echo "   Melissa as plugin: "$cs_have_plugin_melissa""
 fi
+echo " Vofi (VoF initialization) support: "$cs_have_vofi""
 echo " EOS support: "$cs_have_eos""
 echo " freesteam support: "$cs_have_freesteam""
 echo " CoolProp support: "$cs_have_coolprop""
