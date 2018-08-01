@@ -908,6 +908,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
 
       case CS_PARAM_PRECOND_DIAG:
         poly_degree = 0;
+        break;
 
       case CS_PARAM_PRECOND_POLY1:
         poly_degree = 1;
