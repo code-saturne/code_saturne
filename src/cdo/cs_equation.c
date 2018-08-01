@@ -1856,7 +1856,7 @@ cs_equation_solve(cs_equation_t   *eq)
     cs_matrix_get_msr_arrays(eq->matrix, &row_index, &col_id, &d_val, &x_val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
-    cs_dbg_dump_linear_system(eq->name, size, CS_EQUATION_DBG,
+    cs_dbg_dump_linear_system(eqp->name, size, CS_EQUATION_DBG,
                               x, b,
                               row_index, col_id, x_val, d_val);
 #endif
