@@ -393,9 +393,9 @@ cs_gui_check_version(void)
   double major, maj_sat;
 
   cs_tree_node_t *tn = cs_glob_tree;
-  tn = cs_tree_get_node(tn, "/Code_Saturne_GUI");
+  tn = cs_tree_get_node(tn, "Code_Saturne_GUI");
   if (tn == NULL)
-    tn = cs_tree_get_node(cs_glob_tree, "/NEPTUNE_CFD_GUI");
+    tn = cs_tree_get_node(cs_glob_tree, "NEPTUNE_CFD_GUI");
 
   const char *version = cs_tree_node_get_tag(tn, "version");
 

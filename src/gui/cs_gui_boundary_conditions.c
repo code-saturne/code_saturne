@@ -1530,7 +1530,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
       /* Electric arc scalars */
       if (cs_gui_strcmp(vars->model, "joule_effect")) {
 
-        const char path0[] = "/thermophysical_models/joule_effect/variable";
+        const char path0[] = "thermophysical_models/joule_effect/variable";
 
         for (cs_tree_node_t *tn_v = cs_tree_get_node(cs_glob_tree, path0);
              tn_v != NULL;

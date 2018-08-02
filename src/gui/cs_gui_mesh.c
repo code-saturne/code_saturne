@@ -383,7 +383,7 @@ cs_gui_mesh_define_periodicities(void)
 
   cs_tree_node_t *pn
     = cs_tree_get_node(cs_glob_tree,
-                       "/solution_domain/periodicity/face_periodicity");
+                       "solution_domain/periodicity/face_periodicity");
 
   int perio_id = 0;
 

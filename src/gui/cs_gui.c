@@ -5115,7 +5115,7 @@ cs_gui_finalize(void)
 void
 cs_gui_add_notebook_variables(mei_tree_t  *ev_law)
 {
-  const char path0[] = "/physical_properties/notebook/var";
+  const char path0[] = "physical_properties/notebook/var";
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
        tn != NULL;
@@ -5690,7 +5690,7 @@ cs_gui_profile_output(void)
 
   int profile_id = 0;
 
-  const char path0[] = "/analysis_control/profiles/profile";
+  const char path0[] = "analysis_control/profiles/profile";
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
        tn != NULL;

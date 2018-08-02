@@ -1737,7 +1737,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
 
   int icha = 0;
 
-  const char path0[] = "/thermophysical_models/solid_fuels/solid_fuel";
+  const char path0[] = "thermophysical_models/solid_fuels/solid_fuel";
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
        tn != NULL;
