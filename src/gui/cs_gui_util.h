@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_tree.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -334,6 +335,38 @@ cs_gui_strcmp(const char  *s1,
 int
 cs_gui_is_equal_real(cs_real_t v1,
                      cs_real_t v2);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an integer-valued status value based on a node's status tag.
+ *
+ * The status is defined in a string-valued child (tag) node. If no such
+ * tag is present, the initial status is unchanged.
+ *
+ * \param[in]       node    node whose status is queried
+ * \param[in, out]  status  status value (0 or 1)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_status_int(cs_tree_node_t  *node,
+                           int             *status);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an bool-valued status value based on a node's status tag.
+ *
+ * The status is defined in a string-valued child (tag) node. If no such
+ * tag is present, the initial status is unchanged.
+ *
+ * \param[in]       node    node whose status is queried
+ * \param[in, out]  status  status value (0 or 1)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_status_bool(cs_tree_node_t  *node,
+                            bool            *status);
 
 /*-----------------------------------------------------------------------------
  * Add timing increment to global MEI time counter.

@@ -1099,6 +1099,60 @@ cs_gui_is_equal_real(cs_real_t v1,
   return retval;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an integer-valued status value based on a node's status tag.
+ *
+ * The status is defined in a string-valued child (tag) node. If no such
+ * tag is present, the initial status is unchanged.
+ *
+ * \param[in]       node    node whose status is queried
+ * \param[in, out]  status  status value (0 or 1)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_status_int(cs_tree_node_t  *node,
+                           int             *status)
+{
+  const char  *value = cs_tree_node_get_tag(node, "status");
+
+  if (cs_gui_strcmp(value, "on"))
+    *status = 1;
+  else if (cs_gui_strcmp(value, "off"))
+    *status = 0;
+  else if (value != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Invalid status value: %s"), value);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an bool-valued status value based on a node's status tag.
+ *
+ * The status is defined in a string-valued child (tag) node. If no such
+ * tag is present, the initial status is unchanged.
+ *
+ * \param[in]       node    node whose status is queried
+ * \param[in, out]  status  status value (0 or 1)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_status_bool(cs_tree_node_t  *node,
+                            bool            *status)
+{
+  const char  *value = cs_tree_node_get_tag(node, "status");
+
+  if (cs_gui_strcmp(value, "on"))
+    *status = true;
+  else if (cs_gui_strcmp(value, "off"))
+    *status = false;
+  else if (value != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Invalid status value: %s"), value);
+}
+
 /*-----------------------------------------------------------------------------
  * Add timing increment to global MEI time counter.
  *

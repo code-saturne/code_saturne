@@ -66,7 +66,7 @@ struct _cs_tree_node_t {
 
   char       *name;   /* name of the node */
   char       *desc;   /* NULL or short description/help about this node */
-  int         flag;   /* metadata used to specified the node behavior */
+  int         flag;   /* metadata used to specify the node behavior */
 
   void       *value;  /* value related to this node. Cast on-the-fly */
   int         size;   /* size > 1 if it is an array */
@@ -136,7 +136,7 @@ cs_tree_node_set_name(cs_tree_node_t  *node,
  *
  * This function is similar to \ref cs_tree_get_node, but is simpler
  * (albeit more restricted in scope) and may be faster in cases where
- * one level of the tree sis searched at a time.
+ * one level of the tree is searched at a time.
  *
  * In case of multiple children sharing the given name, the first such node
  * is returned.
@@ -404,7 +404,7 @@ cs_tree_node_set_value_real(cs_tree_node_t  *node,
  *
  * The behavior is similar to that of \ref cs_tree_node_get_value_str.
 
- * \param[in]  node         pointer to a cs_tree_node_t to access, or NULL
+ * \param[in]  node        pointer to a cs_tree_node_t to access, or NULL
  * \param[in]  child_name  name of child node
  *
  * \return  pointer to associated values, or NULL
@@ -421,7 +421,7 @@ cs_tree_node_get_child_value_str(cs_tree_node_t  *node,
  *
  * The behavior is similar to that of \ref cs_tree_node_get_values_bool.
  *
- * \param[in]  node         pointer to a cs_tree_node_t to access, or NULL
+ * \param[in]  node        pointer to a cs_tree_node_t to access, or NULL
  * \param[in]  child_name  name of child node
  *
  * \return  pointer to associated values, or NULL
@@ -456,7 +456,7 @@ cs_tree_node_get_child_values_int(cs_tree_node_t  *node,
  *
  * The behavior is similar to that of \ref cs_tree_node_get_values_real.
  *
- * \param[in]  node         pointer to a cs_tree_node_t to access, or NULL
+ * \param[in]  node        pointer to a cs_tree_node_t to access, or NULL
  * \param[in]  child_name  name of child node
  *
  * \return  pointer to associated array, or NULL
@@ -531,8 +531,8 @@ cs_tree_node_dump(cs_log_t                log,
 /*!
  * \brief  Add a node to a tree.
  *
- * This node is located at "path" from the given node
- * level switch is indicated by a "/" in path
+ * This node is located at "path" from the given node, with the path
+ * separator indicated by a "/".
  *
  * Exits on error if a node already exists on this path.
  *
@@ -549,10 +549,10 @@ cs_tree_add_node(cs_tree_node_t  *node,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to a node.
+ * \brief  Retrieve the pointer to a node matching a given path.
  *
- * This node is located at "path" from the given node
- * level switch is indicated by a "/" in path.
+ * This node is located at "path" from the given node, with the path
+ * separator indicated by a "/".
  *
  * In case of multiple nodes sharing the given path, the first such node
  * is returned.
@@ -588,8 +588,8 @@ cs_tree_get_node_count(cs_tree_node_t  *node,
  * \brief  Retrieve the pointer to a node with a child having a given
  *         (character string) tag value.
  *
- * This node is located at "path" from the given node
- * level switch is indicated by a "/" in path.
+ * This node is located at "path" from the given node, with the path
+ * separator indicated by a "/".
  *
  * \param[in]  node       pointer to the node where we start searching
  * \param[in]  path       string describing the path access
@@ -617,8 +617,8 @@ cs_tree_get_node_with_tag(cs_tree_node_t   *node,
 /*!
  * \brief  Retrieve the pointer to a node, adding it if not present.
  *
- * This node is located at "path" from the given node
- * level switch is indicated by a "/" in path.
+ * This node is located at "path" from the given node, with the path
+ * separator indicated by a "/".
  *
  * In case of multiple nodes sharing the given path, the first such node
  * is returned.
@@ -764,6 +764,133 @@ cs_tree_add_child_real(cs_tree_node_t  *parent,
 cs_tree_node_t *
 cs_tree_add_sibling(cs_tree_node_t  *sibling,
                     const char      *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to a node matching a given sub-path.
+ *
+ * This node is located at "path" from the given node or one of its
+ * descendants, with the path separator indicated by a "/".
+ *
+ * In case of multiple nodes sharing the given path, the first such node
+ * is returned, using a depth-first search.
+ *
+ * \param[in]  root      pointer to the root node where we start searching
+ * \param[in]  sub_path  string describing the path access
+ *
+ * \return  pointer to the first matching node, or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_tree_node_t *
+cs_tree_find_node(cs_tree_node_t  *root,
+                  const char      *sub_path);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the next node matching a given sub-path
+ *         and following a given node in a depth-first order.
+ *
+ * This node is located at "path" from the given node or one of its
+ * descendants, with the path separator indicated by a "/".
+ *
+ * If current is NULL, this function behaves as \ref cs_tree_find_node.
+ *
+ * \param[in]  root      pointer to the root node where we start searching
+ * \param[in]  current   pointer to the current node
+ * \param[in]  sub_path  string describing the path access
+ *
+ * \return  pointer to the next matching node, or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_tree_node_t *
+cs_tree_find_node_next(cs_tree_node_t  *root,
+                       cs_tree_node_t  *current,
+                       const char      *sub_path);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to a node's descendants matching a given name.
+ *
+ * This function is similar to \ref cs_tree_find_node,
+ * but is simpler (as it assumes a simple name instead of a more general path)
+ * and should thus be faster.
+ *
+ * In case of multiple nodes sharing the given path, the first such node
+ * is returned, using a depth-first search.
+ *
+ * \param[in]  root  pointer to the root node where we start searching
+ * \param[in]  name      node name searched for
+ *
+ * \return  pointer to the first matching node, or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_tree_node_t *
+cs_tree_find_node_simple(cs_tree_node_t  *root,
+                         const char      *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the next node with a given name
+ *         and following a given node in a depth-first order.
+ *
+ * This function is similar to \ref cs_tree_find_node_next,
+ * but is simpler (as it assumes a simple name instead of a more general path)
+ * and should thus be faster.
+ *
+ * If current is NULL, this function behaves as \ref cs_tree_find_node.
+ *
+ * \param[in]  root      pointer to the root node where we start searching
+ * \param[in]  current   pointer to the current node
+ * \param[in]  name      node name searched for
+ *
+ * \return  pointer to the next matching node, or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_tree_node_t *
+cs_tree_find_node_next_simple(cs_tree_node_t  *root,
+                              cs_tree_node_t  *current,
+                              const char      *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Count a node's descendants matching a given sub-path.
+ *
+ * These nodes are located at "path" from the given node or one of its
+ * descendants, with the path separator indicated by a "/".
+ *
+ * \param[in]  root      pointer to the root node where we start searching
+ * \param[in]  sub_path  string describing the path access
+ *
+ * \return  number of matching nodes
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_tree_get_sub_node_count(cs_tree_node_t  *root,
+                           const char      *sub_path);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Count a node's descendants with a given name
+ *
+ * This function is similar to \ref cs_tree_get_sub_node_count,
+ * but is simpler (as it assumes a simple name instead of a more general path)
+ * and should thus be faster.
+ *
+ * \param[in]  root      pointer to the root node where we start searching
+ * \param[in]  name      node name searched for
+ *
+ * \return  number of matching nodes
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_tree_get_sub_node_count_simple(cs_tree_node_t  *root,
+                                  const char      *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
