@@ -62,12 +62,6 @@ double precision ttsuit, wtsuit
 
 interface
 
-  subroutine gui_postprocess_fields()  &
-      bind(C, name='cs_gui_postprocess_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine gui_postprocess_fields
-
   subroutine gui_linear_solvers()  &
       bind(C, name='cs_gui_linear_solvers')
     use, intrinsic :: iso_c_binding
@@ -182,8 +176,6 @@ endif
 if (icdo.lt.2) then
    call fldini
 endif
-
-call gui_postprocess_fields
 
 call usipes(nmodpp)
 call user_output

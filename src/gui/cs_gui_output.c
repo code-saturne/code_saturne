@@ -105,96 +105,95 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Get output control value parameters.
+ * Get of node of the given type with a given name tag.
  *
  * parameters:
- *   param               <--   name of the parameter
- *   keyword             -->   output control parameter
+ *   name    <--  node type (variable, property, ...)
+ *   name    <--  associated name tag (sub-node)
+ *
+ * return:
+ *   pointer to node found, or NULL
  *----------------------------------------------------------------------------*/
 
-static void
-_output_value(const char  *const param,
-              int         *const keyword)
+static cs_tree_node_t *
+_get_node(const char  *node_type,
+          const char  *name)
 {
-  char *path = NULL;
-  int   result;
+  cs_tree_node_t *root = cs_glob_tree;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
-
-  if (cs_gui_strcmp(param, "auxiliary_restart_file_writing")) {
-
-    cs_xpath_add_attribute(&path, "status");
-    if (cs_gui_get_status(path, &result)) *keyword = result;
-
-  }
-  else {
-
-    cs_xpath_add_function_text(&path);
-    if (cs_gui_get_int(path, &result)) *keyword = result;
-
+  for (cs_tree_node_t *tn = cs_tree_find_node_simple(root, node_type);
+       tn != NULL;
+       tn = cs_tree_find_node_next_simple(root, tn, node_type)) {
+    const char *tag = cs_tree_node_get_tag(tn, "name");
+    if (tag != NULL) {
+      if (strcmp(tag, name) == 0)
+        return tn;
+    }
   }
 
-  BFT_FREE(path);
+  return NULL;
 }
 
-/*----------------------------------------------------------------------------
- * Get output control value parameters for frequency output
+/*-----------------------------------------------------------------------------
+ * Post-processing options for fields
  *
  * parameters:
- *   param               <--   name of the parameter
- *   keyword             -->   output control parameter
+ *   f_id <-- field id
  *----------------------------------------------------------------------------*/
 
 static void
-_output_time_value(const char  *const param,
-                   double      *const keyword)
+_field_post(const char  *field_type,
+            int          f_id)
 {
-  char *path = NULL;
-  char *choice = NULL;
-  double result = 0.0;
+  cs_field_t  *f = cs_field_by_id(f_id);
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
+  /* Now check for options */
 
-  cs_xpath_add_function_text(&path);
-  if (cs_gui_get_double(path, &result)) *keyword = result;
+  int f_post = -999, f_log = -999, f_monitor = -999;
+  const int k_log  = cs_field_key_id("log");
+  const int k_lbl = cs_field_key_id("label");
+  const int k_post = cs_field_key_id("post_vis");
 
-  BFT_FREE(choice);
-  BFT_FREE(path);
-}
+  cs_tree_node_t *tn =_get_node(field_type, f->name);
 
-/*----------------------------------------------------------------------------
- * Return the output format and options for postprocessing.
- *
- * parameters
- *   param         -->  name of the parameter
- *   keyword       <--  output keyword string
- *   max_key_size  -->  maximum keyword size
- *----------------------------------------------------------------------------*/
+  if (tn == NULL)
+    return;
 
-static void
-_output_choice(const char  *const param,
-               char        *const keyword,
-               size_t             max_key_size)
-{
-  char *path = NULL;
-  char *choice = NULL;
+  /* Listing output */
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
-  cs_xpath_add_attribute(&path, "choice");
-  choice = cs_gui_get_attribute_value(path);
-  BFT_FREE(path);
+  cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "listing_printing"),
+                             &f_log);
+  if (f_log != -999)
+    cs_field_set_key_int(f, k_log, f_log);
 
-  if (choice != NULL) {
-    strncpy(keyword, choice, max_key_size);
-    keyword[max_key_size] = '\0';
-  }
-  else
-    keyword[0] = '\0';
+  /* Postprocessing outputs */
 
-  BFT_FREE(choice);
+  cs_gui_node_get_status_int(cs_tree_node_get_child
+                               (tn, "postprocessing_recording"),
+                             &f_post);
+  if (f_post == 1)
+    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
+  else if (f_post == 0)
+    cs_field_clear_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
+  else /* status unspecified here but property referenced in tree,
+          could be improved by depending on field type or flags */
+    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
+
+  cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "probes_recording"),
+                             &f_monitor);
+  if (f_monitor == 1)
+    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
+  else if (f_monitor == 0)
+    cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
+  else /* status unspecified here but property referenced in tree,
+          could be improved by depending on field type or flags */
+    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
+
+  /* Take into account labels */
+
+  const char *label = cs_tree_node_get_tag(tn, "label");
+  if (label != NULL)
+    cs_field_set_key_str(f, k_lbl, label);
 }
 
 /*----------------------------------------------------------------------------
@@ -209,569 +208,22 @@ static bool
 _surfacic_variable_post(const char  *name,
                         bool         default_val)
 {
-  int   result = 0;
-  char *path = NULL;
-
   bool active = default_val;
 
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_tree_node_t *tn = _get_node("property", name);
 
-  if (cs_gui_get_nb_element(path) > 0) {
+  if (tn != NULL) {
 
-    /* If base path present but not recording status, default to true */
+    /* If base node present but not recording status, default to true */
     active = true;
 
-    cs_xpath_add_element(&path, "postprocessing_recording");
-    cs_xpath_add_attribute(&path, "status");
-    if (cs_gui_get_status(path, &result)) {
-      if (result == 1)
-        active = true;
-      else
-        active = false;
-    }
+    cs_gui_node_get_status_bool(cs_tree_node_get_child
+                                 (tn, "postprocessing_recording"),
+                                &active);
 
   }
-
-  BFT_FREE(path);
 
   return active;
-}
-
-/*----------------------------------------------------------------------------
- * Get the attribute value from the xpath query.
- *
- * parameters:
- *   path          <-> path for xpath query (NULL on return)
- *   child         <-- child markup
- *   keyword       --> value of attribute node
- *----------------------------------------------------------------------------*/
-
-static void
-_attribute_value(char               **path,
-                 const char    *const child,
-                 int           *const keyword)
-{
-  int   result;
-
-  assert(path != NULL);
-  assert(child != NULL);
-
-  cs_xpath_add_attribute(path, "status");
-
-  if (cs_gui_get_status(*path, &result))
-    *keyword = result;
-
-  BFT_FREE(*path);
-}
-
-/*----------------------------------------------------------------------------
- * Get the attribute value associated to a child markup from a variable.
- *
- * parameters:
- *   name          <--  name of the variable markup
- *   child         <--  child markup
- *   keyword       -->  value of attribute node contained in the child markup
- *----------------------------------------------------------------------------*/
-
-static void
-_variable_attribute(const char  *name,
-                    const char  *child,
-                    int         *keyword)
-{
-  char *path = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "variable");
-  cs_xpath_add_test_attribute(&path, "name", name);
-  cs_xpath_add_element(&path, child);
-  _attribute_value(&path, child, keyword);
-}
-
-/*-----------------------------------------------------------------------------
- * Return variable label.
- *
- * parameters:
- *   variable   <-- name of variable
- *----------------------------------------------------------------------------*/
-
-static char *
-_variable_label(const char *variable)
-{
-  char *path = NULL;
-  char *label = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "variable");
-  cs_xpath_add_test_attribute(&path, "name", variable);
-  cs_xpath_add_attribute(&path, "label");
-
-  label = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return label;
-}
-
-/*-----------------------------------------------------------------------------
- * Post-processing options for all variables (velocity, pressure, ...)
- *
- * parameters:
- *   f_id <-- field id
- *----------------------------------------------------------------------------*/
-
-static void
-_variable_post(int  f_id)
-{
-  char *label = NULL;
-
-  cs_field_t  *f = cs_field_by_id(f_id);
-
-  int f_post = -999, f_log = -999, f_monitor = -999;
-  const int k_log  = cs_field_key_id("log");
-  const int k_lbl = cs_field_key_id("label");
-  const int k_post = cs_field_key_id("post_vis");
-
-  /* Listing output */
-
-  _variable_attribute(f->name,
-                      "listing_printing",
-                      &f_log);
-  if (f_log != -999)
-    cs_field_set_key_int(f, k_log, f_log);
-
-  /* Postprocessing outputs */
-
-  _variable_attribute(f->name,
-                      "postprocessing_recording",
-                      &f_post);
-  if (f_post == 1)
-    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
-  else if (f_post == 0)
-    cs_field_clear_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
-
-  _variable_attribute(f->name,
-                      "probes_recording",
-                      &f_monitor);
-  if (f_monitor == 1)
-    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
-  else if (f_monitor == 0)
-    cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
-
-  label = _variable_label(f->name);
-  if (label != NULL)
-    cs_field_set_key_str(f, k_lbl, label);
-
-  BFT_FREE(label);
-}
-
-/*-----------------------------------------------------------------------------
- * Return status of the property for physical model
- *
- * parameters:
- *   name          <--  name of the variable markup
- *   child         <--  child markup
- *   value_type    <-- type of value (listing_printing, postprocessing ..)
- *----------------------------------------------------------------------------*/
-
-static void
-_property_output_status(const char  *name,
-                        const char  *child,
-                        int         *keyword)
-{
-  char *path = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", name);
-  cs_xpath_add_element(&path, child);
-  _attribute_value(&path, child, keyword);
-}
-
-/*-----------------------------------------------------------------------------
- * Return the label model's property.
- *
- * parameters:
- *   property   <--  name of property
- *----------------------------------------------------------------------------*/
-
-static char *
-_get_property_label(const char  *property)
-{
-  char *path = NULL;
-  char *label_name = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", property);
-  cs_xpath_add_attribute(&path, "label");
-
-  label_name = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return label_name;
-}
-
-/*-----------------------------------------------------------------------------
- * Post-processing options for properties
- *
- * parameters:
- *   f_id <-- field id
- *----------------------------------------------------------------------------*/
-
-static void
-_property_post(int  f_id)
-{
-  char *label = NULL;
-
-  cs_field_t  *f = cs_field_by_id(f_id);
-
-  /* Some properties are not handled by the GUI */
-
-  if (strcmp(f->name, "porosity") == 0)
-    return;
-
-  /* Now check for options */
-
-  int f_post = -999, f_log = -999, f_monitor = -999;
-  bool in_tree = false;
-  const int k_log  = cs_field_key_id("log");
-  const int k_lbl = cs_field_key_id("label");
-  const int k_post = cs_field_key_id("post_vis");
-
-  /* Listing output */
-  _property_output_status(f->name,
-                          "listing_printing",
-                          &f_log);
-  if (f_log != -999)
-    cs_field_set_key_int(f, k_log, f_log);
-  else {
-    char *pl = _get_property_label(f->name);
-    if (pl != NULL)
-      in_tree = true;
-    BFT_FREE(pl);
-  }
-
-  /* Postprocessing outputs */
-
-  _property_output_status(f->name,
-                          "postprocessing_recording",
-                          &f_post);
-  if (f_post == 1)
-    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
-  else if (f_post == 0)
-    cs_field_clear_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
-  else if (in_tree)
-    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
-
-  _property_output_status(f->name,
-                          "probes_recording",
-                          &f_monitor);
-  if (f_monitor == 1)
-    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
-  else if (f_monitor == 0)
-    cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
-  else if (in_tree)
-    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
-
-  /* Take into account labels */
-
-  label = _get_property_label(f->name);
-  if (label != NULL)
-    cs_field_set_key_str(f, k_lbl, label);
-
-  BFT_FREE(label);
-}
-
-/*-----------------------------------------------------------------------------
- * Return status of the moment for physical models
- *
- * parameters:
- *   moment_id  <-- id of moment
- *   child      <-- child markup
- *   value_type <-- type of value (listing_printing, postprocessing ..)
- *----------------------------------------------------------------------------*/
-
-static void
-_time_moment_output_status(int          moment_id,
-                           const char  *child,
-                           int         *keyword)
-{
-  char *path = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element_num(&path, "time_average", moment_id+1);
-  cs_xpath_add_element(&path, child);
-  _attribute_value(&path, child, keyword);
-}
-
-/*-----------------------------------------------------------------------------
- * Post-processing options for time moments
- *
- * parameters:
- *   f_id <-- field id
- *----------------------------------------------------------------------------*/
-
-static void
-_time_moment_post(int  f_id,
-                  int  moment_id)
-{
-  char *label = NULL;
-
-  cs_field_t  *f = cs_field_by_id(f_id);
-
-  int f_post = -999, f_log = -999, f_monitor = -999;
-  const int k_log  = cs_field_key_id("log");
-  const int k_post = cs_field_key_id("post_vis");
-
-  /* Listing output */
-  _time_moment_output_status(moment_id,
-                             "listing_printing",
-                             &f_log);
-  if (f_log != -999)
-    cs_field_set_key_int(f, k_log, f_log);
-
-  /* Postprocessing outputs */
-
-  _time_moment_output_status(moment_id,
-                             "postprocessing_recording",
-                             &f_post);
-  if (f_post == 1)
-    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
-  else if (f_post == 0)
-    cs_field_clear_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
-
-  _time_moment_output_status(moment_id,
-                             "probes_recording",
-                             &f_monitor);
-
-  if (f_monitor == 1)
-    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
-  else if (f_monitor == 0)
-    cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
-
-  BFT_FREE(label);
-}
-
-/*-----------------------------------------------------------------------------
- * Return a single coordinate of a monitoring probe.
- *
- * parameters
- *   num_probe            <--  number aka name of the monitoring probe
- *   probe_coord          <--  one coordinate of the monitoring probe
- *----------------------------------------------------------------------------*/
-
-static double
-_probe_coordinate(int          num_probe,
-                  const char  *probe_coord)
-{
-  char  *path = NULL;
-  double result = 0.0;
-
-  assert(num_probe > 0);
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "output");
-  cs_xpath_add_element_num(&path, "probe", num_probe);
-  cs_xpath_add_element(&path, probe_coord);
-  cs_xpath_add_function_text(&path);
-
-  if (!cs_gui_get_double(path, &result))
-    bft_error(__FILE__, __LINE__, 0,
-              _("Coordinate %s of the monitoring probe number %i "
-                "not found.\nXpath: %s\n"), probe_coord, num_probe, path);
-
-  BFT_FREE(path);
-
-  return result;
-}
-
-/*----------------------------------------------------------------------------
- * Return the location of a mesh.
- *
- * parameters:
- *   num                <--  number of a mesh
- *----------------------------------------------------------------------------*/
-
-static char
-*_output_mesh_location(int  num)
-{
-  char *path = NULL;
-  char *location = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "output");
-  cs_xpath_add_element_num(&path, "mesh", num);
-  cs_xpath_add_element(&path, "location");
-  cs_xpath_add_function_text(&path);
-  location = cs_gui_get_text_value(path);
-
-  BFT_FREE(path);
-  return location;
-}
-
-/*----------------------------------------------------------------------------
- * Return the density for a particle mesh.
- *
- * parameters:
- *   num                <--  number of a mesh
- *----------------------------------------------------------------------------*/
-
-static double
-_output_particle_density(int  num)
-{
-  char *path = NULL;
-  double result = 1.;
-
-  double density = 1.;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "output");
-  cs_xpath_add_element_num(&path, "mesh", num);
-  cs_xpath_add_element(&path, "density");
-  cs_xpath_add_function_text(&path);
-  if (cs_gui_get_double(path, &result))
-    density = result;
-
-  BFT_FREE(path);
-  return density;
-}
-
-/*----------------------------------------------------------------------------
- * Return the frequency of a writer.
- *
- * parameters:
- *   num                <--  number of the writer
- *----------------------------------------------------------------------------*/
-
-static double
-_output_writer_frequency(int  num)
-{
-  char *path = NULL;
-  char *path_bis = NULL;
-  double time_step = 0.0;
-  double result = 0.0;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "output");
-  cs_xpath_add_element_num(&path, "writer", num);
-  BFT_MALLOC(path_bis, strlen(path) +1, char);
-  strcpy(path_bis, path);
-  cs_xpath_add_element(&path, "frequency");
-  cs_xpath_add_function_text(&path);
-  if (cs_gui_get_double(path, &result))
-    time_step = result;
-  else {
-    cs_xpath_add_element(&path_bis, "frequency_time");
-    cs_xpath_add_function_text(&path_bis);
-    if (cs_gui_get_double(path_bis, &result))
-      time_step = result;
-  }
-
-  BFT_FREE(path);
-  BFT_FREE(path_bis);
-  return time_step;
-}
-
-/*----------------------------------------------------------------------------
- * Return an option for a mesh or a writer call by a number.
- *
- * parameters:
- *   type                 <--  'writer' or 'mesh'
- *   choice               <--  type of option to get
- *   option               <--  the option needed
- *   num                  <--  number of the mesh or the writer
- *----------------------------------------------------------------------------*/
-
-static char *
-_output_type_options(const char  *type,
-                     const char  *choice,
-                     const char  *option,
-                     int          num)
-{
-  char *path = NULL;
-  char *description = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "output");
-  cs_xpath_add_element_num(&path, type, num);
-  cs_xpath_add_element(&path, option);
-
-  if (cs_gui_strcmp(option, "frequency") && choice == NULL) {
-    description = cs_gui_get_text_value(path);
-  }
-  else {
-    cs_xpath_add_attribute(&path, choice);
-    description = cs_gui_get_attribute_value(path);
-  }
-
-  BFT_FREE(path);
-
-  if (description == NULL) {
-    BFT_MALLOC(description, 1, char);
-    description[0] = '\0';
-  }
-
-  return description;
-}
-
-/*----------------------------------------------------------------------------
- * Return the id of a writer associated with a mesh.
- *
- * parameters:
- *   num_mesh                <--  number of the given mesh
- *   num_writer              <--  number of the associated writer
- *----------------------------------------------------------------------------*/
-
-static int
-_output_associate_mesh_writer(int  num_mesh,
-                              int  num_writer)
-{
-  char *path = NULL;
-  char *id = NULL;
-  int description;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "output");
-  cs_xpath_add_element_num(&path, "mesh"  , num_mesh);
-  cs_xpath_add_element_num(&path, "writer", num_writer);
-  cs_xpath_add_attribute(&path, "id");
-
-  id = cs_gui_get_attribute_value(path);
-  description = atoi(id);
-
-  BFT_FREE(path);
-  BFT_FREE(id);
-  return description;
-}
-
-/*----------------------------------------------------------------------------
- * Return a choice for a mesh or a writer call by a number.
- *
- * parameters:
- *   type                <--   'writer' or 'mesh'
- *   choice              <--   the option needed
- *   num                 <--   the number of the mesh or writer
- *----------------------------------------------------------------------------*/
-
-static char *
-_output_type_choice(const char  *type,
-                    const char  *choice,
-                    int          num)
-{
-  char *path = NULL;
-  char *description = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "output");
-  cs_xpath_add_element_num(&path, type, num);
-  cs_xpath_add_attribute(&path, choice);
-  description = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-  return description;
 }
 
 /*-----------------------------------------------------------------------------
@@ -779,31 +231,25 @@ _output_type_choice(const char  *type,
  *
  * parameters:
  *   formula        <--  mei formula
- *   symbols        <--  array of symbol to check
- *   symbol_size    -->  number of symbol in symbols
+ *   nt_cur         <--  current time step
+ *   t_cur          <--  current time value
+ *
+ * return:
+ *   MEI tree object
  *----------------------------------------------------------------------------*/
 
 static mei_tree_t *
-_init_mei_tree(const int        num,
-               const cs_int_t  *ntcabs,
-               const cs_real_t *ttcabs)
+_init_mei_tree(const char      *formula,
+               const int        nt_cur,
+               const cs_real_t  t_cur)
 {
-  char *path = NULL;
-  char *formula = NULL;
-
   /* return an empty interpreter */
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "output");
-  cs_xpath_add_element_num(&path, "writer", num);
-  cs_xpath_add_element(&path, "frequency");
-  cs_xpath_add_function_text(&path);
-  formula = cs_gui_get_text_value(path);
   mei_tree_t *tree = mei_tree_new(formula);
 
   /* add commun variables */
-  mei_tree_insert(tree, "niter", *ntcabs );
-  mei_tree_insert(tree, "t", *ttcabs);
+  mei_tree_insert(tree, "niter", nt_cur );
+  mei_tree_insert(tree, "t", t_cur);
 
   /* add variable from notebook */
   cs_gui_add_notebook_variables(tree);
@@ -825,49 +271,6 @@ _init_mei_tree(const int        num,
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * activation of a writer depending of a formula
- *
- * Fortran Interface:
- *
- * subroutine uinpst (ttcabs, ntcabs)
- * *****************
- *
- * integer         uref   -->   reference velocity
- * double          almax  -->   reference length
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uinpst, UINPST) (const cs_int_t  *ntcabs,
-                                const cs_real_t *ttcabs)
-{
-  int i, id, nwriter;
-  int iactive;
-  char *frequency_choice;
-  char *id_s;
-  mei_tree_t *ev_formula  = NULL;
-  nwriter = cs_gui_get_tag_count("/analysis_control/output/writer", 1);
-  for (i = 1; i <= nwriter; i++) {
-    id = 0;
-    id_s = _output_type_choice("writer","id",i);
-    if (id_s != NULL) {
-      id = atoi(id_s);
-      BFT_FREE(id_s);
-    }
-    frequency_choice = _output_type_options("writer", "period", "frequency", i);
-    if (cs_gui_strcmp(frequency_choice, "formula")) {
-      ev_formula = _init_mei_tree(i, ntcabs, ttcabs);
-      mei_evaluate(ev_formula);
-      iactive =  mei_tree_lookup(ev_formula, "iactive");
-      mei_tree_destroy(ev_formula);
-      if (iactive == 1)
-        cs_post_activate_writer(id, true);
-      else
-        cs_post_activate_writer(id, false);
-    }
-    BFT_FREE(frequency_choice);
-  }
-}
 
 /*----------------------------------------------------------------------------
  * Determine output boundary fields
@@ -916,11 +319,19 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
 
 void CS_PROCF (csenso, CSENSO) (cs_int_t  *iecaux)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
+  const int *v_i = NULL;
 
-  _output_value("auxiliary_restart_file_writing", iecaux);
-  _output_value("listing_printing_frequency", &cs_glob_log_frequency);
+  const char path_o[] = "analysis_control/output";
+  cs_tree_node_t *tn_o = cs_tree_get_node(cs_glob_tree, path_o);
+
+  cs_gui_node_get_status_int(cs_tree_node_get_child
+                               (tn_o, "auxiliary_restart_file_writing"),
+                             iecaux);
+
+  v_i = cs_tree_node_get_child_values_int(tn_o,
+                                          "auxiliary_restart_file_writing");
+  if (v_i != NULL) cs_glob_log_frequency = v_i[0];
+
   const int n_fields = cs_field_n_fields();
 
   /* temporary field -> moment ids */
@@ -941,12 +352,12 @@ void CS_PROCF (csenso, CSENSO) (cs_int_t  *iecaux)
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE)
-      _variable_post(f->id);
+      _field_post("variable", f->id);
     else if (f->type & CS_FIELD_PROPERTY)
-      _property_post(f->id);
+      _field_post("property", f->id);
     else if (moment_id != NULL) {
       if (moment_id[f_id] > -1)
-        _time_moment_post(f->id, moment_id[f_id]);
+        _field_post("time_average", f->id);
     }
   }
 
@@ -970,90 +381,107 @@ void CS_PROCF (csenso, CSENSO) (cs_int_t  *iecaux)
 void
 cs_gui_postprocess_meshes(void)
 {
-  int i, j, id, id_writer;
-  char *id_s = NULL;
-  char *label = NULL;
-  char *all_variables = NULL;
-  bool auto_vars = true;
-  bool add_groups = true;
-  char *location = NULL;
-  int n_writers, nmesh;
-  char *type = NULL;
-  char *path = NULL;
-  int *writer_ids = NULL;
+  const int *v_i = NULL;
+  const cs_real_t *v_r = NULL;
 
-  if (!cs_gui_file_is_loaded())
-    return;
+  const char path_o[] = "analysis_control/output";
+  cs_tree_node_t *tn_o = cs_tree_get_node(cs_glob_tree, path_o);
 
-  nmesh = cs_gui_get_tag_count("/analysis_control/output/mesh", 1);
+  for (cs_tree_node_t *tn = cs_tree_get_node(tn_o, "mesh");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
-  for (i = 1; i <= nmesh; i++) {
-    id_s = _output_type_choice("mesh","id",i);
-    id = atoi(id_s);
-    label = _output_type_choice("mesh","label",i);
-    all_variables = _output_type_options("mesh", "status", "all_variables", i);
-    if (cs_gui_strcmp(all_variables,"on"))
-      auto_vars = true;
-    else if (cs_gui_strcmp(all_variables, "off"))
-      auto_vars = false;
-    location = _output_mesh_location(i);
-    type = _output_type_choice("mesh","type",i);
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "analysis_control", "output");
-    cs_xpath_add_element_num(&path, "mesh", i);
-    cs_xpath_add_element(&path, "writer");
-    n_writers = cs_gui_get_nb_element(path);
-    BFT_MALLOC(writer_ids, n_writers, int);
-    for (j = 0; j <= n_writers-1; j++) {
-      id_writer = _output_associate_mesh_writer(i,j+1);
-      writer_ids[j] = id_writer;
+    v_i = cs_tree_node_get_child_values_int(tn, "id");
+    const char *label = cs_tree_node_get_tag(tn, "label");
+    const char *type = cs_tree_node_get_tag(tn, "type");
+
+    if (v_i == NULL || label == NULL || type == NULL) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("Incorrect setup tree definition for the following node:\n"));
+      cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
+      bft_error(__FILE__, __LINE__, 0,
+                _("One of the following child (tag) nodes is missing: %s"),
+                "id, label, type");
     }
+
+    int id = v_i[0];
+
+    const char *location = cs_tree_node_get_child_value_str(tn, "location");
+    if (location == NULL)
+      location = "all[]";
+
+    bool add_groups = true;
+    bool auto_vars = true;
+
+    cs_gui_node_get_status_bool(cs_tree_node_get_child(tn, "all_variables"),
+                                &auto_vars);
+
+    int n_writers = cs_tree_get_node_count(tn, "writer");
+    int *writer_ids = NULL;
+    BFT_MALLOC(writer_ids, n_writers, int);
+    n_writers = 0;
+    for (cs_tree_node_t *tn_w = cs_tree_get_node(tn, "writer");
+         tn_w != NULL;
+         tn_w = cs_tree_node_get_next_of_name(tn_w)) {
+      v_i = cs_tree_node_get_child_values_int(tn_w, "id");
+      if (v_i != NULL) {
+        writer_ids[n_writers] = v_i[0];
+        n_writers++;
+      }
+    }
+
     if (cs_gui_strcmp(type, "cells")) {
       cs_post_define_volume_mesh(id, label, location, add_groups, auto_vars,
                                  n_writers, writer_ids);
-    } else if(cs_gui_strcmp(type, "interior_faces")) {
+    }
+    else if(cs_gui_strcmp(type, "interior_faces")) {
       cs_post_define_surface_mesh(id, label, location, NULL,
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
-    } else if(cs_gui_strcmp(type, "boundary_faces")) {
+    }
+    else if(cs_gui_strcmp(type, "boundary_faces")) {
       cs_post_define_surface_mesh(id, label, NULL, location,
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
-    } else if(cs_gui_strcmp(type, "boundary_faces")) {
+    }
+    else if(cs_gui_strcmp(type, "boundary_faces")) {
       cs_post_define_surface_mesh(id, label, NULL, location,
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
-    } else if(   cs_gui_strcmp(type, "particles")
-              || cs_gui_strcmp(type, "trajectories")) {
+    }
+    else if(   cs_gui_strcmp(type, "particles")
+            || cs_gui_strcmp(type, "trajectories")) {
       bool trajectory = cs_gui_strcmp(type, "trajectories") ? true : false;
-      double density = _output_particle_density(i);
+      v_r = cs_tree_node_get_child_values_real(tn, "density");
+      double density = (v_r != NULL) ? v_r[0] : 1;
       cs_post_define_particles_mesh(id, label, location,
                                     density, trajectory, auto_vars,
                                     n_writers, writer_ids);
     }
 
     BFT_FREE(writer_ids);
-    BFT_FREE(id_s);
-    BFT_FREE(label);
-    BFT_FREE(all_variables);
-    BFT_FREE(location);
-    BFT_FREE(type);
-    BFT_FREE(path);
   }
 
   /* Probe definitions */
 
-  int n_probes = cs_gui_get_tag_count("/analysis_control/output/probe", 1);
+  int n_probes = cs_tree_get_node_count(tn_o, "probe");
 
   if (n_probes > 0) {
+
+    const char *coord_node_name[] = {"probe_x", "probe_y", "probe_z"};
 
     cs_real_3_t *p_coords;
     BFT_MALLOC(p_coords, n_probes, cs_real_3_t);
 
-    for (i = 0; i < n_probes; i++) {
-      p_coords[i][0] = _probe_coordinate(i+1, "probe_x");
-      p_coords[i][1] = _probe_coordinate(i+1, "probe_y");
-      p_coords[i][2] = _probe_coordinate(i+1, "probe_z");
+    int i = 0;
+    for (cs_tree_node_t *tn = cs_tree_get_node(tn_o, "probe");
+         tn != NULL;
+         tn = cs_tree_node_get_next_of_name(tn), i++) {
+
+      for (int j = 0; j < 3; j++) {
+        v_r = cs_tree_node_get_child_values_real(tn, coord_node_name[j]);
+        p_coords[i][j] = (v_r != NULL) ? v_r[0] : 0;
+      }
     }
 
     cs_probe_set_create_from_array("probes",
@@ -1063,19 +491,17 @@ cs_gui_postprocess_meshes(void)
 
     BFT_FREE(p_coords);
 
-    int frequency_n = 1;
-    cs_real_t frequency_t = -1.;
+    v_i = cs_tree_node_get_child_values_int(tn_o, "probe_recording_frequency");
+    int frequency_n = (v_i != NULL) ? v_i[0] : 1;
 
-    _output_value("probe_recording_frequency", &frequency_n);
-    _output_time_value("probe_recording_frequency_time", &frequency_t);
+    v_r = cs_tree_node_get_child_values_real
+           (tn_o, "probe_recording_frequency_time");
+    cs_real_t frequency_t = (v_r != NULL) ? v_r[0] : -1.;
 
-    /* Time plot (probe) format */
-    char fmt_opts[16], fmtprb[16];
-    _output_choice("probe_format", fmtprb, sizeof(fmtprb) - 1);
-    if (!strcmp(fmtprb, "DAT"))
-      strncpy(fmt_opts, "dat", 16);
-    else if (!strcmp(fmtprb, "CSV"))
-      fmt_opts[0] = '\0';
+    /* Time plot (probe) format string */
+    const char *fmt_opts
+      = cs_tree_node_get_tag(cs_tree_node_get_child(tn_o, "probe_format"),
+                             "choice");
 
     cs_post_define_writer(CS_POST_WRITER_PROBES,   /* writer_id */
                           "",                      /* case_name */
@@ -1097,67 +523,82 @@ cs_gui_postprocess_meshes(void)
 void
 cs_gui_postprocess_writers(void)
 {
-  int i;
-  char *label = NULL;
-  char *directory = NULL;
-  char *format_name = NULL;
-  char *format_options = NULL;
-  char *time_dependency = NULL;
-  char *frequency_choice = NULL;
-  char *output_start_s = NULL;
-  char *output_end_s = NULL;
-  char *id_s = NULL;
+  const char path_o[] = "analysis_control/output";
+  cs_tree_node_t *tn_o = cs_tree_get_node(cs_glob_tree, path_o);
 
-  int n_writers = 0;
+  for (cs_tree_node_t *tn = cs_tree_get_node(tn_o, "writer");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
-  if (!cs_gui_file_is_loaded())
-    return;
+    const int *v_i = cs_tree_node_get_child_values_int(tn, "id");
+    const char *label = cs_tree_node_get_tag(tn, "label");
 
-  n_writers = cs_gui_get_tag_count("/analysis_control/output/writer", 1);
+    if (v_i == NULL || label == NULL) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("Incorrect setup tree definition for the following node:\n"));
+      cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
+      bft_error(__FILE__, __LINE__, 0,
+                _("One of the following child (tag) nodes is missing: %s"),
+                "id, label");
+    }
 
-  for (i = 1; i <= n_writers; i++) {
+    int id = v_i[0];
 
-    int id = 0;
     fvm_writer_time_dep_t  time_dep = FVM_WRITER_FIXED_MESH;
     bool output_at_start = false;
     bool output_at_end = true;
-    cs_int_t time_step = -1;
-    cs_real_t time_value = -1.0;
 
-    id_s = _output_type_choice("writer", "id", i);
-    id = atoi(id_s);
-    label = _output_type_choice("writer", "label", i);
-    directory = _output_type_options("writer", "name", "directory", i);
-    frequency_choice = _output_type_options("writer", "period", "frequency", i);
-    output_start_s = _output_type_options("writer", "status", "output_at_start", i);
-    output_end_s = _output_type_options("writer", "status", "output_at_end", i);
-    if (cs_gui_strcmp(frequency_choice, "none")) {
+    const char *directory
+      = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "directory"),
+                             "name");
+
+    const char *frequency_choice
+      = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "frequency"),
+                             "period");
+    int time_step = -1;
+    cs_real_t time_value = -1.;
+
+    if (cs_gui_strcmp(frequency_choice, "none"))
       time_step = -1;
-      time_value = -1.;
-    } else if (cs_gui_strcmp(frequency_choice, "time_step")) {
-      time_step = (int)_output_writer_frequency(i);
-      time_value = -1.;
-    } else if (cs_gui_strcmp(frequency_choice, "time_value")) {
-      time_step = -1;
-      time_value = _output_writer_frequency(i);
-    } else if (cs_gui_strcmp(frequency_choice, "formula")) {
-      time_step = -1;
-      time_value = -1.;
+    else if (cs_gui_strcmp(frequency_choice, "time_step")) {
+      v_i = cs_tree_node_get_child_values_int(tn, "frequency");
+      if (v_i != NULL) time_step = v_i[0];
     }
-    if (cs_gui_strcmp(output_start_s, "on"))
-      output_at_start = true;
-    if (cs_gui_strcmp(output_end_s, "off"))
-      output_at_end = false;
-    format_name = _output_type_options("writer", "name", "format",i);
-    format_options = _output_type_options("writer", "options", "format", i);
-    time_dependency
-      = _output_type_options("writer", "choice", "time_dependency", i);
+    else if (cs_gui_strcmp(frequency_choice, "time_value")) {
+      const cs_real_t *v_r = cs_tree_node_get_child_values_real(tn, "frequency");
+      if (v_r != NULL)
+        time_value = v_r[0];
+      else {
+        v_r = cs_tree_node_get_child_values_real(tn, "frequency_time");
+        if (v_r != NULL)
+          time_value = v_r[0];
+      }
+    }
+    else if (cs_gui_strcmp(frequency_choice, "formula"))
+      time_step = -1;
+
+    cs_gui_node_get_status_bool(cs_tree_node_get_child(tn, "output_at_start"),
+                                &output_at_start);
+    cs_gui_node_get_status_bool(cs_tree_node_get_child(tn, "output_at_end"),
+                                &output_at_end);
+
+    const char *format_name
+      = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "format"),
+                             "name");
+    const char *format_options
+      = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "format"),
+                             "options");
+    const char *time_dependency
+      = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "time_dependency"),
+                             "choice");
+
     if (cs_gui_strcmp(time_dependency, "fixed_mesh"))
       time_dep = FVM_WRITER_FIXED_MESH;
     else if(cs_gui_strcmp(time_dependency, "transient_coordinates"))
       time_dep = FVM_WRITER_TRANSIENT_COORDS;
     else if(cs_gui_strcmp(time_dependency, "transient_connectivity"))
       time_dep = FVM_WRITER_TRANSIENT_CONNECT;
+
     cs_post_define_writer(id,
                           label,
                           directory,
@@ -1168,29 +609,47 @@ cs_gui_postprocess_writers(void)
                           output_at_end,
                           time_step,
                           time_value);
-    BFT_FREE(id_s);
-    BFT_FREE(label);
-    BFT_FREE(format_name);
-    BFT_FREE(format_options);
-    BFT_FREE(time_dependency);
-    BFT_FREE(output_start_s);
-    BFT_FREE(output_end_s);
-    BFT_FREE(frequency_choice);
-    BFT_FREE(directory);
   }
 }
 
-/*-----------------------------------------------------------------------------
- * Post-processing options for fields
- *
- * These options are used for fields not mapped to variables or properties.
+/*----------------------------------------------------------------------------
+ * Activate writers depending on a formula
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_postprocess_fields(void)
+cs_gui_postprocess_activate(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
+  const char path_o[] = "analysis_control/output";
+  cs_tree_node_t *tn_o = cs_tree_get_node(cs_glob_tree, path_o);
+
+  for (cs_tree_node_t *tn = cs_tree_get_node(tn_o, "writer");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
+
+    const int *v_i = cs_tree_node_get_child_values_int(tn, "id");
+    if (v_i == NULL) continue;
+
+    int id = v_i[0];
+
+    const char *frequency_choice
+      = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "frequency"),
+                             "perio");
+
+    if (cs_gui_strcmp(frequency_choice, "formula")) {
+      const char *formula = cs_tree_node_get_child_value_str(tn, "frequency");
+      assert(formula != NULL);
+      const cs_time_step_t *ts = cs_glob_time_step;
+      mei_tree_t *ev_formula = _init_mei_tree(formula, ts->nt_cur, ts->t_cur);
+      mei_evaluate(ev_formula);
+      int iactive =  mei_tree_lookup(ev_formula, "iactive");
+      mei_tree_destroy(ev_formula);
+      if (iactive == 1)
+        cs_post_activate_writer(id, true);
+      else
+        cs_post_activate_writer(id, false);
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

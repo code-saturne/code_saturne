@@ -144,6 +144,14 @@ interface
 
   !=============================================================================
 
+  subroutine cs_gui_postprocess_activate()  &
+    bind(C, name='cs_gui_postprocess_activate')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_postprocess_activate
+
+  !=============================================================================
+
   subroutine cs_gui_profile_output()  &
     bind(C, name='cs_gui_profile_output')
     use, intrinsic :: iso_c_binding
@@ -963,10 +971,7 @@ call timer_stats_start(post_stats_id)
 
 call post_activate_by_time_step
 
-if (iihmpr.eq.1) then
-  call uinpst(ntcabs, ttcabs)
-endif
-
+call cs_gui_postprocess_activate
 call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
 
 ! If ITRALE=0, deactivate all writers, as geometry has not

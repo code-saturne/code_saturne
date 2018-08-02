@@ -46,22 +46,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Activation of a writer depending of a formula
- *
- * Fortran Interface:
- *
- * subroutine uinpst (ttcabs, ntcabs)
- * *****************
- *
- * integer          uref  <-- reference velocity
- * double          almax  <-- reference length
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uinpst, UINPST) (const cs_int_t  *ntcabs,
-                                const cs_real_t *ttcabs);
-
-
-/*----------------------------------------------------------------------------
  * Determine output boundary fields
  *----------------------------------------------------------------------------*/
 
@@ -91,14 +75,12 @@ cs_gui_postprocess_meshes(void);
 void
 cs_gui_postprocess_writers(void);
 
-/*-----------------------------------------------------------------------------
- * Post-processing options for fields
- *
- * These options are used for fields not mapped to variables or properties.
+/*----------------------------------------------------------------------------
+ * Activate writers depending on a formula
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_postprocess_fields(void);
+cs_gui_postprocess_activate(void);
 
 /*----------------------------------------------------------------------------*/
 
