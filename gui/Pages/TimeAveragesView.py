@@ -562,6 +562,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             lst = [str(s) for s in lst]
             if lst[0] == "":
                 lst.remove(lst[0])
+            self.label_select = self.averageInfo()[1]
             self.mdl.setVariable(self.label_select, lst)
 
             self.updateView()
@@ -575,6 +576,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.modelDrop.removeRows(self.listViewDrop.currentIndex().row(), 1)
         liste = self.modelDrop.stringList()
         liste = [str(s) for s in liste]
+        self.label_select = self.averageInfo()[1]
         self.mdl.setVariable(self.label_select, liste)
 
         self.updateView()
