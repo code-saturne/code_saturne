@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-07-25 18:52+0200\n"
+"POT-Creation-Date: 2018-08-02 17:56+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -11161,6 +11161,13 @@ msgid ""
 "Current size = %lu, minimum size required = %lu."
 msgstr ""
 
+msgid "Incorrect setup tree definition for the following node:\n"
+msgstr ""
+
+#, c-format
+msgid "Missing child (tag) node: %s"
+msgstr ""
+
 #, c-format
 msgid "Error: inlet formula for %s, %s is not defined."
 msgstr "La formule d'interpolation pour %s, %s n'est pas définie."
@@ -11280,21 +11287,19 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid ""
-"Invalid xpath: %s\n"
-" name not found"
+msgid "Error converting profile component tag %s to integer."
 msgstr ""
 
 #, c-format
-msgid ""
-"Invalid markup name: %s\n"
-" label not found"
-msgstr ""
+msgid "Field with name \"%s\" not found"
+msgstr "Le champ de nom \"%s\" n'a pas été trouvé."
 
 #, c-format
-msgid ""
-"Invalid attribute value: %s \n"
-"Xpath: %s\n"
+msgid "Missing child node: %s"
+msgstr "Noeud enfant manquant : %s"
+
+#, c-format
+msgid "Invalid profile format: %s"
 msgstr ""
 
 msgid "mass molar value is zero or not found in the xml file.\n"
@@ -11315,10 +11320,6 @@ msgid ""
 "%s\n"
 "%s\n"
 "%s\n"
-msgstr ""
-
-#, c-format
-msgid "Unable to open the file: %s\n"
 msgstr ""
 
 #, c-format
@@ -11344,6 +11345,10 @@ msgstr ""
 msgid ""
 "soil_tracer_law, WARNING:\n"
 "  isotropic permeability is < 0 in %llu cells.\n"
+msgstr ""
+
+#, c-format
+msgid "Unable to open the file: %s\n"
 msgstr ""
 
 #, c-format
@@ -11391,9 +11396,7 @@ msgid "Formula is null for %s %s"
 msgstr ""
 
 #, c-format
-msgid ""
-"Coordinate %s of the monitoring probe number %i not found.\n"
-"Xpath: %s\n"
+msgid "One of the following child (tag) nodes is missing: %s"
 msgstr ""
 
 #, c-format
@@ -11473,6 +11476,24 @@ msgid "Invalid model : %s\n"
 msgstr ""
 
 #, c-format
+msgid ""
+"The node type is not XML_ATTRIBUTE_NODE.\n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The node type is not XML_TEXT_NODE.\n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The node type is not XML_ELEMENT_NODE.\n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
 msgid "Unable to parse the file: %s\n"
 msgstr ""
 
@@ -11523,20 +11544,8 @@ msgstr ""
 
 #, c-format
 msgid ""
-"The node type is not XML_ATTRIBUTE_NODE.\n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "Several attributes found: %i \n"
 "The first one is %s \n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The node type is not XML_ELEMENT_NODE.\n"
 "Xpath: %s\n"
 msgstr ""
 
@@ -11549,19 +11558,19 @@ msgstr ""
 
 #, c-format
 msgid ""
-"The node type is not XML_TEXT_NODE.\n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "Several text node found: %i \n"
 "The first one is %s \n"
 "Xpath: %s\n"
 msgstr ""
 
 #, c-format
-msgid "No markup found: %s \n"
+msgid ""
+"Invalid attribute value: %s \n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid status value: %s"
 msgstr ""
 
 #, c-format
