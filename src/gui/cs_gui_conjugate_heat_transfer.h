@@ -39,18 +39,17 @@ BEGIN_C_DECLS
  * Public Function prototypes
  *============================================================================*/
 
-/*-----------------------------------------------------------------------------
- * Define new SYRTHES coupling.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define SYRTHES couplings based on the GUI-generated setup.
  *
  * In the case of a single Code_Saturne and single SYRTHES instance, the
- * syrthes_app_num and syrthes_name arguments are ignored.
+ * syrthes_name argument is ignored.
  *
  * In case of multiple couplings, a coupling will be matched with available
- * SYRTHES instances prioritarily based on the syrthes_name argument, then
- * on the syrthes_app_num argument. If syrthes_name is empty, matching will
- * be based on syrthes_app_num only.
- *
- *----------------------------------------------------------------------------*/
+ * SYRTHES instances prioritarily based on the syrthes_name argument.
+ */
+/*----------------------------------------------------------------------------*/
 
 void cs_gui_syrthes_coupling(void);
 

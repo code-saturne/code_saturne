@@ -77,48 +77,23 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
-/*-----------------------------------------------------------------------------
- * Return the value to the asociated markup.
- *
- * parameters:
- *   keyword  <-- label of the markup
- *   number   <-- number of the syrthes coupling
- *----------------------------------------------------------------------------*/
-
-static char*
-_get_syrthes_coupling(const char*  keyword,
-                      int          number)
-{
-  char* value = NULL;
-  char *path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3,
-                        "thermophysical_models",
-                        "conjugate_heat_transfer",
-                        "external_coupling");
-  cs_xpath_add_element_num(&path, "syrthes", number);
-  cs_xpath_add_element(&path, keyword);
-  cs_xpath_add_function_text(&path);
-  value = cs_gui_get_text_value(path);
-  BFT_FREE(path);
-  return value;
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public Function definitions
  *============================================================================*/
 
-/*-----------------------------------------------------------------------------
- * Define new SYRTHES coupling.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define SYRTHES couplings based on the GUI-generated setup.
  *
  * In the case of a single Code_Saturne and single SYRTHES instance, the
  * syrthes_name argument is ignored.
  *
  * In case of multiple couplings, a coupling will be matched with available
  * SYRTHES instances prioritarily based on the syrthes_name argument.
- *
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_gui_syrthes_coupling(void)
@@ -126,77 +101,58 @@ cs_gui_syrthes_coupling(void)
   if (!cs_gui_file_is_loaded())
     return;
 
-  int zone_id;
-  int verbosity = 0;
-  int visualization = 1;
-  bool allow_nonmatching = false;
-  double tolerance = 0.1;
-  char* syrthes_name = NULL;
-  char* syrthes_verbosity = NULL;
-  char* syrthes_visu = NULL;
-  char* syrthes_tolerance = NULL;
-  char* syrthes_nonmatching = NULL;
-  char* projection_axis = NULL;
-  char* boundary_criteria = NULL;
-  char* volume_criteria = NULL;
+  const int *v_i = NULL;
+  const cs_real_t *v_r = NULL;
 
-  int n_couplings
-    = cs_gui_get_tag_count("/conjugate_heat_transfer/external_coupling/syrthes",
-                           1);
+  const char path_c[] = "conjugate_heat_transfer/external_coupling";
+  cs_tree_node_t *tn_c = cs_tree_find_node(cs_glob_tree, path_c);
 
-  for (zone_id = 0; zone_id < n_couplings; zone_id++) {
+  for (cs_tree_node_t *tn = cs_tree_get_node(tn_c, "syrthes");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
-    syrthes_name        = _get_syrthes_coupling("syrthes_name",       zone_id+1);
-    syrthes_tolerance   = _get_syrthes_coupling("tolerance",          zone_id+1);
-    syrthes_verbosity   = _get_syrthes_coupling("verbosity",          zone_id+1);
-    syrthes_visu        = _get_syrthes_coupling("visualization",      zone_id+1);
-    projection_axis     = _get_syrthes_coupling("projection_axis",    zone_id+1);
-    syrthes_nonmatching = _get_syrthes_coupling("allow_nonmatching",  zone_id+1);
-    boundary_criteria   = _get_syrthes_coupling("selection_criteria", zone_id+1);
-    volume_criteria     = _get_syrthes_coupling("volume_criteria",    zone_id+1);
+    const char *syrthes_name
+      = cs_tree_node_get_child_value_str(tn, "syrthes_name");
 
-    if (syrthes_verbosity != NULL)
-      verbosity = atoi(syrthes_verbosity);
+    v_r = cs_tree_node_get_child_values_real(tn, "tolerance");
+    double tolerance = (v_r != NULL) ? v_r[0] : 0.1;
 
-    if (syrthes_visu != NULL)
-      visualization = atoi(syrthes_visu);
+    v_i = cs_tree_node_get_child_values_int(tn, "verbosity");
+    int verbosity = (v_i != NULL) ? v_i[0] : 0;
 
-    if (syrthes_tolerance != NULL)
-      tolerance = atof(syrthes_tolerance);
+    v_i = cs_tree_node_get_child_values_int(tn, "visualization");
+    int visualization = (v_i != NULL) ? v_i[0] : 1;
 
-    if (syrthes_nonmatching != NULL) {
-      if (atoi(syrthes_nonmatching))
-        allow_nonmatching = true;
+    char projection_axis = ' ';
+    const char *_projection_axis
+      = cs_tree_node_get_child_value_str(tn, "projection_axis");
+    if (_projection_axis != NULL) {
+      char c = _projection_axis[0];
+      if (   c == 'x' || c == 'X'
+          || c == 'y' || c == 'Y'
+          || c == 'z' || c == 'Z')
+        projection_axis = c;
     }
+
+    bool allow_nonmatching = false;
+    v_i = cs_tree_node_get_child_values_int(tn, "allow_nonmatching");
+    if (v_i != NULL) {
+      if (v_i[0] > 0) allow_nonmatching = true;
+    }
+
+    const char *boundary_criteria
+      = cs_tree_node_get_child_value_str(tn, "selection_criteria");
+    const char *volume_criteria
+      = cs_tree_node_get_child_value_str(tn, "volume_criteria");
 
     cs_syr_coupling_define(syrthes_name,
                            boundary_criteria,
                            volume_criteria,
-                           *projection_axis,
+                           projection_axis,
                            allow_nonmatching,
                            tolerance,
                            verbosity,
                            visualization);
-
-#if _XML_DEBUG_
-    bft_printf("==>uisyrc\n");
-    bft_printf("--syrthes_name          = %s\n", syrthes_name);
-    bft_printf("--boundary_criteria     = %s\n", boundary_criteria);
-    bft_printf("--volume_criteria       = %s\n", volume_criteria);
-    bft_printf("--syrthes_verbosity     = %s\n", syrthes_verbosity);
-    bft_printf("--syrthes_visualization = %s\n", syrthes_visu);
-    bft_printf("--syrthes_nonmatching   = %s\n", syrthes_nonmatching);
-    bft_printf("--syrthes_tolerance     = %s\n", syrthes_tolerance);
-    bft_printf("--projection_axis       = %s\n", projection_axis);
-#endif
-    BFT_FREE(syrthes_name);
-    BFT_FREE(syrthes_verbosity);
-    BFT_FREE(syrthes_visu);
-    BFT_FREE(syrthes_tolerance);
-    BFT_FREE(syrthes_nonmatching);
-    BFT_FREE(projection_axis);
-    BFT_FREE(boundary_criteria);
-    BFT_FREE(volume_criteria);
   }
 }
 

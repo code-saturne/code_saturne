@@ -74,6 +74,12 @@ interface
     implicit none
   end subroutine user_linear_solvers
 
+  subroutine gui_output()  &
+      bind(C, name='cs_gui_output')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine gui_output
+
   subroutine user_output()  &
       bind(C, name='cs_user_output')
     use, intrinsic :: iso_c_binding
@@ -141,7 +147,7 @@ call cs_user_time_moments
 ! Postprocessing and logging
 
 if (iihmpr.eq.1) then
-  call csenso(iecaux)
+  call gui_output
 endif
 
 ! Restart
