@@ -313,23 +313,24 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
   }
 }
 
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
- * Determine output options.
+ * Determine general output options.
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csenso, CSENSO) (cs_int_t  *iecaux)
+void
+cs_gui_output(void)
 {
   const int *v_i = NULL;
 
   const char path_o[] = "analysis_control/output";
   cs_tree_node_t *tn_o = cs_tree_get_node(cs_glob_tree, path_o);
 
-  cs_gui_node_get_status_int(cs_tree_node_get_child
-                               (tn_o, "auxiliary_restart_file_writing"),
-                             iecaux);
-
   v_i = cs_tree_node_get_child_values_int(tn_o,
-                                          "auxiliary_restart_file_writing");
+                                          "listing_printing_frequency");
   if (v_i != NULL) cs_glob_log_frequency = v_i[0];
 
   const int n_fields = cs_field_n_fields();
@@ -369,10 +370,6 @@ void CS_PROCF (csenso, CSENSO) (cs_int_t  *iecaux)
   bft_printf("--ntlist = %i\n", cs_glob_log_frequency);
 #endif
 }
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * Define postprocessing meshes using an XML file.
