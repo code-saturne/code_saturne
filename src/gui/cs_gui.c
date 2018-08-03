@@ -215,33 +215,6 @@ cs_gui_advanced_options_turbulence(const char  *param,
   BFT_FREE(path);
 }
 
-/*-----------------------------------------------------------------------------
- * Return the name of the related scalar if the scalar "name" is a variance
- *
- * parameter:
- *   name           <--  scalar name
- *----------------------------------------------------------------------------*/
-
-static char *
-_scalar_variance(const char *name)
-{
-  char *path = NULL;
-  char *variance = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "additional_scalars");
-  cs_xpath_add_element(&path, "variable");
-  cs_xpath_add_test_attribute(&path, "name", name);
-  cs_xpath_add_element(&path, "variance");
-  cs_xpath_add_function_text(&path);
-
-  variance = cs_gui_get_text_value(path);
-
-  BFT_FREE(path);
-
-  return variance;
-}
-
 /*----------------------------------------------------------------------------
  * Return the value of the choice attribute for material, method, ...
  *
@@ -1351,60 +1324,6 @@ _get_time_average_variable_name(int  id,
   return name;
 }
 
-/*-----------------------------------------------------------------------------
- * Return the label or the name from a scalar.
- *
- * parameters:
- *   kw                   <--  keyword: 'label' or 'name'
- *   scalar_num          -->   number of the searching scalar
- *----------------------------------------------------------------------------*/
-
-static char *
-_scalar_name_label(const char  *kw,
-                   const int    scalar_num)
-{
-  char *path = NULL;
-  char *str  = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "additional_scalars");
-  cs_xpath_add_element_num(&path, "variable", scalar_num);
-  cs_xpath_add_attribute(&path, kw);
-
-  str = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return str;
-}
-
-/*-----------------------------------------------------------------------------
- * Return the name tor thermal scalar.
- *
- * parameters:
- *   kw                   <--  scalar name
- *----------------------------------------------------------------------------*/
-
-static char *
-_thermal_scalar_name_label(const char  *kw)
-{
-  char *path = NULL;
-  char *str  = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_elements(&path, 3,
-                        "thermophysical_models",
-                        "thermal_scalar",
-                        "variable");
-  cs_xpath_add_attribute(&path, kw);
-
-  str = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return str;
-}
-
 /*==========================
  * FOR VOLUMIC ZONES
  *==========================*/
@@ -1421,8 +1340,8 @@ _thermal_scalar_name_label(const char  *kw)
  *----------------------------------------------------------------------------*/
 
 static bool
-_zone_is_type(int          z_id,
-              const char  *attr)
+_zone_id_is_type(int          z_id,
+                 const char  *attr)
 {
   bool retval = false;
 
@@ -1437,6 +1356,29 @@ _zone_is_type(int          z_id,
       retval = true;
   }
   BFT_FREE(status);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Indicate if a given zone type attribute is active
+ *
+ * parameters:
+ *   tn       <-- tree node associated with the zone variable
+ *   type_str <-- string describing the type
+ *----------------------------------------------------------------------------*/
+
+static bool
+_zone_is_type(cs_tree_node_t  *tn,
+              const char      *type_str)
+{
+  bool retval = false;
+
+  const char *type_s = cs_tree_node_get_tag(tn, type_str);
+  if (type_s != NULL) {
+    if (strcmp(type_s, "on") == 0)
+      retval = true;
+  }
 
   return retval;
 }
@@ -1993,59 +1935,67 @@ _get_rotor_face_joining(const char  *keyword,
 }
 
 /*----------------------------------------------------------------------------
- * Return the value of the choice attribute for fan
+ * Return volume zone id in tree (1 to n).
+ *
+ * Also checks that zone definitions are ordered if id_e > -1
+ *
+ * Note that the name tag for zones actually defines an integer (1 to n).
+ * This tag should be removed in the future to only use the zone label
+ * (the actual zone name).
  *
  * parameters:
- *   fan_id      <--  id of the fan
- *   name        <--  name of the property
- *----------------------------------------------------------------------------*/
-
-static double
-_fan_option(int          fan_id,
-            const char  *name)
-{
-  double value = 0.;
-  char *path   = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2,
-                        "thermophysical_models",
-                        "fans");
-  cs_xpath_add_element_num(&path, "fan", fan_id + 1);
-  cs_xpath_add_element(&path, name);
-  cs_xpath_add_function_text(&path);
-  cs_gui_get_double(path, &value);
-  BFT_FREE(path);
-
-  return value;
-}
-
-/*----------------------------------------------------------------------------
- * Return the value of the choice attribute for fan
+ *   tn   <-- associated tree node
+ *   id_e <-- expected zone id (0 to n-1)
  *
- * parameters:
- *   fan_id      <--  id of the fan
- *   name        <--  name of the property
+ * return
+ *   zone's id in tree (1 to n)
  *----------------------------------------------------------------------------*/
 
 static int
-_fan_dimension(int          fan_id,
-               const char  *name)
+_v_zone_t_id(cs_tree_node_t  *tn,
+             int              id_e)
 {
-  double value = 0.;
-  char *path   = NULL;
+  int z_t_id = id_e + 1;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2,
-                        "thermophysical_models",
-                        "fans");
-  cs_xpath_add_element_num(&path, "fan", fan_id + 1);
-  cs_xpath_add_element(&path, name);
-  cs_xpath_add_function_text(&path);
-  cs_gui_get_double(path, &value);
-  BFT_FREE(path);
+  const char *id_s = cs_tree_node_get_tag(tn, "id");
+  if (id_s != NULL) {
+    z_t_id = atoi(id_s);
+    if (id_e > -1 && z_t_id != id_e + 1)
+      bft_printf(_("\n"
+                   " Warning: noncontiguous %s zone ids in XML:\n"
+                   "          zone with index %d has id %d.\n"),
+                 tn->name, id_e, z_t_id);
+  }
 
-  return value;
+  return z_t_id;
+}
+
+/*----------------------------------------------------------------------------
+ * Return volume zone tree node with a given id (name)
+ *
+ * parameters:
+ *   tn_vc  <-- associated volume conditions tree node (parent)
+ *   z_t_id <-- zone id in tree (1 to n)
+ *
+ * return
+ *   pointer to associated zone node, or NULL if not found
+ *----------------------------------------------------------------------------*/
+
+static cs_tree_node_t *
+_v_zone_node_by_id(cs_tree_node_t  *tn_vc,
+                   int              z_t_id)
+{
+  cs_tree_node_t *retval = NULL;
+
+  for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_vc, "zone");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
+    if (z_t_id == _v_zone_t_id(tn, -1)) {
+      retval = tn;
+      break;
+    }
+  }
+  return retval;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2258,28 +2208,6 @@ void CS_PROCF (csvvva, CSVVVA) (int *iviscv)
 void CS_PROCF (uithsc, UITHSC) (void)
 {
   cs_var_t  *vars = cs_glob_var;
-  char *label = NULL;
-
-  const int n_fields = cs_field_n_fields();
-  const int keysca = cs_field_key_id("scalar_id");
-  const int keylbl = cs_field_key_id("label");
-  const int iscalt = cs_glob_thermal_model->iscalt;
-
-  label = _thermal_scalar_name_label("label");
-
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    int i = cs_field_get_key_int(f, keysca) - 1;
-    if (i == iscalt - 1) {
-#if _XML_DEBUG_
-      bft_printf("--label of thermal scalar: %s\n", label);
-#endif
-      cs_field_set_key_str(f, keylbl, label);
-      break;
-    }
-  }
-
-  BFT_FREE(label);
 
   BFT_REALLOC(vars->model, strlen("thermal_scalar")+1, char);
   strcpy(vars->model, "thermal_scalar");
@@ -3235,7 +3163,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
     if (! (z->type & CS_VOLUME_ZONE_SOURCE_TERM))
       continue;
 
-    if (_zone_is_type(z->id, "momentum_source_term")) {
+    if (_zone_id_is_type(z->id, "momentum_source_term")) {
       const cs_lnum_t n_cells = z->n_elts;
       const cs_lnum_t *cell_ids = z->elt_ids;
 
@@ -3376,7 +3304,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
       continue;
 
     /* species source term */
-    if (_zone_is_type(z->id, "scalar_source_term")) {
+    if (_zone_id_is_type(z->id, "scalar_source_term")) {
       const cs_lnum_t n_cells = z->n_elts;
       const cs_lnum_t *cell_ids = z->elt_ids;
 
@@ -3476,7 +3404,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
       continue;
 
     /* species source term */
-    if (_zone_is_type(z->id, "thermal_source_term")) {
+    if (_zone_id_is_type(z->id, "thermal_source_term")) {
       const cs_lnum_t n_cells = z->n_elts;
       const cs_lnum_t *cell_ids = z->elt_ids;
 
@@ -4538,7 +4466,7 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
   for (int z_id = 0; z_id < n_zones; z_id++) {
     const cs_zone_t *z = cs_volume_zone_by_id(z_id);
 
-    if (_zone_is_type(z->id, "groundwater_law")) {
+    if (_zone_id_is_type(z->id, "groundwater_law")) {
       const cs_lnum_t n_cells = z->n_elts;
       const cs_lnum_t *cell_ids = z->elt_ids;
 
@@ -6142,8 +6070,9 @@ cs_gui_time_moments(void)
     BFT_FREE(m_name);
 
   }
+
 #if _XML_DEBUG_
-  bft_printf("==>UIMOYT\n");
+  bft_printf("==> %s\n", __func__);
 #endif
 }
 
@@ -6299,79 +6228,55 @@ cs_gui_usage_log(void)
 }
 
 /*----------------------------------------------------------------------------
- * Set GUI-defined user scalar labels.
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_user_scalar_labels(void)
-{
-  const int keylbl = cs_field_key_id("label");
-
-  int n_user_scalars = cs_gui_get_tag_count("/additional_scalars/variable", 1);
-
-  for (int i = 0; i < n_user_scalars; i++) {
-    char *label = _scalar_name_label("label", i+1);
-    char *name = _scalar_name_label("name", i+1);
-    cs_field_t *f = cs_field_by_name_try(name);
-    if (f != NULL)
-      cs_field_set_key_str(f, keylbl, label);
-    BFT_FREE(label);
-    BFT_FREE(name);
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Define user variables through the GUI.
  *----------------------------------------------------------------------------*/
 
 void
 cs_gui_user_variables(void)
 {
-  int n_user_scalars = cs_gui_get_tag_count("/additional_scalars/variable", 1);
+  int i = 0;
 
-  const int itherm = cs_glob_thermal_model->itherm;
-  const int var_start_id = (itherm != CS_THERMAL_MODEL_NONE) ? 0 : 1;
-  const int var_end_id = n_user_scalars+1;
+  const char *t_scalar_name = NULL; /* thermal scalar name if present */
 
-#if _XML_DEBUG_
-  bft_printf("==> cs_gui_user_variables\n");
-  bft_printf("--number of user scalars: %i\n", n_user_scalars);
-#endif
+  const char path_s[] = "additional_scalars/variable";
+  cs_tree_node_t *tn_s = cs_tree_get_node(cs_glob_tree, path_s);
 
-  for (int i = 0; i < n_user_scalars; i++) {
+  for (cs_tree_node_t *tn = tn_s;
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), i++) {
 
-    /* Names are equivalent to labels for initial definition of user fields */
+    if (i == 0 && cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_NONE) {
+      const char path_t[] = "thermophysical_models/thermal_scalar/variable";
+      t_scalar_name = cs_tree_node_get_tag
+                        (cs_tree_get_node(cs_glob_tree, path_t), "name");
+    }
 
-    char *name = _scalar_name_label("name", i+1);
+    const char *name = _tree_node_get_tag(tn, "name");
 
-#if _XML_DEBUG_
-    bft_printf("--name of scalar[%i]: %s\n", i, name);
-#endif
+    const char *variance_name = cs_tree_node_get_child_value_str(tn, "variance");
 
-    char *variance_name = _scalar_variance(name);
-
-    /* In case of variance, search for matching field */
+    /* In case of variance, check for presence of matching field
+       in thermal and user scalars */
 
     if (variance_name != NULL) {
 
-      /* Search in thermal and user scalars */
-
-      for (int j = var_start_id; j < var_end_id; j++) {
-        char *cmp_name;
-        if (j == 0)
-          cmp_name = _thermal_scalar_name_label("name");
-        else
-          cmp_name = _scalar_name_label("name", j);
-
-        if (strcmp(cmp_name, variance_name) == 0) {
-          cs_parameters_add_variable_variance(name, variance_name);
-          BFT_FREE(cmp_name);
-          BFT_FREE(variance_name);
-          break;
-        }
-        else
-          BFT_FREE(cmp_name);
+      bool found = false;
+      if (t_scalar_name != NULL) {
+        if (strcmp(t_scalar_name, variance_name) == 0)
+          found = true;
       }
+      for (cs_tree_node_t *tn_c = tn_s;
+           tn_c != NULL && found == false;
+           tn_c = cs_tree_node_get_next_of_name(tn_c), i++) {
+        const char *cmp_name = cs_tree_node_get_tag(tn_c, "name");
+        if (cmp_name != NULL) {
+          if (strcmp(cmp_name, variance_name) == 0)
+            found = true;
+        }
+      }
+
+      if (found)
+        cs_parameters_add_variable_variance(name, variance_name);
 
     }
 
@@ -6379,9 +6284,6 @@ cs_gui_user_variables(void)
 
     else
       cs_parameters_add_variable(name, 1);
-
-    BFT_FREE(name);
-
   }
 }
 
@@ -6395,31 +6297,34 @@ cs_gui_zones(void)
   if (!cs_gui_file_is_loaded())
     return;
 
+  int id = 0;
+
   const char default_criteria[] = "all[]";
 
   /* Volume zones */
   /*------------- */
 
-  const int n_v_zones
-    = cs_gui_get_tag_count("/solution_domain/volumic_conditions/zone\n", 1);
+  cs_tree_node_t *tn_vc = cs_tree_get_node(cs_glob_tree,
+                                           "solution_domain/volumic_conditions");
 
-  /* Build ordering array to check zones are defined in increasing id order  */
+  const int n_v_zones = cs_tree_get_node_count(tn_vc, "zone");
+
+  /* Build ordering array to check zones are defined in increasing id order */
 
   cs_lnum_t *order = NULL, *z_ids = NULL;
   BFT_MALLOC(order, n_v_zones, cs_lnum_t);
   BFT_MALLOC(z_ids, n_v_zones, cs_lnum_t);
 
-  for (int i = 0; i < n_v_zones; i++) {
-    char *path = NULL, *id = NULL;
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
-    cs_xpath_add_element_num(&path, "zone", i+1);
-    cs_xpath_add_attribute(&path, "id");
-    id = cs_gui_get_attribute_value(path);
-    z_ids[i] = atoi(id);
-    BFT_FREE(id);
-    BFT_FREE(path);
+  /* Loop on volume condition zones */
+
+  id = 0;
+  for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_vc, "zone");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), id++) {
+    z_ids[id] = _v_zone_t_id(tn, id);
   }
+
+  assert(id == n_v_zones);
 
   cs_order_lnum_allocated(NULL, z_ids, order, n_v_zones);
 
@@ -6429,65 +6334,44 @@ cs_gui_zones(void)
 
     int type_flag = 0, z_id = z_ids[order[i]];
 
-    if (z_id != i+1)
-      bft_printf(_("\n"
-                   " Warning: noncontiguous volume zone ids in XML:\n"
-                   "          zone with index %d has id %d.\n"), i, z_id);
-
-    char *path = NULL, *name = NULL, *_criteria = NULL;
-    const char *criteria = default_criteria;
+    cs_tree_node_t *tn = _v_zone_node_by_id(tn_vc, z_id);
 
     /* zone name */
 
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
-    cs_xpath_add_element_num(&path, "zone", z_id);
-    cs_xpath_add_attribute(&path, "label");
-    name = cs_gui_get_attribute_value(path);
-    BFT_FREE(path);
+    const char *name = cs_tree_node_get_tag(tn, "label");
 
     /* location criteria */
 
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 3, "solution_domain", "volumic_conditions",
-                          "zone");
-    cs_xpath_add_test_attribute(&path, "label", name);
-    cs_xpath_add_function_text(&path);
-    _criteria = cs_gui_get_text_value(path);
-    BFT_FREE(path);
-    if (_criteria != NULL)
-      criteria = _criteria;
+    const char *_criteria = cs_tree_node_get_value_str(tn);
+    const char *criteria = (_criteria != NULL) ? _criteria : default_criteria;
 
     /* Check for initialization */
 
-    if (_zone_is_type(z_id, "initialization"))
+    if (_zone_is_type(tn, "initialization"))
       type_flag = type_flag | CS_VOLUME_ZONE_INITIALIZATION;
 
     /* Check for porosity */
 
-    if (_zone_is_type(z_id, "porosity"))
+    if (_zone_is_type(tn, "porosity"))
       type_flag = type_flag | CS_VOLUME_ZONE_POROSITY;
 
     /* Check for head losses */
 
-    if (_zone_is_type(z_id, "head_losses"))
+    if (_zone_is_type(tn, "head_losses"))
       type_flag = type_flag | CS_VOLUME_ZONE_HEAD_LOSS;
 
     /* Check for source terms */
 
-    if (_zone_is_type(z_id, "momentum_source_term"))
+    if (_zone_is_type(tn, "momentum_source_term"))
       type_flag = type_flag | CS_VOLUME_ZONE_SOURCE_TERM;
-    if (_zone_is_type(z_id, "scalar_source_term"))
+    if (_zone_is_type(tn, "scalar_source_term"))
       type_flag = type_flag | CS_VOLUME_ZONE_SOURCE_TERM;
-    if (_zone_is_type(z_id, "thermal_source_term"))
+    if (_zone_is_type(tn, "thermal_source_term"))
       type_flag = type_flag | CS_VOLUME_ZONE_SOURCE_TERM;
 
     /* Finally, define zone */
 
     cs_volume_zone_define(name, criteria, type_flag);
-
-    BFT_FREE(_criteria);
-    BFT_FREE(name);
   }
 
   BFT_FREE(order);
@@ -6496,52 +6380,45 @@ cs_gui_zones(void)
   /* Boundary zones */
   /*--------------- */
 
-  const int n_b_zones = cs_gui_boundary_zones_number();
+  /* Loop on boundary condition zones */
 
-  /* Build ordering array to check zones are defined in increasing id order  */
+  cs_tree_node_t *tn_bc = cs_tree_get_node(cs_glob_tree,
+                                           "boundary_conditions");
 
-  BFT_MALLOC(order, n_b_zones, cs_lnum_t);
-  BFT_MALLOC(z_ids, n_b_zones, cs_lnum_t);
+  id = 0;
+  for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_bc, "boundary");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), id++) {
 
-  for (int i = 0; i < n_b_zones; i++)
-    z_ids[i] = cs_gui_boundary_zone_number(i+1);
+    /* Zone id in tree; note that the name tag for boundary zones actually
+       defines an integer (1 to n). This tag should be removed in the
+       future to only use the zone label (the actual zone name). */
 
-  cs_order_lnum_allocated(NULL, z_ids, order, n_b_zones);
+    const char *id_s = cs_tree_node_get_tag(tn, "name");
+    if (id_s != NULL) {
+      int z_t_id = atoi(id_s);
+      if (z_t_id != id + 1)
+        bft_printf(_("\n"
+                     " Warning: noncontiguous %s zone ids in XML:\n"
+                     "          zone with index %d has id %d.\n"),
+                   tn->name, id, z_t_id);
+    }
 
-  /* Now loop on zones in id order */
+    /* Zone name */
 
-  for (int i = 0; i < n_b_zones; i++) {
-
-    int type_flag = 0, z_id = z_ids[order[i]];
-
-    if (z_id != i+1)
-      bft_printf(_("\n"
-                   " Warning: noncontiguous boundary zone ids in XML:\n"
-                   "          zone with index %d has id %d.\n"), i, z_id);
-
-    char *name = NULL, *_criteria = NULL;
-    const char *criteria = default_criteria;
-
-    /* zone name */
-
-    name = cs_gui_boundary_zone_label(i+1);
+    const char *name = cs_tree_node_get_tag(tn, "label");
 
     /* location criteria */
 
-    _criteria = cs_gui_boundary_zone_localization(name);
-    if (_criteria != NULL)
-      criteria = _criteria;
+    const char *_criteria = cs_tree_node_get_value_str(tn);
+    const char *criteria = (_criteria != NULL) ? _criteria : default_criteria;
 
-    /* Finally, define zone */
+    int type_flag = 0;
+
+    /* Define zone */
 
     cs_boundary_zone_define(name, criteria, type_flag);
-
-    BFT_FREE(_criteria);
-    BFT_FREE(name);
   }
-
-  BFT_FREE(order);
-  BFT_FREE(z_ids);
 }
 
 /*----------------------------------------------------------------------------
@@ -6551,42 +6428,25 @@ cs_gui_zones(void)
 void
 cs_gui_balance_by_zone(void)
 {
-  char *path = NULL;
-  char *name = NULL;
-  char *cell_criteria;
-  int n_balance = cs_gui_get_tag_count("/analysis_control/scalar_balances/scalar_balance", 1);
+  const char path0[] = "/analysis_control/scalar_balances/scalar_balance";
 
-  for (int i = 0; i < n_balance; i++) {
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2,
-                          "analysis_control",
-                          "scalar_balances");
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
-    cs_xpath_add_element_num(&path, "scalar_balance", i + 1);
-    cs_xpath_add_element(&path, "criteria");
-    cs_xpath_add_function_text(&path);
-    cell_criteria = cs_gui_get_text_value(path);
-    BFT_FREE(path);
+    const char _default_criteria[] = "all[]";
 
-    int nb_var = cs_gui_get_tag_count("/analysis_control/scalar_balances/scalar_balance/var_prop", 1);
-    if (nb_var > 0) {
-      for (int ii = 0; ii < nb_var; ii++) {
-        path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 2,
-                              "analysis_control",
-                              "scalar_balances");
-        cs_xpath_add_element_num(&path, "scalar_balance", i + 1);
-        cs_xpath_add_element_num(&path, "var_prop", ii + 1);
-        cs_xpath_add_attribute(&path, "name");
-        name = cs_gui_get_attribute_value(path);
-        BFT_FREE(path);
+    const char *criteria = cs_tree_node_get_child_value_str(tn, "criteria");
+    if (criteria == NULL) criteria = _default_criteria;
 
-        cs_balance_by_zone(cell_criteria, name);
-        BFT_FREE(name);
-      }
+    for (cs_tree_node_t *tn_v = cs_tree_node_get_child(tn, "var_prop");
+         tn_v != NULL;
+         tn_v = cs_tree_node_get_next_of_name(tn_v)) {
+
+      const char *name = _tree_node_get_tag(tn_v, "name");
+      cs_balance_by_zone(criteria, name);
+
     }
-
-    BFT_FREE(cell_criteria);
   }
 }
 
@@ -6597,25 +6457,18 @@ cs_gui_balance_by_zone(void)
 void
 cs_gui_pressure_drop_by_zone(void)
 {
-  char *path = NULL;
-  char *cell_criteria;
-  int n_balance = cs_gui_get_tag_count("/analysis_control/scalar_balances/pressure_drop", 1);
+  const char path0[] = "/analysis_control/scalar_balances/pressure_drop";
 
-  for (int i = 0; i < n_balance; i++) {
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2,
-                          "analysis_control",
-                          "scalar_balances");
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
-    cs_xpath_add_element_num(&path, "pressure_drop", i + 1);
-    cs_xpath_add_element(&path, "criteria");
-    cs_xpath_add_function_text(&path);
-    cell_criteria = cs_gui_get_text_value(path);
-    BFT_FREE(path);
+    const char _default_criteria[] = "all[]";
 
-    cs_pressure_drop_by_zone(cell_criteria);
+    const char *criteria = cs_tree_node_get_child_value_str(tn, "criteria");
+    if (criteria == NULL) criteria = _default_criteria;
 
-    BFT_FREE(cell_criteria);
+    cs_pressure_drop_by_zone(criteria);
   }
 }
 
@@ -6626,27 +6479,55 @@ cs_gui_pressure_drop_by_zone(void)
 void
 cs_gui_define_fans(void)
 {
-  cs_real_t inlet_axis_coords[3];
-  cs_real_t outlet_axis_coords[3];
-  cs_real_t pressure_curve_coeffs[3];
+  if (!cs_gui_file_is_loaded())
+    return;
 
-  int n_fans = cs_gui_get_tag_count("/thermophysical_models/fans/fan\n", 1);
+  const char path0[] = "thermophysical_models/fans/fan";
 
-  for (int fan_id = 0; fan_id < n_fans; fan_id++) {
-    int dim                  = _fan_dimension(fan_id, "mesh_dimension");
-    inlet_axis_coords[0]     = _fan_option(fan_id, "inlet_axis_x");
-    inlet_axis_coords[1]     = _fan_option(fan_id, "inlet_axis_y");
-    inlet_axis_coords[2]     = _fan_option(fan_id, "inlet_axis_z");
-    outlet_axis_coords[0]    = _fan_option(fan_id, "outlet_axis_x");
-    outlet_axis_coords[1]    = _fan_option(fan_id, "outlet_axis_y");
-    outlet_axis_coords[2]    = _fan_option(fan_id, "outlet_axis_z");
-    cs_real_t fan_radius     = _fan_option(fan_id, "fan_radius");
-    cs_real_t blades_radius  = _fan_option(fan_id, "blades_radius");
-    cs_real_t hub_radius     = _fan_option(fan_id, "hub_radius");
-    cs_real_t axial_torque   = _fan_option(fan_id, "axial_torque");
-    pressure_curve_coeffs[0] = _fan_option(fan_id, "curve_coeffs_x");
-    pressure_curve_coeffs[1] = _fan_option(fan_id, "curve_coeffs_y");
-    pressure_curve_coeffs[2] = _fan_option(fan_id, "curve_coeffs_z");
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
+
+    const int *v_i;
+    const cs_real_t *v_r;
+
+    const char *i_axis_s[] = {"inlet_axis_x", "inlet_axis_y", "inlet_axis_z"};
+    const char *o_axis_s[] = {"outlet_axis_x", "outlet_axis_y", "outlet_axis_z"};
+    const char *p_coeff_s[]
+      = {"curve_coeffs_x", "curve_coeffs_y", "curve_coeffs_z"};
+
+    v_i = cs_tree_node_get_child_values_int(tn, "mesh_dimension");
+    int dim = (v_i != NULL) ? v_i[0] : 3;
+
+    cs_real_t inlet_axis_coords[3] = {0, 0, 0};
+    cs_real_t outlet_axis_coords[3] = {0.1, 0, 0};
+    cs_real_t pressure_curve_coeffs[3] = {0.6, -0.1, -0.05};
+
+    for (int i = 0; i < 3; i++) {
+      v_r = cs_tree_node_get_child_values_real(tn, i_axis_s[i]);
+      if (v_r != NULL) inlet_axis_coords[i] = v_r[0];
+    }
+    for (int i = 0; i < 3; i++) {
+      v_r = cs_tree_node_get_child_values_real(tn, o_axis_s[i]);
+      if (v_r != NULL) outlet_axis_coords[i] = v_r[0];
+    }
+
+    v_r = cs_tree_node_get_child_values_real(tn, "fan_radius");
+    cs_real_t fan_radius = (v_r != NULL) ? v_r[0] : 0.7;
+
+    v_r = cs_tree_node_get_child_values_real(tn, "blades_radius");
+    cs_real_t blades_radius = (v_r != NULL) ? v_r[0] : 0.5;
+
+    v_r = cs_tree_node_get_child_values_real(tn, "hub_radius");
+    cs_real_t hub_radius = (v_r != NULL) ? v_r[0] : 0.1;
+
+    v_r = cs_tree_node_get_child_values_real(tn, "axial_torque");
+    cs_real_t axial_torque = (v_r != NULL) ? v_r[0] : 0.01;
+
+    for (int i = 0; i < 3; i++) {
+      v_r = cs_tree_node_get_child_values_real(tn, p_coeff_s[i]);
+      if (v_r != NULL) pressure_curve_coeffs[i] = v_r[0];
+    }
 
     cs_fan_define(dim, /* fan (mesh) dimension (2D or 3D) */
                   inlet_axis_coords,

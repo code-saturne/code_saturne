@@ -1009,16 +1009,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> Interface to C function defining user scalar labels through the GUI.
-
-    subroutine cs_gui_user_scalar_labels()  &
-      bind(C, name='cs_gui_user_scalar_labels')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gui_user_scalar_labels
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function selecting specific physical models.
 
     subroutine cs_gui_physical_model_select(ieos, ieqco2)  &

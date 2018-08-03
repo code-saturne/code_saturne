@@ -1722,8 +1722,10 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
   if (*iihmpr != 1)
     cs_gui_load_file("dp_FCP.xml");
 
+  const char path0[] = "thermophysical_models/solid_fuels/solid_fuel";
+
   /* ---- Nb de charbons */
-  *ncharb = cs_gui_get_tag_count("/solid_fuels/solid_fuel", 1);
+  *ncharb = cs_tree_get_node_count(cs_glob_tree, path0);
   if (*ncharb > *ncharm)
     bft_error(__FILE__, __LINE__, 0,
               _("Coal number is limited to %i\n"
@@ -1736,8 +1738,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
   idecal = 0;
 
   int icha = 0;
-
-  const char path0[] = "thermophysical_models/solid_fuels/solid_fuel";
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
        tn != NULL;
@@ -1956,15 +1956,17 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     }
   }
 
-  /*        ! --> Lecture rayonnement */
+  /*  ! --> Lecture rayonnement */
   /*  ! ---- Coefficient d'absorption du melange gazeux */
   if (*iirayo>0)
     *ckabs1 = _get_absorption_coefficient();
 
   /* --> Lecture caracteristiques Oxydants */
 
+  const char path1[] = "thermophysical_models/solid_fuels//oxidants/oxidant";
+
   /* ---- Nb d'oxydants */
-  *noxyd = cs_gui_get_tag_count("/oxidants/oxidant", 1);
+  *noxyd = cs_tree_get_node_count(cs_glob_tree, path1);
   if (*noxyd < 1 || *noxyd > 3 ) {
     bft_error(__FILE__, __LINE__, 0,
         _("Oxidant number must be between 1 and 3.\n"

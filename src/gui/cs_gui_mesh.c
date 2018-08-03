@@ -83,29 +83,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
- * Return the value to a face joining markup
- *
- * parameters:
- *   keyword <-- label of the markup
- *   number  <-- joining number
- *----------------------------------------------------------------------------*/
-
-static char *
-_get_face_joining(const char  *keyword,
-                  int          number)
-{
-  char* value = NULL;
-  char *path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "solution_domain", "joining");
-  cs_xpath_add_element_num(&path, "face_joining", number);
-  cs_xpath_add_element(&path, keyword);
-  cs_xpath_add_function_text(&path);
-  value = cs_gui_get_text_value(path);
-  BFT_FREE(path);
-  return value;
-}
-
-/*-----------------------------------------------------------------------------
  * Get transformation parameters associated with a translational periodicity
  *
  * parameter:
@@ -132,7 +109,7 @@ _get_periodicity_translation(cs_tree_node_t  *node,
   }
 
 #if _XML_DEBUG_
-  bft_printf("==> _get_periodicity_translation\n");
+  bft_printf("==> %s\n", __func__);
   bft_printf("--translation = [%f %f %f]\n",
              trans[0], trans[1], trans[2]);
 #endif
@@ -195,7 +172,7 @@ _get_periodicity_rotation(cs_tree_node_t  *node,
   }
 
 #if _XML_DEBUG_
-  bft_printf("==> _get_periodicity_translation\n");
+  bft_printf("==> %s\n", __func__);
   bft_printf("--angle = %f\n",
              *angle);
   bft_printf("--axis = [%f %f %f]\n",
@@ -248,7 +225,7 @@ _get_periodicity_mixed(cs_tree_node_t  *node,
   }
 
 #if _XML_DEBUG_
-  bft_printf("==> _get_periodicity_translation\n");
+  bft_printf("==> %s\n", __func__);
   bft_printf("--matrix = [[%f %f %f %f]\n"
              "            [%f %f %f %f]\n"
              "            [%f %f %f %f]]\n",
@@ -271,48 +248,38 @@ _get_periodicity_mixed(cs_tree_node_t  *node,
 void
 cs_gui_mesh_warping(void)
 {
-  char  *path = NULL;
-  int cut_warped_faces = 0;
-  double max_warp_angle = -1;
-
   if (!cs_gui_file_is_loaded())
     return;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "solution_domain", "faces_cutting");
-  cs_xpath_add_attribute(&path, "status");
+  const char path0[] = "solution_domain/faces_cutting";
 
-  cs_gui_get_status(path, &cut_warped_faces);
+  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+
+  if (tn == NULL)
+    return;
+
+  int cut_warped_faces = false;
+  cs_gui_node_get_status_int(tn, &cut_warped_faces);
 
   if (cut_warped_faces) {
 
-    BFT_FREE(path);
+    const cs_real_t *v_r = cs_tree_node_get_child_values_real(tn,
+                                                              "warp_angle_max");
+    double max_warp_angle = (v_r != NULL) ? v_r[0] : -1;
 
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 3,
-                          "solution_domain",
-                          "faces_cutting",
-                          "warp_angle_max");
-    cs_xpath_add_function_text(&path);
+    /* Apply warp angle options now */
 
-    if (!cs_gui_get_double(path, &max_warp_angle))
-      max_warp_angle = -1;
+    if (max_warp_angle > 0)
+      cs_mesh_warping_set_defaults(max_warp_angle, 0);
 
 #if _XML_DEBUG_
-  bft_printf("==> uicwf\n");
-  bft_printf("--cut_warped_faces = %d\n"
-             "--warp_angle_max   = %f\n",
-             cut_warped_faces, max_warp_angle);
+    bft_printf("==> %s\n", __func__);
+    bft_printf("--cut_warped_faces = %d\n"
+               "--warp_angle_max   = %f\n",
+               cut_warped_faces, max_warp_angle);
 #endif
 
   }
-
-  BFT_FREE(path);
-
-  /* Apply warp angle options now */
-
-  if (cut_warped_faces && max_warp_angle > 0.0)
-    cs_mesh_warping_set_defaults(max_warp_angle, 0);
 }
 
 /*-----------------------------------------------------------------------------
@@ -322,50 +289,51 @@ cs_gui_mesh_warping(void)
 void
 cs_gui_mesh_define_joinings(void)
 {
-  int join_id;
-  int n_join = 0;
-
   if (!cs_gui_file_is_loaded())
     return;
 
-  n_join = cs_gui_get_tag_count("/solution_domain/joining/face_joining", 1);
+  const int *v_i = NULL;
+  const cs_real_t *v_r = NULL;
 
-  if (n_join == 0)
-    return;
+  /* Loop on joining definitions */
 
-  for (join_id = 0; join_id < n_join; join_id++) {
+  const char path_j[] = "solution_domain/joining/face_joining";
 
-    char *selector_s  =  _get_face_joining("selector", join_id+1);
-    char *fraction_s  =  _get_face_joining("fraction", join_id+1);
-    char *plane_s     =  _get_face_joining("plane", join_id+1);
-    char *verbosity_s =  _get_face_joining("verbosity", join_id+1);
-    char *visu_s      =  _get_face_joining("visualization", join_id+1);
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path_j);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
-    double fraction = (fraction_s != NULL) ? atof(fraction_s) : 0.1;
-    double plane = (plane_s != NULL) ? atof(plane_s) : 25.0;
-    int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 1;
-    int visualization = (visu_s != NULL) ? atoi(visu_s) : 1;
+    const char _default_criteria[] = "all[]";
 
-    cs_join_add(selector_s,
+    const char *selector = cs_tree_node_get_child_value_str(tn, "selector");
+    if (selector == NULL) selector = _default_criteria;
+
+    v_r = cs_tree_node_get_child_values_real(tn, "fraction");
+    double fraction = (v_r != NULL) ? v_r[0] : 0.1;
+
+    v_r = cs_tree_node_get_child_values_real(tn, "plane");
+    double plane = (v_r != NULL) ? v_r[0] : 25.0;
+
+    v_i = cs_tree_node_get_child_values_int(tn, "verbosity");
+    int verbosity = (v_i != NULL) ? v_i[0] : 1;
+
+    v_i = cs_tree_node_get_child_values_int(tn, "visualization");
+    int visualization = (v_i != NULL) ? v_i[0] : 1;
+
+    cs_join_add(selector,
                 fraction,
                 plane,
                 verbosity,
                 visualization);
 
 #if _XML_DEBUG_
-    bft_printf("==> cs_gui_mesh_define_joinings\n");
-    bft_printf("--selector  = %s\n", selector_s);
-    bft_printf("--fraction  = %s\n", fraction_s);
-    bft_printf("--plane     = %s\n", plane_s);
-    bft_printf("--verbosity = %s\n", verbosity_s);
-    bft_printf("--visualization = %s\n", visu_s);
+    bft_printf("==> %s\n", __func__);
+    bft_printf("--selector  = %s\n", selector);
+    bft_printf("--fraction  = %s\n", fraction);
+    bft_printf("--plane     = %g\n", plane);
+    bft_printf("--verbosity = %d\n", verbosity);
+    bft_printf("--visualization = %d\n", visualization);
 #endif
-
-    BFT_FREE(selector_s);
-    BFT_FREE(fraction_s);
-    BFT_FREE(plane_s);
-    BFT_FREE(verbosity_s);
-    BFT_FREE(visu_s);
   }
 }
 
@@ -379,42 +347,50 @@ cs_gui_mesh_define_periodicities(void)
   if (!cs_gui_file_is_loaded())
     return;
 
-  /* Loop on periodicity definitions */
+  const int *v_i = NULL;
+  const cs_real_t *v_r = NULL;
 
-  cs_tree_node_t *pn
-    = cs_tree_get_node(cs_glob_tree,
-                       "solution_domain/periodicity/face_periodicity");
+  /* Loop on periodicity definitions */
 
   int perio_id = 0;
 
-  while (pn != NULL) {
+  const char path_p[] = "solution_domain//periodicity/face_periodicity";
+
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path_p);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), perio_id++) {
 
     double angle, trans[3], axis[3], invariant[3], matrix[3][4];
 
     /* Get mode associated with each periodicity */
 
-    const char *mode = cs_tree_node_get_tag(pn, "mode");
+    const char *mode = cs_tree_node_get_tag(tn, "mode");
 
     if (mode == NULL)
       bft_error(__FILE__, __LINE__, 0,
                 _("\"%s\" node %d is missing a \"%s\" tag/child."),
-                pn->name, perio_id, "mode");
+                tn->name, perio_id, "mode");
 
-    const char *selector_s  =  cs_tree_node_get_child_value_str(pn, "selector");
-    const char *fraction_s  =  cs_tree_node_get_child_value_str(pn, "fraction");
-    const char *plane_s     =  cs_tree_node_get_child_value_str(pn, "plane");
-    const char *verbosity_s =  cs_tree_node_get_child_value_str(pn, "verbosity");
-    const char *visu_s      =  cs_tree_node_get_child_value_str(pn,
-                                                                "visualization");
+    const char _default_criteria[] = "all[]";
 
-    double fraction = (fraction_s != NULL) ? atof(fraction_s) : 0.1;
-    double plane = (plane_s != NULL) ? atof(plane_s) : 25.0;
-    int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 1;
-    int visualization = (visu_s != NULL) ? atoi(visu_s) : 1;
+    const char *selector = cs_tree_node_get_child_value_str(tn, "selector");
+    if (selector == NULL) selector = _default_criteria;
+
+    v_r = cs_tree_node_get_child_values_real(tn, "fraction");
+    double fraction = (v_r != NULL) ? v_r[0] : 0.1;
+
+    v_r = cs_tree_node_get_child_values_real(tn, "plane");
+    double plane = (v_r != NULL) ? v_r[0] : 25.0;
+
+    v_i = cs_tree_node_get_child_values_int(tn, "verbosity");
+    int verbosity = (v_i != NULL) ? v_i[0] : 1;
+
+    v_i = cs_tree_node_get_child_values_int(tn, "visualization");
+    int visualization = (v_i != NULL) ? v_i[0] : 1;
 
     if (!strcmp(mode, "translation")) {
-      _get_periodicity_translation(pn, trans);
-      cs_join_perio_add_translation(selector_s,
+      _get_periodicity_translation(tn, trans);
+      cs_join_perio_add_translation(selector,
                                     fraction,
                                     plane,
                                     verbosity,
@@ -423,8 +399,8 @@ cs_gui_mesh_define_periodicities(void)
     }
 
     else if (!strcmp(mode, "rotation")) {
-      _get_periodicity_rotation(pn, &angle, axis, invariant);
-      cs_join_perio_add_rotation(selector_s,
+      _get_periodicity_rotation(tn, &angle, axis, invariant);
+      cs_join_perio_add_rotation(selector,
                                  fraction,
                                  plane,
                                  verbosity,
@@ -435,8 +411,8 @@ cs_gui_mesh_define_periodicities(void)
     }
 
     else if (!strcmp(mode, "mixed")) {
-      _get_periodicity_mixed(pn, matrix);
-      cs_join_perio_add_mixed(selector_s,
+      _get_periodicity_mixed(tn, matrix);
+      cs_join_perio_add_mixed(selector,
                               fraction,
                               plane,
                               verbosity,
@@ -449,18 +425,13 @@ cs_gui_mesh_define_periodicities(void)
                 _("Periodicity mode \"%s\" unknown."), mode);
 
 #if _XML_DEBUG_
-    bft_printf("==> cs_gui_mesh_define_periodicities\n");
-    bft_printf("--selector      = %s\n", selector_s);
-    bft_printf("--fraction      = %s\n", fraction_s);
-    bft_printf("--plane         = %s\n", plane_s);
-    bft_printf("--verbosity     = %s\n", verbosity_s);
-    bft_printf("--visualization = %s\n", visu_s);
+    bft_printf("==> %s\n", __func__);
+    bft_printf("--selector      = %s\n", selector);
+    bft_printf("--fraction      = %g\n", fraction);
+    bft_printf("--plane         = %g\n", plane);
+    bft_printf("--verbosity     = %d\n", verbosity);
+    bft_printf("--visualization = %d\n", visu);
 #endif
-
-    /* Next node */
-
-    pn = cs_tree_node_get_next_of_name(pn);
-    perio_id += 1;
   }
 }
 
@@ -474,38 +445,30 @@ cs_gui_mesh_define_periodicities(void)
 void
 cs_gui_mesh_smoothe(cs_mesh_t  *mesh)
 {
-  char  *path = NULL;
-  int mesh_smooting = 0;
-  double angle = 25.;
-
   if (!cs_gui_file_is_loaded())
     return;
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "solution_domain", "mesh_smoothing");
-  cs_xpath_add_attribute(&path, "status");
+  const char path0[] = "solution_domain/mesh_smoothing";
 
-  cs_gui_get_status(path, &mesh_smooting);
+  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
 
-  if (mesh_smooting) {
+  if (tn == NULL)
+    return;
 
-    BFT_FREE(path);
+  int mesh_smoothing = false;
+  cs_gui_node_get_status_int(tn, &mesh_smoothing);
 
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 3,
-                          "solution_domain",
-                          "mesh_smoothing",
-                          "smooth_angle");
-    cs_xpath_add_function_text(&path);
+  if (mesh_smoothing) {
 
-    if (!cs_gui_get_double(path, &angle))
-      angle = 25.;
+    const cs_real_t *v_r = cs_tree_node_get_child_values_real(tn,
+                                                              "smooth_angle");
+    double angle = (v_r != NULL) ? v_r[0] : 25;
 
 #if _XML_DEBUG_
-  bft_printf("==> uicwf\n");
+  bft_printf("==> %s\n", __func__);
   bft_printf("--mesh_smoothing = %d\n"
              "--angle          = %f\n",
-             mesh_smooting, angle);
+             mesh_smoothing, angle);
 #endif
 
     int *vtx_is_fixed = NULL;
@@ -525,8 +488,8 @@ cs_gui_mesh_smoothe(cs_mesh_t  *mesh)
     /* Free memory */
 
     BFT_FREE(vtx_is_fixed);
+
   }
-  BFT_FREE(path);
 }
 
 /*----------------------------------------------------------------------------
@@ -539,38 +502,36 @@ cs_gui_mesh_boundary(cs_mesh_t  *mesh)
   if (!cs_gui_file_is_loaded())
     return;
 
-  int nwall = cs_gui_get_tag_count("/solution_domain/thin_walls/thin_wall", 1);
+  const char path0[] = "/solution_domain/thin_walls/thin_wall";
 
-  if (nwall == 0)
-    return;
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
-  for (int iw = 0; iw < nwall; iw++) {
-    char *path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "solution_domain", "thin_walls");
-    cs_xpath_add_element_num(&path, "thin_wall", iw + 1);
-    cs_xpath_add_element(&path, "selector");
-    cs_xpath_add_function_text(&path);
-    char *value = cs_gui_get_text_value(path);
-    BFT_FREE(path);
+    const char _default_criteria[] = "all[]";
+
+    const char *selector = cs_tree_node_get_child_value_str(tn, "selector");
+    if (selector == NULL) selector = _default_criteria;
+
+#if _XML_DEBUG_
+    bft_printf("==> %s\n", __func__);
+    bft_printf("--selector  = %s\n", value);
+#endif
 
     cs_lnum_t   n_selected_faces = 0;
     cs_lnum_t  *selected_faces = NULL;
     BFT_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
 
-    cs_selector_get_i_face_list(value,
-                               &n_selected_faces,
-                               selected_faces);
+    cs_selector_get_i_face_list(selector,
+                                &n_selected_faces,
+                                selected_faces);
 
     cs_mesh_boundary_insert(mesh,
                             n_selected_faces,
                             selected_faces);
 
-#if _XML_DEBUG_
-    bft_printf("cs_gui_mesh_boundary==> \n");
-    bft_printf("--selector  = %s\n", value);
-#endif
     BFT_FREE(selected_faces);
-    BFT_FREE(value);
+
   }
 }
 
@@ -584,52 +545,34 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh)
   if (!cs_gui_file_is_loaded())
     return;
 
-  int n_ext = cs_gui_get_tag_count("/solution_domain/extrusion/extrude_mesh", 1);
+  const int *v_i = NULL;
+  const cs_real_t *v_r = NULL;
 
-  if (n_ext == 0)
-    return;
+  const char path0[] = "solution_domain/extrusion/extrude_mesh";
 
-  for (int ext = 0; ext < n_ext; ext++) {
-    char *path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "solution_domain", "extrusion");
-    cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
-    cs_xpath_add_element(&path, "selector");
-    cs_xpath_add_function_text(&path);
-    char *value = cs_gui_get_text_value(path);
-    BFT_FREE(path);
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "solution_domain", "extrusion");
-    cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
-    cs_xpath_add_element(&path, "layers_number");
-    cs_xpath_add_function_text(&path);
-    int n_layers;
-    cs_gui_get_int(path, &n_layers);
-    BFT_FREE(path);
+    const char _default_criteria[] = "all[]";
 
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "solution_domain", "extrusion");
-    cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
-    cs_xpath_add_element(&path, "thickness");
-    cs_xpath_add_function_text(&path);
-    double thickness;
-    cs_gui_get_double(path, &thickness);
-    BFT_FREE(path);
+    const char *selector = cs_tree_node_get_child_value_str(tn, "selector");
+    if (selector == NULL) selector = _default_criteria;
 
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "solution_domain", "extrusion");
-    cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
-    cs_xpath_add_element(&path, "reason");
-    cs_xpath_add_function_text(&path);
-    double reason;
-    cs_gui_get_double(path, &reason);
-    BFT_FREE(path);
+    v_i = cs_tree_node_get_child_values_int(tn, "layers_number");
+    int n_layers = (v_i != NULL) ? v_i[0] : 2;
+
+    v_r = cs_tree_node_get_child_values_real(tn, "thickness");
+    double thickness = (v_r != NULL) ? v_r[0] : 1;
+
+    v_r = cs_tree_node_get_child_values_real(tn, "reason");
+    double reason = (v_r != NULL) ? v_r[0] : 1.5;
 
     cs_lnum_t   n_selected_faces = 0;
     cs_lnum_t  *selected_faces = NULL;
     BFT_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
 
-    cs_selector_get_b_face_list(value,
+    cs_selector_get_b_face_list(selector,
                                 &n_selected_faces,
                                 selected_faces);
 
@@ -641,15 +584,15 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh)
                              n_selected_faces,
                              selected_faces);
 
+    BFT_FREE(selected_faces);
+
 #if _XML_DEBUG_
-    bft_printf("cs_gui_mesh_extrude==> \n");
+    bft_printf("%s ==>\n", __func__);
     bft_printf("--selector  = %s\n", value);
     bft_printf("--n_layers  = %i\n", n_layers);
     bft_printf("--thickness = %f\n", thickness);
     bft_printf("--reason    = %f\n", reason);
 #endif
-    BFT_FREE(selected_faces);
-    BFT_FREE(value);
   }
 }
 

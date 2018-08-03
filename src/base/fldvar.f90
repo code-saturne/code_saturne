@@ -325,10 +325,6 @@ if (nmodpp.eq.0) then
 
 endif
 
-if (iihmpr.eq.1) then
-  call cs_gui_user_scalar_labels
-endif
-
 call add_user_scalar_fields
 
 ! Map pointers
