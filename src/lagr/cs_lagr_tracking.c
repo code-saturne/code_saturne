@@ -1663,7 +1663,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     /* Selection of the fouling coefficient*/
 
     const cs_lnum_t p_coal_id
-      = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_NUM);
+      = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_ID);
     const cs_lnum_t n_layers = p_am->count[0][CS_LAGR_TEMPERATURE];
     const cs_real_t *particle_temp
       = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_TEMPERATURE);

@@ -455,7 +455,7 @@ cs_lagr_coupling(cs_real_t taup[],
           unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
           cs_lnum_t iel  = cs_lagr_particle_get_cell_id(particle, p_am);
-          cs_lnum_t icha = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_NUM);
+          cs_lnum_t icha = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_ID);
 
           cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_MASS);
           cs_real_t  p_tmp = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_TEMPERATURE);

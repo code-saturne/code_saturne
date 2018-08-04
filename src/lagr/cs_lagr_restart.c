@@ -253,7 +253,7 @@ _legacy_section_names(cs_lagr_attribute_t  attr,
   case CS_LAGR_INITIAL_DIAMETER:
     strcpy(sec_name_0, "diametre_initial_charbon");
     break;
-  case CS_LAGR_COAL_NUM:
+  case CS_LAGR_COAL_ID:
     strcpy(sec_name_0, "numero_charbon");
     break;
   case CS_LAGR_COAL_DENSITY:

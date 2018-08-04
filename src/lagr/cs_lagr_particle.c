@@ -197,7 +197,7 @@ const char *cs_lagr_attribute_name[] = {
   "coke_mass",
   "shrinking_diameter",
   "initial_diameter",
-  "coal_num",
+  "coal_id",
   "coal_density",
   "emissivity",
   "stat_class",
@@ -848,8 +848,8 @@ cs_lagr_particle_attr_initialize(void)
     attr_keys[CS_LAGR_COAL_DENSITY][2]
       = lagr_model->n_temperature_layers;
 
-    attr_keys[CS_LAGR_COAL_NUM][0] = CS_LAGR_P_IPRP;
-    attr_keys[CS_LAGR_COAL_NUM][1] = ++loc_count;
+    attr_keys[CS_LAGR_COAL_ID][0] = CS_LAGR_P_IPRP;
+    attr_keys[CS_LAGR_COAL_ID][1] = ++loc_count;
 
   }
 

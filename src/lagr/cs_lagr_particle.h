@@ -118,7 +118,7 @@ typedef enum {
   CS_LAGR_SHRINKING_DIAMETER,
   CS_LAGR_INITIAL_DIAMETER,
 
-  CS_LAGR_COAL_NUM,
+  CS_LAGR_COAL_ID,
   CS_LAGR_COAL_DENSITY,
 
   /* Radiative model additional parameters */

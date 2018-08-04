@@ -799,7 +799,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
         int coal_id = zis->coal_number - 1;
 
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_COAL_NUM, coal_id);
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_COAL_ID, coal_id);
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
                                   cval_t[cell_id] + tscl_shift);
 

@@ -203,7 +203,7 @@ _lagtmp(cs_lnum_t        npt,
 
   cs_lnum_t cell_id  = cs_lagr_particle_get_cell_id(particle, p_am);
   cs_lnum_t co_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                              CS_LAGR_COAL_NUM);
+                                              CS_LAGR_COAL_ID);
 
   /* Multiple-layer resolution
      ------------------------- */
@@ -1185,7 +1185,7 @@ _lagich(const cs_real_t   tempct[],
     cs_real_t *part_coal_density   = cs_lagr_particle_attr(particle, p_am,
                                                            CS_LAGR_COAL_DENSITY);
 
-    cs_lnum_t co_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_NUM);
+    cs_lnum_t co_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_ID);
 
     cs_real_t layer_vol  = dpis6 * _pow3(init_diam) / f_nlayer;
 
