@@ -246,22 +246,6 @@ int
 cs_gui_get_int(char  *path,
                int   *value);
 
-/*----------------------------------------------------------------------------
- * Query the number of elements (i.e. the number of xml markups)
- * from a xpath request.
- *
- * Example: from <a>3<\a><a>4<\a> return 2
- *
- * parameters:
- *   path <-- path for the xpath request
- *
- * returns:
- *   the number of elements in xpath request
- *----------------------------------------------------------------------------*/
-
-int
-cs_gui_get_nb_element(char  *path);
-
 /*-----------------------------------------------------------------------------
  * Evaluate the "status" attribute value.
  *

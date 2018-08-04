@@ -91,20 +91,20 @@ BEGIN_C_DECLS
 
 /*-----------------------------------------------------------------------------
  * Return value of the particles model
+ *
+ * parameters:
+ *   tn <-- "particles_models" tree node
+ *
+ * return:
+ *   particles model based on "model" tag
  *----------------------------------------------------------------------------*/
 
 static int
-_get_particles_model(const char  *model)
+_get_particles_model(cs_tree_node_t  *tn)
 {
   int retval = 0;
 
-  char *path;
-  char *attr;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "lagrangian", model);
-  cs_xpath_add_attribute(&path, "model");
-  attr = cs_gui_get_attribute_value(path);
+  const char *attr = cs_tree_node_get_tag(tn, "model");
 
   if (attr != NULL) {
     if (cs_gui_strcmp(attr, "off"))
@@ -113,315 +113,70 @@ _get_particles_model(const char  *model)
       retval = 1;
     else if (cs_gui_strcmp(attr, "coal"))
       retval = 2;
-    BFT_FREE(attr);
   }
-  BFT_FREE(path);
 
   return retval;
-}
-
-/*-----------------------------------------------------------------------------
- * Return value of the parameter of the character type for lagrangian
- *
- *   parameters:
- *   keyword   <--   value of parameter
- *   nbr       -->   size of the labels list
- *   ...       -->   list of labels in the path
- *----------------------------------------------------------------------------*/
-
-static void
-_get_status(int  *keyword,
-            int   nbr,
-            ...)
-{
-  va_list list;
-
-  char *elt = NULL;
-  char *path;
-  int i;
-  int result;
-
-  path = cs_xpath_init_path();
-
-  va_start(list, nbr);
-
-  for(i=0; i<nbr; i++) {
-
-    elt = va_arg(list, char *);
-
-    if (elt != NULL) {
-
-      BFT_REALLOC(path,
-                  strlen(path)+ strlen(elt)+ strlen("/") +1,
-                  char);
-
-      strcat(path, "/");
-      strcat(path, elt);
-    }
-  }
-  va_end(list);
-
-  cs_xpath_add_attribute(&path, "status");
-  if(cs_gui_get_status(path, &result))
-    *keyword = result;
-
-  BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
- * Return integer parameters for lagrangian
- *
- *   parameters:
- *   keyword   <--   value of parameter
- *   nbr       -->   size of the labels list
- *   ...       -->   list of labels in the path
- *----------------------------------------------------------------------------*/
-
-static void
-_get_int(int *const keyword, const int nbr, ...)
-{
-  va_list list;
-
-  char *elt = NULL;
-  char *path;
-  int value = 0;
-  int i;
-
-  path = cs_xpath_init_path();
-
-  va_start(list, nbr);
-
-  for(i=0; i<nbr; i++) {
-
-    elt = va_arg(list, char *);
-
-    if (elt != NULL) {
-
-      BFT_REALLOC(path,
-                  strlen(path)+ strlen(elt)+ strlen("/") +1,
-                  char);
-
-      strcat(path, "/");
-      strcat(path, elt);
-    }
-  }
-  va_end(list);
-  cs_xpath_add_function_text(&path);
-
-  if (cs_gui_get_int(path, &value))
-    *keyword = value;
-
-  BFT_FREE(path);
-
-}
-
-
-/*-----------------------------------------------------------------------------
- * Return float parameters for lagrangian
- *
- *   parameters:
- *   keyword   <--   value of parameter
- *   nbr       -->   size of the labels list
- *   ...       -->   list of labels in the path
- *----------------------------------------------------------------------------*/
-
-static void
-_get_double(double *const  keyword,
-            const int      nbr,
-            ...)
-{
-  va_list list;
-
-  char *elt = NULL;
-  char *path;
-  double value = 0;
-
-  path = cs_xpath_init_path();
-
-  va_start(list, nbr);
-
-  for (int i=0; i < nbr; i++) {
-
-    elt = va_arg(list, char *);
-
-    if (elt != NULL) {
-
-      BFT_REALLOC(path,
-                  strlen(path)+ strlen(elt)+ strlen("/") +1,
-                  char);
-
-      strcat(path, "/");
-      strcat(path, elt);
-    }
-  }
-  va_end(list);
-
-  cs_xpath_add_function_text(&path);
-
-  if (cs_gui_get_double(path, &value))
-    *keyword = value;
-
-  BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
- * Return value of the attribute of the character type for lagrangian
- *
- *   parameters:
- *   param     <--   name of the attribute
- *   nbr       -->   size of the labels list
- *   ...       -->   list of labels in the path
- *----------------------------------------------------------------------------*/
-
-static char*
-_get_attr(const char *const param,
-          const int nbr,
-          ...)
-{
-  va_list list;
-
-  int i;
-  char *elt = NULL;
-  char *path;
-  char *name;
-
-  path = cs_xpath_init_path();
-
-  va_start(list, nbr);
-
-  for(i=0; i<nbr; i++) {
-
-    elt = va_arg(list, char *);
-
-    if (elt != NULL) {
-
-      BFT_REALLOC(path,
-                  strlen(path)+ strlen(elt)+ strlen("/") +1,
-                  char);
-
-      strcat(path, "/");
-      strcat(path, elt);
-    }
-  }
-  va_end(list);
-
-  cs_xpath_add_attribute(&path, param);
-
-  name = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return name;
 }
 
 /*-----------------------------------------------------------------------------
  * Define postprocessing output status for a given particle attribute.
  *
  * parameters:
+ *   tn_o    <-- tree node associated to lagrangian output
  *   attr_id <-- associated attribute id
  *   name    <-- name of attribute in XML, or NULL for automatic name
  *----------------------------------------------------------------------------*/
 
 static void
-_attr_post_status(cs_lagr_attribute_t   attr_id,
+_attr_post_status(cs_tree_node_t       *tn_o,
+                  cs_lagr_attribute_t   attr_id,
                   const char           *name)
 {
-  int key = 0;
+  bool status = false;
+
   if (name != NULL)
-    _get_status(&key, 3, "lagrangian", "output", name);
+    cs_gui_node_get_status_bool(cs_tree_node_get_child(tn_o, name),
+                                &status);
   else {
     cs_lagr_particle_attr_in_range(attr_id);
     const char *_name = cs_lagr_attribute_name[attr_id];
-    _get_status(&key, 3, "lagrangian", "output", _name);
+    cs_gui_node_get_status_bool(cs_tree_node_get_child(tn_o, _name),
+                                &status);
   }
-
-  bool status = (key = 0) ? false : true;
 
   cs_lagr_post_set_attr(attr_id, status);
 }
 
 /*-----------------------------------------------------------------------------
- * Return float parameters for coal parameters
+ * Activate statistics and postprocessing for volume or boundary statistics
  *
- *   parameters:
- *    param         -->   value to modify
- *    name          -->   name of property
- *    icoal         -->   number of coal
+ * parameters:
+ *   tn_s     <--  parent tree node ("volume" or "boundary")
+ *   name     <--  name of statistics in tree
+ *   status   <->  associated postprocessing status
  *----------------------------------------------------------------------------*/
 
 static void
-_get_coal_double(double *const param, const char *const name, int icoal)
+_get_stats_post(cs_tree_node_t  *tn_s,
+                const char      *name,
+                int             *status)
 {
-  double result = 0;
-  char *path = NULL;
-  char scoal[2];
+  cs_tree_node_t *tn = NULL;
 
-  sprintf(scoal, "%i", icoal);
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 4,
-                        "lagrangian", "particles_models", "coal_fouling", name);
-  cs_xpath_add_test_attribute(&path, "coal", scoal);
-  cs_xpath_add_function_text(&path);
-
-  if (cs_gui_get_double(path, &result))
-    *param = result;
-
-  BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
- * Return status and label of the property for post treatment
- *
- *   parameters:
- *    type          -->   type of property ('volume' or 'boundary')
- *    name          -->   name of property
- *    list_value    <--   status for listing
- *    record_value  <--   status for post processing
- *----------------------------------------------------------------------------*/
-
-static char*
-_get_char_post(const char *const type,
-               const char *const name,
-               int  *record_value)
-{
-  char *path, *path1, *path2 = NULL;
-  char *label = NULL;
-  int result;
-
-  *record_value = 1;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 4, "lagrangian", "statistics", type, "property");
-  cs_xpath_add_test_attribute(&path, "name", name);
-  BFT_MALLOC(path1, strlen(path)+1, char);
-  strcpy(path1, path);
-  BFT_MALLOC(path2, strlen(path)+1, char);
-  strcpy(path2, path);
-  cs_xpath_add_attribute(&path, "label");
-  label = cs_gui_get_attribute_value(path);
-
-  if (cs_gui_strcmp(type, "volume")) {
-
-    cs_xpath_add_element(&path1, "postprocessing_recording");
-    cs_xpath_add_attribute(&path1, "status");
-    if (cs_gui_get_status(path1, &result))
-      *record_value = result;
+  for (tn = cs_tree_node_get_child(tn_s, "property");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
+    const char *_name = cs_tree_node_get_tag(tn, "name");
+    if (_name != NULL) {
+      if (! strcmp(_name, name)) {
+        *status = 1; /* default if active */
+        cs_gui_node_get_status_int
+          (cs_tree_node_get_child(tn, "postprocessing_recording"),
+           status);
+        break;
+      }
+    }
   }
-
-  else if (cs_gui_strcmp(type, "boundary")) {
-
-    cs_xpath_add_element(&path2, "postprocessing_recording");
-    cs_xpath_add_attribute(&path2, "status");
-    if (cs_gui_get_status(path2, &result))
-      *record_value = result;
-  }
-
-  BFT_FREE(path);
-  BFT_FREE(path1);
-  BFT_FREE(path2);
-
-  return label;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -437,81 +192,91 @@ _get_char_post(const char *const type,
 void
 cs_gui_particles_model(void)
 {
-  int icoal, ncoals = 0;
-  int flag = 0;
-  char *attr = NULL;
-  char *path1 = NULL;
+  cs_tree_node_t *tn_lagr = cs_tree_get_node(cs_glob_tree, "lagrangian");
 
-  attr = _get_attr("model", 1, "lagrangian");
-  if (attr == NULL || cs_gui_strcmp(attr, "off")) {
-    cs_glob_lagr_time_scheme->iilagr = 0;
-    BFT_FREE(attr);
-#if _XML_DEBUG_
-    bft_printf("%s\n", __func__);
-    bft_printf("--iilagr = %i\n", cs_glob_lagr_time_scheme->iilagr);
-#endif
-    return;
+  const char *model = cs_tree_node_get_tag(tn_lagr, "model");
+
+  cs_glob_lagr_time_scheme->iilagr = 0;
+  if (model != NULL) {
+    if (! strcmp(model, "one_way"))
+      cs_glob_lagr_time_scheme->iilagr = 1;
+    else if (! strcmp(model, "two_way"))
+      cs_glob_lagr_time_scheme->iilagr = 2;
+    else if (! strcmp(model, "frozen"))
+      cs_glob_lagr_time_scheme->iilagr = 3;
   }
-  else if (cs_gui_strcmp(attr, "one_way"))
-    cs_glob_lagr_time_scheme->iilagr = 1;
-  else if (cs_gui_strcmp(attr, "two_way"))
-    cs_glob_lagr_time_scheme->iilagr = 2;
-  else if (cs_gui_strcmp(attr, "frozen"))
-    cs_glob_lagr_time_scheme->iilagr = 3;
-  BFT_FREE(attr);
+
+#if _XML_DEBUG_
+  bft_printf("%s\n", __func__);
+  bft_printf("--iilagr = %i\n", cs_glob_lagr_time_scheme->iilagr);
+#endif
+
+  if (cs_glob_lagr_time_scheme->iilagr == 0)
+    return;
 
   /* Global settings */
 
-  _get_status(&(cs_glob_lagr_time_scheme->isuila), 2,
-              "lagrangian", "restart");
-  _get_status(&(cs_glob_lagr_time_scheme->isttio), 2,
-              "lagrangian", "carrier_field_stationary");
+  cs_gui_node_get_status_int(cs_tree_node_get_child(tn_lagr, "restart"),
+                             &(cs_glob_lagr_time_scheme->isuila));
 
-  _get_status(&(cs_glob_lagr_model->deposition), 2,
-              "lagrangian", "deposition_submodel");
+  cs_gui_node_get_status_int(cs_tree_node_get_child(tn_lagr,
+                                                    "carrier_field_stationary"),
+                             &(cs_glob_lagr_time_scheme->isttio));
+
+  cs_gui_node_get_status_int(cs_tree_node_get_child(tn_lagr,
+                                                    "deposition_submodel"),
+                             &(cs_glob_lagr_model->deposition));
 
   /* Particles model */
 
-  cs_glob_lagr_model->physical_model = _get_particles_model("particles_models");
+  cs_tree_node_t *tn_pm = cs_tree_get_node(tn_lagr, "particles_models");
+
+  cs_glob_lagr_model->physical_model = _get_particles_model(tn_pm);
 
   switch (cs_glob_lagr_model->physical_model) {
   case 1:
-    _get_status(&(cs_glob_lagr_specific_physics->idpvar), 3,
-                "lagrangian", "particles_models", "break_up");
-    _get_status(&(cs_glob_lagr_specific_physics->impvar), 3,
-                "lagrangian", "particles_models", "evaporation");
-    _get_status(&(cs_glob_lagr_specific_physics->itpvar), 3,
-                "lagrangian", "particles_models", "thermal");
-#if 0
-    if (cs_glob_lagr_specific_physics->itpvar == 1) {
-      _get_double(tpart,  4, "lagrangian", "particles_models", "thermal",
-                  "particle_temperature");
-      _get_double(cppart, 4, "lagrangian", "particles_models",
-                  "thermal", "particle_specific_heat");
+    {
+      cs_gui_node_get_status_int(cs_tree_node_get_child(tn_pm, "break_up"),
+                                 &(cs_glob_lagr_specific_physics->idpvar));
+      cs_gui_node_get_status_int(cs_tree_node_get_child(tn_pm, "evaporation"),
+                                 &(cs_glob_lagr_specific_physics->impvar));
+      cs_gui_node_get_status_int(cs_tree_node_get_child(tn_pm, "thermal"),
+                                 &(cs_glob_lagr_specific_physics->itpvar));
     }
-#endif
     break;
   case 2:
-    _get_status(&cs_glob_lagr_model->fouling, 3, "lagrangian", "particles_models",
-                "coal_fouling");
-    path1 = cs_xpath_init_path();
-    cs_xpath_add_elements(&path1, 4, "lagrangian", "particles_models",
-                          "coal_fouling", "threshold_temperature");
-    ncoals = cs_gui_get_nb_element(path1);
-    BFT_FREE(path1);
+    {
+      cs_tree_node_t *tn_cf = cs_tree_node_get_child(tn_pm, "coal_fouling");
 
-    for (icoal =1; icoal <= ncoals; icoal++) {
-      _get_coal_double(&cs_glob_lagr_encrustation->tprenc[icoal-1],
-                       "threshold_temperature", icoal);
+      cs_gui_node_get_status_int(tn_cf, &(cs_glob_lagr_model->fouling));
 
-      _get_coal_double(&cs_glob_lagr_encrustation->visref[icoal-1],
-                       "critical_viscosity",    icoal);
+      /* Query various real values */
 
-      _get_coal_double(&cs_glob_lagr_encrustation->enc1[icoal-1],
-                       "fouling_coefficient_1", icoal);
+      const char *attr_name[] = {"threshold_temperature",
+                                 "critical_viscosity",
+                                 "fouling_coefficient_1",
+                                 "fouling_coefficient_2"};
+      cs_real_t *attr_val[] = {cs_glob_lagr_encrustation->tprenc,
+                               cs_glob_lagr_encrustation->visref,
+                               cs_glob_lagr_encrustation->enc1,
+                               cs_glob_lagr_encrustation->enc2};
 
-      _get_coal_double(&cs_glob_lagr_encrustation->enc2[icoal-1],
-                       "fouling_coefficient_2", icoal);
+      for (int attr_id = 0; attr_id < 4; attr_id++) {
+        for (cs_tree_node_t *tn = cs_tree_node_get_child
+                                    (tn_cf, attr_name[attr_id]);
+             tn != NULL;
+             tn = cs_tree_node_get_next_of_name(tn)) {
+
+          const int *v_i = cs_tree_node_get_child_values_int(tn, "coal");
+          if (v_i == NULL) continue;
+          int icoal = v_i[0] - 1;
+
+          const cs_real_t *v_r = cs_tree_node_get_values_real(tn);
+          if (v_r != NULL) attr_val[attr_id][icoal] = v_r[0];
+
+        }
+      }
+
     }
     break;
   }
@@ -519,123 +284,155 @@ cs_gui_particles_model(void)
   /* Two-way coupling */
 
   if (cs_glob_lagr_time_scheme->iilagr == 2) {
-    _get_int(&cs_glob_lagr_source_terms->nstits, 3, "lagrangian",
-             "two_way_coupling", "iteration_start");
-    _get_status(&cs_glob_lagr_source_terms->ltsdyn, 3, "lagrangian",
-                "two_way_coupling", "dynamic");
-    _get_status(&cs_glob_lagr_source_terms->ltsmas, 3, "lagrangian",
-                "two_way_coupling", "mass");
-    _get_status(&cs_glob_lagr_source_terms->ltsthe, 3, "lagrangian",
-                "two_way_coupling", "thermal");
+    cs_tree_node_t *tn = cs_tree_node_get_child(tn_lagr, "two_way_coupling");
+
+    cs_gui_node_get_child_int(tn, "iteration_start",
+                              (&cs_glob_lagr_source_terms->nstits));
+
+    cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "dynamic"),
+                               (&cs_glob_lagr_source_terms->ltsdyn));
+
+    cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "mass"),
+                               (&cs_glob_lagr_source_terms->ltsmas));
+
+    cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "thermal"),
+                               (&cs_glob_lagr_source_terms->ltsthe));
   }
 
   /* Numerical modeling */
 
-  attr = _get_attr("choice", 2, "lagrangian", "scheme_order");
-  if (attr) {
-    cs_glob_lagr_time_scheme->t_order = atoi(attr);
-    BFT_FREE(attr);
-  }
-  attr = _get_attr("choice", 2, "lagrangian", "complete_model_direction");
-  if (attr) {
-    cs_glob_lagr_time_scheme->idirla = atoi(attr);
-    BFT_FREE(attr);
-  }
-  _get_status(&cs_glob_lagr_time_scheme->idistu, 2, "lagrangian",
-              "turbulent_dispersion");
-  _get_status(&cs_glob_lagr_time_scheme->idiffl, 2, "lagrangian",
-              "fluid_particles_turbulent_diffusion");
-  _get_int(&cs_glob_lagr_time_scheme->modcpl, 2, "lagrangian",
-           "complete_model");
+  const char *choice;
+
+  choice = cs_tree_node_get_tag(cs_tree_node_get_child(tn_lagr, "scheme_order"),
+                                "choice");
+  if (choice != NULL)
+    cs_glob_lagr_time_scheme->t_order = atoi(choice);
+
+  cs_gui_node_get_status_int
+    (cs_tree_node_get_child(tn_lagr, "turbulent_dispersion"),
+     &(cs_glob_lagr_time_scheme->idistu));
+
+  cs_gui_node_get_status_int
+    (cs_tree_node_get_child(tn_lagr, "fluid_particles_turbulent_diffusion"),
+     &(cs_glob_lagr_time_scheme->idiffl));
+
+  cs_gui_node_get_status_int(cs_tree_node_get_child(tn_lagr,
+                                                    "deposition_submodel"),
+                             &(cs_glob_lagr_model->deposition));
+
+  cs_gui_node_get_child_int(tn_lagr, "complete_model",
+                            (&cs_glob_lagr_time_scheme->modcpl));
+
+  choice = cs_tree_node_get_tag(cs_tree_node_get_child
+                                  (tn_lagr, "complete_model_direction"),
+                                "choice");
+  if (choice != NULL)
+    cs_glob_lagr_time_scheme->idirla = atoi(choice);
 
   /* Output */
 
-  _attr_post_status(CS_LAGR_VELOCITY, "velocity_particles");
-  _attr_post_status(CS_LAGR_VELOCITY_SEEN, "velocity_fluid_seen");
-  _attr_post_status(CS_LAGR_RESIDENCE_TIME, "resident_time");
-  _attr_post_status(CS_LAGR_DIAMETER, "diameter");
-  _attr_post_status(CS_LAGR_TEMPERATURE, "temperature");
-  _attr_post_status(CS_LAGR_MASS, "mass");
+  cs_tree_node_t *tn_o = cs_tree_node_get_child(tn_lagr, "output");
+  if (tn_o != NULL) {
+    _attr_post_status(tn_o, CS_LAGR_VELOCITY, "velocity_particles");
+    _attr_post_status(tn_o, CS_LAGR_VELOCITY_SEEN, "velocity_fluid_seen");
+    _attr_post_status(tn_o, CS_LAGR_RESIDENCE_TIME, "resident_time");
+    _attr_post_status(tn_o, CS_LAGR_DIAMETER, "diameter");
+    _attr_post_status(tn_o, CS_LAGR_TEMPERATURE, "temperature");
+    _attr_post_status(tn_o, CS_LAGR_MASS, "mass");
 
-  if (cs_glob_lagr_model->physical_model == 2) {
-    _attr_post_status(CS_LAGR_SHRINKING_DIAMETER, "shrinking_core_diameter");
-    _attr_post_status(CS_LAGR_WATER_MASS, "moisture_mass_fraction");
-    _attr_post_status(CS_LAGR_COAL_MASS, "raw_coal_mass_fraction");
-    _attr_post_status(CS_LAGR_COKE_MASS, "char_mass_fraction");
+    if (cs_glob_lagr_model->physical_model == 2) {
+      _attr_post_status(tn_o, CS_LAGR_SHRINKING_DIAMETER,
+                        "shrinking_core_diameter");
+      _attr_post_status(tn_o, CS_LAGR_WATER_MASS, "moisture_mass_fraction");
+      _attr_post_status(tn_o, CS_LAGR_COAL_MASS, "raw_coal_mass_fraction");
+      _attr_post_status(tn_o, CS_LAGR_COKE_MASS, "char_mass_fraction");
+    }
+
+    cs_gui_node_get_child_int(tn_o, "listing_printing_frequency",
+                              &cs_glob_lagr_log_frequency_n);
   }
-
-  _get_int(&cs_glob_lagr_log_frequency_n,
-           3, "lagrangian", "output", "listing_printing_frequency");
 
   /* Statistics */
 
-  _get_int(&cs_glob_lagr_model->n_stat_classes, 3, "lagrangian",
-           "statistics", "statistics_groups_of_particles");
-  _get_status(&cs_glob_lagr_stat_options->isuist, 3, "lagrangian",
-              "statistics", "restart");
+  bool volume_stats = false;
+  bool boundary_stats = false;
 
-  _get_double(&cs_glob_lagr_stat_options->threshold, 3, "lagrangian",
-              "statistics", "threshold");
+  cs_tree_node_t *tn_s = cs_tree_node_get_child(tn_lagr, "statistics");
+  if (tn_s != NULL) {
 
-  _get_int(&cs_glob_lagr_stat_options->idstnt, 3, "lagrangian",
-           "statistics", "iteration_start");
-  _get_int(&cs_glob_lagr_stat_options->nstist, 3, "lagrangian",
-           "statistics", "iteration_steady_start");
+    cs_gui_node_get_child_int(tn_s, "statistics_groups_of_particles",
+                              &cs_glob_lagr_model->n_stat_classes);
 
-  int vol_stats = 0;
-  _get_status(&vol_stats, 3, "lagrangian", "statistics", "volume");
+    cs_gui_node_get_child_int(tn_s, "iteration_start",
+                              &cs_glob_lagr_stat_options->idstnt);
+    cs_gui_node_get_child_int(tn_s, "iteration_steady_start",
+                              &cs_glob_lagr_stat_options->nstist);
 
-  if (vol_stats == 1) {
+    cs_gui_node_get_status_int(cs_tree_node_get_child(tn_lagr,
+                                                      "restart"),
+                               &cs_glob_lagr_stat_options->isuist);
 
-    /* labels */
+    cs_gui_node_get_child_real(tn_s, "threshold",
+                               &cs_glob_lagr_stat_options->threshold);
 
-    flag = 0;
-    _get_char_post("volume", "Part_vol_frac", &flag);
-    if (flag)
-      cs_lagr_stat_activate(CS_LAGR_STAT_VOLUME_FRACTION);
+    cs_tree_node_t *tn_vs = cs_tree_node_get_child(tn_s, "volume");
 
-    _get_char_post("volume", "Part_velocity", &flag);
-    if (flag)
-      cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY);
+    cs_gui_node_get_status_bool(tn_vs, &volume_stats);
 
-    _get_char_post("volume", "Part_resid_time", &flag);
-    if (flag)
-      cs_lagr_stat_activate_attr(CS_LAGR_RESIDENCE_TIME);
+    if (volume_stats) {
 
-    _get_char_post("volume", "Part_stat_weight", &flag);
-    if (flag)
-      cs_lagr_stat_activate(CS_LAGR_STAT_CUMULATIVE_WEIGHT);
+      int flag = 0;
+      _get_stats_post(tn_vs, "Part_vol_frac", &flag);
+      if (flag)
+        cs_lagr_stat_activate(CS_LAGR_STAT_VOLUME_FRACTION);
 
-  }
+      flag = 0;
+      _get_stats_post(tn_vs, "Part_velocity", &flag);
+      if (flag)
+        cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY);
 
-  int b_key = 0;
-  _get_status(&b_key, 3, "lagrangian", "statistics", "boundary");
+      flag = 0;
+      _get_stats_post(tn_vs, "Part_resid_time", &flag);
+      if (flag)
+        cs_lagr_stat_activate_attr(CS_LAGR_RESIDENCE_TIME);
 
-  if (b_key) {
+      flag = 0;
+      _get_stats_post(tn_vs, "Part_stat_weight", &flag);
+      if (flag)
+        cs_lagr_stat_activate(CS_LAGR_STAT_CUMULATIVE_WEIGHT);
 
-    _get_char_post("boundary", "Part_impact_number",
-                   &cs_glob_lagr_boundary_interactions->inbrbd);
-    _get_char_post("boundary", "Part_bndy_mass_flux",
-                   &cs_glob_lagr_boundary_interactions->iflmbd);
-    _get_char_post("boundary", "Part_impact_angle",
-                   &cs_glob_lagr_boundary_interactions->iangbd);
-    _get_char_post("boundary", "Part_impact_velocity",
-                   &cs_glob_lagr_boundary_interactions->ivitbd);
+    }
 
-    /* Coal fouling statistics*/
-    _get_char_post("boundary", "Part_fouled_impact_number",
-                   &cs_glob_lagr_boundary_interactions->iencnbbd);
-    _get_char_post("boundary", "Part_fouled_mass_flux",
-                   &cs_glob_lagr_boundary_interactions->iencmabd);
-    _get_char_post("boundary", "Part_fouled_diam",
-                   &cs_glob_lagr_boundary_interactions->iencdibd);
-    _get_char_post("boundary", "Part_fouled_Xck",
-                   &cs_glob_lagr_boundary_interactions->iencckbd);
+    cs_tree_node_t *tn_bs = cs_tree_node_get_child(tn_s, "boundary");
 
+    cs_gui_node_get_status_bool(tn_bs, &boundary_stats);
+
+    if (boundary_stats) {
+
+      _get_stats_post(tn_bs, "Part_impact_number",
+                      &cs_glob_lagr_boundary_interactions->inbrbd);
+      _get_stats_post(tn_bs, "Part_bndy_mass_flux",
+                      &cs_glob_lagr_boundary_interactions->iflmbd);
+      _get_stats_post(tn_bs, "Part_impact_angle",
+                      &cs_glob_lagr_boundary_interactions->iangbd);
+      _get_stats_post(tn_bs, "Part_impact_velocity",
+                      &cs_glob_lagr_boundary_interactions->ivitbd);
+
+      /* Coal fouling statistics*/
+      _get_stats_post(tn_bs, "Part_fouled_impact_number",
+                      &cs_glob_lagr_boundary_interactions->iencnbbd);
+      _get_stats_post(tn_bs, "Part_fouled_mass_flux",
+                      &cs_glob_lagr_boundary_interactions->iencmabd);
+      _get_stats_post(tn_bs, "Part_fouled_diam",
+                      &cs_glob_lagr_boundary_interactions->iencdibd);
+      _get_stats_post(tn_bs, "Part_fouled_Xck",
+                      &cs_glob_lagr_boundary_interactions->iencckbd);
+
+    }
   }
 
 #if _XML_DEBUG_
-  bft_printf("==>UILAG1\n");
+  bft_printf("==> %s\n", __func__);
   bft_printf("--iilagr = %i\n", cs_glob_lagr_time_scheme->iilagr);
   bft_printf("--isuila = %i\n", cs_glob_lagr_time_scheme->isuila);
   bft_printf("--isttio = %i\n", cs_glob_lagr_time_scheme->isttio);
@@ -651,16 +448,16 @@ cs_gui_particles_model(void)
     break;
   case 2:
     bft_printf("--iencra = %i\n", cs_glob_lagr_model->fouling);
-    for (icoal=1; icoal <= ncoals; icoal++)
-    {
+    const cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+    for (int icoal = 0; icoal < extra->ncharb; icoal++) {
       bft_printf("--tprenc[%i] = %f\n", icoal,
-                 cs_glob_lagr_encrustation->tprenc[icoal-1]);
+                 cs_glob_lagr_encrustation->tprenc[icoal]);
       bft_printf("--visref[%i] = %f\n", icoal,
-                 cs_glob_lagr_encrustation->visref[icoal-1]);
+                 cs_glob_lagr_encrustation->visref[icoal]);
       bft_printf("--enc1[%i] = %f\n", icoal,
-                 cs_glob_lagr_encrustation->enc1[icoal-1]);
+                 cs_glob_lagr_encrustation->enc1[icoal]);
       bft_printf("--enc2[%i] = %f\n", icoal,
-                 cs_glob_lagr_encrustation->enc2[icoal-1]);
+                 cs_glob_lagr_encrustation->enc2[icoal]);
     }
     break;
   }
@@ -678,29 +475,17 @@ cs_gui_particles_model(void)
   bft_printf("--modcpl = %i\n", cs_glob_lagr_time_scheme->modcpl);
   bft_printf("--idirla = %i\n", cs_glob_lagr_time_scheme->idirla);
 
-  bft_printf("--ivisv1 = %i\n", lagr_post_options->ivisv1);
-  bft_printf("--ivisv2 = %i\n", lagr_post_options->ivisv2);
-  bft_printf("--ivistp = %i\n", lagr_post_options->ivistp);
-  bft_printf("--ivisdm = %i\n", lagr_post_options->ivisdm);
-  bft_printf("--iviste = %i\n", lagr_post_options->iviste);
-  bft_printf("--ivismp = %i\n", lagr_post_options->ivismp);
-
-  if (cs_glob_lagr_model->physical_model == 2) {
-    bft_printf("--ivisdk  = %i\n", lagr_post_options->ivisdk);
-    bft_printf("--iviswat = %i\n", lagr_post_options->iviswat);
-    bft_printf("--ivisch  = %i\n", lagr_post_options->ivisch);
-    bft_printf("--ivisck  = %i\n", lagr_post_options->ivisck);
-  }
-
   bft_printf("--isuist = %i\n", cs_glob_lagr_stat_options->isuist);
   bft_printf("--nbclst = %i\n", cs_glob_lagr_model->n_stat_classes);
 
   bft_printf("--idstnt = %i\n", cs_glob_lagr_stat_options->idstnt);
   bft_printf("--nstist = %i\n", cs_glob_lagr_stat_options->nstist);
-  bft_printf("--vol_stats = %i\n", vol_stats);
+  int v_stats = (volume_stats) ? 1 : 0;
+  bft_printf("--vol_stats = %i\n", v_stats);
 
-  bft_printf("--boundary_output = %i\n", b_key);
-  if (b_key == 1) {
+  int b_stats = (boundary_stats) ? 1 : 0;
+  bft_printf("--boundary_output = %i\n", b_stats);
+  if (b_stats) {
     bft_printf("--inbrbd   = %i\n", cs_glob_lagr_boundary_interactions->inbrbd);
     bft_printf("--iflmbd   = %i\n", cs_glob_lagr_boundary_interactions->iflmbd);
     bft_printf("--iangbd   = %i\n", cs_glob_lagr_boundary_interactions->iangbd);
@@ -721,149 +506,146 @@ cs_gui_particles_model(void)
 void
 cs_gui_particles_bcs(void)
 {
-  char *interaction = NULL;
-  char sclass[10];
-  char *path1, *path2;
-  char *choice;
-
   cs_lnum_t iphyla = cs_glob_lagr_model->physical_model;
   cs_lagr_zone_data_t *bdy_cond = cs_lagr_get_boundary_conditions();
   cs_lagr_get_internal_conditions();
 
-  /* zone 0 for "all", next zones defined by GUI */
-
-  int n_zones = cs_gui_boundary_zones_number();
+  /* zone 0 for "all", following zones defined by GUI */
 
 #if _XML_DEBUG_
   bft_printf("%s\n", __func__);
 #endif
 
+  cs_tree_node_t *tn0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+
   /* First iteration only: memory allocation */
 
-  for (cs_lnum_t izone = 0; izone < n_zones; izone++) {
+  int zone_id = 1; /* 1 to n */
 
-    /* zone_id is incremented because access is made through real
-       zone number (from 1 to nzone), and not through array index */
+  for (cs_tree_node_t *tn_bc = cs_tree_node_get_child(tn0, "boundary");
+       tn_bc != NULL;
+       tn_bc = cs_tree_node_get_next_of_name(tn_bc), zone_id++) {
 
-    int zone_id = izone + 1;
+    const char *label = cs_tree_node_get_tag(tn_bc, "label");
+    const char *nature = cs_tree_node_get_tag(tn_bc, "nature");
 
-    char *label = cs_gui_boundary_zone_label(zone_id);
-    char *nature = cs_gui_boundary_zone_nature(zone_id);
+    /* Find associated BC description with particle sub-node if present */
+    /* Loop on all sub-nodes, of which some describe matching one BC info */
 
-    path2 = cs_xpath_init_path();
-    cs_xpath_add_elements(&path2, 2, "boundary_conditions",
-                          nature);
-    cs_xpath_add_test_attribute(&path2, "label", label);
-    cs_xpath_add_test_attribute(&path2, "field_id", "none");
-    cs_xpath_add_element(&path2, "particles");
+    cs_tree_node_t *tn_p = NULL;
 
-    BFT_MALLOC(path1, strlen(path2)+1, char);
-    strcpy(path1, path2);
-    cs_xpath_add_attribute(&path1, "choice");
-    interaction = cs_gui_get_attribute_value(path1);
+    for (cs_tree_node_t *tn1 = cs_tree_node_get_child(tn0, nature);
+         tn1 != NULL && tn_p == NULL;
+         tn1 = cs_tree_node_get_next_of_name(tn1)) {
 
-    if (interaction != NULL) {
+      if (! cs_gui_strcmp(label, cs_tree_node_get_tag(tn1, "label")))
+        continue;
 
-      if (cs_gui_strcmp(interaction, "inlet"))
-        bdy_cond->zone_type[zone_id] = CS_LAGR_INLET;
+      tn_p = cs_tree_node_get_child(tn1, "particles");
+    }
 
-      else if(cs_gui_strcmp(interaction, "outlet"))
-        bdy_cond->zone_type[zone_id] = CS_LAGR_OUTLET;
+    if (tn_p == NULL)
+      continue;
 
-      else if(cs_gui_strcmp(interaction, "bounce"))
-        bdy_cond->zone_type[zone_id] = CS_LAGR_REBOUND;
+    /* Now we have a particles node for the given BC */
 
-      else if(cs_gui_strcmp(interaction, "part_symmetry"))
-        bdy_cond->zone_type[zone_id] = CS_LAGR_SYM;
+    const char *interaction = cs_tree_node_get_tag(tn_p, "choice");
+    if (interaction == NULL)
+      continue;
 
-      else if(cs_gui_strcmp(interaction, "deposit1"))
-        bdy_cond->zone_type[zone_id] = CS_LAGR_DEPO1;
+    if (! strcmp(interaction, "inlet"))
+      bdy_cond->zone_type[zone_id] = CS_LAGR_INLET;
 
-      else if(cs_gui_strcmp(interaction, "deposit2"))
-        bdy_cond->zone_type[zone_id] = CS_LAGR_DEPO2;
+    else if (! strcmp(interaction, "outlet"))
+      bdy_cond->zone_type[zone_id] = CS_LAGR_OUTLET;
 
-      else if(cs_gui_strcmp(interaction, "fouling") && iphyla == 2)
-        bdy_cond->zone_type[zone_id] = CS_LAGR_FOULING;
+    else if (! strcmp(interaction, "bounce"))
+      bdy_cond->zone_type[zone_id] = CS_LAGR_REBOUND;
 
-      else if(   cs_gui_strcmp(interaction, "fouling")
-              && (iphyla == 0  || iphyla == 1))
-        bdy_cond->zone_type[zone_id] = CS_LAGR_DEPO_DLVO;
+    else if (! strcmp(interaction, "part_symmetry"))
+      bdy_cond->zone_type[zone_id] = CS_LAGR_SYM;
 
-#if _XML_DEBUG_
-      bft_printf("--zone_type[%i] = %i has %i set(s) \n", izone,
-                 bdy_cond->zone_type[zone_id],
-                 bdy_cond->b_zone_sets[zone_id]);
+    else if (! strcmp(interaction, "deposit1"))
+      bdy_cond->zone_type[zone_id] = CS_LAGR_DEPO1;
 
-      bft_printf("--        : label    %s \n", label);
-      bft_printf("--        : nature   %s \n", nature);
-      bft_printf("--        : p_nature %i \n", bdy_cond->zone_type[zone_id]);
-#endif
+    else if (! strcmp(interaction, "deposit2"))
+      bdy_cond->zone_type[zone_id] = CS_LAGR_DEPO2;
 
-      /* Additional info for inlet */
+    else if (! strcmp(interaction, "fouling") && iphyla == 2)
+      bdy_cond->zone_type[zone_id] = CS_LAGR_FOULING;
 
-      if (bdy_cond->zone_type[zone_id] == CS_LAGR_INLET) {
-
-        strcpy(path1, path2);
-        cs_xpath_add_element(&path1, "class");
-        int n_injection_sets = cs_gui_get_nb_element(path1);
-        strcpy(path1, path2);
-
-        for (int set_id = 0; set_id < n_injection_sets; set_id++) {
-
-          cs_lagr_injection_set_t *zis
-            = cs_lagr_get_injection_set(bdy_cond, zone_id, set_id);
-
-          cs_lagr_injection_set_default(zis);
-
-          sprintf(sclass, "class[%i]", set_id+1);
-          BFT_REALLOC(path2,
-                      ( 20+strlen(nature)
-                        +10+strlen(label)
-                        +13+strlen(sclass)+1),
-                      char);
-          strcpy(path2, "");
-          sprintf(path2,
-                  "boundary_conditions/%s[@label='%s']/particles/%s",
-                  nature,
-                  label,
-                  sclass);
-
-          int itmp0, itmp1, itmp2;
-          cs_real_t rtmp0 = 0., rtmp1 = 0., rtmp2;
-          _get_int(&(itmp0), 2, path2, "number");
-          _get_int(&(itmp1), 2, path2, "frequency");
-          _get_int(&(itmp2), 2, path2, "statistical_groups");
-
-          zis->n_inject = itmp0;
-          zis->injection_frequency = itmp1;
-          zis->cluster = itmp2;
+    else if (   ! strcmp(interaction, "fouling")
+             && (iphyla == 0  || iphyla == 1))
+      bdy_cond->zone_type[zone_id] = CS_LAGR_DEPO_DLVO;
 
 #if _XML_DEBUG_
-          bft_printf("---number = %i \n", itmp0);
-          bft_printf("---frequency = %i \n", itmp1);
-          bft_printf("---statistical_groups = %i \n", itmp2);
+    bft_printf("--zone_type[%i] = %i \n", zone_id,
+               bdy_cond->zone_type[zone_id]);
+
+    bft_printf("--        : label    %s \n", label);
+    bft_printf("--        : nature   %s \n", nature);
+    bft_printf("--        : p_nature %i \n", bdy_cond->zone_type[zone_id]);
 #endif
-          /* velocity */
 
-          choice = _get_attr("choice", 2, path2, "velocity");
+    /* Additional info for inlet */
 
-          cs_real_t vel[3] = {0, 0, 0};
+    if (bdy_cond->zone_type[zone_id] == CS_LAGR_INLET) {
+
+      /* Loop on injection sets (mislabelled as "class") */
+
+      int set_id = 0;
+      for (cs_tree_node_t *tn_i = cs_tree_node_get_child(tn_p, "class");
+           tn_i != NULL;
+           tn_i = cs_tree_node_get_next_of_name(tn_i), set_id++) {
+
+        cs_lagr_injection_set_t *zis
+          = cs_lagr_get_injection_set(bdy_cond, zone_id, set_id);
+
+        cs_lagr_injection_set_default(zis);
+
+        const char *choice = NULL;
+        const int *v_i;
+        const cs_real_t *v_r;
+        cs_tree_node_t *tn_c; /* child nodes */
+
+        v_i = cs_tree_node_get_child_values_int(tn_i, "number");
+        if (v_i != NULL) zis->n_inject = v_i[0];
+
+        v_i = cs_tree_node_get_child_values_int(tn_i, "frequency");
+        if (v_i != NULL) zis->injection_frequency = v_i[0];
+
+        v_i = cs_tree_node_get_child_values_int(tn_i, "statistical_groups");
+        if (v_i != NULL) zis->cluster = v_i[0];
+
+#if _XML_DEBUG_
+        bft_printf("---number = %llu \n", (unsigned long long)(zis->n_inject));
+        bft_printf("---frequency = %i \n", zis->injection_frequency);
+        bft_printf("---statistical_groups = %i \n", zis->cluster);
+#endif
+
+        /* velocity */
+
+        tn_c = cs_tree_node_get_child(tn_i, "velocity");
+        if (tn_c != NULL) {
+
+          choice = cs_tree_node_get_tag(tn_c, "choice");
 
           if (cs_gui_strcmp(choice, "fluid"))
             zis->velocity_profile = -1;
 
           else if (cs_gui_strcmp(choice, "norm")) {
-            _get_double(&(vel[0]), 3, path2, "velocity", "norm");
             zis->velocity_profile = 0;
-            zis->velocity_magnitude = vel[0];
+
+            v_r = cs_tree_node_get_child_values_real(tn_c, "norm");
+            if (v_r != NULL) zis->velocity_magnitude = v_r[0];
           }
           else if (cs_gui_strcmp(choice, "components")) {
+            const char *cname[] = {"velocity_x", "velocity_y", "velocity_z"};
             zis->velocity_profile = 1;
-            _get_double(&(vel[0]), 3, path2, "velocity", "velocity_x");
-            _get_double(&(vel[1]), 3, path2, "velocity", "velocity_y");
-            _get_double(&(vel[2]), 3, path2, "velocity", "velocity_z");
-            for (int i = 0; i < 3; i++)
-              zis->velocity[i] = vel[i];
+            for (int i = 0; i < 3; i++) {
+              v_r = cs_tree_node_get_child_values_real(tn_c, cname[i]);
+              if (v_r != NULL) zis->velocity[i] = v_r[0];
+            }
           }
           else if (cs_gui_strcmp(choice, "subroutine"))
             zis->velocity_profile = 2;
@@ -871,154 +653,139 @@ cs_gui_particles_bcs(void)
 #if _XML_DEBUG_
           bft_printf("---velocity choice: %i "
                      " (-1: fluid, 0: norm, 1: components, 2: subroutine)\n",
-                     itmp0);
+                     zis->velocity_profile);
 
-          if (itmp0 == 0)
+          if (zis->velocity_profile == 0)
+            bft_printf("----norm = %f \n", zis->velocity_magnitude);
 
-            bft_printf("----norm = %f \n", vel[0]);
-
-          else if (itmp0 == 1) {
-
-            bft_printf("----u = %f \n", vel[0]);
-            bft_printf("----v = %f \n", vel[1]);
-            bft_printf("----w = %f \n", vel[2]);
+          else if (zis->velocity_profile == 1) {
+            bft_printf("----u = %f \n", zis->velocity[0]);
+            bft_printf("----v = %f \n", zis->velocity[1]);
+            bft_printf("----w = %f \n", zis->velocity[2]);
           }
 #endif
-         BFT_FREE(choice);
+        }
 
-          /* statistical_weight, mass_flow_rate*/
+        /* statistical_weight, mass_flow_rate*/
 
-          choice = _get_attr("choice", 2, path2, "statistical_weight");
+        tn_c = cs_tree_node_get_child(tn_i, "statistical_weight");
+        if (tn_c != NULL) {
+
+          choice = cs_tree_node_get_tag(tn_c, "choice");
+          v_r = cs_tree_node_get_values_real(tn_c);
 
           if (cs_gui_strcmp(choice, "rate")) {
-            rtmp0 = 0;
-            _get_double(&rtmp1, 2, path2, "mass_flow_rate");
             zis->stat_weight = 0;
-            zis->flow_rate = rtmp1;
+            if (v_r != NULL) zis->flow_rate = v_r[0];
           }
-          else { /* if (cs_gui_strcmp(choice, "prescribed")) */
-            _get_double(&rtmp0, 2, path2, "statistical_weight");
-            zis->stat_weight = rtmp0;
+          else if (cs_gui_strcmp(choice, "prescribed")) {
+            if (v_r != NULL) zis->stat_weight = v_r[0];
             zis->flow_rate = 0;
           }
 
 #if _XML_DEBUG_
-          bft_printf("---statistical weight choice: %i "
-                     " (1: prescribed, 2: rate)\n", itmp0);
+          bft_printf("---statistical weight choice: %s "
+                     " (1: prescribed, 2: rate)\n", choice);
 
-          if (itmp0 == 1 || itmp0 == 2) {
-            bft_printf("----statistical weight = %f \n", rtmp0);
-            bft_printf("----mass flow rate = %f \n", rtmp1);
-          }
+          bft_printf("----statistical weight = %f \n", zis->stat_weight);
+          bft_printf("----mass flow rate = %f \n", zis->flow_rate);
 #endif
-          BFT_FREE(choice);
+        }
 
-          /* diameter */
+        /* diameter */
 
-          choice = _get_attr("choice", 2, path2, "diameter");
+        v_r = cs_tree_node_get_child_values_real(tn_i, "diameter");
+        if (v_r != NULL) zis->diameter = v_r[0];
 
-          _get_double(&rtmp0, 2, path2, "diameter");
-          _get_double(&rtmp1, 2, path2, "diameter_standard_deviation");
-          zis->diameter = rtmp0;
-          zis->diameter_variance = rtmp1;
+        v_r = cs_tree_node_get_child_values_real
+                (tn_i, "diameter_standard_deviation");
+        if (v_r != NULL) zis->diameter_variance = v_r[0];
 
 #if _XML_DEBUG_
-          if (itmp0 == 1) {
-            bft_printf("----diameter = %f \n", rtmp0);
-            bft_printf("----standard deviation = %f \n", rtmp1);
-          }
+        bft_printf("----diameter = %f \n", zis->diameter);
+        bft_printf("----standard deviation = %f \n", zis->diameter_variance);
 #endif
-          BFT_FREE(choice);
 
-          /* density */
-          if (iphyla != 2) {
-
-            _get_double(&rtmp0, 2, path2, "density");
-
-            zis->density = rtmp0;
+        /* density */
+        if (iphyla != 2) {
+          v_r = cs_tree_node_get_child_values_real(tn_i, "density");
+          if (v_r != NULL) zis->density = v_r[0];
 
 #if _XML_DEBUG_
-            bft_printf("---density = %f \n", rtmp0);
+          bft_printf("---density = %f \n", zis->density);
+#endif
+        }
+
+        /* Fouling index*/
+        v_r = cs_tree_node_get_child_values_real(tn_i, "fouling_index");
+        if (v_r != NULL) zis->fouling_index = v_r[0];
+
+#if _XML_DEBUG_
+          bft_printf("---fouling_index = %f \n", zis->fouling_index);
 #endif
 
-          }
+        if (iphyla == 1) {
 
-          /* Fouling index*/
+          /* temperature, specific_heat, emissivity */
 
-          _get_double(&rtmp0, 2, path2, "fouling_index");
-          zis->fouling_index = rtmp0;
+          tn_c = cs_tree_node_get_child(tn_i, "temperature");
+          if (tn_c != NULL) {
 
-          if (iphyla == 1) {
-
-            /* temperature, specific_heat, emissivity */
-
-            choice = _get_attr("choice", 2, path2, "temperature");
+            choice = cs_tree_node_get_tag(tn_c, "choice");
 
             if (cs_gui_strcmp(choice, "prescribed")) {
               zis->temperature_profile = 1;
-              _get_double(&rtmp0, 2, path2, "temperature");
-              zis->temperature = rtmp0;
+              v_r = cs_tree_node_get_values_real(tn_c);
+              if (v_r != NULL) zis->temperature = v_r[0];
             }
             else if (cs_gui_strcmp(choice, "fluid")) {
               zis->temperature_profile = 0;
               zis->temperature = 0;
             }
 
-            _get_double(&rtmp1, 2, path2, "specific_heat");
-            _get_double(&rtmp2, 2, path2, "emissivity");
-            zis->cp = rtmp1;
-            zis->emissivity = rtmp2;
-
-#if _XML_DEBUG_
-            bft_printf("---temperature choice = %i "
-                       "(0: fluid, 1: prescribed)\n",
-                       itmp0);
-
-            if (itmp0 == 1)
-              bft_printf("----temperature = %f \n", rtmp0);
-
-            bft_printf("---specific heat = %f \n", rtmp1);
-            bft_printf("---emissivity = %f \n", rtmp2);
-#endif
-            BFT_FREE(choice);
-
           }
 
-          /* coal */
-          else if (iphyla == 2) {
+          v_r = cs_tree_node_get_child_values_real(tn_i, "specific_heat");
+          if (v_r != NULL) zis->cp = v_r[0];
 
-            /* Read the coal number */
-
-            _get_int(&itmp0, 2, path2, "coal_number");
-            zis->coal_number = itmp0;
-
-            /* Data are read in pulverized fuel combustion module profile */
-
-            _get_double(&rtmp0, 2, path2, "coal_temperature");
-            zis->temperature = rtmp0;
+          v_r = cs_tree_node_get_child_values_real(tn_i, "emissivity");
+          if (v_r != NULL) zis->emissivity = v_r[0];
 
 #if _XML_DEBUG_
-            bft_printf("---coal number = %i \n", itmp0);
-            bft_printf("---coal composition = %i "
-                       "(1: raw coal, 2: user defined)\n", itmp1);
+          bft_printf("---temperature choice = %s "
+                     "(0: fluid, 1: prescribed)\n",
+                     choice);
+
+          bft_printf("----temperature = %f \n", zis->temperature);
+
+          bft_printf("---specific heat = %f \n", zis->cp);
+          bft_printf("---emissivity = %f \n", zis->emissivity);
+#endif
+        }
+
+        /* coal */
+        else if (iphyla == 2) {
+
+          /* Read the coal number */
+          v_i = cs_tree_node_get_child_values_int(tn_i, "coal_number");
+          if (v_i != NULL) zis->coal_number = v_i[0];
+
+          /* Data are read in pulverized fuel combustion module profile */
+          v_r = cs_tree_node_get_child_values_real(tn_i, "coal_temperature");
+          if (v_r != NULL) zis->temperature = v_r[0];
+
+#if _XML_DEBUG_
+          bft_printf("---coal number = %i \n", zis->coal_number);
+          bft_printf("---coal temperature = %f \n", zis->temperature);
 #endif /* _XML_DEBUG_ */
 
-          }
+        }
 
-        } /* End of loop on set */
+      } /* End of loop on injection sets */
 
-      } /* End of test on inlet */
+    } /* End of test on inlet */
 
-    } /* End of test on interaction */
-
-    BFT_FREE(path1);
-    BFT_FREE(path2);
-    BFT_FREE(interaction);
-
-    BFT_FREE(label);
-    BFT_FREE(nature);
-
-  } /* End of loop on zones */
+  } /* End of loop on zones and interaction */
 
 }
 

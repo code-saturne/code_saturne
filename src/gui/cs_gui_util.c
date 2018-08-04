@@ -268,6 +268,49 @@ _get_nodes_name(char  *path,
   return nodes_name;
 }
 
+/*----------------------------------------------------------------------------
+ * Query the number of elements (i.e. the number of xml markups)
+ * from a xpath request.
+ *
+ * Example: from <a>3<\a><a>4<\a> return 2
+ *
+ * parameters:
+ *   path <-- path for the xpath request
+ *
+ * returns:
+ *   the number of elements in xpath request
+ *----------------------------------------------------------------------------*/
+
+static int
+_get_nb_element(char  *path)
+{
+  int nb = 0;
+
+#if defined(HAVE_LIBXML2)
+
+  xmlXPathObjectPtr xpathObj;
+
+  assert(path);
+
+  xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);
+
+  if (xpathObj == NULL)
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  nb = (xpathObj->nodesetval) ? xpathObj->nodesetval->nodeNr : 0;
+
+  xmlXPathFreeObject(xpathObj);
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without XML support."));
+
+#endif
+
+  return nb;
+}
+
 #endif /* defined(HAVE_LIBXML2) */
 
 /*============================================================================
@@ -689,8 +732,11 @@ cs_xpath_add_function_text(char  **path)
 char *
 cs_gui_get_attribute_value(char  *path)
 {
-  char **array = NULL;
   char  *attr = NULL;
+
+#if defined(HAVE_LIBXML2)
+
+  char **array = NULL;
   int    size;
 
   array = _get_attribute_values(path, &size);
@@ -710,6 +756,13 @@ cs_gui_get_attribute_value(char  *path)
   for (int i = 0; i < size; i++)
     BFT_FREE(array[i]);
   BFT_FREE(array);
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Code_Saturne has been compiled without XML support."));
+
+#endif
 
   return attr;
 }
@@ -887,49 +940,6 @@ cs_gui_get_int(char  *path,
   return test;
 }
 
-/*----------------------------------------------------------------------------
- * Query the number of elements (i.e. the number of xml markups)
- * from a xpath request.
- *
- * Example: from <a>3<\a><a>4<\a> return 2
- *
- * parameters:
- *   path <-- path for the xpath request
- *
- * returns:
- *   the number of elements in xpath request
- *----------------------------------------------------------------------------*/
-
-int
-cs_gui_get_nb_element(char  *path)
-{
-  int nb = 0;
-
-#if defined(HAVE_LIBXML2)
-
-  xmlXPathObjectPtr xpathObj;
-
-  assert(path);
-
-  xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);
-
-  if (xpathObj == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  nb = (xpathObj->nodesetval) ? xpathObj->nodesetval->nodeNr : 0;
-
-  xmlXPathFreeObject(xpathObj);
-
-#else
-
-  bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without XML support."));
-
-#endif
-
-  return nb;
-}
-
 /*-----------------------------------------------------------------------------
  * Evaluate the "status" attribute value.
  *
@@ -1008,7 +1018,7 @@ cs_gui_get_tag_count(const char  *markup,
     strcpy(path, "/");
   }
   cs_xpath_add_element(&path, markup);
-  number = cs_gui_get_nb_element(path);
+  number = _get_nb_element(path);
 
   BFT_FREE(path);
 
@@ -1172,16 +1182,16 @@ cs_gui_node_get_real(cs_tree_node_t  *node,
  * The status is defined in a string-valued child (tag) node. If no such
  * tag is present, the initial status is unchanged.
  *
- * \param[in]       node    node whose status is queried
+ * \param[in]       tn      node whose status is queried
  * \param[in, out]  status  status value (0 or 1)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gui_node_get_status_int(cs_tree_node_t  *node,
+cs_gui_node_get_status_int(cs_tree_node_t  *tn,
                            int             *status)
 {
-  const char  *value = cs_tree_node_get_tag(node, "status");
+  const char  *value = cs_tree_node_get_tag(tn, "status");
 
   if (cs_gui_strcmp(value, "on"))
     *status = 1;
