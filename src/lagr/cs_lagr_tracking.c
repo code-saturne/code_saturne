@@ -1662,7 +1662,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
     /* Selection of the fouling coefficient*/
 
-    const cs_lnum_t particle_coal_number
+    const cs_lnum_t p_coal_id
       = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_NUM);
     const cs_lnum_t n_layers = p_am->count[0][CS_LAGR_TEMPERATURE];
     const cs_real_t *particle_temp
@@ -1670,13 +1670,13 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
     cs_real_t  temp_ext_part = particle_temp[n_layers - 1];
     cs_real_t  tprenc_icoal
-      = cs_glob_lagr_encrustation->tprenc[particle_coal_number - 1];
+      = cs_glob_lagr_encrustation->tprenc[p_coal_id];
     cs_real_t  visref_icoal
-      = cs_glob_lagr_encrustation->visref[particle_coal_number - 1];
+      = cs_glob_lagr_encrustation->visref[p_coal_id];
     cs_real_t  enc1_icoal
-      = cs_glob_lagr_encrustation->enc1[particle_coal_number - 1];
+      = cs_glob_lagr_encrustation->enc1[p_coal_id];
     cs_real_t  enc2_icoal
-      = cs_glob_lagr_encrustation->enc2[particle_coal_number - 1];
+      = cs_glob_lagr_encrustation->enc2[p_coal_id];
 
     if (temp_ext_part > tprenc_icoal+cs_physical_constants_celsius_to_kelvin) {
 
