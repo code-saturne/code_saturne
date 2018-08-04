@@ -1670,7 +1670,6 @@ cs_tree_find_node_next_simple(cs_tree_node_t  *root,
       cs_tree_node_t *tn = current;
 
       /* Determine sub-path to check if first part of path matches */
-      size_t l = 0;
 
       while (retval == NULL && tn != root && tn != NULL) {
         if (tn->next != NULL) {
@@ -1749,7 +1748,6 @@ cs_tree_get_sub_node_count_simple(cs_tree_node_t  *root,
   for (cs_tree_node_t *tn = cs_tree_find_node_simple(root, name);
        tn != NULL;
        tn = cs_tree_find_node_next_simple(root, tn, name)) {
-    const char *tag = cs_tree_node_get_tag(tn, "name");
     retval += 1;
   }
 

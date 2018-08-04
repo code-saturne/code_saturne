@@ -428,6 +428,18 @@ cs_lagr_log_setup(void)
          _("    visref[%3d]:    %11.5e (critical coal viscosity %d)\n"),
          i, cs_glob_lagr_encrustation->visref[i], i);
 
+    for (int i = 0; i < extra->ncharb; i++)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    enc1[%3d]:      %11.5e (fouling coefficient 1 %d)\n"),
+         i, cs_glob_lagr_encrustation->enc1[i], i);
+
+    for (int i = 0; i < extra->ncharb; i++)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    enc2[%3d]:      %11.5e (fouling coefficient 2 %d)\n"),
+         i, cs_glob_lagr_encrustation->enc2[i], i);
+
   }
 
   if (cs_glob_lagr_model->physical_model == 2) {

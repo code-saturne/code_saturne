@@ -136,7 +136,7 @@ BEGIN_C_DECLS
 
 #if defined(HAVE_LIBXML2)
 extern xmlXPathContextPtr xpathCtx;   /* Pointer on the Context       */
-extern xmlNodePtr node;               /* Pointer on the root node     */
+extern xmlNodePtr xmlrootnode;        /* Pointer on the root node     */
 #endif
 
 /*============================================================================
@@ -4854,7 +4854,7 @@ cs_gui_finalize(void)
 
 #if defined(HAVE_LIBXML2)
   if (xpathCtx != NULL) xmlXPathFreeContext(xpathCtx);
-  if (node != NULL) xmlFreeNode(node);
+  if (xmlrootnode != NULL) xmlFreeNode(xmlrootnode);
 #endif
 
   /* Shutdown libxml */

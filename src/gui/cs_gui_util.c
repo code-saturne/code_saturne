@@ -89,9 +89,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #if defined(HAVE_LIBXML2)
-xmlDocPtr docxml            = NULL;   /* Pointer on the XML document  */
-xmlXPathContextPtr xpathCtx = NULL;   /* Pointer on the XPath Context */
-xmlNodePtr node             = NULL;   /* Pointer on the root node     */
+xmlDocPtr docxml            = NULL;   /* Pointer to the XML document  */
+xmlXPathContextPtr xpathCtx = NULL;   /* Pointer to the XPath Context */
+xmlNodePtr xmlrootnode      = NULL;   /* Pointer to the root node     */
 const char *xmlRootName     = NULL;   /* Name of the root node        */
 #endif
 
@@ -352,13 +352,13 @@ cs_gui_load_file(const char  *filename)
   }
   else {
 
-    /* Contexte definition */
+    /* Context definition */
     xpathCtx = xmlXPathNewContext(docxml);
 
     /* Get the root node of the xml document and more particularly
        of its label */
-    node = xmlDocGetRootElement(docxml);
-    xmlRootName = (const char*) node->name;
+    xmlrootnode = xmlDocGetRootElement(docxml);
+    xmlRootName = (const char*) xmlrootnode->name;
 
   }
 

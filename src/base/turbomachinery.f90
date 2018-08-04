@@ -128,7 +128,6 @@ contains
 
     ! Local variables
 
-    integer iel
     type(c_ptr) :: c_p
 
     ! Map turbomachinery module components to global c turbomachinery structure
@@ -164,7 +163,6 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_p
-    integer(c_int) :: iturbo2
 
     call map_turbomachinery_rotor(c_p)
 
