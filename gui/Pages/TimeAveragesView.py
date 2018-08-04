@@ -98,7 +98,7 @@ class LabelDelegate(QItemDelegate):
         if editor.validator().state == QValidator.Acceptable:
             p_value = str(editor.text())
 
-            if p_value in self.mdl.getTimeAverageLabels():
+            if p_value in self.mdl.getTimeAverageNames():
                 title = self.tr("Warning")
                 msg   = self.tr("This time moment field is already used.\n"\
                                 "Please choose another one.")
@@ -106,7 +106,7 @@ class LabelDelegate(QItemDelegate):
                 return
 
             if p_value and p_value != self.old_p_value:
-                self.mdl.setLabel(self.old_p_value, p_value)
+                self.mdl.setName(self.old_p_value, p_value)
                 model.setData(index, to_qvariant(p_value), Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
@@ -174,7 +174,7 @@ class StartValueDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        editor.setText(value)
+        editor.setText(str(value))
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:

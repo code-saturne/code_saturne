@@ -80,7 +80,7 @@ class TimeAveragesModel(Model):
         value['start']     = 1
         value['timestart'] = 0.
         value['restart']   = -2
-        value['label']     = "TimeAverage"
+        value['name']     = "TimeAverage"
 
         return value
 
@@ -111,7 +111,7 @@ class TimeAveragesModel(Model):
                 name = node['name']
                 label = node['label']
                 if not label:
-                    raise ValueError("Node has no label")
+                    label = name
 
                 dim = node['dimension']
                 if dim and int(dim) > 1:
@@ -126,18 +126,18 @@ class TimeAveragesModel(Model):
                             if not (node['support'] and node['support'] == "boundary"):
                                 self.dicoLabel2Name[label1] = (name, str(ii))
                         if not (node['support'] and node['support'] == "boundary"):
-                            self.dicoLabel2Name[label] = (name, str(-1))
+                            self.dicoLabel2Name[name] = (name, str(-1))
                     else:
                         for ii in range(int(dim)):
                             label1 = label + "[" + str(ii) + "]"
                             if not (node['support'] and node['support'] == "boundary"):
                                 self.dicoLabel2Name[label1] = (name, str(ii))
                         if not (node['support'] and node['support'] == "boundary"):
-                            self.dicoLabel2Name[label] = (name, str(-1))
+                            self.dicoLabel2Name[name] = (name, str(-1))
                 else:
                     if not (node['support'] and node['support'] == "boundary"):
                         if name != 'local_time_step':
-                            self.dicoLabel2Name[label] = (name, str(0))
+                            self.dicoLabel2Name[name] = (name, str(0))
 
         return list(self.dicoLabel2Name.keys())
 
@@ -146,43 +146,43 @@ class TimeAveragesModel(Model):
     def addTimeAverage(self):
         """
         Public method.
-        Add a new time average and return a default label
+        Add a new time average and return a default name
         """
-        label = self.defaultValues()['label']
-        def_label = label + str(len(self.getTimeAverageLabels()) + 1)
+        name = self.defaultValues()['name']
+        def_name = name + str(len(self.getTimeAverageNames()) + 1)
 
-        # define default label
-        if def_label in self.getTimeAverageLabels():
+        # define default name
+        if def_name in self.getTimeAverageNames():
             i = 2
-            while def_label in self.getTimeAverageLabels():
-                def_label = label + str(len(self.getTimeAverageLabels()) + i)
+            while def_name in self.getTimeAverageNames():
+                def_name = name + str(len(self.getTimeAverageNames()) + i)
                 i = i + 1
 
-        node = self.node_mean.xmlInitNode('time_average', label = def_label, name = def_label)
-        node['id'] = len(self.getTimeAverageLabels())
+        node = self.node_mean.xmlInitNode('time_average', name = def_name, label = def_name)
+        node['id'] = len(self.getTimeAverageNames())
         ntdmom = self.defaultValues()['start']
         ttdmom = -1.0
         imoold = self.defaultValues()['restart']
-        self.setTimeStepStart(def_label, ntdmom)
-        self.setTimeStart(def_label, ttdmom)
-        self.setRestart(def_label, imoold)
+        self.setTimeStepStart(def_name, ntdmom)
+        self.setTimeStart(def_name, ttdmom)
+        self.setRestart(def_name, imoold)
 
-        return def_label, ntdmom, ttdmom, imoold
+        return def_name, ntdmom, ttdmom, imoold
 
 
     @Variables.undoGlobal
-    def deleteTimeAverage(self, label):
+    def deleteTimeAverage(self, name):
         """
         Public method.
-        @type label: C{String}
-        @param label: label of the time average to delete.
+        @type name: C{String}
+        @param name: name of the time average to delete.
         """
-        node = self.node_mean.xmlGetNode('time_average', label=label)
+        node = self.node_mean.xmlGetNode('time_average', name=name)
         if node:
             nb = node['id']
             node.xmlRemoveNode()
 
-            # renumerotation of all time average
+            # renumbering of all time averages
             for p in range(int(nb)+1, self.getNumberOfTimeAverage()+2):
                 t = self.node_mean.xmlGetNode('time_average', id=p)
                 t['id'] = p - 1
@@ -201,102 +201,100 @@ class TimeAveragesModel(Model):
         node = self.node_mean.xmlGetNode('time_average', id=imom)
         start = node.xmlGetInt('time_step_start')
         timestart = node.xmlGetDouble('time_start')
-        if StartRestartModel(self.case).getRestartPath():
-            restart = node.xmlGetInt('restart_from_time_average')
+        restart = node.xmlGetInt('restart_from_time_average')
 
         for var in node.xmlGetChildNodeList('var_prop'):
-            for label in list(self.dicoLabel2Name.keys()):
-                if self.dicoLabel2Name[label] == (var['name'], var['component']):
-                    lst.append(label)
-        return node['label'], start, timestart, restart, lst
+            for name in list(self.dicoLabel2Name.keys()):
+                if self.dicoLabel2Name[name] == (var['name'], var['component']):
+                    lst.append(name)
+        return node['name'], start, timestart, restart, lst
 
 
     @Variables.undoLocal
-    def setLabel(self, old_label, label):
+    def setName(self, old_name, name):
         """
         Public method.
         """
-        self.isInList(old_label, self.getTimeAverageLabels())
-        node = self.node_mean.xmlInitNode('time_average', label=old_label)
-        node['label'] = label
+        self.isInList(old_name, self.getTimeAverageNames())
+        node = self.node_mean.xmlInitNode('time_average', name=old_name)
+        node['name'] = name
         # needed for acces by name in GUI (probes, ...)
-        node['name'] = label
+        node['name'] = name
 
 
     @Variables.undoLocal
-    def setTimeStart(self, label, start):
+    def setTimeStart(self, name, start):
         """
         Public method.
         """
         self.isFloat(start)
-        self.isInList(label, self.getTimeAverageLabels())
-        node = self.node_mean.xmlInitNode('time_average', label=label)
+        self.isInList(name, self.getTimeAverageNames())
+        node = self.node_mean.xmlInitNode('time_average', name=name)
         node.xmlSetData('time_start', start)
 
 
     @Variables.noUndo
-    def getTimeStart(self, label):
+    def getTimeStart(self, name):
         """
         Public method.
         """
-        self.isInList(label, self.getTimeAverageLabels())
-        node = self.node_mean.xmlInitNode('time_average', label=label)
+        self.isInList(name, self.getTimeAverageNames())
+        node = self.node_mean.xmlInitNode('time_average', name=name)
         return node.xmlGetDouble('time_start')
 
 
     @Variables.undoLocal
-    def setTimeStepStart(self, label, start):
+    def setTimeStepStart(self, name, start):
         """
         Public method.
         """
         self.isInt(start)
-        self.isInList(label, self.getTimeAverageLabels())
-        node = self.node_mean.xmlInitNode('time_average', label=label)
+        self.isInList(name, self.getTimeAverageNames())
+        node = self.node_mean.xmlInitNode('time_average', name=name)
         node.xmlSetData('time_step_start', start)
 
 
     @Variables.noUndo
-    def getTimeStepStart(self, label):
+    def getTimeStepStart(self, name):
         """
         Public method.
         """
-        self.isInList(label, self.getTimeAverageLabels())
-        node = self.node_mean.xmlInitNode('time_average', label=label)
+        self.isInList(name, self.getTimeAverageNames())
+        node = self.node_mean.xmlInitNode('time_average', name=name)
         return node.xmlGetInt('time_step_start')
 
 
     @Variables.undoLocal
-    def setRestart(self, label, restart):
+    def setRestart(self, name, restart):
         """
         Public method.
         """
         self.isInt(restart)
-        self.isInList(label, self.getTimeAverageLabels())
-        node = self.node_mean.xmlInitNode('time_average', label=label)
-        if StartRestartModel(self.case).getRestartPath():
-            if restart != -2:
-                node.xmlSetData('restart_from_time_average', restart)
-            else:
-                node.xmlRemoveChild('restart_from_time_average')
+        self.isInList(name, self.getTimeAverageNames())
+        node = self.node_mean.xmlInitNode('time_average', name=name)
+        if restart != -2:
+            node.xmlSetData('restart_from_time_average', restart)
+        else:
+            node.xmlRemoveChild('restart_from_time_average')
 
 
     @Variables.noUndo
-    def getRestart(self, label):
+    def getRestart(self, name):
         """
         Public method.
         """
-        self.isInList(label, self.getTimeAverageLabels())
-        node = self.node_mean.xmlInitNode('time_average', label=label)
+        self.isInList(name, self.getTimeAverageNames())
+        node = self.node_mean.xmlInitNode('time_average', name=name)
         return node.xmlGetInt('restart_from_time_average')
 
 
     @Variables.undoLocal
-    def setVariable(self, label, lst):
+    def setVariable(self, name, lst):
         """
         Public method.
         """
-        self.isInList(label, self.getTimeAverageLabels())
-        node = self.node_mean.xmlInitNode('time_average', label=label)
+        self.isInList(name, self.getTimeAverageNames())
+        node = self.node_mean.xmlInitNode('time_average', name=name)
         node.xmlRemoveChild('var_prop')
         for var in lst:
             self.isInList(var, self.__var_prop_list)
@@ -305,12 +303,12 @@ class TimeAveragesModel(Model):
 
 
     @Variables.noUndo
-    def getVariable(self, label):
+    def getVariable(self, name):
         """
         Public method.
         """
-        self.isInList(label, self.getTimeAverageLabels())
-        node = self.node_mean.xmlInitNode('time_average', label=label)
+        self.isInList(name, self.getTimeAverageNames())
+        node = self.node_mean.xmlInitNode('time_average', name=name)
 
         lst = []
         for var in node.xmlGetChildNodeList('var_prop'):
@@ -321,16 +319,16 @@ class TimeAveragesModel(Model):
 
 
     @Variables.noUndo
-    def getTimeAverageLabels(self):
+    def getTimeAverageNames(self):
         """
         Public method.
-        @return: list of time averages labels.
+        @return: list of time averages names.
         @rtype: C{List} of C{String}
         """
         lst = []
         for node in self.node_mean.xmlGetNodeList('time_average'):
-            label = node['label']
-            lst.append(label)
+            name = node['name']
+            lst.append(name)
         return lst
 
 
@@ -365,12 +363,12 @@ class TimeAveragesTestCase(ModelTest):
         mdl.setTimeAverage(2, 'deux', 20, 1, ['Pressure'])
 
         doc = '''<time_averages>
-                    <time_average id="1" label="moyenne">
+                    <time_average id="1" name="moyenne">
                             <var_prop name="velocity" component="0"/>
                             <var_prop name="velocity" component="1"/>
                             <time_step_start>10</time_step_start>
                     </time_average>
-                    <time_average id="2" label="deux">
+                    <time_average id="2" name="deux">
                             <var_prop name="pressure"/>
                             <time_step_start>20</time_step_start>
                     </time_average>
@@ -389,17 +387,17 @@ class TimeAveragesTestCase(ModelTest):
         mdl.replaceTimeAverage(2, 'SECOND', 12, 1, ['VelocitW', 'VelocitV'])
         mdl.replaceTimeAverage(3, 'trois', 33, 1, ['Pressure', 'VelocitW'])
         doc = '''<time_averages>
-                    <time_average id="1" label="moyenne">
+                    <time_average id="1" name="moyenne">
                             <var_prop name="velocity" component="0"/>
                             <var_prop name="velocity" component="1"/>
                             <time_step_start>10</time_step_start>
                     </time_average>
-                    <time_average id="2" label="SECOND">
+                    <time_average id="2" name="SECOND">
                             <var_prop name="velocity" component="2"/>
                             <var_prop name="velocity" component="1"/>
                             <time_step_start>12</time_step_start>
                     </time_average>
-                    <time_average id="3" label="trois">
+                    <time_average id="3" name="trois">
                             <var_prop name="pressure"/>
                             <var_prop name="velocity" component="2"/>
                             <time_step_start>33</time_step_start>
@@ -417,12 +415,12 @@ class TimeAveragesTestCase(ModelTest):
         mdl.setTimeAverage(3, 'trois', 33, 1, ['VelocitW', 'VelocitU'])
         mdl.deleteTimeAverage(2)
         doc = '''<time_averages>
-                    <time_average id="1" label="moyenne">
+                    <time_average id="1" name="moyenne">
                             <var_prop name="velocity" component="0"/>
                             <var_prop name="velocity" component="1"/>
                             <time_step_start>10</time_step_start>
                     </time_average>
-                    <time_average id="2" label="trois">
+                    <time_average id="2" name="trois">
                             <var_prop name="velocity" component="2"/>
                             <var_prop name="velocity" component="0"/>
                             <time_step_start>33</time_step_start>
