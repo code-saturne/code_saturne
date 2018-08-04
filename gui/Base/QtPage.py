@@ -151,7 +151,7 @@ if os.environ.get('QT_API', 'pyqt') == 'pyqt':
             else:
                 return convfunc(qobj)
         else:
-            if (qobj):
+            if (qobj != None):
                 if convfunc in TEXT_TYPES or convfunc is to_text_string:
                     return str(qobj)
                 elif convfunc is int:
