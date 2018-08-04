@@ -691,11 +691,12 @@ _inlet_coal(int         izone,
                                          "boundary_conditions/inlet");
   tn0 = cs_tree_node_get_sibling_with_tag(tn0, "label",
                                           boundaries->label[izone]);
-  tn0 = cs_tree_get_node(tn0, "velocity_pressure/coal");
 
   /* Count coal definitions */
 
-  while (tn0 != NULL) {
+  for (tn0 = cs_tree_get_node(tn0, "velocity_pressure/coal");
+       tn0 != NULL;
+       tn0 = cs_tree_node_get_next_of_name(tn0), _n_coals++) {
 
     const char *name = cs_tree_node_get_tag(tn0, "name");
     if (name == NULL)
@@ -732,10 +733,6 @@ _inlet_coal(int         izone,
         boundaries->distch[izone][icoal][iclass] = v[0];
 
     }
-
-    _n_coals += 1;
-
-    tn0 = cs_tree_node_get_next_of_name(tn0);
 
   }
 

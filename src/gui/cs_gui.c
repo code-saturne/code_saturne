@@ -1157,173 +1157,6 @@ _turbulence_initialization_choice(const char* zone_id)
   return initialization_choice;
 }
 
-/*----------------------------------------------------------------------------
- * Return the number of variables and properties inside a given time average.
- *
- * parameters:
- *   id           <--  time average number (imom)
- *----------------------------------------------------------------------------*/
-
-static int
-_get_time_average_n_variables(const int  id)
-{
-  char *path = NULL;
-  int   number = 0;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
-  cs_xpath_add_element_num(&path, "time_average", id);
-  cs_xpath_add_element(&path, "var_prop");
-  number = cs_gui_get_nb_element(path);
-
-  BFT_FREE(path);
-
-  return number;
-}
-
-/*-----------------------------------------------------------------------------
- * Return the label model's property.
- *
- * parameters:
- *   moment_id  <-- moment id
- *----------------------------------------------------------------------------*/
-
-static char *
-_get_time_average_label(int  moment_id)
-{
-  char *path = NULL;
-  char *label_name = NULL;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element_num(&path, "time_average", moment_id+1);
-  cs_xpath_add_attribute(&path, "label");
-
-  label_name = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  return label_name;
-}
-
-/*----------------------------------------------------------------------------
- * Return the component of variables or properties or scalar for a given time average
- *
- * parameters:
- *   id <--  number of 1D profile
- *   nm <--  number of the variable name of the idth 1D profile
- *----------------------------------------------------------------------------*/
-
-static int
-_get_time_average_component(const int  id,
-                            const int  nm)
-{
-  char *path = NULL;
-  char *comp = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
-  cs_xpath_add_element_num(&path, "time_average", id);
-  cs_xpath_add_element_num(&path, "var_prop", nm);
-  cs_xpath_add_attribute(&path, "component");
-
-  comp = cs_gui_get_attribute_value(path);
-  if (comp == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Invalid xpath: %s\n component not found"), path);
-  BFT_FREE(path);
-
-  int compId = atoi(comp);
-
-  BFT_FREE(comp);
-
-  return compId;
-}
-
-/*----------------------------------------------------------------------------
- * Get value of a parameter for a given time average.
- *
- * parameters:
- *   id              <--  time average number (imom)
- *   param           <--  name of the parameter
- *   data           -->   value of the parameter
- *----------------------------------------------------------------------------*/
-
-static void
-_get_time_average_data(int          id,
-                       const char  *param,
-                       int         *data)
-{
-  char *path = NULL;
-  int   result = 0;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
-  cs_xpath_add_element_num(&path, "time_average", id);
-  cs_xpath_add_element(&path, param);
-
-  cs_xpath_add_function_text(&path);
-  if (cs_gui_get_int(path, &result))
-    *data = result;
-
-  BFT_FREE(path);
-}
-
-/*----------------------------------------------------------------------------
- * Get value of a parameter for a given time average.
- *
- * parameters:
- *   id              <--  time average number (imom)
- *   param           <--  name of the parameter
- *   data           -->   value of the parameter
- *----------------------------------------------------------------------------*/
-
-static void
-_get_time_average_time_start(int          id,
-                             const char  *param,
-                             double      *data)
-{
-  char  *path = NULL;
-  double result = 0;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
-  cs_xpath_add_element_num(&path, "time_average", id);
-  cs_xpath_add_element(&path, param);
-
-  cs_xpath_add_function_text(&path);
-  if (cs_gui_get_double(path, &result))
-    *data = result;
-
-  BFT_FREE(path);
-}
-
-/*----------------------------------------------------------------------------
- * Return the name of a variable or a property for a given time average.
- *
- * parameters:
- *   id <--  time average id
- *   nb <--  variable or property number
- *----------------------------------------------------------------------------*/
-
-static char *
-_get_time_average_variable_name(int  id,
-                                int  nb)
-{
-  char *path = NULL;
-  char *name = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
-  cs_xpath_add_element_num(&path, "time_average", id);
-  cs_xpath_add_element_num(&path, "var_prop", nb);
-  cs_xpath_add_attribute(&path, "name");
-
-  name = cs_gui_get_attribute_value(path);
-  BFT_FREE(path);
-
-  return name;
-}
-
 /*==========================
  * FOR VOLUMIC ZONES
  *==========================*/
@@ -5974,53 +5807,60 @@ cs_gui_time_moments(void)
   if (!cs_gui_file_is_loaded())
     return;
 
-  int imom = 0;
-  int isuite = cs_restart_present();
+  int imom = 1;
+  int restart = cs_restart_present();
 
-  int ntimaver
-    = cs_gui_get_tag_count("/analysis_control/time_averages/time_average", 1);
+  /* Loop on time average definitions */
 
-  /* for each average */
-  for (int i = 0; i < ntimaver; i++) {
+  const char path0[] = "/analysis_control/time_averages/time_average";
 
-    imom = i + 1;
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), imom++) {
 
     const char *restart_name;
     cs_time_moment_restart_t  restart_mode = CS_TIME_MOMENT_RESTART_AUTO;
-    int nt_start = 0, restart_id = 0;
-    double t_start = -1;
 
-    char *m_name = _get_time_average_label(i);
+    const int *v_i;
+    const cs_real_t *v_r;
 
-    _get_time_average_data(imom, "time_step_start", &nt_start);
-    _get_time_average_time_start(imom, "time_start", &t_start);
+    const char *m_name = _tree_node_get_tag(tn, "name");
+
+    v_i = cs_tree_node_get_child_values_int(tn, "time_step_start");
+    int nt_start = (v_i != NULL) ? v_i[0] : 0;
+
+    v_r = cs_tree_node_get_child_values_real(tn, "time_start");
+    double t_start = (v_r != NULL) ? v_r[0] : -1;
 
     /* test on restart */
 
-    if (isuite != 0) {
-      restart_id = -2;
-      _get_time_average_data(imom, "restart_from_time_average", &restart_id);
+    if (restart != 0) {
+      v_i = cs_tree_node_get_child_values_int(tn, "restart_from_time_average");
+      int restart_id = (v_i != NULL) ? v_i[0] : -2;
       cs_time_moment_restart_options_by_id(restart_id,
                                            &restart_mode,
                                            &restart_name);
     }
 
-    int n_m_fields = _get_time_average_n_variables(imom);
-    int *m_f_id, *m_c_id;
+    int n_m_fields = cs_tree_get_node_count(tn, "var_prop");
 
+    int *m_f_id;
     BFT_MALLOC(m_f_id, n_m_fields*2, int);
-    m_c_id = m_f_id + n_m_fields;
+    int *m_c_id = m_f_id + n_m_fields;
 
-    for (int j = 0; j < n_m_fields; j++) {
+    int j = 0;
+    for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
+         tn_vp != NULL;
+         tn_vp = cs_tree_node_get_next_of_name(tn_vp), j++) {
 
-      char *f_name = _get_time_average_variable_name(imom, j + 1);
-      int idim = _get_time_average_component(imom, j + 1);
+      const char *f_name = _tree_node_get_tag(tn_vp, "name");
+      v_i = cs_tree_node_get_child_values_int(tn_vp, "component");
+      int idim = (v_i != NULL) ? v_i[0] : -1;
 
       cs_field_t *f = cs_field_by_name_try(f_name);
 
       /* If we failed to find Rij, we search for Rxx.
-       * This test is needed for the case where irijco = 0
-       */
+       * This test is needed for the case where irijco = 0 */
 
       if (f == NULL && cs_gui_strcmp(f_name, "rij")) {
         switch(idim) {
@@ -6052,7 +5892,6 @@ cs_gui_time_moments(void)
         m_c_id[j] = idim;
       }
 
-      BFT_FREE(f_name);
     }
 
     cs_time_moment_define_by_field_ids(m_name,
@@ -6067,7 +5906,6 @@ cs_gui_time_moments(void)
 
     m_c_id = NULL;
     BFT_FREE(m_f_id);
-    BFT_FREE(m_name);
 
   }
 
