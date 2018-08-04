@@ -598,10 +598,33 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
   const cs_real_t  *xwatch = cs_glob_lagr_coal_comb->xwatch;
   const cs_real_t  *rho0ch = cs_glob_lagr_coal_comb->rho0ch;
 
-  const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
-
   const cs_real_t *vela = extra->vel->vals[time_id];
-  cs_real_t *cscalt = NULL, *temp = NULL, *temp1 = NULL;
+  const cs_real_t *cval_h = NULL, *cval_t = NULL;
+  cs_real_t tscl_shift = 0;
+
+  /* Initialize pointers (used to simplify future tests) */
+
+  if (   (   cs_glob_lagr_model->physical_model == 1
+          && cs_glob_lagr_specific_physics->itpvar == 1)
+      || cs_glob_lagr_model->physical_model == 2) {
+
+    if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+        || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
+        || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
+      cval_t = cs_field_by_name("t_gas")->val;
+
+    else {
+      const cs_field_t *f = cs_field_by_name_try("temperature");
+      if (f != NULL)
+        cval_t = f->val;
+      else if (   cs_glob_thermal_model->itherm
+               == CS_THERMAL_MODEL_ENTHALPY)
+        cval_h = cs_field_by_name("enthalpy")->val;
+    }
+
+    if (cs_glob_thermal_model->itpscl == 1) /* Kelvin */
+      tscl_shift = - cs_physical_constants_celsius_to_kelvin;
+  }
 
   const cs_real_t pis6 = cs_math_pi / 6.0;
 
@@ -741,43 +764,16 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
         if (   cs_glob_lagr_model->physical_model == 1
             && cs_glob_lagr_specific_physics->itpvar == 1) {
 
-          if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
-              || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
-              || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
+          if (cval_t != NULL)
             cs_lagr_particle_set_real(particle, p_am,
                                       CS_LAGR_FLUID_TEMPERATURE,
-                                      temp1[cell_id] - tkelvi);
+                                      cval_t[cell_id] + tscl_shift);
 
-          else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
-                   || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
-                   || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
-                   || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
-            cs_lagr_particle_set_real(particle, p_am,
-                                      CS_LAGR_FLUID_TEMPERATURE,
-                                      temp[cell_id] - tkelvi);
-
-          else if (   cs_glob_thermal_model->itherm
-                   == CS_THERMAL_MODEL_TEMPERATURE) {
-
-            /* Kelvin */
-            if (cs_glob_thermal_model->itpscl == 1)
-              cs_lagr_particle_set_real(particle, p_am,
-                                        CS_LAGR_FLUID_TEMPERATURE,
-                                        cscalt[cell_id] - tkelvi);
-
-            /* Celsius */
-            else if (cs_glob_thermal_model->itpscl == 2)
-              cs_lagr_particle_set_real(particle, p_am,
-                                        CS_LAGR_FLUID_TEMPERATURE,
-                                        cscalt[cell_id]);
-
-          }
-
-          else if (   cs_glob_thermal_model->itherm
-                   == CS_THERMAL_MODEL_ENTHALPY) {
+          else if (cval_h != NULL) {
 
             int mode = 1;
-            CS_PROCF(usthht, USTHHT)(&mode, &(cscalt[cell_id]), temp);
+            cs_real_t temp[1];
+            CS_PROCF(usthht, USTHHT)(&mode, &(cval_h[cell_id]), temp);
             cs_lagr_particle_set_real(particle, p_am,
                                       CS_LAGR_FLUID_TEMPERATURE,
                                       temp[0]);
@@ -805,7 +801,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_COAL_NUM, coal_id);
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
-                                  temp1[cell_id] - tkelvi);
+                                  cval_t[cell_id] + tscl_shift);
 
         cs_real_t *particle_temp
           = cs_lagr_particle_attr(particle, p_am, CS_LAGR_TEMPERATURE);
@@ -1019,17 +1015,17 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
         cs_real_t *vals = cs_lagr_particles_attr(p_set, p_id, attr);
 
         for (int l_id = 0; l_id < n_vals; l_id++) {
-          if (vals[l_id] < 0.0 || vals[l_id] > 1.0) {
+          if (vals[l_id] < 0.0) {
             if (n_vals == 1)
               bft_error(__FILE__, __LINE__, 0,
                         _("Lagrangian %s zone %d, set %d:\n"
-                          "  particle %d has %s outside  [0, 1] range: %g"),
+                          "  particle %d has a negative %s: %g"),
                         z_type_name, zis->zone_id, zis->set_id,
                         p_id, cs_lagr_attribute_name[attr], (double)vals[0]);
             else
               bft_error(__FILE__, __LINE__, 0,
                         _("Lagrangian %s zone %d, set %d:\n"
-                          "  particle %d has %s outside  [0, 1] range\n"
+                          "  particle %d has a negative %s\n"
                           "  in layer %d: %g"),
                         z_type_name, zis->zone_id, zis->set_id,
                         p_id, cs_lagr_attribute_name[attr], l_id, (double)vals[l_id]);
@@ -1039,7 +1035,7 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
 
       }
 
-      for (int i_attr = 0; i_attr < 3; i_attr++) {
+      for (int i_attr = 0; i_attr < 2; i_attr++) {
 
         int attr = r00_attrs[i_attr];
         cs_real_t val = cs_lagr_particles_get_real(p_set, p_id, attr);
