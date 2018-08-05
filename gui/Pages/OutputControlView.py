@@ -1427,6 +1427,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # comboBox
         self.comboBoxOutput.activated[str].connect(self.slotOutputListing)
+        self.comboBoxNTLAL.activated[str].connect(self.slotChoiceNTLAL)
+
         self.comboBoxTimeDependency.activated[str].connect(self.slotWriterTimeDependency)
         self.comboBoxFrequency.activated[str].connect(self.slotWriterFrequencyChoice)
         self.comboBoxFormatE.activated[str].connect(self.slotWriterOptions)
