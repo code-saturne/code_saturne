@@ -1101,6 +1101,72 @@ cs_gui_is_equal_real(cs_real_t v1,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update an integer valu based on a tree node
+ *
+ * If no node is present, the initial value is unchanged.
+ * If the node is present but the value missing, an error is returne.
+ *
+ * \param[in]       node    node whose value is queried
+ * \param[in, out]  value   queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_int(cs_tree_node_t  *node,
+                    int             *value)
+{
+  if (node != NULL) {
+
+    const int *v_i = cs_tree_node_get_values_int(node);
+
+    if (node->size != 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Expected 1 value for node %s, not %d"),
+                node->name, node->size);
+
+    if (v_i != NULL)
+      *value = v_i[0];
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Missing values for node %s"), node->name);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an real value based on a tree node
+ *
+ * If no node is present, the initial value is unchanged.
+ * If the node is present but the value missing, an error is returne.
+ *
+ * \param[in]       node    node whose value is queried
+ * \param[in, out]  value   queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_real(cs_tree_node_t  *node,
+                     cs_real_t       *value)
+{
+  if (node != NULL) {
+
+    const cs_real_t *v_r = cs_tree_node_get_values_real(node);
+
+    if (node->size != 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Expected 1 value for node %s, not %d"),
+                node->name, node->size);
+
+    if (v_r != NULL)
+      *value = v_r[0];
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Missing values for node %s"), node->name);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update an integer-valued status value based on a node's status tag.
  *
  * The status is defined in a string-valued child (tag) node. If no such
@@ -1151,6 +1217,148 @@ cs_gui_node_get_status_bool(cs_tree_node_t  *node,
   else if (value != NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("Invalid status value: %s"), value);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an integer value based on a tree's child node
+ *
+ * If no node is present, the initial value is unchanged.
+ * If the node is present but the value missing, an error is returne.
+ *
+ * \param[in]       node        node whose value is queried
+ * \param[in]       child_name  name of child node
+ * \param[in, out]  value       queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_child_int(cs_tree_node_t  *node,
+                          const char      *child_name,
+                          int             *value)
+{
+  cs_tree_node_t *tn_c = cs_tree_node_get_child(node, child_name);
+
+  if (tn_c != NULL) {
+    const int *v_i = cs_tree_node_get_values_int(tn_c);
+
+    if (tn_c->size != 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Expected 1 value for node %s, not %d"),
+                tn_c->name, tn_c->size);
+
+
+    if (v_i != NULL)
+      *value = v_i[0];
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Missing values for node %s"), tn_c->name);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an integer value based on a tree's child node
+ *
+ * If no node is present, the initial value is unchanged.
+ * If the node is present but the value missing, an error is returne.
+ *
+ * \param[in]       node        node whose value is queried
+ * \param[in]       child_name  name of child node
+ * \param[in, out]  value       queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_child_real(cs_tree_node_t  *node,
+                           const char      *child_name,
+                           cs_real_t       *value)
+{
+  cs_tree_node_t *tn_c = cs_tree_node_get_child(node, child_name);
+
+  if (tn_c != NULL) {
+    const cs_real_t *v_r = cs_tree_node_get_values_real(tn_c);
+
+    if (tn_c->size != 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Expected 1 value for node %s, not %d"),
+                tn_c->name, tn_c->size);
+
+
+    if (v_r != NULL)
+      *value = v_r[0];
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Missing values for node %s"), tn_c->name);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an integer-valued status value based on a node child's
+ *         status tag.
+ *
+ * The status is defined in a string-valued child (tag) node. If no such
+ * child and tag is present, the initial status is unchanged.
+ *
+ * \param[in]       node        node whose value is queried
+ * \param[in]       child_name  name of child node
+ * \param[in, out]  value       queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_child_status_int(cs_tree_node_t  *tn,
+                                 const char      *child_name,
+                                 int             *status)
+{
+  cs_tree_node_t *tn_c = cs_tree_node_get_child(tn, child_name);
+
+  const char  *value = cs_tree_node_get_tag(tn_c, "status");
+
+  if (value != NULL) {
+    if (! strcmp(value, "on"))
+      *status = 1;
+    else if (! strcmp(value, "off"))
+      *status = 0;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Invalid status value: %s"), value);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update a bool-valued status value based on a node child's
+ *         status tag.
+ *
+ * The status is defined in a string-valued child (tag) node. If no such
+ * child and tag is present, the initial status is unchanged.
+ *
+ * \param[in]       node        node whose value is queried
+ * \param[in]       child_name  name of child node
+ * \param[in, out]  value       queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_child_status_bool(cs_tree_node_t  *node,
+                                  const char      *child_name,
+                                  bool            *status)
+{
+  cs_tree_node_t *tn_c = cs_tree_node_get_child(node, child_name);
+
+  const char  *value = cs_tree_node_get_tag(tn_c, "status");
+
+  if (value != NULL) {
+    if (! strcmp(value, "on"))
+      *status = true;
+    else if (! strcmp(value, "off"))
+      *status = false;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Invalid status value: %s"), value);
+  }
 }
 
 /*-----------------------------------------------------------------------------

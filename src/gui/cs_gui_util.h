@@ -338,6 +338,38 @@ cs_gui_is_equal_real(cs_real_t v1,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update an integer value based on a tree node
+ *
+ * If no node is present, the initial value is unchanged.
+ * If the node is present but the value missing, an error is returne.
+ *
+ * \param[in]       node    node whose value is queried
+ * \param[in, out]  value   queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_int(cs_tree_node_t  *node,
+                    int             *value);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an real value based on a tree node
+ *
+ * If no node is present, the initial value is unchanged.
+ * If the node is present but the value missing, an error is returne.
+ *
+ * \param[in]       node    node whose value is queried
+ * \param[in, out]  value   queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_real(cs_tree_node_t  *node,
+                     cs_real_t       *value);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update an integer-valued status value based on a node's status tag.
  *
  * The status is defined in a string-valued child (tag) node. If no such
@@ -367,6 +399,80 @@ cs_gui_node_get_status_int(cs_tree_node_t  *node,
 void
 cs_gui_node_get_status_bool(cs_tree_node_t  *node,
                             bool            *status);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an integer value based on a tree's child node
+ *
+ * If no node is present, the initial value is unchanged.
+ * If the node is present but the value missing, an error is returne.
+ *
+ * \param[in]       node        node whose value is queried
+ * \param[in]       child_name  name of child node
+ * \param[in, out]  value       queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_child_int(cs_tree_node_t  *node,
+                          const char      *child_name,
+                          int             *value);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an integer value based on a tree's child node
+ *
+ * If no node is present, the initial value is unchanged.
+ * If the node is present but the value missing, an error is returne.
+ *
+ * \param[in]       node        node whose value is queried
+ * \param[in]       child_name  name of child node
+ * \param[in, out]  value       queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_child_real(cs_tree_node_t  *node,
+                           const char      *child_name,
+                           cs_real_t       *value);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update an integer-valued status value based on a node child's
+ *         status tag.
+ *
+ * The status is defined in a string-valued child (tag) node. If no such
+ * child and tag is present, the initial status is unchanged.
+ *
+ * \param[in]       node        node whose value is queried
+ * \param[in]       child_name  name of child node
+ * \param[in, out]  value       queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_child_status_int(cs_tree_node_t  *node,
+                                 const char      *child_name,
+                                 int             *status);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update a bool-valued status value based on a node child's
+ *         status tag.
+ *
+ * The status is defined in a string-valued child (tag) node. If no such
+ * child and tag is present, the initial status is unchanged.
+ *
+ * \param[in]       node        node whose value is queried
+ * \param[in]       child_name  name of child node
+ * \param[in, out]  value       queried value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_node_get_child_status_bool(cs_tree_node_t  *node,
+                                  const char      *child_name,
+                                  bool            *status);
 
 /*-----------------------------------------------------------------------------
  * Add timing increment to global MEI time counter.
