@@ -386,6 +386,24 @@ cs_gui_node_get_status_bool(cs_tree_node_t  *node,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return a string value associated with a "tag" child node and
+ *         whose presence should be guaranteed.
+ *
+ * If the matching child node is not present, an error is produced
+ *
+ * \param[in]  node      tree node which should have a "tag" child
+ * \param[in]  tag_name  name of tag child node
+ *
+ * \return  pointer to matching child string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_gui_node_get_tag(cs_tree_node_t  *node,
+                    const char      *tag_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update an integer value based on a tree's child node
  *
  * If no node is present, the initial value is unchanged.

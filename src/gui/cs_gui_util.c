@@ -1111,7 +1111,7 @@ cs_gui_is_equal_real(cs_real_t v1,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update an integer valu based on a tree node
+ * \brief  Update an integer value based on a tree node
  *
  * If no node is present, the initial value is unchanged.
  * If the node is present but the value missing, an error is returne.
@@ -1227,6 +1227,37 @@ cs_gui_node_get_status_bool(cs_tree_node_t  *node,
   else if (value != NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("Invalid status value: %s"), value);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a string value associated with a "tag" child node and
+ *         whose presence should be guaranteed.
+ *
+ * If the matching child node is not present, an error is produced
+ *
+ * \param[in]  node      tree node which should have a "tag" child
+ * \param[in]  tag_name  name of tag child node
+ *
+ * \return  pointer to matching child string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_gui_node_get_tag(cs_tree_node_t  *node,
+                    const char      *tag_name)
+{
+  const char *name = cs_tree_node_get_tag(node, tag_name);
+
+  if (name == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Incorrect setup tree definition for the following node:\n"));
+    cs_tree_dump(CS_LOG_DEFAULT, 2, node);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Missing child (tag) node: %s"), tag_name);
+  }
+
+  return name;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -224,26 +224,16 @@ cs_gui_elec_model_rec(void);
  * Return the name of a thermophysical model.
  *
  * parameter:
- *   model_thermo          -->  thermophysical model
+ *   model_thermo -->  thermophysical model category
  *----------------------------------------------------------------------------*/
 
-char *
-cs_gui_get_thermophysical_model(const char *const model_thermo);
+const char *
+cs_gui_get_thermophysical_model(const char  *model_thermo);
 
 /*-----------------------------------------------------------------------------
- * Modify double numerical parameters.
+ * Return 1 if a specific physics model is activated, 0 othewise.
  *
- * parameters:
- *   param               -->  label of the numerical parameter
- *   keyword            <-->  value of the numerical parameter
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_numerical_double_parameters(const char   *const param,
-                                         double *const keyword);
-
-/*-----------------------------------------------------------------------------
- * Return if a predifined physics model is activated.
+ * Updates the cs_glob_vars global structure.
  *----------------------------------------------------------------------------*/
 
 int

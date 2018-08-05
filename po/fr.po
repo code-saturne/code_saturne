@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-08-05 03:01+0200\n"
+"POT-Creation-Date: 2018-08-06 18:40+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -11409,6 +11409,38 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid "Invalid value for node %s: %s"
+msgstr "valeur invalide pour le noeud %s : %s"
+
+#, c-format
+msgid "Missing %s/%s node or value for fuel %s"
+msgstr ""
+
+#, c-format
+msgid "Missing %s child for node %s."
+msgstr "Noeud enfant %s manquant pour le noeud %s"
+
+#, c-format
+msgid "Invalid value for node %s/%s: %s"
+msgstr "valeur invalide pour le noeud %s/%s : %s"
+
+#, c-format
+msgid "Missing %s descendant for node %s."
+msgstr "Descendant %s manquant pour le noeud %s."
+
+#, c-format
+msgid "Missing %s specie child for node %s."
+msgstr "Noeud enfant % specie manquant pour le noeud %s."
+
+#, c-format
+msgid "oxidant node id (%d) out of [1, 3] range."
+msgstr ""
+
+#, c-format
+msgid "Missing tree node %s."
+msgstr "Noeud manquant dans l'arbre : %s"
+
+#, c-format
 msgid ""
 "Coal number is limited to %i\n"
 "In the parametric file it is %i.\n"
@@ -11422,45 +11454,46 @@ msgid ""
 " in the parametric file \n"
 msgstr ""
 
-msgid ""
-"type diameter value must be equal to 1 or 2.\n"
-"Calculation is interupted \n"
+#, c-format
+msgid "Rosin-Rammler refusal parameters for coal %d lead to %g denominator."
+msgstr ""
+
+msgid "type diameter value must be equal to 1 or 2."
 msgstr ""
 
 #, c-format
 msgid ""
-"Oxidant number must be between 1 and 3.\n"
-"It is  %i in the parametric file \n"
-"Calculation is interupted \n"
+"Oxidant count must be between 1 and 3.\n"
+"It is %d in the current setup."
 msgstr ""
 
 #, c-format
-msgid "Invalid coal model: %s.\n"
+msgid "Invalid coal model: %s."
 msgstr ""
 
 #, c-format
-msgid "Invalid gas combustion flow model: %s.\n"
+msgid "Invalid gas combustion flow model: %s."
 msgstr ""
 
 #, c-format
-msgid "Invalid atmospheric flow model: %s.\n"
+msgid "Invalid atmospheric flow model: %s."
 msgstr ""
 
 #, c-format
-msgid "Invalid joule model: %s.\n"
+msgid "Invalid joule model: %s."
 msgstr ""
 
 #, c-format
-msgid "Invalid electrical model: %s.\n"
+msgid "Invalid electrical model: %s."
 msgstr ""
 
 #, c-format
-msgid "Invalid compressible model: %s.\n"
+msgid "Invalid compressible model: %s."
 msgstr ""
 
 #, c-format
-msgid "Invalid model : %s\n"
-msgstr ""
+msgid "Invalid model: %s"
+msgstr "Modèle invalide : %s"
 
 #, c-format
 msgid ""

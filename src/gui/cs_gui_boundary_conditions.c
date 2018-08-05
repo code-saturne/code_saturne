@@ -2472,7 +2472,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                       _("Error: can not interpret expression: %s\n %i"),
                       ev_formula->string, mei_tree_builder(ev_formula));
 
-          char *model = cs_gui_get_thermophysical_model("turbulence");
+          const char *model = cs_gui_get_thermophysical_model("turbulence");
           if (model == NULL)
             return;
 
@@ -2645,7 +2645,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                       _("Invalid turbulence model: %s.\n"), model);
           mei_tree_destroy(ev_formula);
           BFT_FREE(formula);
-          BFT_FREE(model);
         }
         BFT_FREE(path1);
         cs_gui_add_mei_time(cs_timer_wtime() - t0);

@@ -419,9 +419,7 @@ cs_gui_radiative_transfer_parameters(void)
   if (!cs_gui_file_is_loaded())
     return;
 
-  char *model = NULL;
-
-  model = cs_gui_get_thermophysical_model("radiative_transfer");
+  const char *model = cs_gui_get_thermophysical_model("radiative_transfer");
 
   int isuird = 0;
   int ac_type = 0;
@@ -471,7 +469,6 @@ cs_gui_radiative_transfer_parameters(void)
                cs_glob_rad_transfer_params->imodak);
   }
 #endif
-  BFT_FREE(model);
 }
 
 /*----------------------------------------------------------------------------

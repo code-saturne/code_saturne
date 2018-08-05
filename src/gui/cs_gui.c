@@ -155,34 +155,30 @@ cs_var_t    *cs_glob_var = NULL;
  * Private function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Return a string value associated with a "tag" child node and
- * whose presence should be guaranteed.
- *
- * If the matching child node is not present, an error is produced
+/*-----------------------------------------------------------------------------
+ * Modify double numerical parameters.
  *
  * parameters:
- *   tn <-- tree node associated with profile
- *
- * return:
- *   pointer to matching child string
+ *   param    <-- label of the numerical parameter
+ *   keyword  <-- value of the numerical parameter
  *----------------------------------------------------------------------------*/
 
-static const char *
-_tree_node_get_tag(cs_tree_node_t  *tn,
-                   const char      *tag)
+static void
+_numerical_double_parameters(const char  *param,
+                             double      *keyword)
 {
-  const char *name = cs_tree_node_get_tag(tn, tag);
+  char  *path = NULL;
+  double result;
 
-  if (name == NULL) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Incorrect setup tree definition for the following node:\n"));
-    cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
-    bft_error(__FILE__, __LINE__, 0,
-              _("Missing child (tag) node: %s"), tag);
-  }
+  path = cs_xpath_init_path();
+  cs_xpath_add_element(&path, "numerical_parameters");
+  cs_xpath_add_element(&path, param);
+  cs_xpath_add_function_text(&path);
 
-  return name;
+  if (cs_gui_get_double(path, &result))
+    *keyword = result;
+
+  BFT_FREE(path);
 }
 
 /*----------------------------------------------------------------------------
@@ -194,8 +190,8 @@ _tree_node_get_tag(cs_tree_node_t  *tn,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_advanced_options_turbulence(const char  *param,
-                                   int         *keyword)
+_advanced_options_turbulence(const char  *param,
+                             int         *keyword)
 {
   char *path = NULL;
   int  result;
@@ -1392,7 +1388,7 @@ _tree_node_get_field(cs_tree_node_t  *tn)
 {
   const cs_field_t *f = NULL;
 
-  const char *name = _tree_node_get_tag(tn, "name");
+  const char *name = cs_gui_node_get_tag(tn, "name");
   const char *id_name = cs_tree_node_get_tag(tn, "field_id");
 
   /* Special case for NEPTUNE_CFD field with multiple phases */
@@ -1901,10 +1897,9 @@ void CS_PROCF (csther, CSTHER) (void)
 
 void CS_PROCF (csturb, CSTURB) (void)
 {
-  char *model = NULL;
   char *flux_model = NULL;
 
-  model = cs_gui_get_thermophysical_model("turbulence");
+  const char *model = cs_gui_get_thermophysical_model("turbulence");
   if (model == NULL)
     return;
 
@@ -1919,24 +1914,24 @@ void CS_PROCF (csturb, CSTURB) (void)
     _option_turbulence_double("mixing_length_scale", &(rans_mdl->xlomlg));
   } else if (cs_gui_strcmp(model, "k-epsilon")) {
     turb_mdl->iturb = 20;
-    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
+    _advanced_options_turbulence("wall_function", &iwallf);
+    _advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
   } else if (cs_gui_strcmp(model, "k-epsilon-PL")) {
     turb_mdl->iturb = 21;
-    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
+    _advanced_options_turbulence("wall_function", &iwallf);
+    _advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
   } else if (cs_gui_strcmp(model, "Rij-epsilon")) {
     turb_mdl->iturb = 30;
-    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrari));
+    _advanced_options_turbulence("wall_function", &iwallf);
+    _advanced_options_turbulence("gravity_terms", &(rans_mdl->igrari));
   } else if (cs_gui_strcmp(model, "Rij-SSG")) {
     turb_mdl->iturb = 31;
-    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrari));
+    _advanced_options_turbulence("wall_function", &iwallf);
+    _advanced_options_turbulence("gravity_terms", &(rans_mdl->igrari));
   } else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
     turb_mdl->iturb = 32;
-    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrari));
+    _advanced_options_turbulence("wall_function", &iwallf);
+    _advanced_options_turbulence("gravity_terms", &(rans_mdl->igrari));
   } else if (cs_gui_strcmp(model, "LES_Smagorinsky")) {
     turb_mdl->iturb = 40;
   } else if (cs_gui_strcmp(model, "LES_dynamique")) {
@@ -1945,16 +1940,16 @@ void CS_PROCF (csturb, CSTURB) (void)
     turb_mdl->iturb = 42;
   } else if (cs_gui_strcmp(model, "v2f-phi")) {
     turb_mdl->iturb = 50;
-    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
+    _advanced_options_turbulence("wall_function", &iwallf);
+    _advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
   } else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
     turb_mdl->iturb = 51;
-    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
+    _advanced_options_turbulence("wall_function", &iwallf);
+    _advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
   } else if (cs_gui_strcmp(model, "k-omega-SST")) {
     turb_mdl->iturb = 60;
-    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
+    _advanced_options_turbulence("wall_function", &iwallf);
+    _advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
   } else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
     turb_mdl->iturb = 70;
   } else
@@ -1976,7 +1971,6 @@ void CS_PROCF (csturb, CSTURB) (void)
   bft_printf("--xlomlg = %f\n", rans_mdl->xlomlg);
 #endif
 
-  BFT_FREE(model);
   BFT_FREE(flux_model);
 }
 
@@ -2419,8 +2413,8 @@ void CS_PROCF (csnum2, CSNUM2)(double *relaxp,
   _numerical_int_parameters("velocity_pressure_coupling", &(stokes->ipucou));
   _numerical_int_parameters("gradient_reconstruction", imrgra);
   _numerical_int_parameters("piso_sweep_number", &(piso->nterup));
-  cs_gui_numerical_double_parameters("wall_pressure_extrapolation", extrag);
-  cs_gui_numerical_double_parameters("pressure_relaxation", relaxp);
+  _numerical_double_parameters("wall_pressure_extrapolation", extrag);
+  _numerical_double_parameters("pressure_relaxation", relaxp);
 
 #if _XML_DEBUG_
   bft_printf("==>CSNUM2\n");
@@ -3458,7 +3452,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                         _("Error: can not interpret expression: %s\n %i"),
                         ev_formula_turb->string, mei_tree_builder(ev_formula_turb));
 
-            char *model = cs_gui_get_thermophysical_model("turbulence");
+            const char *model = cs_gui_get_thermophysical_model("turbulence");
             if (model == NULL)
               break;
 
@@ -3662,7 +3656,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
               bft_error(__FILE__, __LINE__, 0,
                         _("Invalid turbulence model: %s.\n"), model);
             mei_tree_destroy(ev_formula_turb);
-            BFT_FREE(model);
           }
           BFT_FREE(formula_turb);
         }
@@ -5167,32 +5160,6 @@ cs_gui_linear_solvers(void)
 }
 
 /*-----------------------------------------------------------------------------
- * Modify double numerical parameters.
- *
- * parameters:
- *   param    <-- label of the numerical parameter
- *   keyword  <-- value of the numerical parameter
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_numerical_double_parameters(const char  *param,
-                                   double      *keyword)
-{
-  char  *path = NULL;
-  double result;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_element(&path, "numerical_parameters");
-  cs_xpath_add_element(&path, param);
-  cs_xpath_add_function_text(&path);
-
-  if (cs_gui_get_double(path, &result))
-    *keyword = result;
-
-  BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
  * Define parallel IO settings.
  *----------------------------------------------------------------------------*/
 
@@ -5457,7 +5424,7 @@ cs_gui_profile_output(void)
        tn != NULL;
        tn = cs_tree_node_get_next_of_name(tn), profile_id++) {
 
-    const char *label = _tree_node_get_tag(tn, "label");
+    const char *label = cs_gui_node_get_tag(tn, "label");
 
     /* for each profile, check the output frequency */
 
@@ -5767,32 +5734,29 @@ cs_gui_reference_initialization(const char  *param,
 int
 cs_gui_thermal_model(void)
 {
-  char *model_name = NULL;
   int   test = 0;
 
-  model_name = cs_gui_get_thermophysical_model("thermal_scalar");
+  const char *model = cs_gui_get_thermophysical_model("thermal_scalar");
 
-  if (cs_gui_strcmp(model_name, "off"))
+  if (cs_gui_strcmp(model, "off"))
     test = 0;
   else {
-    if (cs_gui_strcmp(model_name, "enthalpy"))
+    if (cs_gui_strcmp(model, "enthalpy"))
       test = 20;
-    else if (cs_gui_strcmp(model_name, "temperature_kelvin"))
+    else if (cs_gui_strcmp(model, "temperature_kelvin"))
       test = 11;
-    else if (cs_gui_strcmp(model_name, "temperature_celsius"))
+    else if (cs_gui_strcmp(model, "temperature_celsius"))
       test = 10;
-    else if (cs_gui_strcmp(model_name, "potential_temperature"))
+    else if (cs_gui_strcmp(model, "potential_temperature"))
       test = 12;
-    else if (cs_gui_strcmp(model_name, "liquid_potential_temperature"))
+    else if (cs_gui_strcmp(model, "liquid_potential_temperature"))
       test = 13;
-    else if (cs_gui_strcmp(model_name, "total_energy"))
+    else if (cs_gui_strcmp(model, "total_energy"))
       test = 30;
     else
       bft_error(__FILE__, __LINE__, 0,
-          _("Invalid thermal model: %s\n"), model_name);
+          _("Invalid thermal model: %s\n"), model);
   }
-
-  BFT_FREE(model_name);
 
   return test;
 }
@@ -5824,7 +5788,7 @@ cs_gui_time_moments(void)
     const int *v_i;
     const cs_real_t *v_r;
 
-    const char *m_name = _tree_node_get_tag(tn, "name");
+    const char *m_name = cs_gui_node_get_tag(tn, "name");
 
     v_i = cs_tree_node_get_child_values_int(tn, "time_step_start");
     int nt_start = (v_i != NULL) ? v_i[0] : 0;
@@ -5853,7 +5817,7 @@ cs_gui_time_moments(void)
          tn_vp != NULL;
          tn_vp = cs_tree_node_get_next_of_name(tn_vp), j++) {
 
-      const char *f_name = _tree_node_get_tag(tn_vp, "name");
+      const char *f_name = cs_gui_node_get_tag(tn_vp, "name");
       v_i = cs_tree_node_get_child_values_int(tn_vp, "component");
       int idim = (v_i != NULL) ? v_i[0] : -1;
 
@@ -6089,7 +6053,7 @@ cs_gui_user_variables(void)
                         (cs_tree_get_node(cs_glob_tree, path_t), "name");
     }
 
-    const char *name = _tree_node_get_tag(tn, "name");
+    const char *name = cs_gui_node_get_tag(tn, "name");
 
     const char *variance_name = cs_tree_node_get_child_value_str(tn, "variance");
 
@@ -6281,7 +6245,7 @@ cs_gui_balance_by_zone(void)
          tn_v != NULL;
          tn_v = cs_tree_node_get_next_of_name(tn_v)) {
 
-      const char *name = _tree_node_get_tag(tn_v, "name");
+      const char *name = cs_gui_node_get_tag(tn_v, "name");
       cs_balance_by_zone(criteria, name);
 
     }
