@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-08-02 17:56+0200\n"
+"POT-Creation-Date: 2018-08-05 03:01+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -11281,12 +11281,6 @@ msgid "Error: can not use evaluate property: %s\n"
 msgstr ""
 
 #, c-format
-msgid ""
-"Invalid xpath: %s\n"
-" component not found"
-msgstr ""
-
-#, c-format
 msgid "Error converting profile component tag %s to integer."
 msgstr ""
 
@@ -11300,6 +11294,13 @@ msgstr "Noeud enfant manquant : %s"
 
 #, c-format
 msgid "Invalid profile format: %s"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" Warning: noncontiguous %s zone ids in XML:\n"
+"          zone with index %d has id %d.\n"
 msgstr ""
 
 msgid "mass molar value is zero or not found in the xml file.\n"
@@ -11359,20 +11360,6 @@ msgstr ""
 msgid ""
 "\n"
 "Time elapsed defining values using MEI: %12.5f\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" Warning: noncontiguous volume zone ids in XML:\n"
-"          zone with index %d has id %d.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" Warning: noncontiguous boundary zone ids in XML:\n"
-"          zone with index %d has id %d.\n"
 msgstr ""
 
 #, c-format
@@ -11493,6 +11480,9 @@ msgid ""
 "Xpath: %s\n"
 msgstr ""
 
+msgid "Code_Saturne has been compiled without XML support."
+msgstr ""
+
 #, c-format
 msgid "Unable to parse the file: %s\n"
 msgstr ""
@@ -11539,9 +11529,6 @@ msgstr ""
 "      Il est recommandé de reconstruire un nouveau fichier XML.\n"
 "========================================================\n"
 
-msgid "Code_Saturne has been compiled without XML support."
-msgstr ""
-
 #, c-format
 msgid ""
 "Several attributes found: %i \n"
@@ -11567,6 +11554,14 @@ msgstr ""
 msgid ""
 "Invalid attribute value: %s \n"
 "Xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Expected 1 value for node %s, not %d"
+msgstr ""
+
+#, c-format
+msgid "Missing values for node %s"
 msgstr ""
 
 #, c-format
@@ -11788,13 +11783,7 @@ msgstr ""
 #, c-format
 msgid ""
 "Lagrangian %s zone %d, set %d:\n"
-"  particle %d has %s outside  [0, 1] range: %g"
-msgstr ""
-
-#, c-format
-msgid ""
-"Lagrangian %s zone %d, set %d:\n"
-"  particle %d has %s outside  [0, 1] range\n"
+"  particle %d has a negative %s\n"
 "  in layer %d: %g"
 msgstr ""
 
@@ -12070,6 +12059,14 @@ msgid "    visref[%3d]:    %11.5e (critical coal viscosity %d)\n"
 msgstr ""
 
 #, c-format
+msgid "    enc1[%3d]:      %11.5e (fouling coefficient 1 %d)\n"
+msgstr ""
+
+#, c-format
+msgid "    enc2[%3d]:      %11.5e (fouling coefficient 2 %d)\n"
+msgstr ""
+
+#, c-format
 msgid ""
 "\n"
 "  Return coupling options:\n"
@@ -12143,7 +12140,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"  Start of steady-state statistics from Lagrangian iteration number: %10d)\n"
+"  Start of steady-state statistics from Lagrangian iteration number: %10d\n"
 msgstr ""
 
 msgid "   ** INFORMATION ON THE LAGRANGIAN CALCULATION\n"

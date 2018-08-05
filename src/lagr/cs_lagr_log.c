@@ -547,7 +547,7 @@ cs_lagr_log_setup(void)
       cs_log_printf
         (CS_LOG_SETUP,
          _("  Start of steady-state statistics from Lagrangian "
-           "iteration number: %10d)\n"),
+           "iteration number: %10d\n"),
          cs_glob_lagr_stat_options->nstist);
 
     }
