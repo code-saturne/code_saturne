@@ -159,12 +159,6 @@ CS_PROCF (eltsvv, ELTSVV) (const int       *f_id,
                            cs_real_t       *smbrv);
 
 void
-CS_PROCF (elvarp, ELVARP) (void);
-
-void
-CS_PROCF (elprop, ELPROP) (void);
-
-void
 CS_PROCF (eliniv, ELINIV) (cs_int_t *isuite);
 
 void

@@ -76,6 +76,20 @@ integer          itycat
 logical       :: has_previous
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_elec_add_property_fields()  &
+    bind(C, name='cs_elec_add_property_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_elec_add_property_fields
+
+end interface
+
+!===============================================================================
 
 ! ---> Physique particuliere : Combustion Gaz
 
@@ -111,9 +125,8 @@ endif
 
 ! ---> Physique particuliere : Versions electriques
 
-if (ippmod(ieljou).ge.1 .or.                                     &
-    ippmod(ielarc).ge.1) then
-  call elprop(ippmod(ieljou), ippmod(ielarc))
+if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
+  call cs_elec_add_property_fields
 endif
 
 ! ---> Physique particuliere : Atmospherique
@@ -138,8 +151,8 @@ if (ippmod(iaeros).ge.0) then
   call add_property_field_1d('temperature_liquid', 'Temp liq', itml)
   call add_property_field_1d('vertvel_l', 'Vertical vel liq', ivertvel)
 
-  ! Continuous phase variables
-  !---------------------------
+  ! Continuous phase properties
+  !----------------------------
 
   ! NB: 'c' stands for continuous <> 'p' stands for particles
 

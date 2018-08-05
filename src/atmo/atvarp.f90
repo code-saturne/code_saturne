@@ -89,12 +89,6 @@ interface
     integer(c_int), dimension(*) :: species_f_id
   end subroutine cs_field_pointer_map_atmospheric
 
-  subroutine cs_gui_labels_atmospheric()  &
-    bind(C, name='cs_gui_labels_atmospheric')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gui_labels_atmospheric
-
 end interface
 
 !===============================================================================
@@ -111,13 +105,11 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 
 if (iihmpr.eq.1) then
   call uiati1 (imeteo, ficmet, len(ficmet))
-  !==========
 endif
 
 ! Set base default model parameters and call usati1
 
 call atini0
-!==========
 
 !===============================================================================
 ! 1. Add variables
@@ -468,10 +460,6 @@ do isc = 1, nespg
 enddo
 
 call cs_field_pointer_map_atmospheric(n_chem_species, species_f_id)
-
-if (iihmpr.eq.1) then
-  call cs_gui_labels_atmospheric
-endif
 
 !===============================================================================
 ! 5. General field and physical properties

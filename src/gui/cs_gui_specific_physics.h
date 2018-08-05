@@ -249,49 +249,6 @@ cs_gui_numerical_double_parameters(const char   *const param,
 int
 cs_gui_get_activ_thermophysical_model(void);
 
-/*------------------------------------------------------------------------------
- * Set GUI-defined labels for the atmospheric module
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_labels_atmospheric(void);
-
-/*------------------------------------------------------------------------------
- * Set GUI-defined labels for the coal combustion module
- *
- * parameters:
- *   n_coals   <-- number of coals
- *   n_classes <-- number of coal classes
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_labels_coal_combustion(int  n_coals,
-                              int  n_classes);
-
-/*------------------------------------------------------------------------------
- * Set GUI-defined labels for the electric arcs module
- *
- * parameters:
- *   n_gasses <-- number of constituent gasses
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_labels_electric_arcs(int  n_gasses);
-
-/*------------------------------------------------------------------------------
- * Set GUI-defined labels for the gas combustion variables
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_labels_gas_combustion(void);
-
-/*------------------------------------------------------------------------------
- * Set GUI-defined labels for the compressible model variables
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_labels_compressible(void);
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

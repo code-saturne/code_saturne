@@ -75,12 +75,6 @@ interface
     implicit none
   end subroutine cs_field_pointer_map_compressible
 
-  subroutine cs_gui_labels_compressible()  &
-    bind(C, name='cs_gui_labels_compressible')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gui_labels_compressible
-
 end interface
 
 !===============================================================================
@@ -124,11 +118,6 @@ endif
 
 ! MAP to C API
 call cs_field_pointer_map_compressible
-
-! Mapping for GUI
-if (iihmpr.eq.1) then
-  call cs_gui_labels_compressible
-endif
 
 return
 end subroutine

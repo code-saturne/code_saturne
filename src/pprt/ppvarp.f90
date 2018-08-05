@@ -77,10 +77,18 @@ integer          kscmin, kscmax
 double precision scmaxp, scminp
 
 !===============================================================================
-
-!===============================================================================
 ! Interfaces
 !===============================================================================
+
+interface
+
+  subroutine cs_elec_add_variable_fields()  &
+    bind(C, name='cs_elec_add_variable_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_elec_add_variable_fields
+
+end interface
 
 interface
 
@@ -155,9 +163,8 @@ endif
 ! 4. Electric arcs model
 !-----------------------
 
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1       ) then
-  call elvarp(ippmod(ieljou), ippmod(ielarc))
+if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
+  call cs_elec_add_variable_fields
 endif
 
 ! 5. Fuel combustion model

@@ -87,12 +87,6 @@ interface
     implicit none
   end subroutine cs_field_pointer_map_gas_combustion
 
-  subroutine cs_gui_labels_gas_combustion()  &
-    bind(C, name='cs_gui_labels_gas_combustion')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gui_labels_gas_combustion
-
 end interface
 
 !===============================================================================
@@ -228,11 +222,6 @@ endif
 
 ! MAP to C API
 call cs_field_pointer_map_gas_combustion
-
-! Mapping for GUI
-if (iihmpr.eq.1) then
-  call cs_gui_labels_gas_combustion
-endif
 
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES

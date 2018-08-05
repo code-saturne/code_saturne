@@ -473,8 +473,7 @@ CS_PROCF (elini1, ELINI1) (cs_real_t *visls0,
                            cs_int_t  *idircl,
                            cs_int_t  *isca)
 {
-  cs_electrical_model_specific_initialization(visls0, diftl0, idircl,
-                                              isca);
+  cs_electrical_model_specific_initialization(visls0, diftl0, idircl, isca);
 }
 
 void
@@ -530,18 +529,6 @@ CS_PROCF (eltsvv, ELTSVV) (const int       *f_id,
   const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
 
   cs_elec_source_terms_v(mesh, mesh_quantities, *f_id, (cs_real_3_t *)smbrv);
-}
-
-void
-CS_PROCF (elvarp, ELVARP) (void)
-{
-  cs_elec_add_variable_fields();
-}
-
-void
-CS_PROCF (elprop, ELPROP) (void)
-{
-  cs_elec_add_property_fields();
 }
 
 void
@@ -624,7 +611,6 @@ cs_electrical_model_initialize(void)
 
 /*----------------------------------------------------------------------------
  * Destroy structures for electrical model
- *
  *----------------------------------------------------------------------------*/
 
 void
@@ -1897,10 +1883,6 @@ cs_elec_add_variable_fields(void)
   }
 
   _field_pointer_map_electric_arcs(e_props->ngaz);
-
-  /* Map labels for GUI */
-  if (cs_gui_file_is_loaded())
-    cs_gui_labels_electric_arcs(e_props->ngaz);
 }
 
 /*----------------------------------------------------------------------------
@@ -2038,8 +2020,6 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh,
 
   static int ipass = 0;
   ipass += 1;
-
-  double d2s3 = 2. /3.;
 
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 

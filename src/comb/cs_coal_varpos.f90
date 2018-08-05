@@ -83,13 +83,6 @@ interface
     integer(c_int), value        :: n_coals, n_classes
   end subroutine cs_field_pointer_map_coal_combustion
 
-  subroutine cs_gui_labels_coal_combustion(n_coals, n_classes)  &
-    bind(C, name='cs_gui_labels_coal_combustion')
-    use, intrinsic :: iso_c_binding
-    implicit none
-    integer(c_int), value        :: n_coals, n_classes
-  end subroutine cs_gui_labels_coal_combustion
-
 end interface
 
 !===============================================================================
@@ -695,12 +688,6 @@ n_coals = ncharb
 n_classes = nclacp
 
 call cs_field_pointer_map_coal_combustion(n_coals, n_classes)
-
-! Map labels for GUI
-
-if (iihmpr.eq.1) then
-  call cs_gui_labels_coal_combustion(n_coals, n_classes)
-endif
 
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
