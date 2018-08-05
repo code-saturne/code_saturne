@@ -136,6 +136,8 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         Select a properties file of data for electric arc
         """
         data = self.case['data_path']
+        if not data:
+            data = "."
         title = self.tr("Thermochemistry file of data.")
         filetypes = self.tr("Thermochemistry (*dp_*);;All Files (*)")
         file = QFileDialog.getOpenFileName(self, title, data, filetypes)[0]
