@@ -211,7 +211,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setCurrent(current)
 
 
-    @pyqtSlot()
+    @pyqtSlot(str)
     def slotJouleModel(self, text):
         """
         Input Joule model.
