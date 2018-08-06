@@ -71,6 +71,7 @@ class CoalCombustionModel(Variables, Model):
 
         self.coalCombustionModel = ('off', 'homogeneous_fuel', 'homogeneous_fuel_moisture')
 
+        self.y1y2Model = ('user_define', 'automatic_CHONS', 'automatic_formula')
 
     def defaultValues(self):
         """
@@ -1511,7 +1512,7 @@ class CoalCombustionModel(Variables, Model):
         Set Y1Y2 value for a fuel
         """
         self.isInList(str(fuelId), self.getFuelIdList())
-        self.isInList(choice, ('user_define', 'automatic_CHONS', 'automatic_formula'))
+        self.isInList(choice, self.y1y2Model)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('stoichiometric_coefficient')
         node['type'] = choice
@@ -1525,7 +1526,7 @@ class CoalCombustionModel(Variables, Model):
         Return Y1 stoichiometric coefficient for a fuel
         """
         self.isInList(str(fuelId), self.getFuelIdList())
-        self.isInList(self.getY1Y2(fuelId),('user_define', 'automatic_formula'))
+        self.isInList(self.getY1Y2(fuelId), self.y1y2Model)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
         node = devolatilisation.xmlInitNode('stoichiometric_coefficient')
@@ -1546,7 +1547,7 @@ class CoalCombustionModel(Variables, Model):
         Set Y1 stoichiometric coefficient for a fuel
         """
         self.isInList(str(fuelId), self.getFuelIdList())
-        self.isInList(self.getY1Y2(fuelId),('user_define', 'automatic_formula'))
+        self.isInList(self.getY1Y2(fuelId), self.y1y2Model)
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
@@ -1560,7 +1561,7 @@ class CoalCombustionModel(Variables, Model):
         Return Y2 stoichiometric coefficient for a fuel
         """
         self.isInList(str(fuelId), self.getFuelIdList())
-        self.isInList(self.getY1Y2(fuelId),('user_define', 'automatic_formula'))
+        self.isInList(self.getY1Y2(fuelId), self.y1y2Model)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
         node = devolatilisation.xmlInitNode('stoichiometric_coefficient')
@@ -1581,7 +1582,7 @@ class CoalCombustionModel(Variables, Model):
         Set Y2 stoichiometric coefficient for a fuel
         """
         self.isInList(str(fuelId), self.getFuelIdList())
-        self.isInList(self.getY1Y2(fuelId),('user_define', 'automatic_formula'))
+        self.isInList(self.getY1Y2(fuelId), self.y1y2Model)
         self.isPositiveFloat(value)
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
