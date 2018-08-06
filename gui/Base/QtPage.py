@@ -161,6 +161,8 @@ if os.environ.get('QT_API', 'pyqt') == 'pyqt':
                         return float(qobj)
                     except Exception:
                         return locale.atof(qobj)
+                else:
+                    return qobj
             else:
                 return qobj
 
