@@ -1162,7 +1162,7 @@ cs_mesh_adjacency_c2f(const cs_mesh_t  *m,
     if (c1_id < n_cells) { /* Exclude ghost cells */
 
       const cs_lnum_t  shift = c2f->idx[c1_id] + cell_shift[c1_id];
-      c2f->ids[shift] = f_id;
+      c2f->ids[shift] = i_shift + f_id;
       c2f->sgn[shift] = 1;      /* outward orientation */
       cell_shift[c1_id] += 1;
 
