@@ -164,7 +164,7 @@ $(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
 $(LDADD_BLAS) \
 $(LTLIBINTL) \
 $(FCLIBS)
-libsaturne_la_LDFLAGS = -no-undefined -version-info 5:2:0
+libsaturne_la_LDFLAGS = -no-undefined -version-info 5:3:0
 
 libcs_solver_la_SOURCES = cs_solver.c
 libcs_solver_la_LIBADD = libsaturne.la \
@@ -186,7 +186,7 @@ $(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
 $(LDADD_BLAS) \
 $(LTLIBINTL) \
 $(FCLIBS)
-libcs_solver_la_LDFLAGS = -no-undefined -version-info 5:2:0
+libcs_solver_la_LDFLAGS = -no-undefined -version-info 5:3:0
 
 endif
 
