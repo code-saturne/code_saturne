@@ -615,6 +615,7 @@ _read_header(cs_xml_t  *doc)
       found = true;
       doc->byte += 5;
       while (doc->byte < doc->size) {
+        _next(doc);
         if (strncmp(doc->buf + doc->byte, "?>", 2) == 0) {
           doc->byte += 1;
           doc->s_char = '\0';
