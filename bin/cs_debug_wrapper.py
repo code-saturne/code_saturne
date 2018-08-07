@@ -158,6 +158,8 @@ def process_cmd_line(argv, pkg):
                  "mpiexec": -1,
                  "program": -1}
 
+    debugger_options = ("asan-bp", "back-end", "breakpoints", "terminal")
+
     files = []
 
     p = ['.'] + os.getenv('PATH').split(':')
@@ -173,7 +175,8 @@ def process_cmd_line(argv, pkg):
         else:
             b = a[2:]
         if b in positions:
-            positions[b] = idx
+            if positions[b] < 0 or positions[b] > idx:
+                positions[b] = idx
             if a == '--debugger=list':
                 for k in debuggers.keys():
                     print(k + ': ' + debuggers[k])
@@ -288,6 +291,38 @@ def process_cmd_line(argv, pkg):
                 if positions[s] > -1 and positions[s] < p_min:
                     p_min = positions[s]
             cmds['debugger'] = [debugger] + argv[0:p_min]
+
+    # For for debugger options which might have appeared first
+    # check only now to avoid minor risk of similarly-named options
+    # for other tools
+
+    idx_s = 0
+    idx_e = -1
+    for k in positions.keys():
+        if positions[k] > -1:
+            idx_e = positions[k]
+            break;
+
+    idx_mpi = positions['mpiexec'] # in case placed first in the future
+    if idx_mpi > -1 and idx_mpi < idx_e:
+        idx_e = idx_mpi
+
+    idx = 0
+    for idx in range(idx_s, idx_e):
+        a = argv[idx]
+        ie = a[2:].find("=")
+        if ie > -1:
+            b = a[2:ie+2]
+        else:
+            b = a[2:]
+
+        if b in debugger_options:
+            idx_s = idx
+            break
+
+    if cmds['debugger']:
+        for idx in range(idx_s, idx_e):
+            cmds['debugger'].insert(idx-idx_s + 1, argv[idx])
 
     return cmds
 
