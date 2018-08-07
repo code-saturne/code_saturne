@@ -1491,164 +1491,6 @@ _compute_cell_cen_vertex(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------*
- * Compute center of gravity of cells C from their faces F(i) where i=0, n-1
- *
- *           n-1
- *           Sum  Surf(Fi) G(Fi)
- *           i=0
- *  G(C) = -----------------------
- *           n-1
- *           Sum  Surf(Fi)
- *           i=0
- *
- * parameters:
- *   mesh           <--  pointer to mesh structure
- *   i_face_norm    <--  surface normal of internal faces
- *   i_face_cog     <--  center of gravity of internal faces
- *   b_face_norm    <--  surface normal of border faces
- *   b_face_cog     <--  center of gravity of border faces
- *   cell_cen       -->  center of gravity of cells
- *----------------------------------------------------------------------------*/
-
-static void
-_compute_cell_cen_face(const cs_mesh_t  *mesh,
-                       const cs_real_t   i_face_norm[],
-                       const cs_real_t   i_face_cog[],
-                       const cs_real_t   b_face_norm[],
-                       const cs_real_t   b_face_cog[],
-                       cs_real_t         cell_cen[])
-{
-  cs_lnum_t  fac_id, cell_id;
-  cs_real_t  area;
-  cs_real_t  _norm[3];
-
-  cs_real_t  *cell_area = NULL;
-
-  /* Mesh connectivity */
-
-  const  cs_lnum_t  dim = mesh->dim;
-  const  cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const  cs_lnum_t  n_b_faces = mesh->n_b_faces;
-  const  cs_lnum_t  n_cells = mesh->n_cells;
-  const  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
-  const  cs_lnum_2_t  *i_face_cells
-    = (const cs_lnum_2_t *)(mesh->i_face_cells);
-  const  cs_lnum_t  *b_face_cells = mesh->b_face_cells;
-
-  /* Return if ther is not enough data (Solcom case except rediative module
-     or Pre-processor 1.2.d without option "-n") */
-
-  if (mesh->i_face_vtx_lst == NULL && mesh->b_face_vtx_lst == NULL)
-    return;
-
-  /* Checking */
-
-  if (dim != 3)
-    bft_error(__FILE__, __LINE__,0,
-              _("Cell center computation is only implemented in 3D."));
-
-  assert(cell_cen != NULL);
-
-  /* Initialization */
-
-  BFT_MALLOC(cell_area, n_cells_with_ghosts, cs_real_t);
-
-  for (cs_lnum_t j = 0; j < n_cells_with_ghosts; j++) {
-
-    cell_area[j] = 0.;
-
-    for (int i = 0; i < dim; i++)
-      cell_cen[dim*j + i] = 0. ;
-
-  }
-
-  /* ---------------------- */
-  /* Loop on internal faces */
-  /* ---------------------- */
-
-  for (fac_id = 0; fac_id < n_i_faces; fac_id++) {
-
-    /* ----------------------------------------------------------
-     * For each cell sharing the internal face, we update
-     * cell_cen and cell_area
-     * ---------------------------------------------------------- */
-
-    cs_lnum_t cell_id1 = i_face_cells[fac_id][0];
-    cs_lnum_t cell_id2 = i_face_cells[fac_id][1];
-
-    /* Computation of the area of the face */
-
-    for (int i = 0; i < dim; i++)
-      _norm[i] = i_face_norm[dim*fac_id + i];
-
-    area = cs_math_3_norm(_norm);
-
-    if (cell_id1 > -1) {
-      cell_area[cell_id1] += area;
-      for (int i = 0; i < dim; i++)
-        cell_cen[dim*cell_id1 + i] += i_face_cog[dim*fac_id + i]*area;
-    }
-    if (cell_id2 > -1) {
-      cell_area[cell_id2] += area;
-      for (int i = 0; i < dim; i++)
-        cell_cen[dim*cell_id2 + i] += i_face_cog[dim*fac_id + i]*area;
-    }
-
-  } /* End of loop on internal faces */
-
-  /* -------------------- */
-  /* Loop on border faces */
-  /* -------------------- */
-
-  for (fac_id = 0; fac_id < n_b_faces; fac_id++) {
-
-    /* -------------------------------------------------------------
-     * For each cell sharing a border face, we update the numerator
-     * of cell_cen and cell_area
-     * ------------------------------------------------------------- */
-
-    cs_lnum_t cell_id1 = b_face_cells[fac_id];
-
-    /* Computation of the area of the face
-       (note that cell_id1 == -1 may happen for isolated faces,
-       which are cleaned afterwards) */
-
-    if (cell_id1 > -1) {
-
-      for (int i = 0; i < dim; i++)
-        _norm[i] = b_face_norm[dim*fac_id + i];
-
-      area = cs_math_3_norm(_norm);
-
-      cell_area[cell_id1] += area;
-
-      /* Computation of the numerator */
-
-      for (int i = 0; i < dim; i++)
-        cell_cen[dim*cell_id1 + i] += b_face_cog[dim*fac_id + i]*area;
-
-    }
-
-  } /* End of loop on border faces */
-
-  /* ------------------------------------------------------------------
-   * Loop on cells to finalize the computation of center of gravity
-   * ------------------------------------------------------------------*/
-
-  for (cell_id = 0; cell_id < n_cells; cell_id++) {
-
-    for (int i = 0; i < dim; i++)
-      cell_cen[cell_id*dim + i] /= cell_area[cell_id];
-
-  } /* End of loop on cells */
-
-  /* Free memory */
-
-  BFT_FREE(cell_area);
-
-}
-
-/*----------------------------------------------------------------------------*
  * Compute new cell centers by minimizing the distance to faces
  *
  * parameters:
@@ -1776,7 +1618,7 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
 
     }
 
-    /* inversion du systeme */
+    /* invert system */
     double aainv[3][3];
     double bb[3];
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
@@ -2862,12 +2704,12 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
   switch (cs_glob_mesh_quantities_cell_cen) {
 
   case 0:
-    _compute_cell_cen_face(mesh,
-                           mesh_quantities->i_face_normal,
-                           mesh_quantities->i_face_cog,
-                           mesh_quantities->b_face_normal,
-                           mesh_quantities->b_face_cog,
-                           mesh_quantities->cell_cen);
+    cs_mesh_quantities_cell_faces_cog(mesh,
+                                      mesh_quantities->i_face_normal,
+                                      mesh_quantities->i_face_cog,
+                                      mesh_quantities->b_face_normal,
+                                      mesh_quantities->b_face_cog,
+                                      mesh_quantities->cell_cen);
 
     if (cs_glob_mesh_quantities_flag & CS_CELL_CENTER_CORRECTION)
       _recompute_cell_cen_face(mesh,
@@ -3375,6 +3217,143 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
   *p_b_face_normal = b_face_normal;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cells centers as the mean of the given face centers
+ *         weighted by the associated surfaces.
+ *
+ *           n-1
+ *           Sum  Surf(Fi) G(Fi)
+ *           i=0
+ *  G(C) = -----------------------
+ *           n-1
+ *           Sum  Surf(Fi)
+ *           i=0
+ *
+ * \param[in]   mesh         pointer to mesh structure
+ * \param[in]   i_face_norm  surface normal of internal faces
+ * \param[in]   i_face_cog   center of gravity of internal faces
+ * \param[in]   b_face_norm  surface normal of border faces
+ * \param[in]   b_face_cog   center of gravity of border faces
+ * \param[out]  cell_cen     cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
+                                  const cs_real_t   i_face_norm[],
+                                  const cs_real_t   i_face_cog[],
+                                  const cs_real_t   b_face_norm[],
+                                  const cs_real_t   b_face_cog[],
+                                  cs_real_t         cell_cen[])
+{
+  cs_real_t  *cell_area = NULL;
+
+  /* Mesh connectivity */
+
+  const  cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const  cs_lnum_t  n_b_faces = mesh->n_b_faces;
+  const  cs_lnum_t  n_cells = mesh->n_cells;
+  const  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
+  const  cs_lnum_2_t  *i_face_cells
+    = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const  cs_lnum_t  *b_face_cells = mesh->b_face_cells;
+
+  /* Return if ther is not enough data (Solcom case except rediative module
+     or Pre-processor 1.2.d without option "-n") */
+
+  if (mesh->i_face_vtx_lst == NULL && mesh->b_face_vtx_lst == NULL)
+    return;
+
+  /* Checking */
+
+  assert(cell_cen != NULL);
+
+  /* Initialization */
+
+  BFT_MALLOC(cell_area, n_cells_with_ghosts, cs_real_t);
+
+  for (cs_lnum_t j = 0; j < n_cells_with_ghosts; j++) {
+
+    cell_area[j] = 0.;
+
+    for (cs_lnum_t i = 0; i < 3; i++)
+      cell_cen[3*j + i] = 0. ;
+
+  }
+
+  /* Loop on interior faces
+     ---------------------- */
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+    /* For each cell sharing the internal face, we update
+     * cell_cen and cell_area */
+
+    cs_lnum_t cell_id1 = i_face_cells[f_id][0];
+    cs_lnum_t cell_id2 = i_face_cells[f_id][1];
+
+    /* Computation of the area of the face */
+
+    cs_real_t area = cs_math_3_norm(i_face_norm + 3*f_id);
+
+    if (cell_id1 > -1) {
+      cell_area[cell_id1] += area;
+      for (cs_lnum_t i = 0; i < 3; i++)
+        cell_cen[3*cell_id1 + i] += i_face_cog[3*f_id + i]*area;
+    }
+    if (cell_id2 > -1) {
+      cell_area[cell_id2] += area;
+      for (cs_lnum_t i = 0; i < 3; i++)
+        cell_cen[3*cell_id2 + i] += i_face_cog[3*f_id + i]*area;
+    }
+
+  } /* End of loop on interior faces */
+
+  /* Loop on boundary faces
+     --------------------- */
+
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+
+    /* For each cell sharing a border face, we update the numerator
+     * of cell_cen and cell_area */
+
+    cs_lnum_t cell_id1 = b_face_cells[f_id];
+
+    /* Computation of the area of the face
+       (note that cell_id1 == -1 may happen for isolated faces,
+       which are cleaned afterwards) */
+
+    if (cell_id1 > -1) {
+
+      cs_real_t area = cs_math_3_norm(b_face_norm + 3*f_id);
+
+      cell_area[cell_id1] += area;
+
+      /* Computation of the numerator */
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        cell_cen[3*cell_id1 + i] += b_face_cog[3*f_id + i]*area;
+
+    }
+
+  } /* End of loop on boundary faces */
+
+  /* Loop on cells to finalize the computation of center of gravity
+     -------------------------------------------------------------- */
+
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    for (cs_lnum_t i = 0; i < 3; i++)
+      cell_cen[cell_id*3 + i] /= cell_area[cell_id];
+
+  }
+
+  /* Free memory */
+
+  BFT_FREE(cell_area);
+}
+
 /*----------------------------------------------------------------------------
  * Compute cell centers.
  *
@@ -3408,12 +3387,12 @@ cs_mesh_quantities_cell_cen(const cs_mesh_t  *mesh,
       cs_mesh_quantities_i_faces(mesh, &i_face_cog, &i_face_normal);
       cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
 
-      _compute_cell_cen_face(mesh,
-                             i_face_normal,
-                             i_face_cog,
-                             b_face_normal,
-                             b_face_cog,
-                             _cell_cen);
+      cs_mesh_quantities_cell_faces_cog(mesh,
+                                        i_face_normal,
+                                        i_face_cog,
+                                        b_face_normal,
+                                        b_face_cog,
+                                        _cell_cen);
 
       BFT_FREE(b_face_normal);
       BFT_FREE(b_face_cog);

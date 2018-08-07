@@ -33,6 +33,7 @@
 
 #include "cs_base.h"
 #include "cs_halo.h"
+#include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -278,6 +279,41 @@ void
 cs_adjacency_dump(const char           *name,
                   FILE                 *_f,
                   cs_adjacency_t       *adj);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a cells to faces adjacency structure.
+ *
+ * With the boundary_order option set to 0, boundary faces come first, so
+ * interior face ids are shifted by the number of boundary faces.
+ * With boundary_order set to 1, boundary faces come last, so face ids are
+ * shifted by the number of interior faces.
+ *
+ * \param[in]  m               pointer to a cs_mesh_t structure
+ * \param[in]  boundary_order  boundaries first (0) or last (1)
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_mesh_adjacency_c2f(const cs_mesh_t  *m,
+                      int               boundary_order);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and define a cs_adjacency_t structure related to vertices.
+ *
+ * Adjacent vertices are accessed based on the vertex with lowest id.
+ *
+ * \param[in]  m  pointer to a cs_mesh_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_mesh_adjacency_v2v(const cs_mesh_t  *m);
 
 /*----------------------------------------------------------------------------*/
 

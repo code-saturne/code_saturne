@@ -402,6 +402,36 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
                            cs_real_t         *p_b_face_cog[],
                            cs_real_t         *p_b_face_normal[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cells centers as the mean of the given face centers
+ *         weighted by the associated surfaces.
+ *
+ *           n-1
+ *           Sum  Surf(Fi) G(Fi)
+ *           i=0
+ *  G(C) = -----------------------
+ *           n-1
+ *           Sum  Surf(Fi)
+ *           i=0
+ *
+ * \param[in]   mesh         pointer to mesh structure
+ * \param[in]   i_face_norm  surface normal of internal faces
+ * \param[in]   i_face_cog   center of gravity of internal faces
+ * \param[in]   b_face_norm  surface normal of border faces
+ * \param[in]   b_face_cog   center of gravity of border faces
+ * \param[out]  cell_cen     cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
+                                  const cs_real_t   i_face_norm[],
+                                  const cs_real_t   i_face_cog[],
+                                  const cs_real_t   b_face_norm[],
+                                  const cs_real_t   b_face_cog[],
+                                  cs_real_t         cell_cen[]);
+
 /*----------------------------------------------------------------------------
  * Compute cell centers.
  *

@@ -251,6 +251,86 @@ _update_cell_b_faces(cs_mesh_adjacencies_t  *ma)
   cs_sort_indexed(n_cells, c2b_idx, c2b);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the v2v index with the data from the given face connectivity.
+ *
+ * \param[in]      n_vf        number of vertices for this face
+ * \param[in]      f2v_lst     face -> vertices list
+ * \param[in, out] v2v_idx     index to update
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_update_v2v_idx(int              n_vf,
+                const cs_lnum_t  f2v_lst[],
+                cs_lnum_t        v2v_idx[])
+{
+  cs_lnum_t  v1_id, v2_id;
+
+  for (int j = 0; j < n_vf - 1; j++) { /* scan edges */
+
+    v1_id = f2v_lst[j], v2_id = f2v_lst[j+1];
+    if (v1_id < v2_id)
+      v2v_idx[v1_id+1] += 1;
+    else
+      v2v_idx[v2_id+1] += 1;
+
+  }
+
+  /* Last edge */
+  v1_id = f2v_lst[n_vf-1], v2_id = f2v_lst[0];
+  if (v1_id < v2_id)
+    v2v_idx[v1_id+1] += 1;
+  else
+    v2v_idx[v2_id+1] += 1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the v2v index with the data from the given face connectivity
+ *
+ * \param[in]      n_vf        number of vertices for this face
+ * \param[in]      f2v_lst     face -> vertices list
+ * \param[in, out] count       array to known where to place the new elements
+ * \param[in, out] v2v         structure to update
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_update_v2v_lst(int               n_vf,
+                const cs_lnum_t   f2v_lst[],
+                short int         count[],
+                cs_adjacency_t   *v2v)
+{
+  cs_lnum_t  v1_id, v2_id;
+
+  for (int j = 0; j < n_vf - 1; j++) { /* scan edges */
+
+    v1_id = f2v_lst[j], v2_id = f2v_lst[j+1];
+    if (v1_id < v2_id) {
+      v2v->ids[count[v1_id] + v2v->idx[v1_id]] = v2_id;
+      count[v1_id] += 1;
+    }
+    else {
+      v2v->ids[count[v2_id] + v2v->idx[v2_id]] = v1_id;
+      count[v2_id] += 1;
+    }
+
+  }
+
+  /* Last edge */
+  v1_id = f2v_lst[n_vf-1], v2_id = f2v_lst[0];
+  if (v1_id < v2_id) {
+    v2v->ids[count[v1_id] + v2v->idx[v1_id]] = v2_id;
+    count[v1_id] += 1;
+  }
+  else {
+    v2v->ids[count[v2_id] + v2v->idx[v2_id]] = v1_id;
+    count[v2_id] += 1;
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1009,6 +1089,211 @@ cs_adjacency_dump(const char           *name,
 
   if (close_file)
     fclose(f);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a cells to faces adjacency structure.
+ *
+ * With the boundary_order option set to 0, boundary faces come first, so
+ * interior face ids are shifted by the number of boundary faces.
+ * With boundary_order set to 1, boundary faces come last, so face ids are
+ * shifted by the number of interior faces.
+ *
+ * \param[in]  m               pointer to a cs_mesh_t structure
+ * \param[in]  boundary_order  boundaries first (0) or last (1)
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_mesh_adjacency_c2f(const cs_mesh_t  *m,
+                      int               boundary_order)
+{
+  cs_lnum_t  *cell_shift = NULL;
+  cs_adjacency_t  *c2f = NULL;
+
+  cs_lnum_t i_shift = m->n_b_faces, b_shift = 0;
+  if (boundary_order) {
+    i_shift = 0;
+    b_shift = m->n_i_faces;
+  }
+
+  const cs_lnum_t  n_cells = m->n_cells;
+  const cs_lnum_t  n_i_faces = m->n_i_faces;
+  const cs_lnum_t  n_b_faces = m->n_b_faces;
+
+  c2f = cs_adjacency_create(CS_ADJACENCY_SIGNED, // flag
+                            -1,                  // indexed, no stride
+                            n_cells);
+
+  /* Update index count */
+  for (cs_lnum_t i = 0; i < n_b_faces; i++)
+    c2f->idx[m->b_face_cells[i]+1] += 1;
+
+  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+
+    cs_lnum_t  c1_id = m->i_face_cells[i][0];
+    cs_lnum_t  c2_id = m->i_face_cells[i][1];
+
+    if (c1_id < n_cells) // c1 is not a ghost cell
+      c2f->idx[c1_id+1] += 1;
+    if (c2_id < n_cells) // c2 is not a ghost cell
+      c2f->idx[c2_id+1] += 1;
+  }
+
+  /* Build index */
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    c2f->idx[i+1] += c2f->idx[i];
+
+  const cs_lnum_t  idx_size = c2f->idx[n_cells];
+
+  /* Fill arrays */
+  BFT_MALLOC(c2f->ids, idx_size, cs_lnum_t);
+  BFT_MALLOC(c2f->sgn, idx_size, short int);
+
+  BFT_MALLOC(cell_shift, n_cells, cs_lnum_t);
+  memset(cell_shift, 0, n_cells*sizeof(cs_lnum_t));
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+    const cs_lnum_t  c1_id = m->i_face_cells[f_id][0];
+    if (c1_id < n_cells) { /* Exclude ghost cells */
+
+      const cs_lnum_t  shift = c2f->idx[c1_id] + cell_shift[c1_id];
+      c2f->ids[shift] = f_id;
+      c2f->sgn[shift] = 1;      /* outward orientation */
+      cell_shift[c1_id] += 1;
+
+    }
+
+    const cs_lnum_t  c2_id = m->i_face_cells[f_id][1];
+    if (c2_id < n_cells) { /* Exclude ghost cells */
+
+      const cs_lnum_t  shift = c2f->idx[c2_id] + cell_shift[c2_id];
+      c2f->ids[shift] = i_shift + f_id;
+      c2f->sgn[shift] = -1;     /* inward orientation */
+      cell_shift[c2_id] += 1;
+
+    }
+
+  } /* End of loop on internal faces */
+
+  for (cs_lnum_t  f_id = 0; f_id < n_b_faces; f_id++) {
+
+    const cs_lnum_t  c_id = m->b_face_cells[f_id];
+    const cs_lnum_t  shift = c2f->idx[c_id] + cell_shift[c_id];
+
+    c2f->ids[shift] = b_shift + f_id;
+    c2f->sgn[shift] = 1;       /* always outward for a boundary face */
+    cell_shift[c_id] += 1;
+
+  } /* End of loop on border faces */
+
+  /* Free memory */
+  BFT_FREE(cell_shift);
+
+  return c2f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and define a cs_adjacency_t structure related to vertices.
+ *
+ * Adjacent vertices are accessed based on the vertex with lowest id.
+ *
+ * \param[in]  m  pointer to a cs_mesh_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_mesh_adjacency_v2v(const cs_mesh_t  *m)
+{
+  /* Adjacency with an index and without sign  */
+  const cs_lnum_t  n_vertices = m->n_vertices;
+  cs_adjacency_t  *v2v = cs_adjacency_create(0, -1, n_vertices);
+
+  /* Treat boundary faces */
+  for (cs_lnum_t i = 0; i < m->n_b_faces; i++) {
+    const cs_lnum_t  s = m->b_face_vtx_idx[i];
+
+    _update_v2v_idx(m->b_face_vtx_idx[i+1] - s,
+                    m->b_face_vtx_lst + s,
+                    v2v->idx);
+  }
+
+  /* Treat interior faces */
+  for (cs_lnum_t i = 0; i < m->n_i_faces; i++) {
+    const cs_lnum_t  s = m->i_face_vtx_idx[i];
+
+    _update_v2v_idx(m->i_face_vtx_idx[i+1] - s,
+                    m->i_face_vtx_lst + s,
+                    v2v->idx);
+  }
+
+  /* Build index and allocate list (will be resized) */
+  for (cs_lnum_t i = 0; i < n_vertices; i++) v2v->idx[i+1] += v2v->idx[i];
+  assert(m->b_face_vtx_idx[m->n_b_faces] + m->i_face_vtx_idx[m->n_i_faces]
+         == v2v->idx[n_vertices]);
+  BFT_MALLOC(v2v->ids, v2v->idx[n_vertices], cs_lnum_t);
+
+  short int  *count = NULL;
+  BFT_MALLOC(count, n_vertices, short int);
+  memset(count, 0, n_vertices*sizeof(short int));
+
+  /* Treat boundary faces */
+  for (cs_lnum_t i = 0; i < m->n_b_faces; i++) {
+    const cs_lnum_t  s = m->b_face_vtx_idx[i];
+
+    _update_v2v_lst(m->b_face_vtx_idx[i+1] - s,
+                    m->b_face_vtx_lst + s,
+                    count,
+                    v2v);
+  }
+
+  /* Treat interior faces */
+  for (cs_lnum_t i = 0; i < m->n_i_faces; i++) {
+    const cs_lnum_t  s = m->i_face_vtx_idx[i];
+
+    _update_v2v_lst(m->i_face_vtx_idx[i+1] - s,
+                    m->i_face_vtx_lst + s,
+                    count,
+                    v2v);
+  }
+
+  BFT_FREE(count);
+
+  /* Order sub-lists related to each vertex */
+# pragma omp parallel for if (n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
+    cs_sort_shell(v2v->idx[i], v2v->idx[i+1], v2v->ids);
+
+  /* Remove duplicated entries */
+  cs_lnum_t  save = v2v->idx[0];
+  cs_lnum_t  shift = 0;
+
+  for (cs_lnum_t i = 0; i < n_vertices; i++) {
+
+    cs_lnum_t  s = save, e = v2v->idx[i+1];
+
+    if (e - s > 0) {
+      v2v->ids[shift++] = v2v->ids[s];
+      for (cs_lnum_t j = s + 1; j < e; j++)
+        if (v2v->ids[j-1] != v2v->ids[j])
+          v2v->ids[shift++] = v2v->ids[j];
+    }
+
+    save = e;
+    v2v->idx[i+1] = shift;
+
+  }
+
+  BFT_REALLOC(v2v->ids, v2v->idx[n_vertices], cs_lnum_t);
+
+  return v2v;
 }
 
 /*----------------------------------------------------------------------------*/
