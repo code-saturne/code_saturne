@@ -519,7 +519,7 @@ endif
 
 !===============================================================================
 ! 4.  Loop on the variables Rij (6 variables)
-!     The order is R11 R22 R33 R12 R13 R23 (The place of those variables
+!     The order is R11 R22 R33 R12 R23 R13 (The place of those variables
 !      is IR11.    ..
 !     We solve the equation in a routine similar to covofi.f90
 !===============================================================================
