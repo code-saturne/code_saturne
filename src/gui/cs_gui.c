@@ -5788,7 +5788,15 @@ cs_gui_time_moments(void)
     const int *v_i;
     const cs_real_t *v_r;
 
-    const char *m_name = cs_gui_node_get_tag(tn, "name");
+    /* Older files used "label", now use "name", so try both */
+
+    const char *m_name = cs_tree_node_get_tag(tn, "name");
+
+    if (m_name == NULL) {
+      m_name = cs_tree_node_get_tag(tn, "label");
+      if (m_name == NULL) /* if neither found, force error case */
+        m_name = cs_gui_node_get_tag(tn, "name");
+    }
 
     v_i = cs_tree_node_get_child_values_int(tn, "time_step_start");
     int nt_start = (v_i != NULL) ? v_i[0] : 0;
