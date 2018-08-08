@@ -298,7 +298,7 @@ def process_cmd_line(argv, pkg):
 
     idx_s = 0
     idx_e = -1
-    for k in positions.keys():
+    for k in ('debugger', 'mpiexec', 'valgrind', 'program'):
         if positions[k] > -1:
             idx_e = positions[k]
             break;
@@ -322,6 +322,7 @@ def process_cmd_line(argv, pkg):
 
     if cmds['debugger']:
         for idx in range(idx_s, idx_e):
+            print(cmds)
             cmds['debugger'].insert(idx-idx_s + 1, argv[idx])
 
     return cmds
