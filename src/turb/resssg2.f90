@@ -55,6 +55,7 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     gradv         work array for the velocity grad term
 !>                                 only for iturb=31
+!> \param[in]     produc        work array for production
 !> \param[in]     gradro        work array for grad rom
 !>                              (without rho volume) only for iturb=30
 !> \param[in]     ckupdc        work array for the head loss
@@ -73,7 +74,7 @@ subroutine resssg2 &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
-   gradv  , gradro ,                                              &
+   gradv  , produc , gradro ,                                     &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    tslagi ,                                                       &
@@ -117,6 +118,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision gradv(3, 3, ncelet)
+double precision produc(6,ncelet)
 double precision gradro(3,ncelet)
 double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
@@ -456,33 +458,12 @@ do iel = 1, ncel
   impl_id_cst  = 0.0d0
 
   ! Pij
-  xprod(1,1) = -2.0d0*(cvara_var(1 ,iel)*gradv(1, 1, iel) +         &
-                       cvara_var(4 ,iel)*gradv(2, 1, iel) +         &
-                       cvara_var(6 ,iel)*gradv(3, 1, iel) )
-  xprod(1,2) = -(      cvara_var(1 ,iel)*gradv(1, 2, iel) +         &
-                       cvara_var(4 ,iel)*gradv(2, 2, iel) +         &
-                       cvara_var(6 ,iel)*gradv(3, 2, iel) )         &
-               -(      cvara_var(4 ,iel)*gradv(1, 1, iel) +         &
-                       cvara_var(2 ,iel)*gradv(2, 1, iel) +         &
-                       cvara_var(5 ,iel)*gradv(3, 1, iel) )
-  xprod(1,3) = -(      cvara_var(1 ,iel)*gradv(1, 3, iel) +         &
-                       cvara_var(4 ,iel)*gradv(2, 3, iel) +         &
-                       cvara_var(6 ,iel)*gradv(3, 3, iel) )         &
-               -(      cvara_var(6 ,iel)*gradv(1, 1, iel) +         &
-                       cvara_var(5 ,iel)*gradv(2, 1, iel) +         &
-                       cvara_var(3 ,iel)*gradv(3, 1, iel) )
-  xprod(2,2) = -2.0d0*(cvara_var(4 ,iel)*gradv(1, 2, iel) +         &
-                       cvara_var(2 ,iel)*gradv(2, 2, iel) +         &
-                       cvara_var(5 ,iel)*gradv(3, 2, iel) )
-  xprod(2,3) = -(      cvara_var(4 ,iel)*gradv(1, 3, iel) +         &
-                       cvara_var(2 ,iel)*gradv(2, 3, iel) +         &
-                       cvara_var(5 ,iel)*gradv(3, 3, iel) )         &
-               -(      cvara_var(6 ,iel)*gradv(1, 2, iel) +         &
-                       cvara_var(5 ,iel)*gradv(2, 2, iel) +         &
-                       cvara_var(3 ,iel)*gradv(3, 2, iel) )
-  xprod(3,3) = -2.0d0*(cvara_var(6 ,iel)*gradv(1, 3, iel) +         &
-                       cvara_var(5 ,iel)*gradv(2, 3, iel) +         &
-                       cvara_var(3 ,iel)*gradv(3, 3, iel) )
+  xprod(1,1) = produc(1, iel)
+  xprod(1,2) = produc(4, iel)
+  xprod(1,3) = produc(6, iel)
+  xprod(2,2) = produc(2, iel)
+  xprod(2,3) = produc(5, iel)
+  xprod(3,3) = produc(3, iel)
 
   ! Rotating frame of reference => "Coriolis production" term
 

@@ -423,7 +423,7 @@ if (f_id.ge.0) then
   call field_get_val_v(f_id, cpro_gradp)
 else
   allocate(grad(3,ncelet))
- cpro_gradp => grad
+  cpro_gradp => grad
 endif
 
 iccocg = 1

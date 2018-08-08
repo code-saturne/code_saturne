@@ -184,7 +184,7 @@ cs_user_model(void)
 
   /*--------------------------------------------------------------------------*/
 
-  /* Example: add variables to post-process the predicted-velocity divergence
+  /* Example: add field to post-process the predicted-velocity divergence
    * and the pressure gradient in the momentum equation.
    */
 
@@ -195,6 +195,16 @@ cs_user_model(void)
   cs_parameters_add_property("pressure_gradient",
                              3,
                              CS_MESH_LOCATION_CELLS);
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: add field to post-process the Reynolds stress production tensor
+   * (for DRSM models only)
+   */
+
+  cs_parameters_add_property("rij_production",
+                             6,
+                             CS_MESH_LOCATION_CELLS);
+
 }
 
 /*----------------------------------------------------------------------------*/

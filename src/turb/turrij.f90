@@ -110,7 +110,7 @@ integer          ifac  , iel   , ivar  , isou  , ii
 integer          inc   , iccocg
 integer          iwarnp, iclip
 integer          nswrgp, imligp
-integer          f_id0
+integer          f_id0 , f_id
 integer          iprev
 double precision epsrgp, climgp, extrap
 double precision rhothe
@@ -120,7 +120,7 @@ double precision xnoral, xnal(3)
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:,:,:) :: gradv
-double precision, allocatable, dimension(:,:) :: produc
+double precision, allocatable, dimension(:,:), target :: produc
 double precision, allocatable, dimension(:,:) :: gradro
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: smbrts
@@ -138,6 +138,7 @@ double precision, dimension(:), pointer :: cvara_scalt
 double precision, dimension(:), pointer :: cvar_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvara_rij, cvar_rij, vel
 double precision, dimension(:,:), pointer :: lagr_st_rij
+double precision, dimension(:,:), pointer :: cpro_produc
 
 type(var_cal_opt) :: vcopt
 
@@ -162,24 +163,26 @@ if (irijco.eq.1) then
 endif
 
 ! Allocate other arrays, depending on user options
-if (iturb.eq.30) then
+call field_get_id_try("rij_production", f_id)
+if (f_id.ge.0) then
+  call field_get_val_v(f_id, cpro_produc)
+else
   allocate(produc(6,ncelet))
+  cpro_produc => produc
 endif
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
-if (iturb.eq.30) then
-  if (irijco.eq.1) then
-    call field_get_val_prev_v(ivarfl(irij), cvara_rij)
-  else
-    call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-    call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-    call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
-    call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
-    call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
-    call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
-  endif
+if (irijco.eq.1) then
+  call field_get_val_prev_v(ivarfl(irij), cvara_rij)
+else
+  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+  call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
+  call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
+  call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
 endif
 
 call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
@@ -223,7 +226,6 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
 
   if (irijco.eq.1) then
     call field_get_val_v(ivarfl(irij), cvar_rij)
-    call field_get_val_prev_v(ivarfl(irij), cvara_rij)
   else
     call field_get_val_s(ivarfl(ir11), cvar_r11)
     call field_get_val_s(ivarfl(ir22), cvar_r22)
@@ -231,12 +233,6 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
     call field_get_val_s(ivarfl(ir12), cvar_r12)
     call field_get_val_s(ivarfl(ir13), cvar_r13)
     call field_get_val_s(ivarfl(ir23), cvar_r23)
-    call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-    call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-    call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
-    call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
-    call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
-    call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
   endif
 
   utaurf=0.05d0*uref
@@ -349,126 +345,98 @@ call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
                            gradv)
 
 !===============================================================================
-! 2.2 Compute the production term for Rij LRR (iturb =30)
+! 2.2 Compute the production term for Rij
 !===============================================================================
 
-if (iturb.eq.30) then
-    do ii = 1 , 6
-      do iel = 1, ncel
-        produc(ii,iel) = 0.0d0
-      enddo
-    enddo
-  if (irijco.eq.1) then
-    do iel = 1 , ncel
+if (irijco.eq.1) then
+  do iel = 1, ncel
 
-      ! grad u
+    ! Pij = - (Rik dUk/dXj + dUk/dXi Rkj)
+    ! Pij is stored as (P11, P22, P33, P12, P23, P13)
+    cpro_produc(1,iel) = &
+                  - 2.0d0*(cvara_rij(1,iel)*gradv(1, 1, iel) +           &
+                           cvara_rij(4,iel)*gradv(2, 1, iel) +           &
+                           cvara_rij(6,iel)*gradv(3, 1, iel) )
 
-      produc(1,iel) = produc(1,iel)                                  &
-                    - 2.0d0*(cvara_rij(1,iel)*gradv(1, 1, iel) +           &
-                             cvara_rij(4,iel)*gradv(2, 1, iel) +           &
-                             cvara_rij(6,iel)*gradv(3, 1, iel) )
+    cpro_produc(4,iel) = &
+                  - (cvara_rij(4,iel)*gradv(1, 1, iel) +                 &
+                     cvara_rij(2,iel)*gradv(2, 1, iel) +                 &
+                     cvara_rij(5,iel)*gradv(3, 1, iel) )                 &
+                  - (cvara_rij(1,iel)*gradv(1, 2, iel) +                 &
+                     cvara_rij(4,iel)*gradv(2, 2, iel) +                 &
+                     cvara_rij(6,iel)*gradv(3, 2, iel) )
 
-      produc(4,iel) = produc(4,iel)                                  &
-                    - (cvara_rij(4,iel)*gradv(1, 1, iel) +                 &
-                       cvara_rij(2,iel)*gradv(2, 1, iel) +                 &
-                       cvara_rij(5,iel)*gradv(3, 1, iel) )
+    cpro_produc(6,iel) = &
+                  - (cvara_rij(6,iel)*gradv(1, 1, iel) +                 &
+                     cvara_rij(5,iel)*gradv(2, 1, iel) +                 &
+                     cvara_rij(3,iel)*gradv(3, 1, iel) )                 &
+                  - (cvara_rij(1,iel)*gradv(1, 3, iel) +                 &
+                     cvara_rij(4,iel)*gradv(2, 3, iel) +                 &
+                     cvara_rij(6,iel)*gradv(3, 3, iel) )
 
-      produc(6,iel) = produc(6,iel)                                  &
-                    - (cvara_rij(6,iel)*gradv(1, 1, iel) +                 &
-                       cvara_rij(5,iel)*gradv(2, 1, iel) +                 &
-                       cvara_rij(3,iel)*gradv(3, 1, iel) )
+    cpro_produc(2,iel) = &
+                  - 2.0d0*(cvara_rij(4,iel)*gradv(1, 2, iel) +           &
+                           cvara_rij(2,iel)*gradv(2, 2, iel) +           &
+                           cvara_rij(5,iel)*gradv(3, 2, iel) )
 
-      ! grad v
+    cpro_produc(5,iel) = &
+                  - (cvara_rij(6,iel)*gradv(1, 2, iel) +                 &
+                     cvara_rij(5,iel)*gradv(2, 2, iel) +                 &
+                     cvara_rij(3,iel)*gradv(3, 2, iel) )                 &
+                  - (cvara_rij(4,iel)*gradv(1, 3, iel) +                 &
+                     cvara_rij(2,iel)*gradv(2, 3, iel) +                 &
+                     cvara_rij(5,iel)*gradv(3, 3, iel) )
 
-      produc(2,iel) = produc(2,iel)                                  &
-                    - 2.0d0*(cvara_rij(4,iel)*gradv(1, 2, iel) +           &
-                             cvara_rij(2,iel)*gradv(2, 2, iel) +           &
-                             cvara_rij(5,iel)*gradv(3, 2, iel) )
+    cpro_produc(3,iel) = &
+                  - 2.0d0*(cvara_rij(6,iel)*gradv(1, 3, iel) +           &
+                           cvara_rij(5,iel)*gradv(2, 3, iel) +           &
+                           cvara_rij(3,iel)*gradv(3, 3, iel) )
 
-      produc(4,iel) = produc(4,iel)                                  &
-                    - (cvara_rij(1,iel)*gradv(1, 2, iel) +                 &
-                       cvara_rij(4,iel)*gradv(2, 2, iel) +                 &
-                       cvara_rij(6,iel)*gradv(3, 2, iel) )
+  enddo
+else
+  do iel = 1 , ncel
 
-      produc(5,iel) = produc(5,iel)                                  &
-                    - (cvara_rij(6,iel)*gradv(1, 2, iel) +                 &
-                       cvara_rij(5,iel)*gradv(2, 2, iel) +                 &
-                       cvara_rij(3,iel)*gradv(3, 2, iel) )
+    ! Pij = - (Rik dUk/dXj + dUk/dXi Rkj)
+    cpro_produc(1,iel) = &
+                  - 2.0d0*(cvara_r11(iel)*gradv(1, 1, iel) +           &
+                           cvara_r12(iel)*gradv(2, 1, iel) +           &
+                           cvara_r13(iel)*gradv(3, 1, iel) )
 
-      ! grad w
+    cpro_produc(4,iel) = &
+                  - (cvara_r12(iel)*gradv(1, 1, iel) +                 &
+                     cvara_r22(iel)*gradv(2, 1, iel) +                 &
+                     cvara_r23(iel)*gradv(3, 1, iel) )                 &
+                  - (cvara_r11(iel)*gradv(1, 2, iel) +                 &
+                     cvara_r12(iel)*gradv(2, 2, iel) +                 &
+                     cvara_r13(iel)*gradv(3, 2, iel) )
 
-      produc(3,iel) = produc(3,iel)                                  &
-                    - 2.0d0*(cvara_rij(6,iel)*gradv(1, 3, iel) +           &
-                             cvara_rij(5,iel)*gradv(2, 3, iel) +           &
-                             cvara_rij(3,iel)*gradv(3, 3, iel) )
+    cpro_produc(6,iel) = &
+                  - (cvara_r13(iel)*gradv(1, 1, iel) +                 &
+                     cvara_r23(iel)*gradv(2, 1, iel) +                 &
+                     cvara_r33(iel)*gradv(3, 1, iel) )                 &
+                  - (cvara_r11(iel)*gradv(1, 3, iel) +                 &
+                     cvara_r12(iel)*gradv(2, 3, iel) +                 &
+                     cvara_r13(iel)*gradv(3, 3, iel) )
 
-      produc(6,iel) = produc(6,iel)                                  &
-                    - (cvara_rij(1,iel)*gradv(1, 3, iel) +                 &
-                       cvara_rij(4,iel)*gradv(2, 3, iel) +                 &
-                       cvara_rij(6,iel)*gradv(3, 3, iel) )
+    cpro_produc(2,iel) = &
+                  - 2.0d0*(cvara_r12(iel)*gradv(1, 2, iel) +           &
+                           cvara_r22(iel)*gradv(2, 2, iel) +           &
+                           cvara_r23(iel)*gradv(3, 2, iel) )
 
-      produc(5,iel) = produc(5,iel)                                  &
-                    - (cvara_rij(4,iel)*gradv(1, 3, iel) +                 &
-                       cvara_rij(2,iel)*gradv(2, 3, iel) +                 &
-                       cvara_rij(5,iel)*gradv(3, 3, iel) )
+    cpro_produc(5,iel) = &
+                  - (cvara_r13(iel)*gradv(1, 2, iel) +                 &
+                     cvara_r23(iel)*gradv(2, 2, iel) +                 &
+                     cvara_r33(iel)*gradv(3, 2, iel) )                 &
+                  - (cvara_r12(iel)*gradv(1, 3, iel) +                 &
+                     cvara_r22(iel)*gradv(2, 3, iel) +                 &
+                     cvara_r23(iel)*gradv(3, 3, iel) )
 
-    enddo
-  else
-    do iel = 1 , ncel
+    cpro_produc(3,iel) = &
+                  - 2.0d0*(cvara_r13(iel)*gradv(1, 3, iel) +           &
+                           cvara_r23(iel)*gradv(2, 3, iel) +           &
+                           cvara_r33(iel)*gradv(3, 3, iel) )
 
-      ! grad u
-
-      produc(1,iel) = produc(1,iel)                                  &
-                    - 2.0d0*(cvara_r11(iel)*gradv(1, 1, iel) +           &
-                             cvara_r12(iel)*gradv(2, 1, iel) +           &
-                             cvara_r13(iel)*gradv(3, 1, iel) )
-
-      produc(4,iel) = produc(4,iel)                                  &
-                    - (cvara_r12(iel)*gradv(1, 1, iel) +                 &
-                       cvara_r22(iel)*gradv(2, 1, iel) +                 &
-                       cvara_r23(iel)*gradv(3, 1, iel) )
-
-      produc(6,iel) = produc(6,iel)                                  &
-                    - (cvara_r13(iel)*gradv(1, 1, iel) +                 &
-                       cvara_r23(iel)*gradv(2, 1, iel) +                 &
-                       cvara_r33(iel)*gradv(3, 1, iel) )
-
-      ! grad v
-
-      produc(2,iel) = produc(2,iel)                                  &
-                    - 2.0d0*(cvara_r12(iel)*gradv(1, 2, iel) +           &
-                             cvara_r22(iel)*gradv(2, 2, iel) +           &
-                             cvara_r23(iel)*gradv(3, 2, iel) )
-
-      produc(4,iel) = produc(4,iel)                                  &
-                    - (cvara_r11(iel)*gradv(1, 2, iel) +                 &
-                       cvara_r12(iel)*gradv(2, 2, iel) +                 &
-                       cvara_r13(iel)*gradv(3, 2, iel) )
-
-      produc(5,iel) = produc(5,iel)                                  &
-                    - (cvara_r13(iel)*gradv(1, 2, iel) +                 &
-                       cvara_r23(iel)*gradv(2, 2, iel) +                 &
-                       cvara_r33(iel)*gradv(3, 2, iel) )
-
-      ! grad w
-
-      produc(3,iel) = produc(3,iel)                                  &
-                    - 2.0d0*(cvara_r13(iel)*gradv(1, 3, iel) +           &
-                             cvara_r23(iel)*gradv(2, 3, iel) +           &
-                             cvara_r33(iel)*gradv(3, 3, iel) )
-
-      produc(6,iel) = produc(6,iel)                                  &
-                    - (cvara_r11(iel)*gradv(1, 3, iel) +                 &
-                       cvara_r12(iel)*gradv(2, 3, iel) +                 &
-                       cvara_r13(iel)*gradv(3, 3, iel) )
-
-      produc(5,iel) = produc(5,iel)                                  &
-                    - (cvara_r12(iel)*gradv(1, 3, iel) +                 &
-                       cvara_r22(iel)*gradv(2, 3, iel) +                 &
-                       cvara_r23(iel)*gradv(3, 3, iel) )
-
-    enddo
-  endif
+  enddo
 endif
 
 !===============================================================================
@@ -575,7 +543,7 @@ if (irijco.eq.1) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
-   produc , gradro ,                                              &
+   cpro_produc , gradro ,                                         &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    tslagi ,                                                       &
@@ -589,7 +557,7 @@ if (irijco.eq.1) then
     ivar    ,                                                       &
     icepdc  , icetsm , itypsm ,                                     &
     dt      ,                                                       &
-    gradv   , gradro ,                                              &
+    gradv   , cpro_produc, gradro ,                                 &
     ckupdc  , smacel ,                                              &
     viscf   , viscb  ,                                              &
     tslagi ,                                                        &
@@ -622,7 +590,7 @@ else
      ivar   , isou   ,                                              &
      icepdc , icetsm , itypsm ,                                     &
      dt     ,                                                       &
-     produc , gradro ,                                              &
+     cpro_produc , gradro ,                                              &
      ckupdc , smacel ,                                              &
      viscf  , viscb  ,                                              &
      tslagi ,                                                       &
@@ -653,7 +621,7 @@ call reseps &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
-   gradv  , produc , gradro ,                                     &
+   gradv  , cpro_produc , gradro ,                                &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    smbr   , rovsdt )
