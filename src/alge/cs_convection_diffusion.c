@@ -354,30 +354,19 @@ _max_limiter_denom(const int              f_id,
     grdpaa[cell_id][2] = 0.;
   }
 
-  /* Choose gradient type */
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
-
   /* SOLU Scheme asked with standard gradient
    *  or CENTERED scheme */
   if (ischcp == 0 || ischcp == 1) {
 
-    cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                               &gradient_type,
-                               &halo_type);
-
     cs_field_gradient_scalar(f,
                              false, /* use_previous_t */
-                             gradient_type,
-                             halo_type,
                              inc,
                              true, /* _recompute_cocg */
                              grdpa);
 
     cs_field_gradient_scalar(f,
                              true, /* use_previous_t */
-                             gradient_type,
-                             halo_type,
                              inc,
                              true, /* _recompute_cocg */
                              grdpaa);
@@ -1369,7 +1358,7 @@ cs_slope_test_gradient(int                     f_id,
   if (halo != NULL) {
     cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 3);
     if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)grdpa, 3);
+      cs_halo_perio_sync_var_vect(halo, CS_HALO_STANDARD, (cs_real_t *)grdpa, 3);
 
     /* Gradient periodicity of rotation for Reynolds stress components */
     if (cs_glob_mesh->have_rotation_perio > 0 && f_id != -1)

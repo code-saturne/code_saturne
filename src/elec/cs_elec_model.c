@@ -1390,9 +1390,6 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
   cs_real_3_t *grad;
   BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-
   /* ----------------------------------------------------- */
   /* first call : J, E => J.E                              */
   /* ----------------------------------------------------- */
@@ -1402,16 +1399,9 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
     /* Get the calculation option from the field */
     cs_real_3_t *cpro_elefl = (cs_real_3_t *)(CS_F_(elefl)->val);
-    cs_field_get_key_struct(CS_F_(potr), key_cal_opt_id, &var_cal_opt);
-
-    cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                               &gradient_type,
-                               &halo_type);
 
     cs_field_gradient_scalar(CS_F_(potr),
                              false, /* use_previous_t */
-                             gradient_type,
-                             halo_type,
                              1,    /* inc */
                              true, /* recompute_cocg */
                              grad);
@@ -1500,17 +1490,8 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     if (ieljou == 2 || ieljou == 4) {
       /* compute grad(potI) */
 
-      /* Get the calculation option from the field */
-      cs_field_get_key_struct(CS_F_(poti), key_cal_opt_id, &var_cal_opt);
-
-      cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                                &gradient_type,
-                                &halo_type);
-
       cs_field_gradient_scalar(CS_F_(poti),
                                false, /* use_previous_t */
-                               gradient_type,
-                               halo_type,
                                1,    /* inc */
                                true, /* recompute_cocg */
                                grad);
@@ -1601,19 +1582,12 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     if (ielarc == 2) {
       /* compute magnetic field component B */
       cs_field_t  *fp = cs_field_by_name_try("vec_potential");
-      cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
-
-      cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                                 &gradient_type,
-                                 &halo_type);
 
       cs_real_33_t *gradv = NULL;
       BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
       cs_field_gradient_vector(fp,
                                false, /* use_previous_t */
-                               gradient_type,
-                               halo_type,
                                1,    /* inc */
                                gradv);
 

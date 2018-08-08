@@ -204,23 +204,8 @@ cs_user_extra_operations(void)
     cs_real_3_t *grad;
     BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
-    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-    cs_var_cal_opt_t var_cal_opt;
-
-    // Get the calculation option from the field
-    cs_field_get_key_struct(h, key_cal_opt_id, &var_cal_opt);
-
-    cs_halo_type_t halo_type;
-    cs_gradient_type_t gradient_type;
-
-    cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                               &gradient_type,
-                               &halo_type);
-
     cs_field_gradient_scalar(h,
                              true, /* use_previous_t */
-                             gradient_type,
-                             halo_type,
                              1, /* inc */
                              true, /* _recompute_cocg */
                              grad);

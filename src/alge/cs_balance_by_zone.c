@@ -894,17 +894,9 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_real_3_t *grad;
   BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
-  cs_halo_type_t halo_type;
-  cs_gradient_type_t gradient_type;
-
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                             &gradient_type,
-                             &halo_type);
-
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_field_gradient_scalar(f,
                            true, /* use_previous_t */
-                           gradient_type,
-                           halo_type,
                            1, /* inc */
                            true, /* _recompute_cocg */
                            grad);
@@ -1675,19 +1667,6 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
   int iflmab = cs_field_get_key_int(f_pres, cs_field_key_id("boundary_mass_flux_id"));
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-
-  /* Get the calculation option from the field */
-  cs_field_get_key_struct(f_pres, key_cal_opt_id, &var_cal_opt);
-
-  cs_halo_type_t halo_type;
-  cs_gradient_type_t gradient_type;
-
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                             &gradient_type,
-                             &halo_type);
-
   int inc = 1;
 
   /* Get user-selected zone
@@ -1727,7 +1706,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cells_tag_ids[c_id_sel] = 1;
   }
   if (halo != NULL) {
-    cs_halo_sync_num(halo, halo_type, cells_tag_ids);
+    cs_halo_sync_num(halo, CS_HALO_STANDARD, cells_tag_ids);
   }
 
   /* Classify mesh faces with respect to the selected zone */
@@ -2519,17 +2498,8 @@ cs_flux_through_surface(const char         *scalar_name,
   cs_real_3_t *grad;
   BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
-  cs_halo_type_t halo_type;
-  cs_gradient_type_t gradient_type;
-
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                             &gradient_type,
-                             &halo_type);
-
   cs_field_gradient_scalar(f,
                            true, /* use_previous_t */
-                           gradient_type,
-                           halo_type,
                            1, /* inc */
                            true, /* _recompute_cocg */
                            grad);
@@ -2549,7 +2519,7 @@ cs_flux_through_surface(const char         *scalar_name,
     if (var_cal_opt.iconv > 0)
       cs_slope_test_gradient(f->id,
                              1, /* inc */
-                             halo_type,
+                             CS_HALO_STANDARD,
                              (const cs_real_3_t *)grad,
                              gradst,
                              f->val,
@@ -2573,7 +2543,7 @@ cs_flux_through_surface(const char         *scalar_name,
     if (var_cal_opt.iconv > 0)
       cs_upwind_gradient(f->id,
                          1, /* inc */
-                         halo_type,
+                         CS_HALO_STANDARD,
                          a_F,
                          b_F,
                          i_mass_flux,

@@ -234,16 +234,9 @@ cs_lagr_gradients(int            time_id,
 
   if (   cs_glob_lagr_time_scheme->modcpl > 0
       && cs_glob_time_step->nt_cur >= cs_glob_lagr_time_scheme->modcpl) {
-    cs_field_get_key_struct(extra->vel, key_cal_opt_id, &var_cal_opt);
-
-    cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                               &gradient_type,
-                               &halo_type);
 
     cs_field_gradient_vector(extra->vel,
                              time_id,
-                             gradient_type,
-                             halo_type,
                              inc,
                              gradvf);
   }

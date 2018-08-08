@@ -69,8 +69,6 @@ typedef enum {
  * parameters:
  *   f              <-- pointer to field
  *   use_previous_t <-- should we use values from the previous time step ?
- *   gradient_type  <-- gradient type
- *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   grad           --> gradient
@@ -79,8 +77,6 @@ typedef enum {
 void
 cs_field_gradient_scalar(const cs_field_t          *f,
                          bool                       use_previous_t,
-                         cs_gradient_type_t         gradient_type,
-                         cs_halo_type_t             halo_type,
                          int                        inc,
                          bool                       recompute_cocg,
                          cs_real_3_t      *restrict grad);
@@ -92,8 +88,6 @@ cs_field_gradient_scalar(const cs_field_t          *f,
  * parameters:
  *   f              <-- pointer to field
  *   use_previous_t <-- should we use values from the previous time step ?
- *   gradient_type  <-- gradient type
- *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   hyd_p_flag     <-- flag for hydrostatic pressure
@@ -104,8 +98,6 @@ cs_field_gradient_scalar(const cs_field_t          *f,
 void
 cs_field_gradient_potential(const cs_field_t          *f,
                             bool                       use_previous_t,
-                            cs_gradient_type_t         gradient_type,
-                            cs_halo_type_t             halo_type,
                             int                        inc,
                             bool                       recompute_cocg,
                             int                        hyd_p_flag,
@@ -119,8 +111,6 @@ cs_field_gradient_potential(const cs_field_t          *f,
  * parameters:
  *   f              <-- pointer to field
  *   use_previous_t <-- should we use values from the previous time step ?
- *   gradient_type  <-- gradient type
- *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
@@ -128,8 +118,6 @@ cs_field_gradient_potential(const cs_field_t          *f,
 void
 cs_field_gradient_vector(const cs_field_t          *f,
                          bool                       use_previous_t,
-                         cs_gradient_type_t         gradient_type,
-                         cs_halo_type_t             halo_type,
                          int                        inc,
                          cs_real_33_t     *restrict grad);
 
@@ -139,8 +127,6 @@ cs_field_gradient_vector(const cs_field_t          *f,
  * parameters:
  *   f              <-- pointer to field
  *   use_previous_t <-- should we use values from the previous time step ?
- *   gradient_type  <-- gradient type
- *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
@@ -148,8 +134,6 @@ cs_field_gradient_vector(const cs_field_t          *f,
 void
 cs_field_gradient_tensor(const cs_field_t          *f,
                          bool                       use_previous_t,
-                         cs_gradient_type_t         gradient_type,
-                         cs_halo_type_t             halo_type,
                          int                        inc,
                          cs_real_63_t     *restrict grad);
 

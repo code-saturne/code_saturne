@@ -208,37 +208,18 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
 
   /* Get the calculation option from the field */
 
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
-
-  static int key_cal_opt_id = -1;
-  if (key_cal_opt_id < 0)
-    key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
-  if (key_cal_opt_id >= 0) {
-    cs_var_cal_opt_t var_cal_opt;
-    cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-    cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                               &gradient_type,
-                               &halo_type);
-  }
-
   cs_real_t *grad;
   BFT_MALLOC(grad, 3*dim*n_cells_ext, cs_real_t);
 
   if (dim == 1)
     cs_field_gradient_scalar(f,
                              true, /* use_previous_t */
-                             gradient_type,
-                             halo_type,
                              1,    /* inc */
                              true, /* recompute_cocg */
                              (cs_real_3_t *)grad);
   else if (dim == 3)
     cs_field_gradient_vector(f,
                              true, /* use_previous_t */
-                             gradient_type,
-                             halo_type,
                              1,    /* inc */
                              (cs_real_33_t *)grad);
 
@@ -380,21 +361,13 @@ cs_f_field_gradient_scalar(int                    f_id,
                            int                    recompute_cocg,
                            cs_real_3_t  *restrict grad)
 {
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
   bool _use_previous_t = use_previous_t ? true : false;
   bool _recompute_cocg = recompute_cocg ? true : false;
 
   const cs_field_t *f = cs_field_by_id(f_id);
 
-  cs_gradient_type_by_imrgra(imrgra,
-                             &gradient_type,
-                             &halo_type);
-
-  cs_field_gradient_scalar(f,
+    cs_field_gradient_scalar(f,
                            _use_previous_t,
-                           gradient_type,
-                           halo_type,
                            inc,
                            _recompute_cocg,
                            grad);
@@ -426,8 +399,6 @@ cs_f_field_gradient_potential(int                    f_id,
                               cs_real_3_t            f_ext[],
                               cs_real_3_t  *restrict grad)
 {
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
   bool _use_previous_t = use_previous_t ? true : false;
   bool _recompute_cocg = recompute_cocg ? true : false;
 
@@ -436,14 +407,8 @@ cs_f_field_gradient_potential(int                    f_id,
 
   const cs_field_t *f = cs_field_by_id(f_id);
 
-  cs_gradient_type_by_imrgra(imrgra,
-                             &gradient_type,
-                             &halo_type);
-
   cs_field_gradient_potential(f,
                               _use_previous_t,
-                              gradient_type,
-                              halo_type,
                               inc,
                               _recompute_cocg,
                               hyd_p_flag,
@@ -471,20 +436,12 @@ cs_f_field_gradient_vector(int                     f_id,
                            int                     inc,
                            cs_real_33_t  *restrict grad)
 {
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
   bool _use_previous_t = use_previous_t ? true : false;
 
   const cs_field_t *f = cs_field_by_id(f_id);
 
-  cs_gradient_type_by_imrgra(imrgra,
-                             &gradient_type,
-                             &halo_type);
-
   cs_field_gradient_vector(f,
                            _use_previous_t,
-                           gradient_type,
-                           halo_type,
                            inc,
                            grad);
 }
@@ -508,20 +465,13 @@ void cs_f_field_gradient_tensor(int                     f_id,
                                 int                     inc,
                                 cs_real_63_t  *restrict grad)
 {
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
   bool _use_previous_t = use_previous_t ? true : false;
 
   const cs_field_t *f = cs_field_by_id(f_id);
 
-  cs_gradient_type_by_imrgra(imrgra,
-                             &gradient_type,
-                             &halo_type);
 
   cs_field_gradient_tensor(f,
                            _use_previous_t,
-                           gradient_type,
-                           halo_type,
                            inc,
                            grad);
 }
@@ -539,8 +489,6 @@ void cs_f_field_gradient_tensor(int                     f_id,
  * \param[in]       f               pointer to field
  * \param[in]       use_previous_t  should we use values from the previous
  *                                  time step ?
- * \param[in]       gradient_type   gradient type
- * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[out]      grad            gradient
@@ -550,22 +498,29 @@ void cs_f_field_gradient_tensor(int                     f_id,
 void
 cs_field_gradient_scalar(const cs_field_t          *f,
                          bool                       use_previous_t,
-                         cs_gradient_type_t         gradient_type,
-                         cs_halo_type_t             halo_type,
                          int                        inc,
                          bool                       recompute_cocg,
                          cs_real_3_t      *restrict grad)
 {
-  int tr_dim = 0;
-  int w_stride = 1;
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_real_t *c_weight = NULL;
-  cs_internal_coupling_t  *cpl = NULL;
-  cs_var_cal_opt_t var_cal_opt;
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+
+  static int key_cal_opt_id = -1;
+  if (key_cal_opt_id < 0)
+    key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
   /* Get the calculation option from the field */
-
+  cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  int tr_dim = 0;
+  int w_stride = 1;
+  cs_real_t *c_weight = NULL;
+  cs_internal_coupling_t  *cpl = NULL;
+
   if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
     if (var_cal_opt.idiff > 0) {
       /* Weighted gradient coefficients */
@@ -626,8 +581,6 @@ cs_field_gradient_scalar(const cs_field_t          *f,
  * \param[in]       f               pointer to field
  * \param[in]       use_previous_t  should we use values from the previous
  *                                  time step ?
- * \param[in]       gradient_type   gradient type
- * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[in]       hyd_p_flag      flag for hydrostatic pressure
@@ -640,23 +593,32 @@ cs_field_gradient_scalar(const cs_field_t          *f,
 void
 cs_field_gradient_potential(const cs_field_t          *f,
                             bool                       use_previous_t,
-                            cs_gradient_type_t         gradient_type,
-                            cs_halo_type_t             halo_type,
                             int                        inc,
                             bool                       recompute_cocg,
                             int                        hyd_p_flag,
                             cs_real_3_t                f_ext[],
                             cs_real_3_t      *restrict grad)
 {
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+
+  static int key_cal_opt_id = -1;
+  if (key_cal_opt_id < 0)
+    key_cal_opt_id = cs_field_key_id("var_cal_opt");
+
+  /* Get the calculation option from the field */
+  cs_var_cal_opt_t var_cal_opt;
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+                             &gradient_type,
+                             &halo_type);
+
   int w_stride = 1;
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_real_t *c_weight = NULL;
-  cs_var_cal_opt_t var_cal_opt;
+  cs_internal_coupling_t  *cpl = NULL;
 
-  /* Get the calculation option from the field */
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
   if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
     if (var_cal_opt.idiff > 0) {
       int key_id = cs_field_key_id("gradient_weighting_id");
@@ -668,6 +630,19 @@ cs_field_gradient_potential(const cs_field_t          *f,
       }
     }
   }
+
+  if (f->type & CS_FIELD_VARIABLE) {
+    if (var_cal_opt.idiff > 0) {
+      /* Internal coupling structure */
+      int key_id = cs_field_key_id_try("coupling_entity");
+      if (key_id > -1) {
+        int coupl_id = cs_field_get_key_int(f, key_id);
+        if (coupl_id > -1)
+          cpl = cs_internal_coupling_by_id(coupl_id);
+      }
+    }
+  }
+
 
   cs_gradient_scalar(f->name,
                      gradient_type,
@@ -688,7 +663,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
                      f->bc_coeffs->b,
                      var,
                      c_weight,
-                     NULL, /* internal coupling */
+                     cpl, /* internal coupling */
                      grad);
 }
 
@@ -699,8 +674,6 @@ cs_field_gradient_potential(const cs_field_t          *f,
  * \param[in]       f               pointer to field
  * \param[in]       use_previous_t  should we use values from the previous
  *                                  time step ?
- * \param[in]       gradient_type   gradient type
- * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[out]      grad            gradient
  */
@@ -709,18 +682,26 @@ cs_field_gradient_potential(const cs_field_t          *f,
 void
 cs_field_gradient_vector(const cs_field_t          *f,
                          bool                       use_previous_t,
-                         cs_gradient_type_t         gradient_type,
-                         cs_halo_type_t             halo_type,
                          int                        inc,
                          cs_real_33_t     *restrict grad)
 {
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+
+  static int key_cal_opt_id = -1;
+  if (key_cal_opt_id < 0)
+    key_cal_opt_id = cs_field_key_id("var_cal_opt");
+
+  /* Get the calculation option from the field */
   cs_var_cal_opt_t var_cal_opt;
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+                             &gradient_type,
+                             &halo_type);
+
   cs_real_t *c_weight = NULL;
   cs_internal_coupling_t  *cpl = NULL;
 
-  /* Get the calculation option from the field */
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
   if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
     if (var_cal_opt.idiff > 0) {
       /* Weighted gradient coefficients */
@@ -771,8 +752,6 @@ cs_field_gradient_vector(const cs_field_t          *f,
  * \param[in]       f               pointer to field
  * \param[in]       use_previous_t  should we use values from the previous
  *                                  time step ?
- * \param[in]       gradient_type   gradient type
- * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[out]      grad            gradient
  */
@@ -781,16 +760,22 @@ cs_field_gradient_vector(const cs_field_t          *f,
 void
 cs_field_gradient_tensor(const cs_field_t          *f,
                          bool                       use_previous_t,
-                         cs_gradient_type_t         gradient_type,
-                         cs_halo_type_t             halo_type,
                          int                        inc,
                          cs_real_63_t     *restrict grad)
 {
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+
+  static int key_cal_opt_id = -1;
+  if (key_cal_opt_id < 0)
+    key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
   /* Get the calculation option from the field */
+  cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+                             &gradient_type,
+                             &halo_type);
 
   cs_real_6_t *var = (use_previous_t) ? (cs_real_6_t *)(f->val_pre)
                                       : (cs_real_6_t *)(f->val);

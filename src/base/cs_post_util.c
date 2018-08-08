@@ -637,17 +637,7 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_real_3_t *diipb = (const cs_real_3_t *)mq->diipb;
-  cs_var_cal_opt_t var_cal_opt;
-  cs_halo_type_t halo_type;
-  cs_gradient_type_t gradient_type;
   cs_real_3_t *gradp;
-
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_field_get_key_struct(CS_F_(p), key_cal_opt_id, &var_cal_opt);
-
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                             &gradient_type,
-                             &halo_type);
 
   BFT_MALLOC(gradp, m->n_cells_with_ghosts, cs_real_3_t);
 
@@ -660,8 +650,6 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
   int _recompute_cocg = 1;
   cs_field_gradient_potential(CS_F_(p),
                               use_previous_t,
-                              gradient_type,
-                              halo_type,
                               inc,
                               _recompute_cocg,
                               hyd_p_flag,
@@ -699,9 +687,6 @@ cs_post_evm_reynolds_stresses(cs_lnum_t        n_loc_cells,
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  cs_var_cal_opt_t var_cal_opt;
-  cs_halo_type_t halo_type;
-  cs_gradient_type_t gradient_type;
   cs_real_33_t *gradv;
 
   if (   turb_model->itytur != 2
@@ -711,21 +696,12 @@ cs_post_evm_reynolds_stresses(cs_lnum_t        n_loc_cells,
               _("This post-processing utility function is only available for "
                 "Eddy Viscosity Models."));
 
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
-
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                             &gradient_type,
-                             &halo_type);
-
   BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   bool use_previous_t = false;
   int inc = 1;
   cs_field_gradient_vector(CS_F_(u),
                            use_previous_t,
-                           gradient_type,
-                           halo_type,
                            inc,
                            gradv);
 
@@ -775,17 +751,7 @@ cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
 {
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  cs_var_cal_opt_t var_cal_opt;
-  cs_halo_type_t halo_type;
-  cs_gradient_type_t gradient_type;
   cs_real_33_t *gradv;
-
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
-
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                             &gradient_type,
-                             &halo_type);
 
   BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
@@ -793,8 +759,6 @@ cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
   int inc = 1;
   cs_field_gradient_vector(CS_F_(u),
                            use_previous_t,
-                           gradient_type,
-                           halo_type,
                            inc,
                            gradv);
 
