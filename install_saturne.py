@@ -540,6 +540,9 @@ class Setup:
         # Optional libraries
         self.optlibs = ['hdf5', 'cgns', 'med', 'scotch', 'parmetis', 'libxml2']
 
+        # Optional libraries configure could find in salome
+        self.salome_optlibs = ['hdf5', 'cgns', 'med']
+
         # Logging file
         self.log_file = sys.stdout
 
@@ -959,6 +962,15 @@ Check the setup file and some utilities presence.
                 if p.returncode == 0:
                     sys.stdout.write(output[0])
 
+        # Looking for SALOME path provided by the user
+        if self.salome and not os.path.isdir(self.salome):
+            sys.stderr.write("\n*** Aborting installation:\n"
+                             "\'%s\' SALOME directory is provided in the setup "
+                             "file but is not present.\n"
+                             "Please check your setup file.\n\n"
+                             % self.salome)
+            sys.exit(1)
+
         # Checking libraries options
         for lib in self.optlibs:
             p = self.packages[lib]
@@ -977,7 +989,9 @@ Check the setup file and some utilities presence.
                                  % lib)
                 sys.exit(1)
             if p.installation == 'no' and p.use == 'yes':
-                if not os.path.isdir(p.install_dir):
+                use_salome = self.salome and lib in self.salome_optlibs and \
+                             p.install_dir == 'salome'
+                if not os.path.isdir(p.install_dir) and not use_salome:
                     sys.stderr.write("\n*** Aborting installation:\n"
                                      "\'%(path)s\' path is provided for "
                                      "\'%(lib)s\' in the setup "
@@ -985,16 +999,6 @@ Check the setup file and some utilities presence.
                                      "Please check your setup file.\n\n"
                                      % {'path':p.install_dir, 'lib':lib})
                     sys.exit(1)
-
-        # Looking for SALOME path probided by the user
-        if self.salome and not os.path.isdir(self.salome):
-            sys.stderr.write("\n*** Aborting installation:\n"
-                             "\'%s\' SALOME directory is provided in the setup "
-                             "file but is not present.\n"
-                             "Please check your setup file.\n\n"
-                             % self.salome)
-            sys.exit(1)
-
 
         # Looking for make utility
         ret = run_test("make")
@@ -1290,8 +1294,9 @@ salome    %(salome)s
 # packages may be available through the package manager.
 # HDF5 is also often available on large systems.
 # When building with SALOME, the platform distribution's
-# packages may be used, by setting 'salome' in the
-# matching entry under the "Use" column.
+# packages may be used, by setting in the matching entry
+# 'yes' under the "Use" column and simply 'salome' under
+# the path column.
 #
 # Scotch and Pt-Scotch are available in some Linux
 # distributions, but may be built with options
