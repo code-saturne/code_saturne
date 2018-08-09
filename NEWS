@@ -85,12 +85,18 @@ Bug fixes
 
 - Radiative model: fix radiative flux values at parallel boundaries.
 
-Numerics:
+Numerics
+--------
 
 - Add choice of inexact (flexible) preconditioned congugate gradient.
   * When using multiple threads and multigrid preconditioning with a
     Gauss-Seidel smoother, this choice is set by default over the
     standard preconditioned congugate gradient.
+
+User changes
+------------
+
+- Allow short path 'salome' for hdf5, cgns, med in installation script.
 
 Release 5.2.0 (March 30 2018)
 =============================
