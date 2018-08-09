@@ -9,6 +9,8 @@ User changes:
     the GUI; new cases do not include a reference dp_FCP.xml file
     anymore, though older such files may still be read.
 
+- Allow short path 'salome' for hdf5, cgns, med in installation script.
+
 - GUI: steady/unsteady computation type now handled with time step.
 
 - Allow joining of meshes including isolated faces.
