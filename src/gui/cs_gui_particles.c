@@ -672,13 +672,14 @@ cs_gui_particles_bcs(void)
         if (tn_c != NULL) {
 
           choice = cs_tree_node_get_tag(tn_c, "choice");
-          v_r = cs_tree_node_get_values_real(tn_c);
 
           if (cs_gui_strcmp(choice, "rate")) {
+            v_r = cs_tree_node_get_child_values_real(tn_i, "mass_flow_rate");
             zis->stat_weight = 0;
             if (v_r != NULL) zis->flow_rate = v_r[0];
           }
           else if (cs_gui_strcmp(choice, "prescribed")) {
+            v_r = cs_tree_node_get_values_real(tn_c);
             if (v_r != NULL) zis->stat_weight = v_r[0];
             zis->flow_rate = 0;
           }
