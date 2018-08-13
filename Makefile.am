@@ -300,7 +300,6 @@ data/thch/dp_C3P \
 data/thch/dp_C3PSJ \
 data/thch/dp_C4P \
 data/thch/dp_ELE \
-data/thch/dp_FCP.xml \
 data/thch/dp_FUE \
 data/thch/dp_radiat_ADF50 \
 data/thch/dp_radiat_ADF8 \

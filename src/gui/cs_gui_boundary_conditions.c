@@ -746,7 +746,7 @@ _inlet_coal(int         izone,
     boundaries->ientcp[izone] = 1;
     if (_n_coals != *ncharb)
       bft_error(__FILE__, __LINE__, 0,
-                _("Invalid number of coal-> dp_FCP: %i xml: %i\n"),
+                _("Invalid number of coal: %i xml: %i\n"),
                 *ncharb, _n_coals);
   }
 }

@@ -21,7 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine cs_coal_readata
-!=========================
 
 !===============================================================================
 !  FONCTION  :
@@ -2169,7 +2168,7 @@ af9(ihy)   = 1.0d0/wmc
 return
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !================================================================
@@ -2246,7 +2245,7 @@ return
  8052 format( 10x, i3, 8x,1e12.4,1x,1e12.4)
 !================================================================
  8100 format(/,3X,'---------------------------------' , /, &
-               3X,'  Devolatization model constant  ' , /, &
+               3X,' Devolatization model constant'    , /, &
                3X,'---------------------------------')
 !================================================================
  8102 format(/,8X,'Option 0: Y1 and Y2 computed  ')
@@ -2255,7 +2254,7 @@ return
  8105 format(  8X,'Y1_ch = ', 1e12.4,3X,'Y2_ch = ', 1e12.4)
 !====================================================================
  8034 format(/,/,3X,'---------------------------------' , /, &
-                 3X,'         Modele de NOx           ' , /, &
+                 3X,' NOx model                       ' , /, &
                  3X,'---------------------------------')
 !====================================================================
  8024 format(/,/,3X,'---------------------------------' , /, &
@@ -2267,25 +2266,25 @@ return
                  3X,'---------------------------------')
 !====================================================================
  8029 format(/,3X,'---------------------------------' , /,          &
-               3X,'  Composition normee du Charbon  ' , /,          &
+               3X,' Normalized coal composition'      , /,          &
                3X,'---------------------------------')
  8030 format(8X,'C:',1e12.4,3X,'H:',1e12.4,3X,'O:',1e12.4,3X,       &
                 'N:',1e12.4,3X,'S:',1e12.4)
 !====================================================================
  8031 format(/,3X,'---------------------------------' , /,          &
-               3X,'   Composition normee du Char    ' , /,          &
+               3X,' Normalized char composition'      , /,          &
                3X,'---------------------------------')
 !====================================================================
  8036 format(/,3X,'-----------------------------------------' , /,  &
-               3X,' Composition normee du Char (Reaction 1) ' , /,  &
+               3X,' Normalized char composition (Reaction 1)' , /,  &
                3X,'-----------------------------------------')
 !====================================================================
- 8039 format(/,3X,'------------------------------------------' , /, &
-               3X,'  Composition normee du Char (Reaction 2) ' , /, &
-               3X,'------------------------------------------')
+ 8039 format(/,3X,'-----------------------------------------' , /,  &
+               3X,' Normalized char composition (Reaction 2)' , /,  &
+               3X,'-----------------------------------------')
 !====================================================================
  8040 format(/,3X,'---------------------------------' , /, &
-               3X,'   Produits Reaction heterogene  ' , /, &
+               3X,' Heterogeneous reaction products'  , /, &
                3X,'---------------------------------')
  8041 format(8X,'CO',12X,'HCN',12X,'NO')
  8042 format(3X,'R1:',1e12.4,1e12.4,1e12.4)
@@ -2293,222 +2292,230 @@ return
 !====================================================================
 
  9970 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  CERTAINES VALEURS DE CHX1 ET CHX2 SONT NEGATIVES          ',/,&
-'@  OU NULLES                                                 ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@',                                                            /,&
+'@  Some values of CHX1 and CHX2 are negative or zero.        ',/,&
+'@',                                                            /,&
+'@  The computation CAN NOT run',                               /,&
+'@',                                                            /,&
+'@  Check the setup parameters.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
  9971 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  Vous avec pris l''azote dans la composition du charbon    ',/,&
-'@  mais votre repartition entre HCN et NH3 est nulle         ',/,&
-'@  pour le charbon ',I2,'                                    ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@',                                                            /,&
+'@  Nitrogen was chosen in the coal composition but the       ',/,&
+'@  distribution between HCN and NH3 is zero for coal ', i2,    /,&
+'@',                                                            /,&
+'@  The computation CAN NOT run',                               /,&
+'@',                                                            /,&
+'@  Check the setup parameters.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
  9980 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  Vous utilisez une option differente pour Y1 et Y2         ',/,&
-'@  pour le charbon ',I2,'                                    ',/,&
-'@         IY1CH = ',I2,'                                     ',/,&
-'@         IY2CH = ',I2,'                                     ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@',                                                            /,&
+'@  A different option is used for Y1 and Y2 for coal ', i2,    /,&
+'@         IY1CH = ', i2,                                       /,&
+'@         IY2CH = ', i2,                                       /,&
+'@',                                                            /,&
+'@  The computation CAN NOT run',                               /,&
+'@',                                                            /,&
+'@  Check the setup parameters.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
  9981 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  Vous utilisez une option  pour Y1 et Y2 non disponible    ',/,&
-'@  pour le charbon ',I2,'                                    ',/,&
-'@         IY1CH = ',I2,'                                     ',/,&
-'@         IY2CH = ',I2,'                                     ',/,&
-'@                                                            ',/,&
-'@  seules les valeur : 0 , 1 ou 2 sont admissibles.          ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@',                                                            /,&
+'@  An unavailable option is used for Y1 and Y2 for coal ', i2, /,&
+'@         IY1CH = ', i2,                                       /,&
+'@         IY2CH = ', i2,                                       /,&
+'@',                                                            /,&
+'@  only values 0 , 1 or 2 are admissible.',                    /,&
+'@',                                                            /,&
+'@  Check the setup parameters.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
  9982 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@       MATRICE NON INVERSIBLE POUR LE CALCUL DES            ',/,&
-'@                MATIERES VOLATILES                          ',/,&
-'@  pour le charbon ',I2,'                                    ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@',                                                            /,&
+'@  Non invertible matrix for volatile matter computation',     /,&
+'@  for coal ', i2,                                             /,&
+'@',                                                            /,&
+'@  Check the setup parameters.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
  9991 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  Le nombre d''especes courantes doit etre inferieur        ',/,&
-'@                                  ou egal a',I10             ,/,&
-'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@',                                                            /,&
+'@  The current number of species must be less than',           /,&
+'@                                        or equal to ', i10,   /,&
+'@  It is ', i10,' here.',                                      /,&
+'@',                                                            /,&
+'@  The computation CAN NOT run',                               /,&
+'@',                                                            /,&
+'@  Check the setup parameters.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
  9992 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  Le nombre de points de tabulation est limite a ',I10       ,/,&
-'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@',                                                            /,&
+'@  The number of tabulation points is limited to ', i10,       /,&
+'@  It is ', i10,' here.',                                      /,&
+'@',                                                            /,&
+'@  The computation CAN NOT run',                               /,&
+'@',                                                            /,&
+'@  Check the setup parameters.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
  9993 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  Le nombre d''especes elementaires est limite a ',I10       ,/,&
-'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@',                                                            /,&
+'@  The number of elementary species is limited to ', i10,      /,&
+'@  It is ', i10,' here.',                                      /,&
+'@',                                                            /,&
+'@  The computation CAN NOT run',                               /,&
+'@',                                                            /,&
+'@  Check the setup parameters.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
  9896 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@',                                                            /,&
 '@  LA COMPOSITION DE L''OXYDANT 1 EST ERRONEE                ',/,&
 '@     O2  :  ',G15.7,'                                       ',/,&
 '@     N2  :  ',G15.7,'                                       ',/,&
 '@     H2O :  ',G15.7,'                                       ',/,&
 '@     CO2 :  ',G15.7,'                                       ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@  The computation CAN NOT run',                               /,&
+'@',                                                            /,&
+'@  Check the setup parameters.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
  9897 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  LA COMPOSITION DE L''OXYDANT 2 EST ERRONEE                ',/,&
-'@     O2  :  ',G15.7,'                                       ',/,&
-'@     N2  :  ',G15.7,'                                       ',/,&
-'@     H2O :  ',G15.7,'                                       ',/,&
-'@     CO2 :  ',G15.7,'                                       ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@',                                                            /,&
+'@  The composition of oxidant 2 is incorrect',                 /,&
+'@     O2  :  ', g15.7,                                         /,&
+'@     N2  :  ', g15.7,                                         /,&
+'@     H2O :  ', g15.7,                                         /,&
+'@     CO2 :  ', g15.7,                                         /,&
+'@',                                                            /,&
+'@  The computation CAN NOT run',                               /,&
+'@',                                                            /,&
+'@  Check the setup parameters.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
  9898 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  LA COMPOSITION DE L''OXYDANT 3 EST ERRONEE                ',/,&
-'@     O2  :  ',G15.7,'                                       ',/,&
-'@     N2  :  ',G15.7,'                                       ',/,&
-'@     H2O :  ',G15.7,'                                       ',/,&
-'@     CO2 :  ',G15.7,'                                       ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@',                                                            /,&
+'@  The composition of oxidant 2 is incorrect',                 /,&
+'@     O2  :  ', g15.7,                                         /,&
+'@     N2  :  ', g15.7,                                         /,&
+'@     H2O :  ', g15.7,                                         /,&
+'@     CO2 :  ', g15.7,                                         /,&
+'@',                                                            /,&
+'@  The computation CAN NOT run',                               /,&
+'@',                                                            /,&
+'@  Check the setup parameters.',                               /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
  9100 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CS_COAL_READATA)',/,&
-'@ =========                                                  ',/,&
-'@                                                            ',/,&
-'@  *** Mauvaise Bilan elementaire du coke  ***               ',/,&
-'@                                                            ',/,&
-'@  Verifier les pourcentages massiques de chaque element     ',/,&
-'@  (fichier dp_FCP.xml).                                     ',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@                Pulverized coal model',                       /,&
+'@'                                                             /,&
+'@  *** Wrong elementary coke balance ***',                     /,&
+'@',                                                            /,&
+'@  Check the mass percentages of each element.',               /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
+
 !----
 ! End
 !----
+
 end subroutine cs_coal_readata
 
 !===============================================================================
@@ -2516,8 +2523,8 @@ end subroutine cs_coal_readata
 !===============================================================================
 
 subroutine coal_resol_matrice &
-!============================
- ( NDIM, AA , BB , XX , IERR)
+ ( ndim, aa , bb , xx , ierr)
+
 !===============================================================================
 ! FONCTION :
 ! --------
