@@ -220,7 +220,7 @@ class BlendingFactorDelegate(QItemDelegate):
             validator = DoubleValidator(editor, min=0.95, max=1.)
         else:
             validator = DoubleValidator(editor, min=0., max=1.)
-            validator.setExclusiveMin(True)
+            # validator.setExclusiveMin(True)
         editor.setValidator(validator)
         return editor
 
