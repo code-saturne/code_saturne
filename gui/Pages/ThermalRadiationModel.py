@@ -67,19 +67,19 @@ class ThermalRadiationModel(Variables, Model):
         self.c_prop = {}
         self.b_prop = {}
 
-        self.c_prop['qrad']                       = self.tr("Qrad")
+        self.c_prop['radiative_flux']             = self.tr("Qrad")
         self.c_prop['radiative_source_term']      = self.tr("Radiative_source_term")
-        self.c_prop['absorption']                 = self.tr("Absorption")
+        self.c_prop['rad_absorption']             = self.tr("Absorption")
         self.c_prop['emission']                   = self.tr("Emission")
-        self.c_prop['absorption_coefficient']     = self.tr("Absorption_coefficient")
+        self.c_prop['rad_absorption_coeff']       = self.tr("Absorption_coefficient")
 
-        self.b_prop['flux_incident']               = self.tr("Flux_incident")
+        self.b_prop['rad_incident_flux']           = self.tr("Incident_flux")
         self.b_prop['thickness']                   = self.tr("Thickness")
         self.b_prop['wall_thermal_conductivity']   = self.tr("Thermal_conductivity")
         self.b_prop['emissivity']                  = self.tr("Emissivity")
-        self.b_prop['flux_net']                    = self.tr("Flux_net")
-        self.b_prop['flux_convectif']              = self.tr("Flux_convectif")
-        self.b_prop['coeff_ech_conv']              = self.tr("Coeff_ech_convectif")
+        self.b_prop['rad_net_flux']                = self.tr("Net_flux")
+        self.b_prop['rad_convective_flux']         = self.tr("Convective_flux")
+        self.b_prop['rad_exchange_coefficient']    = self.tr("Convective_exch_coef")
 
         self.classesNumber = 0
 
@@ -89,7 +89,8 @@ class ThermalRadiationModel(Variables, Model):
         Return the name and the defaul label for cells properties.
         """
         for k, v in self.c_prop.items():
-            if k in ('absorption', 'emission', 'radiative_source_term', 'absorption_coefficient'):
+            if k in ('rad_absorption', 'rad_emission', 'rad_st',
+                     'rad_absorption_coeff'):
                 for classe in range(1, self.classesNumber+1):
                     k = '%s_%2.2i' % (k, classe)
                     v = '%s_%2.2i' % (v, classe)
@@ -126,17 +127,23 @@ class ThermalRadiationModel(Variables, Model):
         """
         """
         dico = {}
-        rayName = ['srad',     'qrad',     'absorp',  'emiss',    'coefAb',
-                   'flux_incident', 'wall_thermal_conductivity', 'thickness',
-                   'emissivity', 'flux_net',      'flux_convectif',  'coeff_ech_conv']
+        rayName = ['rad_st', 'radiative_flux', 'rad_absorption', 'rad_emission',
+                   'rad_absorption_coeff', 'rad_incident_flux',
+                   'wall_thermal_conductivity', 'wall_thickness',
+                   'emissivity', 'rad_net_flux', 'rad_convective_flux',
+                   'rad_exchange_coefficient']
 
-        raylabF = ['Srad',       'Qrad',          'Absorp',     'Emiss',    'CoefAb',
-                   'Flux_incident', 'Conductivite_th', 'Epaisseur',
-                   'Emissivite', 'Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
+        raylabF = ['Srad', 'Qrad', 'Absorp', 'Emiss',
+                   'CoefAb', 'Flux_incident',
+                   'Conductivite_th', 'Epaisseur',
+                   'Emissivite', 'Flux_net', 'Flux_convectif',
+                   'Coeff_ech_conv']
 
-        raylabE = ['Srad',      'Qrad',      'Absorp',          'Emiss',    'CoefAb',
-                   'Incident_flux', 'Th_conductivity', 'Thickness',
-                   'Emissivity','Net_flux',      'Convective_flux',  'Conv_exch_coeff']
+        raylabE = ['Srad', 'Qrad', 'Absorp', 'Emiss',
+                   'Absorption_coeff', 'Incident_flux',
+                   'Th_conductivity', 'Thickness',
+                   'Emissivity', 'Net_flux', 'Convective_flux',
+                   'Conv_exch_coeff']
 
         dico['name'] = rayName
         dico['labF'] = raylabF
@@ -423,267 +430,6 @@ class ThermalRadiationTestCase(ModelTest):
         mdl = ThermalRadiationModel(self.case)
 
         assert mdl != None, 'Could not instantiate ThermalRadiationModel'
-
-
-    def checkSetandGetRadiativeModel(self):
-        """
-        Check whether the ThermalRadiationModel class could be set and get model
-        """
-        mdl = ThermalRadiationModel(self.case)
-        mdl.setRadiativeModel('dom')
-        doc = '''<radiative_transfer model="dom">
-                    <property label="Srad" name="srad"/>
-                    <property label="Qrad" name="qrad"/>
-                    <property label="Absorp" name="absorp"/>
-                    <property label="Emiss" name="emiss"/>
-                    <property label="CoefAb" name="coefAb"/>
-                    <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
-                    <property label="Thickness" name="thickness" support="boundary"/>
-                    <property label="Emissivity" name="emissivity" support="boundary"/>
-                    <property label="Flux_net" name="flux_net" support="boundary"/>
-                    <property label="Flux_convectif" name="flux_convectif" support="boundary"/>
-                    <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
-                    <restart status="off"/>
-                    <absorption_coefficient type="constant">0</absorption_coefficient>
-                    <quadrature>1</quadrature>
-                    <directions_number>3</directions_number>
-                 </radiative_transfer>'''
-        assert mdl.node_ray == self.xmlNodeFromString(doc), \
-            'Could not set model in ThermalRadiationModel'
-        assert mdl.getRadiativeModel() == 'dom', \
-            'Could not get model in ThermalRadiationModel'
-
-
-    def checkSetandGetRestart(self):
-        """
-        Check whether the ThermalRadiationModel class could be set and get restart
-        """
-        mdl = ThermalRadiationModel(self.case)
-        mdl.setRadiativeModel('dom')
-        mdl.setRestart('on')
-        doc = '''<radiative_transfer model="dom">
-                    <property label="Srad" name="srad"/>
-                    <property label="Qrad" name="qrad"/>
-                    <property label="Absorp" name="absorp"/>
-                    <property label="Emiss" name="emiss"/>
-                    <property label="CoefAb" name="coefAb"/>
-                    <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
-                    <property label="Thickness" name="thickness" support="boundary"/>
-                    <property label="Emissivity" name="emissivity" support="boundary"/>
-                    <property label="Flux_net" name="flux_net" support="boundary"/>
-                    <property label="Flux_convectif" name="flux_convectif" support="boundary"/>
-                    <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
-                    <restart status="on"/>
-                    <absorption_coefficient type="constant">0</absorption_coefficient>
-                    <quadrature>1</quadrature>
-                    <directions_number>3</directions_number>
-                 </radiative_transfer>'''
-        assert mdl.node_ray == self.xmlNodeFromString(doc), \
-            'Could not set restart in ThermalRadiationModel'
-        assert mdl.getRestart() == 'on', \
-            'Could not get restart in ThermalRadiationModel'
-
-    def checkSetandGetTypeCoeff(self):
-        """
-        Check whether the ThermalRadiationModel class could be set and
-        get type of absorption coefficient
-        """
-        mdl = ThermalRadiationModel(self.case)
-        mdl.setRadiativeModel('dom')
-        mdl.setTypeCoeff('variable')
-        doc = '''<radiative_transfer model="dom">
-                    <property label="Srad" name="srad"/>
-                    <property label="Qrad" name="qrad"/>
-                    <property label="Absorp" name="absorp"/>
-                    <property label="Emiss" name="emiss"/>
-                    <property label="CoefAb" name="coefAb"/>
-                    <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
-                    <property label="Thickness" name="thickness" support="boundary"/>
-                    <property label="Emissivity" name="emissivity" support="boundary"/>
-                    <property label="Flux_net" name="flux_net" support="boundary"/>
-                    <property label="Flux_convectif" name="flux_convectif" support="boundary"/>
-                    <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
-                    <restart status="off"/>
-                    <absorption_coefficient type="variable">0</absorption_coefficient>
-                    <quadrature>1</quadrature>
-                    <directions_number>3</directions_number>
-                 </radiative_transfer>'''
-        assert mdl.node_ray == self.xmlNodeFromString(doc), \
-            'Could not set type of absorption coefficient in ThermalRadiationModel'
-        assert mdl.getTypeCoeff() == 'variable', \
-            'Could not get type of absorption coefficient in ThermalRadiationModel'
-
-    def checkSetandGetAbsorCoeff(self):
-        """
-        Check whether the ThermalRadiationModel class could be set and
-        get value of absorption coefficient
-        """
-        mdl = ThermalRadiationModel(self.case)
-        mdl.setRadiativeModel('dom')
-        mdl.setAbsorCoeff(0.77)
-        doc = '''<radiative_transfer model="dom">
-                    <property label="Srad" name="srad"/>
-                    <property label="Qrad" name="qrad"/>
-                    <property label="Absorp" name="absorp"/>
-                    <property label="Emiss" name="emiss"/>
-                    <property label="CoefAb" name="coefAb"/>
-                    <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
-                    <property label="Thickness" name="thickness" support="boundary"/>
-                    <property label="Emissivity" name="emissivity" support="boundary"/>
-                    <property label="Flux_net" name="flux_net" support="boundary"/>
-                    <property label="Flux_convectif" name="flux_convectif" support="boundary"/>
-                    <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
-                    <restart status="off"/>
-                    <absorption_coefficient type="constant">0.77</absorption_coefficient>
-                    <quadrature>1</quadrature>
-                    <directions_number>3</directions_number>
-                 </radiative_transfer>'''
-        assert mdl.node_ray == self.xmlNodeFromString(doc),\
-            'Could not set value of absorption coefficient in ThermalRadiationModel'
-        assert mdl.getAbsorCoeff() == 0.77,\
-            'Could not get value of absorption coefficient in ThermalRadiationModel'
-
-    def checkSetandGetFrequency(self):
-        """
-        Check whether the ThermalRadiationModel class could be set and get
-        frequency for advanced options
-        """
-        mdl = ThermalRadiationModel(self.case)
-        mdl.setRadiativeModel('dom')
-        mdl.setFrequency(12)
-        doc = '''<radiative_transfer model="dom">
-                    <property label="Srad" name="srad"/>
-                    <property label="Qrad" name="qrad"/>
-                    <property label="Absorp" name="absorp"/>
-                    <property label="Emiss" name="emiss"/>
-                    <property label="CoefAb" name="coefAb"/>
-                    <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
-                    <property label="Thickness" name="thickness" support="boundary"/>
-                    <property label="Emissivity" name="emissivity" support="boundary"/>
-                    <property label="Flux_net" name="flux_net" support="boundary"/>
-                    <property label="Flux_convectif" name="flux_convectif" support="boundary"/>
-                    <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
-                    <restart status="off"/>
-                    <absorption_coefficient type="constant">0.0</absorption_coefficient>
-                    <quadrature>1</quadrature>
-                    <directions_number>3</directions_number>
-                    <frequency>12</frequency>
-                 </radiative_transfer>'''
-        assert mdl.node_ray == self.xmlNodeFromString(doc),\
-            'Could not set frequency for advanced options in ThermalRadiationModel'
-        assert mdl.getFrequency() == 12,\
-            'Could not get frequency for advanced options in ThermalRadiationModel'
-
-    def checkSetandGetIntensityResolution(self):
-        """
-        Check whether the ThermalRadiationModel class could be set and get
-        IIMLUM for advanced options
-        """
-        mdl = ThermalRadiationModel(self.case)
-        mdl.setRadiativeModel('dom')
-        mdl.setIntensityResolution(1)
-        doc = '''<radiative_transfer model="dom">
-                    <property label="Srad" name="srad"/>
-                    <property label="Qrad" name="qrad"/>
-                    <property label="Absorp" name="absorp"/>
-                    <property label="Emiss" name="emiss"/>
-                    <property label="CoefAb" name="coefAb"/>
-                    <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
-                    <property label="Thickness" name="thickness" support="boundary"/>
-                    <property label="Emissivity" name="emissivity" support="boundary"/>
-                    <property label="Flux_net" name="flux_net" support="boundary"/>
-                    <property label="Flux_convectif" name="flux_convectif" support="boundary"/>
-                    <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
-                    <restart status="off"/>
-                    <absorption_coefficient type="constant">0.0</absorption_coefficient>
-                    <quadrature>1</quadrature>
-                    <directions_number>3</directions_number>
-                    <intensity_resolution_listing_printing>1</intensity_resolution_listing_printing>
-                 </radiative_transfer>'''
-        assert mdl.node_ray == self.xmlNodeFromString(doc),\
-            'Could not set IIMLUM for advanced options in ThermalRadiationModel'
-        assert mdl.getFrequency() == 1,\
-            'Could not get IIMLUM for advanced options in ThermalRadiationModel'
-
-    def checkSetandGetTemperatureListing(self):
-        """
-        Check whether the ThermalRadiationModel class could be set and get
-        IIMPAR for advanced options
-        """
-        mdl = ThermalRadiationModel(self.case)
-        mdl.setRadiativeModel('dom')
-        mdl.setTemperatureListing(2)
-        doc = '''<radiative_transfer model="dom">
-                    <property label="Srad" name="srad"/>
-                    <property label="Qrad" name="qrad"/>
-                    <property label="Absorp" name="absorp"/>
-                    <property label="Emiss" name="emiss"/>
-                    <property label="CoefAb" name="coefAb"/>
-                    <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
-                    <property label="Thickness" name="thickness" support="boundary"/>
-                    <property label="Emissivity" name="emissivity" support="boundary"/>
-                    <property label="Flux_net" name="flux_net" support="boundary"/>
-                    <property label="Flux_convectif" name="flux_convectif" support="boundary"/>
-                    <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
-                    <restart status="off"/>
-                    <absorption_coefficient type="constant">0.0</absorption_coefficient>
-                    <quadrature>1</quadrature>
-                    <directions_number>3</directions_number>
-                    <temperature_listing_printing>2</temperature_listing_printing>
-                 </radiative_transfer>'''
-        assert mdl.node_ray == self.xmlNodeFromString(doc),\
-            'Could not set IIMPAR for advanced options in ThermalRadiationModel'
-        assert mdl.getTemperatureListing() == 2,\
-            'Could not get IIMPAR for advanced options in ThermalRadiationModel'
-
-    def checkSetandGetTrs(self):
-        """
-        Check whether the ThermalRadiationModel class could be set and get
-        IDIVER for advanced options
-        """
-        mdl = ThermalRadiationModel(self.case)
-        mdl.setRadiativeModel('dom')
-        mdl.setTrs(2)
-        doc = '''<radiative_transfer model="dom">
-                    <property label="Srad" name="srad"/>
-                    <property label="Qrad" name="qrad"/>
-                    <property label="Absorp" name="absorp"/>
-                    <property label="Emiss" name="emiss"/>
-                    <property label="CoefAb" name="coefAb"/>
-                    <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
-                    <property label="Thickness" name="thickness" support="boundary"/>
-                    <property label="Emissivity" name="emissivity" support="boundary"/>
-                    <property label="Flux_net" name="flux_net" support="boundary"/>
-                    <property label="Flux_convectif" name="flux_convectif" support="boundary"/>
-                    <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
-                    <restart status="off"/>
-                    <absorption_coefficient type="constant">0.0</absorption_coefficient>
-                    <quadrature>1</quadrature>
-                    <directions_number>3</directions_number>
-                    <thermal_radiative_source_term>2</thermal_radiative_source_term>
-                 </radiative_transfer>'''
-        assert mdl.node_ray == self.xmlNodeFromString(doc),\
-            'Could not set IDIVER for advanced options in ThermalRadiationModel'
-        assert mdl.getTrs() == 2,\
-            'Could not get IDIVER for advanced options in ThermalRadiationModel'
-
-    def checkGetThermalRadiativeModel(self):
-        """
-        Check whether a thermal radiative model could be get
-        """
-        mdl = ThermalRadiationModel(self.case)
-        assert mdl.getThermalRadiativeModel() == 1,\
-            'Could not get thermal radiative model'
-
-
 
 def suite():
     testSuite = unittest.makeSuite(ThermalRadiationTestCase, "check")

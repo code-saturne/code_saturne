@@ -729,47 +729,6 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         assert mdl.getPostStatus('TempC') == 'off',\
             'Could not get status of post processing in output volumic variables model'
 
-    def checkSetAndGetPostStatusForRadiativeProperties(self):
-        """
-        Check whether the OutputVolumicVariablesModel class could be
-        set and get status for post processing of radaitive property
-        """
-        from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
-        ThermalRadiationModel(self.case).setRadiativeModel('dom')
-        del ThermalRadiationModel
-
-        mdl = OutputVolumicVariablesModel(self.case)
-        mdl.setPostStatus('Srad', 'off')
-        node_out = mdl.case.xmlGetNode('radiative_transfer')
-
-        doc = '''<radiative_transfer model="dom">
-                    <property label="Srad" name="srad">
-                        <postprocessing_recording status="off"/>
-                    </property><property label="Qrad" name="qrad"/>
-                    <property label="Absorp" name="absorp"/>
-                    <property label="Emiss" name="emiss"/>
-                    <property label="CoefAb" name="coefAb"/>
-                    <property label="Wall_temp" name="wall_temp" support="boundary"/>
-                    <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
-                    <property label="Thickness" name="thickness" support="boundary"/>
-                    <property label="Emissivity" name="emissivity" support="boundary"/>
-                    <property label="Flux_net" name="flux_net" support="boundary"/>
-                    <property label="Flux_convectif" name="flux_convectif" support="boundary"/>
-                    <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
-                    <restart status="off"/>
-                    <directions_number>3</directions_number>
-                    <absorption_coefficient type="constant">0</absorption_coefficient>
-                 </radiative_transfer>'''
-
-        assert node_out == self.xmlNodeFromString(doc),\
-        'Could not set status of post processing for radiative property \
-                   in output volumic variables model'
-        assert mdl.getPostStatus('Srad') == 'off',\
-        'Could not get status of post processing for radiative property \
-                   in output volumic variables model'
-
-
 def suite():
     testSuite = unittest.makeSuite(OutputVolumicVariablesModelTestCase, "check")
     return testSuite

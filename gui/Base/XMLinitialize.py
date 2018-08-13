@@ -1562,6 +1562,36 @@ class XMLinit(Variables):
                 node_time.xmlSetData('time_passing', idtvar)
             node_steady.xmlRemoveNode()
 
+        XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
+        npr = XMLThermoPhysicalModelNode.xmlGetNode('radiative_transfer')
+        if npr:
+            node = npr.xmlGetNode('property', name="qrad")
+            if node:
+                node['name'] = "radiative_flux"
+            node = npr.xmlGetNode('property', name="srad")
+            if node:
+                node['name'] = "rad_st"
+            node = npr.xmlGetNode('property', name="flux_convectif")
+            if node:
+                node['name'] = "rad_convective_flux"
+            node = npr.xmlGetNode('property', name="flux_incident")
+            if node:
+                node['name'] = "rad_incident_flux"
+            node = npr.xmlGetNode('property', name="flux_net")
+            if node:
+                node['name'] = "rad_net_flux"
+            node = npr.xmlGetNode('property', name="coeff_ech_conv")
+            if node:
+                node['name'] = "rad_exchange_coefficient"
+            node = npr.xmlGetNode('property', name="absorption")
+            if node:
+                node['name'] = "rad_absorption"
+            node = npr.xmlGetNode('property', name="absorption_coefficient")
+            if node:
+                node['name'] = "rad_absorption_coeff"
+            node = npr.xmlGetNode('property', name="emission")
+            if node:
+                node['name'] = "rad_emission"
 
     def __backwardCompatibilityCurrentVersion(self):
         """
