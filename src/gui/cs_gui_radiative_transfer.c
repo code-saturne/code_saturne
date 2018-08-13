@@ -555,8 +555,10 @@ cs_gui_radiative_transfer_postprocess(void)
 #endif
       cs_field_t *f = b_rad_f[i];
       if (f != NULL) {
-        cs_field_set_key_int(f, k_vis, f_post_vis);
-        cs_field_set_key_int(f, k_log, f_log);
+        if (f_post_vis >= 0)
+          cs_field_set_key_int(f, k_vis, f_post_vis);
+        if (f_log >= 0)
+          cs_field_set_key_int(f, k_log, f_log);
         if (label)
           cs_field_set_key_str(f, k_lbl, label);
       }
