@@ -218,8 +218,7 @@ class TimeAveragesModel(Model):
         self.isInList(old_name, self.getTimeAverageNames())
         node = self.node_mean.xmlInitNode('time_average', name=old_name)
         node['name'] = name
-        # needed for acces by name in GUI (probes, ...)
-        node['name'] = name
+        node['label'] = name
 
 
     @Variables.undoLocal
