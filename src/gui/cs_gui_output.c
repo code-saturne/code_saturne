@@ -187,7 +187,10 @@ _field_post(const char  *field_type,
     cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
   else /* status unspecified here but property referenced in tree,
           could be improved by depending on field type or flags */
-    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
+    if (f->location_id == CS_MESH_LOCATION_CELLS)
+      cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
+    else
+      cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
 
   /* Take into account labels */
 
