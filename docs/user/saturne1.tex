@@ -349,7 +349,8 @@ file being directly placed in \texttt{STUDY/RESU\_COUPLING/}\emph{\texttt{YYYYMM
 \begin{tabular}{lll}
 \multicolumn{3}{l}{Below are typical additional contents with a coupled \syrthes
   case SOLID1 in a study STUDY} \\
-\multicolumn{2}{l}{\texttt{STUDY/runcase\_coupling}}&{Coupled launch script}\\
+\multicolumn{2}{l}{\texttt{STUDY/runcase}}&{Coupled launch script}\\
+\multicolumn{2}{l}{\texttt{STUDY/coupling\_parameters.py}}&{Coupled launch parameters}\\
 \multicolumn{2}{l}{\texttt{STUDY/SOLID1/DATA:}}&{\bf \syrthes data}\\
 &        \texttt{syrthes\_data.syd}          &\syrthes data file \\
 &        \texttt{syrthes.py}                 &\syrthes script\\
@@ -855,7 +856,7 @@ created.
 \noindent
 \texttt{code\_saturne~create --case Flow3 --case Flow4}\\
 executed in the directory \texttt{STUDY} adds the case directories
-\texttt{Flow3} and \texttt{Flow4}. Whenever multiple cases are created simultaneously, it is assumed they may be coupled, so a \texttt{runcase\_coupling} file and \texttt{RESU\_COUPLING} directory are also created.
+\texttt{Flow3} and \texttt{Flow4}. Whenever multiple cases are created simultaneously, it is assumed they may be coupled, so toplevel \texttt{runcase} and \texttt{coupling\_parameters.py} files and \texttt{RESU\_COUPLING} directory are also created.
 
 In the directory \texttt{DATA}, the \texttt{code\_saturne~create} command
 places a subdirectory \texttt{REFERENCE} containing examples of thermochemical
@@ -1615,12 +1616,11 @@ defined by the GUI is used. Other options recognized by
 
 In the case of a coupled calculation, this script also exists, and
 may be used for preprocessing stages, but an additional
-\texttt{runcase\_coupling} is added in the directory above the coupled case
+\texttt{runcase} and accompanying \texttt{coupling\_parameters.py } file
+is added in the directory above the coupled case
 directories, and may be used to define the list of coupled cases,
 as well as global options, such as MPI options of the temporary
-execution directory. An additional \texttt{runcase\_batch} file will
-contain batch submission options when a batch system is available
-(and is the file that should be submitted when using a batch system).
+execution directory.
 
 When not using the GUI, or if additional options must be accessed,
 the \texttt{cs\_user\_scripts.py} file may be copied from
@@ -1632,7 +1632,7 @@ This file contains several Python functions:
 \item \texttt{define\_domain\_parameter\_file} allows defining
  the choice of a parameters file produced by the GUI. This is
  generally not useful, as the parameters file may be directly
- defined in \texttt{runcase} or \texttt{runcase\_coupling}, or passed
+ defined in \texttt{runcase}, or passed
  as an option to \texttt{code\_saturne run}, but could be useful
  when running more complex parametric scripts, and is provided for
  the sake of completeness.
@@ -1649,18 +1649,6 @@ This file contains several Python functions:
  over the GUI parameters file, so if both are used, these tests
  may be removed for parameters which should be defined through
  user scripts.
-\item \texttt{define\_case\_parameters} allows defining
- most parameters relative to the global calculation, such as
- the number of processors or the execution directory.
- To avoid potentially conflicting definitions, this function is ignored
- for coupled calculations, where the corresponding parameters
- may be defined in the \texttt{runcase\_coupling} script.
-\item \texttt{define\_mpi\_environment} allows defining
- advanced MPI parameters or redefining MPI options if the automatic
- settings are incorrect, and its use should only rarely be necessary.
- To avoid potentially conflicting definitions, this function is ignored
- for coupled calculations, where the corresponding parameters
- may be defined in the \texttt{runcase\_coupling} script.
 \end{list}
 
 %==================================
@@ -2221,11 +2209,11 @@ in the standard cases:
 
 \item On clusters with batch systems, the launching of a parallel run
       requires to complete the batch cards located in the
-      beginning of \texttt{runcase} or \texttt{runcase\_batch}
-      script, and set the number of MPI processes, or the numbers
+      beginning of \texttt{runcase} script,
+       and set the number of MPI processes, or the numbers
       of physical nodes and processors per node (\texttt{ppn}) wanted.
       This can be done through the Graphical Interface or by editing
-      the \texttt{runcase}  or \texttt{runcase\_batch} file directly.
+      the \texttt{runcase} file directly.
       The number of processors defined here will override the number
       defined through the GUI in a non-batch environment
       (so that studies defined on one environment may be migrated
@@ -2234,7 +2222,7 @@ in the standard cases:
       the \texttt{cs\_user\_scripts.py} file, or by setting the
       \texttt{n\_procs\_weight}, \texttt{n\_procs\_min}, and
       \texttt{n\_procs\_max} parameters for the different domains
-      defined in \texttt{runcase\_coupling}.
+      defined in \texttt{coupling\_parameters.py}.
 
 \item On clusters with unsupported batch systems,
       \texttt{runcase} file may have to be modified manually.
