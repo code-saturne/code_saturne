@@ -433,8 +433,10 @@ cs_gui_radiative_transfer_parameters(void)
 
   if (cs_glob_rad_transfer_params->type > CS_RAD_TRANSFER_NONE) {
     _radiative_transfer_char("restart", &isuird);
-    if (isuird)
-      cs_glob_rad_transfer_params->restart = true;
+    if (isuird) {
+      if (cs_restart_present())
+        cs_glob_rad_transfer_params->restart = true;
+    }
     _radiative_transfer_int("quadrature",
                             &cs_glob_rad_transfer_params->i_quadrature);
     _radiative_transfer_int("directions_number",

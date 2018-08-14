@@ -113,7 +113,7 @@ class ThermalRadiationModel(Variables, Model):
         default['radiative_model']   = "off"
         default['quadrature']        = 1
         default['directions_number'] = 3
-        default['restart_status']    = 'off'
+        default['restart_status']    = 'on'
         default['type_coef']         = 'constant'
         default['value_coef']        = 0.0
         default['frequency']         = 1
