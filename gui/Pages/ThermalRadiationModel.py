@@ -67,15 +67,16 @@ class ThermalRadiationModel(Variables, Model):
         self.c_prop = {}
         self.b_prop = {}
 
+        self.c_prop['luminance']                  = self.tr("Luminance")
         self.c_prop['radiative_flux']             = self.tr("Qrad")
-        self.c_prop['radiative_source_term']      = self.tr("Radiative_source_term")
         self.c_prop['rad_absorption']             = self.tr("Absorption")
-        self.c_prop['emission']                   = self.tr("Emission")
+        self.c_prop['rad_emission']               = self.tr("Emission")
+        self.c_prop['radiative_st']               = self.tr("Srad")
         self.c_prop['rad_absorption_coeff']       = self.tr("Absorption_coefficient")
 
         self.b_prop['rad_incident_flux']           = self.tr("Incident_flux")
-        self.b_prop['thickness']                   = self.tr("Thickness")
         self.b_prop['wall_thermal_conductivity']   = self.tr("Thermal_conductivity")
+        self.b_prop['wall_thickness']              = self.tr("Thickness")
         self.b_prop['emissivity']                  = self.tr("Emissivity")
         self.b_prop['rad_net_flux']                = self.tr("Net_flux")
         self.b_prop['rad_convective_flux']         = self.tr("Convective_flux")
