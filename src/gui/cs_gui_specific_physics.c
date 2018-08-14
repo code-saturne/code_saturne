@@ -556,7 +556,7 @@ void CS_PROCF (uicpi1, UICPI1) (double *const srrom,
   }
 
 #if _XML_DEBUG_
-  bft_printf("==>UICPI1\n");
+  bft_printf("==> %s\n", __func__);
   bft_printf("--srrom  = %f\n", *srrom);
   if (cs_gui_strcmp(vars->model, "gas_combustion")) {
     bft_printf("--diftl0  = %f\n", *diftl0);
@@ -581,7 +581,7 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
   cs_gui_reference_initialization("oxydant_temperature", toxy);
   cs_gui_reference_initialization("fuel_temperature", tfuel);
 #if _XML_DEBUG_
-  bft_printf("==>UICPI2\n");
+  bft_printf("==> %s\n", __func__);
   bft_printf("--toxy  = %f\n", *toxy);
   bft_printf("--tfuel  = %f\n", *tfuel);
 #endif
@@ -914,8 +914,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
     /* PCI on dry or pure coal based on IPCI value */
     _get_pci_type_and_value(tn, &(ipci[icha]), &(pcich[icha]));
 
-    cs_real_t volatile_matter
-      = _get_solid_fuel_child_real(tn, "volatile_matter");
     h0ashc[icha] = _get_solid_fuel_child_real(tn, "ashes_enthalpy");
     cpashc[icha] = _get_solid_fuel_child_real(tn, "ashes_thermal_capacity");
 
@@ -962,6 +960,14 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
     _get_y1y2_coefficient_values(tn_dv,
                                  &(iy1ch[icha]), &(iy2ch[icha]),
                                  &(y1ch[icha]), &(y2ch[icha]));
+
+#if _XML_DEBUG_
+    /* volatile_matter used by GUI for y1y2 automatic formula (to compute
+       (compute y1ch[icha] and y2ch[icha] when iy1ch[icha] = 2 and
+       iy1ch[icha] = 2), but not used directly here. */
+    cs_real_t volatile_matter
+      = _get_solid_fuel_child_real(tn, "volatile_matter");
+#endif
 
     a1ch[icha] = _get_solid_fuel_child_real(tn_dv, "A1_pre-exponential_factor");
     a2ch[icha] = _get_solid_fuel_child_real(tn_dv, "A2_pre-exponential_factor");
@@ -1234,7 +1240,7 @@ void CS_PROCF (uidai1, UIDAI1) (int  *permeability,
   }
 
 #if _XML_DEBUG_
-  bft_printf("==>UIDAI1\n");
+  bft_printf("==> %s\n", __func__);
   bft_printf("--groundwater_anisotropic_permeability  = %d\n", *permeability);
   bft_printf("--groundwater_anisotropic_dispersion    = %d\n", *dispersion);
   bft_printf("--groundwater_unsteady                  = %d\n", *unsteady);
