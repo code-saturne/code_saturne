@@ -176,7 +176,7 @@ call cs_user_model
 
 ! GUI
 
-call cs_gui_physical_model_select(ieos, ieqco2)
+call cs_gui_physical_model_select(ieos)
 
 if (iihmpr.eq.1) then
   call cfnmtd(ficfpp, len(ficfpp))

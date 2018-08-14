@@ -3,10 +3,12 @@ Master (not on release branches yet)
 
 User changes:
 
-- Coal combustion: fuel definitions must now always be done through
-  the GUI; new cases do not include a reference dp_FCP.xml file
-  anymore, though older such files may still be read.
-  
+- Coal combustion:
+  * The CO2 transport kinetic model may now be set with the GUI.
+  * Fuel definitions must now always be done through
+    the GUI; new cases do not include a reference dp_FCP.xml file
+    anymore, though older such files may still be read.
+
 - GUI: steady/unsteady computation type now handled with time step.
 
 - Allow joining of meshes including isolated faces.

@@ -290,15 +290,15 @@ if (isuite.eq.0) then
 
     cvar_f3m(iel) = zero
 
-    if ( noxyd .ge. 2 ) then
+    if (noxyd .ge. 2) then
       cvar_f6m(iel) = zero
     endif
 
-    if ( noxyd .eq. 3 ) then
+    if (noxyd .eq. 3) then
       cvar_f7m(iel) = zero
     endif
 
-    if ( ieqco2.ge.1 ) then
+    if (ieqco2.ge.1) then
 
       ioxy   =  1
       wmo2   = wmole(io2)
@@ -314,7 +314,7 @@ if (isuite.eq.0) then
 
     endif
 
-    if ( ieqnox .eq. 1 ) then
+    if (ieqnox .eq. 1) then
       cvar_yhcn(iel) = 0.d0
       cvar_yno(iel) = 0.d0
       cvar_taire(iel) = 293.d0

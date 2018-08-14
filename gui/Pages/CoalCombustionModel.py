@@ -134,6 +134,7 @@ class CoalCombustionModel(Variables, Model):
         default['H2O_Kinetics']                          = 'off'
         default['improved_NOx_model']                    = 'off'
         default['reburning']                             = 'unused'
+        default['kinetic_model']                         = 'unused'
 
         return default
 
@@ -242,7 +243,8 @@ class CoalCombustionModel(Variables, Model):
             lst.append("fr_oxyd3")
 
         # ieqco2 fix to true
-        lst.append("x_c_co2")
+        if self.getKineticModel == "co2_ym_transport":
+            lst.append("x_c_co2")
 
         lst.append("f1f2_variance")
 
@@ -1962,6 +1964,29 @@ class CoalCombustionModel(Variables, Model):
 
         return status
 
+
+    @Variables.noUndo
+    def getKineticModel(self):
+        """
+        """
+        value = self.node_fuel.xmlGetString("kinetic_model")
+        if value == '':
+            value = self.defaultValues()['kinetic_model']
+            self.setKineticModel(value)
+        return value
+
+
+    @Variables.undoLocal
+    def setKineticModel(self, choice):
+        """
+        """
+        self.isInList(choice, ('unused',
+                               'co2_ym_transport',
+                               'co_ym_transport'))
+        if choice !=  self.defaultValues()['kinetic_model']:
+            self.node_fuel.xmlSetData('kinetic_model', choice)
+        else:
+            self.node_fuel.xmlRemoveChild('kinetic_model')
 
 #-------------------------------------------------------------------------------
 # SolidFuel combustion test case

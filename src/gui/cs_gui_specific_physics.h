@@ -93,73 +93,75 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
 
 /*----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one
- * for physical properties of the activated specific physics (pulverized solid fuels)
+ * for physical properties of the activated specific physics
+ * (pulverized solid fuels)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
-                                const int    *const iihmpr,
-                                const int    *const ncharm,
-                                      int    *const ncharb,
-                                      int    *const nclpch,
-                                      int    *const nclacp,
-                                const int    *const ncpcmx,
-                                      int    *const ichcor,
-                                      double *const diam20,
-                                      double *const cch,
-                                      double *const hch,
-                                      double *const och,
-                                      double *const nch,
-                                      double *const sch,
-                                      int    *const ipci,
-                                      double *const pcich,
-                                      double *const cp2ch,
-                                      double *const rho0ch,
-                                      double *const thcdch,
-                                      double *const cck,
-                                      double *const hck,
-                                      double *const ock,
-                                      double *const nck,
-                                      double *const sck,
-                                      double *const xashch,
-                                      double *const xashsec,
-                                      double *const xwatch,
-                                      double *const h0ashc,
-                                      double *const cpashc,
-                                      int    *const iy1ch,
-                                      double *const y1ch,
-                                      int    *const iy2ch,
-                                      double *const y2ch,
-                                      double *const a1ch,
-                                      double *const a2ch,
-                                      double *const e1ch,
-                                      double *const e2ch,
-                                      double *const crepn1,
-                                      double *const crepn2,
-                                      double *const ahetch,
-                                      double *const ehetch,
-                                      int    *const iochet,
-                                      double *const ahetc2,
-                                      double *const ehetc2,
-                                      int    *const ioetc2,
-                                      double *const ahetwt,
-                                      double *const ehetwt,
-                                      int    *const ioetwt,
-                                      int    *const ieqnox,
-                                      int    *const imdnox,
-                                      int    *const irb,
-                                      int    *const ihtco2,
-                                      int    *const ihth2o,
-                                      double *const qpr,
-                                      double *const fn,
-                                      double *const ckabs1,
-                                      int    *const noxyd,
-                                      double *const oxyo2,
-                                      double *const oxyn2,
-                                      double *const oxyh2o,
-                                      double *const oxyco2,
-                                      double *const repnck,
-                                      double *const repnle,
-                                      double *const repnlo);
+void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
+                                const int    *iihmpr,
+                                const int    *ncharm,
+                                int          *ncharb,
+                                int          *nclpch,
+                                int          *nclacp,
+                                const int    *ncpcmx,
+                                int          *ichcor,
+                                double       *diam20,
+                                double       *cch,
+                                double       *hch,
+                                double       *och,
+                                double       *nch,
+                                double       *sch,
+                                int          *ipci,
+                                double       *pcich,
+                                double       *cp2ch,
+                                double       *rho0ch,
+                                double       *thcdch,
+                                double       *cck,
+                                double       *hck,
+                                double       *ock,
+                                double       *nck,
+                                double       *sck,
+                                double       *xashch,
+                                double       *xashsec,
+                                double       *xwatch,
+                                double       *h0ashc,
+                                double       *cpashc,
+                                int          *iy1ch,
+                                double       *y1ch,
+                                int          *iy2ch,
+                                double       *y2ch,
+                                double       *a1ch,
+                                double       *a2ch,
+                                double       *e1ch,
+                                double       *e2ch,
+                                double       *crepn1,
+                                double       *crepn2,
+                                double       *ahetch,
+                                double       *ehetch,
+                                int          *iochet,
+                                double       *ahetc2,
+                                double       *ehetc2,
+                                int          *ioetc2,
+                                double       *ahetwt,
+                                double       *ehetwt,
+                                int          *ioetwt,
+                                int          *ieqnox,
+                                int          *ieqco2,
+                                int          *imdnox,
+                                int          *irb,
+                                int          *ihtco2,
+                                int          *ihth2o,
+                                double       *qpr,
+                                double       *fn,
+                                double       *ckabs1,
+                                int          *noxyd,
+                                double       *oxyo2,
+                                double       *oxyn2,
+                                double       *oxyh2o,
+                                double       *oxyco2,
+                                double       *repnck,
+                                double       *repnle,
+                                double       *repnlo);
 
 /*----------------------------------------------------------------------------
  * Copy name of thermophysical data file from C to Fortran
@@ -184,11 +186,11 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
  * integer         unsaturated     <--   take into account unsaturated zone
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
-                                int    *const dispersion,
-                                int    *const unsteady,
-                                int    *const gravity,
-                                int    *const unsaturated);
+void CS_PROCF (uidai1, UIDAI1) (int    *permeability,
+                                int    *dispersion,
+                                int    *unsteady,
+                                int    *gravity,
+                                int    *unsaturated);
 
 /*=============================================================================
  * Public function prototypes
@@ -199,12 +201,10 @@ void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
  *
  * parameters:
  *   ieos    --> compressible
- *   ieqco2  --> CO2 massic fraction transport (for combustion only)
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_physical_model_select(cs_int_t  *ieos,
-                             cs_int_t  *ieqco2);
+cs_gui_physical_model_select(cs_int_t  *ieos);
 
 /*----------------------------------------------------------------------------
  * Electrical model: read parameters

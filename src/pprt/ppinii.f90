@@ -237,6 +237,8 @@ ieqnox = 1
 imdnox = 0
 irb = 0
 
+ieqco2 = 0
+
 ! ---> Coefficient de relation de la masse volumique
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
 srrom = 1.d0

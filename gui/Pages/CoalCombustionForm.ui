@@ -14,11 +14,75 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_26">
+   <item row="1" column="0">
+    <spacer name="verticalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
       <number>0</number>
      </property>
+     <widget class="QWidget" name="tab_3">
+      <attribute name="title">
+       <string>Model</string>
+      </attribute>
+      <widget class="QGroupBox" name="groupBoxCoalsList_2">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>16</y>
+         <width>371</width>
+         <height>190</height>
+        </rect>
+       </property>
+       <property name="title">
+        <string>Combustion model</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_27">
+        <item row="0" column="0">
+         <widget class="QCheckBox" name="checkBoxCO2Kinetics">
+          <property name="text">
+           <string>CO2 Kinetics</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QCheckBox" name="checkBoxH2OKinetics">
+          <property name="text">
+           <string>H2O Kinetics</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QCheckBox" name="checkBoxNOxFormation">
+          <property name="text">
+           <string>NOx formation</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="labelKineticModel">
+          <property name="text">
+           <string>Kinetic model</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QComboBox" name="comboBoxKineticModel"/>
+        </item>
+       </layout>
+      </widget>
+     </widget>
      <widget class="QWidget" name="tab_7">
       <attribute name="title">
        <string>Fuel</string>
@@ -27,7 +91,7 @@
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBoxCoalsList">
          <property name="title">
-          <string>Fuel combustion</string>
+          <string>Fuels characterization</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_24">
           <item row="0" column="0">
@@ -1392,13 +1456,6 @@ p, li { white-space: pre-wrap; }
                    </widget>
                   </item>
                   <item>
-                   <widget class="QCheckBox" name="checkBoxCO2Kinetics">
-                    <property name="text">
-                     <string>CO2 Kinetics</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
                    <widget class="QGroupBox" name="groupBoxParametersCO2">
                     <property name="title">
                      <string>CO2 Kinetics</string>
@@ -1487,13 +1544,6 @@ p, li { white-space: pre-wrap; }
                       </layout>
                      </item>
                     </layout>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QCheckBox" name="checkBoxH2OKinetics">
-                    <property name="text">
-                     <string>H2O Kinetics</string>
-                    </property>
                    </widget>
                   </item>
                   <item>
@@ -1636,13 +1686,6 @@ p, li { white-space: pre-wrap; }
                  </size>
                 </property>
                </spacer>
-              </item>
-              <item row="0" column="1" colspan="2">
-               <widget class="QCheckBox" name="checkBoxNOxFormation">
-                <property name="text">
-                 <string>NOx formation</string>
-                </property>
-               </widget>
               </item>
               <item row="0" column="4" rowspan="4">
                <spacer name="horizontalSpacer_19">

@@ -359,20 +359,6 @@ if (ixmlpu.eq.0) then
 
 endif
 
-! --- Kinetic model for CO <=> CO2
-
-!         Compatible with coal and heavy fuel oil combustion
-
-!         if = 0  unused (maximal conversion in turbulent model)
-!         if = 1  transport of CO2 mass fraction
-!         if = 2  transport of CO mass fraction
-
-if (ixmlpu.eq.0) then
-
-  ieqco2 = 0
-
-endif
-
 !===============================================================================
 ! 2.  Data file related to modules above
 !===============================================================================
@@ -404,7 +390,7 @@ if (ixmlpu.eq.0) then
     ficmet = 'meteo'
   endif
 
- if ( ippmod(igmix).ge.0 ) then
+ if (ippmod(igmix).ge.0) then
    ! Specific condensation modelling
 
    ! wall condensation
@@ -1767,8 +1753,16 @@ implicit none
 ! 1. Additional Calculation Options
 !===============================================================================
 
-! -->  Density Relaxation
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
+! --- Kinetic model for CO <=> CO2
+
+!     if = 0  unused (maximal conversion in turbulent model)
+!     if = 1  transport of CO2 mass fraction
+!     if = 2  transport of CO mass fraction (coal and fuel only)
+
+ieqco2 = 0
+
+! --- Density Relaxation
+!     RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
 
 srrom = 0.8d0
 

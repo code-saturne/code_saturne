@@ -119,7 +119,6 @@ double precision, dimension(:), pointer :: cvar_hox
 
 write(nfecra,9001)
 
-
 !< [init]
 d2s3 = 2.d0/3.d0
 
@@ -254,7 +253,7 @@ if ( isuite.eq.0 ) then
     cvar_fvap(iel) = 0.d0
     cvar_f7m(iel) = zero
     cvar_fvp2m(iel) = zero
-    if ( ieqco2 .ge. 1 ) then
+    if (ieqco2 .ge. 1) then
       ioxy   =  1
       wmo2   = wmole(io2)
       wmco2  = wmole(ico2)
@@ -264,7 +263,7 @@ if ( isuite.eq.0 ) then
               +oxyh2o(ioxy)*wmh2o+oxyco2(ioxy)*wmco2 )
       cvar_yco2(iel) = oxyco2(ioxy)*wmco2/dmas
     endif
-    if ( ieqnox .eq. 1 ) then
+    if (ieqnox .eq. 1) then
       cvar_yhcn(iel) = zero
       cvar_yno(iel) = zero
       cvar_hox(iel) = h1init

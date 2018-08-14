@@ -20,27 +20,21 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine pplecd
-!================
-
 !===============================================================================
-!  FONCTION  :
+!  Function:
 !  ---------
 
-! LECTURE DU FICHIER DE DONNEES PHYSIQUE PARTICULIERE
+!> file pplecd.f90
+!>
+!> \brief Read specific physical model data file
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine pplecd
 
 !===============================================================================
 ! Module files
@@ -67,31 +61,22 @@ implicit none
 
 ! Arguments
 
-
 ! Local variables
 
-
 !===============================================================================
 
-!===============================================================================
-! 1. AIGUILLAGE VERS LE MODELE ADEQUAT
-!===============================================================================
+! ---> Diffusion flame - 3-point chemistry
+!      Premix flame    - EBU model
+!      Premix flame    - LWC model
 
-! ---> Flamme de diffusion  - Chimie 3 points
-!      Flamme de premelange - Modele EBU
-!      Flamme de premelange - Modele LWC
-
-if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
-                         .or. ippmod(icolwc).ge.0  ) then
+if (ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                      &
+                        .or. ippmod(icolwc).ge.0) then
   call colecd
 endif
 
+! ---> Pulverized coal combustion
 
-! ---> Flamme charbon pulverise ou
-! ---> Combustion charbon pulverise couple transport Lagrangien
-!      des particules de charbon
-
-if ( ippmod(iccoal).ge.0 .or. ippmod(icpl3c).ge.0 ) then
+if (ippmod(iccoal).ge.0 .or. ippmod(icpl3c).ge.0) then
   call uisofu(iirayo, iihmpr, ncharm, ncharb, nclpch, nclacp,         &
               ncpcmx, ichcor, diam20, cch,                            &
               hch, och, nch, sch, ipci, pcich, cp2ch, rho0ch,         &
@@ -100,28 +85,26 @@ if ( ippmod(iccoal).ge.0 .or. ippmod(icpl3c).ge.0 ) then
               iy1ch, y1ch, iy2ch, y2ch, a1ch, a2ch, e1ch, e2ch,       &
               crepn1, crepn2, ahetch, ehetch, iochet, ahetc2,         &
               ehetc2, ioetc2, ahetwt, ehetwt, ioetwt,                 &
-              ieqnox, imdnox, irb, ihtco2, ihth2o, qpr, fn,           &
+              ieqnox, ieqco2, imdnox, irb, ihtco2, ihth2o, qpr, fn,   &
               ckabs1, noxyd, oxyo2, oxyn2, oxyh2o, oxyco2,            &
               repnck, repnle, repnlo)
   call cs_coal_readata
 endif
 
-! ---> Flamme fuel
+! ---> Fuel flame
 
-if ( ippmod(icfuel).ge.0 ) then
+if (ippmod(icfuel).ge.0) then
   call cs_fuel_readata
 endif
 
-! ---> Version Electrique : Effet Joule, Arc Electrique,
-!                           Conduction Ionique
+! ---> Joule effect, electric arc, or ionic conduction
 
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1      ) then
-  call ellecd (ippmod(ieljou), ippmod(ielarc))
+if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
+  call ellecd(ippmod(ieljou), ippmod(ielarc))
 endif
 
 !----
-! FIN
+! End
 !----
 
 return

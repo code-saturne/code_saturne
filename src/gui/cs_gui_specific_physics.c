@@ -113,6 +113,33 @@ _get_nb_class(cs_tree_node_t  *tn,
 }
 
 /*-----------------------------------------------------------------------------
+ * Get the kinetic model (CO2 or CO transport).
+ *
+ * parameters:
+ *   tn_sf <-- tree node associated with solid fuels
+ *   model <-> type of kinetic model to use
+ *----------------------------------------------------------------------------*/
+
+static void
+_get_kinetic_model(cs_tree_node_t  *tn_sf,
+                   int             *model)
+{
+  const char *s = cs_tree_node_get_child_value_str(tn_sf, "kinetic_model");
+
+  if (s != NULL) {
+    if (!strcmp(s, "unused"))
+      *model = 0;
+    else if (!strcmp(s, "co2_ym_transport"))
+      *model = 1;
+    else if (!strcmp(s, "co_ym_transport"))
+      *model = 2;
+    else
+      bft_error(__FILE__, __LINE__, 0, _("Invalid value for node %s: %s"),
+                "kinetic_model", s);
+  }
+}
+
+/*-----------------------------------------------------------------------------
  * Return integer for diameter type.
  *
  * parameters:
@@ -625,70 +652,71 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
  * (pulverized solid fuels)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
-                                const int    *const iihmpr,
-                                const int    *const ncharm,
-                                int          *const ncharb,
-                                int          *const nclpch,
-                                int          *const nclacp,
-                                const int    *const ncpcmx,
-                                int          *const ichcor,
-                                double       *const diam20,
-                                double       *const cch,
-                                double       *const hch,
-                                double       *const och,
-                                double       *const nch,
-                                double       *const sch,
-                                int          *const ipci,
-                                double       *const pcich,
-                                double       *const cp2ch,
-                                double       *const rho0ch,
-                                double       *const thcdch,
-                                double       *const cck,
-                                double       *const hck,
-                                double       *const ock,
-                                double       *const nck,
-                                double       *const sck,
-                                double       *const xashch,
-                                double       *const xashsec,
-                                double       *const xwatch,
-                                double       *const h0ashc,
-                                double       *const cpashc,
-                                int          *const iy1ch,
-                                double       *const y1ch,
-                                int          *const iy2ch,
-                                double       *const y2ch,
-                                double       *const a1ch,
-                                double       *const a2ch,
-                                double       *const e1ch,
-                                double       *const e2ch,
-                                double       *const crepn1,
-                                double       *const crepn2,
-                                double       *const ahetch,
-                                double       *const ehetch,
-                                int          *const iochet,
-                                double       *const ahetc2,
-                                double       *const ehetc2,
-                                int          *const ioetc2,
-                                double       *const ahetwt,
-                                double       *const ehetwt,
-                                int          *const ioetwt,
-                                int          *const ieqnox,
-                                int          *const imdnox,
-                                int          *const irb,
-                                int          *const ihtco2,
-                                int          *const ihth2o,
-                                double       *const qpr,
-                                double       *const fn,
-                                double       *const ckabs1,
-                                int          *const noxyd,
-                                double       *const oxyo2,
-                                double       *const oxyn2,
-                                double       *const oxyh2o,
-                                double       *const oxyco2,
-                                double       *const repnck,
-                                double       *const repnle,
-                                double       *const repnlo)
+void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
+                                const int    *iihmpr,
+                                const int    *ncharm,
+                                int          *ncharb,
+                                int          *nclpch,
+                                int          *nclacp,
+                                const int    *ncpcmx,
+                                int          *ichcor,
+                                double       *diam20,
+                                double       *cch,
+                                double       *hch,
+                                double       *och,
+                                double       *nch,
+                                double       *sch,
+                                int          *ipci,
+                                double       *pcich,
+                                double       *cp2ch,
+                                double       *rho0ch,
+                                double       *thcdch,
+                                double       *cck,
+                                double       *hck,
+                                double       *ock,
+                                double       *nck,
+                                double       *sck,
+                                double       *xashch,
+                                double       *xashsec,
+                                double       *xwatch,
+                                double       *h0ashc,
+                                double       *cpashc,
+                                int          *iy1ch,
+                                double       *y1ch,
+                                int          *iy2ch,
+                                double       *y2ch,
+                                double       *a1ch,
+                                double       *a2ch,
+                                double       *e1ch,
+                                double       *e2ch,
+                                double       *crepn1,
+                                double       *crepn2,
+                                double       *ahetch,
+                                double       *ehetch,
+                                int          *iochet,
+                                double       *ahetc2,
+                                double       *ehetc2,
+                                int          *ioetc2,
+                                double       *ahetwt,
+                                double       *ehetwt,
+                                int          *ioetwt,
+                                int          *ieqnox,
+                                int          *ieqco2,
+                                int          *imdnox,
+                                int          *irb,
+                                int          *ihtco2,
+                                int          *ihth2o,
+                                double       *qpr,
+                                double       *fn,
+                                double       *ckabs1,
+                                int          *noxyd,
+                                double       *oxyo2,
+                                double       *oxyn2,
+                                double       *oxyh2o,
+                                double       *oxyco2,
+                                double       *repnck,
+                                double       *repnle,
+                                double       *repnlo)
 {
   cs_var_t  *vars = cs_glob_var;
 
@@ -699,8 +727,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
   if (*iirayo > 0)
     *ckabs1 = _get_absorption_coefficient();
 
-  /* Solid fuel definitions
-     ---------------------- */
+  /* Solid fuel model node */
 
   const char path_sf[] = "thermophysical_models/solid_fuels";
   cs_tree_node_t *tn_sf = cs_tree_get_node(cs_glob_tree, path_sf);
@@ -708,6 +735,17 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
   if (tn_sf == NULL)
     bft_error(__FILE__, __LINE__, 0, _("Missing tree node %s."),
               path_sf);
+
+  /* Heterogeneous combustion options (shrinking sphere model) */
+  cs_gui_node_get_child_status_int(tn_sf, "CO2_kinetics", ihtco2);
+  cs_gui_node_get_child_status_int(tn_sf, "H2O_kinetics", ihth2o);
+
+
+  /* Kinetic model (CO2 or CO transport) */
+  _get_kinetic_model(tn_sf, ieqco2);
+
+  /* Solid fuel definitions
+     ---------------------- */
 
   /* Number of coals */
   *ncharb = cs_tree_get_node_count(tn_sf, "solid_fuel");
@@ -945,7 +983,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     iochet[icha] = _get_cc_reaction_order(tn_cc, "O2");
 
     /* Heterogeneous combustion parameters for CO2 (shrinking sphere model) */
-    cs_gui_node_get_child_status_int(tn_sf, "CO2_kinetics", ihtco2);
     if (*ihtco2) {
       ahetc2[icha] = _get_cc_specie_value(tn_cc,
                                           "CO2", "pre-exponential_constant");
@@ -955,7 +992,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     }
 
     /* Heterogeneous combustion parameters for H2O (shrinking sphere model) */
-    cs_gui_node_get_child_status_int(tn_sf, "H2O_kinetics", ihth2o);
     if (*ihth2o) {
       ahetwt[icha] = _get_cc_specie_value(tn_cc,
                                           "H2O", "pre-exponential_constant");
@@ -1216,12 +1252,10 @@ void CS_PROCF (uidai1, UIDAI1) (int  *permeability,
  *
  * parameters:
  *   ieos    --> compressible
- *   ieqco2  --> CO2 massic fraction transport (for combustion only)
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_physical_model_select(cs_int_t  *ieos,
-                             cs_int_t  *ieqco2)
+cs_gui_physical_model_select(cs_int_t  *ieos)
 {
   if (!cs_gui_file_is_loaded())
     return;
@@ -1229,8 +1263,6 @@ cs_gui_physical_model_select(cs_int_t  *ieos,
   int isactiv = 0;
 
   cs_var_t  *vars = cs_glob_var;
-
-  *ieqco2 = 0;
 
   /* Look for the active specific physics and give the value of the associated
      model attribute */
@@ -1247,8 +1279,6 @@ cs_gui_physical_model_select(cs_int_t  *ieos,
       else
         bft_error(__FILE__, __LINE__, 0,
                   _("Invalid coal model: %s."), vars->model_value);
-      /* ieqco2 fix to transport of CO2 mass fraction */
-      *ieqco2 = 1;
     }
     else if (cs_gui_strcmp(vars->model, "gas_combustion")) {
 

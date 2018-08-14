@@ -326,7 +326,7 @@ if (isuite.eq.0) then
 
     cvar_fvp2m(iel) = zero
 
-    if ( ieqco2.ge.1 ) then
+    if (ieqco2.ge.1) then
 
       ioxy   =  1
       wmo2   = wmole(io2)
@@ -342,7 +342,7 @@ if (isuite.eq.0) then
 
     endif
 
-    if ( ieqnox .eq. 1 ) then
+    if (ieqnox .eq. 1) then
       cvar_yhcn(iel) = 0.d0
       cvar_yno(iel) = 0.d0
       cvar_hox(iel) = h1init

@@ -747,6 +747,12 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         # Combo box
         # ---------
+
+        self.modelKineticModel = ComboModel(self.comboBoxKineticModel,2,1)
+        self.modelKineticModel.addItem(self.tr("unused"),       "unused")
+        self.modelKineticModel.addItem(self.tr("CO2 mass fraction transport"),
+                                       "co2_ym_transport")
+
         self.modelPCI = ComboModel(self.comboBoxPCIList,3,1)
         self.modelPCI.addItem(self.tr("LHV"), "LHV")
         self.modelPCI.addItem(self.tr("HHV"), "HHV")
@@ -785,10 +791,12 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.modelReburning = ComboModel(self.comboBoxReburning,3,1)
         self.modelReburning.addItem(self.tr("unused"), "unused")
         self.modelReburning.addItem(self.tr("Model of Chen et al."), "chen")
-        self.modelReburning.addItem(self.tr("Model of Dimitriou et al."), "dimitriou")
+        self.modelReburning.addItem(self.tr("Model of Dimitriou et al."),
+                                    "dimitriou")
 
         # Connections
         # -----------
+        self.comboBoxKineticModel.activated[str].connect(self.slotKineticModel)
         self.treeViewCoals.clicked[QModelIndex].connect(self.slotSelectCoal)
         self.pushButtonAddCoal.clicked.connect(self.slotCreateCoal)
         self.pushButtonDeleteCoal.clicked.connect(self.slotDeleteCoal)
@@ -1023,6 +1031,14 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.pushButtonDeleteOxidant.setDisabled(True)
 
 
+    def initializeKineticModel(self):
+        """
+        initialize view with kinetic model type choice
+        """
+        key = self.model.getKineticModel()
+        self.modelKineticModel.setItem(str_model=key)
+
+
     def initializeDiameter(self):
         """
         initialize view with diameter type choice
@@ -1090,8 +1106,10 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
                 self.comboBoxReburning.show()
                 mdl = self.model.getReburning(self.fuel)
                 self.modelReburning.setItem(str_model=mdl)
+            else:
+                self.checkBoxNOxFormationFeature.setChecked(False)
+
         else:
-            self.checkBoxNOxFormation.setChecked(False)
             self.groupBoxNOxFormation.hide()
 
 
@@ -1141,6 +1159,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.treeViewClasses.resizeColumnToContents(0)
         self.treeViewClasses.resizeColumnToContents(1)
 
+        self.initializeKineticModel()
         self.initializeDiameter()
         self.initializeKineticsView()
         self.initializeNOxView()
@@ -1232,6 +1251,15 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.lineEditMoisture.setText(str(moisture))
             self.labelMoisture.setDisabled(True)
             self.lineEditMoisture.setDisabled(True)
+
+
+    @pyqtSlot(str)
+    def slotKineticModel(self, text):
+        """
+        Change the diameter type
+        """
+        key = self.modelKineticModel.dicoV2M[str(text)]
+        self.model.setKineticModel(key)
 
 
     @pyqtSlot("QModelIndex")
