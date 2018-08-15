@@ -142,6 +142,7 @@ integer          ivoid(1)
 integer          dimrij
 integer          t2v(3,3)
 integer          iv2t(6), jv2t(6)
+integer          f_id
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
@@ -172,7 +173,7 @@ double precision impl_lin_cst, impl_id_cst
 character(len=80) :: label
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2
-double precision, allocatable, dimension(:,:) :: w7
+double precision, allocatable, dimension(:,:), target :: buoyancy
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
@@ -186,6 +187,7 @@ double precision, dimension(:), pointer :: cvara_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvar_var, cvara_var
 double precision, dimension(:), pointer :: viscl
 double precision, dimension(:,:), pointer:: c_st_prv, lagr_st_rij
+double precision, dimension(:,:), pointer :: cpro_buoyancy
 
 double precision, allocatable, dimension(:,:) :: cvara_r
 
@@ -832,32 +834,33 @@ endif
 
 if (igrari.eq.1) then
 
-  ! Allocate a work array
-  allocate(w7(dimrij,ncelet))
+  call field_get_id_try("rij_buoyancy", f_id)
+  if (f_id.ge.0) then
+    call field_get_val_v(f_id, cpro_buoyancy)
+  else
+    ! Allocate a work array
+    allocate(buoyancy(6,ncelet))
+    cpro_buoyancy => buoyancy
+  endif
 
-  do iel = 1, ncel
-    do isou = 1, dimrij
-      w7(isou,iel) = 0.d0
-    enddo
-  enddo
-  call rijthe2(nscal, gradro, w7)
+  call rijthe2(nscal, gradro, cpro_buoyancy)
 
   do isou = 1, dimrij
     ! If we extrapolate the source terms: previous ST
     if (st_prv_id.ge.0) then
       do iel = 1, ncel
-        c_st_prv(isou,iel) = c_st_prv(isou,iel) + w7(isou,iel)
+        c_st_prv(isou,iel) = c_st_prv(isou,iel) + cpro_buoyancy(isou,iel) * cell_f_vol(iel)
       enddo
     ! Otherwise smbr
     else
       do iel = 1, ncel
-        smbr(isou,iel) = smbr(isou,iel) + w7(isou,iel)
+        smbr(isou,iel) = smbr(isou,iel) + cpro_buoyancy(isou,iel) * cell_f_vol(iel)
       enddo
     endif
   enddo
 
   ! Free memory
-  deallocate(w7)
+  if (allocated(buoyancy)) deallocate(buoyancy)
 
   ! Implicit buoyancy term
   if (iscalt.gt.0 .and. nscal.ge.iscalt) then

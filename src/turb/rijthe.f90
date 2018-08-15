@@ -39,7 +39,7 @@
 !______________________________________________________________________________!
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ivar          variable number
-!> \param[in]     gradro        work array for \f$ \grad{rom} \f$
+!> \param[in]     gradro        work array for \f$ \grad{\rho} \f$
 !> \param[in,out] smbr          work array for second member
 !______________________________________________________________________________!
 
@@ -313,7 +313,7 @@ elseif (ivar.eq.iep ) then
     !FIXME for EB-DFM and EBRSM
     aa = 0.d0
     bb = 0.5d0*(g11p+g22p+g33p)
-    smbr(iel) = smbr(iel) + ce1*max(aa,bb)*volume(iel)
+    smbr(iel) = ce1*max(aa,bb)
 
   enddo
 

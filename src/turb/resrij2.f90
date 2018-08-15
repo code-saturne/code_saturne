@@ -131,7 +131,7 @@ integer          isoluc
 integer          idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
-integer          dimrij
+integer          dimrij, f_id
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
@@ -142,8 +142,8 @@ double precision ccorio, matrot(3,3)
 double precision rctse
 
 character(len=80) :: label
+double precision, allocatable, dimension(:,:), target :: buoyancy
 double precision, allocatable, dimension(:) :: w1
-double precision, allocatable, dimension(:) :: w8
 double precision, allocatable, dimension(:,:) :: w7
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:,:) :: viscce
@@ -159,6 +159,7 @@ double precision, dimension(:,:), pointer :: cvar_var, cvara_var
 double precision, allocatable, dimension(:,:) :: cvara_r
 double precision, dimension(:,:), pointer :: c_st_prv, lagr_st_rij
 double precision, dimension(:), pointer :: viscl
+double precision, dimension(:,:), pointer :: cpro_buoyancy
 
 type(var_cal_opt) :: vcopt_rij
 
@@ -171,7 +172,6 @@ type(var_cal_opt) :: vcopt_rij
 ! Allocate work arrays
 allocate(w1(ncelet))
 allocate(w7(6,ncelet))
-allocate(w8(ncelet))
 allocate(dpvar(ncelet))
 allocate(viscce(6,ncelet))
 allocate(weighf(2,nfac))
@@ -354,12 +354,6 @@ enddo
 ! 6. Production, Pressure-Strain correlation, dissipation
 !===============================================================================
 
-! ---> Calculation of k for the sub-routine continuation
-!       we use a work array
-do iel = 1, ncel
-  w8(iel) = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
-enddo
-
 ! ---> Source term
 
 !      (1-CRIJ2) Pij (for all components of Rij)
@@ -389,7 +383,7 @@ if (st_prv_id.ge.0) then
 
     !     Half-traces of Prod and R
     trprod = 0.5d0*(produc(1,iel)+produc(2,iel)+produc(3,iel))
-    trrij  = w8(iel)
+    trrij  = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
 
     do isou = 1, 6
       !     Calculation of Prod+Phi1+Phi2-Eps
@@ -420,7 +414,7 @@ if (st_prv_id.ge.0) then
 
     do iel = 1, ncel
 
-      trrij  = w8(iel)
+      trrij  = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
       do isou = 1, 6
         !    We remove of cromo
         !       =       -C1rho eps/k(   -1/3Rij dij)
@@ -447,7 +441,7 @@ else
 
     !     Half-traces of Prod and R
     trprod = 0.5d0*(produc(1,iel)+produc(2,iel)+produc(3,iel))
-    trrij  = w8(iel)
+    trrij  =  0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
 
     do isou = 1, 6
       !     Calculation of Prod+Phi1+Phi2-Eps
@@ -588,29 +582,35 @@ endif
 
 if (igrari.eq.1) then
 
-  do iel = 1, ncel
-    do isou = 1, dimrij
-      w7(isou,iel) = 0.d0
-    enddo
-  enddo
+  call field_get_id_try("rij_buoyancy", f_id)
+  if (f_id.ge.0) then
+    call field_get_val_v(f_id, cpro_buoyancy)
+  else
+    ! Allocate a work array
+    allocate(buoyancy(6,ncelet))
+    cpro_buoyancy => buoyancy
+  endif
 
-  call rijthe2(nscal, gradro, w7)
+  call rijthe2(nscal, gradro, cpro_buoyancy)
 
   ! If we extrapolate the source terms: previous ST
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
       do isou = 1, dimrij
-        c_st_prv(isou,iel) = c_st_prv(isou,iel) + w7(isou,iel)
+        c_st_prv(isou,iel) = c_st_prv(isou,iel) + cpro_buoyancy(isou,iel) * cell_f_vol(iel)
       enddo
     enddo
     ! Otherwise smbr
   else
     do iel = 1, ncel
       do isou = 1, dimrij
-        smbr(isou,iel) = smbr(isou,iel) + w7(isou,iel)
+        smbr(isou,iel) = smbr(isou,iel) + cpro_buoyancy(isou,iel) * cell_f_vol(iel)
       enddo
     enddo
   endif
+
+  ! Free memory
+  if (allocated(buoyancy)) deallocate(buoyancy)
 
 endif
 
@@ -704,7 +704,7 @@ call coditts &
 
 ! Free memory
 deallocate(w1)
-deallocate(w7, w8)
+deallocate(w7)
 deallocate(dpvar)
 deallocate(viscce)
 deallocate(weighf, weighb)

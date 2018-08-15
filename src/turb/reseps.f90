@@ -478,11 +478,11 @@ if (igrari.eq.1) then
   ! Extrapolation of source terms (2nd order in time)
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
-      c_st_prv(iel) = c_st_prv(iel) + w7(iel)
+      c_st_prv(iel) = c_st_prv(iel) + w7(iel) * cell_f_vol(iel)
     enddo
   else
     do iel = 1, ncel
-      smbr(iel) = smbr(iel) + w7(iel)
+      smbr(iel) = smbr(iel) + w7(iel) * cell_f_vol(iel)
     enddo
   endif
 

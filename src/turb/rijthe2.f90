@@ -37,13 +37,13 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     gradro        work array for \f$ \grad{rom} \f$
-!> \param[in,out] smbr          work array for second member
+!> \param[in]     gradro        work array for \f$ \grad{\rho} \f$
+!> \param[in,out] buoyancy      Buoyancy term for the Reynolds stress model
 !______________________________________________________________________________!
 
 subroutine rijthe2 &
  ( nscal  ,                                                       &
-   gradro , smbr   )
+   gradro , buoyancy   )
 
 !===============================================================================
 ! Module files
@@ -66,7 +66,7 @@ implicit none
 integer          nscal
 
 double precision gradro(3,ncelet)
-double precision smbr(6,ncelet)
+double precision buoyancy(6,ncelet)
 
 ! Local variables
 
@@ -174,9 +174,7 @@ do iel = 1, ncel
       dij = 0.0d0
     endif
 
-    smbr(isou,iel) = smbr(isou,iel)+ ( gij(i,j) * (1.d0 - csttmp) &
-                                     + csttmp * dij * gkks3       &
-                                     )* volume(iel)
+    buoyancy(isou,iel) = gij(i,j) * (1.d0 - csttmp) + csttmp * dij * gkks3
 
   enddo
 enddo
@@ -184,28 +182,6 @@ enddo
 return
 
 end subroutine rijthe2
-!-------------------------------------------------------------------------------
-
-! This file is part of Code_Saturne, a general-purpose CFD tool.
-!
-! Copyright (C) 1998-2018 EDF S.A.
-!
-! This program is free software; you can redistribute it and/or modify it under
-! the terms of the GNU General Public License as published by the Free Software
-! Foundation; either version 2 of the License, or (at your option) any later
-! version.
-!
-! This program is distributed in the hope that it will be useful, but WITHOUT
-! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-! FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-! details.
-!
-! You should have received a copy of the GNU General Public License along with
-! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
-! Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
-!-------------------------------------------------------------------------------
-
 
 !===============================================================================
 ! Function:
@@ -221,7 +197,7 @@ end subroutine rijthe2
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     gradro        work array for \f$ \grad{rom} \f$
+!> \param[in]     gradro        work array for \f$ \grad{\rho} \f$
 !> \param[in,out] smbr          work array for second member
 !______________________________________________________________________________!
 
@@ -271,7 +247,7 @@ double precision, dimension(:,:), pointer :: cvara_rij
 ! 1. Initialization
 !===============================================================================
 
-! ebrsm
+! EBRSM
 if (iturb.eq.32) then
   csttmp = cebmr6
 else
@@ -304,7 +280,6 @@ call field_get_val_prev_v(ivarfl(irij), cvara_rij)
 !                     ... + CEPS1*        Max(0,(GkkP/2))*volume
 !===============================================================================
 
-
 do iel = 1, ncel
 
   r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
@@ -321,9 +296,10 @@ do iel = 1, ncel
   g22p = const*2.d0*(r2t*gy)
   g33p = const*2.d0*(r3t*gz)
 
+  !FIXME for EB-DFM and EBRSM
   aa = 0.d0
   bb = 0.5d0*(g11p+g22p+g33p)
-  smbr(iel) = smbr(iel) + ce1*max(aa,bb)*volume(iel)
+  smbr(iel) = ce1*max(aa,bb)
 
 enddo
 
