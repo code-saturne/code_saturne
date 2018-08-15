@@ -734,7 +734,7 @@ do ifac = 1, nfabor
 
     ! rugd: rugosite de paroi pour les variables dynamiques
     !       seule la valeur stockee pour iu est utilisee
-    rugd=rcodcl(ifac,iu,3)
+    rugd = rcodcl(ifac,iu,3)
 
     ! NB: for rough walls, yplus is computed from the roughness and not uk.
     yplus = distbf/rugd

@@ -705,9 +705,9 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
 
   double effective_visc = (l_visc + cs_turb_cstlog_alpha * roughness * *uk);
 
+  /* NB: tends to "y/xi" in rough regime, to "y.uk/nu" in smooth regime  */
   *yplus = *uk * (y + y0) / effective_visc;
 
-  /* NB: tends to "y/xi" in rough regime, to "y.uk/nu" in smooth regime  */
   double yk = *uk * y / l_visc;
 
   /* As for scalable wall functions, "y*uk/effective_visc+ dplus = yplus" */
