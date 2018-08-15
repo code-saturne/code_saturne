@@ -490,7 +490,7 @@ if ((iturb.eq.30).or.(iturb.eq.31)) then
 endif
 
 if (itytur.eq.3) then
-  call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt_rij)
+  call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt_rij)
   call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt_ep)
   if (irijco.eq.1) then
     call field_get_val_v(ivarfl(irij), cvar_rij)

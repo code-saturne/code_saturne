@@ -231,6 +231,7 @@ else if (itytur.eq.3) then
     ir13 = ir23 + 1
   else
     call add_variable_field('r11', 'R11', 1, ir11)
+    irij = ir11
     call add_variable_field('r22', 'R22', 1, ir22)
     call add_variable_field('r33', 'R33', 1, ir33)
     call add_variable_field('r12', 'R12', 1, ir12)

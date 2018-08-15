@@ -322,7 +322,7 @@ cs_math_3_square_norm(const cs_real_t v[3])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Normalize a vector of 3 real values.
+ * \brief Normalise a vector of 3 real values.
  *
  * \param[in]     vin           vector
  * \param[out]    vout          normalized vector
