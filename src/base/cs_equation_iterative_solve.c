@@ -861,10 +861,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     /* Writing */
     if (iwarnp >= 2) {
-      bft_printf("%s : CV_DIF_TS, IT : %d, Res : %12.5e, Norm : %12.5e\n",
+      bft_printf("%s: CV_DIF_TS, IT: %d, Res: %12.5e, Norm: %12.5e\n",
                  var_name, isweep, residu, rnorm);
-      bft_printf("%s : Current reconstruction sweep : %d, "
-                 "Sweeps for solver : %d\n", var_name, isweep, niterf);
+      bft_printf("%s: Current reconstruction sweep: %d, "
+                 "Iterations for solver: %d\n", var_name, isweep, niterf);
     }
 
     isweep++;
@@ -1689,10 +1689,10 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
     /* Writing */
     if (iwarnp >= 2) {
-      bft_printf("%s : CV_DIF_TS, IT : %d, Res : %12.5e, Norm : %12.5e\n",
+      bft_printf("%s: CV_DIF_TS, IT: %d, Res: %12.5e, Norm: %12.5e\n",
                  var_name, isweep, residu, rnorm);
-      bft_printf("%s : Current reconstruction sweep : %d, "
-                 "Sweeps for solver : %d\n", var_name, isweep, niterf);
+      bft_printf("%s: Current reconstruction sweep: %d, "
+                 "Iterations for solver: %d\n", var_name, isweep, niterf);
     }
 
     isweep++;
@@ -2482,10 +2482,10 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
     /* Writing */
     if (iwarnp >= 2) {
-      bft_printf("%s : CV_DIF_TS, IT : %d, Res : %12.5e, Norm : %12.5e\n",
+      bft_printf("%s: CV_DIF_TS, IT: %d, Res: %12.5e, Norm: %12.5e\n",
                  var_name, isweep, residu, rnorm);
-      bft_printf("%s : Current reconstruction sweep : %d, "
-                 "Sweeps for solver : %d\n", var_name, isweep, niterf);
+      bft_printf("%s: Current reconstruction sweep: %d, "
+                 "Iterations for solver: %d\n", var_name, isweep, niterf);
     }
 
     isweep++;
