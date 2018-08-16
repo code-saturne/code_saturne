@@ -3299,7 +3299,7 @@ _set_xa_coeffs_msr_direct(cs_matrix_t        *matrix,
 
   /* Copy extra-diagonal values */
 
-  assert(edges != NULL);
+  assert(edges != NULL || n_edges == 0);
 
   if (symmetric == false) {
 

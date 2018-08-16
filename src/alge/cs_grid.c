@@ -154,6 +154,7 @@ struct _cs_grid_t {
 
   /* Geometric data */
 
+  cs_real_t         relaxation;     /* P0/P1 relaxation parameter */
   const cs_real_t  *cell_cen;       /* Cell center (shared) */
   cs_real_t        *_cell_cen;      /* Cell center (private) */
 
@@ -1986,8 +1987,10 @@ _append_cell_data(cs_grid_t  *g)
     g->n_rows = g->merge_cell_idx[g->merge_sub_size];
     g->n_cols_ext = g->n_rows + g->halo->n_elts[0];
 
-    BFT_REALLOC(g->_cell_cen, g->n_cols_ext * 3, cs_real_t);
-    BFT_REALLOC(g->_cell_vol, g->n_cols_ext, cs_real_t);
+    if (g->relaxation > 0) {
+      BFT_REALLOC(g->_cell_cen, g->n_cols_ext * 3, cs_real_t);
+      BFT_REALLOC(g->_cell_vol, g->n_cols_ext, cs_real_t);
+    }
     BFT_REALLOC(g->_da, g->n_cols_ext*g->db_size[3], cs_real_t);
 
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
@@ -1996,11 +1999,13 @@ _append_cell_data(cs_grid_t  *g)
                            - g->merge_cell_idx[rank_id]);
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
 
-      MPI_Recv(g->_cell_cen + g->merge_cell_idx[rank_id]*3, n_recv*3,
-               CS_MPI_REAL, dist_rank, tag, comm, &status);
+      if (g->relaxation > 0) {
+        MPI_Recv(g->_cell_cen + g->merge_cell_idx[rank_id]*3, n_recv*3,
+                 CS_MPI_REAL, dist_rank, tag, comm, &status);
 
-      MPI_Recv(g->_cell_vol + g->merge_cell_idx[rank_id], n_recv,
-               CS_MPI_REAL, dist_rank, tag, comm, &status);
+        MPI_Recv(g->_cell_vol + g->merge_cell_idx[rank_id], n_recv,
+                 CS_MPI_REAL, dist_rank, tag, comm, &status);
+      }
 
       MPI_Recv(g->_da + g->merge_cell_idx[rank_id]*g->db_size[3],
                n_recv*g->db_size[3],
@@ -2010,13 +2015,15 @@ _append_cell_data(cs_grid_t  *g)
 
   }
   else {
-    MPI_Send(g->_cell_cen, g->n_rows*3, CS_MPI_REAL, g->merge_sub_root,
-             tag, comm);
-    BFT_FREE(g->_cell_cen);
+    if (g->relaxation > 0) {
+      MPI_Send(g->_cell_cen, g->n_rows*3, CS_MPI_REAL, g->merge_sub_root,
+               tag, comm);
+      BFT_FREE(g->_cell_cen);
 
-    MPI_Send(g->_cell_vol, g->n_rows, CS_MPI_REAL, g->merge_sub_root,
-             tag, comm);
-    BFT_FREE(g->_cell_vol);
+      MPI_Send(g->_cell_vol, g->n_rows, CS_MPI_REAL, g->merge_sub_root,
+               tag, comm);
+      BFT_FREE(g->_cell_vol);
+    }
 
     MPI_Send(g->_da, g->n_rows*g->db_size[3], CS_MPI_REAL,
              g->merge_sub_root, tag, comm);
@@ -2026,8 +2033,11 @@ _append_cell_data(cs_grid_t  *g)
     g->n_cols_ext = 0;
   }
 
-  g->cell_cen = g->_cell_cen;
-  g->cell_vol = g->_cell_vol;
+  if (g->relaxation > 0) {
+    g->cell_cen = g->_cell_cen;
+    g->cell_vol = g->_cell_vol;
+  }
+
   g->da = g->_da;
 }
 
@@ -2043,11 +2053,13 @@ _sync_merged_cell_data(cs_grid_t  *g)
 {
   if (g->halo != NULL) {
 
-    cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, g->_cell_cen, 3);
-    if (g->halo->n_transforms > 0)
-      cs_halo_perio_sync_coords(g->halo, CS_HALO_STANDARD, g->_cell_cen);
+    if (g->relaxation > 0) {
+      cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, g->_cell_cen, 3);
+      if (g->halo->n_transforms > 0)
+        cs_halo_perio_sync_coords(g->halo, CS_HALO_STANDARD, g->_cell_cen);
 
-    cs_halo_sync_var(g->halo, CS_HALO_STANDARD, g->_cell_vol);
+      cs_halo_sync_var(g->halo, CS_HALO_STANDARD, g->_cell_vol);
+    }
 
     cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD,
                              g->_da, g->db_size[3]);
@@ -2107,15 +2119,19 @@ _append_face_data(cs_grid_t   *g,
 
     BFT_REALLOC(g->_face_cell, n_faces_tot, cs_lnum_2_t);
 
-    BFT_REALLOC(g->_face_normal, n_faces_tot*3, cs_real_t);
-
     if (g->symmetric == true)
       BFT_REALLOC(g->_xa, n_faces_tot, cs_real_t);
     else
       BFT_REALLOC(g->_xa, n_faces_tot*2, cs_real_t);
 
-    BFT_REALLOC(g->_xa0, n_faces_tot, cs_real_t);
-    BFT_REALLOC(g->xa0ij, n_faces_tot*3, cs_real_t);
+    if (g->relaxation > 0) {
+
+      BFT_REALLOC(g->_face_normal, n_faces_tot*3, cs_real_t);
+
+      BFT_REALLOC(g->_xa0, n_faces_tot, cs_real_t);
+      BFT_REALLOC(g->xa0ij, n_faces_tot*3, cs_real_t);
+
+    }
 
     g->n_faces = recv_count[0];
 
@@ -2127,9 +2143,6 @@ _append_face_data(cs_grid_t   *g,
       MPI_Recv(g->_face_cell + g->n_faces, n_recv*2,
                CS_MPI_LNUM, dist_rank, tag, comm, &status);
 
-      MPI_Recv(g->_face_normal + g->n_faces*3, n_recv*3,
-               CS_MPI_REAL, dist_rank, tag, comm, &status);
-
       if (g->symmetric == true)
         MPI_Recv(g->_xa + g->n_faces, n_recv,
                  CS_MPI_REAL, dist_rank, tag, comm, &status);
@@ -2137,11 +2150,18 @@ _append_face_data(cs_grid_t   *g,
         MPI_Recv(g->_xa + g->n_faces*2, n_recv*2,
                  CS_MPI_REAL, dist_rank, tag, comm, &status);
 
-      MPI_Recv(g->_xa0 + g->n_faces, n_recv,
-               CS_MPI_REAL, dist_rank, tag, comm, &status);
+      if (g->relaxation > 0) {
 
-      MPI_Recv(g->xa0ij + g->n_faces*3, n_recv*3,
-               CS_MPI_REAL, dist_rank, tag, comm, &status);
+        MPI_Recv(g->_face_normal + g->n_faces*3, n_recv*3,
+                 CS_MPI_REAL, dist_rank, tag, comm, &status);
+
+        MPI_Recv(g->_xa0 + g->n_faces, n_recv,
+                 CS_MPI_REAL, dist_rank, tag, comm, &status);
+
+        MPI_Recv(g->xa0ij + g->n_faces*3, n_recv*3,
+                 CS_MPI_REAL, dist_rank, tag, comm, &status);
+
+      }
 
       g->n_faces += recv_count[rank_id];
     }
@@ -2159,28 +2179,26 @@ _append_face_data(cs_grid_t   *g,
       cs_lnum_t p_face_id = face_list[face_id];
       g->_face_cell[face_id][0] = g->_face_cell[p_face_id][0];
       g->_face_cell[face_id][1] = g->_face_cell[p_face_id][1];
-      g->_face_normal[face_id*3] = g->_face_normal[p_face_id*3];
-      g->_face_normal[face_id*3 + 1] = g->_face_normal[p_face_id*3 + 1];
-      g->_face_normal[face_id*3 + 2] = g->_face_normal[p_face_id*3 + 2];
       if (g->symmetric == true)
         g->_xa[face_id] = g->_xa[p_face_id];
       else {
         g->_xa[face_id*2] = g->_xa[p_face_id*2];
         g->_xa[face_id*2+1] = g->_xa[p_face_id*2+1];
       }
-      g->_xa0[face_id] = g->_xa0[p_face_id];
-      g->xa0ij[face_id*3] = g->xa0ij[p_face_id*3];
-      g->xa0ij[face_id*3 + 1] = g->xa0ij[p_face_id*3 + 1];
-      g->xa0ij[face_id*3 + 2] = g->xa0ij[p_face_id*3 + 2];
+      if (g->relaxation > 0) {
+        g->_face_normal[face_id*3] = g->_face_normal[p_face_id*3];
+        g->_face_normal[face_id*3 + 1] = g->_face_normal[p_face_id*3 + 1];
+        g->_face_normal[face_id*3 + 2] = g->_face_normal[p_face_id*3 + 2];
+        g->_xa0[face_id] = g->_xa0[p_face_id];
+        g->xa0ij[face_id*3] = g->xa0ij[p_face_id*3];
+        g->xa0ij[face_id*3 + 1] = g->xa0ij[p_face_id*3 + 1];
+        g->xa0ij[face_id*3 + 2] = g->xa0ij[p_face_id*3 + 2];
+      }
     }
 
     MPI_Send(g->_face_cell, n_faces*2, CS_MPI_LNUM,
              g->merge_sub_root, tag, comm);
     BFT_FREE(g->_face_cell);
-
-    MPI_Send(g->_face_normal, n_faces*3, CS_MPI_REAL,
-             g->merge_sub_root, tag, comm);
-    BFT_FREE(g->_face_normal);
 
     if (g->symmetric == true)
       MPI_Send(g->_xa, n_faces, CS_MPI_REAL,
@@ -2190,21 +2208,29 @@ _append_face_data(cs_grid_t   *g,
                g->merge_sub_root, tag, comm);
     BFT_FREE(g->_xa);
 
-    MPI_Send(g->_xa0, n_faces, CS_MPI_REAL,
-             g->merge_sub_root, tag, comm);
-    BFT_FREE(g->_xa0);
+    if (g->relaxation > 0) {
+      MPI_Send(g->_face_normal, n_faces*3, CS_MPI_REAL,
+               g->merge_sub_root, tag, comm);
+      BFT_FREE(g->_face_normal);
 
-    MPI_Send(g->xa0ij, n_faces*3, CS_MPI_REAL,
-             g->merge_sub_root, tag, comm);
-    BFT_FREE(g->xa0ij);
+      MPI_Send(g->_xa0, n_faces, CS_MPI_REAL,
+               g->merge_sub_root, tag, comm);
+      BFT_FREE(g->_xa0);
+
+      MPI_Send(g->xa0ij, n_faces*3, CS_MPI_REAL,
+               g->merge_sub_root, tag, comm);
+      BFT_FREE(g->xa0ij);
+    }
 
     g->n_faces = 0;
   }
 
   g->face_cell = (const cs_lnum_2_t  *)(g->_face_cell);
-  g->face_normal = g->_face_normal;
   g->xa = g->_xa;
-  g->xa0 = g->_xa0;
+  if (g->relaxation > 0) {
+    g->face_normal = g->_face_normal;
+    g->xa0 = g->_xa0;
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3442,16 +3468,14 @@ _build_coarse_matrix_msr(cs_grid_t *c,
  * Build a coarse level from a finer level using face->cells connectivity
  *
  * parameters:
- *   fine_grid   <-- Fine grid structure
- *   coarse_grid <-> Coarse grid structure
- *   relax_param <-- P0/P1 relaxation parameter
+ *   fine_grid   <-- fine grid structure
+ *   coarse_grid <-> coarse grid structure
  *   verbosity   <-- verbosity level
  *----------------------------------------------------------------------------*/
 
 static void
 _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
                                   cs_grid_t        *coarse_grid,
-                                  cs_real_t         relax_param,
                                   int               verbosity)
 {
   cs_lnum_t ic, jc, ii, jj, kk, face_id;
@@ -3491,6 +3515,8 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   const cs_real_t *f_xa0 = fine_grid->xa0;
   const cs_real_t *f_da = fine_grid->da;
   const cs_real_t *f_xa = fine_grid->xa;
+
+  const cs_real_t relax_param = coarse_grid->relaxation;
 
   if (fine_grid->symmetric == true)
     isym = 1;
@@ -3746,16 +3772,14 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
  * Build a coarse level from a finer level for convection/diffusion case.
  *
  * parameters:
- *   fine_grid   <-- Fine grid structure
- *   coarse_grid <-> Coarse grid structure
- *   relax_param <-- P0/P1 relaxation parameter
+ *   fine_grid   <-- fine grid structure
+ *   coarse_grid <-> coarse grid structure
  *   verbosity   <-- verbosity level
  *----------------------------------------------------------------------------*/
 
 static void
 _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
                                      cs_grid_t        *coarse_grid,
-                                     cs_real_t         relax_param,
                                      int               verbosity)
 {
   cs_lnum_t ic, jc, ii, jj, kk, c_face, face_id;
@@ -3869,6 +3893,8 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   /*  interp = 1 : P0 restriction / P1 prolongation => c_xa = c_xa0ij/icjc */
 
   /*  Initialization */
+
+  const cs_real_t relax_param = coarse_grid->relaxation;
 
   int interp = 1;
 
@@ -4423,6 +4449,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   if (cs_matrix_is_mapped_from_native(a))
     g->face_cell = face_cell;
 
+  g->relaxation = 0;
+
   g->cell_cen = cell_cen;
   g->cell_vol = cell_vol;
   g->face_normal = face_normal;
@@ -4480,7 +4508,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
       cs_lnum_t i1 = face_cell[face_id][1];
       for (cs_lnum_t kk = 0; kk < 3; kk++) {
         g->xa0ij[face_id*3 + kk] =   g_xa0[face_id]
-                                   * (cell_cen[i1*3 + kk] - cell_cen[i0*3 + kk]);
+                                   * (  cell_cen[i1*3 + kk]
+                                      - cell_cen[i0*3 + kk]);
       }
     }
 
@@ -4821,8 +4850,9 @@ cs_grid_coarsen(const cs_grid_t   *f,
   if (f->symmetric == true)
     isym = 1;
 
-  if (f->face_cell == NULL && relaxation_parameter > 0)
-    relaxation_parameter = 0;
+  c->relaxation = relaxation_parameter;
+  if (f->face_cell == NULL && c->relaxation > 0)
+    c->relaxation = 0;
 
   /* Ensure default is available */
 
@@ -4848,12 +4878,12 @@ cs_grid_coarsen(const cs_grid_t   *f,
       _automatic_aggregation_fc(f,
                                 coarsening_type,
                                 aggregation_limit,
-                                relaxation_parameter,
+                                c->relaxation,
                                 verbosity,
                                 c->coarse_row);
   }
   else if (coarsening_type == CS_GRID_COARSENING_SPD_MX) {
-    relaxation_parameter = 0;
+    c->relaxation = 0;
     switch (fine_matrix_type) {
     case CS_MATRIX_NATIVE:
       _automatic_aggregation_mx_native(f, aggregation_limit, verbosity,
@@ -4883,7 +4913,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
   c->xa = c->_xa;
 
   if (  (fine_matrix_type == CS_MATRIX_NATIVE || f->face_cell != NULL)
-      && relaxation_parameter > 0) {
+      && c->relaxation > 0) {
 
     /* Allocate permanent arrays in coarse grid */
 
@@ -4941,10 +4971,9 @@ cs_grid_coarsen(const cs_grid_t   *f,
   if (f->face_cell != NULL) {
 
     if (conv_diff)
-      _compute_coarse_quantities_conv_diff(f, c, relaxation_parameter,
-                                           verbosity);
+      _compute_coarse_quantities_conv_diff(f, c, verbosity);
     else
-      _compute_coarse_quantities_native(f, c, relaxation_parameter, verbosity);
+      _compute_coarse_quantities_native(f, c, verbosity);
 
     /* Synchronize matrix's geometric quantities */
 
