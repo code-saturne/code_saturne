@@ -1536,6 +1536,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         mdl = ScriptRunningModel(self.case)
         rt = mdl.getRunType(self.case['prepro'])
         self.case['prepro'] = True
+        self.case['oturns'] = False
         self.initCase()
         mdl.setRunType(rt)
         self.Browser.configureTree(self.case)
@@ -1555,10 +1556,29 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         mdl = ScriptRunningModel(self.case)
         self.case['prepro'] = False
+        self.case['oturns'] = False
         self.initCase()
         mdl.setRunType('standard')
         self.Browser.configureTree(self.case)
         if self.case['current_page'] == 'Prepare batch calculation':
+            p = displaySelectedPage(self.case['current_page'],
+                                    self,
+                                    self.case,
+                                    stbar=self.statusbar,
+                                    study=self.Id,
+                                    tree=self.Browser)
+            self.scrollArea.setWidget(p)
+
+
+    def slotOpenTurnsMode(self):
+        """
+        mode OpenTurns study slot
+        """
+        self.case['prepro'] = False
+        self.case['oturns'] = True
+        self.initCase()
+        self.Browser.configureTree(self.case)
+        if self.case['current_page'] == 'OpenTurns study':
             p = displaySelectedPage(self.case['current_page'],
                                     self,
                                     self.case,

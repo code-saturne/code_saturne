@@ -1179,6 +1179,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  salome/cfd_study/src/Makefile
                  salome/cfd_study/src/CFDSTUDY/Makefile
                  salome/cfd_study/src/CFDSTUDYGUI/Makefile
+                 salome/cfd_study/src/CFDSTUDYOTURNS/Makefile
                  docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
                  docs/studymanager/Makefile docs/studymanager/graphics/Makefile
                  docs/developer/Makefile docs/developer/graphics/Makefile

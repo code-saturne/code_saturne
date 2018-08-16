@@ -83,6 +83,12 @@ Architectural changes:
   with the VOFI (VoF initialization) library (only for some research uses;
   that library's licence is too restrictive for most uses).
 
+- Add the possibility to conduction Uncertainty studies using OpenTURNS within
+  the salome_cfd platform. The full workflow, Code_Saturne case creation to the
+  UQ study, is available within the salome_cfd GUI. Code_Saturne unitary
+  evaluations can be run on either the local workstation or distant machines
+  such as computing clusters.
+
 Bug fixes:
 
 - Minor bug fix updates to Melissa writer.

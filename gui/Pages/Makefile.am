@@ -100,6 +100,8 @@ NumericalParamEquationModel.py \
 NumericalParamEquationView.py \
 NumericalParamGlobalModel.py \
 NumericalParamGlobalView.py \
+OpenTurnsModel.py \
+OpenTurnsView.py \
 OutputControlModel.py \
 OutputControlView.py \
 OutputSurfacicVariablesModel.py \
@@ -197,6 +199,7 @@ MobileMeshForm.ui \
 NotebookForm.ui \
 NumericalParamEquationForm.ui \
 NumericalParamGlobalForm.ui \
+OpenTurnsForm.ui \
 OutputControlForm.ui \
 OutputSurfacicVariablesForm.ui \
 OutputVolumicVariablesForm.ui \

@@ -154,6 +154,10 @@
             <translation>calc-mode.png</translation>
         </message>
         <message>
+            <source>OPENTURNS_MODE_CFD_GUI_ACTION_ICON</source>
+            <translation>ot-logo.png</translation>
+        </message>
+        <message>
             <source>OPENEXISTINGCASEFILEXML_CFD_GUI_ACTION_ICON</source>
             <translation>LaunchGUIwithOptions.png</translation>
         </message>

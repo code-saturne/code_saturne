@@ -41,6 +41,7 @@ edit-undo.png \
 edit-redo.png \
 prepro-mode.png \
 calc-mode.png \
+ot-logo.png \
 Delete.png \
 Document.png \
 EditableDocument.png \

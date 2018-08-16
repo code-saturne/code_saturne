@@ -264,6 +264,10 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         if self._CurrentWindow != None:
             self._CurrentWindow.slotCalculationMode()
 
+    def onOTStudyMode(self):
+        if self._CurrentWindow != None:
+            self._CurrentWindow.slotOpenTurnsMode()
+
     def onOpenShell(self):
         if self._CurrentWindow != None:
             self._CurrentWindow.openXterm()

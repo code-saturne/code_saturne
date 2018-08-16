@@ -459,6 +459,7 @@ Calculation management
     Start/Restart
     Performance tuning
     Prepare batch calculation
+    OpenTurns study
 """
         return tree
 
@@ -690,6 +691,25 @@ Calculation management
             self.setRowClose(self.tr('Profiles'))
             self.setRowClose(self.tr('Balance by zone'))
             self.setRowClose(self.tr('Fans'))
+            self.setRowClose(self.tr('OpenTurns study'))
+            return
+        elif case['oturns'] == True:
+            self.setRowClose(self.tr('Thermophysical models'))
+            self.setRowClose(self.tr('Physical properties'))
+            self.setRowClose(self.tr('Volume conditions'))
+            self.setRowClose(self.tr('Particles and droplets tracking'))
+            self.setRowClose(self.tr('Boundary conditions'))
+            self.setRowClose(self.tr('Numerical parameters'))
+            self.setRowClose(self.tr('Start/Restart'))
+            self.setRowClose(self.tr('Time averages'))
+            self.setRowClose(self.tr('Volume solution control'))
+            self.setRowClose(self.tr('Surface solution control'))
+            self.setRowClose(self.tr('Lagrangian solution control'))
+            self.setRowClose(self.tr('Profiles'))
+            self.setRowClose(self.tr('Balance by zone'))
+            self.setRowClose(self.tr('Fans'))
+            self.setRowOpen(self.tr('Notebook'))
+            self.setRowOpen(self.tr('OpenTurns study'))
             return
         else:
             self.setRowOpen(self.tr('Notebook'))
@@ -707,6 +727,7 @@ Calculation management
             self.setRowOpen(self.tr('Profiles'))
             self.setRowOpen(self.tr('Balance by zone'))
             self.setRowOpen(self.tr('Fans'))
+            self.setRowClose(self.tr('OpenTurns study'))
 
         # Time step management
 
