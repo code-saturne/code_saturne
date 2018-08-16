@@ -3501,9 +3501,11 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
   /* Extradiagonal terms */
 
-# pragma omp parallel for if(c_n_faces*6 > CS_THR_MIN)
-  for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
-    c_xa[c_face] = 0.;
+  cs_lnum_t c_n_vals = c_n_faces*isym;
+
+# pragma omp parallel for if(c_n_vals*6 > CS_THR_MIN)
+  for (cs_lnum_t c_val = 0; c_val < c_n_vals; c_val++) {
+    c_xa[c_val] = 0.;
   }
 
   if (relax_param <= 0) {
@@ -4826,7 +4828,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
   if (coarsening_type == CS_GRID_COARSENING_DEFAULT) {
     if (f->face_cell != NULL) {
-      if (f->symmetric == true)
+      if (f->conv_diff == false)
         coarsening_type = CS_GRID_COARSENING_SPD_DX;
       else
         coarsening_type = CS_GRID_COARSENING_CONV_DIFF_DX;
