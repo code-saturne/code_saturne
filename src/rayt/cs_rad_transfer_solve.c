@@ -266,30 +266,40 @@ _order_by_direction(void)
           cs_sles_t *sles = cs_sles_find(-1, name);
 
           if (sles == NULL) {
-            (void)cs_sles_it_define(-1,
-                                    name,
-                                    CS_SLES_P_GAUSS_SEIDEL,
-                                    0,      /* poly_degree */
-                                    1000);  /* n_max_iter */
-            sles = cs_sles_find(-1, name);
-          }
 
-          if (strcmp(cs_sles_get_type(sles), "cs_sles_it_t") != 0)
-            continue;
+            if (cs_glob_rad_transfer_params->dispersion == false) {
 
-          cs_sles_it_t *sc = cs_sles_get_context(sles);
+              cs_sles_it_t *sc = cs_sles_it_define(-1,
+                                                   name,
+                                                   CS_SLES_P_GAUSS_SEIDEL,
+                                                   0,      /* poly_degree */
+                                                   1000);  /* n_max_iter */
 
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-            s[c_id] =   v[0]*cell_cen[c_id][0]
-                      + v[1]*cell_cen[c_id][1]
-                      + v[2]*cell_cen[c_id][2];
+              for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+                s[c_id] =   v[0]*cell_cen[c_id][0]
+                          + v[1]*cell_cen[c_id][1]
+                          + v[2]*cell_cen[c_id][2];
 
-          cs_lnum_t *order;
-          BFT_MALLOC(order, n_cells, cs_lnum_t);
+              cs_lnum_t *order;
+              BFT_MALLOC(order, n_cells, cs_lnum_t);
 
-          _order_axis(s, order, n_cells);
+              _order_axis(s, order, n_cells);
 
-          cs_sles_it_assign_order(sc, &order); /* becomes owner of order */
+              cs_sles_it_assign_order(sc, &order); /* becomes owner of order */
+
+            }
+            else { /* In case of dispersion, Jacobi and Gauss-Seidel
+                      usually exhibit quite bad convergence. */
+
+              sles = cs_sles_it_define(-1,
+                                       name,
+                                       CS_SLES_BICGSTAB,
+                                       0,       /* poly_degree */
+                                       10000);  /* n_max_iter */
+
+            }
+
+          } /* If linear solver as not already associated */
 
         }
       }
@@ -412,7 +422,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
   vcopt.idiff  =  0; /* no face diffusion */
   vcopt.idifft = -1;
   vcopt.isstpc =  0;
-  vcopt.nswrsm =  1;/* One sweep is sufficient because of the upwind scheme */
+  vcopt.nswrsm =  1; /* One sweep is sufficient because of the upwind scheme */
   vcopt.imrgra =  cs_glob_space_disc->imrgra;
   vcopt.blencv =  0; /* Pure upwind...*/
   vcopt.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
@@ -420,6 +430,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
   if (cs_glob_rad_transfer_params->dispersion) {
     vcopt.idiff  =  1; /* Added face diffusion */
     vcopt.nswrgr = 20;
+    vcopt.nswrsm =  2;
   }
 
   int iescap = 0;
