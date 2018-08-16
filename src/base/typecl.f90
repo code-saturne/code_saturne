@@ -1014,9 +1014,9 @@ do ivar = 1, nvar
       ifac = itrifb(ii)
       if (icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 5
-        ! rcodcl(ifac,ivar,1) = Utilisateur
+        ! rcodcl(ifac,ivar,1) = User
         rcodcl(ifac,ivar,2) = rinfin
-        rcodcl(ifac,ivar,3) = 0.d0
+        ! rcodcl(ifac,ivar,3) unused value, let it as default
       endif
     enddo
   elseif ((itytur.eq.2                                             &
