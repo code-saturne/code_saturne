@@ -291,11 +291,11 @@ _order_by_direction(void)
             else { /* In case of dispersion, Jacobi and Gauss-Seidel
                       usually exhibit quite bad convergence. */
 
-              sles = cs_sles_it_define(-1,
-                                       name,
-                                       CS_SLES_BICGSTAB,
-                                       0,       /* poly_degree */
-                                       10000);  /* n_max_iter */
+              (void)cs_sles_it_define(-1,
+                                      name,
+                                      CS_SLES_BICGSTAB,
+                                      0,       /* poly_degree */
+                                      10000);  /* n_max_iter */
 
             }
 
