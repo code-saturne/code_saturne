@@ -2999,7 +2999,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   halo_type      <-- halo type (extended or not)
- *   clipping_type  <-- type of clipping for the computation of the gradient
+ *   clip_mode      <-- type of clipping for the computation of the gradient
  *   verbosity      <-- output level
  *   climgp         <-- clipping coefficient for the computation of the gradient
  *   pvar           <-- variable
@@ -3011,7 +3011,7 @@ static void
 _vector_gradient_clipping(const cs_mesh_t              *m,
                           const cs_mesh_quantities_t   *fvq,
                           cs_halo_type_t                halo_type,
-                          int                           clipping_type,
+                          int                           clip_mode,
                           int                           verbosity,
                           cs_real_t                     climgp,
                           const cs_real_3_t   *restrict pvar,
@@ -3050,14 +3050,14 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   const cs_halo_t *halo = m->halo;
 
-  if (clipping_type < 0)
+  if (clip_mode < 0)
     return;
 
   /* The gradient and the variable must be already synchronized */
 
   /* Allocate and initialize working buffers */
 
-  if (clipping_type == 1)
+  if (clip_mode == 1)
     BFT_MALLOC(buf, 3*n_cells_ext, cs_real_t);
   else
     BFT_MALLOC(buf, 2*n_cells_ext, cs_real_t);
@@ -3065,7 +3065,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
   denum = buf;
   denom = buf + n_cells_ext;
 
-  if (clipping_type == 1)
+  if (clip_mode == 1)
     clip_factor = buf + 2*n_cells_ext;
 
   /* Initialization */
@@ -3074,7 +3074,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
   for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     denum[cell_id] = 0;
     denom[cell_id] = 0;
-    if (clipping_type == 1)
+    if (clip_mode == 1)
       clip_factor[cell_id] = (cs_real_t)DBL_MAX;
   }
 
@@ -3085,7 +3085,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
   /* First clipping Algorithm: based on the cell gradient */
   /*------------------------------------------------------*/
 
-  if (clipping_type == 0) {
+  if (clip_mode == 0) {
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
 
@@ -3188,7 +3188,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
   /* Second clipping Algorithm: based on the face gradient */
   /*-------------------------------------------------------*/
 
-  else if (clipping_type == 1) {
+  else if (clip_mode == 1) {
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
 
@@ -3282,14 +3282,14 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
       cs_halo_sync_var(m->halo, halo_type, denum);
     }
 
-  } /* End if clipping_type == 1 */
+  } /* End if clip_mode == 1 */
 
   /* Clipping of the gradient if denum/denom > climgp**2 */
 
   /* First clipping Algorithm: based on the cell gradient */
   /*------------------------------------------------------*/
 
-  if (clipping_type == 0) {
+  if (clip_mode == 0) {
 
 #   pragma omp parallel private(t_min_factor, t_max_factor, t_n_clip, \
                                 factor1, i, j)
@@ -3330,7 +3330,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
   /* Second clipping Algorithm: based on the face gradient */
   /*-------------------------------------------------------*/
 
-  else if (clipping_type == 1) {
+  else if (clip_mode == 1) {
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
 
@@ -3423,7 +3423,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
       }
     } /* End of omp parallel construct */
 
-  } /* End if clipping_type == 1 */
+  } /* End if clip_mode == 1 */
 
   /* Update min/max and n_clip in case of parallelism */
   /*--------------------------------------------------*/
