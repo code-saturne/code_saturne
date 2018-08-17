@@ -167,7 +167,7 @@ double precision uiptn, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
 double precision tetmax, tetmin, tplumx, tplumn
 double precision uk, uet, yplus, uplus, phit
-double precision gredu,
+double precision gredu
 double precision cfnnu, cfnns, cfnnk, cfnne
 double precision sqrcmu, clsyme, ek
 double precision xmutlm
