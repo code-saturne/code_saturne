@@ -103,6 +103,8 @@ BEGIN_C_DECLS
        Process-local Gauss-Seidel
   \var CS_SLES_P_SYM_GAUSS_SEIDEL
        Process-local symmetric Gauss-Seidel
+  \var CS_SLES_P_B_GAUSS_SEIDEL
+       Process-local backward Gauss-Seidel (smoother, no convergence test)
   \var CS_SLES_PCR3
        3-layer conjugate residual
 
@@ -290,6 +292,7 @@ const char *cs_sles_it_type_name[]
      N_("GMRES"),
      N_("Local Gauss-Seidel"),
      N_("Local symmetric Gauss-Seidel"),
+     N_("Local backwards Gauss-Seidel"),
      N_("3-layer conjugate residual")};
 
 /*============================================================================
@@ -3672,25 +3675,33 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
     }
 
+    if (convergence->precision > 0. || c->plot != NULL) {
+
 #if defined(HAVE_MPI)
 
-    if (c->comm != MPI_COMM_NULL) {
-      double _sum;
-      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM,
-                    c->comm);
-      res2 = _sum;
-    }
+      if (c->comm != MPI_COMM_NULL) {
+        double _sum;
+        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM,
+                      c->comm);
+        res2 = _sum;
+      }
 
 #endif /* defined(HAVE_MPI) */
 
-    residue = sqrt(res2); /* Actually, residue of previous iteration */
+      residue = sqrt(res2); /* Actually, residue of previous iteration */
 
-    /* Convergence test */
+      /* Convergence test */
 
-    if (n_iter == 1)
-      c->setup_data->initial_residue = residue;
+      if (n_iter == 1)
+        c->setup_data->initial_residue = residue;
 
-    cvg = _convergence_test(c, n_iter, residue, convergence);
+      cvg = _convergence_test(c, n_iter, residue, convergence);
+
+    }
+    else if (n_iter >= convergence->n_iterations_max) {
+      convergence->n_iterations = n_iter;
+      cvg = CS_SLES_MAX_ITERATION;
+    }
 
   }
 
@@ -3920,6 +3931,128 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
       cvg = CS_SLES_MAX_ITERATION;
     }
 
+  }
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using Process-local backward Gauss-Seidel.
+ *
+ * This variant is intended for smoothing with a fixed number of
+ * iterations, so does not compute a residue or run a convergence test.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- linear equation matrix
+ *   diag_block_size <-- diagonal block size
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_p_b_gauss_seidel_msr(cs_sles_it_t              *c,
+                      const cs_matrix_t         *a,
+                      int                        diag_block_size,
+                      cs_halo_rotation_t         rotation_mode,
+                      cs_sles_it_convergence_t  *convergence,
+                      const cs_real_t           *rhs,
+                      cs_real_t                 *restrict vx)
+{
+  cs_sles_convergence_state_t cvg;
+
+  unsigned n_iter = 0;
+
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+
+  const cs_halo_t *halo = cs_matrix_get_halo(a);
+
+  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
+
+  const cs_lnum_t  *a_row_index, *a_col_id;
+  const cs_real_t  *a_d_val, *a_x_val;
+
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+  cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
+
+  cvg = CS_SLES_ITERATING;
+
+  /* Current iteration */
+  /*-------------------*/
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    n_iter += 1;
+
+    /* Synchronize ghost cells first */
+
+    if (halo != NULL)
+      cs_matrix_pre_vector_multiply_sync(rotation_mode, a, vx);
+
+    /* Compute Vx <- Vx - (A-diag).Rk */
+
+    if (diag_block_size == 1) {
+
+#     pragma omp parallel for  if(n_rows > CS_THR_MIN && !_thread_debug)
+      for (cs_lnum_t ii = n_rows - 1; ii > - 1; ii--) {
+
+        const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+        const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+        const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+        cs_real_t vx0 = rhs[ii];
+
+        for (cs_lnum_t jj = n_cols-1; jj > -1; jj--)
+          vx0 -= (m_row[jj]*vx[col_id[jj]]);
+
+        vx0 *= ad_inv[ii];
+
+        vx[ii] = vx0;
+      }
+
+    }
+    else {
+
+#     pragma omp parallel for  if(n_rows > CS_THR_MIN && !_thread_debug)
+      for (cs_lnum_t ii = n_rows - 1; ii > - 1; ii--) {
+
+        const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+        const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+        const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+        cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
+
+        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
+          vx0[kk] = rhs[ii*db_size[1] + kk];
+        }
+
+        for (cs_lnum_t jj = n_cols-1; jj > -1; jj--) {
+          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
+            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+        }
+
+        _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
+                         db_size[0],
+                         _vx,
+                         vx0);
+
+        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
+          vx[ii*db_size[1] + kk] = _vx[kk];
+        }
+
+      }
+
+    }
+
+    if (n_iter >= convergence->n_iterations_max) {
+      convergence->n_iterations = n_iter;
+      cvg = CS_SLES_MAX_ITERATION;
+    }
   }
 
   return cvg;
@@ -4189,6 +4322,7 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   case CS_SLES_JACOBI:
   case CS_SLES_P_GAUSS_SEIDEL:
   case CS_SLES_P_SYM_GAUSS_SEIDEL:
+  case CS_SLES_P_B_GAUSS_SEIDEL:
     c->_pc = NULL;
     break;
   default:
@@ -4460,8 +4594,8 @@ cs_sles_it_setup(void               *context,
   }
 
   if (   c->type == CS_SLES_JACOBI
-      || c->type == CS_SLES_P_GAUSS_SEIDEL
-      || c->type == CS_SLES_P_SYM_GAUSS_SEIDEL) {
+      || (   c->type >= CS_SLES_P_GAUSS_SEIDEL
+          && c->type <= CS_SLES_P_B_GAUSS_SEIDEL)) {
     /* Force to Jacobi in case matrix type is not adapted */
     if (cs_matrix_get_type(a) != CS_MATRIX_MSR)
       c->type = CS_SLES_JACOBI;
@@ -4729,6 +4863,15 @@ cs_sles_it_solve(void                *context,
                                     &convergence,
                                     rhs,
                                     vx);
+      break;
+    case CS_SLES_P_B_GAUSS_SEIDEL:
+      cvg = _p_b_gauss_seidel_msr(c,
+                                  a,
+                                  _diag_block_size,
+                                  rotation_mode,
+                                  &convergence,
+                                  rhs,
+                                  vx);
       break;
     default:
       bft_error
