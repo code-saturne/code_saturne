@@ -467,7 +467,7 @@ if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
                              gradro)
 
   ! gradro stores: - rho grad(theta)/theta
-  ! grad(ro) and grad(teta) have opposite sign
+  ! grad(rho) and grad(theta) have opposite signs
   do iel = 1, ncel
     rhothe = cromo(iel)/cvara_scalt(iel)
     gradro(1, iel) = -rhothe*gradro(1, iel)
@@ -475,20 +475,63 @@ if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
     gradro(3, iel) = -rhothe*gradro(3, iel)
   enddo
 
+  !FIXME test
+  ! Boundary conditions: Dirichlet romb
+  ! We use viscb to store the relative coefficient of rom
+  ! We impose in Dirichlet (coefa) the value romb
+
+  allocate(coefa(nfabor), coefb(nfabor))
+  do ifac = 1, nfabor
+    coefa(ifac) = 0.d0
+    coefb(ifac) = 1.d0
+  enddo
+
+  ! The choice below has the advantage to be simple
+  call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
+
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  iwarnp = vcopt%iwarni
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+  extrap = vcopt%extrag
+
+  f_id0 = -1
+  iccocg = 1
+
+  call field_get_val_s(icrom, cromo)
+
+  call gradient_s                                                 &
+ ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , epsrgp , climgp , extrap ,                            &
+   cvara_scalt, coefa  , coefb       ,                            &
+   gradro )
+
+  deallocate(coefa, coefb)
+  ! gradro stores: - rho grad(theta)/theta
+  ! grad(rho) and grad(theta) have opposite signs
+  do iel = 1, ncel
+    rhothe = cromo(iel)/cvara_scalt(iel)
+    gradro(1, iel) = -rhothe*gradro(1, iel)
+    gradro(2, iel) = -rhothe*gradro(2, iel)
+    gradro(3, iel) = -rhothe*gradro(3, iel)
+  enddo
+
+
 else if (igrari.eq.1) then
   ! Allocate a temporary array for the gradient calculation
   allocate(gradro(3,ncelet))
 
-! Boundary conditions: Dirichlet romb
-!   We use viscb to store the relative coefficient of rom
-!   We impose in Dirichlet (coefa) the value romb
+  ! Boundary conditions: Dirichlet romb
+  ! We use viscb to store the relative coefficient of rom
+  ! We impose in Dirichlet (coefa) the value romb
 
   do ifac = 1, nfabor
     viscb(ifac) = 0.d0
   enddo
 
-! The choice below has the advantage to be simple
-  call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
+  ! The choice below has the advantage to be simple
+  call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
 
   nswrgp = vcopt%nswrgr
   imligp = vcopt%imligr

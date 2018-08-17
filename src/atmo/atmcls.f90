@@ -34,15 +34,11 @@
 !> \param[in]     yplus     adim distance to he boundary faces
 !> \param[out]    uet       friction velocity
 !> \param[out]    gredu     reduced gravity for non horizontal wall
-!> \param[out]    q0        latent heat flux
-!> \param[out]    e0        sensible heat flux
-!> \param[out]    rib       Richardson number
-!> \param[out]    lmo       Monin-Obukhov length
 !> \param[out]    cfnnu     non neutral correction coefficients for profiles of wind
 !> \param[out]    cfnns     non neutral correction coefficients for profiles of scalar
 !> \param[out]    cfnnk     non neutral correction coefficients for profiles of k
 !> \param[out]    cfnne     non neutral correction coefficients for profiles of eps
-!> \param[out]    icodcl        code for boundary conditions at boundary faces
+!> \param[in]     icodcl        code for boundary conditions at boundary faces
 !>                              (nfabor,nvar)
 !>-                           = 1   -> dirichlet
 !>-                           = 3   -> densite de flux
@@ -51,7 +47,7 @@
 !>-                           = 6   -> rugosite et u.n=0 (vitesse)
 !>-                           = 9   -> entree/sortie libre (vitesse
 !>                                      entrante eventuelle     bloquee
-!> \param[out]    rcodcl         valeur des conditions aux limites
+!> \param[in]     rcodcl         valeur des conditions aux limites
 !>                                    (nfabor,nvar) aux faces de bord
 !>-                           rcodcl(1) = valeur du dirichlet
 !>-                           rcodcl(2) = valeur du coef. d'echange
@@ -62,11 +58,12 @@
 !>--                   pour la pression       dt*gradp
 !>--                   pour les scalaires     cp*(viscls+visct/turb_schmidt)*gradt
 ! ______________________________________________________________________________!
+
 subroutine atmcls &
  ( ifac   , iel    ,                                              &
    utau   , yplus  ,                                              &
    uet    ,                                                       &
-   gredu  , q0     , e0     , rib    , lmo    ,                   &
+   gredu  ,                                                       &
    cfnnu ,  cfnns  , cfnnk  , cfnne  ,                            &
    icodcl ,                                                       &
    rcodcl )
@@ -103,13 +100,14 @@ integer          ifac   , iel
 integer          icodcl(nfabor,nvar)
 
 double precision utau, yplus, uet
-double precision gredu, rib, lmo, q0, e0
+double precision gredu
 double precision cfnnu, cfnns, cfnnk,cfnne
 
 double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
+double precision rib, lmo, q0, e0
 double precision tpot1,tpot2,tpotv1,tpotv2
 double precision rscp1,rscp2
 double precision actu,actt,b,c,d
@@ -120,20 +118,17 @@ double precision, dimension(:), pointer :: cvar_totwt, cvar_t
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1. Initialisations
 !===============================================================================
 
 b = 5.d0
 c = 5.d0
 d = 5.d0
-rib = 0.d0
-lmo = 999.d0
-q0 = 0.d0
-e0 = 0.d0
 
 rugd = rcodcl(ifac,iu,3)
 distbf = yplus*rugd
 rugt = rcodcl(ifac,iv,3)
+! 1/U+
 actu = xkappa/log((distbf+rugd)/rugd)
 actt = xkappa/log((distbf+rugt)/rugt)
 
@@ -186,9 +181,12 @@ endif
 !     ...............................................................
 
 if (rib.ge.epzero) then
+  ! Stable case
   fm = 1.d0/(1.d0 + 2.d0*b*rib/sqrt(1.d0 + d*rib))
   fh = 1.d0/(1.d0 + 3.d0*b*rib*sqrt(1.d0 + d*rib))
+
 else
+  ! Unstable case
   fmden1 = (distbf + rugt)*abs(rib)/rugt
   fmden2 = 1.d0 + 3.d0*b*c*actu*actt*sqrt(fmden1)
   fm = 1.d0 - 2.d0*b*rib/fmden2
@@ -240,7 +238,7 @@ endif
 !  endif
 
 !----
-! fin
+! End
 !----
 
 return
