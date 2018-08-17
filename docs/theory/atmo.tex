@@ -124,10 +124,10 @@ quantity through adiabatic transformation (compression/expansion). Its
 expression is (see \cite{Holton:1979} and \cite{Stull:1988}):
 \begin{equation}
 \label{eq1}
-\theta =T\left( {\frac{p_{s}}{p}} \right)^{\left( {\frac{R^{\ast }}{C_{p}}} \right)}
+\theta =T\left( {\frac{p_{s}}{p}} \right)^{\left( {\frac{R^{\star }}{C_{p}}} \right)}
 \end{equation}
-where p$_{s}$ is a constant pressure conventionally taken as 1000 mb
-and $R^{\ast}$ is the gaz constant for dry air (=287 $Jkg^{-1}K^{-1}$).
+where $p_{s}$ is a constant pressure conventionally taken as 1000 mb
+and $R^{\star}$ is the gaz constant for dry air (=287 $Jkg^{-1}K^{-1}$).
 With this variable the thermal equation becomes:
 
 \begin{equation}
@@ -160,7 +160,7 @@ stratified with a potential temperature increasing with height.
 
 
 \subsubsection{Turbulence production by buoyancy}
-In standard \CS with the k-$\epsilon$ turbulence model, the production or destruction rate of the turbulent kinetic energy due to buoyancy is given by:
+In standard \CS with the $k-\varepsilon$ turbulence model, the production or destruction rate of the turbulent kinetic energy due to buoyancy is given by:
 \begin{equation}
 \label{eq:atmo:buoyancy_prod}
 G=-g_{i} \frac{\mu_{t} }{\sigma_{t} }\frac{1}{\rho }\frac{\partial \rho
@@ -566,10 +566,10 @@ approximations the heating rate due to ozone in the layer (l, l$+$1) is
 (LH74):
 \begin{equation}
 F_{abs}^{O_{3}}=\mu_{0}F\, [\, A_{O_{3}}\left( x_{l+1} \right)-A_{O_{3}}\left( x_{l}
-\right)-\bar{R}(\mu_{0})\left( A_{O_{3}}\left( x_{l+1}^{\ast }
-\right)-A_{O_{3}}\left( x_{l}^{\ast } \right) \right)]
+\right)-\bar{R}(\mu_{0})\left( A_{O_{3}}\left( x_{l+1}^{\star }
+\right)-A_{O_{3}}\left( x_{l}^{\star } \right) \right)]
 \end{equation}
-With $x=Mu_{O_{3}}\left( \infty ,z \right),\, \, \, \, x^{\ast }=Mu_{O_{3}}\left(
+With $x=Mu_{O_{3}}\left( \infty ,z \right),\, \, \, \, x^{\star }=Mu_{O_{3}}\left(
 \infty ,0 \right)+\bar{M}(u_{O_{3}}\left( \infty ,0 \right)-u_{O_{3}}\left( \infty
 ,z \right))$ \\
 where $\bar{M}=1.9$ and $\, \, \, M=35/{(1224\mu
@@ -579,11 +579,11 @@ $\bar{R}(\mu_{0})$ is the composite albedo including Rayleigh diffusion
 effect and ground reflection
 
 $\bar{R}\left( \mu_{0} \right)=\overline{R_{a}}\left( \mu_{0}
-\right)+(1-\overline{R_{a}}\left( \mu_{0} \right))(1-\overline{R_{a}^{\ast
-}}{)R}_{g}/(1-\overline{R_{a}^{\ast }}R_{g})$
+\right)+(1-\overline{R_{a}}\left( \mu_{0} \right))(1-\overline{R_{a}^{\star
+}}{)R}_{g}/(1-\overline{R_{a}^{\star }}R_{g})$
 
 with $\overline{R_{a}}\left( \mu_{0}
-\right)=0.213/(1+0.816\mu_{0})$ and $\overline{R_{a}^{\ast }}=0.144$.
+\right)=0.213/(1+0.816\mu_{0})$ and $\overline{R_{a}^{\star }}=0.144$.
 
 The ozone absorption is parameterized as LH74 for both Chappuis and
 ultraviolet bands:
@@ -597,12 +597,12 @@ The global downward flux in the O3 band is (LH74):
 
 ${F\downarrow}_{g}^{O_{3}}=\mu_{0}F(0.647-A_{O_{3}}\left( x
 \right)-\overline{R_{r}}\left( \mu_{0} \right))(1-
-\overline{\overline{R_{r}^{\ast }}}
+\overline{\overline{R_{r}^{\star }}}
 R_{g})$
 \newline
 with $\overline{R_{r}} \mu_{0}=0.28/(1+6.43\mu_{0})$
 \newline
-and $\overline{\overline{R_{r}^{\ast }}}=0.0685$
+and $\overline{\overline{R_{r}^{\star }}}=0.0685$
 \newline
 \newline
 The direct downward flux is (see \cite{Atwater:1978}):
@@ -617,11 +617,11 @@ A_{d}^{O_{3}}\left( z \right)=1-(1.041-0.16\ast \sqrt {M\left( 0.949\,
 For water vapor band (LH74):
 \begin{equation}
 F_{abs}^{H_{2}O}=\mu_{0}F\, [\, A_{H_{2}O}\left( y_{l+1} \right)-A_{H_{2}O}\left(
-y_{l} \right)-R_{g}\left( A_{H_{2}O}\left( y_{l+1}^{\ast }
-\right)-A_{H_{2}O}\left( y_{l}^{\ast } \right) \right)]
+y_{l} \right)-R_{g}\left( A_{H_{2}O}\left( y_{l+1}^{\star }
+\right)-A_{H_{2}O}\left( y_{l}^{\star } \right) \right)]
 \end{equation}
 \newline
-With $y=Mu_{H_{2}O}\left( \infty ,z \right),\, \, \, \, y^{\ast
+With $y=Mu_{H_{2}O}\left( \infty ,z \right),\, \, \, \, y^{\star
 }=Mu_{H_{2}O}\left( \infty ,0 \right)+\frac{5}{3}(u_{H_{2}O}\left( \infty ,0
 \right)-u_{H_{2}O}\left( \infty ,z \right))$
 
@@ -644,8 +644,8 @@ albedo including ground reflection. That leads to the following expression
 for solar heating:
 \begin{equation}
 F_{abs}^{c,a,O3}=\mu_{0}F\, [\, A_{O_{3}}\left( x_{l+1} \right)-A_{O_{3}}\left(
-x_{l} \right)-\bar{R}(\mu_{0})\left( A_{O_{3}}\left( x_{l+1}^{\ast }
-\right)-A_{O_{3}}\left( x_{l}^{\ast } \right) \right)]
+x_{l} \right)-\bar{R}(\mu_{0})\left( A_{O_{3}}\left( x_{l+1}^{\star }
+\right)-A_{O_{3}}\left( x_{l}^{\star } \right) \right)]
 \end{equation}
 
 $\bar{R}(\mu_{0})$ is the composite albedo including cloud droplet (c) or
@@ -653,10 +653,10 @@ aerosol (a) diffusion effect and ground reflection
 
 \begin{equation}
 \bar{R}\left( \mu_{0} \right)=\overline{R_{c,a}}\left( \mu_{0}
-\right)+(1-\overline{R_{c,a}}\left( \mu_{0} \right))(1-\overline{R_{c,a}^{\ast
-}}{)R}_{g}/(1-\overline{R_{c,a}^{\ast }}R_{g})
+\right)+(1-\overline{R_{c,a}}\left( \mu_{0} \right))(1-\overline{R_{c,a}^{\star
+}}{)R}_{g}/(1-\overline{R_{c,a}^{\star }}R_{g})
 \end{equation}
-With $\overline{R_{c,a}}\left( \mu_{0} \right)=\overline{R_{c,a}^{\ast }}=\sqrt 3
+With $\overline{R_{c,a}}\left( \mu_{0} \right)=\overline{R_{c,a}^{\star }}=\sqrt 3
 \left( 1-g_{c,a} \right)\tau_{c,a}/(2+\sqrt 3 \left( 1-g_{c,a} \right)\tau
 _{c,a})$
 Where $g_{c,a}$ is the asymmetry factor of the cloud or aerosols
@@ -681,7 +681,7 @@ The global downward and direct fluxes are:
 \begin{equation}
 {F\downarrow }_{g}^{c,a,O3}=\mu_{0}F(0.647-A_{O_{3}}\left( x
 \right)-\overline{R_{r}}\left( \mu_{0} \right))(1-\overline{R_{c,a}}\left( \mu_{0}
-\right)/(1-\overline{R_{c,a}^{\ast }}R_{g}),\quad
+\right)/(1-\overline{R_{c,a}^{\star }}R_{g}),\quad
 {F\downarrow }_{d}^{c,a,O3}=0.
 \end{equation}
 
@@ -736,9 +736,9 @@ The transmission and reflection functions for global radiation are:
 
 For clear layer:
 
-$R_{l}=R_{l}^{\ast }=0\, ,
+$R_{l}=R_{l}^{\star }=0\, ,
 \quad
-T_{l}=T_{l}^{\ast }=\mathrm{exp}(-\frac{5}{3}\tau_{l,n})$ except for a
+T_{l}=T_{l}^{\star }=\mathrm{exp}(-\frac{5}{3}\tau_{l,n})$ except for a
 clear layer above the highest cloud layer for which
 $T_{l}=\mathrm{exp}(-M\tau_{l,n})$
 
@@ -814,15 +814,15 @@ $p\left( k_{n} \right)$&
 \item The layers are added, going down, to obtain $R_{1,l}$ and $T_{1,l}$ as follow:
 
 \begin{equation}
-R_{1,l}=R_{1,l-1}+\frac{T_{1,l-1}R_{l}T_{1,l-1}^{\ast }}{1-R_{1,l-1}^{\ast
-}R_{l}}\, \, ,\, \, T_{1,l}=\frac{T_{1,l-1}T_{l}}{1-R_{1,l-1}^{\ast }R_{l}}
+R_{1,l}=R_{1,l-1}+\frac{T_{1,l-1}R_{l}T_{1,l-1}^{\star }}{1-R_{1,l-1}^{\star
+}R_{l}}\, \, ,\, \, T_{1,l}=\frac{T_{1,l-1}T_{l}}{1-R_{1,l-1}^{\star }R_{l}}
 \end{equation}
 With similar expressions for $R*$ and $T*$
 \item Layers are added one at a time, going up, to obtain $R_{L+1,l}$ and $T_{L+1,l}$
 \item As two composite layers, say 1,l and l$+$1, L$+$1 are added, the upward and downward fluxes boundary between the two layers are determined:
 \begin{equation}
-U_{l}=\frac{T_{1,l}{\, R}_{L+1,l}}{1-R_{1,l}^{\ast }R_{L+1,l+1}}\, \, ,\, \,
-D_{l}=\frac{T_{1,l}}{1-R_{1,l}^{\ast }R_{L+1,l+1}}
+U_{l}=\frac{T_{1,l}{\, R}_{L+1,l}}{1-R_{1,l}^{\star }R_{L+1,l+1}}\, \, ,\, \,
+D_{l}=\frac{T_{1,l}}{1-R_{1,l}^{\star }R_{L+1,l+1}}
 \end{equation}
 The fraction of the total incident flux absorbed in the upper composite
 layer is:
@@ -1146,16 +1146,16 @@ and $A_{3}$, $A$, $B_{i}$ can be found in
  \cite{Abdul-Razzak:2000}.
 
 \begin{equation}
-A_{3}=\left( \frac{\rho_{w}R_{v}T}{e_{s}D_{v}^{\ast }}-\frac{L_{v}\rho
-_{w}}{k_{a}^{\ast }T}\left( 1-\frac{L_{v}}{TR_{v}} \right) \right)^{-1},\,
+A_{3}=\left( \frac{\rho_{w}R_{v}T}{e_{s}D_{v}^{\star }}-\frac{L_{v}\rho
+_{w}}{k_{a}^{\star }T}\left( 1-\frac{L_{v}}{TR_{v}} \right) \right)^{-1},\,
 \, A=\frac{2\sigma_{vw}}{R_{v}T\rho_{w}},
 B_{i}=\frac{\nu \phi_{s}\epsilon_{m}M_{w}\rho_{ai}}{M_{ai}\rho_{w}}
 \end{equation}
-where $k_{a}^{\ast }=4.187\, {10}^{-3}\left( 5.69+0.017\, T\left( in\,
+where $k_{a}^{\star }=4.187\, {10}^{-3}\left( 5.69+0.017\, T\left( in\,
 ^{\circ}C \right) \right)$ Jm$^{-1}$s$^{-1}$K$^{-1}$ is the dry air
 conductivity and
 
-$D_{v}^{\ast }=0.211\, {10}^{-4}\left( \frac{T}{273.15} \right)^{1.94}\left(
+$D_{v}^{\star }=0.211\, {10}^{-4}\left( \frac{T}{273.15} \right)^{1.94}\left(
 \frac{1.01325\, {10}^{5}}{P} \right)$ m$^{2}$s$^{-1}$ the water vapour
 diffusivity.
 
@@ -1250,18 +1250,18 @@ arrangements) of aerodynamic ($R_{aero})$ and surface ($R_{surf})$ resistances
 within the first layer (between the ground surface and the first grid level):
 \newline
 $R_{aero}=\frac{1}{2}\frac{\ln \left( \frac{z_{1}}{z_{0}}
-\right)-\mathrm{\Psi }_{h}}{\kappa u_{\ast }}$ and
-$R_{surf}=\frac{1}{\varepsilon_{0}u_{\ast }\left( E_{imp}+E_{int} \right)}$
+\right)-\mathrm{\Psi }_{h}}{\kappa u_{\star }}$ and
+$R_{surf}=\frac{1}{\varepsilon_{0}u_{\star }\left( E_{imp}+E_{int} \right)}$
 \newline
 where $z_{1}$ is the height at which the deposition velocity is evaluated,
 $z_{0\, }$ is the roughness height, $\psi_{h}$ is the stability function,
-$\kappa $ is the von Karman constant, $u_{\ast }$ is the friction velocity,
+$\kappa $ is the von Karman constant, $u_{\star }$ is the friction velocity,
 $\varepsilon_{0}=$ 3 is an empirical constant for all types of land.
 $E_{imp}$, $E_{int}$ are collection efficiency from impaction and interception
 respectively (see \cite{Zhang:2001} ):
 \newline
 \newline
-$E_{imp}=\left( \frac{St}{St+1.5} \right)^{2}$ with $St=\frac{V_{g}u_{\ast
+$E_{imp}=\left( \frac{St}{St+1.5} \right)^{2}$ with $St=\frac{V_{g}u_{\star
 }}{0.01g}$ , $E_{int}=2\frac{r_{mv}}{0.01}$
 \newline
 \newline
@@ -1308,10 +1308,10 @@ In \CS different options can be used in order to
 determine surface boundary conditions.
 
 \subsection{Direct estimation of turbulent fluxes}
-The first one is to directly impose the fluxes for momentum, temperature and
-humidity (eventually any scalar). That consist to give data for
-${u_{\ast}} ^2 =\sqrt {\mbox{(}\overline {\mbox{u'w'}}^{2}+\overline {\mbox{v'w'}}^{2})} $ where
-$\mbox{u',}\,\,\mbox{v',}\,\,\mbox{w'}$ are the turbulent fluctuations of
+The first one is to directly impose the fluxes for momentum (surface shear stress), temperature and
+humidity (eventually any scalar). That consists in giving data for
+${u^{\star}} ^2 =\sqrt {\overline {u'w'}^{2}+\overline {v'w'}^{2}} $ where
+$u',\,\,v',\,\,w'$ are the turbulent fluctuations of
 the three components of the wind speed,
 \newline
 \newline
@@ -1319,8 +1319,8 @@ $Q_{0} =\overline{w'\theta'}$ the kinematic flux of sensible heat where
 $\theta '$ is the turbulent fluctuation of the potential temperature,
 \newline
 \newline
-$E_{0} =\overline {\mbox{w'q'}} $ being the kinematic
-evaporative flux and $\mbox{q'}$ the turbulent fluctuation of the specific
+$E_{0} =\overline {w'q'} $ being the kinematic
+evaporative flux and $q'$ the turbulent fluctuation of the specific
 humidity.
 
 These data could be obtained, for example, by experimental
@@ -1337,83 +1337,82 @@ Monin-Obukhov's similarity theory gives relations between the fluxes of
 sensible heat, latent heat and momentum by means of universal functions:
 \begin{equation}
 \label{eq:atmo:eq5}
-\frac{\partial \left| {\vec{u}} \right|}{\partial z}=\left(
-{\frac{{u}_{{\ast }} }{\mbox{kz}}} \right){\kern 1pt}{\kern
-1pt}{\kern 1pt}{\kern 1pt}{\kern 1pt}\phi_{m} \left(
-{\frac{z}{\mbox{L}}} \right),
+\frac{\partial \left| {\vect{u}} \right|}{\partial z} =
+\left( {\frac{{u}^{{\star }} }{\kappa z}} \right) \, \phi_{m} \left(
+{\dfrac{z}{L}} \right),
 \end{equation}
 
 \begin{equation}
 \label{eq:atmo:eq6}
-\frac{\partial {\theta }}{\partial z}=\left( {\frac{\theta{\ast}}{kz}} \right)\phi_{h} \left({\frac{z}{L}} \right)
+\frac{\partial {\theta }}{\partial z}=\left( {\frac{\theta_{\star}}{\kappa z}} \right)\phi_{h} \left({\frac{z}{L}} \right)
 \end{equation}
 
 \begin{equation}
 \label{eq:atmo:eq7}
 \frac{\partial q}{\partial z}=\left(
-{\frac{q_{\ast} }{\mbox{kz}}} \right){\kern 1pt}{\kern
-1pt}{\kern 1pt}{\kern 1pt}{\kern 1pt}\phi_{q} \left(
-{\frac{z}{\mbox{L}}} \right),
+{\frac{q_{\star} }{\kappa z}} \right) \,
+\phi_{q} \left(
+{\frac{z}{L}} \right),
 \end{equation}
 
 
-where $\left| {\vec{u}} \right|$ is the modulus of the horizontal mean wind speed,
+where $\left| {\vect{u}} \right|$ is the modulus of the horizontal mean wind speed,
 \newline
-$u\ast $ is the friction velocity with $u_{\ast}^{2} =\sqrt{(\overline{u'w'}^{2}+\overline{v'w'}^{2})}$
+$u_\star $ is the friction velocity with $u_{\star}^{2} =\sqrt{(\overline{u'w'}^{2}+\overline{v'w'}^{2})}$
 \newline
-$\mbox{u',}\,\,\mbox{v',}\,\,\mbox{w'}$ are the turbulent fluctuations of the three components of the wind speed,
+$u',\,\,v',\,\,w'$ are the turbulent fluctuations of the three components of the wind speed,
 \newline
 where $\theta$ is the mean potential temperature and q is the mean specific humidity:
 \begin{equation}
-\theta_{\ast}=\frac{-Q_{0}}{u_{\ast}}
+\theta_{\star}=\frac{-Q_{0}}{u_{\star}}
 \end{equation}
 
 \begin{equation}
-q_{\ast} =-E_{0} \mbox{/u}_{\ast}
+q_{\star} =-E_{0} \mbox{/u}_{\star}
 \end{equation}
 \newline
-Here, k denotes Von Karman's constant, $\phi_{m} {\kern
-1pt},\,\,{\kern 1pt}\phi_{h} \,\,\mbox{and}\,\,\phi_{q} $
+Here, $\kappa$ denotes Von Karman's constant, $\phi_{m} \, \phi_{h} \,\,\mbox{and}\,\,\phi_{q} $
 are the universal functions for wind, temperature and humidity, z is the
 altitude and L is the Obukhov length:
 \begin{equation}
 \label{eq:atmo:eq8}
-\mbox{L}=-u_{\ast}^{3} \mbox{/(k(g/T}_{0}
-){\kern 1pt}{\kern 1pt}\mbox{(}{\kern 1pt}Q_{0}
-+\mbox{0.61T}_{0} E_{0} \mbox{))},
+L = \dfrac{-u_{\star}^{3}}{
+  \kappa \dfrac{g}{T_{0}} \, Q_{0}
+  +0.61T_{0} E_{0}
+},
 \end{equation}
 where T$_{0}$ is the mean temperature in the surface layer (z$_{2}$-z$_{1}$
 layer).
 
 Usually, the function $\phi_{q} $ is chosen equal to $\phi
 _{h} $. Classically, see for example \cite{Garratt:1992} or \cite{Cheng:2005},
-integration of the relations (1), (2) and (3)%FIXME
+integration of the relations \eqref{eq:atmo:eq5}, \eqref{eq:atmo:eq6} and \eqref{eq:atmo:eq7}
 between two different levels $0<z_{1} <z_{2} $ gives:
 \begin{equation}
 \label{eq:atmo:eq9}
 \delta u=u(z_2)-u(z_1)=
-\left(\frac {u_{\ast}}{k} \right)\Psi_{m}\left({L,z_2,z_1} \right)
+\left(\frac {u_{\star}}{\kappa} \right)\Psi_{m}\left({L,z_2,z_1} \right)
 \end{equation}
 
 \begin{equation}
 \label{eq:atmo:eq10}
 \delta \theta=\theta (z_2) -\theta (z_1)=
-\left(\frac{\theta_{\ast}}{k} \right)\Psi_{h}\left({L,z_2,z_1} \right)
+\left(\frac{\theta_{\star}}{\kappa} \right)\Psi_{h}\left({L,z_2,z_1} \right)
 \end{equation}
 
 \begin{equation}
 \label{eq:atmo:eq11}
 \delta q=q(z_2)-q(z_1)
-\left( {\frac{q_{\ast}}{k}} \right)\Psi_{h} \left({L,z_2,z_1} \right)
+\left( {\frac{q_{\star}}{\kappa}} \right)\Psi_{h} \left({L,z_2,z_1} \right)
 \end{equation}
 
 The formulation of the universal functions are given in \tablename{} \ref{tab:atmo:tab4} (two
 options available) and the integrated form (expressions of the $\Psi$ functions:
 the dynamical profiles $\Psi_{m}$ and the thermal profiles $\Psi_{h}$) are given in the following paragraph:
-\newline
-The dynamical profiles $\Psi_{m}$
-\newline
-- unstable case
+
+\paragraph{The dynamical profiles $\Psi_{m}$}
+
+\subparagraph{Unstable case:}
 
 $\zeta_{2}< \zeta_{1}$ \textless 0:
 $\Psi_{m} =\log \frac{z_{2}}{z_{1}}-2\log \left({\frac{1+\Psi_{2} }{1+\Psi_{1} }}\right)-\log
@@ -1424,7 +1423,7 @@ where $\Psi_{2}= (1-b_{m} \zeta_{2})^{1/4}$ and $\Psi_{1} =(1-b_{m} \zeta_{1})^{
 \newline
 with $\zeta_{1}= $ z$_{1}$/L, $\zeta_{2}= $ z$_{2}$/L, b$_{m\, }= $ 15.
 
-- neutral or stable cases:
+\subparagraph{Neutral or stable cases:}
 
 0 \textless $\zeta_{1}$ \textless $\zeta_{2}$ \textless 0.5:
 $\Psi_{m} =log\frac{z_{2} }{z_{1} }+b_{m} \left( {\zeta_{2} -\zeta_{1} } \right)$,
@@ -1442,15 +1441,15 @@ $
 \newline
 with $\quad b_{m} = 4.7, c_{1m} = 7.85, c_{2m} = 4.15, d_{1m} = 0.7435$
 
-In the case of CB05, $\Psi_{m\, }$ may be expressed as:
+In the case of \cite{Cheng:2005}, $\Psi_{m\, }$ may be expressed as:
 
 0 \textless $\zeta_{1}$ \textless $\zeta_{2}$:$_{\, }\Psi_{m} =alog\frac{z_{2} }{z_{1}
 }-\mbox{a}\,\,log\left( {\zeta+\left( {1+\zeta^{b}} \right)^{\frac{1}{b}}} \right)_{\, }$ with a
 $=$ 6.1 and b $=$ 2.5
 
-The thermal profiles $\Psi_{h}$
-\newline
-- unstable case:
+\paragraph{The thermal profiles $\Psi_{h}$}
+
+\subparagraph{Unstable case:}
 
 $\zeta_{2 }< \zeta_{1}$ \textless 0: $\Psi_{h}
 =\mbox{a}_{h} \left( {log\left( {\frac{z_{2}
@@ -1462,14 +1461,14 @@ where $\Psi_{2} =1-b_{h} \zeta_{2} )^{1/2}$ and $\Psi_{1}
 =1-b_{h} \zeta_{1}
 )^{1/2}$, with a$_{h\, }=$ 0.74, b$_{h\, }=$ 9
 
-- stable cases:
+\subparagraph{Stable cases:}
 
 $\zeta_{2 }> \zeta_{1}$ \textgreater 0: $\Psi_{h}
 =alog\frac{z_{2} }{z_{1} }+b(\zeta_{2} -\zeta_{1} )$ ,
 
-with a$_{h\, }=$ 0.74, $b_{h\, }= $ 4.7 for B71
+with a$_{h\, }=$ 0.74, $b_{h\, }= $ 4.7 for \cite{Businger:1971}
 
-In the case of CB05, $\Psi_{h\, }$may be expressed as:
+In the case of \cite{Cheng:2005}, $\Psi_{h}$ may be expressed as:
 
 0 \textless $\zeta_{1}$ \textless $\zeta_{2}$:$_{\, \, }\Psi_{h} =alog\frac{z_{2} }{z_{1}
 }-c\,\,log\left( {\zeta+\left( {1+\zeta^{d}} \right)^{\frac{1}{d}}} \right)_{\, }$with c
@@ -1477,9 +1476,9 @@ $=$ 5.3 and d $=$ 1.1.
 
 \begin{table}[htbp]
 \begin{center}
-\caption[fonction]{Detailed expression for the universal function issued from
-Businger et al., 1971 (B71); Hicks, 1976 (HI76) and Cheng and Brusaert, 2005
-(CB05)}
+\caption[fonction]{Detailed expressions for the universal functions from
+  \cite{Businger:1971}; \cite{Hicks:1976}, and \cite{Cheng:2005}
+}
 \begin{tabular}{|p{74pt}|p{116pt}|p{262pt}|}
 \hline
 \textbf{Function}&
@@ -1490,14 +1489,15 @@ $0<\zeta <0.5,\quad
 1<\zeta <10,\quad
 \zeta >10$ \\
 \hline
-B71 \par stable: HI76&
+unstable:
+\cite{Businger:1971} \par stable: \cite{Hicks:1976}&
 $\phi_{m} =\left( {1-15\zeta } \right)^{-1/4}$ \par
 $\phi_{h} =0.74\left( {1-9\zeta } \right)^{-1/2}$&
 $\phi_{m} =1+4.7\zeta ,\quad
 \phi_{m} =7.85-\frac{4.25}{\zeta }+\frac{1}{\xi^{2}},\quad
 \phi_{m} =0.7435\,\zeta $ \par $\phi_{h} =0.74+4.7\zeta $ \\
 \hline
-B71 \par stable: CB05 \par &
+\cite{Businger:1971} \par stable: \cite{Cheng:2005} \par &
 
 $\phi_{m} =\left( {1-15\zeta }\right)^{-1/4}$
 
@@ -1507,8 +1507,6 @@ $\phi_{h} =0.74\left( {1-9\zeta } \right)^{-1/2}$&
 $\phi_{m} =
 1+a\frac{\zeta+\zeta^b{1+\zeta^b}^{\frac{1-b}{b}}} {\zeta+(1+\zeta^b)^{\frac{1}{b}} }$
 a$=$6.1, b$=$2.5 \par
-
-
 
 $\phi_{h}=
 1+c\left(\frac{{\zeta+\zeta^d}\left({1\zeta^d}\right)^{\frac{1-d}{d}}} {\zeta+\left(1+\zeta^d)\right)^{\frac{1}{d}} }\right)$
@@ -1527,28 +1525,28 @@ next section.
 
 \subsubsection{The exact iterative method}
 
-From the definition of L, and with the help of Equations \eqref{eq:atmo:eq9}, \eqref{eq:atmo:eq10} and
-\eqref{eq:atmo:eq11} giving $u_\ast $, Q$_{0}$ and E$_{0}$, the following
+From the definition of $L$, and with the help of Equations \eqref{eq:atmo:eq9}, \eqref{eq:atmo:eq10} and
+\eqref{eq:atmo:eq11} giving $u_\star $, Q$_{0}$ and E$_{0}$, the following
 expression is obtained:
 \begin{equation}
 \label{eq:atmo:eq12}L=\frac{\delta u^{2} \Psi_{h}}{\frac{g}{T_{0}}\Psi_{m}^{2}(\delta {\theta}+0.61 T_{0} \delta {q})}
 \end{equation}
 
-Since $\Psi_{m}, \Psi_{h}$ depend on L, this
+Since $\Psi_{m}, \Psi_{h}$ depend on $L$, this
 relation has to be solved by an iterative method. We follow \cite{Beljaars:1991}
-using an initial value of L that depends on the sign of
+using an initial value of $L$ that depends on the sign of
 $\delta \theta +0.61 T_{0} \delta q$.
 
 This iterative procedure converges rapidly in all unstable situations. In
-stable situations for small values of $u_{\ast}$ and L, the
-solution for L tends to zero. For this reason, a minimum value is imposed
-for L. On the other hand, we have verified that the solution obtained is not
-dependent on the initial value of L.
+stable situations for small values of $u_{\star}$ and $L$, the
+solution for $L$ tends to zero. For this reason, a minimum value is imposed
+for $L$. On the other hand, we have verified that the solution obtained is not
+dependent on the initial value of $L$.
 
-Having determined L and $u_{\ast}$, the kinematic
+Having determined $L$ and $u_{\star}$, the kinematic
 fluxes of sensible heat Q$_{0}$ and latent heat E$_{0}$ are then simply
-given by \eqref{eq:atmo:eq10} and \eqref{eq:atmo:eq11}, as well as $q_{\ast} $and
-$\theta_{\ast} $.
+given by \eqref{eq:atmo:eq10} and \eqref{eq:atmo:eq11}, as well as $q_{\star} $and
+$\theta_{\star} $.
 
 The iterative method is well adapted to local determination of the fluxes
 because this method derives directly from the experimental determination of
@@ -1563,7 +1561,7 @@ resolution of an equation.
 
 This method is based on a formulation of the universal functions differing
 from those presented in \tablename{} \ref{tab:atmo:tab4} and leads to a complete analytical method
-(see \cite{Louis:1982} hereafter referred as L82).
+(see \cite{Louis:1982}).
 
 In this formulation the fluxes are estimated with the bulk Richardson
 number, defined by:
@@ -1575,42 +1573,42 @@ Ri=\frac{g(z_{2} -z_{1})
 {T_{0} {\delta u}^{2}}
 \end{equation}
 
-Using Equation \eqref{eq:atmo:eq12} a relation between Ri, the measurement levels z$_{1}$ and
-z$_{2}$, and L is established:
+Using Equation \eqref{eq:atmo:eq12} a relation between $Ri$, the measurement levels $z_{1}$ and
+$z_{2}$, and $L$ is established:
 \begin{equation}
 \label{eq14}
-\frac{\mbox{L}}{z_{2} -z_{1}
-}=\frac{\,\,\Psi_{h} }{\mbox{Ri\, }\,\Psi_{m}^{2}},
+\frac{L}{z_{2} -z_{1}
+}=\frac{\Psi_{h} }{Ri\,\Psi_{m}^{2}},
 \end{equation}
 
-Then $u_{\ast} $, Q$_{0}$, E$_{0}$ according to L82, are
+Then $u_{\star} $, Q$_{0}$, E$_{0}$ according to \cite{Louis:1982}, are
 given by:
 
 \begin{equation}
 \label{eq15}
-u_{\ast} =\delta u (C_{n} F_{d} (Ri,\frac{z_{2}}{z_{1}}))^{1/2},
+u_{\star} =\delta u \left( C_{n} F_{d} \left(Ri, \, \frac{z_{2}}{z_{1}} \right) \right)^{1/2},
 \end{equation}
 
 \begin{equation}
 \label{eq16}
-Q_{0} =-\delta \theta \delta u C_{n} F_{h} (Ri,\,\frac{z_{2} }{z_{1} }),
+Q_{0} =-\delta \theta \delta u C_{n} F_{h} \left( Ri,\,\frac{z_{2} }{z_{1} }\right),
 \end{equation}
 
 \begin{equation}
 \label{eq17}
-E_{0} =-\delta q \delta u C_{n} F_{h} (Ri, \frac {z_{2}}{z_{1}} ),
+E_{0} =-\delta q \delta u C_{n} F_{h} \left( Ri, \frac {z_{2}}{z_{1}} \right),
 \end{equation}
 
 where $C_{n} $ is defined as: $C_{n} =\left(
-{\frac{\mbox{k}}{\mbox{ln(z}_{2} \mbox{/z}_{1} )}}
+{\dfrac{\kappa}{\ln(z_{2} /z_{1} )}}
 \right)^{2}$.
 
-The universal functions F$_{d}$ and F$_{h}$ depend on the atmospheric
+The universal functions $F_{d}$ and $F_{h}$ depend on the atmospheric
 stability through the bulk Richardson number, and are tuned to give results
 close to those of the exact iterative method, at least in the unstable case.
 
-In the unstable case, the functions F$_{d}$ and F$_{h}$ must be
-asymptotically equivalent to Ri$^{1/2}$ in order to be consistent with the
+In the unstable case, the functions $F_{d}$ and $F_{h}$ must be
+asymptotically equivalent to $Ri^{1/2}$ in order to be consistent with the
 free convection regime. Moreover, continuity must be assured when crossing
 the neutral point and the slope of the wind profile in the neighbourhood of
 zero must be slightly larger than the slope of the humidity and temperature.
@@ -1618,20 +1616,19 @@ Taking all these considerations into account, one obtains,
 \begin{equation}
 \label{eq18}
 F_{d} =1-\frac{2bRi
-}{1+\mbox{3bc}_{\ast} \sqrt {\left| {\mbox{Ri}} \right|} },
+}{1+3b c_{\star} \sqrt {\left| {Ri} \right|} },
 \end{equation}
 
 \begin{equation}
 \label{eq19}
 F_{h}
-=1-\frac{\mbox{3bRi}}{1+\mbox{2bc}_{\ast} \sqrt
-{\left| {\mbox{Ri}} \right|} },
+=1-\frac{{3bRi}}{1+{2bc}_{\star} \sqrt
+{\left| {{Ri}} \right|} },
 \end{equation}
-with $c_{\ast} =C_{n} {\kern 1pt}{\kern
-1pt}{\kern 1pt}{\kern 1pt}c{\kern 1pt}{\kern 1pt}{\kern 1pt}\left(
-{1-z_{1} \mbox{/z}_{2} }
-\right)^{1/2}\left( {\mbox{(z}_{1} \mbox{/z}_{2}
-)^{\mbox{1/3}}-1} \right)^{\mbox{3/2}}$ and b $=$ c $=$ 5.
+with $c_{\star} =C_{n} \, \left(
+{1-z_{1} /z_{2} }
+\right)^{1/2}\left( {(z_{1} /z_{2}
+)^{1/3}-1} \right)^{3/2}$ and $b = c = 5$.
 
 For the stable case, the total extinction of the turbulence is prevented by
 a modification of the asymptotic behaviour of the universal functions in
@@ -1642,15 +1639,15 @@ effects for Richardson number greater than the theoretical critical value of
 \begin{equation}
 \label{eq20}
 F_{d} =\frac{1}{1+\frac{2bRi}{\sqrt
-{1+\mbox{dRi}} }},
+{1+d\, Ri} }},
 \end{equation}
 
 \begin{equation}
 \label{eq21}
-F_{h} =\frac{1}{1+\mbox{3bRi}\sqrt
-{1+\mbox{dRi}} },
+F_{h} =\frac{1}{1+ 3 b \, Ri\sqrt
+{1+ d \, Ri} },
 \end{equation}
-with b $=$ d $=$ 5.
+with $b = d = 5$.
 
 The functions do not depend on the ratio $z_{1}
 \mbox{/z}_{2} $.
