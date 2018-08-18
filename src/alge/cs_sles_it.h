@@ -57,14 +57,18 @@ BEGIN_C_DECLS
 typedef enum {
 
   CS_SLES_PCG,                 /* Preconditionned conjugate gradient */
-  CS_SLES_IPCG,                /* Inexact preconditionned conjugate gradient */
+  CS_SLES_FCG,                 /* Preconditionned flexible conjugate gradient */
+  CS_SLES_IPCG,                /* Preconditionned inexact conjugate gradient */
   CS_SLES_JACOBI,              /* Jacobi */
   CS_SLES_BICGSTAB,            /* Bi-conjugate gradient stabilized */
   CS_SLES_BICGSTAB2,           /* Bi-conjugate gradient stabilized - 2*/
   CS_SLES_GMRES,               /* Generalized minimal residual */
   CS_SLES_P_GAUSS_SEIDEL,      /* Process-local Gauss-Seidel */
   CS_SLES_P_SYM_GAUSS_SEIDEL,  /* Process-local symmetric Gauss-Seidel */
-  CS_SLES_P_B_GAUSS_SEIDEL,    /* Process-local backward Gauss-Seidel */
+  CS_SLES_LS_F_GAUSS_SEIDEL,   /* Process-local forward Gauss-Seidel
+                                  smoothing */
+  CS_SLES_LS_B_GAUSS_SEIDEL,   /* Process-local backward Gauss-Seidel
+                                  smoothing */
   CS_SLES_PCR3,                /* 3-layer conjugate residual */
   CS_SLES_N_IT_TYPES           /* Number of resolution algorithms */
 
@@ -367,17 +371,24 @@ cs_sles_it_set_shareable(cs_sles_it_t        *context,
 
 #if defined(HAVE_MPI)
 
-/*----------------------------------------------------------------------------
- * Set MPI communicator for dot products.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set MPI communicator for global reductions.
  *
- * parameters:
- *   context <-> pointer to iterative sparse linear system solver info
- *   comm    <-- MPI communicator
- *----------------------------------------------------------------------------*/
+ * The system is solved only on ranks with a non-NULL communicator or
+ * if the caller communicator has less than 2 ranks. convergence info
+ * is the broadcast across the caller communicator.
+ *
+ * \param[in, out]  context      pointer to iterative solver info and context
+ * \param[in]       comm         MPI communicator for solving
+ * \param[in]       caller_comm  MPI communicator of caller
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_sles_it_set_mpi_reduce_comm(cs_sles_it_t  *context,
-                               MPI_Comm       comm);
+                               MPI_Comm       comm,
+                               MPI_Comm       caller_comm);
 
 #endif /* defined(HAVE_MPI) */
 

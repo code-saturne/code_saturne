@@ -216,25 +216,14 @@ _sles_default_native(int                f_id,
 
     if ((matrix_type == CS_MATRIX_MSR) || (matrix_type == CS_MATRIX_N_TYPES)) {
       if (sles_it_type == CS_SLES_PCG && cs_glob_n_threads > 1)
-        sles_it_type = CS_SLES_IPCG;
+        sles_it_type = CS_SLES_FCG;
       cs_sles_it_t *c = cs_sles_it_define(f_id,
                                           name,
                                           sles_it_type,
                                           -1, /* poly_degree */
                                           n_max_iter);
       cs_sles_pc_t *pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
-      cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
       cs_sles_it_transfer_pc(c, &pc);
-      cs_multigrid_set_solver_options(mg,
-                                      CS_SLES_P_SYM_GAUSS_SEIDEL,
-                                      CS_SLES_P_SYM_GAUSS_SEIDEL,
-                                      CS_SLES_PCG,
-                                      1,    /* n max cycles */
-                                      1,    /* n max iter for descent */
-                                      1,    /* n max iter for ascent */
-                                      500,  /* n max iter for coarse solve */
-                                      0, 0, -1,  /* precond degree */
-                                      -1, -1, 1); /* precision multiplier */
       cs_sles_t *sc = cs_sles_find(f_id, name);
       cs_sles_set_error_handler(sc, cs_sles_default_error);
     }
@@ -745,8 +734,8 @@ cs_sles_solve_native(int                  f_id,
     if (strcmp(cs_sles_get_type(sc), "cs_sles_it_t") == 0) {
       cs_sles_it_t *c = cs_sles_get_context(sc);
       cs_sles_it_type_t s_type = cs_sles_it_get_type(c);
-      if (   s_type == CS_SLES_P_GAUSS_SEIDEL
-          || s_type == CS_SLES_P_SYM_GAUSS_SEIDEL)
+      if (   s_type >= CS_SLES_P_GAUSS_SEIDEL
+          && s_type <= CS_SLES_LS_B_GAUSS_SEIDEL)
         need_msr = true;
       else {
         pc = cs_sles_it_get_pc(c);
@@ -761,8 +750,8 @@ cs_sles_solve_native(int                  f_id,
 
     if (mg != NULL) {
       cs_sles_it_type_t fs_type = cs_multigrid_get_fine_solver_type(mg);
-      if (   fs_type == CS_SLES_P_GAUSS_SEIDEL
-          || fs_type == CS_SLES_P_SYM_GAUSS_SEIDEL)
+      if (   fs_type >= CS_SLES_P_GAUSS_SEIDEL
+          && fs_type <= CS_SLES_LS_B_GAUSS_SEIDEL)
         need_msr = true;
     }
 

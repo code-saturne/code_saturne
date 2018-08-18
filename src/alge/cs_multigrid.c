@@ -1117,7 +1117,9 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
     {
       MPI_Comm lv_comm = cs_grid_get_comm(mgd->grid_hierarchy[i]);
       for (int j = 0; j < n_ops; j++)
-        cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[i*2 + j], lv_comm);
+        cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[i*2 + j],
+                                       lv_comm,
+                                       cs_glob_mpi_comm);
     }
 #endif
 
@@ -1147,7 +1149,8 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
 
 #if defined(HAVE_MPI)
     cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[i*2],
-                                   cs_grid_get_comm(mgd->grid_hierarchy[i]));
+                                   cs_grid_get_comm(mgd->grid_hierarchy[i]),
+                                   cs_glob_mpi_comm);
 #endif
 
     cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m, verbosity - 2);
@@ -2512,21 +2515,31 @@ _multigrid_pc_create(cs_multigrid_type_t  mg_type)
 {
   cs_multigrid_t *mg = cs_multigrid_create(mg_type);
 
-  cs_multigrid_set_solver_options
-    (mg,
-     CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
-     CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
-     CS_SLES_P_SYM_GAUSS_SEIDEL, /* coarse smoothe */
-     1,                          /* n_max_cycles */
-     1,                          /* n_max_iter_descent, */
-     1,                          /* n_max_iter_ascent */
-     1,                          /* n_max_iter_coarse */
-     0,                          /* poly_degree_descent */
-     0,                          /* poly_degree_ascent */
-     0,                          /* poly_degree_coarse */
-     -1.0,                       /* precision_mult_descent */
-     -1.0,                       /* precision_mult_ascent */
-     -1.0);                      /* precision_mult_coarse */
+  if (mg_type == CS_MULTIGRID_V_CYCLE)
+    cs_multigrid_set_solver_options
+      (mg,
+       CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
+       CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
+       CS_SLES_PCG,                /* coarse smoothe */
+       1,                          /* n_max_cycles */
+       1,                          /* n_max_iter_descent, */
+       1,                          /* n_max_iter_ascent */
+       500,                        /* n_max_iter_coarse */
+       0, 0, -1,                   /* precond poly_degree */
+       -1, -1, 1);                 /* precision_multiplier */
+
+  else if (mg->type == CS_MULTIGRID_K_CYCLE)
+    cs_multigrid_set_solver_options
+      (mg,
+       CS_SLES_LS_F_GAUSS_SEIDEL,
+       CS_SLES_LS_B_GAUSS_SEIDEL,
+       CS_SLES_P_SYM_GAUSS_SEIDEL, // CS_SLES_PCG,
+       1,   /* n max cycles */
+       1,   /* n max iter for descent */
+       1,   /* n max iter for ascent */
+       1,   /* n max iter for coarse solve */
+       0, 0, -1,    /* precond degree */
+       -1, -1, -1); /* precision multiplier */
 
   return mg;
 }
@@ -2827,6 +2840,11 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
 
   if (mg->type == CS_MULTIGRID_K_CYCLE) {
     mg->coarsening_type = CS_GRID_COARSENING_SPD_MX;
+    mg->aggregation_limit = 4;
+    mg->n_levels_max = 10;
+    if (cs_glob_n_ranks > 1)
+      mg->n_levels_max = 5;
+    mg->n_g_rows_min = 256;
     mg->p0p1_relax = 0;
   }
 
@@ -2851,22 +2869,29 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
   mg->sles_it_plot = NULL;
   mg->plot_time_stamp = -1;
 
-  if (mg->type == CS_MULTIGRID_K_CYCLE)
+  if (mg_type == CS_MULTIGRID_V_CYCLE)
     cs_multigrid_set_solver_options
       (mg,
-       CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
-       CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
-       CS_SLES_P_SYM_GAUSS_SEIDEL, /* coarse smoothe */
-       1,                          /* n_max_cycles */
-       1,                          /* n_max_iter_descent, */
-       1,                          /* n_max_iter_ascent */
-       1,                          /* n_max_iter_coarse */
-       0,                          /* poly_degree_descent */
-       0,                          /* poly_degree_ascent */
-       0,                          /* poly_degree_coarse */
-       -1.0,                       /* precision_mult_descent */
-       -1.0,                       /* precision_mult_ascent */
-       -1.0);                      /* precision_mult_coarse */
+       CS_SLES_PCG, CS_SLES_PCG, CS_SLES_PCG,
+       100, /* n max cycles */
+       2,   /* n max iter for descent */
+       10,  /* n max iter for ascent */
+       500,
+       0, 0, 0,  /* precond degree */
+       1, 1, 1); /* precision multiplier */
+
+  else if (mg_type == CS_MULTIGRID_K_CYCLE)
+    cs_multigrid_set_solver_options
+      (mg,
+       CS_SLES_P_SYM_GAUSS_SEIDEL,
+       CS_SLES_P_SYM_GAUSS_SEIDEL,
+       CS_SLES_P_SYM_GAUSS_SEIDEL,
+       100, /* n max cycles */
+       1,   /* n max iter for descent */
+       1,   /* n max iter for ascent */
+       1,   /* n max iter for coarse solve */
+       0, 0, 0,    /* precond degree */
+       -1, -1, -1); /* precision multiplier */
 
   return mg;
 }

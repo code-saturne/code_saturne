@@ -574,6 +574,7 @@ class NumericalParamEquationModel(Model):
         """ Put choice of solver for variable labelled name """
         self.isInList(value, ('multigrid', 'multigrid_k_cycle',
                               'conjugate_gradient',
+                              'flexible_conjugate_gradient',
                               'inexact_conjugate_gradient', 'jacobi',
                               'bi_cgstab', 'bi_cgstab2', 'gmres', 'automatic',
                               'gauss_seidel', 'symmetric_gauss_seidel', 'PCR3'))

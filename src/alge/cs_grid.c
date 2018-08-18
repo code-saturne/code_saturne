@@ -2599,9 +2599,11 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
   }
 
   /* Check if the line seems penalized or not. */
-  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-    if (d_val[ii] > _penalization_threshold * sum[ii])
-      penalize[ii] = true;
+  if (f->level == 0) {
+    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+      if (d_val[ii] > _penalization_threshold * sum[ii])
+        penalize[ii] = true;
+    }
   }
   BFT_FREE(sum);
 
@@ -2722,6 +2724,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
   int _max_aggregation = 1, npass = 0;
 
   const cs_lnum_t f_n_rows = f->n_rows;
+  const cs_real_t p_test = (f->level == 0) ? 1. : -1;
 
   cs_lnum_t aggr_count = f_n_rows;
   cs_lnum_t *c_aggr_count;
@@ -2792,7 +2795,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
     }
 
     /* Check if the line seems penalized or not. */
-    if (d_val[ii] > _penalization_threshold * sum)
+    if (d_val[ii]*p_test > _penalization_threshold * sum)
       penalize[ii] = true;
 
   }
@@ -5110,8 +5113,6 @@ cs_grid_restrict_row_var(const cs_grid_t  *f,
                          const cs_real_t  *f_var,
                          cs_real_t        *c_var)
 {
-  int i;
-
   cs_lnum_t f_n_rows = f->n_rows;
   cs_lnum_t c_n_cols_ext = c->n_elts_r[1];
 
@@ -5130,21 +5131,38 @@ cs_grid_restrict_row_var(const cs_grid_t  *f,
 
   cs_lnum_t _c_n_cols_ext = c_n_cols_ext*db_size[0];
 
-# pragma omp parallel for private(i) if(_c_n_cols_ext > CS_THR_MIN)
+# pragma omp parallel for  if(_c_n_cols_ext > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < _c_n_cols_ext; ii++)
     c_var[ii] = 0.;
 
-  if (db_size[0] == 1) {
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-      i = coarse_row[ii];
-      if (i >= 0)
-        c_var[i] += f_var[ii];
+  if (f->level == 0) { /* possible penalization at first level */
+
+    if (db_size[0] == 1) {
+      for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+        cs_lnum_t i = coarse_row[ii];
+        if (i >= 0)
+          c_var[i] += f_var[ii];
+      }
+    }
+    else {
+      for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+        cs_lnum_t i = coarse_row[ii];
+        if (i >= 0) {
+          for (cs_lnum_t j = 0; j < db_size[0]; j++)
+            c_var[i*db_size[1]+j] += f_var[ii*db_size[1]+j];
+        }
+      }
     }
   }
+
   else {
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-      i = coarse_row[ii];
-      if (i >= 0) {
+    if (db_size[0] == 1) {
+      for (cs_lnum_t ii = 0; ii < f_n_rows; ii++)
+        c_var[coarse_row[ii]] += f_var[ii];
+    }
+    else {
+      for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+        cs_lnum_t i = coarse_row[ii];
         for (cs_lnum_t j = 0; j < db_size[0]; j++)
           c_var[i*db_size[1]+j] += f_var[ii*db_size[1]+j];
       }
@@ -5198,7 +5216,6 @@ cs_grid_prolong_row_num(const cs_grid_t  *c,
                         int              *c_num,
                         int              *f_num)
 {
-  cs_lnum_t ii;
   const cs_lnum_t *coarse_row;
   const int *_c_num = c_num;
 
@@ -5214,12 +5231,12 @@ cs_grid_prolong_row_num(const cs_grid_t  *c,
   _scatter_row_num(c, c_num);
 #endif
 
-  /* Set fine values */
+  /* Set fine values (possible penalization at first level) */
 
   coarse_row = c->coarse_row;
 
 # pragma omp parallel for if(f_n_rows > CS_THR_MIN)
-  for (ii = 0; ii < f_n_rows; ii++){
+  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
     cs_lnum_t i = coarse_row[ii];
     if (i >= 0)
       f_num[ii] = _c_num[i];
@@ -5288,34 +5305,56 @@ cs_grid_prolong_row_var(const cs_grid_t  *c,
 
 #endif /* defined(HAVE_MPI) */
 
-  /* Set fine values */
+  /* Set fine values (possible penalization at first level) */
 
   coarse_row = c->coarse_row;
 
-  if (db_size[0] == 1) {
-#   pragma omp parallel if(f_n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-      cs_lnum_t ic = coarse_row[ii];
-      if (ic >= 0) {
-        f_var[ii] = _c_var[ic];
+  if (f->level == 0) {
+
+    if (db_size[0] == 1) {
+#     pragma omp parallel if(f_n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+        cs_lnum_t ic = coarse_row[ii];
+        if (ic >= 0) {
+          f_var[ii] = _c_var[ic];
+        }
+        else
+          f_var[ii] = 0;
       }
-      else
-        f_var[ii] = 0;
     }
+    else {
+#     pragma omp parallel if(f_n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+        cs_lnum_t ic = coarse_row[ii];
+        if (ic >= 0) {
+          for (cs_lnum_t i = 0; i < db_size[0]; i++)
+            f_var[ii*db_size[1]+i] = _c_var[ic*db_size[1]+i];
+        }
+        else {
+          for (cs_lnum_t i = 0; i < db_size[0]; i++)
+            f_var[ii*db_size[1]+i] = 0;
+        }
+      }
+    }
+
   }
-  else {
-#   pragma omp parallel if(f_n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-      cs_lnum_t ic = coarse_row[ii];
-      if (ic >= 0) {
+
+  else { /* coarser levels, no need for penaliation tests */
+
+    if (db_size[0] == 1) {
+#     pragma omp parallel if(f_n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < f_n_rows; ii++)
+        f_var[ii] = _c_var[coarse_row[ii]];
+    }
+    else {
+#     pragma omp parallel if(f_n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+        cs_lnum_t ic = coarse_row[ii];
         for (cs_lnum_t i = 0; i < db_size[0]; i++)
           f_var[ii*db_size[1]+i] = _c_var[ic*db_size[1]+i];
       }
-      else {
-        for (cs_lnum_t i = 0; i < db_size[0]; i++)
-          f_var[ii*db_size[1]+i] = 0;
-      }
     }
+
   }
 }
 

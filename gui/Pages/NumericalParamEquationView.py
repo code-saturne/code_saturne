@@ -121,6 +121,7 @@ class SolverChoiceDelegate(QItemDelegate):
         mg = index.model().dataSolver[index.row()]['mg']
         editor.addItem("Automatic")
         editor.addItem("Conjugate gradient")
+        editor.addItem("Flexible conjugate gradient")
         editor.addItem("Inexact conjugate gradient")
         editor.addItem("Jacobi")
         editor.addItem("BiCGstab")
@@ -139,16 +140,17 @@ class SolverChoiceDelegate(QItemDelegate):
     def setEditorData(self, comboBox, index):
         dico = {"automatic": 0,
                 "conjugate_gradient": 1,
-                "inexact_conjugate_gradient": 2,
-                "jacobi": 3,
-                "bi_cgstab": 4,
-                "bi_cgstab2": 5,
-                "gmres": 6,
-                "gauss_seidel": 7,
-                "symmetric_gauss_seidel": 8,
-                "PCR3": 9,
-                "multigrid": 10,
-                "multigrid_k_cycle": 11}
+                "flexible_conjugate_gradient": 2,
+                "inexact_conjugate_gradient": 3,
+                "jacobi": 4,
+                "bi_cgstab": 5,
+                "bi_cgstab2": 6,
+                "gmres": 7,
+                "gauss_seidel": 8,
+                "symmetric_gauss_seidel": 9,
+                "PCR3": 10,
+                "multigrid": 11,
+                "multigrid_k_cycle": 12}
         row = index.row()
         string = index.model().dataSolver[row]['iresol']
         idx = dico[string]
@@ -511,7 +513,8 @@ class StandardItemModelSolver(QStandardItemModel):
         self.dicoV2M= {"Multigrid, V-cycle"     : 'multigrid',
                        "Multigrid, K-cycle"     : 'multigrid_k_cycle',
                        "Conjugate gradient"     : 'conjugate_gradient',
-                       "Inexact conjugate gradient"     : 'inexact_conjugate_gradient',
+                       "Flexible conjugate gradient" : 'flexible_conjugate_gradient',
+                       "Inexact conjugate gradient"  : 'inexact_conjugate_gradient',
                        "Jacobi"                 : 'jacobi',
                        "BiCGstab"               : 'bi_cgstab',
                        "BiCGstab2"              : 'bi_cgstab2',
@@ -525,7 +528,8 @@ class StandardItemModelSolver(QStandardItemModel):
         self.dicoM2V= {"multigrid"              : 'Multigrid, V-cycle',
                        "multigrid_k_cycle"      : 'Multigrid, K-cycle',
                        "conjugate_gradient"     : 'Conjugate gradient',
-                       "inexact_conjugate_gradient"     : 'Inexact conjugate gradient',
+                       "inexact_conjugate_gradient"  : 'Inexact conjugate gradient',
+                       "flexible_conjugate_gradient" : 'Flexible conjugate gradient',
                        "jacobi"                 : 'Jacobi',
                        "bi_cgstab"              : 'BiCGstab',
                        "bi_cgstab2"             : 'BiCGstab2',

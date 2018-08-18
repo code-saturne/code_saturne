@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-08-14 00:10+0200\n"
+"POT-Creation-Date: 2018-08-19 03:59+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3943,6 +3943,9 @@ msgstr "Gradient conjugué"
 msgid "Inexact Preconditioned Conjugate Gradient"
 msgstr "Gradient conjugué préconditioné inexact"
 
+msgid "Flexible Conjugate Gradient"
+msgstr "Gradient conjugué flexible"
+
 msgid "Jacobi"
 msgstr "Jacobi"
 
@@ -3955,11 +3958,17 @@ msgstr "BiCGstab2"
 msgid "GMRES"
 msgstr ""
 
-msgid "Local Gauss-Seidel"
-msgstr "Gauss-Seidel local"
+msgid "Gauss-Seidel"
+msgstr "Gauss-Seidel"
 
-msgid "Local symmetric Gauss-Seidel"
-msgstr "Gauss-Seidel symmétrique local"
+msgid "Symmetric Gauss-Seidel"
+msgstr "Gauss-Seidel symmétrique"
+
+msgid "Local forward Gauss-Seidel"
+msgstr "Gauss-Seidel local avant"
+
+msgid "Local backwards Gauss-Seidel"
+msgstr "Gauss-Seidel local arrière"
 
 msgid "3-layer conjugate residual"
 msgstr "Résidu conjugué à 3 couches"
@@ -4096,22 +4105,22 @@ msgstr ""
 " Préparation du solveur pour le système linéaire \"%s\"\n"
 
 #, c-format
+msgid "GMRES not supported with block_size > 1 (%s)."
+msgstr ""
+
+#, c-format
+msgid ""
+"Setup of linear equation on \"%s\"\n"
+"with solver type %d, which is not defined)."
+msgstr ""
+
+#, c-format
 msgid ""
 " RHS norm:          %11.4e\n"
 "\n"
 msgstr ""
 " Norme du second-membre : %11.4e\n"
 "\n"
-
-#, c-format
-msgid "GMRES not supported with block_size > 1 (%s)."
-msgstr ""
-
-#, c-format
-msgid ""
-"Resolution of linear equation on \"%s\"\n"
-"with solver type %d, which is not defined)."
-msgstr ""
 
 #, c-format
 msgid ""
