@@ -4,7 +4,7 @@ PREFIX=`dirname $0`
 PREFIX=`cd "$PREFIX/.." ; pwd`
 SUBDIR=`basename $PREFIX`
 
-ARCHNAME=${SUBDIR}.tar.gz
+ARCHNAME=${SUBDIR}.tar.xz
 
 RUNDIR=`pwd`
 
@@ -12,11 +12,10 @@ cd $PREFIX/.. || exit 1
 
 PREFIX_BASE=`basename $PREFIX`
 
-tar cvzf $ARCHNAME --exclude='*.svn'  \
-                   --exclude='*.git'  \
-                   --exclude='.*.swp' \
+tar cvJf $ARCHNAME --exclude='.*.swp' \
                    --exclude='build' \
                    --exclude='arch' \
+                   --exclude='neptune_cfd' \
                    --exclude=$ARCHNAME \
                    $PREFIX_BASE
 
