@@ -713,7 +713,7 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
           rcodcl[2 * n_b_faces * nvar + ivart * n_b_faces + ifbr]
             = _boundary->conduction_flux[izone];
           tintp[ifbr] = _boundary->internal_temp[izone];
-          if (!cs_gui_is_equal_real(_boundary->emissivity[izone], 0.))
+          if (cs_gui_is_equal_real(_boundary->emissivity[izone], 0.))
             isothp[ifbr] = cs_glob_rad_transfer_params->ifrefl;
           else
             epsp[ifbr] = _boundary->emissivity[izone];
