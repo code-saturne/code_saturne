@@ -94,7 +94,6 @@ cs_medcoupling_remapper_by_name_try(const char  *name);
  *   elt_dim         <-- element dimension
  *   select_criteria <-- selection criteria
  *   medfile_path    <-- path of associated MED file
- *   mesh_name       <-- mesh name
  *   n_fields        <-- number of fields
  *   field_names     <-- associated field names
  *   iteration       <-- associated iteration
@@ -109,7 +108,6 @@ cs_medcoupling_remapper_initialize(const char   *name,
                                    int           elt_dim,
                                    const char   *select_criteria,
                                    const char   *medfile_path,
-                                   const char   *mesh_name,
                                    int           n_fields,
                                    const char  **field_names,
                                    int           iteration,

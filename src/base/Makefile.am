@@ -405,7 +405,10 @@ cs_paramedmem_la_CPPFLAGS = \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 $(CPPFLAGS_PLE) \
-$(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
+$(MEDCOUPLING_CPPFLAGS) \
+$(MED_CPPFLAGS) \
+$(HDF5_CPPFLAGS) \
+$(MPI_CPPFLAGS)
 pkglib_LTLIBRARIES += cs_paramedmem.la
 cs_paramedmem_la_SOURCES = \
 cs_paramedmem_coupling.cxx \
@@ -425,7 +428,10 @@ libcs_paramedmem_la_CPPFLAGS = \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 $(CPPFLAGS_PLE) \
-$(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
+$(MEDCOUPLING_CPPFLAGS) \
+$(MED_CPPFLAGS) \
+$(HDF5_CPPFLAGS) \
+$(MPI_CPPFLAGS)
 libcs_paramedmem_la_SOURCES = \
 cs_paramedmem_coupling.cxx \
 cs_medcoupling_remapper.cxx \

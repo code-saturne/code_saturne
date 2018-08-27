@@ -49,9 +49,14 @@
 
 #include <MEDCoupling_version.h>
 
+#include <MEDFileMesh.hxx>
 #include <MEDCouplingUMesh.hxx>
+
+#include <MEDFileField1TS.hxx>
 #include <MEDCouplingField.hxx>
+#include <MEDCouplingFieldFloat.hxx>
 #include <MEDCouplingFieldDouble.hxx>
+
 #include <MEDCouplingRemapper.hxx>
 
 #include <MEDLoader.hxx>
@@ -88,8 +93,9 @@ struct _cs_medcoupling_remapper_t {
 
   char                     *name;
   char                     *medfile_path;
-  char                     *mesh_name;
   char                    **field_names;
+
+  char                     *interp_method;
 
   int                       n_fields;
 
@@ -111,6 +117,48 @@ static int                          _n_remappers = 0;
 static cs_medcoupling_remapper_t  **_remapper = NULL;
 
 /*----------------------------------------------------------------------------
+ * Read a MEDCoupling field (float or double) from a MEDFile and convert it to
+ * MEDCouplingFieldDouble * object
+ *
+ * parameters:
+ *   medfile_path   <-- path to med file
+ *   field_name     <-- field name
+ *   iteration      <-- associated iteration
+ *   order          <-- associated iteration order
+ *----------------------------------------------------------------------------*/
+
+static MEDCouplingFieldDouble *
+_cs_medcoupling_read_field_real(const char *medfile_path,
+                                const char *field_name,
+                                int         iteration,
+                                int         order)
+{
+
+  MCAuto<MEDFileAnyTypeField1TS> f(MEDFileAnyTypeField1TS::New(medfile_path,field_name,iteration,order));
+  MCAuto<MEDFileMesh> mesh(MEDFileMesh::New(medfile_path,f->getMeshName()));
+
+  /* Case 1: Field is a allready a double */
+  {
+    MCAuto<MEDFileField1TS> f1(MEDCoupling::DynamicCast<MEDFileAnyTypeField1TS,MEDFileField1TS>(f));
+    if(f1.isNotNull()) {
+      MEDCouplingFieldDouble *dble_field(f1->field(mesh));
+      return dble_field;
+    }
+  }
+
+  /* Case 2: Field is a float, and we convert it to double */
+  {
+    MCAuto<MEDFileFloatField1TS> f1(MEDCoupling::DynamicCast<MEDFileAnyTypeField1TS,MEDFileFloatField1TS>(f));
+    if(f1.isNotNull()) {
+      MEDCouplingFieldFloat *float_field(f1->field(mesh));
+      MEDCouplingFieldDouble *dble_field = float_field->convertToDblField();
+      return dble_field;
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------
  * Create a new cs_medcoupling_remapper_t * object.
  *
  * parameters:
@@ -118,7 +166,6 @@ static cs_medcoupling_remapper_t  **_remapper = NULL;
  *   elt_dim         <-- element dimension
  *   select_criteria <-- selection criteria
  *   medfile_path    <-- path of associated MED file
- *   mesh_name       <-- mesh name
  *   n_fields        <-- number of fields
  *   field_names     <-- associated field names
  *   iteration       <-- associated iteration
@@ -133,7 +180,6 @@ _cs_paramedmem_create_remapper(const char   *name,
                                int           elt_dim,
                                const char   *select_criteria,
                                const char   *medfile_path,
-                               const char   *mesh_name,
                                int           n_fields,
                                const char  **field_names,
                                int           iteration,
@@ -151,9 +197,6 @@ _cs_paramedmem_create_remapper(const char   *name,
 
   BFT_MALLOC(r->medfile_path, strlen(medfile_path)+1, char);
   strcpy(r->medfile_path, medfile_path);
-
-  BFT_MALLOC(r->mesh_name, strlen(mesh_name)+1, char);
-  strcpy(r->mesh_name, mesh_name);
 
   BFT_MALLOC(r->field_names, n_fields, char *);
   for (int i = 0; i < n_fields; i++) {
@@ -183,12 +226,19 @@ _cs_paramedmem_create_remapper(const char   *name,
 
   BFT_MALLOC(r->source_fields, n_fields, MEDCouplingFieldDouble *);
   for (int ii = 0; ii < n_fields; ii++) {
-    r->source_fields[ii] = ReadFieldCell(medfile_path,
-                                         mesh_name,
-                                         0,
-                                         field_names[ii],
-                                         iteration,
-                                         iteration_order);
+    r->source_fields[ii] = _cs_medcoupling_read_field_real(medfile_path,
+                                                           field_names[ii],
+                                                           iteration,
+                                                           iteration_order);
+
+  }
+
+  // Set the interpolation type (P0P0 or P1P0) based on source_fields type
+  BFT_MALLOC(r->interp_method, 5, char);
+  if (r->source_fields[0]->getTypeOfField() == MEDCoupling::ON_CELLS) {
+    r->interp_method = "P0P0";
+  } else if (r->source_fields[0]->getTypeOfField() == MEDCoupling::ON_NODES) {
+    r->interp_method = "P1P0";
   }
 
   // REduced file mesh: to improve the interpolation performance,
@@ -209,7 +259,6 @@ _cs_paramedmem_create_remapper(const char   *name,
  *   elt_dim         <-- element dimension
  *   select_criteria <-- selection criteria
  *   medfile_path    <-- path of associated MED file
- *   mesh_name       <-- mesh name
  *   n_fields        <-- number of fields
  *   field_names     <-- associated field names
  *   iteration       <-- associated iteration
@@ -221,7 +270,6 @@ _cs_paramedmem_add_remapper(const char   *name,
                             int           elt_dim,
                             const char   *select_criteria,
                             const char   *medfile_path,
-                            const char   *mesh_name,
                             int           n_fields,
                             const char  **field_names,
                             int           iteration,
@@ -240,7 +288,6 @@ _cs_paramedmem_add_remapper(const char   *name,
                                                            elt_dim,
                                                            select_criteria,
                                                            medfile_path,
-                                                           mesh_name,
                                                            n_fields,
                                                            field_names,
                                                            iteration,
@@ -397,7 +444,7 @@ _cs_medcoupling_remapper_setup_no_bbox(cs_medcoupling_remapper_t *r)
 
     r->remapper->prepare(source_field->getMesh(),
                          r->target_mesh->med_mesh,
-                         "P0P0");
+                         r->interp_method);
   }
 
 }
@@ -439,7 +486,7 @@ _cs_medcoupling_remapper_setup_with_bbox(cs_medcoupling_remapper_t  *r)
 
     r->remapper->prepare(source_field->getMesh(),
                          r->target_mesh->med_mesh,
-                         "P0P0");
+                         r->interp_method);
   }
 }
 /*----------------------------------------------------------------------------*/
@@ -499,7 +546,6 @@ cs_medcoupling_remapper_by_name_try(const char  *name)
  *   elt_dim         <-- element dimension
  *   select_criteria <-- selection criteria
  *   medfile_path    <-- path of associated MED file
- *   mesh_name       <-- mesh name
  *   n_fields        <-- number of fields
  *   field_names     <-- associated field names
  *   iteration       <-- associated iteration
@@ -514,7 +560,6 @@ cs_medcoupling_remapper_initialize(const char   *name,
                                    int           elt_dim,
                                    const char   *select_criteria,
                                    const char   *medfile_path,
-                                   const char   *mesh_name,
                                    int           n_fields,
                                    const char  **field_names,
                                    int           iteration,
@@ -524,7 +569,6 @@ cs_medcoupling_remapper_initialize(const char   *name,
                               elt_dim,
                               select_criteria,
                               medfile_path,
-                              mesh_name,
                               n_fields,
                               field_names,
                               iteration,
@@ -550,12 +594,10 @@ cs_medcoupling_remapper_set_iteration(cs_medcoupling_remapper_t  *r,
                                       int                         iteration_order)
 {
   for (int i = 0; i < r->n_fields; i++) {
-    r->source_fields[i] = ReadFieldCell(r->medfile_path,
-                                        r->mesh_name,
-                                        0,
-                                        r->field_names[i],
-                                        iteration,
-                                        iteration_order);
+    r->source_fields[i] = _cs_medcoupling_read_field_real(r->medfile_path,
+                                                          r->field_names[i],
+                                                          iteration,
+                                                          iteration_order);
   }
 }
 
@@ -652,7 +694,7 @@ cs_medcoupling_remapper_translate(cs_medcoupling_remapper_t  *r,
  *   r         <-- pointer to remapper object
  *   invariant <-- coordinates of invariant point
  *   axis      <-- rotation axis vector
- *   angle     <-- rotation angle
+ *   angle     <-- rotation angle in radians
  *----------------------------------------------------------------------------*/
 
 void

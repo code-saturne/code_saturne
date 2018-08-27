@@ -158,16 +158,14 @@ cs_user_boundary_conditions(int         nvar,
      * 2) dimension of the mesh elements
      * 3) selection criteria for the boundary condition zone
      * 4) path to the med file
-     * 5) Name of the support mesh inside the med file
-     * 6) number of fields to interpolate
-     * 7) names of the fields to interpolate
-     * 8 + 9) time iteration index and order
+     * 5) number of fields to interpolate
+     * 6) names of the fields to interpolate
+     * 7 + 8) time iteration index and order
      */
     int r_id = cs_medcoupling_remapper_initialize("scalar_bc",
                                                   elts_dim,
                                                   "inlet",
                                                   "/home/i76777/Etudes/PARAMEDMEM/BC_TEST/carte2D_Tfluid.med",
-                                                  "MAILLAGE",
                                                   nremapper_fields,
                                                   field_names,
                                                   it0,
@@ -181,6 +179,41 @@ cs_user_boundary_conditions(int         nvar,
     cs_medcoupling_remapper_setup(r);
 
   }
+
+  /* If the med data needs for a translation or rotation for the geometrical
+   * superposition with the target Code_Saturne mesh:
+   */
+  if (false) {
+    // Translation using a tranlsation vector. Here it is (1, 0, 0)
+    cs_real_t translation_vector[3];
+    translation_vector[0] = 1.0;
+    translation_vector[1] = 0.0;
+    translation_vector[2] = 0.0;
+    cs_medcoupling_remapper_translate(r, translation_vector);
+
+    // Rotation using an invariant point, the rotation axis and rotation angle
+    // Here, center is O=(0,0,0) and z-axis (0,0,1). Angle is in radians, here
+    // it is ~pi/4
+
+    cs_real_t rot_center[3];
+    rot_center[0] = 0.0;
+    rot_center[1] = 0.0;
+    rot_center[2] = 0.0;
+
+    cs_real_t rot_axis[3];
+    rot_axis[0] = 0.0;
+    rot_axis[1] = 0.0;
+    rot_axis[2] = 1.0;
+
+    cs_real_t rot_angle = 0.7853981;
+
+    cs_medcoupling_remapper_rotate(r, rot_center, rot_axis, rot_angle);
+
+    // Update of the interpolation matrix
+    cs_medcoupling_remapper_setup(r);
+  }
+
+
 
   /* We retrieve an array containing the interpolated values.
    * Inputs are:
