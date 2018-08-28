@@ -1104,18 +1104,18 @@ cs_mesh_adjacency_c2f(const cs_mesh_t  *m,
   cs_lnum_t  *cell_shift = NULL;
   cs_adjacency_t  *c2f = NULL;
 
-  cs_lnum_t i_shift = m->n_b_faces, b_shift = 0;
-  if (boundary_order) {
-    i_shift = 0;
-    b_shift = m->n_i_faces;
-  }
-
   const cs_lnum_t  n_cells = m->n_cells;
   const cs_lnum_t  n_i_faces = m->n_i_faces;
   const cs_lnum_t  n_b_faces = m->n_b_faces;
 
-  c2f = cs_adjacency_create(CS_ADJACENCY_SIGNED, // flag
-                            -1,                  // indexed, no stride
+  cs_lnum_t i_shift = n_b_faces, b_shift = 0;
+  if (boundary_order) {
+    i_shift = 0;
+    b_shift = n_i_faces;
+  }
+
+  c2f = cs_adjacency_create(CS_ADJACENCY_SIGNED, /* flag */
+                            -1,                  /* indexed, no stride */
                             n_cells);
 
   /* Update index count */
@@ -1127,9 +1127,9 @@ cs_mesh_adjacency_c2f(const cs_mesh_t  *m,
     cs_lnum_t  c1_id = m->i_face_cells[i][0];
     cs_lnum_t  c2_id = m->i_face_cells[i][1];
 
-    if (c1_id < n_cells) // c1 is not a ghost cell
+    if (c1_id < n_cells) /* c1 is not a ghost cell */
       c2f->idx[c1_id+1] += 1;
-    if (c2_id < n_cells) // c2 is not a ghost cell
+    if (c2_id < n_cells) /* c2 is not a ghost cell */
       c2f->idx[c2_id+1] += 1;
   }
 
