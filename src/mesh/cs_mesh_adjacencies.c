@@ -546,15 +546,6 @@ cs_adjacency_create_from_i_arrays(cs_lnum_t     n_elts,
                                   cs_lnum_t    *ids,
                                   short int    *sgn)
 {
-  /* Sanity checks */
-  assert(ids != NULL);
-  if (idx == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: index is not allocated.\n", __func__);
-  if (ids == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: array of element ids is not allocated.\n", __func__);
-
   cs_adjacency_t  *adj = NULL;
 
   BFT_MALLOC(adj, 1, cs_adjacency_t);
@@ -565,11 +556,10 @@ cs_adjacency_create_from_i_arrays(cs_lnum_t     n_elts,
 
   adj->idx = idx;
   adj->ids = ids;
+  adj->sgn = sgn;
 
-  if (sgn != NULL) {
+  if (sgn != NULL)
     adj->flag |= CS_ADJACENCY_SIGNED;
-    adj->sgn = sgn;
-  }
 
   return adj;
 }
