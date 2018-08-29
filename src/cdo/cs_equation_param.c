@@ -169,11 +169,15 @@ _petsc_setup_hook(void   *context,
   /* Set the solver */
   switch (info.solver) {
 
-  case CS_PARAM_ITSOL_CG:  /* Preconditioned Conjugate Gradient */
+  case CS_PARAM_ITSOL_CG:    /* Preconditioned Conjugate Gradient */
     KSPSetType(ksp, KSPCG);
     break;
 
-  case CS_PARAM_ITSOL_GMRES:  /* Preconditioned GMRES */
+  case CS_PARAM_ITSOL_FCG:   /* Flexible Conjuguate Gradient */
+    KSPSetType(ksp, KSPFCG);
+    break;
+
+  case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
     {
       const int  n_max_restart = 30;
 
@@ -182,12 +186,12 @@ _petsc_setup_hook(void   *context,
     }
     break;
 
-  case CS_PARAM_ITSOL_BICG: /* Preconditioned Bi-CG */
-    KSPSetType(ksp, KSPBICG);
+  case CS_PARAM_ITSOL_BICG: /* Improved Bi-CG stab */
+    KSPSetType(ksp, KSPIBCGS);
     break;
 
   case CS_PARAM_ITSOL_BICGSTAB2: /* Preconditioned BiCGstab2 */
-    KSPSetType(ksp, KSPBCGS);
+    KSPSetType(ksp, KSPBCGSL);
     break;
 
   default:
@@ -225,6 +229,9 @@ _petsc_setup_hook(void   *context,
 
   switch (info.precond) {
 
+  case CS_PARAM_PRECOND_NONE:
+    PCSetType(pc, PCNONE);
+    break;
   case CS_PARAM_PRECOND_DIAG:
     PCSetType(pc, PCJACOBI);  /* Jacobi (diagonal) preconditioning */
     break;
