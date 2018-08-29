@@ -860,16 +860,20 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
        */
       if (cell_flag & CS_FLAG_BOUNDARY) {
 
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+        if (cs_equation_param_has_diffusion(eqp)) {
 
-          /* Weakly enforced Dirichlet BCs for cells attached to the boundary
-             csys is updated inside (matrix and rhs) */
-          eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   /* in */
-                                 eqc->boundary_flux_op,      /* function */
-                                 fm, cb, csys);              /* in/out */
+          if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+              eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
 
-        }
+            /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+               csys is updated inside (matrix and rhs) */
+            eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   /* in */
+                                   eqc->boundary_flux_op,      /* function */
+                                   fm, cb, csys);              /* in/out */
+
+          }
+
+        } /* diffusion term */
 
       } /* Boundary cell */
 

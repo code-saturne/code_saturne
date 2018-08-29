@@ -985,11 +985,15 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs) */
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-          eqc->enforce_dirichlet(eqp->diffusion_hodge, cm, /* in */
-                                 eqc->boundary_flux_op,    /* function */
-                                 fm, cb, csys);            /* in/out */
+        if (cs_equation_param_has_diffusion(eqp)) {
+
+          if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+              eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+            eqc->enforce_dirichlet(eqp->diffusion_hodge, cm, /* in */
+                                   eqc->boundary_flux_op,    /* function */
+                                   fm, cb, csys);            /* in/out */
+
+        }
 
         /* Neumann boundary conditions (Consistent for linear solutions) */
         if (csys->has_nhmg_neumann) {
@@ -1025,16 +1029,20 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
        */
       if (cell_flag & CS_FLAG_BOUNDARY) {
 
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+        if (cs_equation_param_has_diffusion(eqp)) {
 
-          /* Weakly enforced Dirichlet BCs for cells attached to the boundary
-             csys is updated inside (matrix and rhs) */
-          eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,  /* in */
-                                 eqc->boundary_flux_op,     /* function */
-                                 fm, cb, csys);             /* in/out */
+          if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+              eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
 
-        } /* Enforcement of the Dirichlet BC */
+            /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+               csys is updated inside (matrix and rhs) */
+            eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,  /* in */
+                                   eqc->boundary_flux_op,     /* function */
+                                   fm, cb, csys);             /* in/out */
+
+          } /* Enforcement of the Dirichlet BC */
+
+        } /* Diffusion term */
 
       } /* Boundary cell */
 
@@ -1067,7 +1075,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); // optional
+  cs_matrix_assembler_values_done(mav); /* optional */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
   cs_dbg_darray_to_listing("FINAL RHS_VTX", quant->n_vertices, rhs, 8);

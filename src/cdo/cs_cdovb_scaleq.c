@@ -990,18 +990,22 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
         }
 
         /* Contribution for the advection term: csys is updated inside
-           (matrix and rhs) */
-        if (cs_equation_param_has_convection(eqp))
+           (matrix and rhs) and Dirichlet BCs are handled inside */
+        if (cs_equation_param_has_convection(eqp)) {
+
           eqc->add_advection_bc(cm, eqp, t_eval_pty, fm, cb, csys);
 
-        /* The enforcement of the Dirichlet has to be done after all
-           other contributions */
-        if (csys->has_dirichlet) {
-          /* csys is updated inside (matrix and rhs) */
-          eqc->enforce_dirichlet(eqp->diffusion_hodge,
-                                 cm,
-                                 eqc->boundary_flux_op,
-                                 fm, cb, csys);
+        }
+
+        if (cs_equation_param_has_diffusion(eqp)) {
+
+          /* The enforcement of the Dirichlet has to be done after all
+             other contributions */
+          if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
+            eqc->enforce_dirichlet(eqp->diffusion_hodge,
+                                   cm,
+                                   eqc->boundary_flux_op,
+                                   fm, cb, csys);
 
         }
 

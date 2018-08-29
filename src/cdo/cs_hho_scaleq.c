@@ -1188,12 +1188,16 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 
       if (cell_flag & CS_FLAG_BOUNDARY) {
 
-        /* Weakly enforced Dirichlet BCs for cells attached to the boundary
-           csys is updated inside (matrix and rhs)
-           eqp->diffusion_hodge is a dummy parameter (not used)
-        */
+        if (cs_equation_param_has_diffusion(eqp)) {
+
+          /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+             csys is updated inside (matrix and rhs)
+             eqp->diffusion_hodge is a dummy parameter (not used)
+          */
           eqc->enforce_dirichlet(eqp->diffusion_hodge, cm, NULL,
                                  NULL, cb, csys);
+
+        } /* diffusion term */
 
       }
 
