@@ -3,6 +3,10 @@ Master (not on release branches yet)
 
 User changes:
 
+- For new cases, the default postprocessing output writer uses the
+  'separate_meshes' option, which avoids requiring the 'extract blocs'
+  filter on ParaView.
+
 - Add mesh refinement engine.
   * Coarsening not available at this stage.
   * Load balancing currently handled through complete repartitioning.

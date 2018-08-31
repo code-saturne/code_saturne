@@ -5938,7 +5938,7 @@ cs_post_init_writers(void)
                           "results",                /* writer name */
                           _cs_post_dirname,
                           "EnSight Gold",           /* format name */
-                          "",                       /* format options */
+                          "separate_meshes",        /* format options */
                           FVM_WRITER_FIXED_MESH,
                           false,                    /* output_at_start */
                           true,                     /* output at end */

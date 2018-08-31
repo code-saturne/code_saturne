@@ -226,7 +226,7 @@ class OutputControlModel(Model):
             node = self.node_out.xmlInitNode('writer', id = "-1", label = 'results')
             node.xmlInitNode('frequency', period = 'none')
             node.xmlInitNode('output_at_end', status = 'on')
-            node.xmlInitNode('format', name = 'ensight', options = '')
+            node.xmlInitNode('format', name = 'ensight', options = 'separate_meshes')
             node.xmlInitNode('directory', name = 'postprocessing')
             node.xmlInitNode('time_dependency', choice = 'fixed_mesh')
 
