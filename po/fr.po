@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-08-19 03:59+0200\n"
+"POT-Creation-Date: 2018-08-31 23:59+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3940,11 +3940,11 @@ msgstr ""
 msgid "Conjugate Gradient"
 msgstr "Gradient conjugué"
 
-msgid "Inexact Preconditioned Conjugate Gradient"
-msgstr "Gradient conjugué préconditioné inexact"
-
 msgid "Flexible Conjugate Gradient"
 msgstr "Gradient conjugué flexible"
+
+msgid "Inexact Preconditioned Conjugate Gradient"
+msgstr "Gradient conjugué préconditioné inexact"
 
 msgid "Jacobi"
 msgstr "Jacobi"
@@ -9635,6 +9635,10 @@ msgid "%s: Invalid space scheme for the equation %s."
 msgstr ""
 
 #, c-format
+msgid " Incompatible reduction for equation %s.\n"
+msgstr " Réduction incompatible pour l'équation %s.\n"
+
+#, c-format
 msgid " %s: Invalid way to initialize equation %s.\n"
 msgstr ""
 
@@ -13982,6 +13986,15 @@ msgstr ""
 "visualisable.\n"
 " En cas de recollement de maillage, ceci peut être dû à des paramètres\n"
 " de recollement trop agressifs."
+
+msgid ""
+"Error triangulating polygonal face.\n"
+"This may be due to excessive warping."
+msgstr ""
+
+#, c-format
+msgid "Unhandled cell refinement type: %d"
+msgstr ""
 
 msgid ""
 "\n"
