@@ -3812,7 +3812,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
                i, mesh->vtx_coord[3*i], mesh->vtx_coord[3*i+1],
                mesh->vtx_coord[3*i+2]);
 
-  if (mesh->n_domains > 1) {
+  if (mesh->global_vtx_num != NULL) {
     bft_printf("\nGlobal vertex numbering:\n");
     for (i = 0; i < mesh->n_vertices; i++)
       bft_printf("   <%7d >  %10llu\n",
@@ -3844,7 +3844,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     bft_printf("\nInternal faces global numbering:\n");
     for (i = 0; i < mesh->n_i_faces; i++)
-      bft_printf("   < %7d >  %12llu",
+      bft_printf("   < %7d >  %12llu\n",
                  i, (unsigned long long)(mesh->global_i_face_num[i]));
     bft_printf("\n");
 
@@ -3874,7 +3874,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     bft_printf("\nBoundary faces global numbering:\n");
     for (i = 0; i < mesh->n_b_faces; i++)
-      bft_printf("   < %7d >  %12llu",
+      bft_printf("   < %7d >  %12llu\n",
                  i, (unsigned long long)(mesh->global_b_face_num[i]));
     bft_printf("\n");
 
@@ -3888,7 +3888,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     bft_printf("\nCell global numbering:\n");
     for (i = 0; i < mesh->n_cells; i++)
-      bft_printf("   < %7d >  %12llu", i,
+      bft_printf("   < %7d >  %12llu\n", i,
                  (unsigned long long)(mesh->global_cell_num[i]));
     bft_printf("\n");
 
