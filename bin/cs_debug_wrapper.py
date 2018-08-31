@@ -320,10 +320,12 @@ def process_cmd_line(argv, pkg):
             idx_s = idx
             break
 
-    if cmds['debugger']:
-        for idx in range(idx_s, idx_e):
-            print(cmds)
-            cmds['debugger'].insert(idx-idx_s + 1, argv[idx])
+    try:
+        if cmds['debugger']:
+            for idx in range(idx_s, idx_e):
+                cmds['debugger'].insert(idx-idx_s + 1, argv[idx])
+    except Exception:
+        pass
 
     return cmds
 
