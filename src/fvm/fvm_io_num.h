@@ -147,8 +147,6 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
  * Creation of an I/O numbering structure,
  * sharing a given global numbering array.
  *
- * The corresponding entities must be locally ordered.
- *
  * parameters:
  *   global_number <-- pointer to list of global (i.e. domain splitting
  *                     independent) entity numbers
