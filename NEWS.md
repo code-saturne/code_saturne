@@ -4,8 +4,6 @@ Master (not on release branches yet)
 User changes:
 
 - Add mesh refinement engine.
-  * Currently only hexahedra and "generic" polyhedral refinement
-    templates are available.
   * Coarsening not available at this stage.
   * Load balancing currently handled through complete repartitioning.
 
