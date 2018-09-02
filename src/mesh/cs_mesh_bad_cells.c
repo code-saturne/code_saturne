@@ -863,8 +863,8 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
   /* Check input data */
 
-  assert(mesh_quantities->i_face_normal != NULL);
-  assert(mesh_quantities->i_face_cog != NULL);
+  assert(mesh_quantities->i_face_normal != NULL || mesh->n_i_faces == 0);
+  assert(mesh_quantities->i_face_cog != NULL || mesh->n_i_faces == 0);
   assert(mesh_quantities->cell_cen != NULL);
   assert(mesh_quantities->cell_vol != NULL);
 

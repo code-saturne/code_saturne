@@ -1031,8 +1031,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
   /* Check input data */
 
-  assert(mesh_quantities->i_face_normal != NULL);
-  assert(mesh_quantities->i_face_cog != NULL);
+  assert(mesh_quantities->i_face_normal != NULL || mesh->n_i_faces == 0);
+  assert(mesh_quantities->i_face_cog != NULL || mesh->n_i_faces == 0);
   assert(mesh_quantities->cell_cen != NULL);
   assert(mesh_quantities->cell_vol != NULL);
 
@@ -1092,14 +1092,14 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Display histograms */
 
-    bft_printf(_("\n  Histogram of the interior faces warping:\n\n"));
-    _int_face_histogram(mesh, i_face_warping);
+    if (mesh->n_g_i_faces > 0) {
+      bft_printf(_("\n  Histogram of the interior faces warping:\n\n"));
+      _int_face_histogram(mesh, i_face_warping);
+    }
 
     if (mesh->n_g_b_faces > 0) {
-
       bft_printf(_("\n  Histogram of the boundary faces warping:\n\n"));
       _histogram(n_b_faces, b_face_warping);
-
     }
 
     /* Post processing */
@@ -1190,9 +1190,11 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Display histograms */
 
-    bft_printf(_("\n  Histogram of the interior faces "
-                 "weighting coefficient:\n\n"));
-    _int_face_histogram(mesh, weighting);
+    if (mesh->n_g_i_faces > 0) {
+      bft_printf(_("\n  Histogram of the interior faces "
+                   "weighting coefficient:\n\n"));
+      _int_face_histogram(mesh, weighting);
+    }
 
     bft_printf(_("\n  Histogram of the cells "
                  "off-centering coefficient:\n\n"));
@@ -1273,16 +1275,16 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Display histograms */
 
-    bft_printf(_("\n  Histogram of the interior faces "
-                 "non-orthogonality coefficient (in degrees):\n\n"));
-    _int_face_histogram(mesh, i_face_ortho);
+    if (mesh->n_g_i_faces > 0) {
+      bft_printf(_("\n  Histogram of the interior faces "
+                   "non-orthogonality coefficient (in degrees):\n\n"));
+      _int_face_histogram(mesh, i_face_ortho);
+    }
 
     if (mesh->n_g_b_faces > 0) {
-
       bft_printf(_("\n  Histogram of the boundary faces "
                    "non-orthogonality coefficient (in degrees):\n\n"));
       _histogram(n_b_faces, b_face_ortho);
-
     }
 
     /* Post processing */
