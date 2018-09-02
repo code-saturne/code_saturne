@@ -6164,12 +6164,16 @@ cs_post_init_meshes(int check_mask)
   if (check_mask & 1) {
     const char *fmt_name = fvm_writer_format_name(_cs_post_default_format_id);
     if (!strcmp(fmt_name, "EnSight Gold")) {
-      _vol_submeshes_by_group(cs_glob_mesh,
-                              fmt_name,
-                              _cs_post_default_format_options);
-      _boundary_submeshes_by_group(cs_glob_mesh,
-                                   fmt_name,
-                                   _cs_post_default_format_options);
+      for (int id = 0; id < _cs_post_n_meshes; id++) {
+        if ((_cs_post_meshes + id)->id == CS_POST_MESH_VOLUME)
+          _vol_submeshes_by_group(cs_glob_mesh,
+                                  fmt_name,
+                                  _cs_post_default_format_options);
+        if ((_cs_post_meshes + id)->id == CS_POST_MESH_BOUNDARY)
+          _boundary_submeshes_by_group(cs_glob_mesh,
+                                       fmt_name,
+                                       _cs_post_default_format_options);
+      }
     }
   }
 
