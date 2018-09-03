@@ -1673,7 +1673,7 @@ cs_time_moment_define_by_func(const char                *name,
 
     const cs_time_moment_restart_info_t  *ri = _restart_info;
 
-    int s_prev_id = (ri != NULL) ? ri->l_id[prev_id] : prev_id;
+    int s_prev_id = (ri != NULL && prev_id != -1) ? ri->l_id[prev_id] : prev_id;
 
     cs_time_moment_type_t s_type = m_type -1;
 
@@ -1685,7 +1685,12 @@ cs_time_moment_define_by_func(const char                *name,
                                    wa_id,
                                    s_prev_id);
 
+    /* Redefine the parent moment as pointer _moment might have
+     * been reallocated during the previous _find_or_add_moment call */
+    mt = _moment + moment_id;
     mt->l_id = l_id;
+
+    /* Now defining sub moment */
     mt = _moment + l_id;
 
     if (mt->f_id < 0) {
