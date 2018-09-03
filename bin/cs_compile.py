@@ -474,13 +474,14 @@ class cs_compile(object):
                            stdout=stdout, stderr=stderr) != 0:
                 retval = 1
 
-            import shutil
-            for f in obj_files:
-                if os.path.isabs(f):
-                    f_src = f
-                else:
-                    f_src = os.path.join(call_dir, f)
-                shutil.copy2(f_src, temp_dir)
+            if obj_files:
+                import shutil
+                for f in obj_files:
+                    if os.path.isabs(f):
+                        f_src = f
+                    else:
+                        f_src = os.path.join(call_dir, f)
+                    shutil.copy2(f_src, temp_dir)
 
             dir_files = os.listdir(os.getcwd())
             o_files = fnmatch.filter(dir_files, '*.o')
@@ -520,6 +521,7 @@ class cs_compile(object):
 
         if temp_dir:
             if not os.path.isabs(exec_name):
+                import shutil
                 shutil.copy2(exec_name, os.path.join(call_dir, exec_name))
             for f in os.listdir(temp_dir):
                 os.remove(os.path.join(temp_dir, f))
