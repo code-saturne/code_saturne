@@ -265,6 +265,15 @@ class cs_compile(object):
 
     #---------------------------------------------------------------------------
 
+    def get_ar_lib_dir(self):
+        """
+        Determine directory containing library in archive mode.
+        """
+
+        return self.pkg.get_dir('libdir')
+
+    #---------------------------------------------------------------------------
+
     def so_dirs_path(self, flags):
         """
         Assemble path for shared libraries in nonstandard directories.
@@ -466,7 +475,7 @@ class cs_compile(object):
             temp_dir = tempfile.mkdtemp(suffix=".cs_link")
             os.chdir(temp_dir)
 
-            lib0 = os.path.join(pkg.get_dir('libdir'),
+            lib0 = os.path.join(self.get_ar_lib_dir(),
                                 'lib' + p_libs[0][2:] + '.a')
             p_libs = p_libs[1:]
             cmd = ['ar', 'x', lib0]
@@ -474,13 +483,14 @@ class cs_compile(object):
                            stdout=stdout, stderr=stderr) != 0:
                 retval = 1
 
-            import shutil
-            for f in obj_files:
-                if os.path.isabs(f):
-                    f_src = f
-                else:
-                    f_src = os.path.join(call_dir, f)
-                shutil.copy2(f_src, temp_dir)
+            if obj_files:
+                import shutil
+                for f in obj_files:
+                    if os.path.isabs(f):
+                        f_src = f
+                    else:
+                        f_src = os.path.join(call_dir, f)
+                    shutil.copy2(f_src, temp_dir)
 
             dir_files = os.listdir(os.getcwd())
             o_files = fnmatch.filter(dir_files, '*.o')
@@ -520,6 +530,7 @@ class cs_compile(object):
 
         if temp_dir:
             if not os.path.isabs(exec_name):
+                import shutil
                 shutil.copy2(exec_name, os.path.join(call_dir, exec_name))
             for f in os.listdir(temp_dir):
                 os.remove(os.path.join(temp_dir, f))

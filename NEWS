@@ -5,6 +5,10 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- Fix build on Mac OS X.
+
+- Radiative model: fix GUI-defined prescribed flux BC for grey/black wall.
+
 - Fix minor memory leak in histogram output.
 
 - GUI: fix various crashes with th PyQt API 2(mostly on systems using PyQt5,
