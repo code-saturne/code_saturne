@@ -4220,7 +4220,6 @@ _ls_f_gauss_seidel_msr(cs_sles_it_t              *c,
                        void                      *aux_vectors)
 {
   CS_UNUSED(rotation_mode);
-  CS_UNUSED(convergence);
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
 
@@ -4301,6 +4300,8 @@ _ls_f_gauss_seidel_msr(cs_sles_it_t              *c,
 
   }
 
+  convergence->n_iterations = 1;
+
   return CS_SLES_MAX_ITERATION;
 }
 
@@ -4337,7 +4338,6 @@ _ls_b_gauss_seidel_msr(cs_sles_it_t              *c,
                        void                      *aux_vectors)
 {
   CS_UNUSED(rotation_mode);
-  CS_UNUSED(convergence);
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
 
@@ -4417,6 +4417,8 @@ _ls_b_gauss_seidel_msr(cs_sles_it_t              *c,
     }
 
   }
+
+  convergence->n_iterations = 1;
 
   return CS_SLES_MAX_ITERATION;
 }
