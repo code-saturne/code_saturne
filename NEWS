@@ -4,7 +4,7 @@ Release 4.0.9 (unreleased)
 Bug fixes:
 ----------
 
-- Radiative model: fix GUI-defined BC selectsion between reflecting wall and
+- Radiative model: fix GUI-defined BC selection between reflecting wall and
   prescribed flux BC for grey/black wall.
 
 - Fix face external force projection with tensorial diffusion
