@@ -119,6 +119,20 @@ class compile_build(cs_compile):
         cs_compile.__init__(self, package)
         self.srcdir = srcdir
 
+        top_builddir = os.getcwd()
+        while not os.path.isfile(os.path.join(top_builddir, "cs_config.h")):
+            ds = os.path.split(top_builddir)
+            if ds[1]:
+                top_builddir = ds[0]
+            else:
+                break
+
+        if not os.path.isdir(os.path.join(top_builddir, "src")):
+            raise Exception("top build directory not detected from: " \
+                            + os.getcwd())
+
+        self.top_builddir = top_builddir
+
     #---------------------------------------------------------------------------
 
     def get_compiler(self, compiler):
@@ -143,17 +157,7 @@ class compile_build(cs_compile):
 
         flags = []
 
-        top_builddir = os.getcwd()
-        while not os.path.isfile(os.path.join(top_builddir, "cs_config.h")):
-            ds = os.path.split(top_builddir)
-            if ds[1]:
-                top_builddir = ds[0]
-            else:
-                break
-
-        if not os.path.isdir(os.path.join(top_builddir, "src")):
-            raise Exception("top build directory not detected from: " \
-                            + os.getcwd())
+        top_builddir = self.top_builddir
 
         # Add CPPFLAGS and LDFLAGS information for the current package
         if flag == 'cppflags':
@@ -183,6 +187,15 @@ class compile_build(cs_compile):
                 flags.insert(0, '-L' + d)
 
         return flags
+
+    #---------------------------------------------------------------------------
+
+    def get_ar_lib_dir(self):
+        """
+        Determine directory containing library in archive mode.
+        """
+
+        return os.path.join(self.top_builddir, "src", "apps", ".libs")
 
 #===============================================================================
 # Class used to manage install
@@ -256,15 +269,12 @@ class compile_install(cs_compile):
     #---------------------------------------------------------------------------
 
     def get_flags(self, flag):
-
-        if flag == 'libs':
-            return cs_compile.get_flags(self, flag)
-
-        cmd_line = []
-
         """
         Determine compilation flags for a given flag type.
         """
+
+        if flag == 'libs':
+            return cs_compile.get_flags(self, flag)
 
         cmd_line = self.get_pkg_path_flags(flag)
 
@@ -289,6 +299,21 @@ class compile_install(cs_compile):
             cmd_line.insert(0, "-L" + libdir)
 
         return cmd_line
+
+    #---------------------------------------------------------------------------
+
+    def get_lib_dir(self):
+        """
+        Determine directory containing library.
+        """
+
+        cmd_line = self.get_pkg_path_flags(flag)
+
+        # Build the command line, and split possible multiple arguments in lists.
+        for lib in pkg.config.deplibs:
+            if (pkg.config.libs[lib].have == "yes" \
+                and (not pkg.config.libs[lib].dynamic_load)):
+                cmd_line += separate_args(pkg.config.libs[lib].flags[flag])
 
 #===============================================================================
 # Functions

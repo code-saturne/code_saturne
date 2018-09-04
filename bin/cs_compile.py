@@ -265,6 +265,15 @@ class cs_compile(object):
 
     #---------------------------------------------------------------------------
 
+    def get_ar_lib_dir(self):
+        """
+        Determine directory containing library in archive mode.
+        """
+
+        return self.pkg.get_dir('libdir')
+
+    #---------------------------------------------------------------------------
+
     def so_dirs_path(self, flags):
         """
         Assemble path for shared libraries in nonstandard directories.
@@ -466,7 +475,7 @@ class cs_compile(object):
             temp_dir = tempfile.mkdtemp(suffix=".cs_link")
             os.chdir(temp_dir)
 
-            lib0 = os.path.join(pkg.get_dir('libdir'),
+            lib0 = os.path.join(self.get_ar_lib_dir(),
                                 'lib' + p_libs[0][2:] + '.a')
             p_libs = p_libs[1:]
             cmd = ['ar', 'x', lib0]
