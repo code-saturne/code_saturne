@@ -7,7 +7,8 @@ Bug fixes
 
 - Fix build on Mac OS X.
 
-- Radiative model: fix GUI-defined prescribed flux BC for grey/black wall.
+- Radiative model: fix GUI-defined BC selection between reflecting wall and
+  prescribed flux BC for grey/black wall.
 
 - Fix minor memory leak in histogram output.
 
