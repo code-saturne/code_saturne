@@ -5,6 +5,8 @@ Release 5.0.9 (unreleased)
 Bug fixes
 ---------
 
+- Radiative model: fix GUI-defined prescribed flux BC for grey/black wall.
+
 - GUI: fix various crashes with th PyQt API 2(mostly on systems using PyQt5,
   as these default to the concerned API).
 
