@@ -4,6 +4,9 @@ Release 4.0.9 (unreleased)
 Bug fixes:
 ----------
 
+- Radiative model: fix GUI-defined BC selectsion between reflecting wall and
+  prescribed flux BC for grey/black wall.
+
 - Fix face external force projection with tensorial diffusion
   and porous models 1, 2.
   This was impacting cases with head losses, improved pressure interpolation,

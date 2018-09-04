@@ -699,7 +699,7 @@ void CS_PROCF (uiray2, UIRAY2)
           rcodcl[2 * (*nfabor) * (*nvar) + (*ivart - 1) * (*nfabor) + ifbr]
             = boundary->conduction_flux[izone];
           tintp[ifbr] = boundary->internal_temp[izone];
-          if (!cs_gui_is_equal_real(boundary->emissivity[izone], 0.))
+          if (cs_gui_is_equal_real(boundary->emissivity[izone], 0.))
             isothp[ifbr] = *ifrefl;
           else
             epsp[ifbr] = boundary->emissivity[izone];
