@@ -285,6 +285,31 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     cs_mesh_extrude_vectors_destroy(&e);
   }
   /*! [mesh_modify_boundary_layer] */
+
+  /* Refine a selected portion of a mesh */
+
+  /*! [mesh_modify_refine_1] */
+  {
+    const char criteria[] = "box[0, 0, 0, 0.5, 0.5, 0.5]";
+
+    cs_lnum_t   n_selected_cells = 0;
+    cs_lnum_t  *selected_cells = NULL;
+
+    BFT_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
+
+    cs_selector_get_cell_list(criteria,
+                              &n_selected_cells,
+                              selected_cells);
+
+    cs_mesh_refine_simple_selected(mesh,
+                                   true,              /* conforming or not */
+                                   n_selected_cells,
+                                   selected_cells);
+
+    BFT_FREE(selected_cells);
+  }
+  /*! [mesh_modify_refine_1] */
+
 }
 
 /*----------------------------------------------------------------------------*/

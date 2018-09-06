@@ -88,6 +88,19 @@
 
   \snippet cs_user_mesh-modify.c mesh_modify_groups_2
 
+  \subsection cs_user_mesh_h_cs_user_mesh_modifiy_refine_1 Mesh refinement
+
+  Cells may be refined automatically, using templates adapted to each cell
+  type (see \ref cs_mesh_refine.c").
+
+  This simply required selecting the cells to refine and whether the
+  refinement should be partially propagated to neighboring cells
+  (conforming) or not.
+
+  The following code shows an example of mesh refinement for a given region.
+
+  \snippet cs_user_mesh-modify.c mesh_modify_refine_1
+
   \subsection  cs_user_mesh_h_cs_user_mesh_input Mesh reading and modification
 
   The user function \ref cs_user_mesh_input allows a detailed selection of imported
