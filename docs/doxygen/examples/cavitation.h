@@ -85,7 +85,7 @@ for the gas phase.
 
   \snippet cs_user_parameters-cavitation.f90 reboud_activ
 
-If icvevm = 0, the Reboud correction is desactivated. Using an eddy-viscosity model (see \ref turbulence), this option is recommended, such that icvevm = 1 is the default setting. Of course, this option has no effect for second moment closure or large eddy simulations. Note that the the coefficent mcav of the reboud correction (see \ref cavitation.f90) can also be adjust in the \ref usipsu routine.
+If icvevm = 0, the Reboud correction is deactivated. Using an eddy-viscosity model (see \ref turbulence), this option is recommended, such that icvevm = 1 is the default setting. Of course, this option has no effect for second moment closure or large eddy simulations. Note that the the coefficent mcav of the reboud correction (see \ref cavitation.f90) can also be adjust in the \ref usipsu routine.
 
   \subsection cavit_numerics Numerical options
 
