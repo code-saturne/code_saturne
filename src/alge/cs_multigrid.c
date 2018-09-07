@@ -273,6 +273,15 @@ struct _cs_multigrid_t {
   cs_multigrid_level_info_t  *lv_info;      /* Info for each level */
   cs_multigrid_info_t         info;         /* Base multigrid info */
 
+  /* Communicator used for reduction operations
+     (if left at NULL, main communicator will be used) */
+
+# if defined(HAVE_MPI)
+  MPI_Comm comm;
+  MPI_Comm caller_comm;
+  int      caller_n_ranks;
+# endif
+
   /* Data available between "setup" and "solve" states */
 
   cs_multigrid_setup_data_t  *setup_data;   /* setup data */
@@ -554,9 +563,7 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
                   lv_info->n_g_cells[3] / n_lv_builds,
                   lv_info->n_g_cells[1], lv_info->n_g_cells[2]);
 
-#if defined(HAVE_MPI)
-
-    if (cs_glob_n_ranks == 1) {
+    if (mg->caller_n_ranks == 1) {
       cs_log_strpad(tmp_s[1], _("Number of entries:"), 34, 64);
       cs_log_printf(CS_LOG_PERFORMANCE,
                     "    %s %12llu %12llu %12llu\n",
@@ -565,8 +572,9 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
                     lv_info->n_elts[2][1], lv_info->n_elts[2][2]);
     }
 
-#endif
-    if (cs_glob_n_ranks > 1) {
+#if defined(HAVE_MPI)
+
+    if (mg->caller_n_ranks > 1) {
       cs_log_strpad(tmp_s[0], _("Number of active ranks:"), 34, 64);
       cs_log_printf(CS_LOG_PERFORMANCE,
                     "    %s %12llu %12llu %12llu\n",
@@ -606,6 +614,8 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
                     lv_info->unbalance[2][3] / n_lv_builds,
                     lv_info->unbalance[2][1], lv_info->unbalance[2][2]);
     }
+
+#endif
 
     if (lv_info->n_calls[1] > 0) {
       cs_log_strpad(tmp_s[0], _("Iterations for solving:"), 34, 64);
@@ -844,13 +854,13 @@ _multigrid_add_level(cs_multigrid_t  *mg,
 
 #if defined(HAVE_MPI)
 
-    if (cs_glob_n_ranks > 1) {
+    if (mg->caller_n_ranks > 1) {
       cs_gnum_t tot_sizes[3], max_sizes[3];
       cs_gnum_t loc_sizes[3] = {n_cells, n_cells_with_ghosts, n_entries};
       MPI_Allreduce(loc_sizes, tot_sizes, 3, CS_MPI_GNUM, MPI_SUM,
-                    cs_glob_mpi_comm);
+                    mg->caller_comm);
       MPI_Allreduce(loc_sizes, max_sizes, 3, CS_MPI_GNUM, MPI_MAX,
-                    cs_glob_mpi_comm);
+                    mg->caller_comm);
       for (ii = 0; ii < 3; ii++) {
         lv_info->unbalance[ii][0] = (  max_sizes[ii]
                                      / (tot_sizes[ii]*1.0/n_ranks)) - 1.0;
@@ -1119,7 +1129,7 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
       for (int j = 0; j < n_ops; j++)
         cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[i*2 + j],
                                        lv_comm,
-                                       cs_glob_mpi_comm);
+                                       mg->comm);
     }
 #endif
 
@@ -1150,7 +1160,7 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
 #if defined(HAVE_MPI)
     cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[i*2],
                                    cs_grid_get_comm(mgd->grid_hierarchy[i]),
-                                   cs_glob_mpi_comm);
+                                   mg->comm);
 #endif
 
     cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m, verbosity - 2);
@@ -1215,24 +1225,26 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
  * Compute dot product, summing result over all ranks.
  *
  * parameters:
- *   n <-- local number of elements
- *   x <-- vector in s = x.x
+ *   mg <-- pointer to solver context info
+ *   n  <-- local number of elements
+ *   x  <-- vector in s = x.x
  *
  * returns:
  *   result of s = x.x
  *----------------------------------------------------------------------------*/
 
 inline static double
-_dot_xx(cs_lnum_t         n,
-        const cs_real_t  *x)
+_dot_xx(const cs_multigrid_t  *mg,
+        cs_lnum_t              n,
+        const cs_real_t       *x)
 {
   double s = cs_dot_xx(n, x);
 
 #if defined(HAVE_MPI)
 
-  if (cs_glob_n_ranks > 1) {
+  if (mg->comm != MPI_COMM_NULL) {
     double _sum;
-    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
+    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM, mg->comm);
     s = _sum;
   }
 
@@ -1245,19 +1257,21 @@ _dot_xx(cs_lnum_t         n,
  * Compute 2 dot products x.x and y.y, summing result over all ranks.
  *
  * parameters:
- *   n      <-- number of associated values
- *   x      <-- vector in s1 = x.x
- *   y      <-- vector in s2 = y.y
- *   s1     --> result of s1 = x.x
- *   s2     --> result of s2 = y.y
+ *   mg <-- pointer to solver context info
+ *   n  <-- number of associated values
+ *   x  <-- vector in s1 = x.x
+ *   y  <-- vector in s2 = y.y
+ *   s1 --> result of s1 = x.x
+ *   s2 --> result of s2 = y.y
  *----------------------------------------------------------------------------*/
 
 inline static void
-_dot_xx_yy(cs_lnum_t         n,
-           const cs_real_t  *x,
-           const cs_real_t  *y,
-           double           *s1,
-           double           *s2)
+_dot_xx_yy(const cs_multigrid_t  *mg,
+           cs_lnum_t              n,
+           const cs_real_t       *x,
+           const cs_real_t       *y,
+           double                *s1,
+           double                *s2)
 {
   double s[2];
 
@@ -1266,10 +1280,9 @@ _dot_xx_yy(cs_lnum_t         n,
 
 #if defined(HAVE_MPI)
 
-  MPI_Comm comm = cs_glob_mpi_comm;
-  if (comm != MPI_COMM_NULL) {
+  if (mg->comm != MPI_COMM_NULL) {
     double _sum[2];
-    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, comm);
+    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, mg->comm);
     s[0] = _sum[0];
     s[1] = _sum[1];
   }
@@ -1284,21 +1297,23 @@ _dot_xx_yy(cs_lnum_t         n,
  * Compute 2 dot products x.x and x.y, summing result over all ranks.
  *
  * parameters:
- *   n      <-- number of associated values
- *   x      <-- vector in s1 = x.y
- *   y      <-- vector in s1 = x.y and s2 = y.z
- *   z      <-- vector in s2 = y.z
- *   s1     --> result of s1 = x.y
- *   s2     --> result of s2 = y.z
+ *   mg <-- pointer to solver context info
+ *   n  <-- number of associated values
+ *   x  <-- vector in s1 = x.y
+ *   y  <-- vector in s1 = x.y and s2 = y.z
+ *   z  <-- vector in s2 = y.z
+ *   s1 --> result of s1 = x.y
+ *   s2 --> result of s2 = y.z
  *----------------------------------------------------------------------------*/
 
 inline static void
-_dot_xy_yz(cs_lnum_t         n,
-           const cs_real_t  *x,
-           const cs_real_t  *y,
-           const cs_real_t  *z,
-           double           *s1,
-           double           *s2)
+_dot_xy_yz(const cs_multigrid_t  *mg,
+           cs_lnum_t              n,
+           const cs_real_t       *x,
+           const cs_real_t       *y,
+           const cs_real_t       *z,
+           double                *s1,
+           double                *s2)
 {
   double s[2];
 
@@ -1306,10 +1321,9 @@ _dot_xy_yz(cs_lnum_t         n,
 
 #if defined(HAVE_MPI)
 
-  MPI_Comm comm = cs_glob_mpi_comm;
-  if (comm != MPI_COMM_NULL) {
+  if (mg->comm != MPI_COMM_NULL) {
     double _sum[2];
-    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, comm);
+    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, mg->comm);
     s[0] = _sum[0];
     s[1] = _sum[1];
   }
@@ -1324,24 +1338,26 @@ _dot_xy_yz(cs_lnum_t         n,
  * Compute 3 dot products x.u, xv, and x.w, summing result over all ranks.
  *
  * parameters:
- *   n      <-- number of associated values
- *   x      <-- vector in s1 = x.u, s2 = x.v, s3 = x.w
- *   u      <-- vector in s1 = x.u
- *   v      <-- vector in s2 = x.v
- *   w      <-- vector in s2 = x.w
- *   s1     --> result of s1 = x.y
- *   s2     --> result of s2 = y.z
+ *   mg <-- pointer to solver context info
+ *   n  <-- number of associated values
+ *   x  <-- vector in s1 = x.u, s2 = x.v, s3 = x.w
+ *   u <-- vector in s1 = x.u
+ *   v <-- vector in s2 = x.v
+ *   w <-- vector in s2 = x.w
+ *   s1 --> result of s1 = x.y
+ *   s2 --> result of s2 = y.z
  *----------------------------------------------------------------------------*/
 
 inline static void
-_dot_xu_xv_xw(cs_lnum_t         n,
-              const cs_real_t  *x,
-              const cs_real_t  *u,
-              const cs_real_t  *v,
-              const cs_real_t  *w,
-              double           *s1,
-              double           *s2,
-              double           *s3)
+_dot_xu_xv_xw(const cs_multigrid_t  *mg,
+              cs_lnum_t              n,
+              const cs_real_t       *x,
+              const cs_real_t       *u,
+              const cs_real_t       *v,
+              const cs_real_t       *w,
+              double                *s1,
+              double                *s2,
+              double                *s3)
 {
   double s[3];
 
@@ -1351,10 +1367,9 @@ _dot_xu_xv_xw(cs_lnum_t         n,
 
 #if defined(HAVE_MPI)
 
-  MPI_Comm comm = cs_glob_mpi_comm;
-  if (comm != MPI_COMM_NULL) {
+  if (mg->comm != MPI_COMM_NULL) {
     double _sum[3];
-    MPI_Allreduce(s, _sum, 3, MPI_DOUBLE, MPI_SUM, comm);
+    MPI_Allreduce(s, _sum, 3, MPI_DOUBLE, MPI_SUM, mg->comm);
     s[0] = _sum[0];
     s[1] = _sum[1];
     s[2] = _sum[2];
@@ -1371,6 +1386,7 @@ _dot_xu_xv_xw(cs_lnum_t         n,
  * Test if convergence is attained.
  *
  * parameters:
+ *   mg              <-- associated multigrid structure
  *   var_name        <-- variable name
  *   n_f_cells       <-- number of cells on fine mesh
  *   n_max_cycles    <-- maximum number of cycles
@@ -1389,17 +1405,18 @@ _dot_xu_xv_xw(cs_lnum_t         n,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_convergence_test(const char         *var_name,
-                  cs_int_t            n_f_cells,
-                  int                 n_max_cycles,
-                  int                 cycle_id,
-                  int                 verbosity,
-                  int                 n_iters,
-                  double              precision,
-                  double              r_norm,
-                  double              initial_residue,
-                  double             *residue,
-                  const cs_real_t     rhs[])
+_convergence_test(const cs_multigrid_t  *mg,
+                  const char            *var_name,
+                  cs_int_t               n_f_cells,
+                  int                    n_max_cycles,
+                  int                    cycle_id,
+                  int                    verbosity,
+                  int                    n_iters,
+                  double                 precision,
+                  double                 r_norm,
+                  double                 initial_residue,
+                  double                *residue,
+                  const cs_real_t        rhs[])
 {
   const char cycle_h_fmt[]
     = N_("  ---------------------------------------------------\n"
@@ -1417,7 +1434,7 @@ _convergence_test(const char         *var_name,
 
   /* Compute residue */
 
-  *residue = sqrt(_dot_xx(n_f_cells, rhs));
+  *residue = sqrt(_dot_xx(mg, n_f_cells, rhs));
 
   if (cycle_id == 1)
     initial_residue = *residue;
@@ -1767,7 +1784,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
     if (level == 0) {
 
-      cvg = _convergence_test(lv_names[0],
+      cvg = _convergence_test(mg,
+                              lv_names[0],
                               n_rows*db_size[1],
                               mg->info.n_max_cycles,
                               cycle_id,
@@ -2172,7 +2190,8 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   if (level == 0 || c_cvg < CS_SLES_BREAKDOWN) {
 
     if (c_cvg >= CS_SLES_BREAKDOWN)
-      cvg = _convergence_test(lv_names[0],
+      cvg = _convergence_test(mg,
+                              lv_names[0],
                               f_n_rows*db_size[1],
                               mg->info.n_max_cycles,
                               cycle_id,
@@ -2302,7 +2321,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
     /* Coefficients for the Krylov iteration */
 
     cs_real_t rho1 = 0, alpha1 = 0;
-    _dot_xy_yz(_c_n_rows, v_lv1, vx_lv1, rhs_lv1, &rho1, &alpha1);
+    _dot_xy_yz(mg, _c_n_rows, v_lv1, vx_lv1, rhs_lv1, &rho1, &alpha1);
 
     cs_real_t ar1 = alpha1 / rho1;
 
@@ -2311,7 +2330,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
       rt_lv1[i] = rhs_lv1[i] - ar1 * v_lv1[i];
 
     cs_real_t  rt_lv1_norm = 0.0, r_lv1_norm = 0.0;
-    _dot_xx_yy(_c_n_rows, rt_lv1, rhs_lv1, &rt_lv1_norm, &r_lv1_norm);
+    _dot_xx_yy(mg, _c_n_rows, rt_lv1, rhs_lv1, &rt_lv1_norm, &r_lv1_norm);
 
     /* Free (unmap) arrays that were needed only for the descent phase */
     rhs_lv1 = NULL;
@@ -2362,7 +2381,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
       cs_real_t gamma = 0, beta = 0, alpha2 = 0;
 
-      _dot_xu_xv_xw(_c_n_rows,
+      _dot_xu_xv_xw(mg, _c_n_rows,
                     vx2_lv1, v_lv1, w_lv1, rt_lv1,
                     &gamma, &beta, &alpha2);
 
@@ -2471,7 +2490,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
     cs_real_t x_temp = 0, y_temp = 0;
 
-    _dot_xy_yz(_f_n_rows, rt_lv, z1_lv, z2_lv, &x_temp, &y_temp);
+    _dot_xy_yz(mg, _f_n_rows, rt_lv, z1_lv, z2_lv, &x_temp, &y_temp);
 
     cs_real_t tt = x_temp / y_temp;
 
@@ -2860,6 +2879,16 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
   for (ii = 0; ii < mg->n_levels_max; ii++)
     _multigrid_level_info_init(mg->lv_info + ii);
 
+#if defined(HAVE_MPI)
+  mg->comm = cs_glob_mpi_comm;
+  mg->caller_comm = cs_glob_mpi_comm;
+  mg->caller_n_ranks = cs_glob_n_ranks;
+  if (mg->caller_n_ranks < 2) {
+    mg->comm = MPI_COMM_NULL;
+    mg->caller_comm = cs_glob_mpi_comm;
+  }
+#endif
+
   mg->post_cell_num = NULL;
   mg->post_cell_rank = NULL;
   mg->post_name = NULL;
@@ -3200,8 +3229,7 @@ cs_multigrid_setup_conv_diff(void               *context,
 
   cs_timer_t t0, t1, t2;
 
-  int n_coarse_ranks = cs_glob_n_ranks;
-  int n_coarse_ranks_prev = 0;
+  int n_coarse_ranks = -2, n_coarse_ranks_prev = -2; /* for comparison only */
   cs_lnum_t n_rows = 0, n_cols_ext = 0, n_entries = 0;
   cs_gnum_t n_g_rows = 0, n_g_rows_prev = 0;
 
@@ -3308,19 +3336,19 @@ cs_multigrid_setup_conv_diff(void               *context,
 
 #if defined(HAVE_MPI)
 
-      if (cs_glob_n_ranks > 1) {
+      if (mg->caller_n_ranks > 1) {
 
         int lcount[2], gcount[2];
         int n_c_min, n_c_max, n_f_min, n_f_max;
 
         lcount[0] = n_rows; lcount[1] = n_entries;
         MPI_Allreduce(lcount, gcount, 2, MPI_INT, MPI_MAX,
-                      cs_glob_mpi_comm);
+                      mg->caller_comm);
         n_c_max = gcount[0]; n_f_max = gcount[1];
 
         lcount[0] = n_rows; lcount[1] = n_entries;
         MPI_Allreduce(lcount, gcount, 2, MPI_INT, MPI_MIN,
-                      cs_glob_mpi_comm);
+                      mg->caller_comm);
         n_c_min = gcount[0]; n_f_min = gcount[1];
 
         bft_printf
@@ -3332,7 +3360,7 @@ cs_multigrid_setup_conv_diff(void               *context,
 
 #endif
 
-      if (cs_glob_n_ranks == 1)
+      if (mg->caller_n_ranks == 1)
         bft_printf(_("     number of rows:      %10d\n"
                      "     number of entries:   %10d\n"),
                    (int)n_rows, (int)n_entries);
@@ -3400,7 +3428,7 @@ cs_multigrid_setup_conv_diff(void               *context,
 
   /* In parallel, get global (average) values from local values */
 
-  if (cs_glob_n_ranks > 1) {
+  if (mg->caller_n_ranks > 1) {
 
     int i, j;
     cs_gnum_t *_n_elts_l = NULL, *_n_elts_s = NULL, *_n_elts_m = NULL;
@@ -3416,9 +3444,9 @@ cs_multigrid_setup_conv_diff(void               *context,
     }
 
     MPI_Allreduce(_n_elts_l, _n_elts_s, 3*grid_lv, CS_MPI_GNUM, MPI_SUM,
-                  cs_glob_mpi_comm);
+                  mg->caller_comm);
     MPI_Allreduce(_n_elts_l, _n_elts_m, 3*grid_lv, CS_MPI_GNUM, MPI_MAX,
-                  cs_glob_mpi_comm);
+                  mg->caller_comm);
 
     for (i = 0; i < grid_lv; i++) {
       cs_multigrid_level_info_t *mg_inf = mg->lv_info + i;
