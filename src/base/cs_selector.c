@@ -399,9 +399,25 @@ cs_selector_get_cell_list(const char  *criteria,
 
     cs_mesh_init_group_classes(mesh);
 
+    cs_real_t  *i_face_cog = NULL, *i_face_normal = NULL;
+    cs_real_t  *b_face_cog = NULL, *b_face_normal = NULL;
     cs_real_t  *cell_cen = NULL;
+    BFT_MALLOC(cell_cen, mesh->n_cells_with_ghosts*3, cs_real_t);
 
-    cs_mesh_quantities_cell_cen(mesh, &cell_cen);
+    cs_mesh_quantities_i_faces(mesh, &i_face_cog, &i_face_normal);
+    cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
+
+    cs_mesh_quantities_cell_faces_cog(mesh,
+                                      i_face_normal,
+                                      i_face_cog,
+                                      b_face_normal,
+                                      b_face_cog,
+                                      cell_cen);
+
+    BFT_FREE(b_face_normal);
+    BFT_FREE(b_face_cog);
+    BFT_FREE(i_face_normal);
+    BFT_FREE(i_face_cog);
 
     fvm_selector_t *sel_cells = fvm_selector_create(mesh->dim,
                                                     mesh->n_cells,
