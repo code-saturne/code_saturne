@@ -47,6 +47,7 @@
 #include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_log.h"
+#include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_sles.h"
@@ -102,6 +103,10 @@ BEGIN_C_DECLS
 static void
 _log_global_model_options(void)
 {
+  /* Mesh quantity options */
+
+  cs_mesh_quantities_log_setup();
+
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"
                   "Physical model options\n"

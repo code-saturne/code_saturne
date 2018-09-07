@@ -50,7 +50,7 @@ BEGIN_C_DECLS
  */
 
 /*
- * Field property type
+ * Cell quantities correction types
  */
 
 /*! Correct bad cells warping for gradients */
@@ -71,8 +71,13 @@ BEGIN_C_DECLS
 /*! Clip geometrical quantities used in flux reconstuction */
 #define CS_FACE_RECONSTRUCTION_CLIP (1 << 5)
 
-/*! Limit cells volumle ratio */
+/*! Limit cells volume ratio */
 #define CS_CELL_VOLUME_RATIO_CORRECTION (1 << 6)
+
+/*! Refine face center computation for warped cells
+    (iteratively compute center using previous position instead
+    of using only the initial estimate based on the vertices center) */
+#define CS_FACE_CENTER_REFINE (1 << 7)
 
 /*! @} */
 
@@ -171,27 +176,6 @@ extern int cs_glob_porous_model;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Query or modification of the option for computing cell centers.
- *
- * This function returns 1 or 2 according to the selected algorithm.
- *
- * Fortran interface :
- *
- * SUBROUTINE ALGCEN (IOPT)
- * *****************
- *
- * INTEGER          IOPT        : <-> : Choice of the algorithm
- *                                      < 0 : query
- *                                        0 : computation based
- *                                            on faces (default choice)
- *                                        1 : computation based
- *                                            on vertices
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (algcen, ALGCEN) (cs_int_t  *const iopt);
-
-/*----------------------------------------------------------------------------
  * Set behavior for computing the cocg matrixes for the iterative algo
  * and for the Least square method for scalar and vector gradients.
  *
@@ -224,21 +208,37 @@ CS_PROCF (compor, COMPOR) (const cs_int_t  *const iporos);
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Query or modification of the option for computing cell centers.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Query or modification of the option for computing cell centers.
  *
- *  < 0 : query
- *    0 : computation based on faces (default choice)
- *    1 : computation based on vertices
+ * \param[in]  algo_choice  < 0 : query
+ *                            0 : computation based on face centers
+ *                                (default prior to version 5.3)
+ *                            1 : computation by cell sub-volumes (default)
  *
- * algo_choice  <--  choice of algorithm to compute cell centers.
- *
- * returns:
- *  1 or 2 according to the selected algorithm.
- *----------------------------------------------------------------------------*/
+ * \return  0 or 1 according to the selected algorithm
+ */
+/*----------------------------------------------------------------------------*/
 
 int
-cs_mesh_quantities_cell_cen_choice(const int algo_choice);
+cs_mesh_quantities_cell_cen_choice(int  algo_choice);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Query or modification of the option for computing face centers.
+ *
+ * \param[in]  algo_choice  < 0 : query
+ *                            0 : standard computation
+ *                            1 : use adjustment for volume
+ *                                from versions 1.1 to 5.3
+ *
+ * \return  0 or 1 according to the selected algorithm
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mesh_quantities_face_cog_choice(int  algo_choice);
 
 /*----------------------------------------------------------------------------
  * Compute cocg for iterative gradient reconstruction for scalars.
@@ -260,25 +260,26 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option);
 void
 cs_mesh_quantities_set_porous_model(int  porous_model);
 
-/*----------------------------------------------------------------------------
- * Create a mesh quantities structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a mesh quantities structure.
  *
- * returns:
- *   pointer to created cs_mesh_quantities_t structure
- *----------------------------------------------------------------------------*/
+ * \return  pointer to created cs_mesh_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
-cs_mesh_quantities_t  *
+cs_mesh_quantities_t *
 cs_mesh_quantities_create(void);
 
-/*----------------------------------------------------------------------------
- * Destroy a mesh quantities structure
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy a mesh quantities structure.
  *
- * parameters:
- *   mesh_quantities <-- pointer to a cs_mesh_quantities_t structure
+ * \param[in]  mq  pointer to mesh quantities structures
  *
- * returns:
- *  NULL
- *----------------------------------------------------------------------------*/
+ * \return  NULL
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_mesh_quantities_t *
 cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities);
@@ -287,32 +288,34 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities);
 /*!
  * \brief  Reset a mesh quantities structure to its empty initial state.
  *
- * \param[in]   mq           pointer to mesh quantities structures.
+ * \param[in]  mq  pointer to mesh quantities structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq);
 
-/*----------------------------------------------------------------------------
- * Compute mesh quantities needed fo preprocessing
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute mesh quantities needed for preprocessing.
  *
- * parameters:
- *   mesh            <-- pointer to a cs_mesh_t structure
- *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
- *----------------------------------------------------------------------------*/
+ * \param[in]       m   pointer to mesh structure
+ * \param[in, out]  mq  pointer to mesh quantities structures
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
                                       cs_mesh_quantities_t  *mesh_quantities);
 
-/*----------------------------------------------------------------------------
- * Compute mesh quantities
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute mesh quantities.
  *
- * parameters:
- *   mesh            <-- pointer to a cs_mesh_t structure
- *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
- *----------------------------------------------------------------------------*/
+ * \param[in]       m   pointer to mesh structure
+ * \param[in, out]  mq  pointer to mesh quantities structures.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
@@ -404,8 +407,8 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute cells centers as the mean of the given face centers
- *         weighted by the associated surfaces.
+ * \brief  Compute approximate cells centers as the mean of the given face
+ *         centers weighted by the associated surfaces.
  *
  *           n-1
  *           Sum  Surf(Fi) G(Fi)
@@ -433,19 +436,20 @@ cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
                                   cs_real_t         cell_cen[]);
 
 /*----------------------------------------------------------------------------
- * Compute cell centers.
+ * Compute cell volumes.
  *
  * The corresponding array is allocated by this function, and it is the
- * caller's responsibility to free it when they are no longer needed.
+ * caller's responsability to free it when they are no longer needed.
  *
  * parameters:
- *   mesh       <-- pointer to a cs_mesh_t structure
- *   p_cell_cen <-> pointer to the cell centers array
+ *   mesh     <-- pointer to a cs_mesh_t structure
+ *
+ * return:
+ *   pointer to newly allocated cell volumes array
  *----------------------------------------------------------------------------*/
 
-void
-cs_mesh_quantities_cell_cen(const cs_mesh_t  *mesh,
-                            cs_real_t        *cell_cen[]);
+cs_real_t *
+cs_mesh_quantities_cell_volume(const cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Check that no negative volumes are present, and exit on error otherwise.
@@ -518,6 +522,15 @@ cs_mesh_quantities_b_thickness_f(const cs_mesh_t             *m,
                                  const cs_mesh_quantities_t  *mq,
                                  int                          n_passes,
                                  cs_real_t                    b_thickness[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Log mesh quantities options to setup file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_log_setup(void);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_mesh_quantities_t structure
