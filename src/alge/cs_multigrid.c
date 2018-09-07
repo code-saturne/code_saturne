@@ -2550,8 +2550,8 @@ _multigrid_pc_create(cs_multigrid_type_t  mg_type)
   else if (mg->type == CS_MULTIGRID_K_CYCLE)
     cs_multigrid_set_solver_options
       (mg,
-       CS_SLES_LS_F_GAUSS_SEIDEL,
-       CS_SLES_LS_B_GAUSS_SEIDEL,
+       CS_SLES_TS_F_GAUSS_SEIDEL,
+       CS_SLES_TS_B_GAUSS_SEIDEL,
        CS_SLES_P_SYM_GAUSS_SEIDEL, // CS_SLES_PCG,
        1,   /* n max cycles */
        1,   /* n max iter for descent */

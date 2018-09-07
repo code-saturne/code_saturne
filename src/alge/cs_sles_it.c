@@ -105,10 +105,10 @@ BEGIN_C_DECLS
        Process-local Gauss-Seidel
   \var CS_SLES_P_SYM_GAUSS_SEIDEL
        Process-local symmetric Gauss-Seidel
-  \var CS_SLES_LS_F_GAUSS_SEIDEL
-       Local Gauss-Seidel smoother pass
-  \var CS_SLES_LS_B_GAUSS_SEIDEL
-       Local backward Gauss-Seidel smoother pass
+  \var CS_SLES_TS_F_GAUSS_SEIDEL
+       Truncated Gauss-Seidel smoother pass
+  \var CS_SLES_TS_B_GAUSS_SEIDEL
+       Truncated backward Gauss-Seidel smoother pass
   \var CS_SLES_PCR3
        3-layer conjugate residual
 
@@ -333,8 +333,8 @@ const char *cs_sles_it_type_name[]
      N_("GMRES"),
      N_("Gauss-Seidel"),
      N_("Symmetric Gauss-Seidel"),
-     N_("Local forward Gauss-Seidel"),
-     N_("Local backwards Gauss-Seidel"),
+     N_("Truncated forward Gauss-Seidel"),
+     N_("Truncated backwards Gauss-Seidel"),
      N_("3-layer conjugate residual")};
 
 /*============================================================================
@@ -4188,7 +4188,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using Process-local forward Gauss-Seidel.
+ * Solution of A.vx = Rhs using Truncated forward Gauss-Seidel.
  *
  * This variant is intended for smoothing with a fixed number of
  * iterations, so does not compute a residue or run a convergence test.
@@ -4209,7 +4209,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_ls_f_gauss_seidel_msr(cs_sles_it_t              *c,
+_ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
                        const cs_matrix_t         *a,
                        int                        diag_block_size,
                        cs_halo_rotation_t         rotation_mode,
@@ -4306,7 +4306,7 @@ _ls_f_gauss_seidel_msr(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using Process-local backward Gauss-Seidel.
+ * Solution of A.vx = Rhs using Truncated backward Gauss-Seidel.
  *
  * This variant is intended for smoothing with a fixed number of
  * iterations, so does not compute a residue or run a convergence test.
@@ -4327,7 +4327,7 @@ _ls_f_gauss_seidel_msr(cs_sles_it_t              *c,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_ls_b_gauss_seidel_msr(cs_sles_it_t              *c,
+_ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
                        const cs_matrix_t         *a,
                        int                        diag_block_size,
                        cs_halo_rotation_t         rotation_mode,
@@ -4695,8 +4695,8 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   case CS_SLES_JACOBI:
   case CS_SLES_P_GAUSS_SEIDEL:
   case CS_SLES_P_SYM_GAUSS_SEIDEL:
-  case CS_SLES_LS_F_GAUSS_SEIDEL:
-  case CS_SLES_LS_B_GAUSS_SEIDEL:
+  case CS_SLES_TS_F_GAUSS_SEIDEL:
+  case CS_SLES_TS_B_GAUSS_SEIDEL:
     c->_pc = NULL;
     break;
   default:
@@ -4980,11 +4980,11 @@ cs_sles_it_setup(void               *context,
 
   if (   c->type == CS_SLES_JACOBI
       || (   c->type >= CS_SLES_P_GAUSS_SEIDEL
-          && c->type <= CS_SLES_LS_B_GAUSS_SEIDEL)) {
+          && c->type <= CS_SLES_TS_B_GAUSS_SEIDEL)) {
     /* Force to Jacobi in case matrix type is not adapted */
     if (cs_matrix_get_type(a) != CS_MATRIX_MSR) {
       c->type = CS_SLES_JACOBI;
-      if (c->type >= CS_SLES_LS_B_GAUSS_SEIDEL) {
+      if (c->type >= CS_SLES_TS_B_GAUSS_SEIDEL) {
         c->n_max_iter = 2;
         c->ignore_convergence = true;
       }
@@ -5074,12 +5074,12 @@ cs_sles_it_setup(void               *context,
     c->solve = _p_sym_gauss_seidel_msr;
     break;
 
-  case CS_SLES_LS_F_GAUSS_SEIDEL:
-    c->solve = _ls_f_gauss_seidel_msr;
+  case CS_SLES_TS_F_GAUSS_SEIDEL:
+    c->solve = _ts_f_gauss_seidel_msr;
     c->ignore_convergence = true;
     break;
-  case CS_SLES_LS_B_GAUSS_SEIDEL:
-    c->solve = _ls_b_gauss_seidel_msr;
+  case CS_SLES_TS_B_GAUSS_SEIDEL:
+    c->solve = _ts_b_gauss_seidel_msr;
     c->ignore_convergence = true;
     break;
 

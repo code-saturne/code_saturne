@@ -735,7 +735,7 @@ cs_sles_solve_native(int                  f_id,
       cs_sles_it_t *c = cs_sles_get_context(sc);
       cs_sles_it_type_t s_type = cs_sles_it_get_type(c);
       if (   s_type >= CS_SLES_P_GAUSS_SEIDEL
-          && s_type <= CS_SLES_LS_B_GAUSS_SEIDEL)
+          && s_type <= CS_SLES_TS_B_GAUSS_SEIDEL)
         need_msr = true;
       else {
         pc = cs_sles_it_get_pc(c);
@@ -751,7 +751,7 @@ cs_sles_solve_native(int                  f_id,
     if (mg != NULL) {
       cs_sles_it_type_t fs_type = cs_multigrid_get_fine_solver_type(mg);
       if (   fs_type >= CS_SLES_P_GAUSS_SEIDEL
-          && fs_type <= CS_SLES_LS_B_GAUSS_SEIDEL)
+          && fs_type <= CS_SLES_TS_B_GAUSS_SEIDEL)
         need_msr = true;
     }
 

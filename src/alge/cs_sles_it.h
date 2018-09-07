@@ -65,9 +65,9 @@ typedef enum {
   CS_SLES_GMRES,               /* Generalized minimal residual */
   CS_SLES_P_GAUSS_SEIDEL,      /* Process-local Gauss-Seidel */
   CS_SLES_P_SYM_GAUSS_SEIDEL,  /* Process-local symmetric Gauss-Seidel */
-  CS_SLES_LS_F_GAUSS_SEIDEL,   /* Process-local forward Gauss-Seidel
+  CS_SLES_TS_F_GAUSS_SEIDEL,   /* Truncated forward Gauss-Seidel
                                   smoothing */
-  CS_SLES_LS_B_GAUSS_SEIDEL,   /* Process-local backward Gauss-Seidel
+  CS_SLES_TS_B_GAUSS_SEIDEL,   /* Truncated backward Gauss-Seidel
                                   smoothing */
   CS_SLES_PCR3,                /* 3-layer conjugate residual */
   CS_SLES_N_IT_TYPES           /* Number of resolution algorithms */
