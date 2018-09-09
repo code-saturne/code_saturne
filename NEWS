@@ -5,6 +5,8 @@ Release 5.2.1 (unreleased)
 Bug fixes
 ---------
 
+- Compressible model: fix inverted arguments for user velocity source terms.
+    
 - Fix build on Mac OS X.
 
 - Radiative model: fix GUI-defined BC selection between reflecting wall and
