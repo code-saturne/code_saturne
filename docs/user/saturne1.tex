@@ -1435,14 +1435,21 @@ In turn, this co-processor will execute operations based on a
 special \paraview Python script, and directly generate output such
 as images or movies.
 
-Co-processing scripts may be generated using \paraview 4, with the
-CoProcessing plugin, using initial output in another format (such as \ensightg).
+Co-processing scripts may be generated under \paraview 4.2 or above, using initial
+output in another format (such as \ensightg). With ParaView 4.2 to 5.4,
+this required activating the CoProcessing plugin. With ParaView 5.5,
+a ''Generate Script'' item can be found directly under the ``Catalyst''
+menubar item.
+
 A \CS postprocessing writer will try to read a script named
 \texttt{\emph{<writer\_name>}.py}, which should be places in a case's
 \texttt{DATA} directory.
+Using ParaView 5.5 or above, in the ``Name Simulation Inputs'' stage of the
+Catalyst script generator, the ``simulation name'' field should be set to
+the same name as the script (i.e. \emph{writer\_name}).
 
-Note that this output is still at an experimental stage, and is heavily
-dependent on \paraview. Some operations may work very well, while other,
+Note that this output is heavily dependent on \paraview.
+Some operations may work very well, while other,
 similar operations may fail.
 
 \smallskip \noindent
@@ -1457,7 +1464,8 @@ Surface elements:  & triangles, quadrangles, polygons\\
 \hline
 Volume elements:   & tetrahedra, pyramids, prisms, hexahedra, convex polyhedra\\
 \hline
-Compatibility:     & \catalyst from \href{http://paraview.org}{\paraview} 4.2\\
+Compatibility:     & \catalyst from \href{http://paraview.org}{\paraview} 4.2
+                      or above (version 5.4 or above recommended)\\
 \hline
 Documentation:     & online documentation and Wiki,  at:
                      \url{http://paraview.org/Wiki/Main_Page}\\

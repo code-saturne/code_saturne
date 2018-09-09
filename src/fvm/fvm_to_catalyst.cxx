@@ -1120,7 +1120,11 @@ fvm_to_catalyst_init_writer(const char             *name,
   BFT_FREE(script_path);
 
   w->datadesc = vtkCPDataDescription::New();
+#if CS_PV_VERSION < 55
   w->datadesc->AddInput("input");
+#else
+  w->datadesc->AddInput(w->name);
+#endif
 
   w->modified = true;
 
@@ -1459,7 +1463,12 @@ fvm_to_catalyst_flush(void  *this_writer_p)
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
 
   if (w->processor->RequestDataDescription(w->datadesc) != 0 && w->modified) {
+#if CS_PV_VERSION < 55
     w->datadesc->GetInputDescriptionByName("input")->SetGrid(w->mb);
+#else
+    w->datadesc->GetInputDescriptionByName(w->name)->SetGrid(w->mb);
+#endif
+
     w->processor->CoProcess(w->datadesc);
     w->modified = false;
   }
