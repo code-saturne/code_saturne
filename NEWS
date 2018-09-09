@@ -5,6 +5,8 @@ Release 5.0.9 (unreleased)
 Bug fixes
 ---------
 
+- Compressible model: fix inverted arguments for user velocity source terms.
+
 - Radiative model: fix GUI-defined BC selection between reflecting wall and
   prescribed flux BC for grey/black wall.
 

@@ -226,12 +226,11 @@ if (itsqdm.ne.0) then
 
   ! --- User source term
   call ustsnv &
-  !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iu  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
-   ckupdc , smacel , tsimp  , tsexp     )
+   ckupdc , smacel , tsexp  , tsimp )
 
 
   ! Convective of the momentum equation
