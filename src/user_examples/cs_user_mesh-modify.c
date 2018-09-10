@@ -280,7 +280,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     cs_mesh_extrude_face_info_destroy(&efi);
 
-    cs_mesh_boundary_layer_insert(mesh, e, false);
+    cs_mesh_boundary_layer_insert(mesh, e, 0.2, false);
 
     cs_mesh_extrude_vectors_destroy(&e);
   }

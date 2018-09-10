@@ -3,6 +3,10 @@ Master (not on release branches yet)
 
 User changes:
 
+- Boundary layer insertion: added optional cell volume ratio limiter
+  to reduce the extrusion near cells that would be excessively
+  flattened or entangled.
+
 - For new cases, the default postprocessing output writer uses the
   'separate_meshes' option, which avoids requiring the 'extract blocs'
   filter on ParaView.

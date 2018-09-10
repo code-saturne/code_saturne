@@ -443,8 +443,6 @@ cs_run(void)
 
       /* Finalize sparse linear systems resolution */
 
-      cs_sles_default_finalize();
-
       cs_matrix_finalize();
 
     }
@@ -459,6 +457,10 @@ cs_run(void)
     cs_inflow_finalize();
 
   }
+
+  /* Finalize linear system resolution */
+
+  cs_sles_default_finalize();
 
   /* Switch logging back to C (may be moved depending on Fortran dependencies) */
 

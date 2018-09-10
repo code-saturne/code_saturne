@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-09-09 02:44+0200\n"
+"POT-Creation-Date: 2018-09-10 03:37+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -13357,6 +13357,23 @@ msgstr "Après insertion de frontière définie par l'utilisateur"
 #, c-format
 msgid "%s should be called before halo creation."
 msgstr "%s devrait être appelé avant la création des halos."
+
+#, c-format
+msgid ""
+"\n"
+"Boundary layer insertion:\n"
+"  %llu cells would have a negative volume\n"
+"  %llu cells would have a volume reduced by more than %g\n"
+"    (which is the user-defined threshold)\n"
+"  reducing insertion at adjacent boundary vertices.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"%llu cells would have a negative volume after boundary insertion\n"
+"but none of these are adjacent to an inserted boundary.\n"
+"Unable to detemine appropriate insertion limitation."
+msgstr ""
 
 msgid "Synchronizing cell families\n"
 msgstr " Synchronisation des familles des cellules\n"

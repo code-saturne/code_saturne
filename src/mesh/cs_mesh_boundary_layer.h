@@ -56,17 +56,22 @@ BEGIN_C_DECLS
 /*!
  * \brief Insert mesh boundary layers.
  *
- * \param[in, out]  m             mesh
- * \param[in]       e             extrusion vector definitions
- * \param[in]       interior_gc   if true, maintain group classes of
- *                                interior faces previously on boundary
+ * \param[in, out]  m                  mesh
+ * \param[in, out]  e                  extrusion vector definitions
+ * \param[in]       min_volume_factor  cell volume multiplier threshold:
+ *                                     extrusion is reduced on vertices
+ *                                     adjacent to cells whose volume is
+ *                                     reduced below this; < 0 to ignore
+ * \param[in]       interior_gc        if true, maintain group classes of
+ *                                     interior faces previously on boundary
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_boundary_layer_insert(cs_mesh_t                        *m,
-                              const cs_mesh_extrude_vectors_t  *e,
-                              bool                              interior_gc);
+cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
+                              cs_mesh_extrude_vectors_t  *e,
+                              cs_real_t                   min_volume_factor,
+                              bool                        interior_gc);
 
 /*----------------------------------------------------------------------------*/
 
