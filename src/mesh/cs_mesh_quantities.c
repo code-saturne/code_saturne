@@ -95,7 +95,7 @@ cs_mesh_quantities_t  *cs_glob_mesh_quantities = NULL;
 
 /* Choice of the algorithm for computing gravity centers of the cells */
 
-static int _cell_cen_algorithm = 1;
+static int _cell_cen_algorithm = 0;
 static int _ajust_face_cog_compat_v11_v52 = 0;
 
 /* Choice of the option for computing cocg
@@ -2534,9 +2534,8 @@ CS_PROCF (compor, COMPOR) (const cs_int_t  *const iporos)
  * \brief  Query or modification of the option for computing cell centers.
  *
  * \param[in]  algo_choice  < 0 : query
- *                            0 : computation based on face centers
- *                                (default prior to version 5.3)
- *                            1 : computation by cell sub-volumes (default)
+ *                            0 : computation based on face centers (default)
+ *                            1 : computation by cell sub-volumes
  *
  * \return  0 or 1 according to the selected algorithm
  */
@@ -3819,27 +3818,33 @@ cs_mesh_quantities_log_setup(void)
                                   "Mesh quantity computation options\n"
                                   "---------------------------------\n\n"));
 
-  if (_cell_cen_algorithm == 0)
-    cs_log_printf(CS_LOG_SETUP,
-                  _("  Cell centers: weighthed center of face centers\n\n"));
+  const char *cen_type_name[] = {N_("weighted center of face centers"),
+                                 N_("center of mass")};
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Cell centers: %s\n"),
+                _(cen_type_name[_cell_cen_algorithm]));
 
-  if (cs_glob_mesh_quantities_flag != 0)
+  if (cs_glob_mesh_quantities_flag != 0) {
+
+    const char *correction_name[] = {"CS_BAD_CELLS_WARPED_CORRECTION",
+                                     "CS_BAD_CELLS_WARPED_REGULARISATION",
+                                     "CS_CELL_FACE_CENTER_CORRECTION",
+                                     "CS_CELL_FACE_CENTER_CORRECTION",
+                                     "CS_FACE_DISTANCE_CLIP",
+                                     "CS_FACE_RECONSTRUCTION_CLIP",
+                                     "CS_CELL_VOLUME_RATIO_CORRECTION",
+                                     "CS_FACE_CENTER_REFINE"};
+
     cs_log_printf(CS_LOG_SETUP,
-       ("   Mesh quantity corrections:\n"
-        "      CS_BAD_CELLS_WARPED_CORRECTION: %d\n"
-        "      CS_BAD_CELLS_REGULARISATION: %d\n"
-        "      CS_CELL_FACE_CENTER_CORRECTION: %d\n"
-        "      CS_FACE_DISTANCE_CLIP: %d\n"
-        "      CS_FACE_RECONSTRUCTION_CLIP: %d\n"
-        "      CS_CELL_VOLUME_RATIO_CORRECTION: %d\n"
-        "      CS_FACE_CENTER_REFINE: %d\n"),
-       cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION,
-       cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION,
-       cs_glob_mesh_quantities_flag & CS_CELL_FACE_CENTER_CORRECTION,
-       cs_glob_mesh_quantities_flag & CS_FACE_DISTANCE_CLIP,
-       cs_glob_mesh_quantities_flag & CS_FACE_RECONSTRUCTION_CLIP,
-       cs_glob_mesh_quantities_flag & CS_CELL_VOLUME_RATIO_CORRECTION,
-       cs_glob_mesh_quantities_flag & CS_FACE_CENTER_REFINE);
+       ("\n"
+        "   Mesh quantity corrections:\n"));
+
+    for (int i = 0; i < 8; i++) {
+      if (cs_glob_mesh_quantities_flag & (1 << i))
+        cs_log_printf(CS_LOG_SETUP, "      %s\n", correction_name[i]);
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------

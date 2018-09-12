@@ -213,9 +213,8 @@ CS_PROCF (compor, COMPOR) (const cs_int_t  *const iporos);
  * \brief  Query or modification of the option for computing cell centers.
  *
  * \param[in]  algo_choice  < 0 : query
- *                            0 : computation based on face centers
- *                                (default prior to version 5.3)
- *                            1 : computation by cell sub-volumes (default)
+ *                            0 : computation based on face centers (default)
+ *                            1 : computation by cell sub-volumes
  *
  * \return  0 or 1 according to the selected algorithm
  */
