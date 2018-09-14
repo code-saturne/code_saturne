@@ -282,7 +282,7 @@ nberro = 0
 ! ---> Point de reference de pression
 !     On lit les coordonnees si l'utilisateur n'a rien specifie, i.e.
 !       si IXYZP0=-1, et on met IXYZP0 a 1 pour eviter de le changer ensuite.
-if (ixyzp0.eq.1) then
+if (ixyzp0.eq.-1) then
   rubriq = 'ref_presstot01'
   itysup = 0
   nbval  = 3

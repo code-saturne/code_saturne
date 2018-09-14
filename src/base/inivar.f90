@@ -85,7 +85,7 @@ integer          kscmin, kscmax, keyvar, n_fields
 integer          f_id, f_id_prv, c_id, f_dim
 integer          iflid, iflidp
 integer          idimf
-integer          ivoid
+integer          ivoid, uprtot
 
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
@@ -232,38 +232,72 @@ endif
 
 call user_initialization()
 
-! Si l'utilisateur a change Ptot, on change P* en consequence,
-! sinon on met Ptot a P0 + rho.g.r
-! A priori l'utilisateur remplira les NCEL valeurs ou rien du
-!  tout, mais on ne sait jamais ...
-! En compressible, Ptot n'est pas defini (correspond directement a RTP(.,IPR)
-! For groundwater flows, cpro_prtot is the pressure head (h = H - z)
-! h is only used when gravity is taken into account
+
+! Pressure / Total pressure initialisation
+
+! Standard:
+! If the user has initialized the total pressure Ptot, P* is initialized
+! accordingly, only if the user has speficied the reference point.
+! (all values of the total pressure have to be initialized).
+! Otherwise, the total pressure is initialized using P*,
+! Ptot = P* + P0 + rho.g.r
+
+! In case of restart without auxiliary, Ptot is recomputed with P*.
+! (For EVM models, the shift by 2/3*rho*k is missing)
+! In case of restart with auxiliary, nothing is done.
+
+! Compressible:
+! The total pressure field does not need to be defined. The solved pressure is
+! the total pressure.
+
+! Ground water flow:
+! The field of index iprtot is the pressure head (h = H - z),
+! h is only used when gravity is taken into account.
 
 if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
+
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_s(iprtot, cpro_prtot)
+
+  uprtot = 0
+
+  if (ixyzp0.gt.-1.and.(isuite.eq.0.or.ileaux.eq.0)) then
+    uprtot = 1
+    do iel = 1, ncel
+      if (cpro_prtot(iel).le.-0.5d0*rinfin) then
+        uprtot = 0
+        exit
+      endif
+    enddo
+  endif
+
   xxp0   = xyzp0(1)
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)
-  do iel = 1, ncel
-    if (cpro_prtot(iel).gt.-0.5d0*rinfin) then
-      cvar_pr(iel) = cpro_prtot(iel)                                  &
-           - ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
-           + gy*(xyzcen(2,iel)-xyp0)                         &
-           + gz*(xyzcen(3,iel)-xzp0) )                       &
-           + pred0 - p0
-    else
-      cpro_prtot(iel) = cvar_pr(iel)                                  &
-           + ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
-           + gy*(xyzcen(2,iel)-xyp0)                         &
-           + gz*(xyzcen(3,iel)-xzp0) )                       &
-           + p0 - pred0
-    endif
-  enddo
+
+  if (uprtot.gt.0) then
+    do iel = 1, ncel
+      cvar_pr(iel) =  cpro_prtot(iel)               &
+                    - ro0*( gx*(xyzcen(1,iel)-xxp0) &
+                    + gy*(xyzcen(2,iel)-xyp0)       &
+                    + gz*(xyzcen(3,iel)-xzp0) )     &
+                    + pred0 - p0
+    enddo
+  elseif (isuite.eq.0.or.ileaux.eq.0) then
+    do iel = 1, ncel
+      cpro_prtot(iel) =  cvar_pr(iel)                  &
+                       + ro0*( gx*(xyzcen(1,iel)-xxp0) &
+                       + gy*(xyzcen(2,iel)-xyp0)       &
+                       + gz*(xyzcen(3,iel)-xzp0) )     &
+                       + p0 - pred0
+    enddo
+  endif
+
 else if ((ippmod(idarcy).ge.0).and.(darcy_gravity.ge.1)) then
+
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_s(iprtot, cpro_prtot)
+
   do iel = 1, ncel
     cpro_prtot(iel) = cvar_pr(iel) - xyzcen(1,iel)*darcy_gravity_x &
                                    - xyzcen(2,iel)*darcy_gravity_y &

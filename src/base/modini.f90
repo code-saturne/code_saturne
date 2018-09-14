@@ -895,18 +895,19 @@ if (nscal.gt.0) then
   enddo
 endif
 
-! ---> XYZP0 : reference pour la pression hydrostatique
-!      On considere que l'utilisateur a specifie la reference
-!      a partir du moment ou il a specifie une coordonnee.
-!      Pour les coordonnees non specifiees, on met 0.
+! xyzp0 : reference point for hydrostatic pressure
+! The user should specify the 3 coordinates, otherwise
+! it is set to (0.,0.,0.).
 
-do ii = 1, 3
-  if (xyzp0(ii).gt.-0.5d0*rinfin) then
-    ixyzp0 = 1
-  else
+if (xyzp0(1).gt.-0.5d0*rinfin.and. &
+    xyzp0(2).gt.-0.5d0*rinfin.and. &
+    xyzp0(3).gt.-0.5d0*rinfin       ) then
+  ixyzp0 = 1
+else
+  do ii = 1, 3
     xyzp0(ii) = 0.d0
-  endif
-enddo
+  enddo
+endif
 
 ! Turbulent fluxes constant for GGDH, AFM and DFM
 if (nscal.gt.0) then
