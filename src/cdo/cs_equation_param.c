@@ -1056,8 +1056,8 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
                CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
                CS_SLES_PCG,                /* coarse smoothe */
                itsol.n_max_iter,           /* n_max_cycles */
-               2,                          /* n_max_iter_descent, */
-               2,                          /* n_max_iter_ascent */
+               1,                          /* n_max_iter_descent, */
+               1,                          /* n_max_iter_ascent */
                100,                        /* n_max_iter_coarse */
                0,                          /* poly_degree_descent */
                0,                          /* poly_degree_ascent */
@@ -1093,22 +1093,23 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
           mg = cs_sles_pc_get_context(pc);
           cs_sles_it_transfer_pc(it, &pc);
 
-          /* Default settings for CDO/HHO */
+          /* Change the default settings for CDO/HHO when used as
+             preconditioner */
           cs_multigrid_set_solver_options
             (mg,
-             CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
-             CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
-             CS_SLES_PCG,                /* coarse smoothe */
+             CS_SLES_TS_F_GAUSS_SEIDEL,  /* descent smoothe */
+             CS_SLES_TS_B_GAUSS_SEIDEL,  /* ascent smoothe */
+             CS_SLES_P_SYM_GAUSS_SEIDEL, /* coarse solver */
              itsol.n_max_iter,           /* n_max_cycles */
-             2,                          /* n_max_iter_descent, */
-             2,                          /* n_max_iter_ascent */
-             100,                        /* n_max_iter_coarse */
+             1,                          /* n_max_iter_descent, */
+             1,                          /* n_max_iter_ascent */
+             1,                          /* n_max_iter_coarse */
              -1,                         /* poly_degree_descent */
              -1,                         /* poly_degree_ascent */
              -1,                         /* poly_degree_coarse */
              -1.0,                       /* precision_mult_descent */
              -1.0,                       /* precision_mult_ascent */
-             1);                         /* precision_mult_coarse */
+             -1.0);                      /* precision_mult_coarse */
 
         }
       }
