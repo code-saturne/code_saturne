@@ -79,8 +79,6 @@ typedef struct {
 
   cs_property_t  *zeta;     /*!< Coefficient for the augmented Lagrangian
                                  attached to the grad-div stabilzation term */
-  cs_real_t       relax;    /*!< Coefficient for the Uzawa algorithm attacehd
-                                 to the update of the multiplier */
 
 } cs_navsto_uzawa_t;
 

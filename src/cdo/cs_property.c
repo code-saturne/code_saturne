@@ -1273,7 +1273,7 @@ cs_property_log_setup(void)
     for (int j = 0; j < pty->n_definitions; j++)
       cs_xdef_log(pty->defs[j]);
 
-    cs_log_printf(CS_LOG_SETUP, " </pty>");
+    cs_log_printf(CS_LOG_SETUP, " </pty>\n");
 
   } /* Loop on properties */
 

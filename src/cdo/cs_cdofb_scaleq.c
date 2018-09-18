@@ -697,7 +697,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
          dir_values, neu_tags, field_val,                                \
          cs_cdofb_cell_sys, cs_cdofb_cell_bld)
   {
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
 #else
     int  t_id = 0;
@@ -763,7 +763,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
         if (cs_dbg_cw_test(cm))
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
-      } /* END OF DIFFUSION */
+      } /* End of diffusion */
 
       /* SOURCE TERM */
       /* =========== */

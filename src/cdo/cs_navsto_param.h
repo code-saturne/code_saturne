@@ -29,10 +29,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_param.h"
-#include "cs_property.h"
-#include "cs_quadrature.h"
-#include "cs_xdef.h"
+#include "cs_equation_param.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -155,6 +152,10 @@ typedef struct {
 
   /*! \var time_scheme
    * Discretization scheme for time
+   *
+   * \var theta
+   * Value of the parameter for the time scheme when a theta-scheme is used
+   *
    */
   cs_param_time_scheme_t        time_scheme;
   cs_real_t                     theta;
@@ -202,6 +203,19 @@ typedef struct {
    */
   cs_quadrature_type_t          qtype;
 
+  /*! \var residual_tolerance
+   *  Tolerance at which the Navier--Stokes is resolved (apply to the residual
+   * of the coupling algorithm chosen to solve the Navier--Stokes system)
+   */
+  cs_real_t                     residual_tolerance;
+
+  /*! \var max_algo_iter
+   * Maximal number of iteration of the coupling algorithm. Not useful for a
+   * monolithic approach. In this case, only the maximal number of iterations
+   * for the iterative solver is taken into account
+   */
+  int                           max_algo_iter;
+
   /*!
    * @}
    * @name Physical properties
@@ -235,12 +249,12 @@ typedef struct {
    * @{
    */
 
-  /*! \var velocity_ic_owner
+  /*! \var velocity_ic_is_owner
    *  True if the definitions are stored inside this structure, otherwise
    *  the definitions are stored inside the a \ref cs_equation_param_t
    *  structure dedicated to the momentum equation.
    */
-  bool  velocity_ic_owner;
+  bool  velocity_ic_is_owner;
 
   /*! \var n_velocity_ic_defs
    *  Number of initial conditions associated to the velocity
@@ -255,13 +269,16 @@ typedef struct {
    */
   cs_xdef_t  **velocity_ic_defs;
 
+  /*! \var pressure_ic_is_owner
+   *  True if the definitions are stored inside this structure, otherwise
+   *  the definitions are stored inside a dedicated \ref cs_equation_param_t
+   */
+  bool  pressure_ic_is_owner;
 
   /*! \var n_pressure_ic_defs
    *  Number of initial conditions associated to the pressure
    */
   int  n_pressure_ic_defs;
-
-
 
   /*! \var pressure_ic_defs
    *  Pointers to the definitions of the initial conditions associated to the
@@ -270,8 +287,6 @@ typedef struct {
    *  of the resulting pressure and subtract it
    */
    cs_xdef_t  **pressure_ic_defs;
-
-  bool  pressure_ic_is_owner;
 
   /*! @} */
 
@@ -289,9 +304,18 @@ typedef struct {
  * Set the scaling of the grad-div term when an artificial compressibility
  * algorithm or an Uzawa - Augmented Lagrangian method is used
  *
+ * \var CS_NSKEY_MAX_ALGO_ITER
+ * Set the maximal number of iteration of the coupling algorithm. Not useful
+ * for a monolithic approach. In this case, only the maximal number of
+ * iterations for the iterative solver is taken into account
+ *
  * \var CS_NSKEY_QUADRATURE
  * Set the type to use in all routines involving quadrature (similar to \ref
  * CS_EQKEY_BC_QUADRATURE)
+ *
+ * \var CS_NSKEY_RESIDUAL_TOLERANCE
+ * Tolerance at which the Navier--Stokes is resolved (apply to the residual
+ * of the coupling algorithm chosen to solve the Navier--Stokes system)
  *
  * \var CS_NSKEY_SPACE_SCHEME
  * Numerical scheme for the space discretization
@@ -313,7 +337,9 @@ typedef enum {
 
   CS_NSKEY_DOF_REDUCTION,
   CS_NSKEY_GD_SCALE_COEF,
+  CS_NSKEY_MAX_ALGO_ITER,
   CS_NSKEY_QUADRATURE,
+  CS_NSKEY_RESIDUAL_TOLERANCE,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_TIME_SCHEME,
   CS_NSKEY_TIME_THETA,

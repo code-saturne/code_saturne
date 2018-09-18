@@ -160,10 +160,10 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
   case CS_NAVSTO_COUPLING_UZAWA:
-    return cs_equation_param_by_name("Momentum");
+    return cs_equation_param_by_name("momentum");
 
   case CS_NAVSTO_COUPLING_PROJECTION:
-    return cs_equation_param_by_name("Velocity_Prediction");
+    return cs_equation_param_by_name("velocity_prediction");
     break;
 
   default:
@@ -216,16 +216,23 @@ cs_navsto_param_create(cs_navsto_param_model_t        model,
   param->gd_scale_coef = 1.0;    /* Default value if not set by the user */
   param->qtype = CS_QUADRATURE_BARY;
 
+  param->residual_tolerance = 1e-10;
+  param->max_algo_iter = 20;
+
   /* Main set of properties */
   param->density = cs_property_add("density", CS_PROPERTY_ISO);
   param->lami_viscosity = cs_property_add("laminar_viscosity", CS_PROPERTY_ISO);
 
+  /* Remark: As velocity and pressure may not be associated to an equation
+     directly, one stores it at this level */
+
   /* Initial conditions for the velocity */
-  param->velocity_ic_owner = false;
+  param->velocity_ic_is_owner = false;
   param->n_velocity_ic_defs = 0;
   param->velocity_ic_defs = NULL;
 
   /* Initial conditions for the pressure */
+  param->pressure_ic_is_owner = true;
   param->n_pressure_ic_defs = 0;
   param->pressure_ic_defs = NULL;
 
@@ -251,7 +258,7 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
   if (param->n_velocity_ic_defs > 0) {
 
     /* Otherwise this is freed inside the related equation */
-    if (param->velocity_ic_owner) {
+    if (param->velocity_ic_is_owner) {
       for (int i = 0; i < param->n_velocity_ic_defs; i++)
         param->velocity_ic_defs[i] = cs_xdef_free(param->velocity_ic_defs[i]);
     }
@@ -262,8 +269,10 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
 
   if (param->n_pressure_ic_defs > 0) {
 
-    for (int i = 0; i < param->n_pressure_ic_defs; i++)
-      param->pressure_ic_defs[i] = cs_xdef_free(param->pressure_ic_defs[i]);
+    if (param->pressure_ic_is_owner) {
+      for (int i = 0; i < param->n_pressure_ic_defs; i++)
+        param->pressure_ic_defs[i] = cs_xdef_free(param->pressure_ic_defs[i]);
+    }
     BFT_FREE(param->pressure_ic_defs);
     param->pressure_ic_defs = NULL;
 
@@ -311,14 +320,14 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
     case CS_NAVSTO_COUPLING_PROJECTION:
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(" Trying to set the zeta parameter with the %s\n "
+      bft_printf(" %s: Trying to set the zeta parameter with the %s\n "
                  " although this will not have use in the algorithm.\n",
-                 cs_navsto_param_coupling_name[nsp->coupling]);
+                 __func__, cs_navsto_param_coupling_name[nsp->coupling]);
 
     default:
       break;
 
-    } // Switch
+    } /* End of switch */
     break;
 
   case CS_NSKEY_DOF_REDUCTION:
@@ -375,14 +384,19 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
+                _(" %s: Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
                   " Valid choices are \"implicit\", \"explicit\","
-                  " \"crank_nicolson\", and \"theta_scheme\"."), _val);
+                  " \"crank_nicolson\", and \"theta_scheme\"."),
+                __func__, _val);
     }
     break;
 
   case CS_NSKEY_TIME_THETA:
     nsp->theta = atof(val);
+    if (nsp->theta < 0. - cs_math_zero_threshold ||
+        nsp->theta > 1.0 + cs_math_zero_threshold)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for theta\n", __func__);
     break;
 
   case CS_NSKEY_VERBOSITY:
@@ -404,12 +418,23 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       else {
         const char *_val = val;
         bft_error(__FILE__, __LINE__, 0,
-                  _(" Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
+                  _(" %s: Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
                     " Valid choices are \"bary\", \"bary_subdiv\", \"higher\""
-                    " and \"highest\"."), _val);
+                    " and \"highest\"."), __func__, _val);
       }
 
     }
+    break; /* Quadrature */
+
+  case CS_NSKEY_RESIDUAL_TOLERANCE:
+    nsp->residual_tolerance = atof(val);
+    if (nsp->residual_tolerance < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the residual tolerance\n", __func__);
+    break;
+
+  case CS_NSKEY_MAX_ALGO_ITER:
+    nsp->max_algo_iter = atoi(val);
     break;
 
   default:
@@ -605,7 +630,7 @@ cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
   else { /* No momentum equation available with the choice of velocity-pressure
             coupling */
 
-    nsp->velocity_ic_owner = true;
+    nsp->velocity_ic_is_owner = true;
 
     /* Add a new cs_xdef_t structure */
     int z_id = 0;
@@ -669,7 +694,7 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t      *nsp,
   else { /* No momentum equation available with the choice of velocity-pressure
             coupling */
 
-    nsp->velocity_ic_owner = true;
+    nsp->velocity_ic_is_owner = true;
 
     /* Add a new cs_xdef_t structure */
     int z_id = 0;

@@ -1,6 +1,5 @@
 /*============================================================================
- * Build an algebraic CDO face-based system for unsteady convection/diffusion
- * reaction of vector-valued equations with source terms
+ * Build an algebraic CDO face-based system for the Navier--Stokes system
  *============================================================================*/
 
 /*

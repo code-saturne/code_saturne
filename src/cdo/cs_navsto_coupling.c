@@ -118,7 +118,7 @@ cs_navsto_uzawa_create_context(cs_navsto_param_t    *nsp,
   BFT_MALLOC(nsc, 1, cs_navsto_uzawa_t);
 
   /* Add an equation for the momentum conservation */
-  nsc->momentum = cs_equation_add("Momentum",
+  nsc->momentum = cs_equation_add("momentum",
                                   "velocity",
                                   CS_EQUATION_TYPE_PREDEFINED,
                                   3,
@@ -136,7 +136,6 @@ cs_navsto_uzawa_create_context(cs_navsto_param_t    *nsp,
   nsc->energy = NULL;   /* Not used up to now */
 
   nsc->zeta = cs_property_add("graddiv_coef", CS_PROPERTY_ISO);
-  nsc->relax  = 1.0;
 
   return nsc;
 }
@@ -194,6 +193,9 @@ cs_navsto_uzawa_init_setup(const cs_navsto_param_t    *nsp,
   /* Link the time property to the momentum equation */
   switch (nsp->time_state) {
 
+  case CS_NAVSTO_TIME_STATE_FULL_STEADY:
+    break; /* Nothing to add */
+
   case CS_NAVSTO_TIME_STATE_UNSTEADY:
   case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
     cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
@@ -244,6 +246,17 @@ cs_navsto_uzawa_last_setup(const cs_cdo_connect_t      *connect,
   if (nsc->zeta->n_definitions == 0)
     cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
 
+  /* Set the quadrature level for BCs, if needed */
+  const cs_equation_param_t *eqp = cs_equation_get_param(nsc->momentum);
+
+  for (short int i = 0; i < eqp->n_bc_defs; i++) {
+
+    cs_xdef_t *def = eqp->bc_defs[i];
+    if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) /* Otherwise not useful */
+      cs_xdef_set_quadrature(def, nsp->qtype);
+
+  } /* Loop on BC definitions */
+
   /* TODO */
 }
 
@@ -270,7 +283,7 @@ cs_navsto_ac_create_context(cs_navsto_param_t    *nsp,
 
   BFT_MALLOC(nsc, 1, cs_navsto_ac_t);
 
-  nsc->momentum = cs_equation_add("Momentum",
+  nsc->momentum = cs_equation_add("momentum",
                                   "velocity",
                                   CS_EQUATION_TYPE_PREDEFINED,
                                   3,
@@ -388,6 +401,18 @@ cs_navsto_ac_last_setup(const cs_cdo_connect_t      *connect,
   /* Avoid no definition of the zeta coefficient */
   if (nsc->zeta->n_definitions == 0)
     cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
+
+  /* Set the quadrature level for BCs, if needed */
+  const cs_equation_param_t *eqp = cs_equation_get_param(nsc->momentum);
+
+  for (short int i = 0; i < eqp->n_bc_defs; i++) {
+
+    cs_xdef_t *def = eqp->bc_defs[i];
+    if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) /* Otherwise not useful */
+      cs_xdef_set_quadrature(def, nsp->qtype);
+
+  } /* Loop on BC definitions */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -413,7 +438,7 @@ cs_navsto_ac_vpp_create_context(cs_navsto_param_t    *nsp,
 
   BFT_MALLOC(nsc, 1, cs_navsto_ac_vpp_t);
 
-  nsc->momentum = cs_equation_add("Momentum",
+  nsc->momentum = cs_equation_add("momentum",
                                   "Utilda",
                                   CS_EQUATION_TYPE_PREDEFINED,
                                   3,
@@ -428,7 +453,7 @@ cs_navsto_ac_vpp_create_context(cs_navsto_param_t    *nsp,
   }
 
   /* The grad-div equation is usually always with homogeneous Dirichlet */
-  nsc->graddiv = cs_equation_add("Graddiv",
+  nsc->graddiv = cs_equation_add("graddiv",
                                  "Uhat",
                                  CS_EQUATION_TYPE_PREDEFINED,
                                  3,
@@ -552,6 +577,17 @@ cs_navsto_ac_vpp_last_setup(const cs_cdo_connect_t      *connect,
   if (nsc->zeta->n_definitions == 0)
     cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
 
+  /* Set the quadrature level for BCs, if needed */
+  const cs_equation_param_t *eqp = cs_equation_get_param(nsc->momentum);
+
+  for (short int i = 0; i < eqp->n_bc_defs; i++) {
+
+    cs_xdef_t *def = eqp->bc_defs[i];
+    if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) /* Otherwise not useful */
+      cs_xdef_set_quadrature(def, nsp->qtype);
+
+  } /* Loop on BC definitions */
+
   /* TODO: Setting quadrature for the source terms */
 }
 
@@ -579,7 +615,7 @@ cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
 
   BFT_MALLOC(nsc, 1, cs_navsto_projection_t);
 
-  nsc->prediction = cs_equation_add("Velocity_Prediction",
+  nsc->prediction = cs_equation_add("velocity_prediction",
                                     "velocity",
                                     CS_EQUATION_TYPE_PREDEFINED,
                                     3,
@@ -593,7 +629,7 @@ cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
   }
 
-  nsc->correction = cs_equation_add("Pressure_Correction",
+  nsc->correction = cs_equation_add("pressure_correction",
                                     "phi",
                                     CS_EQUATION_TYPE_PREDEFINED,
                                     1,
