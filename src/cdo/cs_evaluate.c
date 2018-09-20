@@ -72,7 +72,6 @@ static const char _err_empty_array[] =
   " %s: Array storing the evaluation should be allocated before the call"
   " to this function.";
 static const char _err_not_handled[] = " %s: Case not handled yet.";
-static const char _err_quad[] = " %s: Invalid quadrature type.";
 
 /*============================================================================
  * Private function prototypes

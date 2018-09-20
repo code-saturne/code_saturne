@@ -64,10 +64,6 @@ BEGIN_C_DECLS
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
 
-static const char _err_empty_array[] =
-  " %s: Array storing the evaluation should be allocated before the call"
-  " to this function.";
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/

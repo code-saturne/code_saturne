@@ -1378,7 +1378,7 @@ cs_quant_set_face(cs_lnum_t                    f_id,
   cs_nvec3_t  nv;
 
   const cs_lnum_t  bf_id = f_id - cdoq->n_i_faces;
-  if (bf_id > -1) { // Border face
+  if (bf_id > -1) { /* Border face */
 
     q.meas = cdoq->b_face_surf[bf_id];
 
@@ -1391,7 +1391,7 @@ cs_quant_set_face(cs_lnum_t                    f_id,
       q.center[k] = xf[k];
 
   }
-  else { // Interior face
+  else { /* Interior face */
 
     q.meas = cdoq->i_face_surf[f_id];
 
