@@ -105,7 +105,7 @@ BEGIN_C_DECLS
 void
 cs_lagr_resuspension(void)
 {
-  const cs_real_t tkelvi = 273.15;
+  const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
   cs_lagr_particle_set_t *p_set = cs_lagr_get_particle_set();
   const cs_lagr_attribute_map_t *p_am = p_set->p_am;
@@ -119,7 +119,7 @@ cs_lagr_resuspension(void)
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
   const cs_real_3_t *restrict i_face_normal
-        = (const cs_real_3_t *restrict)fvq->i_face_normal;
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
 
   /* ================================================================  */
   /* 1.    Resuspension sub model   */
@@ -131,13 +131,16 @@ cs_lagr_resuspension(void)
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
     unsigned char *part = p_set->p_buffer + p_am->extents * ip;
-    cs_lnum_t face_id       = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
-    cs_real_t p_mass        = cs_lagr_particle_get_real(part, p_am, CS_LAGR_MASS);
-    cs_real_t p_stat_weight = cs_lagr_particle_get_real(part, p_am, CS_LAGR_STAT_WEIGHT);
-    cs_real_t p_diam        = cs_lagr_particle_get_real(part, p_am, CS_LAGR_DIAMETER);
+    cs_lnum_t face_id
+      = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
+    cs_real_t p_mass = cs_lagr_particle_get_real(part, p_am, CS_LAGR_MASS);
+    cs_real_t p_stat_weight
+      = cs_lagr_particle_get_real(part, p_am, CS_LAGR_STAT_WEIGHT);
+    cs_real_t p_diam = cs_lagr_particle_get_real(part, p_am, CS_LAGR_DIAMETER);
 
-    cs_real_t *part_vel     = cs_lagr_particle_attr(part, p_am, CS_LAGR_VELOCITY);
-    cs_real_t *prev_part_vel= cs_lagr_particle_attr_n(part, p_am, 1, CS_LAGR_VELOCITY);
+    cs_real_t *part_vel = cs_lagr_particle_attr(part, p_am, CS_LAGR_VELOCITY);
+    cs_real_t *prev_part_vel
+      = cs_lagr_particle_attr_n(part, p_am, 1, CS_LAGR_VELOCITY);
 
     test_colli = 0;
 
@@ -389,7 +392,7 @@ cs_lagr_resuspension(void)
         /* The adhesion force is calculated    */
         cs_lagr_adh(ip, temp, &adhesion_energ);
 
-      else if (flag == CS_LAGR_PART_ROLLING){
+      else if (flag == CS_LAGR_PART_ROLLING) {
 
         /* The cluster is rolling   */
 
@@ -507,6 +510,7 @@ cs_lagr_resuspension(void)
         }
 
       }
+
 
     } /* End of multilayer resuspension */
 

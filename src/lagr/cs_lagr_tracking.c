@@ -1058,7 +1058,7 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
       }
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
                                 cur_cell_id +1);
-      cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_NEIGHBOR_FACE_ID ,
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID,
                                 face_id);
       // The particle is not treated yet: the motion is now imposed
       move_particle = CS_LAGR_PART_MOVE_OFF;
@@ -1112,7 +1112,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                     int                       *p_move_particle)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const double pi = 4 * atan(1);
+  const double pi = cs_math_pi;
   const double bc_epsilon = 1.e-2;
 
   const cs_lagr_attribute_map_t  *p_am = particles->p_am;

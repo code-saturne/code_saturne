@@ -259,23 +259,19 @@ cs_lagr_barrier_pp(cs_real_t                       dpart,
                    cs_lnum_t                       iel,
                    cs_real_t                      *energy_barrier)
 {
-  cs_lnum_t i;
   cs_real_t rpart = dpart * 0.5;
 
   *energy_barrier = 0.;
 
-  cs_real_t barr = 0.;
-  cs_real_t distcc = 0.;
-
   /* Computation of the energy barrier */
 
-  for (i = 0; i < 1001; i++) {
+  for (int i = 0; i < 1001; i++) {
 
     cs_real_t  step = cs_lagr_dlvo_param.debye_length[iel]/30.0;
 
     /* Interaction between two spheres */
 
-    distcc = _d_cut_off + i * step + 2.0 * rpart;
+    cs_real_t distcc = _d_cut_off + i * step + 2.0 * rpart;
 
     cs_real_t var1
       = cs_lagr_van_der_waals_sphere_sphere(distcc,
@@ -295,11 +291,11 @@ cs_lagr_barrier_pp(cs_real_t                       dpart,
                                   cs_lagr_dlvo_param.debye_length[iel],
                                   cs_lagr_dlvo_param.water_permit);
 
-    barr = (var1 + var2);
+    cs_real_t barr = (var1 + var2);
 
     if (barr >  *energy_barrier)
       *energy_barrier = barr;
-    if ( *energy_barrier < 0)
+    if (*energy_barrier < 0)
       *energy_barrier = 0;
    }
 
