@@ -3567,47 +3567,42 @@ cs_lagr_test_wall_cell(const void                     *particle,
 
   if (cell_num < 0) return;
 
-  cs_lagr_track_builder_t  *builder = _particle_track_builder;
-  cs_lnum_t  *cell_face_idx = builder->cell_face_idx;
-  cs_lnum_t  *cell_face_lst = builder->cell_face_lst;
+  cs_lnum_t  *cell_b_face_idx = cs_glob_mesh_adjacencies->cell_b_faces_idx;
+  cs_lnum_t  *cell_b_faces = cs_glob_mesh_adjacencies->cell_b_faces;
   cs_lnum_t cell_id = cell_num - 1;
 
   *yplus = 10000;
   *face_id = -1;
 
-  cs_lnum_t  start = cell_face_idx[cell_id];
-  cs_lnum_t  end =  cell_face_idx[cell_id + 1];
+  cs_lnum_t  start = cell_b_face_idx[cell_id];
+  cs_lnum_t  end =  cell_b_face_idx[cell_id + 1];
 
   for (cs_lnum_t i = start; i < end; i++) {
-    cs_lnum_t  face_num = cell_face_lst[i];
+    cs_lnum_t f_id = cell_b_faces[i];
 
-    if (face_num < 0) {
+    assert(cs_glob_lagr_boundary_conditions != NULL);
 
-      assert(cs_glob_lagr_boundary_conditions != NULL);
+    const char b_type = cs_glob_lagr_boundary_conditions->elt_type[f_id];
 
-      cs_lnum_t f_id = CS_ABS(face_num) - 1;
-      const char b_type = cs_glob_lagr_boundary_conditions->elt_type[f_id];
+    if (   (b_type == CS_LAGR_DEPO1)
+        || (b_type == CS_LAGR_DEPO2)
+        || (b_type == CS_LAGR_DEPO_DLVO)) {
 
-      if (   (b_type == CS_LAGR_DEPO1)
-          || (b_type == CS_LAGR_DEPO2)
-          || (b_type == CS_LAGR_DEPO_DLVO)) {
+      cs_real_t x_face = cs_glob_lagr_b_u_normal[f_id][0];
+      cs_real_t y_face = cs_glob_lagr_b_u_normal[f_id][1];
+      cs_real_t z_face = cs_glob_lagr_b_u_normal[f_id][2];
 
-        cs_real_t x_face = cs_glob_lagr_b_u_normal[f_id][0];
-        cs_real_t y_face = cs_glob_lagr_b_u_normal[f_id][1];
-        cs_real_t z_face = cs_glob_lagr_b_u_normal[f_id][2];
+      cs_real_t offset_face = cs_glob_lagr_b_u_normal[f_id][3];
+      const cs_real_t  *particle_coord
+        = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
 
-        cs_real_t offset_face = cs_glob_lagr_b_u_normal[f_id][3];
-        const cs_real_t  *particle_coord
-          = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
-
-        cs_real_t dist_norm = CS_ABS(  particle_coord[0] * x_face
-                                     + particle_coord[1] * y_face
-                                     + particle_coord[2] * z_face
-                                     + offset_face) / visc_length[f_id];
-        if (dist_norm  < *yplus) {
-          *yplus = dist_norm;
-          *face_id = f_id;
-        }
+      cs_real_t dist_norm = CS_ABS(  particle_coord[0] * x_face
+                                   + particle_coord[1] * y_face
+                                   + particle_coord[2] * z_face
+                                   + offset_face) / visc_length[f_id];
+      if (dist_norm  < *yplus) {
+        *yplus = dist_norm;
+        *face_id = f_id;
       }
     }
 
