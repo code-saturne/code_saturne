@@ -67,6 +67,8 @@ Numerics:
 
 Architectural changes:
 
+- Preprocessor: update Gmsh reader to handle GMSH v4 format.
+
 - Add "--disable-backend" configure option to build and install only
   front-end and documentation.
 
