@@ -407,7 +407,7 @@ _read_string(cs_xml_t  *doc)
         }
         else if (strncmp(doc->buf+i, "&amp;", 5) == 0) {
           doc->buf[j++] = '&';
-          i += 5;
+          i += 4;
         }
         else if (strncmp(doc->buf+i, "&lt;", 4) == 0) {
           doc->buf[j++] = '<';
