@@ -100,7 +100,7 @@ cs_axpy(cs_lnum_t         n,
  * parameters:
  *   n <-- size of arrays x and y
  *   x <-- array of floating-point values
- *   y<-- array of floating-point values
+ *   y <-- array of floating-point values
  *
  * returns:
  *   dot product
@@ -115,7 +115,7 @@ cs_dot(cs_lnum_t         n,
  * Return dot products of a vector with itself: x.x
  *
  * parameters:
- *   n  <-- size of arrays x and y
+ *   n  <-- size of arrays x
  *   x  <-- array of floating-point values
  *
  * returns:
@@ -125,6 +125,25 @@ cs_dot(cs_lnum_t         n,
 double
 cs_dot_xx(cs_lnum_t         n,
           const cs_real_t  *x);
+
+/*----------------------------------------------------------------------------
+ * Return weighted dot products of a vector with itself: x.x
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * parameters:
+ *   n  <-- size of arrays x
+ *   w  <-- array of weights
+ *   x  <-- array of floating-point values
+ *
+ * returns:
+ *   dot product
+ *----------------------------------------------------------------------------*/
+
+double
+cs_dot_wxx(cs_lnum_t         n,
+           const cs_real_t  *w,
+           const cs_real_t  *x);
 
 /*----------------------------------------------------------------------------
  * Return the double dot product of 2 vectors: x.x, and x.y

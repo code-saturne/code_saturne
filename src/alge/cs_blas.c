@@ -1339,6 +1339,63 @@ cs_dot_xx(cs_lnum_t         n,
   return _cs_glob_dot_xx(n, x);
 }
 
+/*----------------------------------------------------------------------------
+ * Return weighted dot products of a vector with itself: x.x
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * \param[in]  n  size of array x
+ * \param[in]  w  array of weights
+ * \param[in]  x  array of floating-point values
+ *
+ * \return the resulting dot product
+ *----------------------------------------------------------------------------*/
+
+double
+cs_dot_wxx(cs_lnum_t         n,
+           const cs_real_t  *w,
+           const cs_real_t  *x)
+{
+  double dot_wxx = 0.0;
+
+# pragma omp parallel reduction(+:dot_wxx) if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_t *_x = x + s_id;
+    const cs_real_t *_w = w + s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double sdot_wxx = 0.0;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double cdot_wxx = 0.0;
+        for (cs_lnum_t i = start_id; i < end_id; i++)
+          cdot_wxx += _w[i]*_x[i]*_x[i];
+        sdot_wxx += cdot_wxx;
+      }
+
+      dot_wxx += sdot_wxx;
+
+    }
+
+  }
+
+  return dot_wxx;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return 2 dot products of 2 vectors: x.x, and x.y
