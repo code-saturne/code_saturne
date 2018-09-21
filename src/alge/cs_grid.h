@@ -55,7 +55,8 @@ typedef enum {
 
   CS_GRID_COARSENING_DEFAULT,        /*!< default among following choices */
   CS_GRID_COARSENING_SPD_DX,         /*!< SPD, diag/extradiag ratio based */
-  CS_GRID_COARSENING_SPD_MX,         /*!< SPD, max extradiag ratio based, v1 */
+  CS_GRID_COARSENING_SPD_MX,         /*!< SPD, max extradiag ratio based */
+  CS_GRID_COARSENING_SPD_PW,         /*!< SPD, pairwise aggregation */
   CS_GRID_COARSENING_CONV_DIFF_DX    /*!< convection+diffusion,
                                           diag/extradiag ratio based */
 

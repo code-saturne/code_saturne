@@ -225,11 +225,34 @@ struct _cs_grid_t {
 #endif
 };
 
+/* Structure associated with traversal and update of graph */
+/*---------------------------------------------------------*/
+
+typedef struct _cs_graph_m_ptr_t {
+
+  cs_lnum_t           m_min;        /* Minimum local number of columns */
+  cs_lnum_t           m_max;        /* Maximum local number of columns */
+
+  cs_lnum_t          *m_head;       /* pointer to head of rows list for each
+                                       value of m */
+
+  cs_lnum_t          *next;         /* pointer to next row */
+  cs_lnum_t          *prev;         /* pointer to previous row */
+
+} cs_graph_m_ptr_t;
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
 
 cs_real_t _penalization_threshold = 1e4;
+
+ /* Threshold under which diagonal dominant rows are ignored in the
+    aggregation scheme (assuming that dominance allows strong enough
+    convergence for those rows by itself). Y Notay recommends using
+    a value of 5. */
+
+cs_real_t _dd_threshold_pw = 5;
 
 #if defined(HAVE_MPI)
 
@@ -250,6 +273,7 @@ const char *cs_grid_coarsening_type_name[]
   = {N_("default"),
      N_("SPD, diag/extra-diag ratio based"),
      N_("SPD, max extra-diag ratio based"),
+     N_("SPD, (multiple) pairwise aggregation"),
      N_("convection + diffusion")};
 
 /* Select tuning options */
@@ -1234,7 +1258,9 @@ _coarsen(const cs_grid_t   *f,
 
   /* Build face coarsening and coarse grid face -> cells connectivity */
 
-  if (f->face_cell != NULL) {
+  if (  f->face_cell != NULL
+      && (   c->relaxation > 0
+          || cs_matrix_get_type(f->matrix) == CS_MATRIX_NATIVE)) {
     _coarsen_faces(f,
                    c->coarse_row,
                    c->n_rows,
@@ -2487,6 +2513,420 @@ _scatter_row_num(const cs_grid_t  *g,
 }
 
 #endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------
+ * Remove an element from a list (queue) of elements listed by adjacency size.
+ *
+ * parameters:
+ *   s      <-> structure associated with graph traversal and update
+ *   a_m_e  <-- number of adjacencies considered for this element
+ *   elt_id <-- id of element to remove
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_graph_m_ptr_remove_m(cs_graph_m_ptr_t  *s,
+                      cs_lnum_t          a_m_e,
+                      cs_lnum_t          elt_id)
+{
+  cs_lnum_t _m = a_m_e;
+
+  cs_lnum_t s_p = s->prev[elt_id];
+  cs_lnum_t s_n = s->next[elt_id];
+  if (s_p > -1) { /* not head of list */
+    s->next[s_p] = s_n;
+    if (s_n > -1)
+      s->prev[s_n] = s_p;
+  }
+  else { /* head of list */
+    assert(s->m_head[_m] == elt_id);
+    s->m_head[_m] = s_n;
+    if (s_n > -1)
+      s->prev[s_n] = -1;
+    if (s->m_head[_m] < 0) { /* Update min and max m */
+      if (_m == s->m_min) {
+        s->m_min += 1;
+        while (s->m_min < s->m_max) {
+          if (s->m_head[s->m_min] > -1)
+            break;
+          else
+            s->m_min++;
+        }
+      }
+      else if (_m == s->m_max) {
+        s->m_max -= 1;
+        while (s->m_max > s->m_min) {
+          if (s->m_head[s->m_max] > -1)
+            break;
+          else
+            s->m_max--;
+        }
+      }
+    }
+  }
+
+  s->prev[elt_id] = -1;
+  s->next[elt_id] = -1;
+}
+
+/*----------------------------------------------------------------------------
+ * Insert an element at the head of a list (queue) of elements listed
+ * by adjacency size.
+ *
+ * Elements inserted through this function must have been removed from
+ * a list with higher adjacency, so a_m_e < s->m_max.
+ *
+ * parameters:
+ *   s      <-> structure associated with graph traversal and update
+ *   a_m_e  <-> number of adjacencies considered for this element
+ *   elt_id <-- id of element to remove
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_graph_m_ptr_insert_m(cs_graph_m_ptr_t  *s,
+                      cs_lnum_t          a_m_e,
+                      cs_lnum_t          elt_id)
+{
+  cs_lnum_t _m = a_m_e;
+
+  cs_lnum_t s_p = s->m_head[_m];
+  if (s_p > -1) { /* list not empty */
+    assert(s->prev[s_p] == -1);
+    s->prev[s_p] = elt_id;
+    s->next[elt_id] = s_p;
+  }
+  else {  /* Update min and max m */
+    if (_m < s->m_min)
+      s->m_min = _m;
+    else if (_m > s->m_max) {
+      s->m_max = _m;
+      if (s->m_head[s->m_min] < 0)
+        s->m_min = _m;
+    }
+    assert(_m <= s->m_max);
+  }
+  s->m_head[_m] = elt_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply one step of the pairwise aggregation algorithm for a
+ *        matrix expected to be an M-matrix.
+ *
+ * This assumes positive diagonal entries, and negative off-diagonal entries.
+ * The matrix is provided in scalar MSR (modified CSR with separate diagonal)
+ * form. To use block matrixes with this function, their blocks must be
+ * condensed to equivalent scalars.
+ *
+ * \param[in]   f_n_rows      number of rows in fine grid
+ * \param[in]   beta          aggregation criterion
+ * \param[in]   dd_threshold  diagonal dominance threshold; if > 0, ignore rows
+ *                            whose diagonal dominance is above this threshold
+ * \param[in]   row_index     matrix row index (separate diagonal)
+ * \param[in]   col_id        matrix column ids
+ * \param[in]   d_val         matrix diagonal values (scalar)
+ * \param[in]   x_val         matrix extradiagonal values (scalar)
+ * \param[out]  f_c_row       fine to coarse rows mapping
+ *
+ * \return  local number of resulting coarse rows
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_pairwise_msr(cs_lnum_t         f_n_rows,
+              const cs_real_t   beta,
+              const cs_real_t   dd_threshold,
+              const cs_lnum_t   row_index[restrict],
+              const cs_lnum_t   col_id[restrict],
+              const cs_real_t   d_val[restrict],
+              const cs_real_t   x_val[restrict],
+              cs_lnum_t        *f_c_row)
+{
+  cs_lnum_t c_n_rows = 0;
+
+  /* Mark all elements of fine to coarse rows as uninitialized */
+  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++)
+    f_c_row[ii] = -2;
+
+  /* Allocate working arrays */
+
+  short int  *a_m;   /* active m for row */
+  cs_real_t  *a_max; /* max per line */
+
+  BFT_MALLOC(a_m, f_n_rows, short int);
+  BFT_MALLOC(a_max, f_n_rows, cs_real_t);
+
+  /* Computation of the maximum over line ii and test if the line ii is
+   * ignored. Be careful that the sum has to be the sum of the
+   * absolute value of every extra-diagonal coefficient, but the maximum is only
+   * on the negative coefficient. */
+
+  cs_lnum_t m_max = -1;
+
+  if (dd_threshold > 0) {
+
+    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+
+      cs_real_t sum = 0.0;
+
+      cs_lnum_t s_id = row_index[ii];
+      cs_lnum_t e_id = row_index[ii+1];
+      a_max[ii] = 0.0;
+
+      for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
+        cs_real_t xv = x_val[jj];
+        sum += CS_ABS(xv);
+        if (col_id[jj] < f_n_rows && xv < 0)
+          a_max[ii] = CS_MAX(a_max[ii], -xv);
+      }
+
+      /* Check if the line seems ignored or not. */
+      if (d_val[ii] > dd_threshold * sum) {
+        a_m[ii] = -1;
+        f_c_row[ii] = -1;
+      }
+      else {
+        a_m[ii] = 0;
+        for (cs_lnum_t jj = e_id-1; jj >= s_id; jj--) {
+          if (col_id[jj] < f_n_rows && x_val[jj] < beta*sum)
+            a_m[ii] += 1;
+        }
+      }
+
+      if (m_max < a_m[ii])
+        m_max = a_m[ii];
+
+    }
+
+  }
+  else { /* variant with no diagonal dominance check */
+
+    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+
+      cs_lnum_t s_id = row_index[ii];
+      cs_lnum_t e_id = row_index[ii+1];
+      a_max[ii] = 0.0;
+
+      for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
+        cs_real_t xv = x_val[jj];
+        if (col_id[jj] < f_n_rows && xv < 0)
+          a_max[ii] = CS_MAX(a_max[ii], -xv);
+      }
+
+      a_m[ii] = 0;
+      for (cs_lnum_t jj = e_id-1; jj >= s_id; jj--) {
+        if (col_id[jj] < f_n_rows)
+          a_m[ii] += 1;
+      }
+
+      if (m_max < a_m[ii])
+        m_max = a_m[ii];
+
+    }
+
+  }
+
+  /* Build pointers to lists of rows by a_m
+     (to allow access to row with lowest m) */
+
+  cs_graph_m_ptr_t s;
+
+  s.m_min = 0;
+  s.m_max = m_max;
+
+  BFT_MALLOC(s.m_head, s.m_max+1, cs_lnum_t);
+  BFT_MALLOC(s.next, f_n_rows*2, cs_lnum_t);
+  s.prev = s.next + f_n_rows;
+
+  for (cs_lnum_t ii = 0; ii < s.m_max+1; ii++)
+    s.m_head[ii] = -1;
+  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+    s.next[ii] = -1;
+    s.prev[ii] = -1;
+  }
+
+  for (cs_lnum_t ii = f_n_rows-1; ii >= 0; ii--) {
+    cs_lnum_t _m = a_m[ii];
+    if (_m >= 0) {
+      cs_lnum_t prev_head = s.m_head[_m];
+      s.m_head[_m] = ii;
+      s.next[ii] = prev_head;
+      if (prev_head > -1)
+        s.prev[prev_head] = ii;
+    }
+  }
+
+  /* Now build pairs */
+
+  while (s.m_min < s.m_max) {
+    if (s.m_head[s.m_min] < 0)
+      s.m_min++;
+    else
+      break;
+  }
+
+  cs_lnum_t n_remain = f_n_rows;
+
+  while (s.m_min > -1) {
+
+    /* Select remaining ii with minimal a_m */
+
+    cs_lnum_t ii = s.m_head[s.m_min];
+    assert(ii > -1);
+
+    cs_lnum_t gg[2] = {ii, -1};
+
+    /* Select remaining jj such that aij = min_over_k_aik */
+
+    cs_lnum_t s_id = row_index[ii];
+    cs_lnum_t e_id = row_index[ii+1];
+
+    f_c_row[ii] = c_n_rows; /* Add i to "pair" in all cases */
+
+    if (e_id > s_id) {
+
+      cs_lnum_t jj = -1;
+      cs_real_t _a_min = HUGE_VAL;
+      for (cs_lnum_t kk_idx = s_id; kk_idx < e_id; kk_idx++) {
+        cs_lnum_t kk = col_id[kk_idx];
+        if (kk < f_n_rows && f_c_row[kk] == -2) { /* not aggregated yet */
+          cs_real_t xv = x_val[kk_idx];
+          if (xv < _a_min) {
+            _a_min = xv;
+            jj = kk;
+          }
+        }
+      }
+
+      /* keep jj only if within threshold */
+
+      if (_a_min >= -beta*a_max[ii])
+        jj = -1;
+      else {
+        f_c_row[jj] = c_n_rows; /* Add jj to "pair" */
+        gg[1] = jj;
+      }
+
+    }
+
+    c_n_rows++;
+
+    /* Now update search set */
+
+    for (int ip = 0; ip < 2; ip++) {
+      cs_lnum_t i = gg[ip];
+      if (i > -1) {
+        cs_lnum_t _m = a_m[i];
+        assert(_m > -1);
+        _graph_m_ptr_remove_m(&s, _m, i);
+        a_m[i] = -1;
+        cs_lnum_t _s_id = row_index[i];
+        cs_lnum_t _e_id = row_index[i+1];
+        for (cs_lnum_t k = _e_id-1; k >= _s_id; k--) {
+          cs_lnum_t j = col_id[k];
+          if (j >= f_n_rows)
+            continue;
+          _m = a_m[j];
+          if (_m >= 0) {
+            _graph_m_ptr_remove_m(&s, _m, j);
+            if (_m > 0)
+              _graph_m_ptr_insert_m(&s, _m-1, j);
+            a_m[j] = _m - 1;
+          }
+        }
+        n_remain--;
+      }
+    }
+    if (s.m_min == s.m_max) { /* check if list has become empty */
+      if (s.m_head[s.m_min] < 0) {
+        s.m_min = -1;
+        s.m_max = -1;
+      }
+    }
+
+  }
+
+  for (int ii = 0; ii < f_n_rows; ii++)
+    assert(f_c_row[ii] > -2);
+
+  assert(n_remain == 0);
+
+  /* Free working arrays */
+
+  BFT_FREE(s.next);
+  BFT_FREE(s.m_head);
+  BFT_FREE(a_max);
+  BFT_FREE(a_m);
+
+  return c_n_rows;
+}
+
+ /*----------------------------------------------------------------------------
+ * Build a coarse grid level from the previous level using an
+ * automatic criterion and pairwise aggregation variant 1,
+ * with a matrix in MSR format.
+ *
+ * parameters:
+ *   f                   <-- Fine grid structure
+ *   verbosity           <-- Verbosity level
+ *   f_c_row             --> Fine row -> coarse row connectivity
+ *----------------------------------------------------------------------------*/
+
+static void
+_automatic_aggregation_pw_msr(const cs_grid_t  *f,
+                              int               verbosity,
+                              cs_lnum_t        *f_c_row)
+{
+  const cs_real_t beta = 0.25;
+
+  const cs_real_t dd_threshold = (f->level == 0) ? _dd_threshold_pw : -1;
+
+  const cs_lnum_t f_n_rows = f->n_rows;
+
+  /* Access matrix MSR vectors */
+
+  const cs_lnum_t  *row_index, *col_id;
+  const cs_real_t  *d_val, *x_val;
+  cs_real_t *_d_val = NULL, *_x_val = NULL;
+
+  cs_matrix_get_msr_arrays(f->matrix,
+                           &row_index,
+                           &col_id,
+                           &d_val,
+                           &x_val);
+
+  const cs_lnum_t *db_size = f->db_size;
+  const cs_lnum_t *eb_size = f->eb_size;
+
+  if (db_size[0] > 1) {
+    BFT_MALLOC(_d_val, f_n_rows, cs_real_t);
+    _reduce_block(f_n_rows, db_size, d_val, _d_val);
+    d_val = _d_val;
+  }
+
+  if (eb_size[0] > 1) {
+    cs_lnum_t f_n_enz = row_index[f_n_rows];
+    BFT_MALLOC(_x_val, f_n_enz, cs_real_t);
+    _reduce_block(f_n_enz, eb_size, x_val, _x_val);
+    x_val = _x_val;
+  }
+
+  if (verbosity > 3)
+    bft_printf("\n     %s:\n", __func__);
+
+  _pairwise_msr(f_n_rows,
+                beta,
+                dd_threshold,
+                row_index,
+                col_id,
+                d_val,
+                x_val,
+                f_c_row);
+
+  /* Free working arrays */
+
+  BFT_FREE(_d_val);
+  BFT_FREE(_x_val);
+}
 
 /*----------------------------------------------------------------------------
  * Build a coarse grid level from the previous level using an
@@ -4363,6 +4803,38 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
                            c_x_val, c_d_val);
 }
 
+/*----------------------------------------------------------------------------
+ * Project coarse grid row numbers to parent grid.
+ *
+ * parameters:
+ *   c  <-- coarse grid structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_project_coarse_row_to_parent(cs_grid_t  *c)
+{
+  assert(c != NULL);
+
+  const cs_grid_t  *f = c->parent;
+
+  assert(f != NULL);
+
+  if (f->parent != NULL) { /* level > 0*/
+
+    int *c_coarse_row = c->coarse_row;
+    int *f_coarse_row = f->coarse_row;
+
+    cs_lnum_t f_n_cols = f->parent->n_cols_ext;
+
+    for (cs_lnum_t ii = 0; ii < f_n_cols; ii++) {
+      cs_lnum_t ic = f_coarse_row[ii];
+      if (ic >= 0)
+        f_coarse_row[ii] = c_coarse_row[ic];
+    }
+
+  }
+}
+
 /*============================================================================
  * Semi-private function definitions
  *
@@ -4826,6 +5298,8 @@ cs_grid_coarsen(const cs_grid_t   *f,
                 int                aggregation_limit,
                 double             relaxation_parameter)
 {
+  int recurse = 0;
+
   cs_lnum_t isym = 2;
   bool conv_diff = f->conv_diff;
 
@@ -4869,9 +5343,23 @@ cs_grid_coarsen(const cs_grid_t   *f,
     else
       coarsening_type = CS_GRID_COARSENING_SPD_MX;
   }
+  else if (coarsening_type == CS_GRID_COARSENING_SPD_DX) {
+    /* closest altenative */
+    if (f->face_cell == NULL)
+      coarsening_type = CS_GRID_COARSENING_SPD_MX;
+  }
 
-  if (f->face_cell == NULL)
-    coarsening_type = CS_GRID_COARSENING_SPD_MX;
+  else if (coarsening_type == CS_GRID_COARSENING_SPD_PW) {
+    /* closest altenative */
+    if (fine_matrix_type == CS_MATRIX_NATIVE)
+      coarsening_type = CS_GRID_COARSENING_SPD_MX;
+  }
+
+  else if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
+    /* closest altenative */
+    if (f->face_cell == NULL)
+      coarsening_type = CS_GRID_COARSENING_SPD_MX;
+  }
 
   /* Determine fine->coarse cell connectivity (aggregation) */
 
@@ -4886,7 +5374,6 @@ cs_grid_coarsen(const cs_grid_t   *f,
                                 c->coarse_row);
   }
   else if (coarsening_type == CS_GRID_COARSENING_SPD_MX) {
-    c->relaxation = 0;
     switch (fine_matrix_type) {
     case CS_MATRIX_NATIVE:
       _automatic_aggregation_mx_native(f, aggregation_limit, verbosity,
@@ -4899,8 +5386,24 @@ cs_grid_coarsen(const cs_grid_t   *f,
     default:
       bft_error(__FILE__, __LINE__, 0,
                 _("%s: selected coarsening type (%s)\n"
-                  "only available for MSR structured matrices."),
-                __func__, cs_grid_coarsening_type_name[coarsening_type]);
+                  "not available for %s structured matrices."),
+                __func__, cs_grid_coarsening_type_name[coarsening_type],
+                _(cs_matrix_type_name[fine_matrix_type]));
+    }
+  }
+  else if (coarsening_type == CS_GRID_COARSENING_SPD_PW) {
+    switch (fine_matrix_type) {
+    case CS_MATRIX_MSR:
+      _automatic_aggregation_pw_msr(f, verbosity, c->coarse_row);
+      if (aggregation_limit > 2)
+        recurse = 2;
+      break;
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: selected coarsening type (%s)\n"
+                  "not available for %s structured matrices."),
+                __func__, cs_grid_coarsening_type_name[coarsening_type],
+                _(cs_matrix_type_name[fine_matrix_type]));
     }
   }
 
@@ -4971,7 +5474,10 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
   }
 
-  if (f->face_cell != NULL) {
+  if (fine_matrix_type == CS_MATRIX_MSR && c->relaxation <= 0)
+    _compute_coarse_quantities_msr(f, c);
+
+  else if (f->face_cell != NULL) {
 
     if (conv_diff)
       _compute_coarse_quantities_conv_diff(f, c, verbosity);
@@ -4986,7 +5492,9 @@ cs_grid_coarsen(const cs_grid_t   *f,
     /* Merge grids if we are below the threshold */
 
 #if defined(HAVE_MPI)
-    if (c->n_ranks > _grid_merge_min_ranks && _grid_merge_stride > 1) {
+    if (   c->n_ranks > _grid_merge_min_ranks
+        && _grid_merge_stride > 1
+        && recurse == 0) {
       cs_gnum_t  _n_ranks = c->n_ranks;
       cs_gnum_t  _n_mean_g_cells = c->n_g_rows / _n_ranks;
       if (   _n_mean_g_cells < _grid_merge_mean_threshold
@@ -5079,10 +5587,49 @@ cs_grid_coarsen(const cs_grid_t   *f,
                                c->xa);
 
   }
-  else if (fine_matrix_type == CS_MATRIX_MSR)
-    _compute_coarse_quantities_msr(f, c);
 
   c->matrix = c->_matrix;
+
+  /* Recurse if necessary */
+
+  if (recurse > 1) {
+
+    /* Build coarser grid from coarse grid */
+    cs_grid_t *cc = cs_grid_coarsen(c,
+                                    verbosity,
+                                    coarsening_type,
+                                    aggregation_limit / recurse,
+                                    relaxation_parameter);
+
+    /* Project coarsening */
+
+    _project_coarse_row_to_parent(cc);
+    BFT_FREE(cc->coarse_row);
+    cc->coarse_row = c->coarse_row;
+    c->coarse_row = NULL;
+
+    if (c->face_cell != NULL) {
+      BFT_FREE(cc->coarse_face);
+      BFT_FREE(cc->_face_cell);
+      _coarsen_faces(f,
+                     cc->coarse_row,
+                     cc->n_rows,
+                     &(cc->n_faces),
+                     &(cc->coarse_face),
+                     &(cc->_face_cell));
+      cc->face_cell = (const cs_lnum_2_t  *)(cc->_face_cell);
+    }
+
+    /* Keep coarsest grid only */
+
+    cc->level -=1;
+    cc->parent = f;
+
+    assert(cc->parent = c->parent);
+
+    cs_grid_destroy(&c);
+    c = cc;
+  }
 
   /* Optional verification */
 

@@ -2859,7 +2859,7 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
   _multigrid_info_init(&(mg->info));
 
   if (mg->type == CS_MULTIGRID_K_CYCLE) {
-    mg->coarsening_type = CS_GRID_COARSENING_SPD_MX;
+    mg->coarsening_type = CS_GRID_COARSENING_SPD_PW;
     mg->aggregation_limit = 4;
     mg->n_levels_max = 10;
     if (cs_glob_n_ranks > 1)
