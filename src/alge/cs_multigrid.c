@@ -279,8 +279,9 @@ struct _cs_multigrid_t {
 # if defined(HAVE_MPI)
   MPI_Comm comm;
   MPI_Comm caller_comm;
-  int      caller_n_ranks;
 # endif
+
+  int      caller_n_ranks;
 
   /* Data available between "setup" and "solve" states */
 
@@ -2879,10 +2880,11 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
   for (ii = 0; ii < mg->n_levels_max; ii++)
     _multigrid_level_info_init(mg->lv_info + ii);
 
+  mg->caller_n_ranks = cs_glob_n_ranks;
+
 #if defined(HAVE_MPI)
   mg->comm = cs_glob_mpi_comm;
   mg->caller_comm = cs_glob_mpi_comm;
-  mg->caller_n_ranks = cs_glob_n_ranks;
   if (mg->caller_n_ranks < 2) {
     mg->comm = MPI_COMM_NULL;
     mg->caller_comm = cs_glob_mpi_comm;
