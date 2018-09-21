@@ -157,6 +157,13 @@ typedef struct {
 
   cs_field_t         *velocity;
 
+  /*! \var velocity_divergence
+   *  Divergence of the velocity fied, scalar-valued
+   *  pointer to \ref cs_field_t
+   */
+
+  cs_field_t         *velocity_divergence;
+
   /*! \var pressure
    *  Pressure, scalar-valued, pointer to \ref cs_field_t
    */

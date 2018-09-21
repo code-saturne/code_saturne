@@ -887,23 +887,32 @@ cs_advection_field_create_fields(void)
     { /* Add a field attached to cells (Always created since it's used to
          define the numerical scheme for advection */
 
-      /* Define the name of the field */
-      len = strlen(adv->name) + strlen("_cells") + 1;
-      BFT_MALLOC(field_name, len, char);
-      sprintf(field_name, "%s_cells", adv->name);
+      if (adv->type == CS_ADVECTION_FIELD_NAVSTO) {
 
-      cs_field_t  *fld = cs_field_create(field_name,
-                                         field_mask,
-                                         CS_MESH_LOCATION_CELLS,
-                                         3,  /* always a vector-valued field */
-                                         has_previous);
+        adv->cell_field_id = cs_field_id_by_name("velocity");
+        assert(adv->cell_field_id != -1);
 
-      cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-      cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
+      }
+      else {
 
-      adv->cell_field_id = cs_field_id_by_name(field_name);
+        /* Define the name of the field */
+        len = strlen(adv->name) + strlen("_cells") + 1;
+        BFT_MALLOC(field_name, len, char);
+        sprintf(field_name, "%s_cells", adv->name);
 
-      BFT_FREE(field_name);
+        cs_field_t  *fld = cs_field_create(field_name,
+                                           field_mask,
+                                           CS_MESH_LOCATION_CELLS,
+                                           3,  /* always a vector-valued field */
+                                           has_previous);
+
+        cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+        cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
+
+        adv->cell_field_id = cs_field_id_by_name(field_name);
+
+        BFT_FREE(field_name);
+      }
 
     } /* Add a field attached to cells */
 

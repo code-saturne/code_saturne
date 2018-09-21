@@ -129,7 +129,7 @@ typedef struct {
    *  cells
    */
 
-  cs_real_t  *divergence;
+  cs_field_t  *divergence;
 
  /*!
    * @}
@@ -1015,9 +1015,7 @@ cs_cdofb_uzawa_init_scheme_context(const cs_navsto_param_t     *nsp,
 
   sc->velocity = cs_field_by_name("velocity");
   sc->pressure = cs_field_by_name("pressure");
-
-  sc->divergence = NULL;
-  BFT_MALLOC(sc->divergence, cs_shared_quant->n_cells, cs_real_t);
+  sc->divergence = cs_field_by_name("velocity_divergence");
 
   sc->is_gdscale_uniform = true;
   sc->residual = DBL_MAX;
@@ -1204,7 +1202,7 @@ cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
   cs_real_t  *pr = sc->pressure->val;
   cs_real_t  *vel_c = sc->velocity->val;
   cs_real_t  *vel_f = mom_eq->get_face_values(mom_eqc);
-  cs_real_t  *div = sc->divergence;
+  cs_real_t  *div = sc->divergence->val;
 
   /**********  INNER ITERATIONS - START  ***********/
   /* Convergence code:

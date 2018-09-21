@@ -124,6 +124,7 @@ _allocate_navsto_system(void)
 
   /* Main set of variables */
   navsto->velocity = NULL;
+  navsto->velocity_divergence = NULL;
   navsto->pressure = NULL;
   navsto->temperature = NULL;
 
@@ -390,6 +391,18 @@ cs_navsto_system_init_setup(void)
   /* Set default value for keys related to log and post-processing */
   cs_field_set_key_int(ns->pressure, cs_field_key_id("log"), 1);
   cs_field_set_key_int(ns->pressure, cs_field_key_id("post_vis"), post_flag);
+
+  /* Handle the divergence of the velocity field */
+  ns->velocity_divergence = cs_field_find_or_create("velocity_divergence",
+                                                    field_mask,
+                                                    location_id,
+                                                    1, /* dimension */
+                                                    has_previous);
+
+  /* Set default value for keys related to log and post-processing */
+  cs_field_set_key_int(ns->velocity_divergence, cs_field_key_id("log"), 1);
+  cs_field_set_key_int(ns->velocity_divergence, cs_field_key_id("post_vis"),
+                       post_flag);
 
   /* TODO: temperature for the energy equation */
 
