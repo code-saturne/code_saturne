@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-09-12 10:10+0200\n"
+"POT-Creation-Date: 2018-09-22 00:37+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1824,6 +1824,30 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The information on node counts was expected in the form \"numEntityBlocks "
+"numNodes\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"L'information sur le nombre de noeuds était attendue sous la forme"
+"\"numEntityBlocks numNodes\"."
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The description of entity <%d> points was expected in the form \"tagEntity "
+"dimEntity parametric numNodes\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"La description des points de l'entité <%d> était attendue sous la forme "
+"\"tagEntity dimEntity parametric numNodes\"."
+
+#, c-format
+msgid ""
 "Error reading a Gmsh mesh file:\n"
 "at line %ld of file \"%s\".\n"
 "Type identifier <%d> for element <%ld> is not recognized."
@@ -1864,6 +1888,30 @@ msgid ""
 msgstr ""
 "La fin de spécification de la liste des éléments du fichier\n"
 "\"%s\" n'est pas présente à l'emplacement attendu.)"
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The information on element counts was expected in the form \"numEntityBlocks "
+"numElements\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"L'information sur le nombre d'éléments était attendue sous la forme "
+"\"numEntityBlocks numElements\"."
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The description of entity <%d> elements was expected in the form \"tagEntity "
+"dimEntity typeEle numElements\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"La description des éléments de l'entité <%d> était attendue sous la forme "
+"\"tagEntity dimEntity typeEle numElements\"."
 
 #, c-format
 msgid ""
@@ -3182,6 +3230,9 @@ msgstr ""
 msgid "SPD, max extra-diag ratio based"
 msgstr ""
 
+msgid "SPD, (multiple) pairwise aggregation"
+msgstr ""
+
 msgid "convection + diffusion"
 msgstr ""
 
@@ -3217,7 +3268,7 @@ msgstr ""
 #, c-format
 msgid ""
 "%s: selected coarsening type (%s)\n"
-"only available for MSR structured matrices."
+"not available for %s structured matrices."
 msgstr ""
 
 #, c-format
