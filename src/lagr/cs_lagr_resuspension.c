@@ -173,6 +173,50 @@ cs_lagr_resuspension(void)
     cs_lnum_t flag = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG);
     cs_real_t diam_mean = cs_glob_lagr_clogging_model->diam_mean;
 
+    /* Treatment of internal deposition and user imposed motion */
+    if (flag == CS_LAGR_PART_IMPOSED_MOTION && face_id > -1) {
+      bft_printf(" imposed motion\n");
+
+      /* Reorient the face so that it is the outwarding normal */
+      int reorient_face = 1;
+      if (iel == mesh->i_face_cells[face_id][1])
+        reorient_face = -1;
+
+      /* Adhesion forces not implemented */
+
+      /* Gravity forces */
+      cs_real_3_t gravity = {cs_glob_physical_constants->gravity[0],
+        cs_glob_physical_constants->gravity[1],
+        cs_glob_physical_constants->gravity[2]};
+
+      cs_real_t fgrav
+        =   p_mass * reorient_face
+        * cs_math_3_dot_product(gravity, i_face_normal[face_id]);
+
+      /* Forces due to pressure difference */
+      cs_lnum_t c_id1 = mesh->i_face_cells[face_id][0];
+      cs_lnum_t c_id2 = mesh->i_face_cells[face_id][1];
+
+      if (iel == c_id2) {
+        c_id2 = c_id1;
+        c_id1 = iel;
+      }
+
+      /* Warning: dynamic pressure, FIXME for iphydr = 1 */
+      cs_real_t press_out = cs_glob_lagr_extra_module->pressure->val[c_id1];
+      cs_real_t press_in = cs_glob_lagr_extra_module->pressure->val[c_id2];
+
+      cs_real_t fpres = (press_out - press_in) * cs_math_pi * pow(p_diam, 2) * 0.25
+        * cs_lagr_particle_get_real(part, p_am, CS_LAGR_FOULING_INDEX);
+
+      /* Resuspension criterion: Fgrav + Fpres < 0 */
+      if ((fgrav + fpres) < 0.) {
+        cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
+            CS_LAGR_PART_IN_FLOW);
+        /* TODO: impose particle velocity? Do some stats? */
+      }
+    }
+
     /* Monolayer resuspension model */
     if (face_id > 0 &&
         bound_stat[face_id + n_faces * lag_bi->ihdepm] < diam_mean ) {
@@ -339,48 +383,6 @@ cs_lagr_resuspension(void)
 
         }
 
-      }
-      /* Treatment of internal deposition and user imposed motion */
-      else if (flag == CS_LAGR_PART_IMPOSED_MOTION) {
-
-        /* Reorient the face so that it is the outwarding normal */
-        int reorient_face = 1;
-        if (iel == mesh->i_face_cells[face_id][1])
-          reorient_face = -1;
-
-        /* Adhesion forces not implemented */
-
-        /* Gravity forces */
-        cs_real_3_t gravity = {cs_glob_physical_constants->gravity[0],
-                               cs_glob_physical_constants->gravity[1],
-                               cs_glob_physical_constants->gravity[2]};
-
-        cs_real_t fgrav
-          =   p_mass * reorient_face
-            * cs_math_3_dot_product(gravity, i_face_normal[face_id]);
-
-        /* Forces due to pressure difference */
-        cs_lnum_t c_id1 = mesh->i_face_cells[face_id][0];
-        cs_lnum_t c_id2 = mesh->i_face_cells[face_id][1];
-
-        if (iel == c_id2) {
-          c_id2 = c_id1;
-          c_id1 = iel;
-        }
-
-        /* Warning: dynamic pressure, FIXME for iphydr = 1 */
-        cs_real_t press_out = cs_glob_lagr_extra_module->pressure->val[c_id1];
-        cs_real_t press_in = cs_glob_lagr_extra_module->pressure->val[c_id2];
-
-        cs_real_t fpres = (press_out - press_in) * cs_math_pi * pow(p_diam, 2) * 0.25
-          * cs_lagr_particle_get_real(part, p_am, CS_LAGR_FOULING_INDEX);
-
-        /* Resuspension criterion: Fgrav + Fpres < 0 */
-        if ((fgrav + fpres) < 0.) {
-          cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                  CS_LAGR_PART_IN_FLOW);
-          /* TODO: impose particle velocity? Do some stats? */
-        }
       }
     } /* Enf of monolayer resuspension */
     else {

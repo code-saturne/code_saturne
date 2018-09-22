@@ -1033,15 +1033,11 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
 
     cs_real_t energ = 0.5 * particle_mass * (uxn+vyn+wzn) * (uxn+vyn+wzn);
 
-    /* Computation of the energy barrier */
+    /* No energy barrier yet for internal deposition */
     cs_real_t  energt = 0.;
 
-    cs_lagr_barrier_pp(particle_diameter,
-                       cur_cell_id,
-                       &energt);
-
      /* Deposition criterion: E_kin > E_barr */
-    if (energ > energt * 0.5 * particle_diameter) {
+    if (energ >= energt * 0.5 * particle_diameter) {
 
       cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
       cs_real_3_t vect_cen;
@@ -3447,7 +3443,26 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
             * cs_lagr_particles_get_real(particles, ip, CS_LAGR_FOULING_INDEX)
             * cs_lagr_particles_get_real(particles, ip, CS_LAGR_STAT_WEIGHT);
 
-          //FIXME useless cs_lagr_particles_set_lnum(particles, ip, CS_LAGR_NEIGHBOR_FACE_ID, face_id);
+          /* Loop over internal faces of the current particle faces
+           * NB: usefull for resuspension, the last face_id is stored.
+           * face_id is unique in many cases.
+           * */
+          for (cs_lnum_t i = _particle_track_builder->cell_face_idx[cell_id];
+              i < _particle_track_builder->cell_face_idx[cell_id+1] ;
+              i++ ) {
+
+            cs_lnum_t face_num = _particle_track_builder->cell_face_lst[i];
+
+            if (face_num > 0) {
+
+              cs_lnum_t face_id = face_num - 1;
+
+              /* Internal face flagged as internal deposition */
+              if (cs_glob_lagr_internal_conditions->i_face_zone_id[face_id] >= 0)
+                cs_lagr_particles_set_lnum(particles, ip, CS_LAGR_NEIGHBOR_FACE_ID, face_id);
+
+            }
+          }
 
         }
       }
