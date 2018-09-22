@@ -143,7 +143,7 @@ const cs_lagr_const_dim_t *cs_glob_lagr_const_dim
 /* General dimensions */
 
 cs_lagr_dim_t _lagr_dim = {.ntersl = 0,
-                           .nvisbr = 0};
+                           .n_boundary_stats = 0};
 
 cs_lagr_dim_t *cs_glob_lagr_dim = &_lagr_dim;
 
@@ -277,7 +277,7 @@ static cs_lagr_boundary_interactions_t _cs_glob_lagr_boundary_interactions
   = {.nusbor = 0,
      .npstf = 0,
      .npstft = 0,
-     .inbrbd = 0,
+     .has_part_impact_nbr = 0,
      .iflmbd = 0,
      .iangbd= 0,
      .ivitbd = 0,
@@ -950,12 +950,12 @@ cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
                       cs_real_t  **p_cs_glob_lagr_source_terms)
 {
   cs_lnum_t  n_b_faces = cs_glob_mesh->n_b_faces;
-  int   nvisbr = cs_glob_lagr_dim->nvisbr;
+  int   n_boundary_stats = cs_glob_lagr_dim->n_boundary_stats;
 
   assert(bound_stat == NULL);
 
-  if (nvisbr > 0)
-    BFT_MALLOC(bound_stat, n_b_faces * nvisbr, cs_real_t);
+  if (n_boundary_stats > 0)
+    BFT_MALLOC(bound_stat, n_b_faces * n_boundary_stats, cs_real_t);
 
   BFT_MALLOC(cs_glob_lagr_source_terms->st_val,
              cs_glob_lagr_dim->ntersl * cs_glob_mesh->n_cells_with_ghosts,
@@ -975,9 +975,9 @@ cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
 void
 cs_lagr_finalize(void)
 {
-  int  nvisbr = cs_glob_lagr_dim->nvisbr;
+  int  n_boundary_stats = cs_glob_lagr_dim->n_boundary_stats;
 
-  if (nvisbr > 0) {
+  if (n_boundary_stats > 0) {
     assert(bound_stat != NULL);
     BFT_FREE(bound_stat);
   }
@@ -1006,7 +1006,7 @@ cs_lagr_finalize(void)
   BFT_FREE(cs_glob_lagr_boundary_interactions->iusb);
   BFT_FREE(cs_glob_lagr_boundary_interactions->imoybr);
 
-  for (int i = 0; i < cs_glob_lagr_dim->nvisbr; i++)
+  for (int i = 0; i < cs_glob_lagr_dim->n_boundary_stats; i++)
     BFT_FREE(cs_glob_lagr_boundary_interactions->nombrd[i]);
   BFT_FREE(cs_glob_lagr_boundary_interactions->nombrd);
 
@@ -2010,7 +2010,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
           lag_bdi->tstatp = 0.0;
           lag_bdi->npstf  = 0;
 
-          for (int  ii = 0; ii < cs_glob_lagr_dim->nvisbr; ii++) {
+          for (int  ii = 0; ii < cs_glob_lagr_dim->n_boundary_stats; ii++) {
 
             for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
               bound_stat[ii * n_b_faces + ifac] = 0.0;

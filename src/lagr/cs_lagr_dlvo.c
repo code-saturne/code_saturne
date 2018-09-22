@@ -267,7 +267,7 @@ cs_lagr_barrier_pp(cs_real_t                       dpart,
 
   for (int i = 0; i < 1001; i++) {
 
-    cs_real_t  step = cs_lagr_dlvo_param.debye_length[iel]/30.0;
+    cs_real_t step = cs_lagr_dlvo_param.debye_length[iel] / 30.0;
 
     /* Interaction between two spheres */
 

@@ -116,101 +116,81 @@ _status(int i)
 
 /*----------------------------------------------------------------*/
 /*!
- *\brief  Calcul des valeurs min max et moyenne pour les statistiques aux frontieres.
+ *\brief Computes min/max for boundary statistics.
  *
  * Parameters:
- * \param[in]  ivar      numero de la variable a integrer
- * \param[out] gmin      valeurs  min
- * \param[out] gmax      valeurs  max
- * \param[in]  unsnbr    inverse du nombre interaction frontiere pour moyenne
- * \param[in]  unsnbrfou inverse du nombre interaction frontiere (avec fouling) pour moyenne
+ * \param[in]  s_id      stat id
+ * \param[out] gmin      min value
+ * \param[out] gmax      max value
+ * \param[in]  unsnbr    inverse of the number of particles impacting
+ *                       the boundary
+ * \param[in]  unsnbrfou inverse of the number of particles impacting
+ *                       the boundary taking fooling into account.
  */
  /*----------------------------------------------------------------*/
 
 static void
-_lagstf(int         ivar,
-        cs_real_t  *gmin,
-        cs_real_t  *gmax,
-        cs_real_t   unsnbr[],
-        cs_real_t   unsnbrfou[])
+_lagr_min_max_boundary_stats(int         s_id,
+                             cs_real_t  *gmin,
+                             cs_real_t  *gmax,
+                             cs_real_t   unsnbr[],
+                             cs_real_t   unsnbrfou[])
 {
   cs_lagr_boundary_interactions_t *lagr_bd_i = cs_glob_lagr_boundary_interactions;
-  cs_lnum_t nfabor = cs_glob_mesh->n_b_faces;
+  cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-  /* initializations */
-  cs_lnum_t nbrfac  = 0;
-  *gmax  = -cs_math_big_r;
-  *gmin  =  cs_math_big_r;
+  /* Initializations */
+  cs_lnum_t nbrfac = 0;
+  *gmax = -cs_math_big_r;
+  *gmin =  cs_math_big_r;
 
-  cs_real_t  seuilf = cs_glob_lagr_stat_options->threshold;
+  cs_real_t threshold = cs_glob_lagr_stat_options->threshold;
 
-  if (lagr_bd_i->imoybr[ivar] == 3) {
+  if (lagr_bd_i->imoybr[s_id] == 3) {
 
-    for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
-
-      if (bound_stat[ifac + nfabor * lagr_bd_i->iencnb] > seuilf) {
-
+    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+      if (bound_stat[ifac + n_b_faces * lagr_bd_i->iencnb] > threshold) {
         nbrfac++;
-        *gmax = CS_MAX(*gmax, bound_stat[ifac + nfabor * ivar] / unsnbrfou[ifac]);
-        *gmin = CS_MIN(*gmin, bound_stat[ifac + nfabor * ivar] / unsnbrfou[ifac]);
-
+        *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id] * unsnbrfou[ifac]);
+        *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id] * unsnbrfou[ifac]);
       }
-
     }
 
   }
-  else if (lagr_bd_i->imoybr[ivar] == 2) {
+  else if (lagr_bd_i->imoybr[s_id] == 2) {
 
-    for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
-
-      if (bound_stat[ifac + nfabor * lagr_bd_i->inbr] > seuilf) {
-
+    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+      if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
         nbrfac++;
-        *gmax = CS_MAX(*gmax, bound_stat[ifac + nfabor * ivar] * unsnbr[ifac]);
-        *gmin = CS_MIN(*gmin, bound_stat[ifac + nfabor * ivar] * unsnbr[ifac]);
-
+        *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id] * unsnbr[ifac]);
+        *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id] * unsnbr[ifac]);
       }
-
     }
 
   }
-  else if (lagr_bd_i->imoybr[ivar] == 1) {
+  else if (lagr_bd_i->imoybr[s_id] == 1) {
 
-    for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
-
-      if (bound_stat[ifac + nfabor * lagr_bd_i->inbr] > seuilf) {
-
+    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+      if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
         nbrfac++;
-        *gmax = CS_MAX(*gmax, bound_stat[ifac + nfabor * ivar] / lagr_bd_i->tstatp);
-        *gmin = CS_MIN(*gmin, bound_stat[ifac + nfabor * ivar] / lagr_bd_i->tstatp);
-
+        *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id] / lagr_bd_i->tstatp);
+        *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id] / lagr_bd_i->tstatp);
       }
-
     }
 
   }
-  else if (lagr_bd_i->imoybr[ivar] == 0) {
+  else if (lagr_bd_i->imoybr[s_id] == 0) {
 
-    for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
-
-      if (bound_stat[ifac + nfabor * lagr_bd_i->inbr] > seuilf) {
-
+    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+      if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
         nbrfac++;
-        *gmax = CS_MAX(*gmax, bound_stat[ifac + nfabor * ivar]);
-        *gmin = CS_MIN(*gmin, bound_stat[ifac + nfabor * ivar]);
-
+        *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id]);
+        *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id]);
       }
-
     }
 
   }
 
-  if (nbrfac == 0) {
-
-    *gmax     = 0.0;
-    *gmin     = 0.0;
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -508,8 +488,10 @@ cs_lagr_log_setup(void)
     (CS_LOG_SETUP,
      _("\n  Statistics for particles/boundary interaction:\n"));
 
-  if (cs_glob_lagr_boundary_interactions->inbrbd)
-    cs_log_printf(CS_LOG_SETUP, "    %s\n", "number of interactions");
+  if (cs_glob_lagr_dim->n_boundary_stats == 0)
+    cs_log_printf(CS_LOG_SETUP, "    %s\n", "none");
+  if (cs_glob_lagr_boundary_interactions->has_part_impact_nbr)
+    cs_log_printf(CS_LOG_SETUP, "    %s\n", "particle impact number");
   if (cs_glob_lagr_boundary_interactions->iflmbd)
     cs_log_printf(CS_LOG_SETUP, "    %s\n", "particle mass flow");
   if (cs_glob_lagr_boundary_interactions->iangbd)
@@ -718,7 +700,7 @@ cs_lagr_log_iteration(void)
 
   /* Boundary statistics  */
 
-  if (cs_glob_lagr_dim->nvisbr > 0) {
+  if (cs_glob_lagr_dim->n_boundary_stats > 0) {
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _("   Boundary statistics :\n"));
@@ -745,78 +727,73 @@ cs_lagr_log_iteration(void)
     cs_log_printf(CS_LOG_DEFAULT,
                   "\n");
 
-    if (cs_glob_lagr_dim->nvisbr > 0) {
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("                           Min value    Max value    \n"));
 
-      cs_log_printf(CS_LOG_DEFAULT,
-                    _("                           Min value    Max value    \n"));
+    const cs_real_t _threshold = 1.e-30;
 
-      const cs_real_t _threshold = 1.e-30;
+    cs_real_t *tabvr = NULL;
+    cs_real_t *tabvrfou = NULL;
 
-      cs_real_t *tabvr = NULL;
-      cs_real_t *tabvrfou = NULL;
+    if (cs_glob_lagr_boundary_interactions->has_part_impact_nbr == 1) {
 
-      if (cs_glob_lagr_boundary_interactions->inbrbd == 1) {
+      /* Allocate a work array */
+      BFT_MALLOC(tabvr, cs_glob_mesh->n_b_faces, cs_real_t);
 
-        /* Allocate a work array     */
-        BFT_MALLOC(tabvr, cs_glob_mesh->n_b_faces, cs_real_t);
+      int s_id = cs_glob_lagr_boundary_interactions->inbr;
 
-        const cs_lnum_t s_id = cs_glob_lagr_boundary_interactions->inbr;
+      for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
 
-        for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
-
-          if (b_stats[ifac + cs_glob_mesh->n_b_faces * s_id] > _threshold)
-            tabvr[ifac] = 1.0 / b_stats[ifac + cs_glob_mesh->n_b_faces * s_id];
-          else
-            tabvr[ifac] = 0.0;
-
-        }
+        if (b_stats[ifac + cs_glob_mesh->n_b_faces * s_id] > _threshold)
+          tabvr[ifac] = 1.0 / b_stats[ifac + cs_glob_mesh->n_b_faces * s_id];
+        else
+          tabvr[ifac] = 0.0;
 
       }
-
-      if (cs_glob_lagr_boundary_interactions->iencnbbd == 1) {
-
-        BFT_MALLOC(tabvrfou, cs_glob_mesh->n_b_faces, cs_real_t);
-
-        const cs_lnum_t s_id = cs_glob_lagr_boundary_interactions->iencnb;
-
-        for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
-
-          if (b_stats[ifac + cs_glob_mesh->n_b_faces * s_id] > _threshold)
-            tabvrfou[ifac] = 1.0 / b_stats[ifac + cs_glob_mesh->n_b_faces * s_id];
-          else
-            tabvrfou[ifac] = 0.0;
-
-        }
-      }
-
-      for (int ivf = 0; ivf < cs_glob_lagr_dim->nvisbr; ivf++) {
-
-        cs_real_t gmin = cs_math_big_r;
-        cs_real_t gmax =-cs_math_big_r;
-
-        _lagstf(ivf, &gmin, &gmax, tabvr, tabvrfou);
-
-        cs_parall_min(1, CS_REAL_TYPE, &gmin);
-        cs_parall_max(1, CS_REAL_TYPE, &gmax);
-
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "lp  %20s  %12.5E  %12.5E\n",
-                      cs_glob_lagr_boundary_interactions->nombrd[ivf],
-                      gmin,
-                      gmax);
-
-      }
-
-      /* Free memory     */
-
-      if (tabvr != NULL)
-        BFT_FREE(tabvr);
-      if (tabvrfou != NULL)
-        BFT_FREE(tabvrfou);
-
-      cs_log_separator(CS_LOG_DEFAULT);
 
     }
+
+    if (cs_glob_lagr_boundary_interactions->iencnbbd == 1) {
+
+      BFT_MALLOC(tabvrfou, cs_glob_mesh->n_b_faces, cs_real_t);
+
+      int s_id = cs_glob_lagr_boundary_interactions->iencnb;
+
+      for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
+
+        if (b_stats[ifac + cs_glob_mesh->n_b_faces * s_id] > _threshold)
+          tabvrfou[ifac] = 1.0 / b_stats[ifac + cs_glob_mesh->n_b_faces * s_id];
+        else
+          tabvrfou[ifac] = 0.0;
+
+      }
+    }
+
+    for (int s_id = 0; s_id < cs_glob_lagr_dim->n_boundary_stats; s_id++) {
+
+      cs_real_t gmin = cs_math_big_r;
+      cs_real_t gmax =-cs_math_big_r;
+
+      _lagr_min_max_boundary_stats(s_id, &gmin, &gmax, tabvr, tabvrfou);
+
+      cs_parall_min(1, CS_REAL_TYPE, &gmin);
+      cs_parall_max(1, CS_REAL_TYPE, &gmax);
+
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "lp  %20s  %12.5E  %12.5E\n",
+                    cs_glob_lagr_boundary_interactions->nombrd[s_id],
+                    gmin,
+                    gmax);
+
+    }
+
+    /* Free memory */
+    if (tabvr != NULL)
+      BFT_FREE(tabvr);
+    if (tabvrfou != NULL)
+      BFT_FREE(tabvrfou);
+
+    cs_log_separator(CS_LOG_DEFAULT);
 
   }
 

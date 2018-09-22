@@ -1850,7 +1850,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
        || b_type == CS_LAGR_FOULING) {
 
     /* Number of particle-boundary interactions  */
-    if (cs_glob_lagr_boundary_interactions->inbrbd > 0)
+    if (cs_glob_lagr_boundary_interactions->has_part_impact_nbr > 0)
       bound_stat[cs_glob_lagr_boundary_interactions->inbr * n_b_faces + face_id]
         += particle_stat_weight;
 

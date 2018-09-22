@@ -147,12 +147,12 @@ cs_restart_lagrangian_checkpoint_read(void)
 
   }
 
-  if (cs_glob_lagr_dim->nvisbr > 0) {
+  if (cs_glob_lagr_dim->n_boundary_stats > 0) {
 
-    for (cs_lnum_t ivar = 0; ivar < cs_glob_lagr_dim->nvisbr; ivar++) {
+    for (cs_lnum_t ivar = 0; ivar < cs_glob_lagr_dim->n_boundary_stats; ivar++) {
 
       for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++)
-        bound_stat[ifac + nfabor * ivar]   = 0.0;
+        bound_stat[ifac + nfabor * ivar] = 0.0;
 
     }
 
@@ -478,8 +478,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
     }
 
-    if (   cs_glob_lagr_dim->nvisbr > 0
-        && nfabok) {
+    if (cs_glob_lagr_dim->n_boundary_stats > 0 && nfabok) {
 
       {
         itysup  = 0;
@@ -848,12 +847,12 @@ cs_restart_lagrangian_checkpoint_read(void)
              cs_glob_lagr_boundary_interactions->nusbor,
              cs_glob_lagr_boundary_interactions->nusbor);
 
-        /*  --> Lecture des stats aux frontieres. Pas de traitement d'erreurs,    */
-        /*        on suppose qu'elles sont dues a un changement de physique. */
+        /*  --> Read boundary stats. No error treatment, we assume changes are    */
+        /*       due to physical model changes. */
         itysup  = 3;
         nbval   = 1;
 
-        for (cs_lnum_t ivar = 0; ivar < cs_glob_lagr_dim->nvisbr; ivar++) {
+        for (cs_lnum_t ivar = 0; ivar < cs_glob_lagr_dim->n_boundary_stats; ivar++) {
 
           char rubriq[32];
           sprintf(rubriq, "stat_bord_%s",
@@ -2183,13 +2182,12 @@ cs_restart_lagrangian_checkpoint_write(void)
                   "      on particle-based variables\n"));
 
   /*====================================================================
-   * 2. ECRITURE DU FICHIER SUITE STATISTIQUES ET TERMES SOURCES
-   *    DE COUPLAGE RETOUR
+   * 2. Writing of restart stats files and coupling sources terms
    *====================================================================*/
 
   if (   cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt
       || cs_glob_lagr_time_scheme->iilagr == 2
-      || cs_glob_lagr_dim->nvisbr > 0) {
+      || cs_glob_lagr_dim->n_boundary_stats > 0) {
 
     /* ---> Ouverture (et on saute si erreur)   */
     cs_log_printf(CS_LOG_DEFAULT,
@@ -2281,8 +2279,8 @@ cs_restart_lagrangian_checkpoint_write(void)
 
     }
 
-    /* --> En second, c'est le tour des statistiques aux frontieres */
-    if (cs_glob_lagr_dim->nvisbr > 0) {
+    /* --> At the second step, treat boundary stats */
+    if (cs_glob_lagr_dim->n_boundary_stats > 0) {
 
       itysup = 0;
       nbval = 1;
@@ -2347,11 +2345,11 @@ cs_restart_lagrangian_checkpoint_write(void)
         BFT_FREE(tabvar);
       }
 
-      /*  Statistiques aux frontieres   */
+      /* Boundary statistics */
       itysup = 3;
       nbval = 1;
 
-      for (cs_lnum_t ii = 0; ii < cs_glob_lagr_dim->nvisbr; ii++) {
+      for (cs_lnum_t ii = 0; ii < cs_glob_lagr_dim->n_boundary_stats; ii++) {
 
         char rubriq[32];
         sprintf(rubriq, "stat_bord_%s", cs_glob_lagr_boundary_interactions->nombrd[ii]);

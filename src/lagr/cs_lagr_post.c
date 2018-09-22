@@ -279,21 +279,19 @@ _cs_lagr_post(void                  *input,
   /* Boundary statistics */
   /*---------------------*/
 
-  else if (   cat_id == -2
-           && cs_glob_lagr_time_scheme->iilagr > 0) {
+  else if (cat_id == -2 && cs_glob_lagr_time_scheme->iilagr > 0) {
 
     cs_lnum_t nfabor = cs_glob_mesh->n_b_faces;
 
     const cs_lagr_boundary_interactions_t
       *lagr_b = cs_glob_lagr_boundary_interactions;
 
-    int  nvisbr = cs_glob_lagr_dim->nvisbr;
     cs_real_t  seuilf = cs_glob_lagr_stat_options->threshold;
 
     cs_real_t *val;
     BFT_MALLOC(val, nfabor, cs_real_t);
 
-    for (int irf = 0; irf < nvisbr; irf++) {
+    for (int irf = 0; irf < cs_glob_lagr_dim->n_boundary_stats; irf++) {
 
       const char *var_name = lagr_b->nombrd[irf];
 

@@ -133,7 +133,7 @@ typedef struct {
 typedef struct {
 
   int   ntersl;  /*!< number of source terms for return coupling */
-  int   nvisbr;  /*!< number of volume statistics */
+  int   n_boundary_stats;  /*!< number of boundary statistics */
 
 } cs_lagr_dim_t;
 
@@ -737,15 +737,15 @@ typedef struct {
   /*! activation (=1) or not (=0) of the recording of the number of
     particle/boundary interactions, and of the calculation of the associated
     boundary statistics.
-    \ref inbrbd = 1 is a compulsory condition to use the particulate average
-    \ref imoybr = 2.  */
-  int  inbrbd;
+    \ref has_part_impact_nbr is set to 1 when using the particulate average
+    \ref imoybr = 2. */
+  int  has_part_impact_nbr;
 
   /*!  activation (=1) or not (=0) of the recording of the particulate mass flow
     related to the particle/boundary interactions, and of the calculation of
     the associated boundary statistics.
-    \ref inbrbd = 1 is a compulsory condition to use \ref iflmbd=1.
-    Useful if \ref inbrbd=1 */
+    \ref has_part_impact_nbr is set to 1 when using \ref iflmbd=1.
+   */
   int  iflmbd;
 
   /*!  activation (=1) or not (=0) of the recording of the angle between a
@@ -808,7 +808,7 @@ typedef struct {
   /*!  supplementary user boundary statistics */
   int  *iusb;
 
-  /*  the recordings in \ref bound_stat at every particle/boundary interaction are
+  /*! the recordings in \ref bound_stat at every particle/boundary interaction are
       cumulated values (possibly reset to zero at every iteration in the
       unsteady case). They must therefore be divided by a quantity to
       get boundary statistics. The user can choose between two average types:
@@ -822,7 +822,7 @@ typedef struct {
       - = 2: a particulate average is calculated. The cumulated value is divided
              by the number of particle/boundary interactions (in terms of
              statistical weight) recorded in \ref bound_stat "bound_stat"(nfabor,inbr).
-             This average can only be calculated when \ref inbrbd=1.
+             This average can only be calculated when \ref has_part_impact_nbr = 1.
              Only the cumulated value is recorded in the restart file. */
   int  *imoybr;
 
@@ -853,13 +853,13 @@ typedef struct {
   /* id for sum of deposited particle diameters */
   int  ihsum;
 
-  /*!  if the recording of the boundary statistics is steady, \ref tstatp
+  /*! If the recording of the boundary statistics is steady, \ref tstatp
     contains the cumulated physical duration of the recording of the boundary
     statistics.
-    if the recording of the boundary statisticss is unsteady, then
-    \ref tstat=dtp (it is the Lagrangian time step, because the
+    If the recording of the boundary statistics is unsteady, then
+    \ref tstatp = dtp (it is the Lagrangian time step, because the
     statistics are reset to zero at every time step). */
-  cs_real_t        tstatp;
+  cs_real_t tstatp;
 
   /*!  name of the boundary statistics, displayed in the log
     and the post-processing files.

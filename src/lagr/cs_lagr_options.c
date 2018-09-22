@@ -326,7 +326,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   lagr_time_scheme->iadded_mass = 0;
   lagr_time_scheme->added_mass_const = 1.0;
 
-  cs_glob_lagr_boundary_interactions->inbrbd = 0;
+  cs_glob_lagr_boundary_interactions->has_part_impact_nbr = 0;
   cs_glob_lagr_boundary_interactions->iflmbd = 0;
   cs_glob_lagr_boundary_interactions->iangbd = 0;
   cs_glob_lagr_boundary_interactions->ivitbd = 0;
@@ -1959,8 +1959,8 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("in Lagrangian module"),
-                                "cs_glob_lagr_boundary_interactions->inbrbd",
-                                cs_glob_lagr_boundary_interactions->inbrbd,
+                                "cs_glob_lagr_boundary_interactions->has_part_impact_nbr",
+                                cs_glob_lagr_boundary_interactions->has_part_impact_nbr,
                                 0, 2);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
@@ -2067,7 +2067,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   cs_glob_lagr_time_step->nor = 0;
 
   /* 3.7 DEFINITION DES POINTEURS LIES AUX STATISTIQUES AUX FRONTIERES
-   * INBRBD : NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES
+   * has_part_impact_nbr: activate stats on particle/boundary interaction number
    * IFLMBD : FLUX DE MASSE PARTICULAIRE
    * IANGBD : ANGLE VITESSE
    * IVITBD : VITESSE DE LA PARTICULE
@@ -2080,15 +2080,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
    * NVISBR : NOMBRE TOTAL D'INTERACTIONS A ENREGISTRER */
 
   int irf = -1;
-
-  if (cs_glob_lagr_boundary_interactions->inbrbd == 1) {
-
-    irf++;
-    cs_glob_lagr_boundary_interactions->inbr = irf;
-    _copy_boundary_varname(irf, "Part_impact_number");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-
-  }
 
   if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
 
@@ -2173,17 +2164,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   if (lagr_model->physical_model == 2 &&
       lagr_model->fouling == 1 &&
-      cs_glob_lagr_boundary_interactions->iencnbbd == 1) {
-
-    irf++;
-    cs_glob_lagr_boundary_interactions->iencnb = irf;
-    _copy_boundary_varname(irf, "Part_fouled_impact_number");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-
-  }
-
-  if (lagr_model->physical_model == 2 &&
-      lagr_model->fouling == 1 &&
       cs_glob_lagr_boundary_interactions->iencmabd == 1) {
 
     irf++;
@@ -2201,7 +2181,9 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     cs_glob_lagr_boundary_interactions->iencdi = irf;
     _copy_boundary_varname(irf, "Part_fouled_diam");
     cs_glob_lagr_boundary_interactions->imoybr[irf] = 3;
-
+    /* Activate the number of recorded particle/boundary interactions
+     * with fouling*/
+    cs_glob_lagr_boundary_interactions->iencnbbd = 1;
   }
 
   if (lagr_model->physical_model == 2 &&
@@ -2212,6 +2194,9 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     cs_glob_lagr_boundary_interactions->iencck = irf;
     _copy_boundary_varname(irf, "Part_fouled_Xck");
     cs_glob_lagr_boundary_interactions->imoybr[irf] = 3;
+    /* Activate the number of recorded particle/boundary interactions
+     * with fouling*/
+    cs_glob_lagr_boundary_interactions->iencnbbd = 1;
 
   }
 
@@ -2230,7 +2215,29 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   }
 
-  lagdim->nvisbr = irf + 1;
+  /* If there is any boundary stat, activate the number of particle impact */
+  if (irf > -1)
+    cs_glob_lagr_boundary_interactions->has_part_impact_nbr = 1;
+
+  if (cs_glob_lagr_boundary_interactions->has_part_impact_nbr == 1) {
+    irf++;
+    cs_glob_lagr_boundary_interactions->inbr = irf;
+    _copy_boundary_varname(irf, "Part_impact_number");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+  }
+
+  if (lagr_model->physical_model == 2 &&
+      lagr_model->fouling == 1 &&
+      cs_glob_lagr_boundary_interactions->iencnbbd == 1) {
+
+    irf++;
+    cs_glob_lagr_boundary_interactions->iencnb = irf;
+    _copy_boundary_varname(irf, "Part_fouled_impact_number");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+  }
+
+
+  lagdim->n_boundary_stats = irf + 1;
 
   /* 3.8 DEFINITION DES POINTEURS LIES AUX TERMES SOURCES LAGRANGIEN
    * POUR COUPLAGE RETOUR

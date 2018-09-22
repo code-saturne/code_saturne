@@ -531,7 +531,7 @@ cs_user_lagr_model(void)
 
   /* Number of particle/boundary interactions
      (default off: 0 ; on: 1) */
-  cs_glob_lagr_boundary_interactions->inbrbd      = 1;
+  cs_glob_lagr_boundary_interactions->has_part_impact_nbr      = 1;
 
   /* Particle mass flux associated to particle/boundary interactions
      (default off: 0 ; on: 1)*/
@@ -591,7 +591,7 @@ cs_user_lagr_model(void)
      - if imoybr(iusb(ii)) = 2 -> a particle average is applied, i.e. the
          statistic is divided by the number of recorded particle/boundary
          interactions (in terms of statistical weight) in bound_stat(nfabor,inbr)
-         To use this average, inbrbd must be set to 1.
+         To use this average, has_part_impact_nbr is set to 1.
      - if imoybr(iusb(ii)) = 3 -> (coal fouling only) a particle average
          is applied, i.e. the statistic is divided by the number of recorded
          particle/boundary interactions with fouling (in terms of statistical
