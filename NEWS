@@ -4,9 +4,10 @@ Release 5.2.1 (unreleased)
 
 Bug fixes
 ---------
+- Lagrangian module: fix resuspension when having internal deposition.
 
 - Compressible model: fix inverted arguments for user velocity source terms.
-    
+
 - Fix build on Mac OS X.
 
 - Radiative model: fix GUI-defined BC selection between reflecting wall and
@@ -19,7 +20,7 @@ Bug fixes
 
 - GUI: fixes for addition and handling of coal classes.
 
-- GUI: "rij" (coupled) field must return a NULL pointer for uncoupled RSM 
+- GUI: "rij" (coupled) field must return a NULL pointer for uncoupled RSM
   if initilization of turbulent variables is set by formula.
 
 - Fix an uninitialised option (reconstruction flag) if arakawa coef. is 0 and
