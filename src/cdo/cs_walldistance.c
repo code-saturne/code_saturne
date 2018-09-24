@@ -463,7 +463,7 @@ cs_walldistance_setup(void)
 
   /* Add boundary conditions */
   cs_real_t  zero_value = 0.;
-  const char  bc_zone_name[] = "domain_walls";
+  const char  bc_zone_name[] = "cs_domain_boundary_walls";
 
   cs_equation_add_bc_by_value(eqp,
                               CS_PARAM_BC_DIRICHLET,
