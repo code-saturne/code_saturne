@@ -404,7 +404,7 @@ cs_cdofb_ac_init_pressure(const cs_navsto_param_t     *nsp,
    *    it's a value), but it is the only way to allow multiple definitions
    *    and definitions that do not cover all the domain. Moreover, we need
    *    information (e.g. cs_cdo_quant) which we do not know here */
-    cs_cdofb_navsto_ensure_zero_mean_and_avg(values, 1);
+    cs_cdofb_navsto_set_zero_mean_pressure(values);
 
   }  /* Not the default */
 

@@ -210,17 +210,15 @@ cs_cdofb_navsto_update_fields(const cs_real_t              *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Make \p values of zero-mean and compute averages on each cells
+ * \brief  Update the pressure field in order to get a field with a zero-mean
+ *         average
  *
- * \param[in,out]  values    vector of cell DoFs which should be of zero mean
- * \param[in]      dim       dimension
- *
+ * \param[in, out]  values    pressure field values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_ensure_zero_mean_and_avg(cs_real_t values[],
-                                         short int dim);
+cs_cdofb_navsto_set_zero_mean_pressure(cs_real_t   values[]);
 
 /*----------------------------------------------------------------------------*/
 
