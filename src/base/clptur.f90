@@ -1473,40 +1473,72 @@ do ifac = 1, nfabor
            coefb_k(ifac), coefbf_k(ifac),             &
            pimp         , hint          , rinfin )
 
-      ! Neumann Boundary Condition on omega
-      !------------------------------------
+      ! Dirichlet Boundary Condition on omega
+      !--------------------------------------
 
       !FIXME it is wrong because sigma is computed within the model
       ! see turbkw.f90 (So the flux is not the one we impose!)
       hint = (visclc+visctc/ckwsw2)/distbf
+      
+      if (ikwcln.eq.1) then
+        ! In viscous sub layer
+        pimp_lam  = 60.d0*visclc/(romc*ckwbt1*distbf**2)
+        
+        ! If we are outside the viscous sub-layer (either naturally, or
+        ! artificialy using scalable wall functions)
+        
+        if (yplus > epzero) then
+          pimp_turb = 5.d0*uk**2*romc/           &
+                     (sqrcmu*xkappa*visclc*(yplus+dplus))
 
-      ! In viscous sub layer
-      pimp_lam  = 120.d0*8.d0*visclc/(romc*ckwbt1*distbf**2)
+          ! Use gamma function of Kader to weight
+          !between high and low Reynolds meshes
 
-      ! If we are outside the viscous sub-layer (either naturally, or
-      ! artificialy using scalable wall functions)
+          gammap    = -0.01d0*(yplus+dplus)**4.d0/(1.d0+5.d0*(yplus+dplus))
 
-      if (yplus > epzero) then
-        pimp_turb = distbf*4.d0*uk**3*romc**2/           &
-                   (sqrcmu*xkappa*visclc**2*(yplus+dplus)**2)
+          pimp      = pimp_lam*exp(gammap) + exp(1.d0/gammap)*pimp_turb
+        else
+          pimp      = pimp_lam
+        endif
+       
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_omg(ifac), coefaf_omg(ifac),             &
+             coefb_omg(ifac), coefbf_omg(ifac),             &
+             pimp         , hint          , rinfin )
 
-        ! Use gamma function of Kader to weight
-        !between high and low Reynolds meshes
 
-        gammap    = -0.01d0*(yplus+dplus)**4.d0/(1.d0+5.d0*(yplus+dplus))
-
-        pimp      = pimp_lam*exp(gammap) + exp(1.d0/gammap)*pimp_turb
+      ! If ikwcln is equal to 0, switch to deprecated Neumann 
+      ! condition on omega.
       else
-        pimp      = pimp_lam
-      endif
+        ! In viscous sub layer
+        pimp_lam  = 120.d0*8.d0*visclc/(romc*ckwbt1*distbf**2)
 
-      qimp      = -pimp*hint !TODO transform it, it is only to be fully equivalent
+        ! If we are outside the viscous sub-layer (either naturally, or
+        ! artificialy using scalable wall functions)
 
-      call set_neumann_scalar &
-           !==================
-         ( coefa_omg(ifac), coefaf_omg(ifac),             &
-           coefb_omg(ifac), coefbf_omg(ifac),             &
-           qimp           , hint )
+        if (yplus > epzero) then
+          pimp_turb = distbf*4.d0*uk**3*romc**2/           &
+                     (sqrcmu*xkappa*visclc**2*(yplus+dplus)**2)
+
+          ! Use gamma function of Kader to weight
+          !between high and low Reynolds meshes
+
+          gammap    = -0.01d0*(yplus+dplus)**4.d0/(1.d0+5.d0*(yplus+dplus))
+
+          pimp      = pimp_lam*exp(gammap) + exp(1.d0/gammap)*pimp_turb
+        else
+          pimp      = pimp_lam
+        endif
+
+        qimp      = -pimp*hint !TODO transform it, it is only to be fully equivalent
+
+        call set_neumann_scalar &
+             !==================
+           ( coefa_omg(ifac), coefaf_omg(ifac),             &
+             coefb_omg(ifac), coefbf_omg(ifac),             &
+             qimp           , hint )
+      end if
 
     !===========================================================================
     ! 7.1 Boundary conditions on the Spalart Allmaras turbulence model

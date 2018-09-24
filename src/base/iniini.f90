@@ -629,6 +629,7 @@ idifre = 1
 iclsyr = 1
 iclptr = 0
 idries =-1
+ikwcln = 1
 
 ! --- Rotation/curvature correction of turbulence models
 !     Unactivated by default

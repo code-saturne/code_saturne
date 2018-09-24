@@ -872,6 +872,12 @@ module optcal
   !> This keyword requires the completion of the routine  \ref usvort
   integer(c_int), pointer, save :: ivrtex
 
+  !> Wall boundary condition on omega in k-omega SST
+  !> 0: Deprecated Neumann boundary condition 
+  !> 1: Dirichlet boundary condition consistent with Menter's 
+  !>    original model: w_wall = 60*nu/(beta*d**2)
+  integer, save :: ikwcln
+
   !> turbulent flux model for \f$ \overline{\varia^\prime \vect{u}^\prime} \f$
   !> for any scalar \f$ \varia \f$, iturt(isca)
   !>    - 0: SGDH
