@@ -2662,6 +2662,8 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
 
   cs_lnum_t m_max = -1;
 
+  cs_lnum_t n_remain = f_n_rows;
+
   if (dd_threshold > 0) {
 
     for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
@@ -2682,6 +2684,7 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
       /* Check if the line seems ignored or not. */
       if (d_val[ii] > dd_threshold * sum) {
         a_m[ii] = -1;
+        n_remain -= 1;
         f_c_row[ii] = -1;
       }
       else {
@@ -2764,8 +2767,6 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
       break;
   }
 
-  cs_lnum_t n_remain = f_n_rows;
-
   while (s.m_min > -1) {
 
     /* Select remaining ii with minimal a_m */
@@ -2836,7 +2837,7 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
         n_remain--;
       }
     }
-    if (s.m_min == s.m_max) { /* check if list has become empty */
+    if (s.m_min >= s.m_max) { /* check if list has become empty */
       if (s.m_head[s.m_min] < 0) {
         s.m_min = -1;
         s.m_max = -1;
