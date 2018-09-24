@@ -95,6 +95,22 @@ cs_axpy(cs_lnum_t         n,
         cs_real_t        *restrict y);
 
 /*----------------------------------------------------------------------------
+ * Return the sum of a vector. For better precision, a superblock algorithm
+ * is used.
+ *
+ * parameters:
+ *   n <-- size of array x
+ *   x <-- array of floating-point values
+ *
+ * returns:
+ *   the resulting sum
+ *----------------------------------------------------------------------------*/
+
+double
+cs_sum(cs_lnum_t         n,
+       const cs_real_t  *x);
+
+/*----------------------------------------------------------------------------
  * Return the dot product of 2 vectors: x.y
  *
  * parameters:
