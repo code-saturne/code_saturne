@@ -107,32 +107,20 @@ cs_user_boundary_conditions(int         nvar,
                             int         icodcl[],
                             cs_real_t   rcodcl[])
 {
-
-  /* TEST TO REMOVE */
-  if (true) {
-    return;
-  }
-
 #if defined(HAVE_MEDCOUPLING_LOADER)
 
   /* Variables needed for boundary condition sub-selection */
+
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  cs_lnum_t *lstelt = NULL;
-  cs_lnum_t  nelts;
 
-  BFT_MALLOC(lstelt, n_b_faces, cs_lnum_t);
+  /* MEDCoupling Remapper structure:
+   * ------------------------------- */
 
-
-  cs_field_t *f;
-  /* -----------------------------------------------------------
-   * MEDCoupling Remapper structure:
-   * ----------------------------------------------------------- */
-
-  /* Number of fields to interpolate from the medfile */
-  const int    nremapper_fields = 1;
+  /* Number of fields to interpolate from the MED file */
+  const int  nremapper_fields = 1;
 
   /* Names of the fields to read */
-  const char **field_names = NULL;
+  const char  **field_names = NULL;
   BFT_MALLOC(field_names, nremapper_fields, const char *);
   field_names[0] = "TEMPERATURE";
 
@@ -141,37 +129,41 @@ cs_user_boundary_conditions(int         nvar,
   int it0 = -1;
   int it1 = -1;
 
-  /* We ask for a remapper with a certain name. If it does not exist,
+  /* We request a remapper with a given name. If it does not exist,
    * the function returns a NULL pointer. */
-  cs_medcoupling_remapper_t *r = cs_medcoupling_remapper_by_name_try("scalar_bc");
+  cs_medcoupling_remapper_t *r
+    = cs_medcoupling_remapper_by_name_try("scalar_bc");
 
   /* If the returned pointer is NULL (first call), we create the
    * corresponding remapper */
+
   if (r == NULL) {
 
     /* Space dimension of the elements (2 for faces, 3 for cells) */
     int elts_dim = 2;
 
-    /* The remapper is created. We retrieve its id from the function. The function
-     * inputs are:
+    /* Path to file */
+    const char file_name[] = "/home/myname/study/2Dmap_Tfluid.med";
+
+    /* The remapper is created. We retrieve its id from the function.
+     * The function inputs are:
      * 1) Name of the remapper
      * 2) dimension of the mesh elements
      * 3) selection criteria for the boundary condition zone
      * 4) path to the med file
      * 5) number of fields to interpolate
      * 6) names of the fields to interpolate
-     * 7 + 8) time iteration index and order
-     */
+     * 7 + 8) time iteration index and order */
     int r_id = cs_medcoupling_remapper_initialize("scalar_bc",
                                                   elts_dim,
                                                   "inlet",
-                                                  "/home/i76777/Etudes/PARAMEDMEM/BC_TEST/carte2D_Tfluid.med",
+                                                  file_name,
                                                   nremapper_fields,
                                                   field_names,
                                                   it0,
                                                   it1);
 
-    /* We retrieve the pointer */
+    /* Retrieve the pointer */
     r = cs_medcoupling_remapper_by_id(r_id);
 
     /* We create the interpolation matrix => Here it is only called once
@@ -181,54 +173,44 @@ cs_user_boundary_conditions(int         nvar,
   }
 
   /* If the med data needs for a translation or rotation for the geometrical
-   * superposition with the target Code_Saturne mesh:
-   */
+   * superposition with the target Code_Saturne mesh: */
+
   if (false) {
-    // Translation using a tranlsation vector. Here it is (1, 0, 0)
-    cs_real_t translation_vector[3];
-    translation_vector[0] = 1.0;
-    translation_vector[1] = 0.0;
-    translation_vector[2] = 0.0;
+    /* Translation using a tranlsation vector. Here it is (1, 0, 0) */
+    cs_real_t translation_vector[3] = {1.0, 0.0, 0.0};
     cs_medcoupling_remapper_translate(r, translation_vector);
 
-    // Rotation using an invariant point, the rotation axis and rotation angle
-    // Here, center is O=(0,0,0) and z-axis (0,0,1). Angle is in radians, here
-    // it is ~pi/4
-
-    cs_real_t rot_center[3];
-    rot_center[0] = 0.0;
-    rot_center[1] = 0.0;
-    rot_center[2] = 0.0;
-
-    cs_real_t rot_axis[3];
-    rot_axis[0] = 0.0;
-    rot_axis[1] = 0.0;
-    rot_axis[2] = 1.0;
-
+    /* Rotation using an invariant point, the rotation axis and rotation angle
+       Here, center is O=(0,0,0) and z-axis (0,0,1). Angle is in radians, here
+       it is ~pi/4 */
+    cs_real_t rot_center[3] = {0.0, 0.0, 0.0};
+    cs_real_t rot_axis[3] = {0.0, 0.0, 1.0};
     cs_real_t rot_angle = 0.7853981;
 
     cs_medcoupling_remapper_rotate(r, rot_center, rot_axis, rot_angle);
 
-    // Update of the interpolation matrix
+    /* Update of the interpolation matrix */
     cs_medcoupling_remapper_setup(r);
   }
-
-
 
   /* We retrieve an array containing the interpolated values.
    * Inputs are:
    * 1) remapper
    * 2) id of the field to interpolate
-   * 3) a default value (if no intersection is obtained )
-   */
+   * 3) a default value (if no intersection is obtained) */
   cs_real_t *bc_scalar = cs_medcoupling_remapper_copy_values(r, 0, -5.0);
 
   /* We impose a dirichlet condition on all the faces of the boundary condition
    * related to the zone "inlet" */
-  const int keyvar = cs_field_key_id("variable_id");
 
+  const int keyvar = cs_field_key_id("variable_id");
   cs_field_t *scalar = cs_field_by_name_try("scalar1");
   int iscal = cs_field_get_key_int(scalar, keyvar) - 1;
+
+  cs_lnum_t  nelts = 0;
+  cs_lnum_t *lstelt = NULL;
+
+  BFT_MALLOC(lstelt, n_b_faces, cs_lnum_t);
 
   cs_selector_get_b_face_list("inlet", &nelts, lstelt);
 
@@ -242,9 +224,6 @@ cs_user_boundary_conditions(int         nvar,
   BFT_FREE(lstelt);
 
 #endif
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/
