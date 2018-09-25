@@ -370,7 +370,7 @@ _polygon_vertex_is_ear(int               n_vertices,
 
       for (i = list_next[next]; i != previous; i = list_next[i]) {
 
-        if (concave[i] == true) {
+        if (concave[i] == true && fabs(surf_2) > 1e-30) {
 
           vect1[0] = coords[i*2    ] - coords[previous*2    ];
           vect1[1] = coords[i*2 + 1] - coords[previous*2 + 1];
