@@ -161,9 +161,9 @@ if (ifilechemistry.ge.1) then
 
   ! Volume initilization with profiles for species present
   ! in the chemical profiles file
-  if (init_at_chem.eq.1) then
+  if (isuite.ne.0.and.init_at_chem.eq.1) then
     do k = 1, nespgi
-      call field_get_val_s(ivarfl(isca(idespgi(k))), cvar_despgi)
+      call field_get_val_s(ivarfl(isca(isca_chem(idespgi(k)))), cvar_despgi)
 
       do iel = 1, ncel
         zent = xyzcen(3,iel)
