@@ -4,6 +4,9 @@ Release 5.1.5 (unreleased)
 
 Bug fixes
 ---------
+
+- Fixes to atmospheric chemistry model.
+
 - Lagrangian module: fix resuspension when having internal deposition.
 
 - Compressible model: fix inverted arguments for user velocity source terms.

@@ -23,7 +23,7 @@
 !> \brief Automatic boundary conditions for atmospheric module
 !>   (based on meteo file)
 
-!> \brief Automaticly compute the boundary conditions from the meteo file
+!> \brief Automatically compute the boundary conditions from the meteo file
 !>      or from the imbrication profiles
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -360,13 +360,13 @@ if (ifilechemistry.ge.1) then
     ! profiles are used here as boundary conditions if boundary conditions have
     ! not been treated earier (eg, in usatcl)
     do ii = 1, nespgi
-      if (rcodcl(ifac,isca(idespgi(ii)),1).gt.0.5d0*rinfin) then
+      if (rcodcl(ifac,isca(isca_chem(idespgi(ii))),1).gt.0.5d0*rinfin) then
         call intprf                                                    &
         !==========
         (nbchmz, nbchim,                                               &
         zproc, tchem, espnum(1+(ii-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
         ! The first nespg user scalars are supposed to be chemical species
-        rcodcl(ifac,isca(idespgi(ii)),1) = xcent
+        rcodcl(ifac,isca(isca_chem(idespgi(ii))),1) = xcent
       endif
     enddo
 
@@ -375,7 +375,9 @@ if (ifilechemistry.ge.1) then
    ! For other species zero dirichlet conditions are imposed,
    ! unless they have already been treated earlier (eg, in usatcl)
    do ii =1 , nespg
-    if (rcodcl(ifac,isca(ii),1).gt.0.5d0*rinfin) rcodcl(ifac,isca(ii),1) = 0.0d0
+    if (rcodcl(ifac,isca(isca_chem(ii)),1).gt.0.5d0*rinfin) then
+      rcodcl(ifac,isca(isca_chem(ii)),1) = 0.0d0
+    endif
    enddo
 
   endif

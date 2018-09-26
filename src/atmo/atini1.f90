@@ -24,6 +24,7 @@
 !>      addition to what is done in usipsu function
 !>
 !> Warning some initialisations are done twice ...
+
 subroutine atini1
 
 !===============================================================================
@@ -94,13 +95,36 @@ clatev = 2.501d6
 gammat = -6.5d-03
 rvap = rvsra*rair
 
-! ---> Masse volumique et viscosite
+! Density and viscosity
+
 irovar = 0
 ivivar = 0
 
 !===============================================================================
-! 2. VARIABLES TRANSPORTEES pour IPPMOD(IATMOS) = 1 or 2
+! 2. Transported variables for IPPMOD(IATMOS) = 0, 1 or 2
 !===============================================================================
+
+! 2.0  Constant density
+! =====================
+
+if (ippmod(iatmos).eq.0) then
+
+  ! constant density
+  irovar = 0
+
+  ! physical or numerical quantities specific to scalars
+
+  do isc = 1, nscapp
+
+    jj = iscapp(isc)
+
+    if (iscavr(jj).le.0) then
+      visls0(jj) = viscl0
+    endif
+
+  enddo
+
+endif
 
 ! 2.1  Dry atmosphere
 ! ===================
@@ -110,7 +134,7 @@ if (ippmod(iatmos).eq.1) then
   ! for the dry atmosphere case, non constant density
   irovar = 1
 
-  ! Donnees physiques ou numeriques propres aux scalaires
+  ! physical or numerical quantities specific to scalars
 
   do isc = 1, nscapp
 
@@ -138,7 +162,7 @@ if (ippmod(iatmos).eq.2) then
   ! for the humid atmosphere case, non constant density
   irovar = 1
 
-  ! Donnees physiques ou numeriques propres aux scalaires
+  ! physical or numerical quantities specific to scalars
 
   do isc = 1, nscapp
 
