@@ -1,9 +1,10 @@
 
-Release 5.2.1 (unreleased)
-==========================
+Release 5.2.1 (Sep 26 2018)
+===========================
 
 Bug fixes
 ---------
+
 - Lagrangian module: fix resuspension when having internal deposition.
 
 - Compressible model: fix inverted arguments for user velocity source terms.
