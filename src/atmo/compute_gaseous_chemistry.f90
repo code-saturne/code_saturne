@@ -96,8 +96,8 @@ call field_get_val_s(icrom, crom)
 ! Arrays of pointers containing the fields values for each species
 ! (loop on cells outside loop on species)
 do ii = 1, nespg
-  call field_get_val_s(ivarfl(isca(ii)), cvar_espg(ii)%p)
-  call field_get_val_prev_s(ivarfl(isca(ii)), cvara_espg(ii)%p)
+  call field_get_val_s(ivarfl(isca(isca_chem(ii))), cvar_espg(ii)%p)
+  call field_get_val_prev_s(ivarfl(isca(isca_chem(ii))), cvara_espg(ii)%p)
 enddo
 
 do iel = 1, ncel
