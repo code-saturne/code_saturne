@@ -1,13 +1,22 @@
 
+Release 5.1.7 (unreleased)
+ ==========================
+
+   Bug fixes
+    ---------
+
+- Lagrangian module: fix division by 0 in boundary stats.
+
+
 Release 5.1.6 (October 26 2018)
 ===============================
 
-This is the last release of the 5.1 series. 
+This is the last release of the 5.1 series.
 
 Bug fixes
 ---------
 
-- Fix allocation of pmappers to scalar fields in atmospheric aerosols model. 
+- Fix allocation of pmappers to scalar fields in atmospheric aerosols model.
 
 - Fix allocation size for values at injection in case of mass source terms
   with coupled Reynolds stress solver.
