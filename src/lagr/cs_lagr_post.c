@@ -322,7 +322,10 @@ _cs_lagr_post(void                  *input,
 
         for (cs_lnum_t i = 0; i < n_b_faces; i++) {
           cs_lnum_t f_id = b_face_ids[i];
-          val[i] = _b_stats[f_id] / tstatp;
+          if (tstatp > 0)
+            val[i] = _b_stats[f_id] / tstatp;
+          else
+            val[i] = _b_stats[f_id];
         }
 
       }
