@@ -1,4 +1,13 @@
 
+Release 5.1.6 (unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Fix improved hydrostatic treatment and PISO-like iterations (nterup >1
+   and iphydr = 1)
+
 Release 5.1.5 (Sep 26 2018)
 ===========================
 
