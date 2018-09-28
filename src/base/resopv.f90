@@ -297,8 +297,8 @@ call field_get_id_try("predicted_vel_divergence", f_id)
 if (f_id.ge.0) then
   call field_get_val_s(f_id, cpro_divu)
 else
- allocate(divu(ncelet))
- cpro_divu => divu
+  allocate(divu(ncelet))
+  cpro_divu => divu
 endif
 
 ! --- Writing
@@ -930,6 +930,13 @@ call inimav &
    coefav , coefbv ,                                              &
    imasfl , bmasfl )
 
+! --- Initial divergence
+init = 1
+
+call divmas(init, imasfl , bmasfl , cpro_divu)
+
+residu = cs_gdot(ncel,cpro_divu,cpro_divu)
+write(nfecra,*) "in resopv-4", residu
 
 ! --- Projection aux faces des forces exterieures
 
@@ -956,7 +963,7 @@ if (iphydr.eq.1) then
    coefbf_p ,                                                     &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  ,                                              &
-   viscap     , viscap     , viscap     )
+   viscap , viscap , viscap     )
 
   ! Tensor diffusivity
   else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
@@ -973,6 +980,17 @@ if (iphydr.eq.1) then
 
   endif
 endif
+! --- Initial divergence
+init = 1
+
+residu = cs_gdot(ncel,dfrcxt,dfrcxt)
+write(nfecra,*) "in resopv-31", residu
+
+
+call divmas(init, imasfl , bmasfl , cpro_divu)
+
+residu = cs_gdot(ncel,cpro_divu,cpro_divu)
+write(nfecra,*) "in resopv-3", residu
 
 init   = 0
 inc    = 1
@@ -1034,6 +1052,13 @@ if (arak.gt.0.d0) then
    ipro_visc      , bpro_visc      ,                                           &
    cpro_visc ,                                                                 &
    imasfl , bmasfl )
+! --- Initial divergence
+init = 1
+
+call divmas(init, imasfl , bmasfl , cpro_divu)
+
+residu = cs_gdot(ncel,cpro_divu,cpro_divu)
+write(nfecra,*) "in resopv-2", residu
 
     ! Projection du terme source pour oter la partie hydrostat de la pression
     if (iphydr.eq.1) then
@@ -1061,6 +1086,13 @@ if (arak.gt.0.d0) then
    imasfl , bmasfl ,                                              &
    ipro_visc       , bpro_visc  ,                                 &
    cpro_visc, cpro_visc, cpro_visc    )
+! --- Initial divergence
+init = 1
+
+call divmas(init, imasfl , bmasfl , cpro_divu)
+
+residu = cs_gdot(ncel,cpro_divu,cpro_divu)
+write(nfecra,*) "in resopv-1", residu
 
       deallocate(cofbfp)
 
@@ -1168,6 +1200,8 @@ init = 1
 
 call divmas(init, imasfl , bmasfl , cpro_divu)
 
+residu = cs_gdot(ncel,cpro_divu,cpro_divu)
+write(nfecra,*) "in resopv-0", residu
 ! --- Weakly compressible algorithm: semi analytic scheme
 !     1. The RHS contains rho div(u*) and not div(rho u*)
 !     2. Add dilatation source term to rhs
@@ -1287,6 +1321,8 @@ if (icondv.eq.0) then
   deallocate(surfbm)
 endif
 
+residu = cs_gdot(ncel,cpro_divu,cpro_divu)
+write(nfecra,*) "in resopv0", residu
 
 ! --- Source term associated to the mass aggregation
 if (idilat.eq.2.or.idilat.eq.3) then
@@ -1314,6 +1350,12 @@ endif
 do iel = 1, ncel
   rhs(iel) = - cpro_divu(iel) - rovsdt(iel)*phi(iel)
 enddo
+residu = sqrt(cs_gdot(ncel,rovsdt,rovsdt))
+write(nfecra,*) "in resopv2", residu
+residu = sqrt(cs_gdot(ncel,phi,phi))
+write(nfecra,*) "in resopv3", residu
+residu = cs_gdot(ncel,cpro_divu,cpro_divu)
+write(nfecra,*) "in resopv1", residu
 
 ! --- Right hand side residual
 residu = sqrt(cs_gdot(ncel,rhs,rhs))
