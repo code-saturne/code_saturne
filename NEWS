@@ -5,6 +5,9 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- trackcvg: allow saving state only when data is loaded and loading it when
+  saved state is present.
+
 - CFDStudy: allow loading studies with no MESH or POST subdirectories.
 
 - Fix improved hydrostatic treatment and PISO-like iterations
