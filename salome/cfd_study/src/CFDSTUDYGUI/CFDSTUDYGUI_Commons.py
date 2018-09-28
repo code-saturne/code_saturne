@@ -215,19 +215,14 @@ def isaCFDCase(theCasePath):
 
 def isaCFDStudy(theStudyPath):
     log.debug("isaCFDStudy")
-    iok = True
     if os.path.isdir(theStudyPath):
         dirList = os.walk(theStudyPath).next()[1]
 
-        if not (dirList.count("MESH") and dirList.count("POST")):
-            iok = False
-        else:
-            for i in dirList:
-                if i not in ["MESH","POST"]:
-                    if isaCFDCase(os.path.join(theStudyPath,i)) :
-                        return True
-                    iok = iok and isaCFDCase(os.path.join(theStudyPath,i))
-    return iok
+        for i in dirList:
+            if i not in ["MESH", "POST"]:
+                if isaCFDCase(os.path.join(theStudyPath,i)):
+                    return True
+    return False
 
 def isSyrthesCase(theCasePath):
     log.debug("isSyrthesCase")
@@ -249,19 +244,20 @@ def isaSaturneSyrthesCouplingStudy(theStudyPath):
         cfdstudyMess.criticalMessage(mess)
         return False
     dirList = os.listdir(theStudyPath)
-    if not (dirList.count("MESH") and dirList.count("POST") and dirList.count("RESU_COUPLING") and dirList.count("coupling_parameters.py") and dirList.count("runcase")):
+    if not (dirList.count("RESU_COUPLING") and dirList.count("coupling_parameters.py") and dirList.count("runcase")):
         return False
     for i in dirList:
         ipath = os.path.join(theStudyPath,i)
         if os.path.isdir(ipath):
-            if i not in ["MESH","POST","RESU_COUPLING"]:
+            if i not in ["MESH", "POST", "RESU_COUPLING"]:
                 if isaCFDCase(ipath):
                     hasCFDCase = True
                 if isSyrthesCase(ipath):
                     hasSyrthesCase = True
-    if hasCFDCase and hasSyrthesCase :
-       iok = True
+    if hasCFDCase and hasSyrthesCase:
+        iok = True
     return iok
+
 #-------------------------------------------------------------------------------
 # Classes definitions
 #-------------------------------------------------------------------------------
