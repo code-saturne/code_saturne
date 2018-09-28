@@ -252,15 +252,9 @@ cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
   assert(csys->n_dofs == adr->n_rows);
   assert(system_flag & CS_FLAG_SYS_TIME_DIAG);
 
-  /* STEP1 >> Apply source term contribution
-           >> RHS has already the BC contribution */
-  if (cs_equation_param_has_sourceterm(eqp))
-    for (short int i = 0; i < csys->n_dofs; i++)
-      csys->rhs[i] += csys->source[i]; // Values at t_(n+1)
-
-  /* STEP2 >> Compute the time contribution to the RHS: Mtime*pn
-           >> Update the cellwise system with the time matrix
-           >> Apply other contributions to the RHS */
+  /* >> Compute the time contribution to the RHS: Mtime*pn
+     >> Update the cellwise system with the time matrix
+     >> Apply other contributions to the RHS */
   for (short int i = 0; i < csys->n_dofs; i++) {
 
     const double  dval = mass_mat->val[i];
@@ -307,14 +301,7 @@ cs_cdo_time_imp(const cs_equation_param_t  *eqp,
   assert(mass_mat != NULL);
   assert(mass_mat->n_rows == adr->n_rows);
 
-  /* STEP1 >> Apply source term contribution
-           >> RHS has already the BC contribution (+Source term at iter n
-              if required) */
-  if (cs_equation_param_has_sourceterm(eqp))
-    for (short int i = 0; i < csys->n_dofs; i++)
-      csys->rhs[i] += csys->source[i]; // Values at t_(n+1)
-
-  /* STEP2 >> Compute the time contribution to the RHS: Mtime*pn
+  /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
            >> Update the cellwise system with the time matrix
            >> Apply other contributions to the RHS */
 
@@ -496,18 +483,13 @@ cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
   assert(csys->n_dofs == adr->n_rows);
   assert(mass_mat != NULL);
 
-  /* STEP1 >> Treatment of the source term */
-  if (cs_equation_param_has_sourceterm(eqp))
-    for (short int i = 0; i < csys->n_dofs; i++)
-      csys->rhs[i] += eqp->theta * csys->source[i];
-
-  /* STEP2 >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
+  /* STEPS >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
   double  *adr_pn = cb->values;
   cs_sdm_square_matvec(adr, csys->val_n, adr_pn);
   for (short int i = 0; i < csys->n_dofs; i++)
     adr_pn[i] *= tcoef; // (1 - theta)
 
-  /* STEP3 >> Compute the time contribution to the RHS: Mtime*pn
+  /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
            >> Update the cellwise system with the time matrix */
   double  *time_pn = cb->values + csys->n_dofs;
   for (short int i = 0; i < csys->n_dofs; i++) {
@@ -527,7 +509,7 @@ cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
 
   }
 
-  /* STEP4 >> Apply other contributions to the RHS */
+  /* STEPS >> Apply other contributions to the RHS */
   for (short int i = 0; i < csys->n_dofs; i++)
     csys->rhs[i] += time_pn[i] - adr_pn[i];
 
@@ -567,18 +549,13 @@ cs_cdo_time_theta(const cs_equation_param_t  *eqp,
   assert(mass_mat != NULL);
   assert(mass_mat->n_rows == adr->n_rows);
 
-  /* STEP1 >> Treatment of the source term */
-  if (cs_equation_param_has_sourceterm(eqp))
-    for (short int i = 0; i < csys->n_dofs; i++)
-      csys->rhs[i] += eqp->theta * csys->source[i];
-
-  /* STEP2 >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
+  /* STEPS >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
   double  *adr_pn = cb->values;
   cs_sdm_square_matvec(adr, csys->val_n, adr_pn);
   for (short int i = 0; i < csys->n_dofs; i++)
     adr_pn[i] *= tcoef; // (1 - theta)
 
-  /* STEP3 >> Update the cellwise system with the time matrix */
+  /* STEPS >> Update the cellwise system with the time matrix */
   for (short int i = 0; i < csys->n_dofs; i++) {
 
     const int  shift_i = i*csys->n_dofs;
