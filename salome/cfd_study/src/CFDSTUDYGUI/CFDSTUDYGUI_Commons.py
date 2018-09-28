@@ -215,7 +215,6 @@ def isaCFDCase(theCasePath):
 
 def isaCFDStudy(theStudyPath):
     log.debug("isaCFDStudy")
-    iok = False
     if os.path.isdir(theStudyPath):
         dirList = os.walk(theStudyPath).next()[1]
 
@@ -223,8 +222,7 @@ def isaCFDStudy(theStudyPath):
             if i not in ["MESH", "POST"] :
                 if isaCFDCase(os.path.join(theStudyPath,i)) :
                     return True
-                iok = iok or isaCFDCase(os.path.join(theStudyPath,i))
-    return iok
+    return False
 
 def isSyrthesCase(theCasePath):
     log.debug("isSyrthesCase")
@@ -257,7 +255,7 @@ def isaSaturneSyrthesCouplingStudy(theStudyPath):
                 if isSyrthesCase(ipath):
                     hasSyrthesCase = True
     if hasCFDCase and hasSyrthesCase:
-       iok = True
+        iok = True
     return iok
 
 #-------------------------------------------------------------------------------
