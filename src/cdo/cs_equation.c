@@ -269,9 +269,9 @@ _initialize_field_from_ic(cs_real_t         t_eval,
             bft_error(__FILE__, __LINE__, 0,
                       _(" Incompatible reduction for equation %s.\n"),
                       eqp->name);
+            break;
 
           } /* Switch on possible reduction types */
-          break;
 
         } /* face values */
 
@@ -291,9 +291,9 @@ _initialize_field_from_ic(cs_real_t         t_eval,
             bft_error(__FILE__, __LINE__, 0,
                       _(" Incompatible reduction for equation %s.\n"),
                       eqp->name);
+            break;
 
           } /* Switch on possible reduction types */
-          break;
 
         } /* cell values */
 
