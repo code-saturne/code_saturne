@@ -91,7 +91,7 @@ def process_cmd_line(argv):
     parser = OptionParser(usage=usage)
 
     parser.add_option("-r", "--resu", dest="file_name", type="string",
-                      metavar="<file>",
+                      metavar="<directory>",
                       help="open a result directory at the interface start")
 
     (options, args) = parser.parse_args(argv)

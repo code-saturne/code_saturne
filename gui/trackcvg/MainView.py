@@ -96,12 +96,14 @@ from xml.dom.minidom import parse, Document
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
+
 logging.basicConfig()
 log = logging.getLogger("MainView")
 
 #-------------------------------------------------------------------------------
 # item class
 #-------------------------------------------------------------------------------
+
 class item_class(object):
     '''
     custom data object
@@ -121,6 +123,7 @@ class item_class(object):
 #-------------------------------------------------------------------------------
 # Treeitem class
 #-------------------------------------------------------------------------------
+
 class TreeItem(object):
     '''
     a python object used to return row/column data, and keep note of
@@ -184,6 +187,7 @@ class TreeItem(object):
 #-------------------------------------------------------------------------------
 # StandarItemModelOutput class
 #-------------------------------------------------------------------------------
+
 class CaseStandardItemModel(QAbstractItemModel):
 
     def __init__(self, parent, lst, lstFileProbes):
@@ -397,7 +401,7 @@ class CaseStandardItemModel(QAbstractItemModel):
 
 
 #-------------------------------------------------------------------------------
-# gestion des figures
+# manage figures
 #-------------------------------------------------------------------------------
 
 class MyMplCanvas(FigureCanvas):
@@ -559,6 +563,8 @@ class MainView(object):
         self.fileQuitAction.triggered.connect(self.fileQuit)
         self.actionSave_state.triggered.connect(self.SaveState)
         self.actionLoad_state.triggered.connect(self.LoadState)
+        self.actionSave_state.setEnabled(False)
+        self.actionLoad_state.setEnabled(False)
 
         self.displayAboutAction.triggered.connect(self.displayAbout)
         self.backgroundColorAction.triggered.connect(self.setColor)
@@ -620,8 +626,7 @@ class MainView(object):
         if self.caseName == None:
             self.toolButtonDir.setStyleSheet("background-color: red")
         else:
-            self.lineEditCase.setText(self.caseName)
-            self.loadDirectoryContent()
+            self.openCase(self.caseName)
         self.lineEditCase.setEnabled(False)
         self.lineEditTime.setText(str(self.timeRefresh))
 
@@ -873,6 +878,24 @@ class MainView(object):
         self.updateView()
 
 
+    def openCase(self, dirName):
+
+        self.caseName = str(dirName)
+        self.toolButtonDir.setStyleSheet("background-color: green")
+        self.lineEditCase.setText(self.caseName)
+        self.loadDirectoryContent()
+
+        if len(self.fileList) > 0:
+            self.actionSave_state.setEnabled(True)
+        else:
+            self.actionSave_state.setEnabled(False)
+
+        if os.path.exists(os.path.join(self.caseName, '.trackcvg.state')):
+            self.actionLoad_state.setEnabled(True)
+        else:
+            self.actionLoad_state.setEnabled(False)
+
+
     def slotOpenCase(self):
         title = self.tr("Choose a result directory")
 
@@ -886,11 +909,9 @@ class MainView(object):
                                        QFileDialog.DontResolveSymlinks)
         if not dirName:
             self.caseName = None
-        else:
-            self.caseName = str(dirName)
-            self.toolButtonDir.setStyleSheet("background-color: green")
-            self.lineEditCase.setText(self.caseName)
-            self.loadDirectoryContent()
+            return
+
+        self.openCase(dirName)
 
 
     def slotRefreshTime(self, text):
@@ -1097,9 +1118,6 @@ class MainView(object):
     def SaveState(self):
         """
         """
-        name = os.path.join(self.caseName, '.trackcvg.state')
-        ficIn= open(name, 'w')
-
         newdoc = Document()
 
         root = newdoc.createElement('root')
@@ -1124,6 +1142,9 @@ class MainView(object):
                 node.setAttribute("status", itt.status)
                 node.setAttribute("subplot_id", str(itt.subplot_id))
                 newnode.appendChild(node)
+
+        name = os.path.join(self.caseName, '.trackcvg.state')
+        ficIn= open(name, 'w')
 
         newdoc.writexml(ficIn,
                         indent="  ",
