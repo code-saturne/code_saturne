@@ -1117,7 +1117,7 @@ endif
 !      into account (only for the first call, the second one is dedicated
 !      to error estimators)
 
-if (iappel.eq.1.and.iphydr.eq.1.and.iterns.eq.1) then
+if (iappel.eq.1.and.iphydr.eq.1) then
 
 ! force ext au pas de temps precedent :
 !     FRCXT a ete initialise a zero
