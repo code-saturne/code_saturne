@@ -118,7 +118,7 @@ AC_REQUIRE([CS_AC_SALOME_ENV])
 
 if test x$with_salome != xno ; then
 
-  if test x$SALOMEENVCMD != x ; then
+  if test "x$SALOMEENVCMD" != "x" ; then
     KERNEL_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $KERNEL_ROOT_DIR)
     GUI_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $GUI_ROOT_DIR)
     YACS_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $YACS_ROOT_DIR)
@@ -147,7 +147,7 @@ if test x$with_salome != xno ; then
   # Note that we must ensure we are using SALOME's python here, so use "python"
   # with the sourced environment and PATH rather than $PYTHON here.
 
-  if test x$SALOMEENVCMD != x ; then
+  if test "x$SALOMEENVCMD" != "x" ; then
     if test "x$OMNIIDLPYTHONPATH" = "x"; then
      OMNIIDLPYTHONPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/build-aux/cs_config_test.py" pythonpath_filter _omniidlmodule.so _omniidlmodule.so)
     fi
