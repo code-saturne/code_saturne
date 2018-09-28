@@ -1765,7 +1765,7 @@ def checkCode(theCase):
     aChildList = ScanChildren(theCase, "^DATA$")
     if not len(aChildList) == 1:
         # no DATA folder
-        print("There are not data folder in selected by user case")
+        print("There is no data folder in selected case")
         return CFD_Code()
 
     aDataObj =  aChildList[0]
@@ -1790,7 +1790,7 @@ def checkCode(theCase):
     aChildList = ScanChildren(theCase, "^SCRIPTS$")
     if not len(aChildList) == 1:
         # no SCRIPTS folder
-        print("There are not scripts folder in selected by user case")
+        print("There is no scripts folder in selected case")
         return CFD_Code()
 
     aDataObj =  aChildList[0]
