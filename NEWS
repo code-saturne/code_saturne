@@ -1,11 +1,14 @@
+
 Release 5.0.10 (unreleased)
 ===========================
 
 Bug fixes
 ---------
 
-- Fix improved hydrostatic treatment and PISO-like iterations (nterup >1
-   and iphydr = 1)
+- CFDStudy: allow loading studies with no MESH or POST subdirectories.
+
+- Fix improved hydrostatic treatment and PISO-like iterations
+  (nterup > 1 and iphydr = 1).
 
 Release 5.0.9 (Sep 26 2018)
 ===========================
