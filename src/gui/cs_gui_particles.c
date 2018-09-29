@@ -486,7 +486,8 @@ cs_gui_particles_model(void)
   int b_stats = (boundary_stats) ? 1 : 0;
   bft_printf("--boundary_output = %i\n", b_stats);
   if (b_stats) {
-    bft_printf("--has_part_impact_nbr   = %i\n", cs_glob_lagr_boundary_interactions->has_part_impact_nbr);
+    bft_printf("--has_part_impact_nbr   = %i\n",
+               cs_glob_lagr_boundary_interactions->has_part_impact_nbr);
     bft_printf("--iflmbd   = %i\n", cs_glob_lagr_boundary_interactions->iflmbd);
     bft_printf("--iangbd   = %i\n", cs_glob_lagr_boundary_interactions->iangbd);
     bft_printf("--ivitbd   = %i\n", cs_glob_lagr_boundary_interactions->ivitbd);
