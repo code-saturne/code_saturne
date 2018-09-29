@@ -2072,8 +2072,8 @@ _cell_volume_reductions(const cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_face_distances(const cs_lnum_t    n_i_faces,
-                        const cs_lnum_t    n_b_faces,
+_compute_face_distances(cs_lnum_t          n_i_faces,
+                        cs_lnum_t          n_b_faces,
                         const cs_lnum_2_t  i_face_cells[],
                         const cs_lnum_t    b_face_cells[],
                         const cs_lnum_t    b_face_vtx_idx[],
@@ -2089,19 +2089,14 @@ _compute_face_distances(const cs_lnum_t    n_i_faces,
                         cs_real_t          b_dist[],
                         cs_real_t          weight[])
 {
-  cs_lnum_t face_id;
-  cs_lnum_t cell_id;
-
-  cs_real_t dist2f;
-
   cs_gnum_t w_count = 0;
 
   /* Interior faces */
 
-  for (face_id = 0; face_id < n_i_faces; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
     const cs_real_t *face_nomal = i_face_normal[face_id];
-    cs_real_3_t normal;
+    cs_real_t normal[3];
     cs_math_3_normalise(face_nomal, normal);
 
     cs_lnum_t cell_id1 = i_face_cells[face_id][0];
@@ -2117,9 +2112,9 @@ _compute_face_distances(const cs_lnum_t    n_i_faces,
       /* Distance between the face center of gravity
          and the neighbor cell center
          and dot-product with the normal */
-      dist2f = cs_math_3_distance_dot_product(i_face_cog[face_id],
-                                              cell_cen[cell_id2],
-                                              normal);
+      cs_real_t dist2f = cs_math_3_distance_dot_product(i_face_cog[face_id],
+                                                        cell_cen[cell_id2],
+                                                        normal);
       weight[face_id] = dist2f / i_dist[face_id];
     }
     else {
@@ -2153,13 +2148,13 @@ _compute_face_distances(const cs_lnum_t    n_i_faces,
 
   w_count = 0;
 
-  for (face_id = 0; face_id < n_b_faces; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
     const cs_real_t *face_nomal = b_face_normal[face_id];
-    cs_real_3_t normal;
+    cs_real_t normal[3];
     cs_math_3_normalise(face_nomal, normal);
 
-    cell_id = b_face_cells[face_id];
+    cs_lnum_t cell_id = b_face_cells[face_id];
 
     /* Distance between the face center of gravity
        and the neighbor cell center */
@@ -2168,36 +2163,32 @@ _compute_face_distances(const cs_lnum_t    n_i_faces,
                                                      normal);
     /* Clipping of cell boundary distances */
     if (cs_glob_mesh_quantities_flag & CS_FACE_DISTANCE_CLIP) {
-      double distmax = cs_math_3_distance(cell_cen[cell_id],
-                                          b_face_cog[face_id]);
+      cs_real_t distmax = cs_math_3_distance(cell_cen[cell_id],
+                                             b_face_cog[face_id]);
       if (b_dist[face_id] < 0.2 * distmax) {
         w_count++;
         b_dist[face_id] = CS_MAX(b_dist[face_id], 0.2 * distmax);
       }
 
       /* Clipping of cell boundary distances based on a characteristic lenght */
-      int lower_vtx_id = b_face_vtx_idx[face_id];
-      int upper_vtx_id = b_face_vtx_idx[face_id+1];
+      cs_lnum_t s_vtx_id = b_face_vtx_idx[face_id];
+      cs_lnum_t e_vtx_id = b_face_vtx_idx[face_id+1];
+      cs_lnum_t n_f_vertices = e_vtx_id - s_vtx_id;
 
-      double peri = 0.;
+      cs_real_t peri = 0.;
 
-      for (int vtx_id = lower_vtx_id; vtx_id < upper_vtx_id-1; vtx_id++) {
-        int lower_coord_id1 = 3 * (b_face_vtx_lst[vtx_id]);
-        int lower_coord_id2 = 3 * (b_face_vtx_lst[vtx_id+1]);
-        double dist_p1p2 = cs_math_3_distance(vtx_coord[lower_coord_id1],
-                                              vtx_coord[lower_coord_id2]);
+      for (cs_lnum_t f_vtx_id = 0; f_vtx_id < n_f_vertices; f_vtx_id++) {
+        cs_lnum_t vtx_id1 = b_face_vtx_lst[s_vtx_id + f_vtx_id];
+        cs_lnum_t vtx_id2 = b_face_vtx_lst[s_vtx_id + (f_vtx_id+1)%n_f_vertices];
+        cs_real_t dist_p1p2 = cs_math_3_distance(vtx_coord[vtx_id1],
+                                                 vtx_coord[vtx_id2]);
         peri += dist_p1p2;
       }
 
-      int lower_coord_id1 = 3 * (b_face_vtx_lst[upper_vtx_id-1]);
-      int lower_coord_id2 = 3 * (b_face_vtx_lst[lower_vtx_id]);
-      double dist_p1p2 = cs_math_3_distance(vtx_coord[lower_coord_id1],
-                                            vtx_coord[lower_coord_id2]);
-      peri += dist_p1p2;
-
       double miperi = 0.5 * peri;
 
-      /* Compute characteristic dimension of each face based on surfbn and peri */
+      /* Compute characteristic dimension of each face based
+         on surfbn and peri */
       double delta = miperi * miperi - 4. * b_face_surf[face_id];
       if (delta > 0.) {
         double L = 0.5 * (miperi + sqrt(delta));
