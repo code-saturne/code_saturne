@@ -2143,6 +2143,8 @@ cs_mesh_create(void)
   mesh->n_g_b_faces = 0;
   mesh->n_g_vertices = 0;
 
+  mesh->n_g_i_c_faces = 0;
+
   /* Local structures */
 
   mesh->vtx_coord = NULL;
@@ -2641,6 +2643,26 @@ cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
     mesh->n_g_i_faces = mesh->n_i_faces;
     mesh->n_g_b_faces = mesh->n_b_faces;
     mesh->n_g_vertices = mesh->n_vertices;
+  }
+
+  mesh->n_g_i_c_faces = mesh->n_g_i_faces;
+
+  if (mesh->n_init_perio > 0) {
+
+    const cs_lnum_t n_cells = mesh->n_cells;
+    cs_gnum_t n_g_i_c_faces = 0;
+    for (i = 0; i < mesh->n_i_faces; i++) {
+      if (mesh->i_face_cells[i][0] < n_cells)
+        n_g_i_c_faces++;
+    }
+
+    if (cs_glob_n_ranks == 1)
+      mesh->n_g_i_c_faces = n_g_i_c_faces;
+#if defined(HAVE_MPI)
+    else if (cs_glob_n_ranks > 1)
+      MPI_Allreduce(&n_g_i_c_faces, &(mesh->n_g_i_c_faces), 1,
+                    CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
+#endif
   }
 
   /* Sync cell family array (also in case of periodicity) */

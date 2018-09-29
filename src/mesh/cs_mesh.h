@@ -100,6 +100,10 @@ typedef struct {
   cs_gnum_t   n_g_b_faces;         /* Global number of boundary faces */
   cs_gnum_t   n_g_vertices;        /* Global number of vertices */
 
+  cs_gnum_t   n_g_i_c_faces;       /* Global number of interior faces
+                                      for counts (with periodic faces
+                                      counted only once) */
+
   /* Global numbering */
 
   cs_gnum_t  *global_cell_num;     /* Global cell numbering */

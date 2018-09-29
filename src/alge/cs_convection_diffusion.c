@@ -2969,7 +2969,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
                var_name, (unsigned long long)n_upwind,
-               (unsigned long long)m->n_g_i_faces);
+               (unsigned long long)m->n_g_i_c_faces);
   }
 
   /* ======================================================================
@@ -4330,7 +4330,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
                var_name, (unsigned long long)n_upwind,
-               (unsigned long long)m->n_g_i_faces);
+               (unsigned long long)m->n_g_i_c_faces);
   }
 
   /* ======================================================================
@@ -5623,7 +5623,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
                var_name, (unsigned long long)n_upwind,
-               (unsigned long long)m->n_g_i_faces);
+               (unsigned long long)m->n_g_i_c_faces);
   }
 
   /* ======================================================================
@@ -6777,7 +6777,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
                var_name, (unsigned long long)n_upwind,
-               (unsigned long long)m->n_g_i_faces);
+               (unsigned long long)m->n_g_i_c_faces);
   }
 
   /* ======================================================================
