@@ -78,8 +78,8 @@ cs_gui_radiative_transfer_postprocess(void);
 
 void
 cs_gui_radiative_transfer_bcs(const    int   itypfb[],
-                              cs_lnum_t      nvar,
-                              cs_lnum_t      ivart,
+                              int            nvar,
+                              int            ivart,
                               int           *isothp,
                               double        *epsp,
                               double        *epap,
