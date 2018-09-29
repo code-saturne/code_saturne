@@ -284,7 +284,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         """
         default = {}
         default['model']         = self.model.getTurbulenceModel()
-        default['wall_function']   = self.model.getWallFunction()
+        default['wall_function'] = self.model.getWallFunction()
         default['gravity_terms'] = self.model.getGravity()
         log.debug("slotAdvancedOptions -> %s" % str(default))
 

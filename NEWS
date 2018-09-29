@@ -5,6 +5,8 @@ Release 5.1.6 (unreleased)
 Bug fixes
 ---------
 
+- GUI: fix loss of previous deactivated wall function setting when reopened.
+
 - trackcvg: allow saving state only when data is loaded and loading it when
   saved state is present.
 
