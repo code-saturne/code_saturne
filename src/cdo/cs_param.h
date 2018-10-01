@@ -161,6 +161,9 @@ typedef enum {
  * \enum cs_param_time_scheme_t
  *   Type of numerical scheme for the discretization in time
  *
+ * \var CS_TIME_SCHEME_STEADY
+ * No time scheme. Steady-state computation.
+ *
  * \var CS_TIME_SCHEME_IMPLICIT
  * fully implicit (forward Euler/theta-scheme = 1)
  *
@@ -176,6 +179,7 @@ typedef enum {
 
 typedef enum {
 
+  CS_TIME_SCHEME_STEADY,
   CS_TIME_SCHEME_IMPLICIT,
   CS_TIME_SCHEME_EXPLICIT,
   CS_TIME_SCHEME_CRANKNICO,

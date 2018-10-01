@@ -133,7 +133,7 @@ cs_static_condensation_scalar_eq(const cs_adjacency_t    *c2x,
     /* Update RHS_x: RHS_x = RHS_x - Axc*Acc^-1*RHS_c */
     csys->rhs[i] -= rc_tilda[csys->c_id] * axc[i];
 
-  } // Loop on vi cell vertices
+  } /* Loop on vi cell entities */
 
 }
 

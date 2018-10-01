@@ -38,6 +38,7 @@
 #include "cs_equation_param.h"
 #include "cs_flag.h"
 #include "cs_matrix.h"
+#include "cs_range_set.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
 #include "cs_source_term.h"
@@ -209,9 +210,9 @@ cs_equation_cell_mesh_flag(cs_flag_t                      cell_flag,
  *         numerical settings
  *         Set also shared pointers from the main domain members
  *
- * \param[in]  connect          pointer to a cs_cdo_connect_t structure
- * \param[in]  quant            pointer to additional mesh quantities struct.
- * \param[in]  time_step        pointer to a time step structure
+ * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant         pointer to additional mesh quantities struct.
+ * \param[in]  time_step     pointer to a time step structure
  * \param[in]  cc            pointer to a cs_domain_cdo_context_t struct.
  */
 /*----------------------------------------------------------------------------*/
@@ -268,6 +269,35 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Prepare a linear system and synchronize buffers to handle parallelism.
+ *        Transfer a mesh-based description of arrays x0 and rhs into an
+ *        algebraic description for the linear system in x and b.
+ *
+ * \param[in]      stride   stride to apply to the range set operations
+ * \param[in]      x_size   size of the vector unknows (scatter view)
+ * \param[in]      x0       pointer to an array (unknows to compute)
+ * \param[in]      rhs      pointer to an array (right-hand side)
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in]      rset     pointer to a range set structure
+ * \param[in, out] p_x      pointer of pointer to the linear solver unknows
+ * \param[in, out] p_rhs    pointer of pointer to the right-hand side
+ *
+ * \returns the number of non-zeros in the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_equation_prepare_system(int                   stride,
+                           cs_lnum_t             x_size,
+                           const cs_real_t      *x0,
+                           const cs_real_t      *rhs,
+                           const cs_matrix_t    *matrix,
+                           cs_range_set_t       *rset,
+                           cs_real_t            *p_x[],
+                           cs_real_t            *p_rhs[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Print a message in the performance output file related to the
  *          monitoring of equation
  *
@@ -304,8 +334,6 @@ cs_equation_init_cell_sys_bc(const cs_equation_builder_t   *eqb,
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      eqb       pointer to a cs_equation_builder_t structure
  * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in, out] tpty_val  pointer to the value for the time property
- * \param[in, out] rpty_vals pointer to the values for reaction properties
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure (diffusion
  *                           property is stored inside)
  */
@@ -315,8 +343,6 @@ void
 cs_equation_init_properties(const cs_equation_param_t     *eqp,
                             const cs_equation_builder_t   *eqb,
                             cs_real_t                      t_eval,
-                            double                        *tpty_val,
-                            double                        *rpty_vals,
                             cs_cell_builder_t             *cb);
 
 /*----------------------------------------------------------------------------*/

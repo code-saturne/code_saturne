@@ -1125,7 +1125,7 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
 
     const cs_nvec3_t  dfq = cm->dface[e];
 
-    cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, dfq.unitv, matnu);
+    cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, dfq.unitv, matnu);
 
     const cs_real_t  diff_contrib = _dp3(dfq.unitv, matnu);
     const double  mean_flux = fluxes[e]/dfq.meas;
@@ -1306,7 +1306,7 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
 
     const cs_nvec3_t  dfq = cm->dface[e];
 
-    cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, dfq.unitv, matnu);
+    cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, dfq.unitv, matnu);
 
     const cs_real_t  diff_contrib = _dp3(dfq.unitv, matnu);
     const double  mean_flux = fluxes[e]/dfq.meas;

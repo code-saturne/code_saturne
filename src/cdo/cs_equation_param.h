@@ -606,8 +606,7 @@ typedef enum {
 static inline bool
 cs_equation_param_has_diffusion(const cs_equation_param_t     *eqp)
 {
-  if (eqp == NULL)
-    return false;
+  assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_DIFFUSION)
     return true;
   else
@@ -627,8 +626,7 @@ cs_equation_param_has_diffusion(const cs_equation_param_t     *eqp)
 static inline bool
 cs_equation_param_has_convection(const cs_equation_param_t     *eqp)
 {
-  if (eqp == NULL)
-    return false;
+  assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_CONVECTION)
     return true;
   else
@@ -648,8 +646,7 @@ cs_equation_param_has_convection(const cs_equation_param_t     *eqp)
 static inline bool
 cs_equation_param_has_reaction(const cs_equation_param_t     *eqp)
 {
-  if (eqp == NULL)
-    return false;
+  assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_REACTION)
     return true;
   else
@@ -669,8 +666,7 @@ cs_equation_param_has_reaction(const cs_equation_param_t     *eqp)
 static inline bool
 cs_equation_param_has_time(const cs_equation_param_t     *eqp)
 {
-  if (eqp == NULL)
-    return false;
+  assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_UNSTEADY)
     return true;
   else
@@ -690,14 +686,12 @@ cs_equation_param_has_time(const cs_equation_param_t     *eqp)
 static inline bool
 cs_equation_param_has_sourceterm(const cs_equation_param_t     *eqp)
 {
-  if (eqp == NULL)
-    return false;
+  assert(eqp != NULL);
   if (eqp->n_source_terms > 0)
     return true;
   else
     return false;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!

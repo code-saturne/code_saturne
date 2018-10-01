@@ -924,30 +924,6 @@ cs_equation_get_reaction_property(const cs_equation_t    *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return true is the given equation is steady otherwise false
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_equation_is_steady(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return true;
-  if (eq->param == NULL)
-    return true;
-
-  if (eq->param->flag & CS_EQUATION_UNSTEADY)
-    return false;
-  else
-    return true;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Return the type of numerical scheme used for the discretization in
  *         space
  *
@@ -1030,6 +1006,57 @@ cs_equation_get_type(const cs_equation_t    *eq)
     return CS_EQUATION_N_TYPES;
   else
     return eq->param->type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_is_steady(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return true;
+  if (eq->param == NULL)
+    return true;
+
+  if (eq->param->flag & CS_EQUATION_UNSTEADY)
+    return false;
+  else
+    return true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_uses_new_mechanism(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return false;
+  assert(eq->param != NULL);
+
+  if (eq->param->dim == 1) {
+    if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB)  ||
+        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOVCB) ||
+        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB))
+      return true;
+  }
+
+  return false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1374,6 +1401,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
     if (eqp->flag & CS_EQUATION_UNSTEADY)
       all_are_steady = false;
+    else
+      cs_equation_set_param(eqp, CS_EQKEY_TIME_SCHEME, "steady");
 
     if (do_profiling)
       cs_equation_set_timer_stats(eq);
@@ -1386,16 +1415,39 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
         eq->init_context = cs_cdovb_scaleq_init_context;
         eq->free_context = cs_cdovb_scaleq_free_context;
-        eq->initialize_system = cs_cdovb_scaleq_initialize_system;
         eq->set_dir_bc = cs_cdovb_scaleq_set_dir_bc;
+
+        /* deprecated */
+        eq->initialize_system = cs_cdovb_scaleq_initialize_system;
         eq->build_system = cs_cdovb_scaleq_build_system;
         eq->prepare_solving = _prepare_vb_solving;
         eq->update_field = cs_cdovb_scaleq_update_field;
+
+        /* New mechanism */
+        switch (eqp->time_scheme) {
+        case CS_TIME_SCHEME_STEADY:
+          eq->solve = cs_cdovb_scaleq_solve_steady_state;
+          break;
+        case CS_TIME_SCHEME_IMPLICIT:
+          eq->solve = cs_cdovb_scaleq_solve_implicit;
+          break;
+        case CS_TIME_SCHEME_THETA:
+        case CS_TIME_SCHEME_CRANKNICO:
+          eq->solve = cs_cdovb_scaleq_solve_theta;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__, eqp->name);
+        }
+
         eq->compute_balance = cs_cdovb_scaleq_balance;
         eq->compute_flux_across_plane =
           cs_cdovb_scaleq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
         eq->postprocess = cs_cdovb_scaleq_extra_op;
+
         eq->read_restart = NULL;
         eq->write_restart = NULL;
 
@@ -1425,6 +1477,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
           cs_cdovb_vecteq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovb_vecteq_cellwise_diff_flux;
         eq->postprocess = cs_cdovb_vecteq_extra_op;
+
         eq->read_restart = NULL;
         eq->write_restart = NULL;
 
@@ -1452,11 +1505,35 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
         eq->init_context = cs_cdovcb_scaleq_init_context;
         eq->free_context = cs_cdovcb_scaleq_free_context;
-        eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
         eq->set_dir_bc = cs_cdovcb_scaleq_set_dir_bc;
+
+        /* Deprecated */
+        eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
         eq->build_system = cs_cdovcb_scaleq_build_system;
         eq->prepare_solving = _prepare_vb_solving;
         eq->update_field = cs_cdovcb_scaleq_update_field;
+
+        /* New mechanism */
+        switch (eqp->time_scheme) {
+        case CS_TIME_SCHEME_STEADY:
+          eq->solve = cs_cdovcb_scaleq_solve_steady_state;
+          break;
+
+        case CS_TIME_SCHEME_IMPLICIT:
+          eq->solve = cs_cdovcb_scaleq_solve_implicit;
+          break;
+
+        case CS_TIME_SCHEME_THETA:
+        case CS_TIME_SCHEME_CRANKNICO:
+          eq->solve = cs_cdovcb_scaleq_solve_theta;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__, eqp->name);
+        }
+
         eq->compute_flux_across_plane =
           cs_cdovcb_scaleq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
@@ -1487,15 +1564,40 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
         eq->init_context = cs_cdofb_scaleq_init_context;
         eq->free_context = cs_cdofb_scaleq_free_context;
-        eq->initialize_system = cs_cdofb_scaleq_initialize_system;
         eq->set_dir_bc = cs_cdofb_scaleq_set_dir_bc;
+
+        /* Deprecated */
+        eq->initialize_system = cs_cdofb_scaleq_initialize_system;
         eq->build_system = cs_cdofb_scaleq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_cdofb_scaleq_update_field;
+
+        /* New mechanism */
+        switch (eqp->time_scheme) {
+        case CS_TIME_SCHEME_STEADY:
+          eq->solve = cs_cdofb_scaleq_solve_steady_state;
+          break;
+
+        case CS_TIME_SCHEME_IMPLICIT:
+          eq->solve = cs_cdofb_scaleq_solve_implicit;
+          break;
+
+        case CS_TIME_SCHEME_THETA:
+        case CS_TIME_SCHEME_CRANKNICO:
+          eq->solve = cs_cdofb_scaleq_solve_theta;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__, eqp->name);
+        }
+
         eq->compute_flux_across_plane = NULL;
         eq->compute_cellwise_diff_flux = NULL;
         eq->compute_balance = cs_cdofb_scaleq_balance;
         eq->postprocess = cs_cdofb_scaleq_extra_op;
+
         eq->read_restart = cs_cdofb_scaleq_read_restart;
         eq->write_restart = cs_cdofb_scaleq_write_restart;
 
@@ -1669,7 +1771,7 @@ cs_equation_create_fields(void)
 {
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-    int  location_id = -1; // initialize values to avoid a warning
+    int  location_id = -1; /* initialize values to avoid a warning */
     int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
 
     cs_equation_t  *eq = _equations[eq_id];
@@ -1801,7 +1903,10 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
       _initialize_field_from_ic(ts->t_cur, eq);
 
-    /* Enforce initial boundary condition if there is Dirichlet values */
+    /* Enforce initial boundary condition if there is Dirichlet values.
+       If there is a conflict between the initial condition and the boundary
+       conditions. The later is enforced.
+    */
     if (eq->set_dir_bc != NULL) {
 
       cs_real_t  *values = NULL;
@@ -1893,7 +1998,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(cs_equation_t   *eq)
+cs_equation_solve_deprecated(cs_equation_t   *eq)
 {
   int  n_iters = 0;
   double  residual = DBL_MAX;
@@ -1979,10 +2084,6 @@ cs_equation_solve(cs_equation_t   *eq)
   if (eq->solve_ts_id > -1)
     cs_timer_stats_stop(eq->solve_ts_id);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
-  cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, eq->n_sles_gather_elts, x, 6);
-  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, eq->n_sles_gather_elts, b, 6);
-#endif
 
   /* Copy current field values to previous values */
   cs_field_current_to_previous(fld);
@@ -2001,6 +2102,75 @@ cs_equation_solve(cs_equation_t   *eq)
   BFT_FREE(eq->rhs);
   cs_sles_free(sles);
   cs_matrix_destroy(&(eq->matrix));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and then solve the linear system for an equation with an
+ *         unsteady term
+ *
+ * \param[in]       mesh        pointer to a cs_mesh_t structure
+ * \param[in]       dt_cur      value of the current time step
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_solve(const cs_mesh_t            *mesh,
+                  double                      dt_cur,
+                  cs_equation_t              *eq)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  /* Allocate, build and solve the algebraic system:
+     The linear solver is called inside and the field value is updated inside
+  */
+  eq->solve(dt_cur,        /* dummy time step value */
+            mesh,
+            eq->field_id,
+            eq->param,
+            eq->builder,
+            eq->scheme_context);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and then solve the linear system for this equation when the
+ *         goal is to find the steady state
+ *
+ * \param[in]       mesh        pointer to a cs_mesh_t structure
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
+                               cs_equation_t              *eq)
+{
+  assert(eq != NULL);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  /* Allocate, build and solve the algebraic system:
+     The linear solver is called inside and the field value is updated inside
+  */
+  eq->solve(-1.0,        /* dummy time step value */
+            mesh,
+            eq->field_id,
+            eq->param,
+            eq->builder,
+            eq->scheme_context);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/

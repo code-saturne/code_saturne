@@ -34,6 +34,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_flag.h"
+#include "cs_param_cdo.h"
 #include "cs_sdm.h"
 
 /*----------------------------------------------------------------------------*/
@@ -78,8 +79,14 @@ typedef struct {
   double     eig_max;   /*!< max. value among eigenvalues */
 
   /* Store the cellwise value for the diffusion, time and reaction properties */
-  cs_real_33_t  pty_mat; /*!< Property tensor if not isotropic */
-  double        pty_val; /*!< Propety value if isotropic */
+  cs_real_33_t  dpty_mat; /*!< Property tensor if not isotropic for diffusion */
+  double        dpty_val; /*!< Property value if isotropic for diffusion*/
+
+  double        tpty_val; /*!< Property value for time operator */
+
+  /*! Property values for the reaction operator */
+  double        rpty_vals[CS_CDO_N_MAX_REACTIONS];
+  double        rpty_val; /*!< Sum of all reaction property values  */
 
   /* Temporary buffers */
   short int    *ids;     /*!< local ids */
@@ -319,17 +326,13 @@ cs_cell_sys_create(int          n_max_dofbyc,
  * \brief  Reset all members related to BC and some other ones in a
  *         \ref cs_cell_sys_t structure
  *
- * \param[in]      cell_flag  metadata about the cell to treat
- * \param[in]      n_dofbyc   number of DoFs in a cell
  * \param[in]      n_fbyc     number of faces in a cell
  * \param[in, out] csys       pointer to the \ref cs_cell_sys_t struct to reset
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_sys_reset(cs_flag_t        cell_flag,
-                  int              n_dofbyc,
-                  int              n_fbyc,
+cs_cell_sys_reset(int              n_fbyc,
                   cs_cell_sys_t   *csys);
 
 /*----------------------------------------------------------------------------*/
@@ -348,14 +351,12 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys);
  * \brief   Dump a local system for debugging purpose
  *
  * \param[in]       msg     associated message to print
- * \param[in]       c_id    id related to the cell
  * \param[in]       csys    pointer to a \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cell_sys_dump(const char              msg[],
-                 const cs_lnum_t         c_id,
                  const cs_cell_sys_t    *csys);
 
 /*----------------------------------------------------------------------------*/
@@ -444,17 +445,17 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm);
  * \brief  Define a cs_cell_mesh_t structure for a given cell id. According
  *         to the requested level, some quantities may not be defined;
  *
- * \param[in]       c_id      cell id
- * \param[in]       flag      indicate which members are really defined
- * \param[in]       connect   pointer to a cs_cdo_connect_t structure
- * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
- * \param[in, out]  cm        pointer to a cs_cell_mesh_t structure to set
+ * \param[in]       c_id        cell id
+ * \param[in]       build_flag  indicate which members are really built
+ * \param[in]       connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]       quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in, out]  cm          pointer to a cs_cell_mesh_t structure to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cell_mesh_build(cs_lnum_t                    c_id,
-                   cs_flag_t                    flag,
+                   cs_flag_t                    build_flag,
                    const cs_cdo_connect_t      *connect,
                    const cs_cdo_quantities_t   *quant,
                    cs_cell_mesh_t              *cm);

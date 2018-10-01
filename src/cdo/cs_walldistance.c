@@ -521,16 +521,24 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
      Solve the equation related to the definition of the wall distance. */
 
   cs_equation_t  *eq = cs_wd_poisson_eq;
-  double  dt_cur = 0.;  /* Wall distance is a steady-stae equation */
 
-  /* Sanity check */
-  assert(cs_equation_is_steady(eq));
+  if (cs_equation_uses_new_mechanism(eq))
+    cs_equation_solve_steady_state(mesh, eq);
 
-  /* Define the algebraic system */
-  cs_equation_build_system(mesh, time_step, dt_cur, eq);
+  else { /* Deprecated */
 
-  /* Solve the algebraic system */
-  cs_equation_solve(eq);
+    double  dt_cur = 0.;  /* Wall distance is a steady-stae equation */
+
+    /* Sanity check */
+    assert(cs_equation_is_steady(eq));
+
+    /* Define the algebraic system */
+    cs_equation_build_system(mesh, time_step, dt_cur, eq);
+
+    /* Solve the algebraic system */
+    cs_equation_solve_deprecated(eq);
+
+  }
 
   /* Second step:
      Compute the wall distance. */

@@ -982,12 +982,12 @@ _test_cdovb_schemes(FILE                *out,
     csys->dof_ids[v] = cm->v_ids[v];
 
   /* Handle anisotropic diffusion */
-  cb->pty_mat[0][0] = 1.0, cb->pty_mat[0][1] = 0.5, cb->pty_mat[0][2] = 0.0;
-  cb->pty_mat[1][0] = 0.5, cb->pty_mat[1][1] = 1.0, cb->pty_mat[1][2] = 0.5;
-  cb->pty_mat[2][0] = 0.0, cb->pty_mat[2][1] = 0.5, cb->pty_mat[2][2] = 1.0;
+  cb->dpty_mat[0][0] = 1.0, cb->dpty_mat[0][1] = 0.5, cb->dpty_mat[0][2] = 0.0;
+  cb->dpty_mat[1][0] = 0.5, cb->dpty_mat[1][1] = 1.0, cb->dpty_mat[1][2] = 0.5;
+  cb->dpty_mat[2][0] = 0.0, cb->dpty_mat[2][1] = 0.5, cb->dpty_mat[2][2] = 1.0;
 
   // Useful for a weak enforcement of the BC */
-  cs_math_33_eigen((const cs_real_t (*)[3])cb->pty_mat,
+  cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
                    &(cb->eig_ratio),
                    &(cb->eig_max));
 

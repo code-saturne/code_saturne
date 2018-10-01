@@ -395,13 +395,13 @@ cs_equation_create_param(const char            *name,
      Default initialization is made in accordance with this choice */
   eqp->time_hodge.is_unity = true;
   eqp->time_hodge.is_iso = true;
-  eqp->time_hodge.inv_pty = false; // inverse property ?
+  eqp->time_hodge.inv_pty = false; /* inverse property ? */
   eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
   eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
   eqp->time_property = NULL;
 
   /* Description of the time discretization (default values) */
-  eqp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
+  eqp->time_scheme = CS_TIME_SCHEME_STEADY;
   eqp->theta = 1.0;
   eqp->do_lumping = false;
 
@@ -853,7 +853,11 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_TIME_SCHEME:
-    if (strcmp(val, "implicit") == 0) {
+
+    if (strcmp(val, "no") == 0 || strcmp(val, "steady") == 0) {
+      eqp->time_scheme = CS_TIME_SCHEME_STEADY;
+    }
+    else if (strcmp(val, "implicit") == 0) {
       eqp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
       eqp->theta = 1.;
     }

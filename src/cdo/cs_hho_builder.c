@@ -477,7 +477,7 @@ _add_tetra_to_reco_op(const cs_real_3_t         xv1,
 
     for (short int i = 0; i < gs; i++) {
 
-      _mv3((const cs_real_t (*)[3])cb->pty_mat, g_phi + 3*(i+1), Kgrad_phi_i);
+      _mv3((const cs_real_t (*)[3])cb->dpty_mat, g_phi + 3*(i+1), Kgrad_phi_i);
 
       cs_real_t  *mg_i = stiffness->val + i*gs;
       for (short int j = i; j < gs; j++)
@@ -931,7 +931,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
   cs_real_3_t  *kappa_nfc = cb->vectors;
   cs_real_3_t  *gpts = cb->vectors + cm->n_fc;
   for (short int f = 0; f < cm->n_fc; f++) {
-    _mv3((const cs_real_t (*)[3])cb->pty_mat, cm->face[f].unitv, kappa_nfc[f]);
+    _mv3((const cs_real_t (*)[3])cb->dpty_mat, cm->face[f].unitv, kappa_nfc[f]);
     kappa_nfc[f][0] *= cm->f_sgn[f];
     kappa_nfc[f][1] *= cm->f_sgn[f];
     kappa_nfc[f][2] *= cm->f_sgn[f];
@@ -1398,7 +1398,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 
     /* Determine the stabilization coefficient for this face */
     cs_real_3_t  k_nf;
-    _mv3((const cs_real_t (*)[3])cb->pty_mat, cm->face[f].unitv, k_nf);
+    _mv3((const cs_real_t (*)[3])cb->dpty_mat, cm->face[f].unitv, k_nf);
     const cs_real_t  f_coef = _dp3(k_nf, cm->face[f].unitv) / cm->f_diam[f];
 
     cs_sdm_block_add_mult(cb->loc, f_coef, hhob->jstab);

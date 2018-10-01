@@ -337,11 +337,12 @@ _init_cell_system(const cs_flag_t               cell_flag,
     block_sizes[i] = eqc->n_face_dofs;
   block_sizes[cm->n_fc] = eqc->n_cell_dofs;
 
-  /* Initialize the local system */
-  cs_cell_sys_reset(cell_flag, n_dofs, cm->n_fc, csys);
-
   csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
+  csys->cell_flag = cell_flag;
+
+  /* Initialize the local system */
+  cs_cell_sys_reset(cm->n_fc, csys);
 
   cs_sdm_block_init(csys->mat, n_blocks, n_blocks, block_sizes, block_sizes);
 
@@ -1149,23 +1150,18 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
     int  t_id = 0;
 #endif
 
-    /* Each thread get back its related structures:
-       Get the cell-wise view of the mesh and the algebraic system */
+    const cs_real_t  t_eval_pty = t_cur + 0.5*dt_cur;
+
+    /* Set inside the OMP section so that each thread has its own value
+     * Each thread get back its related structures:
+     * Get the cell-wise view of the mesh and the algebraic system */
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_hho_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
     cs_hho_builder_t  *hhob = cs_hho_builders[t_id];
 
-    /* Set inside the OMP section so that each thread has its own value */
-
     /* Initialization of the values of properties */
-    double  time_pty_val = 1.0;
-    double  reac_pty_vals[CS_CDO_N_MAX_REACTIONS];
-
-    const cs_real_t  t_eval_pty = t_cur + 0.5*dt_cur;
-
-    cs_equation_init_properties(eqp, eqb, t_eval_pty,
-                                &time_pty_val, reac_pty_vals, cb);
+    cs_equation_init_properties(eqp, eqb, t_eval_pty, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1243,7 +1239,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_VECTEQ_DBG > 1
         if (_test_debug_cellwise(cm))
-          cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
+          cs_cell_sys_dump("\n>> Local system after diffusion", csys);
 #endif
       } /* END OF DIFFUSION */
 
@@ -1288,8 +1284,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_VECTEQ_DBG > 1
       if (_test_debug_cellwise(cm))
-        cs_cell_sys_dump(">> Local system matrix before condensation",
-                         c_id, csys);
+        cs_cell_sys_dump(">> Local system matrix before condensation", csys);
 #endif
 
       /* Static condensation of the local system matrix of n_fc + 1 blocks into
@@ -1318,7 +1313,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_VECTEQ_DBG > 0
       if (_test_debug_cellwise(cm)) {
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
+        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
         printf(" (FINAL STATE) HHO local system for cell_id = 0\n");
         cs_sdm_block_fprintf(NULL, NULL, 1e-16, csys->mat);
       }

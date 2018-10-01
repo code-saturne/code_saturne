@@ -573,7 +573,7 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat,
+      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
                            fm->face.unitv,
                            pty_nuf);
 
@@ -635,7 +635,7 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat,
+      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
                            fm->face.unitv,
                            pty_nuf);
 
@@ -1057,7 +1057,7 @@ cs_cdo_diffusion_vcost_get_pc_flux(const cs_cell_mesh_t      *cm,
 
   }  /* Loop on cell edges */
 
-  cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, grd, flx);
+  cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, grd, flx);
   const double  invvol = 1/cm->vol_c;
   for (int k = 0; k < 3; k++) flx[k] *= invvol;
 }
@@ -1149,7 +1149,7 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
                      (p_v[v1] - p_f)*grd_v1[k] +
                      (p_v[v2] - p_f)*grd_v2[k];
 
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, grd_pef, mgrd);
+      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, grd_pef, mgrd);
 
       if (f == cm->e2f_ids[ee])
         flx[e] -= cm->sefc[ee].meas * _dp3(cm->sefc[ee].unitv, mgrd);
@@ -1194,7 +1194,7 @@ cs_cdo_diffusion_wbs_get_pc_flux(const cs_cell_mesh_t   *cm,
   /* Compute the mean-value of the cell gradient */
   cs_reco_cw_cgrd_wbs_from_pvc(cm, pot, cb, cgrd);
 
-  cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, cgrd, flx);
+  cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, cgrd, flx);
   for (int k = 0; k < 3; k++) flx[k] *= -1;  /* Flux = - tensor * grd */
 }
 

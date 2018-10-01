@@ -183,16 +183,16 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_cell_system(const cs_flag_t               cell_flag,
-                  const cs_cell_mesh_t         *cm,
-                  const cs_equation_param_t    *eqp,
-                  const cs_equation_builder_t  *eqb,
-                  const cs_real_t               dir_values[],
-                  const short int               neu_tags[],
-                  const cs_real_t               field_tn[],
-                  cs_real_t                     t_eval,
-                  cs_cell_sys_t                *csys,
-                  cs_cell_builder_t            *cb)
+_init_vb_cell_system(const cs_flag_t               cell_flag,
+                     const cs_cell_mesh_t         *cm,
+                     const cs_equation_param_t    *eqp,
+                     const cs_equation_builder_t  *eqb,
+                     const cs_real_t               dir_values[],
+                     const short int               neu_tags[],
+                     const cs_real_t               field_tn[],
+                     cs_real_t                     t_eval,
+                     cs_cell_sys_t                *csys,
+                     cs_cell_builder_t            *cb)
 {
   const int  n_blocks = cm->n_vc;
   const int  n_dofs = 3*n_blocks;
@@ -201,13 +201,13 @@ _init_cell_system(const cs_flag_t               cell_flag,
   for (int i = 0; i < n_blocks; i++)
     block_sizes[i] = 3;
 
-  /* Cell-wise view of the linear system to build:
-     Initialize the local system */
-  cs_cell_sys_reset(cell_flag, n_dofs, cm->n_fc, csys);
-
   csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
-  csys->face_shift = cs_shared_connect->n_faces[2]; /* shift = n_i_faces */
+  csys->cell_flag = cell_flag;
+
+  /* Cell-wise view of the linear system to build:
+     Initialize the local system */
+  cs_cell_sys_reset(cm->n_fc, csys);
 
   cs_sdm_block_init(csys->mat, n_blocks, n_blocks, block_sizes, block_sizes);
 
@@ -745,23 +745,22 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
     int  t_id = 0;
 #endif
 
-    /* Each thread get back its related structures:
-       Get the cell-wise view of the mesh and the algebraic system */
+    const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
+
+    /* Set inside the OMP section so that each thread has its own value
+     * Each thread get back its related structures:
+     * Get the cell-wise view of the mesh and the algebraic system */
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdovb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdovb_cell_bld[t_id];
 
-    /* Set inside the OMP section so that each thread has its own value */
+    /* Store the shift to access border faces (first interior faces and
+       then border faces: shift = n_i_faces */
+    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
-    double  time_pty_val = 1.0;
-    double  reac_pty_vals[CS_CDO_N_MAX_REACTIONS];
-
-    const cs_real_t  t_eval_pty = t_cur + 0.5*dt_cur;
-
-    cs_equation_init_properties(eqp, eqb, t_eval_pty,
-                                &time_pty_val, reac_pty_vals, cb);
+    cs_equation_init_properties(eqp, eqb, time_eval, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -777,9 +776,9 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _init_cell_system(cell_flag, cm, eqp, eqb,
-                        dir_values, neu_tags, field_val, t_eval_pty, // in
-                        csys, cb);                                   // out
+      _init_vb_cell_system(cell_flag, cm, eqp, eqb,
+                           dir_values, neu_tags, field_val, time_eval, // in
+                           csys, cb);                                  // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 2
       if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
@@ -792,7 +791,7 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
 
         /* Define the local stiffness matrix */
         if (!(eqb->diff_pty_uniform))
-          cs_equation_set_diffusion_property_cw(eqp, cm, t_eval_pty, cell_flag,
+          cs_equation_set_diffusion_property_cw(eqp, cm, time_eval, cell_flag,
                                                 cb);
 
         /* local matrix owned by the cellwise builder (store in cb->loc) */
@@ -821,7 +820,7 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
         if (cs_dbg_cw_test(cm))
-          cs_cell_sys_dump("\n>> Cell system after diffusion", c_id, csys);
+          cs_cell_sys_dump("\n>> Cell system after diffusion", csys);
 #endif
       } /* END OF DIFFUSION */
 
@@ -841,7 +840,7 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
-                                        t_eval_pty,
+                                        time_eval,
                                         NULL,  /* No input structure */
                                         cb,    /* mass matrix is cb->hdg */
                                         csys->source);
@@ -867,7 +866,7 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", c_id, csys);
+        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
       /* ASSEMBLY */

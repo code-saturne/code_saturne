@@ -252,9 +252,9 @@ cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
   assert(csys->n_dofs == adr->n_rows);
   assert(system_flag & CS_FLAG_SYS_TIME_DIAG);
 
-  /* >> Compute the time contribution to the RHS: Mtime*pn
-     >> Update the cellwise system with the time matrix
-     >> Apply other contributions to the RHS */
+  /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
+           >> Update the cellwise system with the time matrix
+           >> Apply other contributions to the RHS */
   for (short int i = 0; i < csys->n_dofs; i++) {
 
     const double  dval = mass_mat->val[i];
@@ -284,12 +284,12 @@ cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_imp(const cs_equation_param_t  *eqp,
-                const double                tpty_val,
-                const cs_sdm_t             *mass_mat,
-                const cs_flag_t             system_flag,
-                cs_cell_builder_t          *cb,
-                cs_cell_sys_t              *csys)
+cs_cdo_time_imp(const cs_equation_param_t   *eqp,
+                const double                 tpty_val,
+                const cs_sdm_t              *mass_mat,
+                const cs_flag_t              system_flag,
+                cs_cell_builder_t           *cb,
+                cs_cell_sys_t               *csys)
 {
   CS_UNUSED(system_flag);
 

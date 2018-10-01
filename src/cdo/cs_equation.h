@@ -143,19 +143,6 @@ cs_equation_by_id(int   eq_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return true is the given equation is steady otherwise false
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_equation_is_steady(const cs_equation_t    *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Return the name related to the given cs_equation_t structure
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
@@ -247,6 +234,32 @@ cs_equation_get_builder(const cs_equation_t    *eq);
 
 void *
 cs_equation_get_scheme_context(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_is_steady(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_uses_new_mechanism(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -373,6 +386,36 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build and then solve the linear system for this equation when the
+ *         goal is to find the steady state
+ *
+ * \param[in]       mesh        pointer to a cs_mesh_t structure
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
+                               cs_equation_t              *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and then solve the linear system for an equation with an
+ *         unsteady term
+ *
+ * \param[in]       mesh        pointer to a cs_mesh_t structure
+ * \param[in]       dt_cur      value of the current time step
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_solve(const cs_mesh_t            *mesh,
+                  double                      dt_cur,
+                  cs_equation_t              *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build the linear system for this equation
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure
@@ -397,7 +440,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(cs_equation_t   *eq);
+cs_equation_solve_deprecated(cs_equation_t   *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

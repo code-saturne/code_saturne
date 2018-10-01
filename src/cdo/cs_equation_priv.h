@@ -151,6 +151,27 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build and solve a linear system within the CDO framework
+ *
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      m          pointer to a \ref cs_mesh_t structure
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] eqc        pointer to a scheme context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_solve_t)(double                      dt_cur,
+                      const cs_mesh_t            *mesh,
+                      const int                   field_id,
+                      const cs_equation_param_t  *eqp,
+                      cs_equation_builder_t      *eqb,
+                      void                       *eqc);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Carry out operations for allocating and/or initializing the solution
  *         array and the right hand side of the linear system to solve.
  *         Handle parallelism thanks to cs_range_set_t structure.
@@ -372,6 +393,8 @@ struct _cs_equation_t {
   cs_equation_build_system_t       *build_system;
   cs_equation_prepare_solve_t      *prepare_solving;
   cs_equation_update_field_t       *update_field;
+  cs_equation_solve_t              *solve_steady_state;
+  cs_equation_solve_t              *solve;
 
   cs_equation_get_balance_t        *compute_balance;
   cs_equation_flux_plane_t         *compute_flux_across_plane;
