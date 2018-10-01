@@ -3366,6 +3366,29 @@ cs_gui_get_boundary_faces(const char   *label,
   return face_ids;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the node matching a given boundary type and label
+ *
+ * \param[in]  tn_type  pointer to first node matching the given boundary type
+ * \param[in]  name     name of requested boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_tree_node_t *
+cs_gui_boundary_node_by_type_and_name(cs_tree_node_t  *tn_type,
+                                      const char      *name)
+{
+  for (cs_tree_node_t *tn = tn_type;
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
+    if (strcmp(cs_gui_node_get_tag(tn, "label"), name) == 0)
+      return tn;
+  }
+
+  return NULL;
+}
+
 /*----------------------------------------------------------------------------
  * Free boundary conditions structures
  *

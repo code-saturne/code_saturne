@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-09-22 00:37+0200\n"
+"POT-Creation-Date: 2018-10-01 19:40+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -8290,7 +8290,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "  Wrote field names and types to checkpoint: %s\n"
+msgid "  Wrote field names and types to checkpoint at iteration %d: %s\n"
 msgstr ""
 
 #, c-format
@@ -9589,8 +9589,22 @@ msgid ""
 " Please modify your settings.\n"
 msgstr ""
 
+#, c-format
+msgid " %s: Incompatible reduction for the field %s.\n"
+msgstr " %s : réduction incompatible pour le champ %s.\n"
+
+#, c-format
+msgid " %s: Incompatible way to initialize the field %s.\n"
+msgstr " %s : réduction incompatible pour le champ %s.\n"
+
 msgid " Convection term is not handled yet.\n"
 msgstr ""
+
+msgid "interior_faces"
+msgstr "faces intérieures"
+
+msgid "boundary_faces"
+msgstr "faces de bord"
 
 msgid " Unsteady terms are not handled yet.\n"
 msgstr ""
@@ -9599,13 +9613,6 @@ msgstr ""
 msgid ""
 " Face %d not found.\n"
 " Stop build a face mesh."
-msgstr ""
-
-#, c-format
-msgid ""
-"Restart mismatch for: %s\n"
-"read: %d\n"
-"expected: %d."
 msgstr ""
 
 msgid " Invalid idtvar value for the CDO module.\n"
@@ -9629,6 +9636,9 @@ msgstr ""
 msgid "wall"
 msgstr ""
 
+msgid "sliding wall"
+msgstr ""
+
 msgid "inlet"
 msgstr "entrée"
 
@@ -9641,13 +9651,20 @@ msgstr "symmétrie"
 #, c-format
 msgid ""
 " %s: Invalid type of boundary by default.\n"
-" Valid choice is CS_DOMAIN_BOUNDARY_WALL or CS_DOMAIN_BOUNDARY_SYMMETRY."
+" A valid choice is CS_DOMAIN_BOUNDARY_WALL or CS_DOMAIN_BOUNDARY_SYMMETRY."
 msgstr ""
 
 #, c-format
 msgid ""
-" Invalid zone name %s.\n"
+" %s: Invalid zone name %s.\n"
 " This zone is not already defined.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Restart mismatch for: %s\n"
+"read: %d\n"
+"expected: %d."
 msgstr ""
 
 #, c-format
@@ -9818,7 +9835,13 @@ msgstr ""
 msgid "Stokes velocity-pressure system"
 msgstr ""
 
+msgid "Oseen velocity-pressure system"
+msgstr ""
+
 msgid "Incompressible Navier-Stokes velocity-pressure system"
+msgstr ""
+
+msgid "Navier-Stokes with velocity-pressure unknowns and Boussinesq model"
 msgstr ""
 
 msgid "Fully steady"
@@ -9842,8 +9865,9 @@ msgstr ""
 msgid "Incremental projection algorithm"
 msgstr "algorithme de projection incrémental"
 
+#, c-format
 msgid ""
-" Stop setting an empty cs_navsto_param_t structure.\n"
+" %s: Stop setting an empty cs_navsto_param_t structure.\n"
 " Please check your settings.\n"
 msgstr ""
 
@@ -9861,35 +9885,19 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
+" %s: Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
 " Valid choices are \"implicit\", \"explicit\", \"crank_nicolson\", and "
 "\"theta_scheme\"."
 msgstr ""
 
 #, c-format
 msgid ""
-" Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
+" %s: Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
 " Valid choices are \"bary\", \"bary_subdiv\", \"higher\" and \"highest\"."
 msgstr ""
 
 #, c-format
 msgid " %s: Invalid key for setting the Navier-Stokes system."
-msgstr ""
-
-#, c-format
-msgid " %s: Incompatible reduction.\n"
-msgstr ""
-
-#, c-format
-msgid " %s: Incompatible initialization.\n"
-msgstr ""
-
-#, c-format
-msgid " Incompatible reduction for the field %s.\n"
-msgstr " Réduction incompatible pour le champ %s.\n"
-
-#, c-format
-msgid " Incompatible way to initialize the field %s.\n"
 msgstr ""
 
 msgid "Legacy Finite Volume"
@@ -11435,11 +11443,7 @@ msgid "Periodicity mode \"%s\" unknown."
 msgstr "Mode de périodicité \"%s\" inconnu."
 
 #, c-format
-msgid "Boundary nature formula is null for %s.\n"
-msgstr ""
-
-#, c-format
-msgid "cannot get value for %s %s %s"
+msgid "Boundary nature formula is null for %s."
 msgstr ""
 
 #, c-format
@@ -11454,8 +11458,7 @@ msgstr ""
 msgid "unknow type %s\n"
 msgstr "type inconnu %s \n"
 
-#, c-format
-msgid "Xpath request failed %s \n"
+msgid "node request failed \n"
 msgstr ""
 
 #, c-format
@@ -13875,12 +13878,6 @@ msgstr ""
 
 msgid "global"
 msgstr "global"
-
-msgid "interior_faces"
-msgstr "faces intérieures"
-
-msgid "boundary_faces"
-msgstr "faces de bord"
 
 msgid "edges (type)"
 msgstr ""

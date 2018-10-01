@@ -240,6 +240,19 @@ const cs_lnum_t *
 cs_gui_get_boundary_faces(const char   *label,
                           cs_lnum_t    *n_faces);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the node matching a given boundary type and label
+ *
+ * \param[in]  tn_type  pointer to first node matching the given boundary type
+ * \param[in]  name     name of requested boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_tree_node_t *
+cs_gui_boundary_node_by_type_and_name(cs_tree_node_t  *tn_type,
+                                      const char      *name);
+
 /*----------------------------------------------------------------------------
  * Free boundary conditions structures
  *

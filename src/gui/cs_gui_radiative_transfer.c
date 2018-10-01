@@ -507,15 +507,9 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
       if (cs_gui_strcmp(nature, "wall")) {
 
-        cs_tree_node_t *tn_rd = NULL;
-        for (cs_tree_node_t *tn_w = tn_w0;
-             tn_w != NULL;
-             tn_w = cs_tree_node_get_next_of_name(tn_w0)) {
-          if (strcmp(cs_gui_node_get_tag(tn_w, "label"), label) == 0) {
-            tn_rd = cs_tree_node_get_child(tn_w, "radiative_data");
-            break;
-          }
-        }
+        cs_tree_node_t *tn_w
+          = cs_gui_boundary_node_by_type_and_name(tn_w0, label);
+        cs_tree_node_t *tn_rd = cs_tree_node_get_child(tn_w, "radiative_data");
 
         _boundary->type[izone] = _radiative_boundary_type(tn_rd);
         cs_gui_node_get_child_real(tn_rd, "emissivity",
