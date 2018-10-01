@@ -183,7 +183,7 @@ class DefineUserScalarsModel(Variables, Model):
     def __updateScalarNameAndDiffusivityName(self):
         """
         Private method.
-        Update suffixe number for scalar name and diffusivity' name.
+        Update suffix number for scalar name and diffusivity' name.
         """
         lst = []
         for node in self.scalar_node.xmlGetNodeList('variable'):
@@ -390,6 +390,12 @@ class DefineUserScalarsModel(Variables, Model):
         for node in self.case.xmlGetNodeList('formula'):
             f = node.xmlGetTextNode().replace(old_name, new_name)
             node.xmlSetTextNode(f)
+
+        node_gw = self.node_models.xmlGetNode('groundwater_model')
+        if node_gw:
+            for n in node_gw.xmlGetChildNodeList('scalar'):
+                if n['name'] == old_name:
+                    n['name']  = new_name
 
 
     @Variables.undoGlobal
