@@ -414,10 +414,6 @@ class StandardItemModelVariance(QStandardItemModel):
 
         self.setColumnCount(len(self.headers))
 
-        # FIXME
-        self.toolTipRole = [self.tr("Code_Saturne keyword: ???"),
-                            self.tr("Code_Saturne keyword: ???")]
-
         self._data = []
         self.parent = parent
         self.mdl  = mdl
