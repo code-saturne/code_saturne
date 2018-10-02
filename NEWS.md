@@ -31,6 +31,12 @@ User changes:
 
 Numerics:
 
+- Porous modelling: adapte the numerics to discontinous porosity.
+  * The velocity is interpolated at faces using mass conservation and the momentum is
+    corrected so that the steady state of Euler equations is retrieved.
+    This can be activated using iporos = 3, the improved hydrostatic treatment will then be activated.
+    This was developped in the PhD of C. Colas.
+
 - Improvements in mesh quantity computations.
   * Cell centers are now based on the actual center of gravity.
   * The previous method based on face centers can be restored using
