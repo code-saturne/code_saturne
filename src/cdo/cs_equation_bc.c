@@ -139,7 +139,7 @@ _assign_vb_dirichlet_values(int                dim,
 /*!
  * \brief  Set the values for the normal boundary flux stemming from the
  *         Neumann boundary conditions (zero is left where a Dirichlet is
- *         set. This can be updated later one)
+ *         set. This can be updated later on)
  *
  * \param[in]       t_eval   time at which one performs the evaluation
  * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure

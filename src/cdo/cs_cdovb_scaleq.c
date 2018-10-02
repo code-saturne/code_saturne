@@ -1053,7 +1053,7 @@ cs_cdovb_scaleq_set_dir_bc(const cs_mesh_t              *mesh,
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to cs_cdovcb_scaleq_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1248,7 +1248,7 @@ cs_cdovb_scaleq_solve_steady_state(double                      dt_cur,
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to cs_cdovcb_scaleq_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1493,7 +1493,7 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to cs_cdovcb_scaleq_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1811,7 +1811,7 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context       pointer to cs_cdovcb_scaleq_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
  * \param[in, out] rhs        right-hand side
  * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */

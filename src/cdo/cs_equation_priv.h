@@ -154,7 +154,7 @@ typedef void
  * \brief  Build and solve a linear system within the CDO framework
  *
  * \param[in]      dt_cur     current value of the time step
- * \param[in]      m          pointer to a \ref cs_mesh_t structure
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
  * \param[in]      field_id   id related to the variable field of this equation
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure

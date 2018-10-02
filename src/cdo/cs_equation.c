@@ -105,7 +105,7 @@ static cs_equation_t  **_equations = NULL;
  *============================================================================*/
 
 static const char _err_empty_eq[] =
-  N_(" Stop setting an empty cs_equation_t structure.\n"
+  N_(" %s: Stop setting an empty cs_equation_t structure.\n"
      " Please check your settings.\n");
 
 /*============================================================================
@@ -2266,7 +2266,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
                                       cs_real_t             *conv_flux)
 {
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
   assert(eq->param != NULL);
 
   if (eq->compute_flux_across_plane == NULL) {
@@ -2318,14 +2318,14 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
                                        cs_real_t             *diff_flux)
 {
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
   assert(eq->param != NULL);
 
   if (eq->compute_cellwise_diff_flux == NULL) {
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Cellwise computation of the diffusive flux is not\n"
                 " available for equation %s\n"), __func__, eq->param->name);
-    return; // Avoid a warning
+    return; /* Avoid a warning */
   }
 
   if (eq->builder == NULL)
@@ -2359,7 +2359,7 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
                                        cs_real_t             *v_gradient)
 {
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
   assert(v_gradient != NULL);
 
   const cs_equation_param_t  *eqp = eq->param;

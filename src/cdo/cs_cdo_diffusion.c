@@ -790,7 +790,7 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
  *          The corresponding DoFs are algebraically "removed" of the system
  *
  *          |      |     |     |      |     |     |  |     |          |
- *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.bd |
  *          |------------| --> |------------| and |--| --> |----------|
  *          |      |     |     |      |     |     |  |     |          |
  *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
@@ -848,7 +848,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_param_hodge_t           h_info,
       /* Reset column i */
       for (short int j = 0; j < csys->n_dofs; j++)
         csys->mat->val[i + csys->n_dofs*j] = 0;
-      csys->mat->val[i + csys->n_dofs*i] = 1;
+      csys->mat->val[i*(1 + csys->n_dofs)] = 1;
 
       /* Set the RHS */
       csys->rhs[i] = csys->dir_values[i];
