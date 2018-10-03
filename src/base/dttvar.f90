@@ -102,6 +102,7 @@ double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 ! Local variables
 
 character(len=8) :: cnom
+character(len=80) :: fname
 
 integer          ifac, iel, icfmax(1), icfmin(1), idiff0, iconv0, isym, flid
 integer          modntl
@@ -112,6 +113,7 @@ integer          nswrgp, imligp
 integer          f_id
 integer          nbrval, nclptr
 integer          ntcam1
+integer          ii
 
 double precision epsrgp, climgp, extrap
 double precision cfmax,cfmin, w1min, w2min, w3min
@@ -120,6 +122,7 @@ double precision xyzmax(3), xyzmin(3), vmin(1), vmax(1)
 double precision dtsdtm
 double precision hint
 double precision mult
+double precision prt
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
@@ -128,11 +131,11 @@ double precision, allocatable, dimension(:) :: cofbft, coefbt, coefbr
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3, dtsdt0
-double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: imasfl, bmasfl, imasflt, bmasflt
+double precision, dimension(:), pointer :: brom, crom, cromt
 double precision, dimension(:), pointer :: viscl, visct, cpro_cour, cpro_four
 
-type(var_cal_opt) :: vcopt_u, vcopt_p
+type(var_cal_opt) :: vcopt_u, vcopt_p, vcopt_t
 
 !===============================================================================
 
@@ -473,7 +476,7 @@ if (idtvar.ge.0) then
     endif
 
     !     En compressible, on prend obligatoirement
-    !     en compte la limitation associee � la masse volumique.
+    !     en compte la limitation associée à la masse volumique.
 
     if (icoucf.eq.1) then
       do iel = 1, ncel
@@ -938,6 +941,108 @@ if (idtvar.ge.0) then
     endif
 
   endif
+
+!===============================================================================
+! 4.6 PRINT COMBINED COURANT/FOURIER NUMBER FOR TRANSPORTED SCALARS
+!===============================================================================
+
+  do ii = 1, nscal
+
+    ! Get field parameters
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt_t)
+
+    if ( vcopt_t%idiff.ge.1 .or. vcopt_t%iconv.ge.1 ) then
+
+      ! Get mass fluxes
+      call field_get_key_int(ivarfl(isca(ii)), kimasf, iflmas)
+      call field_get_key_int(ivarfl(isca(ii)), kbmasf, iflmab)
+      call field_get_val_s(iflmas, imasflt)
+      call field_get_val_s(iflmab, bmasflt)
+
+      ! Get density
+      call field_get_key_int(ivarfl(isca(ii)), kromsl, flid)
+      if (flid.gt.-1) then
+        call field_get_val_s(flid, cromt)
+      else
+        call field_get_val_s(icrom, cromt)
+      endif
+
+      ! Compute diffusivity
+      if (vcopt_t%idiff.ge.1) then
+
+        call field_get_key_double(ivarfl(isca(ii)), ksigmas, prt)
+        call field_get_key_int(ivarfl(isca(ii)), kivisl, flid)
+        if (flid.gt.-1) then
+          call field_get_val_s(flid, viscl)
+          do iel = 1, ncel
+            w1(iel) = viscl(iel) + vcopt_t%idifft*visct(iel)/prt
+          enddo
+        else
+          do iel = 1, ncel
+            w1(iel) = visls0(ii) + vcopt_t%idifft*visct(iel)/prt
+          enddo
+        endif
+        call viscfa(imvisf, w1, viscf, viscb)
+
+      else
+
+        do ifac = 1, nfac
+          viscf(ifac) = 0.d0
+        enddo
+        do ifac = 1, nfabor
+          viscb(ifac) = 0.d0
+        enddo
+
+      endif
+
+      ! Boundary conditions for matrdt
+      do ifac = 1, nfabor
+        if (bmasflt(ifac).lt.0.d0) then
+
+          iel = ifabor(ifac)
+          if (flid.gt.-1) then
+            hint = vcopt_t%idiff*( viscl(iel)                                 &
+                                 + vcopt_t%idifft*visct(iel)/prt)/distb(ifac)
+          else
+            hint = vcopt_t%idiff*( visls0(ii)                                 &
+                                 + vcopt_t%idifft*visct(iel)/prt)/distb(ifac)
+          endif
+          coefbt(ifac) = 0.d0
+          cofbft(ifac) = hint
+
+        else
+
+          coefbt(ifac) = 1.d0
+          cofbft(ifac) = 0.d0
+
+        endif
+      enddo
+
+      ! MATRICE A PRIORI NON SYMETRIQUE
+      isym = 1
+      if (vcopt_t%iconv.gt.0) isym = 2
+
+      call matrdt &
+      !==========
+ (vcopt_t%iconv, vcopt_t%idiff, isym, coefbt, cofbft, imasflt, bmasflt, &
+  viscf, viscb, dam)
+
+      do iel = 1, ncel
+        w1(iel) = dam(iel)/(cromt(iel)*volume(iel))
+      enddo
+
+      do iel = 1, ncel
+        w2(iel) = w1(iel)*dt(iel)
+      enddo
+
+      call field_get_name(ivarfl(isca(ii)), fname)
+      call log_iteration_add_array(fname(1:15), 'criterion',    &
+                                   MESH_LOCATION_CELLS, .true.,       &
+                                   1, w2)
+
+    endif
+
+  enddo
 
 !===============================================================================
 ! 5.   ALGORITHME STATIONNAIRE
