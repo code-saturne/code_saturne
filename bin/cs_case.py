@@ -1443,6 +1443,29 @@ $appli/salome kill `cat $port_log`
 
     #---------------------------------------------------------------------------
 
+    def exceeded_time_limit(self):
+
+        """
+        Check the listing file if the allocated time limit was exceeded.
+        """
+        p = os.path.join(self.exec_dir, 'listing')
+
+        fp = open(p, 'r').readlines()
+
+        # The search range is set to the last 1000 lines of the file
+        ml = len(fp)
+        search_range = 1000
+
+        not_finished = False
+        for l in range(ml-search_range, ml):
+            if "** Stop to avoid exceeding time allocation" in f[l]:
+                not_finished = True
+                break
+
+        return not_finished
+
+    #---------------------------------------------------------------------------
+
     def set_run_id(self,
                    run_id = None):
 
@@ -1823,9 +1846,13 @@ $appli/salome kill `cat $port_log`
         except Exception:
             pass
 
-        # Remove the Salome temporary file
-
-        self.update_scripts_tmp('saving', None)
+        # Check if computation finished because of insufficient time allocation
+        # If so, rename the file to run_status.exceeded_time_limit, otherwise
+        # remove the Salome temporary file
+        if self.exceeded_time_limit():
+            self.update_scripts_tmp('saving', 'exceeded_time_limit')
+        else:
+            self.update_scripts_tmp('saving', None)
 
     #---------------------------------------------------------------------------
 
