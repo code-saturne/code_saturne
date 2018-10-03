@@ -1479,14 +1479,14 @@ do ifac = 1, nfabor
       !FIXME it is wrong because sigma is computed within the model
       ! see turbkw.f90 (So the flux is not the one we impose!)
       hint = (visclc+visctc/ckwsw2)/distbf
-      
+
       if (ikwcln.eq.1) then
         ! In viscous sub layer
         pimp_lam  = 60.d0*visclc/(romc*ckwbt1*distbf**2)
-        
+
         ! If we are outside the viscous sub-layer (either naturally, or
         ! artificialy using scalable wall functions)
-        
+
         if (yplus > epzero) then
           pimp_turb = 5.d0*uk**2*romc/           &
                      (sqrcmu*xkappa*visclc*(yplus+dplus))
@@ -1500,7 +1500,7 @@ do ifac = 1, nfabor
         else
           pimp      = pimp_lam
         endif
-       
+
         call set_dirichlet_scalar &
              !====================
            ( coefa_omg(ifac), coefaf_omg(ifac),             &
@@ -1508,7 +1508,7 @@ do ifac = 1, nfabor
              pimp         , hint          , rinfin )
 
 
-      ! If ikwcln is equal to 0, switch to deprecated Neumann 
+      ! If ikwcln is equal to 0, switch to deprecated Neumann
       ! condition on omega.
       else
         ! In viscous sub layer
