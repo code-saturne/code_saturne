@@ -692,6 +692,7 @@ Calculation management
             self.setRowClose(self.tr('Balance by zone'))
             self.setRowClose(self.tr('Fans'))
             self.setRowClose(self.tr('OpenTurns study'))
+            self.setRowOpen(self.tr('Prepare batch calculation'))
             return
         elif case['oturns'] == True:
             self.setRowClose(self.tr('Thermophysical models'))
@@ -710,6 +711,7 @@ Calculation management
             self.setRowClose(self.tr('Fans'))
             self.setRowOpen(self.tr('Notebook'))
             self.setRowOpen(self.tr('OpenTurns study'))
+            self.setRowClose(self.tr('Prepare batch calculation'))
             return
         else:
             self.setRowOpen(self.tr('Notebook'))
@@ -727,6 +729,7 @@ Calculation management
             self.setRowOpen(self.tr('Profiles'))
             self.setRowOpen(self.tr('Balance by zone'))
             self.setRowOpen(self.tr('Fans'))
+            self.setRowOpen(self.tr('Prepare batch calculation'))
             self.setRowClose(self.tr('OpenTurns study'))
 
         # Time step management
