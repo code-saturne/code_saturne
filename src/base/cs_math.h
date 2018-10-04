@@ -601,7 +601,6 @@ cs_math_sym_33_determinant(const cs_real_6_t   m)
   return m[0]*com0 + m[3]*com1 + m[5]*com2;
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the cross product of two vectors of 3 real values.
