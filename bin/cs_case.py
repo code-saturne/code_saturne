@@ -1458,7 +1458,7 @@ $appli/salome kill `cat $port_log`
 
         not_finished = False
         for l in range(ml-search_range, ml):
-            if "** Stop to avoid exceeding time allocation" in f[l]:
+            if "** Stop to avoid exceeding time allocation" in fp[l]:
                 not_finished = True
                 break
 
