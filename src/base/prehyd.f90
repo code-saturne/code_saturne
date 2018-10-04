@@ -121,6 +121,7 @@ integer          ivoid(1)
 double precision thetap
 double precision epsrgp, climgp, extrap, epsilp
 double precision hint, qimp, epsrsp, blencp, relaxp
+double precision normp
 
 double precision rvoid(1)
 
@@ -251,6 +252,7 @@ relaxp = vcopt%relaxv
 thetap = vcopt%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 
 nomva0 = "Prhydro"
 
@@ -261,7 +263,7 @@ call codits &
 ( idtvar , iterns , f_id0  , iconvp , idiffp , ndircp ,          &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-  iwarnp ,                                                       &
+  iwarnp , normp  ,                                              &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
   relaxp , thetap ,                                              &
   prhyd  , prhyd  ,                                              &

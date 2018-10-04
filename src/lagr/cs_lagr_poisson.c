@@ -338,6 +338,7 @@ _lageqp(cs_real_t   *vitessel,
                                      "PoissonL",   /* name */
                                      0,            /* iescap */
                                      0,            /* imucpp */
+                                     -1,           /* normp */
                                      &var_cal_opt,
                                      phia, phia,
                                      coefap, coefbp,

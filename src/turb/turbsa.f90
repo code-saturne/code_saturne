@@ -123,6 +123,7 @@ double precision cofbnu
 double precision chi  , chi3, taussa, nusa, distbf, fw, fv1, fv2
 double precision gsa , rsa , dsigma, cv13
 double precision nu0, dsa0, hssa, omega, sbar, cst2, cst3
+double precision normp
 
 double precision rvoid(1)
 
@@ -579,13 +580,14 @@ relaxp = vcopt_nusa%relaxv
 thetap = vcopt_nusa%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 init   = 1
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    cvara_nusa      , cvara_nusa      ,                            &

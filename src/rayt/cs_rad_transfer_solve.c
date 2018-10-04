@@ -630,6 +630,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
                                              cnom,
                                              iescap,
                                              imucpp,
+                                             -1, /* normp */
                                              &vcopt,
                                              radiance_prev,
                                              radiance,

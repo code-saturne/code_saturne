@@ -115,6 +115,7 @@ integer          imvis1, f_id0, idtcfl
 integer          f_id
 
 double precision thetv, relaxp, hint
+double precision normp
 
 double precision rvoid(1)
 
@@ -346,12 +347,13 @@ extrap = vcopt_p%extrag
 relaxp = vcopt_p%relaxv
 thetv  = vcopt_p%thetav
 icvflb = 0
+normp = -1.d0
 
 call codits                                                                    &
 ( idtvar , init   , ivarfl(ipr)     , iconvp , idiffp , ndircp ,               &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                                 &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                        &
-  iwarnp ,                                                                     &
+  iwarnp , normp  ,                                                            &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,                        &
   relaxp , thetv  ,                                                            &
   cvara_pr        , cvara_pr        ,                                          &

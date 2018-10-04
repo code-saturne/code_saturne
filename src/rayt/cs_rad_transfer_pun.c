@@ -224,6 +224,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                                      "radiation_p1",
                                      iescap,
                                      imucpp,
+                                     -1, /* normp */
                                      &vcopt,
                                      f_thetaa->val,
                                      f_theta4->val,

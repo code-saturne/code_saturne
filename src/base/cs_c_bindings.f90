@@ -1587,7 +1587,7 @@ module cs_c_bindings
 
     subroutine cs_equation_iterative_solve_scalar(idtvar, iterns,             &
                                                   f_id, name,                 &
-                                                  iescap, imucpp,             &
+                                                  iescap, imucpp, normp,      &
                                                   vcopt, pvara, pvark,        &
                                                   coefap, coefbp, cofafp,     &
                                                   cofbfp, i_massflux,         &
@@ -1601,6 +1601,7 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: idtvar, iterns, f_id, iescap, imucpp
+      real(kind=c_double), value :: normp
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefap
@@ -4288,6 +4289,7 @@ contains
   !>                                 \f$ \delta \varia^k \f$  and
   !>                                 \f$ \delta \varia^{k-1} \f$
   !> \param[in]     iwarnp        verbosity
+  !> \param[in]     normp         (optional) norm residual
   !> \param[in]     blencp        fraction of upwinding
   !> \param[in]     epsilp        precision pour resol iter
   !> \param[in]     epsrsp        relative precision for the iterative process
@@ -4352,7 +4354,8 @@ contains
   subroutine codits (idtvar, iterns,                                           &
                      f_id  , iconvp, idiffp, ndircp, imrgra, nswrsp,           &
                      nswrgp, imligp, ircflp, ischcp, isstpp, iescap, imucpp,   &
-                     idftnp, iswdyp, iwarnp, blencp, epsilp, epsrsp, epsrgp,   &
+                     idftnp, iswdyp, iwarnp, normp,                            &
+                     blencp, epsilp, epsrsp, epsrgp,                           &
                      climgp, extrap, relaxp, thetap, pvara, pvark, coefap,     &
                      coefbp, cofafp, cofbfp, i_massflux, b_massflux, i_viscm,  &
                      b_viscm, i_visc, b_visc, viscel, weighf, weighb, icvflb,  &
@@ -4370,6 +4373,7 @@ contains
     integer, intent(in) :: idtvar, iterns, f_id, iconvp, idiffp, ndircp, imrgra
     integer, intent(in) :: nswrsp, nswrgp, imligp, ircflp, ischcp, isstpp
     integer, intent(in) :: iescap, imucpp, idftnp, iswdyp, iwarnp
+    double precision, intent(in) :: normp
     double precision, intent(in) :: blencp, epsilp, epsrsp, epsrgp, climgp
     double precision, intent(in) :: extrap, relaxp, thetap
     real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefap
@@ -4423,7 +4427,7 @@ contains
 
     call cs_equation_iterative_solve_scalar(idtvar, iterns,                    &
                                             f_id, c_name,                      &
-                                            iescap, imucpp, c_k_value,         &
+                                            iescap, imucpp, normp, c_k_value,  &
                                             pvara, pvark,                      &
                                             coefap, coefbp, cofafp, cofbfp,    &
                                             i_massflux, b_massflux,            &

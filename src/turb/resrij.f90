@@ -147,6 +147,7 @@ double precision tuexpr, thets , thetv , thetp1
 double precision d1s3  , d2s3
 double precision ccorio, matrot(3,3)
 double precision rctse
+double precision normp
 
 double precision rvoid(1)
 
@@ -666,13 +667,14 @@ extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 init   = 1
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    cvara_var       , cvara_var       ,                            &

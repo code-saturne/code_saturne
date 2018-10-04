@@ -121,6 +121,7 @@ integer          iterns
 double precision flux, flui, fluj, yip, yjp, gradnb, tip
 double precision dijpfx, dijpfy, dijpfz, pnd  , pip   , pjp
 double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
+double precision normp
 
 double precision mk, cpk, cvk
 double precision rvoid(1)
@@ -748,6 +749,7 @@ iswdyp = 0  ! no dynamic relaxation
 
 ! impose boundary convective at some faces (face indicator icvfli)
 icvflb = 1
+normp = -1.d0
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -759,7 +761,7 @@ call codits                                                      &
 ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-  iwarnp ,                                                       &
+  iwarnp , normp  ,                                              &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
   relaxp , thetap ,                                              &
   cvara_energ     , cvara_energ     ,                            &

@@ -197,6 +197,7 @@ double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 double precision visci(3,3), fikis, viscis, distfi
 double precision cfl, kpdc, rho, pimp, bpmasf
+double precision normp
 
 type(solving_info) sinfo
 type(var_cal_opt) :: vcopt_p, vcopt_u
@@ -2140,6 +2141,7 @@ if (idilat.eq.5) then
   thetap = vcopt_p%thetav
   ! all boundary convective flux with upwind
   icvflb = 0
+  normp = -1.d0
   ! ivar = 0
   nomva0 = "Pr compress"
 
@@ -2152,7 +2154,7 @@ if (idilat.eq.5) then
    ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
      imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
      ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-     iwarnp ,                                                       &
+     iwarnp , normp  ,                                              &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
      dphi   , dphi   ,                                              &

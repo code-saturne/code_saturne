@@ -155,6 +155,8 @@ BEGIN_C_DECLS
  * \param[in]     imucpp        indicator
  *                               - 0 do not multiply the convectiv term by Cp
  *                               - 1 do multiply the convectiv term by Cp
+ * \param[in]     normp         Reference norm to solve the system (optional)
+ *                              if negative: recomputed here
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]     pvara         variable at the previous time step
@@ -210,6 +212,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    const char           *name,
                                    int                   iescap,
                                    int                   imucpp,
+                                   cs_real_t             normp,
                                    cs_var_cal_opt_t     *var_cal_opt,
                                    const cs_real_t       pvara[],
                                    const cs_real_t       pvark[],
@@ -607,7 +610,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   }
 
   rnorm2 = cs_gdot(n_cells,w1,w1);
-  rnorm = sqrt(rnorm2);
+  if (normp > 0.)
+    rnorm = normp;
+  else
+    rnorm = sqrt(rnorm2);
+
   sinfo.rhs_norm = rnorm;
 
   /* Free memory */

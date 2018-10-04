@@ -103,6 +103,7 @@ double precision vmin(1), vmax(1)
 double precision dtmaxl, dtmaxg
 double precision scmaxp, scminp
 double precision thets, thetv, tsexp
+double precision normp
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
@@ -303,13 +304,14 @@ relaxp = vcopt%relaxv
 thetap = vcopt%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 
 call codits &
 !==========
  ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    cvara_voidf     , cvara_voidf     ,                            &

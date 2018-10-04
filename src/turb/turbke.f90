@@ -135,6 +135,7 @@ double precision hint
 double precision turb_schmidt
 double precision xnoral, xnal(3)
 double precision utaurf,ut2,ypa,ya,xunorm, limiter, nu0,alpha
+double precision normp
 
 double precision rvoid(1)
 
@@ -1288,13 +1289,14 @@ relaxp = vcopt_k%relaxv
 thetap = vcopt_k%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 init   = 1
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    cvara_k         , cvara_k         ,                            &
@@ -1364,12 +1366,13 @@ relaxp = vcopt_e%relaxv
 thetap = vcopt_e%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    cvara_ep        , cvara_ep        ,                            &
