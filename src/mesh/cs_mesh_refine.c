@@ -132,7 +132,10 @@ typedef enum {
                            using mid-edge vertices and a face center */
 
   CS_REFINE_POLYGON,     /*!< refine polygon by tesselation, no vertices added */
-
+  CS_REFINE_POLYGON_T,   /*!< refine polygon by triangulation with added
+                           center vertex */
+  CS_REFINE_POLYGON_Q,   /*!< refine polygon by quadrangulation with added
+                           center vertex */
 
   CS_REFINE_TETRA,       /*!< simple tetrahedron subdivision scheme */
   CS_REFINE_PYRAM,       /*!< simple pyramid subdivision scheme */
@@ -184,6 +187,85 @@ typedef void
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Check if a polygon is convex or at least star-shaped.
+ *
+ * parameters:
+ *   n_face_vertices <-- number of polygon vertices
+ *   f2v_lst         <-- polygon connectivity
+ *   vtx_coords      <-- vertex coordinates
+ *
+ * returns:
+ *   true if quadrangle is convex, false otherwise
+ *----------------------------------------------------------------------------*/
+
+static bool
+_polygon_is_nearly_convex(cs_lnum_t         n_face_vertices,
+                          const cs_lnum_t   f2v_lst[],
+                          const cs_coord_t  vtx_coords[][3])
+{
+  bool is_convex = true;
+
+  /* Compute approximate face center coordinates for the polygon */
+
+  cs_real_t a_center[3] = {0, 0, 0};
+  cs_real_t f_norm[3] = {0, 0, 0};
+
+  for (cs_lnum_t j = 0; j < n_face_vertices; j++) {
+    const cs_lnum_t v0 = f2v_lst[j];
+    for (cs_lnum_t i = 0; i < 3; i++)
+      a_center[i] += vtx_coords[v0][i];
+  }
+
+  for (cs_lnum_t i = 0; i < 3; i++)
+    a_center[i] /= n_face_vertices;
+
+  /* first loop on edges, with implied subdivision into triangles
+     defined by edge and cell center */
+
+  cs_real_t vc0[3], vc1[3], vn[3];
+
+  for (cs_lnum_t tri_id = 0; tri_id < n_face_vertices; tri_id++) {
+
+    const cs_lnum_t v0 = f2v_lst[tri_id];
+    const cs_lnum_t v1 = f2v_lst[(tri_id+1)%n_face_vertices];
+
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      vc0[i] = vtx_coords[v0][i] - a_center[i];
+      vc1[i] = vtx_coords[v1][i] - a_center[i];
+    }
+
+    cs_math_3_cross_product(vc0, vc1, vn);
+
+    for (cs_lnum_t i = 0; i < 3; i++)
+      f_norm[i] += vn[i];
+
+  }
+
+  /* second loop on edges, to check consistency of orientation */
+
+  for (cs_lnum_t tri_id = 0; tri_id < n_face_vertices; tri_id++) {
+
+    const cs_lnum_t v0 = f2v_lst[tri_id];
+    const cs_lnum_t v1 = f2v_lst[(tri_id+1)%n_face_vertices];
+
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      vc0[i] = vtx_coords[v0][i] - a_center[i];
+      vc1[i] = vtx_coords[v1][i] - a_center[i];
+    }
+
+    cs_math_3_cross_product(vc0, vc1, vn);
+
+    if (cs_math_3_dot_product(vn, f_norm) < 0) {
+      is_convex = false;
+      break;
+    }
+
+  }
+
+  return is_convex;
+}
 
 /*----------------------------------------------------------------------------
  * Tetrahedron reconstruction.
@@ -1223,21 +1305,25 @@ _sync_i_faces_flag(const cs_mesh_t        *m,
  *       the two could be considered to already be the result of a
  *       subdivision; this should allow improving mesh quality as we refine.
  *
- * \param[in]       f_id      id of this face
- * \param[in]       n_fv      number of vertices for this face
- * \param[in]       f2v_lst   face vertices list
- * \param[in]       v2v       vertex adjacency
- * \param[in, out]  e_v_idx   for each edge, start index of added vertices
- * \param[in, out]  f_v_idx   for each face, start index of added vertices
- * \param[in, out]  f_r_flag  face refinement type flag
+ * \param[in]       f_id          id of this face
+ * \param[in]       n_fv          number of vertices for this face
+ * \param[in]       check_convex  check if faces are convex ?
+ * \param[in]       f2v_lst       face vertices list
+ * \param[in]       v2v           vertex adjacency
+ * \param[in]       vtx_coords    vertex coordinates
+ * \param[in, out]  e_v_idx       for each edge, start index of added vertices
+ * \param[in, out]  f_v_idx       for each face, start index of added vertices
+ * \param[in, out]  f_r_flag      face refinement type flag
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _flag_faces_and_edges(cs_lnum_t               f_id,
                       cs_lnum_t               n_fv,
+                      bool                    check_convex,
                       const cs_lnum_t         f2v_lst[],
                       const cs_adjacency_t   *v2v,
+                      const cs_coord_t        vtx_coords[][3],
                       cs_lnum_t               e_v_idx[],
                       cs_lnum_t               f_v_idx[],
                       cs_mesh_refine_type_t   f_r_flag[])
@@ -1255,11 +1341,18 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
       _f_flag = CS_REFINE_TRIA;
       break;
     case 4:
-      /* TODO check that quadrangles are convex */
       _f_flag = CS_REFINE_QUAD;
+      if (check_convex) {
+        if (_polygon_is_nearly_convex(4, f2v_lst, vtx_coords) == false)
+          _f_flag = CS_REFINE_POLYGON;
+      }
       break;
     default:
-      _f_flag = CS_REFINE_POLYGON;
+      _f_flag = CS_REFINE_POLYGON_Q;
+      if (check_convex) {
+        if (_polygon_is_nearly_convex(n_fv, f2v_lst, vtx_coords) == false)
+          _f_flag = CS_REFINE_POLYGON;
+      }
     }
   }
 
@@ -1267,7 +1360,24 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
 
   switch(_f_flag) {
   case CS_REFINE_TRIA:
+    {
+      /* Flag edges */
+      for (cs_lnum_t i = 0; i < n_fv; i++) {
+
+        cs_lnum_t v0 = f2v_lst[i];
+        cs_lnum_t v1 = f2v_lst[(i+1)%n_fv];
+
+        cs_lnum_t edge_id = _v2v_edge_id(v0, v1, v2v);
+
+        assert(edge_id > -1);
+        e_v_idx[edge_id + 1] = 1;
+
+      }
+    }
+    break;
   case CS_REFINE_QUAD:
+  case CS_REFINE_POLYGON_T:
+  case CS_REFINE_POLYGON_Q:
     {
       /* Flag edges */
       for (cs_lnum_t i = 0; i < n_fv; i++) {
@@ -1283,8 +1393,7 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
       }
 
       /* Flag element centers */
-      if (_f_flag == CS_REFINE_QUAD)
-        f_v_idx[f_id+1] = 1;
+      f_v_idx[f_id+1] = 1;
     }
     break;
   default:
@@ -1298,15 +1407,16 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
 /*!
  * \brief Define vertices to add at refined edges and faces
  *
- * \param[in]       m            mesh
- * \param[in]       v2v          vertex->vertex adjacency
- * \param[in]       c_r_flag     cell refinement flag
- * \param[in, out]  f_r_flag     face refinement flag
- * \param[in, out]  e_v_idx      for each edge, start index of added vertices
- * \param[in, out]  f_v_idx      for each face, start index of added vertices
- * \param[in, out]  g_edges_num  for each edge, start global number of
- *                               added vertices (1 to n, to shift) or NULL
- * \param[out]      n_add_vtx    number of added vertices for edges and faces
+ * \param[in]       m             mesh
+ * \param[in]       check_convex  check if faces are convex ?
+ * \param[in]       v2v           vertex->vertex adjacency
+ * \param[in]       c_r_flag      cell refinement flag
+ * \param[in, out]  f_r_flag      face refinement flag
+ * \param[in, out]  e_v_idx       for each edge, start index of added vertices
+ * \param[in, out]  f_v_idx       for each face, start index of added vertices
+ * \param[in, out]  g_edges_num   for each edge, start global number of
+ *                                added vertices (1 to n, to shift) or NULL
+ * \param[out]      n_add_vtx     number of added vertices for edges and faces
  *
  * \return global number of edges
  */
@@ -1314,6 +1424,7 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
 
 static cs_gnum_t
 _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
+                              bool                          check_convex,
                               const cs_adjacency_t         *v2v,
                               const cs_mesh_refine_type_t   c_r_flag[],
                               cs_mesh_refine_type_t         f_r_flag[],
@@ -1330,6 +1441,8 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_real_3_t *vtx_coords = (const cs_real_3_t *)m->vtx_coord;
 
   /* Loop on boundary faces */
 
@@ -1349,8 +1462,10 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
       cs_lnum_t n_fv = m->b_face_vtx_idx[f_id+1] - m->b_face_vtx_idx[f_id];
       _flag_faces_and_edges(f_id,
                             n_fv,
+                            check_convex,
                             m->b_face_vtx_lst + m->b_face_vtx_idx[f_id],
                             v2v,
+                            vtx_coords,
                             e_v_idx,
                             f_v_idx,
                             f_r_flag);
@@ -1378,8 +1493,10 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
       cs_lnum_t n_fv = m->i_face_vtx_idx[f_id+1] - m->i_face_vtx_idx[f_id];
       _flag_faces_and_edges(f_id,
                             n_fv,
+                            check_convex,
                             m->i_face_vtx_lst + m->i_face_vtx_idx[f_id],
                             v2v,
+                            vtx_coords,
                             e_v_idx,
                             f_v_idx + m->n_b_faces,
                             f_r_flag + m->n_b_faces);
@@ -1733,14 +1850,15 @@ _build_face_vertices(cs_mesh_t                    *m,
 
   for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
 
-    if (f_v_idx[f_id+1] - f_v_idx[f_id] > 0) {
-      if (f_r_flag[f_id] == CS_REFINE_QUAD) {
-        for (cs_lnum_t i = 0; i < 3; i++)
-          m->vtx_coord[(f_v_idx[f_id]*3) + i] = f_center[f_id][i];
-      }
-      else {
-        assert(0); /* Handle other cases when other templates are added */
-      }
+    cs_lnum_t n_add = f_v_idx[f_id+1] - f_v_idx[f_id];
+
+    if (n_add == 1) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        m->vtx_coord[(f_v_idx[f_id]*3) + i] = f_center[f_id][i];
+    }
+    else if (n_add > 1) {
+      CS_UNUSED(f_r_flag);
+      assert(0); /* Handle other cases when other templates are added */
     }
 
   }
@@ -1958,6 +2076,14 @@ _subdivided_face_sizes(const cs_lnum_t          n_fv,
     *n_sub = 4;
     *connect_size = 16;
     break;
+  case CS_REFINE_POLYGON_T:
+    *n_sub = n_fv*2;
+    *connect_size = n_fv*3*2;
+    break;
+  case CS_REFINE_POLYGON_Q:
+    *n_sub = n_fv;
+    *connect_size = n_fv*4;
+    break;
   default:
     *n_sub = 1;
     *connect_size = _count_face_edge_vertices_new(n_fv,
@@ -2113,35 +2239,83 @@ _subdivide_face(cs_lnum_t                 f_id,
 
       }
 
-      if (f_r_flag == CS_REFINE_POLYGON) {
+      switch(f_r_flag) {
+      case CS_REFINE_POLYGON:
+        {
+          cs_lnum_t _buf[64];
+          cs_lnum_t *buf = _buf;
+          if (n_new > 64)
+            BFT_MALLOC(buf, n_new, cs_lnum_t);
+          for (cs_lnum_t i = 0; i < n_new; i++)
+            buf[i] = f2v_lst_n[i];
 
-        cs_lnum_t _buf[64];
-        cs_lnum_t *buf = _buf;
-        if (n_new > 64)
-          BFT_MALLOC(buf, n_new, cs_lnum_t);
-        for (cs_lnum_t i = 0; i < n_new; i++)
-          buf[i] = f2v_lst_n[i];
+          int n_tria = fvm_triangulate_polygon(3, /* dim */
+                                               0, /* base */
+                                               n_new,
+                                               vtx_coords,
+                                               NULL,
+                                               buf,
+                                               FVM_TRIANGULATE_MESH_DEF,
+                                               f2v_lst_n,
+                                               t_state);
 
-        int n_tria = fvm_triangulate_polygon(3, /* dim */
-                                             0, /* base */
-                                             n_new,
-                                             vtx_coords,
-                                             NULL,
-                                             buf,
-                                             FVM_TRIANGULATE_MESH_DEF,
-                                             f2v_lst_n,
-                                             t_state);
+          if (n_tria != n_new-2)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error triangulating polygonal face.\n"
+                        "This may be due to excessive warping."));
 
-        if (n_tria != n_new-2)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Error triangulating polygonal face.\n"
-                      "This may be due to excessive warping."));
+          if (buf != _buf)
+            BFT_FREE(buf);
 
-        if (buf != _buf)
-          BFT_FREE(buf);
+          for (cs_lnum_t i = 1; i < n_tria; i++)
+            f2v_idx_n[i] = f2v_idx_n[0] + 3*i;
+        }
+        break;
 
-        for (cs_lnum_t i = 1; i < n_tria; i++)
-          f2v_idx_n[i] = f2v_idx_n[0] + 3*i;
+      case CS_REFINE_POLYGON_T:
+        {
+          for (cs_lnum_t i = 0; i < n_fv; i++) {
+            cs_lnum_t v0 = f2v_lst_o[i];
+            cs_lnum_t v1 = f2v_lst_o[(i+1)%n_fv];
+            cs_lnum_t v2 = _v2v_mid_vtx_id(v0, v1, v2v, e_v_idx);
+            cs_lnum_t v3 = f_v_idx[f_id];
+
+            f2v_idx_n[i*2]     = f2v_idx_n[0] + i*6;
+            f2v_idx_n[i*2 + 1] = f2v_idx_n[0] + i*6 + 3;
+
+            f2v_lst_n[i*6]     = v0;
+            f2v_lst_n[i*6 + 1] = v2;
+            f2v_lst_n[i*6 + 2] = v3;
+
+            f2v_lst_n[i*6 + 3] = v2;
+            f2v_lst_n[i*6 + 4] = v1;
+            f2v_lst_n[i*6 + 5] = v3;
+          }
+        }
+        break;
+
+      case CS_REFINE_POLYGON_Q:
+        {
+          for (cs_lnum_t i = 0; i < n_fv; i++) {
+            cs_lnum_t v0 = f2v_lst_o[i];
+            cs_lnum_t v1 = f2v_lst_o[(i+1)%n_fv];
+            cs_lnum_t v2 = f2v_lst_o[(i+2)%n_fv];
+            cs_lnum_t v3 = _v2v_mid_vtx_id(v0, v1, v2v, e_v_idx);
+            cs_lnum_t v4 = _v2v_mid_vtx_id(v1, v2, v2v, e_v_idx);
+            cs_lnum_t v5 = f_v_idx[f_id];
+
+            f2v_idx_n[i] = f2v_idx_n[0] + i*4;
+
+            f2v_lst_n[i*4]     = v3;
+            f2v_lst_n[i*4 + 1] = v1;
+            f2v_lst_n[i*4 + 2] = v4;
+            f2v_lst_n[i*4 + 3] = v5;
+          }
+        }
+        break;
+
+      default:
+        break;
 
       }
     }
@@ -3977,6 +4151,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   cs_lnum_t n_b_f_ini = m->n_b_faces;
 
+  bool check_convex = true;
+
   /* Free data that will be rebuilt */
 
   cs_mesh_free_rebuildable(m, true);
@@ -4053,7 +4229,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     BFT_MALLOC(g_edges_num, n_edges, cs_gnum_t);
 
   cs_gnum_t n_g_edges
-    = _new_edge_and_face_vertex_ids(m, v2v, c_r_flag, f_r_flag,
+    = _new_edge_and_face_vertex_ids(m, check_convex, v2v, c_r_flag, f_r_flag,
                                     e_v_idx, f_v_idx, g_edges_num,
                                     n_add_vtx);
 
