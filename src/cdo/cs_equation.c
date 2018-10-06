@@ -812,6 +812,26 @@ cs_equation_get_flag(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Redefine the flag associated to an equation
+ *
+ * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in]       flag     new flag to set
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_flag(cs_equation_t    *eq,
+                     cs_flag_t         flag)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
+  assert(eq->param != NULL);
+
+  eq->param->flag = flag;;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the cs_equation_builder_t structure associated to a
  *         cs_equation_t structure. Only for an advanced usage.
  *
