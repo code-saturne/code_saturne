@@ -611,7 +611,7 @@ class domain(base_domain):
                 # as no calculation is possible, then raise exception
                 for f in [self.package.srcdir, 'compile.log']:
                     self.copy_result(f)
-                raise RunCaseError('Compile or link error.')
+                self.error = 'compile or link'
 
     #---------------------------------------------------------------------------
 
@@ -619,6 +619,8 @@ class domain(base_domain):
         """
         Copy data to the execution directory
         """
+
+        err_str = None
 
         # If we are using a previous preprocessing, simply link to it here
         if self.mesh_input:
@@ -663,18 +665,16 @@ class domain(base_domain):
                 restart_input = os.path.join(self.case_dir, restart_input)
 
             if not os.path.exists(restart_input):
-                err_str = restart_input + ' does not exist.'
-                raise RunCaseError(err_str)
+                err_str = restart_input + ' does not exist.\n\n'
             elif not os.path.isdir(restart_input):
-                err_str = restart_input + ' is not a directory.'
-                raise RunCaseError(err_str)
+                err_str = restart_input + ' is not a directory.\n\n.'
             else:
                 self.symlink(restart_input,
                              os.path.join(self.exec_dir, 'restart'))
 
         # Partition input files
 
-        if self.partition_input != None:
+        if self.partition_input != None and not err_str:
 
             partition_input = os.path.expanduser(self.partition_input)
             if not os.path.isabs(partition_input):
@@ -688,6 +688,10 @@ class domain(base_domain):
                 else:
                     self.symlink(partition_input,
                                  os.path.join(self.exec_dir, 'partition_input'))
+
+        if err_str:
+            sys.stderr.write(err_str)
+            self.error = 'data preparation'
 
     #---------------------------------------------------------------------------
 
