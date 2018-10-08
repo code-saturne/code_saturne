@@ -1000,12 +1000,12 @@ if (idtvar.ge.0) then
         if (bmasflt(ifac).lt.0.d0) then
 
           iel = ifabor(ifac)
-          if (flid.gt.-1) then
-            hint = vcopt_t%idiff*( viscl(iel)                                 &
-                                 + vcopt_t%idifft*visct(iel)/prt)/distb(ifac)
+          if (vcopt_t%idiff.ge.1 .and. flid.gt.-1) then
+            hint = ( viscl(iel)                                 &
+                   + vcopt_t%idifft*visct(iel)/prt)/distb(ifac)
           else
-            hint = vcopt_t%idiff*( visls0(ii)                                 &
-                                 + vcopt_t%idifft*visct(iel)/prt)/distb(ifac)
+            hint = ( visls0(ii)                                 &
+                   + vcopt_t%idifft*visct(iel)/prt)/distb(ifac)
           endif
           coefbt(ifac) = 0.d0
           cofbft(ifac) = hint
