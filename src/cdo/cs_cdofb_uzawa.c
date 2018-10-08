@@ -573,7 +573,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
         memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
 
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                    (const cs_xdef_t **)eqp->source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,

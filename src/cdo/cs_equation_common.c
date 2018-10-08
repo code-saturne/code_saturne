@@ -776,7 +776,7 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
     /* Default intialization */
     eqb->st_msh_flag = cs_source_term_init(eqp->space_scheme,
                                            eqp->n_source_terms,
-                        (const cs_xdef_t**)eqp->source_terms,
+                       (cs_xdef_t *const *)eqp->source_terms,
                                            eqb->compute_source,
                                            &(eqb->sys_flag),
                                            &(eqb->source_mask));

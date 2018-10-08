@@ -1014,7 +1014,7 @@ cs_hho_vecteq_compute_source(const cs_equation_param_t  *eqp,
          If the equation is steady, the source term has already been computed
          and is added to the right-hand side during its initialization. */
       cs_source_term_compute_cellwise(eqp->n_source_terms,
-                  (const cs_xdef_t **)eqp->source_terms,
+                  (cs_xdef_t *const *)eqp->source_terms,
                                       cm,
                                       eqb->source_mask,
                                       eqb->compute_source,
@@ -1252,7 +1252,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                    (const cs_xdef_t **)eqp->source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,

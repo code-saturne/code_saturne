@@ -1164,7 +1164,7 @@ cs_cdovb_scaleq_solve_steady_state(double                      dt_cur,
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                    (const cs_xdef_t **)eqp->source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
@@ -1193,6 +1193,8 @@ cs_cdovb_scaleq_solve_steady_state(double                      dt_cur,
       for (short int v = 0; v < cm->n_vc; v++) /* Assemble RHS */
 #       pragma omp atomic
         rhs[cm->v_ids[v]] += csys->rhs[v];
+
+      /* **********************  END OF ASSEMBLY PROCESS  ******************* */
 
     } /* Main loop on cells */
 
@@ -1359,7 +1361,7 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                    (const cs_xdef_t **)eqp->source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
@@ -1635,7 +1637,7 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
           memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
 
           cs_source_term_compute_cellwise(eqp->n_source_terms,
-                                          (const cs_xdef_t **)eqp->source_terms,
+                      (cs_xdef_t *const *)eqp->source_terms,
                                           cm,
                                           eqb->source_mask,
                                           eqb->compute_source,
@@ -1656,7 +1658,7 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                    (const cs_xdef_t **)eqp->source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
@@ -1975,7 +1977,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                    (const cs_xdef_t **)eqp->source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
@@ -2446,7 +2448,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                    (const cs_xdef_t **)eqp->source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
