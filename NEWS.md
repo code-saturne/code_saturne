@@ -73,6 +73,8 @@ Numerics:
 
 Architectural changes:
 
+- Remove dependency to the libxml2 library.
+
 - Preprocessor: update Gmsh reader to handle GMSH v4 format.
 
 - Add "--disable-backend" configure option to build and install only

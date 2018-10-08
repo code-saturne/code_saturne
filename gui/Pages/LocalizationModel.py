@@ -181,27 +181,29 @@ class BoundaryZone(Zone):
 
         if case != None:
             if self.case['package'].name == 'code_saturne':
-                self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', \
-                                    'imposed_p_outlet']
+                self._natureList = ['wall', 'inlet', 'outlet', 'symmetry',
+                                    'free_inlet_outlet', 'imposed_p_outlet']
                 self._natureDict['free_inlet_outlet'] = self.tr("Free inlet/outlet")
                 self._natureDict['imposed_p_outlet'] = self.tr("Imposed P Outlet")
                 from code_saturne.Pages.MobileMeshModel import MobileMeshModel
                 if MobileMeshModel(self.case).getMethod() != "off":
                     self._natureDict['free_surface'] = self.tr("Free surface")
-                    self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', \
-                                        'free_surface', 'imposed_p_outlet']
+                    self._natureList = ['wall', 'inlet', 'outlet', 'symmetry',
+                                        'free_inlet_outlet', 'free_surface',
+                                        'imposed_p_outlet']
                 del MobileMeshModel
                 from code_saturne.Pages.GroundwaterModel import GroundwaterModel
                 if GroundwaterModel(self.case).getGroundwaterModel() != "off":
                     self._natureDict['groundwater'] = self.tr("Groundwater flow")
-                    self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', 'groundwater']
+                    self._natureList = ['wall', 'inlet', 'outlet', 'symmetry',
+                                        'free_inlet_outlet', 'groundwater']
                 del GroundwaterModel
                 from code_saturne.Pages.LagrangianModel import LagrangianModel
             else:
                 self._natureList = ['wall', 'inlet', 'outlet', 'symmetry']
         else:
-            self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', \
-                                'imposed_p_outlet']
+            self._natureList = ['wall', 'inlet', 'outlet', 'symmetry',
+                                'free_inlet_outlet',  'imposed_p_outlet']
             self._natureDict['free_inlet_outlet'] = self.tr("Free inlet/outlet")
             self._natureDict['imposed_p_outlet'] = self.tr("Imposed P Outlet")
 

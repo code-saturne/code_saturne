@@ -49,6 +49,7 @@
 #include "fvm_selector.h"
 
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_gui_variables.h"
 #include "cs_gui_util.h"
 #include "cs_gui_boundary_conditions.h"
@@ -91,6 +92,7 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 typedef struct {
+  int       n_zones;
   char     **label;                /* label for each boundary zone            */
   char     **nature;               /* nature for each boundary zone           */
   int      *type;
@@ -228,7 +230,7 @@ void
 cs_gui_radiative_transfers_finalize(void)
 {
   if (_boundary != NULL) {
-    int zones = cs_gui_boundary_zones_number();
+    int zones = _boundary->n_zones;
     for (int i = 0; i < zones; i++) {
       BFT_FREE(_boundary->label[i]);
       BFT_FREE(_boundary->nature[i]);
@@ -462,18 +464,21 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
   if (_boundary == NULL) {
 
-    int zones = cs_gui_boundary_zones_number();
+    int n_zones = cs_tree_get_node_count(cs_glob_tree,
+                                         "boundary_conditions/boundary");
 
     BFT_MALLOC(_boundary, 1, cs_radiative_transfer_boundary_t);
-    BFT_MALLOC(_boundary->label,                zones, char *);
-    BFT_MALLOC(_boundary->nature,               zones, char *);
-    BFT_MALLOC(_boundary->type,                 zones, int);
-    BFT_MALLOC(_boundary->emissivity,           zones, double);
-    BFT_MALLOC(_boundary->thickness,            zones, double);
-    BFT_MALLOC(_boundary->thermal_conductivity, zones, double);
-    BFT_MALLOC(_boundary->external_temp,        zones, double);
-    BFT_MALLOC(_boundary->internal_temp,        zones, double);
-    BFT_MALLOC(_boundary->conduction_flux,      zones, double);
+    _boundary->n_zones = n_zones;
+
+    BFT_MALLOC(_boundary->label,                n_zones, char *);
+    BFT_MALLOC(_boundary->nature,               n_zones, char *);
+    BFT_MALLOC(_boundary->type,                 n_zones, int);
+    BFT_MALLOC(_boundary->emissivity,           n_zones, double);
+    BFT_MALLOC(_boundary->thickness,            n_zones, double);
+    BFT_MALLOC(_boundary->thermal_conductivity, n_zones, double);
+    BFT_MALLOC(_boundary->external_temp,        n_zones, double);
+    BFT_MALLOC(_boundary->internal_temp,        n_zones, double);
+    BFT_MALLOC(_boundary->conduction_flux,      n_zones, double);
 
     /* loop on boundary zones */
 
@@ -508,7 +513,7 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
       if (cs_gui_strcmp(nature, "wall")) {
 
         cs_tree_node_t *tn_w
-          = cs_gui_boundary_node_by_type_and_name(tn_w0, label);
+          = cs_tree_node_get_sibling_with_tag(tn_w0, "label", label);
         cs_tree_node_t *tn_rd = cs_tree_node_get_child(tn_w, "radiative_data");
 
         _boundary->type[izone] = _radiative_boundary_type(tn_rd);
@@ -529,7 +534,7 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
     }  /* for izones */
 
-  }  /* if (boundaries == NULL)*/
+  }  /* if (_boundary == NULL)*/
 
   int izone = 0;
 
@@ -537,18 +542,12 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
        tn != NULL;
        tn = cs_tree_node_get_next_of_name(tn), izone++) {
 
-    /* Test for when boundaries are not initialized when only
-       the radiation module is called */
+    const char *label = cs_tree_node_get_tag(tn, "label");
 
-    cs_lnum_t n_faces = 0;
-    const cs_lnum_t *faces_list;
-    if (boundaries != NULL) {
-      faces_list = cs_gui_get_boundary_faces(boundaries->label[izone], &n_faces);
-    }
-    else {
-      const char *label = cs_tree_node_get_tag(tn, "label");
-      faces_list = cs_gui_get_boundary_faces(label, &n_faces);
-    }
+    const cs_zone_t *z = cs_boundary_zone_by_name(label);
+
+    cs_lnum_t n_faces = z->n_elts;
+    const cs_lnum_t *faces_list = z->elt_ids;
 
     if (cs_gui_strcmp(_boundary->nature[izone], "wall")) {
 

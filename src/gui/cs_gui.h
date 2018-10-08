@@ -401,19 +401,6 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
                                 const int       *unsaturated);
 
 /*----------------------------------------------------------------------------
- * Free memory: clean global private variables and libxml2 variables.
- *
- * Fortran Interface:
- *
- * SUBROUTINE MEMUI1
- * *****************
- *
- * INTEGER          NCHARB  <-- number of coal
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (memui1, MEMUI1) (const int *ncharb);
-
-/*----------------------------------------------------------------------------
  * Define fans with GUI
  *
  * Fortran Interface:
