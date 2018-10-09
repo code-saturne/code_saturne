@@ -144,6 +144,7 @@ double precision, dimension(:), pointer :: cvar_al, cvar_fb
 double precision, dimension(:), pointer :: cvar_nusa
 double precision, dimension(:), pointer :: cvar_scal
 double precision, dimension(:,:), pointer :: cvar_vel
+double precision, dimension(:,:), pointer :: cvar_rij
 !< [loc_var_dec]
 
 !===============================================================================
@@ -163,13 +164,17 @@ if (itytur.eq.2) then
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
 elseif (itytur.eq.3) then
-
-  call field_get_val_s(ivarfl(ir11), cvar_r11)
-  call field_get_val_s(ivarfl(ir22), cvar_r22)
-  call field_get_val_s(ivarfl(ir33), cvar_r33)
-  call field_get_val_s(ivarfl(ir12), cvar_r12)
-  call field_get_val_s(ivarfl(ir13), cvar_r13)
-  call field_get_val_s(ivarfl(ir23), cvar_r23)
+  if(irijco.eq.1) then
+    call field_get_val_v(ivarfl(irij), cvar_rij)
+  else
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_s(ivarfl(ir12), cvar_r12)
+    call field_get_val_s(ivarfl(ir13), cvar_r13)
+    call field_get_val_s(ivarfl(ir23), cvar_r23)
+  end if
+  
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
   if (iturb.eq.32) then
@@ -357,12 +362,22 @@ else
 
     elseif (itytur.eq.3) then
 
-      rcodcl(ifac,ir11,1) = cvar_r11(iel)
-      rcodcl(ifac,ir22,1) = cvar_r22(iel)
-      rcodcl(ifac,ir33,1) = cvar_r33(iel)
-      rcodcl(ifac,ir12,1) = cvar_r12(iel)
-      rcodcl(ifac,ir13,1) = cvar_r13(iel)
-      rcodcl(ifac,ir23,1) = cvar_r23(iel)
+      if (irijco.eq.1) then
+        rcodcl(ifac,ir11,1) = cvar_rij(1,iel)
+        rcodcl(ifac,ir22,1) = cvar_rij(2,iel)
+        rcodcl(ifac,ir33,1) = cvar_rij(3,iel)
+        rcodcl(ifac,ir12,1) = cvar_rij(4,iel)
+        rcodcl(ifac,ir13,1) = cvar_rij(6,iel)
+        rcodcl(ifac,ir23,1) = cvar_rij(5,iel)
+      else
+        rcodcl(ifac,ir11,1) = cvar_r11(iel)
+        rcodcl(ifac,ir22,1) = cvar_r22(iel)
+        rcodcl(ifac,ir33,1) = cvar_r33(iel)
+        rcodcl(ifac,ir12,1) = cvar_r12(iel)
+        rcodcl(ifac,ir13,1) = cvar_r13(iel)
+        rcodcl(ifac,ir23,1) = cvar_r23(iel)
+      endif
+      
       rcodcl(ifac,iep,1)  = cvar_ep(iel)
 
       if (iturb.eq.32) then
