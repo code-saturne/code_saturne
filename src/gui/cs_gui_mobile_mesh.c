@@ -49,6 +49,7 @@
 #include "mei_evaluate.h"
 
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_field_pointer.h"
 #include "cs_gui.h"
 #include "cs_gui_util.h"
@@ -76,7 +77,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* debugging switch */
-#define _XML_DEBUG_ 1
+#define _XML_DEBUG_ 0
 
 /*============================================================================
  * Static variables
@@ -607,7 +608,7 @@ void CS_PROCF (uialin, UIALIN) (int     *iale,
   }
 
 #if _XML_DEBUG_
-  bft_printf("==>UIALIN\n");
+  bft_printf("==> %s\n", __func__);
   bft_printf("--iale = %i\n", *iale);
   if (*iale) {
     bft_printf("--nalinf = %i\n", *nalinf);
@@ -647,26 +648,22 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
 
   const cs_mesh_t *m = cs_glob_mesh;
 
-  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
-  cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
-  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "wall");
+  /* Loop on wall boundary zones */
 
-  /* At each time-step, loop on boundary faces */
+  for (cs_tree_node_t *tn_w = cs_tree_node_get_child(tn_b0, "wall");
+       tn_w != NULL;
+       tn_w = cs_tree_node_get_next_of_name(tn_w)) {
 
-  int izone = 0;
+    const char *label = cs_tree_node_get_tag(tn_w, "label");
 
-  for (tn = tn_b0;
-       tn != NULL;
-       tn = cs_tree_node_get_next_of_name(tn), izone++) {
+    const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+      continue;
 
-    const char *label = cs_tree_node_get_tag(tn, "label");
-
-    cs_lnum_t n_faces = 0;
-    const cs_lnum_t *faces_list = cs_gui_get_boundary_faces(label, &n_faces);
-
-    cs_tree_node_t *tn_w
-      = cs_gui_boundary_node_by_type_and_name(tn_w0, label);
+    cs_lnum_t n_faces = z->n_elts;
+    const cs_lnum_t *faces_list = z->elt_ids;
 
     enum ale_boundary_nature nature = _get_ale_boundary_nature(tn_w);
 
@@ -709,16 +706,28 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
                              cs_glob_time_step->nt_cur);
       cs_gui_add_mei_time(cs_timer_wtime() - t0);
     }
-    else {
-      int ith_zone = izone + 1;
-      const char *nat = cs_gui_boundary_zone_nature(ith_zone);
-      if (cs_gui_strcmp(nat, "free_surface")) {
-        for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
-          cs_lnum_t ifbr = faces_list[ifac];
-          ialtyb[ifbr]  = *ifresf;
-        }
-      }
+  }
+
+  /* Loop on free surface boundary zones */
+
+  for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_b0, "free_surface");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
+
+    const char *label = cs_tree_node_get_tag(tn, "label");
+
+    const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+      continue;
+
+    cs_lnum_t n_faces = z->n_elts;
+    const cs_lnum_t *faces_list = z->elt_ids;
+
+    for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
+      cs_lnum_t ifbr = faces_list[ifac];
+      ialtyb[ifbr]  = *ifresf;
     }
+
   }
 }
 
@@ -774,7 +783,7 @@ void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
     const char *label = cs_tree_node_get_tag(tn, "label");
 
     cs_tree_node_t *tn_w
-      = cs_gui_boundary_node_by_type_and_name(tn_w0, label);
+      = cs_tree_node_get_sibling_with_tag(tn_w0, "label", label);
 
     /* Keep only internal coupling */
     if (  _get_ale_boundary_nature(tn_w)
@@ -795,10 +804,14 @@ void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
                                           &vstr0[3 * istruct]);
       }
 
-      cs_lnum_t n_faces = 0;
-      const cs_lnum_t *faces_list
-        = cs_gui_get_boundary_faces(label, &n_faces);
-      /* Set idfstr to positiv index starting at 1 */
+      const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+      if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+        continue;
+
+      cs_lnum_t n_faces = z->n_elts;
+      const cs_lnum_t *faces_list = z->elt_ids;
+
+      /* Set idfstr to positive index starting at 1 */
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
         idfstr[ifbr] = istruct + 1;
@@ -843,7 +856,7 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
     const char *label = cs_tree_node_get_tag(tn, "label");
 
     cs_tree_node_t *tn_w
-      = cs_gui_boundary_node_by_type_and_name(tn_w0, label);
+      = cs_tree_node_get_sibling_with_tag(tn_w0, "label", label);
 
     enum ale_boundary_nature nature =_get_ale_boundary_nature(tn_w);
 
@@ -898,14 +911,18 @@ CS_PROCF(uiaste, UIASTE)(int       *idfstr,
     const char *label = cs_tree_node_get_tag(tn, "label");
 
     cs_tree_node_t *tn_w
-      = cs_gui_boundary_node_by_type_and_name(tn_w0, label);
+      = cs_tree_node_get_sibling_with_tag(tn_w0, "label", label);
 
     enum ale_boundary_nature nature =_get_ale_boundary_nature(tn_w);
 
     if (nature == ale_boundary_nature_external_coupling) {
 
-      cs_lnum_t n_faces = 0;
-      const cs_lnum_t *faces_list = cs_gui_get_boundary_faces(label, &n_faces);
+      const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+      if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+        continue;
+
+      cs_lnum_t n_faces = z->n_elts;
+      const cs_lnum_t *faces_list = z->elt_ids;
 
       cs_tree_node_t *tn_ec = cs_tree_get_node(tn_w, "ale");
       tn_ec = cs_tree_node_get_sibling_with_tag(tn_ec,

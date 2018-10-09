@@ -1154,16 +1154,6 @@ if (ivrtex.eq.1) then
   call finalize_vortex
 endif
 
-!===============================================================================
-! Memory usage
-!===============================================================================
-
-!     Liberation des structures liees a la lecture du fichier xml
-
-if (iihmpr.eq.1) then
-  call memui1(ncharb)
-endif
-
 write(nfecra,7000)
 
 !----

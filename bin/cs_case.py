@@ -1371,7 +1371,7 @@ $appli/salome kill `cat $port_log`
 
     #---------------------------------------------------------------------------
 
-    def update_scripts_tmp(self, src, dest):
+    def update_scripts_tmp(self, src, dest, caption=None):
 
         """
         Create a stamp file in the execution directory, rename it, or destroy it.
@@ -1403,7 +1403,9 @@ $appli/salome kill `cat $port_log`
                 dest_tmp_name = base_path + dest
                 if src_tmp_name == None:
                     scripts_tmp = open(dest_tmp_name, 'w')
-                    scripts_tmp.write(self.case_dir + '\n')
+                    if not caption:
+                        caption = self.case_dir
+                    scripts_tmp.write(caption + '\n')
                     scripts_tmp.close()
                 else:
                     os.rename(src_tmp_name, dest_tmp_name)
@@ -1440,6 +1442,20 @@ $appli/salome kill `cat $port_log`
             os.remove(p)
         except Exception:
             pass
+
+    #---------------------------------------------------------------------------
+
+    def exceeded_time_limit(self):
+
+        """
+        Check if the allocated time limit was exceeded.
+        """
+        p = os.path.join(self.exec_dir, 'status.exceeded_time_limit')
+
+        if os.path.isfile(os.path.join(p)):
+            return True
+        else:
+            return False
 
     #---------------------------------------------------------------------------
 
@@ -1504,6 +1520,14 @@ $appli/salome kill `cat $port_log`
                     sys.stdout.write(msg)
                     sys.stdout.flush()
                 d.compile_and_link()
+                if len(d.error) > 0:
+                    self.error = d.error
+
+        if len(self.error) > 0:
+            self.update_scripts_tmp('preparing', 'failed', self.error)
+            err_str = ' Error in ' + self.error + ' stage.\n\n'
+            sys.stderr.write(err_str)
+            return 1
 
         # Setup data
         #===========
@@ -1542,7 +1566,7 @@ $appli/salome kill `cat $port_log`
         else:
             status = 'failed'
 
-        self.update_scripts_tmp('preparing', status)
+        self.update_scripts_tmp('preparing', status, self.error)
 
         # Standard or error exit
 
@@ -1669,7 +1693,7 @@ $appli/salome kill `cat $port_log`
         else:
             status = 'failed'
 
-        self.update_scripts_tmp('preprocessing', status)
+        self.update_scripts_tmp('preprocessing', status, self.error)
 
         # Standard or error exit
 
@@ -1767,7 +1791,7 @@ $appli/salome kill `cat $port_log`
         else:
             status = 'failed'
 
-        self.update_scripts_tmp(('running',), status)
+        self.update_scripts_tmp(('running',), status, self.error)
 
         return retcode
 
@@ -1783,14 +1807,14 @@ $appli/salome kill `cat $port_log`
 
         os.chdir(self.exec_dir)
 
-        self.update_scripts_tmp(('ready', 'failed', 'finished'), 'saving')
+        self.update_scripts_tmp(('ready', 'finished'), 'saving')
 
         # Now save results
 
         sys.stdout.write('\n'
-                         ' ****************************\n'
-                         '  Saving calculation results\n'
-                         ' ****************************\n\n')
+                         ' *****************************\n'
+                         '  Post-calculation operations\n'
+                         ' *****************************\n\n')
         sys.stdout.flush()
 
         self.summary_finalize()
@@ -1807,11 +1831,16 @@ $appli/salome kill `cat $port_log`
                     except Exception:
                         pass
 
+        e_caption = None
         for d in self.domains:
             d.copy_results()
+            if d.error:
+                e_caption = d.error
 
         for d in self.syr_domains:
             d.copy_results()
+            if d.error:
+                e_caption = d.error
 
         # Remove directories if empty
 
@@ -1823,7 +1852,8 @@ $appli/salome kill `cat $port_log`
         except Exception:
             pass
 
-        # Remove the Salome temporary file
+        if e_caption: # in case of error during copy/cleanup/postprocessing
+            self.update_scripts_tmp('failed', 'failed', e_caption)
 
         self.update_scripts_tmp('saving', None)
 
@@ -1938,6 +1968,10 @@ $appli/salome kill `cat $port_log`
         sys.stdout.write(msg)
         sys.stdout.flush()
 
+        # Remove possible status from previous run
+
+        self.update_scripts_tmp(('failed,',
+                                 'exceeded_time_limit'), None)
         # Now run
 
         try:
@@ -1963,8 +1997,7 @@ $appli/salome kill `cat $port_log`
                 self.update_scripts_tmp(('preparing',
                                          'ready',
                                          'running',
-                                         'finished',
-                                         'failed'), None)
+                                         'finished'), None)
 
         # Standard or error exit
 

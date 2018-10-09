@@ -76,7 +76,6 @@ variable), and to specify the language (between English and French).
   associated libraries. Due to dependencies between the different modules, the
   order of install should be the following:
 
-  - libxml2 (it is advised to use the distribution's own package instead)
   - HDF5
   - CGNS
   - MED
@@ -102,7 +101,7 @@ variable), and to specify the language (between English and French).
      In this case, specify "no" in the "Usage" and "Install" columns. The other
      elements will be installed in accordance. The "Path" column is not used.
 
-  - automatically detect some element (especially useful for libxml2)
+  - automatically detect some element
      In this case, specify "auto" in the "Usage". The other elements will be
       installed in accordance. The "Path" and "Install" column are not used.
 

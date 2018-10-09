@@ -146,7 +146,7 @@ For a minimal build of \CS on a Linux or Posix system, the requirements are:
 \end{itemize}
 
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
-To build and use the GUI, Libxml2 and PyQt 4 or 5 (which in turn requires
+To build and use the GUI, PyQt 4 or 5 (which in turn requires
 Qt 4 or 5 and SIP) are required.
 Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
@@ -175,7 +175,7 @@ For a minimal build of \CS, a Linux or Posix system with C and Fortran compilers
 (C99 and Fortran 95 with Fortran 2003 ISO C bindings conforming respectively),
 a Python (2.6 or later) interpreter and a {\tt make} tool should be sufficient.
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
-To build and use the GUI, Libxml2 and Qt 4 or 5 with PyQt 4 or 5 Python bindings
+To build and use the GUI, Qt 4 or 5 with PyQt 4 or 5 Python bindings
 (which in turn requires SIP) are required.
 Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
@@ -201,9 +201,10 @@ ways:
       installed by default on many systems, this is generally not the
       case for the associated development headers. Development
       packages usually have the same name as the matching runtime package,
-      with a \texttt{-dev} postfix added. For example, on a Debian or
-      Ubuntu system ,\texttt{libxml2} is usually installed by default,
-      but \texttt{libxml2-dev} must also be installed for the \CS
+      with a \texttt{-dev} postfix added. Names might also differ
+      slightly. For example, on a Debian system, the main package
+      for Open MPI is \texttt{openmpi-bin},
+      but \texttt{libopenmpi-dev} must also be installed for the \CS
       build to be able to use the former.
 
 \item On many large compute clusters, Environment Modules allow
@@ -254,15 +255,11 @@ The list of third-party software usable with \CS is provided here:
 \item PyQt version 4 or 5 is required by the \CS GUI. PyQt in turn requires
       Qt (4 or 5), Python, and SIP. Without this library, the GUI may not be
       built, although XML files generated with another install of \CS
-      may be used if Libxml2 is available.
+      may be used.
 
       If desired, Using PySide instead of PyQt4/SIP should require a relatively
       small porting effort, as most of the preparatory work has been done.
       The development team should be contacted in this case.
-
-\item Libxml2 is required to read XML files edited with the GUI.
-      If this library is not available, only user subroutines may
-      be used to setup data.
 
 \item HDF5 is necessary for MED, and may also be used by CGNS.
 
@@ -376,7 +373,7 @@ not provide these libraries, there are several alternatives:
 
 \begin{itemize}
 
-\item build \CS without the GUI. If built with Libxml2, XML files
+\item build \CS without the GUI. XML files
       produced with the GUI are still usable, so if an install of \CS
       with the GUI is available on an other machine, the XML files
       may be copied on the current machine. This is certainly not an optimal
@@ -629,22 +626,6 @@ into the wrappers/Python subdirectory, then run:
 
 Although this is not really an out-of-tree build, the Python
 setup also cleans the directory.
-
-\subsubsection{libxml2\label{sec:ext:libxml2}}
-
-This library is usually available on all general purpose Linux
-distributions, so it does not generally need to be rebuilt,
-although the associated development package (and headers) must
-as usual be installed.
-
-For HPC clusters, it might not be available by default on compute nodes,
-so it may need to be compiled. This library may be downloaded
-at\url{ftp://xmlsoft.org/libxml2/} (with a possible mirror at
-\url{ftp://fr.rpmfind.net/pub/libxml/}). All versions tested so far
-(at least versions 2.6 to 2.9) have worked well with \CS, but to avoid
-compilation issues (as well as generating a smaller library), it
-may be useful to add the \texttt{--with-ftp=no --with-http=no} options
-to libxml2's \texttt{configure} script.
 
 \subsubsection{Paraview or Catalyst\label{sec:ext:catalyst}}
 
@@ -1080,7 +1061,6 @@ build on a cluster named \texttt{athos}, using the Intel compilers
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/athos\_ompi
 \textbackslash \\
 \textcolor{Violet}{--with-blas}=/opt/mkl-2016.0.047/mkl \textbackslash \\
-\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/athos \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/athos
 \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.3/arch/athos
@@ -1144,8 +1124,7 @@ either for the front-end, for the compute nodes, or both:
 \begin{itemize}
 \item BLAS will be useful only for the compute nodes, and are generally
       always available on large compute facilities.
-\item Python and PyQt4 will run on the front-end node only.
-\item Libxml2 must be available for the compute nodes if the GUI is used.
+\item Python and PyQt will run on the front-end node only.
 \item HDF5, MED, CGNSlib, and libCCMIO may be used by the Preprocessor on
       the front-end node to import meshes, and by the main solver on the
       compute nodes to output visualization meshes and fields.
@@ -1175,9 +1154,6 @@ use \texttt{--host=powerpc64-bgq-linux} instead.
 For the compute nodes, the following remarks may be mode for prerequisites:
 
 \begin{itemize}
-\item LibXml: to reduce the size and simplify the installation of this
-library, the \texttt{--with-ftp=no}, \texttt{--with-http=no},
-and \texttt{--without-modules} options may be used with \texttt{configure}.
 \item HDF5: building this library with its \texttt{configure} script
 is a pain\footnote{It requires running a \texttt{yodconfigure}
 script and adapting other scripts (see documentation), then running
@@ -1227,7 +1203,6 @@ compute nodes:
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq
 \textbackslash \\
 \textcolor{Violet}{--without-blas} \\
-\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.13/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.3/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/bgq \textbackslash \\
@@ -1269,7 +1244,6 @@ options such as in the following example are recommended:
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/xc30
 \textbackslash \\
-\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/xc30 \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/xc30 \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.3/arch/xc30 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/xc30 \textbackslash \\

@@ -288,6 +288,9 @@ class SolverDelegate(QItemDelegate):
             validator.setExclusiveMin(True)
         elif (index.column() == 2 or index.column() == 4):
             validator = IntValidator(editor, min=1)
+        elif index.column() == 5:
+            validator = DoubleValidator(editor, min=0.)
+            validator.setExclusiveMin(True)
         editor.setValidator(validator)
         editor.installEventFilter(self)
         return editor
@@ -300,7 +303,7 @@ class SolverDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
-            if index.column() == 3:
+            if index.column() == 3 or index.column() == 5:
                 value = from_qvariant(editor.text(), float)
             elif (index.column() == 2 or index.column() == 4):
                 value = from_qvariant(editor.text(), int)

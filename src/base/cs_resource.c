@@ -348,7 +348,9 @@ cs_resource_get_max_timestep(int   ts_cur,
       }
 
       if (wt_cur >= (wt_rem + wt_cur)*_wt_safe) {
+
         *ts_max = ts_cur;
+
         bft_printf
           (_("===========================================================\n"
              "   ** Stop to avoid exceeding time allocation.\n"
@@ -356,6 +358,13 @@ cs_resource_get_max_timestep(int   ts_cur,
              "      maximum time step number set to: %d\n"
              "===========================================================\n"),
            *ts_max);
+
+        FILE *_f = fopen("status.exceeded_time_limit", "w");
+        if (_f != NULL) {
+          fprintf(_f, "%d\n", ts_cur);
+          fclose(_f);
+        }
+
       }
 
     }

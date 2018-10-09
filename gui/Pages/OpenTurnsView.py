@@ -95,31 +95,49 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         config = configparser.ConfigParser()
         config.read(self.case['package'].get_configfiles())
         self.nmodes = 1
-        if config.has_option('install', 'distant_hosts'):
-            dist_hosts = config.get('install', 'distant_hosts').split(':')
-            self.nmodes += len(dist_hosts)
-        else:
-            dist_hosts = None
 
-        self.modelOtModes = ComboModel(self.comboBoxStudyMode,self.nmodes,1)
-        self.modelOtModes.addItem(self.tr("Localhost"), 'localhost')
+        dist_hosts = None
+        if config.has_section('distant_hosts'):
+            if len(config.options('distant_hosts')) != 0:
+                dist_hosts = config.options('distant_hosts')
+                self.nmodes += len(dist_hosts)
+
+        self.modelOtStudyHosts = ComboModel(self.comboBoxStudyMode,self.nmodes,1)
+        self.modelOtStudyHosts.addItem(self.tr("Localhost"), 'localhost')
 
         self.hosts_bmgr = {}
-        self.hosts_bmgr['localhost'] = 'none'
+        if config.has_option('install', 'batch'):
+            self.hosts_bmgr['localhost'] = (config.get('install', 'batch')).lower()
+        else:
+            self.hosts_bmgr['localhost'] = 'none'
 
-        self.hosts_binpath = {}
-
+        # Check for distant builds:
         # Hosts are stored in the form <batch_rm>_<host_name> hence the split
         # used hereafter to determine the "real" host name
-        if dist_hosts:
-            for host in dist_hosts:
-                host_name = host.split('_')[-1]
-                self.hosts_bmgr[host_name] = host.split('_')[0]
+        self.hosts_binpath =  {}
 
-                self.hosts_binpath[host_name] = config.get('install', host_name+"_path")
+        self.distant_host_builds = None
+        if dist_hosts != None:
+            self.distant_host_builds = {}
+            for key in dist_hosts:
+                host_name = key.split('_')[1]
+                self.hosts_bmgr[host_name] = key.split('_')[0]
+
+                self.hosts_binpath[host_name] = config.get('distant_builds',
+                                                           key)
+
+                self.addDistantBuilds(host_name)
+
+                dh_not_found = False
+                if self.distant_host_builds[host_name] == None:
+                    dh_not_found = True
 
                 host_tag = 'distant : ' + host_name
-                self.modelOtModes.addItem(self.tr(host_tag), host_name)
+                self.modelOtStudyHosts.addItem(self.tr(host_tag),
+                                               host_name,
+                                               warn=dh_not_found)
+                if dh_not_found:
+                    self.modelOtStudyHosts.disableItem(str_model=host_name)
 
         # ---------------------------------------
         # Connections:
@@ -157,7 +175,7 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         # ---------------------------------------
         # Initial values
         self.lineEditOutputFile.setText(self.mdl.resfile_name)
-        self.modelOtModes.setItem(str_model=self.mdl.host_name)
+        self.modelOtStudyHosts.setItem(str_model=self.mdl.host_name)
 
         self.spinBoxLocalProcs.setValue(self.mdl.nprocs)
         self.spinBoxLocalThreads.setValue(1)
@@ -182,7 +200,7 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         """
         print(text)
 
-        host_name = self.modelOtModes.dicoV2M[str(text)]
+        host_name = self.modelOtStudyHosts.dicoV2M[str(text)]
 
         self.mdl.setHostName(host_name)
         self.mdl.setBatchManager(self.hosts_bmgr[host_name])
@@ -330,6 +348,19 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         """
         return text
 
+    def addDistantBuilds(self, host_name):
+        """
+        Search for the distant builds of Code_Saturne for the given distant
+        host.
+        """
+
+        host_path = self.hosts_binpath[host_name]
+
+        builds_list = __getListOfDistantBuilds__(host_name,
+                                                 host_path)
+
+        self.distant_host_builds[host_name] = builds_list
+
 
     def setAvailableBuildsList(self, host_name):
         """
@@ -352,27 +383,14 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
             self.comboBoxDistantBuilds.show()
             self.labelDistantBuilds.show()
 
-            # Constructing the search command
-            search_cmd = ''
-            search_cmd += "cd "+self.hosts_binpath[host_name] + "\n"
-            search_cmd += "build_list=\n"
-            search_cmd += "find . -mindepth 1 -maxdepth 1 -type d |\n"
-            search_cmd += "while read -r d; do\n"
-            search_cmd += "  echo ${d:2}\n"
-            search_cmd += "done\n"
-            search_cmd += "'"
+            dist_builds_list = self.distant_host_builds[host_name]
+            self.modelOtDistantBuilds = ComboModel(self.comboBox,
+                                                   len(dist_builds_list),
+                                                   1)
+            for db in dist_builds_list:
+                self.modelOtDistantBuilds.addItem(tr(db), db)
 
-            ssh_cmd = subprocess.Popen(["ssh", host_name, search_cmd],
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
 
-            vr = ssh_cmd.stdout.readlines()
-            vr.sort()
-            dist_versions = None
-            if vr:
-                dist_versions = []
-                for iv in range(len(vr)):
-                    dist_versions.append(str(vr[iv][:-1]))
 
 
 
@@ -461,6 +479,45 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
 
         f.write(script_cmd)
         f.close()
+
+#-------------------------------------------------------------------------------
+# Utility functions
+#-------------------------------------------------------------------------------
+
+def __getListOfDistantBuilds__(host_name, search_path):
+    """
+    This functions retrieve the list of Code_Saturne builds in a given
+    directory on a distant cluster.
+    Returns None if no builds are found.
+    """
+
+    # Constructing the search command
+    search_cmd = ''
+    search_cmd += "cd "+ search_path + "\n"
+    search_cmd += "build_list=\n"
+    search_cmd += "find . -mindepth 1 -maxdepth 1 -type d |\n"
+    search_cmd += "while read -r d; do\n"
+    search_cmd += "  echo ${d:2}\n"
+    search_cmd += "done\n"
+    search_cmd += "'"
+
+    ssh_cmd = subprocess.Popen(["ssh", host_name, search_cmd],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+
+    vr = ssh_cmd.stdout.readlines()
+    ve = ssh_cmd.stderr.readlines()
+
+    if vr == [] or vr == None or 'Could not resolve hostname' in ve:
+        dist_versions = None
+    else:
+        vr.sort()
+        dist_versions = []
+        for iv in range(len(vr)):
+            dist_versions.append(str(vr[iv][:-1]))
+
+
+    return dist_versions
 
 #-------------------------------------------------------------------------------
 # Testing part
