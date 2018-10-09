@@ -1250,7 +1250,9 @@ _get_profile_format(cs_tree_node_t  *tn)
 {
   int format = 0;
 
-  const char *format_s = cs_tree_node_get_tag(tn, "format");
+  const char *format_s
+    = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "format"),
+                           "name");
 
   if (format_s != NULL) {
     if (cs_gui_strcmp(format_s, "CSV"))
