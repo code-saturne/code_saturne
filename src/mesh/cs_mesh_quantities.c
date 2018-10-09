@@ -2076,15 +2076,11 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
                         cs_lnum_t          n_b_faces,
                         const cs_lnum_2_t  i_face_cells[],
                         const cs_lnum_t    b_face_cells[],
-                        const cs_lnum_t    b_face_vtx_idx[],
-                        const cs_lnum_t    b_face_vtx_lst[],
                         const cs_real_t    i_face_normal[][3],
                         const cs_real_t    b_face_normal[][3],
                         const cs_real_t    i_face_cog[][3],
                         const cs_real_t    b_face_cog[][3],
                         const cs_real_t    cell_cen[][3],
-                        const cs_real_t    vtx_coord[][3],
-                        const cs_real_t    b_face_surf[],
                         cs_real_t          i_dist[],
                         cs_real_t          b_dist[],
                         cs_real_t          weight[])
@@ -2170,30 +2166,6 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
         b_dist[face_id] = CS_MAX(b_dist[face_id], 0.2 * distmax);
       }
 
-      /* Clipping of cell boundary distances based on a characteristic lenght */
-      cs_lnum_t s_vtx_id = b_face_vtx_idx[face_id];
-      cs_lnum_t e_vtx_id = b_face_vtx_idx[face_id+1];
-      cs_lnum_t n_f_vertices = e_vtx_id - s_vtx_id;
-
-      cs_real_t peri = 0.;
-
-      for (cs_lnum_t f_vtx_id = 0; f_vtx_id < n_f_vertices; f_vtx_id++) {
-        cs_lnum_t vtx_id1 = b_face_vtx_lst[s_vtx_id + f_vtx_id];
-        cs_lnum_t vtx_id2 = b_face_vtx_lst[s_vtx_id + (f_vtx_id+1)%n_f_vertices];
-        cs_real_t dist_p1p2 = cs_math_3_distance(vtx_coord[vtx_id1],
-                                                 vtx_coord[vtx_id2]);
-        peri += dist_p1p2;
-      }
-
-      double miperi = 0.5 * peri;
-
-      /* Compute characteristic dimension of each face based
-         on surfbn and peri */
-      double delta = miperi * miperi - 4. * b_face_surf[face_id];
-      if (delta > 0.) {
-        double L = 0.5 * (miperi + sqrt(delta));
-        b_dist[face_id] = CS_MAX(b_dist[face_id], 0.01 * L);
-      }
     }
   }
 
@@ -3149,15 +3121,11 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                           mesh->n_b_faces,
                           (const cs_lnum_2_t *)(mesh->i_face_cells),
                           mesh->b_face_cells,
-                          mesh->b_face_vtx_idx,
-                          mesh->b_face_vtx_lst,
                           (const cs_real_3_t *)(mesh_quantities->i_face_normal),
                           (const cs_real_3_t *)(mesh_quantities->b_face_normal),
                           (const cs_real_3_t *)(mesh_quantities->i_face_cog),
                           (const cs_real_3_t *)(mesh_quantities->b_face_cog),
                           (const cs_real_3_t *)(mesh_quantities->cell_cen),
-                          (const cs_real_3_t *)(mesh->vtx_coord),
-                          mesh_quantities->b_face_surf,
                           mesh_quantities->i_dist,
                           mesh_quantities->b_dist,
                           mesh_quantities->weight);
