@@ -401,7 +401,7 @@ cs_equation_create_param(const char            *name,
   eqp->time_property = NULL;
 
   /* Description of the time discretization (default values) */
-  eqp->time_scheme = CS_TIME_SCHEME_STEADY;
+  eqp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
   eqp->theta = 1.0;
   eqp->do_lumping = false;
 
