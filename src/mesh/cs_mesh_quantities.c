@@ -2376,6 +2376,8 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
                           cs_real_t          djjpf[][3])
 {
 
+  cs_gnum_t w_count = 0;
+
   /* Interior faces */
 
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
@@ -2411,9 +2413,12 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
       cs_real_t iip   = cs_math_3_norm(diipf[face_id]);
 
       cs_real_t corri = 1.;
+      bool is_clipped = false;
 
-      if (0.5 * dist[face_id] < iip)
+      if (0.5 * dist[face_id] < iip) {
+        is_clipped = true;
         corri = 0.5 * dist[face_id] / iip;
+      }
 
       diipf[face_id][0] *= corri;
       diipf[face_id][1] *= corri;
@@ -2423,8 +2428,10 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
 
       corri = 1.;
 
-      if (0.9 * cell_vol[cell_id1] < surfn * iip)
+      if (0.9 * cell_vol[cell_id1] < surfn * iip) {
+        is_clipped = true;
         corri = 0.9 * cell_vol[cell_id1] / (surfn * iip);
+      }
 
       diipf[face_id][0] *= corri;
       diipf[face_id][1] *= corri;
@@ -2434,8 +2441,10 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
 
       cs_real_t corrj = 1.;
 
-      if (0.5 * dist[face_id] < jjp)
+      if (0.5 * dist[face_id] < jjp) {
+        is_clipped = true;
         corrj = 0.5 * dist[face_id] / jjp;
+      }
 
       djjpf[face_id][0] *= corrj;
       djjpf[face_id][1] *= corrj;
@@ -2444,8 +2453,13 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
       jjp = cs_math_3_norm(djjpf[face_id]);
 
       corrj = 1.;
-      if (0.9 * cell_vol[cell_id2] < surfn * jjp)
+      if (0.9 * cell_vol[cell_id2] < surfn * jjp) {
+        is_clipped = true;
         corrj = 0.9 * cell_vol[cell_id2] / (surfn * jjp);
+      }
+
+      if (is_clipped)
+        w_count++;
 
       djjpf[face_id][0] *= corrj;
       djjpf[face_id][1] *= corrj;
@@ -2453,6 +2467,15 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
 
     }
   }
+
+  cs_parall_counter(&w_count, 1);
+
+  if (w_count > 0)
+    bft_printf(_("\n"
+                 "%llu faces have a too large reconstruction distance.\n"
+                 "For these faces, reconstruction are limited.\n"),
+               (unsigned long long)w_count);
+
 }
 
 /*----------------------------------------------------------------------------
