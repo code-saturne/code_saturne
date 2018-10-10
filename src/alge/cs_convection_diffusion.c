@@ -7784,6 +7784,9 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_3_t *restrict i_f_face_normal
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_3_t *restrict diipf
     = (const cs_real_3_t *restrict)fvq->diipf;
   const cs_real_3_t *restrict djjpf
