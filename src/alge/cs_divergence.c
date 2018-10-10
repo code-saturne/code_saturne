@@ -1657,8 +1657,6 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
-  const cs_real_3_t *restrict dijpf
-    = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipf
     = (const cs_real_3_t *restrict)fvq->diipf;
   const cs_real_3_t *restrict djjpf
