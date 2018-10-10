@@ -9590,8 +9590,10 @@ cs_face_diffusion_potential(const int                 f_id,
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict dijpf
-    = (const cs_real_3_t *restrict)fvq->dijpf;
+  const cs_real_3_t *restrict diipf
+    = (const cs_real_3_t *restrict)fvq->diipf;
+  const cs_real_3_t *restrict djjpf
+    = (const cs_real_3_t *restrict)fvq->djjpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
@@ -9781,10 +9783,10 @@ cs_face_diffusion_potential(const int                 f_id,
           double dpzf = 0.5*(  visel[ii]*grad[ii][2]
                              + visel[jj]*grad[jj][2]);
 
-          /*---> Dij = IJ - (IJ.N) N */
-          double dijx = (cell_cen[jj][0]-cell_cen[ii][0]) - dijpf[face_id][0];
-          double dijy = (cell_cen[jj][1]-cell_cen[ii][1]) - dijpf[face_id][1];
-          double dijz = (cell_cen[jj][2]-cell_cen[ii][2]) - dijpf[face_id][2];
+          /*---> Dij = IJ - (IJ.N) N = II' - JJ' */
+          double dijx = diipf[face_id][0] - djjpf[face_id][0];
+          double dijy = diipf[face_id][1] - djjpf[face_id][1];
+          double dijz = diipf[face_id][2] - djjpf[face_id][2];
 
           i_massflux[face_id] =  i_massflux[face_id]
                                + i_visc[face_id]*(pvar[ii] - pvar[jj])
@@ -10412,8 +10414,6 @@ cs_diffusion_potential(const int                 f_id,
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict dijpf
-    = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipf
     = (const cs_real_3_t *restrict)fvq->diipf;
   const cs_real_3_t *restrict djjpf
@@ -10616,10 +10616,10 @@ cs_diffusion_potential(const int                 f_id,
 
           if (mass_flux_rec_type == 0) {
 
-            /*---> Dij = IJ - (IJ.N) N */
-            double dijx = (cell_cen[jj][0]-cell_cen[ii][0]) - dijpf[face_id][0];
-            double dijy = (cell_cen[jj][1]-cell_cen[ii][1]) - dijpf[face_id][1];
-            double dijz = (cell_cen[jj][2]-cell_cen[ii][2]) - dijpf[face_id][2];
+            /*---> Dij = IJ - (IJ.N) N = II' - JJ' */
+            double dijx = diipf[face_id][0] - djjpf[face_id][0];
+            double dijy = diipf[face_id][1] - djjpf[face_id][1];
+            double dijz = diipf[face_id][2] - djjpf[face_id][2];
 
             double dpxf = 0.5*(  visel[ii]*grad[ii][0]
                                + visel[jj]*grad[jj][0]);
