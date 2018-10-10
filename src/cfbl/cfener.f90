@@ -116,7 +116,7 @@ double precision turb_schmidt
 integer          inc    , iccocg , imucpp , idftnp , iswdyp
 integer          f_id0  , ii, jj
 integer          iel1  , iel2
-integer          iterns, irecpt
+integer          iterns
 
 double precision flux, flui, fluj, yip, yjp, gradnb, tip
 double precision dijpfx, dijpfy, dijpfz, pnd  , pip   , pjp
@@ -294,96 +294,20 @@ endif
 ! PRESSURE TRANSPORT TERM  : - >  (---)  *(Q    .n)  *S
 ! =======================      --  RHO ij   pr     ij  ij
 
-irecpt = 0
 allocate(iprtfl(nfac))
 allocate(bprtfl(nfabor))
 
-if (irecpt.eq.1) then
+! No reconstruction yet
 
-  ! With reconstruction: yields problems for now
+! Internal faces
+do ifac = 1, nfac
+  iel1 = ifacel(1,ifac)
+  iel2 = ifacel(2,ifac)
+  iprtfl(ifac) =                                                             &
+       - cvar_pr(iel1)/crom(iel1) * 0.5d0*(imasfl(ifac) +abs(imasfl(ifac)))  &
+       - cvar_pr(iel2)/crom(iel2) * 0.5d0*(imasfl(ifac) -abs(imasfl(ifac)))
+enddo
 
-  ! gradient of P/rho
-
-  do iel = 1, ncel
-    w7(iel) = cvar_pr(iel)/crom(iel)
-  enddo
-
-  ! Since we don't know the parameters for P/rho,
-  ! parameters of P are set.
-
-  iii = ipr
-  inc = 1
-  iccocg = 1
-  nswrgp = vcopt_p%nswrgr
-  imligp = vcopt_p%imligr
-  iwarnp = vcopt_p%iwarni
-  epsrgp = vcopt_p%epsrgr
-  climgp = vcopt_p%climgr
-  extrap = vcopt_p%extrag
-
-  allocate(coefap(nfabor))
-  allocate(coefbp(nfabor))
-
-  do ifac = 1, nfabor
-    coefap(ifac) = zero
-    coefbp(ifac) = 1.d0
-  enddo
-
-  !  f_id0 = -1
-  ! (indicates for the periodicity of rotation that the variable is not a Rij)
-  f_id0 = -1
-
-  call gradient_s                                       &
- ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,&
-   iwarnp , epsrgp , climgp , extrap ,                  &
-   w7     , coefap , coefbp ,                           &
-   grad   )
-
-  ! internal faces
-  do ifac = 1, nfac
-
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-
-    dijpfx = dijpf(1,ifac)
-    dijpfy = dijpf(2,ifac)
-    dijpfz = dijpf(3,ifac)
-
-    pnd   = pond(ifac)
-
-    ! Computation of II' and JJ'
-
-    diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+ (1.d0-pnd) * dijpfx)
-    diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+ (1.d0-pnd) * dijpfy)
-    diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+ (1.d0-pnd) * dijpfz)
-    djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+       pnd  * dijpfx
-    djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+       pnd  * dijpfy
-    djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+       pnd  * dijpfz
-
-    pip = w7(ii) +grad(1,ii)*diipfx+grad(2,ii)*diipfy+grad(3,ii)*diipfz
-    pjp = w7(jj) +grad(1,jj)*djjpfx+grad(2,jj)*djjpfy+grad(3,jj)*djjpfz
-
-    flui = (imasfl(ifac)+abs(imasfl(ifac)))
-    fluj = (imasfl(ifac)-abs(imasfl(ifac)))
-
-    iprtfl(ifac) = -(pnd*pip*flui+pnd*pjp*fluj)
-
-  enddo
-
-else
-
-  ! without reconstruction
-
-  ! Internal faces
-  do ifac = 1, nfac
-    iel1 = ifacel(1,ifac)
-    iel2 = ifacel(2,ifac)
-    iprtfl(ifac) =                                                             &
-         - cvar_pr(iel1)/crom(iel1) * 0.5d0*(imasfl(ifac) +abs(imasfl(ifac)))  &
-         - cvar_pr(iel2)/crom(iel2) * 0.5d0*(imasfl(ifac) -abs(imasfl(ifac)))
-  enddo
-
-endif
 
 ! Boundary faces: for the faces where a flux (Rusanov or analytical) has been
 ! computed, the standard contribution is replaced by this flux in bilsc2.
@@ -429,7 +353,7 @@ allocate(w1(ncelet))
 allocate(viscf(nfac))
 allocate(viscb(nfabor))
 
-if( vcopt_e%idiff.ge. 1 ) then
+if (vcopt_e%idiff.ge. 1) then
 
   call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
 
