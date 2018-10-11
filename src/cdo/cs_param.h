@@ -225,8 +225,12 @@ typedef enum {
  * Continuous Interior Penalty discretization. Only available for
  * \ref CS_SPACE_SCHEME_CDOVCB
  *
- * \var CS_PARAM_ADVECTION_SCHEME_UPWIND
- * Low order upwind discretization
+ * \var CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND
+ * Centered discretization with a portion between [0,1] of upwinding.
+ * The portion is specified thanks to \ref CS_EQKEY_ADV_UPWIND_PORTION
+ * If the portion is equal to 0, then one recovers
+ * \ref CS_PARAM_ADVECTION_SCHEME_CENTERED. If the portion is equal to 1, then
+ * one recovers CS_PARAM_ADVECTION_SCHEME_UPWIND
  *
  * \var CS_PARAM_ADVECTION_SCHEME_SAMARSKII
  * Weighting between an upwind and a centered discretization relying on the
@@ -235,15 +239,19 @@ typedef enum {
  * \var CS_PARAM_ADVECTION_SCHEME_SG
  * Weighting between an upwind and a centered discretization relying on the
  * Peclet number. Weighting function = Scharfetter-Gummel
+ *
+ * \var CS_PARAM_ADVECTION_SCHEME_UPWIND
+ * Low order upwind discretization
  */
 
 typedef enum {
 
   CS_PARAM_ADVECTION_SCHEME_CENTERED,
   CS_PARAM_ADVECTION_SCHEME_CIP,
-  CS_PARAM_ADVECTION_SCHEME_UPWIND,
+  CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND,
   CS_PARAM_ADVECTION_SCHEME_SAMARSKII,
   CS_PARAM_ADVECTION_SCHEME_SG,
+  CS_PARAM_ADVECTION_SCHEME_UPWIND,
 
   CS_PARAM_N_ADVECTION_SCHEMES
 

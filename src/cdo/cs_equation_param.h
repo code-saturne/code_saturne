@@ -299,6 +299,11 @@ typedef struct {
    * \var adv_scheme
    * Numerical scheme used for the discretization of the advection term
    *
+   * \var upwind_portion
+   * Value between 0. and 1. (0: centered scheme, 1: pure upwind scheme)
+   * Introduce a constant portion of upwinding in a centered scheme
+   * Only useful if the advection scheme is set to
+   *
    * \var adv_field
    * Pointer to the \ref cs_adv_field_t structure associated to the advection
    * term
@@ -306,6 +311,7 @@ typedef struct {
 
   cs_param_advection_form_t     adv_formulation;
   cs_param_advection_scheme_t   adv_scheme;
+  cs_real_t                     upwind_portion;
   cs_adv_field_t               *adv_field;
 
   /*!
@@ -541,17 +547,20 @@ typedef struct {
  * \var CS_EQKEY_ADV_SCHEME
  * Type of numerical scheme for the advective term. The available choices
  * depend on the space discretization scheme.
- * - "upwind"
- * - "centered"
+ * - "upwind" (cf. \ref CS_PARAM_ADVECTION_SCHEME_UPWIND)
+ * - "centered" (cf. \ref CS_PARAM_ADVECTION_SCHEME_CENTERED)
+ * - "mix_centered_upwind" (\ref CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND)
  * - "samarskii" --> switch smoothly betwwen an upwind and a centered scheme
- *   thanks to a weight depending on the Peclet number.
+ *   thanks to a weight depending on the Peclet number. (cf.
+ * \ref CS_PARAM_ADVECTION_SCHEME_SAMARSKII). Only for CDO-Vb schemes.
  * - "sg" --> closely related to "samarskii" but with a different definition of
- *   the weight.
+ *   the weight (cf. \ref CS_PARAM_ADVECTION_SCHEME_SG). Only for CDO-Vb schemes
  * - "cip" --> means "continuous interior penalty" (only for CDOVCB schemes).
- *   Enable a better accuracy.
+ *   Enable a better accuracy. (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP)
  *
- * "sg" and "samarskii" are only available with CDOVB schemes
- *
+ * \var CS_EQKEY_ADV_UPWIND_PORTION
+ * Value between 0 and 1 specifying the portion of upwind added to a centered
+ * discretization.
  *
  * \var CS_EQKEY_EXTRA_OP
  * Set the additional post-processing to perform. Available choices are:
@@ -563,6 +572,7 @@ typedef enum {
 
   CS_EQKEY_ADV_FORMULATION,
   CS_EQKEY_ADV_SCHEME,
+  CS_EQKEY_ADV_UPWIND_PORTION,
   CS_EQKEY_AMG_TYPE,
   CS_EQKEY_BC_ENFORCEMENT,
   CS_EQKEY_BC_QUADRATURE,
@@ -585,6 +595,7 @@ typedef enum {
   CS_EQKEY_TIME_SCHEME,
   CS_EQKEY_TIME_THETA,
   CS_EQKEY_VERBOSITY,
+
   CS_EQKEY_N_KEYS
 
 } cs_equation_key_t;

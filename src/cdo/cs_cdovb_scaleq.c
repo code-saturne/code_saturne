@@ -813,6 +813,11 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
         eqc->get_advection_matrix = cs_cdo_advection_get_vb_cencsv;
         break;
 
+      case CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND:
+        eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+        eqc->get_advection_matrix = cs_cdo_advection_get_vb_mcucsv;
+        break;
+
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
       case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
       case CS_PARAM_ADVECTION_SCHEME_SG:

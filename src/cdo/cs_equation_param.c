@@ -421,6 +421,7 @@ cs_equation_create_param(const char            *name,
   /* Advection term */
   eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
   eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+  eqp->upwind_portion = 0.15;
   eqp->adv_field = NULL;
 
   /* No reaction term by default */
@@ -840,6 +841,8 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
     else if (strcmp(val, "centered") == 0)
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
+    else if (strcmp(val, "mix_centered_upwind") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND;
     else if (strcmp(val, "cip") == 0) {
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
       /* Automatically switch to a non-conservative formulation */
@@ -850,6 +853,10 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqp->name, _val, "CS_EQKEY_ADV_SCHEME");
     }
+    break;
+
+  case CS_EQKEY_ADV_UPWIND_PORTION:
+    eqp->upwind_portion = atof(val);
     break;
 
   case CS_EQKEY_TIME_SCHEME:
@@ -1367,8 +1374,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
       case CS_PARAM_ADVECTION_SCHEME_CIP:
         cs_log_printf(CS_LOG_SETUP, " continuous interior penalty\n");
         break;
-      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        cs_log_printf(CS_LOG_SETUP, " upwind\n");
+      case CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND:
+        cs_log_printf(CS_LOG_SETUP, " mixed centered-upwind (%3.2f\%)\n",
+                      eqp->upwind_portion);
         break;
       case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
         cs_log_printf(CS_LOG_SETUP,
@@ -1377,6 +1385,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
       case CS_PARAM_ADVECTION_SCHEME_SG:
         cs_log_printf(CS_LOG_SETUP,
                       " upwind weighted with Scharfetter-Gummel function\n");
+        break;
+      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+        cs_log_printf(CS_LOG_SETUP, " upwind\n");
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
