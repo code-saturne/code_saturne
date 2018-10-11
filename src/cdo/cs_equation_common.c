@@ -450,6 +450,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       cs_equation_common_ma[CS_CDO_CONNECT_VTX_VECT] = ma;
       cs_equation_common_ms[CS_CDO_CONNECT_VTX_VECT] = ms;
 
+      cwb_size *= 3; /* 3*n_cells by default */
       if (cc->vb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
 
         cwb_size = CS_MAX(cwb_size, (size_t)3*n_vertices);

@@ -650,6 +650,22 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute and post-process Peclet number if requested
+ *
+ * \param[in]      eq       pointer to a cs_equation_t structure
+ * \param[in]      ts       pointer to a cs_time_step_t struct.
+ * \param[in, out] peclet   pointer to an array storing the resulting Peclet
+ *                          number in each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_peclet(const cs_equation_t        *eq,
+                           const cs_time_step_t       *ts,
+                           cs_real_t                   peclet[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Write into the restart file additionnal arrays (not defined as
  *         fields) but useful for the checkpoint/restart process
  *
@@ -685,11 +701,21 @@ cs_equation_write_extra_restart(cs_restart_t   *restart);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_extra_post_all(const cs_mesh_t            *mesh,
-                           const cs_cdo_connect_t     *connect,
-                           const cs_cdo_quantities_t  *cdoq,
-                           const cs_time_step_t       *ts,
-                           double                      dt_cur);
+cs_equation_post_balance(const cs_mesh_t            *mesh,
+                         const cs_cdo_connect_t     *connect,
+                         const cs_cdo_quantities_t  *cdoq,
+                         const cs_time_step_t       *ts,
+                         double                      dt_cur);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations related to equations according to the
+ *         type of numerical scheme (for the space discretization)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_extra_post(void);
 
 /*----------------------------------------------------------------------------*/
 

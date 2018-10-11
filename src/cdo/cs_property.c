@@ -228,6 +228,7 @@ _create_property(const char           *name,
   pty->id = id;
   pty->type = type;
   pty->state_flag = 0;
+  pty->process_flag = 0;
 
   pty->n_definitions = 0;
   pty->defs = NULL;
@@ -367,6 +368,37 @@ cs_property_by_id(int         id)
     return NULL;
 
   return  _properties[id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set optional parameters related to a cs_property_t structure
+ *
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       key       key related to a setting option
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_option(cs_property_t       *pty,
+                       cs_property_key_t    key)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  switch(key) {
+
+  case CS_PTYKEY_POST_FOURIER:
+    pty->process_flag |= CS_PROPERTY_POST_FOURIER;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Key not implemented for setting a property."));
+    break;
+
+  } /* Switch on keys */
+
 }
 
 /*----------------------------------------------------------------------------*/

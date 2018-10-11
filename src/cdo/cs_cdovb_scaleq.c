@@ -2738,6 +2738,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
                                    cs_real_t                   *diff_flux)
 {
   cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t  *)data;
+  CS_UNUSED(eqc);
 
   /* Sanity checks */
   assert(diff_flux != NULL && eqp != NULL && eqc != NULL && eqb != NULL);
@@ -2947,14 +2948,13 @@ cs_cdovb_scaleq_extra_op(const char                 *eqname,
   if (cs_equation_param_has_convection(eqp)) {
     if (eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF) {
 
-      cs_real_t  *work_c = cs_equation_get_tmpbuf();
-      char *postlabel = NULL;
       int  len = strlen(eqname) + 8 + 1;
-
+      char *postlabel = NULL;
       BFT_MALLOC(postlabel, len, char);
       sprintf(postlabel, "%s.UpwCoef", eqname);
 
       /* Compute in each cell an evaluation of upwind weight value */
+      cs_real_t  *work_c = cs_equation_get_tmpbuf();
       cs_cdo_advection_get_upwind_coef_cell(cs_shared_quant,
                                             eqp->adv_scheme,
                                             work_c);
@@ -2974,7 +2974,7 @@ cs_cdovb_scaleq_extra_op(const char                 *eqname,
       BFT_FREE(postlabel);
 
     }
-  } // Post a Peclet attached to cells
+  } /* Post the upwind coefficient attached to cells */
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

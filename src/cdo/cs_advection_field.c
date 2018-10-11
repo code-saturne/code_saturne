@@ -43,14 +43,12 @@
 
 #include <bft_mem.h>
 
-#include "cs_array_reduce.h"
 #include "cs_boundary_zone.h"
 #include "cs_evaluate.h"
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
-#include "cs_parall.h"
 #include "cs_param_cdo.h"
 #include "cs_reco.h"
 #include "cs_volume_zone.h"
@@ -171,46 +169,6 @@ _fill_cw_uniform_boundary_flux(const cs_cell_mesh_t   *cm,
   } /* Loop on face edges */
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute very simple statistic for an array with values located
- *         at cells (scalar-valued)
- *
- * \param[in]  basename
- * \param[in]  array      pointer to the array to analyze
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_analyze_cell_array(const char         basename[],
-                    const cs_real_t   *array)
-{
-  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
-
-  cs_real_t  _min = array[0], _max = array[0], _sum = 0.;
-
-  cs_array_reduce_simple_stats_l(cdoq->n_cells, 1, NULL, array,
-                                 &_min, &_max, &_sum);
-
-  /* Parallel treatment */
-  cs_real_t  min, max, sum;
-  if (cs_glob_n_ranks > 1) {
-
-    cs_real_t  minmax[2] = {-_min, _max};
-
-    cs_parall_max(2, CS_REAL_TYPE, minmax);
-    min = -minmax[0], max = minmax[1];
-
-    sum = _sum;
-    cs_parall_sum(1, CS_REAL_TYPE, &sum);
-
-  }
-  else
-    min = _min, max = _max, sum = _sum;
-
-  cs_log_printf(CS_LOG_DEFAULT, "-s- %15s  % -6.4e % -6.4e % -6.4e\n",
-                basename, min, max, sum/cdoq->n_cells);
-}
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -926,8 +884,9 @@ cs_advection_field_create_fields(void)
 
     } /* Add a field attached to boundary faces */
 
-    { /* Add a field attached to cells (Always created since it's used to
-         define the numerical scheme for advection */
+    { /* Add a field attached to cells (Always created since it may be used to
+         define the numerical scheme for advection, to compute adimensional
+         numbers or to postprocess the advection field */
 
       if (adv->type == CS_ADVECTION_FIELD_NAVSTO) {
 
@@ -945,7 +904,7 @@ cs_advection_field_create_fields(void)
         cs_field_t  *fld = cs_field_create(field_name,
                                            field_mask,
                                            CS_MESH_LOCATION_CELLS,
-                                           3,  /* always a vector-valued field */
+                                           3, /* always a vector-valued field */
                                            has_previous);
 
         cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
@@ -2195,7 +2154,7 @@ cs_advection_field_update(cs_real_t    t_eval,
  * \param[in]      adv        pointer to the advection field struct.
  * \param[in]      diff       pointer to the diffusion property struct.
  * \param[in]      t_eval     time at which one evaluates the advection field
- * \param[in, out] peclet     pointer to an array storing Peclet number
+ * \param[in, out] peclet     pointer to an array storing the Peclet number
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2205,14 +2164,17 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
                         cs_real_t                 t_eval,
                         cs_real_t                 peclet[])
 {
+  /* Sanity checks */
+  assert(adv != NULL);
+  assert(diff != NULL);
+  assert(peclet != NULL);
+
   cs_real_t  ptymat[3][3];
   cs_real_3_t  ptydir;
   cs_nvec3_t  adv_c;
 
   const bool  pty_uniform = cs_property_is_uniform(diff);
   const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
-
-  assert(peclet != NULL);  /* Sanity check */
 
   /* Get the value of the material property at the first cell center */
   if (pty_uniform)
@@ -2224,15 +2186,15 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
     if (!pty_uniform)
       cs_property_get_cell_tensor(c_id, t_eval, diff, false, ptymat);
 
+    const cs_real_t  hc = cbrt(cdoq->cell_vol[c_id]);
+
     cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
-
-    cs_real_t  hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
-
     cs_math_33_3_product((const cs_real_t (*)[3])ptymat, adv_c.unitv, ptydir);
-
     peclet[c_id] = hc * adv_c.meas / _dp3(adv_c.unitv, ptydir);
 
   }  /* Loop on cells */
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2253,55 +2215,28 @@ cs_advection_get_courant(const cs_adv_field_t     *adv,
   const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
 
-  if (adv->cell_field_id > -1) { /* field is defined at cell centers */
+  assert(adv->cell_field_id > -1); /* field should be defined at cell centers */
 
-    const cs_field_t  *fld = cs_field_by_id(adv->cell_field_id);
+  const cs_field_t  *fld = cs_field_by_id(adv->cell_field_id);
 
-#   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-      const cs_real_t  *vel_c = fld->val + 3*c_id;
-      const cs_real_t  ovol_c = 1./cdoq->cell_vol[c_id];
+    const cs_real_t  *vel_c = fld->val + 3*c_id;
+    const cs_real_t  ovol_c = 1./cdoq->cell_vol[c_id];
 
-      cs_real_t  _courant = 0.;
-      for (cs_lnum_t  i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+    cs_real_t  _courant = 0.;
+    for (cs_lnum_t  i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
-        const cs_real_t  *f_area = cs_quant_get_face_vector_area(c2f->ids[i],
-                                                                 cdoq);
-        _courant = fmax(_courant, fabs(_dp3(f_area, vel_c)) * ovol_c);
+      const cs_real_t  *f_area = cs_quant_get_face_vector_area(c2f->ids[i],
+                                                               cdoq);
+      _courant = fmax(_courant, fabs(_dp3(f_area, vel_c)) * ovol_c);
 
-      }
-      courant[c_id] = _courant * dt_cur;
+    }
+    courant[c_id] = _courant * dt_cur;
 
-    } /* Loop on cells */
+  } /* Loop on cells */
 
-  }
-  else { /* No definition on cells available */
-
-#   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
-
-      cs_nvec3_t  adv_c;
-      cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
-
-      const cs_real_t  coef_c = adv_c.meas/cdoq->cell_vol[c_id];
-
-      cs_real_t  _courant = 0.;
-      for (cs_lnum_t  i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
-
-        const cs_real_t  *f_area = cs_quant_get_face_vector_area(c2f->ids[i],
-                                                                 cdoq);
-        _courant = fmax(_courant, fabs(_dp3(f_area, adv_c.unitv)) * coef_c);
-
-      }
-      courant[c_id] = _courant * dt_cur;
-
-    } /* Loop on cells */
-
-  }
-
-  /* Output for the listing */
-  _analyze_cell_array("courant_number", courant);
 }
 
 /*----------------------------------------------------------------------------*/

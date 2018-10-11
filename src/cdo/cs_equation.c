@@ -2406,6 +2406,56 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute and post-process Peclet number if requested
+ *
+ * \param[in]      eq       pointer to a cs_equation_t structure
+ * \param[in]      ts       pointer to a cs_time_step_t struct.
+ * \param[in, out] peclet   pointer to an array storing the resulting Peclet
+ *                          number in each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_peclet(const cs_equation_t        *eq,
+                           const cs_time_step_t       *ts,
+                           cs_real_t                   peclet[])
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
+  assert(peclet != NULL);
+
+  const cs_equation_param_t  *eqp = eq->param;
+
+  /* Check if the computation of the Peclet number is requested */
+  if (!(eqp->process_flag & CS_EQUATION_POST_PECLET))
+    return;
+
+  if (eqp->diffusion_property == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Computation of the Peclet number is requested for\n"
+              " equation %s but no diffusion property is set.\n",
+              __func__, eqp->name);
+  if (eqp->adv_field == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Computation of the Peclet number is requested for\n"
+              " equation %s but no advection field is set.\n",
+              __func__, eqp->name);
+
+  if (eq->main_ts_id > -1)    /* Activate timer statistics */
+    cs_timer_stats_start(eq->main_ts_id);
+
+  /* Compute the Peclet number in each cell */
+  cs_advection_get_peclet(eqp->adv_field,
+                          eqp->diffusion_property,
+                          ts->t_cur,
+                          peclet);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Write into the restart file additionnal arrays (not defined as
  *         fields) but useful for the checkpoint/restart process
  *
@@ -2463,11 +2513,11 @@ cs_equation_write_extra_restart(cs_restart_t   *restart)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_extra_post_all(const cs_mesh_t            *mesh,
-                           const cs_cdo_connect_t     *connect,
-                           const cs_cdo_quantities_t  *cdoq,
-                           const cs_time_step_t       *ts,
-                           double                      dt_cur)
+cs_equation_post_balance(const cs_mesh_t            *mesh,
+                         const cs_cdo_connect_t     *connect,
+                         const cs_cdo_quantities_t  *cdoq,
+                         const cs_time_step_t       *ts,
+                         double                      dt_cur)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
@@ -2477,133 +2527,123 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
 
     cs_equation_t  *eq = _equations[i];
     assert(eq != NULL); /* Sanity check */
-
-    const cs_field_t  *field = cs_field_by_id(eq->field_id);
     const cs_equation_param_t  *eqp = eq->param;
 
-    /* Cases where a post-processing is not required */
-    if (eqp->process_flag == 0)
+    /* Check if the computation of the balance is requested */
+    if (!(eqp->process_flag & CS_EQUATION_POST_BALANCE))
       continue;
 
-    if (eq->main_ts_id > -1)
+    if (eq->compute_balance != NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Balance for equation %s is requested but\n"
+                " this functionality is not available yet.\n",
+                __func__, eqp->name);
+
+    if (eq->main_ts_id > -1)    /* Activate timer statistics */
       cs_timer_stats_start(eq->main_ts_id);
 
-    /* Post-processing of a common adimensionnal quantities: the Peclet
-       number */
-    if (eqp->process_flag & CS_EQUATION_POST_PECLET) {
+    cs_equation_balance_t  *b = eq->compute_balance(eqp,
+                                                    eq->builder,
+                                                    eq->scheme_context,
+                                                    dt_cur);
 
-      char *postlabel = NULL;
-      int len = strlen(eqp->name) + 7 + 1;
-      BFT_MALLOC(postlabel, len, char);
-      sprintf(postlabel, "%s.Peclet", eqp->name);
+    char *postlabel = NULL;
+    int len = strlen(eqp->name) + 13 + 1;
+    BFT_MALLOC(postlabel, len, char);
 
-      /* Compute the Peclet number in each cell */
-      double  *peclet = cs_equation_get_tmpbuf();
-      cs_advection_get_peclet(eqp->adv_field,
-                              eqp->diffusion_property,
-                              ts->t_cur,
-                              peclet);
+    switch (eqp->space_scheme) {
 
-      /* Post-process */
-      cs_post_write_var(CS_POST_MESH_VOLUME,
-                        CS_POST_WRITER_ALL_ASSOCIATED,
-                        postlabel,
-                        1,
-                        true,           // interlace
-                        true,           // true = original mesh
-                        CS_POST_TYPE_cs_real_t,
-                        peclet,         // values on cells
-                        NULL,           // values at internal faces
-                        NULL,           // values at border faces
-                        ts);            // time step management struct.
+    case CS_SPACE_SCHEME_CDOVB:
+      {
+        sprintf(postlabel, "%s.Balance", eqp->name);
 
-      BFT_FREE(postlabel);
+        cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                                 CS_POST_WRITER_DEFAULT,
+                                 postlabel,
+                                 eqp->dim,
+                                 false,
+                                 false,
+                                 CS_POST_TYPE_cs_real_t,
+                                 b->balance,
+                                 ts);
 
-    } // Peclet number
+        if (cs_equation_param_has_diffusion(eqp))
+          _post_balance_at_vertices(eq, ts, "Diff", postlabel,
+                                    b->diffusion_term);
 
-    /* Post-processing of a common adimensionnal quantities: the Peclet
-       number */
-    if (eqp->process_flag & CS_EQUATION_POST_BALANCE) {
-      if (eq->compute_balance != NULL) {
+        if (cs_equation_param_has_convection(eqp))
+          _post_balance_at_vertices(eq, ts, "Adv", postlabel,
+                                    b->advection_term);
 
-        cs_equation_balance_t  *b = eq->compute_balance(eqp,
-                                                        eq->builder,
-                                                        eq->scheme_context,
-                                                        dt_cur);
+        if (cs_equation_param_has_time(eqp))
+          _post_balance_at_vertices(eq, ts, "Time", postlabel,
+                                    b->unsteady_term);
 
-        char *postlabel = NULL;
-        int len = strlen(eqp->name) + 13 + 1;
-        BFT_MALLOC(postlabel, len, char);
+        if (cs_equation_param_has_reaction(eqp))
+          _post_balance_at_vertices(eq, ts, "Reac", postlabel,
+                                    b->reaction_term);
 
-        switch (eqp->space_scheme) {
+        if (cs_equation_param_has_sourceterm(eqp))
+          _post_balance_at_vertices(eq, ts, "Src", postlabel,
+                                    b->source_term);
 
-        case CS_SPACE_SCHEME_CDOVB:
-          {
-            sprintf(postlabel, "%s.Balance", eqp->name);
+      }
+      break;
 
-            cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                                     CS_POST_WRITER_DEFAULT,
-                                     postlabel,
-                                     eqp->dim,
-                                     false,
-                                     false,
-                                     CS_POST_TYPE_cs_real_t,
-                                     b->balance,
-                                     ts);
+    default:
+      break;
+    }
 
-            if (cs_equation_param_has_diffusion(eqp))
-              _post_balance_at_vertices(eq, ts, "Diff", postlabel,
-                                        b->diffusion_term);
+    sprintf(postlabel, "%s.BdyFlux", eqp->name);
 
-            if (cs_equation_param_has_convection(eqp))
-              _post_balance_at_vertices(eq, ts, "Adv", postlabel,
-                                        b->advection_term);
+    /* Post-process the boundary fluxes (diffusive and convective) */
+    cs_post_write_var(CS_POST_MESH_BOUNDARY,
+                      CS_POST_WRITER_DEFAULT,
+                      postlabel,
+                      1,
+                      true,             // interlace
+                      true,             // true = original mesh
+                      CS_POST_TYPE_cs_real_t,
+                      NULL,             // values on cells
+                      NULL,             // values at internal faces
+                      b->boundary_term, // values at border faces
+                      ts);              // time step management struct.
 
-            if (cs_equation_param_has_time(eqp))
-              _post_balance_at_vertices(eq, ts, "Time", postlabel,
-                                        b->unsteady_term);
+    /* Free buffers */
+    BFT_FREE(postlabel);
+    cs_equation_balance_destroy(&b);
 
-            if (cs_equation_param_has_reaction(eqp))
-              _post_balance_at_vertices(eq, ts, "Reac", postlabel,
-                                        b->reaction_term);
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
 
-            if (cs_equation_param_has_sourceterm(eqp))
-              _post_balance_at_vertices(eq, ts, "Src", postlabel,
-                                        b->source_term);
+  } /* Loop on equations */
 
-          }
-          break;
+}
 
-        default:
-          break;
-        }
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations related to equations according to the
+ *         type of numerical scheme (for the space discretization)
+ */
+/*----------------------------------------------------------------------------*/
 
-        sprintf(postlabel, "%s.BdyFlux", eqp->name);
+void
+cs_equation_extra_post(void)
+{
+  for (int i = 0; i < _n_equations; i++) {
 
-        /* Post-process the boundary fluxes (diffusive and convective) */
-        cs_post_write_var(CS_POST_MESH_BOUNDARY,
-                          CS_POST_WRITER_DEFAULT,
-                          postlabel,
-                          1,
-                          true,             // interlace
-                          true,             // true = original mesh
-                          CS_POST_TYPE_cs_real_t,
-                          NULL,             // values on cells
-                          NULL,             // values at internal faces
-                          b->boundary_term, // values at border faces
-                          ts);              // time step management struct.
+    cs_equation_t  *eq = _equations[i];
+    assert(eq != NULL); /* Sanity check */
+    const cs_equation_param_t  *eqp = eq->param;
 
-        /* Free buffers */
-        BFT_FREE(postlabel);
-        cs_equation_balance_destroy(&b);
-
-      } /* compute_balance is defined */
-    } /* do the analysis */
+    if (eq->main_ts_id > -1)    /* Activate timer statistics */
+      cs_timer_stats_start(eq->main_ts_id);
+    assert(eq->postprocess != NULL);
 
     /* Perform post-processing specific to a numerical scheme */
     eq->postprocess(eqp->name,
-                    field,
-                    eq->param,
+                    cs_field_by_id(eq->field_id),
+                    eqp,
                     eq->builder,
                     eq->scheme_context);
 
@@ -2611,7 +2651,6 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
       cs_timer_stats_stop(eq->main_ts_id);
 
   } /* Loop on equations */
-
 }
 
 /*----------------------------------------------------------------------------*/

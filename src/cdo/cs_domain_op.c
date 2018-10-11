@@ -43,14 +43,18 @@
 #include <bft_mem.h>
 
 #include "cs_advection_field.h"
+#include "cs_array_reduce.h"
 #include "cs_cdo_quantities.h"
 #include "cs_equation.h"
+#include "cs_equation_param.h"
 #include "cs_gwf.h"
+#include "cs_log.h"
 #include "cs_log_iteration.h"
+#include "cs_navsto_system.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_property.h"
 #include "cs_prototypes.h"
-#include "cs_navsto_system.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
 #include "cs_walldistance.h"
@@ -79,79 +83,230 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined post-processing output for advection fields.
+ * \brief  Check if one needs to compute at least one adimensional number
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_needs_adimensional_numbers(void)
+{
+  bool is_needed = false;
+
+  /* Check for the Courant number */
+  int n_adv_fields = cs_advection_field_get_n_fields();
+  for (int adv_id = 0; adv_id < n_adv_fields; adv_id++) {
+    const cs_adv_field_t  *adv = cs_advection_field_by_id(adv_id);
+    if (adv->flag & CS_ADVECTION_FIELD_POST_COURANT)
+      return true;
+  }
+
+  /* Check for the Peclet number */
+  int n_equations = cs_equation_get_n_equations();
+  for (int i = 0; i < n_equations; i++) {
+    cs_equation_t  *eq = cs_equation_by_id(i);
+    cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+    if (eqp->process_flag & CS_EQUATION_POST_PECLET)
+      return true;
+  }
+
+  /* Check for the Fourier number */
+  int  n_properties = cs_property_get_n_properties();
+  for (int i = 0; i < n_properties; i++) {
+    const cs_property_t  *pty = cs_property_by_id(i);
+    if (pty->process_flag & CS_PROPERTY_POST_FOURIER)
+      return true;
+  }
+
+  return is_needed;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute very simple statistic for an array with values located
+ *         at cells (scalar-valued)
+ *
+ * \param[in]  cdoq       pointer to a cs_cdo_quantities_t struct.
+ * \param[in]  basename   label for output in the listing
+ * \param[in]  array      pointer to the array to analyze
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_analyze_cell_array(const cs_cdo_quantities_t   *cdoq,
+                    const char                   basename[],
+                    const cs_real_t              array[])
+{
+  cs_real_t  _min = array[0], _max = array[0], _sum = 0.;
+
+  cs_array_reduce_simple_stats_l(cdoq->n_cells, 1, NULL, array,
+                                 &_min, &_max, &_sum);
+
+  /* Parallel treatment */
+  cs_real_t  min, max, sum;
+  if (cs_glob_n_ranks > 1) {
+
+    cs_real_t  minmax[2] = {-_min, _max};
+
+    cs_parall_max(2, CS_REAL_TYPE, minmax);
+    min = -minmax[0], max = minmax[1];
+
+    sum = _sum;
+    cs_parall_sum(1, CS_REAL_TYPE, &sum);
+
+  }
+  else
+    min = _min, max = _max, sum = _sum;
+
+  cs_log_printf(CS_LOG_DEFAULT, "s- %20s  % -6.4e % -6.4e % -6.4e\n",
+                basename, min, max, sum/cdoq->n_cells);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined Courant number post-processing for advection fields.
  *
  * \param[in]  adv         pointer to a cs_adv_field_t structure
- * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  cdoq        pointer to a cs_cdo_quantities_t struct.
  * \param[in]  time_step   pointer to a cs_time_step_t struct.
  * \param[in]  dt_cur      value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_post_advection_field(const cs_adv_field_t       *adv,
-                      const cs_cdo_quantities_t  *quant,
-                      const cs_time_step_t       *time_step,
-                      double                      dt_cur)
+_post_courant_number(const cs_adv_field_t       *adv,
+                     const cs_cdo_quantities_t  *cdoq,
+                     const cs_time_step_t       *time_step,
+                     double                      dt_cur)
 {
   if (adv == NULL)
     return;
-  if (adv->flag == 0)
+  if (!(adv->flag & CS_ADVECTION_FIELD_POST_COURANT))
     return;
 
-  const bool post_courant =
-    (adv->flag & CS_ADVECTION_FIELD_POST_COURANT) ? true : false;
+  int  len = strlen(adv->name) + 8 + 1;
+  char  *label = NULL;
+  BFT_MALLOC(label, len, char);
+  sprintf(label, "%s.Courant", adv->name);
 
-  if (post_courant) { /* Compute and postprocess the Courant number */
+  cs_real_t  *courant = cs_equation_get_tmpbuf();
 
-    double  hc;
-    cs_nvec3_t  adv_c;
+  cs_advection_get_courant(adv, dt_cur, courant);
 
-    char  *label = NULL;
-    double  *courant = NULL;
-    int  len = strlen(adv->name) + 8 + 1;
+  /* Brief output for the listing */
+  _analyze_cell_array(cdoq, label, courant);
 
-    BFT_MALLOC(courant, quant->n_cells, double);
-    BFT_MALLOC(label, len, char);
-    sprintf(label, "%s.Courant", adv->name);
+  /* Postprocessing */
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_ALL_ASSOCIATED,
+                    label,
+                    1,
+                    true,       /* interlaced? */
+                    true,       /* true = original mesh */
+                    CS_POST_TYPE_cs_real_t,
+                    courant,    /* values on cells */
+                    NULL, NULL, /* values at internal,border faces */
+                    time_step); /* time step management struct. */
 
-    if (adv->cell_field_id > -1) { /* field is defined at cell centers */
+  BFT_FREE(label);
+}
 
-      cs_field_t  *fld = cs_field_by_id(adv->cell_field_id);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined Peclet number post-processing for an equation
+ *
+ * \param[in]  eq          pointer to a cs_equation_t structure
+ * \param[in]  cdoq        pointer to a cs_cdo_quantities_t struct.
+ * \param[in]  time_step   pointer to a cs_time_step_t struct.
+ */
+/*----------------------------------------------------------------------------*/
 
-      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-        cs_nvec3(fld->val + 3*c_id, &adv_c);
-        hc = cbrt(quant->cell_vol[c_id]);
-        courant[c_id] = dt_cur * adv_c.meas / hc;
-      }
+static void
+_post_peclet_number(const cs_equation_t        *eq,
+                    const cs_cdo_quantities_t  *cdoq,
+                    const cs_time_step_t       *time_step)
+{
+  if (eq == NULL)
+    return;
 
-    }
-    else {
+  const cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
-      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-        cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
-        hc = cbrt(quant->cell_vol[c_id]);
-        courant[c_id] = dt_cur * adv_c.meas / hc;
-      }
+  assert(eqp != NULL);
+  if (!(eqp->process_flag & CS_EQUATION_POST_PECLET))
+    return;
 
-    }
+  int  len = strlen(eqp->name) + 8 + 1;
+  char  *label = NULL;
+  BFT_MALLOC(label, len, char);
+  sprintf(label, "%s.Peclet", eqp->name);
 
-    cs_post_write_var(CS_POST_MESH_VOLUME,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      label,
-                      1,
-                      true,           // interlace
-                      true,           // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      courant,        // values on cells
-                      NULL,           // values at internal faces
-                      NULL,           // values at border faces
-                      time_step);     // time step management struct.
+  cs_real_t  *peclet = cs_equation_get_tmpbuf();
+  cs_equation_compute_peclet(eq, time_step, peclet);
 
-    BFT_FREE(label);
-    BFT_FREE(courant);
-  }
+  /* Brief output for the listing */
+  _analyze_cell_array(cdoq, label, peclet);
 
+  /* Postprocessing */
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_ALL_ASSOCIATED,
+                    label,
+                    1,
+                    true,       /* interlaced? */
+                    true,       /* true = original mesh */
+                    CS_POST_TYPE_cs_real_t,
+                    peclet,    /* values on cells */
+                    NULL, NULL, /* values at internal,border faces */
+                    time_step); /* time step management struct. */
+
+  BFT_FREE(label);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined Fourier number post-processing for a property
+ *
+ * \param[in]  pty         pointer to a cs_property_t structure
+ * \param[in]  cdoq        pointer to a cs_cdo_quantities_t struct.
+ * \param[in]  time_step   pointer to a cs_time_step_t struct.
+ * \param[in]  dt_cur      value of the current time step
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_post_fourier_number(const cs_property_t        *pty,
+                     const cs_cdo_quantities_t  *cdoq,
+                     const cs_time_step_t       *time_step,
+                     double                      dt_cur)
+{
+  if (pty == NULL)
+    return;
+  if (!(pty->process_flag & CS_PROPERTY_POST_FOURIER))
+    return;
+
+  cs_real_t  *fourier = cs_equation_get_tmpbuf();
+
+  cs_property_get_fourier(pty, time_step->t_cur, dt_cur, fourier);
+
+  int  len = strlen(pty->name) + 8 + 1;
+  char  *label = NULL;
+  BFT_MALLOC(label, len, char);
+  sprintf(label, "%s.Fourier", pty->name);
+
+  /* Brief output for the listing */
+  _analyze_cell_array(cdoq, label, fourier);
+
+  /* Postprocessing */
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_ALL_ASSOCIATED,
+                    label,
+                    1,
+                    true,       /* interlaced? */
+                    true,       /* true = original mesh */
+                    CS_POST_TYPE_cs_real_t,
+                    fourier,    /* values on cells */
+                    NULL, NULL, /* values at internal,border faces */
+                    time_step); /* time step management struct. */
+
+  BFT_FREE(label);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -199,11 +354,9 @@ _domain_post(void                      *input,
   CS_UNUSED(cell_ids);
   CS_UNUSED(i_face_ids);
   CS_UNUSED(b_face_ids);
+  CS_UNUSED(time_step);
 
   if (input == NULL)
-    return;
-
-  if (mesh_id != -1) /* Post-processing only on the generic volume mesh */
     return;
 
   cs_domain_t  *d = (cs_domain_t *)input;
@@ -211,23 +364,11 @@ _domain_post(void                      *input,
   if (cs_domain_get_cdo_mode(d) == CS_DOMAIN_CDO_MODE_OFF)
     return;
 
-  assert(time_step == d->time_step);
+  if (mesh_id != -1) /* Post-processing only on the generic volume mesh */
+    return;
 
-  /* Post-processing related to advection fields */
-  int n_adv_fields = cs_advection_field_get_n_fields();
-  for (int adv_id = 0; adv_id < n_adv_fields; adv_id++)
-    _post_advection_field(cs_advection_field_by_id(adv_id),
-                          d->cdo_quantities,
-                          time_step,
-                          d->dt_cur);
-
-  /* Post-processing related to equations */
-  cs_equation_extra_post_all(d->mesh,
-                             d->connect,
-                             d->cdo_quantities,
-                             time_step,
-                             d->dt_cur);
-
+  /* Additional extra-operation(s) specific to a numerical scheme */
+  cs_equation_extra_post();
 }
 
 /*============================================================================
@@ -278,11 +419,58 @@ cs_domain_post(cs_domain_t  *domain)
   cs_user_cdo_extra_op(domain);
 
   /* Log output */
-  if (cs_domain_needs_log(domain))
+  if (cs_domain_needs_log(domain)) {
+
+    /* Basic statistic related to variables */
     cs_log_iteration();
 
-  /* Post-processing */
-  /* =============== */
+    /* Post-processing */
+    /* =============== */
+
+    /* Post-processing of adimensional numbers */
+    if (_needs_adimensional_numbers()) {
+
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " ------------------------------------------------------------\n");
+      cs_log_printf(CS_LOG_DEFAULT, "s- %20s %10s %10s %10s\n",
+                    "Adim. number", "min", "max", "mean");
+
+      /* 1. Courant numbers */
+      int n_adv_fields = cs_advection_field_get_n_fields();
+      for (int adv_id = 0; adv_id < n_adv_fields; adv_id++)
+        _post_courant_number(cs_advection_field_by_id(adv_id),
+                             domain->cdo_quantities,
+                             domain->time_step,
+                             domain->dt_cur);
+
+      /* 2. Peclet numbers */
+      int n_equations = cs_equation_get_n_equations();
+      for (int i = 0; i < n_equations; i++)
+        _post_peclet_number(cs_equation_by_id(i),
+                            domain->cdo_quantities,
+                            domain->time_step);
+
+      /* 3. Fourier numbers */
+      int  n_properties = cs_property_get_n_properties();
+      for (int i = 0; i < n_properties; i++)
+        _post_fourier_number(cs_property_by_id(i),
+                             domain->cdo_quantities,
+                             domain->time_step,
+                             domain->dt_cur);
+
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " ------------------------------------------------------------\n");
+
+    } /* Needs to compute adimensional numbers */
+
+    /* 4. Equation balance */
+    cs_equation_post_balance(domain->mesh,
+                             domain->connect,
+                             domain->cdo_quantities,
+                             domain->time_step,
+                             domain->dt_cur);
+
+  } /* Needs a new log */
 
   /* Predefined extra-operations related to
      - the domain (advection fields and properties),
