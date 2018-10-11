@@ -227,7 +227,7 @@ double precision, dimension(:), pointer :: coefb_nu, coefbf_nu
 double precision, dimension(:,:), pointer :: coefa_rij, coefaf_rij, coefad_rij
 double precision, dimension(:,:,:), pointer :: coefb_rij, coefbf_rij, coefbd_rij
 
-double precision  pimp_lam, pimp_turb, gammap
+double precision  pimp_lam, pimp_turb, gammap, fep, dep, falpg, falpv, ypsd
 
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
@@ -1088,8 +1088,9 @@ do ifac = 1, nfabor
           kk = 3
         endif
 
-        ! LRR and the Standard SGG.
-        if ((iturb.eq.30).or.(iturb.eq.31).and.iuntur.eq.1) then
+        ! LRR and the Standard SGG or EB-RSM + wall functions
+        if (((iturb.eq.30).or.(iturb.eq.31).and.iuntur.eq.1).or. &
+             (iturb.eq.32.and.iwallf.ne.0.and.yplus.gt.epzero)) then
 
           if (irijco.eq.1) then
             coefa_rij(isou, ifac) = - (  eloglo(jj,1)*eloglo(kk,2)         &
@@ -1304,13 +1305,31 @@ do ifac = 1, nfabor
         endif
 
       elseif (iturb.eq.32) then
-        ! Use k at I'
-        xkip = 0.5d0*(rijipb(ifac,1)+rijipb(ifac,2)+rijipb(ifac,3))
 
-        ! Dirichlet Boundary Condition
-        !-----------------------------
+        if(iwallf.ne.0) then
+          ! Use k at I'
+          xkip = 0.5d0*(rijipb(ifac,1)+rijipb(ifac,2)+rijipb(ifac,3))
 
-        pimp = 2.d0*visclc*xkip/(distbf**2*romc)
+          pimp_lam = 2.d0*visclc*xkip/(distbf**2*romc)
+
+          if (yplus > epzero) then
+            pimp_turb = 5.d0*uk**4*romc/        &
+                        (xkappa*visclc*(yplus+dplus))
+
+            ! Blending between wall and homogeneous layer
+            ! from JF Wald PhD (2016)
+            fep       = exp(-(yplus/4.d0)**1.5d0)
+            dep       = 1.d0- exp(-(yplus/9.d0)**2.1d0)
+            pimp      = fep*pimp_lam + (1.d0-fep)*dep*pimp_turb
+          else
+            pimp = pimp_lam
+          end if
+
+        else
+          ! Use k at I'
+          xkip = 0.5d0*(rijipb(ifac,1)+rijipb(ifac,2)+rijipb(ifac,3))
+          pimp = 2.d0*visclc*xkip/(distbf**2*romc)
+        end if
 
         call set_dirichlet_scalar &
              !====================
@@ -1322,8 +1341,19 @@ do ifac = 1, nfabor
 
         ! Dirichlet Boundary Condition
         !-----------------------------
+        if(iwallf.ne.0) then
 
-        pimp = 0.d0
+          if(yplus > epzero) then
+            ypsd  = yplus /2.d0
+            falpg = 16.d0 /(16.d0+4.d-2*ypsd)**2 * exp(- ypsd / (16.d0 + 4.d-2*ypsd) )
+            falpv = 1.d0 - exp(- yplus / (16.d0 + 4.d-2*yplus) )
+            pimp  = falpv - yplus*falpg
+          else
+            pimp = 0.d0
+          end if
+        else
+          pimp = 0.d0
+        end if
 
         hint = 1.d0/distbf
 
