@@ -156,19 +156,18 @@ cs_cdovcb_scaleq_free_context(void   *data);
  *
  * \param[in]      eqp            pointer to a cs_equation_param_t structure
  * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to cs_cdovcb_scaleq_t structure
+ * \param[in, out] context        pointer to cs_cdovcb_scaleq_t structure
  * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
  * \param[in, out] system_rhs     pointer of pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_initialize_system(const cs_equation_param_t   *eqp,
-                                   cs_equation_builder_t       *eqb,
-                                   void                        *data,
-                                   cs_matrix_t               **system_matrix,
-                                   cs_real_t                 **system_rhs);
-
+cs_cdovcb_scaleq_initialize_system(const cs_equation_param_t    *eqp,
+                                   cs_equation_builder_t        *eqb,
+                                   void                         *context,
+                                   cs_matrix_t                **system_matrix,
+                                   cs_real_t                  **system_rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!

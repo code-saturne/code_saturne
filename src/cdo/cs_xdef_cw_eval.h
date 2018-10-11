@@ -594,7 +594,7 @@ cs_xdef_cw_eval_tensor_face_avg_by_array(const cs_cell_mesh_t     *cm,
 /*!
  * \brief  Integrate an analytic function over a face
  *
- * \param[in]      cm       pointer to \ref a cs_cell_mesh_t structure
+ * \param[in]      cm       pointer to \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   time at which the function is evaluated
  * \param[in]      ana      analytic function to integrate
  * \param[in]      input    pointer to an input structure

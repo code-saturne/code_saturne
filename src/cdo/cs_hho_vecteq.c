@@ -600,7 +600,7 @@ _condense_and_store(const cs_adjacency_t    *c2f,
  *
  * \param[in] scheme_flag  flag to identify which kind of numerical scheme is
  *                         requested to solve the computational domain
- * \param[in] quant        pointer to a \ref cs_cdi_quantities_t struct.
+ * \param[in] quant        pointer to a \ref cs_cdo_quantities_t struct.
  * \param[in] connect      pointer to a \ref cs_cdo_connect_t struct.
  * \param[in] time_step    pointer to a \ref cs_time_step_t struct.
  * \param[in] ms0          pointer to a \ref cs_matrix_structure_t struct. (P0)

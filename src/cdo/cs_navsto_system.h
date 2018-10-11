@@ -196,14 +196,14 @@ typedef struct {
    * @{
    */
 
-  /*! \var init
+  /*! \var init_scheme_context
    *  Pointer of functions related to the initialization of the context
    *  structure related to a given discretization scheme for the resolution
    *  of the Navier-Stokes system
    */
   cs_navsto_init_scheme_context_t   *init_scheme_context;
 
-  /*! \var free
+  /*! \var free_scheme_context
    *  Pointer of functions related to the destruction of the context
    *  structure related to a given discretization scheme for the resolution
    *  of the Navier-Stokes system

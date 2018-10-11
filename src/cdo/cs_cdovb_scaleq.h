@@ -272,7 +272,7 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
  * \param[in, out] rhs        right-hand side
  * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */
@@ -284,7 +284,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
                              double                      dt_cur,
                              const cs_equation_param_t  *eqp,
                              cs_equation_builder_t      *eqb,
-                             void                       *data,
+                             void                       *context,
                              cs_real_t                  *rhs,
                              cs_matrix_t                *matrix);
 
