@@ -43,12 +43,14 @@
 
 #include <bft_mem.h>
 
+#include "cs_array_reduce.h"
 #include "cs_boundary_zone.h"
 #include "cs_evaluate.h"
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
+#include "cs_parall.h"
 #include "cs_param_cdo.h"
 #include "cs_reco.h"
 #include "cs_volume_zone.h"
@@ -169,6 +171,46 @@ _fill_cw_uniform_boundary_flux(const cs_cell_mesh_t   *cm,
   } /* Loop on face edges */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute very simple statistic for an array with values located
+ *         at cells (scalar-valued)
+ *
+ * \param[in]  basename
+ * \param[in]  array      pointer to the array to analyze
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_analyze_cell_array(const char         basename[],
+                    const cs_real_t   *array)
+{
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+
+  cs_real_t  _min = array[0], _max = array[0], _sum = 0.;
+
+  cs_array_reduce_simple_stats_l(cdoq->n_cells, 1, NULL, array,
+                                 &_min, &_max, &_sum);
+
+  /* Parallel treatment */
+  cs_real_t  min, max, sum;
+  if (cs_glob_n_ranks > 1) {
+
+    cs_real_t  minmax[2] = {-_min, _max};
+
+    cs_parall_max(2, CS_REAL_TYPE, minmax);
+    min = -minmax[0], max = minmax[1];
+
+    sum = _sum;
+    cs_parall_sum(1, CS_REAL_TYPE, &sum);
+
+  }
+  else
+    min = _min, max = _max, sum = _sum;
+
+  cs_log_printf(CS_LOG_DEFAULT, "-s- %15s  % -6.4e % -6.4e % -6.4e\n",
+                basename, min, max, sum/cdoq->n_cells);
+}
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -2192,6 +2234,74 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
 
   }  /* Loop on cells */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the Courant number in each cell
+ *
+ * \param[in]      adv        pointer to the advection field struct.
+ * \param[in]      dt_cur     current time step
+ * \param[in, out] courant    pointer to an array storing the Courant number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_get_courant(const cs_adv_field_t     *adv,
+                         cs_real_t                 dt_cur,
+                         cs_real_t                 courant[])
+{
+  assert(courant != NULL);  /* Sanity check */
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
+
+  if (adv->cell_field_id > -1) { /* field is defined at cell centers */
+
+    const cs_field_t  *fld = cs_field_by_id(adv->cell_field_id);
+
+#   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+      const cs_real_t  *vel_c = fld->val + 3*c_id;
+      const cs_real_t  ovol_c = 1./cdoq->cell_vol[c_id];
+
+      cs_real_t  _courant = 0.;
+      for (cs_lnum_t  i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+
+        const cs_real_t  *f_area = cs_quant_get_face_vector_area(c2f->ids[i],
+                                                                 cdoq);
+        _courant = fmax(_courant, fabs(_dp3(f_area, vel_c)) * ovol_c);
+
+      }
+      courant[c_id] = _courant * dt_cur;
+
+    } /* Loop on cells */
+
+  }
+  else { /* No definition on cells available */
+
+#   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+      cs_nvec3_t  adv_c;
+      cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
+
+      const cs_real_t  coef_c = adv_c.meas/cdoq->cell_vol[c_id];
+
+      cs_real_t  _courant = 0.;
+      for (cs_lnum_t  i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+
+        const cs_real_t  *f_area = cs_quant_get_face_vector_area(c2f->ids[i],
+                                                                 cdoq);
+        _courant = fmax(_courant, fabs(_dp3(f_area, adv_c.unitv)) * coef_c);
+
+      }
+      courant[c_id] = _courant * dt_cur;
+
+    } /* Loop on cells */
+
+  }
+
+  /* Output for the listing */
+  _analyze_cell_array("courant_number", courant);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -715,6 +715,21 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the Courant number in each cell
+ *
+ * \param[in]      adv        pointer to the advection field struct.
+ * \param[in]      dt_cur     current time step
+ * \param[in, out] courant    pointer to an array storing the Courant number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_get_courant(const cs_adv_field_t     *adv,
+                         cs_real_t                 dt_cur,
+                         cs_real_t                 courant[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the divergence of the advection field at vertices
  *          Useful for CDO Vertex-based schemes
  *
