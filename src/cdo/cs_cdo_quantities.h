@@ -75,10 +75,10 @@ typedef struct {
 
   /* Measure is either a volume for cells, a surface for faces or a length
      for edges */
-  double   meas_min;  // Min. value of the entity measure
-  double   meas_max;  // Max. value of the entity measure
-  double   h_min;     // Estimation of the min. value of the diameter
-  double   h_max;     // Estimation of the max. value of the diameter
+  double   meas_min;  /* Min. value of the entity measure */
+  double   meas_max;  /* Max. value of the entity measure */
+  double   h_min;     /* Estimation of the min. value of the diameter */
+  double   h_max;     /* Estimation of the max. value of the diameter */
 
 } cs_quant_info_t;
 
@@ -112,15 +112,15 @@ typedef struct { /* Specific mesh quantities */
   /* Face-based quantities */
   /* ===================== */
 
-  cs_lnum_t         n_i_faces;      // Local number of interior faces
-  const cs_real_t  *i_face_normal;  // Shared with cs_mesh_quantities_t
-  const cs_real_t  *i_face_center;  // Shared with cs_mesh_quantities_t
-  const cs_real_t  *i_face_surf;    // Shared with cs_mesh_quantities_t
+  cs_lnum_t         n_i_faces;      /* Local number of interior faces */
+  const cs_real_t  *i_face_normal;  /* Shared with cs_mesh_quantities_t */
+  const cs_real_t  *i_face_center;  /* Shared with cs_mesh_quantities_t */
+  const cs_real_t  *i_face_surf;    /* Shared with cs_mesh_quantities_t */
 
-  cs_lnum_t         n_b_faces;      // Local number of border faces
-  const cs_real_t  *b_face_normal;  // Shared with cs_mesh_quantities_t
-  const cs_real_t  *b_face_center;  // Shared with cs_mesh_quantities_t
-  const cs_real_t  *b_face_surf;    // Shared with cs_mesh_quantities_t
+  cs_lnum_t         n_b_faces;      /* Local number of border faces */
+  const cs_real_t  *b_face_normal;  /* Shared with cs_mesh_quantities_t */
+  const cs_real_t  *b_face_center;  /* Shared with cs_mesh_quantities_t */
+  const cs_real_t  *b_face_surf;    /* Shared with cs_mesh_quantities_t */
 
   cs_lnum_t         n_faces;        /* n_i_faces + n_b_faces */
   cs_gnum_t         n_g_faces;      /* Global number of faces */
@@ -294,18 +294,25 @@ cs_cdo_quantities_compute_wvf(const cs_cdo_connect_t       *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a cs_quant_t structure for a primal face (interior or border)
+ * \brief Retrieve the face vector which the face_area * face_normal for a
+ *        primal face (interior or border)
  *
  * \param[in]  f_id     id related to the face (f_id > n_i_face -> border face)
  * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
  *
- * \return a initialize structure
+ * \return a pointer to the face vector
  */
 /*----------------------------------------------------------------------------*/
 
-cs_quant_t
-cs_quant_set_face(cs_lnum_t                    f_id,
-                  const cs_cdo_quantities_t   *cdoq);
+inline static const cs_real_t *
+cs_quant_get_face_vector_area(cs_lnum_t                    f_id,
+                              const cs_cdo_quantities_t   *cdoq)
+{
+  if (f_id < cdoq->n_i_faces)   /* Interior face */
+    return cdoq->i_face_normal + 3*f_id;
+  else                          /* Border face */
+    return cdoq->b_face_normal + 3*(f_id - cdoq->n_i_faces);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -319,15 +326,29 @@ cs_quant_set_face(cs_lnum_t                    f_id,
 /*----------------------------------------------------------------------------*/
 
 inline static const cs_real_t *
-cs_quant_set_face_center(cs_lnum_t                    f_id,
+cs_quant_get_face_center(cs_lnum_t                    f_id,
                          const cs_cdo_quantities_t   *cdoq)
 {
-  const cs_lnum_t  bf_id = f_id - cdoq->n_i_faces;
-  if (bf_id > -1)  // Border face
-    return cdoq->b_face_center + 3*bf_id;
-  else             // Interior face
+  if (f_id < cdoq->n_i_faces)   /* Interior face */
     return cdoq->i_face_center + 3*f_id;
+  else                          /* Border face */
+    return cdoq->b_face_center + 3*(f_id - cdoq->n_i_faces);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a cs_quant_t structure for a primal face (interior or border)
+ *
+ * \param[in]  f_id     id related to the face (f_id > n_i_face -> border face)
+ * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
+ *
+ * \return a initialize structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_quant_t
+cs_quant_set_face(cs_lnum_t                    f_id,
+                  const cs_cdo_quantities_t   *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -394,7 +394,7 @@ _dcsd_by_analytic(cs_real_t                        time_eval,
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
       const cs_lnum_t  f_id = c2f->ids[i];
-      const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
+      const cs_real_t  *xf = cs_quant_get_face_center(f_id, quant);
 
       for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
@@ -459,7 +459,7 @@ _dcvd_by_analytic(cs_real_t                        time_eval,
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
       const cs_lnum_t  f_id = c2f->ids[i];
-      const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
+      const cs_real_t  *xf = cs_quant_get_face_center(f_id, quant);
 
       for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
@@ -1153,7 +1153,7 @@ _pfp_by_analytic(cs_real_t              time_eval,
 
       cs_lnum_t  f_id = c2f->ids[j];
       if (todo[f_id]) {
-        const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
+        const cs_real_t  *xf = cs_quant_get_face_center(f_id, quant);
         ana(time_eval, 1, NULL, xf, false,  input, values + dim*f_id);
         todo[f_id] = false;
       }

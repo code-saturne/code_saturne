@@ -754,7 +754,7 @@ _update_pr_div_rhs(const cs_property_t          *relax,
                              CS_CDO_BC_DIRICHLET)))
         continue;
 
-      const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
+      const cs_nvec3_t pfq = cs_quant_set_face_nvec(f_id, quant);
 
       /* Manually computing the divergence */
       /* No divide by volume since it is then integrated */
@@ -762,11 +762,11 @@ _update_pr_div_rhs(const cs_property_t          *relax,
       cs_real_t  *_rhs = rhs + 3*f_id;
 
       /* Update the RHS */
-#         pragma omp atomic
+#     pragma omp atomic
       _rhs[0] -= ifdv * pfq.unitv[0];
-#         pragma omp atomic
+#     pragma omp atomic
       _rhs[1] -= ifdv * pfq.unitv[1];
-#         pragma omp atomic
+#     pragma omp atomic
       _rhs[2] -= ifdv * pfq.unitv[2];
 
     } /* Loop on cell faces */

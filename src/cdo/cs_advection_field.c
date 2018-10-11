@@ -1398,8 +1398,8 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
         cs_nvec3(constant_val, &nvec);
         for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-          const cs_quant_t  qf = cs_quant_set_face(n_i_faces + i, cdoq);
-          flx_values[i] = qf.meas * nvec.meas * _dp3(qf.unitv, nvec.unitv);
+          const cs_nvec3_t  fq = cs_quant_set_face_nvec(n_i_faces + i, cdoq);
+          flx_values[i] = fq.meas * nvec.meas * _dp3(fq.unitv, nvec.unitv);
         }
 
       }
@@ -1929,11 +1929,11 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
         /* Two triangles composing the dual face inside a cell */
         const short int  f0 = cm->e2f_ids[2*e];
         const cs_nvec3_t  sef0 = cm->sefc[2*e];
-        const cs_quant_t  qf0 = cm->face[f0];
+        const cs_quant_t  fq0 = cm->face[f0];
 
         const short int  f1 = cm->e2f_ids[2*e+1];
         const cs_nvec3_t  sef1 = cm->sefc[2*e+1];
-        const cs_quant_t  qf1 = cm->face[f1];
+        const cs_quant_t  fq1 = cm->face[f1];
 
         fluxes[e] = 0.;
         switch (qtype) {
@@ -1946,9 +1946,9 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
             for (int k = 0; k < 3; k++) {
               const double  xec = cm->xc[k] + edge.center[k];
-              xg[0][k] = xec + qf0.center[k];
+              xg[0][k] = xec + fq0.center[k];
               xg[0][k] *= cs_math_onethird;
-              xg[1][k] = xec + qf1.center[k];
+              xg[1][k] = xec + fq1.center[k];
               xg[1][k] *= cs_math_onethird;
             }
 
@@ -1969,12 +1969,12 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
             cs_real_3_t  gpts[6], eval[6];
 
             /* Two triangles composing the dual face inside a cell */
-            cs_quadrature_tria_3pts(edge.center, qf0.center, cm->xc,
+            cs_quadrature_tria_3pts(edge.center, fq0.center, cm->xc,
                                     sef0.meas,
                                     gpts, w);
 
             /* Evaluate the field at the three quadrature points */
-            cs_quadrature_tria_3pts(edge.center, qf1.center, cm->xc,
+            cs_quadrature_tria_3pts(edge.center, fq1.center, cm->xc,
                                     sef1.meas,
                                     gpts + 3, w + 1);
 
