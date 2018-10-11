@@ -120,12 +120,24 @@
 
   \subsection cs_user_parameters_h_cdo_add_user_pty Add user-defined properties with CDO/HHO schemes
 
-  The definition of an advection field allows one to handle flows with a frozen velocity field or
-  the transport of scalar quantities without solving the Navier-Stokes system.
-  The add of a new user-defined property or a new user-defined advection field
-  with CDO/HHO schemes is specified as follows:
+  The add of a new user-defined property with CDO/HHO schemes is specified as follows:
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_properties
+
+  If you want to compute the Fourier number related to a given property in an unsteady simulation
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_properties_opt
+
+  \subsection cs_user_parameters_h_cdo_add_user_adv_field Add user-defined advection field with CDO/HHO schemes
+
+  The definition of an advection field allows one to handle flows with a frozen velocity field or
+  the transport of scalar quantities without solving the Navier-Stokes system.
+  The add of a new user-defined advection field with CDO/HHO schemes is specified as follows:
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field
+
+  If you need to activate options related to advection fields, you can also specify
+
+  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field_opt
 
   \subsection cs_user_parameters_h_cdo_gwf Settings related to the groundwater flow module with CDO/HHO schemes
 
