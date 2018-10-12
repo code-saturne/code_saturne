@@ -447,7 +447,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* -------------- */
 
   eqc->get_stiffness_matrix = NULL;
-  eqc->boundary_flux_op = NULL;
+  eqc->bdy_flux_op = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
 
     switch (eqp->diffusion_hodge.algo) {
@@ -455,20 +455,20 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     case CS_PARAM_HODGE_ALGO_COST:
       eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_stiffness;
-      eqc->boundary_flux_op = cs_cdovb_diffusion_cost_flux_op;
+      eqc->bdy_flux_op = cs_cdovb_diffusion_cost_flux_op;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
       eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
-      eqc->boundary_flux_op = cs_cdovb_diffusion_cost_flux_op;
+      eqc->bdy_flux_op = cs_cdovb_diffusion_cost_flux_op;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
       eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ |
         CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_wbs_get_stiffness;
-      eqc->boundary_flux_op = cs_cdovb_diffusion_wbs_flux_op;
+      eqc->bdy_flux_op = cs_cdovb_diffusion_wbs_flux_op;
       break;
 
     default:
@@ -858,9 +858,7 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
         if (csys->has_dirichlet)
           /* Weakly enforced Dirichlet BCs for cells attached to the boundary
              csys is updated inside (matrix and rhs) */
-          eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   /* in */
-                                 eqc->boundary_flux_op,      /* function */
-                                 fm, cb, csys);              /* in/out */
+        eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
 
       } /* Boundary cell */
 

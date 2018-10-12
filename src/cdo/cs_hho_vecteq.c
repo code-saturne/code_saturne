@@ -1304,10 +1304,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
            eqp->diffusion_hidge is a dummy parameter (not used)
         */
         if (cell_flag & CS_FLAG_BOUNDARY)
-          cs_cdo_diffusion_pena_block_dirichlet(eqp->diffusion_hodge,
-                                                cm,
-                                                NULL, NULL,
-                                                cb, csys);
+          cs_cdo_diffusion_pena_block_dirichlet(eqp, cm, NULL, NULL, cb, csys);
 
       }
 

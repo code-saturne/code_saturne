@@ -198,6 +198,13 @@ typedef struct {
    * Type of enforcement for the Dirichlet boundary conditions.
    * See \ref cs_param_bc_enforce_t for more details.
    *
+   * \var bc_penalization_coeff
+   * Value of penalization coefficient used to enforce the Dirichlet boundary
+   * conditions (useful if the technique used to enforce the Dirichlet boundary
+   * condition is \ref CS_PARAM_BC_ENFORCE_PENALIZED,
+   * \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE or \ref CS_PARAM_BC_ENFORCE_WEAK_SYM)
+   * See \ref CS_EQKEY_BC_PENA_COEFF for more details.
+   *
    * \var n_bc_defs
    * Number of boundary conditions which are defined for this equation
    *
@@ -207,6 +214,7 @@ typedef struct {
 
   cs_param_bc_type_t            default_bc;
   cs_param_bc_enforce_t         enforcement;
+  cs_real_t                     bc_penalization_coeff;
   int                           n_bc_defs;
   cs_xdef_t                   **bc_defs;
 
@@ -529,6 +537,11 @@ typedef struct {
  * For HHO and CDO-Face based schemes, only the "penalization" and "algebraic"
  * technique is available up to now.
  *
+ * \var CS_EQKEY_BC_PENA_COEFF
+ * Set the value of the penalization coefficient either when "penalization" is
+ * activated or when "weak"/"weak_sym" is activated. In the former case, the
+ * default is about 1e12 and in the latter case, the default value is about 100.
+ *
  * \var CS_EQKEY_BC_QUADRATURE
  * Set the quadrature algorithm used for evaluating integral quantities on
  * faces or volumes. Available choices are:
@@ -588,6 +601,7 @@ typedef enum {
   CS_EQKEY_ADV_UPWIND_PORTION,
   CS_EQKEY_AMG_TYPE,
   CS_EQKEY_BC_ENFORCEMENT,
+  CS_EQKEY_BC_PENA_COEFF,
   CS_EQKEY_BC_QUADRATURE,
   CS_EQKEY_DOF_REDUCTION,
   CS_EQKEY_EXTRA_OP,

@@ -130,7 +130,7 @@ struct _cs_cdovcb_scaleq_t {
   /* Pointer of function to build the diffusion term */
   cs_hodge_t                      *get_stiffness_matrix;
   cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
-  cs_cdo_diffusion_flux_trace_t   *boundary_flux_op;
+  cs_cdo_diffusion_flux_trace_t   *bdy_flux_op;
   cs_flag_t                       *vtx_bc_flag;
 
   /* Pointer of function to build the advection term */
@@ -479,9 +479,7 @@ _vcb_condense_and_apply_bc(cs_real_t                      time_eval,
 
       if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
           eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-        eqc->enforce_dirichlet(eqp->diffusion_hodge, cm, /* in */
-                               eqc->boundary_flux_op,    /* function */
-                               fm, cb, csys);            /* in/out */
+        eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
 
     }
 
@@ -521,9 +519,7 @@ _vcb_condense_and_apply_bc(cs_real_t                      time_eval,
 
       /* Strongly enforced Dirichlet BCs for cells attached to the boundary
          csys is updated inside (matrix and rhs) */
-      eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   /* in */
-                             eqc->boundary_flux_op,      /* function */
-                             fm, cb, csys);              /* in/out */
+      eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
 
     }
 
@@ -873,11 +869,11 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Diffusion part */
   eqc->get_stiffness_matrix = NULL;
-  eqc->boundary_flux_op = NULL;
+  eqc->bdy_flux_op = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
 
     eqc->get_stiffness_matrix = cs_hodge_vcb_get_stiffness;
-    eqc->boundary_flux_op = cs_cdovcb_diffusion_flux_op;
+    eqc->bdy_flux_op = cs_cdovcb_diffusion_flux_op;
 
   }
 
@@ -2131,9 +2127,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
           if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
               eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-            eqc->enforce_dirichlet(eqp->diffusion_hodge, cm, /* in */
-                                   eqc->boundary_flux_op,    /* function */
-                                   fm, cb, csys);            /* in/out */
+            eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
 
         }
 
@@ -2176,9 +2170,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
             /* Weakly enforced Dirichlet BCs for cells attached to the boundary
                csys is updated inside (matrix and rhs) */
-            eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,  /* in */
-                                   eqc->boundary_flux_op,     /* function */
-                                   fm, cb, csys);             /* in/out */
+            eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
 
           } /* Enforcement of the Dirichlet BC */
 

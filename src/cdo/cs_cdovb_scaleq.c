@@ -426,10 +426,7 @@ _vb_apply_bc(cs_real_t                      time_eval,
   if (cs_equation_param_has_diffusion(eqp)) {
 
     if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
-      eqc->enforce_dirichlet(eqp->diffusion_hodge,
-                             cm,
-                             eqc->boundary_flux_op,
-                             fm, cb, csys);
+      eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
 
   }
 
@@ -714,7 +711,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* DIFFUSION */
   eqc->get_stiffness_matrix = NULL;
-  eqc->boundary_flux_op = NULL;
+  eqc->bdy_flux_op = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
 
     switch (eqp->diffusion_hodge.algo) {
@@ -722,20 +719,20 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     case CS_PARAM_HODGE_ALGO_COST:
       eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_stiffness;
-      eqc->boundary_flux_op = cs_cdovb_diffusion_cost_flux_op;
+      eqc->bdy_flux_op = cs_cdovb_diffusion_cost_flux_op;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
       eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
-      eqc->boundary_flux_op = cs_cdovb_diffusion_cost_flux_op;
+      eqc->bdy_flux_op = cs_cdovb_diffusion_cost_flux_op;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
       eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ |
         CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_wbs_get_stiffness;
-      eqc->boundary_flux_op = cs_cdovb_diffusion_wbs_flux_op;
+      eqc->bdy_flux_op = cs_cdovb_diffusion_wbs_flux_op;
       break;
 
     default:
@@ -2059,10 +2056,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
           /* The enforcement of the Dirichlet has to be done after all
              other contributions */
           if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
-            eqc->enforce_dirichlet(eqp->diffusion_hodge,
-                                   cm,
-                                   eqc->boundary_flux_op,
-                                   fm, cb, csys);
+            eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
 
         }
 

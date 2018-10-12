@@ -377,6 +377,7 @@ cs_equation_create_param(const char            *name,
      One assigns a boundary condition by default */
   eqp->default_bc = default_bc;
   eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
+  eqp->bc_penalization_coeff = -1; /* Not set */
   eqp->n_bc_defs = 0;
   eqp->bc_defs = NULL;
 
@@ -767,17 +768,35 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
   case CS_EQKEY_BC_ENFORCEMENT:
     if (strcmp(val, "algebraic") == 0)
       eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
-    else if (strcmp(val, "penalization") == 0)
+    else if (strcmp(val, "penalization") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
-    else if (strcmp(val, "weak_sym") == 0)
+      if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
+        eqp->bc_penalization_coeff = 1e13;
+    }
+    else if (strcmp(val, "weak_sym") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
-    else if (strcmp(val, "weak") == 0)
+      if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
+        eqp->bc_penalization_coeff = 500;
+    }
+    else if (strcmp(val, "weak") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
+      if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
+        eqp->bc_penalization_coeff = 500;
+    }
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqp->name, _val, "CS_EQKEY_BC_ENFORCEMENT");
     }
+    break;
+
+  case CS_EQKEY_BC_PENA_COEFF:
+    eqp->bc_penalization_coeff = atof(val);
+    if (eqp->bc_penalization_coeff < 0.)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value of the penalization coefficient %5.3e\n"
+                " This should be positive.",
+                __func__, eqp->bc_penalization_coeff);
     break;
 
   case CS_EQKEY_BC_QUADRATURE:
@@ -1270,6 +1289,10 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                   "  <%s/Boundary Conditions> default: %s, enforcement: %s\n",
                   eqname, cs_param_get_bc_name(eqp->default_bc),
                   cs_param_get_bc_enforcement_name(eqp->enforcement));
+    if (eqp->enforcement != CS_PARAM_BC_ENFORCE_ALGEBRAIC)
+      cs_log_printf(CS_LOG_SETUP,
+                    "  <%s/Boundary Conditions> penalization coefficient: %5.3e\n",
+                    eqname, eqp->bc_penalization_coeff);
     cs_log_printf(CS_LOG_SETUP, "    <%s/n_bc_definitions> %d\n",
                   eqname, eqp->n_bc_defs);
     if (eqp->verbosity > 1) {

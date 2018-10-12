@@ -431,9 +431,7 @@ _fb_condense_and_apply_bc(const cs_equation_param_t     *eqp,
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs) */
-        eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   /* in */
-                               eqc->boundary_flux_op,      /* function */
-                               fm, cb, csys);              /* in/out */
+        eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
 
       }
 
@@ -779,7 +777,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* -------------- */
 
   eqc->get_stiffness_matrix = NULL;
-  eqc->boundary_flux_op = NULL;
+  eqc->bdy_flux_op = NULL;
   eqc->enforce_dirichlet = NULL;
 
   if (cs_equation_param_has_diffusion(eqp)) {
@@ -788,12 +786,12 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_PARAM_HODGE_ALGO_COST:
       eqc->get_stiffness_matrix = cs_hodge_fb_cost_get_stiffness;
-      eqc->boundary_flux_op = NULL; //cs_cdovb_diffusion_cost_flux_op;
+      eqc->bdy_flux_op = NULL; //cs_cdovb_diffusion_cost_flux_op;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
       eqc->get_stiffness_matrix = cs_hodge_fb_voro_get_stiffness;
-      eqc->boundary_flux_op = NULL; //cs_cdovb_diffusion_cost_flux_op;
+      eqc->bdy_flux_op = NULL; //cs_cdovb_diffusion_cost_flux_op;
       break;
 
     default:
@@ -1856,9 +1854,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
             /* Weakly enforced Dirichlet BCs for cells attached to the boundary
                csys is updated inside (matrix and rhs) */
-            eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   /* in */
-                                   eqc->boundary_flux_op,      /* function */
-                                   fm, cb, csys);              /* in/out */
+            eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
 
           }
 
