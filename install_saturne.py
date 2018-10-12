@@ -527,7 +527,7 @@ class Setup:
         self.top_srcdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 
         # Optional libraries
-        self.optlibs = ['hdf5', 'cgns', 'med', 'scotch', 'parmetis', 'libxml2']
+        self.optlibs = ['hdf5', 'cgns', 'med', 'scotch', 'parmetis']
 
         # Optional libraries configure could find in salome
         self.salome_optlibs = ['hdf5', 'cgns', 'med']
@@ -632,19 +632,6 @@ class Setup:
         p = self.packages['med']
         p.config_opts = "--with-med_int=long --disable-fortran --disable-python"
 
-        # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
-
-        self.packages['libxml2'] = \
-            Package(name="libxml2",
-                    description="XML library",
-                    package="libxml2",
-                    version="2.9.2",
-                    archive="libxml2-sources-2.9.2.tar.gz",
-                    url="ftp://xmlsoft.org/libxml2/%s")
-
-        p = self.packages['libxml2']
-        p.config_opts = "--with-ftp=no --with-http=no"
-
         # ParMETIS
 
         self.packages['parmetis'] = \
@@ -705,12 +692,6 @@ class Setup:
         p.test_library(executables=['mdump'],
                        header='med.h',
                        libname='medC')
-
-        # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
-        p = self.packages['libxml2']
-
-        p.test_library(header='libxml2/libxml/parser.h',
-                       libname='xml2')
 
         # Expand user variables
 
@@ -1041,7 +1022,6 @@ Check the setup file and some utilities presence.
         med= self.packages['med']
         scotch = self.packages['scotch']
         parmetis = self.packages['parmetis']
-        libxml2 = self.packages['libxml2']
 
         # Disable GUI
 
@@ -1094,15 +1074,6 @@ Check the setup file and some utilities presence.
             config_opts = config_opts + " --without-scotch"
         else:
             config_opts = config_opts + " --with-scotch=" + scotch.install_dir
-
-        # Libxml2
-
-        if libxml2.use == 'no':
-            config_opts = config_opts + " --without-libxml2"
-        else:
-            if libxml2.install_dir:
-                config_opts = config_opts + \
-                    " --with-libxml2=" + libxml2.install_dir
 
         # Python
 
@@ -1293,11 +1264,7 @@ salome    %(salome)s
 #
 #   To install CGNS or ParMetis, the CMake
 # configuration/installation tool is required
-# (it is available in most Linux distributions)
-#
-#   Libxml2 is needed to read XML files output by the
-# Graphical User Interface. It is generally available
-# through the package manager.
+# (it is available in most Linux distributions).
 #--------------------------------------------------------
 #
 #  Name    Use   Install  Path

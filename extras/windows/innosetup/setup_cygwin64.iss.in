@@ -34,7 +34,6 @@
 
 #define HAVE_CGNS "@cs_have_cgns@"
 #define HAVE_HDF5 "@cs_have_hdf5@"
-#define HAVE_LIBXML2 "@cs_have_libxml2@"
 #define HAVE_MED "@cs_have_med@"
 #define HAVE_METIS "@cs_have_metis@"
 #define HAVE_MPI "@cs_have_mpi@"
@@ -123,10 +122,6 @@ Name: "dev\cgns"; Description: "CGNS"; Types: full compact custom; Flags: checka
 #if HAVE_HDF5 == "yes"
 Name: "dev\hdf5"; Description: "HDF5"; Types: full compact custom; Flags: checkablealone fixed
 #define HDF5PATH "@hdf5_prefix@"
-#endif
-#if HAVE_LIBXML2 == "yes"
-Name: "dev\libxml2"; Description: "LibXML2"; Types: full compact custom; Flags: checkablealone fixed
-#define LIBXML2PATH "@libxml2_prefix@"
 #endif
 #if HAVE_MED == "yes"
 Name: "dev\med"; Description: "MED"; Types: full compact custom; Flags: checkablealone fixed
@@ -248,11 +243,6 @@ Source: "{#CGNSPATH}\lib\libcgns.a"; DestDir: "{app}\lib"; Flags: ignoreversion;
 Source: "{#HDF5PATH}\include\hdf5.h"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\hdf5
 Source: "{#HDF5PATH}\include\H5*.h"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\hdf5
 Source: "{#HDF5PATH}\lib\libhdf5.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\hdf5
-#endif
-#if HAVE_LIBXML2 == "yes"
-Source: "{#LIBXML2PATH}\bin\libxml2-2.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
-Source: "{#LIBXML2PATH}\include\libxml2\*"; DestDir: "{app}\include\libxml2"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: dev\libxml2
-Source: "{#LIBXML2PATH}\lib\libxml2.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\libxml2
 #endif
 #if HAVE_MED == "yes"
 Source: "{#MEDPATH}\include\med.h"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\med

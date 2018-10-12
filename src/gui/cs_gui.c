@@ -39,19 +39,6 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- * libxml2 library headers
- *----------------------------------------------------------------------------*/
-
-#if defined(HAVE_LIBXML2)
-
-#include <libxml/tree.h>
-#include <libxml/parser.h>
-#include <libxml/xpath.h>
-#include <libxml/xpathInternals.h>
-
-#endif
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -129,15 +116,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * External global variables
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Management of the XML document
- *----------------------------------------------------------------------------*/
-
-#if defined(HAVE_LIBXML2)
-extern xmlXPathContextPtr xpathCtx;   /* Pointer on the Context       */
-extern xmlNodePtr xmlrootnode;        /* Pointer on the root node     */
-#endif
 
 /*============================================================================
  * Private global variables
@@ -3008,13 +2986,12 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
       if (*isuite == 0) {
 
-        const char *formula_uvw = NULL;
-        cs_tree_node_t *tn_velocity = NULL;
-        tn_velocity = cs_tree_get_node(cs_glob_tree,
-                                       "thermophysical_models/velocity_pressure"
-                                       "/initialization/formula");
+        cs_tree_node_t *tn_velocity
+          = cs_tree_get_node(cs_glob_tree,
+                             "thermophysical_models/velocity_pressure"
+                             "/initialization/formula");
         tn_velocity = _add_zone_id_test_attribute(tn_velocity, z->id);
-        formula_uvw = cs_tree_node_get_value_str(tn_velocity);
+        const char *formula_uvw = cs_tree_node_get_value_str(tn_velocity);
 
         cs_field_t *c_vel = cs_field_by_name("velocity");
 
@@ -3095,8 +3072,9 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
         if (cs_gui_strcmp(choice, "formula")) {
 
           const char *formula_turb = NULL;
-          cs_tree_node_t *tn_turb = NULL;
-          tn_turb = cs_tree_get_node(cs_glob_tree, "thermophysical_models/turbulence/initialization");
+          cs_tree_node_t *tn_turb
+            = cs_tree_get_node(cs_glob_tree,
+                               "thermophysical_models/turbulence/initialization");
           tn_turb = _add_zone_id_test_attribute(tn_turb, z->id);
           tn_turb = cs_tree_get_node(tn_turb, "formula");
           formula_turb = cs_tree_node_get_value_str(tn_turb);
@@ -3335,8 +3313,9 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
         const char *formula_sca    = NULL;
         mei_tree_t *ev_formula_sca   = NULL;
-        cs_tree_node_t *tn_sca = NULL;
-        tn_sca = cs_tree_get_node(cs_glob_tree, "thermophysical_models/thermal_scalar/variable/formula");
+        cs_tree_node_t *tn_sca
+          = cs_tree_get_node(cs_glob_tree,
+                             "thermophysical_models/thermal_scalar/variable/formula");
         tn_sca = _add_zone_id_test_attribute(tn_sca, z->id);
         formula_sca = cs_tree_node_get_value_str(tn_sca);
 
@@ -3446,33 +3425,33 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
       /* Meteo Scalars initialization */
       if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
-        int    size;
+
+        cs_tree_node_t *tn_m0
+          = cs_tree_get_node(cs_glob_tree,
+                             "thermophysical_models/atmospheric_flows");
+
         const char *name       = NULL;
         const char *formula_meteo  = NULL;
         mei_tree_t *ev_formula_meteo = NULL;
 
-        size = cs_gui_get_tag_count
-                 ("/thermophysical_models/atmospheric_flows/variable\n", 1);
+        int size = cs_tree_get_sub_node_count_simple(tn_m0, "variable");
 
-        for (int j = 0; j < size; j++)
-        {
-          cs_tree_node_t *tn_meteo = NULL;
-          cs_tree_node_t *tn_meteo2 = NULL;
-          tn_meteo = cs_tree_get_node(cs_glob_tree, "thermophysical_models/atmospheric_flows/variable");
-          int i;
-          for (i = 1;
-               tn_meteo != NULL && i < j + 1 ;
+        for (int j = 0; j < size; j++) {
+          cs_tree_node_t *tn_meteo = cs_tree_get_node(tn_m0, "variable");
+          for (int i = 1;
+               tn_meteo != NULL && i < j + 1;
                i++) {
            tn_meteo = cs_tree_node_get_next_of_name(tn_meteo);
           }
-          tn_meteo2 = tn_meteo;
+          cs_tree_node_t *tn_meteo2 = tn_meteo;
           tn_meteo = cs_tree_get_node(tn_meteo, "name");
           name = cs_tree_node_get_value_str(tn_meteo);
 
           cs_field_t *c = cs_field_by_name_try(name);
 
           snprintf(z_id_str, 31, "%d", z_id);
-          const char *zone_id = cs_tree_node_get_child_value_str(tn_meteo2, "zone_id");
+          const char *zone_id
+            = cs_tree_node_get_child_value_str(tn_meteo2, "zone_id");
 
           if (cs_gui_strcmp(zone_id, z_id_str))
             tn_meteo2 = cs_tree_get_node(tn_meteo2, "formula");
@@ -4405,7 +4384,7 @@ cs_gui_init(void)
 }
 
 /*-----------------------------------------------------------------------------
- * Free memory: clean global private variables and libxml2 variables
+ * Free memory: clean global private variables.
  *----------------------------------------------------------------------------*/
 
 void
@@ -4423,20 +4402,6 @@ cs_gui_finalize(void)
     BFT_FREE(cs_glob_var->model_value);
     BFT_FREE(cs_glob_var);
   }
-
-  /* clean memory for xml document */
-
-#if defined(HAVE_LIBXML2)
-  if (xpathCtx != NULL) xmlXPathFreeContext(xpathCtx);
-  if (xmlrootnode != NULL) xmlFreeNode(xmlrootnode);
-#endif
-
-  /* Shutdown libxml */
-
-#if defined(HAVE_LIBXML2)
-  xmlCleanupParser();
-  xmlMemoryDump();
-#endif
 }
 
 /*----------------------------------------------------------------------------*/

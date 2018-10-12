@@ -440,7 +440,7 @@ void
 cs_gui_init(void);
 
 /*-----------------------------------------------------------------------------
- * Free memory: clean global private variables and libxml2 variables
+ * Free memory: clean global private variables.
  *----------------------------------------------------------------------------*/
 
 void

@@ -44,7 +44,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/turb \
 -I$(top_srcdir)/src/pprt \
 $(CPPFLAGS_PLE) \
-$(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS)
+$(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 

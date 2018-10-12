@@ -47,7 +47,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/rayt \
 -I$(top_srcdir)/src/darc \
 $(CPPFLAGS_PLE) \
-$(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS)
+$(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 

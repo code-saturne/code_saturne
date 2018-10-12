@@ -650,7 +650,6 @@ fi
 
 CS_AC_TEST_SALOME
 
-CS_AC_TEST_LIBXML2
 CS_AC_TEST_BLAS([$cs_have_openmp])
 CS_AC_TEST_MPI
 CS_AC_TEST_METIS
@@ -1246,7 +1245,6 @@ if test x$cs_have_openmp = xyes ; then
   echo " OpenMP Fortran support: "$cs_have_openmp_f""
 fi
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
-echo " Libxml2 (XML Reader) support: "$cs_have_libxml2""
 echo " ParMETIS (Parallel Graph Partitioning) support: "$cs_have_parmetis""
 if test x$cs_have_parmetis = xno ; then
   echo " METIS (Graph Partitioning) support: "$cs_have_metis""

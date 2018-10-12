@@ -94,7 +94,6 @@ class config:
                         'petsc',                        # Linear algebra
                         'metis', 'scotch',              # Partionning libraries
                         'mpi',                          # MPI
-                        'libxml2',                      # XML reader
                         'blas',                         # BLAS (benchmark use)
                         'system']                       # User & system libraries
 
@@ -226,13 +225,6 @@ class config:
                          flags = {'cppflags': "@HDF5_CPPFLAGS@",
                                   'ldflags': "@HDF5_LDFLAGS@",
                                   'libs': "@HDF5_LIBS@"})
-
-        self.libs['libxml2'] = \
-            prerequisite("LibXml2",
-                         have = "@cs_have_libxml2@",
-                         flags = {'cppflags': "@LIBXML2_CPPFLAGS@",
-                                  'ldflags': "@LIBXML2_LDFLAGS@",
-                                  'libs': "@LIBXML2_LIBS@"})
 
         self.libs['med'] = \
             prerequisite("MED",

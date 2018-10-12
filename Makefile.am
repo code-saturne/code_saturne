@@ -128,7 +128,6 @@ m4/cs_eos.m4 \
 m4/cs_fortran.m4 \
 m4/cs_freesteam.m4 \
 m4/cs_hdf5.m4 \
-m4/cs_libxml2.m4 \
 m4/cs_med.m4 \
 m4/cs_medcoupling.m4 \
 m4/cs_melissa.m4 \
