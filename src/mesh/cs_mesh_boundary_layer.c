@@ -467,7 +467,7 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
         compute_displacement = true;
 
       }
-      else if (counts[0] > 1) {
+      else if (counts[0] > 0) {
         cs_base_warn(__FILE__, __LINE__);
         bft_printf
           (_("%llu cells would have a negative volume after boundary insertion\n"
@@ -476,7 +476,7 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
            (unsigned long long)counts[0]);
       }
 
-      if (counts[0] > 1 || counts[2] > 1) {
+      if (compute_displacement) {
         for (cs_lnum_t i = 0; i < m->n_vertices; i++) {
           m->vtx_coord[i*3]     -= vd[i][0];
           m->vtx_coord[i*3 + 1] -= vd[i][1];
