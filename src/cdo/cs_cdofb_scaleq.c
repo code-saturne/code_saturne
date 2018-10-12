@@ -530,9 +530,9 @@ _solve_fb_system(cs_sles_t                    *sles,
 
   }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-  cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, n_vertices, x, 6);
-  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_vertices, rhs, 6);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 3
+  cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, n_faces, x, 6);
+  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_faces, rhs, 6);
 #endif
 
   /* Free what can be freed at this stage */

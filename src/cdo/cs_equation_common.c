@@ -877,8 +877,8 @@ cs_equation_prepare_system(int                   stride,
                 " n_scatter_elts:   %d\n"
                 " n_matrix_rows:    %d\n"
                 " n_matrix_columns: %d\n",
-                n_gather_elts, n_scatter_elts, cs_matrix_get_n_rows(eq->matrix),
-                cs_matrix_get_n_columns(eq->matrix));
+                n_gather_elts, n_scatter_elts, cs_matrix_get_n_rows(matrix),
+                cs_matrix_get_n_columns(matrix));
 #endif
 
   BFT_MALLOC(x, CS_MAX(n_scatter_elts,
