@@ -367,6 +367,24 @@ _fb_advection_diffusion_reaction(double                         time_eval,
       cs_cell_sys_dump("\n>> Local system after advection", csys);
 #endif
   }
+
+  if (cs_equation_param_has_reaction(eqp)) {  /* REACTION TERM
+                                               * ============= */
+
+    /* Use a \mathbb{P}_0 reconstruction in the cell
+     *
+     * Update the local system with reaction term. Only the row attached to the
+     * current cell is involved */
+    assert(csys->mat->n_cols == csys->n_dofs);
+    double  *c_row = csys->mat->val + cm->n_fc*csys->n_dofs;
+    c_row[cm->n_fc] += cb->rpty_val * cm->vol_c;
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+    if (cs_dbg_cw_test(cm))
+      cs_cell_sys_dump(">> Local system after reaction", csys);
+#endif
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
