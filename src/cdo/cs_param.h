@@ -307,11 +307,6 @@ typedef enum {
  * freedom in the algebraic system) with a penalization technique using a huge
  * value.
  *
- * \var CS_PARAM_BC_ENFORCE_STRONG
- * Strong enforcement of the boundary conditions. Degrees of freedom related
- * to this boundary condition are removed from the algebraic system.
- * Deprecated. Do not use this option.
- *
  * \var CS_PARAM_BC_ENFORCE_WEAK_NITSCHE
  * Weak enforcement of the boundary conditions (i.e. one keeps the degrees of
  * freedom in the algebraic system) with a Nitsche-like penalization technique.
@@ -331,7 +326,6 @@ typedef enum {
 
   CS_PARAM_BC_ENFORCE_ALGEBRAIC,
   CS_PARAM_BC_ENFORCE_PENALIZED,
-  CS_PARAM_BC_ENFORCE_STRONG,
   CS_PARAM_BC_ENFORCE_WEAK_NITSCHE,
   CS_PARAM_BC_ENFORCE_WEAK_SYM,
 

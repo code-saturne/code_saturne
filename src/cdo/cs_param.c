@@ -97,7 +97,6 @@ static const char
 cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
   { N_("weak using an algebraic manipulation"),
     N_("weak using a big penalization coefficient"),
-    N_("strong"),
     N_("weak using the Nitsche method"),
     N_("weak using the symmetrized Nitsche method") };
 

@@ -765,9 +765,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_BC_ENFORCEMENT:
-    if (strcmp(val, "strong") == 0)
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
-    else if (strcmp(val, "algebraic") == 0)
+    if (strcmp(val, "algebraic") == 0)
       eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
     else if (strcmp(val, "penalization") == 0)
       eqp->enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
@@ -1375,8 +1373,8 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
         cs_log_printf(CS_LOG_SETUP, " continuous interior penalty\n");
         break;
       case CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND:
-        cs_log_printf(CS_LOG_SETUP, " mixed centered-upwind (%3.2f\%)\n",
-                      eqp->upwind_portion);
+        cs_log_printf(CS_LOG_SETUP, " mixed centered-upwind (%3.2f %%)\n",
+                      100*eqp->upwind_portion);
         break;
       case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
         cs_log_printf(CS_LOG_SETUP,

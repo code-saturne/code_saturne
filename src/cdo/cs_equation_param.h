@@ -509,12 +509,25 @@ typedef struct {
  * \var CS_EQKEY_BC_ENFORCEMENT
  * Set the type of enforcement of the boundary conditions.
  * Available choices are:
- * - "penalization" --> weak enforcement using a huge penalization coefficient
- * - "weak" --> weak enforcement using the Nitsche method
- * - "weak_sym" --> weak enforcement keeping the symmetry of the system
+ * - "algebraic": Modify the linear system so as to add the contribution of the
+ * Dirichlet in the right-hand side and replace the line associated to a
+ * Dirichlet BC by identity. This is a good choice for pure diffusinon or pure
+ * convection problem.
+ * - "penalization": Add a huge penalization coefficient on the diagonal term
+ * of the line related to DoFs associated a Dirichlet BC. The right-hand side is
+ * also modified to take into account this penalization. Be aware that it may
+ * worsen the matrix conditioning.
+ * - "weak": weak enforcement using the Nitsche method (there is also
+ * penalization term but the scaling is such that a moderate value (1-100) of
+ * the penalization coefficient is sufficient). This a good choice for
+ * convection/diffusion problem.
+ * - "weak_sym": Same as the "weak" option but with a modification so as to
+ * add a symmetric contribution to the system. If the problem yields a symmetric
+ * matrix. This choice is more relevant than "weak". This a good choice for a
+ * diffusion problem.
  *
- * For HHO and CDO-Face based schemes, only the penalization technique is
- * available.
+ * For HHO and CDO-Face based schemes, only the "penalization" and "algebraic"
+ * technique is available up to now.
  *
  * \var CS_EQKEY_BC_QUADRATURE
  * Set the quadrature algorithm used for evaluating integral quantities on
