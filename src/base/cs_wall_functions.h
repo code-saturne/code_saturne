@@ -64,6 +64,7 @@ typedef enum {
   CS_WALL_F_SCALABLE_2SCALES_LOG,
   CS_WALL_F_2SCALES_VDRIEST,
   CS_WALL_F_2SCALES_SMOOTH_ROUGH,
+  CS_WALL_F_2SCALES_CONTINUOUS,
 
 } cs_wall_f_type_t;
 
@@ -275,6 +276,169 @@ cs_wall_functions_1scale_log(cs_lnum_t    ifac,
 
   }
 
+}
+
+/*----------------------------------------------------------------------------
+ * Compute du+/dy+ for a given yk+.
+ * parameters:
+ *   yplus     <--  dimensionless distance
+ * returns:
+ *   the resulting dimensionless velocity.
+ *----------------------------------------------------------------------------*/
+
+inline static cs_real_t
+_uplus(cs_real_t yp  ,
+       cs_real_t ka  ,
+       cs_real_t B   ,
+       cs_real_t cuv ,
+       cs_real_t y0  ,
+       cs_real_t n   )
+{
+  cs_real_t uplus, f_blend ;
+
+  f_blend = exp(-0.25*cuv*pow(yp,3)) ;
+  uplus   = f_blend*yp + (log(yp)/ka +B)*(1.-exp(-pow(yp/y0,n)))*(1-f_blend);
+
+  return uplus ;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute du+/dy+ for a given yk+.
+ * parameters:
+ *   yplus     <--  dimensionless distance
+ * returns:
+ *   the resulting dimensionless velocity gradient.
+ *----------------------------------------------------------------------------*/
+
+inline static cs_real_t
+_dupdyp(cs_real_t yp  ,
+        cs_real_t ka  ,
+        cs_real_t B   ,
+        cs_real_t cuv ,
+        cs_real_t y0  ,
+        cs_real_t n   )
+{
+  cs_real_t dupdyp ;
+
+  dupdyp = exp(-0.25*cuv*pow(yp,3))
+   - 0.75*cuv*pow(yp,3.)*exp(-0.25*cuv*pow(yp,3.))
+   + n*(1.-exp(-0.25*cuv*pow(yp,3.)))*(pow(yp,n-1.)/pow(y0,n))*exp(-pow(yp/y0,n))*((1./ka)*log(yp)+B)
+   + 0.75*cuv*pow(yp,2.)*exp(-0.25*cuv*pow(yp,3.))*(1.-exp(-pow(yp/y0,n)))*((1./ka)*log(yp)+B)
+   + (1./ka/yp)*(1.-exp(-pow(yp/y0,n)))*(1-exp(-0.25*cuv*pow(yp,3.))) ;
+
+  return dupdyp ;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Continuous law of the wall between the linear and log law, with two
+ * velocity scales based on the friction and the turbulent kinetic energy. Can
+ * be used with RANS model either in high Reynolds or in low Reynolds
+ * (if the underlying RANS model is compatible).
+ *
+ * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
+ * \param[in]     l_visc        kinematic viscosity
+ * \param[in]     t_visc        turbulent kinematic viscosity
+ * \param[in]     vel           wall projected cell center velocity
+ * \param[in]     y             wall distance
+ * \param[in]     kinetic_en    turbulent kinetic energy
+ * \param[out]    iuntur        indicator: 0 in the viscous sublayer
+ * \param[out]    nsubla        counter of cell in the viscous sublayer
+ * \param[out]    nlogla        counter of cell in the log-layer
+ * \param[out]    ustar         friction velocity
+ * \param[out]    uk            friction velocity
+ * \param[out]    yplus         dimensionless distance to the wall
+ * \param[out]    ypup          yplus projected vel ratio
+ * \param[out]    cofimp        \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
+ *                              turbulence production
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_wall_functions_2scales_continuous(cs_real_t   rnnb,
+                                     cs_real_t   l_visc,
+                                     cs_real_t   t_visc,
+                                     cs_real_t   vel,
+                                     cs_real_t   y,
+                                     cs_real_t   kinetic_en,
+                                     int        *iuntur,
+                                     cs_lnum_t  *nsubla,
+                                     cs_lnum_t  *nlogla,
+                                     cs_real_t  *ustar,
+                                     cs_real_t  *uk,
+                                     cs_real_t  *yplus,
+                                     cs_real_t  *ypup,
+                                     cs_real_t  *cofimp)
+{
+  const double ypluli = cs_glob_wall_functions->ypluli;
+  double Re, g, t_visc_durb;
+  cs_real_t cstcuv, csty0, cstN ;
+  cs_real_t dup1, dup2, uplus ;
+
+  /* Local constants */
+  cstcuv = 1.0674e-3;
+  csty0  = 14.5e0;
+  cstN   = 2.25e0;
+
+  /* Iterative process to determine uk through TKE law */
+  Re = sqrt(kinetic_en) * y / l_visc;
+  g = exp(-Re/11.);
+
+  /* Comutation of uk*/
+  *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
+            + g * l_visc * vel / y);
+
+  /* Local value of y+, estimated U+ */
+  *yplus = *uk * y / l_visc;
+  uplus  = _uplus( *yplus, cs_turb_xkappa, cs_turb_cstlog, cstcuv, csty0, cstN);
+  /* Deduced velocity sclale uet*/
+  *ustar = vel / uplus ;
+
+  if( *yplus < 1.e-1 ) {
+
+    *ypup   = 1.0 ;
+    *cofimp = 0.0 ;
+
+    *iuntur = 0;
+    *nsubla += 1;
+
+  } else {
+
+    /* Dimensionless velocity gradient in y+ */
+    dup1 = _dupdyp(     *yplus, cs_turb_xkappa, cs_turb_cstlog, cstcuv, csty0, cstN);
+    /* Dimensionless velocity gradient in 2 x y+ */
+    dup2 = _dupdyp(2.0 * *yplus , cs_turb_xkappa, cs_turb_cstlog, cstcuv, csty0, cstN);
+
+    *ypup = *yplus / uplus ;
+
+    /* ------------------------------------------------------------
+     * Cofimp = U,F/U,I is built so that the theoretical expression
+     * of the production P_theo = dup1 * (1.0 - dup1) is equal to
+     * P_calc =  mu_t,I * ((U,I - U,F + IF*dup2)/(2IF) )^2
+     * This is a generalization of the process implemented in the 2
+     * scales wall function (iwallf = 3).
+     * ------------------------------------------------------------*/
+
+    /* Turbulent viscocity is modified for RSM so that its expression
+     * remain valid down to the wall, according to Durbin :
+     * nu_t = 0.22 * v'2 * k / eps */
+    if (cs_glob_turb_model->itytur == 3) {
+      t_visc_durb = t_visc / (kinetic_en * cs_turb_cmu ) * rnnb * 0.22 ;
+    } else {
+      t_visc_durb = t_visc ;
+    }
+
+    *cofimp     = 1. - *ypup * (2.0 * sqrt( l_visc / t_visc_durb * dup1 * (1.0 - dup1) ) -  dup2) ;
+
+    /* log layer */
+    if (*yplus > ypluli) {
+      *nlogla += 1;
+    /* viscous sub-layer or buffer layer*/
+     } else {
+      *iuntur = 0;
+      *nsubla += 1;
+     }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

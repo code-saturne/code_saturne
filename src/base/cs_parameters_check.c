@@ -1372,7 +1372,7 @@ cs_parameters_check(void)
                                 _("while reading input data"),
                                 "cs_glob_wall_functions->iwallf",
                                 cs_glob_wall_functions->iwallf,
-                                0, 7);
+                                0, 8);
 
   if (cs_glob_wall_functions->iwallf > 2) {
     const int itytur_vals[5] = {2, 3, 5, 6, 7};
