@@ -350,9 +350,9 @@ class TurbulenceModel(Variables, Model):
             wall_function = -1 # for next test
         if model_turb == 'Rij-EBRSM' :
           if wall_function not in (0,7) :
-            # Force default wall function to iwallf = 0
+            # Force default wall function to iwallf = 7
             # for Rij EB-RSM model
-            wall_function = 0
+            wall_function = 7
             self.setWallFunction(wall_function)
         elif model_turb == 'k-omega-SST' :
           if wall_function < 0 or wall_function > 7 :

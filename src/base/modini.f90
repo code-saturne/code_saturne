@@ -560,6 +560,7 @@ endif
 ! ---> IWALLF
 ! For laminar cases or when using low Reynolds model: no wall function.
 ! When using mixing length, Spalart-Allmaras or LES: one scale log law.
+! When using EB-RSM : all y+ wall functions
 ! In all other cases: 2 scales log law.
 ! Here iwallf is set automatically only if it wasn't set in the gui or
 ! in a user subroutine.
@@ -568,9 +569,10 @@ if (iwallf.eq.-999) then
   if (    iturb.eq.10.or.iturb.eq.70 &
       .or.itytur.eq.4) then
     iwallf = 2
-  elseif (    iturb.eq. 0.or.iturb.eq.32 &
-          .or.itytur.eq.5) then
+  elseif (iturb.eq.0.or.itytur.eq.5) then
     iwallf = 0
+  elseif (iturb.eq.32) then
+    iwallf = 7
   else
     iwallf = 3
   endif
