@@ -288,20 +288,6 @@ _init_fb_cell_system(const cs_flag_t               cell_flag,
   if (cs_equation_param_has_time(eqp)) {
     if (!(eqb->time_pty_uniform))
       cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property, t_eval);
-
-    /* /\* Update rhs with the previous computation of source term if needed *\/ */
-    /* if (cs_equation_param_has_sourceterm(eqp)) { */
-
-    /*   /\* Source terms attached to cells: Need to update rhs because the part */
-    /*      related to cell is used in the static condensation *\/ */
-    /*   cs_cdo_time_update_rhs(eqp, */
-    /*                          1, /\* stride *\/ */
-    /*                          1, /\* n_dofs *\/ */
-    /*                          csys->dof_ids + cm->n_fc, */
-    /*                          eqc->source_terms, */
-    /*                          csys->rhs + cm->n_fc); */
-
-    /* } */
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
@@ -389,6 +375,52 @@ _fb_advection_diffusion_reaction(double                         time_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Apply the part of boundary conditions that should be done before
+ *          the static condensation and the time scheme (case of CDO-Fb schemes)
+ *
+ * \param[in]      time_eval   time at which analytical function are evaluated
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqc         context for this kind of discretization
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] fm          pointer to a facewise view of the mesh
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_fb_apply_bc_partly(cs_real_t                      time_eval,
+                    const cs_equation_param_t     *eqp,
+                    const cs_cdofb_scaleq_t       *eqc,
+                    const cs_cell_mesh_t          *cm,
+                    cs_face_mesh_t                *fm,
+                    cs_cell_sys_t                 *csys,
+                    cs_cell_builder_t             *cb)
+{
+  /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
+   * Operations that have to be performed BEFORE the static condensation */
+  if (csys->cell_flag & CS_FLAG_BOUNDARY) {
+
+    /* Neumann boundary conditions */
+    if (csys->has_nhmg_neumann)
+      for (short int f  = 0; f < cm->n_fc; f++)
+        csys->rhs[f] += csys->neu_values[f];
+
+    if (cs_equation_param_has_convection(eqp)) {
+      eqc->add_advection_bc(cm, eqp, time_eval, fm, cb, csys);
+    }
+
+  } /* Boundary cell */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+  if (cs_dbg_cw_test(cm))
+    cs_cell_sys_dump(">> Local system matrix after BC & before condensation",
+                     csys);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Apply the boundary conditions to the local system in CDO-Fb schemes
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
@@ -401,59 +433,26 @@ _fb_advection_diffusion_reaction(double                         time_eval,
 /*----------------------------------------------------------------------------*/
 
 static void
-_fb_condense_and_apply_bc(const cs_equation_param_t     *eqp,
-                          const cs_cdofb_scaleq_t       *eqc,
-                          const cs_cell_mesh_t          *cm,
-                          cs_face_mesh_t                *fm,
-                          cs_cell_sys_t                 *csys,
-                          cs_cell_builder_t             *cb)
+_fb_apply_remaining_bc(const cs_equation_param_t     *eqp,
+                       const cs_cdofb_scaleq_t       *eqc,
+                       const cs_cell_mesh_t          *cm,
+                       cs_face_mesh_t                *fm,
+                       cs_cell_sys_t                 *csys,
+                       cs_cell_builder_t             *cb)
 {
-  /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
-   * Operations that have to be performed BEFORE the static condensation */
-  if (csys->cell_flag & CS_FLAG_BOUNDARY) {
-
-    /* Neumann boundary conditions */
-    if (csys->has_nhmg_neumann)
-      for (short int f  = 0; f < cm->n_fc; f++)
-        csys->rhs[f] += csys->neu_values[f];
-
-  } /* Boundary cell */
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-  if (cs_dbg_cw_test(cm))
-    cs_cell_sys_dump(">> Local system matrix before condensation", csys);
-#endif
-
-  /* Static condensation of the local system matrix of size n_fc + 1 into
-     a matrix of size n_fc.
-     Store data in rc_tilda and acf_tilda to compute the values at cell
-     centers after solving the system */
-  cs_static_condensation_scalar_eq(cs_shared_connect->c2f,
-                                   eqc->rc_tilda,
-                                   eqc->acf_tilda,
-                                   cb, csys);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-  if (cs_dbg_cw_test(cm))
-    cs_cell_sys_dump(">> Local system matrix after condensation", csys);
-#endif
-
   /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
    * Operations that have to be performed AFTER the static condensation */
   if (csys->cell_flag & CS_FLAG_BOUNDARY) {
 
-    if (cs_equation_param_has_diffusion(eqp)) {
+    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+        eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-          eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+      /* Enforced Dirichlet BCs for cells attached to the boundary
+       * csys is updated inside (matrix and rhs). This is close to a strong
+       * way to enforce Dirichlet BCs */
+      eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
 
-        /* Weakly enforced Dirichlet BCs for cells attached to the boundary
-           csys is updated inside (matrix and rhs) */
-        eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
-
-      }
-
-    } /* diffusion term */
+    }
 
   } /* Boundary cell */
 }
@@ -765,7 +764,8 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Dimensions of the algebraic system */
   eqc->n_dofs = n_faces + n_cells;
 
-  eqb->msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ;
+  eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PF | CS_CDO_LOCAL_DEQ |
+    CS_CDO_LOCAL_PFQ;
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
@@ -846,7 +846,50 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   eqc->get_advection_matrix = NULL;
   eqc->add_advection_bc = NULL;
-  // TODO
+
+  if (cs_equation_param_has_convection(eqp)) {
+
+    cs_xdef_type_t  adv_deftype =
+      cs_advection_field_get_deftype(eqp->adv_field);
+
+    if (adv_deftype == CS_XDEF_BY_ANALYTIC_FUNCTION)
+      eqb->msh_flag |= CS_CDO_LOCAL_FEQ;
+
+    switch (eqp->adv_formulation) {
+
+    case CS_PARAM_ADVECTION_FORM_CONSERV:
+
+      switch (eqp->adv_scheme) {
+
+      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+        eqc->get_advection_matrix = cs_cdo_advection_get_fb_upwcsvdi;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid advection scheme for face-based discretization",
+                  __func__);
+
+      } /* Scheme */
+      break; /* Formulation */
+
+    case CS_PARAM_ADVECTION_FORM_NONCONS:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid type of formulation for the advection term",
+                __func__);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid type of formulation for the advection term",
+                __func__);
+    }
+
+    /* Boundary conditions for advection */
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ;
+    eqc->add_advection_bc = cs_cdo_advection_add_fb_bc;
+
+  }
 
   /* Time part */
   if (cs_equation_param_has_time(eqp))
@@ -861,6 +904,16 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     memset(eqc->source_terms, 0, sizeof(cs_real_t)*n_cells);
 
   } /* There is at least one source term */
+
+  /* Pre-defined a cs_hodge_builder_t struct. */
+  eqc->hdg_mass.is_unity = true;
+  eqc->hdg_mass.is_iso   = true;
+  eqc->hdg_mass.inv_pty  = false;
+  eqc->hdg_mass.type = CS_PARAM_HODGE_TYPE_FB;
+  eqc->hdg_mass.algo = CS_PARAM_HODGE_ALGO_COST;
+  eqc->hdg_mass.coef = 1.0; /* not useful in this case */
+
+  eqc->get_mass_matrix = cs_hodge_fb_get_mass;
 
   return eqc;
 }
@@ -1103,7 +1156,27 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
       /* BOUNDARY CONDITIONS + STATIC CONDENSATION
        * ========================================= */
 
-      _fb_condense_and_apply_bc(eqp, eqc, cm, fm, csys, cb);
+      /* Apply a part of BC before the static condensation */
+      _fb_apply_bc_partly(time_eval, eqp, eqc, cm, fm, csys, cb);
+
+      /* STATIC CONDENSATION
+       * Static condensation of the local system matrix of size n_fc + 1 into
+       * a matrix of size n_fc.
+       * Store data in rc_tilda and acf_tilda to compute the values at cell
+       * centers after solving the system */
+      cs_static_condensation_scalar_eq(connect->c2f,
+                                       eqc->rc_tilda,
+                                       eqc->acf_tilda,
+                                       cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+      if (cs_dbg_cw_test(cm))
+        cs_cell_sys_dump(">> Local system matrix after static condensation",
+                         csys);
+#endif
+
+      /* Remaing part of boundary conditions */
+      _fb_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(cm))
@@ -1296,6 +1369,11 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
 
       } /* End of term source */
 
+      /* First part of the BOUNDARY CONDITIONS
+       *                   ===================
+       * Apply a part of BC before the time scheme */
+      _fb_apply_bc_partly(time_eval, eqp, eqc, cm, fm, csys, cb);
+
       /* UNSTEADY TERM + TIME SCHEME
        * =========================== */
 
@@ -1305,10 +1383,27 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
       csys->rhs[cm->n_fc] += ptyc * csys->val_n[cm->n_fc];
       csys->mat->val[cm->n_fc*csys->n_dofs + cm->n_fc] += ptyc;
 
-      /* BOUNDARY CONDITIONS + STATIC CONDENSATION
-       * ========================================= */
+      /* STATIC CONDENSATION
+       * ===================
+       * Static condensation of the local system matrix of size n_fc + 1 into
+       * a matrix of size n_fc.
+       * Store data in rc_tilda and acf_tilda to compute the values at cell
+       * centers after solving the system */
+      cs_static_condensation_scalar_eq(connect->c2f,
+                                       eqc->rc_tilda,
+                                       eqc->acf_tilda,
+                                       cb, csys);
 
-      _fb_condense_and_apply_bc(eqp, eqc, cm, fm, csys, cb);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+      if (cs_dbg_cw_test(cm))
+        cs_cell_sys_dump(">> Local system matrix after static condensation",
+                         csys);
+#endif
+
+      /* Remaing part of BOUNDARY CONDITIONS
+       * =================================== */
+
+      _fb_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(cm))
@@ -1532,6 +1627,12 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
 
       } /* End of term source */
 
+       /* First part of BOUNDARY CONDITIONS
+        *               ===================
+        * Apply a part of BC before time (csys->mat is going to be multiplied
+        * by theta when applying the time scheme) */
+      _fb_apply_bc_partly(time_eval, eqp, eqc, cm, fm, csys, cb);
+
       /* UNSTEADY TERM + TIME SCHEME
        * ===========================
        * STEP >> Compute the contribution of the diff/conv/reac matrix to
@@ -1557,10 +1658,27 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
       /* Simply add an entry in mat[cell, cell] */
       csys->mat->val[cm->n_fc*csys->n_dofs + cm->n_fc] += ptyc;
 
-      /* BOUNDARY CONDITIONS + STATIC CONDENSATION
-       * ========================================= */
+      /* STATIC CONDENSATION
+       * ===================
+       * Static condensation of the local system matrix of size n_fc + 1 into
+       * a matrix of size n_fc.
+       * Store data in rc_tilda and acf_tilda to compute the values at cell
+       * centers after solving the system */
+      cs_static_condensation_scalar_eq(connect->c2f,
+                                       eqc->rc_tilda,
+                                       eqc->acf_tilda,
+                                       cb, csys);
 
-      _fb_condense_and_apply_bc(eqp, eqc, cm, fm, csys, cb);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+      if (cs_dbg_cw_test(cm))
+        cs_cell_sys_dump(">> Local system matrix after static condensation",
+                         csys);
+#endif
+
+      /* Remaing part of BOUNDARY CONDITIONS
+       * =================================== */
+
+      _fb_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(cm))
