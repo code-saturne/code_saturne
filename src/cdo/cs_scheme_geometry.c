@@ -397,6 +397,9 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
                           const cs_real_t         center[3],
                           cs_real_t               inertia[3][3])
 {
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
+                      CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ));
+
   cs_real_33_t  M = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
   /* Switching on cell-type: optimised version for tetra */

@@ -2057,7 +2057,7 @@ cs_cdo_advection_add_fb_bc(const cs_cell_mesh_t       *cm,
       short int  f = csys->_f_ids[i];
       cs_real_t  *frow = csys->mat->val + f*csys->n_dofs;
 
-      if (fabs(f_nflx[f])>cs_math_zero_threshold){
+      if (fabs(f_nflx[f])>cs_math_zero_threshold) {
 
         /* advection field is inward w.r.t. the face normal */
         if (f_nflx[f] < 0) {

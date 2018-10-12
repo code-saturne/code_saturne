@@ -1503,7 +1503,6 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
          eqp->time_scheme == CS_TIME_SCHEME_THETA);
-  assert(eqc->source_terms != NULL);
 
   cs_timer_t  t0 = cs_timer_time();
 

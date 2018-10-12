@@ -92,10 +92,6 @@ BEGIN_C_DECLS
  * Local variables
  *============================================================================*/
 
-/* Advanced developper parameters (weakly enforced the boundary conditions) */
-static const double  cs_nitsche_pena_coef = 500;
-static const double  cs_big_pena_coef = 1e13;
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================

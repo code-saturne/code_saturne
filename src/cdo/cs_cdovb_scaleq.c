@@ -1387,7 +1387,7 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
         const double  ptyc = cb->tpty_val * cm->vol_c / dt_cur;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
-           >> Update the cellwise system with the time matrix */
+         *       >> Update the cellwise system with the time matrix */
         for (short int i = 0; i < cm->n_vc; i++) {
 
           const double  dval =  ptyc * cm->wvc[i];
@@ -1407,7 +1407,7 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
         const cs_sdm_t  *mass_mat = cb->hdg;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
-           >> Update the cellwise system with the time matrix */
+         *       >> Update the cellwise system with the time matrix */
 
         /* Update rhs with csys->mat*p^n */
         double  *time_pn = cb->values;
