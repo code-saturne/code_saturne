@@ -99,8 +99,16 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
         self.checkBoxGravity.setEnabled(True)
         self.comboBoxWallFunctions.setEnabled(True)
 
-        if default['model'] == 'v2f-BL-v2/k' or \
-           default['model'] == 'Rij-EBRSM':
+        if default['model'] == 'Rij-EBRSM':
+            # Combo - piecewise laws (iwallf=2,3) unavailable through the GUI
+            self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 2, 1)
+            self.wallFunctions.addItem(self.tr("No wall function"), '0')
+            self.wallFunctions.addItem(self.tr("2-scale model (all y+)"), '7')
+
+            # Initialization of wall function model
+            self.wallFunctions.setItem(str_model=str(self.result['wall_function']))
+
+        elif default['model'] == 'v2f-BL-v2/k':
             self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 1, 1)
             self.wallFunctions.addItem(self.tr("No wall function"), '0')
             self.comboBoxWallFunctions.setEnabled(False)
@@ -108,13 +116,24 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
             self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 1, 1)
             self.wallFunctions.addItem(self.tr("One scale model (log law)"), '2')
             self.comboBoxWallFunctions.setEnabled(False)
+        elif default['model'] == 'k-omega-SST':
+            # Combo - power law (iwallf=1) unavailable through the GUI
+            self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 5, 1)
+            self.wallFunctions.addItem(self.tr("No wall function"), '0')
+            self.wallFunctions.addItem(self.tr("1-scale model (log law)"), '2')
+            self.wallFunctions.addItem(self.tr("2-scale model (log law)"), '3')
+            self.wallFunctions.addItem(self.tr("2-scale model (all y+)"), '7')
+            self.wallFunctions.addItem(self.tr("Scalable 2-scale model (log law)"), '4')
+
+            # Initialization of wall function model
+            self.wallFunctions.setItem(str_model=str(self.result['wall_function']))
         else:
             # Combo - power law (iwallf=1) unavailable through the GUI
             self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 4, 1)
             self.wallFunctions.addItem(self.tr("No wall function"), '0')
-            self.wallFunctions.addItem(self.tr("1 scale model (log law)"), '2')
-            self.wallFunctions.addItem(self.tr("2 scales model (log law)"), '3')
-            self.wallFunctions.addItem(self.tr("Scalable 2 scales model (log law)"), '4')
+            self.wallFunctions.addItem(self.tr("1-scale model (log law)"), '2')
+            self.wallFunctions.addItem(self.tr("2-scale model (log law)"), '3')
+            self.wallFunctions.addItem(self.tr("Scalable 2-scale model (log law)"), '4')
 
             # Initialization of wall function model
             self.wallFunctions.setItem(str_model=str(self.result['wall_function']))
