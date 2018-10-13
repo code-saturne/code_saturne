@@ -239,6 +239,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 {
   /* Local variables */
 
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
   int iconvp = var_cal_opt->iconv;
   int idiffp = var_cal_opt->idiff;
   int iwarnp = var_cal_opt->iwarni;
@@ -598,8 +600,12 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    w1);
 
 # pragma omp parallel for
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-    w1[iel] += smbrp[iel];
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    w1[cell_id] += smbrp[cell_id];
+    /* Remove contributions from penalized cells */
+    if (mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] != 0)
+      w1[cell_id] = 0.;
+  }
 
   rnorm2 = cs_gdot(n_cells,w1,w1);
   rnorm = sqrt(rnorm2);
@@ -1112,6 +1118,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 {
   /* Local variables */
 
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
   int iconvp = var_cal_opt->iconv;
   int idiffp = var_cal_opt->idiff;
   int iwarnp = var_cal_opt->iwarni;
@@ -1414,10 +1422,15 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    (cs_real_t *)pvar,
                                    (cs_real_t *)w1);
 
-# pragma omp parallel for private(isou)
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-    for (isou = 0 ; isou < 3 ; isou++)
-      w1[iel][isou] += smbrp[iel][isou];
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0 ; cell_id < n_cells ; cell_id++) {
+    for (int i = 0 ; i < 3 ; i++)
+      w1[cell_id][i] += smbrp[cell_id][i];
+    /* Remove contributions from penalized cells */
+    if (mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] != 0)
+      for (int i = 0 ; i < 3 ; i++)
+        w1[cell_id][i] = 0.;
+  }
 
   rnorm2 = cs_gdot(3*n_cells, (cs_real_t *)w1, (cs_real_t *)w1);
   rnorm = sqrt(rnorm2);
@@ -1919,6 +1932,8 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 {
   /* Local variables */
 
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
   int iconvp = var_cal_opt->iconv;
   int idiffp = var_cal_opt->idiff;
   int iwarnp = var_cal_opt->iwarni;
@@ -2203,10 +2218,15 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
                                    (cs_real_t *)pvar,
                                    (cs_real_t *)w1);
 
-# pragma omp parallel for private(isou)
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-    for (isou = 0 ; isou < 6 ; isou++)
-      w1[iel][isou] += smbrp[iel][isou];
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0 ; cell_id < n_cells ; cell_id++) {
+    for (int i = 0 ; i < 6 ; i++)
+      w1[cell_id][i] += smbrp[cell_id][i];
+    /* Remove contributions from penalized cells */
+    if (mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] != 0)
+      for (int i = 0 ; i < 6 ; i++)
+        w1[cell_id][i] = 0.;
+  }
 
   rnorm2 = cs_gdot(6*n_cells, (cs_real_t *)w1, (cs_real_t *)w1);
   rnorm = sqrt(rnorm2);
