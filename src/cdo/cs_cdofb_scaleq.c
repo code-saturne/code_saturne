@@ -142,7 +142,7 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 
   /* Local square dense matrices used during the construction of
      operators */
-  cb->hdg = cs_sdm_square_create(n_fc);
+  cb->hdg = cs_sdm_square_create(n_fc + 1); /* +1 -> if used as a mass matrix */
   cb->loc = cs_sdm_square_create(n_fc + 1);
   cb->aux = cs_sdm_square_create(n_fc + 1);
 
@@ -354,16 +354,44 @@ _fb_advection_diffusion_reaction(double                         time_eval,
 #endif
   }
 
+  if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) { /* MASS MATRIX
+                                                  * =========== */
+
+    /* Build the mass matrix adn store it in cb->hdg */
+    eqc->get_mass_matrix(eqc->hdg_mass, cm, cb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+    if (cs_dbg_cw_test(cm)) {
+      cs_log_printf(CS_LOG_DEFAULT, ">> Local mass matrix");
+      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, cb->hdg);
+    }
+#endif
+  }
+
   if (cs_equation_param_has_reaction(eqp)) {  /* REACTION TERM
                                                * ============= */
 
-    /* Use a \mathbb{P}_0 reconstruction in the cell
-     *
-     * Update the local system with reaction term. Only the row attached to the
-     * current cell is involved */
-    assert(csys->mat->n_cols == csys->n_dofs);
-    double  *c_row = csys->mat->val + cm->n_fc*csys->n_dofs;
-    c_row[cm->n_fc] += cb->rpty_val * cm->vol_c;
+    if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
+
+      /* Use a \mathbb{P}_0 reconstruction in the cell
+       *
+       * Update the local system with reaction term. Only the row attached to
+       * the current cell is involved */
+      assert(csys->mat->n_cols == csys->n_dofs);
+      double  *c_row = csys->mat->val + cm->n_fc*csys->n_dofs;
+      c_row[cm->n_fc] += cb->rpty_val * cm->vol_c;
+
+    }
+    else {
+
+      assert(eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_COST);
+      assert(eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX);
+
+      /* Update local system matrix with the reaction term
+         cb->hdg corresponds to the current mass matrix */
+      cs_sdm_add_mult(csys->mat, cb->rpty_val, cb->hdg);
+
+    }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(cm))
@@ -891,10 +919,35 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
+  /* Reaction part */
+  if (cs_equation_param_has_reaction(eqp)) {
+
+    if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_COST) {
+      eqb->msh_flag |= CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+      eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
+    }
+
+  } /* Reaction */
+
   /* Time part */
-  if (cs_equation_param_has_time(eqp))
-    eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
-  eqc->apply_time_scheme = cs_cdo_time_get_scheme_function(eqb->sys_flag, eqp);
+  eqc->apply_time_scheme = NULL;
+  if (cs_equation_param_has_time(eqp)) {
+
+    if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
+      eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
+    }
+    else if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_COST) {
+      if (eqp->do_lumping)
+        eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
+      else {
+        eqb->msh_flag |= CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
+      }
+    }
+
+    eqc->apply_time_scheme = cs_cdo_time_get_scheme_function(eqb->sys_flag,
+                                                             eqp);
+  }
 
   /* Source term part */
   eqc->source_terms = NULL;
@@ -1377,11 +1430,34 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
       /* UNSTEADY TERM + TIME SCHEME
        * =========================== */
 
-      const double  ptyc = cb->tpty_val * cm->vol_c / dt_cur;
+      if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping
+                                                      or Hodge-Voronoi */
 
-      /* Simply add an entry in mat[cell, cell] */
-      csys->rhs[cm->n_fc] += ptyc * csys->val_n[cm->n_fc];
-      csys->mat->val[cm->n_fc*csys->n_dofs + cm->n_fc] += ptyc;
+        const double  ptyc = cb->tpty_val * cm->vol_c / dt_cur;
+
+        /* Simply add an entry in mat[cell, cell] */
+        csys->rhs[cm->n_fc] += ptyc * csys->val_n[cm->n_fc];
+        csys->mat->val[cm->n_fc*csys->n_dofs + cm->n_fc] += ptyc;
+
+      }
+      else { /* Use the mass matrix */
+
+        const double  tpty_coef = cb->tpty_val/dt_cur;
+        const cs_sdm_t  *mass_mat = cb->hdg;
+
+        /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
+         *       >> Update the cellwise system with the time matrix */
+
+        /* Update rhs with csys->mat*p^n */
+        double  *time_pn = cb->values;
+        cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
+        for (short int i = 0; i < csys->n_dofs; i++)
+          csys->rhs[i] += tpty_coef*time_pn[i];
+
+        /* Update the cellwise system with the time matrix */
+        cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
+
+      }
 
       /* STATIC CONDENSATION
        * ===================
@@ -1633,29 +1709,52 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
       _fb_apply_bc_partly(time_eval, eqp, eqc, cm, fm, csys, cb);
 
       /* UNSTEADY TERM + TIME SCHEME
-       * ===========================
-       * STEP >> Compute the contribution of the diff/conv/reac matrix to
-       *         the RHS: rhs += (1- \theta) * mat * p_n
-       * STEP >> Add the time matrix contribution (which is non-zero only for
-       *         the cell-cell entry)
-       *         rhs += time_mat * p_n
-       */
+       * =========================== */
 
-      const double  ptyc = cb->tpty_val * cm->vol_c / dt_cur;
-
+      /* STEP.1 >> Compute the contribution of the "adr" to the RHS:
+       *           tcoef*adr_pn where adr_pn = csys->mat * p_n */
       double  *adr_pn = cb->values;
       cs_sdm_square_matvec(csys->mat, csys->val_n, adr_pn);
+      for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
+        csys->rhs[i] -= tcoef * adr_pn[i];
 
-      /* Only the cell row is involved in the time evolution */
-      csys->rhs[cm->n_fc] +=
-        ptyc*csys->val_n[cm->n_fc] - tcoef*adr_pn[cm->n_fc];
-
-      /* STEP >> Multiply csys->mat by theta */
+      /* STEP.2 >> Multiply csys->mat by theta */
       for (int i = 0; i < csys->n_dofs*csys->n_dofs; i++)
         csys->mat->val[i] *= eqp->theta;
 
-      /* Simply add an entry in mat[cell, cell] */
-      csys->mat->val[cm->n_fc*csys->n_dofs + cm->n_fc] += ptyc;
+      /* STEP.3 >> Handle the mass matrix
+       * Two contributions for the mass matrix
+       *  a) add to csys->mat
+       *  b) add to rhs mass_mat * p_n */
+      if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
+
+        const double  ptyc = cb->tpty_val * cm->vol_c / dt_cur;
+
+        /* Only the cell row is involved in the time evolution */
+        csys->rhs[cm->n_fc] += ptyc*csys->val_n[cm->n_fc];
+
+        /* Simply add an entry in mat[cell, cell] */
+        csys->mat->val[cm->n_fc*(csys->n_dofs + 1)] += ptyc;
+
+      }
+      else { /* Use the mass matrix */
+
+        const double  tpty_coef = cb->tpty_val / dt_cur;
+        const cs_sdm_t  *mass_mat = cb->hdg;
+
+        /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
+           >> Update the cellwise system with the time matrix */
+
+        /* Update rhs with mass_mat*p^n */
+        double  *time_pn = cb->values;
+        cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
+        for (short int i = 0; i < csys->n_dofs; i++)
+          csys->rhs[i] += tpty_coef*time_pn[i];
+
+        /* Update the cellwise system with the time matrix */
+        cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
+
+      }
 
       /* STATIC CONDENSATION
        * ===================

@@ -1148,6 +1148,79 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build a local Hodge operator on a given cell which is equivalent of
+ *         a mass matrix. It relies on a CO+ST algo. and is specific to CDO-Fb
+ *         schemes.
+ *
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_fb_get_mass(const cs_param_hodge_t    h_info,
+                     const cs_cell_mesh_t     *cm,
+                     cs_cell_builder_t        *cb)
+{
+  /* Sanity check */
+  assert(cb != NULL && cb->hdg != NULL);
+  assert(h_info.type == CS_PARAM_HODGE_TYPE_FB);
+  assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
+
+  const int n_cols = cm->n_fc + 1;
+  const cs_real_t  over_cell = 1./(cm->vol_c*cm->vol_c);
+
+  /* Initialize the local matrix related to this discrete Hodge operator */
+  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_square_init(n_cols, hdg);
+
+  /* cell-cell entry (cell-face and face-cell block are null */
+  hdg->val[cm->n_fc*(n_cols + 1)] = cm->vol_c;
+
+  /* Compute the inertia (useful for the face-face block */
+  cs_real_t  inertia_tensor[3][3];
+  cs_compute_inertia_tensor(cm, cm->xc, inertia_tensor);
+
+  for (short int fi = 0; fi < cm->n_fc; fi++) {
+
+    const cs_quant_t  pfq_i = cm->face[fi];
+    const short int  sgn_i = cm->f_sgn[fi];
+
+    /* Diagonal entry (a bit more optimized) */
+    cs_real_t dval = 0;
+    for (int k = 0; k < 3; k++) {
+      dval += pfq_i.unitv[k]*pfq_i.unitv[k]*inertia_tensor[k][k];
+      for (int l = k+1; l < 3; l++)
+        dval += 2*pfq_i.unitv[k]*pfq_i.unitv[l]*inertia_tensor[k][l];
+    }
+
+    hdg->val[fi*(n_cols+1)] = over_cell * pfq_i.meas*pfq_i.meas * dval;
+
+    /* Extra-diag entry */
+    for (short int fj = fi + 1; fj < cm->n_fc; fj++) {
+
+      const cs_quant_t  pfq_j = cm->face[fj];
+
+      cs_real_t  eval = 0;
+      for (int k = 0; k < 3; k++) {
+        for (int l = 0; l < 3; l++)
+          eval += pfq_i.unitv[k]*pfq_j.unitv[l]*inertia_tensor[k][l];
+      }
+      eval *= over_cell * sgn_i*pfq_i.meas * cm->f_sgn[fj]*pfq_j.meas;
+
+      /* Symmetric by construction */
+      hdg->val[fi*n_cols+fj] = eval;
+      hdg->val[fj*n_cols+fi] = eval;
+
+    } /* Loop on cell faces (fj) */
+
+  } /* Loop on cell faces (fi) */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local Hodge operator for a given cell using the WBS algo.
  *          This function is specific for vertex+cell-based schemes
  *
