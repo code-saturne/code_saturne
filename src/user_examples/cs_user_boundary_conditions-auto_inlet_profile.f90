@@ -174,7 +174,7 @@ elseif (itytur.eq.3) then
     call field_get_val_s(ivarfl(ir13), cvar_r13)
     call field_get_val_s(ivarfl(ir23), cvar_r23)
   end if
-  
+
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
   if (iturb.eq.32) then
@@ -377,7 +377,7 @@ else
         rcodcl(ifac,ir13,1) = cvar_r13(iel)
         rcodcl(ifac,ir23,1) = cvar_r23(iel)
       endif
-      
+
       rcodcl(ifac,iep,1)  = cvar_ep(iel)
 
       if (iturb.eq.32) then
