@@ -146,6 +146,10 @@ _transfer_bl_faces_selection(void              *input,
 /*!
  * \brief Flag vertices for limiter.
  *
+ * We mark cells using cell_vol_cmp = -3 for negative volumes, -2 for volumes
+ * reduced below the required threshold, and -1 for cells marked through
+ * adjacency with one of the above.
+ *
  * \param[in]   m                mesh
  * \param[in]   cell_vol_cmp     comparative cell volume (< 0 for limit)
  * \param[out]  vtx_flag         vertex flag (0 for unlimited, 1 for limited)
@@ -282,6 +286,77 @@ _extrude_vector_limit(const char                 *vtx_flag,
   return n_limited;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Expand limiter to neighboring cells.
+ *
+ * We mark cells using cell_vol_cmp = -3 for negative volumes, -2 for volumes
+ * reduced below the required threshold, and -1 for cells marked through
+ * adjacency with one of the above.
+ *
+ * \param[in]       m             mesh
+ * \param[in]       vtx_flag      vertex flag (0 for unlimited, 1 for limited)
+ * \param[in, out]  cell_vol_cmp  comparative cell volume (< 0 for limit)
+ *
+ * \return:
+ *   number of cells marked by adjacency
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_expand_limit(const cs_mesh_t  *m,
+              cs_real_t        *cell_vol_cmp,
+              char             *vtx_flag)
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  /* Use vertices flag to mark adjacent cells with bad volumes */
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    bool flag_cells = false;
+    cs_lnum_t s_id = m->i_face_vtx_idx[f_id];
+    cs_lnum_t e_id = m->i_face_vtx_idx[f_id+1];
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+      if (vtx_flag[m->i_face_vtx_lst[i]] != 0)
+        flag_cells = true;
+    }
+    if (flag_cells) {
+      cs_lnum_t c_id0 = m->i_face_cells[f_id][0];
+      cs_lnum_t c_id1 = m->i_face_cells[f_id][0];
+      if (c_id0 > -1 && c_id0 < n_cells)
+        cell_vol_cmp[c_id0] = CS_MIN(cell_vol_cmp[c_id0], -1);
+      if (c_id1 > -1 && c_id1 < n_cells)
+        cell_vol_cmp[c_id1] = CS_MIN(cell_vol_cmp[c_id0], -1);
+    }
+  }
+
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    bool flag_cells = false;
+    cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
+    cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+      if (vtx_flag[m->b_face_vtx_lst[i]] != 0)
+        flag_cells = true;
+    }
+    if (flag_cells) {
+      cs_lnum_t c_id0 = m->b_face_cells[f_id];
+      if (c_id0 > -1 && c_id0 < n_cells)
+        cell_vol_cmp[c_id0] = CS_MIN(cell_vol_cmp[c_id0], -1);
+    }
+
+  }
+
+  cs_lnum_t count = 0;
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    if (fabs(cell_vol_cmp[c_id] + 1) < 0.1)
+      count++;
+  }
+
+  return count;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -410,23 +485,26 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
       m->vtx_coord[i*3 + 2] += vd[i][2];
     }
 
-    /* Check deformation is acceptable */
+    /* Check deformation is acceptable;
+     * We mark cells using cell_vol_cmp = -3 for negative volumes,
+     * -2 for volumes reduced below the required threshold, and -1 for cells
+     * marked through adjacency with one of the above. */
 
     compute_displacement = false;
 
     if (min_volume_factor > 0 && min_volume_factor < 1) {
 
-      cs_gnum_t  counts[3] = {0, 0, 0};
+      cs_gnum_t  counts[4] = {0, 0, 0, 0};
 
       cs_real_t *cell_vol_cmp = cs_mesh_quantities_cell_volume(m);
 
       for (cs_lnum_t i = 0; i < n_cells_ini; i++) {
         if (cell_vol_cmp[i] <= 0) {
-          cell_vol_cmp[i] = -1;
+          cell_vol_cmp[i] = -3;
           counts[0] += 1;
         }
         else if (cell_vol_cmp[i] < cell_vol_ref[i]*min_volume_factor) {
-          cell_vol_cmp[i] = -1;
+          cell_vol_cmp[i] = -2;
           counts[1] += 1;
         }
       }
@@ -442,16 +520,28 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
                                  cell_vol_cmp,
                                  vtx_flag);
 
-      BFT_FREE(cell_vol_cmp);
-
       /* Now adjust extrusion vectors structure,
          removing a layer at flagged vertices */
 
       counts[2] = _extrude_vector_limit(vtx_flag, e);
 
-      BFT_FREE(vtx_flag);
-
       cs_parall_sum(3, CS_GNUM_TYPE, counts);
+
+      /* If bad volumes are present but not adjacent to a boundary
+         layer insertion zone, propagate to neighboring volumes */
+
+      const int max_propagation_iter = 30;
+      for (int p_iter = 0;
+           counts[0] > 0 && counts[2] == 0 && p_iter < max_propagation_iter;
+           p_iter++) {
+        counts[3] = _expand_limit(m, cell_vol_cmp, vtx_flag);
+        _flag_vertices_for_limiter(m, cell_vol_cmp, vtx_flag);
+        counts[2] = _extrude_vector_limit(vtx_flag, e);
+        cs_parall_sum(2, CS_GNUM_TYPE, counts+2); /* do not change initial cell counts */
+      }
+
+      BFT_FREE(vtx_flag);
+      BFT_FREE(cell_vol_cmp);
 
       if (counts[2] > 0) {
 
@@ -460,18 +550,18 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
              "  %llu cells would have a negative volume\n"
              "  %llu cells would have a volume reduced by more than %g\n"
              "    (which is the user-defined threshold)\n"
-             "  reducing insertion at adjacent boundary vertices.\n"),
+             "  reducing insertion at nearby boundary vertices.\n"),
            (unsigned long long)counts[0], (unsigned long long)counts[1],
            min_volume_factor);
 
         compute_displacement = true;
 
       }
+
       else if (counts[0] > 0) {
-        cs_base_warn(__FILE__, __LINE__);
         bft_printf
           (_("%llu cells would have a negative volume after boundary insertion\n"
-             "but none of these are adjacent to an inserted boundary.\n"
+             "but none of these are near to an inserted boundary.\n"
              "Unable to detemine appropriate insertion limitation."),
            (unsigned long long)counts[0]);
       }

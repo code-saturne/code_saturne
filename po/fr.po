@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-10-04 10:08+0200\n"
+"POT-Creation-Date: 2018-10-15 16:26+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -9689,8 +9689,9 @@ msgid ""
 " Stop computing the Neumann value.\n"
 msgstr ""
 
+#, c-format
 msgid ""
-" Stop setting an empty cs_equation_t structure.\n"
+" %s: Stop setting an empty cs_equation_t structure.\n"
 " Please check your settings.\n"
 msgstr ""
 
@@ -9921,6 +9922,9 @@ msgstr ""
 msgid "HHO-P2"
 msgstr ""
 
+msgid "Steady-state"
+msgstr ""
+
 msgid "Implicit"
 msgstr ""
 
@@ -9952,9 +9956,6 @@ msgid "weak using an algebraic manipulation"
 msgstr ""
 
 msgid "weak using a big penalization coefficient"
-msgstr ""
-
-msgid "strong"
 msgstr ""
 
 msgid "weak using the Nitsche method"
@@ -10007,6 +10008,10 @@ msgid ""
 " %s: An existing property has already the name %s.\n"
 " Stop adding this property.\n"
 msgstr ""
+
+#
+msgid " Key not implemented for setting a property."
+msgstr " La clé n'est pas encore gérée pour les propriétés."
 
 #, c-format
 msgid ""
@@ -11343,12 +11348,12 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Invalid xpath: %s\n"
+msgid "Error: can not use evaluate property: %s\n"
 msgstr ""
 
 #, c-format
-msgid "Error: can not use evaluate property: %s\n"
-msgstr ""
+msgid "Invalid node in function %s\n"
+msgstr "Noeud invalide dans la fonction : %s\n"
 
 #, c-format
 msgid "Error converting profile component tag %s to integer."
@@ -11565,37 +11570,6 @@ msgstr "Modèle invalide : %s"
 
 #, c-format
 msgid ""
-"The node type is not XML_ATTRIBUTE_NODE.\n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The node type is not XML_TEXT_NODE.\n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The node type is not XML_ELEMENT_NODE.\n"
-"Xpath: %s\n"
-msgstr ""
-
-msgid "Code_Saturne has been compiled without XML support."
-msgstr ""
-
-#, c-format
-msgid "Unable to parse the file: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"%s was built without XML support,\n"
-"so parameter file \"%s\" may not be loaded.\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "========================================================\n"
 "   ** Invalid version of the XML file\n"
 "      -------------------------------------- \n"
@@ -11629,33 +11603,6 @@ msgstr ""
 "\n"
 "      Il est recommandé de reconstruire un nouveau fichier XML.\n"
 "========================================================\n"
-
-#, c-format
-msgid ""
-"Several attributes found: %i \n"
-"The first one is %s \n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Several nodes name found: %i \n"
-"The first one is %s \n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Several text node found: %i \n"
-"The first one is %s \n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Invalid attribute value: %s \n"
-"Xpath: %s\n"
-msgstr ""
 
 #, c-format
 msgid "Expected 1 value for node %s, not %d"
@@ -13424,13 +13371,13 @@ msgid ""
 "  %llu cells would have a negative volume\n"
 "  %llu cells would have a volume reduced by more than %g\n"
 "    (which is the user-defined threshold)\n"
-"  reducing insertion at adjacent boundary vertices.\n"
+"  reducing insertion at nearby boundary vertices.\n"
 msgstr ""
 
 #, c-format
 msgid ""
 "%llu cells would have a negative volume after boundary insertion\n"
-"but none of these are adjacent to an inserted boundary.\n"
+"but none of these are near to an inserted boundary.\n"
 "Unable to detemine appropriate insertion limitation."
 msgstr ""
 
@@ -13995,6 +13942,13 @@ msgid ""
 "\n"
 "%llu boundary faces have a too small distance between\n"
 "cell centre and face centre.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"%llu faces have a too large reconstruction distance.\n"
+"For these faces, reconstruction are limited.\n"
 msgstr ""
 
 #, c-format
@@ -15650,4 +15604,3 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
-
