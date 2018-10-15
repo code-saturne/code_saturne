@@ -817,6 +817,7 @@ class Study(object):
                                        [],   # syrthes cases
                                        None, # aster cases
                                        None, # cathare case
+                                       None, # python case
                                        None, # copy
                                        False,# import_only
                                        False,# use ref

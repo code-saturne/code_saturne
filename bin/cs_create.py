@@ -110,6 +110,10 @@ def process_cmd_line(argv, pkg):
                       metavar="<cat_case>",
                       help="create a new Cathare2 case.")
 
+    parser.add_option("--python", dest="py_case_name", type="string",
+                      metavar="<py_case>",
+                      help="create a new Python script case.")
+
     parser.set_defaults(use_ref=True)
     parser.set_defaults(study_name=os.path.basename(os.getcwd()))
     parser.set_defaults(case_names=[])
@@ -120,6 +124,7 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(syr_case_names=[])
     parser.set_defaults(ast_case_name=None)
     parser.set_defaults(cat_case_name=None)
+    parser.set_defaults(py_case_name=None)
 
     (options, args) = parser.parse_args(argv)
 
@@ -138,6 +143,7 @@ def process_cmd_line(argv, pkg):
                  options.syr_case_names,
                  options.ast_case_name,
                  options.cat_case_name,
+                 options.py_case_name,
                  options.copy,
                  options.import_only,
                  options.use_ref,
@@ -217,7 +223,8 @@ def syrthes_path_line(pkg):
 class Study:
 
     def __init__(self, package, name, cases, syr_case_names, ast_case_name,
-                 cat_case_name, copy, import_only, use_ref, verbose):
+                 cat_case_name, py_case_name,
+                 copy, import_only, use_ref, verbose):
         """
         Initialize the structure for a study.
         """
@@ -246,6 +253,8 @@ class Study:
         self.ast_case_name = ast_case_name
 
         self.cat_case_name = cat_case_name
+
+        self.py_case_name = py_case_name
 
         if self.import_only:
             self.use_ref = False
@@ -293,6 +302,7 @@ class Study:
                 sys.stderr.write("Cannot locate Code_Aster installation.")
                 sys.exit(1)
 
+        # Creating Cathare case
         if self.cat_case_name is not None:
             config = configparser.ConfigParser()
             config.read(self.package.get_configfiles())
@@ -302,8 +312,13 @@ class Study:
                 sys.stderr.write("Cannot locate Cathare installation.")
                 sys.exit(1)
 
+        # Creating the Python script case
+        if self.py_case_name is not None:
+            self.create_python_case(repbase)
+
         # Creating coupling structure
-        if len(self.cases) + len(self.syr_case_names) > 1 or self.ast_case_name or self.cat_case_name:
+        if len(self.cases) + len(self.syr_case_names) > 1 or self.ast_case_name \
+           or self.cat_case_name or self.py_case_name:
             self.create_coupling(repbase)
 
 
@@ -384,6 +399,28 @@ class Study:
             sys.stderr.write("Cannot find the directory: " + \
                              os.path.join(datadir, 'cathare_coupling') + "\n")
             sys.exit(1)
+
+    def create_python_case(self, repbase):
+        """
+        Create and initialize Python code case directory for coupling
+        """
+
+        os.chdir(repbase)
+
+        if self.verbose > 0:
+            sys.stdout.write("  o Creating Python code case  '%s'...\n" %
+                             self.py_case_name)
+
+        c = os.path.join(repbase, self.py_case_name)
+
+        if not os.path.isdir(c):
+            os.mkdir(c)
+
+        os.chdir(c)
+
+        for d in ["DATA", "SRC", "RESU"]:
+            if not os.path.isdir(d):
+                os.mkdir(d)
 
 
     def create_coupling(self, repbase):
@@ -514,6 +551,27 @@ domains = [
             template = re.sub(e_pkg, solver_name, template)
             template = re.sub(e_dom, base_c, template)
 
+            dict_str += template
+
+
+        if self.py_case_name is not None:
+
+            c = os.path.normpath(self.py_case_name)
+            base_c = os.path.basename(c)
+
+            template = \
+"""
+    ,
+    {'solver': 'PYTHON_CODE',
+     'domain': 'DOMAIN',
+     'py_code': 'pycode.py',
+     'command_line': '',
+     'n_procs_weight': None,
+     'n_procs_min': 1,
+     'n_procs_max': 1}
+"""
+
+            template = re.sub(e_dom, self.py_case_name, template)
             dict_str += template
 
         # Now finish building dictionnary string
@@ -783,6 +841,10 @@ domains = [
                 print("  " + c)
         if self.ast_case_name != None:
             print("Code_Aster instance:", self.ast_case_name)
+        if self.py_case_name != None:
+            print("Python script instances:")
+            for c in self.py_case_name:
+                print("  " + c)
         print()
 
 

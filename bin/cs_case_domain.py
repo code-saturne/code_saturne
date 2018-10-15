@@ -1707,5 +1707,170 @@ class cathare_domain(domain):
     #---------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
+class python_domain(base_domain):
+
+
+    #---------------------------------------------------------------------------
+
+    def __init__(self,
+                 package,
+                 cmd_line = None,
+                 name = None,
+                 script_name = 'partner_script.py',
+                 log_file = None,
+                 n_procs_weight = None,
+                 n_procs_min = 1,
+                 n_procs_max = None,
+                 n_threads = 1):
+
+
+        base_domain.__init__(self,
+                             package,
+                             name,
+                             n_procs_weight,
+                             n_procs_min,
+                             n_procs_max)
+
+        self.cmd_line = cmd_line
+        self.logfile  = log_file
+        if self.logfile == None:
+            self.logfile = 'python.log'
+
+        self.data_file = None
+
+        self.solver_path = 'python'
+        self.exec_solver = True
+        self.nthreads = n_threads
+
+        self.script_name = script_name
+
+    #---------------------------------------------------------------------------
+
+    #---------------------------------------------------------------------------
+
+    def set_case_dir(self, case_dir, staging_dir = None):
+
+        base_domain.set_case_dir(self, case_dir, staging_dir)
+
+        self.data_dir = os.path.join(self.case_dir, "DATA")
+        self.src_dir  = os.path.join(self.case_dir, "SRC")
+        self.result_dir = os.path.join(self.case_dir, "RESU")
+
+    #---------------------------------------------------------------------------
+
+    #---------------------------------------------------------------------------
+
+    def set_exec_dir(self, exec_dir):
+
+        if os.path.isabs(exec_dir):
+            self.exec_dir = exec_dir
+        else:
+            self.exec_dir = os.path.join(self.case_dir, 'RESU', exec_dir)
+
+        self.exec_dir = os.path.join(self.exec_dir, self.name)
+
+        if not os.path.isdir(self.exec_dir):
+            os.mkdir(self.exec_dir)
+
+    #---------------------------------------------------------------------------
+
+    #---------------------------------------------------------------------------
+
+    def set_result_dir(self, name, given_dir = None):
+
+        if given_dir == None:
+            self.result_dir = os.path.join(self.result_dir,
+                                           'RESU_' + self.name,
+                                           name)
+        else:
+            self.result_dir = os.path.join(given_dir, self.name)
+
+        if not os.path.isdir(self.result_dir):
+            os.makedirs(self.result_dir)
+
+    #---------------------------------------------------------------------------
+
+    #---------------------------------------------------------------------------
+
+    def prepare_data(self):
+        """
+        Copy data to run directory
+        """
+
+        dir_files = os.listdir(self.data_dir)
+
+        for f in dir_files:
+            src = os.path.join(self.data_dir, f)
+            if os.path.isfile(src):
+                shutil.copy2(src, os.path.join(self.exec_dir, f))
+
+    #---------------------------------------------------------------------------
+
+    #---------------------------------------------------------------------------
+
+    def preprocess(self):
+        """
+        Preprocess dummy function: Does nothing for a standard python script
+        """
+
+        # Nothing to do
+
+    #---------------------------------------------------------------------------
+
+    #---------------------------------------------------------------------------
+
+    def copy_results(self):
+        """
+        Copy results dummy function: Does nothing for a standard python script
+        """
+        # Nothing to do
+
+    #---------------------------------------------------------------------------
+
+    #---------------------------------------------------------------------------
+
+    def summary_info(self, s):
+        """
+        output summary data into file s
+        """
+
+        base_domain.summary_info(self, s)
+
+    #---------------------------------------------------------------------------
+
+    #---------------------------------------------------------------------------
+
+    def solver_command(self, **kw):
+        """
+        Returns a tuple indicating SYRTHES's working directory,
+        executable path, and associated command-line arguments.
+        """
+
+        wd = enquote_arg(self.exec_dir)              # Working directory
+        # Executable
+        exec_path = enquote_arg(self.solver_path) \
+                  + ' ' + self.script_name
+
+        # Build kernel command-line arguments
+
+        args = ''
+
+        if self.data_file:
+            args += ' -d ' + enquote_arg(self.data_file)
+
+        args += ' --nprocs ' + str(self.n_procs)
+
+        args += ' --name ' + enquote_arg(self.name)
+
+        # Output to a logfile
+        args += ' --log ' + enquote_arg(self.logfile)
+
+        return wd, exec_path, args
+
+    #---------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

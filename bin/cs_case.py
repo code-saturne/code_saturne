@@ -128,22 +128,26 @@ class case:
 
         # Ensure we have tuples or lists to simplify later tests
 
-        if type(domains) == tuple or  type(domains) == list:
+        if type(domains) == list:
             self.domains = domains
+        elif type(domains) == tuple:
+            self.domains = list(domains)
         else:
-            self.domains = (domains,)
+            self.domains = [domains]
 
         if syr_domains == None:
-            self.syr_domains = ()
-        elif type(syr_domains) == tuple or type(syr_domains) == list:
+            self.syr_domains = []
+        elif type(syr_domains) == tuple :
+            self.syr_domains = list(syr_domains)
+        elif type(syr_domains) == list:
             self.syr_domains = syr_domains
         else:
-            self.syr_domains = (syr_domains,)
+            self.syr_domains = [syr_domains]
 
         if ast_domain == None:
-            self.ast_domains = ()
+            self.ast_domains = []
         else:
-            self.ast_domains = (ast_domain,)
+            self.ast_domains = [ast_domain]
 
         self.fsi_coupler = fsi_coupler
 
