@@ -1319,6 +1319,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_real_t  t_cur = cs_shared_time_step->t_cur;
+  const cs_real_t  time_eval = t_cur + dt_cur;
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
@@ -1358,8 +1359,6 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
 #else
     int  t_id = 0;
 #endif
-
-    const cs_real_t  time_eval = t_cur + 0.5*dt_cur; //dt_cur;
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
