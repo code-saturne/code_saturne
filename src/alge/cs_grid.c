@@ -5968,6 +5968,8 @@ cs_grid_project_row_num(const cs_grid_t  *g,
     /* Allocate temporary arrays */
 
     BFT_MALLOC(tmp_num_2, n_max_rows, cs_lnum_t);
+    for (cs_lnum_t i = 0; i < n_max_rows; i++)
+      tmp_num_2[i] = -1;        /* singleton */
 
     for (_g = g; _g->level > 0; _g = _g->parent) {
 
