@@ -58,6 +58,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
+#include "cs_multigrid.h"
 #include "cs_halo.h"
 #include "cs_param.h"
 #include "cs_property.h"
@@ -603,6 +604,39 @@ cs_user_parameters(void)
 
   }
   /*! [param_cdo_numerics] */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Advanced user-defined settings for the linear algebra related
+ *         to CDO equations
+ *         This is closed to cs_user_linear_solvers() but called once the fields
+ *         and equations have been created (this happens at a different stage
+ *         in the CDO framework)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_set_sles(void)
+{
+/*! [param_cdo_mg_aggreg] */
+  {
+    cs_equation_t  *eq = cs_equation_by_name("AdvDiff");
+    cs_field_t  *fld = cs_equation_get_field(eq);
+    cs_multigrid_t *mg = cs_multigrid_define(fld->id,
+                                             NULL,
+                                             CS_MULTIGRID_K_CYCLE);
+
+    cs_multigrid_set_coarsening_options(mg,
+                                        8, /* aggregation_limit*/
+                                        CS_GRID_COARSENING_SPD_PW, // coarsening
+                                        10,  /* n_max_levels */
+                                        30,  /* min_g_cells (default 30) */
+                                        0.,  /* P0P1 relaxation */
+                                        12);  /* postprocessing (default 0) */
+
+  }
+  /*! [param_cdo_mg_aggreg] */
 }
 
 /*----------------------------------------------------------------------------*/

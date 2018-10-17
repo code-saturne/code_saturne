@@ -696,6 +696,19 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Advanced user-defined settings for the linear algebra related
+ *         to CDO equations
+ *         This is closed to cs_user_linear_solvers() but called once the fields
+ *         and equations have been created (this happens at a different stage
+ *         in the CDO framework)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_set_sles(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  After the first step: cs_user_cdo_init_setup(), this second step
  *         concludes the setup of properties, equations, source terms...
  *         At this step, mesh quantities and connectivities are build as well

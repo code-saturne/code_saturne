@@ -61,6 +61,7 @@
 #include "cs_log.h"
 #include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_prototypes.h"
 #include "cs_range_set.h"
 #include "cs_sles.h"
 #include "cs_timer_stats.h"
@@ -1776,6 +1777,9 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       cs_timer_stats_stop(eq->main_ts_id);
 
   } /* Loop on equations */
+
+  /* Advanced settings of the linear algebra */
+  cs_user_cdo_set_sles();
 
   return all_are_steady;
 }
