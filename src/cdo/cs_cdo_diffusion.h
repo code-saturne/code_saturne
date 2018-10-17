@@ -34,6 +34,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
+#include "cs_equation_param.h"
 #include "cs_hodge.h"
 #include "cs_param.h"
 
@@ -92,10 +93,9 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique (symmetrized or not) or penalization
+ * \brief   Enforce the Dirichlet BCs
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
@@ -105,7 +105,7 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdo_diffusion_enforce_dir_t)(const cs_param_hodge_t          h_info,
+(cs_cdo_diffusion_enforce_dir_t)(const cs_equation_param_t      *eqp,
                                  const cs_cell_mesh_t           *cm,
                                  cs_cdo_diffusion_flux_trace_t  *flux_op,
                                  cs_face_mesh_t                 *fm,
@@ -193,14 +193,14 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
  *          The corresponding DoFs are algebraically "removed" of the system
  *
  *          |      |     |     |      |     |     |  |     |          |
- *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.bd |
  *          |------------| --> |------------| and |--| --> |----------|
  *          |      |     |     |      |     |     |  |     |          |
  *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
  *
  * where xd is the value of the Dirichlet BC
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -210,7 +210,7 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_alge_dirichlet(const cs_param_hodge_t           h_info,
+cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
                                 const cs_cell_mesh_t            *cm,
                                 cs_cdo_diffusion_flux_trace_t   *flux_op,
                                 cs_face_mesh_t                  *fm,
@@ -232,7 +232,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_param_hodge_t           h_info,
  *
  * where xd is the value of the Dirichlet BC
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -242,7 +242,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_param_hodge_t           h_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_alge_block_dirichlet(const cs_param_hodge_t           h_info,
+cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
                                       const cs_cell_mesh_t            *cm,
                                       cs_cdo_diffusion_flux_trace_t   *flux_op,
                                       cs_face_mesh_t                  *fm,
@@ -251,20 +251,20 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_param_hodge_t           h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique (symmetrized or not) or penalization
+ * \brief   Take into account Dirichlet BCs by a weak enforcement by a
+ *          penalization technique with a huge value
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
+cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
                                 const cs_cell_mesh_t            *cm,
                                 cs_cdo_diffusion_flux_trace_t   *flux_op,
                                 cs_face_mesh_t                  *fm,
@@ -277,17 +277,17 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
  *          penalization technique with a huge value.
  *          Case of a cellwise system defined by block.
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
+cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
                                       const cs_cell_mesh_t            *cm,
                                       cs_cdo_diffusion_flux_trace_t   *flux_op,
                                       cs_face_mesh_t                  *fm,
@@ -297,31 +297,9 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique plus a symmetric treatment
- *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
-                                  const cs_cell_mesh_t            *cm,
-                                  cs_cdo_diffusion_flux_trace_t   *flux_op,
-                                  cs_face_mesh_t                  *fm,
-                                  cs_cell_builder_t               *cb,
-                                  cs_cell_sys_t                   *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
@@ -331,12 +309,34 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
+cs_cdovb_diffusion_weak_dirichlet(const cs_equation_param_t      *eqp,
                                   const cs_cell_mesh_t           *cm,
                                   cs_cdo_diffusion_flux_trace_t  *flux_op,
                                   cs_face_mesh_t                 *fm,
                                   cs_cell_builder_t              *cb,
                                   cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique plus a symmetric treatment
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux trace operator
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_diffusion_wsym_dirichlet(const cs_equation_param_t       *eqp,
+                                  const cs_cell_mesh_t            *cm,
+                                  cs_cdo_diffusion_flux_trace_t   *flux_op,
+                                  cs_face_mesh_t                  *fm,
+                                  cs_cell_builder_t               *cb,
+                                  cs_cell_sys_t                   *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

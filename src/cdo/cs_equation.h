@@ -143,19 +143,6 @@ cs_equation_by_id(int   eq_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return true is the given equation is steady otherwise false
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_equation_is_steady(const cs_equation_t    *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Return the name related to the given cs_equation_t structure
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
@@ -222,6 +209,19 @@ cs_equation_get_flag(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Redefine the flag associated to an equation
+ *
+ * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in]       flag     new flag to set
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_flag(cs_equation_t    *eq,
+                     cs_flag_t         flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the cs_equation_builder_t structure associated to a
  *         cs_equation_t structure. Only for an advanced usage.
  *
@@ -247,6 +247,32 @@ cs_equation_get_builder(const cs_equation_t    *eq);
 
 void *
 cs_equation_get_scheme_context(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_is_steady(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_uses_new_mechanism(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -373,6 +399,36 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build and then solve the linear system for this equation when the
+ *         goal is to find the steady state
+ *
+ * \param[in]       mesh        pointer to a cs_mesh_t structure
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
+                               cs_equation_t              *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and then solve the linear system for an equation with an
+ *         unsteady term
+ *
+ * \param[in]       mesh        pointer to a cs_mesh_t structure
+ * \param[in]       dt_cur      value of the current time step
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_solve(const cs_mesh_t            *mesh,
+                  double                      dt_cur,
+                  cs_equation_t              *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build the linear system for this equation
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure
@@ -397,7 +453,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(cs_equation_t   *eq);
+cs_equation_solve_deprecated(cs_equation_t   *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -594,6 +650,22 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute and post-process Peclet number if requested
+ *
+ * \param[in]      eq       pointer to a cs_equation_t structure
+ * \param[in]      ts       pointer to a cs_time_step_t struct.
+ * \param[in, out] peclet   pointer to an array storing the resulting Peclet
+ *                          number in each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_peclet(const cs_equation_t        *eq,
+                           const cs_time_step_t       *ts,
+                           cs_real_t                   peclet[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Write into the restart file additionnal arrays (not defined as
  *         fields) but useful for the checkpoint/restart process
  *
@@ -629,11 +701,21 @@ cs_equation_write_extra_restart(cs_restart_t   *restart);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_extra_post_all(const cs_mesh_t            *mesh,
-                           const cs_cdo_connect_t     *connect,
-                           const cs_cdo_quantities_t  *cdoq,
-                           const cs_time_step_t       *ts,
-                           double                      dt_cur);
+cs_equation_post_balance(const cs_mesh_t            *mesh,
+                         const cs_cdo_connect_t     *connect,
+                         const cs_cdo_quantities_t  *cdoq,
+                         const cs_time_step_t       *ts,
+                         double                      dt_cur);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations related to equations according to the
+ *         type of numerical scheme (for the space discretization)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_extra_post(void);
 
 /*----------------------------------------------------------------------------*/
 

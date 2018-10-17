@@ -113,7 +113,7 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
   /* Reconstruction at face centers */
   for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
 
-    const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
+    const cs_real_t  *xf = cs_quant_get_face_center(f_id, quant);
 
     frec[f_id] = 0;
     double  f_surf = 0.;
@@ -365,7 +365,7 @@ cs_reco_pf_from_pv(cs_lnum_t                     f_id,
   if (pdi == NULL)
     return;
 
-  const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
+  const cs_real_t  *xf = cs_quant_get_face_center(f_id, quant);
   const cs_real_t  *xyz = quant->vtx_coord;
   const cs_adjacency_t  *e2v = connect->e2v;
   const cs_adjacency_t  *f2e = connect->f2e;

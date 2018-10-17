@@ -884,8 +884,9 @@ cs_advection_field_create_fields(void)
 
     } /* Add a field attached to boundary faces */
 
-    { /* Add a field attached to cells (Always created since it's used to
-         define the numerical scheme for advection */
+    { /* Add a field attached to cells (Always created since it may be used to
+         define the numerical scheme for advection, to compute adimensional
+         numbers or to postprocess the advection field */
 
       if (adv->type == CS_ADVECTION_FIELD_NAVSTO) {
 
@@ -903,7 +904,7 @@ cs_advection_field_create_fields(void)
         cs_field_t  *fld = cs_field_create(field_name,
                                            field_mask,
                                            CS_MESH_LOCATION_CELLS,
-                                           3,  /* always a vector-valued field */
+                                           3, /* always a vector-valued field */
                                            has_previous);
 
         cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
@@ -1398,8 +1399,8 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
         cs_nvec3(constant_val, &nvec);
         for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-          const cs_quant_t  qf = cs_quant_set_face(n_i_faces + i, cdoq);
-          flx_values[i] = qf.meas * nvec.meas * _dp3(qf.unitv, nvec.unitv);
+          const cs_nvec3_t  fq = cs_quant_set_face_nvec(n_i_faces + i, cdoq);
+          flx_values[i] = fq.meas * nvec.meas * _dp3(fq.unitv, nvec.unitv);
         }
 
       }
@@ -1929,11 +1930,11 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
         /* Two triangles composing the dual face inside a cell */
         const short int  f0 = cm->e2f_ids[2*e];
         const cs_nvec3_t  sef0 = cm->sefc[2*e];
-        const cs_quant_t  qf0 = cm->face[f0];
+        const cs_quant_t  fq0 = cm->face[f0];
 
         const short int  f1 = cm->e2f_ids[2*e+1];
         const cs_nvec3_t  sef1 = cm->sefc[2*e+1];
-        const cs_quant_t  qf1 = cm->face[f1];
+        const cs_quant_t  fq1 = cm->face[f1];
 
         fluxes[e] = 0.;
         switch (qtype) {
@@ -1946,9 +1947,9 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
             for (int k = 0; k < 3; k++) {
               const double  xec = cm->xc[k] + edge.center[k];
-              xg[0][k] = xec + qf0.center[k];
+              xg[0][k] = xec + fq0.center[k];
               xg[0][k] *= cs_math_onethird;
-              xg[1][k] = xec + qf1.center[k];
+              xg[1][k] = xec + fq1.center[k];
               xg[1][k] *= cs_math_onethird;
             }
 
@@ -1969,12 +1970,12 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
             cs_real_3_t  gpts[6], eval[6];
 
             /* Two triangles composing the dual face inside a cell */
-            cs_quadrature_tria_3pts(edge.center, qf0.center, cm->xc,
+            cs_quadrature_tria_3pts(edge.center, fq0.center, cm->xc,
                                     sef0.meas,
                                     gpts, w);
 
             /* Evaluate the field at the three quadrature points */
-            cs_quadrature_tria_3pts(edge.center, qf1.center, cm->xc,
+            cs_quadrature_tria_3pts(edge.center, fq1.center, cm->xc,
                                     sef1.meas,
                                     gpts + 3, w + 1);
 
@@ -2153,7 +2154,7 @@ cs_advection_field_update(cs_real_t    t_eval,
  * \param[in]      adv        pointer to the advection field struct.
  * \param[in]      diff       pointer to the diffusion property struct.
  * \param[in]      t_eval     time at which one evaluates the advection field
- * \param[in, out] peclet     pointer to an array storing Peclet number
+ * \param[in, out] peclet     pointer to an array storing the Peclet number
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2163,14 +2164,17 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
                         cs_real_t                 t_eval,
                         cs_real_t                 peclet[])
 {
+  /* Sanity checks */
+  assert(adv != NULL);
+  assert(diff != NULL);
+  assert(peclet != NULL);
+
   cs_real_t  ptymat[3][3];
   cs_real_3_t  ptydir;
   cs_nvec3_t  adv_c;
 
   const bool  pty_uniform = cs_property_is_uniform(diff);
   const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
-
-  assert(peclet != NULL);  /* Sanity check */
 
   /* Get the value of the material property at the first cell center */
   if (pty_uniform)
@@ -2182,15 +2186,56 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
     if (!pty_uniform)
       cs_property_get_cell_tensor(c_id, t_eval, diff, false, ptymat);
 
+    const cs_real_t  hc = cbrt(cdoq->cell_vol[c_id]);
+
     cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
-
-    cs_real_t  hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
-
     cs_math_33_3_product((const cs_real_t (*)[3])ptymat, adv_c.unitv, ptydir);
-
     peclet[c_id] = hc * adv_c.meas / _dp3(adv_c.unitv, ptydir);
 
   }  /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the Courant number in each cell
+ *
+ * \param[in]      adv        pointer to the advection field struct.
+ * \param[in]      dt_cur     current time step
+ * \param[in, out] courant    pointer to an array storing the Courant number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_get_courant(const cs_adv_field_t     *adv,
+                         cs_real_t                 dt_cur,
+                         cs_real_t                 courant[])
+{
+  assert(courant != NULL);  /* Sanity check */
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
+
+  assert(adv->cell_field_id > -1); /* field should be defined at cell centers */
+
+  const cs_field_t  *fld = cs_field_by_id(adv->cell_field_id);
+
+# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+    const cs_real_t  *vel_c = fld->val + 3*c_id;
+    const cs_real_t  ovol_c = 1./cdoq->cell_vol[c_id];
+
+    cs_real_t  _courant = 0.;
+    for (cs_lnum_t  i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+
+      const cs_real_t  *f_area = cs_quant_get_face_vector_area(c2f->ids[i],
+                                                               cdoq);
+      _courant = fmax(_courant, fabs(_dp3(f_area, vel_c)) * ovol_c);
+
+    }
+    courant[c_id] = _courant * dt_cur;
+
+  } /* Loop on cells */
 
 }
 

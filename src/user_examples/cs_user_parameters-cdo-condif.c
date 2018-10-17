@@ -507,20 +507,58 @@ cs_user_model(void)
   /*! [param_cdo_add_user_equation] */
 
   /* ========================================
-     Add material properties/advection fields
+     Add material properties
      ======================================== */
 
   /*! [param_cdo_add_user_properties] */
   {
-    cs_property_add("conductivity",      // property name
-                    CS_PROPERTY_ANISO);  // type of material property
-    cs_property_add("rho.cp",            // property name
-                    CS_PROPERTY_ISO);    // type of material property
-
-    cs_advection_field_add_user("adv_field"); // name of the new advection field
+    cs_property_add("conductivity",      /* property name */
+                    CS_PROPERTY_ANISO);  /* type of material property */
+    cs_property_add("rho.cp",            /* property name */
+                    CS_PROPERTY_ISO);    /* type of material property */
 
   }
   /*! [param_cdo_add_user_properties] */
+
+  /*! [param_cdo_add_user_properties_opt] */
+  {
+    /* Retrieve a property named "conductivity"  */
+    cs_property_t  *pty = cs_property_by_name("conductivity");
+
+    /* Activate the computation of the Fourier number for this property */
+    cs_property_set_option(pty, CS_PTYKEY_POST_FOURIER);
+  }
+  /*! [param_cdo_add_user_properties_opt] */
+
+  /* ========================================
+     Add advection fields
+     ======================================== */
+
+  /*! [param_cdo_add_user_adv_field] */
+  {
+    /* Add a user-defined advection field named "adv_field"  */
+    cs_adv_field_t  *adv = cs_advection_field_add_user("adv_field");
+  }
+  /*! [param_cdo_add_user_adv_field] */
+
+  /*! [param_cdo_add_user_adv_field_opt] */
+  {
+    /* Retrieve an advection field named "adv_field"  */
+    cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
+
+    /* Compute the Courant number (if unsteady simulation) */
+    cs_advection_field_set_option(adv, CS_ADVKEY_POST_COURANT);
+
+    /* Set other advanced options: for instance, define an interpolation of the
+       advection field at vertices */
+    cs_advection_field_set_option(adv, CS_ADVKEY_DEFINE_AT_VERTICES);
+
+    /* Both options in one call */
+    cs_advection_field_set_option(adv,
+                                  CS_ADVKEY_POST_COURANT |
+                                  CS_ADVKEY_DEFINE_AT_VERTICES);
+  }
+  /*! [param_cdo_add_user_adv_field_opt] */
 
 }
 
@@ -537,12 +575,12 @@ cs_user_model(void)
 void
 cs_user_parameters(void)
 {
-    /* Modify the setting of an equation
-       =================================
+  /* Modify the setting of an equation
+     =================================
 
-       Available keywords and related values for keywords are described in
-       the DOXYGEN documentation.
-    */
+     Available keywords and related values for keywords are described in
+     the DOXYGEN documentation.
+  */
 
   /*! [param_cdo_numerics] */
   {

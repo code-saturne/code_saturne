@@ -49,12 +49,12 @@ class CFDSTUDY_DistantLauncher:
         salome.salome_init()
 
         self.case_dir        = case_dir
-        self.case_name       = os.path.split(self.case_dir)[-1]
+        self.case_name       = os.path.split(self.case_dir)[1]
+
+        self.study_dir       = os.path.split(self.case_dir)[0]
+        self.study_name      = os.path.split(self.study_dir)[1]
 
         self.pkg             = package
-
-        lc = len(self.case_name)+1
-        self.study_name      = os.path.split(self.case_dir[:-lc])[-1]
 
         self.cfg             = params_cfg
         self.host            = self.cfg.get('host_parameters', 'host_name')
@@ -66,6 +66,7 @@ class CFDSTUDY_DistantLauncher:
 
         self.package_name    = self.cfg.get('study_parameters', 'code_name')
         self.paramfile       = self.cfg.get('study_parameters', 'xmlfile')
+        self.results_file    = self.cfg.get('study_parameters', 'results_file')
 
         self.run_prefix = None
         if run_prefix:
@@ -77,6 +78,7 @@ class CFDSTUDY_DistantLauncher:
         self.job_params = self.__getJobParameters__()
 
         self.job_id = -1
+        self.job_failed = False
     # --------------------------------------------------------------------------
 
     # --------------------------------------------------------------------------
@@ -114,7 +116,7 @@ class CFDSTUDY_DistantLauncher:
         exit_code = self.job.verify()
 
         if exit_code != 0:
-           raise Exception('JOB CRASHED')
+            self.job_failed = True
 
     # --------------------------------------------------------------------------
 
@@ -133,7 +135,12 @@ class CFDSTUDY_DistantLauncher:
         Check if the run requires a restart (insufficient time)
         """
 
-        return False
+        test_name = os.path.join(self.job_params.result_directory,
+                                 "status.exceeded_time_limit")
+
+        not_finished = os.path.isfile(test_name)
+
+        return not_finished
     # --------------------------------------------------------------------------
 
     # --------------------------------------------------------------------------
@@ -166,7 +173,7 @@ class CFDSTUDY_DistantLauncher:
         """
 
         # ---------------------------------
-        resManager = salome.lcc.getResourceManager()
+        resManager = salome.lcc.getResourcesManager()
         rdef       = resManager.GetResourceDefinition(self.host)
 
         dist_wdir  = os.path.split(rdef.working_directory)[0]
@@ -178,14 +185,10 @@ class CFDSTUDY_DistantLauncher:
         job_params.resource_required         = salome.ResourceParameters()
         job_params.resource_required.name    = self.host
         job_params.resource_required.nb_proc = int(self.cfg.get('batch_parameters', 'nprocs'))
+        job_params.resource_required.type    = 'rsync'
 
-        wct    = self.cfg.get('batch_parameters', 'wall_clock')
-        wc_d   = int(wct.split('-')[0])
-        wc_hms = (wct.split('-')[1]).split(':')
-        job_params.maximum_duration = int(wc_hms[2])
-                                    + int(wc_hms[1])*60
-                                    + int(wc_hms[0])*3600
-                                    + wc_d * 3600*24
+        job_params.maximum_duration = self.cfg.get('batch_parameters',
+                                                   'wall_clock')
 
         job_params.wckey            = self.cfg.get('batch_parameters', 'wckey')
         job_params.job_name         = "CS_OT"
@@ -211,12 +214,14 @@ class CFDSTUDY_DistantLauncher:
         # ---------------------------------
 
         # ---------------------------------
-        restart_file = os.path.join(job_params.work_directory,
-                                     'RESU',
-                                     self.run_id,
-                                     'restart_needed')
+        job_params.out_files = []
+        for f in (self.results_file, 'status.exceeded_time_limit'):
+            df = os.path.join(job_params.work_directory,
+                              'RESU',
+                              self.run_id,
+                              f)
 
-        job_params.out_files = [restart_file]
+            job_params.out_files.append(df)
         # ---------------------------------
 
         # ---------------------------------
@@ -250,12 +255,11 @@ class CFDSTUDY_DistantLauncher:
             self.run_id = self.run_prefix + '{:0>4}'.format(idx + 1)
 
         else:
-            from code_saturne.cs_script import master_script
-            id_args = ['run', '--suggest-id']
-            ms = master_script(id_args, self.pkg)
-            retcode = ms.execute()
 
-            self.run_id = retcode[0]
+            from code_saturne.cs_run import run as get_run_id
+
+            id_args = ['run', '--suggest-id']
+            self.run_id = get_run_id(id_args, self.pkg)[1]
 
     # --------------------------------------------------------------------------
 

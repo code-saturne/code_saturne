@@ -326,28 +326,24 @@ cs_cell_sys_create(int          n_max_dofbyc,
  * \brief  Reset all members related to BC and some other ones in a
  *         \ref cs_cell_sys_t structure
  *
- * \param[in]      cell_flag  metadata about the cell to treat
- * \param[in]      n_dofbyc   number of DoFs in a cell
  * \param[in]      n_fbyc     number of faces in a cell
  * \param[in, out] csys       pointer to the \ref cs_cell_sys_t struct to reset
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_sys_reset(cs_flag_t        cell_flag,
-                  int              n_dofbyc,
-                  int              n_fbyc,
+cs_cell_sys_reset(int              n_fbyc,
                   cs_cell_sys_t   *csys)
 {
-  if (n_fbyc == 0 || n_dofbyc == 0)
+  if (n_fbyc == 0 || csys->n_dofs == 0)
     return;
 
-  const size_t  s = n_dofbyc * sizeof(double);
+  const size_t  s = csys->n_dofs * sizeof(double);
 
   memset(csys->rhs, 0, s);
   memset(csys->source, 0, s);
 
-  if (cell_flag & CS_FLAG_BOUNDARY) {
+  if (csys->cell_flag & CS_FLAG_BOUNDARY) {
 
     csys->n_bc_faces = 0;
     csys->has_dirichlet = csys->has_nhmg_neumann = csys->has_robin = false;
@@ -355,7 +351,7 @@ cs_cell_sys_reset(cs_flag_t        cell_flag,
     memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_fbyc);
     memset(csys->_f_ids, 0, sizeof(short int)*n_fbyc);
     memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_fbyc);
-    memset(csys->dof_flag, 0, sizeof(cs_flag_t)*n_dofbyc);
+    memset(csys->dof_flag, 0, sizeof(cs_flag_t)*csys->n_dofs);
 
     memset(csys->dir_values, 0, s);
     memset(csys->neu_values, 0, s);
@@ -406,14 +402,12 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
  * \brief   Dump a local system for debugging purpose
  *
  * \param[in]       msg     associated message to print
- * \param[in]       c_id    id related to the cell
  * \param[in]       csys    pointer to a \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cell_sys_dump(const char             msg[],
-                 const cs_lnum_t        c_id,
                  const cs_cell_sys_t   *csys)
 {
 # pragma omp critical
@@ -421,9 +415,9 @@ cs_cell_sys_dump(const char             msg[],
     cs_log_printf(CS_LOG_DEFAULT, "%s", msg);
 
     if (csys->mat->flag & CS_SDM_BY_BLOCK)
-      cs_sdm_block_dump(c_id, csys->mat);
+      cs_sdm_block_dump(csys->c_id, csys->mat);
     else
-      cs_sdm_dump(c_id, csys->dof_ids, csys->dof_ids, csys->mat);
+      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, csys->mat);
 
     cs_log_printf(CS_LOG_DEFAULT, "\n>> %-10s | %-10s | %-10s | %-10s\n",
                   "IDS", "RHS", "TS", "VAL_PREV");
@@ -453,10 +447,13 @@ cs_cell_builder_create(void)
   cb->eig_ratio = -DBL_MAX;
   cb->eig_max = -DBL_MAX;
 
-  cb->pty_mat[0][0] = cb->pty_mat[1][1] = cb->pty_mat[2][2] = 1;
-  cb->pty_mat[0][1] = cb->pty_mat[1][0] = cb->pty_mat[2][0] = 0;
-  cb->pty_mat[0][2] = cb->pty_mat[1][2] = cb->pty_mat[2][1] = 0;
-  cb->pty_val = 1;
+  cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = 1;
+  cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0;
+  cb->dpty_mat[0][2] = cb->dpty_mat[1][2] = cb->dpty_mat[2][1] = 0;
+  cb->dpty_val = 1;
+  cb->tpty_val = 1;
+  cb->rpty_val = 1;
+  for (int r = 0; r < CS_CDO_N_MAX_REACTIONS; r++) cb->rpty_vals[r] = 1;
 
   cb->ids = NULL;
   cb->values = NULL;
@@ -805,17 +802,17 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
  * \brief  Define a cs_cell_mesh_t structure for a given cell id. According
  *         to the requested level, some quantities may not be defined;
  *
- * \param[in]       c_id      cell id
- * \param[in]       flag      indicate which members are really defined
- * \param[in]       connect   pointer to a cs_cdo_connect_t structure
- * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
- * \param[in, out]  cm        pointer to a cs_cell_mesh_t structure to set
+ * \param[in]       c_id        cell id
+ * \param[in]       build_flag  indicate which members are really built
+ * \param[in]       connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]       quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in, out]  cm          pointer to a cs_cell_mesh_t structure to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cell_mesh_build(cs_lnum_t                    c_id,
-                   cs_flag_t                    flag,
+                   cs_flag_t                    build_flag,
                    const cs_cdo_connect_t      *connect,
                    const cs_cdo_quantities_t   *quant,
                    cs_cell_mesh_t              *cm)
@@ -823,7 +820,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   if (cm == NULL)
     return;
 
-  cm->flag = flag;
+  cm->flag = build_flag;
   cm->type = connect->cell_type[c_id];
 
   /* Store information related to cell */
@@ -840,11 +837,11 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   cm->n_ec = c2e_idx[1] - c2e_idx[0];
   cm->n_fc = c2f_idx[1] - c2f_idx[0];
 
-  if (flag == 0)
+  if (build_flag == 0)
     return;
 
   /* Information related to primal vertices */
-  if (flag & cs_cdo_local_flag_v) {
+  if (build_flag & cs_cdo_local_flag_v) {
 
     const cs_lnum_t  *c2v_ids = connect->c2v->ids + c2v_idx[0];
 
@@ -856,7 +853,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     }
 
     /* Primal vertices quantities */
-    if (flag & CS_CDO_LOCAL_PVQ) {
+    if (build_flag & CS_CDO_LOCAL_PVQ) {
 
       const double  *wvc = quant->dcell_vol + c2v_idx[0];
       const double  invvol = 1/cm->vol_c;
@@ -868,16 +865,16 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   } // vertices
 
   /* Information related to primal edges */
-  if (flag & cs_cdo_local_flag_e) {
+  if (build_flag & cs_cdo_local_flag_e) {
 
     const cs_lnum_t  *c2e_ids = connect->c2e->ids + c2e_idx[0];
 
     for (short int e = 0; e < cm->n_ec; e++)
       cm->e_ids[e] = c2e_ids[e];
 
-    if (flag & cs_cdo_local_flag_peq) {
+    if (build_flag & cs_cdo_local_flag_peq) {
 
-      assert(flag & CS_CDO_LOCAL_PV);
+      assert(build_flag & CS_CDO_LOCAL_PV);
 
       /* Primal edge quantities */
       for (short int e = 0; e < cm->n_ec; e++) {
@@ -900,7 +897,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     } // Primal edge quantities
 
     /* Dual face quantities related to each edge */
-    if (flag & CS_CDO_LOCAL_DFQ) {
+    if (build_flag & CS_CDO_LOCAL_DFQ) {
 
       for (short int e = 0; e < cm->n_ec; e++) {
 
@@ -924,7 +921,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } // Edges
 
-  if (flag & CS_CDO_LOCAL_EV) {
+  if (build_flag & CS_CDO_LOCAL_EV) {
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int t_id = omp_get_thread_num();
@@ -958,7 +955,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   } // edge-vertices information
 
   /* Information related to primal faces */
-  if (flag & cs_cdo_local_flag_f) {
+  if (build_flag & cs_cdo_local_flag_f) {
 
     const cs_lnum_t  *c2f_lst = connect->c2f->ids + c2f_idx[0];
     const short int  *c2f_sgn = connect->c2f->sgn + c2f_idx[0];
@@ -969,7 +966,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     } // Loop on cell faces
 
     /* Face related quantities */
-    if (flag & cs_cdo_local_flag_pfq) {
+    if (build_flag & cs_cdo_local_flag_pfq) {
 
       for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -985,7 +982,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     } /* Primal face quantities */
 
-    if (flag & cs_cdo_local_flag_deq) {
+    if (build_flag & cs_cdo_local_flag_deq) {
 
       for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -1001,7 +998,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     } /* Dual edge quantities */
 
-    if (flag & CS_CDO_LOCAL_HFQ) {
+    if (build_flag & CS_CDO_LOCAL_HFQ) {
 
       /* Compute the height of the pyramid of base f whose apex is
          the cell center */
@@ -1020,7 +1017,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } /* Face information */
 
-  if (flag & cs_cdo_local_flag_fe) {
+  if (build_flag & cs_cdo_local_flag_fe) {
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int t_id = omp_get_thread_num();
@@ -1063,7 +1060,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     /* Sanity check */
     assert(cm->f2e_idx[cm->n_fc] == 2*cm->n_ec);
 
-    if (flag & CS_CDO_LOCAL_FEQ) {
+    if (build_flag & CS_CDO_LOCAL_FEQ) {
 
       for (short int f = 0; f < cm->n_fc; f++) {
         for (int ie = cm->f2e_idx[f]; ie < cm->f2e_idx[f+1]; ie++)
@@ -1075,7 +1072,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } // face --> edges connectivity
 
-  if (flag & cs_cdo_local_flag_ef) {
+  if (build_flag & cs_cdo_local_flag_ef) {
 
     /* Build the e2f connectivity */
     for (short int i = 0; i < 2*cm->n_ec; i++) cm->e2f_ids[i] = -1;
@@ -1094,7 +1091,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       } /* Loop on face edges */
     } // Loop on cell faces
 
-    if (flag & CS_CDO_LOCAL_EFQ) { /* Build cm->sefc */
+    if (build_flag & CS_CDO_LOCAL_EFQ) { /* Build cm->sefc */
 
       cs_nvec3_t  nv;
 
@@ -1122,9 +1119,9 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } /* edge-->faces */
 
-  if (flag & CS_CDO_LOCAL_DIAM) {
+  if (build_flag & CS_CDO_LOCAL_DIAM) {
 
-    assert(cs_flag_test(flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
+    assert(cs_flag_test(build_flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int t_id = omp_get_thread_num();

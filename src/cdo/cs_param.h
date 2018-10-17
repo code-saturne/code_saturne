@@ -161,6 +161,9 @@ typedef enum {
  * \enum cs_param_time_scheme_t
  *   Type of numerical scheme for the discretization in time
  *
+ * \var CS_TIME_SCHEME_STEADY
+ * No time scheme. Steady-state computation.
+ *
  * \var CS_TIME_SCHEME_IMPLICIT
  * fully implicit (forward Euler/theta-scheme = 1)
  *
@@ -176,6 +179,7 @@ typedef enum {
 
 typedef enum {
 
+  CS_TIME_SCHEME_STEADY,
   CS_TIME_SCHEME_IMPLICIT,
   CS_TIME_SCHEME_EXPLICIT,
   CS_TIME_SCHEME_CRANKNICO,
@@ -221,8 +225,12 @@ typedef enum {
  * Continuous Interior Penalty discretization. Only available for
  * \ref CS_SPACE_SCHEME_CDOVCB
  *
- * \var CS_PARAM_ADVECTION_SCHEME_UPWIND
- * Low order upwind discretization
+ * \var CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND
+ * Centered discretization with a portion between [0,1] of upwinding.
+ * The portion is specified thanks to \ref CS_EQKEY_ADV_UPWIND_PORTION
+ * If the portion is equal to 0, then one recovers
+ * \ref CS_PARAM_ADVECTION_SCHEME_CENTERED. If the portion is equal to 1, then
+ * one recovers CS_PARAM_ADVECTION_SCHEME_UPWIND
  *
  * \var CS_PARAM_ADVECTION_SCHEME_SAMARSKII
  * Weighting between an upwind and a centered discretization relying on the
@@ -231,15 +239,19 @@ typedef enum {
  * \var CS_PARAM_ADVECTION_SCHEME_SG
  * Weighting between an upwind and a centered discretization relying on the
  * Peclet number. Weighting function = Scharfetter-Gummel
+ *
+ * \var CS_PARAM_ADVECTION_SCHEME_UPWIND
+ * Low order upwind discretization
  */
 
 typedef enum {
 
   CS_PARAM_ADVECTION_SCHEME_CENTERED,
   CS_PARAM_ADVECTION_SCHEME_CIP,
-  CS_PARAM_ADVECTION_SCHEME_UPWIND,
+  CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND,
   CS_PARAM_ADVECTION_SCHEME_SAMARSKII,
   CS_PARAM_ADVECTION_SCHEME_SG,
+  CS_PARAM_ADVECTION_SCHEME_UPWIND,
 
   CS_PARAM_N_ADVECTION_SCHEMES
 
@@ -295,11 +307,6 @@ typedef enum {
  * freedom in the algebraic system) with a penalization technique using a huge
  * value.
  *
- * \var CS_PARAM_BC_ENFORCE_STRONG
- * Strong enforcement of the boundary conditions. Degrees of freedom related
- * to this boundary condition are removed from the algebraic system.
- * Deprecated. Do not use this option.
- *
  * \var CS_PARAM_BC_ENFORCE_WEAK_NITSCHE
  * Weak enforcement of the boundary conditions (i.e. one keeps the degrees of
  * freedom in the algebraic system) with a Nitsche-like penalization technique.
@@ -319,7 +326,6 @@ typedef enum {
 
   CS_PARAM_BC_ENFORCE_ALGEBRAIC,
   CS_PARAM_BC_ENFORCE_PENALIZED,
-  CS_PARAM_BC_ENFORCE_STRONG,
   CS_PARAM_BC_ENFORCE_WEAK_NITSCHE,
   CS_PARAM_BC_ENFORCE_WEAK_SYM,
 

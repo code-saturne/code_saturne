@@ -105,7 +105,7 @@ static cs_equation_t  **_equations = NULL;
  *============================================================================*/
 
 static const char _err_empty_eq[] =
-  N_(" Stop setting an empty cs_equation_t structure.\n"
+  N_(" %s: Stop setting an empty cs_equation_t structure.\n"
      " Please check your settings.\n");
 
 /*============================================================================
@@ -269,9 +269,9 @@ _initialize_field_from_ic(cs_real_t         t_eval,
             bft_error(__FILE__, __LINE__, 0,
                       _(" Incompatible reduction for equation %s.\n"),
                       eqp->name);
+            break;
 
           } /* Switch on possible reduction types */
-          break;
 
         } /* face values */
 
@@ -291,9 +291,9 @@ _initialize_field_from_ic(cs_real_t         t_eval,
             bft_error(__FILE__, __LINE__, 0,
                       _(" Incompatible reduction for equation %s.\n"),
                       eqp->name);
+            break;
 
           } /* Switch on possible reduction types */
-          break;
 
         } /* cell values */
 
@@ -812,6 +812,26 @@ cs_equation_get_flag(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Redefine the flag associated to an equation
+ *
+ * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in]       flag     new flag to set
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_flag(cs_equation_t    *eq,
+                     cs_flag_t         flag)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
+  assert(eq->param != NULL);
+
+  eq->param->flag = flag;;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the cs_equation_builder_t structure associated to a
  *         cs_equation_t structure. Only for an advanced usage.
  *
@@ -924,30 +944,6 @@ cs_equation_get_reaction_property(const cs_equation_t    *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return true is the given equation is steady otherwise false
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_equation_is_steady(const cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return true;
-  if (eq->param == NULL)
-    return true;
-
-  if (eq->param->flag & CS_EQUATION_UNSTEADY)
-    return false;
-  else
-    return true;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Return the type of numerical scheme used for the discretization in
  *         space
  *
@@ -1030,6 +1026,57 @@ cs_equation_get_type(const cs_equation_t    *eq)
     return CS_EQUATION_N_TYPES;
   else
     return eq->param->type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_is_steady(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return true;
+  if (eq->param == NULL)
+    return true;
+
+  if (eq->param->flag & CS_EQUATION_UNSTEADY)
+    return false;
+  else
+    return true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_uses_new_mechanism(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return false;
+  assert(eq->param != NULL);
+
+  if (eq->param->dim == 1) {
+    if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB)  ||
+        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOVCB) ||
+        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB))
+      return true;
+  }
+
+  return false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1374,6 +1421,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
     if (eqp->flag & CS_EQUATION_UNSTEADY)
       all_are_steady = false;
+    else
+      cs_equation_set_param(eqp, CS_EQKEY_TIME_SCHEME, "steady");
 
     if (do_profiling)
       cs_equation_set_timer_stats(eq);
@@ -1386,16 +1435,39 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
         eq->init_context = cs_cdovb_scaleq_init_context;
         eq->free_context = cs_cdovb_scaleq_free_context;
-        eq->initialize_system = cs_cdovb_scaleq_initialize_system;
         eq->set_dir_bc = cs_cdovb_scaleq_set_dir_bc;
+
+        /* deprecated */
+        eq->initialize_system = cs_cdovb_scaleq_initialize_system;
         eq->build_system = cs_cdovb_scaleq_build_system;
         eq->prepare_solving = _prepare_vb_solving;
         eq->update_field = cs_cdovb_scaleq_update_field;
+
+        /* New mechanism */
+        switch (eqp->time_scheme) {
+        case CS_TIME_SCHEME_STEADY:
+          eq->solve = cs_cdovb_scaleq_solve_steady_state;
+          break;
+        case CS_TIME_SCHEME_IMPLICIT:
+          eq->solve = cs_cdovb_scaleq_solve_implicit;
+          break;
+        case CS_TIME_SCHEME_THETA:
+        case CS_TIME_SCHEME_CRANKNICO:
+          eq->solve = cs_cdovb_scaleq_solve_theta;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__, eqp->name);
+        }
+
         eq->compute_balance = cs_cdovb_scaleq_balance;
         eq->compute_flux_across_plane =
           cs_cdovb_scaleq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
         eq->postprocess = cs_cdovb_scaleq_extra_op;
+
         eq->read_restart = NULL;
         eq->write_restart = NULL;
 
@@ -1425,6 +1497,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
           cs_cdovb_vecteq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovb_vecteq_cellwise_diff_flux;
         eq->postprocess = cs_cdovb_vecteq_extra_op;
+
         eq->read_restart = NULL;
         eq->write_restart = NULL;
 
@@ -1452,11 +1525,35 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
         eq->init_context = cs_cdovcb_scaleq_init_context;
         eq->free_context = cs_cdovcb_scaleq_free_context;
-        eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
         eq->set_dir_bc = cs_cdovcb_scaleq_set_dir_bc;
+
+        /* Deprecated */
+        eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
         eq->build_system = cs_cdovcb_scaleq_build_system;
         eq->prepare_solving = _prepare_vb_solving;
         eq->update_field = cs_cdovcb_scaleq_update_field;
+
+        /* New mechanism */
+        switch (eqp->time_scheme) {
+        case CS_TIME_SCHEME_STEADY:
+          eq->solve = cs_cdovcb_scaleq_solve_steady_state;
+          break;
+
+        case CS_TIME_SCHEME_IMPLICIT:
+          eq->solve = cs_cdovcb_scaleq_solve_implicit;
+          break;
+
+        case CS_TIME_SCHEME_THETA:
+        case CS_TIME_SCHEME_CRANKNICO:
+          eq->solve = cs_cdovcb_scaleq_solve_theta;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__, eqp->name);
+        }
+
         eq->compute_flux_across_plane =
           cs_cdovcb_scaleq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
@@ -1487,15 +1584,40 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
         eq->init_context = cs_cdofb_scaleq_init_context;
         eq->free_context = cs_cdofb_scaleq_free_context;
-        eq->initialize_system = cs_cdofb_scaleq_initialize_system;
         eq->set_dir_bc = cs_cdofb_scaleq_set_dir_bc;
+
+        /* Deprecated */
+        eq->initialize_system = cs_cdofb_scaleq_initialize_system;
         eq->build_system = cs_cdofb_scaleq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_cdofb_scaleq_update_field;
+
+        /* New mechanism */
+        switch (eqp->time_scheme) {
+        case CS_TIME_SCHEME_STEADY:
+          eq->solve = cs_cdofb_scaleq_solve_steady_state;
+          break;
+
+        case CS_TIME_SCHEME_IMPLICIT:
+          eq->solve = cs_cdofb_scaleq_solve_implicit;
+          break;
+
+        case CS_TIME_SCHEME_THETA:
+        case CS_TIME_SCHEME_CRANKNICO:
+          eq->solve = cs_cdofb_scaleq_solve_theta;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__, eqp->name);
+        }
+
         eq->compute_flux_across_plane = NULL;
         eq->compute_cellwise_diff_flux = NULL;
         eq->compute_balance = cs_cdofb_scaleq_balance;
         eq->postprocess = cs_cdofb_scaleq_extra_op;
+
         eq->read_restart = cs_cdofb_scaleq_read_restart;
         eq->write_restart = cs_cdofb_scaleq_write_restart;
 
@@ -1669,7 +1791,7 @@ cs_equation_create_fields(void)
 {
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-    int  location_id = -1; // initialize values to avoid a warning
+    int  location_id = -1; /* initialize values to avoid a warning */
     int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
 
     cs_equation_t  *eq = _equations[eq_id];
@@ -1801,7 +1923,10 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
       _initialize_field_from_ic(ts->t_cur, eq);
 
-    /* Enforce initial boundary condition if there is Dirichlet values */
+    /* Enforce initial boundary condition if there is Dirichlet values.
+       If there is a conflict between the initial condition and the boundary
+       conditions. The later is enforced.
+    */
     if (eq->set_dir_bc != NULL) {
 
       cs_real_t  *values = NULL;
@@ -1893,7 +2018,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(cs_equation_t   *eq)
+cs_equation_solve_deprecated(cs_equation_t   *eq)
 {
   int  n_iters = 0;
   double  residual = DBL_MAX;
@@ -1979,10 +2104,6 @@ cs_equation_solve(cs_equation_t   *eq)
   if (eq->solve_ts_id > -1)
     cs_timer_stats_stop(eq->solve_ts_id);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
-  cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, eq->n_sles_gather_elts, x, 6);
-  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, eq->n_sles_gather_elts, b, 6);
-#endif
 
   /* Copy current field values to previous values */
   cs_field_current_to_previous(fld);
@@ -2001,6 +2122,75 @@ cs_equation_solve(cs_equation_t   *eq)
   BFT_FREE(eq->rhs);
   cs_sles_free(sles);
   cs_matrix_destroy(&(eq->matrix));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and then solve the linear system for an equation with an
+ *         unsteady term
+ *
+ * \param[in]       mesh        pointer to a cs_mesh_t structure
+ * \param[in]       dt_cur      value of the current time step
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_solve(const cs_mesh_t            *mesh,
+                  double                      dt_cur,
+                  cs_equation_t              *eq)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  /* Allocate, build and solve the algebraic system:
+     The linear solver is called inside and the field value is updated inside
+  */
+  eq->solve(dt_cur,        /* dummy time step value */
+            mesh,
+            eq->field_id,
+            eq->param,
+            eq->builder,
+            eq->scheme_context);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and then solve the linear system for this equation when the
+ *         goal is to find the steady state
+ *
+ * \param[in]       mesh        pointer to a cs_mesh_t structure
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
+                               cs_equation_t              *eq)
+{
+  assert(eq != NULL);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  /* Allocate, build and solve the algebraic system:
+     The linear solver is called inside and the field value is updated inside
+  */
+  eq->solve(-1.0,        /* dummy time step value */
+            mesh,
+            eq->field_id,
+            eq->param,
+            eq->builder,
+            eq->scheme_context);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2096,7 +2286,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
                                       cs_real_t             *conv_flux)
 {
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
   assert(eq->param != NULL);
 
   if (eq->compute_flux_across_plane == NULL) {
@@ -2148,14 +2338,14 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
                                        cs_real_t             *diff_flux)
 {
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
   assert(eq->param != NULL);
 
   if (eq->compute_cellwise_diff_flux == NULL) {
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Cellwise computation of the diffusive flux is not\n"
                 " available for equation %s\n"), __func__, eq->param->name);
-    return; // Avoid a warning
+    return; /* Avoid a warning */
   }
 
   if (eq->builder == NULL)
@@ -2189,7 +2379,7 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
                                        cs_real_t             *v_gradient)
 {
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
   assert(v_gradient != NULL);
 
   const cs_equation_param_t  *eqp = eq->param;
@@ -2212,6 +2402,56 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
 
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute and post-process Peclet number if requested
+ *
+ * \param[in]      eq       pointer to a cs_equation_t structure
+ * \param[in]      ts       pointer to a cs_time_step_t struct.
+ * \param[in, out] peclet   pointer to an array storing the resulting Peclet
+ *                          number in each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_peclet(const cs_equation_t        *eq,
+                           const cs_time_step_t       *ts,
+                           cs_real_t                   peclet[])
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
+  assert(peclet != NULL);
+
+  const cs_equation_param_t  *eqp = eq->param;
+
+  /* Check if the computation of the Peclet number is requested */
+  if (!(eqp->process_flag & CS_EQUATION_POST_PECLET))
+    return;
+
+  if (eqp->diffusion_property == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Computation of the Peclet number is requested for\n"
+              " equation %s but no diffusion property is set.\n",
+              __func__, eqp->name);
+  if (eqp->adv_field == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Computation of the Peclet number is requested for\n"
+              " equation %s but no advection field is set.\n",
+              __func__, eqp->name);
+
+  if (eq->main_ts_id > -1)    /* Activate timer statistics */
+    cs_timer_stats_start(eq->main_ts_id);
+
+  /* Compute the Peclet number in each cell */
+  cs_advection_get_peclet(eqp->adv_field,
+                          eqp->diffusion_property,
+                          ts->t_cur,
+                          peclet);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2273,11 +2513,11 @@ cs_equation_write_extra_restart(cs_restart_t   *restart)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_extra_post_all(const cs_mesh_t            *mesh,
-                           const cs_cdo_connect_t     *connect,
-                           const cs_cdo_quantities_t  *cdoq,
-                           const cs_time_step_t       *ts,
-                           double                      dt_cur)
+cs_equation_post_balance(const cs_mesh_t            *mesh,
+                         const cs_cdo_connect_t     *connect,
+                         const cs_cdo_quantities_t  *cdoq,
+                         const cs_time_step_t       *ts,
+                         double                      dt_cur)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
@@ -2287,133 +2527,123 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
 
     cs_equation_t  *eq = _equations[i];
     assert(eq != NULL); /* Sanity check */
-
-    const cs_field_t  *field = cs_field_by_id(eq->field_id);
     const cs_equation_param_t  *eqp = eq->param;
 
-    /* Cases where a post-processing is not required */
-    if (eqp->process_flag == 0)
+    /* Check if the computation of the balance is requested */
+    if (!(eqp->process_flag & CS_EQUATION_POST_BALANCE))
       continue;
 
-    if (eq->main_ts_id > -1)
+    if (eq->compute_balance != NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Balance for equation %s is requested but\n"
+                " this functionality is not available yet.\n",
+                __func__, eqp->name);
+
+    if (eq->main_ts_id > -1)    /* Activate timer statistics */
       cs_timer_stats_start(eq->main_ts_id);
 
-    /* Post-processing of a common adimensionnal quantities: the Peclet
-       number */
-    if (eqp->process_flag & CS_EQUATION_POST_PECLET) {
+    cs_equation_balance_t  *b = eq->compute_balance(eqp,
+                                                    eq->builder,
+                                                    eq->scheme_context,
+                                                    dt_cur);
 
-      char *postlabel = NULL;
-      int len = strlen(eqp->name) + 7 + 1;
-      BFT_MALLOC(postlabel, len, char);
-      sprintf(postlabel, "%s.Peclet", eqp->name);
+    char *postlabel = NULL;
+    int len = strlen(eqp->name) + 13 + 1;
+    BFT_MALLOC(postlabel, len, char);
 
-      /* Compute the Peclet number in each cell */
-      double  *peclet = cs_equation_get_tmpbuf();
-      cs_advection_get_peclet(eqp->adv_field,
-                              eqp->diffusion_property,
-                              ts->t_cur,
-                              peclet);
+    switch (eqp->space_scheme) {
 
-      /* Post-process */
-      cs_post_write_var(CS_POST_MESH_VOLUME,
-                        CS_POST_WRITER_ALL_ASSOCIATED,
-                        postlabel,
-                        1,
-                        true,           // interlace
-                        true,           // true = original mesh
-                        CS_POST_TYPE_cs_real_t,
-                        peclet,         // values on cells
-                        NULL,           // values at internal faces
-                        NULL,           // values at border faces
-                        ts);            // time step management struct.
+    case CS_SPACE_SCHEME_CDOVB:
+      {
+        sprintf(postlabel, "%s.Balance", eqp->name);
 
-      BFT_FREE(postlabel);
+        cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                                 CS_POST_WRITER_DEFAULT,
+                                 postlabel,
+                                 eqp->dim,
+                                 false,
+                                 false,
+                                 CS_POST_TYPE_cs_real_t,
+                                 b->balance,
+                                 ts);
 
-    } // Peclet number
+        if (cs_equation_param_has_diffusion(eqp))
+          _post_balance_at_vertices(eq, ts, "Diff", postlabel,
+                                    b->diffusion_term);
 
-    /* Post-processing of a common adimensionnal quantities: the Peclet
-       number */
-    if (eqp->process_flag & CS_EQUATION_POST_BALANCE) {
-      if (eq->compute_balance != NULL) {
+        if (cs_equation_param_has_convection(eqp))
+          _post_balance_at_vertices(eq, ts, "Adv", postlabel,
+                                    b->advection_term);
 
-        cs_equation_balance_t  *b = eq->compute_balance(eqp,
-                                                        eq->builder,
-                                                        eq->scheme_context,
-                                                        dt_cur);
+        if (cs_equation_param_has_time(eqp))
+          _post_balance_at_vertices(eq, ts, "Time", postlabel,
+                                    b->unsteady_term);
 
-        char *postlabel = NULL;
-        int len = strlen(eqp->name) + 13 + 1;
-        BFT_MALLOC(postlabel, len, char);
+        if (cs_equation_param_has_reaction(eqp))
+          _post_balance_at_vertices(eq, ts, "Reac", postlabel,
+                                    b->reaction_term);
 
-        switch (eqp->space_scheme) {
+        if (cs_equation_param_has_sourceterm(eqp))
+          _post_balance_at_vertices(eq, ts, "Src", postlabel,
+                                    b->source_term);
 
-        case CS_SPACE_SCHEME_CDOVB:
-          {
-            sprintf(postlabel, "%s.Balance", eqp->name);
+      }
+      break;
 
-            cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                                     CS_POST_WRITER_DEFAULT,
-                                     postlabel,
-                                     eqp->dim,
-                                     false,
-                                     false,
-                                     CS_POST_TYPE_cs_real_t,
-                                     b->balance,
-                                     ts);
+    default:
+      break;
+    }
 
-            if (cs_equation_param_has_diffusion(eqp))
-              _post_balance_at_vertices(eq, ts, "Diff", postlabel,
-                                        b->diffusion_term);
+    sprintf(postlabel, "%s.BdyFlux", eqp->name);
 
-            if (cs_equation_param_has_convection(eqp))
-              _post_balance_at_vertices(eq, ts, "Adv", postlabel,
-                                        b->advection_term);
+    /* Post-process the boundary fluxes (diffusive and convective) */
+    cs_post_write_var(CS_POST_MESH_BOUNDARY,
+                      CS_POST_WRITER_DEFAULT,
+                      postlabel,
+                      1,
+                      true,             // interlace
+                      true,             // true = original mesh
+                      CS_POST_TYPE_cs_real_t,
+                      NULL,             // values on cells
+                      NULL,             // values at internal faces
+                      b->boundary_term, // values at border faces
+                      ts);              // time step management struct.
 
-            if (cs_equation_param_has_time(eqp))
-              _post_balance_at_vertices(eq, ts, "Time", postlabel,
-                                        b->unsteady_term);
+    /* Free buffers */
+    BFT_FREE(postlabel);
+    cs_equation_balance_destroy(&b);
 
-            if (cs_equation_param_has_reaction(eqp))
-              _post_balance_at_vertices(eq, ts, "Reac", postlabel,
-                                        b->reaction_term);
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
 
-            if (cs_equation_param_has_sourceterm(eqp))
-              _post_balance_at_vertices(eq, ts, "Src", postlabel,
-                                        b->source_term);
+  } /* Loop on equations */
 
-          }
-          break;
+}
 
-        default:
-          break;
-        }
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations related to equations according to the
+ *         type of numerical scheme (for the space discretization)
+ */
+/*----------------------------------------------------------------------------*/
 
-        sprintf(postlabel, "%s.BdyFlux", eqp->name);
+void
+cs_equation_extra_post(void)
+{
+  for (int i = 0; i < _n_equations; i++) {
 
-        /* Post-process the boundary fluxes (diffusive and convective) */
-        cs_post_write_var(CS_POST_MESH_BOUNDARY,
-                          CS_POST_WRITER_DEFAULT,
-                          postlabel,
-                          1,
-                          true,             // interlace
-                          true,             // true = original mesh
-                          CS_POST_TYPE_cs_real_t,
-                          NULL,             // values on cells
-                          NULL,             // values at internal faces
-                          b->boundary_term, // values at border faces
-                          ts);              // time step management struct.
+    cs_equation_t  *eq = _equations[i];
+    assert(eq != NULL); /* Sanity check */
+    const cs_equation_param_t  *eqp = eq->param;
 
-        /* Free buffers */
-        BFT_FREE(postlabel);
-        cs_equation_balance_destroy(&b);
-
-      } /* compute_balance is defined */
-    } /* do the analysis */
+    if (eq->main_ts_id > -1)    /* Activate timer statistics */
+      cs_timer_stats_start(eq->main_ts_id);
+    assert(eq->postprocess != NULL);
 
     /* Perform post-processing specific to a numerical scheme */
     eq->postprocess(eqp->name,
-                    field,
-                    eq->param,
+                    cs_field_by_id(eq->field_id),
+                    eqp,
                     eq->builder,
                     eq->scheme_context);
 
@@ -2421,7 +2651,6 @@ cs_equation_extra_post_all(const cs_mesh_t            *mesh,
       cs_timer_stats_stop(eq->main_ts_id);
 
   } /* Loop on equations */
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -164,14 +164,14 @@ _check_vector_hodge(const cs_real_3_t       *vec,
   double  print_val = 0.;
 
   if (h_info.is_unity) {
-    cb->pty_mat[0][0] = cb->pty_mat[1][1] = cb->pty_mat[2][2] = 1;
-    cb->pty_mat[0][1] = cb->pty_mat[1][0] = cb->pty_mat[2][0] = 0;
-    cb->pty_mat[0][2] = cb->pty_mat[1][2] = cb->pty_mat[2][1] = 0;
+    cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = 1;
+    cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0;
+    cb->dpty_mat[0][2] = cb->dpty_mat[1][2] = cb->dpty_mat[2][1] = 0;
   }
   else if (h_info.is_iso) {
-    cb->pty_mat[0][0] = cb->pty_mat[1][1] = cb->pty_mat[2][2] = cb->pty_val;
-    cb->pty_mat[0][1] = cb->pty_mat[1][0] = cb->pty_mat[2][0] = 0;
-    cb->pty_mat[0][2] = cb->pty_mat[1][2] = cb->pty_mat[2][1] = 0;
+    cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = cb->dpty_val;
+    cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0;
+    cb->dpty_mat[0][2] = cb->dpty_mat[1][2] = cb->dpty_mat[2][1] = 0;
   }
 
   const cs_real_3_t  a[3] = { {1, 0, 0}, {0, 1, 0}, {0, 0, 1} };
@@ -179,7 +179,7 @@ _check_vector_hodge(const cs_real_3_t       *vec,
   for (int dim = 0; dim < 3; dim++) {
 
     cs_real_3_t  pty_a;
-    cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, a[dim], pty_a);
+    cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, a[dim], pty_a);
 
     for (int i = 0; i < hdg->n_rows; i++) {
       in[i] = vec[i][dim];
@@ -652,13 +652,13 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
 
   if (h_info.is_iso || h_info.is_unity) {
 
-    double  pty_val = 0.;
+    double  dpty_val = 0.;
     if (h_info.is_unity)
-      pty_val = 1.0;
+      dpty_val = 1.0;
     else if (h_info.is_iso)
-      pty_val = cb->pty_val;
+      dpty_val = cb->dpty_val;
 
-    _compute_cost_quant_iso(cm->n_ec, invcvol, pty_val,
+    _compute_cost_quant_iso(cm->n_ec, invcvol, dpty_val,
                             (const cs_real_t (*)[3])pq,
                             (const cs_real_t (*)[3])dq,
                             alpha, kappa, hloc);
@@ -666,7 +666,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
   }
   else
     _compute_cost_quant(cm->n_ec, invcvol,
-                        (const cs_real_3_t *)cb->pty_mat,
+                        (const cs_real_3_t *)cb->dpty_mat,
                         (const cs_real_t (*)[3])pq,
                         (const cs_real_t (*)[3])dq,
                         alpha, kappa, hloc);
@@ -802,11 +802,11 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
 
   if (h_info.is_iso || h_info.is_unity) {
 
-    double  pty_val;
+    double  dpty_val;
     if (h_info.is_unity)
-      pty_val = 1.0;
+      dpty_val = 1.0;
     else if (h_info.is_iso)
-      pty_val = cb->pty_val;
+      dpty_val = cb->dpty_val;
 
     /* Loop on cell edges */
     for (int ii = 0; ii < cm->n_ec; ii++) {
@@ -815,7 +815,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
       cs_quant_t  peq = cm->edge[ii];
 
       /* Only a diagonal term */
-      const double  dval = pty_val * dfq.meas/peq.meas;
+      const double  dval = dpty_val * dfq.meas/peq.meas;
       const short int  vi = cm->e2v_ids[2*ii];
       const short int  vj = cm->e2v_ids[2*ii+1];
 
@@ -839,7 +839,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
       cs_nvec3_t  dfq = cm->dface[ii];
       cs_quant_t  peq = cm->edge[ii];
 
-      cs_math_33_3_product((const cs_real_3_t *)cb->pty_mat, dfq.unitv, mv);
+      cs_math_33_3_product((const cs_real_3_t *)cb->dpty_mat, dfq.unitv, mv);
 
       /* Only a diagonal term */
       const double  dval = _dp3(mv, dfq.unitv) * dfq.meas/peq.meas;
@@ -902,12 +902,12 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
   cs_real_33_t  tensor = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
   if (h_info.is_iso) {
     if (!h_info.is_unity)
-      tensor[0][0] = tensor[1][1] = tensor[2][2] = cb->pty_val;
+      tensor[0][0] = tensor[1][1] = tensor[2][2] = cb->dpty_val;
   }
   else {
     for (int k = 0; k < 3; k++)
       for (int l = 0; l < 3; l++)
-        tensor[k][l] = cb->pty_mat[k][l];
+        tensor[k][l] = cb->dpty_mat[k][l];
   }
 
   /* Initialize the local stiffness matrix */
@@ -1034,12 +1034,12 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
   cs_real_33_t  tensor = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
   if (h_info.is_iso) {
     if (!h_info.is_unity)
-      tensor[0][0] = tensor[1][1] = tensor[2][2] = cb->pty_val;
+      tensor[0][0] = tensor[1][1] = tensor[2][2] = cb->dpty_val;
   }
   else {
     for (int k = 0; k < 3; k++)
       for (int l = 0; l < 3; l++)
-        tensor[k][l] = cb->pty_mat[k][l];
+        tensor[k][l] = cb->dpty_mat[k][l];
   }
 
   /* Initialize the local stiffness matrix */
@@ -1242,7 +1242,7 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
     for (short int vi = 0; vi < msize; vi++) {
       double  *mi = hdg->val + vi*msize;
       for (short int vj = vi; vj < msize; vj++)
-        mi[vj] *= cb->pty_val;
+        mi[vj] *= cb->dpty_val;
     }
   }
 
@@ -1352,7 +1352,7 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
     for (short int vi = 0; vi < cm->n_vc; vi++) {
       double  *mi = hdg->val + vi*cm->n_vc;
       for (short int vj = vi; vj < cm->n_vc; vj++)
-        mi[vj] *= cb->pty_val;
+        mi[vj] *= cb->dpty_val;
     }
   }
 
@@ -1406,7 +1406,7 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
   else {
 
     for (int v = 0; v < cm->n_vc; v++)
-      hdg->val[v*cm->n_vc+v] = cb->pty_val * cm->wvc[v] * cm->vol_c;
+      hdg->val[v*cm->n_vc+v] = cb->dpty_val * cm->wvc[v] * cm->vol_c;
 
   }
 
@@ -1449,12 +1449,12 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
   for (short int e = 0; e < cm->n_ec; e++) {
 
     if (h_info.is_iso) {
-      hdg->val[e*cm->n_ec+e] = cb->pty_val*cm->dface[e].meas/cm->edge[e].meas;
+      hdg->val[e*cm->n_ec+e] = cb->dpty_val*cm->dface[e].meas/cm->edge[e].meas;
     }
     else {
 
       const cs_nvec3_t  sef0c = cm->sefc[2*e], sef1c = cm->sefc[2*e+1];
-      const cs_real_3_t *tens = (const cs_real_3_t *)cb->pty_mat;
+      const cs_real_3_t *tens = (const cs_real_3_t *)cb->dpty_mat;
 
       cs_real_3_t  mv;
 
@@ -1535,13 +1535,13 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
                             (const cs_real_t (*)[3])dq,
                             alpha, kappa, hdg);
   else if (h_info.is_iso)
-    _compute_cost_quant_iso(cm->n_ec, 1/cm->vol_c, cb->pty_val,
+    _compute_cost_quant_iso(cm->n_ec, 1/cm->vol_c, cb->dpty_val,
                             (const cs_real_t (*)[3])pq,
                             (const cs_real_t (*)[3])dq,
                             alpha, kappa, hdg);
   else
     _compute_cost_quant(cm->n_ec, 1/cm->vol_c,
-                        (const cs_real_3_t *)cb->pty_mat,
+                        (const cs_real_3_t *)cb->dpty_mat,
                         (const cs_real_t (*)[3])pq,
                         (const cs_real_t (*)[3])dq,
                         alpha, kappa, hdg);
@@ -1590,14 +1590,14 @@ cs_hodge_fped_voro_get(const cs_param_hodge_t    h_info,
   for (short int f = 0; f < cm->n_fc; f++) {
 
     if (h_info.is_iso) {
-      hdg->val[f*cm->n_fc+f] = cb->pty_val*cm->face[f].meas/cm->dedge[f].meas;
+      hdg->val[f*cm->n_fc+f] = cb->dpty_val*cm->face[f].meas/cm->dedge[f].meas;
     }
     else {
 
       cs_real_3_t  mv;
 
       const cs_nvec3_t  deq = cm->dedge[f];
-      const cs_real_3_t *tens = (const cs_real_3_t *)cb->pty_mat;
+      const cs_real_3_t *tens = (const cs_real_3_t *)cb->dpty_mat;
 
       cs_math_33_3_product(tens, deq.unitv, mv);
       hdg->val[f*cm->n_fc+f] = deq.meas * _dp3(mv, deq.unitv)/cm->face[f].meas;
@@ -1670,13 +1670,13 @@ cs_hodge_fped_cost_get(const cs_param_hodge_t    h_info,
                             (const cs_real_t (*)[3])dq,
                             alpha, kappa, hdg);
   else if (h_info.is_iso)
-    _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, cb->pty_val,
+    _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, cb->dpty_val,
                             (const cs_real_t (*)[3])pq,
                             (const cs_real_t (*)[3])dq,
                             alpha, kappa, hdg);
   else
     _compute_cost_quant(cm->n_fc, 1/cm->vol_c,
-                        (const cs_real_3_t *)cb->pty_mat,
+                        (const cs_real_3_t *)cb->dpty_mat,
                         (const cs_real_t (*)[3])pq,
                         (const cs_real_t (*)[3])dq,
                         alpha, kappa, hdg);
@@ -1725,12 +1725,12 @@ cs_hodge_edfp_voro_get(const cs_param_hodge_t    h_info,
   for (short int f = 0; f < cm->n_fc; f++) {
 
     if (h_info.is_iso) {
-      hdg->val[f*cm->n_fc+f] = cb->pty_val*cm->face[f].meas/cm->dedge[f].meas;
+      hdg->val[f*cm->n_fc+f] = cb->dpty_val*cm->face[f].meas/cm->dedge[f].meas;
     }
     else {
 
       const cs_quant_t  pfq = cm->face[f];
-      const cs_real_3_t *tens = (const cs_real_3_t *)cb->pty_mat;
+      const cs_real_3_t *tens = (const cs_real_3_t *)cb->dpty_mat;
 
       cs_real_3_t  mv;
 
@@ -1805,13 +1805,13 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
                             (const cs_real_t (*)[3])pq,
                             alpha, kappa, hdg);
   else if (h_info.is_iso)
-    _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, cb->pty_val,
+    _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, cb->dpty_val,
                             (const cs_real_t (*)[3])dq,
                             (const cs_real_t (*)[3])pq,
                             alpha, kappa, hdg);
   else
     _compute_cost_quant(cm->n_fc, 1/cm->vol_c,
-                        (const cs_real_3_t *)cb->pty_mat,
+                        (const cs_real_3_t *)cb->dpty_mat,
                         (const cs_real_t (*)[3])dq,
                         (const cs_real_t (*)[3])pq,
                         alpha, kappa, hdg);
@@ -2000,16 +2000,16 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
     }
 
     if (pty == NULL) {
-      cb->pty_val = 1;
-      cb->pty_mat[0][0] = cb->pty_mat[1][1] = cb->pty_mat[2][2] = 1.0;
-      cb->pty_mat[0][1] = cb->pty_mat[1][0] = cb->pty_mat[2][0] = 0.0;
-      cb->pty_mat[0][2] = cb->pty_mat[1][2] = cb->pty_mat[2][1] = 0.0;
+      cb->dpty_val = 1;
+      cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = 1.0;
+      cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0.0;
+      cb->dpty_mat[0][2] = cb->dpty_mat[1][2] = cb->dpty_mat[2][1] = 0.0;
     }
 
     if (pty_uniform) { /* Get the value from the first cell */
-      cs_property_get_cell_tensor(0, t_eval, pty, h_info.inv_pty, cb->pty_mat);
+      cs_property_get_cell_tensor(0, t_eval, pty, h_info.inv_pty, cb->dpty_mat);
       if (h_info.is_iso)
-        cb->pty_val = cb->pty_mat[0][0];
+        cb->dpty_val = cb->dpty_mat[0][0];
     }
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
@@ -2021,9 +2021,9 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
       /* Retrieve the value of the property inside the current cell */
       if (!pty_uniform) {
         cs_property_tensor_in_cell(cm, pty, t_eval, h_info.inv_pty,
-                                   cb->pty_mat);
+                                   cb->dpty_mat);
         if (h_info.is_iso)
-          cb->pty_val = cb->pty_mat[0][0];
+          cb->dpty_val = cb->dpty_mat[0][0];
       }
 
       /* Build the local discrete Hodge operator */

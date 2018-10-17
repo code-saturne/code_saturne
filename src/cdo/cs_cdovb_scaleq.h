@@ -192,6 +192,77 @@ cs_cdovb_scaleq_set_dir_bc(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build and solve the linear system arising from a scalar steady-state
+ *         convection/diffusion/reaction equation with a CDO-Vb scheme
+ *         One works cellwise and then process to the assembly
+ *
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      field_id   id of the variable field related to this equation
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_solve_steady_state(double                       dt_cur,
+                                   const cs_mesh_t             *mesh,
+                                   const int                    field_id,
+                                   const cs_equation_param_t   *eqp,
+                                   cs_equation_builder_t       *eqb,
+                                   void                        *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve the linear system arising from a scalar unsteady
+ *         convection/diffusion/reaction equation with a CDO-Vb scheme
+ *         Implicit time scheme is used to progress in time.
+ *         One works cellwise and then process to the assembly
+ *
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      field_id   id of the variable field related to this equation
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
+                               const cs_mesh_t            *mesh,
+                               const int                   field_id,
+                               const cs_equation_param_t  *eqp,
+                               cs_equation_builder_t      *eqb,
+                               void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve the linear system arising from a scalar unsteady
+ *         convection/diffusion/reaction equation with a CDO-Vb scheme
+ *         Theta time scheme is used to progress in time.
+ *         One works cellwise and then process to the assembly
+ *
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      field_id   id of the variable field related to this equation
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_solve_theta(double                      dt_cur,
+                            const cs_mesh_t            *mesh,
+                            const int                   field_id,
+                            const cs_equation_param_t  *eqp,
+                            cs_equation_builder_t      *eqb,
+                            void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build the linear system arising from a scalar convection/diffusion
  *         equation with a CDO vertex-based scheme.
  *         One works cellwise and then process to the assembly
@@ -201,7 +272,7 @@ cs_cdovb_scaleq_set_dir_bc(const cs_mesh_t              *mesh,
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdovcb_scaleq_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
  * \param[in, out] rhs        right-hand side
  * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */
@@ -213,7 +284,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
                              double                      dt_cur,
                              const cs_equation_param_t  *eqp,
                              cs_equation_builder_t      *eqb,
-                             void                       *data,
+                             void                       *context,
                              cs_real_t                  *rhs,
                              cs_matrix_t                *matrix);
 

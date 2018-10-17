@@ -534,7 +534,7 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
@@ -544,7 +544,7 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
+cs_cdovb_diffusion_weak_dirichlet(const cs_equation_param_t      *eqp,
                                   const cs_cell_mesh_t           *cm,
                                   cs_cdo_diffusion_flux_trace_t  *flux_op,
                                   cs_face_mesh_t                 *fm,
@@ -558,7 +558,8 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const double chi = cs_nitsche_pena_coef * fabs(cb->eig_ratio) * cb->eig_max;
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const double chi = eqp->bc_penalization_coeff*fabs(cb->eig_ratio)*cb->eig_max;
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -573,7 +574,7 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat,
+      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
                            fm->face.unitv,
                            pty_nuf);
 
@@ -597,7 +598,7 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
@@ -607,7 +608,7 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
+cs_cdovb_diffusion_wsym_dirichlet(const cs_equation_param_t       *eqp,
                                   const cs_cell_mesh_t            *cm,
                                   cs_cdo_diffusion_flux_trace_t   *flux_op,
                                   cs_face_mesh_t                  *fm,
@@ -621,7 +622,8 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const double chi = cs_nitsche_pena_coef * cb->eig_ratio * cb->eig_max;
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const double chi = eqp->bc_penalization_coeff*fabs(cb->eig_ratio)*cb->eig_max;
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -635,7 +637,7 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat,
+      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
                            fm->face.unitv,
                            pty_nuf);
 
@@ -668,7 +670,7 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
  * \brief   Take into account Dirichlet BCs by a weak enforcement by a
  *          penalization technique with a huge value
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -678,7 +680,7 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
+cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
                                 const cs_cell_mesh_t            *cm,
                                 cs_cdo_diffusion_flux_trace_t   *flux_op,
                                 cs_face_mesh_t                  *fm,
@@ -687,7 +689,6 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
 {
   /* Prototype common to cs_cdo_diffusion_enforce_dir_t.
      Hence the unused parameters */
-  CS_UNUSED(h_info);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(cb);
@@ -704,11 +705,11 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
   for (short int i = 0; i < csys->n_dofs; i++) {
 
     if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) {
-      csys->mat->val[i + csys->n_dofs*i] += cs_big_pena_coef;
-      csys->rhs[i] += csys->dir_values[i] * cs_big_pena_coef;
+      csys->mat->val[i + csys->n_dofs*i] += eqp->bc_penalization_coeff;
+      csys->rhs[i] += csys->dir_values[i] * eqp->bc_penalization_coeff;
     }
     else if (csys->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
-      csys->mat->val[i + csys->n_dofs*i] += cs_big_pena_coef;
+      csys->mat->val[i + csys->n_dofs*i] += eqp->bc_penalization_coeff;
 
   } /* Loop on degrees of freedom */
 
@@ -720,7 +721,7 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
  *          penalization technique with a huge value.
  *          Case of a cellwise system defined by block.
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -730,7 +731,7 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
+cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
                                       const cs_cell_mesh_t            *cm,
                                       cs_cdo_diffusion_flux_trace_t   *flux_op,
                                       cs_face_mesh_t                  *fm,
@@ -739,7 +740,6 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
 {
   /* Prototype common to cs_cdo_diffusion_enforce_dir_t
      Hence the unused parameters */
-  CS_UNUSED(h_info);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(cb);
@@ -769,11 +769,11 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
     for (int i = 0; i < mII->n_rows; i++) {
 
       if (_flag[i] & CS_CDO_BC_DIRICHLET) {
-        mII->val[i + mII->n_rows*i] += cs_big_pena_coef;
-        _rhs[i] += _dir_val[i] * cs_big_pena_coef;
+        mII->val[i + mII->n_rows*i] += eqp->bc_penalization_coeff;
+        _rhs[i] += _dir_val[i] * eqp->bc_penalization_coeff;
       }
       else if (_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
-        mII->val[i + mII->n_rows*i] += cs_big_pena_coef;
+        mII->val[i + mII->n_rows*i] += eqp->bc_penalization_coeff;
 
     }
 
@@ -790,14 +790,14 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
  *          The corresponding DoFs are algebraically "removed" of the system
  *
  *          |      |     |     |      |     |     |  |     |          |
- *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.bd |
  *          |------------| --> |------------| and |--| --> |----------|
  *          |      |     |     |      |     |     |  |     |          |
  *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
  *
  * where xd is the value of the Dirichlet BC
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -807,7 +807,7 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_param_hodge_t           h_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_alge_dirichlet(const cs_param_hodge_t           h_info,
+cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
                                 const cs_cell_mesh_t            *cm,
                                 cs_cdo_diffusion_flux_trace_t   *flux_op,
                                 cs_face_mesh_t                  *fm,
@@ -816,7 +816,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_param_hodge_t           h_info,
 {
   /* Prototype common to cs_cdo_diffusion_enforce_dir_t
      Hence the unused parameters */
-  CS_UNUSED(h_info);
+  CS_UNUSED(eqp);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(flux_op);
@@ -848,7 +848,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_param_hodge_t           h_info,
       /* Reset column i */
       for (short int j = 0; j < csys->n_dofs; j++)
         csys->mat->val[i + csys->n_dofs*j] = 0;
-      csys->mat->val[i + csys->n_dofs*i] = 1;
+      csys->mat->val[i*(1 + csys->n_dofs)] = 1;
 
       /* Set the RHS */
       csys->rhs[i] = csys->dir_values[i];
@@ -876,7 +876,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_param_hodge_t           h_info,
  *
  * where xd is the value of the Dirichlet BC
  *
- * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
  * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
@@ -886,7 +886,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_param_hodge_t           h_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_alge_block_dirichlet(const cs_param_hodge_t           h_info,
+cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
                                       const cs_cell_mesh_t            *cm,
                                       cs_cdo_diffusion_flux_trace_t   *flux_op,
                                       cs_face_mesh_t                  *fm,
@@ -895,7 +895,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_param_hodge_t           h_info,
 {
   /* Prototype common to cs_cdo_diffusion_enforce_dir_t
      Hence the unused parameters */
-  CS_UNUSED(h_info);
+  CS_UNUSED(eqp);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(flux_op);
@@ -1057,7 +1057,7 @@ cs_cdo_diffusion_vcost_get_pc_flux(const cs_cell_mesh_t      *cm,
 
   }  /* Loop on cell edges */
 
-  cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, grd, flx);
+  cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, grd, flx);
   const double  invvol = 1/cm->vol_c;
   for (int k = 0; k < 3; k++) flx[k] *= invvol;
 }
@@ -1149,7 +1149,7 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
                      (p_v[v1] - p_f)*grd_v1[k] +
                      (p_v[v2] - p_f)*grd_v2[k];
 
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, grd_pef, mgrd);
+      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, grd_pef, mgrd);
 
       if (f == cm->e2f_ids[ee])
         flx[e] -= cm->sefc[ee].meas * _dp3(cm->sefc[ee].unitv, mgrd);
@@ -1194,7 +1194,7 @@ cs_cdo_diffusion_wbs_get_pc_flux(const cs_cell_mesh_t   *cm,
   /* Compute the mean-value of the cell gradient */
   cs_reco_cw_cgrd_wbs_from_pvc(cm, pot, cb, cgrd);
 
-  cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, cgrd, flx);
+  cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, cgrd, flx);
   for (int k = 0; k < 3; k++) flx[k] *= -1;  /* Flux = - tensor * grd */
 }
 

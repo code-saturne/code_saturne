@@ -301,6 +301,7 @@ typedef unsigned short int  cs_flag_t;   /* Flag for storing metadata */
 /* Vector or array block types */
 
 typedef int        cs_lnum_2_t[2];      /* Vector of 2 local numbers */
+typedef int        cs_lnum_3_t[3];      /* Vector of 3 local numbers */
 
 typedef double     cs_coord_3_t[3];     /* Vector of 3 real (coordinate)
                                            values */

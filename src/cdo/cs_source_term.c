@@ -481,7 +481,7 @@ cs_source_term_get_flag(const cs_xdef_t  *st)
 cs_flag_t
 cs_source_term_init(cs_param_space_scheme_t       space_scheme,
                     const int                     n_source_terms,
-                    const cs_xdef_t             **source_terms,
+                    cs_xdef_t             *const *source_terms,
                     cs_source_term_cellwise_t    *compute_source[],
                     cs_flag_t                    *sys_flag,
                     cs_mask_t                    *source_mask[])
@@ -794,7 +794,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
 void
 cs_source_term_compute_cellwise(const int                    n_source_terms,
-                                const cs_xdef_t            **source_terms,
+                                cs_xdef_t            *const *source_terms,
                                 const cs_cell_mesh_t        *cm,
                                 const cs_mask_t             *source_mask,
                                 cs_source_term_cellwise_t   *compute_source[],

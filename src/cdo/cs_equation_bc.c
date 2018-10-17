@@ -139,7 +139,7 @@ _assign_vb_dirichlet_values(int                dim,
 /*!
  * \brief  Set the values for the normal boundary flux stemming from the
  *         Neumann boundary conditions (zero is left where a Dirichlet is
- *         set. This can be updated later one)
+ *         set. This can be updated later on)
  *
  * \param[in]       t_eval   time at which one performs the evaluation
  * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure
@@ -767,10 +767,50 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Define an array of flags for each vertex collecting the flags
+ *          of associated boundary faces
+ *
+ * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]  face_bc    pointer to a structure collecting boundary conditions
+ *                        applied to faces
+ *
+ * \return an array collecting bc flags
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t *
+cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
+                               const cs_cdo_bc_t          *face_bc)
+{
+  assert(connect->bf2v != NULL);
+
+  const cs_adjacency_t  *bf2v = connect->bf2v;
+  const cs_lnum_t  n_vertices = connect->n_vertices;
+  const cs_lnum_t  n_b_faces = connect->n_faces[1];
+
+  cs_flag_t  *vflag = NULL;
+
+  /* Initialization */
+  BFT_MALLOC(vflag, n_vertices, cs_flag_t);
+  memset(vflag, 0, n_vertices*sizeof(cs_flag_t));
+
+  for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
+
+    const cs_flag_t  bc_flag = face_bc->flag[bf_id];
+    for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++)
+      vflag[bf2v->ids[j]] |= bc_flag;
+
+  } /* Loop on boerder faces */
+
+  return vflag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Tag each face related to a Neumann BC with its definition id.
  *          Default tag is -1 (not a Neumann face)
  *
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp        pointer to a cs_equation_param_t
 
  * \return an array with prescribed tags

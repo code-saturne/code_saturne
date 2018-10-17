@@ -78,7 +78,8 @@ cs_param_space_scheme_name[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
 
 static const char
 cs_param_time_scheme_name[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
-  { N_("Implicit"),
+  { N_("Steady-state"),
+    N_("Implicit"),
     N_("Explicit"),
     N_("Crank-Nicolson"),
     N_("Theta scheme")
@@ -96,7 +97,6 @@ static const char
 cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
   { N_("weak using an algebraic manipulation"),
     N_("weak using a big penalization coefficient"),
-    N_("strong"),
     N_("weak using the Nitsche method"),
     N_("weak using the symmetrized Nitsche method") };
 

@@ -3417,8 +3417,6 @@ cs_convection_diffusion_vector(int                         idtvar,
     = (const cs_real_3_t *restrict)fvq->diipf;
   const cs_real_3_t *restrict djjpf
     = (const cs_real_3_t *restrict)fvq->djjpf;
-  const cs_real_3_t *restrict dijpf
-    = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
@@ -4781,17 +4779,22 @@ cs_convection_diffusion_vector(int                         idtvar,
           double grdtrv =      pnd*(grad[ii][0][0]+grad[ii][1][1]+grad[ii][2][2])
                  + (1.-pnd)*(grad[jj][0][0]+grad[jj][1][1]+grad[jj][2][2]);
 
-          double tgrdfl;
-          /* We need to compute trans_grad(u).IJ which is equal to IJ.grad(u) */
+          cs_real_3_t n, ipjp;
+          cs_math_3_normalise(i_face_normal[face_id], n);
 
+          /* I'J' */
+          for (int i = 0; i < 3; i++)
+            ipjp[i] = n[i] * i_dist[face_id];
+
+          /* We need to compute trans_grad(u).I'J' which is equal to I'J'.grad(u) */
           for (int isou = 0; isou < 3; isou++) {
 
-            tgrdfl = dijpf[face_id][0] * (      pnd*grad[ii][0][isou]
-                                         + (1.-pnd)*grad[jj][0][isou])
-                   + dijpf[face_id][1] * (      pnd*grad[ii][1][isou]
-                                         + (1.-pnd)*grad[jj][1][isou])
-                   + dijpf[face_id][2] * (      pnd*grad[ii][2][isou]
-                                         + (1.-pnd)*grad[jj][2][isou]);
+            double tgrdfl = ipjp[0] * (      pnd*grad[ii][0][isou]
+                                      + (1.-pnd)*grad[jj][0][isou])
+                          + ipjp[1] * (      pnd*grad[ii][1][isou]
+                                      + (1.-pnd)*grad[jj][1][isou])
+                          + ipjp[2] * (      pnd*grad[ii][2][isou]
+                                      + (1.-pnd)*grad[jj][2][isou]);
 
             double flux = visco*tgrdfl + secvis*grdtrv*i_f_face_normal[face_id][isou];
 
@@ -7781,8 +7784,9 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_3_t *restrict i_f_face_normal
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
-  const cs_real_3_t *restrict dijpf
-    = (const cs_real_3_t *restrict)fvq->dijpf;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_3_t *restrict diipf
     = (const cs_real_3_t *restrict)fvq->diipf;
   const cs_real_3_t *restrict djjpf
@@ -8170,18 +8174,25 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
             =        pnd*(gradv[ii][0][0]+gradv[ii][1][1]+gradv[ii][2][2])
               + (1.-pnd)*(gradv[jj][0][0]+gradv[jj][1][1]+gradv[jj][2][2]);
 
+          cs_real_3_t n, ipjp;
+          cs_math_3_normalise(i_face_normal[face_id], n);
+
+          /* I'J' */
+          for (int i = 0; i < 3; i++)
+            ipjp[i] = n[i] * i_dist[face_id];
+
           for (int i = 0; i < 3; i++) {
 
             cs_real_t flux = secvis*grdtrv*i_f_face_normal[face_id][i];
 
-            /* We need to compute (K grad(u)^T) .IJ
-               which is equal to IJ . (grad(u) . K^T)
-               But: (IJ . (grad(u) . K^T))_i = IJ_k grad(u)_kj K_ij
-               Warning, in FORTRAN K_ij = K(j, i) */
+            /* We need to compute (K grad(u)^T) .I'J'
+               which is equal to I'J' . (grad(u) . K^T)
+               But: (I'J' . (grad(u) . K^T))_i = I'J'_k grad(u)_kj K_ij
+            */
 
             for (int j = 0; j < 3; j++) {
               for (int k = 0; k < 3; k++) {
-                flux += dijpf[face_id][k]
+                flux += ipjp[k]
                             *(pnd*gradv[ii][k][j]+(1-pnd)*gradv[jj][k][j])
                             *i_visc[face_id][i][j];
               }
@@ -9590,8 +9601,10 @@ cs_face_diffusion_potential(const int                 f_id,
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict dijpf
-    = (const cs_real_3_t *restrict)fvq->dijpf;
+  const cs_real_3_t *restrict diipf
+    = (const cs_real_3_t *restrict)fvq->diipf;
+  const cs_real_3_t *restrict djjpf
+    = (const cs_real_3_t *restrict)fvq->djjpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
@@ -9781,10 +9794,10 @@ cs_face_diffusion_potential(const int                 f_id,
           double dpzf = 0.5*(  visel[ii]*grad[ii][2]
                              + visel[jj]*grad[jj][2]);
 
-          /*---> Dij = IJ - (IJ.N) N */
-          double dijx = (cell_cen[jj][0]-cell_cen[ii][0]) - dijpf[face_id][0];
-          double dijy = (cell_cen[jj][1]-cell_cen[ii][1]) - dijpf[face_id][1];
-          double dijz = (cell_cen[jj][2]-cell_cen[ii][2]) - dijpf[face_id][2];
+          /*---> Dij = IJ - (IJ.N) N = II' - JJ' */
+          double dijx = diipf[face_id][0] - djjpf[face_id][0];
+          double dijy = diipf[face_id][1] - djjpf[face_id][1];
+          double dijz = diipf[face_id][2] - djjpf[face_id][2];
 
           i_massflux[face_id] =  i_massflux[face_id]
                                + i_visc[face_id]*(pvar[ii] - pvar[jj])
@@ -10412,8 +10425,6 @@ cs_diffusion_potential(const int                 f_id,
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict dijpf
-    = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipf
     = (const cs_real_3_t *restrict)fvq->diipf;
   const cs_real_3_t *restrict djjpf
@@ -10616,10 +10627,10 @@ cs_diffusion_potential(const int                 f_id,
 
           if (mass_flux_rec_type == 0) {
 
-            /*---> Dij = IJ - (IJ.N) N */
-            double dijx = (cell_cen[jj][0]-cell_cen[ii][0]) - dijpf[face_id][0];
-            double dijy = (cell_cen[jj][1]-cell_cen[ii][1]) - dijpf[face_id][1];
-            double dijz = (cell_cen[jj][2]-cell_cen[ii][2]) - dijpf[face_id][2];
+            /*---> Dij = IJ - (IJ.N) N = II' - JJ' */
+            double dijx = diipf[face_id][0] - djjpf[face_id][0];
+            double dijy = diipf[face_id][1] - djjpf[face_id][1];
+            double dijz = diipf[face_id][2] - djjpf[face_id][2];
 
             double dpxf = 0.5*(  visel[ii]*grad[ii][0]
                                + visel[jj]*grad[jj][0]);

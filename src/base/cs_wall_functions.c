@@ -220,7 +220,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
        cs_real_t        *dplus
 )
 {
-  assert(*iwallf >= 0 && *iwallf <= 6);
+  assert(*iwallf >= 0 && *iwallf <= 7);
 
   cs_wall_functions_velocity((cs_wall_f_type_t)*iwallf,
                              *ifac,
@@ -453,6 +453,22 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                            dplus,
                                            ypup,
                                            cofimp);
+    break;
+  case CS_WALL_F_2SCALES_CONTINUOUS:
+    cs_wall_functions_2scales_continuous(rnnb,
+                                         l_visc,
+                                         t_visc,
+                                         vel,
+                                         y,
+                                         kinetic_en,
+                                         iuntur,
+                                         nsubla,
+                                         nlogla,
+                                         ustar,
+                                         uk,
+                                         yplus,
+                                         ypup,
+                                         cofimp);
     break;
   default:
     break;

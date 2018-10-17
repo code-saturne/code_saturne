@@ -191,6 +191,28 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex-based scheme when a mixed centered/upwind scheme with
+ *          a conservative formulation is used.
+ *          The local matrix related to this operator is stored in cb->loc
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_get_vb_mcucsv(const cs_equation_param_t   *eqp,
+                               const cs_cell_mesh_t        *cm,
+                               cs_real_t                    t_eval,
+                               cs_face_mesh_t              *fm,
+                               cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme when diffusion is activated and an upwind
  *          scheme and a conservative formulation is used
  *          The local matrix related to this operator is stored in cb->loc

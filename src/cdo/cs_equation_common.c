@@ -52,6 +52,7 @@
 #include "cs_hho_vecteq.h"
 #include "cs_log.h"
 #include "cs_math.h"
+#include "cs_parall.h"
 #include "cs_xdef_eval.h"
 
 /*----------------------------------------------------------------------------*/
@@ -449,6 +450,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       cs_equation_common_ma[CS_CDO_CONNECT_VTX_VECT] = ma;
       cs_equation_common_ms[CS_CDO_CONNECT_VTX_VECT] = ms;
 
+      cwb_size *= 3; /* 3*n_cells by default */
       if (cc->vb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
 
         cwb_size = CS_MAX(cwb_size, (size_t)3*n_vertices);
@@ -775,7 +777,7 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
     /* Default intialization */
     eqb->st_msh_flag = cs_source_term_init(eqp->space_scheme,
                                            eqp->n_source_terms,
-                        (const cs_xdef_t**)eqp->source_terms,
+                       (cs_xdef_t *const *)eqp->source_terms,
                                            eqb->compute_source,
                                            &(eqb->sys_flag),
                                            &(eqb->source_mask));
@@ -830,6 +832,132 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder)
   BFT_FREE(eqb);
 
   *p_builder = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prepare a linear system and synchronize buffers to handle parallelism.
+ *        Transfer a mesh-based description of arrays x0 and rhs into an
+ *        algebraic description for the linear system in x and b.
+ *
+ * \param[in]      stride   stride to apply to the range set operations
+ * \param[in]      x_size   size of the vector unknows (scatter view)
+ * \param[in]      x0       pointer to an array (unknows to compute)
+ * \param[in]      rhs      pointer to an array (right-hand side)
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in]      rset     pointer to a range set structure
+ * \param[in, out] p_x      pointer of pointer to the linear solver unknows
+ * \param[in, out] p_rhs    pointer of pointer to the right-hand side
+ *
+ * \returns the number of non-zeros in the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_equation_prepare_system(int                   stride,
+                           cs_lnum_t             x_size,
+                           const cs_real_t      *x0,
+                           const cs_real_t      *rhs,
+                           const cs_matrix_t    *matrix,
+                           cs_range_set_t       *rset,
+                           cs_real_t            *p_x[],
+                           cs_real_t            *p_rhs[])
+{
+  cs_real_t  *x = NULL, *b = NULL;
+
+  const cs_lnum_t  n_scatter_elts = x_size; /* size of x and rhs */
+  const cs_lnum_t  n_gather_elts = cs_matrix_get_n_rows(matrix);
+
+  /* Sanity checks */
+  assert(n_gather_elts <= n_scatter_elts);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 0
+  cs_log_printf(CS_LOG_DEFAULT,
+                " n_gather_elts:    %d\n"
+                " n_scatter_elts:   %d\n"
+                " n_matrix_rows:    %d\n"
+                " n_matrix_columns: %d\n",
+                n_gather_elts, n_scatter_elts, cs_matrix_get_n_rows(eq->matrix),
+                cs_matrix_get_n_columns(eq->matrix));
+#endif
+
+  BFT_MALLOC(x, CS_MAX(n_scatter_elts,
+                       cs_matrix_get_n_columns(matrix)), cs_real_t);
+
+  /* p_x and b are a "gathered" view of x0 and rhs respectively through the
+     range set operation.
+     Their size is equal to n_sles_gather_elts <= n_sles_scatter_elts */
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+                             /* ============= */
+
+    /* Compact numbering to fit the algebraic decomposition */
+    cs_range_set_gather(rset,
+                        CS_REAL_TYPE, /* type */
+                        stride,       /* stride */
+                        x0,           /* in: size = n_sles_scatter_elts */
+                        x);           /* out: size = n_sles_gather_elts */
+
+    /* The right-hand side stems from a cellwise building on this rank.
+       Other contributions from distant ranks may contribute to an element
+       owned by the local rank */
+    BFT_MALLOC(b, n_scatter_elts, cs_real_t);
+
+#if defined(HAVE_OPENMP)
+#   pragma omp parallel for if (n_scatter_elts > CS_THR_MIN)
+    for (cs_lnum_t  i = 0; i < n_scatter_elts; i++) b[i] = rhs[i];
+#else
+    memcpy(b, rhs, n_scatter_elts * sizeof(cs_real_t));
+#endif
+
+    cs_interface_set_sum(rset->ifs,
+                         n_scatter_elts, stride, false, CS_REAL_TYPE,
+                         b);
+
+    cs_range_set_gather(rset,
+                        CS_REAL_TYPE,/* type */
+                        stride,      /* stride */
+                        b,           /* in: size = n_sles_scatter_elts */
+                        b);          /* out: size = n_sles_gather_elts */
+  }
+  else { /* Sequential mode *** without periodicity *** */
+         /* ===============     ===================     */
+
+    assert(n_gather_elts == n_scatter_elts);
+
+#if defined(HAVE_OPENMP)
+#   pragma omp parallel for if (n_scatter_elts > CS_THR_MIN)
+    for (cs_lnum_t  i = 0; i < n_scatter_elts; i++) x[i] = x0[i];
+#else
+    memcpy(x, x0, n_scatter_elts * sizeof(cs_real_t));
+#endif
+
+    /* Nothing to do for the right-hand side */
+    b = rhs;
+
+  }
+
+  /* Output information related to the linear system */
+  const cs_lnum_t  *row_index, *col_id;
+  const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_msr_arrays(matrix, &row_index, &col_id, &d_val, &x_val);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 1
+  cs_dbg_dump_linear_system("Dump linear system",
+                            n_gather_elts, CS_EQUATION_COMMON_DBG,
+                            x, b,
+                            row_index, col_id, x_val, d_val);
+#endif
+
+  cs_gnum_t  nnz = row_index[n_gather_elts];
+  if (cs_glob_n_ranks > 1) cs_parall_counter(&nnz, 1);
+
+  /* Return pointers */
+  *p_x = x;
+  *p_rhs = b;
+
+  return nnz;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -910,8 +1038,6 @@ cs_equation_init_cell_sys_bc(const cs_equation_builder_t   *eqb,
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      eqb       pointer to a cs_equation_builder_t structure
  * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in, out] tpty_val  pointer to the value for the time property
- * \param[in, out] rpty_vals pointer to the values for reaction properties
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure (diffusion
  *                           property is stored inside)
  */
@@ -921,8 +1047,6 @@ void
 cs_equation_init_properties(const cs_equation_param_t     *eqp,
                             const cs_equation_builder_t   *eqb,
                             cs_real_t                      t_eval,
-                            double                        *tpty_val,
-                            double                        *rpty_vals,
                             cs_cell_builder_t             *cb)
 {
   /* Preparatory step for diffusion term */
@@ -937,21 +1061,21 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
   /* Preparatory step for unsteady term */
   if (cs_equation_param_has_time(eqp))
     if (eqb->time_pty_uniform)
-      *tpty_val = cs_property_get_cell_value(0, t_eval, eqp->time_property);
+      cb->tpty_val = cs_property_get_cell_value(0, t_eval, eqp->time_property);
 
   /* Preparatory step for reaction term */
-  for (int i = 0; i < CS_CDO_N_MAX_REACTIONS; i++) rpty_vals[i] = 1.0;
-
   if (cs_equation_param_has_reaction(eqp)) {
+
+    for (int i = 0; i < CS_CDO_N_MAX_REACTIONS; i++) cb->rpty_vals[i] = 1.0;
 
     for (int r = 0; r < eqp->n_reaction_terms; r++) {
       if (eqb->reac_pty_uniform[r]) {
-        cs_property_t  *r_pty = eqp->reaction_properties[r];
-        rpty_vals[r] = cs_property_get_cell_value(0, t_eval, r_pty);
+        cb->rpty_vals[r] =
+          cs_property_get_cell_value(0, t_eval, eqp->reaction_properties[r]);
       }
     } /* Loop on reaction properties */
 
-  } /* Reaction properties */
+  }
 
 }
 
@@ -978,17 +1102,17 @@ cs_equation_set_diffusion_property(const cs_equation_param_t   *eqp,
                               t_eval,
                               eqp->diffusion_property,
                               eqp->diffusion_hodge.inv_pty,
-                              cb->pty_mat);
+                              cb->dpty_mat);
 
   if (cs_property_is_isotropic(eqp->diffusion_property))
-    cb->pty_val = cb->pty_mat[0][0];
+    cb->dpty_val = cb->dpty_mat[0][0];
 
   /* Set additional quantities in case of more advanced way of enforcing the
      Dirichlet BCs */
   if (c_flag & CS_FLAG_BOUNDARY) {
     if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
         eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-      cs_math_33_eigen((const cs_real_t (*)[3])cb->pty_mat,
+      cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
                        &(cb->eig_ratio),
                        &(cb->eig_max));
   }
@@ -1018,17 +1142,17 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t     *eqp,
                              eqp->diffusion_property,
                              t_eval,
                              eqp->diffusion_hodge.inv_pty,
-                             cb->pty_mat);
+                             cb->dpty_mat);
 
   if (cs_property_is_isotropic(eqp->diffusion_property))
-    cb->pty_val = cb->pty_mat[0][0];
+    cb->dpty_val = cb->dpty_mat[0][0];
 
   /* Set additional quantities in case of more advanced way of enforcing the
      Dirichlet BCs */
   if (c_flag & CS_FLAG_BOUNDARY) {
     if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
         eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-      cs_math_33_eigen((const cs_real_t (*)[3])cb->pty_mat,
+      cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
                        &(cb->eig_ratio),
                        &(cb->eig_max));
   }

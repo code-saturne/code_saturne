@@ -377,6 +377,7 @@ cs_equation_create_param(const char            *name,
      One assigns a boundary condition by default */
   eqp->default_bc = default_bc;
   eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
+  eqp->bc_penalization_coeff = -1; /* Not set */
   eqp->n_bc_defs = 0;
   eqp->bc_defs = NULL;
 
@@ -395,7 +396,7 @@ cs_equation_create_param(const char            *name,
      Default initialization is made in accordance with this choice */
   eqp->time_hodge.is_unity = true;
   eqp->time_hodge.is_iso = true;
-  eqp->time_hodge.inv_pty = false; // inverse property ?
+  eqp->time_hodge.inv_pty = false; /* inverse property ? */
   eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
   eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
   eqp->time_property = NULL;
@@ -421,6 +422,7 @@ cs_equation_create_param(const char            *name,
   /* Advection term */
   eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
   eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+  eqp->upwind_portion = 0.15;
   eqp->adv_field = NULL;
 
   /* No reaction term by default */
@@ -764,21 +766,37 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_BC_ENFORCEMENT:
-    if (strcmp(val, "strong") == 0)
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
-    else if (strcmp(val, "algebraic") == 0)
+    if (strcmp(val, "algebraic") == 0)
       eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
-    else if (strcmp(val, "penalization") == 0)
+    else if (strcmp(val, "penalization") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
-    else if (strcmp(val, "weak_sym") == 0)
+      if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
+        eqp->bc_penalization_coeff = 1e13;
+    }
+    else if (strcmp(val, "weak_sym") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
-    else if (strcmp(val, "weak") == 0)
+      if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
+        eqp->bc_penalization_coeff = 500;
+    }
+    else if (strcmp(val, "weak") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
+      if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
+        eqp->bc_penalization_coeff = 500;
+    }
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqp->name, _val, "CS_EQKEY_BC_ENFORCEMENT");
     }
+    break;
+
+  case CS_EQKEY_BC_PENA_COEFF:
+    eqp->bc_penalization_coeff = atof(val);
+    if (eqp->bc_penalization_coeff < 0.)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value of the penalization coefficient %5.3e\n"
+                " This should be positive.",
+                __func__, eqp->bc_penalization_coeff);
     break;
 
   case CS_EQKEY_BC_QUADRATURE:
@@ -840,6 +858,8 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
     else if (strcmp(val, "centered") == 0)
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
+    else if (strcmp(val, "mix_centered_upwind") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND;
     else if (strcmp(val, "cip") == 0) {
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
       /* Automatically switch to a non-conservative formulation */
@@ -852,8 +872,16 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     }
     break;
 
+  case CS_EQKEY_ADV_UPWIND_PORTION:
+    eqp->upwind_portion = atof(val);
+    break;
+
   case CS_EQKEY_TIME_SCHEME:
-    if (strcmp(val, "implicit") == 0) {
+
+    if (strcmp(val, "no") == 0 || strcmp(val, "steady") == 0) {
+      eqp->time_scheme = CS_TIME_SCHEME_STEADY;
+    }
+    else if (strcmp(val, "implicit") == 0) {
       eqp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
       eqp->theta = 1.;
     }
@@ -1261,6 +1289,10 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                   "  <%s/Boundary Conditions> default: %s, enforcement: %s\n",
                   eqname, cs_param_get_bc_name(eqp->default_bc),
                   cs_param_get_bc_enforcement_name(eqp->enforcement));
+    if (eqp->enforcement != CS_PARAM_BC_ENFORCE_ALGEBRAIC)
+      cs_log_printf(CS_LOG_SETUP,
+                    "  <%s/Boundary Conditions> penalization coefficient: %5.3e\n",
+                    eqname, eqp->bc_penalization_coeff);
     cs_log_printf(CS_LOG_SETUP, "    <%s/n_bc_definitions> %d\n",
                   eqname, eqp->n_bc_defs);
     if (eqp->verbosity > 1) {
@@ -1363,8 +1395,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
       case CS_PARAM_ADVECTION_SCHEME_CIP:
         cs_log_printf(CS_LOG_SETUP, " continuous interior penalty\n");
         break;
-      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        cs_log_printf(CS_LOG_SETUP, " upwind\n");
+      case CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND:
+        cs_log_printf(CS_LOG_SETUP, " mixed centered-upwind (%3.2f %%)\n",
+                      100*eqp->upwind_portion);
         break;
       case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
         cs_log_printf(CS_LOG_SETUP,
@@ -1373,6 +1406,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
       case CS_PARAM_ADVECTION_SCHEME_SG:
         cs_log_printf(CS_LOG_SETUP,
                       " upwind weighted with Scharfetter-Gummel function\n");
+        break;
+      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+        cs_log_printf(CS_LOG_SETUP, " upwind\n");
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,

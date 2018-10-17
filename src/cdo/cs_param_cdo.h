@@ -55,6 +55,10 @@ BEGIN_C_DECLS
 #define CS_CDO_OMP_CHUNK_SIZE  128
 #define CS_CDO_OMP_SCHEDULE  schedule(static, CS_CDO_OMP_CHUNK_SIZE)
 
+#define CS_ALL_FACES   0        /* All faces: interior + border */
+#define CS_BND_FACES   1        /* Boundary faces */
+#define CS_INT_FACES   2        /* Interior faces */
+
 /* Number of DoFs on faces and cells according to the polynomial space */
 #define CS_N_FACE_DOFS_0TH  1
 #define CS_N_FACE_DOFS_1ST  3

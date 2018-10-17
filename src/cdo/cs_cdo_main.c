@@ -94,7 +94,6 @@ static void
 _compute_steady_user_equations(cs_domain_t   *domain)
 {
   int  n_equations = cs_equation_get_n_equations();
-  double  dt_cur = 0.; /* Useless for steady-state equations */
 
   for (int eq_id = 0; eq_id < n_equations; eq_id++) {
 
@@ -106,14 +105,23 @@ _compute_steady_user_equations(cs_domain_t   *domain)
 
       if (type == CS_EQUATION_TYPE_USER) {
 
-        /* Define the algebraic system */
-        cs_equation_build_system(domain->mesh,
-                                 domain->time_step,
-                                 dt_cur,
-                                 eq);
+        if (cs_equation_uses_new_mechanism(eq))
+          cs_equation_solve_steady_state(domain->mesh, eq);
 
-        /* Solve the algebraic system */
-        cs_equation_solve(eq);
+        else { /* Deprecated */
+
+          double  dt_cur = 0.; /* Useless for steady-state equations */
+
+          /* Define the algebraic system */
+          cs_equation_build_system(domain->mesh,
+                                   domain->time_step,
+                                   dt_cur,
+                                   eq);
+
+          /* Solve the algebraic system */
+          cs_equation_solve_deprecated(eq);
+
+        }
 
       } /* User-defined equation */
 
@@ -150,14 +158,21 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 
         if (type == CS_EQUATION_TYPE_USER) {
 
-          /* Define the algebraic system */
-          cs_equation_build_system(domain->mesh,
-                                   domain->time_step,
-                                   domain->dt_cur,
-                                   eq);
+          if (cs_equation_uses_new_mechanism(eq))
+            cs_equation_solve(domain->mesh, domain->dt_cur, eq);
 
-          /* Solve domain */
-          cs_equation_solve(eq);
+          else { /* Deprecated */
+
+            /* Define the algebraic system */
+            cs_equation_build_system(domain->mesh,
+                                     domain->time_step,
+                                     domain->dt_cur,
+                                     eq);
+
+            /* Solve domain */
+            cs_equation_solve_deprecated(eq);
+
+          }
 
         } /* User-defined equation */
 
@@ -191,7 +206,8 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   else if (do_output) {
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
     cs_log_printf(CS_LOG_DEFAULT,
-                  "-ite- 0; >> Solve only steady-state equations");
+                  "-ite- 0; >> Solve only steady-state equations if needed");
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", lsepline);
   }
 
   /* Predefined equation for the computation of the wall distance */

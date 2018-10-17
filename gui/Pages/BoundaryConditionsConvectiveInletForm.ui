@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>313</width>
-    <height>116</height>
+    <height>59</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxConvectiveInlet">
      <property name="toolTip">
-      <string>For a convective inlet, diffusion is disabled at adjacent cells.</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply feedback from values computed downstream from the inlet by mapping inlet faces to cells defined by a chosen translation:&lt;br/&gt;- the feedback is applied after the first iteration&lt;br/&gt;- velocity and transported variables are rescaled to maintain mass conservativity&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Convective Inlet</string>
@@ -25,6 +25,10 @@
      <property name="checkable">
       <bool>true</bool>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_7"/>
     </widget>
    </item>
   </layout>

@@ -198,6 +198,13 @@ typedef struct {
    * Type of enforcement for the Dirichlet boundary conditions.
    * See \ref cs_param_bc_enforce_t for more details.
    *
+   * \var bc_penalization_coeff
+   * Value of penalization coefficient used to enforce the Dirichlet boundary
+   * conditions (useful if the technique used to enforce the Dirichlet boundary
+   * condition is \ref CS_PARAM_BC_ENFORCE_PENALIZED,
+   * \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE or \ref CS_PARAM_BC_ENFORCE_WEAK_SYM)
+   * See \ref CS_EQKEY_BC_PENA_COEFF for more details.
+   *
    * \var n_bc_defs
    * Number of boundary conditions which are defined for this equation
    *
@@ -207,6 +214,7 @@ typedef struct {
 
   cs_param_bc_type_t            default_bc;
   cs_param_bc_enforce_t         enforcement;
+  cs_real_t                     bc_penalization_coeff;
   int                           n_bc_defs;
   cs_xdef_t                   **bc_defs;
 
@@ -299,6 +307,11 @@ typedef struct {
    * \var adv_scheme
    * Numerical scheme used for the discretization of the advection term
    *
+   * \var upwind_portion
+   * Value between 0. and 1. (0: centered scheme, 1: pure upwind scheme)
+   * Introduce a constant portion of upwinding in a centered scheme
+   * Only useful if the advection scheme is set to
+   *
    * \var adv_field
    * Pointer to the \ref cs_adv_field_t structure associated to the advection
    * term
@@ -306,6 +319,7 @@ typedef struct {
 
   cs_param_advection_form_t     adv_formulation;
   cs_param_advection_scheme_t   adv_scheme;
+  cs_real_t                     upwind_portion;
   cs_adv_field_t               *adv_field;
 
   /*!
@@ -503,12 +517,30 @@ typedef struct {
  * \var CS_EQKEY_BC_ENFORCEMENT
  * Set the type of enforcement of the boundary conditions.
  * Available choices are:
- * - "penalization" --> weak enforcement using a huge penalization coefficient
- * - "weak" --> weak enforcement using the Nitsche method
- * - "weak_sym" --> weak enforcement keeping the symmetry of the system
+ * - "algebraic": Modify the linear system so as to add the contribution of the
+ * Dirichlet in the right-hand side and replace the line associated to a
+ * Dirichlet BC by identity. This is a good choice for pure diffusinon or pure
+ * convection problem.
+ * - "penalization": Add a huge penalization coefficient on the diagonal term
+ * of the line related to DoFs associated a Dirichlet BC. The right-hand side is
+ * also modified to take into account this penalization. Be aware that it may
+ * worsen the matrix conditioning.
+ * - "weak": weak enforcement using the Nitsche method (there is also
+ * penalization term but the scaling is such that a moderate value (1-100) of
+ * the penalization coefficient is sufficient). This a good choice for
+ * convection/diffusion problem.
+ * - "weak_sym": Same as the "weak" option but with a modification so as to
+ * add a symmetric contribution to the system. If the problem yields a symmetric
+ * matrix. This choice is more relevant than "weak". This a good choice for a
+ * diffusion problem.
  *
- * For HHO and CDO-Face based schemes, only the penalization technique is
- * available.
+ * For HHO and CDO-Face based schemes, only the "penalization" and "algebraic"
+ * technique is available up to now.
+ *
+ * \var CS_EQKEY_BC_PENA_COEFF
+ * Set the value of the penalization coefficient either when "penalization" is
+ * activated or when "weak"/"weak_sym" is activated. In the former case, the
+ * default is about 1e12 and in the latter case, the default value is about 100.
  *
  * \var CS_EQKEY_BC_QUADRATURE
  * Set the quadrature algorithm used for evaluating integral quantities on
@@ -541,17 +573,20 @@ typedef struct {
  * \var CS_EQKEY_ADV_SCHEME
  * Type of numerical scheme for the advective term. The available choices
  * depend on the space discretization scheme.
- * - "upwind"
- * - "centered"
+ * - "upwind" (cf. \ref CS_PARAM_ADVECTION_SCHEME_UPWIND)
+ * - "centered" (cf. \ref CS_PARAM_ADVECTION_SCHEME_CENTERED)
+ * - "mix_centered_upwind" (\ref CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND)
  * - "samarskii" --> switch smoothly betwwen an upwind and a centered scheme
- *   thanks to a weight depending on the Peclet number.
+ *   thanks to a weight depending on the Peclet number. (cf.
+ * \ref CS_PARAM_ADVECTION_SCHEME_SAMARSKII). Only for CDO-Vb schemes.
  * - "sg" --> closely related to "samarskii" but with a different definition of
- *   the weight.
+ *   the weight (cf. \ref CS_PARAM_ADVECTION_SCHEME_SG). Only for CDO-Vb schemes
  * - "cip" --> means "continuous interior penalty" (only for CDOVCB schemes).
- *   Enable a better accuracy.
+ *   Enable a better accuracy. (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP)
  *
- * "sg" and "samarskii" are only available with CDOVB schemes
- *
+ * \var CS_EQKEY_ADV_UPWIND_PORTION
+ * Value between 0 and 1 specifying the portion of upwind added to a centered
+ * discretization.
  *
  * \var CS_EQKEY_EXTRA_OP
  * Set the additional post-processing to perform. Available choices are:
@@ -563,8 +598,10 @@ typedef enum {
 
   CS_EQKEY_ADV_FORMULATION,
   CS_EQKEY_ADV_SCHEME,
+  CS_EQKEY_ADV_UPWIND_PORTION,
   CS_EQKEY_AMG_TYPE,
   CS_EQKEY_BC_ENFORCEMENT,
+  CS_EQKEY_BC_PENA_COEFF,
   CS_EQKEY_BC_QUADRATURE,
   CS_EQKEY_DOF_REDUCTION,
   CS_EQKEY_EXTRA_OP,
@@ -585,6 +622,7 @@ typedef enum {
   CS_EQKEY_TIME_SCHEME,
   CS_EQKEY_TIME_THETA,
   CS_EQKEY_VERBOSITY,
+
   CS_EQKEY_N_KEYS
 
 } cs_equation_key_t;
@@ -606,8 +644,7 @@ typedef enum {
 static inline bool
 cs_equation_param_has_diffusion(const cs_equation_param_t     *eqp)
 {
-  if (eqp == NULL)
-    return false;
+  assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_DIFFUSION)
     return true;
   else
@@ -627,8 +664,7 @@ cs_equation_param_has_diffusion(const cs_equation_param_t     *eqp)
 static inline bool
 cs_equation_param_has_convection(const cs_equation_param_t     *eqp)
 {
-  if (eqp == NULL)
-    return false;
+  assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_CONVECTION)
     return true;
   else
@@ -648,8 +684,7 @@ cs_equation_param_has_convection(const cs_equation_param_t     *eqp)
 static inline bool
 cs_equation_param_has_reaction(const cs_equation_param_t     *eqp)
 {
-  if (eqp == NULL)
-    return false;
+  assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_REACTION)
     return true;
   else
@@ -669,8 +704,7 @@ cs_equation_param_has_reaction(const cs_equation_param_t     *eqp)
 static inline bool
 cs_equation_param_has_time(const cs_equation_param_t     *eqp)
 {
-  if (eqp == NULL)
-    return false;
+  assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_UNSTEADY)
     return true;
   else
@@ -690,14 +724,12 @@ cs_equation_param_has_time(const cs_equation_param_t     *eqp)
 static inline bool
 cs_equation_param_has_sourceterm(const cs_equation_param_t     *eqp)
 {
-  if (eqp == NULL)
-    return false;
+  assert(eqp != NULL);
   if (eqp->n_source_terms > 0)
     return true;
   else
     return false;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!

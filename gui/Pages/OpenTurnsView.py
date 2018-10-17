@@ -123,7 +123,7 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
                 host_name = key.split('_')[1]
                 self.hosts_bmgr[host_name] = key.split('_')[0]
 
-                self.hosts_binpath[host_name] = config.get('distant_builds',
+                self.hosts_binpath[host_name] = config.get('distant_hosts',
                                                            key)
 
                 self.addDistantBuilds(host_name)
@@ -175,20 +175,23 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         # ---------------------------------------
         # Initial values
         self.lineEditOutputFile.setText(self.mdl.resfile_name)
-        self.modelOtStudyHosts.setItem(str_model=self.mdl.host_name)
+        if dist_hosts != None:
+            self.modelOtStudyHosts.setItem(str_model=self.mdl.host_name)
+        else:
+            self.modelOtStudyHosts.setItem(str_model='localhost')
 
-        self.spinBoxLocalProcs.setValue(self.mdl.nprocs)
+        self.spinBoxLocalProcs.setValue(int(self.mdl.nprocs))
         self.spinBoxLocalThreads.setValue(1)
 
-        self.spinBoxNumberNodes.setValue(self.mdl.nnodes)
-        self.spinboxNumberTasks.setValue(self.mdl.ntasks)
-        self.spinBoxNumberThreads.setValue(self.mdl.nthreads)
+        self.spinBoxNumberNodes.setValue(int(self.mdl.nnodes))
+        self.spinBoxNumberTasks.setValue(int(self.mdl.ntasks))
+        self.spinBoxNumberThreads.setValue(int(self.mdl.nthreads))
 
         wct = self.mdl.getWallClockTime()
-        self.spinBoxNumberDays.setValue(wct[0])
-        self.spinBoxNumberHours.setValue(wct[1])
-        self.spinBoxNumberMinutes.setValue(wct[2])
-        self.spinBoxNumberSeconds.setValue(wct[3])
+        self.spinBoxNumberDays.setValue(int(wct[0]))
+        self.spinBoxNumberHours.setValue(int(wct[1]))
+        self.spinBoxNumberMinutes.setValue(int(wct[2]))
+        self.spinBoxNumberSeconds.setValue(int(wct[3]))
 
         self.lineEditWCKEY.setText(self.mdl.wckey)
 
@@ -198,8 +201,6 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         """
         Host type: localhost or a distant one (defined in code_saturne.cfg).
         """
-        print(text)
-
         host_name = self.modelOtStudyHosts.dicoV2M[str(text)]
 
         self.mdl.setHostName(host_name)
@@ -384,11 +385,11 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
             self.labelDistantBuilds.show()
 
             dist_builds_list = self.distant_host_builds[host_name]
-            self.modelOtDistantBuilds = ComboModel(self.comboBox,
+            self.modelOtDistantBuilds = ComboModel(self.comboBoxDistantBuilds,
                                                    len(dist_builds_list),
                                                    1)
             for db in dist_builds_list:
-                self.modelOtDistantBuilds.addItem(tr(db), db)
+                self.modelOtDistantBuilds.addItem(self.tr(db), db)
 
 
 

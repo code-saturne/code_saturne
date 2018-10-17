@@ -227,7 +227,7 @@ double precision, dimension(:), pointer :: coefb_nu, coefbf_nu
 double precision, dimension(:,:), pointer :: coefa_rij, coefaf_rij, coefad_rij
 double precision, dimension(:,:,:), pointer :: coefb_rij, coefbf_rij, coefbd_rij
 
-double precision  pimp_lam, pimp_turb, gammap
+double precision  pimp_lam, pimp_turb, gammap, fep, dep, falpg, falpv, ypsd
 
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
@@ -1088,8 +1088,9 @@ do ifac = 1, nfabor
           kk = 3
         endif
 
-        ! LRR and the Standard SGG.
-        if ((iturb.eq.30).or.(iturb.eq.31).and.iuntur.eq.1) then
+        ! LRR and the Standard SGG or EB-RSM + wall functions
+        if (((iturb.eq.30).or.(iturb.eq.31).and.iuntur.eq.1).or. &
+             (iturb.eq.32.and.iwallf.ne.0.and.yplus.gt.epzero)) then
 
           if (irijco.eq.1) then
             coefa_rij(isou, ifac) = - (  eloglo(jj,1)*eloglo(kk,2)         &
@@ -1304,13 +1305,31 @@ do ifac = 1, nfabor
         endif
 
       elseif (iturb.eq.32) then
-        ! Use k at I'
-        xkip = 0.5d0*(rijipb(ifac,1)+rijipb(ifac,2)+rijipb(ifac,3))
 
-        ! Dirichlet Boundary Condition
-        !-----------------------------
+        if(iwallf.ne.0) then
+          ! Use k at I'
+          xkip = 0.5d0*(rijipb(ifac,1)+rijipb(ifac,2)+rijipb(ifac,3))
 
-        pimp = 2.d0*visclc*xkip/(distbf**2*romc)
+          pimp_lam = 2.d0*visclc*xkip/(distbf**2*romc)
+
+          if (yplus > epzero) then
+            pimp_turb = 5.d0*uk**4*romc/        &
+                        (xkappa*visclc*(yplus+dplus))
+
+            ! Blending between wall and homogeneous layer
+            ! from JF Wald PhD (2016)
+            fep       = exp(-(yplus/4.d0)**1.5d0)
+            dep       = 1.d0- exp(-(yplus/9.d0)**2.1d0)
+            pimp      = fep*pimp_lam + (1.d0-fep)*dep*pimp_turb
+          else
+            pimp = pimp_lam
+          end if
+
+        else
+          ! Use k at I'
+          xkip = 0.5d0*(rijipb(ifac,1)+rijipb(ifac,2)+rijipb(ifac,3))
+          pimp = 2.d0*visclc*xkip/(distbf**2*romc)
+        end if
 
         call set_dirichlet_scalar &
              !====================
@@ -1322,8 +1341,19 @@ do ifac = 1, nfabor
 
         ! Dirichlet Boundary Condition
         !-----------------------------
+        if(iwallf.ne.0) then
 
-        pimp = 0.d0
+          if(yplus > epzero) then
+            ypsd  = yplus /2.d0
+            falpg = 16.d0 /(16.d0+4.d-2*ypsd)**2 * exp(- ypsd / (16.d0 + 4.d-2*ypsd) )
+            falpv = 1.d0 - exp(- yplus / (16.d0 + 4.d-2*yplus) )
+            pimp  = falpv - yplus*falpg
+          else
+            pimp = 0.d0
+          end if
+        else
+          pimp = 0.d0
+        end if
 
         hint = 1.d0/distbf
 
@@ -2044,6 +2074,7 @@ double precision tetmax, tetmin, tplumx, tplumn
 ! Local variables
 
 integer          ivar, f_id, b_f_id, isvhbl
+integer          f_id_ut, f_id_al
 integer          ifac, iel, isou, jsou
 integer          ifcvsl, itplus, itstar
 
@@ -2148,14 +2179,14 @@ if (ityturt(iscal).eq.3) then
   call field_get_name(ivarfl(ivar), fname)
 
   ! Index of the corresponding turbulent flux
-  call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+  call field_get_id(trim(fname)//'_turbulent_flux', f_id_ut)
 
-  call field_get_coefa_v(f_id,coefaut)
-  call field_get_coefb_v(f_id,coefbut)
-  call field_get_coefaf_v(f_id,cofafut)
-  call field_get_coefbf_v(f_id,cofbfut)
-  call field_get_coefad_v(f_id,cofarut)
-  call field_get_coefbd_v(f_id,cofbrut)
+  call field_get_coefa_v(f_id_ut,coefaut)
+  call field_get_coefb_v(f_id_ut,coefbut)
+  call field_get_coefaf_v(f_id_ut,cofafut)
+  call field_get_coefbf_v(f_id_ut,cofbfut)
+  call field_get_coefad_v(f_id_ut,cofarut)
+  call field_get_coefbd_v(f_id_ut,cofbrut)
 
 endif
 
@@ -2166,12 +2197,12 @@ if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
   call field_get_name(ivarfl(ivar), fname)
 
   ! Index of the corresponding turbulent flux
-  call field_get_id(trim(fname)//'_alpha', f_id)
+  call field_get_id(trim(fname)//'_alpha', f_id_al)
 
-  call field_get_coefa_s (f_id, a_al)
-  call field_get_coefb_s (f_id, b_al)
-  call field_get_coefaf_s(f_id, af_al)
-  call field_get_coefbf_s(f_id, bf_al)
+  call field_get_coefa_s (f_id_al, a_al)
+  call field_get_coefb_s (f_id_al, b_al)
+  call field_get_coefaf_s(f_id_al, af_al)
+  call field_get_coefbf_s(f_id_al, bf_al)
 endif
 
 ! pointers to T+ and T* if saved

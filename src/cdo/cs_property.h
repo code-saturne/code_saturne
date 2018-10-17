@@ -45,16 +45,56 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/*!
+ * @defgroup cdo_property_flags Flags specifying metadata related to the
+ *  post-processing for a property
+ * @{
+ */
+
+/*!  1: Perform the computation and post-processing of the Fourier number */
+#define CS_PROPERTY_POST_FOURIER  (1 << 0)
+
+/*! @} */
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
 
-/* Type of property considered */
+/*! \enum cs_property_key_t
+ *  \brief List of available keys for setting options on a property
+ *
+ * \var CS_PTYKEY_POST_FOURIER
+ * Perform the computation (and post-processing) of the Fourier number
+ */
+
 typedef enum {
 
-  CS_PROPERTY_ISO,      /* isotropic */
-  CS_PROPERTY_ORTHO,    /* orthotropic */
-  CS_PROPERTY_ANISO,    /* anisotropic */
+  CS_PTYKEY_POST_FOURIER,
+  CS_PTYKEY_N_KEYS
+
+} cs_property_key_t;
+
+/*! \enum cs_property_type_t
+ *  \brief Type of property to consider
+ *
+ *  \var CS_PROPERTY_ISO
+ *  Isotropic behavior (one real number is sufficient to describe the property)
+ *
+ *  \var CS_PROPERTY_ORTHO
+ *  Orthotropic behavior (three real numbers describe the behavior assuming
+ *  that the different behavior is aligned with Cartesian axis)
+ *
+ *  \var CS_PROPERTY_ANISO
+ *  Anisotropic behavior (a 3x3 tensor describe the behavior). This tensor
+ *  should be symmetric positive definite (i.e 6 real numbers describe the
+ *  behavior).
+ */
+
+typedef enum {
+
+  CS_PROPERTY_ISO,
+  CS_PROPERTY_ORTHO,
+  CS_PROPERTY_ANISO,
 
   CS_PROPERTY_N_TYPES
 
@@ -66,6 +106,7 @@ typedef struct {
   char  *restrict      name;
   int                  id;
   cs_flag_t            state_flag;
+  cs_flag_t            process_flag;
 
   /* The number of values to set depends on the type of property
       isotropic   = 1, orthotropic = 3, anisotropic = 9  */
@@ -92,14 +133,6 @@ typedef struct {
   cs_xdef_cw_eval_t  **get_eval_at_cell_cw;
 
 } cs_property_t;
-
-/* List of available keys for setting an advection field */
-typedef enum {
-
-  CS_PTYKEY_POST,
-  CS_PTYKEY_N_KEYS
-
-} cs_property_key_t;
 
 /*============================================================================
  * Global variables
@@ -173,6 +206,19 @@ cs_property_by_name(const char   *name);
 
 cs_property_t *
 cs_property_by_id(int         id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set optional parameters related to a cs_property_t structure
+ *
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       key       key related to a setting option
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_option(cs_property_t       *pty,
+                       cs_property_key_t    key);
 
 /*----------------------------------------------------------------------------*/
 /*!

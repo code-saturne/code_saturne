@@ -367,19 +367,26 @@ cs_mesh_deform_solve_displacement(cs_domain_t  *domain)
 
     cs_equation_t *eq = cs_equation_by_name(eq_name[i]);
 
-    /* Sanity check */
-    assert(cs_equation_is_steady(eq));
+    if (cs_equation_uses_new_mechanism(eq))
+      cs_equation_solve_steady_state(domain->mesh, eq);
 
-    /* Define the algebraic system */
-    cs_equation_build_system(domain->mesh,
-                             domain->time_step,
-                             domain->dt_cur,
-                             eq);
+    else { /* Deprecated */
 
-    /* Solve the algebraic system */
-    cs_equation_solve(eq);
+      /* Sanity check */
+      assert(cs_equation_is_steady(eq));
 
-  }
+      /* Define the algebraic system */
+      cs_equation_build_system(domain->mesh,
+                               domain->time_step,
+                               domain->dt_cur,
+                               eq);
+
+      /* Solve the algebraic system */
+      cs_equation_solve_deprecated(eq);
+
+    }
+
+  } /* Loop on Cartesian component */
 
   {
     cs_field_t *fx = cs_field_by_name("mesh_deform_x");

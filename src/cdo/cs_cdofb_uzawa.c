@@ -430,6 +430,8 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
     int  t_id = 0;
 #endif
 
+    const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
+
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
@@ -439,16 +441,14 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
     cs_cdofb_vecteq_get(&csys, &cb);
 
+    /* Store the shift to access border faces (first interior faces and
+       then border faces: shift = n_i_faces */
+    csys->face_shift = connect->n_faces[CS_INT_FACES];
+
     /* Initialization of the values of properties */
-    double  time_pty_val = 1.0;
-    double  reac_pty_vals[CS_CDO_N_MAX_REACTIONS];
+    cs_equation_init_properties(eqp, eqb, time_eval, cb);
 
-    const cs_real_t  t_eval_pty = t_cur + 0.5*dt_cur;
-
-    cs_equation_init_properties(eqp, eqb, t_eval_pty,
-                                &time_pty_val, reac_pty_vals, cb);
-
-    cs_real_t  zeta_c = cs_property_get_cell_value(0, t_eval_pty, zeta);
+    cs_real_t  zeta_c = cs_property_get_cell_value(0, time_eval, zeta);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -477,8 +477,8 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
       /* Set the local (i.e. cellwise) structures for the current cell */
       cs_cdofb_vecteq_init_cell_system(cell_flag, cm, eqp, eqb, eqc,
                                        dir_values, neu_tags,
-                                       vel_vals, t_eval_pty,  /* in */
-                                       csys, cb);             /* out */
+                                       vel_vals, time_eval,  /* in */
+                                       csys, cb);            /* out */
 
       const short int  n_fc = cm->n_fc, f_dofs = 3*n_fc;
 
@@ -494,12 +494,12 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
         if (!(eqb->diff_pty_uniform)) {
           cs_property_tensor_in_cell(cm,
                                      eqp->diffusion_property,
-                                     t_eval_pty,
+                                     time_eval,
                                      eqp->diffusion_hodge.inv_pty,
-                                     cb->pty_mat);
+                                     cb->dpty_mat);
 
           if (eqp->diffusion_hodge.is_iso)
-            cb->pty_val = cb->pty_mat[0][0];
+            cb->dpty_val = cb->dpty_mat[0][0];
         }
 
         /* local matrix owned by the cellwise builder (store in cb->loc) */
@@ -530,7 +530,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
         if (cs_dbg_cw_test(cm))
-          cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
+          cs_cell_sys_dump("\n>> Local system after diffusion", csys);
 #endif
       } /* END OF DIFFUSION */
 
@@ -555,14 +555,14 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
       /* Update the property */
       if ( !(sc->is_gdscale_uniform) )
-        zeta_c = cs_property_value_in_cell(cm, zeta, t_eval_pty);
+        zeta_c = cs_property_value_in_cell(cm, zeta, time_eval);
 
       _add_grad_div(n_fc, zeta_c*ovol, div, csys->mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(cm))
         cs_cell_sys_dump(">> Local system after diffusion and grad-div (lhs)",
-                         c_id, csys);
+                         csys);
 #endif
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
@@ -573,11 +573,11 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
         memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
 
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                    (const cs_xdef_t **)eqp->source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
-                                        t_eval_pty,
+                                        time_eval,
                                         NULL, /* No input structure */
                                         cb,   /* mass matrix is cb->hdg */
                                         csys->source);
@@ -593,7 +593,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
         if (cs_dbg_cw_test(cm))
           cs_cell_sys_dump(">> Local system matrix after"
-                           " diffusion and source term", c_id, csys);
+                           " diffusion and source term", csys);
 #endif
 
       } /* If source term */
@@ -620,8 +620,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> Local system matrix before condensation",
-                         c_id, csys);
+        cs_cell_sys_dump(">> Local system matrix before condensation", csys);
 #endif
 
       /* 5- (STATIC CONDENSATION AND) UPDATE OF THE LOCAL SYSTEM */
@@ -638,8 +637,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> Local system matrix after condensation",
-                         c_id, csys);
+        cs_cell_sys_dump(">> Local system matrix after condensation", csys);
 #endif
 
       /* 6- BOUNDARY CONDITIONS */
@@ -651,9 +649,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
           /* Weakly enforced Dirichlet BCs for cells attached to the boundary
              csys is updated inside (matrix and rhs) */
-          eqc->enforce_dirichlet(eqp->diffusion_hodge, cm,   /* in */
-                                 eqc->boundary_flux_op,      /* function */
-                                 fm, cb, csys);              /* in/out */
+          eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
 
         }
 
@@ -661,7 +657,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
+        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
 
       /* 7- ASSEMBLY */
@@ -718,7 +714,7 @@ _update_pr_div_rhs(const cs_property_t          *relax,
                    cs_real_t                    *rhs)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_real_t  t_eval_pty = cs_shared_time_step->t_cur + 0.5*dt_cur;
+  const cs_real_t  time_eval = cs_shared_time_step->t_cur + 0.5*dt_cur;
   const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
   const bool  rlx_n_unif = !(cs_property_is_uniform(relax));
   const cs_flag_t *bc_flag = eqb->face_bc->flag;
@@ -727,13 +723,13 @@ _update_pr_div_rhs(const cs_property_t          *relax,
   memset(rhs, 0, 3*quant->n_faces*sizeof(cs_real_t));
 
   /* Get the value of the relaxation parameter for the first cell */
-  cs_real_t  rlx = cs_property_get_cell_value(0, t_eval_pty, relax);
+  cs_real_t  rlx = cs_property_get_cell_value(0, time_eval, relax);
 
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     /* Update pressure value: p^{n+1} = p^n - relax div.u^n*/
-    if (rlx_n_unif) rlx = cs_property_get_cell_value(c_id, t_eval_pty, relax);
+    if (rlx_n_unif) rlx = cs_property_get_cell_value(c_id, time_eval, relax);
 
     /* Compute divergence and store it */
     const cs_real_t  div_c = _get_cell_divergence(c_id, quant, c2f, vel_f);
@@ -756,7 +752,7 @@ _update_pr_div_rhs(const cs_property_t          *relax,
                              CS_CDO_BC_DIRICHLET)))
         continue;
 
-      const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
+      const cs_nvec3_t pfq = cs_quant_set_face_nvec(f_id, quant);
 
       /* Manually computing the divergence */
       /* No divide by volume since it is then integrated */
@@ -764,11 +760,11 @@ _update_pr_div_rhs(const cs_property_t          *relax,
       cs_real_t  *_rhs = rhs + 3*f_id;
 
       /* Update the RHS */
-#         pragma omp atomic
+#     pragma omp atomic
       _rhs[0] -= ifdv * pfq.unitv[0];
-#         pragma omp atomic
+#     pragma omp atomic
       _rhs[1] -= ifdv * pfq.unitv[1];
-#         pragma omp atomic
+#     pragma omp atomic
       _rhs[2] -= ifdv * pfq.unitv[2];
 
     } /* Loop on cell faces */

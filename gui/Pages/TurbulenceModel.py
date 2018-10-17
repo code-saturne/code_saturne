@@ -240,8 +240,6 @@ class TurbulenceModel(Variables, Model):
             self.setNewProperty(self.node_turb, 'turbulent_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
-            wall_function = 0
-            self.setWallFunction(wall_function)
 
         elif model_turb in self.LESmodels():
             if model_turb == 'LES_dynamique':
@@ -347,9 +345,21 @@ class TurbulenceModel(Variables, Model):
         Return wall function from advanced options.
         """
         wall_function = self.node_turb.xmlGetInt('wall_function')
+        model_turb    = self.getTurbulenceModel()
         if wall_function == None:
             wall_function = -1 # for next test
-        if wall_function < 0 or wall_function > 5:
+        if model_turb == 'Rij-EBRSM' :
+          if wall_function not in (0,7) :
+            # Force default wall function to iwallf = 7
+            # for Rij EB-RSM model
+            wall_function = 7
+            self.setWallFunction(wall_function)
+        elif model_turb == 'k-omega-SST' :
+          if wall_function < 0 or wall_function > 7 :
+            wall_function = self.defaultTurbulenceValues()['wall_function']
+            self.setWallFunction(wall_function)
+        else :
+          if wall_function < 0 or wall_function > 5 :
             wall_function = self.defaultTurbulenceValues()['wall_function']
             self.setWallFunction(wall_function)
         return wall_function
@@ -360,7 +370,7 @@ class TurbulenceModel(Variables, Model):
         """
         Input wall function for advanced options.
         """
-        self.isIntInList(wall_function, [0, 1, 2, 3, 4, 5])
+        self.isIntInList(wall_function, [0, 1, 2, 3, 4, 5, 7])
         self.node_turb.xmlSetData('wall_function', wall_function)
 
 

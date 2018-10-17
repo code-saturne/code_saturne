@@ -34,7 +34,6 @@
 
 #define HAVE_CGNS "@cs_have_cgns@"
 #define HAVE_HDF5 "@cs_have_hdf5@"
-#define HAVE_LIBXML2 "@cs_have_libxml2@"
 #define HAVE_MED "@cs_have_med@"
 #define HAVE_METIS "@cs_have_metis@"
 #define HAVE_MPI "@cs_have_mpi@"
@@ -123,10 +122,6 @@ Name: "dev\cgns"; Description: "CGNS"; Types: full
 #if HAVE_HDF5 == "yes"
 Name: "dev\hdf5"; Description: "HDF5"; Types: full
 #define HDF5PATH "@hdf5_prefix@"
-#endif
-#if HAVE_LIBXML2 == "yes"
-Name: "dev\libxml2"; Description: "LibXML2"; Types: full
-#define LIBXML2PATH "@libxml2_prefix@"
 #endif
 #if HAVE_MED == "yes"
 Name: "dev\med"; Description: "MED"; Types: full
@@ -314,11 +309,6 @@ Source: "{#MinGW}\bin\libhdf5-7.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "{#MinGW}\include\hdf5.h"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\hdf5
 Source: "{#MinGW}\include\H5*.h"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\hdf5
 Source: "{#MinGW}\lib\libhdf5.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\hdf5
-#endif
-#if HAVE_LIBXML2 == "yes"
-Source: "{#MinGW}\bin\libxml2-2.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
-Source: "{#MinGW}\include\libxml2\*"; DestDir: "{app}\include\libxml2"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: dev\libxml2
-Source: "{#MinGW}\lib\libxml2.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\libxml2
 #endif
 #if HAVE_MED == "yes"
 Source: "{#MinGW}\bin\libmedC-1.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core

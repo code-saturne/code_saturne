@@ -2076,15 +2076,11 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
                         cs_lnum_t          n_b_faces,
                         const cs_lnum_2_t  i_face_cells[],
                         const cs_lnum_t    b_face_cells[],
-                        const cs_lnum_t    b_face_vtx_idx[],
-                        const cs_lnum_t    b_face_vtx_lst[],
                         const cs_real_t    i_face_normal[][3],
                         const cs_real_t    b_face_normal[][3],
                         const cs_real_t    i_face_cog[][3],
                         const cs_real_t    b_face_cog[][3],
                         const cs_real_t    cell_cen[][3],
-                        const cs_real_t    vtx_coord[][3],
-                        const cs_real_t    b_face_surf[],
                         cs_real_t          i_dist[],
                         cs_real_t          b_dist[],
                         cs_real_t          weight[])
@@ -2170,30 +2166,6 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
         b_dist[face_id] = CS_MAX(b_dist[face_id], 0.2 * distmax);
       }
 
-      /* Clipping of cell boundary distances based on a characteristic lenght */
-      cs_lnum_t s_vtx_id = b_face_vtx_idx[face_id];
-      cs_lnum_t e_vtx_id = b_face_vtx_idx[face_id+1];
-      cs_lnum_t n_f_vertices = e_vtx_id - s_vtx_id;
-
-      cs_real_t peri = 0.;
-
-      for (cs_lnum_t f_vtx_id = 0; f_vtx_id < n_f_vertices; f_vtx_id++) {
-        cs_lnum_t vtx_id1 = b_face_vtx_lst[s_vtx_id + f_vtx_id];
-        cs_lnum_t vtx_id2 = b_face_vtx_lst[s_vtx_id + (f_vtx_id+1)%n_f_vertices];
-        cs_real_t dist_p1p2 = cs_math_3_distance(vtx_coord[vtx_id1],
-                                                 vtx_coord[vtx_id2]);
-        peri += dist_p1p2;
-      }
-
-      double miperi = 0.5 * peri;
-
-      /* Compute characteristic dimension of each face based
-         on surfbn and peri */
-      double delta = miperi * miperi - 4. * b_face_surf[face_id];
-      if (delta > 0.) {
-        double L = 0.5 * (miperi + sqrt(delta));
-        b_dist[face_id] = CS_MAX(b_dist[face_id], 0.01 * L);
-      }
     }
   }
 
@@ -2404,6 +2376,8 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
                           cs_real_t          djjpf[][3])
 {
 
+  cs_gnum_t w_count = 0;
+
   /* Interior faces */
 
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
@@ -2439,9 +2413,12 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
       cs_real_t iip   = cs_math_3_norm(diipf[face_id]);
 
       cs_real_t corri = 1.;
+      bool is_clipped = false;
 
-      if (0.5 * dist[face_id] < iip)
+      if (0.5 * dist[face_id] < iip) {
+        is_clipped = true;
         corri = 0.5 * dist[face_id] / iip;
+      }
 
       diipf[face_id][0] *= corri;
       diipf[face_id][1] *= corri;
@@ -2451,8 +2428,10 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
 
       corri = 1.;
 
-      if (0.9 * cell_vol[cell_id1] < surfn * iip)
+      if (0.9 * cell_vol[cell_id1] < surfn * iip) {
+        is_clipped = true;
         corri = 0.9 * cell_vol[cell_id1] / (surfn * iip);
+      }
 
       diipf[face_id][0] *= corri;
       diipf[face_id][1] *= corri;
@@ -2462,8 +2441,10 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
 
       cs_real_t corrj = 1.;
 
-      if (0.5 * dist[face_id] < jjp)
+      if (0.5 * dist[face_id] < jjp) {
+        is_clipped = true;
         corrj = 0.5 * dist[face_id] / jjp;
+      }
 
       djjpf[face_id][0] *= corrj;
       djjpf[face_id][1] *= corrj;
@@ -2472,8 +2453,13 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
       jjp = cs_math_3_norm(djjpf[face_id]);
 
       corrj = 1.;
-      if (0.9 * cell_vol[cell_id2] < surfn * jjp)
+      if (0.9 * cell_vol[cell_id2] < surfn * jjp) {
+        is_clipped = true;
         corrj = 0.9 * cell_vol[cell_id2] / (surfn * jjp);
+      }
+
+      if (is_clipped)
+        w_count++;
 
       djjpf[face_id][0] *= corrj;
       djjpf[face_id][1] *= corrj;
@@ -2481,6 +2467,15 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
 
     }
   }
+
+  cs_parall_counter(&w_count, 1);
+
+  if (w_count > 0)
+    bft_printf(_("\n"
+                 "%llu faces have a too large reconstruction distance.\n"
+                 "For these faces, reconstruction are limited.\n"),
+               (unsigned long long)w_count);
+
 }
 
 /*----------------------------------------------------------------------------
@@ -3149,15 +3144,11 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                           mesh->n_b_faces,
                           (const cs_lnum_2_t *)(mesh->i_face_cells),
                           mesh->b_face_cells,
-                          mesh->b_face_vtx_idx,
-                          mesh->b_face_vtx_lst,
                           (const cs_real_3_t *)(mesh_quantities->i_face_normal),
                           (const cs_real_3_t *)(mesh_quantities->b_face_normal),
                           (const cs_real_3_t *)(mesh_quantities->i_face_cog),
                           (const cs_real_3_t *)(mesh_quantities->b_face_cog),
                           (const cs_real_3_t *)(mesh_quantities->cell_cen),
-                          (const cs_real_3_t *)(mesh->vtx_coord),
-                          mesh_quantities->b_face_surf,
                           mesh_quantities->i_dist,
                           mesh_quantities->b_dist,
                           mesh_quantities->weight);

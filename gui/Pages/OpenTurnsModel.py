@@ -101,12 +101,12 @@ class OpenTurnsModel(Model):
 
         # SUBMISSION
         self.wall_clock   = self.cfg_ot.get('batch_parameters', 'wall_clock')
-        self.nprocs       = int(self.cfg_ot.get('batch_parameters', 'nprocs'))
+        self.nprocs       = self.cfg_ot.get('batch_parameters', 'nprocs')
         self.wckey        = self.cfg_ot.get('batch_parameters', 'wckey')
         if self.batch_manager == 'none':
-            self.nnodes    = 'none'
-            self.ntasks    = 'none'
-            self.nthreads  = 'none'
+            self.nnodes    = 1
+            self.ntasks    = 1
+            self.nthreads  = 1
             self.dist_wdir = 'none'
         else:
             self.nnodes    = self.cfg_ot.get('batch_parameters', 'number_of_nodes')
@@ -158,7 +158,7 @@ class OpenTurnsModel(Model):
         cfg.set('host_parameters', 'host_name', 'localhost')
         cfg.set('host_parameters', 'batch_manager', 'none')
         cfg.set('host_parameters', 'build_name', 'default')
-        cfg.set('host_paramaters', 'arch_path', 'default')
+        cfg.set('host_parameters', 'arch_path', 'default')
 
         cfg.add_section('study_parameters')
         case_dir = self.case['case_path']
@@ -345,7 +345,7 @@ class OpenTurnsModel(Model):
         if nthreads:
             self.nthreads = nthreads
 
-        self.nprocs = nnodes * ntasks * nthreads
+        self.nprocs = int(self.nnodes) * int(self.ntasks) * int(self.nthreads)
 
     def getClusterParams(self):
         """

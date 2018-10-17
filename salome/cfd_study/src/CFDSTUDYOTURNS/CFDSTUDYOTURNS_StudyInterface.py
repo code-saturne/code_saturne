@@ -103,9 +103,9 @@ class cfd_openturns_study:
         elif self.run_type == 'distant':
             from CFDSTUDYOTURNS_DistantLauncher import CFDSTUDY_DistantLauncher
 
-            self.cs_launcher = CFDSTUDY_DistantLauncher(case_dir   = case_dir,
-                                                        params_cfg = self.cfg,
-                                                        package    = self.pkg)
+            new_launcher = CFDSTUDY_DistantLauncher(case_dir   = case_dir,
+                                                    params_cfg = self.cfg,
+                                                    package    = self.pkg)
 
         self.cs_launcher = new_launcher
     # ---------------------------------------
@@ -164,6 +164,9 @@ class cfd_openturns_study:
                     self.cs_launcher.__setRunId__()
 
                     self.cs_launcher.launch(force_submit=True)
+
+                    if self.cs_launcher.job_failed:
+                        break
                 else:
                     break
 
@@ -178,6 +181,7 @@ class cfd_openturns_study:
         Returns a tuple of all the required values (needed by OpenTurns)
         """
 
+
         resfile = self.cfg.get('study_parameters', 'results_file')
 
         rspth = os.path.join(self.study_path,
@@ -189,10 +193,12 @@ class cfd_openturns_study:
         r = open(rspth, 'r').readlines()
         d = r[-1].split()
 
-        if len(data) > 1:
-            results = tuple(d)
+        if len(d) > 1:
+            results = ()
+            for ed in d:
+                results += (float(ed),)
         else:
-            results = d
+            results = float(d[0])
 
         return results;
     # ---------------------------------------

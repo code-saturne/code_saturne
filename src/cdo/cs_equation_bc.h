@@ -183,6 +183,23 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Define an array of flags for each vertex collecting the flags
+ *          of associated boundary faces
+ *
+ * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]  face_bc    pointer to a structure collecting boundary conditions
+ *                        applied to faces
+ *
+ * \return an array collecting bc flags
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t *
+cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
+                               const cs_cdo_bc_t          *face_bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Tag each face related to a Neumann BC with its definition id.
  *          Default tag is -1 (not a Neumann face)
  *
