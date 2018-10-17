@@ -41,12 +41,6 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * PLE library headers
- *----------------------------------------------------------------------------*/
-
-#include <ple_coupling.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -57,6 +51,8 @@
 #include "cs_advection_field.h"
 #include "cs_base.h"
 #include "cs_domain_setup.h"
+#include "cs_equation.h"
+#include "cs_equation_param.h"
 #include "cs_field.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -64,10 +60,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_halo.h"
 #include "cs_param.h"
-#include "cs_physical_model.h"
 #include "cs_property.h"
-#include "cs_prototypes.h"
-#include "cs_time_moment.h"
 #include "cs_time_step.h"
 #include "cs_walldistance.h"
 
@@ -584,7 +577,7 @@ cs_user_parameters(void)
 
   /*! [param_cdo_numerics] */
   {
-    cs_equation_param_t  *eqp = cs_equation_param_by_name("FVCA6.1");
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff");
 
     /* The modification of the space discretization should be apply first */
     cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");

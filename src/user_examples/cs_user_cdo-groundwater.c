@@ -218,54 +218,6 @@ cs_user_cdo_init_setup(cs_domain_t   *domain)
 
 }
 
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  - Specify the elements such as properties, advection fields,
- *           user-defined equations and modules which have been previously
- *           added.
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
-*/
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_finalize_setup(cs_domain_t   *domain)
-{
-  CS_UNUSED(domain);
-
-  /*=============
-    Set equations
-    ============= */
-
-  /* Richards equation */
-  cs_equation_param_t  *r_eqp = cs_equation_param_by_name("Richards");
-
-  /* Define the boundary conditions  */
-  cs_real_t  val0 = 0.0, val1 = 1.0;
-
-  cs_equation_add_bc_by_value(r_eqp,
-                              CS_PARAM_BC_DIRICHLET,
-                              "left", // boundary zone name
-                              &val1);  // value to set
-
-  cs_equation_add_bc_by_value(r_eqp,
-                              CS_PARAM_BC_DIRICHLET,
-                              "right", // boundary zone name
-                              &val0);  // value to set
-
-  /* Tracer equation */
-  cs_equation_param_t  *t_eqp = cs_equation_param_by_name("Tracer_01");
-
-  cs_equation_add_bc_by_value(t_eqp,
-                              CS_PARAM_BC_DIRICHLET,
-                              "left",  // boundary zone name
-                              &val1);  // value to set
-
-  /* Define the initial condition (By default: zero is set) */
-  cs_equation_add_ic_by_analytic(t_eqp, "cells", get_tracer_sol, NULL);
-}
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
