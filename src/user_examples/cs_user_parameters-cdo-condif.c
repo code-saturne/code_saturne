@@ -62,6 +62,7 @@
 #include "cs_halo.h"
 #include "cs_param.h"
 #include "cs_property.h"
+#include "cs_sles.h"
 #include "cs_time_step.h"
 #include "cs_walldistance.h"
 
@@ -622,19 +623,44 @@ cs_user_linear_solvers(void)
 /*! [param_cdo_mg_aggreg] */
   {
     cs_equation_t  *eq = cs_equation_by_name("AdvDiff");
+    cs_equation_param_t  *eqp = cs_equation_get_param(eq);
     cs_field_t  *fld = cs_equation_get_field(eq);
-    cs_multigrid_t *mg = cs_multigrid_define(fld->id,
-                                             NULL,
-                                             CS_MULTIGRID_K_CYCLE);
 
-    cs_multigrid_set_coarsening_options(mg,
-                                        8, /* aggregation_limit*/
-                                        CS_GRID_COARSENING_SPD_PW, // coarsening
-                                        10,  /* n_max_levels */
-                                        30,  /* min_g_cells (default 30) */
-                                        0.,  /* P0P1 relaxation */
-                                        12);  /* postprocessing (default 0) */
+    /* In case of a in-house K-cylcle multigrid as a preconditioner of a
+       linear iterative solver */
+    if (eqp->itsol_info.precond == CS_PARAM_PRECOND_AMG) {
+      /* If multigrid is the chosen preconditioner */
+      if (eqp->itsol_info.amg_type == CS_PARAM_AMG_HOUSE_K) {
+        /* If this is a K-cycle multigrid */
 
+        /* Retrieve the different context structures to apply additional
+           settings */
+        cs_sles_t  *sles = cs_sles_find_or_add(fld->id, NULL);
+        cs_sles_it_t  *itsol = cs_sles_get_context(sles);
+        cs_sles_pc_t  *pc = cs_sles_it_get_pc(itsol);
+        cs_multigrid_t  *mg = cs_sles_pc_get_context(pc);
+
+        /* Available settings:
+         * - max. number of elements in an aggregation
+         * - type of algorithm to perform the aggregation
+         * - max. number of levels (i.e. grids)
+         * - max globalnumber of rows at the coarsest level
+         * - type of relaxation (weighting between a P_0 and P_1). For K-cycle,
+         * this should be equal to 0.
+         * - Activation of the postprocessing for the aggregation if > 0.
+         * Aggregation set is numbered by its coarse row number modulo this
+         * value
+         */
+        cs_multigrid_set_coarsening_options(mg,
+                                            8,   /* aggregation_limit*/
+                                            CS_GRID_COARSENING_SPD_PW,
+                                            10,  /* n_max_levels */
+                                            30,  /* min_g_cells (default 30) */
+                                            0.,  /* P0P1 relaxation */
+                                            12); /* postprocess (default 0) */
+
+      } /* K-cycle */
+    }   /* Multigrid as preconditioner */
   }
   /*! [param_cdo_mg_aggreg] */
 }
