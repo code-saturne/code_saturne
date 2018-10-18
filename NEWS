@@ -23,6 +23,9 @@ Release 5.0.9 (Sep 26 2018)
 Bug fixes
 ---------
 
+- Fix allocation size for values at injection in case of mass source terms
+  with coupled Reynolds stress solver.
+
 - Fixes to atmospheric chemistry model.
 
 - Lagrangian module: fix resuspension when having internal deposition.
