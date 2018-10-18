@@ -172,7 +172,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:,:) :: w7
 double precision, allocatable, dimension(:) :: dpvar
-double precision, allocatable, dimension(:,:) :: viscce
+double precision, allocatable, dimension(:,:) :: gatinj, viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
@@ -198,7 +198,7 @@ type(var_cal_opt) :: vcopt
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet))
 allocate(dpvar(ncelet))
-allocate(viscce(6,ncelet))
+allocate(gatinj(6,ncelet), viscce(6,ncelet))
 allocate(weighf(2,nfac))
 allocate(weighb(nfabor))
 
@@ -362,17 +362,17 @@ if (ncesmp.gt.0) then
    ( ncelet , ncel   , ncesmp , iiun     , isto2t ,                   &
      icetsm , itypsm(:,ivar + isou - 1)  ,                            &
      cell_f_vol , cvara_var  , smacel(:,ivar+isou-1)  , smacel(:,ipr) ,   &
-     smbr   ,  rovsdt    , w1 )
+     smbr   ,  rovsdt    , gatinj )
 
    ! If we extrapolate the source terms we put Gamma Pinj in the previous st
     if (st_prv_id.ge.0) then
       do iel = 1, ncel
-        c_st_prv(isou,iel) = c_st_prv(isou,iel) + w1(iel)
+        c_st_prv(isou,iel) = c_st_prv(isou,iel) + gatinj(isou,iel)
       enddo
     ! Otherwise we put it directly in the RHS
     else
       do iel = 1, ncel
-        smbr(isou, iel) = smbr(isou, iel) + w1(iel)
+        smbr(isou, iel) = smbr(isou, iel) + gatinj(isou,iel)
       enddo
     endif
 
@@ -1027,7 +1027,7 @@ call coditts &
 ! Free memory
 deallocate(w1, w2)
 deallocate(dpvar)
-deallocate(viscce)
+deallocate(gatinj, viscce)
 deallocate(weighf, weighb)
 
 !--------

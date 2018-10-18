@@ -5,6 +5,9 @@ Release 5.1.6 (unreleased)
 Bug fixes
 ---------
 
+- Fix allocation size for values at injection in case of mass source terms
+  with coupled Reynolds stress solver.
+
 - GUI: fix missing update of modified scalar names for groundwater flows.
 
 - GUI: fix loss of previous deactivated wall function setting when reopened.
