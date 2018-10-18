@@ -190,7 +190,6 @@ cs_domain_create(void)
   domain->restart_nt = 0;
   domain->output_nt = -1;
   domain->verbosity = 1;
-  domain->profiling = false;
 
   /* By default: CDO-HHO schemes are not activated */
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);

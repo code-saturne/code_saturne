@@ -1154,9 +1154,6 @@ cs_equation_add(const char            *eqname,
 
   eq->field_id = -1;    /* field is created in a second step */
 
-  /* Set timer statistic structure to a default value */
-  eq->main_ts_id = eq->solve_ts_id = -1;
-
   /* Algebraic system: allocated later */
   eq->matrix = NULL;
   eq->rhs = NULL;
@@ -1185,6 +1182,11 @@ cs_equation_add(const char            *eqname,
   eq->get_vertex_values = NULL;
   eq->get_cell_values = NULL;
   eq->get_face_values = NULL;
+
+  /* Set timer statistic structure to a default value */
+  eq->main_ts_id = cs_timer_stats_create(NULL, /* new root */
+                                         eqname,
+                                         eqname);
 
   return  eq;
 }
@@ -1340,48 +1342,6 @@ cs_equation_log_setup(void)
       cs_timer_stats_stop(eq->main_ts_id);
 
   } /* Loop on equations */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Create timer statistics structures to enable a "home-made" profiling
- *
- * \param[in, out]  eq       pointer to a cs_equation_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_timer_stats(cs_equation_t  *eq)
-{
-  if (eq == NULL)
-    return;
-
-  cs_equation_param_t  *eqp = eq->param;
-
-  /* Set timer statistics */
-  if (eqp->verbosity > 0) {
-
-    eq->main_ts_id = cs_timer_stats_create(NULL, /* new root */
-                                           eqp->name,
-                                           eqp->name);
-
-    cs_timer_stats_start(eq->main_ts_id);
-
-    if (eqp->verbosity > 1) {
-
-      char *label = NULL;
-
-      int  len = strlen("_solve") + strlen(eqp->name) + 1;
-      BFT_MALLOC(label, len, char);
-      sprintf(label, "%s_solve", eqp->name);
-      eq->solve_ts_id = cs_timer_stats_create(eqp->name, label, label);
-
-      BFT_FREE(label);
-
-    } /* verbosity > 1 */
-
-  } /* verbosity > 0 */
 
 }
 
@@ -1683,13 +1643,11 @@ cs_equation_setup(void)
  *         structure during the computation
  *
  * \param[in]  connect        pointer to a cs_cdo_connect_t structure
- * \param[in]  do_profiling   true or false
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
-                           bool                      do_profiling)
+cs_equation_assign_range_set(const cs_cdo_connect_t   *connect)
 {
   if (_n_equations == 0)
     return;
@@ -1707,9 +1665,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
-
-    if (do_profiling)
-      cs_equation_set_timer_stats(eq);
 
     /* Set function pointers */
     switch(eqp->space_scheme) {
@@ -2123,8 +2078,6 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
-  if (eq->solve_ts_id > -1)
-    cs_timer_stats_start(eq->solve_ts_id);
 
   const cs_equation_param_t  *eqp = eq->param;
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
@@ -2195,10 +2148,6 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
                          eq->rhs);
 
   }
-
-  if (eq->solve_ts_id > -1)
-    cs_timer_stats_stop(eq->solve_ts_id);
-
 
   /* Copy current field values to previous values */
   cs_field_current_to_previous(fld);

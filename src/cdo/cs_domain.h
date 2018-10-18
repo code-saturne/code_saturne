@@ -106,8 +106,6 @@ typedef struct {
   int        output_nt;   /* Log information every nt iterations */
   int        restart_nt;  /* Write a restart every nt iterations */
   int        verbosity;   /* Level of details given in log */
-  bool       profiling;   /* Activate a set of timer statistics (details
-                             differ according to the verbosity level) */
 
   /* Specific context structure related to the numerical schemes */
   cs_domain_cdo_context_t   *cdo_context;

@@ -410,9 +410,6 @@ struct _cs_equation_t {
   /* Timer statistic for a "light" profiling */
   int     main_ts_id;   /* Id of the main timer states structure related
                            to this equation */
-  int     solve_ts_id;  /* Id of the timer stats structure related to the
-                           inversion of the linear system */
-
 };
 
 /*============================================================================
