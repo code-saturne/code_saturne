@@ -399,6 +399,7 @@ cs_equation_create_param(const char            *name,
   eqp->time_hodge.inv_pty = false; /* inverse property ? */
   eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
   eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+  eqp->time_hodge.coef = 1.;
   eqp->time_property = NULL;
 
   /* Description of the time discretization (default values) */
@@ -556,7 +557,9 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
       eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
       eqp->space_poly_degree = 0;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->diffusion_hodge.coef = 1./sqrt(3.); /* SUSHI algo. */
     }
     else if (strcmp(val, "hho_p0") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P0;

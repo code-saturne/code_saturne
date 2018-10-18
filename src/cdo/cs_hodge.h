@@ -171,6 +171,23 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build a local Hodge operator on a given cell which is equivalent of
+ *         a mass matrix. It relies on a CO+ST algo. and is specific to CDO-Fb
+ *         schemes.
+ *
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_fb_get_mass(const cs_param_hodge_t    h_info,
+                     const cs_cell_mesh_t     *cm,
+                     cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local Hodge operator for a given cell using the WBS algo.
  *          This function is specific for vertex+cell-based schemes
  *

@@ -100,6 +100,9 @@ BEGIN_C_DECLS
 
 #define CS_SIMD_SIZE(s) (((s-1)/16+1)*16)
 
+#define POST_ON_CELLS     1
+#define POST_ON_VERTICES  2
+
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -256,6 +259,7 @@ struct _cs_multigrid_t {
 
   /* Data for postprocessing callback */
 
+  int        post_location;      /* 1: cells, 2: vertices */
   int        n_levels_post;      /* Current number of postprocessed levels */
 
   int      **post_cell_num;      /* If post_row_max > 0, array of
@@ -898,14 +902,16 @@ _multigrid_add_level(cs_multigrid_t  *mg,
  * Add postprocessing info to multigrid hierarchy
  *
  * parameters:
- *   mg           <-> multigrid structure
- *   name         <-- postprocessing name
- *   n_base_cells <-- number of cells in base grid
+ *   mg            <-> multigrid structure
+ *   name          <-- postprocessing name
+ *   post_location <-- where to postprocess (cells or vertices)
+ *   n_base_cells  <-- number of cells in base grid
  *----------------------------------------------------------------------------*/
 
 static void
 _multigrid_add_post(cs_multigrid_t  *mg,
                     const char      *name,
+                    int              post_location,
                     cs_lnum_t        n_base_cells)
 {
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
@@ -917,6 +923,7 @@ _multigrid_add_post(cs_multigrid_t  *mg,
   if (mg->post_row_max < 1)
     return;
 
+  mg->post_location = post_location;
   mg->n_levels_post = mgd->n_levels - 1;
 
   BFT_REALLOC(mg->post_name, strlen(name) + 1, char);
@@ -997,17 +1004,33 @@ _cs_multigrid_post_function(void                  *mgh,
     sprintf(var_name, "mg %s %2d",
             base_name, (ii+1));
 
-    cs_post_write_var(CS_POST_MESH_VOLUME,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      var_name,
-                      1,
-                      false,
-                      true,
-                      CS_POST_TYPE_int,
-                      mg->post_cell_num[ii],
-                      NULL,
-                      NULL,
-                      cs_glob_time_step);
+    if (mg->post_location ==  POST_ON_CELLS)
+      cs_post_write_var(CS_POST_MESH_VOLUME,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        var_name,
+                        1,
+                        false,
+                        true,
+                        CS_POST_TYPE_int,
+                        mg->post_cell_num[ii],
+                        NULL,
+                        NULL,
+                        cs_glob_time_step);
+
+    else if (mg->post_location == POST_ON_VERTICES)
+      cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                               CS_POST_WRITER_ALL_ASSOCIATED,
+                               var_name,
+                               1,
+                               false,
+                               true,
+                               CS_POST_TYPE_int,
+                               mg->post_cell_num[ii],
+                               cs_glob_time_step);
+
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid location for post-processing.\n", __func__);
 
     BFT_FREE(mg->post_cell_num[ii]);
 
@@ -1016,17 +1039,28 @@ _cs_multigrid_post_function(void                  *mgh,
       sprintf(var_name, "rk %s %2d",
               base_name, (ii+1));
 
-      cs_post_write_var(CS_POST_MESH_VOLUME,
-                        CS_POST_WRITER_ALL_ASSOCIATED,
-                        var_name,
-                        1,
-                        false,
-                        true,
-                        CS_POST_TYPE_int,
-                        mg->post_cell_rank[ii],
-                        NULL,
-                        NULL,
-                        cs_glob_time_step);
+      if (mg->post_location ==  POST_ON_CELLS)
+        cs_post_write_var(CS_POST_MESH_VOLUME,
+                          CS_POST_WRITER_ALL_ASSOCIATED,
+                          var_name,
+                          1,
+                          false,
+                          true,
+                          CS_POST_TYPE_int,
+                          mg->post_cell_rank[ii],
+                          NULL,
+                          NULL,
+                          cs_glob_time_step);
+      else if (mg->post_location == POST_ON_VERTICES)
+        cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                                 CS_POST_WRITER_ALL_ASSOCIATED,
+                                 var_name,
+                                 1,
+                                 false,
+                                 true,
+                                 CS_POST_TYPE_int,
+                                 mg->post_cell_rank[ii],
+                                 cs_glob_time_step);
 
       BFT_FREE(mg->post_cell_rank[ii]);
 
@@ -3409,17 +3443,18 @@ cs_multigrid_setup_conv_diff(void               *context,
   if (mg->post_row_max > 0) {
     if (mg->info.n_calls[0] == 0) {
       int i = 0;
-      if (n_rows == mesh->n_cells)
-        i = 1;
-      else if (n_rows == mesh->n_vertices)
-        i = 2;
+      const cs_lnum_t n_rows_a = cs_matrix_get_n_rows(a);
+      if (n_rows_a == mesh->n_cells)
+        i = POST_ON_CELLS;
+      else if (n_rows_a == mesh->n_vertices)
+        i = POST_ON_VERTICES;
       int j = i;
       cs_parall_min(1, CS_INT_TYPE, &j);
       int k = i;
       cs_parall_max(1, CS_INT_TYPE, &k);
       if (i != 0 && j == i && k == i) {
         cs_post_add_time_dep_output(_cs_multigrid_post_function, (void *)mg);
-        _multigrid_add_post(mg, name, n_rows);
+        _multigrid_add_post(mg, name, i, n_rows_a);
       }
     }
   }

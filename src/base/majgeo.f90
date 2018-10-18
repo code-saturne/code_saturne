@@ -22,7 +22,7 @@
 
 subroutine majgeo &
  ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2  ,                   &
-   lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 , nfml2  , &
+   lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 ,          &
    iface2 , ifabo2 , ifmfb2 , ifmce2 ,                            &
    ipnfa2 , nodfa2 , ipnfb2 , nodfb2 , isymp2 , isoli2 ,          &
    volmn2 , volmx2 , voltt2 ,                                     &
@@ -61,7 +61,6 @@ subroutine majgeo &
 ! nthdb2           ! i  ! <-- ! nb. max de threads par groupe de faces de bord !
 ! ngrpi2           ! i  ! <-- ! nb. groupes de faces interieures               !
 ! ngrpb2           ! i  ! <-- ! nb. groupes de faces de bord                   !
-! nfml2            ! i  ! <-- ! number of families                             !
 ! idxfi            ! ia ! <-- ! index pour faces internes                      !
 ! idxfb            ! ia ! <-- ! index pour faces de bord                       !
 ! iface2           ! ia ! <-- ! interior face->cells connectivity              !
@@ -120,7 +119,6 @@ implicit none
 integer, intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
 integer, intent(in) :: lndfa2, lndfb2
 integer(kind=8), intent(in) :: ncelg2, nfacg2 , nfbrg2, nsomg2
-integer, intent(in) :: nfml2
 
 integer, dimension(2,nfac2), target :: iface2
 integer, dimension(ncele2), target :: ifmce2
@@ -170,8 +168,6 @@ else
 endif
 
 nnod = nsom2
-
-nfml = nfml2
 
 !===============================================================================
 ! 2. Global sizes

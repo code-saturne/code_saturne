@@ -270,7 +270,6 @@ ncel   = 0
 ncelet = 0
 nfac   = 0
 nfabor = 0
-nfml   = 0
 nnod   = 0
 lndfac = 0
 lndfbr = 0

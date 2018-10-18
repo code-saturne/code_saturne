@@ -4463,7 +4463,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   /* Rebuild ghosts */
 
-  if (m->halo != NULL || m->halo_type == CS_HALO_EXTENDED) {
+  if (m->n_domains > 0 || m->n_init_perio > 0 || m->halo_type == CS_HALO_EXTENDED) {
     cs_halo_type_t halo_type = m->halo_type;
     assert(m == cs_glob_mesh);
     cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;

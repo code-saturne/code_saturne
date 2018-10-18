@@ -997,7 +997,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   } /* There is at least one source term */
 
-  // Pre-defined a cs_hodge_builder_t struct.
+  /* Pre-defined a cs_hodge_builder_t struct. */
   eqc->hdg_mass.is_unity = true;
   eqc->hdg_mass.is_iso   = true;
   eqc->hdg_mass.inv_pty  = false;

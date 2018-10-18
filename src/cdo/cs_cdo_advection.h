@@ -125,6 +125,50 @@ cs_cdo_advection_get_cip_coef(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the convection operator attached to a cell with a CDO
+ *          face-based scheme with diffusion and an upwind scheme and a
+ *          conservative formulation is used.
+ *          The local matrix related to this operator is stored in cb->loc
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_get_fb_upwcsvdi(const cs_equation_param_t   *eqp,
+                                 const cs_cell_mesh_t        *cm,
+                                 cs_real_t                    t_eval,
+                                 cs_face_mesh_t              *fm,
+                                 cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
+ *          face-based scheme without diffusion and an upwind scheme and a
+ *          conservative formulation is used.
+ *          The local matrix related to this operator is stored in cb->loc
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in, out] fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_get_fb_upwcsv(const cs_equation_param_t   *eqp,
+                               const cs_cell_mesh_t        *cm,
+                               cs_real_t                    t_eval,
+                               cs_face_mesh_t              *fm,
+                               cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme when diffusion is activated and an upwind
  *          scheme and a conservative formulation is used
  *          The local matrix related to this operator is stored in cb->loc
@@ -316,6 +360,28 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
                          cs_real_t                    t_eval,
                          cs_face_mesh_t              *fm,
                          cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the BC contribution for the convection operator, face based
+ *          upwind
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      t_eval  time at which one evaluates the advection field
+ * \param[in, out] fm      pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb      pointer to a convection builder structure
+ * \param[in, out] csys    cell-wise structure storing the local system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_add_fb_bc(const cs_cell_mesh_t       *cm,
+                           const cs_equation_param_t  *eqp,
+                           cs_real_t                   t_eval,
+                           cs_face_mesh_t             *fm,
+                           cs_cell_builder_t          *cb,
+                           cs_cell_sys_t              *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

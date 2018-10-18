@@ -41,12 +41,6 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * PLE library headers
- *----------------------------------------------------------------------------*/
-
-#include <ple_coupling.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -57,17 +51,17 @@
 #include "cs_advection_field.h"
 #include "cs_base.h"
 #include "cs_domain_setup.h"
+#include "cs_equation.h"
+#include "cs_equation_param.h"
 #include "cs_field.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
+#include "cs_multigrid.h"
 #include "cs_halo.h"
 #include "cs_param.h"
-#include "cs_physical_model.h"
 #include "cs_property.h"
-#include "cs_prototypes.h"
-#include "cs_time_moment.h"
 #include "cs_time_step.h"
 #include "cs_walldistance.h"
 
@@ -584,7 +578,7 @@ cs_user_parameters(void)
 
   /*! [param_cdo_numerics] */
   {
-    cs_equation_param_t  *eqp = cs_equation_param_by_name("FVCA6.1");
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff");
 
     /* The modification of the space discretization should be apply first */
     cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
@@ -610,6 +604,39 @@ cs_user_parameters(void)
 
   }
   /*! [param_cdo_numerics] */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Advanced user-defined settings for the linear algebra related
+ *         to CDO equations
+ *         This is closed to cs_user_linear_solvers() but called once the fields
+ *         and equations have been created (this happens at a different stage
+ *         in the CDO framework)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_set_sles(void)
+{
+/*! [param_cdo_mg_aggreg] */
+  {
+    cs_equation_t  *eq = cs_equation_by_name("AdvDiff");
+    cs_field_t  *fld = cs_equation_get_field(eq);
+    cs_multigrid_t *mg = cs_multigrid_define(fld->id,
+                                             NULL,
+                                             CS_MULTIGRID_K_CYCLE);
+
+    cs_multigrid_set_coarsening_options(mg,
+                                        8, /* aggregation_limit*/
+                                        CS_GRID_COARSENING_SPD_PW, // coarsening
+                                        10,  /* n_max_levels */
+                                        30,  /* min_g_cells (default 30) */
+                                        0.,  /* P0P1 relaxation */
+                                        12);  /* postprocessing (default 0) */
+
+  }
+  /*! [param_cdo_mg_aggreg] */
 }
 
 /*----------------------------------------------------------------------------*/

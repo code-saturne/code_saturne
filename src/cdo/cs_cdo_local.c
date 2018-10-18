@@ -650,17 +650,19 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_mesh_dump(cs_cell_mesh_t     *cm)
+cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
 {
   if (cm == NULL) {
-    cs_log_printf(CS_LOG_DEFAULT, "\n>> Dump cs_cell_mesh_t %p\n", (void *)cm);
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Dump cs_cell_mesh_t %p\n",
+                  (const void *)cm);
     return;
   }
 
   cs_log_printf(CS_LOG_DEFAULT, "\n>> Dump cs_cell_mesh_t %p; %s; flag: %d\n"
                 " c_id:%d; vol: %9.6e; xc (% .5e % .5e % .5e); diam: % .5e\n",
-                (void *)cm, fvm_element_type_name[cm->type], cm->flag, cm->c_id,
-                cm->vol_c, cm->xc[0], cm->xc[1], cm->xc[2], cm->diam_c);
+                (const void *)cm, fvm_element_type_name[cm->type], cm->flag,
+                cm->c_id, cm->vol_c, cm->xc[0], cm->xc[1], cm->xc[2],
+                cm->diam_c);
 
   /* Information related to primal vertices */
   if (cm->flag & cs_cdo_local_flag_v) {

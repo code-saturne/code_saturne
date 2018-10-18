@@ -427,7 +427,7 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_mesh_dump(cs_cell_mesh_t     *cm);
+cs_cell_mesh_dump(const cs_cell_mesh_t     *cm);
 
 /*----------------------------------------------------------------------------*/
 /*!

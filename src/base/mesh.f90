@@ -71,10 +71,6 @@ module mesh
   !> (see \ref note_3)
   integer, save :: lndfbr
 
-  !> \anchor nfml
-  !> Number of referenced families of entities (boundary faces, elements, ...)
-  integer, save :: nfml
-
   ! pointer to C array used by ifacel (0 to n-1 numbering)
   integer, dimension(:,:), pointer :: ifacel_0
 
