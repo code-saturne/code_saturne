@@ -369,7 +369,7 @@ cs_domain_set_scheme_flags(cs_domain_t    *domain)
                   " Please check your settings."), cs_equation_get_name(eq));
     }
 
-  } // Loop on equations
+  } /* Loop on equations */
 
   /* Navier-Stokes sytem */
   if (cs_navsto_system_is_activated()) {
@@ -493,8 +493,8 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
      - Setup the structure related to cs_sles_*
   */
 
-  domain->only_steady = cs_equation_finalize_setup(domain->connect,
-                                                   domain->profiling);
+  cs_equation_finalize_setup(domain->connect,
+                             domain->profiling);
 
   if (domain->only_steady)
     domain->is_last_iter = true;

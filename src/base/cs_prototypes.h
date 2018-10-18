@@ -517,9 +517,9 @@ cs_user_parameters(void);
 void
 cs_user_radiative_transfer_parameters(void);
 
-/*-------------------------------------------------------------------------------*
+/*-----------------------------------------------------------------------------
  * User subroutine for input of radiative transfer boundary conditions
- *-------------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_user_radiative_transfer_bcs(int               nvar,
@@ -693,19 +693,6 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
 /*============================================================================
  *  CDO User function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Advanced user-defined settings for the linear algebra related
- *         to CDO equations
- *         This is closed to cs_user_linear_solvers() but called once the fields
- *         and equations have been created (this happens at a different stage
- *         in the CDO framework)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_set_sles(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

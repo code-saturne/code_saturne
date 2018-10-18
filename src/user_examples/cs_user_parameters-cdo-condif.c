@@ -617,7 +617,7 @@ cs_user_parameters(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_set_sles(void)
+cs_user_linear_solvers(void)
 {
 /*! [param_cdo_mg_aggreg] */
   {

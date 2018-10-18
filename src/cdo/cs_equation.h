@@ -357,15 +357,28 @@ cs_equation_set_timer_stats(cs_equation_t  *eq);
 /*!
  * \brief  Assign a set of pointer functions for managing the cs_equation_t
  *         structure during the computation
- *
- * \param[in]  connect        pointer to a cs_cdo_connect_t structure
- * \param[in]  do_profiling   true or false
+ *         Setup the linear algebra requirements
  *
  * \return true if all equations are steady-state otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
 bool
+cs_equation_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign cs_range_set_t structure for synchronization when computing
+ *         in parallel mode
+ *         After this call, parameters related to an equation are set once for
+ *         all
+ *
+ * \param[in]  connect        pointer to a cs_cdo_connect_t structure
+ * \param[in]  do_profiling   true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
 cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
                            bool                      do_profiling);
 
