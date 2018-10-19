@@ -422,7 +422,8 @@ enddo
 
 ! The computation of explicit and implicit source terms is performed
 ! at the first iteration only.
-if (iterns.eq.1) then
+! If iphydr=1 or if we have buoyant scalars then we need to update source terms
+if (iterns.eq.1.or.iphydr.eq.1.or.n_buoyant_scal.ge.1) then
 
   if (iihmpr.eq.1) then
     call uitsnv (vel, tsexp, tsimp)
