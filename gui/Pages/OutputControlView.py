@@ -97,6 +97,7 @@ class LabelWriterDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
@@ -153,6 +154,7 @@ class LabelMeshDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
@@ -331,6 +333,7 @@ class LocationSelectorDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         self.value = from_qvariant(index.model().data(index, Qt.DisplayRole),
                                    to_text_string)
         editor.setText(self.value)
@@ -368,6 +371,7 @@ class DensitySelectorDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         self.value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(self.value)
 
@@ -407,6 +411,7 @@ class AssociatedWriterDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         l1 = index.model().mdl.getWriterLabelList()
         for s in l1:
             idx = index.model().mdl.getWriterIdFromLabel(s)
@@ -1182,6 +1187,7 @@ class MonitoringPointDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         text = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         if isinstance(editor, QLineEdit):
             editor.setText(text)

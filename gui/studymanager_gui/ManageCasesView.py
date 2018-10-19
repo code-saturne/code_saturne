@@ -175,6 +175,7 @@ class LabelDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         self.p_value = str(v)
         editor.setText(v)

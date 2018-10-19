@@ -250,6 +250,7 @@ class LabelDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
@@ -276,6 +277,7 @@ class ValueDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 

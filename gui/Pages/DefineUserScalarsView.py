@@ -97,6 +97,7 @@ class NameDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         self.old_pname = str(value)
         editor.setText(value)
@@ -150,6 +151,7 @@ class GGDHDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
 
         if GroundwaterModel(self.case).getGroundwaterModel() == "groundwater":
             self.modelCombo.addItem(self.tr("OFF"), "OFF")
@@ -204,6 +206,7 @@ class VarianceNameDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         self.old_pname = str(value)
         editor.setText(value)
@@ -256,6 +259,7 @@ class VarianceDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         l1 = index.model().mdl.getScalarNameList()
         for label in index.model().mdl.getThermalScalarName():
             l1.append(label)
