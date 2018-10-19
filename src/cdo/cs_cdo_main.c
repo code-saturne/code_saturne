@@ -387,34 +387,13 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
 
   cs_timer_t t0 = cs_timer_time();
 
-  /* Add a boundary zone gathering all "wall" boundaries */
-  if (cs_navsto_system_is_activated() ||
-      cs_walldistance_is_activated())
-    cs_domain_boundary_def_wall_zones();
-
-  /* According to the settings, add or not predefined equations:
-      >> Wall distance
-      >> Groundwater flows
-      >> Mesh deformation
-      >> Navier-Stokes system
-  */
-  cs_domain_setup_predefined_equations(domain);
-
-  /* Add variables related to user-defined and predefined equations */
-  cs_equation_create_fields();
-  cs_advection_field_create_fields();
-
-  /* Set the scheme flag for the computational domain */
-  cs_domain_set_scheme_flags(domain);
-
-  /* Proceed to the settings of a cs_equation_t structure
-     - Assign to a cs_equation_t structure a list of function to manage this
-       structure during the computation.
-     - The set of functions chosen for each equation depends on the parameters
-       specifying the cs_equation_t structure
-     - Setup the structure related to cs_sles_*
-  */
-  domain->only_steady = cs_equation_setup();
+  /* First setup stage of the cs_domain_t structure
+   * - Define extra domain boundaries
+   * - Setup predefined equations
+   * - Create fields
+   * - Define cs_sles_t structures for variable fields
+   */
+  cs_domain_initialize_setup(domain);
 
   /* Monitoring */
   cs_timer_stats_stop(cs_cdo_ts_id);

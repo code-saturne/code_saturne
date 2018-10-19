@@ -135,32 +135,22 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup predefined equations which are activated
- *         At this stage, no equation is added and the space discretization
- *         scheme and the related numerical parameters are set.
+ * \brief  First setup stage of the cs_domain_t structure
+ *         Define extra domain boundaries
+ *         Setup predefined equations
+ *         Create fields
+ *         Define cs_sles_t structures for variable fields
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * \param[in, out]  domain            pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_setup_predefined_equations(cs_domain_t   *domain);
+cs_domain_initialize_setup(cs_domain_t                 *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the scheme flags for the current computational domain
- *         Requirement: domain->cdo_context is alloctated
- *
- * \param[in, out]  domain       pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_scheme_flags(cs_domain_t    *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build a cs_domain_t structure
+ * \brief  Last setup stage of the cs_domain_t structure
  *
  * \param[in, out]  domain            pointer to a cs_domain_t struct.
  * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
@@ -172,17 +162,6 @@ void
 cs_domain_finalize_setup(cs_domain_t                 *domain,
                          cs_mesh_t                   *mesh,
                          const cs_mesh_quantities_t  *mesh_quantities);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve all the equations of a computational domain for one time step
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_solve(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
