@@ -271,8 +271,13 @@ call field_get_val_s(icrom, crom_eos)
 call field_get_val_s(ibrom, brom_eos)
 
 ! Density at time (n)
-call field_get_val_prev_s(icrom, croma)
-call field_get_val_prev_s(ibrom, broma)
+if (irovar.eq.1) then
+  call field_get_val_prev_s(icrom, croma)
+  call field_get_val_prev_s(ibrom, broma)
+else
+  croma => crom_eos
+  broma => brom_eos
+endif
 
 ! Density at time (n-1) if needed
 if ((ivofmt.ge.0 .or. idilat.gt.1 .or. ipredfl.eq.0).and.irovar.eq.1) then
