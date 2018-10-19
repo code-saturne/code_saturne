@@ -186,6 +186,7 @@ typedef struct {
   short int   *f_sgn;   /*!< incidence number between f and c */
   double      *f_diam;  /*!< diameters of local faces */
   double      *hfc;     /*!< height of the pyramid of basis f and apex c */
+  double      *pfc;     /*!< volume of the pyramid for each face */
   cs_quant_t  *face;    /*!< face quantities (xf, area and unit normal) */
   cs_nvec3_t  *dedge;   /*!< dual edge quantities (length and unit vector) */
 
