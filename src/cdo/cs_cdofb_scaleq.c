@@ -434,6 +434,16 @@ _fb_apply_bc_partly(cs_real_t                      time_eval,
       for (short int f  = 0; f < cm->n_fc; f++)
         csys->rhs[f] += csys->neu_values[f];
 
+    /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+       csys is updated inside (matrix and rhs) */
+    if (cs_equation_param_has_diffusion(eqp)) {
+
+      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+          eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+        eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+
+    }
+
     if (cs_equation_param_has_convection(eqp)) {
       eqc->add_advection_bc(cm, eqp, time_eval, fm, cb, csys);
     }
@@ -862,7 +872,21 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    if (cs_equation_param_has_diffusion(eqp) == false)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid choice of Dirichlet enforcement.\n"
+                " Diffusion term should be active.", __func__);
+    eqc->enforce_dirichlet = cs_cdofb_diffusion_weak_dirichlet;
+    break;
+
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+    if (cs_equation_param_has_diffusion(eqp) == false)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid choice of Dirichlet enforcement.\n"
+                " Diffusion term should be active.", __func__);
+    eqc->enforce_dirichlet = cs_cdofb_diffusion_wsym_dirichlet;
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid type of algorithm to enforce Dirichlet BC.",
@@ -2002,6 +2026,28 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       } /* End of term source contribution */
 
+      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
+       * Operations that have to be performed BEFORE the static condensation
+       */
+      if (cell_flag & CS_FLAG_BOUNDARY) {
+
+        /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+           csys is updated inside (matrix and rhs) */
+        if (cs_equation_param_has_diffusion(eqp)) {
+
+          if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+              eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+            eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+
+        }
+
+        /* Neumann boundary conditions */
+        if (csys->has_nhmg_neumann)
+          for (short int f  = 0; f < cm->n_fc; f++)
+            csys->rhs[f] += csys->neu_values[f];
+
+      } /* Boundary cell */
+
       /* UNSTEADY TERM + TIME SCHEME */
       /* =========================== */
 
@@ -2043,18 +2089,6 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
                                csys);
 
       } /* END OF TIME CONTRIBUTION */
-
-      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
-       * Operations that have to be performed BEFORE the static condensation
-       */
-      if (cell_flag & CS_FLAG_BOUNDARY) {
-
-        /* Neumann boundary conditions */
-        if (csys->has_nhmg_neumann)
-          for (short int f  = 0; f < cm->n_fc; f++)
-            csys->rhs[f] += csys->neu_values[f];
-
-      } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
       if (cs_dbg_cw_test(cm))
