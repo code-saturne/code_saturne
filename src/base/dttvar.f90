@@ -114,6 +114,7 @@ integer          f_id
 integer          nbrval, nclptr
 integer          ntcam1
 integer          ii
+integer          ifcvsl
 
 double precision epsrgp, climgp, extrap
 double precision cfmax,cfmin, w1min, w2min, w3min
@@ -122,7 +123,8 @@ double precision xyzmax(3), xyzmin(3), vmin(1), vmax(1)
 double precision dtsdtm
 double precision hint
 double precision mult
-double precision prt
+double precision turb_schmidt
+double precision temp
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
@@ -130,10 +132,14 @@ double precision, allocatable, dimension(:) :: wcf
 double precision, allocatable, dimension(:) :: cofbft, coefbt, coefbr
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:,:) :: vistet, viscce, weighf
+double precision, allocatable, dimension(:) :: weighb, xcpp
 double precision, allocatable, dimension(:) :: w1, w2, w3, dtsdt0
 double precision, dimension(:), pointer :: imasfl, bmasfl, imasflt, bmasflt
 double precision, dimension(:), pointer :: brom, crom, cromt
 double precision, dimension(:), pointer :: viscl, visct, cpro_cour, cpro_four
+double precision, dimension(:), pointer :: cpro_viscls, cpro_cp
+double precision, dimension(:,:), pointer :: visten
 
 type(var_cal_opt) :: vcopt_u, vcopt_p, vcopt_t
 
@@ -970,19 +976,133 @@ if (idtvar.ge.0) then
       ! Compute diffusivity
       if (vcopt_t%idiff.ge.1) then
 
-        call field_get_key_double(ivarfl(isca(ii)), ksigmas, prt)
-        call field_get_key_int(ivarfl(isca(ii)), kivisl, flid)
-        if (flid.gt.-1) then
-          call field_get_val_s(flid, viscl)
-          do iel = 1, ncel
-            w1(iel) = viscl(iel) + vcopt_t%idifft*visct(iel)/prt
-          enddo
+        ! Key for scalar diffusivity
+        call field_get_key_int(ivarfl(isca(ii)), kivisl, ifcvsl)
+        if (ifcvsl.ge.0) call field_get_val_s(ifcvsl, cpro_viscls)
+
+        ! Scalars related to temperature / enthalpy include a Cp
+        allocate(xcpp(ncelet))
+        if (      (iscavr(ii).gt.0 .and. abs(iscacp(iscavr(ii))).eq.1) &
+             .or. (iscavr(ii).le.0 .and. abs(iscacp(ii)).eq.1) ) then
+          if (icp.ge.0) then
+            call field_get_val_s(icp, cpro_cp)
+            do iel = 1, ncel
+              xcpp(iel) = cpro_cp(iel)
+            enddo
+          else
+            do iel = 1, ncel
+              xcpp(iel) = cp0
+            enddo
+          endif
         else
           do iel = 1, ncel
-            w1(iel) = visls0(ii) + vcopt_t%idifft*visct(iel)/prt
+            xcpp(iel) = 1.d0
           enddo
         endif
-        call viscfa(imvisf, w1, viscf, viscb)
+
+        ! Isotropic diffusion
+        if (iand(vcopt_t%idften, ISOTROPIC_DIFFUSION).ne.0) then
+          call field_get_key_double(ivarfl(isca(ii)), ksigmas, turb_schmidt)
+          if (ifcvsl.lt.0) then
+            do iel = 1, ncel
+              w1(iel) = visls0(ii)                                                 &
+                      + vcopt_t%idifft*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
+            enddo
+          else
+            do iel = 1, ncel
+              w1(iel) = cpro_viscls(iel)                                           &
+                      + vcopt_t%idifft*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
+            enddo
+          endif
+          call viscfa(imvisf, w1, viscf, viscb)
+
+        ! Symmetric tensor diffusivity (GGDH)
+        elseif (iand(vcopt_t%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+
+          ! Allocate temporary arrays
+          allocate(viscce(6,ncelet))
+          allocate(weighf(2,nfac))
+          allocate(weighb(nfabor))
+
+          if (iturt(ii).eq.11.or.iturt(ii).eq.20.or.iturt(ii).eq.21) then
+
+            allocate(vistet(6,ncelet))
+            call divrit &
+            !==========
+            ( nscal  ,                                                       &
+              ii     ,                                                       &
+              dt     ,                                                       &
+              xcpp   ,                                                       &
+              vistet ,                                                       &
+              w1  )
+
+            if (ifcvsl.lt.0) then
+              do iel = 1, ncel
+
+                temp = vcopt_t%idifft*xcpp(iel)
+                viscce(1,iel) = temp*vistet(1,iel) + visls0(ii)
+                viscce(2,iel) = temp*vistet(2,iel) + visls0(ii)
+                viscce(3,iel) = temp*vistet(3,iel) + visls0(ii)
+                viscce(4,iel) = temp*vistet(4,iel)
+                viscce(5,iel) = temp*vistet(5,iel)
+                viscce(6,iel) = temp*vistet(6,iel)
+
+              enddo
+            else
+              do iel = 1, ncel
+
+                temp = vcopt_t%idifft*xcpp(iel)
+                viscce(1,iel) = temp*vistet(1,iel) + cpro_viscls(iel)
+                viscce(2,iel) = temp*vistet(2,iel) + cpro_viscls(iel)
+                viscce(3,iel) = temp*vistet(3,iel) + cpro_viscls(iel)
+                viscce(4,iel) = temp*vistet(4,iel)
+                viscce(5,iel) = temp*vistet(5,iel)
+                viscce(6,iel) = temp*vistet(6,iel)
+
+              enddo
+            endif
+          else
+
+            if (iturb.ne.32) then
+              call field_get_val_v(ivsten, visten)
+            else ! EBRSM and (GGDH or AFM)
+              call field_get_val_v(ivstes, visten)
+            endif
+
+            if (ifcvsl.lt.0) then
+              do iel = 1, ncel
+
+                temp = vcopt_t%idifft*xcpp(iel)*ctheta(ii)/csrij
+                viscce(1,iel) = temp*visten(1,iel) + visls0(ii)
+                viscce(2,iel) = temp*visten(2,iel) + visls0(ii)
+                viscce(3,iel) = temp*visten(3,iel) + visls0(ii)
+                viscce(4,iel) = temp*visten(4,iel)
+                viscce(5,iel) = temp*visten(5,iel)
+                viscce(6,iel) = temp*visten(6,iel)
+
+              enddo
+            else
+              do iel = 1, ncel
+
+                temp = vcopt_t%idifft*xcpp(iel)*ctheta(ii)/csrij
+                viscce(1,iel) = temp*visten(1,iel) + cpro_viscls(iel)
+                viscce(2,iel) = temp*visten(2,iel) + cpro_viscls(iel)
+                viscce(3,iel) = temp*visten(3,iel) + cpro_viscls(iel)
+                viscce(4,iel) = temp*visten(4,iel)
+                viscce(5,iel) = temp*visten(5,iel)
+                viscce(6,iel) = temp*visten(6,iel)
+
+              enddo
+            endif
+          endif
+
+          call vitens &
+          !==========
+         ( viscce , iwarnp ,             &
+           weighf , weighb ,             &
+           viscf  , viscb  )
+
+        endif
 
       else
 
@@ -996,16 +1116,21 @@ if (idtvar.ge.0) then
       endif
 
       ! Boundary conditions for matrdt
+      ! This works ONLY for isotropic diffusion
+      ! TODO: adapt to tensor diffusivity
       do ifac = 1, nfabor
-        if (bmasflt(ifac).lt.0.d0) then
+        if ( (bmasflt(ifac).lt.0.d0)                                       &
+             .and. (iand(vcopt_t%idften, ISOTROPIC_DIFFUSION).ne.0) ) then
 
           iel = ifabor(ifac)
-          if (vcopt_t%idiff.ge.1 .and. flid.gt.-1) then
-            hint = ( viscl(iel)                                 &
-                   + vcopt_t%idifft*visct(iel)/prt)/distb(ifac)
+          if (vcopt_t%idiff.ge.1 .and. ifcvsl.ge.0) then
+            hint = ( visls0(ii)                                                 &
+                   + vcopt_t%idifft*xcpp(iel)*max(visct(iel),zero)/turb_schmidt &
+                     )/distb(ifac)
           else
-            hint = ( visls0(ii)                                 &
-                   + vcopt_t%idifft*visct(iel)/prt)/distb(ifac)
+            hint = ( cpro_viscls(iel)                                           &
+                   + vcopt_t%idifft*xcpp(iel)*max(visct(iel),zero)/turb_schmidt &
+                     )/distb(ifac)
           endif
           coefbt(ifac) = 0.d0
           cofbft(ifac) = hint
@@ -1024,8 +1149,8 @@ if (idtvar.ge.0) then
 
       call matrdt &
       !==========
- (vcopt_t%iconv, vcopt_t%idiff, isym, coefbt, cofbft, imasflt, bmasflt, &
-  viscf, viscb, dam)
+      (vcopt_t%iconv, vcopt_t%idiff, isym, coefbt, cofbft, imasflt, bmasflt, &
+       viscf, viscb, dam)
 
       do iel = 1, ncel
         w1(iel) = dam(iel)/(cromt(iel)*volume(iel))
@@ -1066,6 +1191,9 @@ else
 endif
 
 ! Free memory
+if (allocated(xcpp)) deallocate(xcpp)
+if (allocated(vistet)) deallocate(vistet)
+if (allocated(viscce)) deallocate(viscce, weighf, weighb)
 deallocate(viscf, viscb)
 deallocate(dam)
 deallocate(coefbt, cofbft)
