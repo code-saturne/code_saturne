@@ -81,7 +81,6 @@
 !>                              \f$ \Gamma_{s, cond}^n \f$)
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     trava         working array for the velocity-pressure coupling
-!> \param[in]     ximpa         same
 !> \param[in]     dfrcxt        variation of the external forces
 !                               making the hydrostatic pressure
 !> \param[in]     grdphd        hydrostatic pressure gradient to handle the
@@ -109,7 +108,7 @@ subroutine predvv &
    dt     , vel    , vela   , velk   ,                            &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
    ckupdc , smacel , spcond , frcxt  , grdphd ,                   &
-   trava  , ximpa  ,          dfrcxt , tpucou , trav   ,          &
+   trava  ,                   dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     )
 
@@ -167,7 +166,6 @@ double precision spcond(nfbpcd,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision grdphd(3, ncelet)
 double precision trava(ndim,ncelet)
-double precision ximpa(ndim,ndim,ncelet)
 double precision tpucou(6, ncelet)
 double precision trav(3,ncelet)
 double precision viscf(*), viscb(nfabor)
@@ -421,57 +419,54 @@ enddo
 ! The computation of explicit and implicit source terms is performed
 ! at the first iteration only.
 ! If iphydr=1 or if we have buoyant scalars then we need to update source terms
-if (iterns.eq.1.or.iphydr.eq.1.or.n_buoyant_scal.ge.1) then
+if (iihmpr.eq.1) then
+  call uitsnv (vel, tsexp, tsimp)
+endif
 
-  if (iihmpr.eq.1) then
-    call uitsnv (vel, tsexp, tsimp)
+call ustsnv &
+  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+  iu   ,                                                         &
+  icepdc , icetsm , itypsm ,                                     &
+  dt     ,                                                       &
+  ckupdc , smacel , tsexp  , tsimp  )
+
+n_fans = cs_fan_n_fans()
+if (n_fans .gt. 0) then
+  if (ntcabs.eq.ntpabs+1) then
+    call debvtl(imasfl, bmasfl, crom, brom)
   endif
+  call tsvvtl(tsexp)
+endif
 
-  call ustsnv &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iu   ,                                                         &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel , tsexp  , tsimp  )
+! Skip first time step after restart if previous values have not been read.
+if (vcopt_u%ibdtso.lt.0) then
+  vcopt_u%ibdtso = iabs(vcopt_u%ibdtso)
+  call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+endif
 
-  n_fans = cs_fan_n_fans()
-  if (n_fans .gt. 0) then
-    if (ntcabs.eq.ntpabs+1) then
-      call debvtl(imasfl, bmasfl, crom, brom)
-    endif
-    call tsvvtl(tsexp)
+! Nudging towards optimal interpolation for velocity
+if (ippmod(iatmos).ge.0) then
+  call field_get_key_int(ivarfl(iu), kopint, f_oi_id)
+  if (f_oi_id.ge.0) then
+    call cs_at_data_assim_source_term(ivarfl(iu), tsexp, tsimp)
   endif
-
-  ! Skip first time step after restart if previous values have not been read.
-  if (vcopt_u%ibdtso.lt.0) then
-    vcopt_u%ibdtso = iabs(vcopt_u%ibdtso)
-    call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+  if (iatmst.eq.1) then
+    call cs_at_source_term_for_inlet(tsexp)
   endif
+endif
 
-  ! Nudging towards optimal interpolation for velocity
-  if (ippmod(iatmos).ge.0) then
-    call field_get_key_int(ivarfl(iu), kopint, f_oi_id)
-    if (f_oi_id.ge.0) then
-      call cs_at_data_assim_source_term(ivarfl(iu), tsexp, tsimp)
-    endif
-    if (iatmst.eq.1) then
-      call cs_at_source_term_for_inlet(tsexp)
-    endif
-  endif
+! Coupling between two Code_Saturne
+if (nbrcpl.gt.0) then
+  !vectorial interleaved exchange
+  call csccel(iu, vela, coefav, coefbv, tsexp)
+endif
 
-  ! Coupling between two Code_Saturne
-  if (nbrcpl.gt.0) then
-    !vectorial interleaved exchange
-    call csccel(iu, vela, coefav, coefbv, tsexp)
-  endif
-
-  if (vcopt_u%ibdtso.gt.1.and.ntcabs.gt.ntinit &
-      .and.(idtvar.eq.0.or.idtvar.eq.1)) then
-    ! TODO: remove test on ntcabs and implemente a "proper" condition for
-    ! initialization.
-    f_id = ivarfl(iu)
-    call cs_backward_differentiation_in_time(f_id, tsexp, tsimp)
-  endif
+if (vcopt_u%ibdtso.gt.1.and.ntcabs.gt.ntinit &
+  .and.(idtvar.eq.0.or.idtvar.eq.1)) then
+  ! TODO: remove test on ntcabs and implemente a "proper" condition for
+  ! initialization.
+  f_id = ivarfl(iu)
+  call cs_backward_differentiation_in_time(f_id, tsexp, tsimp)
 endif
 
 !===============================================================================
@@ -1318,17 +1313,6 @@ endif
 !-------------------------------------------------------------------------------
 ! ---> Use user source terms
 
-! if PISO sweeps are expected, implicit user sources terms are stored in ximpa
-if (iterns.eq.1.and.nterup.gt.1) then
-  do iel = 1, ncel
-    do isou = 1, 3
-      do jsou = 1, 3
-        ximpa(jsou,isou,iel) = tsimp(jsou,isou,iel)
-      enddo
-    enddo
-  enddo
-endif
-
 ! ---> Explicit contribution due to implicit terms
 
 if (iterns.eq.1) then
@@ -1387,45 +1371,23 @@ if (iappel.eq.1) then
   ! If source terms are time-extrapolated
   if (isno2t.gt.0) then
     thetap = vcopt_u%thetav
-    if (iterns.gt.1) then
-      do iel = 1, ncel
-        do isou = 1, 3
-          do jsou = 1, 3
-            fimp(jsou,isou,iel) = fimp(jsou,isou,iel)                      &
-                                - ximpa(jsou,isou,iel)*thetap
-          enddo
+    do iel = 1, ncel
+      do isou = 1, 3
+        do jsou = 1, 3
+          fimp(jsou,isou,iel) = fimp(jsou,isou,iel)                      &
+                              - tsimp(jsou,isou,iel)*thetap
         enddo
       enddo
-    else
-      do iel = 1, ncel
-        do isou = 1, 3
-          do jsou = 1, 3
-            fimp(jsou,isou,iel) = fimp(jsou,isou,iel)                      &
-                                - tsimp(jsou,isou,iel)*thetap
-          enddo
-        enddo
-      enddo
-    endif
+    enddo
   else
-    if (iterns.gt.1) then
-      do iel = 1, ncel
-        do isou = 1, 3
-          do jsou = 1, 3
-            fimp(jsou,isou,iel) = fimp(jsou,isou,iel)                      &
-                                + max(-ximpa(jsou,isou,iel),zero)
-          enddo
+    do iel = 1, ncel
+      do isou = 1, 3
+        do jsou = 1, 3
+          fimp(jsou,isou,iel) = fimp(jsou,isou,iel)                      &
+                              + max(-tsimp(jsou,isou,iel),zero)
         enddo
       enddo
-    else
-      do iel = 1, ncel
-        do isou = 1, 3
-          do jsou = 1, 3
-            fimp(jsou,isou,iel) = fimp(jsou,isou,iel)                      &
-                                + max(-tsimp(jsou,isou,iel),zero)
-          enddo
-        enddo
-      enddo
-    endif
+    enddo
   endif
 endif
 

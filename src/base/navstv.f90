@@ -51,7 +51,6 @@
 !> \param[in]     frcxt         external force generating the hydrostatic
 !>                              pressure
 !> \param[in]     trava         work array for pressure velocity coupling
-!> \param[in]     ximpa         work array for pressure velocity coupling
 !_______________________________________________________________________________
 
 
@@ -60,7 +59,7 @@ subroutine navstv &
    isostd ,                                                       &
    dt     ,                                                       &
    frcxt  ,                                                       &
-   trava  , ximpa  )
+   trava  )
 
 !===============================================================================
 
@@ -108,7 +107,6 @@ integer          isostd(nfabor+1)
 double precision, pointer, dimension(:)   :: dt
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, pointer, dimension(:,:) :: trava
-double precision, pointer, dimension(:,:,:) :: ximpa
 
 ! Local variables
 
@@ -497,7 +495,7 @@ call predvv &
   dt     , vel    , vela   , velk   ,                            &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
   ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
-  trava  , ximpa  ,          dfrcxt , dttens ,  trav  ,          &
+  trava  ,                   dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
   w1     )
 
@@ -793,7 +791,6 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
       if (nterup.gt.1) then
         call resize_vec_real_array(velk)
-        call resize_tens_real_array(ximpa)
         call resize_vec_real_array(trava)
       else
         velk => vela
@@ -1404,7 +1401,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    dt     , vel    , vel    , velk   ,                            &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
    ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
-   trava  , ximpa  ,          dfrcxt , dttens , trav   ,          &
+   trava  ,                   dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     )
 
