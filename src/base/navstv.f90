@@ -386,8 +386,6 @@ call field_get_val_s(icrom, crom_eos)
 call field_get_val_s(ibrom, brom_eos)
 
 if (irovar.eq.1) then
-  call field_get_val_prev_s(icrom, croma)
-  call field_get_val_prev_s(ibrom, broma)
   ! If iterns = 1: this is density at time n
   call field_get_id("density_mass", f_id)
   call field_get_val_s(f_id, cpro_rho_mass)
@@ -396,6 +394,8 @@ if (irovar.eq.1) then
 
   ! Time interpolated density
   if (vcopt_u%thetav .lt. 1.d0) then
+    call field_get_val_prev_s(icrom, croma)
+    call field_get_val_prev_s(ibrom, broma)
     allocate(cpro_rho_tc(ncelet))
     allocate(bpro_rho_tc(nfabor))
 
