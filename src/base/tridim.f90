@@ -145,7 +145,6 @@ double precision, allocatable, dimension(:) :: prdv2f
 double precision, allocatable, dimension(:) :: mass_source
 double precision, dimension(:), pointer :: brom, crom
 
-double precision, pointer, dimension(:,:) :: uvwk
 double precision, pointer, dimension(:,:) :: trava
 double precision, pointer, dimension(:,:,:) :: ximpav
 double precision, dimension(:,:), pointer :: disale
@@ -185,7 +184,7 @@ interface
     isostd ,                                                       &
     dt     ,                                                       &
     frcxt  ,                                                       &
-    trava  , ximpa  , uvwk   )
+    trava  , ximpa  )
 
     use dimens, only: ndimfb
     use mesh, only: nfabor
@@ -198,7 +197,7 @@ interface
 
     double precision, pointer, dimension(:)   :: dt
     double precision, pointer, dimension(:,:) :: frcxt
-    double precision, pointer, dimension(:,:) :: trava, uvwk
+    double precision, pointer, dimension(:,:) :: trava
     double precision, pointer, dimension(:,:,:) :: ximpa
 
   end subroutine navstv
@@ -801,11 +800,9 @@ itrfup = 1
 
 if (nterup.gt.1) then
   allocate(ximpav(ndim,ndim,ncelet))
-  allocate(uvwk(ndim,ncelet))
   allocate(trava(ndim,ncelet))
 else
   ximpav => rvoid3
-  uvwk => rvoid2
   trava => rvoid2
 endif
 
@@ -1210,7 +1207,7 @@ do while (iterns.le.nterup)
     if (allocated(visvdr)) deallocate(visvdr)
 
     if (nterup.gt.1) then
-      deallocate(ximpav, uvwk, trava)
+      deallocate(ximpav, trava)
     endif
 
     deallocate(icodcl, rcodcl)
@@ -1271,7 +1268,7 @@ do while (iterns.le.nterup)
         isostd ,                                                       &
         dt     ,                                                       &
         frcxt  ,                                                       &
-        trava  , ximpav , uvwk   )
+        trava  , ximpav )
 
       ! Update local pointer arrays for transient turbomachinery computations
       if (iturbo.eq.2) then
@@ -1430,7 +1427,7 @@ if (allocated(theipb)) deallocate(theipb)
 if (allocated(visvdr)) deallocate(visvdr)
 
 if (nterup.gt.1) then
-  deallocate(ximpav, uvwk, trava)
+  deallocate(ximpav, trava)
 endif
 
 ! Calcul sur champ de vitesse fige SUITE (a cause de la boucle U/P)

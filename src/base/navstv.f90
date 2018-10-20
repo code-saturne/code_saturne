@@ -52,7 +52,6 @@
 !>                              pressure
 !> \param[in]     trava         work array for pressure velocity coupling
 !> \param[in]     ximpa         work array for pressure velocity coupling
-!> \param[in]     uvwk          work array for pressure velocity coupling
 !_______________________________________________________________________________
 
 
@@ -61,7 +60,7 @@ subroutine navstv &
    isostd ,                                                       &
    dt     ,                                                       &
    frcxt  ,                                                       &
-   trava  , ximpa  , uvwk   )
+   trava  , ximpa  )
 
 !===============================================================================
 
@@ -108,7 +107,7 @@ integer          isostd(nfabor+1)
 
 double precision, pointer, dimension(:)   :: dt
 double precision, pointer, dimension(:,:) :: frcxt
-double precision, pointer, dimension(:,:) :: trava, uvwk
+double precision, pointer, dimension(:,:) :: trava
 double precision, pointer, dimension(:,:,:) :: ximpa
 
 ! Local variables
@@ -141,6 +140,8 @@ double precision disp_fac(3)
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
 double precision, allocatable, dimension(:,:,:), target :: wvisfi
+double precision, allocatable, dimension(:,:), target :: uvwk
+double precision, dimension(:,:), pointer :: velk
 double precision, allocatable, dimension(:), target :: wvisbi
 double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc
 double precision, allocatable, dimension(:) :: phi
@@ -317,15 +318,13 @@ ivar = 0
 iflmas = 0
 imax = 0
 
-! Memory
-
+! pointer to velosity at sub iteration k for PISO like algorithm
 if (nterup.gt.1) then
 
+  allocate(uvwk(3, ncelet))
   !$omp parallel do private(isou)
-  do iel = 1,ncelet
+  do iel = 1, ncel
     do isou = 1, 3
-    !     La boucle sur NCELET est une securite au cas
-    !       ou on utiliserait UVWK par erreur a ITERNS = 1
       uvwk(isou,iel) = vel(isou,iel)
     enddo
   enddo
@@ -355,14 +354,16 @@ if (nterup.gt.1) then
     xnrmu0 = sqrt(xnrmu0)
   endif
 
-  ! On assure la periodicite ou le parallelisme de UVWK et la pression
-  if (iterns.gt.1) then
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synvin(uvwk(1,1))
-      call synsca(cvar_pr)
-    endif
+  ! On assure la periodicite ou le parallelisme de uvwk et la pression
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvin(uvwk)
+    call synsca(cvar_pr)
   endif
 
+  velk => uvwk
+
+else
+  velk => vela
 endif
 
 ! --- Physical quantities
@@ -494,10 +495,10 @@ call predvv &
   ncepdc , ncetsm , nfbpcd , ncmast ,                            &
   icepdc , icetsm , ifbpcd , ltmast ,                            &
   itypsm ,                                                       &
-  dt     , vel    , vela   ,                                     &
+  dt     , vel    , vela   , velk   ,                            &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
   ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
-  trava  , ximpa  , uvwk   , dfrcxt , dttens ,  trav  ,          &
+  trava  , ximpa  ,          dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
   w1     , w7     , w8     , w9     )
 
@@ -772,12 +773,6 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
         call resize_vec_real_array(grdphd)
       endif
 
-      if (nterup.gt.1) then
-        call resize_vec_real_array(uvwk)
-        call resize_tens_real_array(ximpa)
-        call resize_vec_real_array(trava)
-      endif
-
       ! Update local pointers on "cells" fields
 
       call field_get_val_s(icrom, crom)
@@ -795,6 +790,14 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
       if (ivofmt.ge.0) then
         call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
         call field_get_val_prev_s(ivarfl(ivolf2), cvara_voidf)
+      endif
+
+      if (nterup.gt.1) then
+        call resize_vec_real_array(velk)
+        call resize_tens_real_array(ximpa)
+        call resize_vec_real_array(trava)
+      else
+        velk => vela
       endif
 
     endif
@@ -1399,10 +1402,10 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    ncepdc , ncetsm , nfbpcd , ncmast ,                            &
    icepdc , icetsm , ifbpcd , ltmast ,                            &
    itypsm ,                                                       &
-   dt     , vel    , vel    ,                                     &
+   dt     , vel    , vel    , velk   ,                            &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
    ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
-   trava  , ximpa  , uvwk   , dfrcxt , dttens , trav   ,          &
+   trava  , ximpa  ,          dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     )
 
@@ -1423,15 +1426,15 @@ if (nterup.gt.1) then
 
   xnrtmp = 0.d0
   !$omp parallel do reduction(+:xnrtmp) private(xdu, xdv, xdw)
-  do iel = 1,ncel
-    xdu = vel(1,iel) - uvwk(1,iel)
-    xdv = vel(2,iel) - uvwk(2,iel)
-    xdw = vel(3,iel) - uvwk(3,iel)
+  do iel = 1, ncel
+    xdu = vel(1,iel) - velk(1,iel)
+    xdv = vel(2,iel) - velk(2,iel)
+    xdw = vel(3,iel) - velk(3,iel)
     xnrtmp = xnrtmp +(xdu**2 + xdv**2 + xdw**2) * cell_f_vol(iel)
   enddo
   xnrmu = xnrtmp
-  ! --->    TRAITEMENT DU PARALLELISME
 
+  ! --->    TRAITEMENT DU PARALLELISME
   if (irangp.ge.0) call parsom (xnrmu)
 
   ! -- >    TRAITEMENT DU COUPLAGE ENTRE DEUX INSTANCES DE CODE_SATURNE
@@ -1672,6 +1675,7 @@ deallocate(dfrcxt)
 deallocate(w1)
 deallocate(w7, w8, w9)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
+if (allocated(uvwk)) deallocate(uvwk)
 if (allocated(secvif)) deallocate(secvif, secvib)
 if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
 if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)

@@ -62,6 +62,7 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vel           velocity
 !> \param[in]     vela          velocity at the previous time step
+!> \param[in]     velk          velocity at the previous sub iteration (or vela)
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     coefav        boundary condition array for the variable
 !>                               (explicit part)
@@ -81,7 +82,6 @@
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     trava         working array for the velocity-pressure coupling
 !> \param[in]     ximpa         same
-!> \param[in]     uvwk          same (stores the velocity at the previous iteration)
 !> \param[in]     dfrcxt        variation of the external forces
 !                               making the hydrostatic pressure
 !> \param[in]     grdphd        hydrostatic pressure gradient to handle the
@@ -109,10 +109,10 @@ subroutine predvv &
    ncepdp , ncesmp , nfbpcd , ncmast ,                            &
    icepdc , icetsm , ifbpcd , ltmast ,                            &
    itypsm ,                                                       &
-   dt     , vel    , vela   ,                                     &
+   dt     , vel    , vela   , velk   ,                            &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
    ckupdc , smacel , spcond , frcxt  , grdphd ,                   &
-   trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
+   trava  , ximpa  ,          dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     )
 
@@ -170,7 +170,7 @@ double precision spcond(nfbpcd,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision grdphd(3, ncelet)
 double precision trava(ndim,ncelet)
-double precision ximpa(ndim,ndim,ncelet),uvwk(ndim,ncelet)
+double precision ximpa(ndim,ndim,ncelet)
 double precision tpucou(6, ncelet)
 double precision trav(3,ncelet)
 double precision viscf(*), viscb(nfabor)
@@ -184,6 +184,7 @@ double precision coefbv(3,3,nfabor)
 double precision cofbfv(3,3,nfabor)
 
 double precision vel   (3, ncelet)
+double precision velk  (3, ncelet)
 double precision vela  (3, ncelet)
 
 ! Local variables
@@ -803,7 +804,7 @@ endif
 if ((ncepdp.gt.0).and.(iphydr.ne.1)) then
 
   ! Les termes diagonaux sont places dans TRAV ou TRAVA,
-  !   La prise en compte de uvwk a partir de la seconde iteration
+  !   La prise en compte de velk a partir de la seconde iteration
   !   est faite directement dans coditv.
   if (iterns.eq.1) then
 
@@ -1611,38 +1612,16 @@ if (iappel.eq.1) then
 
   iescap = iescal(iespre)
 
-  if (iterns.eq.1) then
-
-    ! Warning: in case of convergence estimators, eswork give the estimator
-    ! of the predicted velocity
-    call coditv &
- ( idtvar , iterns , ivarfl(iu)      , iconvp , idiffp , ndircp ,&
-   imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
-   ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
-   iwarnp ,                                                       &
-   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
-   relaxp , thetap ,                                              &
-   vela   , vela   ,                                              &
-   coefav , coefbv , cofafv , cofbfv ,                            &
-   imasfl , bmasfl ,                                              &
-   viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   icvflb , icvfli ,                                              &
-   fimp   ,                                                       &
-   smbr   ,                                                       &
-   vel    ,                                                       &
-   eswork )
-
-  else if(iterns.gt.1) then
-
-    call coditv &
+  ! Warning: in case of convergence estimators, eswork give the estimator
+  ! of the predicted velocity
+  call coditv &
  ( idtvar , iterns , ivarfl(iu)      , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
-   vela   , uvwk   ,                                              &
+   vela   , velk   ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    imasfl , bmasfl ,                                              &
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
@@ -1652,8 +1631,6 @@ if (iappel.eq.1) then
    smbr   ,                                                       &
    vel    ,                                                       &
    eswork )
-
-  endif
 
   ! Velocity-pression coupling: compute the vector T, stored in tpucou,
   !  coditv is called, only one sweep is done, and tpucou is initialized
