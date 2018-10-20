@@ -329,14 +329,15 @@ if (nterup.gt.1) then
     enddo
   enddo
 
-  ! Calcul de la norme L2 de la vitesse
-  if (iterns.eq.1) then
+  ! Compute the L2 velocity norm (it is zero at the first time step, so
+  ! we recompute it)
+  if (iterns.eq.1.or.xnrmu0.eq.0d0) then
     xnrtmp = 0.d0
     !$omp parallel do reduction(+:xnrtmp)
     do iel = 1, ncel
-      xnrtmp = xnrtmp +(vela(1,iel)**2        &
-                      + vela(2,iel)**2        &
-                      + vela(3,iel)**2)       &
+      xnrtmp = xnrtmp +(vel(1,iel)**2        &
+                      + vel(2,iel)**2        &
+                      + vel(3,iel)**2)       &
                       * cell_f_vol(iel)
     enddo
     xnrmu0 = xnrtmp
@@ -1419,9 +1420,8 @@ endif
 !===============================================================================
 
 if (nterup.gt.1) then
-! TEST DE CONVERGENCE DE L'ALGORITHME ITERATIF
-! On initialise ICVRGE a 1 et on le met a 0 si on n'a pas convergee
 
+  ! Convergence test on PISO-like algorithm, icvrge is 1 if converged
   icvrge = 1
 
   xnrtmp = 0.d0
@@ -1434,12 +1434,12 @@ if (nterup.gt.1) then
   enddo
   xnrmu = xnrtmp
 
-  ! --->    TRAITEMENT DU PARALLELISME
+  ! parallelism
   if (irangp.ge.0) call parsom (xnrmu)
 
-  ! -- >    TRAITEMENT DU COUPLAGE ENTRE DEUX INSTANCES DE CODE_SATURNE
+  ! code-code coupling
   do numcpl = 1, nbrcpl
-    call tbrcpl ( numcpl, 1, 1, xnrmu, xnrdis )
+    call tbrcpl(numcpl, 1, 1, xnrmu, xnrdis)
     xnrmu = xnrmu + xnrdis
   enddo
   xnrmu = sqrt(xnrmu)
