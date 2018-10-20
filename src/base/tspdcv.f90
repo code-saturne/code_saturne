@@ -20,34 +20,33 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file tspdcv.f90
+!>
+!> \brief This subroutine computes the explicit contribution of
+!> headlosses terms.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     icepdc        index of cells with head loss
+!> \param[in]     vela          velocity at the previous time step
+!> \param[in]     ckupdc        work array for the head loss
+!> \param[out]    trav          right hand side
+!_______________________________________________________________________________
+
+
 subroutine tspdcv &
  ( ncepdp , icepdc ,                                              &
    vela   ,                                                       &
    ckupdc , trav   )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CALCUL DES TERMES DE PERTE DE CHARGE
-!        POUR LE BILAN EXPLICITE
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! trav(ncelet,3    ! tr ! <-- ! tableau des second membres                     !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -103,9 +102,9 @@ do ielpdc = 1, ncepdp
   vit2   = vela(2,iel)
   vit3   = vela(3,iel)
 
-  trav(1,iel) = trav(1,iel) + romvom*(cpdc11*vit1 + cpdc12*vit2 + cpdc13*vit3)
-  trav(2,iel) = trav(2,iel) + romvom*(cpdc12*vit1 + cpdc22*vit2 + cpdc23*vit3)
-  trav(3,iel) = trav(3,iel) + romvom*(cpdc13*vit1 + cpdc23*vit2 + cpdc33*vit3)
+  trav(1,iel) = romvom*(cpdc11*vit1 + cpdc12*vit2 + cpdc13*vit3)
+  trav(2,iel) = romvom*(cpdc12*vit1 + cpdc22*vit2 + cpdc23*vit3)
+  trav(3,iel) = romvom*(cpdc13*vit1 + cpdc23*vit2 + cpdc33*vit3)
 
 enddo
 

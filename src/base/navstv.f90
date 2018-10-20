@@ -146,7 +146,6 @@ double precision, allocatable, dimension(:), target :: wvisbi
 double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc
 double precision, allocatable, dimension(:) :: phi
 double precision, allocatable, dimension(:) :: w1
-double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
@@ -306,7 +305,6 @@ endif
 
 ! Allocate work arrays
 allocate(w1(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1000)
@@ -501,7 +499,7 @@ call predvv &
   ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
   trava  , ximpa  ,          dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
-  w1     , w7     , w8     , w9     )
+  w1     )
 
 ! Bad cells regularisation
 call cs_bad_cells_regularisation_vector(vel, 1)
@@ -742,8 +740,8 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
       ! Scratch and resize work arrays
 
-      deallocate(w1, w7, w8, w9)
-      allocate(w1(ncelet), w7(ncelet), w8(ncelet), w9(ncelet))
+      deallocate(w1)
+      allocate(w1(ncelet))
 
       ! Resize auxiliary arrays (pointe module)
 
@@ -1408,7 +1406,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
    trava  , ximpa  ,          dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
-   w1     , w7     , w8     , w9     )
+   w1     )
 
   endif
 
@@ -1673,7 +1671,6 @@ deallocate(phi)
 deallocate(trav)
 deallocate(dfrcxt)
 deallocate(w1)
-deallocate(w7, w8, w9)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
 if (allocated(uvwk)) deallocate(uvwk)
 if (allocated(secvif)) deallocate(secvif, secvib)

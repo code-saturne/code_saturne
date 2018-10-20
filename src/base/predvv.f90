@@ -98,9 +98,6 @@
 !> \param[in]     secvif        secondary viscosity at interior faces
 !> \param[in]     secvib        secondary viscosity at boundary faces
 !> \param[in]     w1            working array
-!> \param[in]     w7            working array
-!> \param[in]     w8            working array
-!> \param[in]     w9            working array
 !_______________________________________________________________________________
 
 subroutine predvv &
@@ -114,7 +111,7 @@ subroutine predvv &
    ckupdc , smacel , spcond , frcxt  , grdphd ,                   &
    trava  , ximpa  ,          dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
-   w1     , w7     , w8     , w9     )
+   w1     )
 
 !===============================================================================
 
@@ -177,7 +174,6 @@ double precision viscf(*), viscb(nfabor)
 double precision viscfi(*), viscbi(nfabor)
 double precision secvif(nfac), secvib(nfabor)
 double precision w1(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision coefav(3  ,nfabor)
 double precision cofafv(3  ,nfabor)
 double precision coefbv(3,3,nfabor)
@@ -217,6 +213,7 @@ double precision rvoid(1)
 ! Working arrays
 double precision, allocatable, dimension(:,:) :: eswork
 double precision, allocatable, dimension(:,:), target :: grad
+double precision, allocatable, dimension(:,:), target :: hl_exp
 double precision, dimension(:,:), allocatable :: smbr
 double precision, dimension(:,:,:), allocatable :: fimp
 double precision, dimension(:,:), allocatable :: gavinj
@@ -808,36 +805,26 @@ if ((ncepdp.gt.0).and.(iphydr.ne.1)) then
   !   est faite directement dans coditv.
   if (iterns.eq.1) then
 
-    ! On utilise temporairement TRAV comme tableau de travail.
-    ! Son contenu est stocke dans W7, W8 et W9 jusqu'apres tspdcv
-    do iel = 1,ncel
-      w7(iel) = trav(1,iel)
-      w8(iel) = trav(2,iel)
-      w9(iel) = trav(3,iel)
-      trav(1,iel) = 0.d0
-      trav(2,iel) = 0.d0
-      trav(3,iel) = 0.d0
-    enddo
+    allocate(hl_exp(3, ncelet))
 
-    call tspdcv(ncepdp, icepdc, vela, ckupdc, trav)
+    call tspdcv(ncepdp, icepdc, vela, ckupdc, hl_exp)
 
-    ! Si on itere sur navsto, on utilise TRAVA ; sinon TRAV
+    ! If PISO-like sub-iterations, we use trava, otherwise trav
     if(nterup.gt.1) then
       do iel = 1, ncel
-        trava(1,iel) = trava(1,iel) + trav(1,iel)
-        trava(2,iel) = trava(2,iel) + trav(2,iel)
-        trava(3,iel) = trava(3,iel) + trav(3,iel)
-        trav(1,iel)  = w7(iel)
-        trav(2,iel)  = w8(iel)
-        trav(3,iel)  = w9(iel)
+        trava(1,iel) = trava(1,iel) + hl_exp(1,iel)
+        trava(2,iel) = trava(2,iel) + hl_exp(2,iel)
+        trava(3,iel) = trava(3,iel) + hl_exp(3,iel)
       enddo
     else
       do iel = 1, ncel
-        trav(1,iel)  = w7(iel) + trav(1,iel)
-        trav(2,iel)  = w8(iel) + trav(2,iel)
-        trav(3,iel)  = w9(iel) + trav(3,iel)
+        trav(1,iel) = trav(1,iel) + hl_exp(1,iel)
+        trav(2,iel) = trav(2,iel) + hl_exp(2,iel)
+        trav(3,iel) = trav(3,iel) + hl_exp(3,iel)
       enddo
     endif
+
+    deallocate(hl_exp)
   endif
 
 endif
