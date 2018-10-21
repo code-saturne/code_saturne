@@ -338,7 +338,7 @@ module optcal
   !>    - 1: standard least squares method
   !>    - 2: least square method with extended neighborhood
   !>    - 3: least square method with reduced extended neighborhood
-  !>    - 4: iterative precess initialized by the least squares method
+  !>    - 4: iterative process initialized by the least squares method
   integer(c_int), pointer, save :: imrgra
 
   !> non orthogonality angle of the faces, in radians.
