@@ -88,7 +88,11 @@ typedef struct {
   double        rpty_vals[CS_CDO_N_MAX_REACTIONS];
   double        rpty_val; /*!< Sum of all reaction property values  */
 
-  /* Temporary buffers */
+  /* Advection-related values */
+  double       *adv_fluxes;
+
+  /* Temporary buffers (erase and updated several times during the system
+     build */
   short int    *ids;     /*!< local ids */
   double       *values;  /*!< local values */
   cs_real_3_t  *vectors; /*!< local 3-dimensional vectors */

@@ -531,8 +531,8 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   }
 
   /* Advection part */
-  eqc->get_advection_matrix = NULL;
-  eqc->add_advection_bc = NULL;
+  eqc->adv_func = NULL;
+  eqc->adv_func_bc = NULL;
   // TODO
 
   /* Time part */

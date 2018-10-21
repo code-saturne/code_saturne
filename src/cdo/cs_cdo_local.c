@@ -455,6 +455,7 @@ cs_cell_builder_create(void)
   cb->rpty_val = 1;
   for (int r = 0; r < CS_CDO_N_MAX_REACTIONS; r++) cb->rpty_vals[r] = 1;
 
+  cb->adv_fluxes = NULL;
   cb->ids = NULL;
   cb->values = NULL;
   cb->vectors = NULL;
@@ -480,6 +481,7 @@ cs_cell_builder_free(cs_cell_builder_t     **p_cb)
   if (cb == NULL)
     return;
 
+  BFT_FREE(cb->adv_fluxes);
   BFT_FREE(cb->ids);
   BFT_FREE(cb->values);
   BFT_FREE(cb->vectors);
