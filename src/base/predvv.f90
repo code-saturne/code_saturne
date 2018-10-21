@@ -614,18 +614,16 @@ if (allocated(grad)) deallocate(grad)
 
 
 !-------------------------------------------------------------------------------
-! ---> INITIALISATION DU TABLEAU TRAVA et terme source AU PREMIER PASSAGE
-!     (A LA PREMIERE ITER SUR NAVSTO)
+! ---> Initialize trava array and source terms at the first call (iterns=1)
 
-!     TRAVA rassemble les termes sources qu'il suffit de calculer
-!       a la premiere iteration sur navsto quand il y a plusieurs iter.
-!     Quand il n'y a qu'une iter, on cumule directement dans TRAV
-!       ce qui serait autrement alle dans TRAVA
-!     Les termes sources explicites serviront
-!       pour le pas de temps suivant en cas d'extrapolation (plusieurs
-!       iter sur navsto ou pas)
+!     trava contains all source terms needed from the first sub iteration
+!       (iterns=1) for the other iterations.
+!     When there is only one iteration, we build source terms directly in trav
+!       array.
+!     Explicit source terms will be used at the next time step in case of
+!       extrapolation (if there is only one or many iteration on navtsv)
 
-!     A la premiere iter sur navsto
+! At the first iteration on navstv
 if (iterns.eq.1) then
 
   ! Si on   extrapole     les T.S. : -theta*valeur precedente
@@ -1194,10 +1192,10 @@ endif
 
 if (iappel.eq.1.and.iphydr.eq.1) then
 
-! force ext au pas de temps precedent :
-!     FRCXT a ete initialise a zero
-!     (est deja utilise dans typecl, et est mis a jour a la fin
-!     de navsto)
+  ! External forces at previous time step:
+  !     frcxt was initialised to 0
+  !     NB: frcxt was used in typecl, and will be updated
+  !         at the end of navstv
 
   do iel = 1, ncel
 

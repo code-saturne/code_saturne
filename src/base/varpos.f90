@@ -229,7 +229,6 @@ endif
 if (isno2t.eq.-999) then
   if (ischtp.eq.1) then
     isno2t = 0
-    !            ELSE IF (ISCHTP.EQ.2.AND.IVISSE.EQ.1) THEN
   else if (ischtp.eq.2) then
     !       Pour le moment par defaut on prend l'ordre 2
     isno2t = 1
