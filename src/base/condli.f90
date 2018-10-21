@@ -401,7 +401,7 @@ if (iturbo.ne.0) then
 endif
 
 call typecl &
- ( nvar   , nscal  ,                                              &
+ ( nvar   , nscal  , iterns ,                                     &
    itypfb , itrifb , icodcl , isostd ,                            &
    rcodcl )
 

@@ -32,6 +32,7 @@
 !------------------------------------------------------------------------------
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
+!> \param[in]     iterns        iteration number on Navier-Stokes equations
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    itrifb        tab d'indirection pour tri des faces
 !> \param[in,out] icodcl        face boundary condition code:
@@ -67,7 +68,7 @@
 !______________________________________________________________________________
 
 subroutine typecl &
- ( nvar   , nscal  ,                                              &
+ ( nvar   , nscal  , iterns ,                                     &
    itypfb , itrifb , icodcl , isostd ,                            &
    rcodcl )
 
@@ -99,7 +100,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar   , nscal, iterns
 
 integer          icodcl(ndimfb,nvar)
 integer          itypfb(ndimfb) , itrifb(ndimfb)
@@ -1610,15 +1611,13 @@ enddo
 
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 
-if(vcopt%iwarni.ge.1 .or. mod(ntcabs,ntlist).eq.0                        &
-       .or.(ntcabs.le.ntpabs+2).or.(ntcabs.ge.ntmabs-1)) then
-  write(nfecra,7010)
-endif
+! Writings: mass flux if verbosity or when log is on, and at the first two
+! iterations and the two last iteration. Only the first iteration on navstv.
+if (vcopt%iwarni.ge.1 .or. (iterns.eq.1.and.(mod(ntcabs,ntlist).eq.0 &
+  .or.(ntcabs.le.ntpabs+2).or.(ntcabs.ge.ntmabs-1)))) then
 
-!     On ecrit le flux de masse si IWARNI>0, a la periodicite NTLIST
-!     et au deux premiers et deux derniers pas de temps.
-if(vcopt%iwarni.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
-     .or.(ntcabs.le.ntpabs+2).or.(ntcabs.ge.ntmabs-1)) then
+  ! Header
+  write(nfecra,7010)
 
   ! Convective mass flux of the velocity
   call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
