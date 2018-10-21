@@ -1433,7 +1433,9 @@ rnormp = sqrt(cs_gdot(ncel,res,res))
 if (vcopt_p%iwarni.ge.2) then
   write(nfecra,1300)chaine(1:16) ,rnormp
 endif
-sinfo%nbivar = 0
+if (iterns.le.1) then
+  sinfo%nbivar = 0
+endif
 
 ! Pressure derive for the log
 if (rnormp.lt.epzero) then
