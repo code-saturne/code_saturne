@@ -966,16 +966,6 @@ if (ippmod(icompf).lt.0) then
       deallocate(xinvro)
     endif
 
-    !$omp parallel do private(isou)
-    do iel = 1, ncelet
-      do isou = 1, 3
-        trav(isou,iel) = gradp(isou, iel)
-      enddo
-    enddo
-
-    !Free memory
-    deallocate(gradp)
-
     ! Update the velocity field
     !--------------------------
     thetap = vcopt_p%thetav
@@ -991,7 +981,7 @@ if (ippmod(icompf).lt.0) then
           dtsrom = thetap*dt(iel)/crom(iel)
           do isou = 1, 3
             vel(isou,iel) = vel(isou,iel)                            &
-                 + dtsrom*(dfrcxt(isou, iel)-trav(isou,iel))
+                 + dtsrom*(dfrcxt(isou, iel)-gradp(isou,iel))
           enddo
         enddo
 
@@ -1001,23 +991,23 @@ if (ippmod(icompf).lt.0) then
         do iel = 1, ncel
           unsrom = thetap/crom(iel)
 
-          vel(1, iel) = vel(1, iel)                                             &
-               + unsrom*(                                                &
-                 dttens(1,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
-               + dttens(4,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
-               + dttens(6,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
+          vel(1, iel) = vel(1, iel)                              &
+               + unsrom*(                                        &
+                 dttens(1,iel)*(dfrcxt(1, iel)-gradp(1,iel))     &
+               + dttens(4,iel)*(dfrcxt(2, iel)-gradp(2,iel))     &
+               + dttens(6,iel)*(dfrcxt(3, iel)-gradp(3,iel))     &
                )
-          vel(2, iel) = vel(2, iel)                                             &
-               + unsrom*(                                                &
-                 dttens(4,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
-               + dttens(2,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
-               + dttens(5,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
+          vel(2, iel) = vel(2, iel)                              &
+               + unsrom*(                                        &
+                 dttens(4,iel)*(dfrcxt(1, iel)-gradp(1,iel))     &
+               + dttens(2,iel)*(dfrcxt(2, iel)-gradp(2,iel))     &
+               + dttens(5,iel)*(dfrcxt(3, iel)-gradp(3,iel))     &
                )
-          vel(3, iel) = vel(3, iel)                                             &
-               + unsrom*(                                                &
-                 dttens(6,iel)*(dfrcxt(1 ,iel)-trav(1,iel))     &
-               + dttens(5,iel)*(dfrcxt(2 ,iel)-trav(2,iel))     &
-               + dttens(3,iel)*(dfrcxt(3 ,iel)-trav(3,iel))     &
+          vel(3, iel) = vel(3, iel)                              &
+               + unsrom*(                                        &
+                 dttens(6,iel)*(dfrcxt(1 ,iel)-gradp(1,iel))     &
+               + dttens(5,iel)*(dfrcxt(2 ,iel)-gradp(2,iel))     &
+               + dttens(3,iel)*(dfrcxt(3 ,iel)-gradp(3,iel))     &
                )
         enddo
       endif
@@ -1060,7 +1050,7 @@ if (ippmod(icompf).lt.0) then
         do iel = 1, ncel
           dtsrom = thetap*dt(iel)/crom(iel)
           do isou = 1, 3
-            vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
+            vel(isou,iel) = vel(isou,iel) - dtsrom*gradp(isou,iel)
           enddo
         enddo
 
@@ -1073,26 +1063,30 @@ if (ippmod(icompf).lt.0) then
 
           vel(1, iel) = vel(1, iel)                              &
                       - unsrom*(                                 &
-                                 dttens(1,iel)*(trav(1,iel))     &
-                               + dttens(4,iel)*(trav(2,iel))     &
-                               + dttens(6,iel)*(trav(3,iel))     &
+                                 dttens(1,iel)*(gradp(1,iel))    &
+                               + dttens(4,iel)*(gradp(2,iel))    &
+                               + dttens(6,iel)*(gradp(3,iel))    &
                                )
           vel(2, iel) = vel(2, iel)                              &
                       - unsrom*(                                 &
-                                 dttens(4,iel)*(trav(1,iel))     &
-                               + dttens(2,iel)*(trav(2,iel))     &
-                               + dttens(5,iel)*(trav(3,iel))     &
+                                 dttens(4,iel)*(gradp(1,iel))    &
+                               + dttens(2,iel)*(gradp(2,iel))    &
+                               + dttens(5,iel)*(gradp(3,iel))    &
                                )
           vel(3, iel) = vel(3, iel)                              &
                       - unsrom*(                                 &
-                                 dttens(6,iel)*(trav(1,iel))     &
-                               + dttens(5,iel)*(trav(2,iel))     &
-                               + dttens(3,iel)*(trav(3,iel))     &
+                                 dttens(6,iel)*(gradp(1,iel))    &
+                               + dttens(5,iel)*(gradp(2,iel))    &
+                               + dttens(3,iel)*(gradp(3,iel))    &
                                )
         enddo
 
       endif
     endif
+
+    !Free memory
+    deallocate(gradp)
+
   endif
 
 endif
