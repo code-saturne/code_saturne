@@ -369,7 +369,7 @@ cs_domain_set_scheme_flags(cs_domain_t    *domain)
                   " Please check your settings."), cs_equation_get_name(eq));
     }
 
-  } // Loop on equations
+  } /* Loop on equations */
 
   /* Navier-Stokes sytem */
   if (cs_navsto_system_is_activated()) {
@@ -485,16 +485,8 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
      fields (no more fields are created at this stage) */
   cs_user_cdo_finalize_setup(cs_glob_domain);
 
-  /* Proceed to the last settings of a cs_equation_t structure
-     - Assign to a cs_equation_t structure a list of function to manage this
-       structure during the computation.
-     - The set of functions chosen for each equation depends on the parameters
-       specifying the cs_equation_t structure
-     - Setup the structure related to cs_sles_*
-  */
-
-  domain->only_steady = cs_equation_finalize_setup(domain->connect,
-                                                   domain->profiling);
+  /* Set the range set structure for synchronization in parallel computing */
+  cs_equation_assign_range_set(domain->connect);
 
   if (domain->only_steady)
     domain->is_last_iter = true;

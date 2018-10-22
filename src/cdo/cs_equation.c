@@ -1154,9 +1154,6 @@ cs_equation_add(const char            *eqname,
 
   eq->field_id = -1;    /* field is created in a second step */
 
-  /* Set timer statistic structure to a default value */
-  eq->main_ts_id = eq->solve_ts_id = -1;
-
   /* Algebraic system: allocated later */
   eq->matrix = NULL;
   eq->rhs = NULL;
@@ -1185,6 +1182,11 @@ cs_equation_add(const char            *eqname,
   eq->get_vertex_values = NULL;
   eq->get_cell_values = NULL;
   eq->get_face_values = NULL;
+
+  /* Set timer statistic structure to a default value */
+  eq->main_ts_id = cs_timer_stats_create(NULL, /* new root */
+                                         eqname,
+                                         eqname);
 
   return  eq;
 }
@@ -1345,61 +1347,16 @@ cs_equation_log_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create timer statistics structures to enable a "home-made" profiling
- *
- * \param[in, out]  eq       pointer to a cs_equation_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_timer_stats(cs_equation_t  *eq)
-{
-  if (eq == NULL)
-    return;
-
-  cs_equation_param_t  *eqp = eq->param;
-
-  /* Set timer statistics */
-  if (eqp->verbosity > 0) {
-
-    eq->main_ts_id = cs_timer_stats_create(NULL, /* new root */
-                                           eqp->name,
-                                           eqp->name);
-
-    cs_timer_stats_start(eq->main_ts_id);
-
-    if (eqp->verbosity > 1) {
-
-      char *label = NULL;
-
-      int  len = strlen("_solve") + strlen(eqp->name) + 1;
-      BFT_MALLOC(label, len, char);
-      sprintf(label, "%s_solve", eqp->name);
-      eq->solve_ts_id = cs_timer_stats_create(eqp->name, label, label);
-
-      BFT_FREE(label);
-
-    } /* verbosity > 1 */
-
-  } /* verbosity > 0 */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Assign a set of pointer functions for managing the cs_equation_t
  *         structure during the computation
- *
- * \param[in]  connect        pointer to a cs_cdo_connect_t structure
- * \param[in]  do_profiling   true or false
+ *         Setup the linear algebra requirements
  *
  * \return true if all equations are steady-state otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
-                           bool                      do_profiling)
+cs_equation_setup(void)
 {
   if (_n_equations == 0)
     return true;
@@ -1424,9 +1381,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       all_are_steady = false;
     else
       cs_equation_set_param(eqp, CS_EQKEY_TIME_SCHEME, "steady");
-
-    if (do_profiling)
-      cs_equation_set_timer_stats(eq);
 
     /* Set function pointers */
     switch(eqp->space_scheme) {
@@ -1477,13 +1431,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->get_cell_values = cs_cdovb_scaleq_get_cell_values;
         eq->get_face_values = NULL;
 
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
-
       }
       else if (eqp->dim == 3) {
 
@@ -1506,14 +1453,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->get_vertex_values = cs_cdovb_vecteq_get_vertex_values;
         eq->get_cell_values = cs_cdovb_vecteq_get_cell_values;
         eq->get_face_values = NULL;
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-        eq->n_sles_gather_elts = eqp->dim * connect->n_vertices;
-        eq->n_sles_scatter_elts = eqp->dim * connect->n_vertices;
 
       }
       else
@@ -1566,13 +1505,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->get_vertex_values = cs_cdovcb_scaleq_get_vertex_values;
         eq->get_cell_values = cs_cdovcb_scaleq_get_cell_values;
         eq->get_face_values = NULL;
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
 
       }
       else
@@ -1627,13 +1559,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->get_cell_values = cs_cdofb_scaleq_get_cell_values;
         eq->get_face_values = cs_cdofb_scaleq_get_face_values;
 
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
-
       }
       else if (eqp->dim == 3) {
 
@@ -1655,6 +1580,150 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->get_cell_values = cs_cdofb_vecteq_get_cell_values;
         eq->get_face_values = cs_cdofb_vecteq_get_face_values;
 
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P0:
+      if (eqp->dim == 1) /* Set pointers of function */
+        _set_scal_hho_function_pointers(eq);
+      else
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P1:
+      if (eqp->dim == 1) /* Set pointers of function */
+        _set_scal_hho_function_pointers(eq);
+
+      else if (eqp->dim == 3) /* Set pointers of function */
+        _set_vect_hho_function_pointers(eq);
+
+      else
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P2:
+      if (eqp->dim == 1) /* Set pointers of function */
+        _set_scal_hho_function_pointers(eq);
+
+      else if (eqp->dim == 3) /* Set pointers of function */
+        _set_vect_hho_function_pointers(eq);
+
+      else
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid scheme for the space discretization.\n"
+                  " Please check your settings."));
+      break;
+    }
+
+    /* Initialize cs_sles_t structure */
+    cs_equation_param_set_sles(eqp, eq->field_id);
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  } /* Loop on equations */
+
+  return all_are_steady;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a set of pointer functions for managing the cs_equation_t
+ *         structure during the computation
+ *
+ * \param[in]  connect        pointer to a cs_cdo_connect_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_assign_range_set(const cs_cdo_connect_t   *connect)
+{
+  if (_n_equations == 0)
+    return;
+
+  const char  s_err_msg[] =
+    "%s: Only the scalar-valued case is handled for this scheme.\n";
+  const char  sv_err_msg[] =
+    "%s: Only the scalar-valued and vector-valued case are handled"
+    "for this scheme.\n";
+
+  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
+
+    cs_equation_t  *eq = _equations[eq_id];
+    cs_equation_param_t  *eqp = eq->param;
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
+
+    /* Set function pointers */
+    switch(eqp->space_scheme) {
+
+    case CS_SPACE_SCHEME_CDOVB:
+      if (eqp->dim == 1) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
+
+      }
+      else if (eqp->dim == 3) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eqp->dim * connect->n_vertices;
+        eq->n_sles_scatter_elts = eqp->dim * connect->n_vertices;
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_CDOVCB:
+      if (eqp->dim == 1) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_CDOFB:
+      if (eqp->dim == 1) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
+
+      }
+      else if (eqp->dim == 3) {
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
@@ -1673,9 +1742,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
     case CS_SPACE_SCHEME_HHO_P0:
       if (eqp->dim == 1) {
 
-        /* Set pointers of function */
-        _set_scal_hho_function_pointers(eq);
-
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
 
@@ -1692,9 +1758,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
     case CS_SPACE_SCHEME_HHO_P1:
       if (eqp->dim == 1) {
 
-        /* Set pointers of function */
-        _set_scal_hho_function_pointers(eq);
-
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
 
@@ -1705,9 +1768,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
       }
       else if (eqp->dim == 3) {
-
-        /* Set pointers of function */
-        _set_vect_hho_function_pointers(eq);
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
@@ -1726,9 +1786,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
     case CS_SPACE_SCHEME_HHO_P2:
       if (eqp->dim == 1) {
 
-        /* Set pointers of function */
-        _set_scal_hho_function_pointers(eq);
-
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
 
@@ -1739,9 +1796,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
       }
       else if (eqp->dim == 3) {
-
-        /* Set pointers of function */
-        _set_vect_hho_function_pointers(eq);
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
@@ -1767,9 +1821,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
     if (cs_glob_n_ranks > 1)
       eq->n_sles_gather_elts = eq->rset->n_elts[0];
 
-    /* Initialize cs_sles_t structure */
-    cs_equation_param_set_sles(eqp, eq->field_id);
-
     /* Flag this equation such that parametrization is not modifiable anymore */
     eqp->flag |= CS_EQUATION_LOCKED;
 
@@ -1777,11 +1828,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       cs_timer_stats_stop(eq->main_ts_id);
 
   } /* Loop on equations */
-
-  /* Advanced settings of the linear algebra */
-  cs_user_cdo_set_sles();
-
-  return all_are_steady;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2032,8 +2078,6 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
-  if (eq->solve_ts_id > -1)
-    cs_timer_stats_start(eq->solve_ts_id);
 
   const cs_equation_param_t  *eqp = eq->param;
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
@@ -2104,10 +2148,6 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
                          eq->rhs);
 
   }
-
-  if (eq->solve_ts_id > -1)
-    cs_timer_stats_stop(eq->solve_ts_id);
-
 
   /* Copy current field values to previous values */
   cs_field_current_to_previous(fld);

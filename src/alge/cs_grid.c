@@ -2544,13 +2544,8 @@ _graph_m_ptr_remove_m(cs_graph_m_ptr_t  *s,
       s->prev[s_n] = -1;
     if (s->m_head[_m] < 0) { /* Update min and max m */
       if (_m == s->m_min) {
-        s->m_min += 1;
-        while (s->m_min < s->m_max) {
-          if (s->m_head[s->m_min] > -1)
-            break;
-          else
-            s->m_min++;
-        }
+        while (s->m_min < s->m_max && s->m_head[s->m_min] < 0)
+          s->m_min++;
       }
       else if (_m == s->m_max) {
         s->m_max -= 1;

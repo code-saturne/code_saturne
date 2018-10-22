@@ -264,6 +264,10 @@ cs_run(void)
 
     cs_cdo_initialize_setup(cs_glob_domain);
 
+    /* Setup linear solvers */
+    cs_gui_linear_solvers();
+    cs_user_linear_solvers();
+
     cs_base_fortran_bft_printf_to_c();
 
     cs_ctwr_build_zones();

@@ -62,18 +62,6 @@ double precision ttsuit, wtsuit
 
 interface
 
-  subroutine gui_linear_solvers()  &
-      bind(C, name='cs_gui_linear_solvers')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine gui_linear_solvers
-
-  subroutine user_linear_solvers()  &
-      bind(C, name='cs_user_linear_solvers')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine user_linear_solvers
-
   subroutine gui_output()  &
       bind(C, name='cs_gui_output')
     use, intrinsic :: iso_c_binding
@@ -185,9 +173,6 @@ endif
 
 call usipes(nmodpp)
 call user_output
-
-call gui_linear_solvers
-call user_linear_solvers
 
 !===============================================================================
 ! 5. Coherency checks

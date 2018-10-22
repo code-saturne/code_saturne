@@ -882,8 +882,6 @@ _uzawa_solve(cs_equation_t   *eq,
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
-  if (eq->solve_ts_id > -1)
-    cs_timer_stats_start(eq->solve_ts_id);
 
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
                                                    eq->matrix,
@@ -931,8 +929,6 @@ _uzawa_solve(cs_equation_t   *eq,
 
   }
 
-  if (eq->solve_ts_id > -1)
-    cs_timer_stats_stop(eq->solve_ts_id);
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
 

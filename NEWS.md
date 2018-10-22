@@ -99,6 +99,9 @@ Architectural changes:
 
 Bug fixes:
 
+- Fix allocation size for values at injection in case of mass source terms
+  with coupled Reynolds stress solver.
+
 - Minor bug fix updates to Melissa writer.
 
 - Fix face external force projection with tensorial diffusion and porous models 1, 2.

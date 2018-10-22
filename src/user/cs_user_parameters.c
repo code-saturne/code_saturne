@@ -163,22 +163,6 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Advanced user-defined settings for the linear algebra related
- *         to CDO equations
- *         This is closed to cs_user_linear_solvers() but called once the fields
- *         and equations have been created (this happens at a different stage
- *         in the CDO framework)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_set_sles(void)
-{
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Define or modify output user parameters.
  */
 /*----------------------------------------------------------------------------*/
