@@ -1180,7 +1180,9 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
     {
       cs_xdef_array_input_t  *array_input = (cs_xdef_array_input_t *)def->input;
 
+#if defined(DEBUG) && !defined(NDEBUG) /* Used in an assert */
       const int  stride = array_input->stride;
+#endif
 
       if (cs_flag_test(array_input->loc, cs_flag_primal_vtx)) {
 
@@ -1676,7 +1678,9 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
     else
       def = adv->bdy_flux_defs[adv->bdy_def_ids[bf_id]];
 
+#if defined(DEBUG) && !defined(NDEBUG) /* Useful for assert */
     const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
+#endif
 
     switch (def->type) {
 
@@ -1761,13 +1765,8 @@ cs_advection_field_get_cw_face_flux(const cs_cell_mesh_t       *cm,
 
   cs_xdef_t  *def = adv->definition;
 
-  cs_field_t  *bflux =
-    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
-  const cs_real_t  *bflux_val = bflux->val;
-
   /* Sanity checks */
   assert(def != NULL);
-  assert(bflux_val != NULL);
 
   switch (def->type) {
 

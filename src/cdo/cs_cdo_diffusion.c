@@ -314,7 +314,6 @@ cs_cdofb_diffusion_weak_dirichlet(const cs_equation_param_t      *eqp,
   }
   else {
     for (short int f = 0; f < cm->n_fc; f++) {
-      const cs_real_t  coef = cm->face[f].meas*cb->dpty_val;
       cs_math_33_3_product((const cs_real_3_t *)cb->dpty_mat, cm->face[f].unitv,
                            kappa_f[f]);
       for (short int k = 0; k < 3; k++) kappa_f[f][k] *= cm->face[f].meas;
@@ -336,14 +335,15 @@ cs_cdofb_diffusion_weak_dirichlet(const cs_equation_param_t      *eqp,
         csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, h_info, kappa_f, bc_op);
+      _cdofb_normal_flux_reco(f, cm, cb, h_info,
+                              (const cs_real_t (*)[3])kappa_f,
+                              bc_op);
 
     } /* If Dirichlet */
 
   } /* Loop boundary faces */
 
   /* Second pass: add the bc_op matrix, add the BC */
-  cs_real_t *ntrgrd_v = bc_op->val;
 
   /* !!! ATTENTION !!!
    * Two passes in order to avoid truncation error if the arbitrary coefficient
@@ -429,7 +429,6 @@ cs_cdofb_diffusion_wsym_dirichlet(const cs_equation_param_t      *eqp,
   }
   else {
     for (short int f = 0; f < cm->n_fc; f++) {
-      const cs_real_t  coef = cm->face[f].meas*cb->dpty_val;
       cs_math_33_3_product((const cs_real_3_t *)cb->dpty_mat, cm->face[f].unitv,
                            kappa_f[f]);
       for (short int k = 0; k < 3; k++) kappa_f[f][k] *= cm->face[f].meas;
@@ -450,7 +449,9 @@ cs_cdofb_diffusion_wsym_dirichlet(const cs_equation_param_t      *eqp,
         csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, h_info, kappa_f, bc_op);
+      _cdofb_normal_flux_reco(f, cm, cb, h_info,
+                              (const cs_real_t (*)[3])kappa_f,
+                              bc_op);
 
     } /* If Dirichlet */
 

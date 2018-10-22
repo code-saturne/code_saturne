@@ -171,11 +171,6 @@ static cs_gwf_t  *cs_gwf_main_structure = NULL;
 /*!
  * \brief  Compute the normal diffusive flux across boundary faces
  *
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in]      pot_vals   array of values for the variable field
- *
- * \param[in]      dt_cur     current value of the time step
- * \param[in, out] nflx_val   array of values to compute
  */
 /*----------------------------------------------------------------------------*/
 
@@ -186,7 +181,6 @@ _vb_enforce_boundary_divergence(const cs_cdo_connect_t        *connect,
                                 cs_real_t                      t_cur)
 {
   const cs_equation_t  *richards = gw->richards;
-  const cs_equation_param_t  *eqp = cs_equation_get_param(richards);
   const cs_equation_builder_t  *eqb = cs_equation_get_builder(richards);
   const cs_adjacency_t  *c2e = connect->c2e;
   const cs_adjacency_t  *e2v = connect->e2v;
@@ -196,6 +190,9 @@ _vb_enforce_boundary_divergence(const cs_cdo_connect_t        *connect,
   const cs_lnum_t  n_b_faces = cdoq->n_b_faces;
   const cs_lnum_t  n_vertices = cdoq->n_vertices;
 
+#if defined(DEBUG) && !defined(NDEBUG) /* Used in an assert */
+  const cs_equation_param_t  *eqp = cs_equation_get_param(richards);
+#endif
   assert(cs_flag_test(gw->flux_location, cs_flag_dual_face_byc));
   assert(cs_equation_param_has_diffusion(eqp));
 
