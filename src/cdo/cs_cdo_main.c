@@ -537,6 +537,9 @@ cs_cdo_main(cs_domain_t   *domain)
   /* Read a restart file if needed */
   cs_domain_read_restart(domain);
 
+  /* Activate writers for post-processing */
+  cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
+
   /* Initialization for user-defined extra operations. Should be done
      after the domain initialization if one wants to overwrite the field
      initialization for instance */
