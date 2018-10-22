@@ -1136,7 +1136,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
   /* Contribution of the Dirichlet conditions */
   cs_sdm_matvec(csys->mat, x_dir, ax_dir);
 
-  /* Second pass: Replace the Dirichlet block by a diagonal block*/
+  /* Second pass: Replace the Dirichlet block by a diagonal block */
   for (short int i = 0; i < csys->n_dofs; i++) {
 
     if (csys->dof_flag[i] & (CS_CDO_BC_DIRICHLET | CS_CDO_BC_HMG_DIRICHLET)) {
@@ -1218,7 +1218,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
   /* Contribution of the Dirichlet conditions */
   cs_sdm_block_matvec(csys->mat, x_dir, ax_dir);
 
-  /* Second pass: Replace the Dirichlet block by a diagonal block*/
+  /* Second pass: Replace the Dirichlet block by a diagonal block */
   int  s = 0;
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
