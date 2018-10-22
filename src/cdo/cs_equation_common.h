@@ -386,6 +386,30 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Take into account the enforcement of internal DoFs. Apply an
+ *          algebraic manipulation
+ *
+ *          |      |     |     |      |     |     |  |     |             |
+ *          | Aii  | Aie |     | Aii  |  0  |     |bi|     |bi -Aid.x_enf|
+ *          |------------| --> |------------| and |--| --> |-------------|
+ *          |      |     |     |      |     |     |  |     |             |
+ *          | Aei  | Aee |     |  0   |  Id |     |be|     |   x_enf     |
+ *
+ * where x_enf is the value of the enforcement for the selected internal DoFs
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
+                                   cs_cell_builder_t               *cb,
+                                   cs_cell_sys_t                   *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Assemble a cellwise system into the global algebraic system
  *
  * \param[in]      csys         cellwise view of the algebraic system

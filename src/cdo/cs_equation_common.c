@@ -1160,6 +1160,71 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Take into account the enforcement of internal DoFs. Apply an
+ *          algebraic manipulation
+ *
+ *          |      |     |     |      |     |     |  |     |             |
+ *          | Aii  | Aie |     | Aii  |  0  |     |bi|     |bi -Aid.x_enf|
+ *          |------------| --> |------------| and |--| --> |-------------|
+ *          |      |     |     |      |     |     |  |     |             |
+ *          | Aei  | Aee |     |  0   |  Id |     |be|     |   x_enf     |
+ *
+ * where x_enf is the value of the enforcement for the selected internal DoFs
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
+                                   cs_cell_builder_t               *cb,
+                                   cs_cell_sys_t                   *csys)
+{
+  /* Enforcement of the Dirichlet BCs */
+  if (csys->has_internal_enforcement == false)
+    return;  /* Nothing to do */
+
+  double  *x_vals = cb->values;
+  double  *ax = cb->values + csys->n_dofs;
+
+  memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
+
+  /* Build x_vals */
+  for (short int i = 0; i < csys->n_dofs; i++) {
+    if (csys->intern_forced_ids[i] > -1)
+      x_vals[i] = eqp->enforced_dof_values[csys->intern_forced_ids[i]];
+  }
+
+  /* Contribution of the DoFs which are enforced */
+  cs_sdm_matvec(csys->mat, x_vals, ax);
+
+  /* Second pass: Replace the block of enforced DoFs by a diagonal block */
+  for (short int i = 0; i < csys->n_dofs; i++) {
+
+    if (csys->intern_forced_ids[i] > -1) {
+
+      /* Reset row i */
+      memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
+      /* Reset column i */
+      for (short int j = 0; j < csys->n_dofs; j++)
+        csys->mat->val[i + csys->n_dofs*j] = 0;
+      csys->mat->val[i*(1 + csys->n_dofs)] = 1;
+
+      /* Set the RHS */
+      csys->rhs[i] = x_vals[i];
+
+    } /* DoF associated to a Dirichlet BC */
+    else
+      csys->rhs[i] -= ax[i];  /* Update RHS */
+
+  } /* Loop on degrees of freedom */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Assemble a cellwise system into the global algebraic system
  *
  * \param[in]      csys         cellwise view of the algebraic system

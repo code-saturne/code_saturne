@@ -132,16 +132,20 @@ typedef struct {
   cs_flag_t  *bf_flag;     /*!< Boundary face flag; size n_bc_faces */
 
   /* Dirichlet BCs */
-  bool        has_dirichlet;
-  double     *dir_values;    /* Values of the Dirichlet BCs (size = n_dofs) */
+  bool        has_dirichlet; /*!< Dirichlet BCs ?*/
+  double     *dir_values;    /*!< Values of the Dirichlet BCs (size = n_dofs) */
 
   /* Neumann BCs */
-  bool        has_nhmg_neumann; /*!< Non-homogeneous Neumann BCs */
+  bool        has_nhmg_neumann; /*!< Non-homogeneous Neumann BCs ? */
   double     *neu_values;       /*!< Neumann BCs values; size = n_dofs */
 
   /* Robin BCs */
   bool        has_robin;
   double     *rob_values;    /*!< Robin BCs values; size = 2*n_dofs */
+
+  /* Internal enforcement of DoFs */
+  bool        has_internal_enforcement;  /*!< Internal enforcement ? */
+  cs_lnum_t  *intern_forced_ids;         /*!< Id in the enforcement array */
 
 } cs_cell_sys_t;
 

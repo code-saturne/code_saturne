@@ -440,6 +440,11 @@ cs_equation_create_param(const char            *name,
   eqp->n_source_terms = 0;
   eqp->source_terms = NULL;
 
+  /* No enforcement of internal DoFs */
+  eqp->n_enforced_dofs = 0;
+  eqp->enforced_dof_ids = NULL;
+  eqp->enforced_dof_values = NULL;
+
   /* Settings for driving the linear algebra */
   eqp->solver_class = CS_EQUATION_SOLVER_CLASS_CS;
   eqp->itsol_info = _itsol_info_by_default;
@@ -487,6 +492,15 @@ cs_equation_free_param(cs_equation_param_t     *eqp)
     for (int i = 0; i < eqp->n_source_terms; i++)
       eqp->source_terms[i] = cs_xdef_free(eqp->source_terms[i]);
     BFT_FREE(eqp->source_terms);
+
+  }
+
+  /* Information related to the enforcement of internal DoFs */
+  if (eqp->n_enforced_dofs > 0) {
+
+    eqp->n_enforced_dofs = 0;
+    BFT_FREE(eqp->enforced_dof_ids);
+    BFT_FREE(eqp->enforced_dof_values);
 
   }
 
@@ -1277,13 +1291,14 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   bool  diffusion = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
   bool  reaction = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
   bool  source_term = (eqp->n_source_terms > 0) ? true : false;
+  bool  force_values = (eqp->flag & CS_EQUATION_FORCE_VALUES) ? true : false;
 
   cs_log_printf(CS_LOG_SETUP,
                 "  <%s/Terms>  unsteady:%s, convection:%s, diffusion:%s,"
-                " reaction:%s, source term:%s\n",
+                " reaction:%s, source term:%s, force internal values: %s\n",
                 eqname, cs_base_strtf(unsteady), cs_base_strtf(convection),
                 cs_base_strtf(diffusion), cs_base_strtf(reaction),
-                cs_base_strtf(source_term));
+                cs_base_strtf(source_term), cs_base_strtf(force_values));
 
   /* Boundary conditions */
   if (eqp->verbosity > 0) {
@@ -1294,8 +1309,8 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                   cs_param_get_bc_enforcement_name(eqp->enforcement));
     if (eqp->enforcement != CS_PARAM_BC_ENFORCE_ALGEBRAIC)
       cs_log_printf(CS_LOG_SETUP,
-                    "  <%s/Boundary Conditions> penalization coefficient: %5.3e\n",
-                    eqname, eqp->bc_penalization_coeff);
+                    "  <%s/Boundary Conditions> penalization coefficient:"
+                    " %5.3e\n", eqname, eqp->bc_penalization_coeff);
     cs_log_printf(CS_LOG_SETUP, "    <%s/n_bc_definitions> %d\n",
                   eqname, eqp->n_bc_defs);
     if (eqp->verbosity > 1) {
@@ -2052,6 +2067,55 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
   eqp->source_terms[new_id] = d;
 
   return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add an enforcement of the value of degrees of freedom located at
+ *         mesh vertices.
+ *         The spatial discretization scheme for the given equation has to be
+ *         CDO-Vertex based or CDO-Vertex+Cell-based schemes.
+ *         We assume that values are interlaced (if eqp->dim > 1)
+ *
+ * \param[in, out] eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      n_elts      number of vertices to enforce
+ * \param[in]      elt_ids     list of vertices
+ * \param[in]      elt_values  list of associated values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
+                                cs_lnum_t               n_elts,
+                                const cs_lnum_t         elt_ids[],
+                                const cs_real_t         elt_values[])
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOVB &&
+      eqp->space_scheme != CS_SPACE_SCHEME_CDOVCB)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid space scheme. This should be a vertex-based one.",
+              __func__);
+
+  if (eqp->n_enforced_dofs > 0) { /* A set of vertices is already defined
+                                    -> Erase it */
+
+    BFT_FREE(eqp->enforced_dof_ids);
+    BFT_FREE(eqp->enforced_dof_values);
+
+  }
+
+  eqp->flag |= CS_EQUATION_FORCE_VALUES;
+  eqp->n_enforced_dofs = n_elts;
+
+  /* Copy user-defined data in the structure */
+  BFT_MALLOC(eqp->enforced_dof_values, eqp->dim*n_elts, cs_real_t);
+  memcpy(eqp->enforced_dof_values, elt_values,
+         eqp->dim*n_elts*sizeof(cs_real_t));
+
+  BFT_MALLOC(eqp->enforced_dof_ids, n_elts, cs_lnum_t);
+  memcpy(eqp->enforced_dof_ids, elt_ids, n_elts*sizeof(cs_lnum_t));
 }
 
 /*----------------------------------------------------------------------------*/

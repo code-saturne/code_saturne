@@ -259,6 +259,13 @@ cs_cell_sys_create(int          n_max_dofbyc,
   csys->source = NULL;
   csys->val_n = NULL;
 
+  /* Internal enforcement */
+  csys->has_internal_enforcement = false;
+  csys->intern_forced_ids = NULL;
+
+  if (n_max_dofbyc > 0)
+    BFT_MALLOC(csys->intern_forced_ids, n_max_dofbyc, cs_lnum_t);
+
   /* Boundary conditions */
   csys->face_shift = -1;
   csys->n_bc_faces = 0;
@@ -343,6 +350,10 @@ cs_cell_sys_reset(int              n_fbyc,
   memset(csys->rhs, 0, s);
   memset(csys->source, 0, s);
 
+  csys->has_internal_enforcement = false;
+  for (int i = 0; i < csys->n_dofs; i++)
+    csys->intern_forced_ids[i] = -1; /* Not selected */
+
   if (csys->cell_flag & CS_FLAG_BOUNDARY) {
 
     csys->n_bc_faces = 0;
@@ -393,6 +404,8 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
   BFT_FREE(csys->neu_values);
   BFT_FREE(csys->rob_values);
 
+  BFT_FREE(csys->intern_forced_ids);
+
   BFT_FREE(csys);
   *p_csys= NULL;
 }
@@ -412,19 +425,20 @@ cs_cell_sys_dump(const char             msg[],
 {
 # pragma omp critical
   {
-    cs_log_printf(CS_LOG_DEFAULT, "%s", msg);
+    cs_log_printf(CS_LOG_DEFAULT, "%s\n", msg);
 
     if (csys->mat->flag & CS_SDM_BY_BLOCK)
       cs_sdm_block_dump(csys->c_id, csys->mat);
     else
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, csys->mat);
 
-    cs_log_printf(CS_LOG_DEFAULT, "\n>> %-10s | %-10s | %-10s | %-10s\n",
-                  "IDS", "RHS", "TS", "VAL_PREV");
+    cs_log_printf(CS_LOG_DEFAULT, ">> %-10s | %-10s | %-10s | %-10s | %-10s\n",
+                  "IDS", "RHS", "TS", "VAL_PREV", "ENFORCED");
     for (int i = 0; i < csys->n_dofs; i++)
-      cs_log_printf(CS_LOG_DEFAULT, ">> %10d | % -.3e | % -.3e | % -.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, ">> %10d | % -.3e | % -.3e | % -.3e |"
+                    " %10d\n",
                     csys->dof_ids[i], csys->rhs[i], csys->source[i],
-                    csys->val_n[i]);
+                    csys->val_n[i], csys->intern_forced_ids[i]);
   }
 }
 
