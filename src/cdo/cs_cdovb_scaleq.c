@@ -792,7 +792,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqb->bd_msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
     CS_CDO_LOCAL_FEQ;
 
-  /* DIFFUSION */
+  /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
   eqc->bdy_flux_op = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
@@ -825,8 +825,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Switch on Hodge algo. */
 
-  } /* DIFFUSION */
+  } /* Diffusion */
 
+  /* Boundary conditions */
   eqc->enforce_dirichlet = NULL;
   eqc->vtx_bc_flag = NULL;
   switch (eqp->enforcement) {

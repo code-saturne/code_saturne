@@ -883,7 +883,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     }
 
-  } // vertices
+  } /* vertices */
 
   /* Information related to primal edges */
   if (build_flag & cs_cdo_local_flag_e) {
@@ -915,7 +915,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
       }
 
-    } // Primal edge quantities
+    } /* Primal edge quantities */
 
     /* Dual face quantities related to each edge */
     if (build_flag & CS_CDO_LOCAL_DFQ) {
@@ -938,9 +938,9 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
       }
 
-    } // Dual face quantities
+    } /* Dual face quantities */
 
-  } // Edges
+  } /* Edge-related quantities */
 
   if (build_flag & CS_CDO_LOCAL_EV) {
 
@@ -971,9 +971,9 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       cm->e2v_ids[2*e]   = kbuf[connect->e2v->ids[2*e_id] - shift];
       cm->e2v_ids[2*e+1] = kbuf[connect->e2v->ids[2*e_id+1] - shift];
 
-    } // Loop on cell edges
+    } /* Loop on cell edges */
 
-  } // edge-vertices information
+  } /* edge-vertices information */
 
   /* Information related to primal faces */
   if (build_flag & cs_cdo_local_flag_f) {
@@ -984,7 +984,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     for (short int f = 0; f < cm->n_fc; f++) {
       cm->f_ids[f] = c2f_lst[f];
       cm->f_sgn[f] = c2f_sgn[f];
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
     /* Face related quantities */
     if (build_flag & cs_cdo_local_flag_pfq) {
@@ -1080,7 +1080,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
         cm->f2e_ids[shift_idx++] = kbuf[f2e_ids[i] - shift];
       cm->f2e_idx[f+1] = shift_idx;
 
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
     /* Sanity check */
     assert(cm->f2e_idx[cm->n_fc] == 2*cm->n_ec);
@@ -1093,9 +1093,9 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
                                                    cm->face[f].center);
       }
 
-    } // face --> edges quantities
+    } /* face --> edges quantities */
 
-  } // face --> edges connectivity
+  } /* face --> edges connectivity */
 
   if (build_flag & cs_cdo_local_flag_ef) {
 
@@ -1114,7 +1114,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
         }
 
       } /* Loop on face edges */
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
     if (build_flag & CS_CDO_LOCAL_EFQ) { /* Build cm->sefc */
 
@@ -1355,7 +1355,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     }
   }
 
-  if (_f == n_fc) // Sanity check
+  if (_f == n_fc) /* Sanity check */
     bft_error(__FILE__, __LINE__, 0,
               _(" Face %d not found.\n Stop build a face mesh."), f_id);
 
@@ -1376,7 +1376,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     fm->edge[e].meas = e_nvect.meas;
     for (int k = 0; k < 3; k++)
       fm->edge[e].unitv[k] = e_nvect.unitv[k];
-    // Still to handle the edge barycenter
+    /* Still to handle the edge barycenter */
 
     const cs_lnum_t  *e2v_ids = connect->e2v->ids + 2*e_id;
     short int  v1 = -1, v2 = -1;
@@ -1388,9 +1388,9 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     }
 
     /* Add vertices if not already identified */
-    if (v1 == -1) // Not found -> Add v1
+    if (v1 == -1) /* Not found -> Add v1 */
       fm->v_ids[nv] = e2v_ids[0], v1 = nv++;
-    if (v2 == -1) // Not found -> Add v2
+    if (v2 == -1) /* Not found -> Add v2 */
       fm->v_ids[nv] = e2v_ids[1], v2 = nv++;
 
     /* Update e2v_ids */
@@ -1398,9 +1398,9 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     fm->e2v_ids[_eshft]   = v1;
     fm->e2v_ids[_eshft+1] = v2;
 
-  } // Loop on face edges
+  } /* Loop on face edges */
 
-  assert(nv == fm->n_vf); // Sanity check
+  assert(nv == fm->n_vf); /* Sanity check */
 
   /* Update vertex coordinates */
   int  shift = 0;
@@ -1432,7 +1432,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     fm->wvf[v2] += tef;
     fm->tef[e] = tef;
 
-  } // Loop on face edges
+  } /* Loop on face edges */
 
   const double  invf = 0.5/pfq.meas;
   for (short int v = 0; v < fm->n_vf; v++) fm->wvf[v] *= invf;
@@ -1518,9 +1518,9 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
     }
 
     /* Add vertices if not already identified */
-    if (v1 == -1) // Not found -> Add v1
+    if (v1 == -1) /* Not found -> Add v1 */
       fm->v_ids[nv] = v1c_id, v1 = nv++;
-    if (v2 == -1) // Not found -> Add v2
+    if (v2 == -1) /* Not found -> Add v2 */
       fm->v_ids[nv] = v2c_id, v2 = nv++;
 
     /* Update e2v_ids */
@@ -1528,9 +1528,9 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
     fm->e2v_ids[_eshft]   = v1;
     fm->e2v_ids[_eshft+1] = v2;
 
-  } // Loop on face edges
+  } /* Loop on face edges */
 
-  assert(nv == fm->n_vf); // Sanity check
+  assert(nv == fm->n_vf); /* Sanity check */
 
   /* Update vertex coordinates */
   int  shift = 0;
@@ -1707,7 +1707,7 @@ cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
     }
   }
 
-  assert(nv == fm->n_vf); // Sanity check
+  assert(nv == fm->n_vf); /* Sanity check */
   const double  invf = 0.5/cm->face[f].meas;
   for (short int v = 0; v < fm->n_vf; v++) fm->wvf[v] *= invf;
 }
