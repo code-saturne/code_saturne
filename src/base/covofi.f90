@@ -407,7 +407,7 @@ if (ippmod(idarcy).eq.1) then
   call cs_gwf_decay_rate(ivarfl(ivar), rovsdt)
 endif
 
-! Store the source terms for convective limiter
+! Store the source terms for convective limiter or time extrapolation for buoyant scalar
 call field_get_key_int(iflid, kst, st_id)
 if (st_id .ge.0) then
   call field_get_val_s(st_id, cpro_scal_st)
@@ -470,14 +470,16 @@ endif
 !     quand meme dans SMBRS (pas d'autre choix)
 if (st_prv_id .ge. 0) then
   do iel = 1, ncel
-    ! Stockage temporaire pour economiser un tableau
     smbexp = cproa_scal_st(iel)
-    ! Terme source utilisateur explicite
-    cproa_scal_st(iel) = smbrs(iel)
+    ! If the scalar is not buoyant no need of saving the current source term,
+    ! save directly the previous one
+    if (iterns.eq.-1) then
+      cproa_scal_st(iel) = smbrs(iel)
+    endif
     ! Terme source du pas de temps precedent et
     ! On suppose -ROVSDT > 0 : on implicite
     !    le terme source utilisateur (le reste)
-    smbrs(iel) = rovsdt(iel)*cvara_var(iel) - thets*smbexp
+    smbrs(iel) = rovsdt(iel)*cvara_var(iel) - thets * smbexp
     ! Diagonale
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
@@ -956,10 +958,14 @@ endif
 
 ! Low Mach compressible algos (conservative in time).
 ! Same algo. for Volume of Fluid method
-if (idilat.gt.1 .or. ivofmt.ge.0) then
-  call field_get_val_prev_s(icrom_scal, pcrom)
+if ((idilat.gt.1 .or. ivofmt.ge.0 .or. ipredfl.eq.0).and.irovar.eq.1) then
+  if (iterns.eq.1) then
+    call field_get_val_prev2_s(icrom_scal, pcrom)
+  else
+    call field_get_val_prev_s(icrom_scal, pcrom)
+  endif
 
-! Standard algo
+! Deprecated algo or constant density
 else
   call field_get_val_s(icrom_scal, pcrom)
 endif
@@ -1268,7 +1274,7 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   cvara_var       , cvara_var       ,                            &
+   cvara_var       , cvar_var        ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscf  , viscb  , viscce ,                   &

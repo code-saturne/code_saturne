@@ -69,11 +69,12 @@ implicit none
 
 ! Local variables
 
-integer       iscal , id, ityloc, itycat, ifcvsl, pflag
-integer       ii
-integer       iok
-integer       f_id
-integer       ivisph, iest
+integer          iscal , id, ityloc, itycat, ifcvsl, pflag
+integer          ii
+integer          iok
+integer          f_id
+integer          ivisph, iest
+integer          key_buoyant_id, is_buoyant_fld
 
 double precision gravn2
 
@@ -96,6 +97,9 @@ endif
 !===============================================================================
 ! Initialization
 !===============================================================================
+
+! Key id for buoyant field (inside the Navier Stokes loop)
+call field_get_key_id("is_buoyant", key_buoyant_id)
 
 ! Determine itycor now that irccor is known (iturb/itytur known much earlier)
 ! type of rotation/curvature correction for turbulent viscosity models
@@ -225,11 +229,9 @@ endif
 if (isno2t.eq.-999) then
   if (ischtp.eq.1) then
     isno2t = 0
-    !            ELSE IF (ISCHTP.EQ.2.AND.IVISSE.EQ.1) THEN
   else if (ischtp.eq.2) then
     !       Pour le moment par defaut on prend l'ordre 2
     isno2t = 1
-    !              ISNO2T = 0
   endif
 endif
 !     Termes sources turbulence (k-eps, Rij, v2f ou k-omega)
@@ -403,18 +405,14 @@ endif
 
 ! Density at the second previous time step for VOF algorithm
 ! or dilatable algorithm
-if (ivofmt.ge.0.or.idilat.gt.1) then
+if (ivofmt.ge.0.or.idilat.gt.1.or.irovar.eq.1) then
   call field_set_n_previous(icrom, 2)
-  if (iroext.gt.0) then
-    call field_set_n_previous(ibrom, 2)
-  endif
+  call field_set_n_previous(ibrom, 2)
   ! The density at the previous time step is required if
   ! we perform a hydrostatic pressure correction (icalhy=1)
-else if (iroext.gt.0.or.icalhy.eq.1.or.ipthrm.eq.1.or.ippmod(icompf).ge.0) then
+else if (icalhy.eq.1.or.ipthrm.eq.1.or.ippmod(icompf).ge.0) then
   call field_set_n_previous(icrom, 1)
-  if (iroext.gt.0) then
-    call field_set_n_previous(ibrom, 1)
-  endif
+  call field_set_n_previous(ibrom, 1)
 endif
 ! Dans le cas d'une extrapolation de la viscosite totale
 if (iviext.gt.0) then
@@ -478,6 +476,11 @@ endif
 if (nscal.ge.1) then
   do ii = 1, nscal
     if (isso2t(ii).gt.0) then
+      ! For buoyant scalars, save the current user source term
+      call field_get_key_int(ivarfl(isca(ii)), key_buoyant_id, is_buoyant_fld)
+      if (is_buoyant_fld.eq.1) then
+        call add_source_term_field(ivarfl(isca(ii)))
+      endif
       call add_source_term_prev_field(ivarfl(isca(ii)))
     endif
     ! Only usefull for Min/Max limiter

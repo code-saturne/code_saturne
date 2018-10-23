@@ -51,8 +51,6 @@
 !> \param[in]     frcxt         external force generating the hydrostatic
 !>                              pressure
 !> \param[in]     trava         work array for pressure velocity coupling
-!> \param[in]     ximpa         work array for pressure velocity coupling
-!> \param[in]     uvwk          work array for pressure velocity coupling
 !_______________________________________________________________________________
 
 
@@ -61,7 +59,7 @@ subroutine navstv &
    isostd ,                                                       &
    dt     ,                                                       &
    frcxt  ,                                                       &
-   trava  , ximpa  , uvwk   )
+   trava  )
 
 !===============================================================================
 
@@ -108,13 +106,12 @@ integer          isostd(nfabor+1)
 
 double precision, pointer, dimension(:)   :: dt
 double precision, pointer, dimension(:,:) :: frcxt
-double precision, pointer, dimension(:,:) :: trava, uvwk
-double precision, pointer, dimension(:,:,:) :: ximpa
+double precision, pointer, dimension(:,:) :: trava
 
 ! Local variables
 
 integer          iccocg, inc, iel, iel1, iel2, ifac, imax, imaxt, imin, imint
-integer          ii    , inod, itypfl
+integer          ii    , inod, itypfl, f_id
 integer          isou, ivar, iitsm
 integer          init, iautof
 integer          iflmas, iflmab
@@ -141,10 +138,12 @@ double precision disp_fac(3)
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
 double precision, allocatable, dimension(:,:,:), target :: wvisfi
+double precision, allocatable, dimension(:,:), target :: uvwk
+double precision, dimension(:,:), pointer :: velk
 double precision, allocatable, dimension(:), target :: wvisbi
+double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc
 double precision, allocatable, dimension(:) :: phi
 double precision, allocatable, dimension(:) :: w1
-double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
@@ -162,7 +161,7 @@ double precision, dimension(:,:), pointer :: coefau, cofafu, claale
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, clbale
 double precision, dimension(:), pointer :: coefa_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer :: brom, crom, croma, viscl, visct
+double precision, dimension(:), pointer :: brom, broma, crom, croma, viscl, visct
 double precision, dimension(:), pointer :: ivoifl, bvoifl
 double precision, dimension(:), pointer :: coavoi, cobvoi
 double precision, dimension(:,:), pointer :: trav
@@ -175,6 +174,9 @@ double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 double precision, dimension(:), pointer :: cvara_k
+double precision, dimension(:), pointer :: cpro_rho_mass
+double precision, dimension(:), pointer :: bpro_rho_mass
+double precision, dimension(:), pointer :: brom_eos, crom_eos
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
@@ -301,7 +303,6 @@ endif
 
 ! Allocate work arrays
 allocate(w1(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1000)
@@ -313,27 +314,26 @@ ivar = 0
 iflmas = 0
 imax = 0
 
-! Memory
-
+! pointer to velosity at sub iteration k for PISO like algorithm
 if (nterup.gt.1) then
 
+  allocate(uvwk(3, ncelet))
   !$omp parallel do private(isou)
-  do iel = 1,ncelet
+  do iel = 1, ncel
     do isou = 1, 3
-    !     La boucle sur NCELET est une securite au cas
-    !       ou on utiliserait UVWK par erreur a ITERNS = 1
       uvwk(isou,iel) = vel(isou,iel)
     enddo
   enddo
 
-  ! Calcul de la norme L2 de la vitesse
-  if (iterns.eq.1) then
+  ! Compute the L2 velocity norm (it is zero at the first time step, so
+  ! we recompute it)
+  if (iterns.eq.1.or.xnrmu0.eq.0d0) then
     xnrtmp = 0.d0
     !$omp parallel do reduction(+:xnrtmp)
     do iel = 1, ncel
-      xnrtmp = xnrtmp +(vela(1,iel)**2        &
-                      + vela(2,iel)**2        &
-                      + vela(3,iel)**2)       &
+      xnrtmp = xnrtmp +(vel(1,iel)**2        &
+                      + vel(2,iel)**2        &
+                      + vel(3,iel)**2)       &
                       * cell_f_vol(iel)
     enddo
     xnrmu0 = xnrtmp
@@ -351,14 +351,16 @@ if (nterup.gt.1) then
     xnrmu0 = sqrt(xnrmu0)
   endif
 
-  ! On assure la periodicite ou le parallelisme de UVWK et la pression
-  if (iterns.gt.1) then
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synvin(uvwk(1,1))
-      call synsca(cvar_pr)
-    endif
+  ! On assure la periodicite ou le parallelisme de uvwk et la pression
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvin(uvwk)
+    call synsca(cvar_pr)
   endif
 
+  velk => uvwk
+
+else
+  velk => vela
 endif
 
 ! --- Physical quantities
@@ -370,6 +372,62 @@ t1 = 0.d0
 t2 = 0.d0
 t3 = 0.d0
 t4 = 0.d0
+
+! Id of the mass flux
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+
+! Pointers to the mass fluxes
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
+
+! Pointers to properties
+call field_get_val_s(icrom, crom_eos)
+call field_get_val_s(ibrom, brom_eos)
+
+if (irovar.eq.1) then
+  ! If iterns = 1: this is density at time n
+  call field_get_id("density_mass", f_id)
+  call field_get_val_s(f_id, cpro_rho_mass)
+  call field_get_id("boundary_density_mass", f_id)
+  call field_get_val_s(f_id, bpro_rho_mass)
+
+  ! Time interpolated density
+  if (vcopt_u%thetav .lt. 1.d0) then
+    call field_get_val_prev_s(icrom, croma)
+    call field_get_val_prev_s(ibrom, broma)
+    allocate(cpro_rho_tc(ncelet))
+    allocate(bpro_rho_tc(nfabor))
+
+    do iel = 1, ncelet
+      cpro_rho_tc(iel) = vcopt_u%thetav * cpro_rho_mass(iel) &
+        + (1.d0 - vcopt_u%thetav) * croma(iel)
+    enddo
+
+    crom => cpro_rho_tc
+
+    do ifac = 1, nfabor
+      bpro_rho_tc(ifac) = vcopt_u%thetav * bpro_rho_mass(ifac) &
+        + (1.d0 - vcopt_u%thetav) * broma(ifac)
+    enddo
+
+    brom => bpro_rho_tc
+
+  else
+    crom => cpro_rho_mass
+    brom => bpro_rho_mass
+  endif
+
+else
+  crom => crom_eos
+  brom => brom_eos
+endif
+
+! Pointers to BC coefficients
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
+call field_get_coefaf_v(ivarfl(iu), cofafu)
+call field_get_coefbf_v(ivarfl(iu), cofbfu)
 
 !===============================================================================
 ! 1. Prediction of the mass flux in case of Low Mach compressible algorithm
@@ -428,37 +486,18 @@ endif
 
 iappel = 1
 
-! Id of the mass flux
-call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-
-! Pointers to the mass fluxes
-call field_get_val_s(iflmas, imasfl)
-call field_get_val_s(iflmab, bmasfl)
-
-! Pointers to properties
-call field_get_val_s(icrom, crom)
-call field_get_val_s(ibrom, brom)
-
-! Pointers to BC coefficients
-call field_get_coefa_v(ivarfl(iu), coefau)
-call field_get_coefb_v(ivarfl(iu), coefbu)
-call field_get_coefaf_v(ivarfl(iu), cofafu)
-call field_get_coefbf_v(ivarfl(iu), cofbfu)
-
 call predvv &
 ( iappel ,                                                       &
   nvar   , nscal  , iterns ,                                     &
   ncepdc , ncetsm , nfbpcd , ncmast ,                            &
   icepdc , icetsm , ifbpcd , ltmast ,                            &
   itypsm ,                                                       &
-  dt     , vel    , vela   ,                                     &
-  imasfl , bmasfl ,                                              &
+  dt     , vel    , vela   , velk   ,                            &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-  ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
-  trava  , ximpa  , uvwk   , dfrcxt , dttens ,  trav  ,          &
+  ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
+  trava  ,                   dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
-  w1     , w7     , w8     , w9     )
+  w1     )
 
 ! Bad cells regularisation
 call cs_bad_cells_regularisation_vector(vel, 1)
@@ -484,7 +523,7 @@ if (iprco.le.0) then
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
-   crom, brom,                                                    &
+   crom   , brom   ,                                              &
    vel    ,                                                       &
    coefau , coefbu ,                                              &
    imasfl , bmasfl )
@@ -622,6 +661,8 @@ if (iprco.le.0) then
   ! Free memory
   !--------------
   deallocate(coefa_dp, coefb_dp)
+  if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
+  if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
 
   return
 
@@ -697,8 +738,8 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
       ! Scratch and resize work arrays
 
-      deallocate(w1, w7, w8, w9)
-      allocate(w1(ncelet), w7(ncelet), w8(ncelet), w9(ncelet))
+      deallocate(w1)
+      allocate(w1(ncelet))
 
       ! Resize auxiliary arrays (pointe module)
 
@@ -729,12 +770,6 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
         call resize_vec_real_array(grdphd)
       endif
 
-      if (nterup.gt.1) then
-        call resize_vec_real_array(uvwk)
-        call resize_tens_real_array(ximpa)
-        call resize_vec_real_array(trava)
-      endif
-
       ! Update local pointers on "cells" fields
 
       call field_get_val_s(icrom, crom)
@@ -752,6 +787,13 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
       if (ivofmt.ge.0) then
         call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
         call field_get_val_prev_s(ivarfl(ivolf2), cvara_voidf)
+      endif
+
+      if (nterup.gt.1) then
+        call resize_vec_real_array(velk)
+        call resize_vec_real_array(trava)
+      else
+        velk => vela
       endif
 
     endif
@@ -924,16 +966,6 @@ if (ippmod(icompf).lt.0) then
       deallocate(xinvro)
     endif
 
-    !$omp parallel do private(isou)
-    do iel = 1, ncelet
-      do isou = 1, 3
-        trav(isou,iel) = gradp(isou, iel)
-      enddo
-    enddo
-
-    !Free memory
-    deallocate(gradp)
-
     ! Update the velocity field
     !--------------------------
     thetap = vcopt_p%thetav
@@ -949,7 +981,7 @@ if (ippmod(icompf).lt.0) then
           dtsrom = thetap*dt(iel)/crom(iel)
           do isou = 1, 3
             vel(isou,iel) = vel(isou,iel)                            &
-                 + dtsrom*(dfrcxt(isou, iel)-trav(isou,iel))
+                 + dtsrom*(dfrcxt(isou, iel)-gradp(isou,iel))
           enddo
         enddo
 
@@ -959,23 +991,23 @@ if (ippmod(icompf).lt.0) then
         do iel = 1, ncel
           unsrom = thetap/crom(iel)
 
-          vel(1, iel) = vel(1, iel)                                             &
-               + unsrom*(                                                &
-                 dttens(1,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
-               + dttens(4,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
-               + dttens(6,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
+          vel(1, iel) = vel(1, iel)                              &
+               + unsrom*(                                        &
+                 dttens(1,iel)*(dfrcxt(1, iel)-gradp(1,iel))     &
+               + dttens(4,iel)*(dfrcxt(2, iel)-gradp(2,iel))     &
+               + dttens(6,iel)*(dfrcxt(3, iel)-gradp(3,iel))     &
                )
-          vel(2, iel) = vel(2, iel)                                             &
-               + unsrom*(                                                &
-                 dttens(4,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
-               + dttens(2,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
-               + dttens(5,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
+          vel(2, iel) = vel(2, iel)                              &
+               + unsrom*(                                        &
+                 dttens(4,iel)*(dfrcxt(1, iel)-gradp(1,iel))     &
+               + dttens(2,iel)*(dfrcxt(2, iel)-gradp(2,iel))     &
+               + dttens(5,iel)*(dfrcxt(3, iel)-gradp(3,iel))     &
                )
-          vel(3, iel) = vel(3, iel)                                             &
-               + unsrom*(                                                &
-                 dttens(6,iel)*(dfrcxt(1 ,iel)-trav(1,iel))     &
-               + dttens(5,iel)*(dfrcxt(2 ,iel)-trav(2,iel))     &
-               + dttens(3,iel)*(dfrcxt(3 ,iel)-trav(3,iel))     &
+          vel(3, iel) = vel(3, iel)                              &
+               + unsrom*(                                        &
+                 dttens(6,iel)*(dfrcxt(1 ,iel)-gradp(1,iel))     &
+               + dttens(5,iel)*(dfrcxt(2 ,iel)-gradp(2,iel))     &
+               + dttens(3,iel)*(dfrcxt(3 ,iel)-gradp(3,iel))     &
                )
         enddo
       endif
@@ -1018,7 +1050,7 @@ if (ippmod(icompf).lt.0) then
         do iel = 1, ncel
           dtsrom = thetap*dt(iel)/crom(iel)
           do isou = 1, 3
-            vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
+            vel(isou,iel) = vel(isou,iel) - dtsrom*gradp(isou,iel)
           enddo
         enddo
 
@@ -1031,26 +1063,30 @@ if (ippmod(icompf).lt.0) then
 
           vel(1, iel) = vel(1, iel)                              &
                       - unsrom*(                                 &
-                                 dttens(1,iel)*(trav(1,iel))     &
-                               + dttens(4,iel)*(trav(2,iel))     &
-                               + dttens(6,iel)*(trav(3,iel))     &
+                                 dttens(1,iel)*(gradp(1,iel))    &
+                               + dttens(4,iel)*(gradp(2,iel))    &
+                               + dttens(6,iel)*(gradp(3,iel))    &
                                )
           vel(2, iel) = vel(2, iel)                              &
                       - unsrom*(                                 &
-                                 dttens(4,iel)*(trav(1,iel))     &
-                               + dttens(2,iel)*(trav(2,iel))     &
-                               + dttens(5,iel)*(trav(3,iel))     &
+                                 dttens(4,iel)*(gradp(1,iel))    &
+                               + dttens(2,iel)*(gradp(2,iel))    &
+                               + dttens(5,iel)*(gradp(3,iel))    &
                                )
           vel(3, iel) = vel(3, iel)                              &
                       - unsrom*(                                 &
-                                 dttens(6,iel)*(trav(1,iel))     &
-                               + dttens(5,iel)*(trav(2,iel))     &
-                               + dttens(3,iel)*(trav(3,iel))     &
+                                 dttens(6,iel)*(gradp(1,iel))    &
+                               + dttens(5,iel)*(gradp(2,iel))    &
+                               + dttens(3,iel)*(gradp(3,iel))    &
                                )
         enddo
 
       endif
     endif
+
+    !Free memory
+    deallocate(gradp)
+
   endif
 
 endif
@@ -1349,7 +1385,6 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
     enddo
 
     !   APPEL A PREDVV AVEC VALEURS AU PAS DE TEMPS COURANT
-    !                  AVEC LE FLUX DE MASSE RECALCULE
     iappel = 2
     call predvv &
  ( iappel ,                                                       &
@@ -1357,13 +1392,12 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    ncepdc , ncetsm , nfbpcd , ncmast ,                            &
    icepdc , icetsm , ifbpcd , ltmast ,                            &
    itypsm ,                                                       &
-   dt     , vel    , vel    ,                                     &
-   esflum , esflub ,                                              &
+   dt     , vel    , vel    , velk   ,                            &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-   ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
-   trava  , ximpa  , uvwk   , dfrcxt , dttens , trav   ,          &
+   ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
+   trava  ,                   dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
-   w1     , w7     , w8     , w9     )
+   w1     )
 
   endif
 
@@ -1375,27 +1409,26 @@ endif
 !===============================================================================
 
 if (nterup.gt.1) then
-! TEST DE CONVERGENCE DE L'ALGORITHME ITERATIF
-! On initialise ICVRGE a 1 et on le met a 0 si on n'a pas convergee
 
+  ! Convergence test on PISO-like algorithm, icvrge is 1 if converged
   icvrge = 1
 
   xnrtmp = 0.d0
   !$omp parallel do reduction(+:xnrtmp) private(xdu, xdv, xdw)
-  do iel = 1,ncel
-    xdu = vel(1,iel) - uvwk(1,iel)
-    xdv = vel(2,iel) - uvwk(2,iel)
-    xdw = vel(3,iel) - uvwk(3,iel)
+  do iel = 1, ncel
+    xdu = vel(1,iel) - velk(1,iel)
+    xdv = vel(2,iel) - velk(2,iel)
+    xdw = vel(3,iel) - velk(3,iel)
     xnrtmp = xnrtmp +(xdu**2 + xdv**2 + xdw**2) * cell_f_vol(iel)
   enddo
   xnrmu = xnrtmp
-  ! --->    TRAITEMENT DU PARALLELISME
 
+  ! parallelism
   if (irangp.ge.0) call parsom (xnrmu)
 
-  ! -- >    TRAITEMENT DU COUPLAGE ENTRE DEUX INSTANCES DE CODE_SATURNE
+  ! code-code coupling
   do numcpl = 1, nbrcpl
-    call tbrcpl ( numcpl, 1, 1, xnrmu, xnrdis )
+    call tbrcpl(numcpl, 1, 1, xnrmu, xnrdis)
     xnrmu = xnrmu + xnrdis
   enddo
   xnrmu = sqrt(xnrmu)
@@ -1629,9 +1662,11 @@ deallocate(phi)
 deallocate(trav)
 deallocate(dfrcxt)
 deallocate(w1)
-deallocate(w7, w8, w9)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
+if (allocated(uvwk)) deallocate(uvwk)
 if (allocated(secvif)) deallocate(secvif, secvib)
+if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
+if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
 if (iphydr.eq.2) deallocate(grdphd)
 
 ! Free memory

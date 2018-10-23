@@ -1347,16 +1347,234 @@ cs_equation_log_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Setup the linear algebra requirements
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_linear_solvers(void)
+{
+  if (_n_equations == 0)
+    return;
+
+  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
+
+    cs_equation_t  *eq = _equations[eq_id];
+    cs_equation_param_t  *eqp = eq->param;
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
+
+    /* Initialize cs_sles_t structure */
+    cs_equation_param_set_sles(eqp, eq->field_id);
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  } /* Loop on equations */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Assign a set of pointer functions for managing the cs_equation_t
  *         structure during the computation
- *         Setup the linear algebra requirements
+ *
+ * \param[in]  connect        pointer to a cs_cdo_connect_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_assign_range_set(const cs_cdo_connect_t   *connect)
+{
+  if (_n_equations == 0)
+    return;
+
+  const char  s_err_msg[] =
+    "%s: Only the scalar-valued case is handled for this scheme.\n";
+  const char  sv_err_msg[] =
+    "%s: Only the scalar-valued and vector-valued case are handled"
+    "for this scheme.\n";
+
+  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
+
+    cs_equation_t  *eq = _equations[eq_id];
+    cs_equation_param_t  *eqp = eq->param;
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
+
+    /* Set function pointers */
+    switch(eqp->space_scheme) {
+
+    case CS_SPACE_SCHEME_CDOVB:
+      if (eqp->dim == 1) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
+
+      }
+      else if (eqp->dim == 3) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eqp->dim * connect->n_vertices;
+        eq->n_sles_scatter_elts = eqp->dim * connect->n_vertices;
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_CDOVCB:
+      if (eqp->dim == 1) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_CDOFB:
+      if (eqp->dim == 1) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
+
+      }
+      else if (eqp->dim == 3) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process (OK for a sequential run) */
+        eq->n_sles_gather_elts = eqp->dim * connect->n_faces[0];
+        eq->n_sles_scatter_elts = eqp->dim * connect->n_faces[0];
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P0:
+      if (eqp->dim == 1) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P1:
+      if (eqp->dim == 1) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process (OK for a sequential run) */
+        eq->n_sles_gather_elts = CS_N_FACE_DOFS_1ST * connect->n_faces[0];
+        eq->n_sles_scatter_elts = CS_N_FACE_DOFS_1ST * connect->n_faces[0];
+
+      }
+      else if (eqp->dim == 3) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process (OK for a sequential run) */
+        eq->n_sles_gather_elts = 3*CS_N_FACE_DOFS_1ST * connect->n_faces[0];
+        eq->n_sles_scatter_elts = 3*CS_N_FACE_DOFS_1ST * connect->n_faces[0];
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P2:
+      if (eqp->dim == 1) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process (OK for a sequential run) */
+        eq->n_sles_gather_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
+        eq->n_sles_scatter_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
+
+      }
+      else if (eqp->dim == 3) {
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process (OK for a sequential run) */
+        eq->n_sles_gather_elts = 3*CS_N_FACE_DOFS_2ND * connect->n_faces[0];
+        eq->n_sles_scatter_elts = 3*CS_N_FACE_DOFS_2ND * connect->n_faces[0];
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid scheme for the space discretization.\n"
+                  " Please check your settings."));
+      break;
+    }
+
+    if (cs_glob_n_ranks > 1)
+      eq->n_sles_gather_elts = eq->rset->n_elts[0];
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  } /* Loop on equations */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a set of pointer functions for managing the cs_equation_t
+ *         structure during the computation
  *
  * \return true if all equations are steady-state otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_equation_setup(void)
+cs_equation_assign_functions(void)
 {
   if (_n_equations == 0)
     return true;
@@ -1625,202 +1843,6 @@ cs_equation_setup(void)
       break;
     }
 
-    /* Initialize cs_sles_t structure */
-    cs_equation_param_set_sles(eqp, eq->field_id);
-
-    if (eq->main_ts_id > -1)
-      cs_timer_stats_stop(eq->main_ts_id);
-
-  } /* Loop on equations */
-
-  return all_are_steady;
-}
-
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assign a set of pointer functions for managing the cs_equation_t
- *         structure during the computation
- *
- * \param[in]  connect        pointer to a cs_cdo_connect_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_assign_range_set(const cs_cdo_connect_t   *connect)
-{
-  if (_n_equations == 0)
-    return;
-
-  const char  s_err_msg[] =
-    "%s: Only the scalar-valued case is handled for this scheme.\n";
-  const char  sv_err_msg[] =
-    "%s: Only the scalar-valued and vector-valued case are handled"
-    "for this scheme.\n";
-
-  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
-
-    cs_equation_t  *eq = _equations[eq_id];
-    cs_equation_param_t  *eqp = eq->param;
-
-    if (eq->main_ts_id > -1)
-      cs_timer_stats_start(eq->main_ts_id);
-
-    /* Set function pointers */
-    switch(eqp->space_scheme) {
-
-    case CS_SPACE_SCHEME_CDOVB:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
-
-      }
-      else if (eqp->dim == 3) {
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-        eq->n_sles_gather_elts = eqp->dim * connect->n_vertices;
-        eq->n_sles_scatter_elts = eqp->dim * connect->n_vertices;
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
-
-      break;
-
-    case CS_SPACE_SCHEME_CDOVCB:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
-
-      break;
-
-    case CS_SPACE_SCHEME_CDOFB:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
-
-      }
-      else if (eqp->dim == 3) {
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process (OK for a sequential run) */
-        eq->n_sles_gather_elts = eqp->dim * connect->n_faces[0];
-        eq->n_sles_scatter_elts = eqp->dim * connect->n_faces[0];
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
-
-      break;
-
-    case CS_SPACE_SCHEME_HHO_P0:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
-
-      break;
-
-    case CS_SPACE_SCHEME_HHO_P1:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process (OK for a sequential run) */
-        eq->n_sles_gather_elts = CS_N_FACE_DOFS_1ST * connect->n_faces[0];
-        eq->n_sles_scatter_elts = CS_N_FACE_DOFS_1ST * connect->n_faces[0];
-
-      }
-      else if (eqp->dim == 3) {
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process (OK for a sequential run) */
-        eq->n_sles_gather_elts = 3*CS_N_FACE_DOFS_1ST * connect->n_faces[0];
-        eq->n_sles_scatter_elts = 3*CS_N_FACE_DOFS_1ST * connect->n_faces[0];
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
-
-      break;
-
-    case CS_SPACE_SCHEME_HHO_P2:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process (OK for a sequential run) */
-        eq->n_sles_gather_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
-        eq->n_sles_scatter_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
-
-      }
-      else if (eqp->dim == 3) {
-
-        /* Set the cs_range_set_t structure */
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process (OK for a sequential run) */
-        eq->n_sles_gather_elts = 3*CS_N_FACE_DOFS_2ND * connect->n_faces[0];
-        eq->n_sles_scatter_elts = 3*CS_N_FACE_DOFS_2ND * connect->n_faces[0];
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
-
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid scheme for the space discretization.\n"
-                  " Please check your settings."));
-      break;
-    }
-
-    if (cs_glob_n_ranks > 1)
-      eq->n_sles_gather_elts = eq->rset->n_elts[0];
-
     /* Flag this equation such that parametrization is not modifiable anymore */
     eqp->flag |= CS_EQUATION_LOCKED;
 
@@ -1828,6 +1850,8 @@ cs_equation_assign_range_set(const cs_cdo_connect_t   *connect)
       cs_timer_stats_stop(eq->main_ts_id);
 
   } /* Loop on equations */
+
+  return all_are_steady;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -129,12 +129,15 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
+  BFT_MALLOC(cb->adv_fluxes, n_fc, double);
+  memset(cb->adv_fluxes, 0, n_fc*sizeof(double));
+
   BFT_MALLOC(cb->ids, n_fc, short int);
   memset(cb->ids, 0, n_fc*sizeof(short int));
 
   int  size = n_fc*(n_fc+1);
   BFT_MALLOC(cb->values, size, double);
-  memset(cb->values, 0, size*sizeof(cs_real_t));
+  memset(cb->values, 0, size*sizeof(double));
 
   size = 2*n_fc;
   BFT_MALLOC(cb->vectors, size, cs_real_3_t);
@@ -342,8 +345,9 @@ _fb_advection_diffusion_reaction(double                         time_eval,
   if (cs_equation_param_has_convection(eqp)) {  /* ADVECTION TERM
                                                  * ============== */
 
-    /* Define the local advection matrix */
-    eqc->get_advection_matrix(eqp, cm, time_eval, fm, cb);
+    /* Define the local advection matrix and store the advection
+       fluxes across primal faces */
+    cs_cdofb_advection_build(eqp, cm, time_eval, eqc->adv_func, cb);
 
     /* Add it to the local system */
     cs_sdm_add(csys->mat, cb->loc);
@@ -434,8 +438,18 @@ _fb_apply_bc_partly(cs_real_t                      time_eval,
       for (short int f  = 0; f < cm->n_fc; f++)
         csys->rhs[f] += csys->neu_values[f];
 
-    if (cs_equation_param_has_convection(eqp)) {
-      eqc->add_advection_bc(cm, eqp, time_eval, fm, cb, csys);
+    /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+       csys is updated inside (matrix and rhs) */
+    if (cs_equation_param_has_diffusion(eqp)) {
+
+      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+          eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+        eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+
+    }
+
+    if (cs_equation_param_has_convection(eqp)) { /* Always weakly enforced */
+      eqc->adv_func_bc(eqp, cm, cb, csys);
     }
 
   } /* Boundary cell */
@@ -862,7 +876,21 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    if (cs_equation_param_has_diffusion(eqp) == false)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid choice of Dirichlet enforcement.\n"
+                " Diffusion term should be active.", __func__);
+    eqc->enforce_dirichlet = cs_cdofb_diffusion_weak_dirichlet;
+    break;
+
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+    if (cs_equation_param_has_diffusion(eqp) == false)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid choice of Dirichlet enforcement.\n"
+                " Diffusion term should be active.", __func__);
+    eqc->enforce_dirichlet = cs_cdofb_diffusion_wsym_dirichlet;
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid type of algorithm to enforce Dirichlet BC.",
@@ -872,8 +900,8 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Advection part */
 
-  eqc->get_advection_matrix = NULL;
-  eqc->add_advection_bc = NULL;
+  eqc->adv_func = NULL;
+  eqc->adv_func_bc = NULL;
 
   if (cs_equation_param_has_convection(eqp)) {
 
@@ -883,14 +911,34 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     if (adv_deftype == CS_XDEF_BY_ANALYTIC_FUNCTION)
       eqb->msh_flag |= CS_CDO_LOCAL_FEQ;
 
+    /* Boundary conditions for advection */
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ;
+
     switch (eqp->adv_formulation) {
 
     case CS_PARAM_ADVECTION_FORM_CONSERV:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid type of formulation for the advection scheme for"
+                " face-based discretization",
+                __func__);
+      break; /* Conservative formulation */
 
+    case CS_PARAM_ADVECTION_FORM_NONCONS:
       switch (eqp->adv_scheme) {
 
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        eqc->get_advection_matrix = cs_cdo_advection_get_fb_upwcsvdi;
+        if (!cs_equation_param_has_diffusion(eqp)){
+          eqc->adv_func = cs_cdo_advection_fb_upwnoc;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc;
+        }
+        else {
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Invalid choice for the advection scheme in face-based"
+                    " discretization.\n"
+                    " Non-conservative formulation, upwind and diffusion term",
+                    __func__);
+
+        }
         break;
 
       default:
@@ -899,23 +947,14 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
                   __func__);
 
       } /* Scheme */
-      break; /* Formulation */
-
-    case CS_PARAM_ADVECTION_FORM_NONCONS:
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid type of formulation for the advection term",
-                __func__);
-      break;
+      break; /* Non-conservative formulation */
 
     default:
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid type of formulation for the advection term",
                 __func__);
-    }
 
-    /* Boundary conditions for advection */
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ;
-    eqc->add_advection_bc = cs_cdo_advection_add_fb_bc;
+    } /* Switch on the formulation */
 
   }
 
@@ -2002,6 +2041,28 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       } /* End of term source contribution */
 
+      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
+       * Operations that have to be performed BEFORE the static condensation
+       */
+      if (cell_flag & CS_FLAG_BOUNDARY) {
+
+        /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+           csys is updated inside (matrix and rhs) */
+        if (cs_equation_param_has_diffusion(eqp)) {
+
+          if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+              eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+            eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+
+        }
+
+        /* Neumann boundary conditions */
+        if (csys->has_nhmg_neumann)
+          for (short int f  = 0; f < cm->n_fc; f++)
+            csys->rhs[f] += csys->neu_values[f];
+
+      } /* Boundary cell */
+
       /* UNSTEADY TERM + TIME SCHEME */
       /* =========================== */
 
@@ -2043,18 +2104,6 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
                                csys);
 
       } /* END OF TIME CONTRIBUTION */
-
-      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
-       * Operations that have to be performed BEFORE the static condensation
-       */
-      if (cell_flag & CS_FLAG_BOUNDARY) {
-
-        /* Neumann boundary conditions */
-        if (csys->has_nhmg_neumann)
-          for (short int f  = 0; f < cm->n_fc; f++)
-            csys->rhs[f] += csys->neu_values[f];
-
-      } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
       if (cs_dbg_cw_test(cm))

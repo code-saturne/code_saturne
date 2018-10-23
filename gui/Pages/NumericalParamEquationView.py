@@ -228,6 +228,7 @@ class BlendingFactorDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 
@@ -259,6 +260,7 @@ class RhsReconstructionDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 
@@ -297,6 +299,7 @@ class SolverDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 
@@ -682,6 +685,7 @@ class MinimumDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 
@@ -718,6 +722,7 @@ class VerbosityDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 
@@ -749,6 +754,7 @@ class MaximumDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 

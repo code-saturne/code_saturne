@@ -259,6 +259,13 @@ cs_cell_sys_create(int          n_max_dofbyc,
   csys->source = NULL;
   csys->val_n = NULL;
 
+  /* Internal enforcement */
+  csys->has_internal_enforcement = false;
+  csys->intern_forced_ids = NULL;
+
+  if (n_max_dofbyc > 0)
+    BFT_MALLOC(csys->intern_forced_ids, n_max_dofbyc, cs_lnum_t);
+
   /* Boundary conditions */
   csys->face_shift = -1;
   csys->n_bc_faces = 0;
@@ -343,6 +350,10 @@ cs_cell_sys_reset(int              n_fbyc,
   memset(csys->rhs, 0, s);
   memset(csys->source, 0, s);
 
+  csys->has_internal_enforcement = false;
+  for (int i = 0; i < csys->n_dofs; i++)
+    csys->intern_forced_ids[i] = -1; /* Not selected */
+
   if (csys->cell_flag & CS_FLAG_BOUNDARY) {
 
     csys->n_bc_faces = 0;
@@ -393,6 +404,8 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
   BFT_FREE(csys->neu_values);
   BFT_FREE(csys->rob_values);
 
+  BFT_FREE(csys->intern_forced_ids);
+
   BFT_FREE(csys);
   *p_csys= NULL;
 }
@@ -412,19 +425,20 @@ cs_cell_sys_dump(const char             msg[],
 {
 # pragma omp critical
   {
-    cs_log_printf(CS_LOG_DEFAULT, "%s", msg);
+    cs_log_printf(CS_LOG_DEFAULT, "%s\n", msg);
 
     if (csys->mat->flag & CS_SDM_BY_BLOCK)
       cs_sdm_block_dump(csys->c_id, csys->mat);
     else
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, csys->mat);
 
-    cs_log_printf(CS_LOG_DEFAULT, "\n>> %-10s | %-10s | %-10s | %-10s\n",
-                  "IDS", "RHS", "TS", "VAL_PREV");
+    cs_log_printf(CS_LOG_DEFAULT, ">> %-10s | %-10s | %-10s | %-10s | %-10s\n",
+                  "IDS", "RHS", "TS", "VAL_PREV", "ENFORCED");
     for (int i = 0; i < csys->n_dofs; i++)
-      cs_log_printf(CS_LOG_DEFAULT, ">> %10d | % -.3e | % -.3e | % -.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, ">> %10d | % -.3e | % -.3e | % -.3e |"
+                    " %10d\n",
                     csys->dof_ids[i], csys->rhs[i], csys->source[i],
-                    csys->val_n[i]);
+                    csys->val_n[i], csys->intern_forced_ids[i]);
   }
 }
 
@@ -455,6 +469,7 @@ cs_cell_builder_create(void)
   cb->rpty_val = 1;
   for (int r = 0; r < CS_CDO_N_MAX_REACTIONS; r++) cb->rpty_vals[r] = 1;
 
+  cb->adv_fluxes = NULL;
   cb->ids = NULL;
   cb->values = NULL;
   cb->vectors = NULL;
@@ -480,6 +495,7 @@ cs_cell_builder_free(cs_cell_builder_t     **p_cb)
   if (cb == NULL)
     return;
 
+  BFT_FREE(cb->adv_fluxes);
   BFT_FREE(cb->ids);
   BFT_FREE(cb->values);
   BFT_FREE(cb->vectors);
@@ -535,6 +551,7 @@ cs_cell_mesh_create(const cs_cdo_connect_t   *connect)
   BFT_MALLOC(cm->f_sgn, cm->n_max_fbyc, short int);
   BFT_MALLOC(cm->f_diam, cm->n_max_fbyc, double);
   BFT_MALLOC(cm->hfc, cm->n_max_fbyc, double);
+  BFT_MALLOC(cm->pfc, cm->n_max_fbyc, double);
   BFT_MALLOC(cm->face, cm->n_max_fbyc, cs_quant_t);
   BFT_MALLOC(cm->dedge, cm->n_max_fbyc, cs_nvec3_t);
 
@@ -621,6 +638,7 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
     cm->f_sgn[f] = 0;
     cm->f_diam[f] = -DBL_MAX;
     cm->hfc[f] = -DBL_MAX;
+    cm->pfc[f] = -DBL_MAX;
     cm->face[f].meas = cm->dedge[f].meas = -DBL_MAX;
     cm->face[f].unitv[0] = cm->dedge[f].unitv[0] = -DBL_MAX;
     cm->face[f].unitv[1] = cm->dedge[f].unitv[1] = -DBL_MAX;
@@ -697,18 +715,18 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   if (cm->flag & cs_cdo_local_flag_f) {
 
     cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-9s %-9s %-4s %-38s %-38s %-11s"
-                  "%-11s %-38s\n",
+                  "%-11s %-11s %-38s\n",
                   "f", "id", "diam", "surf", "sgn", "unit", "coords", "hfc",
-                  "dlen", "dunitv");
+                  "pfc", "dlen", "dunitv");
     for (short int f = 0; f < cm->n_fc; f++) {
       cs_quant_t  fq = cm->face[f];
       cs_nvec3_t  eq = cm->dedge[f];
       cs_log_printf(CS_LOG_DEFAULT,
                     "%2d |%8d |%.3e|%.3e| %2d|% .5e % .5e % .5e|"
-                    "% .5e % .5e % .5e|%.5e|%.5e|% .5e % .5e % .5e\n",
+                    "% .5e % .5e % .5e|%.5e|%.5e|%.5e||% .5e % .5e % .5e\n",
                     f, cm->f_ids[f], cm->f_diam[f], fq.meas, cm->f_sgn[f],
                     fq.unitv[0], fq.unitv[1], fq.unitv[2], fq.center[0],
-                    fq.center[1], fq.center[2], cm->hfc[f], eq.meas,
+                    fq.center[1], fq.center[2], cm->hfc[f], cm->pfc[f], eq.meas,
                     eq.unitv[0], eq.unitv[1], eq.unitv[2]);
     }
 
@@ -782,6 +800,7 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
   BFT_FREE(cm->f_sgn);
   BFT_FREE(cm->f_diam);
   BFT_FREE(cm->hfc);
+  BFT_FREE(cm->pfc);
   BFT_FREE(cm->face);
   BFT_FREE(cm->dedge);
 
@@ -1013,7 +1032,11 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
           bft_error(__FILE__, __LINE__, 0,
                     " Invalid result; hfc = %5.3e < 0 !\n", cm->hfc[f]);
 #endif
-      }
+
+        /* Volume of the pyramid of base f and apex x_c */
+        cm->pfc[f] = cs_math_onethird * cm->hfc[f] * cm->face[f].meas;
+
+      } /* Loop on cell faces */
 
     } /* Quantities related to the pyramid of base f */
 

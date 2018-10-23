@@ -102,6 +102,140 @@ static const char _err_empty_cdo_context[] =
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the scheme flags for the current computational domain
+ *         Requirement: domain->cdo_context is alloctated
+ *
+ * \param[in, out]  domain       pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_scheme_flags(cs_domain_t    *domain)
+{
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain->cdo_context == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_cdo_context);
+
+  cs_domain_cdo_context_t  *cc = domain->cdo_context;
+
+  /* Define a scheme flag for the current domain */
+  const int  n_equations = cs_equation_get_n_equations();
+  for (int eq_id = 0; eq_id < n_equations; eq_id++) {
+
+    cs_equation_t  *eq = cs_equation_by_id(eq_id);
+    cs_param_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
+    int  vardim = cs_equation_get_var_dim(eq);
+
+    switch (scheme) {
+
+    case CS_SPACE_SCHEME_CDOVB:
+      cc->vb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
+      if (vardim == 1)
+        cc->vb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
+      else if (vardim == 3)
+        cc->vb_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
+      break;
+
+    case CS_SPACE_SCHEME_CDOVCB:
+      cc->vcb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
+      if (vardim == 1)
+        cc->vcb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
+      else if (vardim == 3)
+        cc->vcb_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
+      break;
+
+    case CS_SPACE_SCHEME_CDOFB:
+      cc->fb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
+      if (vardim == 1)
+        cc->fb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
+      else if (vardim == 3)
+        cc->fb_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P0:
+      assert(cs_equation_get_space_poly_degree(eq) == 0);
+      cc->hho_scheme_flag |= CS_FLAG_SCHEME_POLY0;
+      if (vardim == 1)
+        cc->hho_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
+      else if (vardim == 3)
+        cc->hho_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P1:
+      cc->hho_scheme_flag |= CS_FLAG_SCHEME_POLY1;
+      assert(cs_equation_get_space_poly_degree(eq) == 1);
+      if (vardim == 1)
+        cc->hho_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
+      else if (vardim == 3)
+        cc->hho_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P2:
+      cc->hho_scheme_flag |= CS_FLAG_SCHEME_POLY2;
+      assert(cs_equation_get_space_poly_degree(eq) == 2);
+      if (vardim == 1)
+        cc->hho_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
+      else if (vardim == 3)
+        cc->hho_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
+      else
+        bft_error(__FILE__, __LINE__, 0, "Invalid case");
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Undefined type of schme to solve for eq. %s."
+                  " Please check your settings."), cs_equation_get_name(eq));
+    }
+
+  } /* Loop on equations */
+
+  /* Navier-Stokes sytem */
+  if (cs_navsto_system_is_activated()) {
+
+    cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
+
+    switch (nsp->space_scheme) {
+
+    case CS_SPACE_SCHEME_CDOVB:
+      cc->vb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
+      break;
+
+    case CS_SPACE_SCHEME_CDOVCB:
+      cc->vcb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
+      break;
+
+    case CS_SPACE_SCHEME_CDOFB:
+      cc->fb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P0:
+    case CS_SPACE_SCHEME_HHO_P1:
+    case CS_SPACE_SCHEME_HHO_P2:
+      cc->hho_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
+      break;
+
+    default:
+      break;
+
+    }
+
+  } /* NavSto is activated */
+
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -243,17 +377,29 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup predefined equations which are activated.
- *         At this stage, no equation is added and the space discretization
- *         scheme and the related numerical parameters are set.
+ * \brief  First setup stage of the cs_domain_t structure
+ *         Define extra domain boundaries
+ *         Setup predefined equations
+ *         Create fields
+ *         Define cs_sles_t structures for variable fields
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * \param[in, out]  domain    pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_setup_predefined_equations(cs_domain_t   *domain)
+cs_domain_initialize_setup(cs_domain_t    *domain)
 {
+  /* Add a boundary zone gathering all "wall" boundaries */
+  if (cs_navsto_system_is_activated() ||
+      cs_walldistance_is_activated())
+    cs_domain_boundary_def_wall_zones();
+
+  /* Setup predefined equations which are activated. At this stage,
+   * no equation is added. Space discretization scheme and the related
+   * numerical parameters are set.
+   */
+
   /* Wall distance */
   if (cs_walldistance_is_activated())
     cs_walldistance_setup();
@@ -269,145 +415,23 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
   /* Navier-Stokes system */
   if (cs_navsto_system_is_activated())
     cs_navsto_system_init_setup();
+
+  /* Add variables related to user-defined and predefined equations */
+  cs_equation_create_fields();
+  cs_advection_field_create_fields();
+
+  /* Set the scheme flag for the computational domain */
+  _set_scheme_flags(domain);
+
+  /* Proceed to the settings of a cs_equation_t structure. Setup the structure
+     related to cs_sles_*
+  */
+  cs_equation_set_linear_solvers();
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the scheme flags for the current computational domain
- *         Requirement: domain->cdo_context is alloctated
- *
- * \param[in, out]  domain       pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_scheme_flags(cs_domain_t    *domain)
-{
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-  if (domain->cdo_context == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_cdo_context);
-
-  cs_domain_cdo_context_t  *cc = domain->cdo_context;
-
-  /* Define a scheme flag for the current domain */
-  const int  n_equations = cs_equation_get_n_equations();
-  for (int eq_id = 0; eq_id < n_equations; eq_id++) {
-
-    cs_equation_t  *eq = cs_equation_by_id(eq_id);
-    cs_param_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
-    int  vardim = cs_equation_get_var_dim(eq);
-
-    switch (scheme) {
-
-    case CS_SPACE_SCHEME_CDOVB:
-      cc->vb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
-      if (vardim == 1)
-        cc->vb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
-      else if (vardim == 3)
-        cc->vb_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
-      else
-        bft_error(__FILE__, __LINE__, 0, "Invalid case");
-      break;
-
-    case CS_SPACE_SCHEME_CDOVCB:
-      cc->vcb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
-      if (vardim == 1)
-        cc->vcb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
-      else if (vardim == 3)
-        cc->vcb_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
-      else
-        bft_error(__FILE__, __LINE__, 0, "Invalid case");
-      break;
-
-    case CS_SPACE_SCHEME_CDOFB:
-      cc->fb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
-      if (vardim == 1)
-        cc->fb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
-      else if (vardim == 3)
-        cc->fb_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
-      else
-        bft_error(__FILE__, __LINE__, 0, "Invalid case");
-      break;
-
-    case CS_SPACE_SCHEME_HHO_P0:
-      assert(cs_equation_get_space_poly_degree(eq) == 0);
-      cc->hho_scheme_flag |= CS_FLAG_SCHEME_POLY0;
-      if (vardim == 1)
-        cc->hho_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
-      else if (vardim == 3)
-        cc->hho_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
-      else
-        bft_error(__FILE__, __LINE__, 0, "Invalid case");
-      break;
-
-    case CS_SPACE_SCHEME_HHO_P1:
-      cc->hho_scheme_flag |= CS_FLAG_SCHEME_POLY1;
-      assert(cs_equation_get_space_poly_degree(eq) == 1);
-      if (vardim == 1)
-        cc->hho_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
-      else if (vardim == 3)
-        cc->hho_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
-      else
-        bft_error(__FILE__, __LINE__, 0, "Invalid case");
-      break;
-
-    case CS_SPACE_SCHEME_HHO_P2:
-      cc->hho_scheme_flag |= CS_FLAG_SCHEME_POLY2;
-      assert(cs_equation_get_space_poly_degree(eq) == 2);
-      if (vardim == 1)
-        cc->hho_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
-      else if (vardim == 3)
-        cc->hho_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
-      else
-        bft_error(__FILE__, __LINE__, 0, "Invalid case");
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Undefined type of schme to solve for eq. %s."
-                  " Please check your settings."), cs_equation_get_name(eq));
-    }
-
-  } /* Loop on equations */
-
-  /* Navier-Stokes sytem */
-  if (cs_navsto_system_is_activated()) {
-
-    cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
-
-    switch (nsp->space_scheme) {
-
-    case CS_SPACE_SCHEME_CDOVB:
-      cc->vb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
-      break;
-
-    case CS_SPACE_SCHEME_CDOVCB:
-      cc->vcb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
-      break;
-
-    case CS_SPACE_SCHEME_CDOFB:
-      cc->fb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
-      break;
-
-    case CS_SPACE_SCHEME_HHO_P0:
-    case CS_SPACE_SCHEME_HHO_P1:
-    case CS_SPACE_SCHEME_HHO_P2:
-      cc->hho_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
-      break;
-
-    default:
-      break;
-
-    }
-
-  } /* NavSto is activated */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build a cs_domain_t structure
+ * \brief  Last setup stage of the cs_domain_t structure
  *
  * \param[in, out]  domain            pointer to a cs_domain_t struct.
  * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
@@ -481,13 +505,29 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
                               domain->time_step,
                               domain->cdo_context);
 
-  /* Set the definition of user-defined properties and/or advection
-     fields (no more fields are created at this stage) */
-  cs_user_cdo_finalize_setup(cs_glob_domain);
-
   /* Set the range set structure for synchronization in parallel computing */
   cs_equation_assign_range_set(domain->connect);
 
+  /* Set the definition of user-defined properties and/or advection
+   * fields (no more fields are created at this stage)
+   * Last setting stage for equations: Associate properties to activate or not
+   * terms such as:
+   * --> Unsteady terms (link with a property)
+   * --> Diffusion terms (link with a property)
+   * --> Advection term  (link with an advection field)
+   * --> Reaction term (link with a property)
+   * --> Source term
+   */
+
+  cs_user_cdo_finalize_setup(cs_glob_domain);
+
+  /* Assign to a cs_equation_t structure a list of function to manage this
+   * structure during the computation.
+   * The set of functions chosen for each equation depends on the parameters
+   * specifying the cs_equation_t structure
+   */
+
+  domain->only_steady = cs_equation_assign_functions();
   if (domain->only_steady)
     domain->is_last_iter = true;
 

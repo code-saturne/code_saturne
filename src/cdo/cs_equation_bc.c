@@ -800,7 +800,7 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
     for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++)
       vflag[bf2v->ids[j]] |= bc_flag;
 
-  } /* Loop on boerder faces */
+  } /* Loop on border faces */
 
   return vflag;
 }

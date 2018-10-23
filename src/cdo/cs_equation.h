@@ -344,16 +344,12 @@ cs_equation_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign a set of pointer functions for managing the cs_equation_t
- *         structure during the computation
- *         Setup the linear algebra requirements
- *
- * \return true if all equations are steady-state otherwise false
+ * \brief  Setup the linear algebra requirements
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_equation_setup(void);
+void
+cs_equation_set_linear_solvers(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -368,6 +364,18 @@ cs_equation_setup(void);
 
 void
 cs_equation_assign_range_set(const cs_cdo_connect_t   *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a set of pointer functions for managing the cs_equation_t
+ *         structure during the computation
+ *
+ * \return true if all equations are steady-state otherwise false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_assign_functions(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

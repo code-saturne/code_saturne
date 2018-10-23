@@ -70,12 +70,17 @@ BEGIN_C_DECLS
  * \def CS_EQUATION_REACTION
  * \brief Reaction term is needed
  *
+ * \def CS_EQUATION_FORCE_VALUES
+ * \brief Add an algebraic manipulation to set the value of a given set of
+ *       interior degrees of freedom
+ *
  */
-#define CS_EQUATION_LOCKED        (1 <<  0)  //  1
-#define CS_EQUATION_UNSTEADY      (1 <<  1)  //  2
-#define CS_EQUATION_CONVECTION    (1 <<  2)  //  4
-#define CS_EQUATION_DIFFUSION     (1 <<  3)  //  8
-#define CS_EQUATION_REACTION      (1 <<  4)  // 16
+#define CS_EQUATION_LOCKED        (1 <<  0)  /* 1 */
+#define CS_EQUATION_UNSTEADY      (1 <<  1)  /* 2 */
+#define CS_EQUATION_CONVECTION    (1 <<  2)  /* 4 */
+#define CS_EQUATION_DIFFUSION     (1 <<  3)  /* 8 */
+#define CS_EQUATION_REACTION      (1 <<  4)  /* 16 */
+#define CS_EQUATION_FORCE_VALUES  (1 <<  5)  /* 32 */
 
 /*!
  * @}
@@ -361,6 +366,30 @@ typedef struct {
 
   int                           n_source_terms;
   cs_xdef_t                   **source_terms;
+
+  /*! @} */
+
+  /*!
+   * @}
+   * @name Enforcement of values in the computational domain
+   * Assign a values to a selection of degrees of freedom inside the domain
+   * This is different from the enforcement of boundary conditions but rely on
+   * the same algebraic manipulation.
+   * @{
+   *
+   * \var n_enforced_dofs
+   * Number of degrees of freedom (DoFs) to enforce
+   *
+   * \var enforced_dof_ids
+   * List of related DoF ids
+   *
+   * \var enforced_dof_values
+   * List of related values to enforce
+   */
+
+  cs_lnum_t                   n_enforced_dofs;
+  cs_lnum_t                  *enforced_dof_ids;
+  cs_real_t                  *enforced_dof_values;
 
   /*! @} */
 
@@ -733,6 +762,27 @@ cs_equation_param_has_sourceterm(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Ask if the parameters of the equation has an internal enforcement
+ *         of the degrees of freedom
+ *
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_internal_enforcement(const cs_equation_param_t     *eqp)
+{
+  assert(eqp != NULL);
+  if (eqp->flag & CS_EQUATION_FORCE_VALUES)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Check if a \ref cs_equation_param_t structure has its name member
  *         equal to the given name
  *
@@ -1092,6 +1142,27 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                      cs_flag_t               loc,
                                      cs_real_t              *array,
                                      cs_lnum_t              *index);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add an enforcement of the value of degrees of freedom located at
+ *         mesh vertices.
+ *         The spatial discretization scheme for the given equation has to be
+ *         CDO-Vertex based or CDO-Vertex+Cell-based schemes.
+ *         We assume that values are interlaced (if eqp->dim > 1)
+ *
+ * \param[in, out] eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      n_elts      number of vertices to enforce
+ * \param[in]      elt_ids     list of vertices
+ * \param[in]      elt_values  list of associated values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
+                                cs_lnum_t               n_elts,
+                                const cs_lnum_t         elt_ids[],
+                                const cs_real_t         elt_values[]);
 
 /*----------------------------------------------------------------------------*/
 

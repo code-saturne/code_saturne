@@ -78,6 +78,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 
@@ -105,6 +106,7 @@ class VelocityDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(value)
 

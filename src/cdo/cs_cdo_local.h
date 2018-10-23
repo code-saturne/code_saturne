@@ -88,7 +88,11 @@ typedef struct {
   double        rpty_vals[CS_CDO_N_MAX_REACTIONS];
   double        rpty_val; /*!< Sum of all reaction property values  */
 
-  /* Temporary buffers */
+  /* Advection-related values */
+  double       *adv_fluxes;
+
+  /* Temporary buffers (erase and updated several times during the system
+     build */
   short int    *ids;     /*!< local ids */
   double       *values;  /*!< local values */
   cs_real_3_t  *vectors; /*!< local 3-dimensional vectors */
@@ -128,16 +132,20 @@ typedef struct {
   cs_flag_t  *bf_flag;     /*!< Boundary face flag; size n_bc_faces */
 
   /* Dirichlet BCs */
-  bool        has_dirichlet;
-  double     *dir_values;    /* Values of the Dirichlet BCs (size = n_dofs) */
+  bool        has_dirichlet; /*!< Dirichlet BCs ?*/
+  double     *dir_values;    /*!< Values of the Dirichlet BCs (size = n_dofs) */
 
   /* Neumann BCs */
-  bool        has_nhmg_neumann; /*!< Non-homogeneous Neumann BCs */
+  bool        has_nhmg_neumann; /*!< Non-homogeneous Neumann BCs ? */
   double     *neu_values;       /*!< Neumann BCs values; size = n_dofs */
 
   /* Robin BCs */
   bool        has_robin;
   double     *rob_values;    /*!< Robin BCs values; size = 2*n_dofs */
+
+  /* Internal enforcement of DoFs */
+  bool        has_internal_enforcement;  /*!< Internal enforcement ? */
+  cs_lnum_t  *intern_forced_ids;         /*!< Id in the enforcement array */
 
 } cs_cell_sys_t;
 
@@ -186,6 +194,7 @@ typedef struct {
   short int   *f_sgn;   /*!< incidence number between f and c */
   double      *f_diam;  /*!< diameters of local faces */
   double      *hfc;     /*!< height of the pyramid of basis f and apex c */
+  double      *pfc;     /*!< volume of the pyramid for each face */
   cs_quant_t  *face;    /*!< face quantities (xf, area and unit normal) */
   cs_nvec3_t  *dedge;   /*!< dual edge quantities (length and unit vector) */
 

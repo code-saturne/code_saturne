@@ -531,8 +531,8 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   }
 
   /* Advection part */
-  eqc->get_advection_matrix = NULL;
-  eqc->add_advection_bc = NULL;
+  eqc->adv_func = NULL;
+  eqc->adv_func_bc = NULL;
   // TODO
 
   /* Time part */
@@ -890,7 +890,8 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
        */
       if (cell_flag & CS_FLAG_BOUNDARY) {
 
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
 
           /* Weakly enforced Dirichlet BCs for cells attached to the boundary
              csys is updated inside (matrix and rhs) */

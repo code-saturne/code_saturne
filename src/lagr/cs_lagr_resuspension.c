@@ -175,7 +175,6 @@ cs_lagr_resuspension(void)
 
     /* Treatment of internal deposition and user imposed motion */
     if (flag == CS_LAGR_PART_IMPOSED_MOTION && face_id > -1) {
-      bft_printf(" imposed motion\n");
 
       /* Reorient the face so that it is the outwarding normal */
       int reorient_face = 1;

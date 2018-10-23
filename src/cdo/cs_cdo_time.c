@@ -157,7 +157,7 @@ cs_cdo_time_update_rhs(const cs_equation_param_t    *eqp,
 
         for (cs_lnum_t i = 0; i < n_dofs; i++)
           for (int k = 0; k < stride; k++)
-            rhs[stride*i+k] += values[stride*dof_ids[i]+k];
+            rhs[stride*i+k] += values[dof_ids[stride*i+k]];
 
       }
       else {
@@ -174,7 +174,7 @@ cs_cdo_time_update_rhs(const cs_equation_param_t    *eqp,
         if (stride > 1) {
           for (cs_lnum_t i = 0; i < n_dofs; i++)
             for (int k = 0; k < stride; k++)
-              rhs[stride*i+k] += tcoef * values[stride*dof_ids[i]+k];
+              rhs[stride*i+k] += tcoef * values[dof_ids[stride*i+k]];
         }
         else {
           for (cs_lnum_t i = 0; i < n_dofs; i++)

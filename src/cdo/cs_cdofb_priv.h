@@ -79,8 +79,8 @@ struct  _cs_cdofb_t {
   cs_cdo_diffusion_flux_trace_t   *bdy_flux_op;
 
   /* Pointer of function to build the advection term */
-  cs_cdo_advection_t              *get_advection_matrix;
-  cs_cdo_advection_bc_t           *add_advection_bc;
+  cs_cdofb_advection_t              *adv_func;
+  cs_cdofb_advection_bc_t           *adv_func_bc;
 
   /* Pointer of function to apply the time scheme */
   cs_cdo_time_scheme_t            *apply_time_scheme;

@@ -272,6 +272,7 @@ class LabelDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         self.p_value = str(v)
         editor.setText(v)
@@ -321,6 +322,7 @@ class CodeNumberDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(self.value)
 
@@ -533,6 +535,7 @@ class VolumeNatureDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         data = index.model().getData(index.row(), index.column())
         dicoM2V = index.model().dicoM2V
 
@@ -561,6 +564,7 @@ class LocalizationSelectorDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
         self.value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(self.value)
 

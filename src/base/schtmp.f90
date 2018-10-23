@@ -74,92 +74,67 @@ integer          nscal  , iappel
 integer          iel    , ifac   , iscal
 integer          iflmas , iflmab
 integer          f_id
-double precision flux   , theta  , aa, bb, viscos, xmasvo, varcp
+
+double precision flux   , theta  , viscos, varcp
+
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 double precision, dimension(:), pointer :: i_mass_flux_prev, b_mass_flux_prev
-double precision, dimension(:), pointer :: brom, crom, broma, croma
+double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cpro_viscl, cpro_visct
 double precision, dimension(:), pointer :: cpro_cp, cpro_visls
 double precision, dimension(:), pointer :: cproa_cp, cproa_visls, cproa_visct
-double precision, dimension(:), pointer :: cpro_romls
-double precision, dimension(:), pointer :: cproa_romls
+double precision, dimension(:), pointer :: cpro_rho_mass, bpro_rho_mass
 
 !===============================================================================
 
 !===============================================================================
-! 0. INITIALISATION
-!===============================================================================
-
-!===============================================================================
-! 1.  AU TOUT DEBUT DE LA BOUCLE EN TEMPS
+! 1. At the really beginning of the time step
 !===============================================================================
 
 if (iappel.eq.1) then
 
-! --- Application du schema en temps sur le flux de masse
-!     Soit F le flux de masse
-!       - si istmpf = 2 (schema non standard, theta>0 en fait = 0.5)
-!         i_mass_flux      contient F_(n-2+theta) et on y met F(n-1+theta)
-!         i_mass_flux_prev contient F_(n-1+theta) et
-!                                    on y met une extrapolation en n+theta
-!       - si istmpf = 1 (schema non standard, theta=0)
-!         i_mass_flux      contient deja F_n et
-!         i_mass_flux_prev n'est pas utilise : on ne fait rien
-!       - sinon : istmpf = 0 (schema standard, theta= -999)
-!         i_mass_flux      et i_mass_flux_prev contiennent tous les deux F(n)
-!                                            : on ne fait rien
-
-
-!     Ordre 2 en temps pour le flux (theta = 0.5) a entrer dans navsto
-!       Flux convectif = 2F(n-1+theta)-F(n-2+theta)
-!       Flux conserve  =  F(n-1+theta)
-!     Au premier pas de temps, l'ancien a ete initialise dans inivar (a 0)
-!       en suite de calcul, les deux ont ete relus.
-
+  ! --- Store the previous mass flux (n-1->n) in *_mass_flux_prev
   if (istmpf.eq.2) then
     call field_get_key_int(ivarfl(iu), kimasf, iflmas)
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-    call field_get_val_s(iflmas, i_mass_flux)
-    call field_get_val_s(iflmab, b_mass_flux)
-    call field_get_val_prev_s(iflmas, i_mass_flux_prev)
-    call field_get_val_prev_s(iflmab, b_mass_flux_prev)
-    do ifac = 1 , nfac
-      flux                   =                          i_mass_flux(ifac)
-      i_mass_flux(ifac)      = 2.d0*i_mass_flux(ifac) - i_mass_flux_prev(ifac)
-      i_mass_flux_prev(ifac) = flux
+    call field_current_to_previous(iflmas)
+    call field_current_to_previous(iflmab)
+  endif
+
+  ! If required, the density at time step n-1 is updated
+  ! Note that for VOF and dilatable algorithmes, density at time step n-2
+  ! is also updated
+  ! Note that at the begining of the calculation, previous values have been
+  ! initialized by inivar
+  if (irovar.gt.0) then
+    call field_current_to_previous(icrom)
+    call field_current_to_previous(ibrom)
+
+    ! Save the latest density field seen by the mass equation
+    ! it will be updated in the correction step.
+    call field_get_id("density_mass", f_id)
+    call field_get_val_s(f_id, cpro_rho_mass)
+    call field_get_id("boundary_density_mass", f_id)
+    call field_get_val_s(f_id, bpro_rho_mass)
+
+    call field_get_val_s(icrom, crom)
+    do iel = 1, ncelet
+      cpro_rho_mass(iel) = crom(iel)
     enddo
-    do ifac = 1 , nfabor
-      flux                   =                          b_mass_flux(ifac)
-      b_mass_flux(ifac)      = 2.d0*b_mass_flux(ifac) - b_mass_flux_prev(ifac)
-      b_mass_flux_prev(ifac) = flux
+
+    call field_get_val_s(ibrom, brom)
+    do ifac = 1, nfabor
+      bpro_rho_mass(ifac) = brom(ifac)
     enddo
   endif
 
-!     Les valeurs courantes ecrasent les valeurs anterieures
-!       en cas d'extrapolation en temps (theta > 0)
-!       Pour RHO, on le fait en double si ICALHY = 1 (et sur NCELET)
-!     Au debut du calcul les flux nouveau et ancien ont ete initialises inivar
-  if (iroext.gt.0) then
-    call field_current_to_previous(icrom)
-    call field_current_to_previous(ibrom)
-  endif
   if (iviext.gt.0) then
-    call field_get_val_s(iviscl, cpro_viscl)
-    call field_get_val_s(ivisct, cpro_visct)
-    call field_get_val_prev_s(iviscl, cproa_visls)
-    call field_get_val_prev_s(ivisct, cproa_visct)
-    do iel = 1, ncel
-      cproa_visls(iel) = cpro_viscl(iel)
-      cproa_visct(iel) = cpro_visct(iel)
-    enddo
+    call field_current_to_previous(iviscl)
+    call field_current_to_previous(ivisct)
   endif
   if (icpext.gt.0) then
     if (icp.ge.0) then
-      call field_get_val_s(icp, cpro_cp)
-      call field_get_val_prev_s(icp, cproa_cp)
-      do iel = 1, ncel
-        cproa_cp(iel) = cpro_cp(iel)
-      enddo
+      call field_current_to_previous(icp)
     endif
   endif
 
@@ -172,22 +147,14 @@ if (iappel.eq.1) then
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
-          call field_get_val_s(f_id, cpro_visls)
-          call field_get_val_prev_s(f_id, cproa_visls)
-          do iel = 1, ncel
-            cproa_visls(iel) = cpro_visls(iel)
-          enddo
+          call field_current_to_previous(f_id)
         endif
       endif
       ! Densisty
       call field_get_key_int (ivarfl(isca(iscal)), kromsl, f_id)
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
         if (iroext.gt.0) then
-          call field_get_val_s(f_id, cpro_romls)
-          call field_get_val_prev_s(f_id, cproa_romls)
-          do iel = 1, ncel
-            cproa_romls(iel) = cpro_romls(iel)
-          enddo
+          call field_current_to_previous(f_id)
         endif
       endif
     enddo
@@ -214,7 +181,7 @@ elseif (iappel.eq.2) then
 
   if (initro.ne.1) then
     initro = 1
-    if (iroext.gt.0) then
+    if (iroext.gt.0) then!FIXME rm this option
       call field_current_to_previous(icrom)
       call field_current_to_previous(ibrom)
     endif
@@ -222,25 +189,15 @@ elseif (iappel.eq.2) then
   if (initvi.ne.1) then
     initvi = 1
     if (iviext.gt.0) then
-      call field_get_val_s(iviscl, cpro_viscl)
-      call field_get_val_s(ivisct, cpro_visct)
-      call field_get_val_prev_s(iviscl, cproa_visls)
-      call field_get_val_prev_s(ivisct, cproa_visct)
-      do iel = 1, ncel
-        cproa_visls(iel) = cpro_viscl(iel)
-        cproa_visct(iel) = cpro_visct(iel)
-      enddo
+      call field_current_to_previous(iviscl)
+      call field_current_to_previous(ivisct)
     endif
   endif
   if (initcp.ne.1) then
     initcp = 1
     if (icpext.gt.0) then
-      if (icp   .gt.0) then
-        call field_get_val_s(icp, cpro_cp)
-        call field_get_val_prev_s(icp, cproa_cp)
-        do iel = 1, ncel
-          cproa_cp(iel) = cpro_cp(iel)
-        enddo
+      if (icp.gt.0) then
+        call field_current_to_previous(icp)
       endif
     endif
   endif
@@ -256,11 +213,7 @@ elseif (iappel.eq.2) then
         call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
         if (f_id.ge.0.and.iscavr(iscal).le.0) then
           if (ivsext(iscal).gt.0) then
-            call field_get_val_s(f_id, cpro_visls)
-            call field_get_val_prev_s(f_id, cproa_visls)
-            do iel = 1, ncel
-              cproa_visls(iel) = cpro_visls(iel)
-            enddo
+            call field_current_to_previous(f_id)
           endif
         endif
       endif
@@ -271,31 +224,12 @@ elseif (iappel.eq.2) then
 ! 2.2 EXTRAPOLATION DES NOUVELLES VALEURS
 ! =======================================
 
-! --- Extrapolation de la viscosite et de la masse volumique dans le cas d'un
+! --- Extrapolation de la viscosite dans le cas d'un
 !     theta schema
 !     A partir de Fn-1 et Fn on calcule Fn+theta
 !     On conserve les nouvelles valeurs dans l'ancien tableau pour
 !     retablir en fin de pas de temps
 
-!     Le calcul pour Rho est fait sur NCELET afin d'economiser un echange.
-
-  if (iroext.gt.0) then
-    call field_get_val_s(icrom, crom)
-    call field_get_val_prev_s(icrom, croma)
-    theta  = thetro
-    do iel = 1, ncelet
-      xmasvo = crom(iel)
-      crom(iel) = (1.d0+theta)*crom(iel) - theta*croma(iel)
-      croma(iel) = xmasvo
-    enddo
-    call field_get_val_s(ibrom, brom)
-    call field_get_val_prev_s(ibrom, broma)
-    do ifac = 1, nfabor
-      xmasvo = brom(ifac)
-      brom(ifac) = (1.d0+theta)*brom(ifac) - theta*broma(ifac)
-      broma(ifac) = xmasvo
-    enddo
-  endif
   if (iviext.gt.0) then
     call field_get_val_s(iviscl, cpro_viscl)
     call field_get_val_s(ivisct, cpro_visct)
@@ -347,21 +281,6 @@ elseif (iappel.eq.2) then
           enddo
         endif
       endif
-      ! Density
-      call field_get_key_int (ivarfl(isca(iscal)), kromsl, f_id)
-      if (f_id.ge.0.and.iscavr(iscal).le.0) then
-        if (iroext.gt.0) then
-          theta = thetvs(iscal)
-          call field_get_val_s(f_id, cpro_romls)
-          call field_get_val_prev_s(f_id, cproa_romls)
-          do iel = 1, ncel
-            viscos = cpro_romls(iel)
-            cpro_romls(iel) = (1.d0+theta)*cpro_romls(iel) &
-                                    -theta *cproa_romls(iel)
-            cproa_romls(iel) = viscos
-          enddo
-        endif
-      endif
 
     enddo
   endif
@@ -379,9 +298,7 @@ elseif (iappel.eq.3) then
 !        On suppose qu'il n'y en a qu'un seul.
 
 !     si istmpf = 1 : standard : on ne fait rien
-!     si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5)
-!       on calcule f(n+theta) par interpolation a partir
-!       de F_(n-1+theta) et f(n+1) et on le met dans i_mass_flux
+!     si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5) : on ne fait rien
 !     si istmpf = 0 : explicite (thetfl = 0) : on remet F(n) dans
 !       i_mass_flux sauf a la derniere iteration (un traitement
 !       complementaire sera fait en iappel=4)
@@ -390,27 +307,13 @@ elseif (iappel.eq.3) then
 !     - a toutes les iterations si ISTMPF.NE.0
 !     - a toutes les iterations sauf la derniere si ISTMPF.EQ.0
 
-  call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-  call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-  call field_get_val_s(iflmas, i_mass_flux)
-  call field_get_val_s(iflmab, b_mass_flux)
-
-  if (istmpf.ne.1) then
+  if (istmpf.eq.0) then
+    call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+    call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+    call field_get_val_s(iflmas, i_mass_flux)
+    call field_get_val_s(iflmab, b_mass_flux)
     call field_get_val_prev_s(iflmas, i_mass_flux_prev)
     call field_get_val_prev_s(iflmab, b_mass_flux_prev)
-  endif
-
-  if (istmpf.eq.2) then
-    theta  = thetfl
-    aa = 1.d0/(2.d0-theta)
-    bb = (1.d0-theta)/(2.d0-theta)
-    do ifac = 1 , nfac
-      i_mass_flux(ifac) = aa * i_mass_flux(ifac) + bb * i_mass_flux_prev(ifac)
-    enddo
-    do ifac = 1 , nfabor
-      b_mass_flux(ifac) = aa * b_mass_flux(ifac) + bb * b_mass_flux_prev(ifac)
-    enddo
-  else if (istmpf.eq.0) then
     do ifac = 1 , nfac
       i_mass_flux(ifac) = i_mass_flux_prev(ifac)
     enddo
@@ -431,11 +334,9 @@ elseif (iappel.eq.4) then
 !        On suppose qu'il n'y en a qu'un seul.
 
 !     Si istmpf = 1 : standard : on ne fait rien
-!     Si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5)
-!       on calcule F(n+theta) par interpolation a partir
-!       de F_(n-1+theta) et F(n+1) et on le met dans i_mass_flux)
+!     Si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5) : on ne fait rien
 !     Si istmpf = 0 : explicite (thetfl = 0)
-!       On sauvegarde F_(n+1) dans i_mas_flux_prev,mais on continue
+!       On sauvegarde F_(n+1) dans i_mass_flux_prev, mais on continue
 !       les calculs avec F_(n) mis dans i_mass_flux
 
 !     On retablira au dernier appel de schtmp pour istmpf = 0
@@ -507,20 +408,6 @@ elseif (iappel.eq.5) then
 ! 3.1 RETABLISSEMENT POUR LES PROPRIETES PHYSIQUES
 ! ================================================
 
-!     Le calcul pour Rho est fait sur NCELET afin d'economiser un echange.
-
-  if (iroext.gt.0) then
-    call field_get_val_s(icrom, crom)
-    call field_get_val_prev_s(icrom, croma)
-    do iel = 1, ncelet
-      crom(iel) = croma(iel)
-    enddo
-    call field_get_val_s(ibrom, brom)
-    call field_get_val_prev_s(ibrom, broma)
-    do ifac = 1, nfabor
-      brom(ifac) = broma(ifac)
-    enddo
-  endif
   if (iviext.gt.0) then
     call field_get_val_s(iviscl, cpro_viscl)
     call field_get_val_s(ivisct, cpro_visct)
@@ -554,17 +441,6 @@ elseif (iappel.eq.5) then
           call field_get_val_prev_s(f_id, cproa_visls)
           do iel = 1, ncel
             cpro_visls(iel) = cproa_visls(iel)
-          enddo
-        endif
-      endif
-      ! Density
-      call field_get_key_int (ivarfl(isca(iscal)), kromsl, f_id)
-      if (f_id.ge.0.and.iscavr(iscal).le.0) then
-        if (iroext.gt.0) then
-          call field_get_val_s(f_id, cpro_romls)
-          call field_get_val_prev_s(f_id, cproa_romls)
-          do iel = 1, ncel
-            cpro_romls(iel) = cproa_romls(iel)
           enddo
         endif
       endif

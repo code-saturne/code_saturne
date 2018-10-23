@@ -31,6 +31,17 @@ User changes:
 
 Numerics:
 
+- Major change in the time stepping to ensure 2nd time order for
+  variable density flow if 2nd time order is activated.
+   It impacts all the second time order time stepping and also all variable
+   densities algorithms.
+  * If you want to go back to the previous algorithm for variable
+    density, you can specify ipredfl = 0 in the usipsu
+    (cs_user_parameters.f90) subroutine.
+  * The momentum equation is staggered in time, that is to say, when
+    2nd order is activated, velocity is solved from time n-1/2 to n+1/2.
+    A special care should be done for time averaged quantities.
+
 - Porous modelling: adapte the numerics to discontinous porosity.
   * The velocity is interpolated at faces using mass conservation and the momentum is
     corrected so that the steady state of Euler equations is retrieved.
@@ -67,9 +78,27 @@ Numerics:
     Gauss-Seidel smoother, this choice is set by default over the
     standard preconditioned congugate gradient.
 
-- Add vector-valued Laplacian for HHO schemes (case k=1)
+- Add vector-valued Laplacian for HHO schemes (case k=1). Based on
+  Daniel Castenon's work.
 
 - Add vector-valued Laplacian for CDO vertex-based schemes
+
+- Add the steady Stokes equations with CDO Face-based schemes (based
+  on the work of Riccardo Milani).
+  * Velocity-pressure coupling is handled thanks to an Uzawa-Augmented
+    Lagrangian algorithm
+
+- Several new features for scalar-valued CDO Face-based scheme
+  * Add an advection term: Upwind scheme in non-conservative
+    formulation (Joint work with Hanz CHENG (Univ. Monash, Australia)
+  * Add unsteady and reaction term for scalar-valued CDO Face-based
+  scheme: Theta-scheme (including implicit and Crank-Nicolson)
+  * Add a weak enforcement of Dirichlet boundary conditions (Nitsche
+  technique) and also its symmetric version (based on Riccardo
+  Milani's work)
+
+- Add enforcement of internal degrees of freedom in scalar-valued CDO
+  Vertex-based schemes
 
 Architectural changes:
 

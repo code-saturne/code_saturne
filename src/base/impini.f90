@@ -543,7 +543,7 @@ write(nfecra,9900)
 
 ! --- Stokes
 write(nfecra,4114)istmpf,thetfl,     &
-     iroext,thetro,                  &
+     iroext,                         &
      iviext,thetvi,                  &
      icpext,thetcp,                  &
      thetsn,thetst,epsup
@@ -569,8 +569,6 @@ write(nfecra,9900)
 '                ',14x,       ' (0 : explicite',                /,&
 '                ',14x,       ' (1 : n+thetro avec thetro=1/2', /,&
 '                ',14x,       ' (2 : n+thetro avec thetro=1',   /,&
-'       THETRO = ', e14.5,    ' (theta pour masse volumique',   /,&
-'                               ((1+theta)nouveau-theta ancien',/,&
 '       IVIEXT = ',4x,i10,    ' (extrap. viscosite totale',     /,&
 '                ',14x,       ' (0 : explicite',                /,&
 '                ',14x,       ' (1 : n+thetvi avec thetro=1/2', /,&
@@ -609,8 +607,6 @@ write(nfecra,9900)
 '                ',14x,       ' (0: explicit',                  /,&
 '                ',14x,       ' (1: n+thetro with thetro=1/2',  /,&
 '                ',14x,       ' (2: n+thetro with thetro=1',    /,&
-'       THETRO = ', e14.5,    ' (theta for density',            /,&
-'                               ((1+theta).new-theta.old',      /,&
 '       IVIEXT = ',4x,i10,    ' (total viscosity extrapolation',/,&
 '                ',14x,       ' (0: explicit',                  /,&
 '                ',14x,       ' (1: n+thetvi with thetro=1/2',  /,&

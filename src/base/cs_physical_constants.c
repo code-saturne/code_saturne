@@ -266,7 +266,7 @@ BEGIN_C_DECLS
         (dimensionless)
   \var  cs_fluid_properties_t::ipthrm
         uniform variable thermodynamic pressure:
-        - 0: false
+        - 0: false (ie not variable)
         - 1: true
   \var  cs_fluid_properties_t::pther
         Thermodynamic pressure for the current time step.

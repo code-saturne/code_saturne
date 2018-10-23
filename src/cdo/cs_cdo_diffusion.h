@@ -118,6 +118,50 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique - Face-based version
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux trace operator
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_diffusion_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                  const cs_cell_mesh_t           *cm,
+                                  cs_cdo_diffusion_flux_trace_t  *flux_op,
+                                  cs_face_mesh_t                 *fm,
+                                  cs_cell_builder_t              *cb,
+                                  cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique plus a symmetric treatment - Face-based version
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux trace operator
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_diffusion_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                  const cs_cell_mesh_t           *cm,
+                                  cs_cdo_diffusion_flux_trace_t  *flux_op,
+                                  cs_face_mesh_t                 *fm,
+                                  cs_cell_builder_t              *cb,
+                                  cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the normal trace operator for a given border face when a
  *          WBS algo. is used for reconstructing the degrees of freedom
  *          Specific to CDO-V+C schemes

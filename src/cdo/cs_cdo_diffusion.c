@@ -193,11 +193,314 @@ _enforce_nitsche(const double              pcoef,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute \f$ \int_{fb} \nabla (u) \cdot \nu_{fb} v \f$ where \p fb
+ *         is a boundary faces (Co+St algorithm)
+ *
+ * \param[in]       fb       index of the boundary face on the local numbering
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in]       h_info    \ref cs_param_hodge_t structure for diffusion
+ * \param[in]       kappa_f   diffusion property against face vector for all
+ *                            faces
+ * \param[in, out]  ntrgrd    pointer to a local matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cdofb_normal_flux_reco(short int                  fb,
+                        const cs_cell_mesh_t      *cm,
+                        const cs_cell_builder_t   *cb,
+                        const cs_param_hodge_t     h_info,
+                        const cs_real_3_t         *kappa_f,
+                        cs_sdm_t                  *ntrgrd)
+{
+  /* Sanity check */
+  assert(cb != NULL);
+  assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
+  assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
+                      CS_CDO_LOCAL_HFQ));
+  assert(cm->f_sgn[fb] == 1);  /* +1 because it's a boundary face */
+
+  const short int  nfc = cm->n_fc;
+  const cs_quant_t  pfbq = cm->face[fb];
+  const cs_nvec3_t  debq = cm->dedge[fb];
+
+  /* |fb|^2 * nu_{fb}^T.kappa.nu_{fb} */
+  const cs_real_t  fb_k_fb = pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv);
+  const cs_real_t  beta_fbkfb_o_pfc = h_info.coef * fb_k_fb / cm->pfc[fb];
+
+  cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (nfc + 1);
+  cs_real_t  row_sum = 0.0;
+  for (short int f = 0; f < nfc; f++) {
+
+    const cs_real_t  if_ov = cm->f_sgn[f] / cm->vol_c;
+    const cs_real_t  f_k_fb = pfbq.meas * _dp3(kappa_f[f], pfbq.unitv);
+    const cs_quant_t  pfq = cm->face[f];
+    cs_real_t  stab = - pfq.meas*debq.meas * _dp3(debq.unitv, pfq.unitv);
+    if (f == fb) stab += cm->vol_c;
+    const cs_real_t  int_gradf_dot_f = if_ov *
+      ( f_k_fb                        /* Cons */
+        + beta_fbkfb_o_pfc * stab);   /* Stab */
+    ntrgrd_fb[f] -= int_gradf_dot_f;  /* Minus because -du/dn */
+    row_sum      += int_gradf_dot_f;
+
+  } /* Loop on f */
+
+  /* Cell column */
+  ntrgrd_fb[nfc] += row_sum;
+
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique - Face-based version
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux trace operator
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_diffusion_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                  const cs_cell_mesh_t           *cm,
+                                  cs_cdo_diffusion_flux_trace_t  *flux_op,
+                                  cs_face_mesh_t                 *fm,
+                                  cs_cell_builder_t              *cb,
+                                  cs_cell_sys_t                  *csys)
+{
+  CS_UNUSED(fm);
+
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(cs_equation_param_has_diffusion(eqp));
+
+  /* Enforcement of the Dirichlet BCs */
+  if (csys->has_dirichlet == false)
+    return;  /* Nothing to do */
+
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const double chi =
+    eqp->bc_penalization_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+
+  /* First step: pre-compute the product between diffusion property and the
+     face vector areas */
+  cs_real_3_t  *kappa_f = cb->vectors;
+  if (h_info.is_unity) {
+    for (short int f = 0; f < cm->n_fc; f++) {
+      for (short int k = 0; k < 3; k++)
+        kappa_f[f][k] = cm->face[f].meas*cm->face[f].unitv[k];
+    }
+  }
+  else if (h_info.is_iso) {
+    for (short int f = 0; f < cm->n_fc; f++) {
+      const cs_real_t  coef = cm->face[f].meas*cb->dpty_val;
+      for (short int k = 0; k < 3; k++)
+        kappa_f[f][k] = coef * cm->face[f].unitv[k];
+    }
+  }
+  else {
+    for (short int f = 0; f < cm->n_fc; f++) {
+      cs_math_33_3_product((const cs_real_3_t *)cb->dpty_mat, cm->face[f].unitv,
+                           kappa_f[f]);
+      for (short int k = 0; k < 3; k++) kappa_f[f][k] *= cm->face[f].meas;
+    }
+  }
+
+  /* Initialize the matrix related this flux reconstruction operator */
+  const short int n_dofs = cm->n_fc + 1;
+  cs_sdm_t *bc_op = cb->loc;
+  cs_sdm_square_init(n_dofs, bc_op);
+
+  /* First pass: build the bc_op matrix */
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
+        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+
+      /* Compute \int_f du/dn v and update the matrix */
+      _cdofb_normal_flux_reco(f, cm, cb, h_info,
+                              (const cs_real_t (*)[3])kappa_f,
+                              bc_op);
+
+    } /* If Dirichlet */
+
+  } /* Loop boundary faces */
+
+  /* Second pass: add the bc_op matrix, add the BC */
+
+  /* !!! ATTENTION !!!
+   * Two passes in order to avoid truncation error if the arbitrary coefficient
+   * of the Nitsche algorithm is large
+   */
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
+        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+
+      /* chi * \meas{f} / h_f  */
+      const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
+
+      /* Diagonal term */
+      bc_op->val[f*(n_dofs + 1)] += pcoef;
+
+      /* rhs */
+      csys->rhs[f] += pcoef * csys->dir_values[f];
+
+    } /* If Dirichlet */
+
+  } /* Loop on boundary faces */
+
+  /* Update the local system matrix */
+  cs_sdm_add(csys->mat, bc_op);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique plus a symmetric treatment - Face-based version
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux trace operator
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_diffusion_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                  const cs_cell_mesh_t           *cm,
+                                  cs_cdo_diffusion_flux_trace_t  *flux_op,
+                                  cs_face_mesh_t                 *fm,
+                                  cs_cell_builder_t              *cb,
+                                  cs_cell_sys_t                  *csys)
+{
+  CS_UNUSED(fm);
+
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(cs_equation_param_has_diffusion(eqp));
+
+  /* Enforcement of the Dirichlet BCs */
+  if (csys->has_dirichlet == false)
+    return;  /* Nothing to do */
+
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const double chi =
+    eqp->bc_penalization_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+
+  /* First step: pre-compute the product between diffusion property and the
+     face vector areas */
+  cs_real_3_t  *kappa_f = cb->vectors;
+  if (h_info.is_unity) {
+    for (short int f = 0; f < cm->n_fc; f++) {
+      for (short int k = 0; k < 3; k++)
+        kappa_f[f][k] = cm->face[f].meas*cm->face[f].unitv[k];
+    }
+  }
+  else if (h_info.is_iso) {
+    for (short int f = 0; f < cm->n_fc; f++) {
+      const cs_real_t  coef = cm->face[f].meas*cb->dpty_val;
+      for (short int k = 0; k < 3; k++)
+        kappa_f[f][k] = coef * cm->face[f].unitv[k];
+    }
+  }
+  else {
+    for (short int f = 0; f < cm->n_fc; f++) {
+      cs_math_33_3_product((const cs_real_3_t *)cb->dpty_mat, cm->face[f].unitv,
+                           kappa_f[f]);
+      for (short int k = 0; k < 3; k++) kappa_f[f][k] *= cm->face[f].meas;
+    }
+  }
+
+  const short int n_dofs = cm->n_fc + 1, n_f = cm->n_fc;
+  cs_sdm_t  *bc_op = cb->loc, *bc_op_t = cb->aux;
+  cs_sdm_square_init(n_dofs, bc_op);
+
+  /* First pass: build the bc_op matrix */
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
+        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+
+      /* Compute \int_f du/dn v and update the matrix */
+      _cdofb_normal_flux_reco(f, cm, cb, h_info,
+                              (const cs_real_t (*)[3])kappa_f,
+                              bc_op);
+
+    } /* If Dirichlet */
+
+  } /* Loop boundary faces */
+
+  /* Second pass: add the bc_op matrix, add the BC */
+  /* !!! ATTENTION !!!
+   * Two passes in order to avoid truncation error if the arbitrary coefficient
+   * of the Nitsche algo is large
+   */
+  cs_real_t *dir_val = cb->values, *u0_trgradv = cb->values + n_dofs;
+
+  /* Putting the face DoFs of the BC, into a face- and cell-DoFs array */
+  memcpy(dir_val, csys->dir_values, n_f*sizeof(cs_real_t));
+  dir_val[n_f] = 0.;
+
+  /* Update bc_op = bc_op + transp and transp = transpose(bc_op) cb->loc
+     plays the role of the flux operator */
+  cs_sdm_square_add_transpose(bc_op, bc_op_t);
+  cs_sdm_square_matvec(bc_op_t, dir_val, u0_trgradv);
+
+  for (short int i = 0; i < n_dofs; i++) /* Cell too! */
+    csys->rhs[i] += u0_trgradv[i];
+
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
+        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+
+      /* chi * \meas{f} / h_f  */
+      const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
+
+      /* Diagonal term */
+      bc_op->val[f*(n_dofs + 1)] += pcoef;
+
+      /* rhs */
+      csys->rhs[f] += pcoef * csys->dir_values[f];
+
+    } /* If Dirichlet */
+
+  } /* Loop on boundary faces */
+
+  /* Update the local system matrix */
+  cs_sdm_add(csys->mat, bc_op);
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -834,7 +1137,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
   /* Contribution of the Dirichlet conditions */
   cs_sdm_matvec(csys->mat, x_dir, ax_dir);
 
-  /* Second pass: Replace the Dirichlet block by a diagonal block*/
+  /* Second pass: Replace the Dirichlet block by a diagonal block */
   for (short int i = 0; i < csys->n_dofs; i++) {
 
     if (csys->dof_flag[i] & (CS_CDO_BC_DIRICHLET | CS_CDO_BC_HMG_DIRICHLET)) {
@@ -916,7 +1219,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
   /* Contribution of the Dirichlet conditions */
   cs_sdm_block_matvec(csys->mat, x_dir, ax_dir);
 
-  /* Second pass: Replace the Dirichlet block by a diagonal block*/
+  /* Second pass: Replace the Dirichlet block by a diagonal block */
   int  s = 0;
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 

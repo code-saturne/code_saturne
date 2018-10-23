@@ -676,6 +676,21 @@ endif
 ! It is then used in tridim to update buoyant scalars and density in U-P loop
 call cs_parameters_set_n_buoyant_scalars
 
+! If density is variable, a particular care must be taken when dealing with
+! density in the unsteady term in the velocity pressure loop
+if (irovar.eq.1) then
+  ! EOS density, imposed after the correction step, so we need
+  ! to keep the previous one, which is in balance with the mass
+  f_name = 'density_mass'
+  itycat = FIELD_PROPERTY
+  ityloc = 1 ! cells
+  call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+  f_name = 'boundary_density_mass'
+  itycat = FIELD_PROPERTY
+  ityloc = 3 ! boundary faces
+  call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+endif
+
 ! Some C mappings
 call cs_field_pointer_map_boundary
 

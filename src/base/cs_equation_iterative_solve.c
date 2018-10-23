@@ -490,7 +490,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
     smbini[iel] = smbrp[iel];
 
-  /* pvar is initialized on ncelet to avoid a synchronization */
+  /* pvar is initialized on n_cells_ext to avoid a synchronization */
 
 # pragma omp parallel for
   for (cs_lnum_t iel = 0 ; iel < n_cells_ext; iel++)
@@ -1043,7 +1043,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               \f$ \vect{a}^k \f$.
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
- *                               pvara (usually pvar=pvara)
+ *                               \ref pvara (usually \ref pvar= \ref pvara)
  * \param[in]     coefav        boundary condition array for the variable
  *                               (explicit part)
  * \param[in]     coefbv        boundary condition array for the variable
@@ -1304,7 +1304,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     for (isou = 0 ; isou < 3 ; isou++)
       smbini[iel][isou] = smbrp[iel][isou];
 
-  /* pvar is initialized on n_cellset to avoid a synchronization */
+  /* pvar is initialized on n_cells_ext to avoid a synchronization */
 # pragma omp parallel for private(isou)
   for (cs_lnum_t iel = 0 ; iel < n_cells_ext ; iel++)
     for (isou = 0 ; isou < 3 ; isou++)
@@ -2108,7 +2108,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     for (isou = 0 ; isou < 6 ; isou++)
       smbini[iel][isou] = smbrp[iel][isou];
 
-  /* pvar is initialized on n_cellset to avoid a synchronization */
+  /* pvar is initialized on n_cells_ext to avoid a synchronization */
 # pragma omp parallel for private(isou)
   for (cs_lnum_t iel = 0 ; iel < n_cells_ext ; iel++)
     for (isou = 0 ; isou < 6 ; isou++)

@@ -157,10 +157,10 @@ module optcal
   !> - 1: second-order: the physical property \f$\phi\f$ is
   !> extrapolated according to the formula
   !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$ being
-  !> given by the value of \ref thetro = 0.5
+  !> given by the value of 0.5
   !> - 2: first-order: the physical property \f$\phi\f$ is
   !> extrapolated at $n+1$ according to the same formula
-  !> as when \ref iroext = 1 but with \f$\theta\f$ = \ref thetro = 1
+  !> as when \ref iroext = 1 but with \f$\theta\f$ = 1
   integer, save ::          iroext
 
   !> \ref iviext specifies the time scheme activated
@@ -274,17 +274,6 @@ module optcal
   double precision, save :: thetvi
 
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
-  !> property \f$\phi\f$ "density" when the extrapolation has been
-  !> activated (see \ref iroext), according to the formula
-  !> \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
-  !> The value of \f$\theta\f$ = \ref thetro is deduced from the value chosen
-  !> for \ref iroext. Generally, only the value 0.5 is used.
-  !>    -  0 : explicit
-  !>    - 1/2: extrapolated in n+1/2
-  !>    -  1 : extrapolated in n+1
-  double precision, save :: thetro
-
-  !> \f$ \theta \f$-scheme for the extrapolation of the physical
   !> property \f$\phi\f$ "specific heat" when the extrapolation
   !> has been activated (see \ref icpext), according to the
   !> formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
@@ -349,7 +338,7 @@ module optcal
   !>    - 1: standard least squares method
   !>    - 2: least square method with extended neighborhood
   !>    - 3: least square method with reduced extended neighborhood
-  !>    - 4: iterative precess initialized by the least squares method
+  !>    - 4: iterative process initialized by the least squares method
   integer(c_int), pointer, save :: imrgra
 
   !> non orthogonality angle of the faces, in radians.
