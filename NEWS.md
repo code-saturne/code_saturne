@@ -128,6 +128,8 @@ Architectural changes:
 
 Bug fixes:
 
+- Fix CGNS reader so as to handle cases with unordered sections.
+
 - Fix allocation size for values at injection in case of mass source terms
   with coupled Reynolds stress solver.
 

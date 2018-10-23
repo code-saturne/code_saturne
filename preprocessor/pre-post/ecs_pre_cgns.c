@@ -183,13 +183,13 @@ typedef struct {
                                                      les sommets, cellules,
                                                      et cellules de bord     */
   int             nbr_sections;                   /* Nombre de sections      */
-  int             num_som_deb;                    /* Numéro premier sommet   */
-  int             num_elt_deb;                    /* Numéro premier élement  */
-  int             num_elt_fin;                    /* Numéro dernier élement  */
+  cgsize_t        num_som_deb;                    /* Numéro premier sommet   */
+  cgsize_t        num_elt_deb;                    /* Numéro premier élement  */
+  cgsize_t        num_elt_fin;                    /* Numéro dernier élement  */
   CS_CG_ENUM(AngleUnits_t)    angle;              /* Unités angles           */
   ecs_loc_cgns_section_t  *tab_sections;          /* Descriptions sections   */
-  bool            trait_renum;                    /* Utilisation de renum ?  */
-  int            *renum;                          /* Numéro CGNS -> ECS      */
+  cgsize_t        renum_size;                     /* Renumbering array size  */
+  cgsize_t       *renum;                          /* Numéro CGNS -> ECS      */
 
 } ecs_loc_cgns_zone_t;
 
@@ -483,7 +483,7 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
     num_zone = ind_zone + 1;
     ptr_zone = tab_zone + ind_zone;
 
-    ptr_zone->trait_renum = false;
+    ptr_zone->renum_size = -1;
     ptr_zone->num_elt_deb = INT_MAX;
     ptr_zone->num_elt_fin = INT_MIN;
     ptr_zone->renum = NULL;
@@ -925,8 +925,10 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
                  num_boco, nom_tmp, BCTypeName[bocotype],
                  GridLocationName[GridLocation]);
 
-          if (GridLocation != CS_CG_ENUM(Vertex))
-            ptr_zone->trait_renum = true;
+          if (GridLocation != CS_CG_ENUM(Vertex)) {
+            if (ptr_zone->renum_size < 0)
+              ptr_zone->renum_size = 0;
+          }
 
         }
 
@@ -1974,7 +1976,6 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
   ecs_int_t    ind_val;
   ecs_int_t    ind_som;
   ecs_int_t    cpt_elt_loc;
-  ecs_int_t    cpt_elt_zone;
   ecs_int_t    cpt_section;
   ecs_int_t    nbr_elt_loc;
   ecs_int_t    nbr_elt_zone;
@@ -2134,6 +2135,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
     nbr_elt_zone = 0;
 
+    cgsize_t max_elt_zone = 0;
 
     /* Cas d'une zone structurée */
 
@@ -2150,6 +2152,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
         cpt_elt_ent[ECS_ENTMAIL_CEL] += nbr_elt_loc;
         cpt_val_ent[ECS_ENTMAIL_CEL] += nbr_elt_loc * 8;
       }
+
+      max_elt_zone = nbr_elt_zone;
 
     }
 
@@ -2171,6 +2175,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
         nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
 
         ient = ecs_maillage_pre__ret_typ_geo(ecs_typ);
+
+        max_elt_zone = ECS_MAX(max_elt_zone, ptr_section->num_elt_fin);
 
         if (ptr_section->type == CS_CG_ENUM(MIXED)) {
 
@@ -2285,8 +2291,11 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
     /* Ajout pour conditions aux limites */
 
-    if (ptr_zone->trait_renum == true) {
-      ECS_MALLOC(ptr_zone->renum, nbr_elt_zone, int);
+    if (ptr_zone->renum_size > -1) {
+      cgsize_t n = max_elt_zone + 1;
+      ECS_MALLOC(ptr_zone->renum, n, cgsize_t);
+      for (cgsize_t i = 0; i < n; i++)
+        ptr_zone->renum[i] = 0;
     }
 
   } /* Fin boucle sur les zones */
@@ -2344,8 +2353,6 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
     num_zone = ind_zone + 1;
     ptr_zone = tab_zone + ind_zone;
-
-    cpt_elt_zone = 0;
 
     /* Cas d'une zone structurée */
 
@@ -2655,13 +2662,13 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           if (ient != ECS_ENTMAIL_NONE) {
 
-            if (ptr_zone->trait_renum == true) {
+            cgsize_t cg_elt_id = ptr_section->num_elt_deb + cpt_elt_loc - 1;
+
+            if (ptr_zone->renum_size > 0) {
               if (ient == ient_max - 1)
-                ptr_zone->renum[cpt_elt_zone++] = cpt_elt_ent[ient] + 1;
+                ptr_zone->renum[cg_elt_id] = cpt_elt_ent[ient] + 1;
               else if (ient == ient_max)
-                ptr_zone->renum[cpt_elt_zone++] = -(cpt_elt_ent[ient] + 1);
-              else
-                ptr_zone->renum[cpt_elt_zone++] = 0;
+                ptr_zone->renum[cg_elt_id] = -(cpt_elt_ent[ient] + 1);
             }
 
             if (ind_zone_ent[ient] != NULL)
@@ -2673,9 +2680,6 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
             cpt_elt_ent[ient]++;
 
           }
-
-          else if (ptr_zone->trait_renum == true)
-            ptr_zone->renum[cpt_elt_zone++] = 0;
 
           cpt_elt_loc++;
 
