@@ -2293,6 +2293,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
     if (ptr_zone->renum_size > -1) {
       cgsize_t n = max_elt_zone + 1;
+      ptr_zone->renum_size = n;
       ECS_MALLOC(ptr_zone->renum, n, cgsize_t);
       for (cgsize_t i = 0; i < n; i++)
         ptr_zone->renum[i] = 0;
@@ -2957,7 +2958,7 @@ ecs_loc_pre_cgns__cree_grps_boco(const ecs_loc_cgns_base_t  *base_maillage,
             /* If boundary condition references elements not present,
                ignore it (workaroud for bug in ICEM Meshing 13 output). */
 
-            if (ind_ent > n_elts_zone)
+            if (ind_ent > ptr_zone->renum_size)
               continue;
 
             /* Stockage des valeurs lues avant transfert dans maillage */
