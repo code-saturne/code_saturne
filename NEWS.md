@@ -78,9 +78,27 @@ Numerics:
     Gauss-Seidel smoother, this choice is set by default over the
     standard preconditioned congugate gradient.
 
-- Add vector-valued Laplacian for HHO schemes (case k=1)
+- Add vector-valued Laplacian for HHO schemes (case k=1). Based on
+  Daniel Castenon's work.
 
 - Add vector-valued Laplacian for CDO vertex-based schemes
+
+- Add the steady Stokes equations with CDO Face-based schemes (based
+  on the work of Riccardo Milani).
+  * Velocity-pressure coupling is handled thanks to an Uzawa-Augmented
+    Lagrangian algorithm
+
+- Several new features for scalar-valued CDO Face-based scheme
+  * Add an advection term: Upwind scheme in non-conservative
+    formulation (Joint work with Hanz CHENG (Univ. Monash, Australia)
+  * Add unsteady and reaction term for scalar-valued CDO Face-based
+  scheme: Theta-scheme (including implicit and Crank-Nicolson)
+  * Add a weak enforcement of Dirichlet boundary conditions (Nitsche
+  technique) and also its symmetric version (based on Riccardo
+  Milani's work)
+
+- Add enforcement of internal degrees of freedom in scalar-valued CDO
+  Vertex-based schemes
 
 Architectural changes:
 
