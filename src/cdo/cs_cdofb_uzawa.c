@@ -649,7 +649,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
           /* Weakly enforced Dirichlet BCs for cells attached to the boundary
              csys is updated inside (matrix and rhs) */
-          eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+          eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
         }
 

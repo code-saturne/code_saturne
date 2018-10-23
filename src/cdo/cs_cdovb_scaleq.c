@@ -474,7 +474,7 @@ _vb_apply_bc(cs_real_t                      time_eval,
   if (cs_equation_param_has_diffusion(eqp)) {
 
     if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
-      eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+      eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
   }
 
@@ -794,7 +794,6 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
-  eqc->bdy_flux_op = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
 
     switch (eqp->diffusion_hodge.algo) {
@@ -802,20 +801,17 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     case CS_PARAM_HODGE_ALGO_COST:
       eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_stiffness;
-      eqc->bdy_flux_op = cs_cdovb_diffusion_cost_flux_op;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
       eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
-      eqc->bdy_flux_op = cs_cdovb_diffusion_cost_flux_op;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
       eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ |
         CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_wbs_get_stiffness;
-      eqc->bdy_flux_op = cs_cdovb_diffusion_wbs_flux_op;
       break;
 
     default:
@@ -844,8 +840,28 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
     eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ;
-    eqc->enforce_dirichlet = cs_cdovb_diffusion_weak_dirichlet;
-    if (cs_equation_param_has_diffusion(eqp) == false)
+    if (cs_equation_param_has_diffusion(eqp)) {
+
+      switch (eqp->diffusion_hodge.algo) {
+
+      case CS_PARAM_HODGE_ALGO_COST:
+      case CS_PARAM_HODGE_ALGO_VORONOI:
+        eqc->enforce_dirichlet = cs_cdo_diffusion_vbcost_weak_dirichlet;
+        break;
+
+      case CS_PARAM_HODGE_ALGO_WBS:
+        eqc->enforce_dirichlet = cs_cdo_diffusion_vbwbs_weak_dirichlet;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  (" %s: Invalid type of algorithm to build the diffusion term."),
+                  __func__);
+
+      } /* Switch on Hodge algo. */
+
+    }
+    else
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid choice of Dirichlet enforcement.\n"
                 " Diffusion term should be active.", __func__);
@@ -853,8 +869,28 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
     eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ;
-    eqc->enforce_dirichlet = cs_cdovb_diffusion_wsym_dirichlet;
-    if (cs_equation_param_has_diffusion(eqp) == false)
+    if (cs_equation_param_has_diffusion(eqp)) {
+
+      switch (eqp->diffusion_hodge.algo) {
+
+      case CS_PARAM_HODGE_ALGO_COST:
+      case CS_PARAM_HODGE_ALGO_VORONOI:
+        eqc->enforce_dirichlet = cs_cdo_diffusion_vbcost_wsym_dirichlet;
+        break;
+
+      case CS_PARAM_HODGE_ALGO_WBS:
+        eqc->enforce_dirichlet = cs_cdo_diffusion_vbwbs_wsym_dirichlet;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  (" %s: Invalid type of algorithm to build the diffusion term."),
+                  __func__);
+
+      } /* Switch on Hodge algo. */
+
+    }
+    else
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid choice of Dirichlet enforcement.\n"
                 " Diffusion term should be active.", __func__);
@@ -2168,7 +2204,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
           /* The enforcement of the Dirichlet has to be done after all
              other contributions */
           if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
-            eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+            eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
         }
 
@@ -2606,7 +2642,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
             if (cs_equation_param_has_diffusion(eqp)) {
               if (face_bc->flag[bf_id] & CS_CDO_BC_DIRICHLET ||
                   face_bc->flag[bf_id] & CS_CDO_BC_HMG_DIRICHLET) {
-                cs_cdovb_diffusion_face_p0_flux(cm,
+                cs_cdovb_diffusion_p0_face_flux(cm,
                         (const cs_real_t (*)[3])cb->dpty_mat,
                                                 p_cur,
                                                 f,
@@ -2914,11 +2950,11 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
       /* Set function pointers */
       if (cs_flag_test(location, cs_flag_primal_cell)) {
         msh_flag |= CS_CDO_LOCAL_EV;
-        compute_flux = cs_cdo_diffusion_vcost_get_pc_flux;
+        compute_flux = cs_cdo_diffusion_vbcost_get_cell_flux;
       }
       else if (cs_flag_test(location, cs_flag_dual_face_byc)) {
         get_diffusion_hodge = cs_hodge_epfd_cost_get;
-        compute_flux = cs_cdo_diffusion_vcost_get_dfbyc_flux;
+        compute_flux = cs_cdo_diffusion_vbcost_get_dfbyc_flux;
       }
 
       break;
@@ -2929,9 +2965,9 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
       /* Set function pointers */
       get_diffusion_hodge = cs_hodge_epfd_voro_get;
       if (cs_flag_test(location, cs_flag_primal_cell))
-        compute_flux = cs_cdo_diffusion_vcost_get_pc_flux;
+        compute_flux = cs_cdo_diffusion_vbcost_get_cell_flux;
       else if (cs_flag_test(location, cs_flag_dual_face_byc))
-        compute_flux = cs_cdo_diffusion_vcost_get_dfbyc_flux;
+        compute_flux = cs_cdo_diffusion_vbcost_get_dfbyc_flux;
 
       msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
         CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_PVQ;
@@ -2946,7 +2982,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
 
       /* Set function pointers */
       if (cs_flag_test(location, cs_flag_primal_cell)) {
-        compute_flux = cs_cdo_diffusion_wbs_get_pc_flux;
+        compute_flux = cs_cdo_diffusion_wbs_get_cell_flux;
         msh_flag |= CS_CDO_LOCAL_HFQ;
       }
       else if (cs_flag_test(location, cs_flag_dual_face_byc)) {

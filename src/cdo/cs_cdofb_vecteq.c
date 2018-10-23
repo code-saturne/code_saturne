@@ -486,20 +486,16 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* -------------- */
 
   eqc->get_stiffness_matrix = NULL;
-  eqc->bdy_flux_op = NULL;
-
   if (cs_equation_param_has_diffusion(eqp)) {
 
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
       eqc->get_stiffness_matrix = cs_hodge_fb_cost_get_stiffness;
-      eqc->bdy_flux_op = NULL; //cs_cdofb_diffusion_cost_flux_op;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
       eqc->get_stiffness_matrix = cs_hodge_fb_voro_get_stiffness;
-      eqc->bdy_flux_op = NULL; //cs_cdofb_diffusion_cost_flux_op;
       break;
 
     default:
@@ -533,7 +529,6 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Advection part */
   eqc->adv_func = NULL;
   eqc->adv_func_bc = NULL;
-  // TODO
 
   /* Time part */
   if (cs_equation_param_has_time(eqp))
@@ -895,7 +890,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
 
           /* Weakly enforced Dirichlet BCs for cells attached to the boundary
              csys is updated inside (matrix and rhs) */
-          eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+          eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
         }
 

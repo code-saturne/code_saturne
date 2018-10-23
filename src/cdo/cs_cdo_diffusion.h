@@ -52,30 +52,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the diffusion flux operator which corresponds to the normal
- *          trace operator for a given border face.
- *          Different algorithm can be used to reconstruct this flux.
- *
- * \param[in]      fm      pointer to a cs_face_mesh_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      mnu     property tensor times the face normal
- * \param[in]      beta    value of the stabilization coef. or zero if not used
- * \param[in, out] cb      pointer to a cell builder structure
- * \param[in, out] ntrgrd  local matrix related to the normal trace op. i.e.
- *                         the flux operator
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_cdo_diffusion_flux_trace_t)(const cs_face_mesh_t     *fm,
-                                const cs_cell_mesh_t     *cm,
-                                const cs_real_3_t         mnu,
-                                double                    beta,
-                                cs_cell_builder_t        *cb,
-                                cs_sdm_t                 *ntrgrd);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Cellwise computation of the diffusive flux
  *
  * \param[in]      cm       pointer to a cs_face_mesh_t structure
@@ -93,11 +69,12 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Enforce the Dirichlet BCs
+ * \brief   Enforce the Dirichlet BCs when a diffusion term is present. This
+ *          routine define an operator which reconstructs the normal diffusive
+ *          flux from the knowledge of the potential at degrees of freedom
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
@@ -107,7 +84,6 @@ typedef void
 typedef void
 (cs_cdo_diffusion_enforce_dir_t)(const cs_equation_param_t      *eqp,
                                  const cs_cell_mesh_t           *cm,
-                                 cs_cdo_diffusion_flux_trace_t  *flux_op,
                                  cs_face_mesh_t                 *fm,
                                  cs_cell_builder_t              *cb,
                                  cs_cell_sys_t                  *csys);
@@ -123,7 +99,6 @@ typedef void
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
@@ -131,12 +106,11 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_diffusion_weak_dirichlet(const cs_equation_param_t      *eqp,
-                                  const cs_cell_mesh_t           *cm,
-                                  cs_cdo_diffusion_flux_trace_t  *flux_op,
-                                  cs_face_mesh_t                 *fm,
-                                  cs_cell_builder_t              *cb,
-                                  cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_fb_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                   const cs_cell_mesh_t           *cm,
+                                   cs_face_mesh_t                 *fm,
+                                   cs_cell_builder_t              *cb,
+                                   cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -145,7 +119,6 @@ cs_cdofb_diffusion_weak_dirichlet(const cs_equation_param_t      *eqp,
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
@@ -153,82 +126,134 @@ cs_cdofb_diffusion_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_diffusion_wsym_dirichlet(const cs_equation_param_t      *eqp,
-                                  const cs_cell_mesh_t           *cm,
-                                  cs_cdo_diffusion_flux_trace_t  *flux_op,
-                                  cs_face_mesh_t                 *fm,
-                                  cs_cell_builder_t              *cb,
-                                  cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_fb_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                   const cs_cell_mesh_t           *cm,
+                                   cs_face_mesh_t                 *fm,
+                                   cs_cell_builder_t              *cb,
+                                   cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the normal trace operator for a given border face when a
- *          WBS algo. is used for reconstructing the degrees of freedom
- *          Specific to CDO-V+C schemes
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique. Case of CDO-Vb schemes with a CO+ST algorithm.
  *
- * \param[in]      fm        pointer to a cs_face_mesh_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      pty_nuf   property tensor times the face normal
- * \param[in]      beta      not useful here (prototype of function pointer)
- * \param[in, out] cb        pointer to a cell builder structure
- * \param[in, out] ntrgrd    local matrix related to the normal trace op. i.e.
- *                           the flux operator
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_diffusion_flux_op(const cs_face_mesh_t     *fm,
-                            const cs_cell_mesh_t     *cm,
-                            const cs_real_3_t         pty_nuf,
-                            double                    beta,
-                            cs_cell_builder_t        *cb,
-                            cs_sdm_t                 *ntrgrd);
+cs_cdo_diffusion_vbcost_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                       const cs_cell_mesh_t           *cm,
+                                       cs_face_mesh_t                 *fm,
+                                       cs_cell_builder_t              *cb,
+                                       cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the normal trace operator for a given border face when a
- *          WBS algo. is used for reconstructing the degrees of freedom
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique plus a symmetric treatment. Case of CDO-Vb schemes with a
+ *          CO+ST algorithm.
  *
- * \param[in]      fm        pointer to a cs_face_mesh_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      pty_nuf   property tensor times the face normal
- * \param[in]      beta      not useful here (prototype of function pointer)
- * \param[in, out] cb        pointer to a cell builder structure
- * \param[in, out] ntrgrd    local matrix related to the normal trace op. i.e.
- *                           the flux operator
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
-                               const cs_cell_mesh_t     *cm,
-                               const cs_real_3_t         pty_nuf,
-                               double                    beta,
-                               cs_cell_builder_t        *cb,
-                               cs_sdm_t                 *ntrgrd);
+cs_cdo_diffusion_vbcost_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                       const cs_cell_mesh_t           *cm,
+                                       cs_face_mesh_t                 *fm,
+                                       cs_cell_builder_t              *cb,
+                                       cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the normal trace operator for a given border face when a
- *          COST algo. is used for reconstructing the degrees of freedom
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique. Case of CDO-Vb schemes with a WBS algorithm.
  *
- * \param[in]      fm      pointer to a cs_face_mesh_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      mnu     property tensor times the face normal
- * \param[in]      beta    value of the stabilizarion coef. related to reco.
- * \param[in, out] cb      pointer to a cell builder structure
- * \param[in, out] ntrgrd  local matrix related to the normal trace op. i.e.
- *                         the flux operator
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
-                                const cs_cell_mesh_t     *cm,
-                                const cs_real_3_t         mnu,
-                                double                    beta,
-                                cs_cell_builder_t        *cb,
-                                cs_sdm_t                 *ntrgrd);
+cs_cdo_diffusion_vbwbs_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                      const cs_cell_mesh_t           *cm,
+                                      cs_face_mesh_t                 *fm,
+                                      cs_cell_builder_t              *cb,
+                                      cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique plus a symmetric treatment. Case of CDO-Vb schemes with a
+ *          WBS algorithm
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vbwbs_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                      const cs_cell_mesh_t           *cm,
+                                      cs_face_mesh_t                 *fm,
+                                      cs_cell_builder_t              *cb,
+                                      cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique. Case of CDO-VCb schemes with a WBS algorithm.
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                    const cs_cell_mesh_t           *cm,
+                                    cs_face_mesh_t                 *fm,
+                                    cs_cell_builder_t              *cb,
+                                    cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique plus a symmetric treatment. Case of CDO-VCb schemes with
+ *          a WBS algorithm
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                    const cs_cell_mesh_t           *cm,
+                                    cs_face_mesh_t                 *fm,
+                                    cs_cell_builder_t              *cb,
+                                    cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -246,7 +271,6 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
@@ -256,7 +280,6 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
 void
 cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
                                 const cs_cell_mesh_t            *cm,
-                                cs_cdo_diffusion_flux_trace_t   *flux_op,
                                 cs_face_mesh_t                  *fm,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys);
@@ -278,7 +301,6 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
@@ -288,7 +310,6 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
 void
 cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
                                       const cs_cell_mesh_t            *cm,
-                                      cs_cdo_diffusion_flux_trace_t   *flux_op,
                                       cs_face_mesh_t                  *fm,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys);
@@ -300,7 +321,6 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
@@ -310,7 +330,6 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
 void
 cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
                                 const cs_cell_mesh_t            *cm,
-                                cs_cdo_diffusion_flux_trace_t   *flux_op,
                                 cs_face_mesh_t                  *fm,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys);
@@ -323,7 +342,6 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
@@ -333,54 +351,9 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
 void
 cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
                                       const cs_cell_mesh_t            *cm,
-                                      cs_cdo_diffusion_flux_trace_t   *flux_op,
                                       cs_face_mesh_t                  *fm,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique
- *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cellwise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_diffusion_weak_dirichlet(const cs_equation_param_t      *eqp,
-                                  const cs_cell_mesh_t           *cm,
-                                  cs_cdo_diffusion_flux_trace_t  *flux_op,
-                                  cs_face_mesh_t                 *fm,
-                                  cs_cell_builder_t              *cb,
-                                  cs_cell_sys_t                  *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique plus a symmetric treatment
- *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux trace operator
- * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_diffusion_wsym_dirichlet(const cs_equation_param_t       *eqp,
-                                  const cs_cell_mesh_t            *cm,
-                                  cs_cdo_diffusion_flux_trace_t   *flux_op,
-                                  cs_face_mesh_t                  *fm,
-                                  cs_cell_builder_t               *cb,
-                                  cs_cell_sys_t                   *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -397,30 +370,30 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_equation_param_t       *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vcost_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
-                                      const double              *pot,
-                                      cs_cell_builder_t         *cb,
-                                      double                    *flx);
+cs_cdo_diffusion_vbcost_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
+                                       const double              *pot,
+                                       cs_cell_builder_t         *cb,
+                                       double                    *flx);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the diffusive flux inside a (primal) cell
- *          Use the COST algo. for computing the discrete Hodge op.
- *          This function is dedicated to vertex-based schemes.
- *                       Flux = -Hdg * GRAD(pot)
+ * \brief   Compute the constant approximation of the diffusive flux inside a
+ *          (primal) cell. Use the CO+ST algo. for computing the discrete Hodge
+ *          op. This function is dedicated to vertex-based schemes.
+ *          Flux = -Hdg * GRAD(pot)
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      pot     values of the potential fields at specific locations
  * \param[in, out] cb      auxiliary structure for computing the flux
- * \param[in, out] flx     values of the flux across specific entities
+ * \param[in, out] flx     values of the flux inside the cell
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vcost_get_pc_flux(const cs_cell_mesh_t      *cm,
-                                   const double              *pot,
-                                   cs_cell_builder_t         *cb,
-                                   double                    *flx);
+cs_cdo_diffusion_vbcost_get_cell_flux(const cs_cell_mesh_t      *cm,
+                                      const double              *pot,
+                                      cs_cell_builder_t         *cb,
+                                      double                    *flx);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -457,10 +430,10 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_wbs_get_pc_flux(const cs_cell_mesh_t   *cm,
-                                 const cs_real_t        *pot,
-                                 cs_cell_builder_t      *cb,
-                                 cs_real_t              *flx);
+cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
+                                   const cs_real_t        *pot,
+                                   cs_cell_builder_t      *cb,
+                                   cs_real_t              *flx);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -480,7 +453,7 @@ cs_cdo_diffusion_wbs_get_pc_flux(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_face_p0_flux(const cs_cell_mesh_t     *cm,
+cs_cdovb_diffusion_p0_face_flux(const cs_cell_mesh_t     *cm,
                                 const cs_real_3_t        *diff_tensor,
                                 const cs_real_t          *pot_values,
                                 short int                 f,
@@ -504,7 +477,7 @@ cs_cdovb_diffusion_face_p0_flux(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_diffusion_face_wbs_flux(const cs_face_mesh_t      *fm,
+cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
                                const cs_real_t            pty_tens[3][3],
                                const double              *p_v,
                                const double               p_f,
@@ -516,8 +489,6 @@ cs_cdo_diffusion_face_wbs_flux(const cs_face_mesh_t      *fm,
  * \brief   Compute the normal flux for a face assuming only the knowledge
  *          of the potential at cell vertices. COST algorithm is used for
  *          reconstructing the degrees of freedom.
- *          This routine shares similarities with
- *          \ref cs_cdovb_diffusion_cost_flux_op
  *
  * \param[in]   f             face id in the cell mesh
  * \param[in]   cm            pointer to a cs_cell_mesh_t structure
@@ -530,8 +501,8 @@ cs_cdo_diffusion_face_wbs_flux(const cs_face_mesh_t      *fm,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_cdovb_diffusion_face_cost_flux(short int                 f,
+double
+cs_cdo_diffusion_vbcost_face_flux(short int                 f,
                                   const cs_cell_mesh_t     *cm,
                                   const cs_real_3_t        *diff_tensor,
                                   const cs_real_t          *pot_values,

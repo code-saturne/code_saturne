@@ -130,7 +130,6 @@ struct _cs_cdovcb_scaleq_t {
   /* Pointer of function to build the diffusion term */
   cs_hodge_t                      *get_stiffness_matrix;
   cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
-  cs_cdo_diffusion_flux_trace_t   *bdy_flux_op;
   cs_flag_t                       *vtx_bc_flag;
 
   /* Pointer of function to build the advection term */
@@ -479,7 +478,7 @@ _vcb_condense_and_apply_bc(cs_real_t                      time_eval,
 
       if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
           eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-        eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+        eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
     }
 
@@ -519,7 +518,7 @@ _vcb_condense_and_apply_bc(cs_real_t                      time_eval,
 
       /* Strongly enforced Dirichlet BCs for cells attached to the boundary
          csys is updated inside (matrix and rhs) */
-      eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+      eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
     }
 
@@ -869,13 +868,8 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Diffusion part */
   eqc->get_stiffness_matrix = NULL;
-  eqc->bdy_flux_op = NULL;
-  if (cs_equation_param_has_diffusion(eqp)) {
-
+  if (cs_equation_param_has_diffusion(eqp))
     eqc->get_stiffness_matrix = cs_hodge_vcb_get_stiffness;
-    eqc->bdy_flux_op = cs_cdovcb_diffusion_flux_op;
-
-  }
 
   /* Dirichlet boundary condition enforcement */
   eqc->enforce_dirichlet = NULL;
@@ -905,14 +899,14 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid choice of Dirichlet enforcement.\n"
                 " Diffusion term should be active.", __func__);
-    eqc->enforce_dirichlet = cs_cdovb_diffusion_weak_dirichlet;
+    eqc->enforce_dirichlet = cs_cdo_diffusion_vcb_weak_dirichlet;
     break;
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
     if (cs_equation_param_has_diffusion(eqp) == false)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid choice of Dirichlet enforcement.\n"
                 " Diffusion term should be active.", __func__);
-    eqc->enforce_dirichlet = cs_cdovb_diffusion_wsym_dirichlet;
+    eqc->enforce_dirichlet = cs_cdo_diffusion_vcb_wsym_dirichlet;
     break;
 
   default:
@@ -2127,7 +2121,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
           if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
               eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-            eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+            eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
         }
 
@@ -2170,7 +2164,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
             /* Weakly enforced Dirichlet BCs for cells attached to the boundary
                csys is updated inside (matrix and rhs) */
-            eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+            eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
           } /* Enforcement of the Dirichlet BC */
 
@@ -2410,7 +2404,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
                                     eqp->diffusion_hodge.inv_pty,
                                     pty_tens);
 
-        flx = cs_cdo_diffusion_face_wbs_flux(fm,
+        flx = cs_cdo_diffusion_wbs_face_flux(fm,
                                              (const cs_real_3_t (*))pty_tens,
                                              p_v, p_f, eqc->cell_values[c_id],
                                              cb);
@@ -2460,7 +2454,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
                                       eqp->diffusion_hodge.inv_pty,
                                       pty_tens);
 
-          flx = cs_cdo_diffusion_face_wbs_flux(fm,
+          flx = cs_cdo_diffusion_wbs_face_flux(fm,
                                                (const cs_real_3_t (*))pty_tens,
                                                p_v, p_f, eqc->cell_values[c_id],
                                                cb);
@@ -2565,7 +2559,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
       CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV;
 
     if (cs_flag_test(location, cs_flag_primal_cell)) {
-      compute_flux = cs_cdo_diffusion_wbs_get_pc_flux;
+      compute_flux = cs_cdo_diffusion_wbs_get_cell_flux;
       msh_flag |= CS_CDO_LOCAL_HFQ;
     }
     else if (cs_flag_test(location, cs_flag_dual_face_byc)) {

@@ -1193,7 +1193,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
              csys is updated inside (matrix and rhs)
              eqp->diffusion_hodge is a dummy parameter (not used)
           */
-          eqc->enforce_dirichlet(eqp, cm, NULL, NULL, cb, csys);
+          eqc->enforce_dirichlet(eqp, cm, NULL, cb, csys);
 
         } /* diffusion term */
 
