@@ -136,7 +136,7 @@ class XMLinit(Variables):
                 zone = LocalizationModel("VolumicZone", self.case).getCodeNumberOfZoneLabel('all_cells')
                 InitializationModel(self.case).getInitialTurbulenceChoice(zone)
 
-            # Time step
+            # Time settings
 
             TimeStepModel(self.case).getTimeStep()
             TimeStepModel(self.case).getIterationsNumber()

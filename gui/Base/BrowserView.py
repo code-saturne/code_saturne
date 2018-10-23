@@ -446,7 +446,7 @@ Boundary conditions
 Numerical parameters
     Global parameters
     Equation parameters
-    Time step
+    Time settings
 Calculation control
     Time averages
     Output control
@@ -665,8 +665,7 @@ Calculation management
         self.setRowClose(self.tr('Atmospheric flows'))
         self.setRowClose(self.tr('Particles boundary conditions'))
         # self.setRowClose(self.tr('Surface solution control'))
-        self.setRowClose(self.tr('Time step'))
-        self.setRowClose(self.tr('Pseudo-Time step'))
+        self.setRowClose(self.tr('Time settings'))
         self.setRowClose(self.tr('Fluid structure interaction'))
         self.setRowClose(self.tr('Source terms'))
         self.setRowClose(self.tr('Head losses'))
@@ -734,7 +733,7 @@ Calculation management
 
         # Time step management
 
-        self.setRowOpen(self.tr('Time step'))
+        self.setRowOpen(self.tr('Time settings'))
 
         # Multi-phase flow
 

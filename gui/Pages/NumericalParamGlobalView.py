@@ -87,7 +87,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         # Combo models
         self.modelEXTRAG = ComboModel(self.comboBoxEXTRAG,2,1)
         self.modelIMRGRA = ComboModel(self.comboBoxIMRGRA,5,1)
-        self.modelNTERUP = ComboModel(self.comboBoxNTERUP,3,1)
 
         self.modelEXTRAG.addItem(self.tr("Neumann 1st order"), 'neumann')
         self.modelEXTRAG.addItem(self.tr("Extrapolation"), 'extrapolation')
@@ -98,12 +97,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.modelIMRGRA.addItem(self.tr("Least squares method over partial extended cell neighborhood"),'3')
         self.modelIMRGRA.addItem(self.tr("Iterative method with least squares initialization"),'4')
 
-        self.modelNTERUP.addItem(self.tr("SIMPLE"), 'simple')
-        self.modelNTERUP.addItem(self.tr("SIMPLEC"),'simplec')
-        self.modelNTERUP.addItem(self.tr("PISO"),'piso')
-
         self.comboBoxEXTRAG.setSizeAdjustPolicy(QComboBox.AdjustToContents)
-        self.comboBoxNTERUP.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 
         # Connections
         self.checkBoxIVISSE.clicked.connect(self.slotIVISSE)
@@ -114,8 +108,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.lineEditRELAXP.textChanged[str].connect(self.slotRELAXP)
         self.comboBoxIMRGRA.activated[str].connect(self.slotIMRGRA)
         self.lineEditSRROM.textChanged[str].connect(self.slotSRROM)
-        self.comboBoxNTERUP.activated[str].connect(self.slotNTERUP)
-        self.spinBoxNTERUP.valueChanged[int].connect(self.slotNTERUP2)
 
         # Validators
         validatorRELAXP = DoubleValidator(self.lineEditRELAXP, min=0., max=1.)
@@ -154,24 +146,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.lineEditSRROM.setText(str(self.model.getDensityRelaxation()))
             self.line_5.show()
 
-        algo = self.model.getVelocityPressureAlgorithm()
-
-        from code_saturne.Pages.TimeStepModel import TimeStepModel
-        idtvar = TimeStepModel(self.case).getTimePassing()
-        if idtvar in [-1, 2]:
-            self.modelNTERUP.enableItem(str_model = 'simple')
-            self.modelNTERUP.disableItem(str_model = 'piso')
-        else:
-            self.modelNTERUP.disableItem(str_model = 'simple')
-            self.modelNTERUP.enableItem(str_model = 'piso')
-
-        self.modelNTERUP.setItem(str_model=algo)
-
-        if algo == 'piso':
-            self.spinBoxNTERUP.show()
-        else:
-            self.spinBoxNTERUP.hide()
-
         if modl_comp != 'off':
             self.labelICFGRP.show()
             self.checkBoxICFGRP.show()
@@ -190,9 +164,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.line_5.hide()
             self.line_7.hide()
             self.line_8.hide()
-            self.labelNTERUP.setText("Velocity-Pressure algorithm\nsub-iterations on Navier-Stokes")
-            self.comboBoxNTERUP.hide()
-            self.spinBoxNTERUP.show()
         else:
             self.labelICFGRP.hide()
             self.checkBoxICFGRP.hide()
@@ -207,9 +178,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.line_5.show()
             self.line_7.show()
             self.line_8.show()
-
-        value = self.model.getPisoSweepNumber()
-        self.spinBoxNTERUP.setValue(value)
 
         # Update the Tree files and folders
         self.browser.configureTree(self.case)
@@ -301,32 +269,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         imrgra = self.modelIMRGRA.dicoV2M[str(text)]
         self.model.setGradientReconstruction(int(imrgra))
         log.debug("slotIMRGRA-> %s" % imrgra)
-
-
-    @pyqtSlot(str)
-    def slotNTERUP(self,text):
-        """
-        Set value for parameterNTERUP
-        """
-        NTERUP = self.modelNTERUP.dicoV2M[str(text)]
-        self.model.setVelocityPressureAlgorithm(NTERUP)
-        if NTERUP == 'piso':
-            self.spinBoxNTERUP.show()
-            value = self.model.getPisoSweepNumber()
-            self.spinBoxNTERUP.setValue(value)
-        else:
-            self.spinBoxNTERUP.hide()
-        self.browser.configureTree(self.case)
-        log.debug("slotNTERUP-> %s" % NTERUP)
-
-
-    @pyqtSlot(int)
-    def slotNTERUP2(self, var):
-        """
-        Set value for parameter piso sweep number
-        """
-        self.model.setPisoSweepNumber(var)
-        log.debug("slotNTERUP2-> %s" % var)
 
 
     def tr(self, text):

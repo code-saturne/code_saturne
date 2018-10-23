@@ -65,7 +65,7 @@ log.setLevel(GuiParam.DEBUG)
 class TimeStepView(QWidget, Ui_TimeStepForm):
     """
     """
-    def __init__(self, parent, case):
+    def __init__(self, parent, case, tree):
         """
         Constructor
         """
@@ -77,6 +77,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.case = case
         self.case.undoStopGlobal()
         self.mdl = TimeStepModel(self.case)
+        self.browser = tree
 
        # Combo model
 
@@ -84,7 +85,13 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.modelTimeOptions.addItem(self.tr("Constant"), '0')
         self.modelTimeOptions.addItem(self.tr("Time varying (adaptive)"), '1')
         self.modelTimeOptions.addItem(self.tr("Space & time varying (pseudo-steady)"), '2')
-        self.modelTimeOptions.addItem(self.tr("Steady"), '-1')
+        self.modelTimeOptions.addItem(self.tr("Steady (constant relaxation coefficient)"), '-1')
+
+        self.modelNTERUP = ComboModel(self.comboBoxNTERUP,3,1)
+        self.modelNTERUP.addItem(self.tr("SIMPLE"), 'simple')
+        self.modelNTERUP.addItem(self.tr("SIMPLEC"), 'simplec')
+        self.modelNTERUP.addItem(self.tr("PISO"), 'piso')
+        self.comboBoxNTERUP.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 
         # Connections
         self.comboBoxOptions.activated[str].connect(self.slotTimePassing)
@@ -98,6 +105,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.lineEditVARRDT.textChanged[str].connect(self.slotTimeOptionVARRDT)
         self.checkBoxIPTLRO.clicked.connect(self.slotThermalTimeStep)
         self.checkBoxINPDT0.clicked.connect(self.slotZeroTimeStep)
+        self.comboBoxNTERUP.activated[str].connect(self.slotNTERUP)
+        self.spinBoxNTERUP.valueChanged[int].connect(self.slotNTERUP2)
 
         # Validators
 
@@ -165,6 +174,9 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.modelTimeOptions.disableItem(str_model='1')
             self.modelTimeOptions.disableItem(str_model='2')
             self.modelTimeOptions.disableItem(str_model='-1')
+            self.labelNTERUP.setText("Velocity-Pressure algorithm\nsub-iterations on Navier-Stokes")
+            self.comboBoxNTERUP.hide()
+            self.spinBoxNTERUP.show()
 
         # Constraints on time step from groundwater model
 
@@ -212,6 +224,29 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
 
         self.modelTimeOptions.setItem(str_model=str(idtvar))
+
+        if idtvar == -1:
+            self.modelNTERUP.enableItem(str_model = 'simple')
+            self.modelNTERUP.disableItem(str_model = 'simplec')
+            self.modelNTERUP.disableItem(str_model = 'piso')
+        elif idtvar == 2:
+            self.modelNTERUP.disableItem(str_model = 'simple')
+            self.modelNTERUP.enableItem(str_model = 'simplec')
+            self.modelNTERUP.disableItem(str_model = 'piso')
+        else:
+            self.modelNTERUP.disableItem(str_model = 'simple')
+            self.modelNTERUP.enableItem(str_model = 'simplec')
+            self.modelNTERUP.enableItem(str_model = 'piso')
+
+        algo = self.mdl.getVelocityPressureAlgorithm()
+        self.modelNTERUP.setItem(str_model=algo)
+        if algo == 'piso':
+            self.spinBoxNTERUP.show()
+        else:
+            self.spinBoxNTERUP.hide()
+
+        value = self.mdl.getPisoSweepNumber()
+        self.spinBoxNTERUP.setValue(value)
 
         if idtvar == -1:
             self.labelRELXST.show()
@@ -269,6 +304,32 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         if self.lineEditDTREF.validator().state == QValidator.Acceptable:
             time_step = from_qvariant(text, float)
             self.mdl.setTimeStep(time_step)
+
+
+    @pyqtSlot(str)
+    def slotNTERUP(self,text):
+        """
+        Set value for parameterNTERUP
+        """
+        NTERUP = self.modelNTERUP.dicoV2M[str(text)]
+        self.mdl.setVelocityPressureAlgorithm(NTERUP)
+        if NTERUP == 'piso':
+            self.spinBoxNTERUP.show()
+            value = self.mdl.getPisoSweepNumber()
+            self.spinBoxNTERUP.setValue(value)
+        else:
+            self.spinBoxNTERUP.hide()
+        self.browser.configureTree(self.case)
+        log.debug("slotNTERUP-> %s" % NTERUP)
+
+
+    @pyqtSlot(int)
+    def slotNTERUP2(self, var):
+        """
+        Set value for parameter piso sweep number
+        """
+        self.mdl.setPisoSweepNumber(var)
+        log.debug("slotNTERUP2-> %s" % var)
 
 
     @pyqtSlot(str)

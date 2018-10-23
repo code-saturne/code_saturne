@@ -63,6 +63,7 @@ class TimeStepModel(Model):
         self.node_models       = self.case.xmlGetNode('thermophysical_models')
         self.node_turb         = self.node_models.xmlGetNode('turbulence')
         self.node_control      = self.case.xmlGetNode('analysis_control')
+        self.node_np           = self.case.xmlGetNode('numerical_parameters')
         self.node_time         = self.node_control.xmlInitNode('time_parameters')
 
 
@@ -72,17 +73,24 @@ class TimeStepModel(Model):
         """
         default = {}
 
-        default['iterations']        = 10
-        default['time_passing']      = 0
-        default['time_step_ref']     = 0.1
-        default['max_courant_num']   = 1.0
-        default['max_fourier_num']   = 10.0
+        default['iterations']             = 10
+        default['time_passing']           = 0
+        default['velocity_pressure_algo'] ='simplec'
+        default['time_step_ref']          = 0.1
+        default['max_courant_num']        = 1.0
+        default['max_fourier_num']        = 10.0
         default['relaxation_coefficient'] = 0.7
-        default['time_step_min_factor'] = 0.1
-        default['time_step_max_factor'] = 1000.0
-        default['time_step_var']     = 0.1
-        default['thermal_time_step'] = 'off'
-        default['zero_time_step']    = 'off'
+        default['time_step_min_factor']   = 0.1
+        default['time_step_max_factor']   = 1000.0
+        default['time_step_var']          = 0.1
+        default['thermal_time_step']      = 'off'
+        default['zero_time_step']         = 'off'
+        from code_saturne.Pages.CompressibleModel import CompressibleModel
+        if CompressibleModel(self.case).getCompressibleModel() != 'off':
+            default['piso_sweep_number'] = 1
+        else:
+            default['piso_sweep_number'] = 2
+        del CompressibleModel
 
         return default
 
@@ -146,6 +154,12 @@ class TimeStepModel(Model):
         self.isIntInList(val, [0, 1, 2, -1])
         self.node_time.xmlSetData('time_passing', val)
 
+        if val == -1:
+            algo = "simple"
+        else:
+            algo = "simplec"
+        self.setVelocityPressureAlgorithm(algo)
+
         from code_saturne.Pages.GroundwaterModel import GroundwaterModel
         if GroundwaterModel(self.case).getGroundwaterModel() == 'off':
             Variables(self.case).setNewProperty(self.node_time, 'courant_number')
@@ -176,6 +190,57 @@ class TimeStepModel(Model):
                         'time_step_max_factor',
                         'time_step_var'):
                 self.node_time.xmlRemoveChild(tag)
+
+
+    @Variables.noUndo
+    def getVelocityPressureAlgorithm(self):
+        """
+        Return velocity pressure algoritm value
+        """
+        node = self.node_np.xmlInitNode('velocity_pressure_algo','choice')
+        value = node['choice']
+        if not value:
+            value = self.defaultValues()['velocity_pressure_algo']
+            self.setVelocityPressureAlgorithm(value)
+        return value
+
+
+    @Variables.undoGlobal
+    def setVelocityPressureAlgorithm(self, value):
+        """
+        Put value of velocity pressure algorithm
+        """
+        self.isInList(value, ('simple', 'simplec', 'piso'))
+        node = self.node_np.xmlInitNode('velocity_pressure_algo', 'choice')
+        node['choice'] = value
+        if value == 'simple' or value =='simplec':
+            self.setPisoSweepNumber(1)
+        elif self.getPisoSweepNumber() < self.defaultValues()['piso_sweep_number']:
+            value = self.defaultValues()['piso_sweep_number']
+            self.setPisoSweepNumber(value)
+
+
+    @Variables.noUndo
+    def getPisoSweepNumber(self):
+        """
+        Return piso_sweep_number value
+        """
+        self.node_algo = self.node_np.xmlGetNode('velocity_pressure_algo')
+        value = self.node_algo.xmlGetInt('piso_sweep_number')
+        if not value:
+            value = self.defaultValues()['piso_sweep_number']
+            self.setPisoSweepNumber(value)
+        return value
+
+
+    @Variables.undoLocal
+    def setPisoSweepNumber(self, value):
+        """
+        Put value of NTRUP
+        """
+        self.isInt(value)
+        self.node_algo = self.node_np.xmlGetNode('velocity_pressure_algo')
+        self.node_algo.xmlSetData('piso_sweep_number',value)
 
 
     @Variables.noUndo
@@ -486,6 +551,39 @@ class TimeStepModelTestCase(ModelTest):
                  </time_parameters>'''
         assert mdl.node_time == self.xmlNodeFromString(doc),\
             'Could not remove tagged time node in TimeStepModel'
+
+    def checkGetandSetVelocityPressureAlgorithm(self):
+        """
+        Check whether velocity pressure algorithm could be set and get
+        """
+        model = NumericalParamGlobalModel(self.case)
+        model.setVelocityPressureAlgorithm('piso')
+        doc = '''<numerical_parameters>
+                         <velocity_pressure_algo choice="piso"/>
+                 </numerical_parameters>'''
+        assert model.node_np== self.xmlNodeFromString(doc), \
+                    'Could not set velocity pressure algorithm'
+        assert model.getVelocityPressureAlgorithm() == 'piso',\
+                    'Could not get velocity pressure algorithm'
+
+    def checkGetandSetNterup(self):
+        """
+        Check whether velocity pressure algorithm could be set and get
+        """
+        model = NumericalParamGlobalModel(self.case)
+        model.setVelocityPressureAlgorithm('piso')
+        model.setNterup(3)
+        doc = '''<numerical_parameters>
+                         <velocity_pressure_algo choice="piso">
+                                 <piso_sweep_number>
+                                         3
+                                 </piso_sweep_number>
+                         </velocity_pressure_algo>
+                 </numerical_parameters>'''
+        assert model.node_np == self.xmlNodeFromString(doc), \
+                    'Could not set nterup'
+        assert model.getNterup() == 3,\
+                    'Could not get nterup'
 
     def checkSetandGetIterationsNumber(self):
         """Check whether the TimeStepModel class could be set and get number of iterations"""

@@ -205,9 +205,9 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.TimeAveragesView as Page
         thisPage = Page.TimeAveragesView(root, case, stbar)
 
-    elif page_name == tr("Time step"):
+    elif page_name == tr("Time settings"):
         import code_saturne.Pages.TimeStepView as Page
-        thisPage = Page.TimeStepView(root, case)
+        thisPage = Page.TimeStepView(root, case, tree)
 
     elif page_name == tr("Output control"):
         import code_saturne.Pages.OutputControlView as Page
