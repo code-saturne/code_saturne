@@ -144,11 +144,11 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("--repo", type="string",
                       dest="repo_path", default="",
-                      help="force the path to the repository directory")
+                      help="Force path to repository directory")
 
     parser.add_option("--dest", type="string",
                       dest="dest_path", default="",
-                      help="force the path to the destination directory")
+                      help="Force path to destination directory")
 
     parser.add_option("-g", "--debug", action="store_true",
                       dest="debug", default=False,

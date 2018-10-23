@@ -117,7 +117,10 @@ class Parser(object):
 
         if len(l) == 1:
             current = l.item(0)
-            data = current.firstChild.data
+            if current.firstChild:
+                data = current.firstChild.data
+            else:
+                data = None
         else:
             print("Error: in getDataFromNode several markup %s found." %  childName)
             sys.exit(1)
@@ -181,16 +184,8 @@ class Parser(object):
         @rtype: C{String}
         @return: repository directory of all studies.
         """
-        if self.__repo == None: # Set the member
-            elt = self.root.getElementsByTagName("repository");
-            if len(elt) == 1:
-                try:
-                    self.__repo=elt.item(0).firstChild.data;
-                except AttributeError:
-                    msg="Parser.getRepository() >> No repository set.\n";
-                    msg+="Add a path to the *.xml file or use the command "
-                    msg+="line argument.\n"
-                    sys.exit(msg);
+        if self.__repo == None:
+            self.__repo = self.getDataFromNode(self.root, "repository")
 
         return self.__repo;
 

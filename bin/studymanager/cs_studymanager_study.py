@@ -1031,29 +1031,60 @@ class Studies(object):
             print("Specified XML parameter file for studymanager does not exist.")
             sys.exit(1)
 
-        # Test if the repository exists
+        self.__xmlupdate = options.update_xml
 
+        # try to determine if current directory is a study one
+        cwd = os.getcwd()
+        postd = os.path.join(cwd, 'POST')
+        meshd = os.path.join(cwd, 'MESH')
+        is_study = os.path.isdir(postd) and os.path.isdir(meshd)
+
+        # set repository
         if len(options.repo_path) > 0:
             self.__parser.setRepository(options.repo_path)
         self.__repo = self.__parser.getRepository()
-        if not os.path.isdir(self.__repo):
-            msg="Studies.__init__() >> self.__repo = {0}\n".format(self.__repo)
-            sys.exit(msg+"Error: repository path is not valid.\n")
+        if self.__repo:
+            if not os.path.isdir(self.__repo):
+                msg="Studies.__init__() >> self.__repo = {0}\n".format(self.__repo)
+                sys.exit(msg+"Error: repository path is not valid.\n")
+        else: # default value
+            # if current directory is a study
+            # set repository as directory containing the study
+            if is_study:
+                self.__parser.setRepository(os.path.join(cwd,".."))
+                self.__repo = self.__parser.getRepository()
+            else:
+                msg="Parser.getRepository() >> No repository set.\n"
+                msg+="Add a path to the *.xml file or use the command "
+                msg+="line argument.\n"
+                sys.exit(msg)
+
+        # set destination
+        if self.__xmlupdate:
+            self.__dest = self.__repo
+        else:
+            if len(options.dest_path) > 0:
+                self.__parser.setDestination(options.dest_path)
+            self.__dest = self.__parser.getDestination()
+            if not self.__dest: # default value
+                # if current directory is a study
+                # set destination as a directory "../RUN_(study_name)
+                if is_study:
+                    studyd = os.path.basename(cwd)
+                    self.__parser.setDestination(os.path.join(cwd,
+                                                              "../RUN_"+studyd))
+                    self.__dest = self.__parser.getDestination()
+                else:
+                    msg="Parser.getDestination() >> No destination set.\n"
+                    msg+="Add a path to the *.xml file or use the command "
+                    msg+="line argument.\n"
+                    sys.exit(msg)
 
         # create if necessary the destination directory
-
-        if len(options.dest_path) > 0:
-            self.__parser.setDestination(options.dest_path)
-        self.__xmlupdate = options.update_xml
-        if not self.__xmlupdate:
-            self.__dest = self.__parser.getDestination()
-        else:
-            self.__dest = self.__repo
         if not os.path.isdir(self.__dest):
             os.makedirs(self.__dest)
 
         # copy the xml file of parameters for update and restart
-
         file = os.path.join(self.__dest, os.path.basename(f))
         try:
             shutil.copyfile(f, file)
