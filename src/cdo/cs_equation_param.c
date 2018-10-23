@@ -454,6 +454,113 @@ cs_equation_create_param(const char            *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Copy the settings from one \ref cs_equation_param_t structure to
+ *         another one
+ *
+ * \param[in]      ref   pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst   pointer to the \ref cs_equation_param_t to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_update_from(const cs_equation_param_t   *ref,
+                              cs_equation_param_t         *dst)
+{
+  /* Generic members */
+  dst->type = ref->type;
+  dst->dim = ref->dim;
+  dst->verbosity = ref->verbosity;
+  dst->sles_verbosity = ref->sles_verbosity;
+  dst->process_flag = ref->process_flag;
+  dst->flag = ref->flag;
+  dst->space_scheme = ref->space_scheme;
+  dst->dof_reduction = ref->dof_reduction;
+  dst->space_poly_degree = ref->space_poly_degree;
+
+  /* Boundary conditions structure */
+  dst->default_bc = ref->default_bc;
+  dst->enforcement = ref->enforcement;
+  dst->bc_penalization_coeff = ref->bc_penalization_coeff;
+  dst->n_bc_defs = ref->n_bc_defs;
+  BFT_MALLOC(dst->bc_defs, dst->n_bc_defs, cs_xdef_t *);
+  for (int i = 0; i < ref->n_bc_defs; i++)
+    dst->bc_defs[i] = cs_xdef_copy(ref->bc_defs[i]);
+
+  /* Description of the time discretization */
+  dst->time_hodge.is_unity = ref->time_hodge.is_unity;
+  dst->time_hodge.is_iso = ref->time_hodge.is_iso;
+  dst->time_hodge.inv_pty = ref->time_hodge.inv_pty;
+  dst->time_hodge.type = ref->time_hodge.type;
+  dst->time_hodge.algo = ref->time_hodge.algo;
+  dst->time_hodge.coef = ref->time_hodge.coef;
+
+  dst->time_property = ref->time_property;
+  dst->time_scheme = ref->time_scheme;
+  dst->theta = ref->theta;
+  dst->do_lumping = ref->do_lumping;
+
+  /* Initial condition (zero value by default) */
+  dst->n_ic_defs = ref->n_ic_defs;
+  BFT_MALLOC(dst->ic_defs, dst->n_ic_defs, cs_xdef_t *);
+  for (int i = 0; i < ref->n_ic_defs; i++)
+    dst->ic_defs[i] = cs_xdef_copy(ref->ic_defs[i]);
+
+  /* Diffusion term */
+  dst->diffusion_property = ref->diffusion_property;
+  dst->diffusion_hodge.is_unity = ref->diffusion_hodge.is_unity;
+  dst->diffusion_hodge.is_iso = ref->diffusion_hodge.is_iso;
+  dst->diffusion_hodge.inv_pty = ref->diffusion_hodge.inv_pty;
+  dst->diffusion_hodge.type = ref->diffusion_hodge.type;
+  dst->diffusion_hodge.algo = ref->diffusion_hodge.algo;
+  dst->diffusion_hodge.coef = ref->diffusion_hodge.coef;
+
+  /* Advection term */
+  dst->adv_formulation = ref->adv_formulation;
+  dst->adv_scheme = ref->adv_scheme;
+  dst->upwind_portion = ref->upwind_portion;
+  dst->adv_field = ref->adv_field;
+
+  /* Reaction term */
+  dst->reaction_hodge.is_unity = ref->reaction_hodge.is_unity;
+  dst->reaction_hodge.is_iso = ref->reaction_hodge.is_iso;
+  dst->reaction_hodge.inv_pty = ref->reaction_hodge.inv_pty;
+  dst->reaction_hodge.algo = ref->reaction_hodge.algo;
+  dst->reaction_hodge.type = ref->reaction_hodge.type;
+
+  dst->n_reaction_terms = ref->n_reaction_terms;
+  BFT_MALLOC(dst->reaction_properties, dst->n_reaction_terms, cs_property_t *);
+  for (int i = 0; i < ref->n_reaction_terms; i++)
+    dst->reaction_properties[i] = ref->reaction_properties[i];
+
+  /* Source term */
+  dst->n_source_terms = ref->n_source_terms;
+  BFT_MALLOC(dst->source_terms, dst->n_source_terms, cs_xdef_t *);
+  for (int i = 0; i < dst->n_source_terms; i++)
+    dst->source_terms[i] = cs_xdef_copy(ref->source_terms[i]);
+
+  /* No enforcement of internal DoFs */
+  dst->n_enforced_dofs = ref->n_enforced_dofs;
+  if (ref->n_enforced_dofs > 0) {
+    BFT_MALLOC(dst->enforced_dof_ids, dst->n_enforced_dofs, cs_lnum_t);
+    memcpy(dst->enforced_dof_ids, ref->enforced_dof_ids,
+           dst->n_enforced_dofs*sizeof(cs_lnum_t));
+    BFT_MALLOC(dst->enforced_dof_values, dst->n_enforced_dofs, cs_real_t);
+    memcpy(dst->enforced_dof_values, ref->enforced_dof_values,
+           dst->n_enforced_dofs*sizeof(cs_real_t));
+  }
+
+  /* Settings for driving the linear algebra */
+  dst->solver_class = ref->solver_class;
+  dst->itsol_info.precond = ref->itsol_info.precond;
+  dst->itsol_info.solver = ref->itsol_info.solver;
+  dst->itsol_info.amg_type = ref->itsol_info.amg_type;
+  dst->itsol_info.n_max_iter = ref->itsol_info.n_max_iter;
+  dst->itsol_info.eps = ref->itsol_info.eps;
+  dst->itsol_info.resid_normalized = ref->itsol_info.resid_normalized;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free a \ref cs_equation_param_t
  *
  * \param[in, out] eqp          pointer to a \ref cs_equation_param_t
