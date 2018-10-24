@@ -380,7 +380,7 @@ cs_equation_create_param(const char            *name,
      One assigns a boundary condition by default */
   eqp->default_bc = default_bc;
   eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
-  eqp->bc_penalization_coeff = -1; /* Not set */
+  eqp->bc_penalization_coeff = 5;
   eqp->n_bc_defs = 0;
   eqp->bc_defs = NULL;
 
@@ -898,17 +898,17 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else if (strcmp(val, "penalization") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
       if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
-        eqp->bc_penalization_coeff = 1e13;
+        eqp->bc_penalization_coeff = 1e12;
     }
     else if (strcmp(val, "weak_sym") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
       if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
-        eqp->bc_penalization_coeff = 500;
+        eqp->bc_penalization_coeff = 5;
     }
     else if (strcmp(val, "weak") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
       if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
-        eqp->bc_penalization_coeff = 500;
+        eqp->bc_penalization_coeff = 5;
     }
     else {
       const char *_val = val;
