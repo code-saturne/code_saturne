@@ -175,19 +175,10 @@ enddo
 
 ! Note: for VOF or dilatable algorithms, density at twice previous time step is
 ! also stored and written here with "current to previous" function
-if (ivofmt.ge.0.or.idilat.ge.1.or.ipredfl.eq.0) then
-  call field_current_to_previous(icrom)
-  call field_current_to_previous(icrom)
-  if (iroext.gt.0.or.idilat.gt.1) then
-    call field_current_to_previous(ibrom)
-    call field_current_to_previous(ibrom)
-  endif
-else if (iroext.gt.0.or.icalhy.eq.1.or.ipthrm.eq.1.or.ippmod(icompf).ge.0) then
-  call field_current_to_previous(icrom)
-  if (iroext.gt.0) then
-    call field_current_to_previous(ibrom)
-  endif
-endif
+call field_current_to_previous(icrom)
+call field_current_to_previous(icrom)
+call field_current_to_previous(ibrom)
+call field_current_to_previous(ibrom)
 
 ! Moleacular viscosity
 call field_get_val_s(iviscl, viscl)

@@ -143,6 +143,8 @@ integer          dimrij
 integer          t2v(3,3)
 integer          iv2t(6), jv2t(6)
 integer          f_id
+integer          key_t_ext_id
+integer          iroext
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
@@ -198,6 +200,11 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+call field_get_key_int(icrom, key_t_ext_id, iroext)
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet))

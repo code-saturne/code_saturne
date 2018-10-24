@@ -73,15 +73,20 @@ double precision vela  (3  ,ncelet)
 ! Local variables
 
 integer          iel   , ielpdc
+integer          key_t_ext_id
+integer          iroext
 double precision romvom, vit1  , vit2  , vit3
 double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision, dimension(:), pointer :: crom, croma
 
 !===============================================================================
 
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 call field_get_val_s(icrom, crom)
 
+call field_get_key_int(icrom, key_t_ext_id, iroext)
 if (iroext.gt.0.and.isno2t.gt.0) then
   call field_get_val_prev_s(icrom, croma)
 endif

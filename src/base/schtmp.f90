@@ -76,6 +76,7 @@ integer          iflmas , iflmab
 integer          f_id
 integer          key_t_ext_id, icpext
 integer          iviext
+integer          iroext
 
 double precision flux   , theta  , viscos, varcp
 
@@ -167,6 +168,7 @@ if (iappel.eq.1) then
       ! Densisty
       call field_get_key_int (ivarfl(isca(iscal)), kromsl, f_id)
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
+        call field_get_key_int(f_id, key_t_ext_id, iroext)
         if (iroext.gt.0) then
           call field_current_to_previous(f_id)
         endif
@@ -195,7 +197,8 @@ elseif (iappel.eq.2) then
 
   if (initro.ne.1) then
     initro = 1
-    if (iroext.gt.0) then!FIXME rm this option
+    call field_get_key_int(icrom, key_t_ext_id, iroext)
+    if (iroext.gt.0) then
       call field_current_to_previous(icrom)
       call field_current_to_previous(ibrom)
     endif

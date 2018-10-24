@@ -123,6 +123,8 @@ integer          st_prv_id
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
+integer          key_t_ext_id
+integer          iroext
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp, alpha3
 double precision trprod , trrij
@@ -157,6 +159,11 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+call field_get_key_int(icrom, key_t_ext_id, iroext)
 
 ivar = iep
 

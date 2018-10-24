@@ -85,8 +85,6 @@ integer          f_id, n_fields
 integer          igg, ige
 double precision scmaxp, scminp
 double precision turb_schmidt
-integer          key_t_ext_id, icpext
-integer          iviext
 
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
@@ -109,15 +107,6 @@ end interface
 ! 0. Initialisation
 !===============================================================================
 
-! Time extrapolation?
-call field_get_key_id("time_extrapolated", key_t_ext_id)
-
-if (icp.ge.0) then
-  call field_get_key_int(icp, key_t_ext_id, icpext)
-else
-  icpext = 0
-endif
-call field_get_key_int(iviscl, key_t_ext_id, iviext)
 
 !===============================================================================
 ! 1. Introduction
@@ -559,9 +548,8 @@ write(nfecra,9900)
 
 ! --- Stokes
 write(nfecra,4114)istmpf,thetfl,     &
-     iroext,                         &
-     iviext,thetvi,                  &
-     icpext,thetcp,                  &
+     thetvi,                  &
+     thetcp,                  &
      thetsn,thetst,epsup
 
 write(nfecra,9900)
@@ -581,20 +569,8 @@ write(nfecra,9900)
 '                ',14x,       ' (1 : schema std (Saturne 1.0 )',/,&
 '                ',14x,       ' (2 : ordre 2   (THETFL = 0.5 )',/,&
 '       THETFL = ', e14.5,    ' (theta pour flux de masse    )',/,&
-'       IROEXT = ',4x,i10,    ' (extrap. masse volumique',      /,&
-'                ',14x,       ' (0 : explicite',                /,&
-'                ',14x,       ' (1 : n+thetro avec thetro=1/2', /,&
-'                ',14x,       ' (2 : n+thetro avec thetro=1',   /,&
-'       IVIEXT = ',4x,i10,    ' (extrap. viscosite totale',     /,&
-'                ',14x,       ' (0 : explicite',                /,&
-'                ',14x,       ' (1 : n+thetvi avec thetro=1/2', /,&
-'                ',14x,       ' (2 : n+thetvi avec thetro=1',   /,&
 '       THETVI = ', e14.5,    ' (theta pour viscosite totale',  /,&
 '                               ((1+theta)nouveau-theta ancien',/,&
-'       ICPEXT = ',4x,i10,    ' (extrap. chaleur specifique',   /,&
-'                ',14x,       ' (0 : explicite',                /,&
-'                ',14x,       ' (1 : n+thetcp avec thetro=1/2', /,&
-'                ',14x,       ' (2 : n+thetcp avec thetro=1',   /,&
 '       THETCP = ', e14.5,    ' (theta schema chaleur spec',    /,&
 '                               ((1+theta)nouveau-theta ancien',/,&
 '       THETSN = ', e14.5,    ' (theta schema T.S. Nav-Stokes)',/,&
@@ -612,21 +588,13 @@ write(nfecra,9900)
 ' ** STOKES',                                                   /,&
 '    ------',                                                   /,&
                                                                 /,&
-'  -- Phase continue :',                                        /,&
+'  -- Continuous phase:',                                       /,&
                                                                 /,&
 '       ISTMPF = ',4x,i10,    ' (time scheme for flow',         /,&
 '                ',14x,       ' (0: explicit (THETFL = 0     )',/,&
 '                ',14x,       ' (1: std scheme (Saturne 1.0  )',/,&
 '                ',14x,       ' (2: 2nd-order (THETFL = 0.5  )',/,&
 '       THETFL = ', e14.5,    ' (theta for mass flow         )',/,&
-'       IROEXT = ',4x,i10,    ' (density extrapolation',        /,&
-'                ',14x,       ' (0: explicit',                  /,&
-'                ',14x,       ' (1: n+thetro with thetro=1/2',  /,&
-'                ',14x,       ' (2: n+thetro with thetro=1',    /,&
-'       IVIEXT = ',4x,i10,    ' (total viscosity extrapolation',/,&
-'                ',14x,       ' (0: explicit',                  /,&
-'                ',14x,       ' (1: n+thetvi with thetro=1/2',  /,&
-'                ',14x,       ' (2: n+thetvi with thetro=1',    /,&
 '       THETVI = ', e14.5,    ' (theta for total viscosity',    /,&
 '                               ((1+theta).new-theta.old',      /,&
 '       ICPEXT = ',4x,i10,    ' (specific heat extrapolation',  /,&

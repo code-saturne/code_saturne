@@ -106,12 +106,14 @@ double precision, dimension(:), pointer :: bromo, cromo
 
 ! Local variables
 
-integer          ifac  , iel   , ivar  , isou  , ii
+integer          ifac  , iel   , ivar  , isou
 integer          inc   , iccocg
 integer          iwarnp, iclip
 integer          nswrgp, imligp
 integer          f_id0 , f_id
 integer          iprev
+integer          key_t_ext_id
+integer          iroext
 double precision epsrgp, climgp, extrap
 double precision rhothe
 double precision utaurf,ut2,ypa,ya,tke,xunorm, limiter, nu0,alpha
@@ -196,6 +198,9 @@ if(vcopt%iwarni.ge.1) then
     write(nfecra,1002)
   endif
 endif
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 !===============================================================================
 ! 1.1 Advanced init for EBRSM
@@ -500,6 +505,7 @@ else if (igrari.eq.1) then
   f_id0 = -1
   iccocg = 1
 
+  call field_get_key_int(icrom, key_t_ext_id, iroext)
   ! If we extrapolate the source terms and rho, we use cpdt rho^n
   if(isto2t.gt.0.and.iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)

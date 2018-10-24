@@ -149,20 +149,6 @@ module optcal
   !> otherwise to 0.
   integer, save ::          isso2t(nscamx)
 
-  !> \ref iroext specifies the time scheme activated
-  !> for the physical property \f$\phi\f$ density.
-  !> - 0: "standard" first-order: the value calculated at
-  !> the beginning of the current time step (from the
-  !> variables known at the end of the previous time step) is used
-  !> - 1: second-order: the physical property \f$\phi\f$ is
-  !> extrapolated according to the formula
-  !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$ being
-  !> given by the value of 0.5
-  !> - 2: first-order: the physical property \f$\phi\f$ is
-  !> extrapolated at $n+1$ according to the same formula
-  !> as when \ref iroext = 1 but with \f$\theta\f$ = 1
-  integer, save ::          iroext
-
   !> initvi : =1 if total viscosity read from checkpoint file
   integer, save ::          initvi
 

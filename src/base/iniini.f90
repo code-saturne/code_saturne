@@ -440,7 +440,6 @@ thetst = -999.d0
 !       fichier suite portant les valeurs adaptees)
 
 !     Masse volumique
-iroext = -999
 initro = 0
 !     Viscosite totale
 thetvi = -999.d0

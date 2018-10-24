@@ -77,6 +77,7 @@ integer          ivisph, iest
 integer          key_buoyant_id, is_buoyant_fld
 integer          key_t_ext_id, icpext
 integer          iviext
+integer          iroext
 
 double precision gravn2
 
@@ -200,13 +201,14 @@ if (istmpf.eq.-999) then
     istmpf = 2
   endif
 endif
-!     Masse volumique
-if (iroext.eq.-999) then
+
+! Density
+call field_get_key_int(icrom, key_t_ext_id, iroext)
+if (iroext.eq.-1) then
   if (ischtp.eq.1) then
     iroext = 0
   else if (ischtp.eq.2) then
-    !       Pour le moment par defaut on ne prend pas l'ordre 2
-    !              IROEXT = 1
+    ! not extrapolated by default
     iroext = 0
   endif
 endif
@@ -372,12 +374,6 @@ endif
 ! Schema en temps pour les termes sources des grandeurs turbulentes
 if (isto2t.ne.0.and.isto2t.ne. 1.and.isto2t.ne.2) then
   write(nfecra,8131) 'ISTO2T',isto2t
-  iok = iok + 1
-endif
-
-! Schema en temps pour la masse volumique
-if (iroext.ne.0.and.iroext.ne. 1.and.iroext.ne.2) then
-  write(nfecra,8131) 'IROEXT',iroext
   iok = iok + 1
 endif
 

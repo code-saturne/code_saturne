@@ -937,11 +937,19 @@ cs_parameters_define_field_keys(void)
 
   cs_field_define_key_int("coupling_entity", -1, 0);
 
-  /* Is the field time-extrapolated?
+  /*! Is the field time-extrapolated?
    * -1: default automatic value
-   *  0: not extrapolated
-   *  1: extrapolated
-   *  */
+   *  0: "standard" first-order: the value calculated at
+   *     the beginning of the current time step (from the
+   *     variables known at the end of the previous time step) is used
+   *  1: second-order: the physical property \f$\phi\f$ is
+   *     extrapolated according to the formula
+   *     \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$ being
+   *     given by the value of 0.5
+   *  2: first-order: the physical property \f$\phi\f$ is
+   *     extrapolated at $n+1$ according to the same formula
+   *     as when = 1 but with \f$\theta\f$ = 1
+   */
   cs_field_define_key_int("time_extrapolated", -1, 0);
 
   cs_field_define_key_int("measures_set_id", -1, CS_FIELD_VARIABLE);

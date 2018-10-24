@@ -107,6 +107,7 @@ integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
 integer          key_t_ext_id
+integer          iroext
 integer          iviext
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
@@ -267,6 +268,7 @@ thetv  = vcopt%thetav
 call field_get_val_s(icrom, cromo)
 call field_get_val_s(iviscl, cpro_pcvlo)
 if (istprv.ge.0) then
+  call field_get_key_int(icrom, key_t_ext_id, iroext)
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif

@@ -115,6 +115,7 @@ integer          istprv, f_oi_id
 integer          iphydp, iprev
 integer          imucpp, idftnp, iswdyp
 integer          key_t_ext_id
+integer          iroext
 integer          iviext
 
 integer          icvflb, imasac
@@ -234,6 +235,7 @@ call field_get_val_s(ibrom, bromo)
 call field_get_val_s(ivisct, cpro_pcvto)
 call field_get_val_s(iviscl, cpro_pcvlo)
 if (istprv.ge.0) then
+  call field_get_key_int(icrom, key_t_ext_id, iroext)
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
     call field_get_val_prev_s(ibrom, bromo)

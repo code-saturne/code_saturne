@@ -110,6 +110,7 @@ integer          imucpp, idftnp, iswdyp
 integer          f_id
 integer          init
 integer          key_t_ext_id
+integer          iroext
 integer          iviext
 
 double precision romvsd
@@ -196,6 +197,7 @@ endif
 call field_get_val_s(icrom, cromo)
 
 if (istprv.ge.0) then
+  call field_get_key_int(icrom, key_t_ext_id, iroext)
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif

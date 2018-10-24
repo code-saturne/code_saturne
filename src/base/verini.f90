@@ -82,6 +82,7 @@ integer          kscmin, kscmax, ifcvsl
 integer          keyvar, keysca
 integer          key_t_ext_id, icpext
 integer          iviext
+integer          iroext
 integer          ivisext
 double precision scmaxp, scminp
 double precision turb_schmidt
@@ -118,6 +119,7 @@ else
   icpext = 0
 endif
 call field_get_key_int(iviscl, key_t_ext_id, iviext)
+call field_get_key_int(icrom, key_t_ext_id, iroext)
 
 !===============================================================================
 ! 1. ENTREES SORTIES entsor : formats 1000
@@ -150,12 +152,6 @@ if (nscapp.lt.0.or.nscapp.gt.nscamx) then
 endif
 if (nvar.lt.0.or.nvar.gt.nvarmx) then
   write(nfecra,2000)'NVAR  ',nvarmx,nvar
-  iok = iok + 1
-endif
-
-!     Extrap de rho : necessairement rho variable
-if (irovar.eq.0.and.iroext.gt.0) then
-  write(nfecra,2005)iroext,irovar
   iok = iok + 1
 endif
 
@@ -957,24 +953,6 @@ endif
 '@',    a6,' DOIT ETRE UN ENTIER',                              /,&
 '@      STRICTEMENT POSITIF ET INFERIEUR OU EGAL A', i10,       /,&
 '@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute',                            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2005 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    ON DEMANDE UNE EXTRAPOLATION TEMPORELLE DE RHO AVEC',     /,&
-'@      IROEXT = ', i10,                                        /,&
-'@    CECI EST INCOMPATIBLE AVEC RHO CONSTANT',                 /,&
-'@      IROVAR = ', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute',                            /,&
 '@',                                                            /,&
@@ -2180,24 +2158,6 @@ endif
 '@',    a6,' MUST BE AN INTEGER',                               /,&
 '@      STRICTLY POSITIVE AND LESS THAN or EGAL TO',i10,        /,&
 '@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2005 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    TEMPORAL EXTRAPOLATION OF DENSITY RHO REQUESTED,',        /,&
-'@      BUT IROEXT = ', i10,                                    /,&
-'@    THIS IS INCOMPATIBLE WITH RHO = CONSTANT',                /,&
-'@      IROVAR = ', i10,                                        /,&
 '@',                                                            /,&
 '@  The calculation could NOT run.',                            /,&
 '@',                                                            /,&
