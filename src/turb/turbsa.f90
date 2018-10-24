@@ -109,6 +109,8 @@ integer          ipatrg
 integer          imucpp, idftnp, iswdyp
 integer          f_id
 integer          init
+integer          key_t_ext_id
+integer          iviext
 
 double precision romvsd
 double precision visct , rom
@@ -136,7 +138,6 @@ double precision, allocatable, dimension(:) :: csab1r, rotfct
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
 double precision, dimension(:), pointer :: cvar_nusa, cvara_nusa
-double precision, dimension(:), pointer :: cpro_pcvto
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: c_st_nusa_p
@@ -149,6 +150,9 @@ type(var_cal_opt) :: vcopt_nusa
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
@@ -195,8 +199,9 @@ if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
   if (iviext.gt.0) then
-    call field_get_val_prev_s(ivisct, cpro_pcvto)
+    call field_get_val_prev_s(ivisct, cvisct)
   endif
 endif
 
@@ -333,11 +338,7 @@ endif
 !                                 visct is visct^n
 do iel = 1, ncel
 
-  if (istprv.ge.0 .and. iviext.gt.0) then
-    visct = cpro_pcvto(iel)
-  else
-    visct = cvisct(iel)
-  endif
+  visct = cvisct(iel)
   rom   = cromo(iel)
   ! kinematic viscosity
   nu0   = viscl(iel)/rom

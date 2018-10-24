@@ -75,6 +75,7 @@ integer          iel    , ifac   , iscal
 integer          iflmas , iflmab
 integer          f_id
 integer          key_t_ext_id, icpext
+integer          iviext
 
 double precision flux   , theta  , viscos, varcp
 
@@ -135,8 +136,12 @@ if (iappel.eq.1) then
     enddo
   endif
 
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_current_to_previous(iviscl)
+  endif
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
     call field_current_to_previous(ivisct)
   endif
   if (icp.ge.0) then
@@ -196,8 +201,12 @@ elseif (iappel.eq.2) then
   endif
   if (initvi.ne.1) then
     initvi = 1
+    call field_get_key_int(iviscl, key_t_ext_id, iviext)
     if (iviext.gt.0) then
       call field_current_to_previous(iviscl)
+    endif
+    call field_get_key_int(ivisct, key_t_ext_id, iviext)
+    if (iviext.gt.0) then
       call field_current_to_previous(ivisct)
     endif
   endif
@@ -239,17 +248,25 @@ elseif (iappel.eq.2) then
 !     On conserve les nouvelles valeurs dans l'ancien tableau pour
 !     retablir en fin de pas de temps
 
-  if (iviext.gt.0) then
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
+   if (iviext.gt.0) then
     call field_get_val_s(iviscl, cpro_viscl)
-    call field_get_val_s(ivisct, cpro_visct)
     call field_get_val_prev_s(iviscl, cproa_visls)
-    call field_get_val_prev_s(ivisct, cproa_visct)
     theta  = thetvi
     do iel = 1, ncel
       viscos = cpro_viscl(iel)
       cpro_viscl(iel) = (1.d0+theta) * cpro_viscl(iel)    &
            -       theta  * cproa_visls(iel)
       cproa_visls(iel) = viscos
+    enddo
+  endif
+
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
+    call field_get_val_s(ivisct, cpro_visct)
+    call field_get_val_prev_s(ivisct, cproa_visct)
+    theta  = thetvi
+    do iel = 1, ncel
       viscos = cpro_visct(iel)
       cpro_visct(iel) = (1.d0+theta) * cpro_visct(iel)    &
            -       theta  * cproa_visct(iel)
@@ -418,16 +435,24 @@ elseif (iappel.eq.5) then
 ! 3.1 RETABLISSEMENT POUR LES PROPRIETES PHYSIQUES
 ! ================================================
 
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_get_val_s(iviscl, cpro_viscl)
-    call field_get_val_s(ivisct, cpro_visct)
     call field_get_val_prev_s(iviscl, cproa_visls)
-    call field_get_val_prev_s(ivisct, cproa_visct)
     do iel = 1, ncel
       cpro_viscl(iel) = cproa_visls(iel)
+    enddo
+  endif
+
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
+    call field_get_val_s(ivisct, cpro_visct)
+    call field_get_val_prev_s(ivisct, cproa_visct)
+    do iel = 1, ncel
       cpro_visct(iel) = cproa_visct(iel)
     enddo
   endif
+
   if (icp.gt.0) then
     call field_get_key_int(icp, key_t_ext_id, icpext)
     if (icpext.gt.0) then

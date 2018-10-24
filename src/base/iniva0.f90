@@ -83,7 +83,6 @@ integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin, kscmax
 integer          f_type
 integer          keyvar
-integer          key_t_ext_id, icpext
 
 logical          have_previous
 
@@ -104,7 +103,7 @@ double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
 double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls, cvar_tempk
-double precision, dimension(:), pointer :: cproa_viscl, cproa_cp, cpro_visma_s
+double precision, dimension(:), pointer :: cpro_visma_s
 double precision, dimension(:), pointer :: mix_mol_mas
 double precision, dimension(:,:), pointer :: cpro_visma_v
 
@@ -127,9 +126,6 @@ end interface
 !===============================================================================
 
 call field_get_key_id("variable_id", keyvar)
-
-! Time extrapolation?
-call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 call field_get_val_s_by_name('dt', dt)
 
@@ -193,34 +189,23 @@ else if (iroext.gt.0.or.icalhy.eq.1.or.ipthrm.eq.1.or.ippmod(icompf).ge.0) then
   endif
 endif
 
-!     Viscosite moleculaire
+! Moleacular viscosity
 call field_get_val_s(iviscl, viscl)
 call field_get_val_s(ivisct, visct)
 
-!     Viscosite moleculaire aux cellules (et au pdt precedent si ordre2)
+! Molecular viscosity at cells (and eventual previous value)
 do iel = 1, ncel
   viscl(iel) = viscl0
 enddo
-if(iviext.gt.0) then
-  call field_get_val_prev_s(iviscl, cproa_viscl)
-  do iel = 1, ncel
-    cproa_viscl(iel) = viscl(iel)
-  enddo
-endif
+call field_current_to_previous(iviscl)
 
-!     Chaleur massique aux cellules (et au pdt precedent si ordre2)
+! Specific heat at cells (and eventual previous value)
 if(icp.ge.0) then
   call field_get_val_s(icp, cpro_cp)
-  call field_get_key_int(icp, key_t_ext_id, icpext)
   do iel = 1, ncel
     cpro_cp(iel) = cp0
   enddo
-  if(icpext.gt.0) then
-    call field_get_val_prev_s(icp, cproa_cp)
-    do iel = 1, ncel
-      cproa_cp(iel) = cpro_cp(iel)
-    enddo
-  endif
+  call field_current_to_previous(icp)
 endif
 
 ! La pression totale sera initialisee a P0 + rho.g.r dans INIVAR

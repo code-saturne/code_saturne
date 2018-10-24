@@ -163,21 +163,6 @@ module optcal
   !> as when \ref iroext = 1 but with \f$\theta\f$ = 1
   integer, save ::          iroext
 
-  !> \ref iviext specifies the time scheme activated
-  !> for the physical property \f$\phi\f$ "total viscosity"
-  !> (molecular+turbulent or sub-grid viscosities).
-  !> - 0: "standard" first-order: the value calculated at
-  !> the beginning of the current time step (from the
-  !> variables known at the end of the previous time step) is used
-  !> - 1: second-order: the physical property \f$\phi\f$ is
-  !> extrapolated according to the formula
-  !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$
-  !> being given by the value of \ref thetvi = 0.5
-  !> - 2: first-order: the physical property \f$\phi\f$ is
-  !> extrapolated at \f$n+1\f$ according to the
-  !> same formula as when \ref iviext = 1, but with \f$\theta\f$= \ref thetvi = 1
-  integer, save ::          iviext
-
   !> for each scalar iscal, \ref ivsext (iscal) specifies the time scheme
   !> activated for the physical property \f$\phi\f$ "diffusivity".
   !> - 0: "standard" first-order: the value calculated at
@@ -250,10 +235,11 @@ module optcal
 
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
   !> property \f$\phi\f$ "total viscosity" when the extrapolation
-  !> has been activated (see \ref iviext), according to the formula
+  !> has been activated (see \ref time_extrapolated key word), according to the formula
   !> \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
   !> The value of \f$\theta\f$ = \ref thetvi is deduced from the value
-  !> chosen for \ref iviext. Generally, only the value 0.5 is used.
+  !> chosen for \ref time_extrapolated key word for the viscosity.
+  !> Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1

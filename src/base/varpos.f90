@@ -76,6 +76,7 @@ integer          f_id
 integer          ivisph, iest
 integer          key_buoyant_id, is_buoyant_fld
 integer          key_t_ext_id, icpext
+integer          iviext
 
 double precision gravn2
 
@@ -209,15 +210,29 @@ if (iroext.eq.-999) then
     iroext = 0
   endif
 endif
-!     Viscosite
-if (iviext.eq.-999) then
+
+! Molecular Viscosity
+call field_get_key_int(iviscl, key_t_ext_id, iviext)
+if (iviext.eq.-1) then
   if (ischtp.eq.1) then
     iviext = 0
   else if (ischtp.eq.2) then
-    !       Pour le moment par defaut on ne prend pas l'ordre 2
-    !              IVIEXT = 1
+    ! not extrapolated by default
     iviext = 0
   endif
+  call field_set_key_int(iviscl, key_t_ext_id, iviext)
+endif
+
+! Turbulent Viscosity
+call field_get_key_int(ivisct, key_t_ext_id, iviext)
+if (iviext.eq.-1) then
+  if (ischtp.eq.1) then
+    iviext = 0
+  else if (ischtp.eq.2) then
+    ! not extrapolated by default
+    iviext = 0
+  endif
+  call field_set_key_int(ivisct, key_t_ext_id, iviext)
 endif
 
 ! Specific heat
@@ -231,6 +246,7 @@ if (icp.ge.0) then
       icpext = 0
     endif
   endif
+  call field_set_key_int(icp, key_t_ext_id, icpext)
 endif
 !     Termes sources NS,
 if (isno2t.eq.-999) then
@@ -361,12 +377,6 @@ if (iroext.ne.0.and.iroext.ne. 1.and.iroext.ne.2) then
   iok = iok + 1
 endif
 
-! Schema en temps pour la viscosite
-if (iviext.ne.0.and.iviext.ne. 1.and.iviext.ne.2) then
-  write(nfecra,8131) 'IVIEXT',iviext
-  iok = iok + 1
-endif
-
 do iscal = 1, nscal
   ! Schema en temps pour les termes sources des scalaires
   if (isso2t(iscal).ne.0.and.                                    &
@@ -405,8 +415,12 @@ if (idilat.ge.4) then
 endif
 
 ! Dans le cas d'une extrapolation de la viscosite totale
+call field_get_key_int(iviscl, key_t_ext_id, iviext)
 if (iviext.gt.0) then
   call field_set_n_previous(iviscl, 1)
+endif
+call field_get_key_int(ivisct, key_t_ext_id, iviext)
+if (iviext.gt.0) then
   call field_set_n_previous(ivisct, 1)
 endif
 

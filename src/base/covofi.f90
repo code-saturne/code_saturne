@@ -162,6 +162,8 @@ integer          icvflb, f_dim, iflwgr
 integer          icla
 integer          icrom_scal
 integer          key_buoyant_id, is_buoyant_fld
+integer          key_t_ext_id
+integer          iviext
 
 integer          ivoid(1)
 
@@ -235,6 +237,9 @@ iflid = ivarfl(ivar)
 ! Key id for buoyant field (inside the Navier Stokes loop)
 call field_get_key_id("is_buoyant", key_buoyant_id)
 call field_get_key_int(iflid, key_buoyant_id, is_buoyant_fld)
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 ! If the scalar is buoyant, it is inside the Navier Stokes loop, and so iterns >=1
 ! otherwise it is outside of the loop and iterns = -1.
@@ -777,6 +782,7 @@ if (itspdv.eq.1) then
 
       ! Not extapolated value of the viscosity
       call field_get_val_s(ivisct, cpro_visct)
+      call field_get_key_int(ivisct, key_t_ext_id, iviext)
       if (iviext.gt.0) call field_get_val_prev_s(ivisct, cpro_visct)
 
       ! iscal is the variance of the scalar iiscav

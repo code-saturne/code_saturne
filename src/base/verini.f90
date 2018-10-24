@@ -81,6 +81,7 @@ integer          indest, iiidef, istop
 integer          kscmin, kscmax, ifcvsl
 integer          keyvar, keysca
 integer          key_t_ext_id, icpext
+integer          iviext
 double precision scmaxp, scminp
 double precision turb_schmidt
 
@@ -115,6 +116,7 @@ if (icp.ge.0) then
 else
   icpext = 0
 endif
+call field_get_key_int(iviscl, key_t_ext_id, iviext)
 
 !===============================================================================
 ! 1. ENTREES SORTIES entsor : formats 1000

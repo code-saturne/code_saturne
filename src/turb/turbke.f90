@@ -114,6 +114,8 @@ integer          iwarnp
 integer          istprv, f_oi_id
 integer          iphydp, iprev
 integer          imucpp, idftnp, iswdyp
+integer          key_t_ext_id
+integer          iviext
 
 integer          icvflb, imasac
 integer          ivoid(1)
@@ -170,6 +172,9 @@ type(var_cal_opt) :: vcopt_k, vcopt_e
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
@@ -233,9 +238,13 @@ if (istprv.ge.0) then
     call field_get_val_prev_s(icrom, cromo)
     call field_get_val_prev_s(ibrom, bromo)
   endif
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
+    call field_get_val_prev_s(iviscl, cpro_pcvlo)
+  endif
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_get_val_prev_s(ivisct, cpro_pcvto)
-    call field_get_val_prev_s(iviscl, cpro_pcvlo)
   endif
 endif
 

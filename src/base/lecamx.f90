@@ -115,6 +115,7 @@ integer          nfmtst
 integer          jale, jcavit, jvolfl
 integer          f_id, iflmas, iflmab, iflvoi, iflvob
 integer          key_t_ext_id, icpext
+integer          iviext
 integer          ival(1), ngbstr(2)
 double precision rval(1), tmpstr(27)
 
@@ -135,7 +136,7 @@ double precision, allocatable, dimension(:) :: vismbf
 !===============================================================================
 
 !===============================================================================
-! 0. INITIALISATION
+! 0. Initialisation
 !===============================================================================
 
 !  ---> Banniere
@@ -377,8 +378,8 @@ endif
 !     La viscosite moleculaire est egalement lue pour le modele de cavitation
 !     Si on reussit, on l'indique
 
-if (    iviext.gt.0                   &
-    .or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
+call field_get_key_int(iviscl, key_t_ext_id, iviext)
+if (iviext.gt.0.or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
 
   inierr = 0
 
@@ -390,8 +391,11 @@ if (    iviext.gt.0                   &
     nberro = nberro+ierror
     inierr = inierr+ierror
   endif
+endif
 
-  !         Viscosite turbulente ou de sous-maille - cellules
+call field_get_key_int(ivisct, key_t_ext_id, iviext)
+if (iviext.gt.0.or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
+  ! Viscosite turbulente ou de sous-maille - cellules
   if (iviext.gt.0) then
     call restart_read_field_vals(rp, ivisct, 0, ierror)
     nberro = nberro+ierror

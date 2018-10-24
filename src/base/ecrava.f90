@@ -98,6 +98,7 @@ integer          ifac, istr
 integer          iz, kk
 integer          ival(1)
 integer          key_t_ext_id, icpext
+integer          iviext
 double precision rval(1), tmpstr(27)
 
 type(c_ptr) :: rp
@@ -432,16 +433,18 @@ if (iecaux.eq.1) then
   !       Une exception : on ecrit egalement Cp en effet joule pour
   !         pouvoir calculer la temperature H/Cp en debut de calcul
 
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
   if (iviext.gt.0.or.ivofmt.ge.0) then
-    !  Viscosite moleculaire - cellules (si variable ou cavitation)
+    ! Molecular viscosity
     if (ivivar.eq.1.or.ivofmt.ge.0) then
       call restart_write_field_vals(rp, iviscl, 0)
     endif
+  endif
 
-    if (iviext.gt.0) then
-      ! Viscosite turbulente ou de sous-maille - cellules
-      call restart_write_field_vals(rp, ivisct, 0)
-    endif
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
+    ! Turbulent viscosity
+    call restart_write_field_vals(rp, ivisct, 0)
   endif
 
   if (icp.ge.0) then

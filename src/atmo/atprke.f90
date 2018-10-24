@@ -69,10 +69,12 @@ double precision smbrk(ncelet), smbre(ncelet)
 double precision tinstk(ncelet)
 
 ! Local variables
-integer         iel
-integer         itpp , iqw
-integer         iccocg, inc
-integer         iivar
+integer          iel
+integer          itpp , iqw
+integer          iccocg, inc
+integer          iivar
+integer          key_t_ext_id
+integer          iviext
 
 double precision gravke, prdtur
 double precision theta_virt
@@ -97,6 +99,9 @@ double precision, dimension(:), pointer :: cpro_pcvto, cpro_pcliq
 ! Allocate work arrays
 allocate(grad(3,ncelet))
 
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
 ! Pointer to density and turbulent viscosity
 call field_get_val_s(icrom, cromo)
 call field_get_val_s(ivisct, cpro_pcvto)
@@ -104,6 +109,7 @@ if(isto2t.gt.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
   if(iviext.gt.0) then
     call field_get_val_prev_s(ivisct, cpro_pcvto)
   endif

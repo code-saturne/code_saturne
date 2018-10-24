@@ -106,6 +106,8 @@ integer          istprv
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
+integer          key_t_ext_id
+integer          iviext
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision tuexpe, thets , thetv , thetap, thetp1
@@ -201,6 +203,9 @@ if (vcopt%iwarni.ge.1) then
   write(nfecra,1000)
 endif
 
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
 !===============================================================================
 ! 2. Calculation of term grad(phi).grad(k)
 !===============================================================================
@@ -265,6 +270,8 @@ if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
+
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_get_val_prev_s(iviscl, cpro_pcvlo)
   endif
@@ -528,6 +535,7 @@ thetv  = vcopt%thetav
 
 call field_get_val_s(ivisct, cpro_pcvto)
 if (istprv.ge.0) then
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_get_val_prev_s(ivisct, cpro_pcvto)
   endif

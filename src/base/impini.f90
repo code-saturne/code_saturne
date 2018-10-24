@@ -86,6 +86,7 @@ integer          igg, ige
 double precision scmaxp, scminp
 double precision turb_schmidt
 integer          key_t_ext_id, icpext
+integer          iviext
 
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
@@ -116,6 +117,7 @@ if (icp.ge.0) then
 else
   icpext = 0
 endif
+call field_get_key_int(iviscl, key_t_ext_id, iviext)
 
 !===============================================================================
 ! 1. Introduction

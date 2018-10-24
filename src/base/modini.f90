@@ -67,6 +67,7 @@ integer          imrgrp
 integer          kcpsyr, icpsyr
 integer          nfld, f_type
 integer          key_t_ext_id, icpext
+integer          iviext
 
 logical          is_set
 
@@ -187,6 +188,7 @@ elseif (istmpf.eq.2) then
 endif
 
 !    -- Proprietes physiques
+call field_get_key_int(iviscl, key_t_ext_id, iviext)
 if (abs(thetvi+999.d0).gt.epzero) then
   write(nfecra,1011) 'IVIEXT',iviext,'THETVI'
   iok = iok + 1

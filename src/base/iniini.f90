@@ -443,7 +443,6 @@ thetst = -999.d0
 iroext = -999
 initro = 0
 !     Viscosite totale
-iviext = -999
 thetvi = -999.d0
 initvi = 0
 !     Chaleur specifique

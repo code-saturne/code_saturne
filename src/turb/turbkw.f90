@@ -105,6 +105,8 @@ integer          iwarnp
 integer          istprv
 integer          init
 integer          imucpp, idftnp, iswdyp
+integer          key_t_ext_id
+integer          iviext
 
 integer          icvflb, imasac
 integer          ivoid(1)
@@ -235,9 +237,13 @@ if (istprv.ge.0) then
     call field_get_val_prev_s(icrom, cromo)
     call field_get_val_prev_s(ibrom, bromo)
   endif
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
+    call field_get_val_prev_s(iviscl, cpro_pcvlo)
+  endif
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_get_val_prev_s(ivisct, cpro_pcvto)
-    call field_get_val_prev_s(iviscl, cpro_pcvlo)
   endif
 endif
 
