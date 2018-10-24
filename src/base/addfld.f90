@@ -389,8 +389,6 @@ if ((iturb.eq.30.and.irijec.eq.1).or.              &
 
 endif
 
-
-
 !===============================================================================
 ! 3. Additional postprocessing fields
 !===============================================================================
@@ -457,6 +455,22 @@ if (itempb .ge. 0) then
     call field_get_label(f_id, f_label)
     call field_set_key_str(itempb, keylbl, f_label)
   endif
+endif
+
+!===============================================================================
+! 4. Set number of previous values if needed
+!===============================================================================
+
+! Density at the second previous time step for VOF algorithm
+! or dilatable algorithm
+if (ivofmt.ge.0.or.idilat.gt.1.or.irovar.eq.1) then
+  call field_set_n_previous(icrom, 2)
+  call field_set_n_previous(ibrom, 2)
+  ! The density at the previous time step is required if
+  ! we perform a hydrostatic pressure correction (icalhy=1)
+else if (icalhy.eq.1.or.ipthrm.eq.1.or.ippmod(icompf).ge.0) then
+  call field_set_n_previous(icrom, 1)
+  call field_set_n_previous(ibrom, 1)
 endif
 
 !---
