@@ -95,7 +95,8 @@ typedef void
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique - Face-based version
+ *          technique.
+ *          Case of scalar-valued CDO Face-based schemes
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -106,16 +107,40 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_fb_weak_dirichlet(const cs_equation_param_t      *eqp,
-                                   const cs_cell_mesh_t           *cm,
-                                   cs_face_mesh_t                 *fm,
-                                   cs_cell_builder_t              *cb,
-                                   cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                    const cs_cell_mesh_t           *cm,
+                                    cs_face_mesh_t                 *fm,
+                                    cs_cell_builder_t              *cb,
+                                    cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique.
+ *          Case of vector-valued CDO Face-based schemes
+ *          The idea is to compute the scalar version and dispatch it three
+ *          times, one for each Cartesian components
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                    const cs_cell_mesh_t           *cm,
+                                    cs_face_mesh_t                 *fm,
+                                    cs_cell_builder_t              *cb,
+                                    cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment - Face-based version
+ *          Case of scalar-valued CDO Face-based schemes
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -126,11 +151,34 @@ cs_cdo_diffusion_fb_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_fb_wsym_dirichlet(const cs_equation_param_t      *eqp,
-                                   const cs_cell_mesh_t           *cm,
-                                   cs_face_mesh_t                 *fm,
-                                   cs_cell_builder_t              *cb,
-                                   cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                    const cs_cell_mesh_t           *cm,
+                                    cs_face_mesh_t                 *fm,
+                                    cs_cell_builder_t              *cb,
+                                    cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique plus a symmetric treatment.
+ *          Case of vector-valued CDO Face-based schemes
+ *          The idea is to compute the scalar version and dispatch it three
+ *          times, one for each Cartesian components
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                    const cs_cell_mesh_t           *cm,
+                                    cs_face_mesh_t                 *fm,
+                                    cs_cell_builder_t              *cb,
+                                    cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

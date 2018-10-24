@@ -518,7 +518,13 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    eqc->enforce_dirichlet = cs_cdo_diffusion_vfb_weak_dirichlet;
+    break;
+
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+    eqc->enforce_dirichlet = cs_cdo_diffusion_vfb_wsym_dirichlet;
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid type of algorithm to enforce Dirichlet BC.",
