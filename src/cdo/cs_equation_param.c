@@ -333,6 +333,9 @@ _petsc_setup_hook(void   *context,
   /* User function for additional settings */
   cs_user_sles_petsc_hook((void *)eqp, ksp);
 
+  /* Update with the new defined options */
+  KSPSetFromOptions(ksp);
+  PCSetFromOptions(pc);
 }
 
 #endif /* defined(HAVE_PETSC) */
