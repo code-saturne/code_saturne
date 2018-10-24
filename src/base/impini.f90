@@ -597,10 +597,6 @@ write(nfecra,9900)
 '       THETFL = ', e14.5,    ' (theta for mass flow         )',/,&
 '       THETVI = ', e14.5,    ' (theta for total viscosity',    /,&
 '                               ((1+theta).new-theta.old',      /,&
-'       ICPEXT = ',4x,i10,    ' (specific heat extrapolation',  /,&
-'                ',14x,       ' (0: explicit',                  /,&
-'                ',14x,       ' (1: n+thetcp with thetro=1/2',  /,&
-'                ',14x,       ' (2: n+thetcp with thetro=1',    /,&
 '       THETCP = ', e14.5,    ' (specific heat theta-scheme',   /,&
 '                               ((1+theta).new-theta.old',      /,&
 '       THETSN = ', e14.5,    ' (Nav-Stokes S.T. theta scheme)',/,&
