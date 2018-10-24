@@ -182,6 +182,20 @@ cs_equation_get_field(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the id related to the variable field structure associated to
+ *         the cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return an integer (-1 if the field is not defined)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_get_field_id(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the field structure for the (normal) boundary flux associated
  *         to a cs_equation_t structure
  *
