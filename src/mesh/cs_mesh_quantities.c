@@ -2066,6 +2066,7 @@ _cell_volume_reductions(const cs_mesh_t  *mesh,
  *   i_face_cog     <--  center of gravity of interior faces
  *   b_face_cog     <--  center of gravity of border faces
  *   cell_cen       <--  cell center
+ *   cell_vol       <--  cell volume
  *   i_dist         -->  distance IJ.Nij for interior faces
  *   b_dist         -->  likewise for border faces
  *   weight         -->  weighting factor (Aij=pond Ai+(1-pond)Aj)
@@ -2081,6 +2082,7 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
                         const cs_real_t    i_face_cog[][3],
                         const cs_real_t    b_face_cog[][3],
                         const cs_real_t    cell_cen[][3],
+                        const cs_real_t    cell_vol[],
                         cs_real_t          i_dist[],
                         cs_real_t          b_dist[],
                         cs_real_t          weight[])
@@ -2116,12 +2118,20 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
     else {
       weight[face_id] = 0.5;
     }
-    double distmax = cs_math_3_distance(cell_cen[cell_id1],
-                                        cell_cen[cell_id2]);
 
     /* Clipping of cell cell distances */
     if (cs_glob_mesh_quantities_flag & CS_FACE_DISTANCE_CLIP) {
-      if (i_dist[face_id] < 0.2 * distmax) {
+
+      /* Min value between IJ and
+       * (Omega_i+Omega_j)/S_ij which is exactly the distance for tetras */
+      double distmax = CS_MIN(
+          cs_math_3_distance(cell_cen[cell_id1],cell_cen[cell_id2]),
+          (cell_vol[cell_id1]+cell_vol[cell_id2])/cs_math_3_norm(face_nomal));
+
+      /* Previous value of 0.2 sometimes leads to computation divergence */
+      /* 0.01 seems better and safer for the moment */
+      double critmin = 0.01;
+      if (i_dist[face_id] < critmin * distmax) {
         w_count++;
         i_dist[face_id] = CS_MAX(i_dist[face_id], 0.2 * distmax);
       }
@@ -2159,9 +2169,17 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
                                                      normal);
     /* Clipping of cell boundary distances */
     if (cs_glob_mesh_quantities_flag & CS_FACE_DISTANCE_CLIP) {
-      cs_real_t distmax = cs_math_3_distance(cell_cen[cell_id],
-                                             b_face_cog[face_id]);
-      if (b_dist[face_id] < 0.2 * distmax) {
+
+      /* Min value between IF and
+       * (Omega_i)/S which is exactly the distance for tetras */
+      double distmax = CS_MIN(
+          cs_math_3_distance(cell_cen[cell_id], b_face_cog[face_id]),
+          cell_vol[cell_id]/cs_math_3_norm(face_nomal));
+
+      /* Previous value of 0.2 sometimes leads to computation divergence */
+      /* 0.01 seems better and safer for the moment */
+      double critmin = 0.01;
+      if (b_dist[face_id] < 0.01 * distmax) {
         w_count++;
         b_dist[face_id] = CS_MAX(b_dist[face_id], 0.2 * distmax);
       }
@@ -3149,6 +3167,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                           (const cs_real_3_t *)(mesh_quantities->i_face_cog),
                           (const cs_real_3_t *)(mesh_quantities->b_face_cog),
                           (const cs_real_3_t *)(mesh_quantities->cell_cen),
+                          (const cs_real_t *)(mesh_quantities->cell_vol),
                           mesh_quantities->i_dist,
                           mesh_quantities->b_dist,
                           mesh_quantities->weight);
