@@ -82,6 +82,7 @@ integer          kscmin, kscmax, ifcvsl
 integer          keyvar, keysca
 integer          key_t_ext_id, icpext
 integer          iviext
+integer          ivisext
 double precision scmaxp, scminp
 double precision turb_schmidt
 
@@ -214,8 +215,12 @@ do iscal = 1, nscal
   if (isso2t(iscal).ne.isno2t) then
     write(nfecra,2133) iscal,isso2t(iscal),isno2t
   endif
-  if (ivsext(iscal).ne.iviext) then
-    write(nfecra,2134) iscal,ivsext(iscal),iviext
+  call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
+  if (f_id.ge.0.and.iscavr(iscal).le.0) then
+    call field_get_key_int(f_id, key_t_ext_id, ivisext)
+    if (ivisext.ne.iviext) then
+      write(nfecra,2134) iscal,ivisext,iviext
+    endif
   endif
 enddo
 
@@ -225,16 +230,6 @@ if (ischtp.eq.2.and.vcopt%ibdtso.gt.1) then
   write(nfecra,1135)
   iok = iok + 1
 endif
-
-do iscal = 1, nscal
-  if (ivsext(iscal).gt.0) then
-    call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
-    if (ifcvsl.lt.0) then
-      write(nfecra,2136) iscal, ivsext(iscal), ifcvsl
-      iok = iok + 1
-    endif
-  endif
-enddo
 
 !     Pour les tests suivants : Utilise-t-on un estimateur d'erreur ?
 indest = 0
@@ -385,10 +380,9 @@ if (ippmod(iphpar).ge.1) then
       (thetcp .gt.0.d0).or.                                &
       (icpext .gt.0   )) istop = 1
   do iscal = 1, nscal
-    if ((    thetss(iscal)       .gt.0.d0 ).or.            &
-        (    isso2t(iscal)       .gt.0    ).or.            &
-        (    thetvs(iscal).gt.0.d0 ).or.                   &
-        (    ivsext(iscal).gt.0    )    ) istop = 1
+    if ((thetss(iscal)       .gt.0.d0 ).or.            &
+        (isso2t(iscal)       .gt.0    ).or.            &
+        (thetvs(iscal).gt.0.d0 )) istop = 1
   enddo
 
   if (istop.ne.0) then
@@ -1090,32 +1084,6 @@ endif
 '@',                                                            /,&
 '@  Il est conseille de verifier les parametres donnes via',    /,&
 '@  l''interface ou cs_user_parameters.f90.',                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2136 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
-'@    =========',                                               /,&
-'@   CHOIX INCOMPATIBLE POUR LE SCHEMA EN TEMPS',               /,&
-'@',                                                            /,&
-'@   Scalaire ISCAL = ', i10,                                   /,&
-'@     La  diffusivite      est extrapolee en temps avec',      /,&
-'@       IVSEXT(ISCAL) = ', i10,                                /,&
-'@     Pour cela, elle doit etre variable, or',                 /,&
-'@       scalar_diffusivity_id = ', i10, ' pour ce champ.'      /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute',                             /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@    - desactiver le choix d''extrapolation en temps',         /,&
-'@                                     de la diffusivite',      /,&
-'@      ou',                                                    /,&
-'@    - imposer la diffusivite variable',                       /,&
-'@         (et le renseigner alors via l''interface ou usphyv)',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -2357,31 +2325,6 @@ endif
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2136 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
-'@    =========',                                               /,&
-'@  INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME',            /,&
-'@',                                                            /,&
-'@   Scalar   ISCAL = ', i10,                                   /,&
-'@    Diffusivity   is extrapolated in time wih',               /,&
-'@       IVSEXT(ISCAL) = ', i10,                                /,&
-'@     it should thus be a variable, or',                       /,&
-'@       scalar_diffusivity_id = ', i10, ' for this field.'     /,&
-'@',                                                            /,&
-'@ Computation will  NOT  proceed',                             /,&
-'@',                                                            /,&
-'@  Verify the parameters',                                     /,&
-'@    - deactivate intepolation in time',                       /,&
-'@                                     for diffusivity',        /,&
-'@      or',                                                    /,&
-'@    - impose diffusivite variable',                           /,&
-'@         (define its variation law in the GUI ou usphyv)',    /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

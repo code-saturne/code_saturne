@@ -159,7 +159,8 @@ if (iappel.eq.1) then
       ! Diffusivity
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
-        if (ivsext(iscal).gt.0) then
+        call field_get_key_int(f_id, key_t_ext_id, iviext)
+        if (iviext.gt.0) then
           call field_current_to_previous(f_id)
         endif
       endif
@@ -230,7 +231,8 @@ elseif (iappel.eq.2) then
         initvs(iscal) = 1
         call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
         if (f_id.ge.0.and.iscavr(iscal).le.0) then
-          if (ivsext(iscal).gt.0) then
+          call field_get_key_int(f_id, key_t_ext_id, iviext)
+          if (iviext.gt.0) then
             call field_current_to_previous(f_id)
           endif
         endif
@@ -296,7 +298,8 @@ elseif (iappel.eq.2) then
       ! Diffusivity
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
-        if (ivsext(iscal).gt.0) then
+        call field_get_key_int(f_id, key_t_ext_id, iviext)
+        if (iviext.gt.0) then
           theta  = thetvs(iscal)
           call field_get_val_s(f_id, cpro_visls)
           call field_get_val_prev_s(f_id, cproa_visls)
@@ -472,7 +475,8 @@ elseif (iappel.eq.5) then
       ! Diffusivity
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
-        if (ivsext(iscal).gt.0) then
+        call field_get_key_int(f_id, key_t_ext_id, iviext)
+        if (iviext.gt.0) then
           call field_get_val_s(f_id, cpro_visls)
           call field_get_val_prev_s(f_id, cproa_visls)
           do iel = 1, ncel

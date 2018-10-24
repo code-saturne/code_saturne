@@ -929,7 +929,7 @@ if (nscal.ge.1) then
   write(nfecra,6030)
   write(nfecra,6040)
   do ii = 1, nscal
-    write(nfecra,6041) ii,thetss(ii),ivsext(ii),thetvs(ii)
+    write(nfecra,6041) ii,thetss(ii),thetvs(ii)
   enddo
   write(nfecra,6042)
 
@@ -990,19 +990,15 @@ endif
 '          pris en compte que si ICLVFL = 2',                   /)
  6040 format(                                                     &
 '------------------------------------------------------',       /,&
-'   Scalaire      THETSS    IVSEXT      THETVS',                /,&
+'   Scalaire      THETSS     THETVS',                /,&
 '------------------------------------------------------'         )
  6041 format(                                                     &
- 1x,     i10,      e12.4,      i10,      e12.4                   )
+ 1x,     i10,      e12.4,   e12.4                   )
  6042 format(                                                     &
 '------------------------------------------------------',       /,&
                                                                 /,&
 '       THETSS =                (theta pour termes sources   )',/,&
 '                               ((1+theta)nouveau-theta ancien',/,&
-'       IVSEXT =                (extrap. viscosite totale    )',/,&
-'                               (0 : explicite               )',/,&
-'                               (1 : n+thetvs avec thetvs=1/2', /,&
-'                               (2 : n+thetvs avec thetvs=1  )',/,&
 '       THETVS =                (theta pour diffusiv. scalaire',/,&
 '                               ((1+theta)nouveau-theta ancien',/)
 
@@ -1058,19 +1054,15 @@ endif
 '          only if ICLVFL = 2',                                 /)
  6040 format(                                                     &
 '------------------------------------------------------',       /,&
-'   Scalar        THETSS    IVSEXT      THETVS',                /,&
+'   Scalar        THETSS      THETVS',                /,&
 '------------------------------------------------------'         )
  6041 format(                                                     &
- 1x,     i10,      e12.4,      i10,      e12.4                   )
+ 1x,     i10,      e12.4,     e12.4                   )
  6042 format(                                                     &
 '------------------------------------------------------',       /,&
                                                                 /,&
 '       THETSS =                (theta for source terms      )',/,&
 '                               ((1+theta).new-theta.old     )',/,&
-'       IVSEXT =                (extrap. total viscosity     )',/,&
-'                               (0: explicit                 )',/,&
-'                               (1: n+thetvs with thetvs=1/2 )',/,&
-'                               (2: n+thetvs with thetvs=1   )',/,&
 '       THETVS =                (theta for scalar diffusivity', /,&
 '                               ((1+theta).new-theta.old     )',/)
 

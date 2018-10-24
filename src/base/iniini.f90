@@ -490,7 +490,6 @@ do iscal = 1, nscamx
 !     INIT.. =1 indique que la variable a ete proprement initialisee (dans un
 !       fichier suite portant les valeurs adaptees)
 
-  ivsext(iscal) = -999
   thetvs(iscal) = -999.d0
   initvs(iscal) = 0
 

@@ -250,15 +250,21 @@ do iscal = 1, nscal
   elseif (isso2t(iscal).eq.0) then
     thetss(iscal) = 0.d0
   endif
-!    -- Diffusivite des scalaires
+  ! Scalars diffusivity
+  call field_get_key_int(ivarfl(isca(ii)), kivisl, f_id)
+  if (f_id.ge.0) then
+    call field_get_key_int(f_id, key_t_ext_id, iviext)
+  else
+    iviext = 0
+  endif
   if (abs(thetvs(iscal)+999.d0).gt.epzero) then
-    write(nfecra,1021) iscal,'IVSEXT',ivsext(iscal),'THETVS'
+    write(nfecra,1021) iscal,'IVSEXT',iviext,'THETVS'
     iok = iok + 1
-  elseif (ivsext(iscal).eq.0) then
+  elseif (iviext.eq.0) then
     thetvs(iscal) = 0.d0
-  elseif (ivsext(iscal).eq.1) then
+  elseif (iviext.eq.1) then
     thetvs(iscal) = 0.5d0
-  elseif (ivsext(iscal).eq.2) then
+  elseif (iviext.eq.2) then
     thetvs(iscal) = 1.d0
   endif
 enddo

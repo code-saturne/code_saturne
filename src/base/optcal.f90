@@ -163,20 +163,6 @@ module optcal
   !> as when \ref iroext = 1 but with \f$\theta\f$ = 1
   integer, save ::          iroext
 
-  !> for each scalar iscal, \ref ivsext (iscal) specifies the time scheme
-  !> activated for the physical property \f$\phi\f$ "diffusivity".
-  !> - 0: "standard" first-order: the value calculated at
-  !> the beginning of the current time step (from the variables known
-  !> at the end of the previous time step) is used
-  !> - 1: second-order: the physical property \f$\phi\f$ is
-  !> extrapolated according to the formula
-  !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$
-  !> being given by the value of \ref thetvs (iscal) = 0.5
-  !> - 2: first-order: the physical property \f$\phi\f$ is
-  !> extrapolated at $n+1$ according to the same formula as
-  !> when \ref ivsext = 1, but with \f$\theta\f$ = \ref thetvs (iscal) = 1
-  integer, save ::          ivsext(nscamx)
-
   !> initvi : =1 if total viscosity read from checkpoint file
   integer, save ::          initvi
 
@@ -258,10 +244,10 @@ module optcal
 
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
   !> property \f$\phi\f$ "diffusivity" when the extrapolation has
-  !> been activated (see \ref ivsext), according to the formula
+  !> been activated (see \ref time_extrapolated key word), according to the formula
   !> \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
   !> The value of\f$\theta\f$ = \ref thetvs is deduced from the value
-  !> chosen for \ref ivsext. Generally, only the value 0.5 is used.
+  !> chosen for \ref time_extrapolated key word. Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1

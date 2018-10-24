@@ -285,13 +285,17 @@ do iscal = 1, nscal
       isso2t(iscal) = 1
     endif
   endif
-  ! Diffusivite scalaires
-  if (ivsext(iscal).eq.-999) then
-    if (ischtp.eq.1) then
-      ivsext(iscal) = 0
-    else if (ischtp.eq.2) then
-      ! Pour le moment par defaut on ne prend pas l'ordre 2
-      ivsext(iscal) = 0
+  ! Diffusivity of scalars
+  call field_get_key_int(ivarfl(isca(ii)), kivisl, ifcvsl)
+  if (ifcvsl.ge.0) then
+    call field_get_key_int(ifcvsl, key_t_ext_id, iviext)
+    if (iviext.eq.-1) then
+      if (ischtp.eq.1) then
+        iviext = 0
+      else if (ischtp.eq.2) then
+        ! Pour le moment par defaut on ne prend pas l'ordre 2
+        iviext = 0
+      endif
     endif
   endif
 
@@ -382,12 +386,6 @@ do iscal = 1, nscal
   if (isso2t(iscal).ne.0.and.                                    &
       isso2t(iscal).ne. 1.and.isso2t(iscal).ne.2) then
     write(nfecra,8141) iscal,'ISSO2T',isso2t(iscal)
-    iok = iok + 1
-  endif
-  ! Schema en temps pour la viscosite
-  if (ivsext(iscal).ne.0.and.                                    &
-      ivsext(iscal).ne. 1.and.ivsext(iscal).ne.2) then
-    write(nfecra,8141) iscal,'IVSEXT',ivsext(iscal)
     iok = iok + 1
   endif
 enddo
@@ -496,14 +494,16 @@ if (nscal.ge.1) then
     ! Diffusivity
     call field_get_key_int (ivarfl(isca(ii)), kivisl, ifcvsl)
     if (ifcvsl.ge.0.and.iscavr(ii).le.0) then
-      if (ivsext(ii).gt.0) then
+      call field_get_key_int(ifcvsl, key_t_ext_id, iviext)
+      if (iviext.gt.0) then
         call field_set_n_previous(ifcvsl, 1)
       endif
     endif
     ! Density
     call field_get_key_int (ivarfl(isca(ii)), kromsl, ifcvsl)
     if (ifcvsl.ge.0.and.iscavr(ii).le.0) then
-      if (ivsext(ii).gt.0) then
+      call field_get_key_int(ifcvsl, key_t_ext_id, iviext)
+      if (iviext.gt.0) then
         call field_set_n_previous(ifcvsl, 1)
       endif
     endif
