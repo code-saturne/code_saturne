@@ -114,6 +114,7 @@ integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
 integer          nfmtst
 integer          jale, jcavit, jvolfl
 integer          f_id, iflmas, iflmab, iflvoi, iflvob
+integer          key_t_ext_id, icpext
 integer          ival(1), ngbstr(2)
 double precision rval(1), tmpstr(27)
 
@@ -155,6 +156,9 @@ cindff='YYYY'
 cindfm='YYYY'
 cindfc='YY'
 cindfl='YYYY'
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 !===============================================================================
 ! 1. OUVERTURE DU FICHIER SUITE AUXILIAIRE
@@ -410,21 +414,25 @@ endif
 !        et quand l'utilisateur peut s'en servir pour passer
 !        de H a T, comme en effet Joule par exemple).
 
-if ((icpext.gt.0.and.icp.ge.0).or.                &
-     (ippmod(ieljou).ge.1.and.icp.ge.0)) then
+if (icp.ge.0) then
 
-  inierr = 0
+  call field_get_key_int(icp, key_t_ext_id, icpext)
 
-  ! Chaleur massique - cellules
-  call restart_read_field_vals(rp, icp, 0, ierror)
-  nberro = nberro+ierror
-  inierr = inierr+ierror
+  if (icpext.gt.0.or.ippmod(ieljou).ge.1) then
 
-  ! Si on a initialise Cp, on l'indique (pour schtmp)
-  if (inierr.eq.0) then
-    initcp = 1
+    inierr = 0
+
+    ! Chaleur massique - cellules
+    call restart_read_field_vals(rp, icp, 0, ierror)
+    nberro = nberro+ierror
+    inierr = inierr+ierror
+
+    ! Si on a initialise Cp, on l'indique (pour schtmp)
+    if (inierr.eq.0) then
+      initcp = 1
+    endif
+
   endif
-
 endif
 
 !     Si on a des scalaires, on lit a diffusivite

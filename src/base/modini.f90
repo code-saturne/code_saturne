@@ -66,6 +66,7 @@ integer          nscacp, iscal
 integer          imrgrp
 integer          kcpsyr, icpsyr
 integer          nfld, f_type
+integer          key_t_ext_id, icpext
 
 logical          is_set
 
@@ -86,6 +87,8 @@ call field_get_n_fields(n_fields)
 call field_get_key_id("variable_id", keyvar)
 
 call field_get_key_id("syrthes_coupling", kcpsyr)
+
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 !===============================================================================
 ! 1. ENTREES SORTIES entsor
@@ -194,15 +197,19 @@ elseif (iviext.eq.1) then
 elseif (iviext.eq.2) then
   thetvi = 1.d0
 endif
-if (abs(thetcp+999.d0).gt.epzero) then
-  write(nfecra,1011) 'ICPEXT',icpext,'THETCP'
-  iok = iok + 1
-elseif (icpext.eq.0) then
-  thetcp = 0.0d0
-elseif (icpext.eq.1) then
-  thetcp = 0.5d0
-elseif (icpext.eq.2) then
-  thetcp = 1.d0
+
+if (icp.ge.0) then
+  call field_get_key_int(icp, key_t_ext_id, icpext)
+  if (abs(thetcp+999.d0).gt.epzero) then
+    write(nfecra,1011) 'ICPEXT',icpext,'THETCP'
+    iok = iok + 1
+  elseif (icpext.eq.0) then
+    thetcp = 0.0d0
+  elseif (icpext.eq.1) then
+    thetcp = 0.5d0
+  elseif (icpext.eq.2) then
+    thetcp = 1.d0
+  endif
 endif
 
 !    -- Termes sources NS

@@ -2041,6 +2041,23 @@ cs_parameters_check(void)
                                0);
   }
 
+  /* Check the consistency of time extrapolation key */
+  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+    cs_field_t  *f = cs_field_by_id(f_id);
+
+    int t_ext = cs_field_get_key_int(f, cs_field_key_id("time_extrapolated"));
+
+    f_desc = _field_section_desc(f, "while reading parameters for "
+                                    "field ");
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _(f_desc),
+                                  "key 'time_extrapolated'",
+                                  t_ext,
+                                  -1,
+                                  3);
+    }
+
+
   /* Check the consistency of the restart_file key */
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);

@@ -74,6 +74,7 @@ integer          nscal  , iappel
 integer          iel    , ifac   , iscal
 integer          iflmas , iflmab
 integer          f_id
+integer          key_t_ext_id, icpext
 
 double precision flux   , theta  , viscos, varcp
 
@@ -86,6 +87,12 @@ double precision, dimension(:), pointer :: cproa_cp, cproa_visls, cproa_visct
 double precision, dimension(:), pointer :: cpro_rho_mass, bpro_rho_mass
 
 !===============================================================================
+
+!===============================================================================
+! 0. Initialisation
+!===============================================================================
+
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 !===============================================================================
 ! 1. At the really beginning of the time step
@@ -132,8 +139,9 @@ if (iappel.eq.1) then
     call field_current_to_previous(iviscl)
     call field_current_to_previous(ivisct)
   endif
-  if (icpext.gt.0) then
-    if (icp.ge.0) then
+  if (icp.ge.0) then
+    call field_get_key_int(icp, key_t_ext_id, icpext)
+    if (icpext.gt.0) then
       call field_current_to_previous(icp)
     endif
   endif
@@ -195,8 +203,9 @@ elseif (iappel.eq.2) then
   endif
   if (initcp.ne.1) then
     initcp = 1
-    if (icpext.gt.0) then
-      if (icp.gt.0) then
+    if (icp.gt.0) then
+      call field_get_key_int(icp, key_t_ext_id, icpext)
+      if (icpext.gt.0) then
         call field_current_to_previous(icp)
       endif
     endif
@@ -247,8 +256,9 @@ elseif (iappel.eq.2) then
       cproa_visct(iel) = viscos
     enddo
   endif
-  if (icpext.gt.0) then
-    if (icp.ge.0) then
+  if (icp.gt.0) then
+    call field_get_key_int(icp, key_t_ext_id, icpext)
+    if (icpext.gt.0) then
       call field_get_val_s(icp, cpro_cp)
       call field_get_val_prev_s(icp, cproa_cp)
       theta  = thetcp
@@ -418,8 +428,9 @@ elseif (iappel.eq.5) then
       cpro_visct(iel) = cproa_visct(iel)
     enddo
   endif
-  if (icpext.gt.0) then
-    if (icp.ge.0) then
+  if (icp.gt.0) then
+    call field_get_key_int(icp, key_t_ext_id, icpext)
+    if (icpext.gt.0) then
       call field_get_val_s(icp, cpro_cp)
       call field_get_val_prev_s(icp, cproa_cp)
       do iel = 1, ncel

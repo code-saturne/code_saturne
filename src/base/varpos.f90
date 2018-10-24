@@ -75,6 +75,7 @@ integer          iok
 integer          f_id
 integer          ivisph, iest
 integer          key_buoyant_id, is_buoyant_fld
+integer          key_t_ext_id, icpext
 
 double precision gravn2
 
@@ -100,6 +101,9 @@ endif
 
 ! Key id for buoyant field (inside the Navier Stokes loop)
 call field_get_key_id("is_buoyant", key_buoyant_id)
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 ! Determine itycor now that irccor is known (iturb/itytur known much earlier)
 ! type of rotation/curvature correction for turbulent viscosity models
@@ -215,14 +219,17 @@ if (iviext.eq.-999) then
     iviext = 0
   endif
 endif
-!     Chaleur massique
-if (icpext.eq.-999) then
-  if (ischtp.eq.1) then
-    icpext = 0
-  else if (ischtp.eq.2) then
-    !       Pour le moment par defaut on ne prend pas l'ordre 2
-    !              ICPEXT = 1
-    icpext = 0
+
+! Specific heat
+if (icp.ge.0) then
+  call field_get_key_int(icp, key_t_ext_id, icpext)
+  if (icpext.eq.-1) then
+    if (ischtp.eq.1) then
+      icpext = 0
+    else if (ischtp.eq.2) then
+      ! not extrapolated by default
+      icpext = 0
+    endif
   endif
 endif
 !     Termes sources NS,
@@ -360,12 +367,6 @@ if (iviext.ne.0.and.iviext.ne. 1.and.iviext.ne.2) then
   iok = iok + 1
 endif
 
-! Schema en temps pour la chaleur specifique
-if (icpext.ne.0 .and. icpext.ne.1 .and.icpext.ne.2) then
-  write(nfecra,8131) 'ICPEXT',icpext
-  iok = iok + 1
-endif
-
 do iscal = 1, nscal
   ! Schema en temps pour les termes sources des scalaires
   if (isso2t(iscal).ne.0.and.                                    &
@@ -411,6 +412,7 @@ endif
 
 ! CP s'il est variable
 if (icp.ge.0) then
+  call field_get_key_int(icp, key_t_ext_id, icpext)
   if (icpext.gt.0) then
     call field_set_n_previous(icp, 1)
   endif

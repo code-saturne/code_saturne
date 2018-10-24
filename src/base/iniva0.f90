@@ -83,6 +83,7 @@ integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin, kscmax
 integer          f_type
 integer          keyvar
+integer          key_t_ext_id, icpext
 
 logical          have_previous
 
@@ -126,6 +127,9 @@ end interface
 !===============================================================================
 
 call field_get_key_id("variable_id", keyvar)
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 call field_get_val_s_by_name('dt', dt)
 
@@ -207,6 +211,7 @@ endif
 !     Chaleur massique aux cellules (et au pdt precedent si ordre2)
 if(icp.ge.0) then
   call field_get_val_s(icp, cpro_cp)
+  call field_get_key_int(icp, key_t_ext_id, icpext)
   do iel = 1, ncel
     cpro_cp(iel) = cp0
   enddo

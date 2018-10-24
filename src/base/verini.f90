@@ -80,6 +80,7 @@ integer          f_id, n_fields
 integer          indest, iiidef, istop
 integer          kscmin, kscmax, ifcvsl
 integer          keyvar, keysca
+integer          key_t_ext_id, icpext
 double precision scmaxp, scminp
 double precision turb_schmidt
 
@@ -105,6 +106,15 @@ call field_get_key_id("variable_id", keyvar)
 ! Key ids for clippings
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+if (icp.ge.0) then
+  call field_get_key_int(icp, key_t_ext_id, icpext)
+else
+  icpext = 0
+endif
 
 !===============================================================================
 ! 1. ENTREES SORTIES entsor : formats 1000
@@ -214,12 +224,6 @@ if (ischtp.eq.2.and.vcopt%ibdtso.gt.1) then
   iok = iok + 1
 endif
 
-!     Test du theta de la diffusivite des scalaires et de Cp : ils doivent etre
-!       variables en (en espace) si on les extrapole (en temps) (...)
-if ( icpext.gt.0 .and. icp.lt.0 ) then
-  write(nfecra,2135) icpext, icp
-  iok = iok + 1
-endif
 do iscal = 1, nscal
   if (ivsext(iscal).gt.0) then
     call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
@@ -1084,30 +1088,6 @@ endif
 '@',                                                            /,&
 '@  Il est conseille de verifier les parametres donnes via',    /,&
 '@  l''interface ou cs_user_parameters.f90.',                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2135 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
-'@    =========',                                               /,&
-'@   CHOIX INCOMPATIBLE POUR LE SCHEMA EN TEMPS',               /,&
-'@',                                                            /,&
-'@     La  chaleur massique est extrapolee en temps avec',      /,&
-'@       ICPEXT = ', i10,                                       /,&
-'@     Pour cela, elle doit etre variable, or',                 /,&
-'@       ICP    = ', i10,                                       /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute',                             /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@    - desactiver le choix d''extrapolation de Cp en temps',   /,&
-'@      ou',                                                    /,&
-'@    - imposer Cp variable',                                   /,&
-'@         (et le renseigner alors via l''interface ou usphyv)',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -2375,29 +2355,6 @@ endif
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2135 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
-'@    =========',                                               /,&
-'@  INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME',            /,&
-'@',                                                            /,&
-'@     Specific heat is extrapolated in time with',             /,&
-'@       ICPEXT = ', i10,                                       /,&
-'@    in which case it should be variable, or',                 /,&
-'@       ICP    = ', i10,                                       /,&
-'@',                                                            /,&
-'@  Computation will NOT go on',                                /,&
-'@',                                                            /,&
-'@  Verify   the parameters',                                   /,&
-'@    - deactivate xtrapolation of Cp in time',                 /,&
-'@      or',                                                    /,&
-'@    - define Cp as variable',                                 /,&
-'@         (define its variation law in the GUI ou usphyv)',    /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

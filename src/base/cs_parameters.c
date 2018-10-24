@@ -937,12 +937,19 @@ cs_parameters_define_field_keys(void)
 
   cs_field_define_key_int("coupling_entity", -1, 0);
 
-  cs_field_define_key_double("min_scalar_clipping", -1.e12, 0);
-  cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);
+  /* Is the field time-extrapolated?
+   * -1: default automatic value
+   *  0: not extrapolated
+   *  1: extrapolated
+   *  */
+  cs_field_define_key_int("time_extrapolated", -1, 0);
 
   cs_field_define_key_int("measures_set_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("opt_interp_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("opt_interp_analysis_id", -1, CS_FIELD_VARIABLE);
+
+  cs_field_define_key_double("min_scalar_clipping", -1.e12, 0);
+  cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);
 
   /* Bounds of a given scalar which won't be used in clipping */
 

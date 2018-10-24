@@ -447,7 +447,6 @@ iviext = -999
 thetvi = -999.d0
 initvi = 0
 !     Chaleur specifique
-icpext = -999
 thetcp = -999.d0
 initcp = 0
 

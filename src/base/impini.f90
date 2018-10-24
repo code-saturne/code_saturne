@@ -85,6 +85,7 @@ integer          f_id, n_fields
 integer          igg, ige
 double precision scmaxp, scminp
 double precision turb_schmidt
+integer          key_t_ext_id, icpext
 
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
@@ -102,6 +103,19 @@ interface
   end subroutine syr_coupling_log_setup
 
 end interface
+
+!===============================================================================
+! 0. Initialisation
+!===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+if (icp.ge.0) then
+  call field_get_key_int(icp, key_t_ext_id, icpext)
+else
+  icpext = 0
+endif
 
 !===============================================================================
 ! 1. Introduction

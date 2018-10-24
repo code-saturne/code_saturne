@@ -97,6 +97,7 @@ integer          ngbstr(2)
 integer          ifac, istr
 integer          iz, kk
 integer          ival(1)
+integer          key_t_ext_id, icpext
 double precision rval(1), tmpstr(27)
 
 type(c_ptr) :: rp
@@ -124,6 +125,13 @@ type(var_cal_opt) :: vcopt
 
 !        Ceci est par exemple utilise pour relier les flux de masse aux
 !        variables
+
+!===============================================================================
+! 0. Initialisation
+!===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 !===============================================================================
 ! 1. VERIFICATIONS DE BASE ET CODAGE DES CHAINES DE CARACTERES
@@ -436,10 +444,12 @@ if (iecaux.eq.1) then
     endif
   endif
 
-  if ((icpext.gt.0.and.icp.ge.0).or.              &
-       (ippmod(ieljou).ge.1.and.icp.ge.0))  then
-    !  Chaleur massique - cellules
-    call restart_write_field_vals(rp, icp, 0)
+  if (icp.ge.0) then
+    call field_get_key_int(icp, key_t_ext_id, icpext)
+    if (icpext.gt.0.or.ippmod(ieljou).ge.1)  then
+      ! Specific heat
+      call restart_write_field_vals(rp, icp, 0)
+    endif
   endif
 
   call restart_write_linked_fields(rp, "scalar_diffusivity_id", iecr)
