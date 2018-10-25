@@ -580,9 +580,9 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
        where the value of the source term is given by m^3
     */
     cs_real_t  st_val = -0.1;
-    cs_xdef_t  *st = cs_equation_add_source_term_by_value(eqp,
-                                                          "cells",
-                                                          &st_val);
+    cs_xdef_t  *st = cs_equation_add_source_term_by_val(eqp,
+                                                        "cells",
+                                                        &st_val);
 
   }
   /*! [param_cdo_add_terms] */
