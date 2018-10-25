@@ -376,6 +376,7 @@ use period
 use albase
 use field
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -385,14 +386,21 @@ implicit none
 
 ! Local
 
+integer           idftnp
+
 double precision, dimension(:), pointer :: cpro_vism_s
 double precision, dimension(:,:), pointer :: cpro_vism_v
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
-if (iortvm.eq.0) then
+call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+idftnp = vcopt%idften
+
+if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
   call field_get_val_s(ivisma, cpro_vism_s)
-else
+else if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
   call field_get_val_v(ivisma, cpro_vism_v)
 endif
 

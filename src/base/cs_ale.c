@@ -41,6 +41,7 @@
 
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
+#include "cs_convection_diffusion.h"
 #include "cs_face_viscosity.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -223,7 +224,7 @@ cs_ale_project_displacement(const int           ialtyb[],
              +dvol2*(meshv[cell_id2][i] + gradm[cell_id2][i][0]*cen2_node[0]
                                         + gradm[cell_id2][i][1]*cen2_node[1]
                                         + gradm[cell_id2][i][2]*cen2_node[2])
-             *dt[cell_id2];
+              *dt[cell_id2];
           }
 
           vtx_counter[vtx_id] += dvol1+dvol2;
@@ -414,14 +415,14 @@ cs_ale_update_mesh(const int           itrale,
  * so that it can be used to update mass fluxes (due to mesh displacement).
  *
  * \param[in]       iterns        Navier-Stokes iteration number
- * \param[in]       ialtyb        Type of boundary for ALE
  * \param[in]       ndircl        Number of Dirichlet BCs for mesh velocity
+ * \param[in]       impale        Indicator for fixed node displacement
+ * \param[in]       ialtyb        Type of boundary for ALE
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_ale_solve_mesh_velocity(const int   iterns,
-                           const int   iortvm,
                            const int   ndircl,
                            const int  *impale,
                            const int  *ialtyb)
@@ -459,18 +460,6 @@ cs_ale_solve_mesh_velocity(const int   iterns,
   BFT_MALLOC(smbr, n_cells_ext, cs_real_3_t);
   BFT_MALLOC(fimp, n_cells_ext, cs_real_33_t);
 
-  cs_real_t *i_visc, *b_visc;
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
-
-  cs_real_t *mesh_viscs;
-  cs_real_3_t *mesh_viscv;
-  if (iortvm == 0) {
-    mesh_viscs = cs_field_by_name("mesh_viscosity")->val;
-  } else {
-    mesh_viscv = (cs_real_3_t *)cs_field_by_name("mesh_viscosity")->val;
-  }
-
   cs_real_3_t *mshvel = (cs_real_3_t *)CS_F_(mesh_u)->val;
   cs_real_3_t *mshvela = (cs_real_3_t *)CS_F_(mesh_u)->val_pre;
 
@@ -498,21 +487,21 @@ cs_ale_solve_mesh_velocity(const int   iterns,
   cs_real_33_t *bc_b   = (cs_real_33_t *)bc_coeffs->b;
   cs_real_33_t *bc_bf  = (cs_real_33_t *)bc_coeffs->bf;
 
-  /* The mesh move in the direction of the gravity in case of free-surface */
+  int idftnp = var_cal_opt.idften;
+
+  /* The mesh moves in the direction of the gravity in case of free-surface */
   for (cs_lnum_t face_id = 0 ; face_id < n_b_faces ; face_id++) {
     if (ialtyb[face_id] == CS_FREE_SURFACE) {
       cs_lnum_t cell_id = b_face_cells[face_id];
       cs_real_t distbf = b_dist[face_id];
-      cs_real_t srfbn2 = cs_math_pow2(b_face_surf[face_id]);
 
-      cs_real_t hint;
-      if (iortvm == 0) {
-        hint = mesh_viscs[cell_id] / distbf;
-      } else { /* FIXME */
-        hint = (mesh_viscv[cell_id][0] * cs_math_pow2(b_face_normal[face_id][0])
-             +  mesh_viscv[cell_id][1] * cs_math_pow2(b_face_normal[face_id][1])
-             +  mesh_viscv[cell_id][2] * cs_math_pow2(b_face_normal[face_id][2]))
-             / distbf / srfbn2;
+      cs_real_6_t hintt = {0., 0., 0., 0., 0., 0.};
+      if (idftnp & CS_ISOTROPIC_DIFFUSION) {
+        for (int isou  = 0; isou < 3; isou++)
+          hintt[isou] = CS_F_(vism)->val[cell_id] / distbf;
+      } else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
+          for (int isou  = 0; isou < 5; isou++)
+            hintt[isou] = CS_F_(vism)->val[6*cell_id+isou] / distbf;
      }
 
      cs_real_t prosrf = cs_math_3_dot_product(grav, b_face_normal[face_id]);
@@ -521,18 +510,19 @@ cs_ale_solve_mesh_velocity(const int   iterns,
      for (int i = 0 ; i < 3 ; i++)
        pimpv[i] = grav[i]*b_massflux[face_id]/(brom[face_id]*prosrf);
 
-     cs_boundary_conditions_set_dirichlet_vector(&(bc_a[face_id]),
-                                                 &(bc_af[face_id]),
-                                                 &(bc_b[face_id]),
-                                                 &(bc_bf[face_id]),
-                                                 pimpv,
-                                                 hint,
-                                                 rinfiv);
+     cs_boundary_conditions_set_dirichlet_vector_aniso(&(bc_a[face_id]),
+                                                       &(bc_af[face_id]),
+                                                       &(bc_b[face_id]),
+                                                       &(bc_bf[face_id]),
+                                                       pimpv,
+                                                       hintt,
+                                                       rinfiv);
 
     }
   }
 
   /* 2. Solving of the mesh velocity equation */
+
   if (var_cal_opt.iwarni >= 1)
     bft_printf("\n\n           SOLVING VARIABLE %s\n\n",
                CS_F_(mesh_u)->name);
@@ -545,19 +535,28 @@ cs_ale_solve_mesh_velocity(const int   iterns,
     }
   }
 
-  if (iortvm == 0) {
+  cs_real_t *i_visc, *b_visc;
+
+  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+
+  if (idftnp & CS_ISOTROPIC_DIFFUSION) {
+    BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
+
     cs_face_viscosity(m,
                       fvq,
                       cs_glob_space_disc->imvisf,
-                      mesh_viscs,
+                      CS_F_(vism)->val,
                       i_visc,
                       b_visc);
-  } else {
-    cs_face_orthotropic_viscosity_vector(m,
+
+  } else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
+    BFT_MALLOC(i_visc, 9*n_i_faces, cs_real_t);
+
+    cs_face_anisotropic_viscosity_vector(m,
                                          fvq,
                                          cs_glob_space_disc->imvisf,
-                                         mesh_viscv,
-                                         i_visc,
+                                         (cs_real_6_t *)CS_F_(vism)->val,
+                                         (cs_real_33_t *)i_visc,
                                          b_visc);
   }
 
@@ -566,7 +565,6 @@ cs_ale_solve_mesh_velocity(const int   iterns,
   var_cal_opt.istat  = -1;
   var_cal_opt.idifft = -1;
 
-  /* FIXME : do a proper anisotropic version */
   cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                      iterns,
                                      CS_F_(mesh_u)->id,
@@ -587,18 +585,17 @@ cs_ale_solve_mesh_velocity(const int   iterns,
                                      b_visc,
                                      i_visc,
                                      b_visc,
-                                     i_visc,
-                                     b_visc,
-                                     NULL,
-                                     NULL,
-                                     NULL,
-                                     0, /* icvflv */
-                                     NULL,
+                                     NULL, /* i_secvis */
+                                     NULL, /* b_secvis */
+                                     NULL, /* viscel */
+                                     NULL, /* weighf */
+                                     NULL, /* weighb */
+                                     0,    /* icvflv */
+                                     NULL, /* icvfli */
                                      (const cs_real_33_t *)fimp,
                                      smbr,
                                      mshvel,
-                                     NULL);
-
+                                     NULL); /* eswork */
 
   /* Free memory */
   BFT_FREE(smbr);
@@ -628,7 +625,7 @@ cs_ale_solve_mesh_velocity(const int   iterns,
                               (const cs_real_33_t *)gradm,
                               (const cs_real_3_t *)bc_coeffs->a,
                               (const cs_real_33_t *)bc_coeffs->b,
-                              (const cs_real_t *)CS_F_(dt),
+                              (const cs_real_t *)CS_F_(dt)->val,
                               dproj);
 
   /* FIXME : warning if nterup > 1, use itrale ? */

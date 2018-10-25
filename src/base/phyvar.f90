@@ -96,8 +96,8 @@ integer          ivar  , iel   , ifac  , iscal
 integer          ii    , iok   , iok1  , iok2  , iisct, idfm, iggafm, iebdfm
 integer          nn    , isou
 integer          mbrom , ifcvsl
-integer          iclipc
-Double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
+integer          iclipc, idftnp
+double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto
 double precision xttkmg, xttdrb
@@ -845,10 +845,12 @@ endif
 if (iale.eq.1 .and. ntcabs.eq.ntpabs+1) then
 
   call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+  idftnp = vcopt%idften
+
   iok1 = 0
-  if (iortvm.eq.1) then
+  if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
     call field_get_val_v(ivisma, cpro_visma_v)
-    do ii = 1, 3
+    do ii = 1, 6
       ! Min et max sur les cellules
       varmx(1) = cpro_visma_v(ii,1)
       varmn(1) = cpro_visma_v(ii,1)
@@ -881,7 +883,7 @@ if (iale.eq.1 .and. ntcabs.eq.ntpabs+1) then
       endif
 
     enddo
-  else
+  else if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
     call field_get_val_s(ivisma, cpro_visma_s)
     ! Min et max sur les cellules
     varmx(1) = cpro_visma_s(1)

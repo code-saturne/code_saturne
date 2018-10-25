@@ -1392,12 +1392,6 @@ nalimx = 15
 epalim = 1.d-5
 
 
-! Mesh viscosity modeling
-!   0: isotropic
-!   1: orthotropic
-
-iortvm = 0
-
 !< [usipsu]
 
 !----

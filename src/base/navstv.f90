@@ -892,8 +892,7 @@ call cs_bad_cells_regularisation_scalar(cvar_pr)
 if (iale.eq.1) then
 
   if (itrale.gt.nalinf) then
-    call cs_ale_solve_mesh_velocity(iterns, iortvm, ndircl(iuma), impale, &
-                                    ialtyb)
+    call cs_ale_solve_mesh_velocity(iterns, ndircl(iuma), impale, ialtyb)
   endif
 
 endif

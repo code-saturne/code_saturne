@@ -190,44 +190,6 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
                                      cs_real_t            *restrict b_visc);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Orthotropic diffusion velocity computation.
- *
- * viscf,b = viscosity*surface/distance, in kg/s
- *
- * \f[ viscf,b = (nx^2*visc11\_moy\_face
- *             +  ny^2*visc22\_moy\_face
- *             +  nz^2*visc33\_moy\_face)*surface/distance
- * \f]
- *
- * The viscosity is given by w1, w2, w3
- *
- * \remark There's no need for a reconstruction technique. (To improve if necessary)
- *
- * Please refer to the
- * <a href="../../theory.pdf#visort"><b>visort</b></a> section of the
- * theory guide for more informations.
- *
- * \param[in]     imvisf        Face viscosity computation method
- *                              - 0: arithmetic
- *                              - 1: harmonic
- * \param[in]     w             Viscosity values
- * \param[out]    i_visc        inner face viscosity
- *                               (times surface divided by distance)
- * \param[out]    b_visc        boundary face viscosity
- *                               (surface, must be consistent with flux BCs)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_face_orthotropic_viscosity_vector(const cs_mesh_t               *m,
-                                     cs_mesh_quantities_t          *fvq,
-                                     const int                      imvisf,
-                                     cs_real_3_t          *restrict c_visc,
-                                     cs_real_t            *restrict i_visc,
-                                     cs_real_t            *restrict b_visc);
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

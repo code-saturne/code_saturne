@@ -72,7 +72,7 @@ implicit none
 integer          iscal , id, ityloc, itycat, ifcvsl, pflag
 integer          ii
 integer          iok
-integer          f_id
+integer          f_id, idftnp
 integer          ivisph, iest
 integer          key_buoyant_id, is_buoyant_fld
 integer          key_t_ext_id, icpext
@@ -84,18 +84,6 @@ double precision gravn2
 character(len=80) :: f_name, f_label, s_label, s_name
 
 type(var_cal_opt) :: vcopt
-
-!===============================================================================
-! Verification
-!===============================================================================
-
-! ALE viscosity
-if (iale.eq.1) then
-  if (iortvm.ne.0 .and. iortvm.ne.1) then
-    write(nfecra, 8022) 'iortvm', iortvm
-    call csexit (1)
-  endif
-endif
 
 !===============================================================================
 ! Initialization
@@ -131,10 +119,13 @@ endif
 
 ! ALE mesh viscosity
 if (iale.eq.1) then
-  if (iortvm.eq.0) then
+  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+  idftnp = vcopt%idften
+
+  if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
     call add_property_field('mesh_viscosity', 'Mesh Visc', 1, .false., ivisma)
-  else
-    call add_property_field('mesh_viscosity', 'Mesh Visc', 3, .false., ivisma)
+  else if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
+    call add_property_field('mesh_viscosity', 'Mesh Visc', 6, .false., ivisma)
   endif
 endif
 

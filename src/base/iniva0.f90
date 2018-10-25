@@ -81,7 +81,7 @@ integer          iclip , ii    , jj    , idim, f_dim
 integer          ifcvsl
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin, kscmax
-integer          f_type
+integer          f_type, idftnp
 integer          keyvar
 
 logical          have_previous
@@ -106,6 +106,8 @@ double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls, cvar_tempk
 double precision, dimension(:), pointer :: cpro_visma_s
 double precision, dimension(:), pointer :: mix_mol_mas
 double precision, dimension(:,:), pointer :: cpro_visma_v
+
+type(var_cal_opt) :: vcopt_uma
 
 !===============================================================================
 ! Interfaces
@@ -261,14 +263,18 @@ enddo
 ! Mesh viscosity for ALE
 if (iale.eq.1) then
 
-  if (iortvm.eq.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt_uma)
+  idftnp = vcopt_uma%idften
+
+  if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
     call field_get_val_v(ivisma, cpro_visma_v)
     do iel = 1, ncel
       do ii = 1, 3
-        cpro_visma_v(ii,iel) = 1.d0
+        cpro_visma_v(ii  ,iel) = 1.d0
+        cpro_visma_v(ii+3,iel) = 0.d0
       enddo
     enddo
-  else
+  else if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
     call field_get_val_s(ivisma, cpro_visma_s)
     do iel = 1, ncel
       cpro_visma_s(iel) = 1.d0

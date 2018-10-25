@@ -42,8 +42,6 @@ module albase
   integer, save :: nalinf
   !> maximum number of imlicitation iterations of of the structure displacement
   integer, save :: nalimx
-  !> viscosity type of mesh : isotropic=0, orthotropic=1.
-  integer, save :: iortvm
   !> relative precision of implicitation of the structure displacement
   double precision, save :: epalim
   !> iteration (yes=1, no=0) to initialize ALE

@@ -3080,9 +3080,9 @@ if (iale.eq.1) then
   call field_get_coefaf_v(ivarfl(iuma), cfaale)
   call field_get_coefbf_v(ivarfl(iuma), cfbale)
 
-  if (iortvm.eq.0) then
+  if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
     call field_get_val_s(ivisma, cpro_visma_s)
-  else
+  elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
     call field_get_val_v(ivisma, cpro_visma_v)
   endif
 
@@ -3090,14 +3090,25 @@ if (iale.eq.1) then
 
     iel = ifabor(ifac)
     distbf = distb(ifac)
-    srfbn2 = surfbn(ifac)**2
-    if (iortvm.eq.0) then
-      hint = cpro_visma_s(iel)/distbf
-    else
-      hint = ( cpro_visma_v(1,iel)*surfbo(1,ifac)**2    &
-             + cpro_visma_v(2,iel)*surfbo(2,ifac)**2    &
-             + cpro_visma_v(3,iel)*surfbo(3,ifac)**2 )  &
-           /distbf/srfbn2
+
+    if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
+
+      hintt(1) = cpro_visma_s(iel)/distbf
+      hintt(2) = cpro_visma_s(iel)/distbf
+      hintt(3) = cpro_visma_s(iel)/distbf
+      hintt(4) = 0.d0
+      hintt(5) = 0.d0
+      hintt(6) = 0.d0
+
+    elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+
+      hintt(1) = cpro_visma_v(1,iel)/distbf
+      hintt(2) = cpro_visma_v(2,iel)/distbf
+      hintt(3) = cpro_visma_v(3,iel)/distbf
+      hintt(4) = cpro_visma_v(4,iel)/distbf
+      hintt(5) = cpro_visma_v(5,iel)/distbf
+      hintt(6) = cpro_visma_v(6,iel)/distbf
+
     endif
 
     ! Dirichlet Boundary Conditions
@@ -3112,10 +3123,10 @@ if (iale.eq.1) then
       hextv(2) = rcodcl(ifac,ivma,2)
       hextv(3) = rcodcl(ifac,iwma,2)
 
-      call set_dirichlet_vector &
+      call set_dirichlet_vector_aniso &
          ( claale(:,ifac)  , cfaale(:,ifac)  ,             &
            clbale(:,:,ifac), cfbale(:,:,ifac),             &
-           pimpv           , hint            , hextv )
+           pimpv           , hintt           , hextv )
 
     ! Neumann Boundary Conditions
     !----------------------------
@@ -3128,10 +3139,10 @@ if (iale.eq.1) then
       qimpv(2) = rcodcl(ifac,ivma,3)
       qimpv(3) = rcodcl(ifac,iwma,3)
 
-      call set_neumann_vector &
+      call set_neumann_vector_aniso &
          ( claale(:,ifac)  , cfaale(:,ifac)  ,             &
            clbale(:,:,ifac), cfbale(:,:,ifac),             &
-           qimpv           , hint )
+           qimpv           , hintt )
 
 
     ! Convective Boundary Conditions
@@ -3148,10 +3159,10 @@ if (iale.eq.1) then
       pimpv(3) = rcodcl(ifac,iwma,1)
       cflv(3) = rcodcl(ifac,iwma,2)
 
-      call set_convective_outlet_vector &
+      call set_convective_outlet_vector_aniso &
          ( claale(:,ifac)  , cfaale(:,ifac)  ,             &
            clbale(:,:,ifac), cfbale(:,:,ifac),             &
-           pimpv           , cflv            , hint )
+           pimpv           , cflv            , hintt )
 
     endif
 

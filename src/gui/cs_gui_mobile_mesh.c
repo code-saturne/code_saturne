@@ -50,6 +50,7 @@
 
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
+#include "cs_convection_diffusion.h"
 #include "cs_field_pointer.h"
 #include "cs_gui.h"
 #include "cs_gui_util.h"
@@ -581,15 +582,13 @@ _get_external_coupling_dof(cs_tree_node_t  *tn_ec,
  *                               the displacement of the structures
  * DOUBLE           EPALIM  <--  realtive precision of implicitation of
  *                               the displacement of the structures
- * INTEGER          IORTVM  <--  type of viscosity of mesh
  *
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uialin, UIALIN) (int     *iale,
                                 int     *nalinf,
                                 int     *nalimx,
-                                double  *epalim,
-                                int     *iortvm)
+                                double  *epalim)
 {
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
@@ -603,8 +602,6 @@ void CS_PROCF (uialin, UIALIN) (int     *iale,
                               nalimx);
     cs_gui_node_get_child_real(tn, "implicitation_precision",
                                epalim);
-
-    *iortvm = _iale_visc_type(tn);
   }
 
 #if _XML_DEBUG_
@@ -614,7 +611,40 @@ void CS_PROCF (uialin, UIALIN) (int     *iale,
     bft_printf("--nalinf = %i\n", *nalinf);
     bft_printf("--nalimx = %i\n", *nalimx);
     bft_printf("--epalim = %g\n", *epalim);
-    bft_printf("--iortvm = %i\n", *iortvm);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * ALE diffusion type
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIALVM
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uialvm, UIALVM) ()
+{
+  cs_tree_node_t *tn
+    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
+
+  int iortvm = _iale_visc_type(tn);
+
+  cs_var_cal_opt_t vcopt;
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_field_t *f_mesh_u = cs_field_by_name("mesh_velocity");
+  cs_field_get_key_struct(f_mesh_u, key_cal_opt_id, &vcopt);
+
+  if (iortvm == 1) { /* orthotropic viscosity */
+    vcopt.idften = CS_ANISOTROPIC_LEFT_DIFFUSION;
+  } else { /* isotropic viscosity */
+    vcopt.idften = CS_ISOTROPIC_DIFFUSION;
+  }
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--iortvm = %i\n",  iortvm);
   }
 #endif
 }

@@ -114,7 +114,7 @@ double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 
 integer          ifac, ii, isou
 integer          iel, f_dim
-integer          iscal , ivar
+integer          iscal , ivar, idftnp
 
 double precision rnx, rny, rnz, rxnn
 double precision upx, upy, upz, usn
@@ -123,7 +123,7 @@ double precision clsyme
 double precision eloglo(3,3), alpha(6,6)
 double precision srfbnf, rcodcn, hint, visclc, visctc, distbf
 double precision cpp
-double precision vismsh(3), hintv(3)
+double precision vismsh(3), hintv(6), rnn(6), htnn(6)
 double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 
@@ -149,7 +149,7 @@ double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:), pointer :: cpro_visma_s
 double precision, dimension(:,:), pointer :: cpro_visma_v
 
-type(var_cal_opt) :: vcopt_rij
+type(var_cal_opt) :: vcopt_uma, vcopt_rij
 
 !===============================================================================
 
@@ -669,9 +669,12 @@ if (iale.eq.1) then
   call field_get_coefaf_v(ivarfl(iuma), cfaale)
   call field_get_coefbf_v(ivarfl(iuma), cfbale)
 
-  if (iortvm.eq.0) then
+  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt_uma)
+  idftnp = vcopt_uma%idften
+
+  if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
     call field_get_val_s(ivisma, cpro_visma_s)
-  else
+  else if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
     call field_get_val_v(ivisma, cpro_visma_v)
   endif
 
@@ -689,19 +692,16 @@ if (iale.eq.1) then
       srfbnf = surfbn(ifac)
 
       ! --- Physical properties
-      if (iortvm.eq.0) then
-        vismsh(1) = cpro_visma_s(iel)
-        vismsh(2) = cpro_visma_s(iel)
-        vismsh(3) = cpro_visma_s(iel)
-      else
-        vismsh(1) = cpro_visma_v(1,iel)
-        vismsh(2) = cpro_visma_v(2,iel)
-        vismsh(3) = cpro_visma_v(3,iel)
+      if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
+        do ii = 1, 3
+          hintv(ii) = cpro_visma_s(iel)/distbf
+          hintv(ii+3) = 0.d0
+        enddo
+      else if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
+        do ii = 1, 6
+          hintv(ii) = cpro_visma_v(ii,iel)/distbf
+        enddo
       endif
-
-      hintv(1) = vismsh(1)/distbf
-      hintv(2) = vismsh(2)/distbf
-      hintv(3) = vismsh(3)/distbf
 
       ! Unit normal
       rnx = surfbo(1,ifac)/srfbnf
@@ -731,16 +731,23 @@ if (iale.eq.1) then
       cfaale(2,ifac) = 0.d0
       cfaale(3,ifac) = 0.d0
 
-      cfbale(1,1,ifac) = hintv(1)*rnx**2
-      cfbale(2,2,ifac) = hintv(2)*rny**2
-      cfbale(3,3,ifac) = hintv(3)*rnz**2
+      rnn(1) = rnx**2
+      rnn(2) = rny**2
+      rnn(3) = rnz**2
+      rnn(4) = rnx*rny
+      rnn(5) = rny*rnz
+      rnn(6) = rnx*rnz
 
-      cfbale(1,2,ifac) = hintv(1)*rnx*rny
-      cfbale(2,1,ifac) = hintv(2)*rny*rnx
-      cfbale(1,3,ifac) = hintv(1)*rnx*rnz
-      cfbale(3,1,ifac) = hintv(3)*rnz*rnx
-      cfbale(2,3,ifac) = hintv(2)*rny*rnz
-      cfbale(3,2,ifac) = hintv(3)*rnz*rny
+      call symmetric_matrix_product(hintv, rnn, htnn)
+      cfbale(1,1,ifac) = htnn(1)
+      cfbale(2,2,ifac) = htnn(2)
+      cfbale(3,3,ifac) = htnn(3)
+      cfbale(1,2,ifac) = htnn(4)
+      cfbale(2,1,ifac) = htnn(4)
+      cfbale(1,3,ifac) = htnn(6)
+      cfbale(3,1,ifac) = htnn(6)
+      cfbale(2,3,ifac) = htnn(5)
+      cfbale(3,2,ifac) = htnn(5)
 
     endif
   enddo

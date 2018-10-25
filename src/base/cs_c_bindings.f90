@@ -2346,11 +2346,11 @@ module cs_c_bindings
 
     ! Interface to C function solving mesh velocity in ALE framework.
 
-    subroutine cs_ale_solve_mesh_velocity(iterns, iortvm, ndircl, impale, ialtyb)   &
+    subroutine cs_ale_solve_mesh_velocity(iterns, ndircl, impale, ialtyb)   &
       bind(C, name='cs_ale_solve_mesh_velocity')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: iterns, iortvm, ndircl
+      integer(c_int), value :: iterns, ndircl
       integer(c_int), dimension(*), intent(in) :: impale, ialtyb
     end subroutine cs_ale_solve_mesh_velocity
 

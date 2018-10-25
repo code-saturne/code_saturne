@@ -1020,9 +1020,6 @@ iale = 0
 ! --- Iterations d'initialisation fluide seul
 nalinf = 0
 
-! --- Type de viscosite de maillage (isotrope par defaut)
-iortvm = 0
-
 ! --- Nombre de structures internes
 !     (sera relu ou recalcule)
 nbstru = -999

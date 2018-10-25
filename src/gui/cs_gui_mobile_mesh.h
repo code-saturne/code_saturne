@@ -60,15 +60,24 @@ BEGIN_C_DECLS
  *                                the displacement of the structures
  * DOUBLE           EPALIM  <--   realtive precision of implicitation of
  *                                the displacement of the structures
- * INTEGER          IORTVM  <--   type of viscosity of mesh
  *
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uialin, UIALIN) (int    *const iale,
                                 int    *const nalinf,
                                 int    *const nalimx,
-                                double *const epalim,
-                                int    *const iortvm);
+                                double *const epalim);
+
+/*----------------------------------------------------------------------------
+ * ALE diffusion type
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIALVM
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uialvm, UIALVM) ();
 
 /*-----------------------------------------------------------------------------
  * uialcl

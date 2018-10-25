@@ -148,7 +148,7 @@ endif
 ! GUI
 
 if (iihmpr.eq.1) then
-  call uialin (iale, nalinf, nalimx, epalim, iortvm)
+  call uialin (iale, nalinf, nalimx, epalim)
 endif
 
 ! User sub-routines
@@ -208,6 +208,9 @@ if (icdo.lt.2) then
 endif
 
 if (iihmpr.eq.1) then
+  if (iale.eq.1) then
+    call uialvm
+  endif
   call csivis
 endif
 
