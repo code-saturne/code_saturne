@@ -93,8 +93,8 @@ dlpress = dldens*rair*dltemp ! ideal gas law
 dlhumid = 0.0d0
 
 allocate(cvar_espg(nespg_siream))
-allocate(cvar_espg(nespg_siream+nbin_aer+(nesp_aer-1)*nbin_aer))
-allocate(cvar_espg(nespg_siream+nesp_aer*nbin_aer+nbin_aer))
+allocate(cvar_aer(nesp_aer*nbin_aer))
+allocate(cvar_naer(nbin_aer))
 
 ! Get Physical quantities
 ! Densisty
@@ -110,12 +110,12 @@ enddo
 do jb = 1, nbin_aer
   do jsp = 1, nesp_aer
     index = nespg_siream+jb+(jsp-1)*nbin_aer
-    call field_get_val_s(ivarfl(isca(index)), cvar_aer(index)%p)
+    call field_get_val_s(ivarfl(isca(index)), cvar_aer(jb+(jsp-1)*nbin_aer)%p)
   enddo
 enddo
 do jb = 1, nbin_aer
   index = nespg_siream+nesp_aer*nbin_aer+jb
-  call field_get_val_s(ivarfl(isca(index)), cvar_naer(index)%p)
+  call field_get_val_s(ivarfl(isca(index)), cvar_naer(jb)%p)
 enddo
 
 ! Clipping before calling siream
@@ -136,12 +136,12 @@ do iel = 1, ncel
 
   do jb = 1, nbin_aer
     do jsp = 1, nesp_aer
-      dlconc_aer(jb,jsp) = cvar_aer(nespg_siream+jb+(jsp-1)*nbin_aer)%p(iel)
+      dlconc_aer(jb,jsp) = cvar_aer(jb+(jsp-1)*nbin_aer)%p(iel)
     enddo
   enddo
 
   do jb = 1, nbin_aer
-    dlnum_aer(jb) = cvar_naer(nespg_siream+nesp_aer*nbin_aer+jb)%p(iel)
+    dlnum_aer(jb) = cvar_naer(jb)%p(iel)
   enddo
 
   ! Temperature and density
@@ -215,12 +215,12 @@ do iel = 1, ncel
 
   do jb = 1, nbin_aer
     do jsp = 1, nesp_aer
-      cvar_aer(nespg_siream+jb+(jsp-1)*nbin_aer)%p(iel) = dlconc_aer(jb,jsp)
+      cvar_aer(jb+(jsp-1)*nbin_aer)%p(iel) = dlconc_aer(jb,jsp)
     enddo
   enddo
 
   do jb = 1, nbin_aer
-    cvar_naer(nespg_siream+nesp_aer*nbin_aer+jb)%p(iel) = dlnum_aer(jb)
+    cvar_naer(jb)%p(iel) = dlnum_aer(jb)
   enddo
 
 enddo ! Loop on cells

@@ -1,3 +1,13 @@
+
+Release 4.0.10 (unreleased)
+===========================
+
+Bug fixes:
+----------
+
+- Fix allocation of pmappers to scalar fields in atmospheric aerosols model. 
+
+
 Release 4.0.9 (26 Sep 2018)
 ===========================
 
