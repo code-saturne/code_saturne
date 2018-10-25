@@ -5,6 +5,11 @@ Release 5.0.10 (unreleased)
 Bug fixes
 ---------
 
+- Fix allocation of pmappers to scalar fields in atmospheric aerosols model. 
+
+- Fix allocation size for values at injection in case of mass source terms
+  with coupled Reynolds stress solver.
+
 - GUI: fix missing update of modified scalar names for groundwater flows.
 
 - GUI: fix loss of previous deactivated wall function setting when reopened.
@@ -22,9 +27,6 @@ Release 5.0.9 (Sep 26 2018)
 
 Bug fixes
 ---------
-
-- Fix allocation size for values at injection in case of mass source terms
-  with coupled Reynolds stress solver.
 
 - Fixes to atmospheric chemistry model.
 
