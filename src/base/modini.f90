@@ -251,7 +251,7 @@ do iscal = 1, nscal
     thetss(iscal) = 0.d0
   endif
   ! Scalars diffusivity
-  call field_get_key_int(ivarfl(isca(ii)), kivisl, f_id)
+  call field_get_key_int(ivarfl(isca(iscal)), kivisl, f_id)
   if (f_id.ge.0) then
     call field_get_key_int(f_id, key_t_ext_id, iviext)
   else

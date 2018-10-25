@@ -279,7 +279,7 @@ do iscal = 1, nscal
     endif
   endif
   ! Diffusivity of scalars
-  call field_get_key_int(ivarfl(isca(ii)), kivisl, ifcvsl)
+  call field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
   if (ifcvsl.ge.0) then
     call field_get_key_int(ifcvsl, key_t_ext_id, iviext)
     if (iviext.eq.-1) then
