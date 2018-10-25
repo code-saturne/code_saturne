@@ -3,6 +3,14 @@ Master (not on release branches yet)
 
 User changes:
 
+- Move velocity-pressure algorithm settings from global numerical
+  parameters view to time step view in GUI. "Time step" view is
+  subsequently renamed "Time settings".
+
+- For studymanager, add default destination and repository directories
+  if process is launched from a study directory. Destination directory
+  is based on study directory name (RUN_study_name).
+
 - Boundary layer insertion: added optional cell volume ratio limiter
   to reduce the extrusion near cells that would be excessively
   flattened or entangled.
@@ -30,6 +38,9 @@ User changes:
 - Add postprocessing of temperature and flux at internal coupling interface.
 
 Numerics:
+
+- Use left anisotropic diffusion scheme (legacy FV) for mesh velocity solving
+  in ALE framework.
 
 - Major change in the time stepping to ensure 2nd time order for
   variable density flow if 2nd time order is activated.
@@ -101,6 +112,8 @@ Numerics:
   Vertex-based schemes
 
 Architectural changes:
+
+- Move mesh velocity solving (ALE) from Fortran to C.
 
 - Remove dependency to the libxml2 library.
 
