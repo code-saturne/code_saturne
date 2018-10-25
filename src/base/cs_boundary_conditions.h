@@ -42,6 +42,7 @@
 
 #include "cs_base.h"
 #include "cs_field.h"
+#include "cs_math.h"
 #include "cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------*/
@@ -267,6 +268,71 @@ cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  *a,
     *af = -heq*pimp;
     *bf =  heq;
 
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set Dirichlet BC for a vector for a given face.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   pimpv  dirichlet value to impose
+ * \param[in]   hint   internal exchange coefficient
+ * \param[in]   hextv  external exchange coefficient
+ *                     (assumed infinite/ignored if < 0)
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_boundary_conditions_set_dirichlet_vector(cs_real_3_t   *a,
+                                            cs_real_3_t   *af,
+                                            cs_real_33_t  *b,
+                                            cs_real_33_t  *bf,
+                                            cs_real_3_t    pimpv,
+                                            cs_real_t      hint,
+                                            cs_real_3_t    hextv)
+{
+  for (int isou = 0 ; isou < 3 ; isou++) {
+    if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
+
+      /* Gradient BCs */
+      *a[isou] = pimpv[isou];
+      for (int jsou = 0 ; jsou < 3 ; jsou++)
+        *b[isou][jsou] = 0.;
+
+      /* Flux BCs */
+      *af[isou] = -hint*pimpv[isou];
+      for (int jsou = 0 ; jsou < 3 ; jsou++) {
+        if (jsou == isou)
+          *bf[isou][jsou] = hint;
+        else
+          *bf[isou][jsou] = 0.;
+      }
+    } else {
+
+      cs_real_t heq = hint*hextv[isou]/(hint + hextv[isou]);
+
+      /* Gradient BCs */
+      *a[isou] = hextv[isou]*pimpv[isou]/(hint + hextv[isou]);
+      for (int jsou = 0 ; jsou < 3 ; jsou++) {
+        if (jsou == isou)
+          *b[isou][jsou] = hint/(hint + hextv[isou]);
+        else
+          *b[isou][jsou] = 0.;
+      }
+
+      /* Flux BCs */
+      *af[isou] = -heq*pimpv[isou];
+      for (int jsou = 0 ; jsou < 3 ; jsou++) {
+        if (jsou == isou)
+          *bf[isou][jsou] = heq;
+        else
+          *bf[isou][jsou] = 0.;
+      }
+    }
   }
 }
 

@@ -45,53 +45,80 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Compute cell and face center of gravity, cell volume.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell and face centers of gravity, cell volumes
+ *         and update bad cells.
  *
- * Fortran Interface
- *
- * subroutine algrma
- * *****************
- *
- * min_vol           : --> : Minimum cell volume
- * max_vol           : --> : Maximum cell volume
- * tot_vol           : --> : Total mesh volume
- *----------------------------------------------------------------------------*/
+ * \param[out]       min_vol        Minimum cell volume
+ * \param[out]       max_vol        Maximum cell volume
+ * \param[out]       tot_vol        Total cell volume
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (algrma, ALGRMA)(cs_real_t  *min_vol,
-                          cs_real_t  *max_vol,
-                          cs_real_t  *tot_vol);
+cs_ale_update_mesh_quantities(cs_real_t  *min_vol,
+                              cs_real_t  *max_vol,
+                              cs_real_t  *tot_vol);
 
-/*----------------------------------------------------------------------------
- * Projection on mesh vertices of the displacement (computed on cell center)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Project the displacement on mesh vertices (solved on cell center).
  *
- * Fortran Interface
- *
- * subroutine aledis
- * *****************
- *
- * ialtyb            : <-- : Type of boundary for ALE
- * meshv             : <-- : Mesh velocity
- * gradm             : <-- : Mesh velocity gradient (du_i/dx_j : gradv[][i][j])
- * claale            : <-- : Boundary conditions A
- * clbale            : <-- : Boundary conditions B
- * dt                : <-- : Time step
- * disp_proj         : --> : Displacement projected on vertices
- *----------------------------------------------------------------------------*/
+ * \param[in]       ialtyb        Type of boundary for ALE
+ * \param[in]       meshv         Mesh velocity
+ * \param[in]       gradm         Mesh velocity gradient
+ *                                (du_i/dx_j : gradv[][i][j])
+ * \param[in]       claale        Boundary conditions A
+ * \param[in]       clbale        Boundary conditions B
+ * \param[in]       dt            Time step
+ * \param[out]      disp_proj     Displacement projected on vertices
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (aledis, ALEDIS)(const cs_int_t      ialtyb[],
-                          const cs_real_3_t  *meshv,
-                          const cs_real_33_t  gradm[],
-                          const cs_real_3_t  *claale,
-                          const cs_real_33_t *clbale,
-                          const cs_real_t    *dt,
-                          cs_real_3_t        *disp_proj);
+cs_ale_project_displacement(const int           ialtyb[],
+                            const cs_real_3_t  *meshv,
+                            const cs_real_33_t  gradm[],
+                            const cs_real_3_t  *claale,
+                            const cs_real_33_t *clbale,
+                            const cs_real_t    *dt,
+                            cs_real_3_t        *disp_proj);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update mesh in the ALE framework.
+ *
+ * \param[in]       itrale        number of the current ALE iteration
+ * \param[in]       xyzno0        nodes coordinates of the initial mesh
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_ale_update_mesh(const int           itrale,
+                   const cs_real_3_t  *xyzno0);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve a Poisson equation on the mesh velocity in ALE framework.
+ *
+ * It also updates the mesh displacement
+ * so that it can be used to update mass fluxes (due to mesh displacement).
+ *
+ * \param[in]       iterns        Navier-Stokes iteration number
+ * \param[in]       ialtyb        Type of boundary for ALE
+ * \param[in]       ndircl        Number of Dirichlet BCs for mesh velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_solve_mesh_velocity(const int   iterns,
+                           const int   iortvm,
+                           const int   ndircl,
+                           const int  *impale,
+                           const int  *ialtyb);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
 #endif /* __CS_ALE_H__ */
-

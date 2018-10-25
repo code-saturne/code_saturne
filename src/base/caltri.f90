@@ -558,7 +558,7 @@ if (isuite.eq.1) then
       enddo
     enddo
 
-    call algrma(volmin, volmax, voltot)
+    call cs_ale_update_mesh_quantities(volmin, volmax, voltot)
 
     ! Abort at the end of the current time-step if there is a negative volume
     if (volmin.le.0.d0) ntmabs = ntcabs
@@ -895,7 +895,7 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
 
   if (itrale.eq.0 .or. itrale.gt.nalinf) then
 
-    call alemav(itrale, xyzno0)
+    call cs_ale_update_mesh(itrale, xyzno0)
 
   endif
 

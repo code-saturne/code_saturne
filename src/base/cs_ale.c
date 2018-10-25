@@ -40,10 +40,18 @@
 #include "cs_interface.h"
 
 #include "cs_base.h"
-
+#include "cs_boundary_conditions.h"
+#include "cs_face_viscosity.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
+#include "cs_field_operator.h"
+#include "cs_equation_iterative_solve.h"
+#include "cs_physical_constants.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -71,23 +79,21 @@ BEGIN_C_DECLS
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Compute cell and face center of gravity, cell volume.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell and face centers of gravity, cell volumes
+ *         and update bad cells.
  *
- * Fortran Interface
- *
- * subroutine algrma
- * *****************
- *
- * min_vol           : --> : Minimum cell volume
- * max_vol           : --> : Maximum cell volume
- * tot_vol           : --> : Total mesh volume
- *----------------------------------------------------------------------------*/
+ * \param[out]       min_vol        Minimum cell volume
+ * \param[out]       max_vol        Maximum cell volume
+ * \param[out]       tot_vol        Total cell volume
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (algrma, ALGRMA)(cs_real_t  *min_vol,
-                          cs_real_t  *max_vol,
-                          cs_real_t  *tot_vol)
+cs_ale_update_mesh_quantities(cs_real_t  *min_vol,
+                              cs_real_t  *max_vol,
+                              cs_real_t  *tot_vol)
 {
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -100,45 +106,40 @@ CS_PROCF (algrma, ALGRMA)(cs_real_t  *min_vol,
   *tot_vol = mq->tot_vol;
 }
 
-/*----------------------------------------------------------------------------
- * Projection on mesh vertices of the displacement (computed on cell center)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Project the displacement on mesh vertices (solved on cell center).
  *
- * Fortran Interface
- *
- * subroutine aledis
- * *****************
- *
- * ialtyb            : <-- : Type of boundary for ALE
- * meshv             : <-- : Mesh velocity
- * gradm             : <-- : Mesh velocity gradient (du_i/dx_j : gradv[][i][j])
- * claale            : <-- : Boundary conditions A
- * clbale            : <-- : Boundary conditions B
- * dt                : <-- : Time step
- * disp_proj         : --> : Displacement projected on vertices
- *----------------------------------------------------------------------------*/
+ * \param[in]       ialtyb        Type of boundary for ALE
+ * \param[in]       meshv         Mesh velocity
+ * \param[in]       gradm         Mesh velocity gradient
+ *                                (du_i/dx_j : gradv[][i][j])
+ * \param[in]       claale        Boundary conditions A
+ * \param[in]       clbale        Boundary conditions B
+ * \param[in]       dt            Time step
+ * \param[out]      disp_proj     Displacement projected on vertices
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (aledis, ALEDIS)(const cs_int_t      ialtyb[],
-                          const cs_real_3_t  *meshv,
-                          const cs_real_33_t  gradm[],
-                          const cs_real_3_t  *claale,
-                          const cs_real_33_t *clbale,
-                          const cs_real_t    *dt,
-                          cs_real_3_t        *disp_proj)
+cs_ale_project_displacement(const int           ialtyb[],
+                            const cs_real_3_t  *meshv,
+                            const cs_real_33_t  gradm[],
+                            const cs_real_3_t  *claale,
+                            const cs_real_33_t *clbale,
+                            const cs_real_t    *dt,
+                            cs_real_3_t        *disp_proj)
 {
-  cs_int_t  j, face_id, vtx_id, cell_id, cell_id1, cell_id2;
-
+  int  j, face_id, vtx_id, cell_id, cell_id1, cell_id2;
   bool *vtx_interior_indicator = NULL;
-
   cs_real_t *vtx_counter = NULL;
-
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  const cs_int_t  n_vertices = m->n_vertices;
-  const cs_int_t  n_cells = m->n_cells;
-  const cs_int_t  n_b_faces = m->n_b_faces;
-  const cs_int_t  n_i_faces = m->n_i_faces;
-  const cs_int_t  dim = m->dim;
+  const int n_vertices = m->n_vertices;
+  const int n_cells = m->n_cells;
+  const int n_b_faces = m->n_b_faces;
+  const int n_i_faces = m->n_i_faces;
+  const int dim = m->dim;
   const cs_real_3_t *restrict vtx_coord
     = (const cs_real_3_t *restrict)m->vtx_coord;
   const cs_real_3_t *restrict cell_cen
@@ -333,6 +334,316 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t      ialtyb[],
 
   BFT_FREE(vtx_counter);
   BFT_FREE(vtx_interior_indicator);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update mesh in the ALE framework.
+ *
+ * \param[in]       itrale        number of the current ALE iteration
+ * \param[in]       xyzno0        nodes coordinates of the initial mesh
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_update_mesh(const int           itrale,
+                   const cs_real_3_t  *xyzno0)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  cs_real_3_t *vtx_coord = (cs_real_3_t *)m->vtx_coord;
+  cs_real_3_t *mshvel, *mshvela, *disale, *disala;
+  cs_var_cal_opt_t var_cal_opt;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  const cs_lnum_t n_vertices = cs_glob_mesh->n_vertices;
+  const int ndim = cs_glob_mesh->dim;
+  cs_time_step_t *ts = cs_get_glob_time_step();
+
+  /* Initialization */
+  cs_field_get_key_struct(CS_F_(mesh_u), key_cal_opt_id, &var_cal_opt);
+
+  if (var_cal_opt.iwarni >= 1) {
+    bft_printf("\n ------------------------"
+               "---------------------------"
+               "---------\n\n\n"
+               "  Update mesh (ALE)\n"
+               "  =================\n\n");
+  }
+
+  /* Retrieving fields */
+  mshvel = (cs_real_3_t *)CS_F_(mesh_u)->val;
+  mshvela = (cs_real_3_t *)CS_F_(mesh_u)->val_pre;
+
+  disale = (cs_real_3_t *)cs_field_by_name("disale")->val;
+  disala = (cs_real_3_t *)cs_field_by_name("disale")->val_pre;
+
+  /* Update geometry */
+  for (int inod = 0 ; inod < n_vertices ; inod++) {
+    for (int idim = 0 ; idim < ndim ; idim++) {
+      vtx_coord[inod][idim] = xyzno0[inod][idim] + disale[inod][idim];
+      disala[inod][idim] = vtx_coord[inod][idim] - xyzno0[inod][idim];
+    }
+  }
+
+  cs_ale_update_mesh_quantities(&(fvq->min_vol),
+                                &(fvq->max_vol),
+                                &(fvq->tot_vol));
+
+  /* Abort at the end of the current time-step if there is a negative volume */
+  if (fvq->min_vol <= 0.) {
+    ts->nt_max = ts->nt_cur;
+  }
+
+  /* The mesh velocity is reverted to its initial value if the current time step is
+     the initialization time step */
+  if (itrale == 0) {
+    for (cs_lnum_t cell_id = 0 ; cell_id < n_cells_ext ; cell_id++) {
+      for (int idim = 0 ; idim < ndim ; idim++) {
+        mshvel[cell_id][idim] = mshvela[cell_id][idim];
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve a Poisson equation on the mesh velocity in ALE framework.
+ *
+ * It also updates the mesh displacement
+ * so that it can be used to update mass fluxes (due to mesh displacement).
+ *
+ * \param[in]       iterns        Navier-Stokes iteration number
+ * \param[in]       ialtyb        Type of boundary for ALE
+ * \param[in]       ndircl        Number of Dirichlet BCs for mesh velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_solve_mesh_velocity(const int   iterns,
+                           const int   iortvm,
+                           const int   ndircl,
+                           const int  *impale,
+                           const int  *ialtyb)
+{
+  cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_vertices = m->n_vertices;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t *b_face_cells = (const cs_lnum_t *)m->b_face_cells;
+  const cs_real_t *b_dist = (const cs_real_t *)fvq->b_dist;
+  const cs_real_t *b_face_surf = (const cs_real_t *)fvq->b_face_surf;
+  const cs_real_3_t *b_face_normal = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_t *grav = cs_glob_physical_constants->gravity;
+  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+
+  /* The mass flux is necessary to call cs_equation_iterative_solve_vector
+     but not used (iconv = 0), except for the free surface, where it is used
+     as a boundary condition */
+
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  const cs_real_t *i_massflux
+    = cs_field_by_id(cs_field_get_key_int(CS_F_(u), kimasf))->val;
+  const cs_real_t *b_massflux
+    = cs_field_by_id(cs_field_get_key_int(CS_F_(u), kbmasf))->val;
+
+  /* 1. Initialization */
+
+  cs_real_3_t rinfiv = {cs_math_infinite_r};
+
+  cs_real_3_t *smbr;
+  cs_real_33_t *fimp;
+  BFT_MALLOC(smbr, n_cells_ext, cs_real_3_t);
+  BFT_MALLOC(fimp, n_cells_ext, cs_real_33_t);
+
+  cs_real_t *i_visc, *b_visc;
+  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
+  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+
+  cs_real_t *mesh_viscs;
+  cs_real_3_t *mesh_viscv;
+  if (iortvm == 0) {
+    mesh_viscs = cs_field_by_name("mesh_viscosity")->val;
+  } else {
+    mesh_viscv = (cs_real_3_t *)cs_field_by_name("mesh_viscosity")->val;
+  }
+
+  cs_real_3_t *mshvel = (cs_real_3_t *)CS_F_(mesh_u)->val;
+  cs_real_3_t *mshvela = (cs_real_3_t *)CS_F_(mesh_u)->val_pre;
+
+  cs_real_3_t *disale = (cs_real_3_t *)cs_field_by_name("disale")->val;
+  cs_real_3_t *disala = (cs_real_3_t *)cs_field_by_name("disale")->val_pre;
+
+  cs_var_cal_opt_t var_cal_opt;
+  cs_field_get_key_struct(CS_F_(mesh_u), key_cal_opt_id, &var_cal_opt);
+
+  if (var_cal_opt.iwarni >= 1) {
+    bft_printf("\n   ** SOLVING MESH VELOCITY\n"
+               "      ---------------------\n");
+  }
+
+  /* We compute the boundary condition on the mesh velocity at the free surface
+   * from the new mass flux. */
+
+  /* Density at the boundary */
+  cs_real_t *brom = CS_F_(rho_b)->val;
+
+  cs_field_bc_coeffs_t *bc_coeffs = CS_F_(mesh_u)->bc_coeffs;
+
+  cs_real_3_t  *bc_a   = (cs_real_3_t  *)bc_coeffs->a;
+  cs_real_3_t  *bc_af  = (cs_real_3_t  *)bc_coeffs->af;
+  cs_real_33_t *bc_b   = (cs_real_33_t *)bc_coeffs->b;
+  cs_real_33_t *bc_bf  = (cs_real_33_t *)bc_coeffs->bf;
+
+  /* The mesh move in the direction of the gravity in case of free-surface */
+  for (cs_lnum_t face_id = 0 ; face_id < n_b_faces ; face_id++) {
+    if (ialtyb[face_id] == CS_FREE_SURFACE) {
+      cs_lnum_t cell_id = b_face_cells[face_id];
+      cs_real_t distbf = b_dist[face_id];
+      cs_real_t srfbn2 = cs_math_pow2(b_face_surf[face_id]);
+
+      cs_real_t hint;
+      if (iortvm == 0) {
+        hint = mesh_viscs[cell_id] / distbf;
+      } else { /* FIXME */
+        hint = (mesh_viscv[cell_id][0] * cs_math_pow2(b_face_normal[face_id][0])
+             +  mesh_viscv[cell_id][1] * cs_math_pow2(b_face_normal[face_id][1])
+             +  mesh_viscv[cell_id][2] * cs_math_pow2(b_face_normal[face_id][2]))
+             / distbf / srfbn2;
+     }
+
+     cs_real_t prosrf = cs_math_3_dot_product(grav, b_face_normal[face_id]);
+
+     cs_real_3_t pimpv;
+     for (int i = 0 ; i < 3 ; i++)
+       pimpv[i] = grav[i]*b_massflux[face_id]/(brom[face_id]*prosrf);
+
+     cs_boundary_conditions_set_dirichlet_vector(&(bc_a[face_id]),
+                                                 &(bc_af[face_id]),
+                                                 &(bc_b[face_id]),
+                                                 &(bc_bf[face_id]),
+                                                 pimpv,
+                                                 hint,
+                                                 rinfiv);
+
+    }
+  }
+
+  /* 2. Solving of the mesh velocity equation */
+  if (var_cal_opt.iwarni >= 1)
+    bft_printf("\n\n           SOLVING VARIABLE %s\n\n",
+               CS_F_(mesh_u)->name);
+
+  for (cs_lnum_t cell_id = 0 ; cell_id < n_cells_ext ; cell_id++) {
+    for (int isou = 0 ; isou < 3 ; isou++) {
+      smbr[cell_id][isou] = 0.;
+      for (int jsou = 0 ; jsou < 3 ; jsou++)
+        fimp[cell_id][jsou][isou] = 0.;
+    }
+  }
+
+  if (iortvm == 0) {
+    cs_face_viscosity(m,
+                      fvq,
+                      cs_glob_space_disc->imvisf,
+                      mesh_viscs,
+                      i_visc,
+                      b_visc);
+  } else {
+    cs_face_orthotropic_viscosity_vector(m,
+                                         fvq,
+                                         cs_glob_space_disc->imvisf,
+                                         mesh_viscv,
+                                         i_visc,
+                                         b_visc);
+  }
+
+  var_cal_opt.relaxv = 1.;
+  var_cal_opt.thetav = 1.;
+  var_cal_opt.istat  = -1;
+  var_cal_opt.idifft = -1;
+
+  /* FIXME : do a proper anisotropic version */
+  cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
+                                     iterns,
+                                     CS_F_(mesh_u)->id,
+                                     CS_F_(mesh_u)->name,
+                                     ndircl,
+                                     0, /* ivisep */
+                                     0, /* iescap */
+                                     &var_cal_opt,
+                                     (const cs_real_3_t *)mshvela,
+                                     (const cs_real_3_t *)mshvela,
+                                     (const cs_real_3_t *)bc_coeffs->a,
+                                     (const cs_real_33_t *)bc_coeffs->b,
+                                     (const cs_real_3_t *)bc_coeffs->af,
+                                     (const cs_real_33_t *)bc_coeffs->bf,
+                                     i_massflux,
+                                     b_massflux,
+                                     i_visc,
+                                     b_visc,
+                                     i_visc,
+                                     b_visc,
+                                     i_visc,
+                                     b_visc,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     0, /* icvflv */
+                                     NULL,
+                                     (const cs_real_33_t *)fimp,
+                                     smbr,
+                                     mshvel,
+                                     NULL);
+
+
+  /* Free memory */
+  BFT_FREE(smbr);
+  BFT_FREE(fimp);
+  BFT_FREE(i_visc);
+  BFT_FREE(b_visc);
+
+  /* 3. Update nodes displacement */
+
+  cs_real_3_t *dproj;
+  cs_real_33_t *gradm;
+
+  /* Allocate a temporary array */
+  BFT_MALLOC(dproj, n_vertices, cs_real_3_t);
+  BFT_MALLOC(gradm, n_cells_ext, cs_real_33_t);
+
+  bool use_previous_t = false;
+  int inc = 1;
+
+  cs_field_gradient_vector(CS_F_(mesh_u),
+                           use_previous_t,
+                           inc,
+                           gradm);
+
+  cs_ale_project_displacement(ialtyb,
+                              (const cs_real_3_t *)mshvel,
+                              (const cs_real_33_t *)gradm,
+                              (const cs_real_3_t *)bc_coeffs->a,
+                              (const cs_real_33_t *)bc_coeffs->b,
+                              (const cs_real_t *)CS_F_(dt),
+                              dproj);
+
+  /* FIXME : warning if nterup > 1, use itrale ? */
+  /* Update mesh displacement only where it is not
+     imposed by the user (ie when impale <> 1) */
+  for (cs_lnum_t inod = 0 ; inod < n_vertices ; inod++) {
+    if (impale[inod] == 0) {
+      for (int isou = 0 ; isou < 3 ; isou++)
+        disale[inod][isou] = disala[inod][isou] + dproj[inod][isou];
+    }
+  }
+
+  /* Free memory */
+  BFT_FREE(dproj);
+  BFT_FREE(gradm);
 }
 
 /*----------------------------------------------------------------------------*/

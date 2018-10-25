@@ -206,8 +206,6 @@ libcscore_la_LIBADD = libcscorep.la $(top_builddir)/src/fvm/libfvm.la
 
 libcsbase_la_SOURCES = \
 addfld.f90 \
-alelav.f90 \
-alemav.f90 \
 altycl.f90 \
 b_t_to_h.f90 \
 b_h_to_t.f90 \

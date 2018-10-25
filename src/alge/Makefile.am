@@ -118,7 +118,6 @@ cs_sles.c \
 cs_sles_default.c \
 cs_sles_it.c \
 cs_sles_pc.c \
-visort.f90
 libcsalge_la_LDFLAGS = -no-undefined
 
 libcsalge_la_LIBADD =

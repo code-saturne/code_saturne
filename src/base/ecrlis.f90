@@ -83,7 +83,7 @@ integer          kval, nfld, f_type
 integer          length, max_name_width, max_line_width, i
 character(len=400) :: chain, chainc, flabel,fname, line, title
 
-double precision dervar(9)
+double precision dervar(9), dervars
 double precision varres(9), varnrm(9)
 
 double precision, allocatable, dimension(:) :: w1, w2
@@ -189,14 +189,12 @@ do f_id = 0, nfld - 1
     if (f_dim.eq.1.and.(ippmod(icompf).ge.0.or.trim(fname).ne.'pressure')) then
       call field_get_val_s(f_id, field_s_v)
       call field_get_val_prev_s(f_id, field_s_vp)
-      dervar(1) = 0.d0
+
       do icel = 1, ncel
-        dervar(1) = dervar(1)                                            &
-                  + (field_s_v(icel) - field_s_vp(icel))**2              &
-                  *  volume(icel)/dt(icel)
+        w1(icel) = volume(icel)*(field_s_v(icel)-field_s_vp(icel))/sqrt(dt(icel))
       enddo
-      if (irangp.ge.0) call parsom (dervar(1))
-      dervar(1) = dervar(1) / voltot
+
+      dervar(1) = cs_gres(ncel,volume,w1,w1)
 
     ! Pressure time drift (computed in resopv.f90)
     else if (f_dim.eq.1) then
@@ -207,21 +205,24 @@ do f_id = 0, nfld - 1
       call field_get_val_v(f_id, field_v_v)
       call field_get_val_prev_v(f_id, field_v_vp)
 
-      ! Compute the derive
-      dervar(1) = 0.d0
+      ! Loop over the components
+      do c_id = 1, f_dim
 
-      do icel = 1, ncel
-
-        ! Loop over the components
-        do c_id = 1, f_dim
-          dervar(1) = dervar(1)                                         &
-                    + (field_v_v(c_id,icel) - field_v_vp(c_id,icel))**2 &
-                    *  volume(icel)/dt(icel)
+        do icel = 1, ncel
+          w1(icel) = volume(icel) & 
+                   * (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/sqrt(dt(icel))
         enddo
+
+        dervar(c_id) = cs_gres(ncel,volume,w1,w1)
+
       enddo
 
-      if (irangp.ge.0) call parsom (dervar(1))
-      dervar(1) = dervar(1) / voltot
+      ! Saving the first component value
+      dervars = dervar(1)
+
+      do c_id = 2, f_dim
+        dervar(1) = dervar(1) + dervar(c_id)
+      enddo
 
     endif
 
@@ -290,18 +291,10 @@ do f_id = 0, nfld - 1
       call field_get_val_v(f_id, field_v_v)
       call field_get_val_prev_v(f_id, field_v_vp)
 
+      dervar(1) = dervars
+
       ! Loop over the components
       do c_id = 1, f_dim
-
-        ! Compute the time drift
-        dervar(c_id) = 0.d0
-        do icel = 1, ncel
-          dervar(c_id) = dervar(c_id)                                      &
-                       + (field_v_v(c_id,icel) - field_v_vp(c_id,icel))**2 &
-                       *  volume(icel)/dt(icel)
-        enddo
-        if (irangp.ge.0) call parsom (dervar(c_id))
-        dervar(c_id) = dervar(c_id) / voltot
 
         chainc = 'c'
         chain = ' '

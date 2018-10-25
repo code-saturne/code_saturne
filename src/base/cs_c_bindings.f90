@@ -2321,6 +2321,41 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function updating mesh quantities in the ALE framework.
+
+    subroutine cs_ale_update_mesh_quantities(min_vol, max_vol, tot_vol)   &
+      bind(C, name='cs_ale_update_mesh_quantities')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), intent(inout) :: min_vol, max_vol, tot_vol
+    end subroutine cs_ale_update_mesh_quantities
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function updating the mesh in the ALE framework.
+
+    subroutine cs_ale_update_mesh(itrale, xyzno0)   &
+      bind(C, name='cs_ale_update_mesh')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: itrale
+      real(kind=c_double), dimension(*), intent(in) :: xyzno0
+    end subroutine cs_ale_update_mesh
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function solving mesh velocity in ALE framework.
+
+    subroutine cs_ale_solve_mesh_velocity(iterns, iortvm, ndircl, impale, ialtyb)   &
+      bind(C, name='cs_ale_solve_mesh_velocity')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: iterns, iortvm, ndircl
+      integer(c_int), dimension(*), intent(in) :: impale, ialtyb
+    end subroutine cs_ale_solve_mesh_velocity
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------
