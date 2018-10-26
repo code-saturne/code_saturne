@@ -251,6 +251,29 @@ cs_equation_compute_neumann_fb(short int                    def_id,
                                double                      *neu_values);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Robin BCs
+ *
+ * \param[in]      def_id      id of the definition for setting the Neumann BC
+ * \param[in]      f           local face number in the cs_cell_mesh_t
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      eqp         pointer to a cs_equation_param_t
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in, out] rob_values  array storing Robin values to use
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_robin(short int                    def_id,
+                          short int                    f,
+                          cs_real_t                    t_eval,
+                          const cs_cdo_quantities_t   *quant,
+                          const cs_equation_param_t   *eqp,
+                          const cs_cell_mesh_t        *cm,
+                          double                      *rob_values);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

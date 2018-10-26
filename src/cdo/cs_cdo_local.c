@@ -83,6 +83,7 @@ cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light = NULL;
  * Local static variables
  *============================================================================*/
 
+static const int  n_robin_parameters = 3;
 static int  cs_cdo_local_n_structures = 0;
 
 /* Store predefined flags */
@@ -307,23 +308,24 @@ cs_cell_sys_create(int          n_max_dofbyc,
                                       block_sizes,
                                       block_sizes);
 
-    BFT_MALLOC(csys->rhs, n_max_dofbyc, double);
-    BFT_MALLOC(csys->source, n_max_dofbyc, double);
-    BFT_MALLOC(csys->val_n, n_max_dofbyc, double);
+    BFT_MALLOC(csys->rhs       , n_max_dofbyc, double);
+    BFT_MALLOC(csys->source    , n_max_dofbyc, double);
+    BFT_MALLOC(csys->val_n     , n_max_dofbyc, double);
     BFT_MALLOC(csys->dir_values, n_max_dofbyc, double);
     BFT_MALLOC(csys->neu_values, n_max_dofbyc, double);
-    BFT_MALLOC(csys->rob_values, 2*n_max_dofbyc, double);
 
     const size_t  s = n_max_dofbyc * sizeof(double);
 
-    memset(csys->rhs, 0, s);
-    memset(csys->source, 0, s);
-    memset(csys->val_n, 0, s);
+    memset(csys->rhs       , 0, s);
+    memset(csys->source    , 0, s);
+    memset(csys->val_n     , 0, s);
     memset(csys->dir_values, 0, s);
     memset(csys->neu_values, 0, s);
-    memset(csys->rob_values, 0, 2*s);
-
   }
+
+  int  n_rob_size = n_robin_parameters*CS_MAX(n_max_dofbyc, n_max_fbyc);
+  BFT_MALLOC(csys->rob_values, n_rob_size, double);
+  memset(csys->rob_values, 0, n_rob_size*sizeof(cs_real_t));
 
   return csys;
 }
@@ -360,14 +362,15 @@ cs_cell_sys_reset(int              n_fbyc,
     csys->n_bc_faces = 0;
     csys->has_dirichlet = csys->has_nhmg_neumann = csys->has_robin = false;
 
-    memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_fbyc);
-    memset(csys->_f_ids, 0, sizeof(short int)*n_fbyc);
-    memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_fbyc);
+    memset(csys->bf_flag , 0, sizeof(cs_flag_t)*n_fbyc);
+    memset(csys->_f_ids  , 0, sizeof(short int)*n_fbyc);
+    memset(csys->bf_ids  , 0, sizeof(cs_lnum_t)*n_fbyc);
     memset(csys->dof_flag, 0, sizeof(cs_flag_t)*csys->n_dofs);
 
     memset(csys->dir_values, 0, s);
     memset(csys->neu_values, 0, s);
-    memset(csys->rob_values, 0, 2*s);
+    memset(csys->rob_values, 0,
+           CS_MAX(n_fbyc, csys->n_dofs)*sizeof(double)*n_robin_parameters);
 
   } /* Boundary cell -> reset BC-related members */
 

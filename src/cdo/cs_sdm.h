@@ -827,6 +827,18 @@ cs_sdm_square_add_transpose(cs_sdm_t  *mat,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Set the given matrix to two times its symmetric part
+ *          mat --> mat + mat_tr = 2*symm(mat)
+ *
+ * \param[in, out] mat   small dense matrix to transform
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_square_2symm(cs_sdm_t   *mat);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Set the given matrix into its anti-symmetric part
  *
  * \param[in, out] mat   small dense matrix to transform

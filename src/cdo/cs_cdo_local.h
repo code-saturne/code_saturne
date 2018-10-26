@@ -141,7 +141,7 @@ typedef struct {
 
   /* Robin BCs */
   bool        has_robin;
-  double     *rob_values;    /*!< Robin BCs values; size = 2*n_dofs */
+  double     *rob_values;    /*!< Robin BCs values; size = 3*n_dofs */
 
   /* Internal enforcement of DoFs */
   bool        has_internal_enforcement;  /*!< Internal enforcement ? */

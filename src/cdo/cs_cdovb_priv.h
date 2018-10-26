@@ -78,7 +78,8 @@ struct _cs_cdovb_t {
 
   /* Pointer of function to build the diffusion term */
   cs_hodge_t                      *get_stiffness_matrix;
-  cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
+  cs_cdo_diffusion_enforce_bc_t   *enforce_dirichlet;
+  cs_cdo_diffusion_enforce_bc_t   *enforce_robin;
   cs_flag_t                       *vtx_bc_flag;
 
   /* Pointer of function to build the advection term */

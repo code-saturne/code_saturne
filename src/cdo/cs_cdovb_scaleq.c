@@ -489,6 +489,11 @@ _vb_apply_bc(cs_real_t                      time_eval,
      other contributions */
   if (cs_equation_param_has_diffusion(eqp)) {
 
+    if (csys->has_robin) {
+      assert(eqc->enforce_robin != NULL);
+      eqc->enforce_robin(eqp, cm, fm, cb, csys);
+    }
+
     if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
       eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
@@ -810,6 +815,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
+  eqc->enforce_robin = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
 
     switch (eqp->diffusion_hodge.algo) {
@@ -817,6 +823,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     case CS_PARAM_HODGE_ALGO_COST:
       eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_stiffness;
+
+      eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
+      eqc->enforce_robin = cs_cdo_diffusion_vbcost_robin;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
@@ -1248,8 +1257,8 @@ cs_cdovb_scaleq_solve_steady_state(double                      dt_cur,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)      \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,        \
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
+  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
          dir_values, forced_ids, fld, rs, cs_cdovb_cell_sys,            \
          cs_cdovb_cell_bld)
   {

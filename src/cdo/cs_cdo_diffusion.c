@@ -244,8 +244,9 @@ _vbcost_cellwise_grd(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the gradient reconstruction for Vb schemes using a
- *          CO+ST algorithm
+ * \brief   Compute the normal diffusive flux reconstruction for Vb schemes
+ *          using the CO+ST algorithm. This normal flux is constant in t_{ek,f}
+ *          the triangle with base e_k and apex xf
  *
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
  * \param[in]      beta      value of the stabilization coef. related to reco.
@@ -254,61 +255,69 @@ _vbcost_cellwise_grd(const cs_cell_mesh_t   *cm,
  * \param[in]      dfkq      dual face quantities for ek
  * \param[in]      grd_cell  cellwise gradient vector attached to each vertex
  *                           degree of freedom
- * \param[in, out] le_grd    reconstructed gradient related to each vertex
+ * \param[in]      mnu       diff. property times the face normal of t_{ek,f}
+ * \param[in, out] nflux     reconstructed normal flux related to each vertex
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_grad_cost_reco_in_pec(const cs_cell_mesh_t   *cm,
-                       const double            beta,
-                       const short int         ek,
-                       const cs_quant_t        pekq,
-                       const cs_nvec3_t        dfkq,
-                       const cs_real_3_t       grd_cell[],
-                       cs_real_3_t             le_grd[])
+_nflux_reco_vbcost_in_pec(const cs_cell_mesh_t   *cm,
+                          const double            beta,
+                          const short int         ek,
+                          const cs_quant_t        pekq,
+                          const cs_nvec3_t        dfkq,
+                          const cs_real_3_t       grd_cell[],
+                          const cs_real_3_t       mnu,
+                          cs_real_t               nflux[])
 {
-  /* Reset L_{E_c}(GRAD(p_v)) for each vertex of the cell */
-  for (short int v = 0; v < cm->n_vc; v++)
-    le_grd[v][0] = le_grd[v][1] = le_grd[v][2] = 0;
+  /* Reset the normal flux for each vertex of the cell */
+  for (short int v = 0; v < cm->n_vc; v++) nflux[v] = 0;
 
   /* Compute the gradient reconstruction for the potential arrays of the
    * canonical basis (size = number of cell vertices)
    * L_{E_c}(GRAD(p)) on t_{e_k,f} for each vertex of the cell
    * The restriction to t_{e_k,f} is identical to the restriction to p_{e_k,f}
+   *
+   * L_{E_c}(GRAD(p))|t_{e_k,f}
+   *   =  Gc(p)                                              ──> Consist. part
+   *    + beta*fd_ek(c)/(p_{ek,c} * (GRAD(p)|ek - ek.Gc(p) ) ──> Stabili. part
    */
 
-  const cs_real_t  stabk = 3*beta/_dp3(pekq.unitv, dfkq.unitv);
-  const cs_real_t  stabk_vek = stabk/pekq.meas;
-  const short int  *_vk = cm->e2v_ids + 2*ek; /* v1 = _v[0], v2 = _v[1] */
-  const short int  sgn_vk1 = cm->e2v_sgn[ek]; /* sgn_vl2 = - sgn_vl1 */
+  const cs_real_t  stab_ek = 3*beta/(_dp3(pekq.unitv, dfkq.unitv));
+  const short int  *_vk = cm->e2v_ids + 2*ek; /* vk0 = _v[0], vk1 = _v[1] */
+  const short int  sgn_vk0 = cm->e2v_sgn[ek]; /* sgn_vk1 = - sgn_vk0 */
 
   /* Consistent + Stabilization part */
   for (short int v = 0; v < cm->n_vc; v++) {
 
-    if (v == _vk[0]) { /* v = v1k belonging to edge ek */
+    const cs_real_t  ekgc = _dp3(pekq.unitv, grd_cell[v]);
 
+    /* Initialize the reconstruction of the gradient with the consistent part */
+    cs_real_3_t  le_grd = {grd_cell[v][0], grd_cell[v][1], grd_cell[v][2]};
+
+    if (v == _vk[0]) { /* v = vk0 belonging to edge ek */
+
+      const cs_real_t  stab_coef = stab_ek * (sgn_vk0/pekq.meas - ekgc);
       for (int p = 0; p < 3; p++)
-        le_grd[v][p] = grd_cell[v][p]      /* Consistent part */
-          + stabk_vek * dfkq.unitv[p] *    /* Stabilization part */
-          (sgn_vk1 - pekq.meas*_dp3(pekq.unitv, grd_cell[v]));
+        le_grd[p] += stab_coef * dfkq.unitv[p];  /* Stabilization part */
 
     }
-    else if (v == _vk[1]) { /* v = v2k belonging to edge ek */
+    else if (v == _vk[1]) { /* v = vk1 belonging to edge ek */
 
+      const cs_real_t  stab_coef = -stab_ek * (sgn_vk0/pekq.meas + ekgc);
       for (int p = 0; p < 3; p++)
-        le_grd[v][p] = grd_cell[v][p]      /* Consistent part */
-          + stabk_vek * dfkq.unitv[p] *    /* Stabilization part */
-          (-sgn_vk1 - pekq.meas*_dp3(pekq.unitv, grd_cell[v]));
+        le_grd[p] += stab_coef * dfkq.unitv[p];  /* Stabilization part */
 
     }
     else { /* Other cell vertices */
 
+      const cs_real_t  stab_coef = -stab_ek * ekgc;
       for (int p = 0; p < 3; p++)
-        le_grd[v][p] = grd_cell[v][p]      /* Consistent part */
-          - stabk * dfkq.unitv[p] *        /* Stabilization part */
-          _dp3(pekq.unitv, grd_cell[v]);
+        le_grd[p] += stab_coef * dfkq.unitv[p];  /* Stabilization part */
 
     }
+
+    nflux[v] = -_dp3(mnu, le_grd); /* Minus because -du/dn */
 
   } /* Loop on cell vertices */
 
@@ -337,7 +346,7 @@ _vb_cost_normal_flux_op(const short int           f,
                         cs_cell_builder_t        *cb,
                         cs_sdm_t                 *ntrgrd)
 {
-  cs_real_3_t  *le_grd = cb->vectors;              /* size = cm->n_vc */
+  cs_real_t  *nflux = cb->values;                  /* size = cm->n_vc */
   cs_real_3_t  *grd_cell = cb->vectors + cm->n_vc; /* size = cm->n_vc */
 
   /* Initialize the local operator */
@@ -352,31 +361,120 @@ _vb_cost_normal_flux_op(const short int           f,
   for (int fe_idx = cm->f2e_idx[f]; fe_idx < cm->f2e_idx[f+1]; fe_idx++) {
 
     const short int  ek = cm->f2e_ids[fe_idx];
+    const cs_real_t  tekf = cm->tef[fe_idx];
     const cs_quant_t  pekq = cm->edge[ek];
     const cs_nvec3_t  dfkq = cm->dface[ek];
     const short int  *_vk = cm->e2v_ids + 2*ek; /* v1 = _v[0], v2 = _v[1] */
 
-    /* Compute the reconstructed gradient */
-    _grad_cost_reco_in_pec(cm, beta, ek, pekq, dfkq,
-                           (const cs_real_3_t *)grd_cell,
-                           le_grd);
+    /* Compute the reconstructed normal flux */
+    _nflux_reco_vbcost_in_pec(cm, beta, ek, pekq, dfkq,
+                              (const cs_real_3_t *)grd_cell,
+                              mnu,
+                              nflux);
 
     for (short int v = 0; v < cm->n_vc; v++) {
 
-      const double  contrib = _dp3(mnu, le_grd[v]) * cm->tef[fe_idx];
+      const double  contrib_v = nflux[v] * tekf;
 
-      ntrgrd->val[_vk[0]*cm->n_vc + v] += contrib;
-      ntrgrd->val[_vk[1]*cm->n_vc + v] += contrib;
+      ntrgrd->val[_vk[0]*cm->n_vc + v] += contrib_v;
+      ntrgrd->val[_vk[1]*cm->n_vc + v] += contrib_v;
 
-    }
+    } /* Loop on cell vertices */
 
-  }
+  } /* Loop on face edges */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
   cs_log_printf(CS_LOG_DEFAULT,
                 ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)",
-                cm->c_id, cm->f_ids[fm->f_id]);
+                cm->c_id, cm->f_ids[f]);
   cs_sdm_dump(cm->c_id, NULL, NULL, ntrgrd);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the transposed of the normal trace operator and the full
+ *          boundary operator to enforce weakly a Robin BC for a given border
+ *          face when a COST algo. is used for reconstructing the degrees of
+ *          freedom
+ *
+ * \param[in]      fm         pointer to a cs_face_mesh_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      mnu        property tensor times the face normal
+ * \param[in]      beta       value of the stabilization coef. related to reco.
+ * \param[in, out] cb         pointer to a cell builder structure
+ * \param[in, out] bc_op      local matrix storing du/dn.dv/dn
+ * \param[in, out] ntrgrd_tr  local matrix related to the transposed version of
+ *                            the normal trace op. (i.e. the flux operator)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_vb_cost_full_flux_op(const short int           f,
+                      const cs_cell_mesh_t     *cm,
+                      const cs_real_3_t         mnu,
+                      double                    beta,
+                      cs_cell_builder_t        *cb,
+                      cs_sdm_t                 *bc_op,
+                      cs_sdm_t                 *ntrgrd_tr)
+{
+  cs_real_t  *nflux = cb->values;         /* size = cm->n_vc */
+  cs_real_3_t  *grd_cell = cb->vectors;   /* size = cm->n_vc */
+
+  /* Initialize the local operators */
+  cs_sdm_square_init(cm->n_vc, bc_op);
+  cs_sdm_square_init(cm->n_vc, ntrgrd_tr);
+
+  /* Compute the cellwise-constant gradient for each array of the canonical
+   * basis of the potential DoFs (size = cm->n_vc)
+   */
+  _vbcost_cellwise_grd(cm, grd_cell);
+
+  /* Loop on border face edges */
+  for (int fe_idx = cm->f2e_idx[f]; fe_idx < cm->f2e_idx[f+1]; fe_idx++) {
+
+    const short int  ek = cm->f2e_ids[fe_idx];
+    const cs_real_t  tekf = cm->tef[fe_idx];
+    const cs_quant_t  pekq = cm->edge[ek];
+    const cs_nvec3_t  dfkq = cm->dface[ek];
+    const short int  *_vk = cm->e2v_ids + 2*ek; /* v1 = _v[0], v2 = _v[1] */
+
+    /* Compute the reconstructed normal flux */
+    _nflux_reco_vbcost_in_pec(cm, beta, ek, pekq, dfkq,
+                              (const cs_real_3_t *)grd_cell,
+                              mnu,
+                              nflux);
+
+    for (short int vi = 0; vi < cm->n_vc; vi++) {
+
+      const double  contrib_vi = nflux[vi] * tekf;
+
+      ntrgrd_tr->val[vi*cm->n_vc + _vk[0]] += contrib_vi;
+      ntrgrd_tr->val[vi*cm->n_vc + _vk[1]] += contrib_vi;
+
+      for (short int vj = 0; vj < cm->n_vc; vj++) {
+        bc_op->val[vi*cm->n_vc + vj] += contrib_vi * nflux[vj];
+      } /* Loop on cells vertices (vj) */
+
+    } /* Loop on cell vertices (vi) */
+
+  } /* Loop on face edges */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
+  cs_log_printf(CS_LOG_DEFAULT,
+                ">> Full flux.Op (NGRD.NGRD) matrix (c_id: %d,f_id: %d)",
+                cm->c_id, cm->f_ids[f]);
+  cs_log_printf(CS_LOG_DEFAULT, " grd_cell:\n>> ");
+  for (int k = 0; k < 3; k++) {
+    for (int i = 0; i < cm->n_vc; i++)
+      cs_log_printf(CS_LOG_DEFAULT, "% .4e ", grd_cell[i][k]);
+    if (k < 2)
+      cs_log_printf(CS_LOG_DEFAULT, "\n>> ");
+    else
+      cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
+  cs_sdm_dump(cm->c_id, NULL, NULL, bc_op);
+  cs_sdm_dump(cm->c_id, NULL, NULL, ntrgrd_tr);
 #endif
 }
 
@@ -1116,6 +1214,213 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Take into account Robin BCs by a weak enforcement using Nitsche
+ *          technique.
+ *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vbcost_robin(const cs_equation_param_t      *eqp,
+                              const cs_cell_mesh_t           *cm,
+                              cs_face_mesh_t                 *fm,
+                              cs_cell_builder_t              *cb,
+                              cs_cell_sys_t                  *csys)
+{
+  CS_UNUSED(eqp);
+
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+
+  /* Enforcement of the Robin BCs */
+  if (csys->has_robin == false)
+    return;  /* Nothing to do */
+
+  /* Robin BC expression: K du/dn + alpha*(u - u0) = g
+   * Store x = alpha*u0 + g
+   */
+  cs_real_t  *x = cb->values;
+  cs_sdm_t  *bc_op = cb->loc;
+
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
+
+      /* Reset local operator */
+      cs_sdm_square_init(cm->n_vc, bc_op);
+
+      /* Compute the face-view of the mesh */
+      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
+
+      /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
+      /* ------------------------------------------------- */
+
+      const double  alpha = csys->rob_values[3*f];
+      const double  u0 = csys->rob_values[3*f+1];
+      const double  g = csys->rob_values[3*f+2];
+
+      memset(x, 0, sizeof(cs_real_t)*cm->n_vc);
+      for (short int v = 0; v < fm->n_vf; v++) {
+        const short int  vi = fm->v_ids[v];
+        x[vi] = alpha*u0 + g;
+      }
+
+      /* Update the RHS and the local system */
+      for (short int v = 0; v < fm->n_vf; v++) {
+        const double  pcoef_v = fm->face.meas * fm->wvf[v];
+        const short int  vi = fm->v_ids[v];
+        csys->rhs[vi] += pcoef_v*x[vi];
+        bc_op->val[vi*(1 + bc_op->n_rows)] += alpha*pcoef_v;
+      }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
+      cs_log_printf(CS_LOG_DEFAULT,
+                    ">> Local Robin bc matrix (f_id: %d)", fm->f_id);
+      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+#endif
+
+      /* Add contribution to the linear system */
+      cs_sdm_add(csys->mat, bc_op);
+
+    }  /* Robin face */
+  } /* Loop on boundary faces */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account generic BCs by a weak enforcement using Nitsche
+ *          technique. According to the settings one can apply Neumann BCs if
+ *          alpha = 0, Dirichlet BCs if alpha >> 1 or Robin BCs
+ *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vbcost_generic(const cs_equation_param_t      *eqp,
+                                const cs_cell_mesh_t           *cm,
+                                cs_face_mesh_t                 *fm,
+                                cs_cell_builder_t              *cb,
+                                cs_cell_sys_t                  *csys)
+{
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+
+  /* Enforcement of the Robin BCs */
+  if (csys->has_robin == false)
+    return;  /* Nothing to do */
+
+  const double  cs_gamma_generic = 1e-2;
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+
+  /* Robin BC expression: K du/dn + alpha*(u - u0) = g
+   * Store x = u0 + g/alpha
+   */
+  cs_real_t  *x = cb->values;
+  cs_real_t  *ax = cb->values + cm->n_vc;
+  cs_sdm_t  *bc_op = cb->loc;
+  cs_sdm_t  *ntrgrd_tr = cb->aux;
+
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
+
+      /* Compute the face-view of the mesh */
+      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
+
+      /* Compute the product: matpty*face unit normal */
+      cs_real_3_t  pty_nuf;
+      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
+                           fm->face.unitv,
+                           pty_nuf);
+
+      /* Compute the flux operator related to the trace on the current face
+         of the normal gradient */
+      _vb_cost_full_flux_op(f, cm, pty_nuf, h_info.coef, cb, bc_op, ntrgrd_tr);
+
+      /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
+      /* ------------------------------------------------- */
+      const double  alpha = csys->rob_values[3*f];
+      const double  u0 = csys->rob_values[3*f+1];
+      const double  g = csys->rob_values[3*f+2];
+      assert(fabs(alpha) > 0);
+      const double  epsilon = 1./alpha;
+
+      const double  hf = sqrt(cm->face[f].meas);
+      const double  pena_coef = 1./(epsilon + cs_gamma_generic*hf);
+      const double  flux_coef = cs_gamma_generic*hf*pena_coef;
+
+      memset(x, 0, sizeof(cs_real_t)*cm->n_vc);
+      for (short int v = 0; v < fm->n_vf; v++) {
+        const short int  vi = fm->v_ids[v];
+        x[vi] = u0 + epsilon*g;
+      }
+
+      /* Update the RHS */
+      cs_sdm_square_matvec(ntrgrd_tr, x, ax);
+      for (short int v = 0; v < fm->n_vf; v++) {
+        const double  pcoef_v = pena_coef * fm->face.meas * fm->wvf[v];
+        const short int  vi = fm->v_ids[v];
+        csys->rhs[vi] += pcoef_v*x[vi] - flux_coef*ax[vi];
+      }
+
+      /* Update the local system matrix:
+       *
+       * Initially bc_op = du/dn.dv/dn
+       * 1) bc_op *= -epsilon*gamma*hf/(epsilon + gamma*hf)
+       * 2) bc_op += (u,v) * 1/(epsilon + gamma*hf)
+       * 3) bc_op += (-gamma*hf)/(epsilon + gamma*hf) [ntrgrd + ntrgrd_tr]
+       */
+
+      /* Step 1 */
+      for (int ij = 0; ij < cm->n_vc*cm->n_vc; ij++)
+        bc_op->val[ij] *= -epsilon*flux_coef;
+
+      /* Step 2 */
+      for (short int v = 0; v < fm->n_vf; v++) {
+        const double  pcoef_v = pena_coef * fm->face.meas * fm->wvf[v];
+        const short int  vi = fm->v_ids[v];
+        bc_op->val[vi*(1 + bc_op->n_rows)] += pcoef_v;
+      }
+
+      /* Step 3 */
+      cs_sdm_square_2symm(ntrgrd_tr); /* ntrgrd_tr is now a symmetric matrix */
+      cs_sdm_add_mult(bc_op, -flux_coef, ntrgrd_tr);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
+      cs_log_printf(CS_LOG_DEFAULT,
+                    ">> Local Robin bc matrix (f_id: %d)", fm->f_id);
+      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+#endif
+
+      /* Add contribution to the linear system */
+      cs_sdm_add(csys->mat, bc_op);
+
+    }  /* Robin face */
+  } /* Loop on boundary faces */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique. Case of CDO-Vb schemes with a CO+ST algorithm.
  *
@@ -1606,7 +1911,7 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_diffusion_enforce_dir_t.
+  /* Prototype common to cs_cdo_diffusion_enforce_bc_t.
      Hence the unused parameters */
   CS_UNUSED(fm);
   CS_UNUSED(cm);
@@ -1655,7 +1960,7 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_diffusion_enforce_dir_t. Hence the unused
+  /* Prototype common to cs_cdo_diffusion_enforce_bc_t. Hence the unused
      parameters */
   CS_UNUSED(fm);
   CS_UNUSED(cm);
@@ -1729,7 +2034,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_diffusion_enforce_dir_t
+  /* Prototype common to cs_cdo_diffusion_enforce_bc_t
      Hence the unused parameters */
   CS_UNUSED(eqp);
   CS_UNUSED(fm);
@@ -1805,7 +2110,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_diffusion_enforce_dir_t. Hence the unused
+  /* Prototype common to cs_cdo_diffusion_enforce_bc_t. Hence the unused
      parameters */
   CS_UNUSED(eqp);
   CS_UNUSED(fm);

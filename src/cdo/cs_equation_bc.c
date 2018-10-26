@@ -339,6 +339,17 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
         for (short int i = 0; i < n_vf; i++)
           for (int k = 0; k < d; k++)
             csys->dof_flag[d*_v_ids[i]+k] |= CS_CDO_BC_ROBIN;
+
+        /* The values which define the Robin BC are stored for each boundary
+           face. This is different from Neumann and Dirichlet where the values
+           are defined at each vertices. Be aware of that when computing */
+        cs_equation_compute_robin(face_bc->def_ids[csys->bf_ids[f]],
+                                  f,
+                                  t_eval,
+                                  quant,
+                                  eqp,
+                                  cm,
+                                  csys->rob_values);
         break;
 
       default:
@@ -1017,6 +1028,97 @@ cs_equation_compute_neumann_fb(short int                    def_id,
       cs_real_t  *face_val = array_input->values + 3*bf_id;
 
       cs_xdef_cw_eval_flux_by_val(cm, f, t_eval, face_val, neu_values);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of definition.\n"
+                " Stop computing the Neumann value.\n"));
+
+  } /* switch def_type */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Robin BCs
+ *
+ * \param[in]      def_id      id of the definition for setting the Neumann BC
+ * \param[in]      f           local face number in the cs_cell_mesh_t
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      eqp         pointer to a cs_equation_param_t
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in, out] rob_values  array storing Robin values to use
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_robin(short int                    def_id,
+                          short int                    f,
+                          cs_real_t                    t_eval,
+                          const cs_cdo_quantities_t   *quant,
+                          const cs_equation_param_t   *eqp,
+                          const cs_cell_mesh_t        *cm,
+                          double                      *rob_values)
+{
+  assert(rob_values != NULL && cm != NULL && eqp != NULL);
+  assert(def_id > -1);
+  assert(eqp->dim == 1);
+
+  const cs_xdef_t  *def = eqp->bc_defs[def_id];
+
+  /* Flux is a vector in the scalar-valued case and a tensor in the
+     vector-valued case */
+  assert(def->meta & CS_CDO_BC_ROBIN); /* Robin BC */
+
+  /* Evaluate the boundary condition at each boundary face */
+  switch(def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    {
+      const cs_real_t  *parameters = (cs_real_t *)def->input;
+
+      rob_values[3*f  ] = parameters[0];
+      rob_values[3*f+1] = parameters[1];
+      rob_values[3*f+2] = parameters[2];
+    }
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_real_3_t  parameters = {0, 0, 0};
+      cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+
+      anai->func(t_eval, 1, NULL,
+                 cm->face[f].center,
+                 true, /* compacted output ? */
+                 anai->input,
+                 (cs_real_t *)parameters);
+
+      rob_values[3*f  ] = parameters[0];
+      rob_values[3*f+1] = parameters[1];
+      rob_values[3*f+2] = parameters[2];
+    }
+    break;
+
+  case CS_XDEF_BY_ARRAY:
+    {
+      cs_xdef_array_input_t  *array_input =
+        (cs_xdef_array_input_t *)def->input;
+
+      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
+      assert(array_input->stride == 3);
+      assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
+
+      cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+      assert(bf_id > -1);
+      cs_real_t  *parameters = array_input->values + 3*bf_id;
+
+      rob_values[3*f  ] = parameters[0];
+      rob_values[3*f+1] = parameters[1];
+      rob_values[3*f+2] = parameters[2];
     }
     break;
 

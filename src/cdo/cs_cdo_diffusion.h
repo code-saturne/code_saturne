@@ -82,7 +82,7 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdo_diffusion_enforce_dir_t)(const cs_equation_param_t      *eqp,
+(cs_cdo_diffusion_enforce_bc_t)(const cs_equation_param_t      *eqp,
                                  const cs_cell_mesh_t           *cm,
                                  cs_face_mesh_t                 *fm,
                                  cs_cell_builder_t              *cb,
@@ -179,6 +179,49 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
                                     cs_face_mesh_t                 *fm,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Robin BCs by a weak enforcement using Nitsche
+ *          technique.
+ *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vbcost_robin(const cs_equation_param_t      *eqp,
+                              const cs_cell_mesh_t           *cm,
+                              cs_face_mesh_t                 *fm,
+                              cs_cell_builder_t              *cb,
+                              cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account generic BCs by a weak enforcement using Nitsche
+ *          technique. According to the settings one can apply Neumann BCs if
+ *          alpha = 0, Dirichlet BCs if alpha >> 1 or Robin BCs
+ *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vbcost_generic(const cs_equation_param_t      *eqp,
+                                const cs_cell_mesh_t           *cm,
+                                cs_face_mesh_t                 *fm,
+                                cs_cell_builder_t              *cb,
+                                cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

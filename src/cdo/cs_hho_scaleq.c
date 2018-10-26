@@ -94,45 +94,45 @@ struct _cs_hho_scaleq_t {
   int          bflux_field_id;
 
   /* System size (n_faces * n_face_dofs + n_cells * n_cell_dofs) */
-  cs_lnum_t                      n_dofs;
-  int                            n_max_loc_dofs;
-  int                            n_cell_dofs;
-  int                            n_face_dofs;
+  cs_lnum_t    n_dofs;
+  int          n_max_loc_dofs;
+  int          n_cell_dofs;
+  int          n_face_dofs;
 
   /* Structures related to the algebraic sytem construction (shared) */
-  const cs_matrix_structure_t   *ms;
-  const cs_range_set_t          *rs;
+  const cs_matrix_structure_t    *ms;
+  const cs_range_set_t           *rs;
 
   /* Solution of the algebraic system at the last computed iteration.
      cell_values is different from the values stored in the associated
      field since here it's the values of polynomial coefficients which
      are stored */
-  cs_real_t                     *face_values;  /* DoF unknowns (x) + BCs */
-  cs_real_t                     *cell_values;  /* DoF recomputed after the
-                                                  static condensation */
+  cs_real_t                      *face_values;  /* DoF unknowns (x) + BCs */
+  cs_real_t                      *cell_values;  /* DoF recomputed after the
+                                                   static condensation */
 
   /* Storage of the source term (if one wants to apply a specific time
      discretization) */
-  cs_real_t                     *source_terms;
+  cs_real_t                      *source_terms;
 
   /* Handle the definition of the BCs */
-  short int                     *bf2def_ids;
+  short int                      *bf2def_ids;
 
   /* Pointer of function to build the diffusion term */
-  cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
+  cs_cdo_diffusion_enforce_bc_t  *enforce_dirichlet;
 
   /* Static condensation members */
   /* =========================== */
 
   /* Acc_inv = Inverse of a diagonal matrix (block cell-cell)
      rc_tilda = Acc_inv * rhs_c (perform for each cell) */
-  cs_real_t                     *rc_tilda;
+  cs_real_t                      *rc_tilda;
 
   /* Lower-Left block of the full matrix (block cell-faces).
      Access to the values thanks to the c2f connectivity
      The transposed version of each block is stored for a more efficient
      usage */
-  cs_sdm_t                      *acf_tilda;
+  cs_sdm_t                       *acf_tilda;
 
 };
 

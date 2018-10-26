@@ -1785,8 +1785,15 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
   if (bc_type == CS_PARAM_BC_NEUMANN||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
-  else if (bc_type == CS_PARAM_BC_ROBIN)
-    dim *= 4;
+
+  if (bc_type == CS_PARAM_BC_ROBIN) {
+    /* FluxNormal + alpha * (u - u_0) = beta => Set (alpha, u_0, beta) */
+    if (eqp->dim == 1)
+      dim = 3;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: This situation is not handled yet.\n", __func__);
+  }
 
   cs_flag_t  bc_flag = cs_cdo_bc_get_flag(bc_type);
 
@@ -1850,8 +1857,16 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
   if (bc_type == CS_PARAM_BC_NEUMANN||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
-  else if (bc_type == CS_PARAM_BC_ROBIN)
-    dim *= 4;
+
+  if (bc_type == CS_PARAM_BC_ROBIN) {
+    /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+    if (eqp->dim == 1)
+      dim = 3;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: This situation is not handled yet.\n", __func__);
+  }
+
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,
@@ -1903,8 +1918,15 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
   if (bc_type == CS_PARAM_BC_NEUMANN||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
-  else if (bc_type == CS_PARAM_BC_ROBIN)
-    dim *= 4;
+
+  if (bc_type == CS_PARAM_BC_ROBIN) {
+    /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+    if (eqp->dim == 1)
+      dim = 3;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: This situation is not handled yet.\n", __func__);
+  }
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           dim,
