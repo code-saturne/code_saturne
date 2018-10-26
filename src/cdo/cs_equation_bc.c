@@ -976,7 +976,7 @@ cs_equation_compute_neumann_fb(short int                    def_id,
      vector-valued case */
   assert(def->meta & CS_CDO_BC_NEUMANN); /* Neuman BC */
 
-  /* Evaluate the boundary condition at each boundary vertex */
+  /* Evaluate the boundary condition at each boundary face */
   switch(def->type) {
 
   case CS_XDEF_BY_VALUE:

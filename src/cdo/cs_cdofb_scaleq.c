@@ -2161,7 +2161,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); // optional
+  cs_matrix_assembler_values_done(mav); /* optional */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
   cs_dbg_darray_to_listing("FINAL RHS_FACE", quant->n_faces, rhs, 8);
@@ -2430,7 +2430,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       /* } /\* END OF TIME CONTRIBUTION *\/ */
 
 
-    } // Main loop on cells
+    } /* Main loop on cells */
 
     if (p_cur != _p_cur) {
       BFT_FREE(p_cur);
@@ -2438,7 +2438,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       BFT_FREE(p_theta);
     }
 
-  } // OPENMP Block
+  } /* OPENMP Block */
 
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
     eb->balance[c_id] =
@@ -2471,7 +2471,7 @@ cs_cdofb_scaleq_extra_op(const char                 *eqname,
                          cs_equation_builder_t      *eqb,
                          void                       *data)
 {
-  CS_UNUSED(eqname); // avoid a compilation warning
+  CS_UNUSED(eqname); /* avoid a compilation warning */
   CS_UNUSED(eqp);
 
   char *postlabel = NULL;
@@ -2491,12 +2491,12 @@ cs_cdofb_scaleq_extra_op(const char                 *eqname,
                     postlabel,
                     field->dim,
                     true,
-                    true,                  // true = original mesh
+                    true,                  /* true = original mesh */
                     CS_POST_TYPE_cs_real_t,
-                    NULL,                  // values on cells
-                    NULL,                  // values at internal faces
-                    face_pdi + n_i_faces,  // values at border faces
-                    cs_shared_time_step);  // time step management structure
+                    NULL,                  /* values on cells */
+                    NULL,                  /* values at internal faces */
+                    face_pdi + n_i_faces,  /* values at border faces */
+                    cs_shared_time_step);  /* time step management structure */
 
 
   BFT_FREE(postlabel);

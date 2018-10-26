@@ -497,7 +497,7 @@ cs_cell_mesh_get_f2v(short int                    f,
     v_ids[cm->e2v_ids[shift_e]] = 1;
     v_ids[cm->e2v_ids[shift_e+1]] = 1;
 
-  } // Loop on face edges
+  } /* Loop on face edges */
 
   for (short int v = 0; v < cm->n_vc; v++) {
     if (v_ids[v] > 0)

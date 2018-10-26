@@ -297,7 +297,7 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
       const double  hf_coef = cs_math_onethird * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int n_vf = end - start; /* #vertices (=#edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
 
       assert(n_vf > 2);
@@ -324,7 +324,7 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
 
           for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-            // Edge-related variables
+            /* Edge-related variables */
             const short int e0  = f2e_ids[e];
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
@@ -637,7 +637,7 @@ cs_xdef_cw_eval_by_analytic(const cs_cell_mesh_t       *cm,
   /* Evaluate the function for this time at the cell center */
   anai->func(time_eval,
              1, NULL, cm->xc,
-             true, // compacted output ?
+             true, /* compacted output ? */
              anai->input,
              eval);
 }
@@ -782,7 +782,7 @@ cs_xdef_cw_eval_at_xyz_by_analytic(const cs_cell_mesh_t       *cm,
   /* Evaluate the function for this time at the given coordinates */
   anai->func(time_eval,
              n_points, NULL, xyz,
-             true, // compacted output ?
+             true, /* compacted output ? */
              anai->input,
              eval);
 }
@@ -914,7 +914,7 @@ cs_xdef_cw_eval_vector_at_xyz_by_field(const cs_cell_mesh_t    *cm,
     cs_real_3_t  cell_vector;
     for (int k = 0; k < 3; k++)
       cell_vector[k] = values[3*cm->c_id + k];
-    for (int i = 0; i < n_points; i++) { // No interpolation
+    for (int i = 0; i < n_points; i++) { /* No interpolation */
       eval[3*i    ] = cell_vector[0];
       eval[3*i + 1] = cell_vector[1];
       eval[3*i + 2] = cell_vector[2];
@@ -1036,7 +1036,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
       cs_real_3_t  flux_xc = {0, 0, 0};
 
       /* Evaluate the function for this time at the given coordinates */
-      anai->func(time_eval, 1, NULL, cm->xc, true, // compacted output ?
+      anai->func(time_eval, 1, NULL, cm->xc, true, /* compacted output ? */
                  anai->input,
                  flux_xc);
 
@@ -1068,7 +1068,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           /* Evaluate the function for this time at the given coordinates */
           anai->func(time_eval, 2, NULL,
-                     (const cs_real_t *)_xyz, true, // compacted output ?
+                     (const cs_real_t *)_xyz, true, /* compacted output ? */
                      anai->input,
                      (cs_real_t *)_val);
 
@@ -1095,7 +1095,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           /* Evaluate the function for this time at the given coordinates */
           anai->func(time_eval, 2, NULL,
-                     (const cs_real_t *)_xyz, true, // compacted output ?
+                     (const cs_real_t *)_xyz, true, /* compacted output ? */
                      anai->input,
                      (cs_real_t *)_val);
 
@@ -1140,7 +1140,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           /* Evaluate the function for this time at the given coordinates */
           anai->func(time_eval, 6, NULL,
-                     (const cs_real_t *)gpts, true, // compacted output ?
+                     (const cs_real_t *)gpts, true, /* compacted output ? */
                      anai->input,
                      (cs_real_t *)_val);
 
@@ -1179,7 +1179,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           /* Evaluate the function for this time at the given coordinates */
           anai->func(time_eval, 6, NULL,
-                     (const cs_real_t *)gpts, true, // compacted output ?
+                     (const cs_real_t *)gpts, true, /* compacted output ? */
                      anai->input,
                      (cs_real_t *)_val);
 
@@ -1242,7 +1242,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
       /* Evaluate the function for this time at the given coordinates */
       anai->func(time_eval, 1, NULL, cm->face[f].center,
-                 true, // compacted output ?
+                 true, /* compacted output ? */
                  anai->input,
                  flux_xf);
 
@@ -1275,7 +1275,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
         /* Evaluate the function for this time at the given coordinates */
         anai->func(time_eval, 1, NULL,
-                   (const cs_real_t *)_xyz, true, // compacted output ?
+                   (const cs_real_t *)_xyz, true, /* compacted output ? */
                    anai->input,
                    (cs_real_t *)_val);
 

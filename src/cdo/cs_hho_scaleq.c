@@ -403,7 +403,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
 
       } /* Border face id */
 
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
 #if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
     for (short int f = 0; f < eqc->n_face_dofs*cm->n_fc; f++) {

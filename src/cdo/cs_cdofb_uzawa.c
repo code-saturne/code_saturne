@@ -463,7 +463,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
-      /* For the stationnary Stokes problem:
+      /* For the stationary Stokes problem:
        *
        *     |        |         |
        *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
