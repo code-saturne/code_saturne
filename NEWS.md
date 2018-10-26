@@ -141,6 +141,10 @@ Architectural changes:
 
 Bug fixes:
 
+- Fix initialisation of some turbulence constants. Constant/Models concerned:
+  * sigmae (for all RSM models)
+  * csrij (EB-RSM model).
+
 - Fix CGNS reader so as to handle cases with unordered sections.
 
 - Fix allocation size for values at injection in case of mass source terms

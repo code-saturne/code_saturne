@@ -91,6 +91,8 @@ call field_get_key_id("syrthes_coupling", kcpsyr)
 
 call field_get_key_id("time_extrapolated", key_t_ext_id)
 
+call cs_f_turb_complete_constants
+
 !===============================================================================
 ! 1. ENTREES SORTIES entsor
 !===============================================================================
