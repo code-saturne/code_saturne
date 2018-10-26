@@ -73,7 +73,7 @@ AM_LDFLAGS =
 EXTRA_DIST = cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 cs_user_extra_operations.f90 \
 cs_user_initialization.f90  \
-cs_user_parameters.f90 cs_user_physical_properties.f90
+cs_user_parameters.f90 cs_user_physical_properties.f90 cs_user_porosity.f90
 
 # Library source files
 
