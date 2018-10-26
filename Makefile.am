@@ -226,7 +226,7 @@ bin/cs_package.py: $(srcdir)/bin/cs_package.py.in
 BUILT_SOURCES = bin/cs_package.py
 
 CLEANFILES = $(edit_scripts)
-EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in \
+EXTRA_DIST += bin/code_saturne.py.in bin/cs_package.py.in \
               data/thch/dp_radiat_MFS.tar.xz
 
 # Install binary scripts

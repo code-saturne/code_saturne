@@ -117,7 +117,7 @@ cs_bad_cells_regularisation.c \
 cs_sles.c \
 cs_sles_default.c \
 cs_sles_it.c \
-cs_sles_pc.c \
+cs_sles_pc.c
 libcsalge_la_LDFLAGS = -no-undefined
 
 libcsalge_la_LIBADD =
