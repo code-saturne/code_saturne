@@ -1,6 +1,11 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Bug fixes:
+
+- Fix parallel maximum in sedimentation source term with humid atmosphere
+  model.
+
 Release 5.3.0 - October 26, 2018
 --------------------------------
 
