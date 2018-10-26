@@ -219,7 +219,7 @@ _init_vb_cell_system(const cs_flag_t               cell_flag,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
-  if (cell_flag & CS_FLAG_BOUNDARY) {
+  if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     /* Set the bc (specific part) */
     cs_equation_vb_set_cell_bc(cm,
@@ -841,7 +841,7 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
       /* ======================================================= */
 
-      if (cell_flag & CS_FLAG_BOUNDARY) {
+      if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         if (csys->has_dirichlet)
           /* Weakly enforced Dirichlet BCs for cells attached to the boundary

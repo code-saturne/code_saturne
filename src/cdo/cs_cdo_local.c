@@ -354,7 +354,8 @@ cs_cell_sys_reset(int              n_fbyc,
   for (int i = 0; i < csys->n_dofs; i++)
     csys->intern_forced_ids[i] = -1; /* Not selected */
 
-  if (csys->cell_flag & CS_FLAG_BOUNDARY) {
+  if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) ||
+      (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)) {
 
     csys->n_bc_faces = 0;
     csys->has_dirichlet = csys->has_nhmg_neumann = csys->has_robin = false;

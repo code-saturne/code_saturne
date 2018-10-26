@@ -368,7 +368,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
-  if (cell_flag & CS_FLAG_BOUNDARY) {
+  if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     /* Identify which face is a boundary face */
     for (short int f = 0; f < cm->n_fc; f++) {
@@ -1303,7 +1303,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
            csys is updated inside (matrix and rhs)
            eqp->diffusion_hidge is a dummy parameter (not used)
         */
-        if (cell_flag & CS_FLAG_BOUNDARY)
+        if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)
           cs_cdo_diffusion_pena_block_dirichlet(eqp, cm, NULL, cb, csys);
 
       }

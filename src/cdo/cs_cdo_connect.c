@@ -468,6 +468,65 @@ _get_cell_type(cs_lnum_t                 c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Associate to each cell a type and a flag.
+ *
+ * \param[in, out]  connect   pointer to a cs_cdo_connect_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_cell_type_and_flag(cs_cdo_connect_t   *connect)
+{
+  const cs_lnum_t  n_vertices = connect->n_vertices;
+  const cs_lnum_t  n_i_faces = connect->n_faces[2];
+  const cs_lnum_t  n_b_faces = connect->n_faces[1];
+  const cs_lnum_t  n_cells = connect->n_cells;
+
+  BFT_MALLOC(connect->cell_flag, n_cells, cs_flag_t);
+  BFT_MALLOC(connect->cell_type, n_cells, fvm_element_t);
+
+  bool  *is_border_vtx = NULL;
+  BFT_MALLOC(is_border_vtx, n_vertices, bool);
+
+# pragma omp parallel if (n_cells > CS_THR_MIN)
+  {
+#   pragma omp for nowait
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      connect->cell_flag[c_id] = 0;
+      connect->cell_type[c_id] = _get_cell_type(c_id, connect);
+    }
+
+#   pragma omp for nowait
+    for (cs_lnum_t v = 0; v < n_vertices; v++)
+      is_border_vtx[v] = false;
+
+  } /* End of OpenMP block */
+
+  /* Loop on border faces and flag boundary cells */
+  const cs_lnum_t  *c_ids = connect->f2c->ids + connect->f2c->idx[n_i_faces];
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
+    connect->cell_flag[c_ids[f_id]] = CS_FLAG_BOUNDARY_CELL_BY_FACE;
+
+  const cs_adjacency_t  *bf2v = connect->bf2v;
+  for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
+    for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++) {
+      is_border_vtx[bf2v->ids[j]] = true;
+    }
+  } /* Loop on border faces */
+
+  const cs_adjacency_t  *c2v = connect->c2v;
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+      if (is_border_vtx[c2v->ids[j]])
+        connect->cell_flag[c_id] |= CS_FLAG_BOUNDARY_CELL_BY_VERTEX;
+    }
+  } /* Loop on cells */
+
+  BFT_FREE(is_border_vtx);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and define a \ref cs_range_set_t structure and a
  *        \ref cs_interface_set_t structure for schemes with DoFs at faces.
  *
@@ -711,19 +770,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   cs_adjacency_sort(connect->c2v);
 
   /* Build the cell flag and associate a cell type to each cell */
-  BFT_MALLOC(connect->cell_flag, n_cells, cs_flag_t);
-  BFT_MALLOC(connect->cell_type, n_cells, fvm_element_t);
-
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    connect->cell_flag[c_id] = 0;
-    connect->cell_type[c_id] = _get_cell_type(c_id, connect);
-  }
-
-  /* Loop on border faces and flag boundary cells */
-  cs_lnum_t  *c_ids = connect->f2c->ids + connect->f2c->idx[mesh->n_i_faces];
-  for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++)
-    connect->cell_flag[c_ids[f_id]] = CS_FLAG_BOUNDARY;
+  _build_cell_type_and_flag(connect);
 
   /* Max number of entities (vertices, edges and faces) by cell */
   _compute_max_ent(mesh, connect);
@@ -892,8 +939,25 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
                 " --dim-- max. vertex range for a cell:      %d\n",
                 n_max_entbyc[3]);
   cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- max. edge range for a cell:        %d\n\n",
+                " --dim-- max. edge range for a cell:        %d\n",
                 n_max_entbyc[4]);
+
+  /* Information about special case where vertices are lying on the boundary
+     but not a face (for instance a tetrahedron) */
+  cs_lnum_t  count = 0;
+  for (cs_lnum_t c = 0; c < connect->n_cells; c++) {
+    if ((connect->cell_flag[c] & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) &&
+        !(connect->cell_flag[c] & CS_FLAG_BOUNDARY_CELL_BY_FACE))
+      count++;
+  }
+
+  cs_gnum_t  counter = count;
+  if (cs_glob_n_ranks > 1)
+    cs_parall_counter(&counter, 1);
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- number of boundary cells through a vertex only"
+                " %lu\n\n", counter);
 
   /* Information about the element types */
   cs_gnum_t  n_type_cells[FVM_N_ELEMENT_TYPES];

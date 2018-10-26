@@ -266,7 +266,7 @@ _init_vb_cell_system(const cs_flag_t                cell_flag,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
-  if (cell_flag & CS_FLAG_BOUNDARY) {
+  if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     /* Set the bc (specific part) */
     cs_equation_vb_set_cell_bc(cm,
@@ -444,7 +444,7 @@ _vb_apply_bc(cs_real_t                      time_eval,
              cs_cell_sys_t                 *csys,
              cs_cell_builder_t             *cb)
 {
-  if ((csys->cell_flag & CS_FLAG_BOUNDARY) == 0)
+  if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) == 0)
     return;
 
   /* Neumann boundary conditions */
@@ -2156,7 +2156,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
       /* BOUNDARY CONDITIONS */
       /* =================== */
 
-      if (cell_flag & CS_FLAG_BOUNDARY) {
+      if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         /* Neumann boundary conditions */
         if (csys->has_nhmg_neumann) {
@@ -2584,7 +2584,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
       } /* End of term source */
 
       /* BOUNDARY CONDITIONS */
-      if (cell_flag &  CS_FLAG_BOUNDARY) {
+      if (cell_flag &  CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
 

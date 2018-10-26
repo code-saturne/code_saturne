@@ -191,7 +191,7 @@ cs_equation_cell_mesh_flag(cs_flag_t                      cell_flag,
 {
   cs_flag_t  _flag = eqb->msh_flag | eqb->st_msh_flag;
 
-  if (cell_flag & CS_FLAG_BOUNDARY)
+  if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)
     _flag |= eqb->bd_msh_flag;
 
   return _flag;

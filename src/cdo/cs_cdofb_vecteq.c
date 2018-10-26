@@ -235,7 +235,7 @@ cs_cdofb_vecteq_init_cell_system(const cs_flag_t               cell_flag,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
-  if (cell_flag & CS_FLAG_BOUNDARY) {
+  if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     cs_equation_fb_set_cell_bc(cm,
                                cs_shared_connect,
@@ -847,7 +847,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
        * Operations that have to be performed BEFORE the static condensation
        */
-      if (cell_flag & CS_FLAG_BOUNDARY) {
+      if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         /* Neumann boundary conditions */
         if (csys->has_nhmg_neumann) {
@@ -879,7 +879,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
        * Operations that have to be performed AFTER the static condensation
        */
-      if (cell_flag & CS_FLAG_BOUNDARY) {
+      if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
             eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {

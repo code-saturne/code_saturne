@@ -297,7 +297,7 @@ _init_vcb_cell_system(const cs_flag_t                 cell_flag,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
-  if (cell_flag & CS_FLAG_BOUNDARY) {
+  if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     cs_equation_vb_set_cell_bc(cm,
                                cs_shared_connect,
@@ -454,7 +454,7 @@ _vcb_condense_and_apply_bc(cs_real_t                      time_eval,
 {
   /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
    * Operations that have to be performed BEFORE the static condensation */
-  if (csys->cell_flag & CS_FLAG_BOUNDARY) {
+  if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     if (cs_equation_param_has_convection(eqp))
       /* Apply boundary conditions related to the advection term
@@ -500,7 +500,7 @@ _vcb_condense_and_apply_bc(cs_real_t                      time_eval,
 
   /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
    * Operations that have to be performed AFTER the static condensation */
-  if (csys->cell_flag & CS_FLAG_BOUNDARY) {
+  if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
         eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
@@ -2086,7 +2086,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
        * Operations that have to be performed BEFORE the static condensation
        */
-      if (cell_flag & CS_FLAG_BOUNDARY) {
+      if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         if (cs_equation_param_has_convection(eqp))
           /* Apply boundary conditions related to the advection term
@@ -2133,7 +2133,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
        * Operations that have to be performed AFTER the static condensation
        */
-      if (cell_flag & CS_FLAG_BOUNDARY) {
+      if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         if (cs_equation_param_has_diffusion(eqp)) {
 

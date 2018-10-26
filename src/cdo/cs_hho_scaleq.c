@@ -354,7 +354,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
-  if (cell_flag & CS_FLAG_BOUNDARY) {
+  if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     /* Identify which face is a boundary face */
     for (short int f = 0; f < cm->n_fc; f++) {
@@ -1185,7 +1185,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 
       /* TODO: Neumann boundary conditions */
 
-      if (cell_flag & CS_FLAG_BOUNDARY) {
+      if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         if (cs_equation_param_has_diffusion(eqp)) {
 

@@ -223,7 +223,8 @@ _vb_enforce_boundary_divergence(const cs_cdo_connect_t        *connect,
   memset(divergence, 0, sizeof(cs_real_t)*n_vertices);
 
   for (cs_lnum_t  c_id = 0; c_id < cdoq->n_cells; c_id++) {
-    if (connect->cell_flag[c_id] & CS_FLAG_BOUNDARY) {
+    if (connect->cell_flag[c_id] & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+      /* TODO: Take into account boundary cells by vertices ? */
 
       /* Compute divergence */
       for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {

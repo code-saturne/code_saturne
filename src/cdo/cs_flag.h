@@ -46,8 +46,10 @@ BEGIN_C_DECLS
  * @{
  */
 
-#define CS_FLAG_BOUNDARY     (1 << 0)  /*!< 1: cell with at least one border
-                                               face */
+#define CS_FLAG_BOUNDARY_CELL_BY_FACE   (1 << 0)  /*!< 1: boundary cell with at
+                                                    least one border face */
+#define CS_FLAG_BOUNDARY_CELL_BY_VERTEX (1 << 1)  /*!< 2: boundary cell with at
+                                                    least one border vertex */
 
 /*!
  * @}

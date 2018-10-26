@@ -604,7 +604,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
        * Operations that have to be performed BEFORE the static condensation
        */
-      if (cell_flag & CS_FLAG_BOUNDARY) {
+      if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         /* Neumann boundary conditions */
         if (csys->has_nhmg_neumann) {
@@ -638,7 +638,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
       /* 6- BOUNDARY CONDITIONS */
       /* ====================== */
-      if (cell_flag & CS_FLAG_BOUNDARY) {
+      if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
             eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {

@@ -1018,10 +1018,11 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
   /* Preparatory step for diffusion term */
   if (cs_equation_param_has_diffusion(eqp))
     if (eqb->diff_pty_uniform)
+      /* One call this function as if it's a boundary cell */
       cs_equation_set_diffusion_property(eqp,
-                                         0,                /* cell_id */
+                                         0, /* cell_id */
                                          t_eval,
-                                         CS_FLAG_BOUNDARY, /* force boundary */
+                                         CS_FLAG_BOUNDARY_CELL_BY_FACE,
                                          cb);
 
   /* Preparatory step for unsteady term */
@@ -1075,7 +1076,7 @@ cs_equation_set_diffusion_property(const cs_equation_param_t   *eqp,
 
   /* Set additional quantities in case of more advanced way of enforcing the
      Dirichlet BCs */
-  if (c_flag & CS_FLAG_BOUNDARY) {
+  if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
     if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
         eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
       cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
@@ -1115,7 +1116,7 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t     *eqp,
 
   /* Set additional quantities in case of more advanced way of enforcing the
      Dirichlet BCs */
-  if (c_flag & CS_FLAG_BOUNDARY) {
+  if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
     if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
         eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
       cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
