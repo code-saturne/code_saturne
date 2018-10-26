@@ -983,8 +983,6 @@ contains
     call c_f_pointer(c_cmu    , cmu   )
     call c_f_pointer(c_cmu025 , cmu025)
 
-    call cs_f_turb_complete_constants
-
   end subroutine turb_model_constants_init
 
   !=============================================================================

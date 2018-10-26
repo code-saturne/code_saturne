@@ -87,6 +87,8 @@ call field_get_key_id("variable_id", keyvar)
 
 call field_get_key_id("syrthes_coupling", kcpsyr)
 
+call cs_f_turb_complete_constants
+
 !===============================================================================
 ! 1. ENTREES SORTIES entsor
 !===============================================================================

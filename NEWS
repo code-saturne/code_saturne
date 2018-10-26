@@ -5,6 +5,10 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- Fix initialisation of some turbulence constants. Constant/Models concerned:
+  * sigmae (for all RSM models)
+  * csrij (EB-RSM model).
+
 - Fix allocation of pmappers to scalar fields in atmospheric aerosols model. 
 
 - Fix allocation size for values at injection in case of mass source terms
