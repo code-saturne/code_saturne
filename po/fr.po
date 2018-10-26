@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-10-15 16:26+0200\n"
+"POT-Creation-Date: 2018-10-26 17:07+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4541,6 +4541,10 @@ msgstr "L'interpolation optimale avec id %d n'est pas définie."
 #, c-format
 msgid "Optimal interpolation \"%s\" is not defined."
 msgstr "L'interpolation optimale \"%s\" n'est pas définie."
+
+#, c-format
+msgid "Error while trying to find symbol %s in lib %s: %s\n"
+msgstr ""
 
 #, c-format
 msgid ""
