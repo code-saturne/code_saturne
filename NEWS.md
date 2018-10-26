@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 5.3.0 - October 26, 2018
+--------------------------------
+
 User changes:
 
 - Move velocity-pressure algorithm settings from global numerical
