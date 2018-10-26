@@ -48,7 +48,10 @@ Toolbox.py \
 XMLengine.py \
 XMLinitialize.py \
 XMLmodel.py \
-XMLvariables.py
+XMLvariables.py \
+XMLvariablesNeptune.py \
+XMLmodelNeptune.py \
+XMLinitializeNeptune.py
 
 if HAVE_QT5
   PYFILES += qt5/QtCore.py qt5/QtGui.py qt5/QtWidgets.py
@@ -103,9 +106,12 @@ clean-local:
 # Install Python library
 
 basedir = $(pkgpythondir)/Base
+
 dist_base_PYTHON = \
 __init__.py \
-$(PYFILES)
+$(PYFILES) \
+icons/22x22/MONO-bulle-HD.png \
+icons/22x22/logoneptune.png
 
 nodist_base_PYTHON = \
 $(FORMS) \

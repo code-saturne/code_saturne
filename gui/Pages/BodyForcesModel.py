@@ -59,8 +59,12 @@ class BodyForcesModel(Model):
         """
         self.case = case
 
-        self.node_pp      = self.case.xmlGetNode('physical_properties')
-        self.node_gravity = self.node_pp.xmlInitNode('gravity')
+        if self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
+            self.node_pp      = self.case.xmlGetNode('physical_properties')
+            self.node_gravity = self.node_pp.xmlInitNode('gravity')
+        elif self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            self.node_pp = self.case.xmlGetNode('closure_modeling')
+            self.node_gravity = self.node_pp.xmlInitNode('gravity')
 
         self.nodes = ['gravity_x', 'gravity_y', 'gravity_z']
 

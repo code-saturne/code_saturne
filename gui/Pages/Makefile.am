@@ -23,7 +23,6 @@
 #-------------------------------------------------------------------------------
 
 # Python files
-
 PYFILES = \
 AnalysisFeaturesView.py \
 AtmosphericFlowsModel.py \
@@ -100,13 +99,12 @@ NumericalParamEquationModel.py \
 NumericalParamEquationView.py \
 NumericalParamGlobalModel.py \
 NumericalParamGlobalView.py \
-OpenTurnsModel.py \
-OpenTurnsView.py \
 OutputControlModel.py \
 OutputControlView.py \
 OutputSurfacicVariablesModel.py \
 OutputSurfacicVariablesView.py \
 OutputVolumicVariablesModel.py \
+OutputVolumicVariablesModelNeptune.py \
 OutputVolumicVariablesView.py \
 PreProcessingInformationsView.py \
 PerformanceTuningModel.py \
@@ -141,10 +139,76 @@ TurbulenceModel.py \
 TurbulenceView.py \
 VerifyExistenceLabelDialogView.py \
 WelcomeView.py \
-XMLEditorView.py
+XMLEditorView.py \
+GlobalNumericalParametersModel.py \
+GlobalNumericalParametersView.py \
+NonCondensableModel.py \
+NonCondensableView.py \
+TurbulenceModel.py \
+TurbulenceView.py  \
+TurbulenceNeptuneModel.py \
+TurbulenceNeptuneView.py \
+SpeciesView.py \
+SpeciesModel.py \
+InterfacialForcesModel.py \
+InterfacialForcesView.py \
+InterfacialAreaModel.py \
+InterfacialAreaView.py \
+MainFieldsView.py \
+MainFieldsModel.py \
+ProfilesViewNeptune.py \
+ProfilesModelNeptune.py \
+TimeAveragesModelNeptune.py \
+TimeAveragesViewNeptune.py \
+NucleateBoilingModel.py \
+NucleateBoilingView.py \
+InterfacialEnthalpyModel.py \
+InterfacialEnthalpyView.py \
+DropletCondensationEvaporationModel.py \
+DropletCondensationEvaporationView.py \
+MainFieldsInitializationView.py \
+MainFieldsInitializationModel.py \
+CathareCouplingModel.py \
+CathareCouplingView.py \
+BoundaryNeptune.py \
+LocalizationViewNeptune.py \
+LocalizationModelNeptune.py \
+BoundaryConditionsViewNeptune.py \
+BoundaryConditionsModelNeptune.py \
+UsersControlModel.py \
+UsersControlView.py \
+OutputFieldsModel.py \
+OutputFieldsView.py \
+OpenTurnsModel.py \
+OpenTurnsView.py \
+OutputControlViewNeptune.py \
+OutputControlModelNeptune.py \
+OutputSurfacicFieldsModel.py \
+OutputSurfacicFieldsView.py \
+SolidModel.py \
+SolidView.py \
+ThermodynamicsModel.py \
+ThermodynamicsView.py  \
+NumericalParamEquationModelNeptune.py \
+NumericalParamEquationViewNeptune.py \
+BoundaryConditionsPressureViewNeptune.py \
+BoundaryConditionsEnergyView.py \
+BoundaryConditionsFractionView.py \
+BoundaryConditionsNonCondensableView.py \
+BoundaryConditionsScalarViewNeptune.py \
+BoundaryConditionsTurbulenceInletViewNeptune.py \
+BoundaryConditionsVelocityInletViewNeptune.py \
+BoundaryConditionsWallView.py \
+BoundaryConditionsInterfacialAreaView.py \
+TimeStepModelNeptune.py \
+TimeStepViewNeptune.py \
+ThermalRadiationModelNeptune.py \
+ThermalRadiationViewNeptune.py \
+BalanceViewNeptune.py \
+BalanceModelNeptune.py
+
 
 # PyQt User Interface files
-
 UIFILES = \
 AnalysisFeaturesForm.ui \
 AtmosphericFlowsForm.ui \
@@ -199,7 +263,6 @@ MobileMeshForm.ui \
 NotebookForm.ui \
 NumericalParamEquationForm.ui \
 NumericalParamGlobalForm.ui \
-OpenTurnsForm.ui \
 OutputControlForm.ui \
 OutputSurfacicVariablesForm.ui \
 OutputVolumicVariablesForm.ui \
@@ -220,10 +283,38 @@ TimeStepForm.ui \
 TurboMachineryForm.ui \
 TurbulenceAdvancedOptionsDialogForm.ui \
 TurbulenceForm.ui \
+TurbulenceNeptune.ui \
 VerifyExistenceLabelDialogForm.ui \
 VolumicZoneAdvancedDialogForm.ui \
 WelcomeForm.ui \
-XMLEditorForm.ui
+XMLEditorForm.ui \
+Noncondensable.ui \
+Turbulence.ui \
+Species.ui\
+InterfacialForces.ui \
+InterfacialArea.ui \
+MainFields.ui \
+GlobalNumericalParameters.ui \
+GlobalNumericalParametersAdvancedOptionsDialog.ui \
+InterfacialEnthalpy.ui \
+NucleateBoiling.ui \
+DropletCondensationEvaporation.ui \
+MainFieldsInitialization.ui \
+CathareCouplingForm.ui \
+BoundaryConditionsNeptune.ui \
+UsersControl.ui \
+OutputFields.ui \
+Solid.ui \
+Thermodynamics.ui \
+NumericalParamEquationNeptune.ui \
+BoundaryConditionsPressure.ui \
+BoundaryConditionsEnergy.ui \
+BoundaryConditionsFraction.ui \
+BoundaryConditionsNonCondensable.ui \
+BoundaryConditionsScalar.ui \
+BoundaryConditionsWall.ui \
+BoundaryConditionsInterfacialArea.ui \
+TimeStep.ui
 
 # PyQt Resources files
 
@@ -261,7 +352,7 @@ else
 endif
 
 .ui.py:
-	$(PYUIC) -o $@ $<
+	$(PYUIC) -o $@ $<	
 
 .qrc_rc.py:
 	$(PYRCC) -o $@ $<

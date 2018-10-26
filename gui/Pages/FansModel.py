@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+
+#-------------------------------------------------------------------------------
+
+# This file is part of Code_Saturne, a general-purpose CFD tool.
+#
 # Copyright (C) 1998-2018 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -53,8 +59,8 @@ class FansModel(Variables, Model):
         #
         # XML file parameters
         self.case = case
-        self.node_model      = self.case.xmlInitNode('thermophysical_models')
-        self.node_model_fans = self.node_model.xmlInitNode('fans')
+        node_model = self.case.xmlInitNode('thermophysical_models')
+        self.node_model_fans = node_model.xmlInitNode('fans')
 
 
     def defaultValues(self):
@@ -159,13 +165,64 @@ class FansModel(Variables, Model):
         node.xmlSetData('mesh_dimension', val)
 
 
+class FansStatus(Variables, Model):
+
+    """
+    This class checks for fan objects in the XML file
+    """
+
+    def __init__(self, case):
+        """
+        Constuctor.
+        """
+        self.case = case
+
+
+    def getFanCount(self):
+        """
+        Returns info on fans: -1 if node is not present, count if present
+        """
+        count = -1
+
+        node_model = self.case.xmlGetNode('thermophysical_models')
+        if node_model:
+            node_fans = node_model.xmlGetNode('fans')
+            if node_fans:
+                count =len(node_fans.xmlGetNodeList('fan'))
+
+        return count
+
+
+    def initFans(self):
+        """
+        Ensures a fans node is present
+        """
+        node_model = self.case.xmlInitNode('thermophysical_models')
+        node_model.xmlInitNode('fans')
+
+
+    def cleanFans(self):
+        """
+        Removes fan node if empty
+        """
+        count = -1
+        node_model = self.case.xmlGetNode('thermophysical_models')
+        if node_model:
+            node_fans = node_model.xmlGetNode('fans')
+            if node_fans:
+                count =len(node_fans.xmlGetNodeList('fan'))
+
+        if count == 0:
+            node_fans.xmlRemoveNode()
+
+
 #-------------------------------------------------------------------------------
 # Fans test case
 #-------------------------------------------------------------------------------
+
 class FansTestCase(ModelTest):
     """
     """
-
 
 def suite():
     testSuite = unittest.makeSuite(FansTestCase, "check")

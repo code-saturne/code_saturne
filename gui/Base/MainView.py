@@ -78,6 +78,7 @@ from code_saturne.Base.IdView import IdView
 from code_saturne.Base.BrowserView import BrowserView
 from code_saturne.Base import XMLengine, QtCase
 from code_saturne.Base.XMLinitialize import *
+from code_saturne.Base.XMLinitializeNeptune import *
 from code_saturne.Base.XMLmodel import *
 from code_saturne.Base.Toolbox import GuiParam, displaySelectedPage
 from code_saturne.Base.Common import XML_DOC_VERSION
@@ -326,11 +327,11 @@ class MainView(object):
         """
         Factory
         """
-        if cmd_package.name == 'code_saturne':
-            return MainViewSaturne.__new__(MainViewSaturne, cmd_package, cmd_case, cmd_salome)
-        elif cmd_package.name == 'neptune_cfd':
-            from core.MainView import MainViewNeptune
-            return MainViewNeptune.__new__(MainViewNeptune, cmd_package, cmd_case, cmd_salome)
+
+        #~ if cmd_package.name == 'code_saturne':
+        return MainViewSaturne.__new__(MainViewSaturne, cmd_package, cmd_case, cmd_salome)
+        #~ elif cmd_package.name == 'neptune_cfd':
+            #~ return MainViewNeptune.__new__(MainViewNeptune, cmd_package, cmd_case, cmd_salome)
 
 
     @staticmethod
@@ -784,27 +785,10 @@ class MainView(object):
             return
 
         # Instantiate a new case
-
         try:
             self.case = QtCase.QtCase(package=self.package, file_name=file_name)
         except:
             msg = self.tr("This file is not in accordance with XML specifications.")
-            self.loadingAborted(msg, fn)
-            return
-
-        # Check if the root node is the good one
-
-        if self.case.xmlRootNode().tagName != self.package.code_name + "_GUI":
-            msg = self.tr("This file seems not to be a %s file of parameters.\n\n"  \
-                          "XML root node found: %s" % \
-                          (self.package.code_name, self.case.xmlRootNode().tagName))
-            self.loadingAborted(msg, fn)
-            return
-
-        if self.case.root()['version'] != self.XML_DOC_VERSION:
-            msg = self.tr("The syntax version %s of this file of parameters does\n" \
-                          "not match with the version required y the GUI: %s." %    \
-                          (self.case.root()['version'], self.XML_DOC_VERSION) )
             self.loadingAborted(msg, fn)
             return
 
@@ -816,9 +800,6 @@ class MainView(object):
         self.case['prepro'] = mdl.getPreproMode()
 
         msg = self.initCase()
-        if msg:
-            self.loadingAborted(msg, fn)
-            return
 
         # All checks are fine, wan can continue...
 
@@ -841,13 +822,35 @@ class MainView(object):
 
         self.case['saved'] = "yes"
 
-
         # Update the Tree Navigator layout
 
         self.case.undo_signal.connect(self.slotUndoRedoView)
         self.actionPrepro.setEnabled(True)
         self.actionCalculation.setEnabled(True)
 
+        #Update Icon, Window Title Name and package name :
+        icondir = os.path.dirname(os.path.abspath(__file__)) + '/'
+        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
+
+            icone = QIcon(QPixmap(icondir+"logoneptune.png")) #QIcon est dans QtGui / QPixmap est dans QtGui
+            self.displayLogo.setIcon(icone)
+
+            titre = self.windowTitle()
+            titre = titre.replace("Code_Saturne", "NEPTUNE_CFD")
+            self.setWindowTitle(titre)
+
+            self.case['package'].name = 'NEPTUNE_CFD'
+
+        elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI" :
+
+            icone = QIcon(QPixmap(icondir+"MONO-bulle-HD.png")) #QIcon est dans QtGui / QPixmap est dans QtGui
+            self.displayLogo.setIcon(icone)
+
+            titre = self.windowTitle()
+            titre = titre.replace("NEPTUNE_CFD", "Code_Saturne")
+            self.setWindowTitle(titre)
+
+            self.case['package'].name = 'code_saturne'
 
     def fileOpen(self):
         """
@@ -941,6 +944,7 @@ class MainView(object):
 
         save the current case
         """
+
         log.debug("fileSave()")
 
         if not hasattr(self, 'case'):
@@ -1148,7 +1152,6 @@ class MainView(object):
                                                   self.batch_file),
                                      package=self.package)
 
-
         parameters = os.path.basename(self.case['xmlfile'])
 
         self.case['runcase'].set_parameters(parameters)
@@ -1164,6 +1167,7 @@ class MainView(object):
         @type index: C{QModelIndex}
         @param index: index of the item in the C{QTreeView} clicked in the browser
         """
+
         # stop if the entry is a folder or a file
 
         if self.Browser.isFolder(): return
@@ -1329,6 +1333,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         @type cmd_case:
         @param cmd_case:
         """
+
         QMainWindow.__init__(self)
         Ui_MainForm.__init__(self)
 
@@ -1376,13 +1381,16 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.displayNCManualAction.setVisible(False)
 
 
-    def initCase(self):
+    def initCase(self):  #Il faut rappeller cette methode des que l'on passe de CS a Neptune...
         """
         Initializes the new case with default xml nodes.
         If previous case, just check if all mandatory nodes exist.
         """
-        return XMLinit(self.case).initialize(self.case['prepro'])
 
+        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
+            return XMLinitNeptune(self.case).initialize(self.case['prepro'])
+        elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI" :
+            return XMLinit(self.case).initialize(self.case['prepro'])
 
     def displayWelcomePage(self):
         """
@@ -1536,7 +1544,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         mdl = ScriptRunningModel(self.case)
         rt = mdl.getRunType(self.case['prepro'])
         self.case['prepro'] = True
-        self.case['oturns'] = False
         self.initCase()
         mdl.setRunType(rt)
         self.Browser.configureTree(self.case)
@@ -1556,29 +1563,10 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         mdl = ScriptRunningModel(self.case)
         self.case['prepro'] = False
-        self.case['oturns'] = False
         self.initCase()
         mdl.setRunType('standard')
         self.Browser.configureTree(self.case)
         if self.case['current_page'] == 'Prepare batch calculation':
-            p = displaySelectedPage(self.case['current_page'],
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    study=self.Id,
-                                    tree=self.Browser)
-            self.scrollArea.setWidget(p)
-
-
-    def slotOpenTurnsMode(self):
-        """
-        mode OpenTurns study slot
-        """
-        self.case['prepro'] = False
-        self.case['oturns'] = True
-        self.initCase()
-        self.Browser.configureTree(self.case)
-        if self.case['current_page'] == 'OpenTurns study':
             p = displaySelectedPage(self.case['current_page'],
                                     self,
                                     self.case,
@@ -1598,8 +1586,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             self.actionRedo.setEnabled(True)
         else:
             self.actionRedo.setEnabled(False)
-
-
 #-------------------------------------------------------------------------------
 
 def isAlive(qobj):

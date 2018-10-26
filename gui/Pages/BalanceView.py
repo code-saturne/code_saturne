@@ -48,7 +48,6 @@ from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import RegExpValidator, IntValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.BalanceForm import Ui_BalanceForm
-from code_saturne.Pages.BalanceModel import BalanceModel
 from code_saturne.Pages.FacesSelectionView import StandardItemModelFaces
 
 #-------------------------------------------------------------------------------
@@ -340,7 +339,12 @@ class BalanceView(QWidget, Ui_BalanceForm):
 
         self.case = case
         self.case.undoStopGlobal()
-        self.mdl = BalanceModel(self.case)
+        if self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
+            from code_saturne.Pages.BalanceModel import BalanceModel
+            self.mdl = BalanceModel(self.case)
+        elif self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            from code_saturne.Pages.BalanceModelNeptune import BalanceModelNeptune
+            self.mdl = BalanceModelNeptune(self.case)
 
         # tableView Pressure Drop
         self.pressureModel = StandardItemModelPressureDrop(self.mdl)

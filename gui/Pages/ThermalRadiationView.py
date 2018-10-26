@@ -235,11 +235,11 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
         coal_or_gas = CoalCombustionModel(self.case).getCoalCombustionModel("only")
         del CoalCombustionModel
-
-        if coal_or_gas == "off":
-            from code_saturne.Pages.GasCombustionModel import GasCombustionModel
-            coal_or_gas = GasCombustionModel(self.case).getGasCombustionModel()
-            del GasCombustionModel
+        if case.xmlRootNode().tagName == "Code_Saturne_GUI":
+            if coal_or_gas == "off":
+                from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+                coal_or_gas = GasCombustionModel(self.case).getGasCombustionModel()
+                del GasCombustionModel
 
         if coal_or_gas != "off":
             self.modelAbsorption.disableItem(str_model='variable')

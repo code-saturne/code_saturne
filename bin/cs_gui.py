@@ -102,8 +102,7 @@ def process_cmd_line(argv):
                       action="store_false",
                       help="deactivate splash screen")
 
-
-    parser.set_defaults(splash_screen=True)
+    parser.set_defaults(splash_screen=True, enable_neptune_cfd=True)
 
     (options, args) = parser.parse_args(argv)
 

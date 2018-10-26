@@ -23,10 +23,11 @@
 #-------------------------------------------------------------------------------
 
 """
+Output of volume variables
 """
 
 #-------------------------------------------------------------------------------
-# Library odules import
+# Library modules import
 #-------------------------------------------------------------------------------
 
 import unittest
@@ -441,7 +442,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getPrintingStatus(self, name):
+    def getPrintingStatus(self, name, fieldId=None):
         """
         Return status of markup printing from node with name. Only for the View
         """
@@ -457,7 +458,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getPostStatus(self, name):
+    def getPostStatus(self, name, fieldId=None):
         """
         Return status of markup  post processing from node with name. Only for the View
         """
@@ -473,7 +474,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getMonitorStatus(self, name):
+    def getMonitorStatus(self, name, fiel_id=None):
         """
         Return status of markup monitoring from node with name. Only for the View
         """
@@ -527,7 +528,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
 
     @Variables.undoLocal
-    def setPrintingStatus(self, name, status):
+    def setPrintingStatus(self, name, status, fieldId=None):
         """
         Put status for printing from node with name and label
         """
@@ -562,7 +563,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
 
     @Variables.undoLocal
-    def setPostStatus(self, name, status):
+    def setPostStatus(self, name, status, fieldId=None):
         """
         Put status for postprocessing from node with name and label
         """
@@ -579,7 +580,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
 
     @Variables.undoLocal
-    def setMonitorStatus(self, name, status):
+    def setMonitorStatus(self, name, status, fieldId=None):
         """
         Put status for monitoring from node with name and label
         """

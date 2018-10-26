@@ -289,7 +289,8 @@ class TreeModel(QAbstractItemModel):
                 raise ValueError("This flags is not implemented")
 
             if self.hasChildren(index):
-                result += self.match(self.index(0, index.column(), index), role, value, hits, flags)
+                result += self.match(self.index(0, index.column(), index),
+                                     role, value, hits, flags)
 
         return result
 
@@ -410,6 +411,7 @@ Calculation environment
     Notebook
 Thermophysical models
     Calculation features
+    Main fields
     Deformable mesh
     Turbulence models
     Thermal model
@@ -423,32 +425,44 @@ Thermophysical models
     Turbomachinery
     Groundwater flows
     Fans
+    Non condensable gases
+    Thermodynamics
+Closure modeling
+    Interfacial momentum transfer
+    Interfacial area
+    Interfacial enthalpy transfer
+    Nucleate boiling parameters
+    Droplet condensation-evaporation
+    Particles interactions
 Physical properties
     Reference values
     Fluid properties
     Gravity
+Particles and droplets tracking
+    Global settings
+    Statistics
 Volume conditions
     Volume regions definition
+    Main fields initialization
     Initialization
     Head losses
     Porosity
     Source terms
     Coriolis Source Terms
     Groundwater laws
-Particles and droplets tracking
-    Global settings
-    Statistics
 Boundary conditions
-    Definition of boundary regions
+    Boundary regions definition
     Boundary conditions
-    Particles boundary conditions
+    Particle boundary conditions
     Fluid structure interaction
+    Cathare Coupling
 Numerical parameters
     Global parameters
     Equation parameters
     Time settings
 Calculation control
     Time averages
+    Additional user arrays
     Output control
     Volume solution control
     Surface solution control
@@ -458,8 +472,8 @@ Calculation control
 Calculation management
     Start/Restart
     Performance tuning
-    Prepare batch calculation
     OpenTurns study
+    Prepare batch calculation
 """
         return tree
 
@@ -482,6 +496,17 @@ Calculation management
             column = itemInfo[1]
             parent = itemInfo[2]
             self.treeView.setRowHidden(row, parent, False)
+
+
+    def setRowShow(self, string, status=True):
+        log.debug("setRowVisible(): %s" % string)
+        itemInfoList = self.model.itemLocalization(string)
+        hidden = not status
+        for itemInfo in itemInfoList:
+            row    = itemInfo[0]
+            column = itemInfo[1]
+            parent = itemInfo[2]
+            self.treeView.setRowHidden(row, parent, hidden)
 
 
     def isRowClose(self, string):
@@ -565,7 +590,8 @@ Calculation management
         """
         """
         if index != None:
-            self.treeView.selectionModel().select(index, QItemSelectionModel.SelectCurrent)
+            self.treeView.selectionModel().select(index,
+                                                  QItemSelectionModel.SelectCurrent)
 
         return
 
@@ -651,223 +677,364 @@ Calculation management
             self.onFolderClose(index)
 
 
-    def configureTree(self, case):
+    def __configureTreePrepro(self, case):
         """
         Public method.
         Configures the browser with users data.
         """
-        self.setRowClose(self.tr('Particles and droplets tracking'))
+
+        self.setRowClose(self.tr('Notebook'))
+
+        self.setRowClose(self.tr('Thermophysical models'))
+        """
+        self.setRowClose(self.tr('Calculation features'))
+        self.setRowClose(self.tr('Main fields'))
+        self.setRowClose(self.tr('Deformable mesh'))
+        self.setRowClose(self.tr('Turbulence models'))
+        self.setRowClose(self.tr('Thermal model'))
         self.setRowClose(self.tr('Gas combustion'))
         self.setRowClose(self.tr('Pulverized fuel combustion'))
         self.setRowClose(self.tr('Electrical models'))
         self.setRowClose(self.tr('Radiative transfers'))
         self.setRowClose(self.tr('Conjugate heat transfer'))
         self.setRowClose(self.tr('Atmospheric flows'))
-        self.setRowClose(self.tr('Particles boundary conditions'))
-        # self.setRowClose(self.tr('Surface solution control'))
-        self.setRowClose(self.tr('Time settings'))
-        self.setRowClose(self.tr('Fluid structure interaction'))
-        self.setRowClose(self.tr('Source terms'))
+        self.setRowClose(self.tr('Species transport'))
+        self.setRowClose(self.tr('Turbomachinery'))
+        self.setRowClose(self.tr('Groundwater flows'))
+        self.setRowClose(self.tr('Fans'))
+        self.setRowClose(self.tr('Non condensable gases'))
+        self.setRowClose(self.tr('Thermodynamics'))
+        """
+
+        self.setRowClose(self.tr('Closure modeling'))
+        """
+        self.setRowClose(self.tr('Interfacial momentum transfer'))
+        self.setRowClose(self.tr('Interfacial area'))
+        self.setRowClose(self.tr('Interfacial enthalpy transfer'))
+        self.setRowClose(self.tr('Nucleate boiling parameters'))
+        self.setRowClose(self.tr('Droplet condensation-evaporation'))
+        self.setRowClose(self.tr('Particles interactions'))
+        """
+
+        self.setRowClose(self.tr('Physical properties'))
+        """
+        self.setRowClose(self.tr('Reference values'))
+        self.setRowClose(self.tr('Fluid properties'))
+        self.setRowClose(self.tr('Gravity'))
+        """
+
+        self.setRowClose(self.tr('Particles and droplets tracking'))
+        """
+        self.setRowClose(self.tr('Global settings'))
+        self.setRowClose(self.tr('Statistics'))
+        """
+
+        self.setRowShow(self.tr('Volume conditions'), False)
+        """
+        self.setRowClose(self.tr('Volume regions definition'))
+        self.setRowClose(self.tr('Main fields initialization'))
+        self.setRowClose(self.tr('Initialization'))
         self.setRowClose(self.tr('Head losses'))
         self.setRowClose(self.tr('Porosity'))
-        self.setRowClose(self.tr('Lagrangian solution control'))
-        self.setRowClose(self.tr('Groundwater flows'))
+        self.setRowClose(self.tr('Source terms'))
+        self.setRowClose(self.tr('Coriolis Source Terms'))
         self.setRowClose(self.tr('Groundwater laws'))
+        """
+
+        self.setRowClose(self.tr('Boundary conditions'))
+        self.setRowClose(self.tr('Particle boundary conditions'))
+        self.setRowClose(self.tr('Fluid structure interaction'))
+        self.setRowClose(self.tr('Cathare Coupling'))
+
+        self.setRowClose(self.tr('Numerical parameters'))
+        """
+        self.setRowClose(self.tr('Global parameters'))
+        self.setRowClose(self.tr('Equation parameters'))
+        self.setRowClose(self.tr('Time settings'))
+        """
+
+        self.setRowClose(self.tr('Time averages'))
+        self.setRowClose(self.tr('Additional user arrays'))
+        self.setRowClose(self.tr('Output control'))
+        self.setRowClose(self.tr('Volume solution control'))
+        self.setRowClose(self.tr('Surface solution control'))
+        self.setRowClose(self.tr('Lagrangian solution control'))
+        self.setRowClose(self.tr('Profiles'))
+        self.setRowClose(self.tr('Balance by zone'))
+
+        self.setRowClose(self.tr('Start/Restart'))
+        self.setRowClose(self.tr('OpenTurns study'))
+
+        self.__hideRow()
+
+
+    def configureTree(self, case):
+        """
+        Public method.
+        Configures the browser with users data.
+        """
 
         if case['prepro'] == True:
-            self.setRowClose(self.tr('Notebook'))
-            self.setRowClose(self.tr('Thermophysical models'))
-            self.setRowClose(self.tr('Physical properties'))
-            self.setRowClose(self.tr('Volume conditions'))
-            self.setRowClose(self.tr('Particles and droplets tracking'))
-            self.setRowClose(self.tr('Boundary conditions'))
-            self.setRowClose(self.tr('Numerical parameters'))
-            self.setRowClose(self.tr('Start/Restart'))
-            self.setRowClose(self.tr('Time averages'))
-            self.setRowClose(self.tr('Volume solution control'))
-            self.setRowClose(self.tr('Surface solution control'))
-            self.setRowClose(self.tr('Lagrangian solution control'))
-            self.setRowClose(self.tr('Profiles'))
-            self.setRowClose(self.tr('Balance by zone'))
-            self.setRowClose(self.tr('Fans'))
-            self.setRowClose(self.tr('OpenTurns study'))
-            self.setRowOpen(self.tr('Prepare batch calculation'))
-            return
-        elif case['oturns'] == True:
-            self.setRowClose(self.tr('Thermophysical models'))
-            self.setRowClose(self.tr('Physical properties'))
-            self.setRowClose(self.tr('Volume conditions'))
-            self.setRowClose(self.tr('Particles and droplets tracking'))
-            self.setRowClose(self.tr('Boundary conditions'))
-            self.setRowClose(self.tr('Numerical parameters'))
-            self.setRowClose(self.tr('Start/Restart'))
-            self.setRowClose(self.tr('Time averages'))
-            self.setRowClose(self.tr('Volume solution control'))
-            self.setRowClose(self.tr('Surface solution control'))
-            self.setRowClose(self.tr('Lagrangian solution control'))
-            self.setRowClose(self.tr('Profiles'))
-            self.setRowClose(self.tr('Balance by zone'))
-            self.setRowClose(self.tr('Fans'))
-            self.setRowOpen(self.tr('Notebook'))
-            self.setRowOpen(self.tr('OpenTurns study'))
-            self.setRowClose(self.tr('Prepare batch calculation'))
-            return
-        else:
-            self.setRowOpen(self.tr('Notebook'))
-            self.setRowOpen(self.tr('Thermophysical models'))
-            self.setRowOpen(self.tr('Physical properties'))
-            self.setRowOpen(self.tr('Volume conditions'))
-            self.setRowOpen(self.tr('Particles and droplets tracking'))
-            self.setRowOpen(self.tr('Boundary conditions'))
-            self.setRowOpen(self.tr('Numerical parameters'))
-            self.setRowOpen(self.tr('Start/Restart'))
-            self.setRowOpen(self.tr('Time averages'))
-            self.setRowOpen(self.tr('Volume solution control'))
-            self.setRowOpen(self.tr('Surface solution control'))
-            self.setRowOpen(self.tr('Lagrangian solution control'))
-            self.setRowOpen(self.tr('Profiles'))
-            self.setRowOpen(self.tr('Balance by zone'))
-            self.setRowOpen(self.tr('Fans'))
-            self.setRowOpen(self.tr('Prepare batch calculation'))
-            self.setRowClose(self.tr('OpenTurns study'))
+            return self.__configureTreePrepro(case)
 
-        # Time step management
+        p_module = ''
+        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            p_module = 'neptune_cfd'
 
-        self.setRowOpen(self.tr('Time settings'))
+        # Precompute some values
+        #-----------------------
 
-        # Multi-phase flow
+        m_tbm = False
+        m_fans = False
+        m_lagr = False
+        m_ale = 0
+        m_thermal = 0
+        m_cht = False
+        m_gas_comb = False
+        m_sf_comb = False
+        m_elec = False
+        m_atmo = False
+        m_rad = False
+        m_comp = False
+        m_gwf = False
 
-        nodeLagr = case.xmlGetNode('lagrangian', 'model')
+        node_pm = case.xmlGetNode('thermophysical_models')
 
-        if nodeLagr and nodeLagr['model'] != "off":
-            self.setRowOpen(self.tr('Particles and droplets tracking'))
-            self.setRowOpen(self.tr('Lagrangian solution control'))
-            self.setRowOpen(self.tr('Particles boundary conditions'))
-            self.setRowClose(self.tr('Deformable mesh'))
-        else:
-            self.setRowClose(self.tr('Particles and droplets tracking'))
-            self.setRowClose(self.tr('Lagrangian solution control'))
-            self.setRowClose(self.tr('Particles boundary conditions'))
-            self.setRowOpen(self.tr('Deformable mesh'))
+        if node_pm:
 
-        # OutputSurfacicView
+            node = node_pm.xmlGetNode('ale_method', 'status')
+            if node and node['status'] == 'on':
+                m_ale = 1
+            node = node_pm.xmlGetNode('turbomachinery', 'model')
+            if node and node['model'] != "off":
+                m_tbm = True
+            node = node_pm.xmlGetNode('fans')
+            if node:
+                m_fans = True
 
-        node_control = case.xmlGetNode('analysis_control')
-        node_out     = node_control.xmlInitNode('output')
-        node_bound   = node_out.xmlGetNode('domain_boundary', 'status')
+            if not m_thermal:
+                node = node_pm.xmlGetNode('gas_combustion', 'model')
+                if node and node['model'] in ('ebu', 'd3p', 'lwp'):
+                    m_gas_comb = True
+                    m_thermal = 1
+            if not m_thermal:
+                node = node_pm.xmlGetNode('solid_fuels', 'model')
+                if node and node['model'] in ('homogeneous_fuel',
+                                              'homogeneous_fuel_moisture',
+                                              'homogeneous_fuel_moisture_lagr'):
+                    m_sf_comb = True
+                    m_thermal = 1
+            if not m_thermal:
+                node = node_pm.xmlGetNode('joule_effect', 'model')
+                if node and node['model'] in ('joule', 'arc'):
+                    m_elec = True
+                    m_thermal = 1
+            if not m_thermal:
+                node = node_pm.xmlGetNode('atmospheric_flows',  'model')
+                if node and node['model'] != 'off':
+                    m_atmo = True
+                    if node['model'] == 'constant':
+                        m_thermal = -1
+                    elif node['model'] in ('dry', 'humid'):
+                        m_thermal = 1
+            if not m_thermal:
+                node = node_pm.xmlGetNode('compressible_model', 'model')
+                if node and node['model'] != 'off':
+                    m_cpr = True
+                    m_thermal = 1
 
-        # FIXME: node_bound = ''
-        if node_bound and node_bound['status'] == 'on':
-            self.setRowOpen(self.tr('Surface solution control'))
+            if not m_thermal:
+                node = node_pm.xmlGetNode('thermal_scalar', 'model')
+                if node and node['model'] != 'off':
+                    m_thermal = 2
 
-        # Reactive flow
+            node = node_pm.xmlGetNode('groundwater_model',  'model')
+            if node and node['model'] != 'off':
+                m_gwf = True
+                m_thermal = -1
+                m_ale = -1
+                m_fans = False
 
-        node0 = case.xmlGetNode('thermophysical_models')
-        node1 = node0.xmlGetNode('gas_combustion',     'model')
-        node2 = node0.xmlGetNode('solid_fuels',        'model')
-        node3 = node0.xmlGetNode('joule_effect',       'model')
-        node4 = node0.xmlGetNode('thermal_scalar',     'model')
-        node5 = node0.xmlGetNode('radiative_transfer', 'model')
-        node6 = node0.xmlGetNode('atmospheric_flows',  'model')
-        node7 = node0.xmlGetNode('compressible_model', 'model')
-        node8 = node0.xmlGetNode('groundwater_model',  'model')
+            if m_thermal > 0:
+                m_rad = True
+                m_cht = True
 
-        if node1['model'] in ('ebu', 'd3p', 'lwp'):
-            self.setRowOpen(self.tr('Thermal model'))
-            self.setRowOpen(self.tr('Gas combustion'))
-            self.setRowOpen(self.tr('Radiative transfers'))
-            self.setRowOpen(self.tr('Conjugate heat transfer'))
+        node = case.xmlGetNode('lagrangian', 'model')
+        if node and node['model'] != "off":
+            m_lagr = True
 
-        elif node2['model'] in ('homogeneous_fuel', 'homogeneous_fuel_moisture',
-                                'homogeneous_fuel_moisture_lagr'):
-            self.setRowOpen(self.tr('Thermal model'))
-            self.setRowOpen(self.tr('Pulverized fuel combustion'))
-            self.setRowOpen(self.tr('Radiative transfers'))
-            self.setRowOpen(self.tr('Conjugate heat transfer'))
+        # Options for NEPTUNE_CFD if present:
 
-        elif node3['model'] in ('joule', 'arc'):
-            self.setRowOpen(self.tr('Thermal model'))
-            self.setRowOpen(self.tr('Electrical models'))
-            self.setRowOpen(self.tr('Radiative transfers'))
-            self.setRowOpen(self.tr('Conjugate heat transfer'))
+        m_ncfd = {}
+        m_ncfd['non_condens'] = False
+        m_ncfd['nucleate_boiling'] = False
+        m_ncfd['droplet_condens'] = False
+        m_ncfd['particles_interactions'] = False
+        m_ncfd['itf_area'] = False
+        m_ncfd['itf_h_transfer'] = False
 
-        elif node6['model'] and node6['model'] != 'off':
-            self.setRowOpen(self.tr('Atmospheric flows'))
-            self.setRowOpen(self.tr('Radiative transfers'))
-            self.setRowOpen(self.tr('Conjugate heat transfer'))
+        ncfd_fields = 0
 
-            if node6 and node6['model'] in ('dry', 'humid'):
-                self.setRowOpen(self.tr('Thermal model'))
-            else:
-                self.setRowClose(self.tr('Thermal model'))
+        if p_module == 'neptune_cfd' and node_pm:
 
-        elif node7['model'] != 'off':
-            self.setRowClose(self.tr('Thermal model'))
+            m_ale = -1
+            m_fans = False
+            m_thermal = -1
+            m_rad = True
+            m_cht = True
 
-        else:
-            self.setRowOpen(self.tr('Thermal model'))
-            if node4.xmlGetAttribute('model') != 'off':
-                self.setRowOpen(self.tr('Radiative transfers'))
-                self.setRowOpen(self.tr('Conjugate heat transfer'))
+            node_f = node_pm.xmlInitNode('fields')
+            fields = node_f.xmlGetNodeList('field')
+            ncfd_fields = len(fields)
 
-        node7 = node0.xmlGetNode('ale_method', 'status')
-        if node7 and node7['status'] == 'on':
-            self.setRowOpen(self.tr('Fluid structure interaction'))
+        if ncfd_fields > 1:
+            from code_saturne.Pages.MainFieldsModel import MainFieldsModel
+            from code_saturne.Pages.NonCondensableModel import NonCondensableModel
+            from code_saturne.Pages.InterfacialForcesModel import InterfacialForcesModel
+            predefined_flow = MainFieldsModel(case).getPredefinedFlow()
 
-        if node8 and node8['model'] != 'off':
-            self.setRowOpen(self.tr('Groundwater flows'))
-            self.setRowClose(self.tr('Turbulence models'))
-            self.setRowClose(self.tr('Turbomachinery'))
-            self.setRowClose(self.tr('Fans'))
-            self.setRowClose(self.tr('Physical properties'))
-            self.setRowClose(self.tr('Reference values'))
-            self.setRowClose(self.tr('Gravity'))
-            self.setRowClose(self.tr('Fluid properties'))
-            self.setRowClose(self.tr('Deformable mesh'))
-            self.setRowClose(self.tr('Thermal model'))
-            self.setRowClose(self.tr('Coriolis Source Terms'))
-        else:
-            self.setRowOpen(self.tr('Turbulence models'))
-            self.setRowOpen(self.tr('Turbomachinery'))
-            self.setRowOpen(self.tr('Reference values'))
-            self.setRowOpen(self.tr('Gravity'))
-            self.setRowOpen(self.tr('Fluid properties'))
-            self.setRowOpen(self.tr('Deformable mesh'))
-            self.setRowOpen(self.tr('Thermal model'))
-            self.setRowOpen(self.tr('Coriolis Source Terms'))
+            if (len(MainFieldsModel(case).getSolidFieldIdList()) > 0):
+                m_ncfd['particles_interactions'] = True
+            if (len(MainFieldsModel(case).getDispersedFieldList()) > 0
+                or InterfacialForcesModel(case).getBubblesForLIMStatus() == 'on'):
+                m_ncfd['itf_area'] = True
 
-        # Source terms view
+            if predefined_flow == "free_surface":
+                m_ncfd['non_condens'] = True
+                m_ncfd['nucleate_boiling'] = True
+                m_ncfd['itf_h_transfer'] = True
+            elif predefined_flow == "boiling_flow":
+                m_ncfd['non_condens'] = True
+                m_ncfd['nucleate_boiling'] = True
+                m_ncfd['itf_h_transfer'] = True
+            elif predefined_flow == "droplet_flow":
+                m_ncfd['non_condens'] = True
+                m_ncfd['droplet_condens'] = True
+                m_ncfd['itf_h_transfer'] = True
+            elif predefined_flow == "particles_flow":
+                m_ncfd['particles_interactions'] = True
+                m_ncfd['itf_h_transfer'] = True
+
+        is_ncfd = (p_module == 'neptune_cfd')
+
+        # Manage visibility
+        #------------------
+
+        self.setRowOpen(self.tr('Notebook'))
+
+        # Thermophysical Models
+
+        self.setRowShow(self.tr('Thermophysical models'), True)
+        self.setRowShow(self.tr('Calculation features'), True)
+        self.setRowShow(self.tr('Main fields'), (p_module == 'neptune_cfd'))
+        self.setRowShow(self.tr('Deformable mesh'), (m_ale > -1))
+        self.setRowShow(self.tr('Turbulence models'), (p_module == ''))
+        self.setRowShow(self.tr('Thermal model'), (m_thermal > -1))
+        self.setRowShow(self.tr('Gas combustion'), m_gas_comb)
+        self.setRowShow(self.tr('Pulverized fuel combustion'), m_sf_comb)
+        self.setRowShow(self.tr('Electrical models'), m_elec)
+        self.setRowShow(self.tr('Radiative transfers'), m_rad)
+        self.setRowShow(self.tr('Conjugate heat transfer'), m_cht)
+        self.setRowShow(self.tr('Atmospheric flows'), m_atmo)
+        self.setRowShow(self.tr('Species transport'), True)
+        self.setRowShow(self.tr('Turbomachinery'), m_tbm)
+        self.setRowShow(self.tr('Groundwater flows'), m_gwf)
+        self.setRowShow(self.tr('Fans'), m_fans)
+
+        self.setRowShow(self.tr('Non condensable gases'), m_ncfd['non_condens'])
+        self.setRowShow(self.tr('Thermodynamics'), is_ncfd)
+
+        # Closure modeling
+
+        self.setRowShow(self.tr('Closure modeling'), (ncfd_fields > 1))
+        self.setRowShow(self.tr('Interfacial momentum transfer'), (ncfd_fields > 1))
+        self.setRowShow(self.tr('Interfacial enthalpy transfer'), m_ncfd['itf_h_transfer'])
+        self.setRowShow(self.tr('Interfacial area'), m_ncfd['itf_area'])
+        self.setRowShow(self.tr('Nucleate boiling parameters'), m_ncfd['nucleate_boiling'])
+        self.setRowShow(self.tr('Droplet condensation-evaporation'), m_ncfd['droplet_condens'])
+        self.setRowShow(self.tr('Particles interactions'), m_ncfd['particles_interactions'])
+
+        # Physical properties
+
+        self.setRowShow(self.tr('Physical properties'), (not m_gwf))
+        self.setRowShow(self.tr('Reference values'), (not (m_gwf or is_ncfd)))
+        self.setRowShow(self.tr('Fluid properties'), (not (m_gwf or is_ncfd)))
+        self.setRowShow(self.tr('Gravity'), (not m_gwf))
+
+        # Particles and droplets tracking
+
+        self.setRowShow(self.tr('Particles and droplets tracking'), m_lagr)
+        self.setRowShow(self.tr('Global settings'), m_lagr)
+        self.setRowShow(self.tr('Statistics'), m_lagr)
+
+        # Volume conditions
+
+        self.setRowShow(self.tr('Volume conditions'), True)
+        self.setRowShow(self.tr('Volume regions definition'), True)
+        self.setRowShow(self.tr('Main fields initialization'), is_ncfd)
+        self.setRowShow(self.tr('Initialization'), (not is_ncfd))
+
         node_domain = case.xmlGetNode('solution_domain')
         node_vol = node_domain.xmlGetNode('volumic_conditions')
-        nb_zone = 0
-        nb_zone_losses = 0
-        nb_zone_porosity = 0
-        nb_zone_groundwater = 0
+        z_st = False
+        z_head_loss = False
+        z_porosity = False
+        z_groundwater = False
 
         for node in node_vol.xmlGetChildNodeList('zone'):
-            if node['momentum_source_term'] == 'on':
-                nb_zone = nb_zone + 1
-            elif node['mass_source_term'] == 'on':
-                nb_zone = nb_zone + 1
-            elif node['thermal_source_term'] == 'on':
-                nb_zone = nb_zone + 1
-            elif node['scalar_source_term'] == 'on':
-                nb_zone = nb_zone + 1
+            if (node['momentum_source_term'] == 'on'
+                or node['mass_source_term'] == 'on'
+                or node['thermal_source_term'] == 'on'
+                or node['scalar_source_term'] == 'on'):
+                z_st = True
             if node['head_losses'] == 'on':
-                nb_zone_losses = nb_zone_losses + 1
+                z_head_loss = True
             if node['porosity'] == 'on':
-                nb_zone_porosity = nb_zone_porosity + 1
+                z_porosity = True
             if node['groundwater_law'] == 'on':
-                nb_zone_groundwater = nb_zone_groundwater + 1
+                z_groundwater = True
 
-        if nb_zone > 0:
-            self.setRowOpen(self.tr('Source terms'))
-        if nb_zone_losses > 0:
-            self.setRowOpen(self.tr('Head losses'))
-        if nb_zone_porosity > 0:
-            self.setRowOpen(self.tr('Porosity'))
-        if nb_zone_groundwater > 0 and node8 and node8['model'] != 'off':
-            self.setRowOpen(self.tr('Groundwater laws'))
+        self.setRowShow(self.tr('Head losses'), z_head_loss)
+        self.setRowShow(self.tr('Porosity'), z_porosity)
+        self.setRowShow(self.tr('Source terms'), z_st)
+        self.setRowShow(self.tr('Coriolis Source Terms'), (not (m_gwf or is_ncfd)))
+        self.setRowShow(self.tr('Groundwater laws'), z_groundwater)
+
+        # Boundary conditions
+
+        self.setRowShow(self.tr('Boundary conditions'), True)
+        self.setRowShow(self.tr('Boundary regions definition'), True)
+        self.setRowShow(self.tr('Boundary conditions'), True)
+        self.setRowShow(self.tr('Particle boundary conditions'), m_lagr)
+        self.setRowShow(self.tr('Fluid structure interaction'), (m_ale > 0))
+        self.setRowShow(self.tr('Cathare Coupling'), is_ncfd)
+
+        # Numerical parameters
+
+        self.setRowShow(self.tr('Numerical parameters'))
+        self.setRowShow(self.tr('Global parameters'), (not is_ncfd))
+        self.setRowShow(self.tr('Equation parameters'), (not is_ncfd))
+        self.setRowShow(self.tr('Time settings'))
+
+        # Calculation control
+
+        self.setRowShow(self.tr('Time averages'), True)
+        self.setRowShow(self.tr('Additional user arrays'), is_ncfd)
+        self.setRowShow(self.tr('Output control'), True)
+        self.setRowShow(self.tr('Volume solution control'), True)
+        self.setRowShow(self.tr('Surface solution control'), True)
+        self.setRowShow(self.tr('Lagrangian solution control'), m_lagr)
+        self.setRowShow(self.tr('Profiles'), True)
+        self.setRowShow(self.tr('Balance by zone'), (not is_ncfd))
+
+        # Calculation management
+
+        self.setRowShow(self.tr('Start/Restart'), True)
+        self.setRowShow(self.tr('Performance tuning'), True)
+        self.setRowShow(self.tr('Prepare batch calculation'), True)
+        self.setRowShow(self.tr('OpenTurns study'), (not is_ncfd))
+
+        # End of test of physical module
 
         self.__hideRow()
 

@@ -1114,7 +1114,7 @@ class BoundaryLocalizationView(LocalizationView):
 
         LocalizationView.__init__(self, "BoundaryZone", parent, self.case, dicoM2V, tree)
 
-        title = self.tr("Definition of boundary regions")
+        title = self.tr("Boundary regions definition")
         self.groupBoxLocalization.setTitle(title)
 
         # Delegates

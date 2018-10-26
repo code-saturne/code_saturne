@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+
+#-------------------------------------------------------------------------------
+
+# This file is part of Code_Saturne, a general-purpose CFD tool.
+#
 # Copyright (C) 1998-2018 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under

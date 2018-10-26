@@ -50,6 +50,8 @@ from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.OutputSurfacicVariablesForm import Ui_OutputSurfacicVariablesForm
 from code_saturne.Pages.OutputControlModel import OutputControlModel
 from code_saturne.Pages.OutputSurfacicVariablesModel import OutputSurfacicVariablesModel
+from code_saturne.Pages.OutputSurfacicFieldsModel import OutputSurfacicFieldsModel #AZ
+from code_saturne.Pages.OutputControlModelNeptune import OutputControlModel as OutputControlModelNeptune
 from code_saturne.Pages.OutputVolumicVariablesView import LabelDelegate
 
 #-------------------------------------------------------------------------------
@@ -91,9 +93,15 @@ class StandardItemModelOutput(QStandardItemModel):
 
             label = self.mdl.dicoLabelName[name]
             post  = self.mdl.getPostProcessing(label)
-            if OutputControlModel(self.case).getAssociatedWriterIdList("-2") == []:
-                self.disableItem.append((row, 1))
-                post = "off"
+
+            if self.case.xmlRootNode().tagName == "Code_Saturne_GUI" :
+                if OutputControlModel(self.case).getAssociatedWriterIdList("-2") == []:
+                    self.disableItem.append((row, 1))
+                    post = "off"
+            else :
+                if OutputControlModelNeptune(self.case).getAssociatedWriterIdList("-2") == []:
+                    self.disableItem.append((row, 1))
+                    post = "off"
 
             self.dataLabel.append(label)
             self.dataName.append(name)
@@ -179,8 +187,12 @@ class StandardItemModelOutput(QStandardItemModel):
                 self.dataPost[row] = "on"
             else:
                 self.dataPost[row] = "off"
-            if OutputControlModel(self.case).getAssociatedWriterIdList("-2") == []:
-                self.dataPost[row] = "off"
+            if self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
+                if OutputControlModel(self.case).getAssociatedWriterIdList("-2") == []:
+                    self.dataPost[row] = "off"
+            else :
+                if OutputControlModelNeptune(self.case).getAssociatedWriterIdList("-2") == []:
+                    self.dataPost[row] = "off"
 
             self.mdl.setPostProcessing(self.dataLabel[row], self.dataPost[row])
 
@@ -205,7 +217,11 @@ class OutputSurfacicVariablesView(QWidget, Ui_OutputSurfacicVariablesForm):
 
         self.case = case
         self.case.undoStopGlobal()
-        self.mdl = OutputSurfacicVariablesModel(self.case)
+
+        if self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
+            self.mdl = OutputSurfacicVariablesModel(self.case)
+        else:
+            self.mdl = OutputSurfacicFieldsModel(self.case)
 
         self.modelOutput = StandardItemModelOutput(self.case, self.mdl)
         self.tableViewOutput.setModel(self.modelOutput)

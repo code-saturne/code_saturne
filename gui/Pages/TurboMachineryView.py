@@ -235,14 +235,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.case.undoStopGlobal()
         self.mdl = TurboMachineryModel(self.case)
 
-        # Combo model
-        self.modelTurboMachineryType = ComboModel(self.comboBoxTurboMachineryType, 3, 1)
-        self.modelTurboMachineryType.addItem(self.tr("None"), "off")
-        self.modelTurboMachineryType.addItem(self.tr("Full transient simulation"), "transient")
-        self.modelTurboMachineryType.addItem(self.tr("Transient with explicit coupling"), "transient_coupled")
-        self.modelTurboMachineryType.addItem(self.tr("Frozen rotor model"), "frozen")
-        self.modelTurboMachineryType.addItem(self.tr("Frozen rotor with explicit coupling"), "frozen_coupled")
-
         # Set up validators
         self.lineEditDX.setValidator(DoubleValidator(self.lineEditDX))
         self.lineEditDY.setValidator(DoubleValidator(self.lineEditDY))
@@ -278,7 +270,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.widgetFacesJoin.tableView.setModel(model)
 
         # Connections
-        self.comboBoxTurboMachineryType.activated[str].connect(self.slotTurboModel)
         self.rotorModel.dataChanged.connect(self.dataChanged)
         self.tableViewTurboMachinery.clicked[QModelIndex].connect(self.slotChangeSelection)
 
@@ -375,24 +366,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         """
         detect change selection to update constant properties
         """
-        self.updateView()
-
-
-    @pyqtSlot(str)
-    def slotTurboModel(self, text):
-        """
-        Input turbomachinery model.
-        """
-        for nb in range(self.rotorModel.rowCount()):
-            self.rotorModel.delItem(0)
-
-        mdl = self.modelTurboMachineryType.dicoV2M[str(text)]
-        self.mdl.setTurboMachineryModel(mdl)
-
-        if len(self.mdl.getRotorList()) > 0:
-            for i in range(len(self.mdl.getRotorList())):
-                self.rotorModel.addItem(i)
-
         self.updateView()
 
 

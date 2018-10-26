@@ -53,7 +53,7 @@ from code_saturne.Base.QtPage import PYQT_API_1
 from code_saturne.Pages.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
 from code_saturne.Pages.OutputControlModel import OutputControlModel
 from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
-from code_saturne.Pages.TimeStepModel import TimeStepModel
+from code_saturne.Pages.OutputVolumicVariablesModelNeptune import OutputVolumicVariablesModelNeptune
 
 #-------------------------------------------------------------------------------
 # log config
@@ -124,10 +124,11 @@ class item_class(object):
     '''
     custom data object
     '''
-    def __init__(self, name, label, listing, post, monitor):
+    def __init__(self, name, label, listing, post, monitor, value=None):
         self.name    = name
         self.label   = label
         self.status  = [listing, post, monitor]
+        self.value = value
 
     def __repr__(self):
         return "variable - %s %s // log %s // post %s // monitor %s"\
@@ -353,23 +354,26 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             row = self.rowCount()
             parentItem = self.noderoot[value]
             label = self.mdl.dicoLabelName[name]
-            printing = self.mdl.getPrintingStatus(name)
+            printing = self.mdl.getPrintingStatus(name, value)
 
             if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
                 post = "off"
                 self.mdl.setPostStatus(name, post)
             else:
-                 post = self.mdl.getPostStatus(name)
+                post = self.mdl.getPostStatus(name, value)
 
-            if TimeStepModel(self.case).getTimePassing() in (0, 1):
-                if name == 'local_time_step':
-                    self.disabledItem.append((row, 3))
-                    self.disabledItem.append((row, 4))
+            if self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
+                from code_saturne.Pages.TimeStepModel import TimeStepModel
+                if TimeStepModel(self.case).getTimePassing() in (0, 1):
+                    if name == 'local_time_step':
+                        self.disabledItem.append((row, 3))
+                        self.disabledItem.append((row, 4))
+                del TimeStepModel
 
-            monitor = self.mdl.getMonitorStatus(name)
+            monitor = self.mdl.getMonitorStatus(name, value)
 
             # StandardItemModel data
-            item = item_class(name, label, printing, post, monitor)
+            item = item_class(name, label, printing, post, monitor, value)
             newItem = TreeItem(item, "", parentItem)
             parentItem.appendChild(newItem)
 
@@ -413,6 +417,8 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
     def setData(self, index, value, role=None):
         item = index.internalPointer()
 
+        field_id = item.item.value
+
         if index.column() == 0:
             label = str(from_qvariant(value, to_text_string))
             if label == "":
@@ -432,12 +438,13 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                 if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
                     item.item.status[1] = "off"
             if item not in self.noderoot.values():
+
                 if c_id == 0:
-                    self.mdl.setPrintingStatus(item.item.name, item.item.status[0])
+                    self.mdl.setPrintingStatus(item.item.name, item.item.status[0], field_id)
                 elif c_id == 1:
-                    self.mdl.setPostStatus(item.item.name, item.item.status[1])
+                    self.mdl.setPostStatus(item.item.name, item.item.status[1], field_id)
                 elif c_id == 2:
-                    self.mdl.setMonitorStatus(item.item.name, item.item.status[2])
+                    self.mdl.setMonitorStatus(item.item.name, item.item.status[2], field_id)
                 # count for parent item
                 size = len(item.parentItem.childItems)
                 active = 0
@@ -454,11 +461,11 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             else:
                 for itm in item.childItems:
                     if c_id == 0:
-                        self.mdl.setPrintingStatus(itm.item.name, item.item.status[0])
+                        self.mdl.setPrintingStatus(itm.item.name, item.item.status[0], field_id)
                     elif c_id == 1:
-                        self.mdl.setPostStatus(itm.item.name, item.item.status[1])
+                        self.mdl.setPostStatus(itm.item.name, item.item.status[1], field_id)
                     elif c_id == 2:
-                        self.mdl.setMonitorStatus(itm.item.name, item.item.status[2])
+                        self.mdl.setMonitorStatus(itm.item.name, item.item.status[2], field_id)
                     itm.item.status[c_id] = item.item.status[c_id]
 
         self.dataChanged.emit(QModelIndex(), QModelIndex())
@@ -486,7 +493,11 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.parent = parent
         self.case.undoStopGlobal()
         self.info_turb_name = []
-        self.mdl = OutputVolumicVariablesModel(self.case)
+
+        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
+            self.mdl = OutputVolumicVariablesModelNeptune(self.case)
+        elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
+            self.mdl = OutputVolumicVariablesModel(self.case)
 
         self.modelOutput = VolumicOutputStandardItemModel(parent, self.case, self.mdl)
         self.treeViewOutput.setModel(self.modelOutput)
@@ -503,42 +514,50 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.treeViewOutput.resizeColumnToContents(0)
         self.treeViewOutput.resizeColumnToContents(1)
 
-        self.correctionEstimator = ComboModel(self.comboBoxIescor, 3, 1)
-        self.correctionEstimator.addItem(self.tr("off"),                         '0')
-        self.correctionEstimator.addItem(self.tr("without volume contribution"), '1')
-        self.correctionEstimator.addItem(self.tr("with volume contribution"), '2')
 
-        self.driftEstimator = ComboModel(self.comboBoxIesder, 3, 1)
-        self.driftEstimator.addItem(self.tr("off"),                         '0')
-        self.driftEstimator.addItem(self.tr("without volume contribution"), '1')
-        self.driftEstimator.addItem(self.tr("with volume contribution"), '2')
+        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
 
-        self.predictionEstimator = ComboModel(self.comboBoxIespre, 3, 1)
-        self.predictionEstimator.addItem(self.tr("off"),                         '0')
-        self.predictionEstimator.addItem(self.tr("without volume contribution"), '1')
-        self.predictionEstimator.addItem(self.tr("with volume contribution"), '2')
+            self.groupBox_2.hide()
 
-        self.totalEstimator = ComboModel(self.comboBoxIestot, 3, 1)
-        self.totalEstimator.addItem(self.tr("off"),                         '0')
-        self.totalEstimator.addItem(self.tr("without volume contribution"), '1')
-        self.totalEstimator.addItem(self.tr("with volume contribution"), '2')
+        elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
 
-        self.comboBoxIescor.activated[str].connect(self.slotCorrectionEstimator)
-        self.comboBoxIesder.activated[str].connect(self.slotDriftEstimator)
-        self.comboBoxIespre.activated[str].connect(self.slotPredictionEstimator)
-        self.comboBoxIestot.activated[str].connect(self.slotTotalEstimator)
+            self.correctionEstimator = ComboModel(self.comboBoxIescor, 3, 1)
+            self.correctionEstimator.addItem(self.tr("off"),                         '0')
+            self.correctionEstimator.addItem(self.tr("without volume contribution"), '1')
+            self.correctionEstimator.addItem(self.tr("with volume contribution"), '2')
 
-        modelIescor = self.mdl.getEstimatorModel("Correction")
-        self.correctionEstimator.setItem(str_model=modelIescor)
+            self.driftEstimator = ComboModel(self.comboBoxIesder, 3, 1)
+            self.driftEstimator.addItem(self.tr("off"),                         '0')
+            self.driftEstimator.addItem(self.tr("without volume contribution"), '1')
+            self.driftEstimator.addItem(self.tr("with volume contribution"), '2')
 
-        modelIesder = self.mdl.getEstimatorModel("Drift")
-        self.driftEstimator.setItem(str_model=modelIesder)
+            self.predictionEstimator = ComboModel(self.comboBoxIespre, 3, 1)
+            self.predictionEstimator.addItem(self.tr("off"),                         '0')
+            self.predictionEstimator.addItem(self.tr("without volume contribution"), '1')
+            self.predictionEstimator.addItem(self.tr("with volume contribution"), '2')
 
-        modelIespre = self.mdl.getEstimatorModel("Prediction")
-        self.predictionEstimator.setItem(str_model=modelIespre)
+            self.totalEstimator = ComboModel(self.comboBoxIestot, 3, 1)
+            self.totalEstimator.addItem(self.tr("off"),                         '0')
+            self.totalEstimator.addItem(self.tr("without volume contribution"), '1')
+            self.totalEstimator.addItem(self.tr("with volume contribution"), '2')
 
-        modelIestot = self.mdl.getEstimatorModel("Total")
-        self.totalEstimator.setItem(str_model=modelIestot)
+            self.comboBoxIescor.activated[str].connect(self.slotCorrectionEstimator)
+            self.comboBoxIesder.activated[str].connect(self.slotDriftEstimator)
+            self.comboBoxIespre.activated[str].connect(self.slotPredictionEstimator)
+            self.comboBoxIestot.activated[str].connect(self.slotTotalEstimator)
+
+            modelIescor = self.mdl.getEstimatorModel("Correction")
+            self.correctionEstimator.setItem(str_model=modelIescor)
+
+            modelIesder = self.mdl.getEstimatorModel("Drift")
+            self.driftEstimator.setItem(str_model=modelIesder)
+
+            modelIespre = self.mdl.getEstimatorModel("Prediction")
+            self.predictionEstimator.setItem(str_model=modelIespre)
+
+            modelIestot = self.mdl.getEstimatorModel("Total")
+            self.totalEstimator.setItem(str_model=modelIestot)
+
 
         self.case.undoStartGlobal()
 
@@ -559,6 +578,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         """
         model = self.correctionEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Correction", model)
+        self.mdl.updateList()
 
         self.initializeView()
 
@@ -571,6 +591,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         """
         model = self.driftEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Drift", model)
+        self.mdl.updateList()
 
         self.initializeView()
 
@@ -583,6 +604,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         """
         model = self.predictionEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Prediction", model)
+        self.mdl.updateList()
 
         self.initializeView()
 
@@ -595,6 +617,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         """
         model = self.totalEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Total", model)
+        self.mdl.updateList()
 
         self.initializeView()
 

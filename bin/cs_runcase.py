@@ -149,7 +149,7 @@ class runcase(object):
         # We should have exited before reaching this.
 
         err_str = "Error: unable to determine the name of the script for " + self.path
-        raise ValueError(err_str)
+        sys.stderr.write(err_str)
 
     #---------------------------------------------------------------------------
 

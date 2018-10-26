@@ -76,7 +76,7 @@ class OpenTurnsModel(Model):
 
         # Test for uninitialized cfg file
         if not self.cfg_ot.has_section('host_parameters'):
-            self.__set_default_cfg(self.cfg)
+            self.__set_default_cfg(self.cfg_ot)
 
         #FIXME:
         self.resfile_name = "output.dat"
@@ -174,10 +174,10 @@ class OpenTurnsModel(Model):
         cfg.add_section('batch_parameters')
         cfg.set('batch_parameters', 'wall_clock', '0-00:10:00')
         cfg.set('batch_parameters', 'wckey', 'SATURNE')
-        cfg.set('batch_parameters', 'nprocs', 1)
-        cfg.set('batch_parameters', 'number_of_nodes', 1)
-        cfg.set('batch_parameters', 'tasks_per_node', 1)
-        cfg.set('batch_parameters', 'threads_per_process', 1)
+        cfg.set('batch_parameters', 'nprocs', '1')
+        cfg.set('batch_parameters', 'number_of_nodes', '1')
+        cfg.set('batch_parameters', 'tasks_per_node', '1')
+        cfg.set('batch_parameters', 'threads_per_process', '1')
         cfg.set('batch_parameters', 'distant_workdir', 'DEFAULT')
 
     # ---------------------------------------

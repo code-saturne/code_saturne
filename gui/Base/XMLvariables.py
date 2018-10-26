@@ -35,23 +35,18 @@ This module contains the following classes and function:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-
 import unittest
-
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
-
 from code_saturne.Base.Common import *
 from code_saturne.Base import Toolbox
-
 
 #-------------------------------------------------------------------------------
 # Class Model
 #-------------------------------------------------------------------------------
-
 
 class Model:
     """
@@ -352,6 +347,124 @@ class Variables:
             p1 = node.xmlGetNode('property', name=tag)
 
         return p1
+
+
+#Copie des methode de Variables pour Neptune (surcharge):
+
+    def setOutputControl(self, variable, post=False):
+        """
+        Update the output markups <probe_recording name="XX">,
+        <postprocessing_recording status='on'> and
+        <listing_printing status='on'> for the new 'variable' markup.
+        """
+        analysis_ctrl = self.case.xmlGetNode('analysis_control')
+        node_output   = analysis_ctrl.xmlInitChildNode('output')
+        if not (variable['support'] and variable['support'] == "boundary"):
+            for node in node_output.xmlGetChildNodeList('probe', 'name'):
+                num = node['name']
+                variable.xmlInitChildNode('probe_recording', name=num)
+
+        variable.xmlInitChildNode('listing_printing', status='on')
+        if post:
+            variable.xmlInitChildNode('postprocessing_recording', status='on')
+        else:
+            variable.xmlInitChildNode('postprocessing_recording', status='off')
+
+
+    def setNewVariableProperty(self, type, choice, node, num, name, label, dim=None, support=None, post=False):
+        id = str(num)
+        label = label
+        if not node.xmlGetNode(type, field_id=id,  name=name):
+            if type != 'property' :
+                if dim != None:
+                    n = node.xmlInitNode(type, field_id=id, name=name, label=label, dimension=dim)
+                else:
+                    n = node.xmlInitNode(type, field_id=id, name=name, label=label, dimension='1')
+            else :
+                if support != None:
+                    n = node.xmlInitNode(type, field_id=id, choice=choice, name=name, label=label, dimension='1', support = support)
+                else:
+                    n = node.xmlInitNode(type, field_id=id, choice=choice, name=name, label=label, dimension='1')
+            self.setOutputControl(n, post=post)
+            self.updateLabel(n)
+
+
+    def removeVariableProperty(self, type, node, id, name):
+        """
+        """
+        try :
+            noder = node.xmlGetNode(type, field_id=id,  name=name)
+            noder.xmlRemoveNode()
+        except :
+            pass
+
+
+    def removeVariablesProperties(self, type, node, id):
+        """
+        """
+        nodesList = node.xmlGetNodeList(type, field_id=str(id))
+        for variableNode in nodesList:
+            variableNode.xmlRemoveNode()
+
+
+    def setNewTurbField(self, node, id, model, coupling):
+        """
+        Input a new node
+        <field id="my_id" model="my_model", two_way_coupling="coupling">
+        in the xmldoc.
+        """
+        if not node.xmlGetNode('field', field_id=id, model=model):
+            v1 = node.xmlInitNode('field', field_id=str(id),
+                                        model=model,
+                                        two_way_coupling=coupling)
+            self.updateLabel(v1)
+
+
+    def getVariablesPropertiesList(self, average, constant, user) :
+        """
+        return list of variables, properties (and scalar)
+        for Output field, profiles and averages
+        if constant == yes we take account constant variables
+        """
+        self.XMLNodethermo  = self.case.xmlGetNode('thermophysical_models')
+        self.XMLNodeclosure = self.case.xmlGetNode('closure_modeling')
+        self.XMLNodeTurb    = self.XMLNodeclosure.xmlInitNode('turbulence')
+        self.XMLNodeAna     = self.case.xmlGetNode('analysis_control')
+        self.XMLNodeAverage = self.XMLNodeAna.xmlGetNode('time_averages')
+        self.XMLUserScalar  = self.case.xmlGetNode('additional_scalars')
+        self.XMLScalar      = self.XMLUserScalar.xmlInitNode('scalars')
+        self.XMLUsers       = self.XMLUserScalar.xmlGetNode('users')
+        list = []
+        #TODO for variableType in ('variable', 'property', 'scalar') :
+        for node in self.XMLNodethermo.xmlGetNodeList('variable') :
+            list.append(node)
+        for node in self.XMLNodeTurb.xmlGetNodeList('variable') :
+            list.append(node)
+        for node in self.XMLScalar.xmlGetNodeList('variable') :
+            list.append(node)
+        for node in self.XMLNodethermo.xmlGetNodeList('property') :
+            choice = node['choice']
+            if constant == 'yes' :
+                list.append(node)
+            elif choice != 'constant' :
+                list.append(node)
+        for node in self.XMLNodeTurb.xmlGetNodeList('property') :
+            choice = node['choice']
+            if constant == 'yes' :
+                list.append(node)
+            elif choice != 'constant' :
+                list.append(node)
+        if average == 'yes':
+            # Warning average node is different
+            for node in self.XMLNodeAverage.xmlGetNodeList('time_average'):
+                list.append(node)
+        if user == 'yes' and self.XMLUsers:
+            for node in self.XMLUsers.xmlGetNodeList('variable'):
+                list.append(node)
+
+        return list
+
+#Copie des methode de Variables pour Neptune (surcharge) FIN
 
 
 #-------------------------------------------------------------------------------

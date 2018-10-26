@@ -37,23 +37,18 @@ This module contains the following classes and function:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-
 import sys, unittest
-
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
-
 from code_saturne.Base.XMLvariables import Variables
 from code_saturne.Base import Toolbox
-
 
 #-------------------------------------------------------------------------------
 # class XMLmodel
 #-------------------------------------------------------------------------------
-
 
 class XMLmodel(Variables):
     """
@@ -66,7 +61,7 @@ class XMLmodel(Variables):
         self.root = self.case.root()
         self.node_models = self.case.xmlGetNode('thermophysical_models')
 
-#FIXME: voir getTurbulenceModel de Turbulence.py (le noeud etant a declarer des le deaprt /...
+    #FIXME: see getTurbulenceModel in Turbulence.py (node should be declared from start)
     def getTurbModel(self):
         """
         This method return the turbilence model, but does not manage

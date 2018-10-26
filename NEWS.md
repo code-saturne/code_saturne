@@ -11,6 +11,10 @@ Release 5.3.0 - October 26, 2018
 
 User changes:
 
+- GUI: when the NEPTUNE_CFD module is available, the GUI
+  can now switch directly between Code_Saturne and NEPTUNE_CFD
+  setups.
+
 - Move velocity-pressure algorithm settings from global numerical
   parameters view to time step view in GUI. "Time step" view is
   subsequently renamed "Time settings".
