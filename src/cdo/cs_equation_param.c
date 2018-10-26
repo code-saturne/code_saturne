@@ -94,6 +94,9 @@ static cs_param_itsol_t _itsol_info_by_default = {
 
 };
 
+static const cs_real_t  _bc_weak_penalization_coef_by_default = 5.;
+static const cs_real_t  _bc_strong_penalization_coef_by_default = 1e12;
+
 static const char _err_empty_eqp[] =
   N_(" Stop setting an empty cs_equation_param_t structure.\n"
      " Please check your settings.\n");
@@ -380,7 +383,7 @@ cs_equation_create_param(const char            *name,
      One assigns a boundary condition by default */
   eqp->default_bc = default_bc;
   eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
-  eqp->bc_penalization_coeff = 5;
+  eqp->bc_penalization_coeff = -1; /* Not set */
   eqp->n_bc_defs = 0;
   eqp->bc_defs = NULL;
 
@@ -898,17 +901,17 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
     else if (strcmp(val, "penalization") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
       if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
-        eqp->bc_penalization_coeff = 1e12;
+        eqp->bc_penalization_coeff = _bc_strong_penalization_coef_by_default;
     }
     else if (strcmp(val, "weak_sym") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
       if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
-        eqp->bc_penalization_coeff = 5;
+        eqp->bc_penalization_coeff = _bc_weak_penalization_coef_by_default;
     }
     else if (strcmp(val, "weak") == 0) {
       eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
       if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
-        eqp->bc_penalization_coeff = 5;
+        eqp->bc_penalization_coeff = _bc_weak_penalization_coef_by_default;
     }
     else {
       const char *_val = val;
