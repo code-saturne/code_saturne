@@ -1317,12 +1317,17 @@ cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
                                             delta_vel_f,
                                             delta_vel_c);
 
-      for (cs_lnum_t i = 0; i < 3*n_faces; i++)
-        vel_f[i] += delta_vel_f[i];
-
 #     pragma omp parallel if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < 3*n_cells; i++)
-        vel_c[i] += delta_vel_c[i];
+      {
+#       pragma omp for nowait
+        for (cs_lnum_t i = 0; i < 3*n_faces; i++)
+          vel_f[i] += delta_vel_f[i];
+
+#       pragma omp for nowait
+        for (cs_lnum_t i = 0; i < 3*n_cells; i++)
+          vel_c[i] += delta_vel_c[i];
+
+      } /* End of the OpenMP region */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
       cs_dbg_darray_to_listing("CELL_DELTA_VELOCITY",
