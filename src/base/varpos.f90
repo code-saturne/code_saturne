@@ -202,6 +202,7 @@ if (iroext.eq.-1) then
     ! not extrapolated by default
     iroext = 0
   endif
+  call field_set_key_int(icrom, key_t_ext_id, iroext)
 endif
 
 ! Molecular Viscosity
