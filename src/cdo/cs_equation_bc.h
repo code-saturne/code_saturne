@@ -134,26 +134,28 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
  * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
  *          vertices
  *
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      mesh        pointer to a cs_mesh_t structure
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
- * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in, out] bcflag      pointer to an array storing type of BC
  * \param[in, out] values      pointer to the array of values to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_dirichlet_vb(const cs_mesh_t            *mesh,
+cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
+                                 const cs_mesh_t            *mesh,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_cdo_connect_t     *connect,
                                  const cs_equation_param_t  *eqp,
                                  const cs_cdo_bc_face_t     *face_bc,
-                                 cs_real_t                   t_eval,
                                  cs_cell_builder_t          *cb,
-                                 cs_real_t                  *values);
+                                 cs_flag_t                  *bcflag,
+                                 cs_real_t                  *bcvals);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -186,17 +188,17 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
  * \brief   Define an array of flags for each vertex collecting the flags
  *          of associated boundary faces
  *
- * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]  face_bc    pointer to a structure collecting boundary conditions
- *                        applied to faces
- *
- * \return an array collecting bc flags
+ * \param[in]      connect   pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]      face_bc   pointer to a structure collecting boundary
+ *                           conditions applied to faces
+ * \param[in, out] vflag     BC flag on vertices to define
  */
 /*----------------------------------------------------------------------------*/
 
-cs_flag_t *
+void
 cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
-                               const cs_cdo_bc_face_t     *face_bc);
+                               const cs_cdo_bc_face_t     *face_bc,
+                               cs_flag_t                  *vflag);
 
 /*----------------------------------------------------------------------------*/
 /*!

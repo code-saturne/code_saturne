@@ -109,19 +109,21 @@ typedef void
 /*!
  * \brief  Set the Dirichlet boundary stemming from the settings.
  *
+ * \param[in]      t_eval      time at which one evaluates BCs
  * \param[in]      mesh        pointer to a cs_mesh_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      t_eval      time at which one evaluates BCs
+ * \param[in, out] context     pointer to the scheme context (cast on-the-fly)
  * \param[in, out] field_val   pointer to the values of the variable field
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_set_dir_bc_t)(const cs_mesh_t              *mesh,
+(cs_equation_set_dir_bc_t)(cs_real_t                     t_eval,
+                           const cs_mesh_t              *mesh,
                            const cs_equation_param_t    *eqp,
                            cs_equation_builder_t        *eqb,
-                           cs_real_t                     t_eval,
+                           void                         *context,
                            cs_real_t                     field_val[]);
 
 /*----------------------------------------------------------------------------*/

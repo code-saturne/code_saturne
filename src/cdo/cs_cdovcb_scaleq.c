@@ -216,34 +216,39 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
  * \param[in]      mesh          pointer to a cs_mesh_t structure
  * \param[in]      eqp           pointer to a cs_equation_param_t structure
  * \param[in, out] eqb           pointer to a cs_equation_builder_t structure
+ * \param[in, out] vtx_bc_flag   pointer to an array of BC flag for each vtx
  * \param[in, out] p_dir_values  pointer to the Dirichlet values to set
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_setup_bc(cs_real_t                     t_eval,
-          const cs_mesh_t              *mesh,
-          const cs_equation_param_t    *eqp,
-          cs_equation_builder_t        *eqb,
-          cs_real_t                    *p_dir_values[])
+_setup_vcb(cs_real_t                     t_eval,
+           const cs_mesh_t              *mesh,
+           const cs_equation_param_t    *eqp,
+           cs_equation_builder_t        *eqb,
+           cs_flag_t                    *vtx_bc_flag,
+           cs_real_t                    *p_dir_values[])
+
 {
+  assert(vtx_bc_flag != NULL);  /* Sanity check */
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
   cs_real_t  *dir_values = NULL;
 
   /* Compute the values of the Dirichlet BC */
   BFT_MALLOC(dir_values, quant->n_vertices, cs_real_t);
-  memset(dir_values, 0, quant->n_vertices*sizeof(cs_real_t));
 
   /* Compute the values of the Dirichlet BC */
-  cs_equation_compute_dirichlet_vb(mesh,
+  cs_equation_compute_dirichlet_vb(t_eval,
+                                   mesh,
                                    quant,
                                    cs_shared_connect,
                                    eqp,
                                    eqb->face_bc,
-                                   t_eval,
                                    cs_cdovcb_cell_bld[0], /* static variable */
+                                   vtx_bc_flag,
                                    dir_values);
+
   *p_dir_values = dir_values;
 }
 
@@ -251,16 +256,17 @@ _setup_bc(cs_real_t                     t_eval,
 /*!
  * \brief   Initialize the local structure for the current cell
  *
- * \param[in]      cell_flag   flag related to the current cell
- * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         pointer to a cs_cdovcb_scaleq_t structure
- * \param[in]      dir_values  Dirichlet values associated to each vertex
- * \param[in]      field_tn    values of the field at the last computed time
- * \param[in]      t_eval      time at which one performs the evaluation
- * \param[in, out] csys        pointer to a cellwise view of the system
- * \param[in, out] cb          pointer to a cellwise builder
+ * \param[in]      cell_flag    flag related to the current cell
+ * \param[in]      cm           pointer to a cellwise view of the mesh
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      eqb          pointer to a cs_equation_builder_t structure
+ * \param[in]      eqc          pointer to a cs_cdovcb_scaleq_t structure
+ * \param[in]      dir_values   Dirichlet values associated to each vertex
+ * \param[in]      vtx_bc_flag  Flag related to BC associated to each vertex
+ * \param[in]      field_tn     values of the field at the last computed time
+ * \param[in]      t_eval       time at which one performs the evaluation
+ * \param[in, out] csys         pointer to a cellwise view of the system
+ * \param[in, out] cb           pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
@@ -271,6 +277,7 @@ _init_vcb_cell_system(const cs_flag_t                 cell_flag,
                       const cs_equation_builder_t    *eqb,
                       const cs_cdovcb_scaleq_t       *eqc,
                       const cs_real_t                 dir_values[],
+                      const cs_flag_t                 vtx_bc_flag[],
                       const cs_real_t                 field_tn[],
                       cs_real_t                       t_eval,
                       cs_cell_sys_t                  *csys,
@@ -313,6 +320,24 @@ _init_vcb_cell_system(const cs_flag_t                 cell_flag,
     cs_dbg_check_hmg_dirichlet_cw(__func__, csys);
 #endif
   } /* Border cell */
+
+  /* Special case to handle if enforcement by penalization or algebraic
+   * This situation may happen with a tetrahedron with one vertex or an edge
+   * lying on the boundary (but no face)
+   */
+  if (cell_flag == CS_FLAG_BOUNDARY_CELL_BY_VERTEX) {
+
+    assert(vtx_bc_flag != NULL);
+
+    for (short int v = 0; v < cm->n_vc; v++) {
+      csys->dof_flag[v] = vtx_bc_flag[cm->v_ids[v]];
+      if (cs_cdo_bc_is_dirichlet(csys->dof_flag[v])) {
+        csys->has_dirichlet = true;
+        csys->dir_values[v] = dir_values[cm->v_ids[v]];
+      }
+    }
+
+  }
 
   /* Set the diffusion property */
   if (cs_equation_param_has_diffusion(eqp))
@@ -861,27 +886,17 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
     eqc->get_stiffness_matrix = cs_hodge_vcb_get_stiffness;
 
   /* Dirichlet boundary condition enforcement */
+  BFT_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
+  cs_equation_set_vertex_bc_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
+
   eqc->enforce_dirichlet = NULL;
-  eqc->vtx_bc_flag = NULL;
-
-  bool needs_vtx_bc_flag = false;
-  bool needs_source_term_array = false;
-  if (cs_equation_param_has_time(eqp) &&
-      (eqp->time_scheme == CS_TIME_SCHEME_THETA ||
-       eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO))
-    needs_vtx_bc_flag = needs_source_term_array = true;
-
   switch (eqp->enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
     eqc->enforce_dirichlet = cs_cdo_diffusion_alge_dirichlet;
-    if (needs_vtx_bc_flag)
-      eqc->vtx_bc_flag = cs_equation_set_vertex_bc_flag(connect, eqb->face_bc);
     break;
   case CS_PARAM_BC_ENFORCE_PENALIZED:
     eqc->enforce_dirichlet = cs_cdo_diffusion_pena_dirichlet;
-    if (needs_vtx_bc_flag)
-      eqc->vtx_bc_flag = cs_equation_set_vertex_bc_flag(connect, eqb->face_bc);
     break;
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
     if (cs_equation_param_has_diffusion(eqp) == false)
@@ -902,7 +917,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid type of algorithm to enforce Dirichlet BC.",
               __func__);
-
+    break;
   }
 
   /* Advection part */
@@ -971,6 +986,11 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Source term part */
   /* ---------------- */
+  bool needs_source_term_array = false;
+  if (cs_equation_param_has_time(eqp) &&
+      (eqp->time_scheme == CS_TIME_SCHEME_THETA ||
+       eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO))
+    needs_source_term_array = true;
 
   eqc->source_terms = NULL;
   if (cs_equation_param_has_sourceterm(eqp) && needs_source_term_array) {
@@ -1071,33 +1091,44 @@ cs_cdovcb_scaleq_initialize_system(const cs_equation_param_t    *eqp,
  * \brief  Set the boundary conditions known from the settings when the fields
  *         stem from a scalar CDO vertex+cell-based scheme.
  *
+ * \param[in]      t_eval      time at which one evaluates BCs
  * \param[in]      mesh        pointer to a cs_mesh_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      t_eval      time at which one evaluates BCs
+ * \param[in, out] context     pointer to the scheme context (cast on-the-fly)
  * \param[in, out] field_val   pointer to the values of the variable field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_set_dir_bc(const cs_mesh_t              *mesh,
+cs_cdovcb_scaleq_set_dir_bc(cs_real_t                     t_eval,
+                            const cs_mesh_t              *mesh,
                             const cs_equation_param_t    *eqp,
                             cs_equation_builder_t        *eqb,
-                            cs_real_t                     t_eval,
+                            void                         *context,
                             cs_real_t                     field_val[])
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
+  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
+  assert(eqc->vtx_bc_flag != NULL);
+
+  cs_timer_t  t0 = cs_timer_time();
+
   /* Compute the values of the Dirichlet BC */
-  cs_equation_compute_dirichlet_vb(mesh,
+  cs_equation_compute_dirichlet_vb(t_eval,
+                                   mesh,
                                    quant,
                                    connect,
                                    eqp,
                                    eqb->face_bc,
-                                   t_eval,
                                    cs_cdovcb_cell_bld[0], /* static variable */
+                                   eqc->vtx_bc_flag,
                                    field_val);
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1139,7 +1170,7 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
      argument) */
   cs_real_t  *dir_values = NULL;
 
-  _setup_bc(dt_cur, mesh, eqp, eqb, &dir_values);
+  _setup_vcb(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
 
     /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1200,8 +1231,9 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vcb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                            dir_values, fld->val, time_eval, /* in */
-                            csys, cb);                       /* out */
+                            dir_values, eqc->vtx_bc_flag, fld->val, time_eval,
+                            csys, cb);
+
       /* Build and add the diffusion/advection/reaction term to the local
          system. A mass matrix is also built if needed (stored it cb->hdg) */
       _vcb_advection_diffusion_reaction(time_eval,
@@ -1330,7 +1362,7 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
      argument) */
   cs_real_t  *dir_values = NULL;
 
-  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values);
+  _setup_vcb(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
 
     /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1350,7 +1382,8 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, fld, rs, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
+         dir_values, fld, rs,                                           \
+         cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1391,8 +1424,9 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vcb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                            dir_values, fld->val, time_eval, /* in */
-                            csys, cb);                       /* out */
+                            dir_values, eqc->vtx_bc_flag, fld->val, time_eval,
+                            csys, cb);
+
       /* Build and add the diffusion/advection/reaction term to the local
          system. A mass matrix is also built if needed (stored it cb->hdg) */
       _vcb_advection_diffusion_reaction(time_eval,
@@ -1577,7 +1611,7 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
      argument) */
   cs_real_t  *dir_values = NULL;
 
-  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values);
+  _setup_vcb(t_cur + dt_cur, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1667,8 +1701,9 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vcb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                            dir_values, fld->val, time_eval, /* in */
-                            csys, cb);                       /* out */
+                            dir_values, eqc->vtx_bc_flag, fld->val, time_eval,
+                            csys, cb);
+
       /* Build and add the diffusion/advection/reaction term to the local
          system. A mass matrix is also built if needed (stored it cb->hdg) */
       _vcb_advection_diffusion_reaction(time_eval,
@@ -1902,7 +1937,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
   BFT_MALLOC(dir_values, quant->n_vertices, cs_real_t);
   memset(dir_values, 0, quant->n_vertices*sizeof(cs_real_t));
 
-  cs_cdovcb_scaleq_set_dir_bc(mesh, eqp, eqb, t_cur + dt_cur, dir_values);
+  cs_cdovcb_scaleq_set_dir_bc(t_cur + dt_cur, mesh, eqp, eqb, eqc, dir_values);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)          \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values, \
@@ -1948,8 +1983,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_vcb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                            dir_values, field_val, time_eval, /* in */
-                            csys, cb);                        /* out */
+                            dir_values, eqc->vtx_bc_flag, field_val, time_eval,
+                            csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
       if (cs_dbg_cw_test(cm))

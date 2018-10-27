@@ -2042,7 +2042,8 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
                   " %s: Invalid space scheme.", __func__);
       }
 
-      eq->set_dir_bc(mesh, eqp, eq->builder, ts->t_cur, values);
+      eq->set_dir_bc(ts->t_cur, mesh, eqp, eq->builder, eq->scheme_context,
+                     values);
 
     }
 

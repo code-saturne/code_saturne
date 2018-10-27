@@ -640,34 +640,40 @@ cs_cdovb_vecteq_initialize_system(const cs_equation_param_t  *eqp,
  * \brief  Set the boundary conditions known from the settings when the fields
  *         stem from a vector CDO vertex-based scheme.
  *
+ * \param[in]      t_eval      time at which one evaluates BCs
  * \param[in]      mesh        pointer to a cs_mesh_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      t_eval      time at which one evaluates BCs
+ * \param[in, out] context     pointer to the scheme context (cast on-the-fly)
  * \param[in, out] field_val   pointer to the values of the variable field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_set_dir_bc(const cs_mesh_t              *mesh,
+cs_cdovb_vecteq_set_dir_bc(cs_real_t                     t_eval,
+                           const cs_mesh_t              *mesh,
                            const cs_equation_param_t    *eqp,
                            cs_equation_builder_t        *eqb,
-                           cs_real_t                     t_eval,
+                           void                         *context,
                            cs_real_t                     field_val[])
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
+  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
+
+  assert(eqc->vtx_bc_flag != NULL); /* Sanity check */
 
   cs_timer_t  t0 = cs_timer_time();
 
   /* Compute the values of the Dirichlet BC */
-  cs_equation_compute_dirichlet_vb(mesh,
+  cs_equation_compute_dirichlet_vb(t_eval,
+                                   mesh,
                                    quant,
                                    connect,
                                    eqp,
                                    eqb->face_bc,
-                                   t_eval,
                                    cs_cdovb_cell_bld[0], /* static variable */
+                                   eqc->vtx_bc_flag,
                                    field_val);
 
   cs_timer_t  t1 = cs_timer_time();
@@ -721,7 +727,8 @@ cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
   BFT_MALLOC(dir_values, 3*quant->n_vertices, cs_real_t);
   memset(dir_values, 0, 3*quant->n_vertices*sizeof(cs_real_t));
 
-  cs_cdovb_vecteq_set_dir_bc(mesh, eqp, eqb, t_cur + dt_cur, dir_values);
+  cs_cdovb_vecteq_set_dir_bc(t_cur + dt_cur, mesh, eqp, eqb, eqc,
+                             dir_values);
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
