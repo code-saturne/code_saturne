@@ -789,6 +789,7 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
      for computation. We make the distinction between homogeneous and
      non-homogeneous BCs.  */
   eqb->face_bc = cs_cdo_bc_face_define(eqp->default_bc,
+                                       true, /* Steady BC up to now */
                                        eqp->dim,
                                        eqp->n_bc_defs,
                                        eqp->bc_defs,

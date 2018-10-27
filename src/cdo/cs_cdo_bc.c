@@ -69,6 +69,7 @@ BEGIN_C_DECLS
 /*!
  * \brief   Create a cs_cdo_bc_face_t structure
  *
+ * \param[in] is_steady   true o false
  * \param[in] n_b_faces   number of boundary faces
  *
  * \return  a new allocated pointer to a cs_cdo_bc_face_t structure
@@ -76,12 +77,14 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 static cs_cdo_bc_face_t *
-_cdo_bc_face_create(cs_lnum_t  n_b_faces)
+_cdo_bc_face_create(bool       is_steady,
+                    cs_lnum_t  n_b_faces)
 {
   cs_cdo_bc_face_t  *bc = NULL;
 
   BFT_MALLOC(bc, 1, cs_cdo_bc_face_t);
 
+  bc->is_steady = is_steady;
   bc->n_b_faces = n_b_faces;
 
   /* Default initialization */
@@ -126,6 +129,7 @@ _cdo_bc_face_create(cs_lnum_t  n_b_faces)
  *         keeping the values of the boundary condition to set.
  *
  * \param[in] default_bc   type of boundary condition to set by default
+ * \param[in] is_steady    modification or not of the BC selection in time
  * \param[in] dim          dimension of the related equation
  * \param[in] n_defs       number of boundary definitions
  * \param[in] defs         list of boundary condition definition
@@ -137,6 +141,7 @@ _cdo_bc_face_create(cs_lnum_t  n_b_faces)
 
 cs_cdo_bc_face_t *
 cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
+                      bool                  is_steady,
                       int                   dim,
                       int                   n_defs,
                       cs_xdef_t           **defs,
@@ -151,7 +156,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
               _(" %s: Incompatible type of boundary condition by default.\n"
                 " Please modify your settings.\n"), __func__);
 
-  cs_cdo_bc_face_t  *bc = _cdo_bc_face_create(n_b_faces);
+  cs_cdo_bc_face_t  *bc = _cdo_bc_face_create(is_steady, n_b_faces);
 
   if (n_b_faces == 0) /* In parallel run this situation may occur */
     return  bc;

@@ -86,6 +86,8 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  bool        is_steady;    /* Do we need to update BC faces during the
+                               computation */
   cs_lnum_t   n_b_faces;    /* Number of boundary faces */
 
   /* Type of boundary conditions associated to a face. Size: n_b_faces */
@@ -202,6 +204,7 @@ cs_cdo_bc_is_dirichlet(cs_flag_t    flag)
  *         keeping the values of the boundary condition to set.
  *
  * \param[in] default_bc   type of boundary condition to set by default
+ * \param[in] is_steady    modification or not of the BC selection in time
  * \param[in] dim          dimension of the related equation
  * \param[in] n_defs       number of boundary definitions
  * \param[in] defs         list of boundary condition definition
@@ -213,6 +216,7 @@ cs_cdo_bc_is_dirichlet(cs_flag_t    flag)
 
 cs_cdo_bc_face_t *
 cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
+                      bool                  is_steady,
                       int                   dim,
                       int                   n_defs,
                       cs_xdef_t           **defs,
