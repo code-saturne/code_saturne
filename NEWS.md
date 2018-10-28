@@ -3,6 +3,8 @@ Release 5.3.1 - (unreleased)
 
 Bug fixes:
 
+- Fix bugs in ALE and free surface condition.
+
 - Fix  in gas mix initialization.
 
 - Fix scalar viscosity time extrapolation (automatic default value not taken into

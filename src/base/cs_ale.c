@@ -453,7 +453,10 @@ cs_ale_solve_mesh_velocity(const int   iterns,
 
   /* 1. Initialization */
 
-  cs_real_3_t rinfiv = {cs_math_infinite_r};
+  cs_real_3_t rinfiv =
+  { cs_math_infinite_r,
+    cs_math_infinite_r,
+    cs_math_infinite_r};
 
   cs_real_3_t *smbr;
   cs_real_33_t *fimp;
@@ -500,7 +503,7 @@ cs_ale_solve_mesh_velocity(const int   iterns,
         for (int isou  = 0; isou < 3; isou++)
           hintt[isou] = CS_F_(vism)->val[cell_id] / distbf;
       } else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
-          for (int isou  = 0; isou < 5; isou++)
+          for (int isou = 0; isou < 6; isou++)
             hintt[isou] = CS_F_(vism)->val[6*cell_id+isou] / distbf;
      }
 
@@ -510,10 +513,10 @@ cs_ale_solve_mesh_velocity(const int   iterns,
      for (int i = 0 ; i < 3 ; i++)
        pimpv[i] = grav[i]*b_massflux[face_id]/(brom[face_id]*prosrf);
 
-     cs_boundary_conditions_set_dirichlet_vector_aniso(&(bc_a[face_id]),
-                                                       &(bc_af[face_id]),
-                                                       &(bc_b[face_id]),
-                                                       &(bc_bf[face_id]),
+     cs_boundary_conditions_set_dirichlet_vector_aniso((bc_a[face_id]),
+                                                       (bc_af[face_id]),
+                                                       (bc_b[face_id]),
+                                                       (bc_bf[face_id]),
                                                        pimpv,
                                                        hintt,
                                                        rinfiv);
