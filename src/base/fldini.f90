@@ -572,7 +572,7 @@ if (ippmod(igmix).ge.0) then
 
   call cs_parameters_define_field_key_gas_mix
 
-  do f_id = 1, nfld
+  do f_id = 0, nfld - 1
 
     call field_get_name (f_id, name)
 
