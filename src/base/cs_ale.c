@@ -493,14 +493,14 @@ cs_ale_solve_mesh_velocity(const int   iterns,
   int idftnp = var_cal_opt.idften;
 
   /* The mesh moves in the direction of the gravity in case of free-surface */
-  for (cs_lnum_t face_id = 0 ; face_id < n_b_faces ; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     if (ialtyb[face_id] == CS_FREE_SURFACE) {
       cs_lnum_t cell_id = b_face_cells[face_id];
       cs_real_t distbf = b_dist[face_id];
 
       cs_real_6_t hintt = {0., 0., 0., 0., 0., 0.};
       if (idftnp & CS_ISOTROPIC_DIFFUSION) {
-        for (int isou  = 0; isou < 3; isou++)
+        for (int isou = 0; isou < 3; isou++)
           hintt[isou] = CS_F_(vism)->val[cell_id] / distbf;
       } else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
           for (int isou  = 0; isou < 5; isou++)
