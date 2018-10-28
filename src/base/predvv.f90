@@ -324,11 +324,13 @@ if (vcopt_u%thetav .lt. 1.d0 .and. iappel.eq.1 .and. iterns.gt.1) then
   call field_get_val_prev_s(iflmas, imasfl_prev)
   call field_get_val_prev_s(iflmab, bmasfl_prev)
 
-  ! remap the density pointer: n-1/2
-  do iel = 1, ncelet
-    cproa_rho_tc(iel) = vcopt_u%thetav * croma(iel) + (1.d0 - vcopt_u%thetav) * cromaa(iel)
-  enddo
-  pcrom => cproa_rho_tc
+  if (irovar.eq.1) then
+    ! remap the density pointer: n-1/2
+    do iel = 1, ncelet
+      cproa_rho_tc(iel) = vcopt_u%thetav * croma(iel) + (1.d0 - vcopt_u%thetav) * cromaa(iel)
+    enddo
+    pcrom => cproa_rho_tc
+  endif
 
   ! Inner mass flux interpolation: n-1/2->n+1/2
   do ifac = 1, nfac

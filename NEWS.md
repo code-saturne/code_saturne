@@ -1,3 +1,12 @@
+Release 5.3.1 - (unreleased)
+----------------------------
+
+Bug fixes:
+
+- Fix in Crank Nicolson time stepping with PISO like sweeps with constant
+  density.
+
+
 Release 5.3.0 - October 26, 2018
 --------------------------------
 
