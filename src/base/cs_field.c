@@ -865,7 +865,7 @@ cs_f_field_get_name(int           id,
  *
  * parameters:
  *   id  <-- field id
- *   dim <-- field dimension
+ *   dim --> field dimension
  *----------------------------------------------------------------------------*/
 
 void
