@@ -503,7 +503,7 @@ cs_ale_solve_mesh_velocity(const int   iterns,
         for (int isou = 0; isou < 3; isou++)
           hintt[isou] = CS_F_(vism)->val[cell_id] / distbf;
       } else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
-          for (int isou  = 0; isou < 5; isou++)
+          for (int isou = 0; isou < 6; isou++)
             hintt[isou] = CS_F_(vism)->val[6*cell_id+isou] / distbf;
      }
 
