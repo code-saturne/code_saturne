@@ -3,6 +3,8 @@ Release 5.3.1 - (unreleased)
 
 Bug fixes:
 
+- Fix  in gas mix initialization.
+
 - Fix scalar viscosity time extrapolation (automatic default value not taken into
   account since Fortran-C conversion).
 
