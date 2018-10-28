@@ -79,7 +79,7 @@ implicit none
 
 ! Local variables
 
-integer          ii
+integer          ii, iscal
 integer          ifcvsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
@@ -90,6 +90,10 @@ integer          kfturt_alpha
 integer          keycpl, keydri
 integer          ivar, iscdri
 logical          iprev, inoprv, is_set
+integer          key_t_ext_id
+integer          nfld
+integer          n_prev
+integer          t_ext
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
 type(var_cal_opt) :: vcopt_dfm, vcopt_alpha, vcopt
@@ -132,6 +136,12 @@ call field_get_key_id('coupled', keycpl)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+! Number of fields
+call field_get_n_fields(nfld)
 
 !===============================================================================
 ! 0. Initialization
@@ -458,7 +468,7 @@ if (itempb .ge. 0) then
 endif
 
 !===============================================================================
-! 4. Set number of previous values if needed
+! 4. Set some field keys and number of previous values if needed
 !===============================================================================
 
 ! Density at the second previous time step for VOF algorithm
@@ -472,6 +482,89 @@ else if (icalhy.eq.1.or.ipthrm.eq.1.or.ippmod(icompf).ge.0) then
   call field_set_n_previous(icrom, 1)
   call field_set_n_previous(ibrom, 1)
 endif
+
+!Time extrapolation
+!-------------------
+
+! Density
+call field_get_key_int(icrom, key_t_ext_id, t_ext)
+if (t_ext.eq.-1) then
+  if (ischtp.eq.1) then
+    t_ext = 0
+  else if (ischtp.eq.2) then
+    ! not extrapolated by default
+    t_ext = 0
+  endif
+  call field_set_key_int(icrom, key_t_ext_id, t_ext)
+endif
+
+! Molecular Viscosity
+call field_get_key_int(iviscl, key_t_ext_id, t_ext)
+if (t_ext.eq.-1) then
+  if (ischtp.eq.1) then
+    t_ext = 0
+  else if (ischtp.eq.2) then
+    ! not extrapolated by default
+    t_ext = 0
+  endif
+  call field_set_key_int(iviscl, key_t_ext_id, t_ext)
+endif
+
+! Turbulent Viscosity
+call field_get_key_int(ivisct, key_t_ext_id, t_ext)
+if (t_ext.eq.-1) then
+  if (ischtp.eq.1) then
+    t_ext = 0
+  else if (ischtp.eq.2) then
+    ! not extrapolated by default
+    t_ext = 0
+  endif
+  call field_set_key_int(ivisct, key_t_ext_id, t_ext)
+endif
+
+! Specific heat
+if (icp.ge.0) then
+  call field_get_key_int(icp, key_t_ext_id, t_ext)
+  if (t_ext.eq.-1) then
+    if (ischtp.eq.1) then
+      t_ext = 0
+    else if (ischtp.eq.2) then
+      ! not extrapolated by default
+      t_ext = 0
+    endif
+  endif
+  call field_set_key_int(icp, key_t_ext_id, t_ext)
+endif
+
+! Scalar diffusivity time extrapolation
+do iscal = 1, nscal
+  ! Diffusivity of scalars
+  call field_get_key_int(ivarfl(isca(iscal)), kivisl, f_id)
+  if (f_id.ge.0) then
+    call field_get_key_int(f_id, key_t_ext_id, t_ext)
+    if (t_ext.eq.-1) then
+      if (ischtp.eq.1) then
+        t_ext = 0
+      else if (ischtp.eq.2) then
+        ! Pour le moment par defaut on ne prend pas l'ordre 2
+        t_ext = 0
+      endif
+    endif
+    call field_set_key_int(f_id, key_t_ext_id, t_ext)
+  endif
+enddo
+
+! If time extrapolation, set previous values
+do f_id = 0, nfld - 1
+  call field_get_key_int(f_id, key_t_ext_id, t_ext)
+  if (t_ext.gt.0) then
+    call field_get_n_previous(iviscl, n_prev)
+    if (n_prev .lt. 1) then
+      call field_set_n_previous(iviscl, 1)
+    endif
+  endif
+enddo
+
 
 !---
 ! Formats

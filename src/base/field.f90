@@ -325,6 +325,19 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function to get the number of previous values
+
+    subroutine cs_f_field_get_n_previous(f_id, n_previous)  &
+      bind(C, name='cs_f_field_get_n_previous')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      integer(c_int), dimension(1), intent(out) :: n_previous
+    end subroutine cs_f_field_get_n_previous
+
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function allocating field values
 
     subroutine cs_field_allocate_values(f)  &
@@ -1053,6 +1066,38 @@ contains
     return
 
   end subroutine field_set_n_previous
+
+  !=============================================================================
+
+  !> \brief Return a given field's number of previous values.
+
+  !> \param[in]   f_id   field id
+  !> \param[out]  f_n    number of previous values
+
+  subroutine field_get_n_previous(f_id, f_n)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)  :: f_id
+    integer, intent(out) :: f_n
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id
+    integer(c_int), dimension(1) :: c_n
+
+    c_f_id = f_id
+
+    call cs_f_field_get_n_previous(c_f_id, c_n)
+
+    f_n = c_n(1)
+
+    return
+
+  end subroutine field_get_n_previous
 
   !=============================================================================
 
