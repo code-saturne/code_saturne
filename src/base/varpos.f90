@@ -291,6 +291,7 @@ do iscal = 1, nscal
         iviext = 0
       endif
     endif
+    call field_set_key_int(ifcvsl, key_t_ext_id, iviext)
   endif
 
   ! Model for turbulent fluxes u'T' (SGDH, GGDH, AFM, DFM)

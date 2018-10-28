@@ -3,6 +3,9 @@ Release 5.3.1 - (unreleased)
 
 Bug fixes:
 
+- Fix scalar viscosity time extrapolation (automatic default value not taken into
+  account since Fortran-C conversion).
+
 - Fix in Crank Nicolson time stepping with PISO like sweeps with constant
   density.
 
