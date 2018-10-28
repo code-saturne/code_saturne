@@ -453,7 +453,10 @@ cs_ale_solve_mesh_velocity(const int   iterns,
 
   /* 1. Initialization */
 
-  cs_real_3_t rinfiv = {cs_math_infinite_r};
+  cs_real_3_t rinfiv =
+  { cs_math_infinite_r,
+    cs_math_infinite_r,
+    cs_math_infinite_r};
 
   cs_real_3_t *smbr;
   cs_real_33_t *fimp;
