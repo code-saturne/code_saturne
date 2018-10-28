@@ -296,6 +296,10 @@ cs_f_field_set_n_previous(int  id,
                           int  n_previous);
 
 void
+cs_f_field_get_n_previous(int  id,
+                          int  n_previous[1]);
+
+void
 cs_f_field_var_ptr_by_id(int          id,
                          int          pointer_type,
                          int          pointer_rank,
@@ -871,6 +875,25 @@ cs_f_field_get_dimension(int  id,
   const cs_field_t *f = cs_field_by_id(id);
 
   dim[0] = f->dim;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the number of previous values of a field.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   id  <-- field id
+ *   dim --> field dimension
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_get_n_previous(int  id,
+                          int  n_previous[1])
+{
+  const cs_field_t *f = cs_field_by_id(id);
+
+  n_previous[0] = f->n_time_vals - 1;
 }
 
 /*----------------------------------------------------------------------------

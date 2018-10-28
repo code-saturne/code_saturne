@@ -69,15 +69,12 @@ implicit none
 
 ! Local variables
 
-integer          iscal , id, ityloc, itycat, ifcvsl, pflag
+integer          iscal , id, ityloc, itycat, pflag
 integer          ii
 integer          iok
 integer          f_id, idftnp
 integer          ivisph, iest
 integer          key_buoyant_id, is_buoyant_fld
-integer          key_t_ext_id, icpext
-integer          iviext
-integer          iroext
 
 double precision gravn2
 
@@ -91,9 +88,6 @@ type(var_cal_opt) :: vcopt
 
 ! Key id for buoyant field (inside the Navier Stokes loop)
 call field_get_key_id("is_buoyant", key_buoyant_id)
-
-! Time extrapolation?
-call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 ! Determine itycor now that irccor is known (iturb/itytur known much earlier)
 ! type of rotation/curvature correction for turbulent viscosity models
@@ -193,55 +187,6 @@ if (istmpf.eq.-999) then
   endif
 endif
 
-! Density
-call field_get_key_int(icrom, key_t_ext_id, iroext)
-if (iroext.eq.-1) then
-  if (ischtp.eq.1) then
-    iroext = 0
-  else if (ischtp.eq.2) then
-    ! not extrapolated by default
-    iroext = 0
-  endif
-  call field_set_key_int(icrom, key_t_ext_id, iroext)
-endif
-
-! Molecular Viscosity
-call field_get_key_int(iviscl, key_t_ext_id, iviext)
-if (iviext.eq.-1) then
-  if (ischtp.eq.1) then
-    iviext = 0
-  else if (ischtp.eq.2) then
-    ! not extrapolated by default
-    iviext = 0
-  endif
-  call field_set_key_int(iviscl, key_t_ext_id, iviext)
-endif
-
-! Turbulent Viscosity
-call field_get_key_int(ivisct, key_t_ext_id, iviext)
-if (iviext.eq.-1) then
-  if (ischtp.eq.1) then
-    iviext = 0
-  else if (ischtp.eq.2) then
-    ! not extrapolated by default
-    iviext = 0
-  endif
-  call field_set_key_int(ivisct, key_t_ext_id, iviext)
-endif
-
-! Specific heat
-if (icp.ge.0) then
-  call field_get_key_int(icp, key_t_ext_id, icpext)
-  if (icpext.eq.-1) then
-    if (ischtp.eq.1) then
-      icpext = 0
-    else if (ischtp.eq.2) then
-      ! not extrapolated by default
-      icpext = 0
-    endif
-  endif
-  call field_set_key_int(icp, key_t_ext_id, icpext)
-endif
 !     Termes sources NS,
 if (isno2t.eq.-999) then
   if (ischtp.eq.1) then
@@ -278,20 +223,6 @@ do iscal = 1, nscal
       ! generalement pas de TS scalaire a interpoler.
       isso2t(iscal) = 1
     endif
-  endif
-  ! Diffusivity of scalars
-  call field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
-  if (ifcvsl.ge.0) then
-    call field_get_key_int(ifcvsl, key_t_ext_id, iviext)
-    if (iviext.eq.-1) then
-      if (ischtp.eq.1) then
-        iviext = 0
-      else if (ischtp.eq.2) then
-        ! Pour le moment par defaut on ne prend pas l'ordre 2
-        iviext = 0
-      endif
-    endif
-    call field_set_key_int(ifcvsl, key_t_ext_id, iviext)
   endif
 
   ! Model for turbulent fluxes u'T' (SGDH, GGDH, AFM, DFM)
@@ -401,24 +332,6 @@ if (idilat.ge.4) then
   call field_set_key_int(id, keyvis, 0)
 endif
 
-! Dans le cas d'une extrapolation de la viscosite totale
-call field_get_key_int(iviscl, key_t_ext_id, iviext)
-if (iviext.gt.0) then
-  call field_set_n_previous(iviscl, 1)
-endif
-call field_get_key_int(ivisct, key_t_ext_id, iviext)
-if (iviext.gt.0) then
-  call field_set_n_previous(ivisct, 1)
-endif
-
-! CP s'il est variable
-if (icp.ge.0) then
-  call field_get_key_int(icp, key_t_ext_id, icpext)
-  if (icpext.gt.0) then
-    call field_set_n_previous(icp, 1)
-  endif
-endif
-
 ! On a besoin d'un tableau pour les termes sources de Navier Stokes
 !  a extrapoler. Ce tableau est NDIM dans le cas general et NDIM+1
 !  si on extrapole aussi les termes sources de l equation sur le taux
@@ -464,7 +377,6 @@ if (isto2t.gt.0) then
 endif
 
 ! Proprietes des scalaires : termes sources pour theta schema
-!   et VISCLS si elle est variable
 if (nscal.ge.1) then
   do ii = 1, nscal
     if (isso2t(ii).gt.0) then
@@ -479,22 +391,6 @@ if (nscal.ge.1) then
     call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
     if (vcopt%isstpc.eq.2) then
       call add_source_term_field(ivarfl(isca(ii)))
-    endif
-    ! Diffusivity
-    call field_get_key_int (ivarfl(isca(ii)), kivisl, ifcvsl)
-    if (ifcvsl.ge.0.and.iscavr(ii).le.0) then
-      call field_get_key_int(ifcvsl, key_t_ext_id, iviext)
-      if (iviext.gt.0) then
-        call field_set_n_previous(ifcvsl, 1)
-      endif
-    endif
-    ! Density
-    call field_get_key_int (ivarfl(isca(ii)), kromsl, ifcvsl)
-    if (ifcvsl.ge.0.and.iscavr(ii).le.0) then
-      call field_get_key_int(ifcvsl, key_t_ext_id, iviext)
-      if (iviext.gt.0) then
-        call field_set_n_previous(ifcvsl, 1)
-      endif
     endif
   enddo
 endif
