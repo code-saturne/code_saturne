@@ -1376,9 +1376,6 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
   cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
   const int keysca  = cs_field_key_id("scalar_diffusivity_id");
 
-  cs_halo_type_t halo_type;
-  cs_gradient_type_t gradient_type;
-
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
