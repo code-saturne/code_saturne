@@ -37,9 +37,9 @@ AC_ARG_WITH(cgns,
             [if test "x$withval" = "x"; then
                with_cgns=yes
              elif test "x$withval" = "xsalome"; then
-               if test "x$CGNSHOME" = "x"; then
+               if test "x$CGNSHOME" != "x"; then
                  with_cgns=$CGNSHOME
-               elif test "x$CGNS_ROOT_DIR" = "x"; then
+               elif test "x$CGNS_ROOT_DIR" != "x"; then
                  with_cgns=$CGNS_ROOT_DIR
                else
                  AC_MSG_FAILURE([no SALOME path information for CGNS (needed by --with-cgns=salome)!])
