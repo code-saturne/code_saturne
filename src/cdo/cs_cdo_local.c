@@ -428,18 +428,36 @@ cs_cell_sys_dump(const char             msg[],
   {
     cs_log_printf(CS_LOG_DEFAULT, "%s\n", msg);
 
+    if (csys->cell_flag > 0) {
+      cs_log_printf(CS_LOG_DEFAULT,
+                    ">> dirichlet: %s, nhmg_neumann: %s, robin: %s\n",
+                    cs_base_strtf(csys->has_dirichlet),
+                    cs_base_strtf(csys->has_nhmg_neumann),
+                    cs_base_strtf(csys->has_robin));
+      cs_log_printf(CS_LOG_DEFAULT, ">> Boundary faces\n"
+                    ">> %-10s | %-10s | %-10s\n", "_ID", "ID", "FLAG");
+      for (int i = 0; i < csys->n_bc_faces; i++) {
+        short int f = csys->_f_ids[i];
+        cs_log_printf(CS_LOG_DEFAULT, ">> %10d | %10d | %10d\n",
+                      f, csys->bf_ids[f], csys->bf_flag[f]);
+      }
+    }
+
     if (csys->mat->flag & CS_SDM_BY_BLOCK)
       cs_sdm_block_dump(csys->c_id, csys->mat);
     else
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, csys->mat);
 
-    cs_log_printf(CS_LOG_DEFAULT, ">> %-10s | %-10s | %-10s | %-10s | %-10s\n",
-                  "IDS", "RHS", "TS", "VAL_PREV", "ENFORCED");
+    cs_log_printf(CS_LOG_DEFAULT, ">> %-10s | %-10s | %-10s | %-10s | %-10s |"
+                  " %-10s | %-10s\n",
+                  "IDS", "RHS", "TS", "VAL_PREV", "ENFORCED", "FLAG",
+                  "DIR_VALS");
     for (int i = 0; i < csys->n_dofs; i++)
       cs_log_printf(CS_LOG_DEFAULT, ">> %10d | % -.3e | % -.3e | % -.3e |"
-                    " %10d\n",
+                    " %10d | %10d | % -.3e\n",
                     csys->dof_ids[i], csys->rhs[i], csys->source[i],
-                    csys->val_n[i], csys->intern_forced_ids[i]);
+                    csys->val_n[i], csys->intern_forced_ids[i],
+                    csys->dof_flag[i], csys->dir_values[i]);
   }
 }
 
@@ -678,7 +696,7 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   }
 
   cs_log_printf(CS_LOG_DEFAULT, "\n>> Dump cs_cell_mesh_t %p; %s; flag: %d\n"
-                " c_id:%d; vol: %9.6e; xc (% .5e % .5e % .5e); diam: % .5e\n",
+                " c_id:%d; vol: %9.6e; xc (% .4e % .4e % .4e); diam: % .4e\n",
                 (const void *)cm, fvm_element_type_name[cm->type], cm->flag,
                 cm->c_id, cm->vol_c, cm->xc[0], cm->xc[1], cm->xc[2],
                 cm->diam_c);
@@ -686,10 +704,10 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   /* Information related to primal vertices */
   if (cm->flag & cs_cdo_local_flag_v) {
 
-    cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-38s %-9s\n",
+    cs_log_printf(CS_LOG_DEFAULT, " %s | %6s | %35s | %10s\n",
                   "v", "id", "coord", "wvc");
     for (short int v = 0; v < cm->n_vc; v++)
-      cs_log_printf(CS_LOG_DEFAULT, "%2d |%8d |% .5e % .5e % .5e| %.5e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "%2d | %6d | % .4e % .4e % .4e | %.4e\n",
                     v, cm->v_ids[v], cm->xv[3*v], cm->xv[3*v+1], cm->xv[3*v+2],
                     cm->wvc[v]);
 
@@ -698,49 +716,48 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   /* Information related to primal edges */
   if (cm->flag & cs_cdo_local_flag_e) {
 
-    cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-9s %-38s %-38s %-11s %-38s\n",
-                  "e", "id", "length", "unit", "coords", "df.meas", "df.unit");
+    cs_log_printf(CS_LOG_DEFAULT, " %s | %6s | %3s | %2s | %2s | %9s |"
+                  " %35s | %35s | %10s | %35s\n",
+                  "e", "id", "sgn", "v1", "v2", "length", "unit", "coords",
+                  "df.meas", "df.unit");
     for (short int e = 0; e < cm->n_ec; e++) {
+
       cs_quant_t  peq = cm->edge[e];
       cs_nvec3_t  dfq = cm->dface[e];
-      cs_log_printf(CS_LOG_DEFAULT, "%2d |%8d |%.3e|% .5e % .5e % .5e|"
-                    "% .5e % .5e % .5e|%.5e|% .5e % .5e % .5e\n",
-                    e, cm->e_ids[e], peq.meas, peq.unitv[0], peq.unitv[1],
+      cs_log_printf(CS_LOG_DEFAULT, "%2d | %6d | %3d | %2d | %2d | %.3e |"
+                    " % .4e % .4e % .4e | % .4e % .4e % .4e | %.4e |"
+                    " % .4e % .4e % .4e\n",
+                    e, cm->e_ids[e], cm->e2v_sgn[e], cm->e2v_ids[2*e],
+                    cm->e2v_ids[2*e+1], peq.meas, peq.unitv[0], peq.unitv[1],
                     peq.unitv[2], peq.center[0], peq.center[1], peq.center[2],
                     dfq.meas, dfq.unitv[0], dfq.unitv[1], dfq.unitv[2]);
-    }
+
+    } /* Loop on edges */
 
   } /* Edge quantities */
 
   /* Information related to primal faces */
   if (cm->flag & cs_cdo_local_flag_f) {
 
-    cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-9s %-9s %-4s %-38s %-38s %-11s"
-                  "%-11s %-11s %-38s\n",
-                  "f", "id", "diam", "surf", "sgn", "unit", "coords", "hfc",
-                  "pfc", "dlen", "dunitv");
+    cs_log_printf(CS_LOG_DEFAULT, " %s | %6s | %9s | %3s | %35s | %35s |"
+                  " %10s | %35s | %11s  %11s  %11s\n",
+                  "f", "id", "surf", "sgn", "unit", "coords", "dlen", "dunitv",
+                  "pfc",  "hfc", "diam");
     for (short int f = 0; f < cm->n_fc; f++) {
-      cs_quant_t  fq = cm->face[f];
-      cs_nvec3_t  eq = cm->dedge[f];
+      cs_quant_t  pfq = cm->face[f];
+      cs_nvec3_t  deq = cm->dedge[f];
       cs_log_printf(CS_LOG_DEFAULT,
-                    "%2d |%8d |%.3e|%.3e| %2d|% .5e % .5e % .5e|"
-                    "% .5e % .5e % .5e|%.5e|%.5e|%.5e||% .5e % .5e % .5e\n",
-                    f, cm->f_ids[f], cm->f_diam[f], fq.meas, cm->f_sgn[f],
-                    fq.unitv[0], fq.unitv[1], fq.unitv[2], fq.center[0],
-                    fq.center[1], fq.center[2], cm->hfc[f], cm->pfc[f], eq.meas,
-                    eq.unitv[0], eq.unitv[1], eq.unitv[2]);
+                    "%2d | %6d | %.3e | %3d | % .4e % .4e % .4e |"
+                    " % .4e % .4e % .4e | %.4e | % .4e % .4e % .4e | %.3e |"
+                    " %.3e | %.3e\n",
+                    f, cm->f_ids[f], pfq.meas, cm->f_sgn[f],
+                    pfq.unitv[0], pfq.unitv[1], pfq.unitv[2], pfq.center[0],
+                    pfq.center[1], pfq.center[2], deq.meas, deq.unitv[0],
+                    deq.unitv[1], deq.unitv[2], cm->pfc[f], cm->hfc[f],
+                    cm->f_diam[f]);
     }
 
   } /* Face quantities */
-
-  if (cm->flag & CS_CDO_LOCAL_EV) {
-
-    cs_log_printf(CS_LOG_DEFAULT, "%-2s (v1, v2) sgn\n", "e");
-    for (short int e = 0; e < cm->n_ec; e++)
-      cs_log_printf(CS_LOG_DEFAULT, "%2d (%2d, %2d) %2d\n",
-                    e, cm->e2v_ids[2*e], cm->e2v_ids[2*e+1], cm->e2v_sgn[e]);
-
-  }
 
   if (cm->flag & cs_cdo_local_flag_fe) {
 
@@ -749,7 +766,7 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
       cs_log_printf(CS_LOG_DEFAULT, " %4d |",
                     cm->f2e_idx[f+1] - cm->f2e_idx[f]);
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++)
-        cs_log_printf(CS_LOG_DEFAULT, " %2d:%.5e|", cm->f2e_ids[i], cm->tef[i]);
+        cs_log_printf(CS_LOG_DEFAULT, " %2d:%.4e|", cm->f2e_ids[i], cm->tef[i]);
       cs_log_printf(CS_LOG_DEFAULT, "\n");
     }
 
@@ -761,8 +778,8 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
                   "e", "sef0c: meas, unitv", "sef1c: meas, unitv");
     for (short int e = 0; e < cm->n_ec; e++)
       cs_log_printf(CS_LOG_DEFAULT,
-                    " %3d | %2d | % .5e (% .5e % .5e % .5e) |"
-                    " %2d | % .5e (% .5e % .5e % .5e)\n",
+                    " %3d | %2d | % .4e (% .4e % .4e % .4e) |"
+                    " %2d | % .4e (% .4e % .4e % .4e)\n",
                     e, cm->e2f_ids[2*e], cm->sefc[2*e].meas,
                     cm->sefc[2*e].unitv[0], cm->sefc[2*e].unitv[1],
                     cm->sefc[2*e].unitv[2], cm->e2f_ids[2*e+1],
