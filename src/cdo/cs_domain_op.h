@@ -68,12 +68,14 @@ cs_domain_post_init(cs_domain_t   *domain);
 /*!
  * \brief  Process the computational domain after the resolution
  *
- * \param[in]  domain     pointer to a cs_domain_t structure
+ * \param[in]  domain            pointer to a cs_domain_t structure
+ * \param[in]  force_activation  true or false
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_post(cs_domain_t  *domain);
+cs_domain_post(cs_domain_t  *domain,
+               bool          force_activation);
 
 /*----------------------------------------------------------------------------*/
 /*!

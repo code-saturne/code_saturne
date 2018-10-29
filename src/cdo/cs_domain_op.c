@@ -394,17 +394,22 @@ cs_domain_post_init(cs_domain_t   *domain)
 /*!
  * \brief  Process the computational domain after the resolution
  *
- * \param[in]  domain     pointer to a cs_domain_t structure
+ * \param[in]  domain            pointer to a cs_domain_t structure
+ * \param[in]  force_activation  true or false
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_post(cs_domain_t  *domain)
+cs_domain_post(cs_domain_t  *domain,
+               bool          force_activation)
 {
   cs_timer_t  t0 = cs_timer_time();
 
   /* Pre-stage for post-processing for the current time step */
   cs_post_time_step_begin(domain->time_step);
+
+  if (force_activation) /* Force the activation of writers for postprocessing */
+    cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
 
   /* Extra-operations */
   /* ================ */

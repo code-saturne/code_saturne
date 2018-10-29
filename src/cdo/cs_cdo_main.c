@@ -232,7 +232,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   _compute_steady_user_equations(domain);
 
   /* Extra operations and post-processing of the computed solutions */
-  cs_domain_post(domain);
+  cs_domain_post(domain, true);
 
 }
 
@@ -537,9 +537,6 @@ cs_cdo_main(cs_domain_t   *domain)
   /* Read a restart file if needed */
   cs_domain_read_restart(domain);
 
-  /* Activate writers for post-processing */
-  cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
-
   /* Initialization for user-defined extra operations. Should be done
      after the domain initialization if one wants to overwrite the field
      initialization for instance */
@@ -565,7 +562,7 @@ cs_cdo_main(cs_domain_t   *domain)
     cs_domain_increment_time(domain);
 
     /* Extra operations and post-processing of the computed solutions */
-    cs_domain_post(domain);
+    cs_domain_post(domain, false);
 
     /* Increment time */
     cs_domain_increment_time_step(domain);
