@@ -821,6 +821,18 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
 
   } /* Loop on border faces */
 
+#if defined(DEBUG) && !defined(NDEBUG)
+  for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
+    for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++) {
+      const cs_lnum_t v_id = bf2v->ids[j];
+      if (vflag[v_id] == 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Border vertices %d without any boundary conditions.",
+                  __func__, v_id);
+    }
+  } /* Loop on border faces */
+#endif
+
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 
     assert(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL);
