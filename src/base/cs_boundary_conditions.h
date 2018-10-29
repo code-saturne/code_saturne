@@ -401,7 +401,7 @@ cs_boundary_conditions_set_dirichlet_vector_aniso(cs_real_3_t    a,
   }
 
   /* Flux BCs */
-  cs_math_sym_33_3_product(hintt, pimpv, *af);
+  cs_math_sym_33_3_product(hintt, pimpv, af);
   for (int isou = 0 ; isou < 3 ; isou++)
     af[isou] = -af[isou];
 
