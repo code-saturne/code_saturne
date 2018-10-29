@@ -1291,6 +1291,68 @@ cs_cdo_advection_fb_bc_wdi(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme in the conservative formulation
+ *         - upwind scheme
+ *         - no diffusion is present
+ *         Rely on the article: Di Pietro, Droniou, Ern (2015)
+ *         A discontinuous-skeletal method for advection-diffusion-reaction on
+ *         general meshes
+ *         The local matrix related to this operator is stored in cb->loc
+ *
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      fluxes    array of computed fluxes across cell faces
+ * \param[in, out] adv       pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_fb_upwcsv(const cs_cell_mesh_t      *cm,
+                           const cs_real_t            fluxes[],
+                           cs_sdm_t                  *adv)
+{
+  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
+
+  /* Access the row containing current cell */
+  double  *c_row = adv->val + c*adv->n_rows;
+
+  /* Loop on cell faces */
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
+    const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
+
+    /* access the row containing the current face */
+    double  *f_row = adv->val + f*adv->n_rows;
+
+    if (fabs(beta_flx) > cs_math_zero_threshold) {
+
+      /* Consistent part */
+      f_row[c] -= beta_flx;
+      c_row[c] += beta_flx;
+
+      /* Stabilization part */
+      f_row[f] += beta_minus;
+      f_row[c] -= beta_minus;
+      c_row[f] -= beta_minus;
+      c_row[c] += beta_minus;
+
+    }
+    else { /* If non diffusion, add this term to avoid a singularity in the
+              linear system. Set the value at the current face as the mean value
+              of the two adjacent cells */
+
+      f_row[c]  = -1.0;
+      f_row[f] +=  1.0;
+
+    }
+
+  } /* Loop on cell faces */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme in the non-conservative formulation
  *         - upwind scheme
  *         - no diffusion is present
@@ -1299,11 +1361,9 @@ cs_cdo_advection_fb_bc_wdi(const cs_equation_param_t   *eqp,
  *         general meshes
  *         The local matrix related to this operator is stored in cb->loc
  *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval    time at which one evaluates the advection field
- * \param[in, out] fm        pointer to a cs_face_mesh_t structure
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      fluxes    array of computed fluxes across cell faces
+ * \param[in, out] cb        pointer to a local matrix to build
  */
 /*----------------------------------------------------------------------------*/
 
