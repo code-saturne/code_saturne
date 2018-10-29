@@ -287,50 +287,50 @@ cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  *a,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_boundary_conditions_set_dirichlet_vector(cs_real_3_t   *a,
-                                            cs_real_3_t   *af,
-                                            cs_real_33_t  *b,
-                                            cs_real_33_t  *bf,
+cs_boundary_conditions_set_dirichlet_vector(cs_real_3_t    a,
+                                            cs_real_3_t    af,
+                                            cs_real_33_t   b,
+                                            cs_real_33_t   bf,
                                             cs_real_3_t    pimpv,
                                             cs_real_t      hint,
                                             cs_real_3_t    hextv)
 {
-  for (int isou = 0 ; isou < 3 ; isou++) {
+  for (int isou = 0 ; isou < 3; isou++) {
     if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
 
       /* Gradient BCs */
-      *a[isou] = pimpv[isou];
+      a[isou] = pimpv[isou];
       for (int jsou = 0 ; jsou < 3 ; jsou++)
-        *b[isou][jsou] = 0.;
+        b[isou][jsou] = 0.;
 
       /* Flux BCs */
-      *af[isou] = -hint*pimpv[isou];
-      for (int jsou = 0 ; jsou < 3 ; jsou++) {
+      af[isou] = -hint*pimpv[isou];
+      for (int jsou = 0; jsou < 3; jsou++) {
         if (jsou == isou)
-          *bf[isou][jsou] = hint;
+          bf[isou][jsou] = hint;
         else
-          *bf[isou][jsou] = 0.;
+          bf[isou][jsou] = 0.;
       }
     } else {
 
       cs_real_t heq = hint*hextv[isou]/(hint + hextv[isou]);
 
       /* Gradient BCs */
-      *a[isou] = hextv[isou]*pimpv[isou]/(hint + hextv[isou]);
+      a[isou] = hextv[isou]*pimpv[isou]/(hint + hextv[isou]);
       for (int jsou = 0 ; jsou < 3 ; jsou++) {
         if (jsou == isou)
-          *b[isou][jsou] = hint/(hint + hextv[isou]);
+          b[isou][jsou] = hint/(hint + hextv[isou]);
         else
-          *b[isou][jsou] = 0.;
+          b[isou][jsou] = 0.;
       }
 
       /* Flux BCs */
-      *af[isou] = -heq*pimpv[isou];
+      af[isou] = -heq*pimpv[isou];
       for (int jsou = 0 ; jsou < 3 ; jsou++) {
         if (jsou == isou)
-          *bf[isou][jsou] = heq;
+          bf[isou][jsou] = heq;
         else
-          *bf[isou][jsou] = 0.;
+          bf[isou][jsou] = 0.;
       }
     }
   }
@@ -377,10 +377,10 @@ cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_boundary_conditions_set_dirichlet_vector_aniso(cs_real_3_t   *a,
-                                                  cs_real_3_t   *af,
-                                                  cs_real_33_t  *b,
-                                                  cs_real_33_t  *bf,
+cs_boundary_conditions_set_dirichlet_vector_aniso(cs_real_3_t    a,
+                                                  cs_real_3_t    af,
+                                                  cs_real_33_t   b,
+                                                  cs_real_33_t   bf,
                                                   cs_real_3_t    pimpv,
                                                   cs_real_6_t    hintt,
                                                   cs_real_3_t    hextv)
@@ -389,9 +389,9 @@ cs_boundary_conditions_set_dirichlet_vector_aniso(cs_real_3_t   *a,
     if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
 
       /* Gradient BCs */
-      *a[isou] = pimpv[isou];
+      a[isou] = pimpv[isou];
       for (int jsou = 0 ; jsou < 3 ; jsou++)
-        *b[isou][jsou] = 0.;
+        b[isou][jsou] = 0.;
 
     } else {
 
@@ -403,17 +403,17 @@ cs_boundary_conditions_set_dirichlet_vector_aniso(cs_real_3_t   *a,
   /* Flux BCs */
   cs_math_sym_33_3_product(hintt, pimpv, *af);
   for (int isou = 0 ; isou < 3 ; isou++)
-    *af[isou] = -*af[isou];
+    af[isou] = -af[isou];
 
-  *bf[0][0] = hintt[0];
-  *bf[1][1] = hintt[1];
-  *bf[2][2] = hintt[2];
-  *bf[0][1] = hintt[3];
-  *bf[1][0] = hintt[3];
-  *bf[1][2] = hintt[4];
-  *bf[2][1] = hintt[4];
-  *bf[0][2] = hintt[5];
-  *bf[2][0] = hintt[5];
+  bf[0][0] = hintt[0];
+  bf[1][1] = hintt[1];
+  bf[2][2] = hintt[2];
+  bf[0][1] = hintt[3];
+  bf[1][0] = hintt[3];
+  bf[1][2] = hintt[4];
+  bf[2][1] = hintt[4];
+  bf[0][2] = hintt[5];
+  bf[2][0] = hintt[5];
 }
 
 /*----------------------------------------------------------------------------*/
