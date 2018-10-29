@@ -2299,7 +2299,7 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
     return NULL;
 
   cs_real_t  *f_values = NULL;
-  if (eq->get_cell_values != NULL)
+  if (eq->get_face_values != NULL)
     f_values = eq->get_face_values(eq->scheme_context);
 
   return f_values;
