@@ -220,11 +220,11 @@ cs_ale_project_displacement(const int           ialtyb[],
               dvol1*(meshv[cell_id1][i] + gradm[cell_id1][i][0]*cen1_node[0]
                                         + gradm[cell_id1][i][1]*cen1_node[1]
                                         + gradm[cell_id1][i][2]*cen1_node[2])
-              *dt[cell_id1]
-             +dvol2*(meshv[cell_id2][i] + gradm[cell_id2][i][0]*cen2_node[0]
+              * dt[cell_id1]
+            + dvol2*(meshv[cell_id2][i] + gradm[cell_id2][i][0]*cen2_node[0]
                                         + gradm[cell_id2][i][1]*cen2_node[1]
                                         + gradm[cell_id2][i][2]*cen2_node[2])
-              *dt[cell_id2];
+              * dt[cell_id2];
           }
 
           vtx_counter[vtx_id] += dvol1+dvol2;
@@ -255,8 +255,8 @@ cs_ale_project_displacement(const int           ialtyb[],
         /* Get the vector from the face center to the node*/
 
         cs_real_3_t face_node;
-        for (int i = 0; i<3; i++)
-          face_node[i] = -face_cen[face_id][i] + vtx_coord[vtx_id][i];
+        for (int i = 0; i < 3; i++)
+          face_node[i] = vtx_coord[vtx_id][i] - face_cen[face_id][i];
 
         /* 1st order extrapolation of the mesh velocity at the face center
          * to the node */
@@ -271,7 +271,7 @@ cs_ale_project_displacement(const int           ialtyb[],
         cs_real_t dsurf = 1./fvq->b_face_surf[face_id];
 
         for (int i = 0; i<3; i++)
-          disp_proj[vtx_id][i] += dsurf*dt[cell_id]*
+          disp_proj[vtx_id][i] += dsurf * dt[cell_id] *
             (vel_node[i] + clbale[face_id][i][0]*meshv[cell_id][0]
                          + clbale[face_id][i][1]*meshv[cell_id][1]
                          + clbale[face_id][i][2]*meshv[cell_id][2]);
