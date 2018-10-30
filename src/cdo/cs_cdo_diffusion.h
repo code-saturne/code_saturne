@@ -182,8 +182,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Robin BCs by a weak enforcement using Nitsche
- *          technique.
+ * \brief   Take into account Robin BCs.
  *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
@@ -200,6 +199,26 @@ cs_cdo_diffusion_vbcost_robin(const cs_equation_param_t      *eqp,
                               cs_face_mesh_t                 *fm,
                               cs_cell_builder_t              *cb,
                               cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Robin BCs.
+ *          Case of scalar-valued CDO-Vb schemes with a WBS algorithm.
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vbwbs_robin(const cs_equation_param_t      *eqp,
+                             const cs_cell_mesh_t           *cm,
+                             cs_face_mesh_t                 *fm,
+                             cs_cell_builder_t              *cb,
+                             cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

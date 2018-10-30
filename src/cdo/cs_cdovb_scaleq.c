@@ -490,8 +490,8 @@ _vb_apply_bc(cs_real_t                      time_eval,
   if (cs_equation_param_has_diffusion(eqp)) {
 
     if (csys->has_robin) {
-      assert(eqc->enforce_robin != NULL);
-      eqc->enforce_robin(eqp, cm, fm, cb, csys);
+      assert(eqc->apply_robin_bc != NULL);
+      eqc->apply_robin_bc(eqp, cm, fm, cb, csys);
     }
 
     if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
@@ -815,7 +815,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
-  eqc->enforce_robin = NULL;
+  eqc->apply_robin_bc = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
 
     switch (eqp->diffusion_hodge.algo) {
@@ -825,18 +825,22 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_stiffness;
 
       eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
-      eqc->enforce_robin = cs_cdo_diffusion_vbcost_robin;
+      eqc->apply_robin_bc = cs_cdo_diffusion_vbcost_robin;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
       eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
+
+      eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
+      eqc->apply_robin_bc = cs_cdo_diffusion_vbcost_robin;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
       eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ |
         CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_wbs_get_stiffness;
+      eqc->apply_robin_bc = cs_cdo_diffusion_vbwbs_robin;
       break;
 
     default:

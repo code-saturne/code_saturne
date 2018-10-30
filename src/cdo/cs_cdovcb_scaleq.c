@@ -130,6 +130,7 @@ struct _cs_cdovcb_scaleq_t {
   /* Pointer of function to build the diffusion term */
   cs_hodge_t                      *get_stiffness_matrix;
   cs_cdo_diffusion_enforce_bc_t   *enforce_dirichlet;
+  cs_cdo_diffusion_enforce_bc_t   *apply_robin_bc;
   cs_flag_t                       *vtx_bc_flag;
 
   /* Pointer of function to build the advection term */
@@ -489,6 +490,11 @@ _vcb_condense_and_apply_bc(cs_real_t                      time_eval,
     /* Weakly enforced Dirichlet BCs for cells attached to the boundary
        csys is updated inside (matrix and rhs) */
     if (cs_equation_param_has_diffusion(eqp)) {
+
+      if (csys->has_robin) {
+        assert(eqc->apply_robin_bc != NULL);
+        eqc->apply_robin_bc(eqp, cm, fm, cb, csys);
+      }
 
       if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
           eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
@@ -882,8 +888,11 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Diffusion part */
   eqc->get_stiffness_matrix = NULL;
-  if (cs_equation_param_has_diffusion(eqp))
+  eqc->apply_robin_bc = NULL;
+  if (cs_equation_param_has_diffusion(eqp)) {
     eqc->get_stiffness_matrix = cs_hodge_vcb_get_stiffness;
+    eqc->apply_robin_bc = cs_cdo_diffusion_vbwbs_robin;
+  }
 
   /* Dirichlet boundary condition enforcement */
   BFT_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);

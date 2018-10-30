@@ -1214,8 +1214,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Robin BCs by a weak enforcement using Nitsche
- *          technique.
+ * \brief   Take into account Robin BCs.
  *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
@@ -1587,6 +1586,101 @@ cs_cdo_diffusion_vbcost_wsym_dirichlet(const cs_equation_param_t      *eqp,
       cs_sdm_add(csys->mat, ntrgrd);
 
     }  /* Dirichlet face */
+  } /* Loop on boundary faces */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Robin BCs.
+ *          Case of scalar-valued CDO-Vb schemes with a WBS algorithm.
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vbwbs_robin(const cs_equation_param_t      *eqp,
+                             const cs_cell_mesh_t           *cm,
+                             cs_face_mesh_t                 *fm,
+                             cs_cell_builder_t              *cb,
+                             cs_cell_sys_t                  *csys)
+{
+  CS_UNUSED(eqp);
+
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+
+  /* Enforcement of the Robin BCs */
+  if (csys->has_robin == false)
+    return;  /* Nothing to do */
+
+  /* Robin BC expression: K du/dn + alpha*(u - u0) = g
+   * Store x = alpha*u0 + g
+   */
+  cs_real_t  *x = cb->values;
+  cs_sdm_t  *bc_op = cb->loc;
+  cs_sdm_t  *hloc = cb->aux; /* 2D Hodge operator on a boundary face */
+
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
+
+      /* Reset local operator */
+      cs_sdm_square_init(csys->n_dofs, bc_op);
+
+      /* Compute the face-view of the mesh */
+      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
+
+      cs_hodge_compute_wbs_surfacic(fm, hloc);  /* hloc is of size n_vf */
+
+      /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
+      /* ------------------------------------------------- */
+
+      const double  alpha = csys->rob_values[3*f];
+      const double  u0 = csys->rob_values[3*f+1];
+      const double  g = csys->rob_values[3*f+2];
+
+      memset(x, 0, sizeof(cs_real_t)*cm->n_vc);
+      for (short int v = 0; v < fm->n_vf; v++) {
+        const short int  vi = fm->v_ids[v];
+        x[vi] = alpha*u0 + g;
+      }
+
+      /* Update the RHS and the local system */
+      for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
+
+        const short int  vi = fm->v_ids[vfi];
+        const cs_real_t  *hfi = hloc->val + vfi*fm->n_vf;
+        cs_real_t  *opi = bc_op->val + vi*bc_op->n_rows;
+
+        for (short int vfj = 0; vfj < fm->n_vf; vfj++) {
+
+          const short int  vj = fm->v_ids[vfj];
+          csys->rhs[vi] += hfi[vfj]*x[vj];
+          opi[vj] += alpha * hfi[vfj];
+
+        }
+
+      }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
+      cs_log_printf(CS_LOG_DEFAULT,
+                    ">> Local Robin bc matrix (f_id: %d)", fm->f_id);
+      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+#endif
+
+      /* Add contribution to the linear system */
+      cs_sdm_add(csys->mat, bc_op);
+
+    }  /* Robin face */
   } /* Loop on boundary faces */
 
 }
