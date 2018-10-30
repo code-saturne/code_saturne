@@ -435,7 +435,6 @@ cs_ale_solve_mesh_velocity(const int   iterns,
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t *b_face_cells = (const cs_lnum_t *)m->b_face_cells;
   const cs_real_t *b_dist = (const cs_real_t *)fvq->b_dist;
-  const cs_real_t *b_face_surf = (const cs_real_t *)fvq->b_face_surf;
   const cs_real_3_t *b_face_normal = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
   const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -538,7 +537,7 @@ cs_ale_solve_mesh_velocity(const int   iterns,
     }
   }
 
-  cs_real_t *i_visc, *b_visc;
+  cs_real_t *i_visc = NULL, *b_visc = NULL;
 
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
 
@@ -552,7 +551,8 @@ cs_ale_solve_mesh_velocity(const int   iterns,
                       i_visc,
                       b_visc);
 
-  } else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
+  }
+  else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
     BFT_MALLOC(i_visc, 9*n_i_faces, cs_real_t);
 
     cs_face_anisotropic_viscosity_vector(m,

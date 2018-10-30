@@ -1189,7 +1189,6 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
   long        label;
   ecs_int_t   type_ecs;
   ecs_int_t   coul_elt;
-  ecs_int_t   ind_elt;
   ecs_int_t   nbr_elt_lus;
   ecs_int_t   ind_nod_elt;
   ecs_int_t   ind_som_elt;
@@ -1218,8 +1217,9 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
   ecs_int_t   *elt_val_som_ent    [ECS_N_ENTMAIL]; /* Numeros des sommets   */
   ecs_int_t   *elt_val_color_ent  [ECS_N_ENTMAIL]; /* Couleurs              */
 
-  ecs_int_t cpt_are   = 0;
-  ecs_int_t cpt_point = 0;
+  ecs_int_t  ind_elt = 0;
+  ecs_int_t  cpt_are   = 0;
+  ecs_int_t  cpt_point = 0;
 
   int        retour;
   bool       ligne_decodee = true;

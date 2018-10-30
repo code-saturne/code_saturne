@@ -81,8 +81,8 @@ integer ::         ifac, iloc, ivar
 integer ::         iel
 integer ::         iflmab
 
-double precision :: cpp   , srfbn , hext  , heq   , hbord2
-double precision :: flumab, diipbx, diipby, diipbz, tcel
+double precision :: cpp   , srfbn , heq
+double precision :: flumab, diipbx, diipby, diipbz
 
 double precision, allocatable, dimension(:) :: theipb
 double precision, allocatable, dimension(:,:) :: grad
@@ -292,10 +292,9 @@ integer ::         inc, iccocg
 integer ::         iel, ifac, iloc, ivar
 integer ::         ifcvsl, itplus, itstar
 
-double precision :: xvsl  , srfbn , heq   , phit
+double precision :: xvsl  , srfbn , heq
 double precision :: diipbx, diipby, diipbz
-double precision :: numer, denom, tcel
-double precision :: heqohint, phitohint
+double precision :: numer, denom
 
 double precision, allocatable, dimension(:) :: theipb
 double precision, allocatable, dimension(:,:) :: grad

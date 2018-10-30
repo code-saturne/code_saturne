@@ -95,7 +95,6 @@ integer          itytu0
 double precision xjjp   , yjjp   , zjjp
 double precision d2s3
 double precision xjpf,yjpf,zjpf,jpf
-double precision xx, yy, zz
 
 double precision, allocatable, dimension(:,:,:) :: gradv, gradts
 double precision, allocatable, dimension(:,:) :: grad

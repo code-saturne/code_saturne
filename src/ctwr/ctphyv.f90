@@ -71,8 +71,6 @@ subroutine ctphyv
 !   ITYPFB et ITRIFB n'ont pas ete renseignes)
 
 
-
-
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
@@ -107,10 +105,6 @@ implicit none
 
 ! Local variables
 
-integer          iel, ifcvsl
-
-double precision, dimension(:), pointer :: cvar_press
-
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -130,7 +124,7 @@ if (icp.lt.0) then
 endif
 
 !===============================================================================
-! 1 - Update properties at cell centres
+! 1 - Update properties at cell centers
 !===============================================================================
 
 call cs_ctwr_phyvar_update(ro0,t0,p0,molmass_rat)

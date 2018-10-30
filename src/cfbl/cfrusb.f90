@@ -84,7 +84,6 @@ double precision bc_en(nfabor), bc_pr(nfabor), bc_vel(3,nfabor)
 
 integer          iel, l_size
 integer          ien
-integer          iflmab
 
 double precision und, uni, rund, runi, cd, ci, cd2(1), ci2(1)
 double precision rrus, runb

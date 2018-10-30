@@ -106,8 +106,8 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer          ivar  , ifac  , iel, l_size
-integer          ii    , iii   , iccfth
+integer          ifac  , iel
+integer          ii    , iccfth
 integer          icalep
 integer          ien   , itk
 integer          nvarcf
@@ -116,7 +116,7 @@ integer          nvcfmx
 parameter       (nvcfmx=6)
 integer          ivarcf(nvcfmx)
 
-double precision hint, cpb(1), cvb(1), bmasfl
+double precision hint, bmasfl
 
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w4, w5, w6
