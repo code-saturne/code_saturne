@@ -898,22 +898,20 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     /* Boundary conditions for advection */
     eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ;
 
-    eqc->adv_func_bc = cs_cdo_advection_fb_bc;
-
     switch (eqp->adv_formulation) {
 
     case CS_PARAM_ADVECTION_FORM_CONSERV:
       switch (eqp->adv_scheme) {
 
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        if (!cs_equation_param_has_diffusion(eqp))
+        if (cs_equation_param_has_diffusion(eqp)) {
+          eqc->adv_func = cs_cdo_advection_fb_upwcsvdi;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_wdi;
+        }
+        else {
           eqc->adv_func = cs_cdo_advection_fb_upwcsv;
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid choice for the advection scheme in face-based"
-                    " discretization.\n"
-                    " Conservative formulation, upwind and diffusion term",
-                    __func__);
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc;
+        }
         break;
 
       default:
@@ -928,14 +926,14 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       switch (eqp->adv_scheme) {
 
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        if (!cs_equation_param_has_diffusion(eqp))
+        if (cs_equation_param_has_diffusion(eqp)) {
+          eqc->adv_func = cs_cdo_advection_fb_upwnocdi;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_wdi;
+        }
+        else {
           eqc->adv_func = cs_cdo_advection_fb_upwnoc;
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid choice for the advection scheme in face-based"
-                    " discretization.\n"
-                    " Non-conservative formulation, upwind and diffusion term",
-                    __func__);
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc;
+        }
         break;
 
       default:
