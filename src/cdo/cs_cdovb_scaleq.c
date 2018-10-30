@@ -401,7 +401,7 @@ _vb_advection_diffusion_reaction(double                         time_eval,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(cm))
-      cs_cell_sys_dump("\n>> Local system after diffusion", csys);
+      cs_cell_sys_dump("\n>> Local system after adding diffusion", csys);
 #endif
   }
 
@@ -416,7 +416,7 @@ _vb_advection_diffusion_reaction(double                         time_eval,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(cm))
-      cs_cell_sys_dump("\n>> Local system after advection", csys);
+      cs_cell_sys_dump("\n>> Local system after adding advection", csys);
 #endif
   }
 
@@ -443,14 +443,15 @@ _vb_advection_diffusion_reaction(double                         time_eval,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(cm))
-      cs_cell_sys_dump("\n>> Local system after reaction", csys);
+      cs_cell_sys_dump("\n>> Local system after adding reaction", csys);
 #endif
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Apply the boundary conditions to the local system in CDO-Vb schemes
+ * \brief   First pass to apply boundary conditions enforced weakly in CDO-Vb
+ *          schemes. Update the local system before applying the time scheme.
  *
  * \param[in]      time_eval   time at which analytical function are evaluated
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
@@ -463,66 +464,90 @@ _vb_advection_diffusion_reaction(double                         time_eval,
 /*----------------------------------------------------------------------------*/
 
 static void
-_vb_apply_bc(cs_real_t                      time_eval,
-             const cs_equation_param_t     *eqp,
-             const cs_cdovb_scaleq_t       *eqc,
-             const cs_cell_mesh_t          *cm,
-             cs_face_mesh_t                *fm,
-             cs_cell_sys_t                 *csys,
-             cs_cell_builder_t             *cb)
+_vb_apply_weak_bc(cs_real_t                      time_eval,
+                  const cs_equation_param_t     *eqp,
+                  const cs_cdovb_scaleq_t       *eqc,
+                  const cs_cell_mesh_t          *cm,
+                  cs_face_mesh_t                *fm,
+                  cs_cell_sys_t                 *csys,
+                  cs_cell_builder_t             *cb)
 {
-  if (csys->cell_flag == 0) /* No boundary element (either vertices or faces) */
-    return;
+  if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
-  /* Neumann boundary conditions */
-  if (csys->has_nhmg_neumann) {
-    for (short int v  = 0; v < cm->n_vc; v++)
-      csys->rhs[v] += csys->neu_values[v];
-  }
-
-  /* Contribution for the advection term: csys is updated inside
-     (matrix and rhs) and Dirichlet BCs are handled inside */
-  if (cs_equation_param_has_convection(eqp))
-    eqc->add_advection_bc(cm, eqp, time_eval, fm, cb, csys);
-
-  /* The enforcement of the Dirichlet has to be done after all
-     other contributions */
-  if (cs_equation_param_has_diffusion(eqp)) {
-
-    if (csys->has_robin) {
-      assert(eqc->apply_robin_bc != NULL);
-      eqc->apply_robin_bc(eqp, cm, fm, cb, csys);
+    /* Neumann boundary conditions */
+    if (csys->has_nhmg_neumann) {
+      for (short int v  = 0; v < cm->n_vc; v++)
+        csys->rhs[v] += csys->neu_values[v];
     }
 
-    if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
-      eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
+    /* Contribution for the advection term: csys is updated inside
+       (matrix and rhs) and Dirichlet BCs are handled inside */
+    if (cs_equation_param_has_convection(eqp))
+      eqc->add_advection_bc(cm, eqp, time_eval, fm, cb, csys);
 
-  }
+    /* The enforcement of the Dirichlet has to be done after all
+       other contributions */
+    if (cs_equation_param_has_diffusion(eqp)) {
+
+      if (csys->has_robin) {
+        assert(eqc->apply_robin_bc != NULL);
+        eqc->apply_robin_bc(eqp, cm, fm, cb, csys);
+      }
+
+      if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED)
+          eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
+
+    }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-  if (cs_dbg_cw_test(cm))
-    cs_cell_sys_dump("\n>> Local system after BC treatment", csys);
+    if (cs_dbg_cw_test(cm))
+      cs_cell_sys_dump("\n>> Local system after BC treatment", csys);
 #endif
+  } /* Cell with at least one boundary face */
+
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Apply the enforcement of internal DoFs in CDO-Vb schemes
+ * \brief   Second pass to apply boundary conditions. Only Dirichlet BCs which
+ *          are enforced strongly. Apply also the enforcement of internal DoFs.
+ *          Update the local system after applying the time scheme.
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] fm          pointer to a facewise view of the mesh
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_vb_apply_internal_enforcement(const cs_equation_param_t     *eqp,
-                               const cs_cell_mesh_t          *cm,
-                               cs_cell_sys_t                 *csys,
-                               cs_cell_builder_t             *cb)
+_vb_enforce_values(const cs_equation_param_t     *eqp,
+                   const cs_cdovb_scaleq_t       *eqc,
+                   const cs_cell_mesh_t          *cm,
+                   cs_face_mesh_t                *fm,
+                   cs_cell_sys_t                 *csys,
+                   cs_cell_builder_t             *cb)
 {
-  CS_UNUSED(cm); /* Only in debug mode */
+  if (csys->cell_flag > 0 && csys->has_dirichlet) {
+
+    /* Boundary element (through either vertices or faces) */
+
+    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
+        eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
+
+      /* csys is updated inside (matrix and rhs) */
+      eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+      if (cs_dbg_cw_test(cm))
+        cs_cell_sys_dump("\n>> Local system after strong BC treatment", csys);
+#endif
+    }
+  }
 
   if (cs_equation_param_has_internal_enforcement(eqp) == false)
     return;
@@ -1340,11 +1365,11 @@ cs_cdovb_scaleq_solve_steady_state(double                      dt_cur,
 
       } /* End of term source */
 
-      /* Apply boundary conditions */
-      _vb_apply_bc(time_eval, eqp, eqc, cm, fm, csys, cb);
+      /* Apply boundary conditions (those which are weakly enforced) */
+      _vb_apply_weak_bc(time_eval, eqp, eqc, cm, fm, csys, cb);
 
-      /* Apply internal enforcement */
-      _vb_apply_internal_enforcement(eqp, cm, csys, cb);
+      /* Enforce values if needed (internal or Dirichlet) */
+      _vb_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(cm))
@@ -1543,6 +1568,9 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
 
       } /* End of term source */
 
+      /* Apply boundary conditions (those which are weakly enforced) */
+      _vb_apply_weak_bc(time_eval, eqp, eqc, cm, fm, csys, cb);
+
       /* UNSTEADY TERM + TIME SCHEME
        * =========================== */
 
@@ -1591,11 +1619,8 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
         cs_cell_sys_dump("\n>> Local system after time", csys);
 #endif
 
-      /* Apply boundary conditions */
-      _vb_apply_bc(time_eval, eqp, eqc, cm, fm, csys, cb);
-
-      /* Apply internal enforcement */
-      _vb_apply_internal_enforcement(eqp, cm, csys, cb);
+      /* Enforce values if needed (internal or Dirichlet) */
+      _vb_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(cm))
@@ -1843,6 +1868,9 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
 
       } /* End of term source */
 
+      /* Apply boundary conditions (those which are weakly enforced) */
+      _vb_apply_weak_bc(time_eval, eqp, eqc, cm, fm, csys, cb);
+
       /* UNSTEADY TERM + TIME SCHEME
        * =========================== */
 
@@ -1904,14 +1932,11 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
       if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump("\n>> Local system after time", csys);
+        cs_cell_sys_dump("\n>> Local system after adding time", csys);
 #endif
 
-      /* Apply boundary conditions */
-      _vb_apply_bc(time_eval, eqp, eqc, cm, fm, csys, cb);
-
-      /* Apply internal enforcement */
-      _vb_apply_internal_enforcement(eqp, cm, csys, cb);
+      /* Enforce values if needed (internal or Dirichlet) */
+      _vb_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(cm))
