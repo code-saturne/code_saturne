@@ -349,7 +349,7 @@ _vb_cost_normal_flux_op(const short int           f,
   _vbcost_cellwise_grd(cm, grd_cell);
 
   /* Loop on border face edges */
-  for (int fe_idx = cm->f2e_idx[f]; fe_idx < cm->f2e_idx[f]; fe_idx++) {
+  for (int fe_idx = cm->f2e_idx[f]; fe_idx < cm->f2e_idx[f+1]; fe_idx++) {
 
     const short int  ek = cm->f2e_ids[fe_idx];
     const cs_quant_t  pekq = cm->edge[ek];
