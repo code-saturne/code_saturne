@@ -5,6 +5,9 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- Fixes for parallel runs in sedimentation source term with humid atmosphere
+  model.
+
 - Fix initialisation of some turbulence constants. Constant/Models concerned:
   * sigmae (for all RSM models)
   * csrij (EB-RSM model).
