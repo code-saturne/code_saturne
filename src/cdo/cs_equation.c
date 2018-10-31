@@ -1687,11 +1687,28 @@ cs_equation_assign_functions(void)
 
         eq->init_context = cs_cdovb_vecteq_init_context;
         eq->free_context = cs_cdovb_vecteq_free_context;
-        eq->initialize_system = cs_cdovb_vecteq_initialize_system;
         eq->set_dir_bc = cs_cdovb_vecteq_set_dir_bc;
-        eq->build_system = cs_cdovb_vecteq_build_system;
-        eq->prepare_solving = _prepare_vb_solving;
-        eq->update_field = cs_cdovb_vecteq_update_field;
+
+        /* Deprecated */
+        eq->initialize_system = NULL;
+        eq->build_system = NULL;
+        eq->prepare_solving = NULL;
+        eq->update_field = NULL;
+
+        /* New mechanism */
+        switch (eqp->time_scheme) {
+        case CS_TIME_SCHEME_STEADY:
+          eq->solve = cs_cdovb_vecteq_solve_steady_state;
+          break;
+        case CS_TIME_SCHEME_IMPLICIT:
+        case CS_TIME_SCHEME_THETA:
+        case CS_TIME_SCHEME_CRANKNICO:
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__, eqp->name);
+        }
+
         eq->compute_flux_across_plane =
           cs_cdovb_vecteq_compute_flux_across_plane;
         eq->compute_cellwise_diff_flux = cs_cdovb_vecteq_cellwise_diff_flux;

@@ -194,30 +194,26 @@ cs_cdovb_vecteq_set_dir_bc(cs_real_t                     t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the linear system arising from a vector convection/diffusion
- *         equation with a CDO vertex-based scheme.
- *         One works cellwise and then process to the assembly
+ * \brief  Build and solve the linear system arising from a vector steady-state
+ *         convection/diffusion/reaction equation with a CDO-Vb scheme.
+ *         One works cellwise and then process to the assembly.
  *
+ * \param[in]      dt_cur     current value of the time step (dummy arg.)
  * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_val  pointer to the current value of the vertex field
- * \param[in]      dt_cur     current value of the time step
+ * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdovcb_vecteq_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
-                             const cs_real_t            *field_val,
-                             double                      dt_cur,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *data,
-                             cs_real_t                  *rhs,
-                             cs_matrix_t                *matrix);
+cs_cdovb_vecteq_solve_steady_state(double                      dt_cur,
+                                   const cs_mesh_t            *mesh,
+                                   const int                   field_id,
+                                   const cs_equation_param_t  *eqp,
+                                   cs_equation_builder_t      *eqb,
+                                   void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
