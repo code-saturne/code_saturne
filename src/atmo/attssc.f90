@@ -319,6 +319,9 @@ do iel = 1, ncel
   endif
   r3max = max(r3(iel),r3max)
 enddo
+
+if (irangp.ge.0) call parmax (r3max)
+
 end subroutine define_r3
 
 ! *******************************************************************
