@@ -303,10 +303,10 @@
 
   Fortran code                                                                  | C code                             | Description
   ----------------------------------------------------------------------------- | ---------------------------------- | ------------
-  <tt> call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ipotr "ipotr"), cvar_potr)   | CS_F_(potr)->val          | Electric potential, real part
-  call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ipoti "ipoti"), cvar_poti)        | CS_F_(poti)->val          | Electric potential, imaginary part
-  call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ipotva "ipotva(1)"), cvar_potva1) \n call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ipotva "ipotva(2")), cvar_potva2) \n call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ipotva "ipotva(3)"), cvar_potva3) | CS_F_(potva)->val | Vector potential
-  call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::iycoel "iycoel"(iesp)), cvar_ycoel(iesp)) | \ref CS_FI_(ycoel,iesp-1)->val | Constituent mass fraction </tt>
+  <tt> call \ref field::field_get_val_s_by_name "field_get_val_s_by_name"("elec_pot_r", cvar_potr)   | CS_F_(potr)->val          | Electric potential, real part
+  call \ref field::field_get_val_s_by_name "field_get_val_s_by_name"("elec_pot_i", cvar_poti)        | CS_F_(poti)->val          | Electric potential, imaginary part
+  call \ref field::field_get_val_v_by_name "field_get_val_v_by_name"("vec_potential", cvar_potva)    | CS_F_(potva)->val         | Vector potential
+  call \ref field::field_get_val_s_by_name "field_get_val_s_by_name"("esl_fraction_01", cvar_ycoel_01) | \ref CS_FI_(ycoel,iesp-1)->val | Constituent mass fraction </tt>
 
 
   \subsection cs_var_dico_cogz Gas combustion
