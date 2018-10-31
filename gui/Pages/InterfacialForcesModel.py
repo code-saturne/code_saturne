@@ -217,7 +217,6 @@ class InterfacialForcesModel(TurbulenceModel,
         default['InterfaceSharpening']           = 'off'
         default['UnsharpenedCells']              = 'off'
         default['SurfaceTension']                = 'off'
-        default['LI3CVolFrac']                   = 'off'
 
         return default
 
@@ -546,12 +545,6 @@ class InterfacialForcesModel(TurbulenceModel,
             ChildNode2 = ChildNode.xmlGetChildNode('BubblesForLIM')
             if ChildNode2 != None :
                 ChildNode2.xmlRemoveNode()
-            ChildNode2 = ChildNode.xmlGetChildNode('WaweRoughness')
-            if ChildNode2 != None :
-                ChildNode2.xmlRemoveNode()
-            ChildNode2 = ChildNode.xmlGetChildNode('ITMContinuousLI3C')
-            if ChildNode2 != None :
-                ChildNode2.xmlRemoveNode()
 
         if model == "none" :
             ChildNode2 = ChildNode.xmlGetChildNode('InterfaceSharpening')
@@ -730,29 +723,6 @@ class InterfacialForcesModel(TurbulenceModel,
            status = self.defaultValuesContinuous()['SurfaceTension']
            self.setSurfaceTensionStatus(status)
         status = node.xmlGetString('ITMSurfaceTension')
-        return status
-
-
-    @Variables.undoLocal
-    def setLI3CVolFracStatus(self, status) :
-        """
-        set
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        node.xmlSetData('ITMContinuousLI3C', status)
-
-
-    @Variables.noUndo
-    def getLI3CVolFracStatus(self) :
-        """
-        get
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        ChildNode = node.xmlGetChildNode('ITMContinuousLI3C')
-        if ChildNode == None :
-           status = self.defaultValuesContinuous()['LI3CVolFrac']
-           self.setLI3CVolFracStatus(status)
-        status = node.xmlGetString('ITMContinuousLI3C')
         return status
 
 

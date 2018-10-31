@@ -713,7 +713,6 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         self.checkBoxInterfaceSharpening.clicked.connect(self.slotInterfaceSharpening)
         self.checkBoxUnsharpenedCells.clicked.connect(self.slotUnsharpenedCells)
         self.checkBoxSurfaceTension.clicked.connect(self.slotSurfaceTension)
-        self.checkBoxLI3CVolFrac.clicked.connect(self.slotLI3CVolFrac)
 
         for force in self.mdl.getForceList() :
             self.tableModelInterfacialForces.newItem(force)
@@ -740,14 +739,6 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
                 isSurfaceTension = self.mdl.getSurfaceTensionStatus() == "on"
                 self.checkBoxSurfaceTension.setChecked(isSurfaceTension)
 
-                if model == "Large_Interface_Model" :
-                    self.labelLI3CVolFrac.show()
-                    self.checkBoxLI3CVolFrac.show()
-                    isLI3CVolFrac = self.mdl.getLI3CVolFracStatus() == "on"
-                    self.checkBoxLI3CVolFrac.setChecked(isLI3CVolFrac)
-                else:
-                    self.labelLI3CVolFrac.hide()
-                    self.checkBoxLI3CVolFrac.hide()
             else:
                 self.groupBoxInterfaceSharpeningOptions.hide()
 
@@ -891,14 +882,4 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
             status = 'on'
         self.mdl.setSurfaceTensionStatus(status)
 
-
-    @pyqtSlot(bool)
-    def slotLI3CVolFrac(self, checked):
-        """
-        check box for LIC3 based on surface tension
-        """
-        status = 'off'
-        if checked:
-            status = 'on'
-        self.mdl.setLI3CVolFracStatus(status)
 

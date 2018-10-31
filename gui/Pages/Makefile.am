@@ -352,7 +352,7 @@ else
 endif
 
 .ui.py:
-	$(PYUIC) -o $@ $<	
+	$(PYUIC) -o $@ $<
 
 .qrc_rc.py:
 	$(PYRCC) -o $@ $<
