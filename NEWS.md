@@ -3,6 +3,9 @@ Release 5.3.1 - (unreleased)
 
 Bug fixes:
 
+- Fixes for parallel runs in sedimentation source term with humid atmosphere
+  model.
+
 - Fix bugs in ALE and free surface condition.
 
 - Fix  in gas mix initialization.
@@ -12,7 +15,6 @@ Bug fixes:
 
 - Fix in Crank Nicolson time stepping with PISO like sweeps with constant
   density.
-
 
 Release 5.3.0 - October 26, 2018
 --------------------------------
