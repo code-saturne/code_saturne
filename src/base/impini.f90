@@ -1121,20 +1121,7 @@ write(nfecra,7532)
 !   - Fichiers listing
 
 write(nfecra,7540) ntlist
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    iwar = vcopt%iwarni
-  else
-    iwar = -999
-  endif
-  call field_get_key_int(f_id, keylog, kval)
-  if (kval.eq.1) then
-    call field_get_label(f_id, name)
-    write(nfecra,7531) name(1:16), iwar
-  endif
-enddo
+
 write(nfecra,7532)
 
 !   - Post-traitement automatique (bord)
@@ -1161,15 +1148,11 @@ write(nfecra,9900)
 ' --- Fichiers historiques',                                    /,&
 '       NTHIST = ',4x,i10,    ' (Periode de sortie    )',       /,&
 '       FRHIST = ',4x,e11.5,  ' (Periode de sortie (s))')
- 7531 format(1X,          A16,6X,         i10                )
  7532 format(                                                     &
 '         --           --                --',                   /)
  7540 format(                                                     &
 ' --- Fichiers listing',                                        /,&
-'       NTLIST = ',4x,i10,    ' (Periode de sortie    )',       /,&
-                                                                /,&
-'       Numero Nom                 Niveau d''impression IWARNI',/,&
-'                                      (-999 : non applicable)',/)
+'       NTLIST = ',4x,i10,    ' (Periode de sortie    )',       /)
  7550 format(                                                     &
 ' --- Variables supplementaires en post-traitement (ipstdv)',   /,&
 '       ',a6,' = ',4x,i10,    ' (Force exercee par',            /,&
@@ -1193,15 +1176,11 @@ write(nfecra,9900)
 ' --- Probe history files',                                     /,&
 '       NTHIST = ',4x,i10,    ' (Output frequency     )',       /,&
 '       FRHIST = ',4x,e11.5,  ' (Output frequency (s) )')
- 7531 format(1X,          A16,6X,         i10                )
  7532 format(                                                     &
 '         --           --                --',                   /)
  7540 format(                                                     &
 ' --- Log files',                                               /,&
-'       NTLIST = ',4x,i10,    ' (Output frequency     )',       /,&
-                                                                /,&
-'       Number Name                IWARNI verbosity level',     /,&
-'                                      (-999: not applicable)', /)
+'       NTLIST = ',4x,i10,    ' (Output frequency     )',       /)
  7550 format(                                                     &
 ' --- Additional post-processing variables (ipstdv)',           /,&
 '       ',a6,' = ',4x,i10,    ' (Force exerted by the',         /,&
