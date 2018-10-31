@@ -315,6 +315,8 @@ _fb_advection_diffusion_reaction(double                         time_eval,
                                  cs_cell_builder_t             *cb)
 {
   CS_UNUSED(eqb);
+  CS_UNUSED(fm);
+  CS_UNUSED(time_eval);
 
   if (cs_equation_param_has_diffusion(eqp)) {   /* DIFFUSION TERM
                                                  * ============== */
@@ -419,6 +421,8 @@ _fb_apply_bc_partly(cs_real_t                      time_eval,
                     cs_cell_sys_t                 *csys,
                     cs_cell_builder_t             *cb)
 {
+  CS_UNUSED(time_eval);
+
   /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
    * Operations that have to be performed BEFORE the static condensation */
   if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
@@ -2234,7 +2238,6 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
-  cs_field_t  *bflux = cs_field_by_id(eqc->bflux_field_id);
 
   /* Allocate and initialize the structure storing the balance evaluation */
   cs_equation_balance_t  *eb = cs_equation_balance_create(cs_flag_primal_cell,
@@ -2243,7 +2246,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
   cs_equation_balance_reset(eb);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, pot, bflux,             \
+  shared(dt_cur, quant, connect, eqp, eqb, eqc, pot,                    \
          eb, cs_cdofb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -2254,7 +2257,6 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
 
