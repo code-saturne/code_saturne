@@ -309,7 +309,7 @@ endif
 
 iconvp = 0 ! no convection
 idiffp = 1 ! diffusion
-ndircp = ndircl(ipr) ! no diagonal stepped aside
+ndircp = vcopt_p%ndircl ! no diagonal stepped aside
 thetap = 1.d0 ! implicit scheme
 imucpp = 0 ! do not multiply the convectiv term by anything
 

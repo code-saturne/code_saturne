@@ -1531,7 +1531,7 @@ endif
 ! Solver parameters
 iconvp = vcopt_u%iconv
 idiffp = vcopt_u%idiff
-ndircp = ndircl(iu)
+ndircp = vcopt_u%ndircl
 nswrsp = vcopt_u%nswrsm
 nswrgp = vcopt_u%nswrgr
 imligp = vcopt_u%imligr

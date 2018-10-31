@@ -225,7 +225,7 @@ call viscfa                                                       &
 
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
-ndircp = ndircl(ial) ! Diagonal reinforcement: same as dynamic Alpha
+ndircp = vcopt%ndircl ! Diagonal reinforcement: same as dynamic Alpha
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr

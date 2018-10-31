@@ -303,33 +303,7 @@ module optcal
 
   !> \}
 
-  !> \defgroup linear_solver Linear solver
-  !> \addtogroup linear_solver
-  !> \{
-
-  !> \anchor idircl
-  !> indicates whether the diagonal of the matrix should be slightly
-  !> shifted or not if there is no Dirichlet boundary condition and
-  !> if \ref cs_var_cal_opt_t::istat "istat" = 0.
-  !>    - 0: false
-  !>    - 1: true
-  !> Indeed, in such a case, the matrix for the general
-  !> advection/diffusion equation is singular. A slight shift in the
-  !> diagonal will make it invertible again.\n By default, \ref idircl
-  !> is set to 1 for all the unknowns, except \f$\overline{f}\f$ in v2f
-  !> modelling, since its equation contains another diagonal term
-  !> that ensures the regularity of the matrix.
-  !> \remark
-  !> the code computes automatically for each variable the number of Dirichlet
-  !> BCs
-  integer, save ::          idircl(nvarmx)
-
-  !> number of Dirichlet BCs
-  integer, save ::          ndircl(nvarmx)
-
-  !> \}
-
-  !> \}
+ !> \}
 
   !> Indicator of a calculation restart (=1) or not (=0).
   !> This value is set automatically by the code; depending on

@@ -1185,7 +1185,7 @@ do while (iterns.le.nterup)
     ! otherwise it is done in navstv.f90
     if (itrale.eq.0) then
 
-      call cs_ale_solve_mesh_velocity(iterns, ndircl(iuma), impale, ialtyb)
+      call cs_ale_solve_mesh_velocity(iterns, impale, ialtyb)
       must_return = .true.
 
     endif

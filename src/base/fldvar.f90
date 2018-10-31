@@ -246,9 +246,9 @@ else if (itytur.eq.3) then
     call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     vcopt%istat = 0
     vcopt%iconv = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     ! For alpha, we always have a diagonal term, so do not shift the diagonal
-    idircl(ial) = 0
+    vcopt%idircl = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
   endif
 else if (itytur.eq.5) then
   call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)
@@ -259,17 +259,17 @@ else if (itytur.eq.5) then
     call field_get_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
     vcopt%istat = 0
     vcopt%iconv = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
     ! For fb, we always have a diagonal term, so do not shift the diagonal
-    idircl(ifb) = 0
+    vcopt%idircl = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
   else if (iturb.eq.51) then
     call add_variable_field('alpha', 'Alpha', 1, ial)
     call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     vcopt%istat = 0
     vcopt%iconv = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     ! For alpha, we always have a diagonal term, so do not shift the diagonal
-    idircl(ial) = 0
+    vcopt%idircl = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
   endif
 else if (iturb.eq.60) then
   call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)

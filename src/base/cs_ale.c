@@ -415,7 +415,6 @@ cs_ale_update_mesh(const int           itrale,
  * so that it can be used to update mass fluxes (due to mesh displacement).
  *
  * \param[in]       iterns        Navier-Stokes iteration number
- * \param[in]       ndircl        Number of Dirichlet BCs for mesh velocity
  * \param[in]       impale        Indicator for fixed node displacement
  * \param[in]       ialtyb        Type of boundary for ALE
  */
@@ -423,7 +422,6 @@ cs_ale_update_mesh(const int           itrale,
 
 void
 cs_ale_solve_mesh_velocity(const int   iterns,
-                           const int   ndircl,
                            const int  *impale,
                            const int  *ialtyb)
 {
@@ -572,7 +570,6 @@ cs_ale_solve_mesh_velocity(const int   iterns,
                                      iterns,
                                      CS_F_(mesh_u)->id,
                                      CS_F_(mesh_u)->name,
-                                     ndircl,
                                      0, /* ivisep */
                                      0, /* iescap */
                                      &var_cal_opt,

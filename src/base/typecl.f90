@@ -1577,23 +1577,28 @@ enddo
 !===============================================================================
 ! 7.  RENFORCEMENT DIAGONALE DE LA MATRICE SI AUCUN POINTS DIRICHLET
 !===============================================================================
-! On renforce si ISTAT=0 et si l'option est activee (IDIRCL=1)
-! Si une de ces conditions est fausse, on force NDIRCL a valoir
+! On renforce si ISTAT=0 et si l'option est activee (idircl=1)
+! Si une de ces conditions est fausse, on force ndircl a valoir
 ! au moins 1 pour ne pas decaler la diagonale.
 
 do ivar = 1, nvar
-  ndircl(ivar) = 0
   call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  if ( vcopt%istat.gt.0 .or. idircl(ivar).eq.0 ) ndircl(ivar) = 1
+  vcopt%ndircl = 0
+  if (vcopt%istat.gt.0 .or. vcopt%idircl.eq.0) then
+    vcopt%ndircl = 1
+  endif
+  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 enddo
 
 do ivar = 1, nvar
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
   do ifac = 1, nfabor
-    if( icodcl(ifac,ivar).eq.1 .or. icodcl(ifac,ivar).eq.5 ) then
-      ndircl(ivar) = ndircl(ivar) +1
+    if (icodcl(ifac,ivar).eq.1 .or. icodcl(ifac,ivar).eq.5) then
+      vcopt%ndircl = vcopt%ndircl +1
     endif
   enddo
-  if (irangp.ge.0) call parcpt (ndircl(ivar))
+  if (irangp.ge.0) call parcpt (vcopt%ndircl)
+  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 enddo
 
 !===============================================================================

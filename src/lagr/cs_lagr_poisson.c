@@ -324,6 +324,7 @@ _lageqp(cs_real_t   *vitessel,
   var_cal_opt.iwarni = 2;  /* quasi-debug at this stage, TODO clean */
   var_cal_opt.iconv  = 0;  /* no convection, pure diffusion here */
   var_cal_opt.istat  = -1;
+  var_cal_opt.ndircl = 1;
   var_cal_opt.idifft = -1;
   var_cal_opt.isstpc = 0;
   var_cal_opt.nswrgr = 10000;
@@ -335,7 +336,6 @@ _lageqp(cs_real_t   *vitessel,
                                      1,            /* external sub-iteration? */
                                      -1,           /* field_id (not a field) */
                                      "PoissonL",   /* name */
-                                     1,            /* ndircp */
                                      0,            /* iescap */
                                      0,            /* imucpp */
                                      &var_cal_opt,

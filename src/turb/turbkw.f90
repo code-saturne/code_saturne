@@ -1021,7 +1021,7 @@ endif
 ! Solving k
 iconvp = vcopt_k%iconv
 idiffp = vcopt_k%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt_k%ndircl
 nswrsp = vcopt_k%nswrsm
 nswrgp = vcopt_k%nswrgr
 imligp = vcopt_k%imligr
@@ -1091,7 +1091,7 @@ endif
 ! Solving omega
 iconvp = vcopt_w%iconv
 idiffp = vcopt_w%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt_w%ndircl
 nswrsp = vcopt_w%nswrsm
 nswrgp = vcopt_w%nswrgr
 imligp = vcopt_w%imligr

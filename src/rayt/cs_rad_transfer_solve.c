@@ -419,6 +419,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
   vcopt.iwarni =  cs_glob_rad_transfer_params->iimlum;
   vcopt.iconv  =  1; /* Pure convection */
   vcopt.istat  = -1;
+  vcopt.ndircl = 1;/* There are Dirichlet BCs */
   vcopt.idiff  =  0; /* no face diffusion */
   vcopt.idifft = -1;
   vcopt.isstpc =  0;
@@ -435,9 +436,6 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
 
   int iescap = 0;
   int imucpp = 0;
-
-  /* There are Dirichlet BCs */
-  int ndirc1 = 1;
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1)
     _order_by_direction();
@@ -630,7 +628,6 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
                                              1,   /* external sub-iteration */
                                              -1,  /* f_id */
                                              cnom,
-                                             ndirc1,
                                              iescap,
                                              imucpp,
                                              &vcopt,

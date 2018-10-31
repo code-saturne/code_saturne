@@ -882,6 +882,12 @@ cs_parameters_check(void)
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
+                                    "var_cal_opt.idircl (reinforce matrix diag)",
+                                    var_cal_opt.idircl,
+                                    0, 2);
+
+      cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                    _(f_desc),
                                     "var_cal_opt.idiff (diffusion flag)",
                                     var_cal_opt.idiff,
                                     0, 2);

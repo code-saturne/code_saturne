@@ -82,6 +82,8 @@ module cs_c_bindings
     integer(c_int) :: iwarni
     integer(c_int) :: iconv
     integer(c_int) :: istat
+    integer(c_int) :: idircl
+    integer(c_int) :: ndircl
     integer(c_int) :: idiff
     integer(c_int) :: idifft
     integer(c_int) :: idften
@@ -1584,7 +1586,7 @@ module cs_c_bindings
     ! Interface to C function cs_equation_iterative_solve_scalar
 
     subroutine cs_equation_iterative_solve_scalar(idtvar, iterns,             &
-                                                  f_id, name, ndircp,         &
+                                                  f_id, name,                 &
                                                   iescap, imucpp,             &
                                                   vcopt, pvara, pvark,        &
                                                   coefap, coefbp, cofafp,     &
@@ -1598,7 +1600,7 @@ module cs_c_bindings
       bind(C, name='cs_equation_iterative_solve_scalar')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: idtvar, iterns, f_id, ndircp, iescap, imucpp
+      integer(c_int), value :: idtvar, iterns, f_id, iescap, imucpp
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefap
@@ -1619,7 +1621,7 @@ module cs_c_bindings
     ! Interface to C function cs_equation_iterative_solve_vector
 
     subroutine cs_equation_iterative_solve_vector(idtvar, iterns,             &
-                                                  f_id, name, ndircp,         &
+                                                  f_id, name,                 &
                                                   ivisep, iescap,             &
                                                   vcopt, pvara, pvark,        &
                                                   coefav, coefbv, cofafv,     &
@@ -1633,7 +1635,7 @@ module cs_c_bindings
       bind(C, name='cs_equation_iterative_solve_vector')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: idtvar, iterns, f_id, ndircp, iescap, ivisep
+      integer(c_int), value :: idtvar, iterns, f_id, iescap, ivisep
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefav
@@ -1654,7 +1656,7 @@ module cs_c_bindings
 
     ! Interface to C function cs_equation_iterative_solve_tensor
 
-    subroutine cs_equation_iterative_solve_tensor(idtvar, f_id, name, ndircp, &
+    subroutine cs_equation_iterative_solve_tensor(idtvar, f_id, name,         &
                                                   vcopt, pvara, pvark,        &
                                                   coefats, coefbts, cofafts,  &
                                                   cofbfts, i_massflux,        &
@@ -1666,7 +1668,7 @@ module cs_c_bindings
       bind(C, name='cs_equation_iterative_solve_tensor')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: idtvar, f_id, ndircp
+      integer(c_int), value :: idtvar, f_id
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefats
@@ -2346,11 +2348,11 @@ module cs_c_bindings
 
     ! Interface to C function solving mesh velocity in ALE framework.
 
-    subroutine cs_ale_solve_mesh_velocity(iterns, ndircl, impale, ialtyb)   &
+    subroutine cs_ale_solve_mesh_velocity(iterns, impale, ialtyb)   &
       bind(C, name='cs_ale_solve_mesh_velocity')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: iterns, ndircl
+      integer(c_int), value :: iterns
       integer(c_int), dimension(*), intent(in) :: impale, ialtyb
     end subroutine cs_ale_solve_mesh_velocity
 
@@ -4396,6 +4398,7 @@ contains
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
+    vcopt%ndircl = ndircp
     vcopt%idiff  = idiffp
     vcopt%idifft = -1
     vcopt%idften = idftnp
@@ -4419,7 +4422,7 @@ contains
     vcopt%relaxv = relaxp
 
     call cs_equation_iterative_solve_scalar(idtvar, iterns,                    &
-                                            f_id, c_name, ndircp,              &
+                                            f_id, c_name,                      &
                                             iescap, imucpp, c_k_value,         &
                                             pvara, pvark,                      &
                                             coefap, coefbp, cofafp, cofbfp,    &
@@ -4633,6 +4636,7 @@ contains
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
+    vcopt%ndircl = ndircp
     vcopt%idiff  = idiffp
     vcopt%idifft = -1
     vcopt%idften = idftnp
@@ -4656,7 +4660,7 @@ contains
     vcopt%relaxv = relaxp
 
     call cs_equation_iterative_solve_vector(idtvar, iterns,                    &
-                                            f_id, c_name, ndircp,              &
+                                            f_id, c_name,                      &
                                             ivisep, iescap, c_k_value,         &
                                             pvara, pvark,                      &
                                             coefav, coefbv, cofafv, cofbfv,    &
@@ -4855,6 +4859,7 @@ contains
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
+    vcopt%ndircl = ndircp
     vcopt%idiff  = idiffp
     vcopt%idifft = -1
     vcopt%idften = idftnp
@@ -4877,7 +4882,7 @@ contains
     vcopt%extrag = 0
     vcopt%relaxv = relaxp
 
-    call cs_equation_iterative_solve_tensor(idtvar, f_id, c_name, ndircp,      &
+    call cs_equation_iterative_solve_tensor(idtvar, f_id, c_name,              &
                                             c_k_value,                         &
                                             pvara, pvark,                      &
                                             coefats, coefbts, cofafts, cofbfts,&

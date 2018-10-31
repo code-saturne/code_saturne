@@ -175,6 +175,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
 
   vcopt.imrgra = cs_glob_space_disc->imrgra;
   vcopt.istat  = -1;
+  vcopt.ndircl =  1; /* There are Dirichlet BCs  */
   vcopt.isstpc =  0;
   vcopt.iwarni =  cs_glob_rad_transfer_params->iimlum;
   vcopt.blencv =  0.0;
@@ -189,8 +190,6 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
   /* all boundary convective flux with upwind */
   int icvflb = 0;
 
-  /* There are Dirichlet BCs  */
-  int ndirc1 = 1;
 
   /* Reset arrays before solve */
   for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
@@ -223,7 +222,6 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                                      1,  /* external sub-iteration */
                                      -1, /* f_id */
                                      "radiation_p1",
-                                     ndirc1,
                                      iescap,
                                      imucpp,
                                      &vcopt,

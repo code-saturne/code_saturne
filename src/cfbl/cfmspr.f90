@@ -325,7 +325,7 @@ call viscfa                                                                    &
 istatp = vcopt_p%istat
 iconvp = vcopt_p%iconv
 idiffp = vcopt_p%idiff
-ndircp = ndircl(ipr)
+ndircp = vcopt_p%ndircl
 nswrsp = vcopt_p%nswrsm
 nswrgp = vcopt_p%nswrgr
 imligp = vcopt_p%imligr

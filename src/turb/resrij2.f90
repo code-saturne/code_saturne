@@ -674,7 +674,7 @@ endif
 
 iconvp = vcopt_rij%iconv
 idiffp = vcopt_rij%idiff
-ndircp = ndircl(irij)
+ndircp = vcopt_rij%ndircl
 nswrsp = vcopt_rij%nswrsm
 nswrgp = vcopt_rij%nswrgr
 imligp = vcopt_rij%imligr

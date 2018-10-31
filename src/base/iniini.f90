@@ -507,22 +507,6 @@ iflxmw = 0
 
 anomax = -grand*10.d0
 
-! --- Solveurs iteratifs
-!       La methode de resolution sera choisie selon les equations
-!       La valeur de epsilon relatif est tres faible
-!         (1.D-5 pourrait suffire)
-!       On met IDIRCL a 1 pour toutes les variables. Pour toutes les
-!       variables sauf pression et fb (en v2f) on a ISTAT=1, le
-!       decalage de diagonale ne sera pas active. Pour la pression
-!       on decalera la diagonale si necessaire. Pour fb, on sait qu'il
-!       y a un autre terme diagonal (meme si ISTAT=0), donc IDIRCL
-!       sera mis a 0 dans varpos.
-
-do ii = 1, nvarmx
-  idircl(ii) = 1
-  ndircl(ii) = 0
-enddo
-
 ! --- Restarted calculation
 !       By default, non-restarted calculation
 !       Write auxiliary restart file by default

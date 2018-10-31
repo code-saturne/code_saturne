@@ -61,6 +61,8 @@ typedef struct {
   int     iwarni;
   int     iconv;
   int     istat;
+  int     idircl;
+  int     ndircl;
   int     idiff;
   int     idifft;
   int     idften;

@@ -420,24 +420,6 @@ if (iirayo.gt.0) then
   endif
 endif
 
-! --- Solveurs iteratifs
-
-! Il n'y a pas besoin de test sur les epsilons
-!   Ce sont simplement des reels
-!   Une valeur negative indique qu'on veut atteindre
-!   le nombre d'iterations maximal
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    if (idircl(ii).ne.0.and.idircl(ii).ne.1) then
-      call field_get_label(f_id, chaine)
-      write(nfecra,2401) chaine(1:16),ii,idircl(ii)
-      iok = iok + 1
-    endif
-  endif
-enddo
-
 ! --- Suite de calcul
 
 if (ileaux.ne.0.and.ileaux.ne.1) then
@@ -1333,25 +1315,6 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2401 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IDIRCL(',i10,   ') DOIT ETRE UN ENTIER EGAL A 0 OU 1',    /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  IDIRCL(I) indique si le code doit decaler la diagonale de', /,&
-'@    la matrice de la variable I en l''absence de Dirichlet',  /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -2553,25 +2516,6 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2401 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IDIRCL(',i10,   ') MUST BE AN INTEGER EQUAL  0  OR 1',    /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  IDIRCL(I) tells if the diagonal of the matrix for variable',/,&
-'@  I should be shifted in the absence of Dirichlet condition', /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&

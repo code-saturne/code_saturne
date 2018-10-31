@@ -801,7 +801,7 @@ endif
 
 iconvp = vcopt_p%iconv
 idiffp = vcopt_p%idiff
-ndircp = ndircl(ipr)
+ndircp = vcopt_p%ndircl
 
 thetap = 1.d0
 imucpp = 0

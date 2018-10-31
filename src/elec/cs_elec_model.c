@@ -469,11 +469,9 @@ _field_pointer_properties_map_electric_arcs(void)
 
 void
 CS_PROCF (elini1, ELINI1) (cs_real_t *visls0,
-                           cs_real_t *diftl0,
-                           cs_int_t  *idircl,
-                           cs_int_t  *isca)
+                           cs_real_t *diftl0)
 {
-  cs_electrical_model_specific_initialization(visls0, diftl0, idircl, isca);
+  cs_electrical_model_specific_initialization(visls0, diftl0);
 }
 
 void
@@ -652,9 +650,7 @@ cs_electrical_model_finalize(void)
 
 void
 cs_electrical_model_specific_initialization(cs_real_t  *visls0,
-                                            cs_real_t  *diftl0,
-                                            int        *idircl,
-                                            int        *isca)
+                                            cs_real_t  *diftl0)
 {
   cs_field_t *f = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -670,7 +666,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   var_cal_opt.istat  = 0;
   var_cal_opt.idiff  = 1;
   var_cal_opt.idifft = 0;
-  idircl[isca[id] - 1] = 1;
 
   cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
@@ -685,7 +680,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     var_cal_opt.istat  = 0;
     var_cal_opt.idiff  = 1;
     var_cal_opt.idifft = 0;
-    idircl[isca[id] - 1] = 1;
     cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
 
@@ -697,7 +691,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     var_cal_opt.istat  = 0;
     var_cal_opt.idiff  = 1;
     var_cal_opt.idifft = 0;
-    idircl[isca[id] - 1] = 1;
     visls0[id  ] = 1.;
     cs_field_set_key_struct(fp, key_cal_opt_id, &var_cal_opt);
   }

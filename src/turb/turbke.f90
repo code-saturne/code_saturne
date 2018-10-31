@@ -1266,7 +1266,7 @@ endif
 ! Solving k
 iconvp = vcopt_k%iconv
 idiffp = vcopt_k%idiff
-ndircp = ndircl(ik)
+ndircp = vcopt_k%ndircl
 nswrsp = vcopt_k%nswrsm
 nswrgp = vcopt_k%nswrgr
 imligp = vcopt_k%imligr
@@ -1342,7 +1342,7 @@ endif
 ! Solving epsilon
 iconvp = vcopt_e%iconv
 idiffp = vcopt_e%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt_e%ndircl
 nswrsp = vcopt_e%nswrsm
 nswrgp = vcopt_e%nswrgr
 imligp = vcopt_e%imligr

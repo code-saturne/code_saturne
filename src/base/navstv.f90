@@ -892,7 +892,7 @@ call cs_bad_cells_regularisation_scalar(cvar_pr)
 if (iale.eq.1) then
 
   if (itrale.gt.nalinf) then
-    call cs_ale_solve_mesh_velocity(iterns, ndircl(iuma), impale, ialtyb)
+    call cs_ale_solve_mesh_velocity(iterns, impale, ialtyb)
   endif
 
 endif
@@ -1440,13 +1440,13 @@ endif
 
 ! ---> RECALAGE DE LA PRESSION SUR UNE PRESSION A MOYENNE NULLE
 !  On recale si on n'a pas de Dirichlet. Or le nombre de Dirichlets
-!  calcule dans typecl.F est NDIRCL si IDIRCL=1 et NDIRCL-1 si IDIRCL=0
+!  calcule dans typecl.f90 est NDIRCL si IDIRCL=1 et NDIRCL-1 si IDIRCL=0
 !  (ISTAT vaut toujours 0 pour la pression)
 
-if (idircl(ipr).eq.1) then
-  ndircp = ndircl(ipr)
+if (vcopt_p%idircl.eq.1) then
+  ndircp = vcopt_p%ndircl
 else
-  ndircp = ndircl(ipr)-1
+  ndircp = vcopt_p%ndircl-1
 endif
 if (ndircp.le.0) then
   call prmoy0 &

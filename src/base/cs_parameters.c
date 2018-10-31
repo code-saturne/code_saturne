@@ -157,6 +157,27 @@ BEGIN_C_DECLS
         (variable \ref ipr) or f in v2f modelling (variable \ref ifb) and
         set to 1 for the other unknowns.
 
+  \var  cs_var_cal_opt_t::idircl
+        \anchor idircl
+        indicates whether the diagonal of the matrix should be slightly
+        shifted or not if there is no Dirichlet boundary condition and
+        if \ref cs_var_cal_opt_t::istat "istat" = 0.
+         - 0: false
+         - 1: true
+        Indeed, in such a case, the matrix for the general
+        advection/diffusion equation is singular. A slight shift in the
+        diagonal will make it invertible again.\n By default, \ref idircl
+        is set to 1 for all the unknowns, except \f$\overline{f}\f$ in v2f
+        modelling, since its equation contains another diagonal term
+        that ensures the regularity of the matrix.
+        \remark
+        the code computes automatically for each variable the number of Dirichlet
+        BCs
+
+  \var  cs_var_cal_opt_t::ndircl
+        \anchor ndircl
+        number of Dirichlet BCs
+
   \var  cs_var_cal_opt_t::idiff
         \anchor idiff
         For each unknown variable to calculate, indicates whether the
@@ -475,6 +496,8 @@ static cs_var_cal_opt_t _var_cal_opt =
   .iwarni = 0,
   .iconv  = 1,
   .istat  = 1,
+  .idircl = 1,
+  .ndircl = 0,
   .idiff  = 1,
   .idifft = 1,
   .idften = CS_ISOTROPIC_DIFFUSION,
@@ -599,6 +622,8 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_i, "iwarni", _t->iwarni);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "iconv ", _t->iconv );
   cs_log_printf(CS_LOG_SETUP, fmt_i, "istat ", _t->istat );
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "idircl", _t->idircl);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "ndircl", _t->ndircl);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "idiff ", _t->idiff );
   cs_log_printf(CS_LOG_SETUP, fmt_i, "idifft", _t->idifft);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "idften", _t->idften);

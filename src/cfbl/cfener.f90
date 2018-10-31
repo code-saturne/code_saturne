@@ -723,7 +723,7 @@ endif
 
 iconvp = vcopt_e%iconv
 idiffp = vcopt_e%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt_e%ndircl
 nswrsp = vcopt_e%nswrsm
 nswrgp = vcopt_e%nswrgr
 imligp = vcopt_e%imligr

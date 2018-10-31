@@ -151,7 +151,6 @@ BEGIN_C_DECLS
  * \param[in]     iterns        external sub-iteration number
  * \param[in]     f_id          field id (or -1)
  * \param[in]     name          associated name if f_id < 0, or NULL
- * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
  * \param[in]     iescap        compute the predictor indicator if 1
  * \param[in]     imucpp        indicator
  *                               - 0 do not multiply the convectiv term by Cp
@@ -209,7 +208,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    int                   iterns,
                                    int                   f_id,
                                    const char           *name,
-                                   int                   ndircp,
                                    int                   iescap,
                                    int                   imucpp,
                                    cs_var_cal_opt_t     *var_cal_opt,
@@ -245,6 +243,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   int idiffp = var_cal_opt->idiff;
   int iwarnp = var_cal_opt->iwarni;
   int iswdyp = var_cal_opt->iswdyn;
+  int ndircp = var_cal_opt->ndircl;
   double epsrsp = var_cal_opt->epsrsm;
   double epsilp = var_cal_opt->epsilo;
   double relaxp = var_cal_opt->relaxv;
@@ -1028,7 +1027,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  * \param[in]     iterns        external sub-iteration number
  * \param[in]     f_id          field id (or -1)
  * \param[in]     name          associated name if f_id < 0, or NULL
- * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
  * \param[in]     ivisep        indicator to take \f$ \divv
  *                               \left(\mu \gradt \transpose{\vect{a}} \right)
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
@@ -1088,7 +1086,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    int                   iterns,
                                    int                   f_id,
                                    const char           *name,
-                                   int                   ndircp,
                                    int                   ivisep,
                                    int                   iescap,
                                    cs_var_cal_opt_t     *var_cal_opt,
@@ -1125,6 +1122,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   int iwarnp = var_cal_opt->iwarni;
   int iswdyp = var_cal_opt->iswdyn;
   int idftnp = var_cal_opt->idften;
+  int ndircp = var_cal_opt->ndircl;
   double epsrsp = var_cal_opt->epsrsm;
   double epsilp = var_cal_opt->epsilo;
   double relaxp = var_cal_opt->relaxv;
@@ -1858,7 +1856,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
  * \param[in]     name          associated name if f_id < 0, or NULL
- * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]     pvara         variable at the previous time step
@@ -1907,7 +1904,6 @@ void
 cs_equation_iterative_solve_tensor(int                   idtvar,
                                    int                   f_id,
                                    const char           *name,
-                                   int                   ndircp,
                                    cs_var_cal_opt_t     *var_cal_opt,
                                    const cs_real_6_t     pvara[],
                                    const cs_real_6_t     pvark[],
@@ -1939,6 +1935,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   int iwarnp = var_cal_opt->iwarni;
   int iswdyp = var_cal_opt->iswdyn;
   int idftnp = var_cal_opt->idften;
+  int ndircp = var_cal_opt->ndircl;
   double epsrsp = var_cal_opt->epsrsm;
   double epsilp = var_cal_opt->epsilo;
   double relaxp = var_cal_opt->relaxv;

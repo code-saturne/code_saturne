@@ -557,7 +557,7 @@ endif
 
 iconvp = vcopt_nusa%iconv
 idiffp = vcopt_nusa%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt_nusa%ndircl
 nswrsp = vcopt_nusa%nswrsm
 nswrgp = vcopt_nusa%nswrgr
 imligp = vcopt_nusa%imligr
