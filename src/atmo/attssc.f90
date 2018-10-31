@@ -168,13 +168,14 @@ endif
 ! we assume that the vertical direction (given by the gravity)
 ! is ALWAYS oriented along the z axis.
 
-if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics only
+if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
 
   ! Test minimum liquid water to carry out drop sedimentation
   qliqmax = 0.d0
   do iel = 1, ncelet
     qliqmax = max(propce(iel,ipproc(iliqwt)),qliqmax)
   enddo
+  if (irangp.ge.0) call parmax(qliqmax)
 
   if(qliqmax.gt.1e-8)then
 
@@ -325,6 +326,9 @@ do iel = 1, ncel
   endif
   r3max = max(r3(iel),r3max)
 enddo
+
+if (irangp.ge.0) call parmax (r3max)
+
 end subroutine define_r3
 
 ! *******************************************************************
