@@ -377,6 +377,8 @@ cs_navsto_system_init_setup(void)
                                          3, /* dimension */
                                          has_previous);
 
+  cs_advection_field_def_by_field(ns->adv_field, ns->velocity);
+
   /* Set default value for keys related to log and post-processing */
   cs_field_set_key_int(ns->velocity, cs_field_key_id("log"), 1);
   cs_field_set_key_int(ns->velocity, cs_field_key_id("post_vis"), post_flag);
