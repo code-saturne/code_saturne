@@ -906,7 +906,7 @@ _update_mesh(bool     restart_mode,
 
   if (restart_mode == false) {
 
-    int n_retry = CS_MIN(tbm->n_max_join_tries, 1);
+    int n_retry = CS_MAX(tbm->n_max_join_tries, 1);
     cs_lnum_t boundary_changed = 0;
     double eps_dt = 0.;
 
