@@ -36,6 +36,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/cuda \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
@@ -61,6 +62,7 @@ $(FCMODINCLUDE)$(top_builddir)/src/cfbl \
 $(FCMODINCLUDE)$(top_builddir)/src/cogz \
 $(FCMODINCLUDE)$(top_builddir)/src/comb \
 $(FCMODINCLUDE)$(top_builddir)/src/ctwr \
+$(FCMODINCLUDE)$(top_builddir)/src/cuda \
 $(FCMODINCLUDE)$(top_builddir)/src/darc \
 $(FCMODINCLUDE)$(top_builddir)/src/elec \
 $(FCMODINCLUDE)$(top_builddir)/src/lagr \

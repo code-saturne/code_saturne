@@ -51,6 +51,7 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_cuda.h"
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_halo.h"
@@ -402,6 +403,10 @@ _sles_pc_poly_setup(void               *context,
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_rows; i++)
     c->_ad_inv[i] = 1.0 / c->_ad_inv[i];
+#ifdef HAVE_CUDA_OFFLOAD
+  if ( n_rows > CS_CUDA_GPU_THRESHOLD)
+    cs_cuda_map_to(c->_ad_inv, n_rows*sizeof(cs_real_t));
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -473,11 +478,17 @@ _sles_pc_poly_apply_jacobi(void                *context,
   const cs_real_t *restrict ad_inv = c->ad_inv;
 
   if (x_in != NULL) {
+#   ifdef HAVE_CUDA_OFFLOAD
+    if (!cs_cuda_vector_vc_equal_va_mul_vb(n_rows, x_out, x_in, ad_inv))
+#   endif
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       x_out[ii] = x_in[ii] * ad_inv[ii];
   }
   else {
+#   ifdef HAVE_CUDA_OFFLOAD
+    if (!cs_cuda_vector_vc_mul_equal_va(n_rows, x_out, ad_inv))
+#   endif
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       x_out[ii] *= ad_inv[ii];
@@ -566,6 +577,11 @@ static void
 _sles_pc_poly_free(void  *context)
 {
   cs_sles_pc_poly_t  *c = context;
+
+#ifdef HAVE_CUDA_OFFLOAD
+  if (c->n_rows > CS_CUDA_GPU_THRESHOLD)
+    cs_cuda_map_release(c->_ad_inv, 0);
+#endif
 
   c->n_rows = 0;
   c->n_cols = 0;

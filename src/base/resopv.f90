@@ -210,7 +210,11 @@ double precision, allocatable, dimension(:) :: coefaf_dp, coefbf_dp
 double precision, allocatable, dimension(:) :: coefap, coefbp, coefa_dp2
 double precision, allocatable, dimension(:) :: coefa_rho, coefb_rho
 double precision, allocatable, dimension(:) :: cofafp, cofbfp, coefaf_dp2
-double precision, allocatable, dimension(:) :: rhs, rovsdt
+
+double precision, pointer, dimension(:) :: rhs
+type(c_ptr) :: rhs_ptr
+
+double precision, allocatable, dimension(:) :: rovsdt
 double precision, allocatable, dimension(:) :: hydro_pres
 double precision, allocatable, dimension(:) :: velflx, velflb, ddphi
 double precision, allocatable, dimension(:,:) :: coefar, cofafr
@@ -262,7 +266,11 @@ call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac))
 allocate(res(ncelet), phia(ncelet))
-allocate(rhs(ncelet), rovsdt(ncelet))
+
+call cs_cuda_attempt_host_alloc(rhs_ptr, ncelet)
+call c_f_pointer(rhs_ptr, rhs, [ncelet])
+
+allocate(rovsdt(ncelet))
 allocate(iflux(nfac), bflux(ndimfb))
 allocate(dphi(ncelet))
 allocate(trav(3, ncelet))
@@ -2296,7 +2304,8 @@ deallocate(res, phia, dphi)
 if (allocated(divu)) deallocate(divu)
 deallocate(gradp)
 deallocate(coefaf_dp, coefbf_dp)
-deallocate(rhs, rovsdt)
+call cs_cuda_attempt_host_free(rhs_ptr)
+deallocate(rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dphim1, rhs0)
 if (icalhy.eq.1) deallocate(frchy, dfrchy, hydro_pres)

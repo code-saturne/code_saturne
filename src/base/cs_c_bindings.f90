@@ -151,6 +151,27 @@ module cs_c_bindings
 
   interface
 
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function calling CUDA pinned memory allocator.
+    subroutine cs_cuda_attempt_host_alloc(ptr, size_val) &
+      bind(C, name='cs_cuda_attempt_host_alloc')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ptr
+      integer(c_int), intent(in), value :: size_val
+    end subroutine cs_cuda_attempt_host_alloc
+
+    ! Interface to C function calling CUDa memory release.
+    subroutine cs_cuda_attempt_host_free(ptr) &
+      bind(C, name='cs_cuda_attempt_host_free')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(in), value :: ptr
+    end subroutine cs_cuda_attempt_host_free
+
+    !=============================================================================
+
     subroutine max_limiter_building(f_id, inc, rovsdt) &
     bind(C, name='cs_max_limiter_building')
       use, intrinsic :: iso_c_binding

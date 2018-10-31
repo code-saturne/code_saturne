@@ -51,6 +51,7 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_cuda.h"
 #include "cs_file.h"
 #include "cs_grid.h"
 #include "cs_halo.h"
@@ -1234,6 +1235,10 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
         wr_size1 += block_size;
     }
 
+#   ifdef HAVE_CUDA_OFFLOAD
+    mgd->rhs_vx_buf = cs_cuda_host_alloc((wr_size0*n0 + wr_size1*n1)*sizeof(cs_real_t));
+    if (!mgd->rhs_vx_buf)
+#   endif
     BFT_MALLOC(mgd->rhs_vx_buf, wr_size0*n0 + wr_size1*n1, cs_real_t);
 
     size_t block_size_shift = 0;
@@ -3613,9 +3618,13 @@ cs_multigrid_solve(void                *context,
                       + n_rows * 6 * db_size[1] * sizeof(cs_real_t);
   unsigned char *_aux_buf = aux_vectors;
 
-  if (_aux_size > aux_size)
+  if (_aux_size > aux_size) {
+#   ifdef HAVE_CUDA_OFFLOAD
+    _aux_buf = cs_cuda_host_alloc(_aux_size*sizeof(unsigned char));
+    if (!_aux_buf)
+#   endif
     BFT_MALLOC(_aux_buf, _aux_size, unsigned char);
-  else
+  } else
     _aux_size = aux_size;
 
   _level_names_init(name, mg->setup_data->n_levels, _aux_buf);
@@ -3673,8 +3682,12 @@ cs_multigrid_solve(void                *context,
     n_cycles++;
   }
 
-  if (_aux_buf != aux_vectors)
+  if (_aux_buf != aux_vectors) {
+#   ifdef HAVE_CUDA_OFFLOAD
+    if (!cs_cuda_host_free(_aux_buf))
+#   endif
     BFT_FREE(_aux_buf);
+  }
 
   /* Update statistics */
 
@@ -3734,6 +3747,9 @@ cs_multigrid_free(void  *context)
     /* Free coarse solution data */
 
     BFT_FREE(mgd->rhs_vx);
+#   ifdef HAVE_CUDA_OFFLOAD
+    if (!cs_cuda_host_free(mgd->rhs_vx_buf))
+#   endif
     BFT_FREE(mgd->rhs_vx_buf);
 
     /* Destroy solver hierarchy */

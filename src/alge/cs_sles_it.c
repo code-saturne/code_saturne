@@ -51,6 +51,7 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_cuda.h"
 #include "cs_file.h"
 #include "cs_log.h"
 #include "cs_halo.h"
@@ -918,6 +919,10 @@ _setup_sles_it(cs_sles_it_t       *c,
     }
 
     if (s != NULL) {
+#ifdef HAVE_CUDA_OFFLOAD
+      if (sd->n_rows > CS_CUDA_GPU_THRESHOLD && sd->_ad_inv)
+        cs_cuda_map_release(sd->_ad_inv, 0);
+#endif
       sd->ad_inv = s->setup_data->ad_inv;
       BFT_FREE(sd->_ad_inv);
     }
@@ -939,6 +944,10 @@ _setup_sles_it(cs_sles_it_t       *c,
         for (cs_lnum_t i = 0; i < n_rows; i++)
           sd->_ad_inv[i] = 1.0 / sd->_ad_inv[i];
 
+#ifdef HAVE_CUDA_OFFLOAD
+        if (n_rows > CS_CUDA_GPU_THRESHOLD)
+          cs_cuda_map_to(sd->_ad_inv, n_rows*sizeof(cs_real_t));
+#endif
       }
       else {
 
@@ -949,6 +958,11 @@ _setup_sles_it(cs_sles_it_t       *c,
           _fact_lu33(n_blocks, ad, sd->_ad_inv);
         else
           _fact_lu(n_blocks, diag_block_size, ad, sd->_ad_inv);
+
+#ifdef HAVE_CUDA_OFFLOAD
+        if (sd->n_rows > CS_CUDA_GPU_THRESHOLD)
+          cs_cuda_map_to(sd->_ad_inv, sd->n_rows*diag_block_size*sizeof(cs_real_t));
+#endif
 
       }
 
@@ -1005,17 +1019,22 @@ _conjugate_gradient(cs_sles_it_t              *c,
   assert(c->setup_data != NULL);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
-
+  cs_lnum_t tmp_size = 0;
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
     const size_t n_wa = 4;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa)) {
+#     ifdef HAVE_CUDA_OFFLOAD
+      _aux_vectors = cs_cuda_host_alloc(wa_size * n_wa * sizeof(cs_real_t));
+      if (!_aux_vectors)
+#     endif
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
-    else
+    } else
       _aux_vectors = aux_vectors;
 
+    tmp_size = wa_size * n_wa;
     rk = _aux_vectors;
     dk = _aux_vectors + wa_size;
     gk = _aux_vectors + wa_size*2;
@@ -1027,8 +1046,22 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
   /* Residue and descent direction */
 
+
+#ifdef HAVE_CUDA_OFFLOAD
+  const cs_lnum_t vx_size = cs_matrix_get_n_columns(a);
+  if (n_rows > CS_CUDA_GPU_THRESHOLD) {
+    cs_cuda_map_to(vx,vx_size*sizeof(cs_real_t));
+    cs_cuda_map_to(rhs,n_rows*sizeof(cs_real_t));
+    cs_cuda_map_alloc(_aux_vectors,tmp_size*sizeof(cs_real_t));
+  }
+#endif
+
+  // vx will be mapped here if not maaped before.
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
+# ifdef HAVE_CUDA_OFFLOAD
+  if (!cs_cuda_vector_vc_sub_equal_va(n_rows, rk, rhs))
+# endif
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
@@ -1043,8 +1076,11 @@ _conjugate_gradient(cs_sles_it_t              *c,
   /* Descent direction */
   /*-------------------*/
 
-#if defined(HAVE_OPENMP)
+# ifdef HAVE_CUDA_OFFLOAD
+  if(!cs_cuda_vector_vc_equal_va(n_rows,dk, gk))
+# endif
 
+#if defined(HAVE_OPENMP)
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     dk[ii] = gk[ii];
@@ -1074,7 +1110,9 @@ _conjugate_gradient(cs_sles_it_t              *c,
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
     alpha =  - ro_0 / ro_1;
-
+#   ifdef HAVE_CUDA_OFFLOAD
+    if (!cs_cuda_vector_vc_add_equal_s_mul_vb(n_rows,alpha,vx,dk,rk,zk))
+#   endif
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
@@ -1126,6 +1164,9 @@ _conjugate_gradient(cs_sles_it_t              *c,
     beta = rk_gk / rk_gkm1;
     rk_gkm1 = rk_gk;
 
+#   ifdef HAVE_CUDA_OFFLOAD
+    if (!cs_cuda_vector_vc_equal_va_add_s_mul_vb(n_rows, beta, dk, gk, dk))
+#   endif
 #   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       dk[ii] = gk[ii] + (beta * dk[ii]);
@@ -1136,6 +1177,9 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     alpha =  - ro_0 / ro_1;
 
+#   ifdef HAVE_CUDA_OFFLOAD
+    if (!cs_cuda_vector_vc_add_equal_s_mul_vb(n_rows, alpha, vx, dk, rk, zk))
+#   endif
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
@@ -1146,11 +1190,22 @@ _conjugate_gradient(cs_sles_it_t              *c,
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] += (alpha * zk[ii]);
     }
-
   }
 
-  if (_aux_vectors != aux_vectors)
+#ifdef HAVE_CUDA_OFFLOAD
+  if (n_rows > CS_CUDA_GPU_THRESHOLD) {
+    cs_cuda_map_release(_aux_vectors,tmp_size*sizeof(cs_real_t));
+    cs_cuda_map_release(rhs,n_rows*sizeof(cs_real_t));
+    cs_cuda_map_from_sync(vx,vx_size*sizeof(cs_real_t));
+  }
+#endif
+
+  if (_aux_vectors != aux_vectors) {
+#   ifdef HAVE_CUDA_OFFLOAD
+    if (!cs_cuda_host_free(_aux_vectors))
+#   endif
     BFT_FREE(_aux_vectors);
+  }
 
   return cvg;
 }
@@ -4003,6 +4058,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
   unsigned n_iter = 0;
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+  const cs_lnum_t n_colsext = cs_matrix_get_n_columns(a);
 
   const cs_halo_t *halo = cs_matrix_get_halo(a);
 
@@ -4020,6 +4076,11 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
   /* Current iteration */
   /*-------------------*/
+
+#ifdef HAVE_CUDA_OFFLOAD
+  if (n_rows > CS_CUDA_GPU_THRESHOLD)
+    cs_cuda_map_to(rhs, diag_block_size*n_rows*sizeof(cs_real_t));
+#endif
 
   while (cvg == CS_SLES_ITERATING) {
 
@@ -4052,7 +4113,9 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
     }
     else {
-
+#     ifdef HAVE_CUDA_OFFLOAD
+      if(!cs_cuda_seidel_forward(a_row_index,a_col_id,a_x_val, ad_inv, rhs, vx, diag_block_size, db_size, n_rows, n_colsext))
+#     endif
 #     pragma omp parallel for if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
@@ -4117,7 +4180,9 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
     }
     else {
-
+#     ifdef HAVE_CUDA_OFFLOAD
+      if(!cs_cuda_seidel_backward(a_row_index, a_col_id, a_x_val, ad_inv, ad, rhs, vx, &res2, diag_block_size, db_size, n_rows, n_colsext))
+#     endif
 #     pragma omp parallel for reduction(+:res2) \
                           if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = n_rows - 1; ii > - 1; ii--) {
@@ -4183,6 +4248,11 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
     }
 
   }
+
+#ifdef HAVE_CUDA_OFFLOAD
+  if (n_rows > CS_CUDA_GPU_THRESHOLD)
+    cs_cuda_map_release(rhs, 0);
+#endif
 
   return cvg;
 }
@@ -5305,6 +5375,10 @@ cs_sles_it_free(void  *context)
     cs_sles_pc_free(c->_pc);
 
   if (c->setup_data != NULL) {
+#ifdef HAVE_CUDA_OFFLOAD
+    if (c->setup_data->n_rows > CS_CUDA_GPU_THRESHOLD && c->setup_data->_ad_inv)
+      cs_cuda_map_release(c->setup_data->_ad_inv, 0);
+#endif
     BFT_FREE(c->setup_data->_ad_inv);
     BFT_FREE(c->setup_data);
   }

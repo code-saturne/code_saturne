@@ -34,6 +34,7 @@ endif
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/cuda \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/base \

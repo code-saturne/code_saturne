@@ -52,6 +52,7 @@
 #include "bft_printf.h"
 
 #include "cs_blas.h"
+#include "cs_cuda.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
@@ -1179,6 +1180,10 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   /* Allocate temporary arrays */
   BFT_MALLOC(dam, n_cells_ext, cs_real_33_t);
+  // dpvar may be needed in the GPU so we get pinned memory for it.
+# ifdef HAVE_CUDA_OFFLOAD
+  if (!(dpvar = cs_cuda_host_alloc(n_cells_ext * sizeof(cs_real_3_t))))
+# endif
   BFT_MALLOC(dpvar, n_cells_ext, cs_real_3_t);
   BFT_MALLOC(smbini, n_cells_ext, cs_real_3_t);
 
@@ -1801,6 +1806,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   BFT_FREE(dam);
   BFT_FREE(xam);
   BFT_FREE(smbini);
+# ifdef HAVE_CUDA_OFFLOAD
+  if(!cs_cuda_host_free(dpvar))
+# endif
   BFT_FREE(dpvar);
   if (iswdyp >= 1) {
     BFT_FREE(adxk);

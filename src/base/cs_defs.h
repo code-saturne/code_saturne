@@ -412,6 +412,15 @@ typedef struct {
 #  define CS_THR_MIN 128
 #endif
 
+// Number of elements threshold to actually offload to the GPU.
+#define GPU_THRESHOLD 1024
+
+// Number of threads to b e used in each CUDA block.
+#define GPU_NUMTHD 128
+
+// Number of threads that cooperate to get the same result withing a warp.
+#define GPU_VECSIZE 8
+
 /* Cache line size, or multiple thereof */
 /*--------------------------------------*/
 
@@ -544,6 +553,9 @@ cs_align(cs_lnum_t  i,
 }
 
 /*----------------------------------------------------------------------------*/
+
+// Maximum value for diagonal block size for blocked operations.
+#define DB_SIZE_MAX 8
 
 #ifdef __cplusplus
 }
