@@ -1398,6 +1398,8 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   cs_log_printf(CS_LOG_SETUP, "  <%s/space poly degree>  %d\n",
                 eqname, eqp->space_poly_degree);
+  cs_log_printf(CS_LOG_SETUP, "  <%s/Verbosity>  %d\n",
+                eqname, eqp->verbosity);
 
   bool  unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
   bool  convection = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
@@ -1414,22 +1416,19 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                 cs_base_strtf(source_term), cs_base_strtf(force_values));
 
   /* Boundary conditions */
-  if (eqp->verbosity > 0) {
-
+  cs_log_printf(CS_LOG_SETUP,
+                "  <%s/Boundary Conditions> default: %s, enforcement: %s\n",
+                eqname, cs_param_get_bc_name(eqp->default_bc),
+                cs_param_get_bc_enforcement_name(eqp->enforcement));
+  if (eqp->enforcement != CS_PARAM_BC_ENFORCE_ALGEBRAIC)
     cs_log_printf(CS_LOG_SETUP,
-                  "  <%s/Boundary Conditions> default: %s, enforcement: %s\n",
-                  eqname, cs_param_get_bc_name(eqp->default_bc),
-                  cs_param_get_bc_enforcement_name(eqp->enforcement));
-    if (eqp->enforcement != CS_PARAM_BC_ENFORCE_ALGEBRAIC)
-      cs_log_printf(CS_LOG_SETUP,
-                    "  <%s/Boundary Conditions> penalization coefficient:"
-                    " %5.3e\n", eqname, eqp->bc_penalization_coeff);
-    cs_log_printf(CS_LOG_SETUP, "    <%s/n_bc_definitions> %d\n",
-                  eqname, eqp->n_bc_defs);
-    if (eqp->verbosity > 1) {
-      for (int id = 0; id < eqp->n_bc_defs; id++)
-        cs_xdef_log(eqp->bc_defs[id]);
-    }
+                  "  <%s/Boundary Conditions> penalization coefficient:"
+                  " %5.3e\n", eqname, eqp->bc_penalization_coeff);
+  cs_log_printf(CS_LOG_SETUP, "    <%s/n_bc_definitions> %d\n",
+                eqname, eqp->n_bc_defs);
+  if (eqp->verbosity > 1) {
+    for (int id = 0; id < eqp->n_bc_defs; id++)
+      cs_xdef_log(eqp->bc_defs[id]);
   }
 
   if (unsteady) {
@@ -1504,19 +1503,22 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
     cs_log_printf(CS_LOG_SETUP, "  <Advection field>  %s\n",
                   cs_advection_field_get_name(eqp->adv_field));
 
-    if (eqp->verbosity > 1) {
+    if (eqp->verbosity > 0) {
+
       cs_log_printf(CS_LOG_SETUP, "  <%s/Advection.Formulation>", eqname);
       switch(eqp->adv_formulation) {
+
       case CS_PARAM_ADVECTION_FORM_CONSERV:
         cs_log_printf(CS_LOG_SETUP, " Conservative\n");
         break;
       case CS_PARAM_ADVECTION_FORM_NONCONS:
         cs_log_printf(CS_LOG_SETUP, " Non-conservative\n");
         break;
+
       default:
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid operator type for advection.");
-      }
+      } /* Switch on formulation */
 
       cs_log_printf(CS_LOG_SETUP, "  <%s/Advection.Scheme> ", eqname);
       switch(eqp->adv_scheme) {
@@ -1583,6 +1585,8 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   const cs_param_itsol_t   itsol = eqp->itsol_info;
 
   cs_log_printf(CS_LOG_SETUP, "\n  <%s/Sparse.Linear.Algebra>", eqname);
+  cs_log_printf(CS_LOG_SETUP, "  <%s/SLES Verbosity>  %d\n",
+                eqname, eqp->sles_verbosity);
 
   if (eqp->solver_class == CS_EQUATION_SOLVER_CLASS_CS)
     cs_log_printf(CS_LOG_SETUP, " Code_Saturne iterative solvers\n");

@@ -626,7 +626,7 @@ cs_xdef_log(cs_xdef_t     *d)
   if (d->state & CS_FLAG_STATE_CELLWISE) is_cellwise = true;
 
   cs_log_printf(CS_LOG_SETUP,
-                " <Definition> uniform [%s], cellwise [%s], steady [%s],"
+                "  <Definition> uniform [%s], cellwise [%s], steady [%s],"
                 " meta: %u\n",
                 cs_base_strtf(is_uniform), cs_base_strtf(is_cellwise),
                 cs_base_strtf(is_steady), d->meta);
@@ -636,7 +636,7 @@ cs_xdef_log(cs_xdef_t     *d)
     const cs_zone_t  *z = cs_volume_zone_by_id(d->z_id);
     assert(z != NULL);
     cs_log_printf(CS_LOG_SETUP,
-                  " <Definition> support: volume, zone: %d, %s,"
+                  "  <Definition> support: volume, zone: %d, %s,"
                   " mesh_location: %s\n",
                   z->id, z->name, cs_mesh_location_get_name(z->location_id));
 
@@ -646,7 +646,7 @@ cs_xdef_log(cs_xdef_t     *d)
     const cs_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
     assert(z != NULL);
     cs_log_printf(CS_LOG_SETUP,
-                  " <Definition> support: boundary, zone: %d, %s,"
+                  "  <Definition> support: boundary, zone: %d, %s,"
                   " mesh_location: %s\n",
                   z->id, z->name, cs_mesh_location_get_name(z->location_id));
 
@@ -717,7 +717,7 @@ cs_xdef_log(cs_xdef_t     *d)
 
   } /* switch on def_type */
 
-  cs_log_printf(CS_LOG_SETUP, " <Definition/Quadrature> %s\n",
+  cs_log_printf(CS_LOG_SETUP, "  <Definition/Quadrature> %s\n",
                 cs_quadrature_get_type_name(d->qtype));
 
 }
