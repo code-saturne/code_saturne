@@ -5,6 +5,9 @@ Release 5.0.10 (unreleased)
 Bug fixes
 ---------
 
+- Fixes for parallel runs in sedimentation source term with humid atmosphere
+  model.
+
 - Fix allocation of pmappers to scalar fields in atmospheric aerosols model. 
 
 - Fix allocation size for values at injection in case of mass source terms
