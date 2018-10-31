@@ -128,7 +128,7 @@ def main(argv, pkg):
 
     case = process_cmd_line(argv)
 
-    app = QApplication(argv)
+    app = QApplication(sys.argv)
     app.setOrganizationName(pkg.code_name) # Defines the name of subdirectory under .config
     app.setOrganizationDomain(pkg.url)
     app.setApplicationName("tracking convergence") # Defines the name of the configuration file
