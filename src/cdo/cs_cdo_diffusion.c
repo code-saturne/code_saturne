@@ -1283,7 +1283,7 @@ cs_cdo_diffusion_vbcost_robin(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
       cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Local Robin bc matrix (f_id: %d)", fm->f_id);
+                    ">> Cell Vb COST Robin bc matrix (f_id: %d)", fm->f_id);
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
 #endif
 
@@ -1406,7 +1406,7 @@ cs_cdo_diffusion_vbcost_generic(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
       cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Local Robin bc matrix (f_id: %d)", fm->f_id);
+                    ">> Cell Vb COST generic bc matrix (f_id: %d)", fm->f_id);
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
 #endif
 
@@ -1487,7 +1487,7 @@ cs_cdo_diffusion_vbcost_weak_dirichlet(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
       cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Local weak bc matrix (f_id: %d)", fm->f_id);
+                    ">> Cell Vb.COST Weak bc matrix (f_id: %d)", fm->f_id);
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
 #endif
 
@@ -1578,7 +1578,7 @@ cs_cdo_diffusion_vbcost_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
       cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Local weak bc matrix (f_id: %d)", fm->f_id);
+                    ">> Cell Vb COST WeakSym bc matrix (f_id: %d)", fm->f_id);
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
 #endif
 
@@ -1673,7 +1673,7 @@ cs_cdo_diffusion_vbwbs_robin(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
       cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Local Robin bc matrix (f_id: %d)", fm->f_id);
+                    ">> Cell Vb WBS Robin bc matrix (f_id: %d)", fm->f_id);
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
 #endif
 
@@ -1743,7 +1743,7 @@ cs_cdo_diffusion_vbwbs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
       cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Local weak bc matrix (f_id: %d)", fm->f_id);
+                    ">> Cell Vb WBS Weak bc matrix (f_id: %d)", fm->f_id);
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
 #endif
 
@@ -1823,7 +1823,7 @@ cs_cdo_diffusion_vbwbs_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
       cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Local weak bc matrix (f_id: %d)", fm->f_id);
+                    ">> Cell Vb WBS WeakSym bc matrix (f_id: %d)", fm->f_id);
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
 #endif
 
@@ -1893,7 +1893,7 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
       cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Local weak bc matrix (f_id: %d)", fm->f_id);
+                    ">> Cell VCb Weak bc matrix (f_id: %d)", fm->f_id);
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
 #endif
 
@@ -1973,7 +1973,7 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
       cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Local weak bc matrix (f_id: %d)", fm->f_id);
+                    ">> Cell VCb WeakSym bc matrix (f_id: %d)", fm->f_id);
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
 #endif
 
