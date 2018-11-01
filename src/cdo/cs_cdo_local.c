@@ -480,8 +480,9 @@ cs_cell_builder_create(void)
   /* Common part to all discretization */
   BFT_MALLOC(cb, 1, cs_cell_builder_t);
 
-  cb->eig_ratio = -DBL_MAX;
-  cb->eig_max = -DBL_MAX;
+  /* Consider a unitary diffusion property by default */
+  cb->eig_ratio = 1;
+  cb->eig_max = 1;
 
   cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = 1;
   cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0;
@@ -489,6 +490,7 @@ cs_cell_builder_create(void)
   cb->dpty_val = 1;
   cb->tpty_val = 1;
   cb->rpty_val = 1;
+
   for (int r = 0; r < CS_CDO_N_MAX_REACTIONS; r++) cb->rpty_vals[r] = 1;
 
   cb->adv_fluxes = NULL;

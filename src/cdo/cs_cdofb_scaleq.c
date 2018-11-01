@@ -861,18 +861,10 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    if (cs_equation_param_has_diffusion(eqp) == false)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid choice of Dirichlet enforcement.\n"
-                " Diffusion term should be active.", __func__);
     eqc->enforce_dirichlet = cs_cdo_diffusion_sfb_weak_dirichlet;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    if (cs_equation_param_has_diffusion(eqp) == false)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid choice of Dirichlet enforcement.\n"
-                " Diffusion term should be active.", __func__);
     eqc->enforce_dirichlet = cs_cdo_diffusion_sfb_wsym_dirichlet;
     break;
 

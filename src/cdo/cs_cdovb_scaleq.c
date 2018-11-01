@@ -894,60 +894,42 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
     eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
-    if (cs_equation_param_has_diffusion(eqp)) {
+    switch (eqp->diffusion_hodge.algo) {
 
-      switch (eqp->diffusion_hodge.algo) {
+    case CS_PARAM_HODGE_ALGO_COST:
+    case CS_PARAM_HODGE_ALGO_VORONOI:
+      eqc->enforce_dirichlet = cs_cdo_diffusion_vbcost_weak_dirichlet;
+      break;
+    case CS_PARAM_HODGE_ALGO_WBS:
+      eqc->enforce_dirichlet = cs_cdo_diffusion_vbwbs_weak_dirichlet;
+      break;
 
-      case CS_PARAM_HODGE_ALGO_COST:
-      case CS_PARAM_HODGE_ALGO_VORONOI:
-        eqc->enforce_dirichlet = cs_cdo_diffusion_vbcost_weak_dirichlet;
-        break;
-
-      case CS_PARAM_HODGE_ALGO_WBS:
-        eqc->enforce_dirichlet = cs_cdo_diffusion_vbwbs_weak_dirichlet;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid type of algorithm to build the diffusion term.",
-                  __func__);
-
-      } /* Switch on Hodge algo. */
-
-    }
-    else
+    default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid choice of Dirichlet enforcement.\n"
-                " Diffusion term should be active.", __func__);
+                " %s: Invalid type of algorithm to enforce the Dirichlet BC.",
+                __func__);
+
+    } /* Switch on Hodge algo. */
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
     eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
-    if (cs_equation_param_has_diffusion(eqp)) {
+    switch (eqp->diffusion_hodge.algo) {
 
-      switch (eqp->diffusion_hodge.algo) {
+    case CS_PARAM_HODGE_ALGO_COST:
+    case CS_PARAM_HODGE_ALGO_VORONOI:
+      eqc->enforce_dirichlet = cs_cdo_diffusion_vbcost_wsym_dirichlet;
+      break;
+    case CS_PARAM_HODGE_ALGO_WBS:
+      eqc->enforce_dirichlet = cs_cdo_diffusion_vbwbs_wsym_dirichlet;
+      break;
 
-      case CS_PARAM_HODGE_ALGO_COST:
-      case CS_PARAM_HODGE_ALGO_VORONOI:
-        eqc->enforce_dirichlet = cs_cdo_diffusion_vbcost_wsym_dirichlet;
-        break;
-
-      case CS_PARAM_HODGE_ALGO_WBS:
-        eqc->enforce_dirichlet = cs_cdo_diffusion_vbwbs_wsym_dirichlet;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  (" %s: Invalid type of algorithm to build the diffusion term."),
-                  __func__);
-
-      } /* Switch on Hodge algo. */
-
-    }
-    else
+    default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid choice of Dirichlet enforcement.\n"
-                " Diffusion term should be active.", __func__);
+                " %s: Invalid type of algorithm to enforce the Dirichlet BC.",
+                __func__);
+
+    } /* Switch on Hodge algo. */
     break;
 
   default:
