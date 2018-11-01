@@ -552,7 +552,7 @@ _vcb_enforce_values(const cs_equation_param_t     *eqp,
          csys is updated inside (matrix and rhs) */
       eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
       if (cs_dbg_cw_test(cm))
         cs_cell_sys_dump("\n>> Local system after strong BC treatment", csys);
 #endif
@@ -635,7 +635,7 @@ _solve_vcb_system(cs_sles_t                    *sles,
 
   }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
   cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, n_vertices, x, 6);
   cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_vertices, rhs, 6);
 #endif
