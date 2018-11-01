@@ -495,8 +495,8 @@ _vb_apply_weak_bc(cs_real_t                      time_eval,
       }
 
       if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED)
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
           eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
     }
