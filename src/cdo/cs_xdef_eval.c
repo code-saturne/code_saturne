@@ -378,6 +378,8 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
       const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
       const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
       double *val_i = eval + dim*bf_id;
+      /* Resetting */
+      memset(val_i, 0, dim*sizeof(double));
 
       switch (end - start) {
 
@@ -425,6 +427,8 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
       const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
       double  *val_i = compact ? eval + dim*i : eval + dim*bf_id;
+      /* Resetting */
+      memset(val_i, 0, dim*sizeof(double));
 
       switch (end - start) {
 
