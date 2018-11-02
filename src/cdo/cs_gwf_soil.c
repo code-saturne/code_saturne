@@ -815,8 +815,8 @@ cs_gwf_soil_set_all_saturated(cs_property_t         *permeability,
 
     if (soil->model != CS_GWF_SOIL_SATURATED)
       bft_error(__FILE__, __LINE__, 0,
-                " Invalid way of setting soil parameter.\n"
-                " All soils are not considered as saturated.");
+                " %s: Invalid way of setting soil parameter.\n"
+                " All soils are not considered as saturated.", __func__);
 
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
@@ -977,7 +977,7 @@ cs_gwf_soil_log_setup(void)
     const cs_gwf_soil_t  *soil = _soils[i];
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
-    cs_log_printf(CS_LOG_SETUP, "\n  <GWF/Soil %d> %s\n", soil->id, z->name);
+    cs_log_printf(CS_LOG_SETUP, "\n  <GWF/Soil_id %d> %s\n", soil->id, z->name);
     switch (soil->model) {
 
     case CS_GWF_SOIL_GENUCHTEN:

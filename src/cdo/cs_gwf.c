@@ -95,7 +95,7 @@ BEGIN_C_DECLS
  * Structure definitions
  *============================================================================*/
 
-/* Set of parameters related to the groundwater module */
+/* Set of parameters related to the groundwater flow (GWF) module */
 
 struct _gwf_t {
 
@@ -112,8 +112,8 @@ struct _gwf_t {
   /* Members related to the associated tracer equations */
   int                          n_tracers;
   cs_gwf_tracer_t            **tracers;
-  cs_gwf_tracer_setup_t      **finalize_tracer_setup;  // Function pointers
-  cs_gwf_tracer_add_terms_t  **add_tracer_terms;       // Function pointers
+  cs_gwf_tracer_setup_t      **finalize_tracer_setup;  /* Function pointers */
+  cs_gwf_tracer_add_terms_t  **add_tracer_terms;       /* Function pointers */
 
   /* Additional heads */
   cs_field_t      *pressure_head;    /* Allocated only if gravitation is active
@@ -140,10 +140,12 @@ struct _gwf_t {
   cs_field_t      *permea_field;     /* Related cs_field_t structure at cells */
 
   /* Settings related to the advection field stemming from the darcian flux */
-  cs_flag_t        flux_location; /* indicate where the array is defined */
-  /* array defining the advection field (optional) */
+  cs_flag_t        flux_location;   /* Indicate where the array is defined */
+
+  /* Array defining the advection field (optional) */
   cs_real_t       *darcian_flux;
-  /* array defining the normal flux of the advection field across the domain
+
+  /* Array defining the normal flux of the advection field across the domain
      boundary (optional) */
   cs_real_t       *darcian_boundary_flux;
 
@@ -426,7 +428,7 @@ _update_head(cs_gwf_t                    *gw,
       }
 
       /* Update head_in_law */
-      cs_reco_pv_at_cell_centers(connect->c2v, cdoq,pressure_head->val,
+      cs_reco_pv_at_cell_centers(connect->c2v, cdoq, pressure_head->val,
                                  gw->head_in_law);
       break;
 
@@ -826,10 +828,12 @@ cs_gwf_set_gravity_vector(const cs_real_3_t      gvec)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Advanced setting: indicate where the darcian flux is stored
- *         cs_flag_primal_cell is the default setting
- *         cs_flag_dual_face_byc is a valid choice for vertex-based schemes
  *
- * \param[in]       location_flag   where the flux is defined
+ *         cs_flag_dual_face_byc is the default setting for Vb (default space
+ *         scheme) whereas cs_flag_primal_cell should be prefered for other
+ *         schemes
+ *
+ * \param[in]  location_flag      where the flux is defined
  */
 /*----------------------------------------------------------------------------*/
 
@@ -986,9 +990,10 @@ cs_gwf_init_setup(void)
   const int  n_soils = cs_gwf_get_n_soils();
   if (n_soils < 1)
     bft_error(__FILE__, __LINE__, 0,
-              _(" Groundwater module is activated but no soil is defined."));
+              " %s: Groundwater module is activated but no soil is defined.",
+              __func__);
 
-  const bool has_previous = cs_equation_is_steady(gw->richards) ? false:true;
+  const bool has_previous = cs_equation_is_steady(gw->richards) ? false : true;
   const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
   const int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
   const int  v_loc_id = cs_mesh_location_get_id_by_name("vertices");
@@ -1020,7 +1025,7 @@ cs_gwf_init_setup(void)
       break;
 
     default:
-      bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
+      bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.", __func__);
     }
 
     cs_field_set_key_int(gw->pressure_head, log_key, 1);
@@ -1056,7 +1061,8 @@ cs_gwf_init_setup(void)
                                        1,   /* dimension */
                                        pty_has_previous);
 
-  cs_field_set_key_int(gw->moisture_field, log_key, 1);
+  if (pty_has_previous)
+    cs_field_set_key_int(gw->moisture_field, log_key, 1);
   if (gw->flag & CS_GWF_POST_MOISTURE)
     cs_field_set_key_int(gw->moisture_field, post_key, 1);
 
@@ -1111,7 +1117,7 @@ cs_gwf_init_setup(void)
 
     }
 
-  }
+  } /* Some soils are unsaturated */
 
   /* Add default post-processing related to groundwater flow module */
   cs_post_add_time_mesh_dep_output(cs_gwf_extra_post, gw);
@@ -1235,7 +1241,8 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
       richards_scheme == CS_SPACE_SCHEME_HHO_P1 ||
       richards_scheme == CS_SPACE_SCHEME_HHO_P2)
     bft_error(__FILE__, __LINE__, 0,
-              _(" Richards eq. is only available for vertex-based schemes."));
+              " %s: Richards eq. is only available for vertex-based schemes.",
+              __func__);
 
   /* Up to now Richards equation is only set with vertex-based schemes
      TODO: Face-based schemes */
@@ -1686,7 +1693,7 @@ cs_gwf_extra_post(void                      *input,
                 " %s: Null pointer encounter\n", __func__);
 
     cs_log_printf(CS_LOG_DEFAULT,
-                  " Balance of the Darcy flux across the domain boundary\n");
+                  "-b- Balance of the Darcy flux across the domain boundary\n");
 
     cs_real_t balance = 0;
     for (cs_lnum_t  i = 0; i < n_b_faces; i++)

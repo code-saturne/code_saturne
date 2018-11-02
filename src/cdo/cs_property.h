@@ -116,8 +116,8 @@ typedef struct {
   int                  n_definitions;  /* Current number of definitions used */
   cs_xdef_t          **defs;           /* List of definitions */
 
-  /* Store the definition id for each cell, NULL is only one
-     definition is set */
+  /* Store the definition id for each cell, NULL if there is only one
+     definition set */
   short int           *def_ids;
 
   /* Function pointers to handle generic tasks related to a property. There
