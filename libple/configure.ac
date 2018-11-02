@@ -187,6 +187,13 @@ if test "${relocatable}" = yes ; then
   AC_DEFINE([HAVE_RELOCATABLE], 1, [Relocatable installation])
 fi
 
+
+# SWIG
+AX_PKG_SWIG(1.3.21) # check swig version
+AX_SWIG_PYTHON
+AM_PATH_PYTHON(2.3)
+AX_PYTHON_DEVEL([>='2.5'])
+
 # Default compiler options (may be modified
 # by defining CFLAGS in the environment)
 #------------------------------------------
@@ -487,7 +494,7 @@ PLE_AC_CONFIG_INFO_FINALIZE
 
 # If we use GNU gettext, we need to add po/Makefile.
 
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile
+AC_CONFIG_FILES([Makefile src/Makefile pyple/Makefile tests/Makefile
                  doc/Makefile doc/doxygen/Makefile
                  po/Makefile.in])
 

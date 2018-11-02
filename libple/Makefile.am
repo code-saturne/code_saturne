@@ -34,7 +34,7 @@ AUX_DIST = build-aux/compile \
 
 MAINTAINERCLEANFILES = aclocal.m4 configure $(AUX_DIST)
 
-SUBDIRS = src tests doc po
+SUBDIRS = src pyple tests doc po
 
 EXTRA_DIST = m4/ple_config_info.m4 \
              m4/ple_config_publ.m4 \
