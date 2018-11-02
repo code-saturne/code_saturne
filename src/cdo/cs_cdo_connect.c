@@ -485,8 +485,8 @@ _build_cell_type_and_flag(cs_cdo_connect_t   *connect)
   BFT_MALLOC(connect->cell_flag, n_cells, cs_flag_t);
   BFT_MALLOC(connect->cell_type, n_cells, fvm_element_t);
 
-  bool  *is_border_vtx = NULL;
-  BFT_MALLOC(is_border_vtx, n_vertices, bool);
+  cs_flag_t  *is_border_vtx = NULL;
+  BFT_MALLOC(is_border_vtx, n_vertices, cs_flag_t);
 
 # pragma omp parallel if (n_cells > CS_THR_MIN)
   {
@@ -498,7 +498,7 @@ _build_cell_type_and_flag(cs_cdo_connect_t   *connect)
 
 #   pragma omp for nowait
     for (cs_lnum_t v = 0; v < n_vertices; v++)
-      is_border_vtx[v] = false;
+      is_border_vtx[v] = 0;
 
   } /* End of OpenMP block */
 
@@ -510,14 +510,29 @@ _build_cell_type_and_flag(cs_cdo_connect_t   *connect)
   const cs_adjacency_t  *bf2v = connect->bf2v;
   for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
     for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++) {
-      is_border_vtx[bf2v->ids[j]] = true;
+      assert(bf2v->ids[j] < n_vertices);
+      is_border_vtx[bf2v->ids[j]] = 1;
     }
   } /* Loop on border faces */
+
+  /* Synchronization needed in parallel computations */
+  if (cs_glob_n_ranks > 1) {
+
+    assert(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL);
+
+    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                         n_vertices,
+                         1,             /* stride */
+                         false,         /* interlace (not useful here) */
+                         CS_FLAG_TYPE,  /* unsigned short int */
+                         is_border_vtx);
+
+  }
 
   const cs_adjacency_t  *c2v = connect->c2v;
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
-      if (is_border_vtx[c2v->ids[j]])
+      if (is_border_vtx[c2v->ids[j]] > 0)
         connect->cell_flag[c_id] |= CS_FLAG_BOUNDARY_CELL_BY_VERTEX;
     }
   } /* Loop on cells */
@@ -769,9 +784,6 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   connect->c2v = cs_adjacency_compose(n_vertices, connect->c2e, connect->e2v);
   cs_adjacency_sort(connect->c2v);
 
-  /* Build the cell flag and associate a cell type to each cell */
-  _build_cell_type_and_flag(connect);
-
   /* Max number of entities (vertices, edges and faces) by cell */
   _compute_max_ent(mesh, connect);
 
@@ -845,6 +857,9 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
     _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_FACE_DOFS_2ND,
                         connect->interfaces + CS_CDO_CONNECT_FACE_VHP2,
                         connect->range_sets + CS_CDO_CONNECT_FACE_VHP2);
+
+  /* Build the cell flag and associate a cell type to each cell */
+  _build_cell_type_and_flag(connect);
 
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();
