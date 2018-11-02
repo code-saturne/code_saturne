@@ -1175,8 +1175,6 @@ cs_equation_add(const char            *eqname,
   eq->field_id = -1;    /* field is created in a second step */
 
   /* Algebraic system: allocated later */
-  eq->matrix = NULL;
-  eq->rhs = NULL;
   eq->rset = NULL;
   eq->n_sles_gather_elts = eq->n_sles_scatter_elts = 0;
 
@@ -1187,14 +1185,14 @@ cs_equation_add(const char            *eqname,
   /* Pointers of function */
   eq->init_context = NULL;
   eq->free_context = NULL;
-  eq->initialize_system = NULL;
-  eq->set_dir_bc = NULL;
-  eq->build_system = NULL;
-  eq->update_field = NULL;
+
+  /* Postprocessing */
   eq->compute_balance = NULL;
   eq->compute_flux_across_plane = NULL;
   eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = NULL;
+
+  /* Restart */
   eq->read_restart = NULL;
   eq->write_restart = NULL;
 
@@ -1202,6 +1200,20 @@ cs_equation_add(const char            *eqname,
   eq->get_vertex_values = NULL;
   eq->get_cell_values = NULL;
   eq->get_face_values = NULL;
+
+  /* New functions */
+  eq->solve = NULL;
+  eq->solve_steady_state = NULL;
+
+  /* Deprecated functions */
+  eq->initialize_system = NULL;
+  eq->set_dir_bc = NULL;
+  eq->build_system = NULL;
+  eq->update_field = NULL;
+
+  /* Deprecated members related to deprecated functions */
+  eq->matrix = NULL;
+  eq->rhs = NULL;
 
   /* Set timer statistic structure to a default value */
   eq->main_ts_id = cs_timer_stats_create(NULL, /* new root */
@@ -1628,18 +1640,19 @@ cs_equation_assign_functions(void)
 
         eq->init_context = cs_cdovb_scaleq_init_context;
         eq->free_context = cs_cdovb_scaleq_free_context;
-        eq->set_dir_bc = cs_cdovb_scaleq_set_dir_bc;
 
         /* deprecated */
-        eq->initialize_system = cs_cdovb_scaleq_initialize_system;
-        eq->build_system = cs_cdovb_scaleq_build_system;
-        eq->prepare_solving = _prepare_vb_solving;
-        eq->update_field = cs_cdovb_scaleq_update_field;
+        eq->set_dir_bc = cs_cdovb_scaleq_set_dir_bc;
+        eq->initialize_system = NULL;
+        eq->build_system = NULL;
+        eq->prepare_solving = NULL;
+        eq->update_field = NULL;
 
         /* New mechanism */
+        eq->solve_steady_state = cs_cdovb_scaleq_solve_steady_state;
         switch (eqp->time_scheme) {
         case CS_TIME_SCHEME_STEADY:
-          eq->solve = cs_cdovb_scaleq_solve_steady_state;
+          eq->solve = eq->solve_steady_state;
           break;
         case CS_TIME_SCHEME_IMPLICIT:
           eq->solve = cs_cdovb_scaleq_solve_implicit;

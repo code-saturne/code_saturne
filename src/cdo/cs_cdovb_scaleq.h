@@ -151,27 +151,6 @@ cs_cdovb_scaleq_free_context(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         builder structure
- *
- * \param[in]      eqp            pointer to a cs_equation_param_t structure
- * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to cs_cdovb_scaleq_t structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_scaleq_initialize_system(const cs_equation_param_t  *eqp,
-                                  cs_equation_builder_t      *eqb,
-                                  void                       *data,
-                                  cs_matrix_t               **system_matrix,
-                                  cs_real_t                 **system_rhs);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set the boundary conditions known from the settings when the fields
  *         stem from a scalar CDO vertex-based scheme.
  *
@@ -262,55 +241,6 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
                             const cs_equation_param_t  *eqp,
                             cs_equation_builder_t      *eqb,
                             void                       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build the linear system arising from a scalar convection/diffusion
- *         equation with a CDO vertex-based scheme.
- *         One works cellwise and then process to the assembly
- *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_val  pointer to the current value of the vertex field
- * \param[in]      dt_cur     current value of the time step
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
-                             const cs_real_t            *field_val,
-                             double                      dt_cur,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *context,
-                             cs_real_t                  *rhs,
-                             cs_matrix_t                *matrix);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Store solution(s) of the linear system into a field structure
- *         Update extra-field values if required (for hybrid discretization)
- *
- * \param[in]      solu       solution array
- * \param[in]      rhs        rhs associated to this solution array
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdovb_scaleq_t structure
- * \param[in, out] field_val  pointer to the current value of the field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_scaleq_update_field(const cs_real_t            *solu,
-                             const cs_real_t            *rhs,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *data,
-                             cs_real_t                  *field_val);
 
 /*----------------------------------------------------------------------------*/
 /*!

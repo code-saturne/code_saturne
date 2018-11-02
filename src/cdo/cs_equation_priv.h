@@ -390,11 +390,6 @@ struct _cs_equation_t {
   /* Pointer to functions (see prototypes just above) */
   cs_equation_init_context_t       *init_context;
   cs_equation_free_context_t       *free_context;
-  cs_equation_initialize_system_t  *initialize_system;
-  cs_equation_set_dir_bc_t         *set_dir_bc;
-  cs_equation_build_system_t       *build_system;
-  cs_equation_prepare_solve_t      *prepare_solving;
-  cs_equation_update_field_t       *update_field;
   cs_equation_solve_t              *solve_steady_state;
   cs_equation_solve_t              *solve;
 
@@ -408,6 +403,13 @@ struct _cs_equation_t {
   cs_equation_get_values_t         *get_face_values;
   cs_equation_get_values_t         *get_cell_values;
   cs_equation_get_values_t         *get_vertex_values;
+
+  /* Deprecated functions --> use rather solve() and solve_steady_state() */
+  cs_equation_initialize_system_t  *initialize_system;
+  cs_equation_set_dir_bc_t         *set_dir_bc;
+  cs_equation_build_system_t       *build_system;
+  cs_equation_prepare_solve_t      *prepare_solving;
+  cs_equation_update_field_t       *update_field;
 
   /* Timer statistic for a "light" profiling */
   int     main_ts_id;   /* Id of the main timer states structure related
