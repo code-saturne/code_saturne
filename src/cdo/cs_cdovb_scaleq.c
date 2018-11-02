@@ -862,8 +862,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
-      eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ |
-        CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+      eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
+        | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_wbs_get_stiffness;
       eqc->apply_robin_bc = cs_cdo_diffusion_vbwbs_robin;
       break;
@@ -1031,7 +1031,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
-      eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_HFQ;
+      eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
+        | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
       eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     }
     else
@@ -1052,8 +1053,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       if (eqp->do_lumping)
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
       else {
-        eqb->msh_flag |= CS_CDO_LOCAL_PVQ|CS_CDO_LOCAL_DEQ|CS_CDO_LOCAL_PFQ |
-          CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
+          | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
       }
     }
