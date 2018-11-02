@@ -1255,11 +1255,11 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
              preconditioner */
           cs_multigrid_set_solver_options
             (mg,
-             CS_SLES_TS_F_GAUSS_SEIDEL,  /* descent smoothe */
-             CS_SLES_TS_B_GAUSS_SEIDEL,  /* ascent smoothe */
+             CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
+             CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
              CS_SLES_P_SYM_GAUSS_SEIDEL, /* coarse solver */
              itsol.n_max_iter,           /* n_max_cycles */
-             1,                          /* n_max_iter_descent, */
+             2,                          /* n_max_iter_descent, */
              1,                          /* n_max_iter_ascent */
              1,                          /* n_max_iter_coarse */
              -1,                         /* poly_degree_descent */
@@ -1269,7 +1269,18 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
              -1.0,                       /* precision_mult_ascent */
              -1.0);                      /* precision_mult_coarse */
 
-        }
+          /* If this is a K-cycle multigrid. Change the defaukt aggregation
+             algorithm */
+          if (eqp->itsol_info.amg_type == CS_PARAM_AMG_HOUSE_K)
+            cs_multigrid_set_coarsening_options(mg,
+                                                8,   /* aggregation_limit*/
+                                                CS_GRID_COARSENING_SPD_DX,
+                                                10,  /* n_max_levels */
+                                                100, /* min_g_cells */
+                                                0.,  /* P0P1 relaxation */
+                                                0);  /* postprocess */
+
+        } /* AMG as preconditioner */
       }
 
       /* Define the level of verbosity for SLES structure */
