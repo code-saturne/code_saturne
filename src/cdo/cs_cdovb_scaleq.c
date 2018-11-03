@@ -286,6 +286,7 @@ _vbs_init_cell_system(cs_real_t                      t_eval,
                                cs_shared_quant,
                                eqp,
                                eqb->face_bc,
+                               vtx_bc_flag,
                                dir_values,
                                t_eval,
                                csys,
@@ -481,8 +482,10 @@ _vbs_apply_weak_bc(cs_real_t                      time_eval,
 
     /* Neumann boundary conditions */
     if (csys->has_nhmg_neumann) {
-      for (short int v  = 0; v < cm->n_vc; v++)
-        csys->rhs[v] += csys->neu_values[v];
+      for (short int v  = 0; v < cm->n_vc; v++) {
+        if (cs_cdo_bc_is_dirichlet(csys->dof_flag[v]) == false)
+          csys->rhs[v] += csys->neu_values[v];
+      }
     }
 
     /* Contribution for the advection term: csys is updated inside

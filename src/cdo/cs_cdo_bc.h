@@ -191,7 +191,7 @@ cs_cdo_bc_is_dirichlet(cs_flag_t    flag)
 {
   if (flag & CS_CDO_BC_DIRICHLET)
     return true;
-  else if (flag &CS_CDO_BC_HMG_DIRICHLET)
+  else if (flag & CS_CDO_BC_HMG_DIRICHLET)
     return true;
   else
     return false;

@@ -248,15 +248,16 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
  * \brief   Set the BC into a cellwise view of the current system.
  *          Case of vertex-based schemes
  *
- * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
- * \param[in]      dir_values  Dirichlet values associated to each vertex
- * \param[in]      t_eval      time at which one performs the evaluation
- * \param[in, out] csys        pointer to a cellwise view of the system
- * \param[in, out] cb          pointer to a cellwise builder
+ * \param[in]      cm           pointer to a cellwise view of the mesh
+ * \param[in]      connect      pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      face_bc      pointer to a cs_cdo_bc_face_t structure
+ * \param[in]      vtx_bc_flag  BC flags associated to vertices
+ * \param[in]      dir_values   Dirichlet values associated to each vertex
+ * \param[in]      t_eval       time at which one performs the evaluation
+ * \param[in, out] csys         pointer to a cellwise view of the system
+ * \param[in, out] cb           pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
@@ -266,6 +267,7 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            const cs_cdo_quantities_t    *quant,
                            const cs_equation_param_t    *eqp,
                            const cs_cdo_bc_face_t       *face_bc,
+                           const cs_flag_t               vtx_bc_flag[],
                            const cs_real_t               dir_values[],
                            cs_real_t                     t_eval,
                            cs_cell_sys_t                *csys,
@@ -281,49 +283,35 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
 
   const int  d = eqp->dim;
 
-  /* Build the face --> vertices in the cell numbering */
-  short int  n_vf;
-  short int  *_v_ids = cb->ids;
+  /* First pass: Set the DoF flag and the Dirichlet values */
+  for (short int v = 0; v < cm->n_vc; v++) {
 
-  /* Identify which face is a boundary face */
+    const cs_flag_t bc_flag = vtx_bc_flag[cm->v_ids[v]];
+    for (int k = 0; k < d; k++)
+      csys->dof_flag[d*v+k] = bc_flag;
+
+    if (cs_cdo_bc_is_dirichlet(bc_flag)) {
+      csys->has_dirichlet = true;
+      if (bc_flag & CS_CDO_BC_HMG_DIRICHLET)
+        continue; /* Nothing else to do for this vertex */
+      else {
+        assert(bc_flag & CS_CDO_BC_DIRICHLET);
+        for (int k = 0; k < d; k++)
+          csys->dir_values[d*v+k] = dir_values[d*cm->v_ids[v]+k];
+      }
+    }
+
+  } /* Loop on cell vertices */
+
+  /* Second pass: BC related to faces (Neumann or Robin)
+     Identify which face is a boundary face */
   for (short int f = 0; f < cm->n_fc; f++) {
     if (csys->bf_ids[f] > -1) { /* This a boundary face */
 
-      cs_cell_mesh_get_f2v(f, cm, &n_vf, _v_ids);
-      assert(n_vf == cm->f2e_idx[f+1] - cm->f2e_idx[f]);
-
       switch(csys->bf_flag[f]) {
-
-      case CS_CDO_BC_HMG_DIRICHLET:
-        csys->has_dirichlet = true;
-        for (short int i = 0; i < n_vf; i++)
-          for (int k = 0; k < d; k++)
-            csys->dof_flag[d*_v_ids[i]+k] |= CS_CDO_BC_HMG_DIRICHLET;
-        break;
-
-      case CS_CDO_BC_DIRICHLET:
-        csys->has_dirichlet = true;
-        for (short int i = 0; i < n_vf; i++) {
-          short int v = _v_ids[i];
-          for (int k = 0; k < d; k++) {
-            csys->dir_values[d*v+k] = dir_values[d*cm->v_ids[v]+k];
-            csys->dof_flag[d*v+k] |= CS_CDO_BC_DIRICHLET;
-          }
-        }
-        break;
-
-      case CS_CDO_BC_HMG_NEUMANN:
-        for (short int i = 0; i < n_vf; i++)
-          for (int k = 0; k < d; k++)
-            csys->dof_flag[d*_v_ids[i]+k] |= CS_CDO_BC_HMG_NEUMANN;
-        break;
 
       case CS_CDO_BC_NEUMANN:
         csys->has_nhmg_neumann = true;
-        for (short int i = 0; i < n_vf; i++)
-          for (int k = 0; k < d; k++)
-            csys->dof_flag[d*_v_ids[i]+k] |= CS_CDO_BC_NEUMANN;
-
         cs_equation_compute_neumann_sv(face_bc->def_ids[csys->bf_ids[f]],
                                        f,
                                        quant,
@@ -336,9 +324,6 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
 
       case CS_CDO_BC_ROBIN:
         csys->has_robin = true;
-        for (short int i = 0; i < n_vf; i++)
-          for (int k = 0; k < d; k++)
-            csys->dof_flag[d*_v_ids[i]+k] |= CS_CDO_BC_ROBIN;
 
         /* The values which define the Robin BC are stored for each boundary
            face. This is different from Neumann and Dirichlet where the values
@@ -352,8 +337,10 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
                                   csys->rob_values);
         break;
 
-      default:
-        /* Nothing to do for instance in case of homogeneous Neumann */
+      default:   /* Nothing to do for */
+        /* case CS_CDO_BC_HMG_DIRICHLET: */
+        /* case CS_CDO_BC_DIRICHLET: */
+        /* case CS_CDO_BC_HMG_NEUMANN: */
         break;
 
       } /* End of switch */
@@ -827,8 +814,9 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
   for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
 
     const cs_flag_t  bc_flag = face_bc->flag[bf_id];
-    for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++)
+    for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++) {
       vflag[bf2v->ids[j]] |= bc_flag;
+    }
 
   } /* Loop on border faces */
 
