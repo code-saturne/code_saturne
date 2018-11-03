@@ -377,7 +377,7 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
       cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property, t_eval);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 2
-  if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
+  if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
 #endif
 }
 
@@ -411,6 +411,7 @@ _vbv_advection_diffusion_reaction(double                         time_eval,
 {
   CS_UNUSED(time_eval);
   CS_UNUSED(fm);
+  CS_UNUSED(eqb);
 
   if (cs_equation_param_has_diffusion(eqp)) {   /* DIFFUSION TERM
                                                  * ============== */
@@ -440,7 +441,7 @@ _vbv_advection_diffusion_reaction(double                         time_eval,
     cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
+    if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after adding diffusion", csys);
 #endif
   }
@@ -488,7 +489,7 @@ _vbv_apply_weak_bc(cs_real_t                      time_eval,
     }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
+    if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after BC treatment", csys);
 #endif
   } /* Cell with at least one boundary face */
@@ -530,7 +531,7 @@ _vbv_enforce_values(const cs_equation_param_t     *eqp,
       eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump("\n>> Cell system after strong BC treatment", csys);
 #endif
     }
@@ -545,7 +546,7 @@ _vbv_enforce_values(const cs_equation_param_t     *eqp,
     cs_equation_enforced_internal_dofs(eqp, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
+    if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
                        csys);
 #endif
@@ -1244,7 +1245,7 @@ cs_cdovb_vecteq_solve_steady_state(double                      dt_cur,
       _vbv_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 

@@ -1139,7 +1139,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
                         hhob, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 2
-      if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
+      if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
 #endif
 
       const short int  face_offset = cm->n_fc*eqc->n_face_dofs;
@@ -1163,7 +1163,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
         cs_sdm_block_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 1
-        if (cs_dbg_cw_test(cm))
+        if (cs_dbg_cw_test(eqp, cm, csys))
           cs_cell_sys_dump("\n>> Local system after diffusion", csys);
 #endif
       } /* END OF DIFFUSION */
@@ -1211,7 +1211,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       } /* End of term source contribution */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> Local system matrix before condensation", csys);
 #endif
 
@@ -1240,7 +1240,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm)) {
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
         cs_sdm_block_fprintf(NULL, NULL, 1e-16, csys->mat);
       }

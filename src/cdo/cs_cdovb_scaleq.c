@@ -361,7 +361,7 @@ _vbs_init_cell_system(cs_real_t                      t_eval,
       cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property, t_eval);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-  if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
+  if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
 #endif
 }
 
@@ -404,7 +404,7 @@ _vbs_advection_diffusion_reaction(double                         time_eval,
     cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
+    if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after adding diffusion", csys);
 #endif
   }
@@ -419,7 +419,7 @@ _vbs_advection_diffusion_reaction(double                         time_eval,
     cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
+    if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after adding advection", csys);
 #endif
   }
@@ -431,7 +431,7 @@ _vbs_advection_diffusion_reaction(double                         time_eval,
     eqc->get_mass_matrix(eqc->hdg_mass, cm, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm)) {
+    if (cs_dbg_cw_test(eqp, cm, csys)) {
       cs_log_printf(CS_LOG_DEFAULT, ">> Cell mass matrix");
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, cb->hdg);
     }
@@ -446,7 +446,7 @@ _vbs_advection_diffusion_reaction(double                         time_eval,
     cs_sdm_add_mult(csys->mat, cb->rpty_val, cb->hdg);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
+    if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after adding reaction", csys);
 #endif
   }
@@ -507,7 +507,7 @@ _vbs_apply_weak_bc(cs_real_t                      time_eval,
     }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
+    if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after BC treatment", csys);
 #endif
   } /* Cell with at least one boundary face */
@@ -549,7 +549,7 @@ _vbs_enforce_values(const cs_equation_param_t     *eqp,
       eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump("\n>> Cell system after strong BC treatment", csys);
 #endif
     }
@@ -564,7 +564,7 @@ _vbs_enforce_values(const cs_equation_param_t     *eqp,
     cs_equation_enforced_internal_dofs(eqp, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
+    if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
                        csys);
 #endif
@@ -1415,7 +1415,7 @@ cs_cdovb_scaleq_solve_steady_state(double                      dt_cur,
       _vbs_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
@@ -1658,7 +1658,7 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump("\n>> Cell system after time", csys);
 #endif
 
@@ -1666,7 +1666,7 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
       _vbs_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
@@ -1973,7 +1973,7 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump("\n>> Cell system after adding time", csys);
 #endif
 
@@ -1981,7 +1981,7 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
       _vbs_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
@@ -2752,7 +2752,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
+      if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
 #endif
 
       if (!eqb->diff_pty_uniform) {

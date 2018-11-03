@@ -889,7 +889,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
                                        csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
-      if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
+      if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
 #endif
 
       /* DIFFUSION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
@@ -927,7 +927,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
         }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
-        if (cs_dbg_cw_test(cm))
+        if (cs_dbg_cw_test(eqp, cm, csys))
           cs_cell_sys_dump("\n>> Local system after diffusion", csys);
 #endif
       } /* END OF DIFFUSION */
@@ -977,7 +977,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
       } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> Local system matrix before condensation", csys);
 #endif
 
@@ -991,7 +991,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
                                        cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> Local system matrix after condensation", csys);
 #endif
 
@@ -1012,7 +1012,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
       } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
 

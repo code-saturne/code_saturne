@@ -479,7 +479,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
       const short int  n_fc = cm->n_fc, f_dofs = 3*n_fc;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
-      if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
+      if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
 #endif
 
       /* 1- VELOCITY (VECTORIAL) EQUATION */
@@ -525,7 +525,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
         }  /* Loop on row blocks: bi */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
-        if (cs_dbg_cw_test(cm))
+        if (cs_dbg_cw_test(eqp, cm, csys))
           cs_cell_sys_dump("\n>> Local system after diffusion", csys);
 #endif
       } /* END OF DIFFUSION */
@@ -537,7 +537,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
       const cs_real_t *div = cb->aux->val, ovol = 1. / cm->vol_c;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
-      if (cs_dbg_cw_test(cm)) {
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
 #       pragma omp critical
         {
           cs_log_printf(CS_LOG_DEFAULT, ">> Divergence:\n");
@@ -556,7 +556,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
       _add_grad_div(n_fc, zeta_c*ovol, div, csys->mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> Local system after diffusion and grad-div (lhs)",
                          csys);
 #endif
@@ -587,7 +587,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
           eqc->source_terms[3*c_id + k] = csys->source[3*n_fc + k];
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
-        if (cs_dbg_cw_test(cm))
+        if (cs_dbg_cw_test(eqp, cm, csys))
           cs_cell_sys_dump(">> Local system matrix after"
                            " diffusion and source term", csys);
 #endif
@@ -615,7 +615,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
       } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> Local system matrix before condensation", csys);
 #endif
 
@@ -632,7 +632,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
                                        cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> Local system matrix after condensation", csys);
 #endif
 
@@ -652,7 +652,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
       } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
 

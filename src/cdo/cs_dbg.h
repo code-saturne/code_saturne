@@ -35,6 +35,7 @@
 #include "cs_cdo_bc.h"
 #include "cs_cdo_local.h"
 #include "cs_defs.h"
+#include "cs_equation_param.h"
 #include "cs_math.h"
 
 /*----------------------------------------------------------------------------*/
@@ -63,17 +64,41 @@ BEGIN_C_DECLS
  * \brief   Function used to select which element deserves a dump or specific
  *          treatment during a debugging stage
  *
- * \param[in]  cm       pointer to a cs_cell_mesh_t  structure
+ * \param[in]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  csys     pointer to a cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_dbg_cw_test(const cs_cell_mesh_t  *cm)
+cs_dbg_cw_test(const cs_equation_param_t   *eqp,
+               const cs_cell_mesh_t        *cm,
+               const cs_cell_sys_t         *csys)
 {
-  if (cm->c_id == 0)
-    return true;
-  else
-    return false;
+  bool has_name = false;
+  if (eqp != NULL) {
+    if (strcmp(eqp->name, "Tracer1") == 0)
+      has_name=true;
+  }
+
+  if (has_name) {
+#if 0 /* First example: Look for the cells which have the vertex 5 */
+    for (int v = 0; v < cm->n_vc; v++)
+      if (cm->v_ids[v] == 5)
+        return true;
+#endif
+
+#if 1 /* Second example: Look for the cells which have a previous DoF value
+         greater than 1.02 */
+    if (csys != NULL) {
+      for (int i = 0; i < csys->n_dofs; i++)
+        if (csys->val_n[i] > 1.02)
+          return true;
+    }
+#endif
+  } /* The current equation has the requested name */
+
+  return false;
 }
 
 /*----------------------------------------------------------------------------*/

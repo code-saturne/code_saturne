@@ -366,7 +366,7 @@ _init_vcb_cell_system(const cs_flag_t                 cell_flag,
       cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property, t_eval);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
-  if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
+  if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
 #endif
 }
 
@@ -408,8 +408,8 @@ _vcb_advection_diffusion_reaction(double                         time_eval,
     cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
-      cs_cell_sys_dump("\n>> Local system after diffusion", csys);
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after diffusion", csys);
 #endif
   }
 
@@ -423,8 +423,8 @@ _vcb_advection_diffusion_reaction(double                         time_eval,
     cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
-      cs_cell_sys_dump("\n>> Local system after advection", csys);
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after advection", csys);
 #endif
   }
 
@@ -435,8 +435,8 @@ _vcb_advection_diffusion_reaction(double                         time_eval,
     eqc->get_mass_matrix(eqc->hdg_mass, cm, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm)) {
-      cs_log_printf(CS_LOG_DEFAULT, ">> Local mass matrix");
+    if (cs_dbg_cw_test(eqp, cm, csys)) {
+      cs_log_printf(CS_LOG_DEFAULT, ">> Cell mass matrix");
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, cb->hdg);
     }
 #endif
@@ -450,8 +450,8 @@ _vcb_advection_diffusion_reaction(double                         time_eval,
     cs_sdm_add_mult(csys->mat, cb->rpty_val, cb->hdg);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
-      cs_cell_sys_dump("\n>> Local system after reaction", csys);
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after reaction", csys);
 #endif
   }
 }
@@ -511,8 +511,8 @@ _vcb_apply_weak_bc(cs_real_t                      time_eval,
     }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
-      cs_cell_sys_dump(">> Local system matrix after weak BC treatment", csys);
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump(">> Cell system matrix after weak BC treatment", csys);
 #endif
   } /* Cell with at least one boundary face */
 
@@ -554,8 +554,8 @@ _vcb_enforce_values(const cs_equation_param_t     *eqp,
       eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump("\n>> Local system after strong BC treatment", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump("\n>> Cell system after strong BC treatment", csys);
 #endif
     }
 
@@ -1399,16 +1399,16 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
                                        cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> Local system matrix after condensation", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> Cell system matrix after condensation", csys);
 #endif
 
       /* Enforce values if needed (internal or Dirichlet) */
       _vcb_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
       /* ************************* ASSEMBLY PROCESS ************************* */
@@ -1646,8 +1646,8 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump("\n>> Local system after adding time", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump("\n>> Cell system after adding time", csys);
 #endif
 
       /* STATIC CONDENSATION
@@ -1660,16 +1660,16 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
                                        cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> Local system matrix after condensation", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> Cell system matrix after condensation", csys);
 #endif
 
       /* Enforce values if needed (internal or Dirichlet) */
       _vcb_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
       /* ************************* ASSEMBLY PROCESS ************************* */
@@ -1978,8 +1978,8 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump("\n>> Local system after adding time", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump("\n>> Cell system after adding time", csys);
 #endif
 
       /* STATIC CONDENSATION
@@ -1992,16 +1992,16 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
                                        cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> Local system matrix after condensation", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> Cell system matrix after condensation", csys);
 #endif
 
       /* Enforce values if needed (internal or Dirichlet) */
       _vcb_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
       /* ************************* ASSEMBLY PROCESS ************************* */
@@ -2155,7 +2155,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
                             csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_mesh_dump(cm);
 #endif
 
@@ -2176,8 +2176,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
         cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-        if (cs_dbg_cw_test(cm))
-          cs_cell_sys_dump("\n>> Local system after diffusion", csys);
+        if (cs_dbg_cw_test(eqp, cm, csys))
+          cs_cell_sys_dump("\n>> Cell system after diffusion", csys);
 #endif
       } /* END OF DIFFUSION */
 
@@ -2192,8 +2192,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
         cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-        if (cs_dbg_cw_test(cm))
-          cs_cell_sys_dump("\n>> Local system after advection", csys);
+        if (cs_dbg_cw_test(eqp, cm, csys))
+          cs_cell_sys_dump("\n>> Cell system after advection", csys);
 #endif
       } /* END OF ADVECTION */
 
@@ -2281,8 +2281,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
                                csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> Local system matrix after time scheme", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> Cell system matrix after time scheme", csys);
 #endif
       } /* END OF TIME CONTRIBUTION */
 
@@ -2315,8 +2315,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
       } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> Local system matrix before condensation", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> Cell system matrix before condensation", csys);
 #endif
 
       /* Static condensation of the local system matrix of size n_vc + 1 into
@@ -2329,8 +2329,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
                                        cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> Local system matrix after condensation", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> Cell system matrix after condensation", csys);
 #endif
 
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
@@ -2354,8 +2354,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
       } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
       /* ASSEMBLY */
