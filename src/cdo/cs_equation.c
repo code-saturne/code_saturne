@@ -148,172 +148,6 @@ _post_balance_at_vertices(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the initial values for the variable(s) related to an equation
- *
- * \param[in]       t_eval   time at which one performs the evaluation
- * \param[in, out]  eq       pointer to a cs_equation_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_initialize_field_from_ic(cs_real_t         t_eval,
-                          cs_equation_t    *eq)
-{
-  cs_real_t  *v_vals = NULL;    /* values at vertices */
-  cs_real_t  *f_vals = NULL;    /* values at faces */
-  cs_real_t  *c_vals = NULL;    /* values at cells */
-
-  assert(eq != NULL);
-  const cs_equation_param_t  *eqp = eq->param;
-
-  cs_flag_t  dof_flag = 0;
-  switch (eqp->dim) {
-  case 1: /* Scalar-valued */
-    dof_flag |= CS_FLAG_SCALAR;
-    break;
-  case 3: /* Vector-valued */
-    dof_flag |= CS_FLAG_VECTOR;
-    break;
-  case 9: /* Tensor-valued */
-    dof_flag |= CS_FLAG_TENSOR;
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: Incompatible type of variable for the equation %s."),
-              __func__, eqp->name);
-     break;
-  }
-
-  /* Update dof_flag according to the space scheme */
-  switch (eqp->space_scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-    v_vals = eq->get_vertex_values(eq->scheme_context);
-    break;
-  case CS_SPACE_SCHEME_CDOVCB:
-    v_vals = eq->get_vertex_values(eq->scheme_context);
-    c_vals = eq->get_cell_values(eq->scheme_context);
-    break;
-  case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO_P0:
-    f_vals = eq->get_face_values(eq->scheme_context);
-    c_vals = eq->get_cell_values(eq->scheme_context);
-    break;
-
-  case CS_SPACE_SCHEME_HHO_P1:  /* Not handled yet */
-  case CS_SPACE_SCHEME_HHO_P2:  /* Not handled yet */
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: Invalid space scheme for the equation %s."),
-              __func__, eqp->name);
-    break;
-
-  } /* Switch on space discretization scheme */
-
-  for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
-
-    /* Get and then set the definition of the initial condition */
-    const cs_xdef_t  *def = eqp->ic_defs[def_id];
-
-    switch(def->type) {
-
-    case CS_XDEF_BY_VALUE:
-      if (v_vals != NULL) /* Initialize values at mesh vertices */
-        cs_evaluate_potential_by_value(dof_flag | cs_flag_primal_vtx, def,
-                                       v_vals);
-      if (f_vals != NULL) /* Initialize values at mesh faces */
-        cs_evaluate_potential_by_value(dof_flag | cs_flag_primal_face, def,
-                                       f_vals);
-      if (c_vals != NULL) /* Initialize values at mesh cells */
-        cs_evaluate_potential_by_value(dof_flag | cs_flag_primal_cell, def,
-                                       c_vals);
-      break;
-
-    case CS_XDEF_BY_QOV:
-      if (v_vals != NULL && c_vals != NULL) /* VCb schemes */
-        cs_evaluate_potential_by_qov(dof_flag
-                                     | cs_flag_primal_vtx
-                                     | cs_flag_primal_cell,
-                                     def,
-                                     v_vals, c_vals);
-
-      else if (v_vals != NULL) /* Initialize values at mesh vertices */
-        cs_evaluate_potential_by_qov(dof_flag | cs_flag_primal_vtx, def,
-                                     v_vals, NULL);
-      break;
-
-    case CS_XDEF_BY_ANALYTIC_FUNCTION:
-      {
-        const cs_param_dof_reduction_t  red = eqp->dof_reduction;
-
-        if (v_vals != NULL) { /* Initialize values at mesh vertices */
-          assert(red == CS_PARAM_REDUCTION_DERHAM);
-          cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_vtx,
-                                            def, t_eval,
-                                            v_vals);
-        }
-
-        if (f_vals != NULL) { /* Initialize values at mesh faces */
-
-          switch (red) {
-
-          case CS_PARAM_REDUCTION_DERHAM:
-            cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_face,
-                                              def, t_eval,
-                                              f_vals);
-            break;
-          case CS_PARAM_REDUCTION_AVERAGE:
-            cs_evaluate_average_on_faces_by_analytic(def, t_eval, f_vals);
-            break;
-
-          default:
-            bft_error(__FILE__, __LINE__, 0,
-                      _(" Incompatible reduction for equation %s.\n"),
-                      eqp->name);
-            break;
-
-          } /* Switch on possible reduction types */
-
-        } /* face values */
-
-        if (c_vals != NULL) { /* Initialize values at mesh cells */
-
-          switch (red) {
-          case CS_PARAM_REDUCTION_DERHAM:
-            cs_evaluate_potential_by_analytic(dof_flag | cs_flag_primal_cell,
-                                              def, t_eval,
-                                              c_vals);
-            break;
-          case CS_PARAM_REDUCTION_AVERAGE:
-            cs_evaluate_average_on_cells_by_analytic(def, t_eval, c_vals);
-            break;
-
-          default:
-            bft_error(__FILE__, __LINE__, 0,
-                      _(" Incompatible reduction for equation %s.\n"),
-                      eqp->name);
-            break;
-
-          } /* Switch on possible reduction types */
-
-        } /* cell values */
-
-      } /* Definition by an analytic function */
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Invalid way to initialize equation %s.\n"),
-                __func__, eqp->name);
-
-    } /* Switch on possible type of definition */
-
-  } /* Loop on definitions */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Carry out operations for allocating and/or initializing the solution
  *         array and the right hand side of the linear system to solve.
  *         Handle parallelism thanks to cs_range_set_t structure.
@@ -1202,6 +1036,7 @@ cs_equation_add(const char            *eqname,
   eq->get_face_values = NULL;
 
   /* New functions */
+  eq->init_field_values = NULL;
   eq->solve = NULL;
   eq->solve_steady_state = NULL;
 
@@ -1640,6 +1475,7 @@ cs_equation_assign_functions(void)
 
         eq->init_context = cs_cdovb_scaleq_init_context;
         eq->free_context = cs_cdovb_scaleq_free_context;
+        eq->init_field_values = cs_cdovb_scaleq_init_values;
 
         /* deprecated */
         eq->set_dir_bc = cs_cdovb_scaleq_set_dir_bc;
@@ -1687,18 +1523,20 @@ cs_equation_assign_functions(void)
 
         eq->init_context = cs_cdovb_vecteq_init_context;
         eq->free_context = cs_cdovb_vecteq_free_context;
-        eq->set_dir_bc = cs_cdovb_vecteq_set_dir_bc;
+        eq->init_field_values = cs_cdovb_vecteq_init_values;
 
         /* Deprecated */
+        eq->set_dir_bc = cs_cdovb_vecteq_set_dir_bc;
         eq->initialize_system = NULL;
         eq->build_system = NULL;
         eq->prepare_solving = NULL;
         eq->update_field = NULL;
 
         /* New mechanism */
+        eq->solve_steady_state = cs_cdovb_vecteq_solve_steady_state;
         switch (eqp->time_scheme) {
         case CS_TIME_SCHEME_STEADY:
-          eq->solve = cs_cdovb_vecteq_solve_steady_state;
+        eq->solve = eq->solve_steady_state;
           break;
         case CS_TIME_SCHEME_IMPLICIT:
         case CS_TIME_SCHEME_THETA:
@@ -1733,18 +1571,20 @@ cs_equation_assign_functions(void)
 
         eq->init_context = cs_cdovcb_scaleq_init_context;
         eq->free_context = cs_cdovcb_scaleq_free_context;
-        eq->set_dir_bc = cs_cdovcb_scaleq_set_dir_bc;
+        eq->init_field_values = cs_cdovcb_scaleq_init_values;
 
         /* Deprecated */
+        eq->set_dir_bc = cs_cdovcb_scaleq_set_dir_bc;
         eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
         eq->build_system = cs_cdovcb_scaleq_build_system;
         eq->prepare_solving = _prepare_vb_solving;
         eq->update_field = cs_cdovcb_scaleq_update_field;
 
         /* New mechanism */
+        eq->solve_steady_state = cs_cdovcb_scaleq_solve_steady_state;
         switch (eqp->time_scheme) {
         case CS_TIME_SCHEME_STEADY:
-          eq->solve = cs_cdovcb_scaleq_solve_steady_state;
+          eq->solve = eq->solve_steady_state;
           break;
 
         case CS_TIME_SCHEME_IMPLICIT:
@@ -1785,18 +1625,20 @@ cs_equation_assign_functions(void)
 
         eq->init_context = cs_cdofb_scaleq_init_context;
         eq->free_context = cs_cdofb_scaleq_free_context;
-        eq->set_dir_bc = cs_cdofb_scaleq_set_dir_bc;
+        eq->init_field_values = cs_cdofb_scaleq_init_values;
 
         /* Deprecated */
+        eq->set_dir_bc = cs_cdofb_scaleq_set_dir_bc;
         eq->initialize_system = cs_cdofb_scaleq_initialize_system;
         eq->build_system = cs_cdofb_scaleq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_cdofb_scaleq_update_field;
 
         /* New mechanism */
+        eq->solve_steady_state = cs_cdofb_scaleq_solve_steady_state;
         switch (eqp->time_scheme) {
         case CS_TIME_SCHEME_STEADY:
-          eq->solve = cs_cdofb_scaleq_solve_steady_state;
+          eq->solve = eq->solve_steady_state;
           break;
 
         case CS_TIME_SCHEME_IMPLICIT:
@@ -1832,14 +1674,19 @@ cs_equation_assign_functions(void)
 
         eq->init_context = cs_cdofb_vecteq_init_context;
         eq->free_context = cs_cdofb_vecteq_free_context;
+        eq->init_field_values = cs_cdofb_vecteq_init_values;
+
+        /* Depreacted */
         eq->initialize_system = cs_cdofb_vecteq_initialize_system;
         eq->set_dir_bc = cs_cdofb_vecteq_set_dir_bc;
         eq->build_system = cs_cdofb_vecteq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_cdofb_vecteq_update_field;
+
         eq->compute_flux_across_plane = NULL;
         eq->compute_cellwise_diff_flux = NULL;
         eq->postprocess = cs_cdofb_vecteq_extra_op;
+
         eq->read_restart = cs_cdofb_vecteq_read_restart;
         eq->write_restart = cs_cdofb_vecteq_write_restart;
 
@@ -2020,7 +1867,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
   for (int i = 0; i < _n_equations; i++) {
 
     cs_equation_t *eq = _equations[i];
-    assert(eq != NULL); // Sanity check
+    assert(eq != NULL); /* Sanity check */
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
@@ -2034,50 +1881,14 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
                                           eq->boundary_flux_id,
                                           eq->builder);
 
-    /* Retrieve the associated fields */
-    cs_field_t  *var_field = cs_field_by_id(eq->field_id);
-    cs_field_t  *bflux = cs_field_by_id(eq->boundary_flux_id);
-
-    /* By default, 0 is set as initial condition for the computational domain.
-
-       Warning: This operation has to be done after the settings of the
-       Dirichlet boundary conditions where an interface sum is performed
-       for vertex-based schemes
-    */
-    if (eqp->n_ic_defs > 0 && ts->nt_cur < 1)
-      _initialize_field_from_ic(ts->t_cur, eq);
-
-    /* Enforce initial boundary condition if there is Dirichlet values.
-       If there is a conflict between the initial condition and the boundary
-       conditions. The later is enforced.
-    */
-    if (eq->set_dir_bc != NULL) {
-
-      cs_real_t  *values = NULL;
-      switch (eqp->space_scheme) {
-
-      case CS_SPACE_SCHEME_CDOVB:
-      case CS_SPACE_SCHEME_CDOVCB:
-        values = var_field->val;
-        break;
-
-      case CS_SPACE_SCHEME_CDOFB:
-        values = cs_equation_get_face_values(eq);
-        /* Point only on the boundary faces */
-        values = values + eqp->dim *connect->n_faces[2];
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid space scheme.", __func__);
-      }
-
-      eq->set_dir_bc(ts->t_cur, mesh, eqp, eq->builder, eq->scheme_context,
-                     values);
-
-    }
+    /* Assign an initial value for the variable fields */
+    if (ts->nt_cur < 1)
+      eq->init_field_values(ts->t_cur, eq->field_id,
+                            mesh, eqp, eq->builder, eq->scheme_context);
 
     /* Assign the initial boundary flux where Neumann is defined */
+    cs_field_t  *bflux = cs_field_by_id(eq->boundary_flux_id);
+
     cs_equation_init_boundary_flux_from_bc(ts->t_cur, quant, eqp, bflux->val);
 
     if (eq->main_ts_id > -1)

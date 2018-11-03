@@ -953,6 +953,46 @@ cs_hho_scaleq_free_context(void   *data)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the initial values of the variable field taking into account
+ *         the boundary conditions.
+ *         Case of scalar-valued HHO schemes.
+ *
+ * \param[in]      t_eval     time at which one evaluates BCs
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hho_scaleq_init_values(cs_real_t                     t_eval,
+                          const int                     field_id,
+                          const cs_mesh_t              *mesh,
+                          const cs_equation_param_t    *eqp,
+                          cs_equation_builder_t        *eqb,
+                          void                         *context)
+{
+  CS_UNUSED(t_eval);
+  CS_UNUSED(mesh);
+  CS_UNUSED(eqp);
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+
+  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t *)context;
+  cs_real_t  *f_vals = eqc->face_values;
+  cs_real_t  *c_vals = eqc->cell_values;
+
+  memset(f_vals, 0, quant->n_faces * eqc->n_face_dofs * sizeof(cs_real_t));
+  memset(c_vals, 0, quant->n_cells * eqc->n_cell_dofs * sizeof(cs_real_t));
+
+  /* TODO */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create the matrix of the current algebraic system.
  *         Allocate and initialize the right-hand side associated to the given
  *         data structure

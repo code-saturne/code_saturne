@@ -86,24 +86,45 @@ typedef void *
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         builder structure
+ * \brief  Initialize the variable field values related to an equation
  *
+ * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to generic data structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
+ * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_initialize_system_t)(const cs_equation_param_t   *eqp,
-                                  cs_equation_builder_t       *eqb,
-                                  void                        *data,
-                                  cs_matrix_t                **system_matrix,
-                                  cs_real_t                  **system_rhs);
+(cs_equation_init_values_t)(cs_real_t                     t_eval,
+                            const int                     field_id,
+                            const cs_mesh_t              *mesh,
+                            const cs_equation_param_t    *eqp,
+                            cs_equation_builder_t        *eqb,
+                            void                         *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve a linear system within the CDO framework
+ *
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] eqc        pointer to a scheme context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_solve_t)(double                      dt_cur,
+                      const cs_mesh_t            *mesh,
+                      const int                   field_id,
+                      const cs_equation_param_t  *eqp,
+                      cs_equation_builder_t      *eqb,
+                      void                       *eqc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -125,6 +146,27 @@ typedef void
                            cs_equation_builder_t        *eqb,
                            void                         *context,
                            cs_real_t                     field_val[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create the matrix of the current algebraic system.
+ *         Allocate and initialize the right-hand side associated to the given
+ *         builder structure
+ *
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] data       pointer to generic data structure
+ * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
+ * \param[in, out] system_rhs     pointer of pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_initialize_system_t)(const cs_equation_param_t   *eqp,
+                                  cs_equation_builder_t       *eqb,
+                                  void                        *data,
+                                  cs_matrix_t                **system_matrix,
+                                  cs_real_t                  **system_rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -150,27 +192,6 @@ typedef void
                              void                       *data,
                              cs_real_t                  *rhs,
                              cs_matrix_t                *matrix);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build and solve a linear system within the CDO framework
- *
- * \param[in]      dt_cur     current value of the time step
- * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
- * \param[in]      field_id   id related to the variable field of this equation
- * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
- * \param[in, out] eqc        pointer to a scheme context structure
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_equation_solve_t)(double                      dt_cur,
-                      const cs_mesh_t            *mesh,
-                      const int                   field_id,
-                      const cs_equation_param_t  *eqp,
-                      cs_equation_builder_t      *eqb,
-                      void                       *eqc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -390,6 +411,8 @@ struct _cs_equation_t {
   /* Pointer to functions (see prototypes just above) */
   cs_equation_init_context_t       *init_context;
   cs_equation_free_context_t       *free_context;
+
+  cs_equation_init_values_t        *init_field_values;
   cs_equation_solve_t              *solve_steady_state;
   cs_equation_solve_t              *solve;
 

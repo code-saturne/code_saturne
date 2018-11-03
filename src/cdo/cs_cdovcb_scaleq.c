@@ -52,6 +52,7 @@
 #include "cs_defs.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
+#include "cs_evaluate.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
@@ -153,8 +154,8 @@ struct _cs_cdovcb_scaleq_t {
  *============================================================================*/
 
 /* Size = 1 if openMP is not used */
-static cs_cell_sys_t      **cs_cdovcb_cell_sys = NULL;
-static cs_cell_builder_t  **cs_cdovcb_cell_bld = NULL;
+static cs_cell_sys_t      **_vcbs_cell_system = NULL;
+static cs_cell_builder_t  **_vcbs_cell_builder = NULL;
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t    *cs_shared_quant;
@@ -246,7 +247,7 @@ _setup_vcb(cs_real_t                     t_eval,
                                    cs_shared_connect,
                                    eqp,
                                    eqb->face_bc,
-                                   cs_cdovcb_cell_bld[0], /* static variable */
+                                   _vcbs_cell_builder[0], /* static variable */
                                    vtx_bc_flag,
                                    dir_values);
 
@@ -732,7 +733,7 @@ _set_cip_coef(const cs_equation_param_t  *eqp)
 bool
 cs_cdovcb_scaleq_is_initialized(void)
 {
-  if (cs_cdovcb_cell_sys == NULL || cs_cdovcb_cell_bld == NULL)
+  if (_vcbs_cell_system == NULL || _vcbs_cell_builder == NULL)
     return false;
   else
     return true;
@@ -764,12 +765,12 @@ cs_cdovcb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
   cs_shared_ms = ms;
 
   /* Specific treatment for handling openMP */
-  BFT_MALLOC(cs_cdovcb_cell_sys, cs_glob_n_threads, cs_cell_sys_t *);
-  BFT_MALLOC(cs_cdovcb_cell_bld, cs_glob_n_threads, cs_cell_builder_t *);
+  BFT_MALLOC(_vcbs_cell_system, cs_glob_n_threads, cs_cell_sys_t *);
+  BFT_MALLOC(_vcbs_cell_builder, cs_glob_n_threads, cs_cell_builder_t *);
 
   for (int i = 0; i < cs_glob_n_threads; i++) {
-    cs_cdovcb_cell_sys[i] = NULL;
-    cs_cdovcb_cell_bld[i] = NULL;
+    _vcbs_cell_system[i] = NULL;
+    _vcbs_cell_builder[i] = NULL;
   }
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -778,17 +779,17 @@ cs_cdovcb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
     int t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
 
-    cs_cdovcb_cell_sys[t_id] = cs_cell_sys_create(connect->n_max_vbyc + 1,
+    _vcbs_cell_system[t_id] = cs_cell_sys_create(connect->n_max_vbyc + 1,
                                                   connect->n_max_fbyc,
                                                   1, NULL);
-    cs_cdovcb_cell_bld[t_id] = _cell_builder_create(connect);
+    _vcbs_cell_builder[t_id] = _cell_builder_create(connect);
   }
 #else
   assert(cs_glob_n_threads == 1);
-  cs_cdovcb_cell_sys[0] = cs_cell_sys_create(connect->n_max_vbyc + 1,
+  _vcbs_cell_system[0] = cs_cell_sys_create(connect->n_max_vbyc + 1,
                                              connect->n_max_fbyc,
                                              1, NULL);
-  cs_cdovcb_cell_bld[0] = _cell_builder_create(connect);
+  _vcbs_cell_builder[0] = _cell_builder_create(connect);
 #endif /* openMP */
 }
 
@@ -812,8 +813,8 @@ cs_cdovcb_scaleq_get(cs_cell_sys_t       **csys,
   assert(t_id < cs_glob_n_threads);
 #endif /* openMP */
 
-  *csys = cs_cdovcb_cell_sys[t_id];
-  *cb = cs_cdovcb_cell_bld[t_id];
+  *csys = _vcbs_cell_system[t_id];
+  *cb = _vcbs_cell_builder[t_id];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -830,19 +831,19 @@ cs_cdovcb_scaleq_finalize_common(void)
 #pragma omp parallel
   {
     int t_id = omp_get_thread_num();
-    cs_cell_sys_free(&(cs_cdovcb_cell_sys[t_id]));
-    cs_cell_builder_free(&(cs_cdovcb_cell_bld[t_id]));
+    cs_cell_sys_free(&(_vcbs_cell_system[t_id]));
+    cs_cell_builder_free(&(_vcbs_cell_builder[t_id]));
   }
 #else
   assert(cs_glob_n_threads == 1);
-  cs_cell_sys_free(&(cs_cdovcb_cell_sys[0]));
-  cs_cell_builder_free(&(cs_cdovcb_cell_bld[0]));
+  cs_cell_sys_free(&(_vcbs_cell_system[0]));
+  cs_cell_builder_free(&(_vcbs_cell_builder[0]));
 #endif /* openMP */
 
-  BFT_FREE(cs_cdovcb_cell_sys);
-  BFT_FREE(cs_cdovcb_cell_bld);
-  cs_cdovcb_cell_bld = NULL;
-  cs_cdovcb_cell_sys = NULL;
+  BFT_FREE(_vcbs_cell_system);
+  BFT_FREE(_vcbs_cell_builder);
+  _vcbs_cell_builder = NULL;
+  _vcbs_cell_system = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1064,6 +1065,110 @@ cs_cdovcb_scaleq_free_context(void   *data)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the initial values of the variable field taking into account
+ *         the boundary conditions.
+ *         Case of scalar-valued CDO-VCb schemes.
+ *
+ * \param[in]      t_eval     time at which one evaluates BCs
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
+                             const int                     field_id,
+                             const cs_mesh_t              *mesh,
+                             const cs_equation_param_t    *eqp,
+                             cs_equation_builder_t        *eqb,
+                             void                         *context)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
+  cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_real_t  *v_vals = fld->val;
+  cs_real_t  *c_vals = eqc->cell_values;
+
+  /* By default, 0 is set as initial condition for the computational domain.
+
+     Warning: This operation has to be done after the settings of the
+     Dirichlet boundary conditions where an interface sum is performed
+     for vertex-based schemes
+  */
+
+  memset(v_vals, 0, quant->n_vertices*sizeof(cs_real_t));
+  memset(c_vals, 0, quant->n_cells*sizeof(cs_real_t));
+
+  if (eqp->n_ic_defs > 0) {
+
+    /* Initialize values at mesh vertices */
+    cs_flag_t  v_dof_flag = CS_FLAG_SCALAR | cs_flag_primal_vtx;
+    cs_flag_t  c_dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
+
+    for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
+
+      /* Get and then set the definition of the initial condition */
+      const cs_xdef_t  *def = eqp->ic_defs[def_id];
+
+      switch(def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        cs_evaluate_potential_by_value(v_dof_flag, def, v_vals);
+        cs_evaluate_potential_by_value(c_dof_flag, def, c_vals);
+        break;
+
+      case CS_XDEF_BY_QOV:
+        cs_evaluate_potential_by_qov(v_dof_flag | cs_flag_primal_cell, def,
+                                     v_vals, c_vals);
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        if (eqp->dof_reduction != CS_PARAM_REDUCTION_DERHAM)
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Incompatible reduction for equation %s.\n",
+                    __func__, eqp->name);
+        cs_evaluate_potential_by_analytic(v_dof_flag, def, t_eval, v_vals);
+        cs_evaluate_potential_by_analytic(c_dof_flag, def, t_eval, c_vals);
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid way to initialize field values for eq. %s.\n",
+                  __func__, eqp->name);
+
+      } /* Switch on possible type of definition */
+
+    } /* Loop on definitions */
+
+  } /* Initial values to set */
+
+  /* Set the boundary values as initial values: Compute the values of the
+     Dirichlet BC */
+  cs_real_t  *work_v = cs_equation_get_tmpbuf();
+
+  cs_equation_compute_dirichlet_vb(t_eval,
+                                   mesh,
+                                   quant,
+                                   connect,
+                                   eqp,
+                                   eqb->face_bc,
+                                   _vcbs_cell_builder[0], /* static variable */
+                                   eqc->vtx_bc_flag,
+                                   work_v);
+
+
+  for (cs_lnum_t v = 0; v < quant->n_vertices; v++)
+    if (cs_cdo_bc_is_dirichlet(eqc->vtx_bc_flag[v]))
+      v_vals[v] = work_v[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create the matrix of the current algebraic system.
  *         Allocate and initialize the right-hand side associated to the given
  *         data structure
@@ -1141,7 +1246,7 @@ cs_cdovcb_scaleq_set_dir_bc(cs_real_t                     t_eval,
                                    connect,
                                    eqp,
                                    eqb->face_bc,
-                                   cs_cdovcb_cell_bld[0], /* static variable */
+                                   _vcbs_cell_builder[0], /* static variable */
                                    eqc->vtx_bc_flag,
                                    field_val);
 
@@ -1208,7 +1313,7 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, fld, rs, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
+         dir_values, fld, rs, _vcbs_cell_system, _vcbs_cell_builder)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1223,8 +1328,8 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
        Get the cell-wise view of the mesh and the algebraic system */
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_sys_t  *csys = cs_cdovcb_cell_sys[t_id];
-    cs_cell_builder_t  *cb = cs_cdovcb_cell_bld[t_id];
+    cs_cell_sys_t  *csys = _vcbs_cell_system[t_id];
+    cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -1416,7 +1521,7 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
          dir_values, fld, rs,                                           \
-         cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
+         _vcbs_cell_system, _vcbs_cell_builder)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1431,8 +1536,8 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
        Get the cell-wise view of the mesh and the algebraic system */
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_sys_t  *csys = cs_cdovcb_cell_sys[t_id];
-    cs_cell_builder_t  *cb = cs_cdovcb_cell_bld[t_id];
+    cs_cell_sys_t  *csys = _vcbs_cell_system[t_id];
+    cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -1706,8 +1811,8 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, fld, rs, cs_cdovcb_cell_sys,                       \
-         cs_cdovcb_cell_bld, compute_initial_source)
+         dir_values, fld, rs, _vcbs_cell_system,                       \
+         _vcbs_cell_builder, compute_initial_source)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1722,8 +1827,8 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
        Get the cell-wise view of the mesh and the algebraic system */
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_sys_t  *csys = cs_cdovcb_cell_sys[t_id];
-    cs_cell_builder_t  *cb = cs_cdovcb_cell_bld[t_id];
+    cs_cell_sys_t  *csys = _vcbs_cell_system[t_id];
+    cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
     cs_real_t  *cell_sources = eqc->source_terms + n_vertices;
 
     /* Store the shift to access border faces (first interior faces and
@@ -2004,7 +2109,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)          \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values, \
-         field_val, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
+         field_val, _vcbs_cell_system, _vcbs_cell_builder)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2018,8 +2123,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
        Get the cell-wise view of the mesh and the algebraic system */
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_sys_t  *csys = cs_cdovcb_cell_sys[t_id];
-    cs_cell_builder_t  *cb = cs_cdovcb_cell_bld[t_id];
+    cs_cell_sys_t  *csys = _vcbs_cell_system[t_id];
+    cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
 
     /* Set inside the OMP section so that each thread has its own value */
 
@@ -2444,7 +2549,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
 
   // To be modified for an fully integration of openMP
   cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(0);
-  cs_cell_builder_t  *cb = cs_cdovcb_cell_bld[0];
+  cs_cell_builder_t  *cb = _vcbs_cell_builder[0];
 
   double  *p_v = NULL;
   BFT_MALLOC(p_v, connect->n_max_vbyf, double);
@@ -2618,7 +2723,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)   \
   shared(quant, connect, location, eqp, eqb, eqc, diff_flux, values,  \
-         t_eval, cs_cdovcb_cell_bld)
+         t_eval, _vcbs_cell_builder)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2645,7 +2750,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_builder_t  *cb = cs_cdovcb_cell_bld[t_id];
+    cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
 
     if (eqb->diff_pty_uniform)
       cs_equation_set_diffusion_property(eqp, 0, t_eval, 0, cb);
@@ -2721,7 +2826,7 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)  \
   shared(quant, connect, eqc, v_gradient, v_values, dualcell_vol, \
-         cs_cdovcb_cell_bld, cs_glob_n_ranks)
+         _vcbs_cell_builder, cs_glob_n_ranks)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2739,7 +2844,7 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_builder_t  *cb = cs_cdovcb_cell_bld[t_id];
+    cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
 
     /* Define the flux by cellwise contributions */
 #   pragma omp for CS_CDO_OMP_SCHEDULE

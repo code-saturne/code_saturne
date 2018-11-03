@@ -52,6 +52,7 @@
 #include "cs_cdo_time.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
+#include "cs_evaluate.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
@@ -1128,6 +1129,104 @@ cs_cdovb_scaleq_free_context(void   *builder)
   return NULL;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the initial values of the variable field taking into account
+ *         the boundary conditions.
+ *         Case of scalar-valued CDO-Vb schemes.
+ *
+ * \param[in]      t_eval     time at which one evaluates BCs
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
+                            const int                     field_id,
+                            const cs_mesh_t              *mesh,
+                            const cs_equation_param_t    *eqp,
+                            cs_equation_builder_t        *eqb,
+                            void                         *context)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
+  cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_real_t  *v_vals = fld->val;
+
+  /* By default, 0 is set as initial condition for the computational domain.
+
+     Warning: This operation has to be done after the settings of the
+     Dirichlet boundary conditions where an interface sum is performed
+     for vertex-based schemes
+  */
+
+  memset(v_vals, 0, quant->n_vertices*sizeof(cs_real_t));
+
+  if (eqp->n_ic_defs > 0) {
+
+    /* Initialize values at mesh vertices */
+    cs_flag_t  dof_flag = CS_FLAG_SCALAR | cs_flag_primal_vtx;
+
+    for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
+
+      /* Get and then set the definition of the initial condition */
+      const cs_xdef_t  *def = eqp->ic_defs[def_id];
+
+      switch(def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        cs_evaluate_potential_by_value(dof_flag, def, v_vals);
+        break;
+
+      case CS_XDEF_BY_QOV:
+        cs_evaluate_potential_by_qov(dof_flag, def, v_vals, NULL);
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        {
+          const cs_param_dof_reduction_t  red = eqp->dof_reduction;
+
+          assert(red == CS_PARAM_REDUCTION_DERHAM);
+          cs_evaluate_potential_by_analytic(dof_flag, def, t_eval, v_vals);
+        }
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid way to initialize field values for eq. %s.\n",
+                  __func__, eqp->name);
+
+      } /* Switch on possible type of definition */
+
+    } /* Loop on definitions */
+
+  } /* Initial values to set */
+
+  /* Set the boundary values as initial values: Compute the values of the
+     Dirichlet BC */
+  cs_real_t  *work_v = cs_equation_get_tmpbuf();
+
+  cs_equation_compute_dirichlet_vb(t_eval,
+                                   mesh,
+                                   quant,
+                                   connect,
+                                   eqp,
+                                   eqb->face_bc,
+                                   _vbs_cell_builder[0], /* static variable */
+                                   eqc->vtx_bc_flag,
+                                   work_v);
+
+
+  for (cs_lnum_t v = 0; v < quant->n_vertices; v++)
+    if (cs_cdo_bc_is_dirichlet(eqc->vtx_bc_flag[v]))
+      v_vals[v] = work_v[v];
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

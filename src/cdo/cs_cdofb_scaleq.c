@@ -50,6 +50,7 @@
 #include "cs_cdofb_priv.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
+#include "cs_evaluate.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
@@ -1028,6 +1029,117 @@ cs_cdofb_scaleq_free_context(void   *data)
   BFT_FREE(eqc);
 
   return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the initial values of the variable field taking into account
+ *         the boundary conditions.
+ *         Case of scalar-valued CDO-Fb schemes.
+ *
+ * \param[in]      t_eval     time at which one evaluates BCs
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
+                            const int                     field_id,
+                            const cs_mesh_t              *mesh,
+                            const cs_equation_param_t    *eqp,
+                            cs_equation_builder_t        *eqb,
+                            void                         *context)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
+  cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_real_t  *c_vals = fld->val;
+  cs_real_t  *f_vals = eqc->face_values;
+
+  /* By default, 0 is set as initial condition for the computational domain */
+  memset(f_vals, 0, quant->n_faces*sizeof(cs_real_t));
+  memset(c_vals, 0, quant->n_cells*sizeof(cs_real_t));
+
+  if (eqp->n_ic_defs > 0) {
+
+    /* Initialize values at mesh vertices */
+    cs_flag_t  f_dof_flag = CS_FLAG_SCALAR | cs_flag_primal_face;
+    cs_flag_t  c_dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
+
+    for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
+
+      /* Get and then set the definition of the initial condition */
+      const cs_xdef_t  *def = eqp->ic_defs[def_id];
+
+      switch(def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        cs_evaluate_potential_by_value(f_dof_flag, def, f_vals);
+        cs_evaluate_potential_by_value(c_dof_flag, def, c_vals);
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        {
+          const cs_param_dof_reduction_t  red = eqp->dof_reduction;
+          switch (red) {
+
+          case CS_PARAM_REDUCTION_DERHAM:
+            cs_evaluate_potential_by_analytic(f_dof_flag, def, t_eval, f_vals);
+            cs_evaluate_potential_by_analytic(c_dof_flag, def, t_eval, c_vals);
+            break;
+          case CS_PARAM_REDUCTION_AVERAGE:
+            cs_evaluate_average_on_faces_by_analytic(def, t_eval, f_vals);
+            cs_evaluate_average_on_cells_by_analytic(def, t_eval, c_vals);
+            break;
+
+          default:
+            bft_error(__FILE__, __LINE__, 0,
+                      " %s: Incompatible reduction for equation %s.\n",
+                      __func__, eqp->name);
+            break;
+
+          } /* Switch on possible reduction types */
+
+        }
+        break;
+
+      case CS_XDEF_BY_QOV:      /* TODO */
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid way to initialize field values for eq. %s.\n",
+                  __func__, eqp->name);
+
+      } /* Switch on possible type of definition */
+
+    } /* Loop on definitions */
+
+  } /* Initial values to set */
+
+  /* Set the boundary values as initial values: Compute the values of the
+     Dirichlet BC */
+  const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
+  cs_real_t  *work_f = cs_equation_get_tmpbuf();
+
+  cs_equation_compute_dirichlet_fb(mesh,
+                                   quant,
+                                   connect,
+                                   eqp,
+                                   face_bc,
+                                   t_eval,
+                                   cs_cdofb_cell_bld[0],
+                                   work_f);
+
+
+  cs_real_t  *bf_vals = f_vals + quant->n_i_faces;
+  for (cs_lnum_t f = 0; f < quant->n_b_faces; f++)
+    if (cs_cdo_bc_is_dirichlet(face_bc->flag[f]))
+      bf_vals[f] = work_f[f];
 }
 
 /*----------------------------------------------------------------------------*/
