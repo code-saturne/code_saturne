@@ -96,7 +96,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDOVB_SCALEQ_DBG     0
+#define CS_CDOVB_SCALEQ_DBG     3
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
@@ -1192,12 +1192,8 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        {
-          const cs_param_dof_reduction_t  red = eqp->dof_reduction;
-
-          assert(red == CS_PARAM_REDUCTION_DERHAM);
-          cs_evaluate_potential_by_analytic(dof_flag, def, t_eval, v_vals);
-        }
+        assert(eqp->dof_reduction == CS_PARAM_REDUCTION_DERHAM);
+        cs_evaluate_potential_by_analytic(dof_flag, def, t_eval, v_vals);
         break;
 
       default:

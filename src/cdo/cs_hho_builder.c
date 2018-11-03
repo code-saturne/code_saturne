@@ -67,8 +67,6 @@ BEGIN_C_DECLS
  * Private variables
  *============================================================================*/
 
-static const double  cs_hho_builder_pena_coef = 1e13;
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -647,10 +645,9 @@ _compute_mcg(const cs_cell_mesh_t    *cm,
 {
   const cs_basis_func_t  *cbf = hhob->cell_basis;
   const short int  cs = cbf->size;
-  const short int  cs_kp1 = cbf_kp1->size;
   const short int  gs = hhob->grad_basis->size - 1;
 
-  assert(gs + 1 == cs_kp1);
+  assert(gs + 1 == cbf_kp1->size);
 
   cs_sdm_t  *mcg = cb->hdg;
 

@@ -760,6 +760,11 @@ cs_hho_stokes_build_system(const cs_mesh_t            *mesh,
   cs_timer_t  t0 = cs_timer_time();
 
   /* TODO */
+  CS_UNUSED(quant);
+  CS_UNUSED(connect);
+  CS_UNUSED(eqc);
+  CS_UNUSED(rhs);
+  CS_UNUSED(matrix);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
@@ -789,6 +794,8 @@ cs_hho_stokes_update_field(const cs_real_t            *solu,
 {
   CS_UNUSED(rhs);
   CS_UNUSED(eqp);
+  CS_UNUSED(solu);
+  CS_UNUSED(field_val);
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -797,6 +804,11 @@ cs_hho_stokes_update_field(const cs_real_t            *solu,
 
   cs_hho_stokes_t  *eqc = (cs_hho_stokes_t  *)data;
 
+  CS_UNUSED(quant);
+  CS_UNUSED(connect);
+  CS_UNUSED(eqc);
+
+  /* TODO */
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

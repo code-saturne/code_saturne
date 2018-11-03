@@ -974,6 +974,9 @@ cs_hho_scaleq_init_values(cs_real_t                     t_eval,
                           cs_equation_builder_t        *eqb,
                           void                         *context)
 {
+  /* Unused parameters --> generic function pointer */
+  CS_UNUSED(field_id);
+  CS_UNUSED(eqb);
   CS_UNUSED(t_eval);
   CS_UNUSED(mesh);
   CS_UNUSED(eqp);

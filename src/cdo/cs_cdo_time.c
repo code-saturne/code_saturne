@@ -244,6 +244,7 @@ cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
   CS_UNUSED(eqp);
   CS_UNUSED(tpty_val);
   CS_UNUSED(cb);
+  CS_UNUSED(system_flag);       /* Only in debug mode */
 
   cs_sdm_t  *adr = csys->mat;
 
@@ -291,6 +292,7 @@ cs_cdo_time_imp(const cs_equation_param_t   *eqp,
                 cs_cell_builder_t           *cb,
                 cs_cell_sys_t               *csys)
 {
+  CS_UNUSED(eqp);               /* Only in debug mode */
   CS_UNUSED(system_flag);
 
   cs_sdm_t  *adr = csys->mat;
@@ -471,6 +473,7 @@ cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
                        cs_cell_sys_t              *csys)
 {
   CS_UNUSED(tpty_val);
+  CS_UNUSED(system_flag);       /* Only in debug mode */
 
   const double  tcoef = 1 - eqp->theta;
 

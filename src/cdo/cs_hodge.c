@@ -1163,6 +1163,8 @@ cs_hodge_fb_get_mass(const cs_param_hodge_t    h_info,
                      const cs_cell_mesh_t     *cm,
                      cs_cell_builder_t        *cb)
 {
+  CS_UNUSED(h_info);            /* Only in debug mode */
+
   /* Sanity check */
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_FB);

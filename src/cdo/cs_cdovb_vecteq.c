@@ -971,13 +971,8 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        {
-          const cs_param_dof_reduction_t  red = eqp->dof_reduction;
-
-          assert(red == CS_PARAM_REDUCTION_DERHAM);
-          cs_evaluate_potential_by_analytic(dof_flag, def, t_eval, v_vals);
-
-        }
+        assert(eqp->dof_reduction == CS_PARAM_REDUCTION_DERHAM);
+        cs_evaluate_potential_by_analytic(dof_flag, def, t_eval, v_vals);
         break;
 
       default:
@@ -1506,6 +1501,8 @@ cs_cdovb_vecteq_cellwise_diff_flux(const cs_real_t             *values,
   const cs_timer_t  t0 = cs_timer_time();
 
   /* TODO */
+  CS_UNUSED(eqc);
+  CS_UNUSED(diff_flux);
   CS_UNUSED(quant);
   CS_UNUSED(connect);
   CS_UNUSED(values);

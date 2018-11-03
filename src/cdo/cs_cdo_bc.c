@@ -147,6 +147,8 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
                       cs_xdef_t           **defs,
                       cs_lnum_t             n_b_faces)
 {
+  CS_UNUSED(dim); /* Only in debug */
+
   /* Set the default flag */
   cs_flag_t  default_flag = cs_cdo_bc_get_flag(default_bc);
 

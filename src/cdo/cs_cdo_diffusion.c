@@ -162,8 +162,9 @@ _cdofb_normal_flux_reco(short int                  fb,
                         const cs_real_3_t         *kappa_f,
                         cs_sdm_t                  *ntrgrd)
 {
+  CS_UNUSED(cb);
+
   /* Sanity check */
-  assert(cb != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
   assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |

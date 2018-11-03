@@ -1864,6 +1864,8 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
                        const cs_cdo_quantities_t   *quant,
                        const cs_time_step_t        *ts)
 {
+  CS_UNUSED(connect);
+
   for (int i = 0; i < _n_equations; i++) {
 
     cs_equation_t *eq = _equations[i];

@@ -600,8 +600,9 @@ cs_sdm_block_multiply_rowrow(const cs_sdm_t   *a,
 
   const cs_sdm_block_t  *a_desc = a->block_desc;
   const cs_sdm_block_t  *b_desc = b->block_desc;
-  const cs_sdm_block_t  *c_desc = c->block_desc; /* used in assert */
+  const cs_sdm_block_t  *c_desc = c->block_desc;
 
+  CS_UNUSED(c_desc);            /* Only in debug mode */
   assert(a_desc->n_col_blocks == b_desc->n_col_blocks &&
          a_desc->n_row_blocks == c_desc->n_row_blocks &&
          c_desc->n_col_blocks == b_desc->n_row_blocks);
@@ -881,9 +882,10 @@ cs_sdm_block_add_mult(cs_sdm_t        *mat,
   if (mat == NULL || add == NULL)
     return;
 
-  const cs_sdm_block_t  *add_desc = add->block_desc; /* used in assert */
+  const cs_sdm_block_t  *add_desc = add->block_desc;
   const cs_sdm_block_t  *mat_desc = mat->block_desc;
 
+  CS_UNUSED(add_desc);          /* Only in debug mode */
   assert(add_desc != NULL && mat_desc != NULL);
   assert(add_desc->n_row_blocks == mat_desc->n_row_blocks);
   assert(add_desc->n_col_blocks == mat_desc->n_col_blocks);
