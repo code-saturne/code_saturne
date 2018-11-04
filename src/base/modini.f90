@@ -279,7 +279,7 @@ do f_id = 0, nfld - 1
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
     call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if (abs(vcopt%thetav+999.d0).gt.epzero) then
+    if (abs(vcopt%thetav+1.d0).gt.epzero) then
       call field_get_name(f_id, name)
       write(nfecra,1131) trim(name),'THETAV'
     else
@@ -347,32 +347,36 @@ if (itytur.eq.3) then
 endif
 
 ! ---> ISSTPC
-!        Si l'utilisateur n'a rien specifie pour le test de pente (=-999),
+!        Si l'utilisateur n'a rien specifie pour le test de pente (=-1),
 !        On impose 1 (ie sans) pour la vitesse en LES
 !                  0 (ie avec) sinon
 
 if (itytur.eq.4) then
   ii = iu
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-  if (vcopt%isstpc.eq.-999) then
+  if (vcopt%isstpc.eq.-1) then
     vcopt%isstpc = 1
     call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   endif
   do jj = 1, nscal
     ii = isca(jj)
     call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-    if (vcopt%isstpc.eq.-999) then
+    if (vcopt%isstpc.eq.-1) then
       vcopt%isstpc = 0
       call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
     endif
  enddo
 endif
 
-do ii = 1, nvar
-  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-  if (vcopt%isstpc.eq.-999) then
-    vcopt%isstpc = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if (vcopt%isstpc.eq.-1) then
+      vcopt%isstpc = 0
+      call field_set_key_struct_var_cal_opt(f_id, vcopt)
+    endif
   endif
 enddo
 
@@ -389,7 +393,7 @@ enddo
 
 ii = iu
 call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-if (abs(vcopt%blencv+999.d0).lt.epzero) then
+if (abs(vcopt%blencv+1.d0).lt.epzero) then
   vcopt%blencv = 1.d0
   call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 endif
@@ -397,8 +401,8 @@ endif
 if (icavit.ge.0) then
   ii = ivolf2
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-  if (abs(vcopt%blencv+999.d0).lt.epzero) then
-    if (abs(vcopt%blencv+999.d0).gt.epzero) &
+  if (abs(vcopt%blencv+1.d0).lt.epzero) then
+    if (abs(vcopt%blencv+1.d0).gt.epzero) &
          write(nfecra,3000) 0.d0, vcopt%blencv
     vcopt%blencv = 0.d0
     call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
@@ -408,7 +412,7 @@ endif
 do jj = 1, nscaus
   ii = isca(jj)
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-  if (abs(vcopt%blencv+999.d0).lt.epzero) then
+  if (abs(vcopt%blencv+1.d0).lt.epzero) then
     vcopt%blencv = 1.d0
     call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   endif
@@ -417,22 +421,26 @@ enddo
 if (iscalt.gt.0) then
   ii = isca(iscalt)
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-  if (abs(vcopt%blencv+999.d0).lt.epzero) then
+  if (abs(vcopt%blencv+1.d0).lt.epzero) then
     vcopt%blencv = 1.d0
     call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   endif
 endif
 
-do ii = 1, nvar
-  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-  if (abs(vcopt%blencv+999.d0).lt.epzero) then
-    vcopt%blencv = 0.d0
-    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if (abs(vcopt%blencv+1.d0).lt.epzero) then
+      vcopt%blencv = 0.d0
+      call field_set_key_struct_var_cal_opt(f_id, vcopt)
+    endif
   endif
 enddo
 
 ! ---> NSWRSM, EPSRSM ET EPSILO
-!        Si l'utilisateur n'a rien specifie  (NSWRSM=-999),
+!        Si l'utilisateur n'a rien specifie  (NSWRSM=-1),
 !        On impose
 !           a l'ordre 1 :
 !                  2  pour la pression
@@ -449,36 +457,40 @@ enddo
 if (ischtp.eq.2) then
   ii = ipr
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-  if (vcopt%nswrsm.eq.-999) vcopt%nswrsm = 5
-  if (abs(vcopt%epsilo+999.d0).lt.epzero) vcopt%epsilo = 1.d-5
-  if (abs(vcopt%epsrsm+999.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
+  if (vcopt%nswrsm.eq.-1) vcopt%nswrsm = 5
+  if (abs(vcopt%epsilo+1.d0).lt.epzero) vcopt%epsilo = 1.d-5
+  if (abs(vcopt%epsrsm+1.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
   call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   ii = iu
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-  if (vcopt%nswrsm.eq.-999) vcopt%nswrsm = 10
-  if (abs(vcopt%epsilo+999.d0).lt.epzero) vcopt%epsilo = 1.d-5
-  if (abs(vcopt%epsrsm+999.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
+  if (vcopt%nswrsm.eq.-1) vcopt%nswrsm = 10
+  if (abs(vcopt%epsilo+1.d0).lt.epzero) vcopt%epsilo = 1.d-5
+  if (abs(vcopt%epsrsm+1.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
   call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   do jj = 1, nscal
     ii = isca(jj)
     call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-    if (vcopt%nswrsm.eq.-999) vcopt%nswrsm = 10
-    if (abs(vcopt%epsilo+999.d0).lt.epzero) vcopt%epsilo = 1.d-5
-    if (abs(vcopt%epsrsm+999.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
+    if (vcopt%nswrsm.eq.-1) vcopt%nswrsm = 10
+    if (abs(vcopt%epsilo+1.d0).lt.epzero) vcopt%epsilo = 1.d-5
+    if (abs(vcopt%epsrsm+1.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
     call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   enddo
 endif
 ii = ipr
 call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-if (vcopt%nswrsm.eq.-999) vcopt%nswrsm = 2
+if (vcopt%nswrsm.eq.-1) vcopt%nswrsm = 2
 call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 
-do ii = 1, nvar
-  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-  if (vcopt%nswrsm.eq.-999) vcopt%nswrsm = 1
-  if (abs(vcopt%epsilo+999.d0).lt.epzero) vcopt%epsilo = 1.d-8
-  if (abs(vcopt%epsrsm+999.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
-  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if (vcopt%nswrsm.eq.-1) vcopt%nswrsm = 1
+    if (abs(vcopt%epsilo+1.d0).lt.epzero) vcopt%epsilo = 1.d-8
+    if (abs(vcopt%epsrsm+1.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
+    call field_set_key_struct_var_cal_opt(f_id, vcopt)
+  endif
 enddo
 
 ! ---> ANOMAX
@@ -499,25 +511,32 @@ imrgrp = abs(imrgra)
 if (imrgrp.ge.10) imrgrp = imrgrp - 10
 
 if (imrgrp.eq.0.or.imrgrp.ge.4) then
-  do ii = 1, nvar
-    call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-    if (vcopt%imligr.eq.-999) then
-      vcopt%imligr = -1
-      call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  do f_id = 0, nfld - 1
+    call field_get_type(f_id, f_type)
+    ! Is the field of type FIELD_VARIABLE?
+    if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+      call field_get_key_struct_var_cal_opt(f_id, vcopt)
+      if (vcopt%imligr.eq.-999) then
+        vcopt%imligr = -1
+        call field_set_key_struct_var_cal_opt(f_id, vcopt)
+      endif
     endif
   enddo
 else
-  do ii = 1, nvar
-    call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-    if (vcopt%imligr.eq.-999) then
-      vcopt%imligr = 1
-      call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  do f_id = 0, nfld - 1
+    call field_get_type(f_id, f_type)
+    ! Is the field of type FIELD_VARIABLE?
+    if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+      call field_get_key_struct_var_cal_opt(f_id, vcopt)
+      if (vcopt%imligr.eq.-999) then
+        vcopt%imligr = 1
+        call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+      endif
     endif
   enddo
 endif
 
 ! ---> DTMIN DTMAX CDTVAR
-
 
 if (dtmin.le.-grand) then
   dtmin = 0.1d0*dtref
@@ -742,66 +761,34 @@ if (idtvar.lt.0) then
   relxsp = 1.d0-relxst
   if (relxsp.le.epzero) relxsp = relxst
   call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-  if (abs(vcopt%relaxv+999.d0).le.epzero) then
-       vcopt%relaxv = relxsp
-       call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+  if (abs(vcopt%relaxv+1.d0).le.epzero) then
+    vcopt%relaxv = relxsp
+    call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
   endif
-  do ii = 1, nvar
-    call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-    if (abs(vcopt%relaxv+999.d0).le.epzero) then
-      vcopt%relaxv = relxst
-      call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  do f_id = 0, nfld - 1
+    call field_get_type(f_id, f_type)
+    ! Is the field of type FIELD_VARIABLE?
+    if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+      call field_get_key_struct_var_cal_opt(f_id, vcopt)
+      if (abs(vcopt%relaxv+1.d0).le.epzero) then
+        vcopt%relaxv = relxst
+        call field_set_key_struct_var_cal_opt(f_id, vcopt)
+      endif
     endif
   enddo
 else
-  if (ikecou.eq.0) then
-    if (itytur.eq.5) then !FIXME
-      call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
-      if (abs(vcopt%relaxv+999.d0).lt.epzero) then
+
+  do f_id = 0, nfld - 1
+    call field_get_type(f_id, f_type)
+    ! Is the field of type FIELD_VARIABLE?
+    if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+      call field_get_key_struct_var_cal_opt(f_id, vcopt)
+      if (abs(vcopt%relaxv+1.d0).le.epzero) then
         vcopt%relaxv = 1.d0
-        call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
-      endif
-      call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
-      if (abs(vcopt%relaxv+999.d0).lt.epzero) then
-        vcopt%relaxv = 1.d0
-        call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
-      endif
-    else if (itytur.eq.2) then
-      call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
-      if (abs(vcopt%relaxv+999.d0).lt.epzero) then
-        vcopt%relaxv = 1.d0
-        call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
-      endif
-      call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
-      if (abs(vcopt%relaxv+999.d0).lt.epzero) then
-        vcopt%relaxv = 1.d0
-        call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
-      endif
-    else if (itytur.eq.6) then
-      call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
-      if (abs(vcopt%relaxv+999.d0).lt.epzero)  then
-           vcopt%relaxv = 1.d0
-           call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
-      endif
-      call field_get_key_struct_var_cal_opt(ivarfl(iomg), vcopt)
-      if (abs(vcopt%relaxv+999.d0).lt.epzero) then
-           vcopt%relaxv = 1.d0
-           call field_set_key_struct_var_cal_opt(ivarfl(iomg), vcopt)
+        call field_set_key_struct_var_cal_opt(f_id, vcopt)
       endif
     endif
-  endif
-  if (iturb.eq.70) then
-    call field_get_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
-    if (abs(vcopt%relaxv+999.d0).lt.epzero) then
-      vcopt%relaxv = 1.d0
-      call field_set_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
-    endif
-  endif
-  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-  if (abs(vcopt%relaxv+999.d0).lt.epzero) then
-     vcopt%relaxv = 1.d0
-     call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-  endif
+  enddo
 endif
 
 ! ---> SPECIFIQUE STATIONNAIRE
@@ -809,10 +796,14 @@ if (idtvar.lt.0) then
   dtref = 1.d0
   dtmin = 1.d0
   dtmax = 1.d0
-  do ii = 1, nvar
-    call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-    vcopt%istat = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  do f_id = 0, nfld - 1
+    call field_get_type(f_id, f_type)
+    ! Is the field of type FIELD_VARIABLE?
+    if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+      call field_get_key_struct_var_cal_opt(f_id, vcopt)
+      vcopt%istat = 0
+      call field_set_key_struct_var_cal_opt(f_id, vcopt)
+    endif
   enddo
   call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
   arak = arak/max(vcopt%relaxv,epzero)
