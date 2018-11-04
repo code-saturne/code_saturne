@@ -451,8 +451,6 @@ class NumericalParamEquationModel(Model):
     def getFluxReconstruction(self, name):
         """ Return value of flux reconstruction for variable labelled name """
         node = self._getSchemeNameNode(name)
-        if self._isPressure(node):
-            return None
         value = self._defaultValues()['flux_reconstruction']
         if node.xmlGetNode('flux_reconstruction'):
             value = node.xmlGetNode('flux_reconstruction')['status']
@@ -461,14 +459,11 @@ class NumericalParamEquationModel(Model):
 
     @Variables.noUndo
     def getRhsReconstruction(self, name):
-        """ Return value of blending factor for variable labelled name """
+        """ Return value of RHS reconstruction for variable labelled name """
         node = self._getSchemeNameNode(name)
         value = node.xmlGetDouble('rhs_reconstruction')
         if value == None:
-            if self._isPressure(node): # temporary fix for probable mix between label and name
-                value = self._defaultValues('Pressure')['rhs_reconstruction']
-            else:
-                value = self._defaultValues(name)['rhs_reconstruction']
+            value = self._defaultValues(name)['rhs_reconstruction']
         return value
 
 
@@ -543,8 +538,7 @@ class NumericalParamEquationModel(Model):
     @Variables.undoLocal
     def setRhsReconstruction(self, name, value):
         """
-        Put value of blending factor for variable labelled name
-        only if it 's different of default value
+        Put value of RHS reconstruction
         """
         self.isInt(value)
         node = self._getSchemeNameNode(name)
