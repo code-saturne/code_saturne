@@ -130,12 +130,12 @@ class NumericalParamEquationModel(Model):
             ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             if name in self.UVW:
                 self.default['slope_test'] = 'off'
-            if name == 'Pressure':
+            if name == 'pressure':
                 self.default['rhs_reconstruction'] = 5
             else:
                 self.default['rhs_reconstruction'] = 10
         else:
-            if name == 'Pressure':
+            if name == 'pressure':
                 self.default['rhs_reconstruction'] = 2
             else:
                 self.default['rhs_reconstruction'] = 1
@@ -875,14 +875,14 @@ class NumericalParamEquatTestCase(ModelTest):
         """
         model = NumericalParamEquationModel(self.case)
 
-        assert model.getSolverPrecision('Pressure') == 1e-8,\
+        assert model.getSolverPrecision('pressure') == 1e-8,\
                 'Could not get solver precision for pressure in NumericalParamEquationModel'
         from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
         NumericalParamGlobalModel(self.case).setTimeSchemeOrder(2)
         del NumericalParamGlobalModel
-        assert model.getSolverPrecision('Velocity') == 1e-5
+        assert model.getSolverPrecision('velocity') == 1e-5
 
-        model.setSolverPrecision('VelocitU', 2e-6)
+        model.setSolverPrecision('velocity', 2e-6)
         doc = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
                     <variable label="Velocity" name="velocity">
@@ -894,7 +894,7 @@ class NumericalParamEquatTestCase(ModelTest):
                  </velocity_pressure>"""
         assert model.node_vitpre == self.xmlNodeFromString(doc),\
                 'Could not set solver precision in NumericalParamEquationModel'
-        assert model.getSolverPrecision('VelocitU') == 2e-6,\
+        assert model.getSolverPrecision('velocity') == 2e-6,\
                 'Could not get solver precision in NumericalParamEquationModel'
 
     def checkSetAndGetScalarTimeStepFactor(self):
