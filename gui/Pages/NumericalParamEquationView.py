@@ -575,9 +575,9 @@ class StandardItemModelSolver(QStandardItemModel):
 
         if role == Qt.ToolTipRole:
             if index.column() == 3:
-                return to_qvariant(self.tr("Code_Saturne keyword: EPSILO"))
+                return to_qvariant(self.tr("Field variable calculation option keyword: epsilo"))
             elif index.column() == 4:
-                return to_qvariant(self.tr("Code_Saturne keyword: IWARNI"))
+                return to_qvariant(self.tr("Field variable calculation option keyword: iwarni"))
             elif index.column() == 5:
                 return to_qvariant(self.tr("Code_Saturne keyword: CDTVAR"))
 
