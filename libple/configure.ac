@@ -193,6 +193,12 @@ AX_PKG_SWIG(1.3.21) # check swig version
 AX_SWIG_PYTHON
 AM_PATH_PYTHON(2.3)
 AX_PYTHON_DEVEL([>='2.5'])
+AX_PYTHON_MODULE(mpi4py)
+
+AM_CONDITIONAL(HAVE_MPI4PY, [test "${HAVE_PYMOD_MPI4PY}" = yes])
+if test "${HAVE_PYMOD_MPI4PY}" = "yes"; then
+  AC_DEFINE([HAVE_MPI4PY], 1, [mpi4py module])
+fi
 
 # Default compiler options (may be modified
 # by defining CFLAGS in the environment)
