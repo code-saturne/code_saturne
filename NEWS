@@ -25,6 +25,8 @@ Bug fixes
 - Fix improved hydrostatic treatment and PISO-like iterations
   (nterup > 1 and iphydr = 1).
 
+- GUI: fix crash on startup on some recent systems.
+
 Release 5.0.9 (Sep 26 2018)
 ===========================
 

@@ -140,7 +140,7 @@ def main(argv, pkg):
 
     case = process_cmd_line(argv)
 
-    app = QApplication(argv)
+    app = QApplication(sys.argv)
     # Defines the name of subdirectory under .config
     app.setOrganizationName(pkg.code_name)
     app.setOrganizationDomain(pkg.url)
