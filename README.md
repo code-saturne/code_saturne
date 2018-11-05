@@ -86,8 +86,7 @@ variable), and to specify the language (between English and French).
   first:
 
   - Zlib (optional)
-  - BLAS (optional)
-  - PyQT (optional, required for the GUI)
+  - PyQt (optional, required for the GUI)
   - C, C++, and Fortran compilers
   - Python
   - MPI (optional)
