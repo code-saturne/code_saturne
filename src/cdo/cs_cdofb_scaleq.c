@@ -1124,7 +1124,6 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
   /* Set the boundary values as initial values: Compute the values of the
      Dirichlet BC */
   const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
-  cs_real_t  *work_f = cs_equation_get_tmpbuf();
 
   cs_equation_compute_dirichlet_fb(mesh,
                                    quant,
@@ -1133,13 +1132,8 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
                                    face_bc,
                                    t_eval,
                                    cs_cdofb_cell_bld[0],
-                                   work_f);
+                                   f_vals + quant->n_i_faces);
 
-
-  cs_real_t  *bf_vals = f_vals + quant->n_i_faces;
-  for (cs_lnum_t f = 0; f < quant->n_b_faces; f++)
-    if (cs_cdo_bc_is_dirichlet(face_bc->flag[f]))
-      bf_vals[f] = work_f[f];
 }
 
 /*----------------------------------------------------------------------------*/
