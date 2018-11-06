@@ -2231,6 +2231,15 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
 
     cs_cell_mesh_get_f2v(f, cm, &n_vf, v_ids);
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys)) {
+      cs_log_printf(CS_LOG_DEFAULT, " %s: f:%d --> bndy_flux:", __func__, f);
+      for (short int v = 0; v < cm->n_vc; v++)
+        cs_log_printf(CS_LOG_DEFAULT, " v%d:%e", v, v_nflx[v]);
+      cs_log_printf(CS_LOG_DEFAULT, "\n");
+    }
+#endif
+
     if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV) {
 
       for (short int v = 0; v < n_vf; v++) {

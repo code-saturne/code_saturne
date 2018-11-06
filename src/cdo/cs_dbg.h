@@ -61,48 +61,6 @@ BEGIN_C_DECLS
 #if defined(DEBUG) && !defined(NDEBUG)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Function used to select which element deserves a dump or specific
- *          treatment during a debugging stage
- *
- * \param[in]  eqp      pointer to a cs_equation_param_t structure
- * \param[in]  cm       pointer to a cs_cell_mesh_t structure
- * \param[in]  csys     pointer to a cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline bool
-cs_dbg_cw_test(const cs_equation_param_t   *eqp,
-               const cs_cell_mesh_t        *cm,
-               const cs_cell_sys_t         *csys)
-{
-  bool has_name = false;
-  if (eqp != NULL) {
-    if (strcmp(eqp->name, "Tracer1") == 0)
-      has_name=true;
-  }
-
-  if (has_name) {
-#if 0 /* First example: Look for the cells which have the vertex 5 */
-    for (int v = 0; v < cm->n_vc; v++)
-      if (cm->v_ids[v] == 5)
-        return true;
-#endif
-
-#if 1 /* Second example: Look for the cells which have a previous DoF value
-         greater than 1.02 */
-    if (csys != NULL) {
-      for (int i = 0; i < csys->n_dofs; i++)
-        if (csys->val_n[i] > 1.02)
-          return true;
-    }
-#endif
-  } /* The current equation has the requested name */
-
-  return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Check if there is no invalid setting for a homogeneous Dirichlet
  *
  * \param[in]  fname      name of the calling function
@@ -126,6 +84,22 @@ cs_dbg_check_hmg_dirichlet_cw(const char           *fname,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Function used to select which element deserves a dump or specific
+ *          treatment during a debugging stage
+ *
+ * \param[in]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  csys     pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_dbg_cw_test(const cs_equation_param_t   *eqp,
+               const cs_cell_mesh_t        *cm,
+               const cs_cell_sys_t         *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -211,7 +185,7 @@ cs_dbg_dump_linear_system(const char        *eqname,
                           const cs_lnum_t    col_id[],
                           const cs_real_t    xval[],
                           const cs_real_t    dval[]);
-#endif
+#endif  /* DEBUG */
 
 /*----------------------------------------------------------------------------*/
 

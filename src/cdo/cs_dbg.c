@@ -70,6 +70,54 @@ BEGIN_C_DECLS
 #if defined(DEBUG) && !defined(NDEBUG)
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Function used to select which element deserves a dump or specific
+ *          treatment during a debugging stage
+ *
+ * \param[in]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  csys     pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_dbg_cw_test(const cs_equation_param_t   *eqp,
+               const cs_cell_mesh_t        *cm,
+               const cs_cell_sys_t         *csys)
+{
+#if 1 /* Example: Only search debug information for a givan equation */
+  bool has_name = false;
+  if (eqp != NULL) {
+    if (strcmp(eqp->name, "Tracer1") == 0)
+      has_name=true;
+  }
+#else
+  bool has_name = true;
+#endif
+
+  if (has_name) {
+#if 1 /* First example: Look for the cells which have the vertex 441 */
+    short int _v = -1;
+    for (int v = 0; v < cm->n_vc; v++)
+      if (cm->v_ids[v] == 441)
+        _v = v;
+#else
+    short int _v = 0;
+#endif
+
+#if 1 /* Second example: Look for the cells which have a previous DoF value
+         greater than 0.06 and the vertex 441 */
+    if (csys != NULL && _v > -1) {
+      if (csys->val_n[_v] > 0.06)
+        return true;
+    }
+#endif
+  } /* The current equation has the requested name */
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Print a cs_sdm_t structure which is defined by block
  *          Print into the file f if given otherwise open a new file named
  *          fname if given otherwise print into the standard output
