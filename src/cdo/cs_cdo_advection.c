@@ -1170,11 +1170,12 @@ cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
   build_func(cm, cb->adv_fluxes, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, csys)) {
+  if (cs_dbg_cw_test(eqp, cm, NULL)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection fluxes");
     cs_log_printf(CS_LOG_DEFAULT, "\n beta_fluxes>>");
     for (int f = 0; f < cm->n_fc; f++)
-      cs_log_printf(CS_LOG_DEFAULT, "f%d;% -5.3e|", cm->f_ids[f], fluxes[f]);
+      cs_log_printf(CS_LOG_DEFAULT, "f%d;% -5.3e|",
+                    cm->f_ids[f], cb->adv_fluxes[f]);
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
     cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
   }
@@ -1587,7 +1588,7 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
   _build_cell_vpfd_upw(cm, get_weight, fluxes, upwcoef, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, csys)) {
+  if (cs_dbg_cw_test(eqp, cm, NULL)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
     cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
   }
@@ -1646,7 +1647,7 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
   _build_cell_vpfd_upw(cm, get_weight, fluxes, upwcoef, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, csys)) {
+  if (cs_dbg_cw_test(eqp, cm, NULL)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
     cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
   }
@@ -1693,7 +1694,7 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
   _build_cell_vpfd_cen(cm, fluxes, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, csys)) {
+  if (cs_dbg_cw_test(eqp, cm, NULL)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
     cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
   }
@@ -1740,7 +1741,7 @@ cs_cdo_advection_get_vb_mcucsv(const cs_equation_param_t   *eqp,
   _build_cell_vpfd_mcu(cm, eqp->upwind_portion, fluxes, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, csys)) {
+  if (cs_dbg_cw_test(eqp, cm, NULL)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
     cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
   }
@@ -1814,7 +1815,7 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
   _build_cell_epcd_upw(cm, get_weight, fluxes, upwcoef,        adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, csys)) {
+  if (cs_dbg_cw_test(eqp, cm, NULL)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
     cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
   }
@@ -1873,7 +1874,7 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
   _build_cell_epcd_upw(cm, get_weight, fluxes, upwcoef, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, csys)) {
+  if (cs_dbg_cw_test(eqp, cm, NULL)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
     cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
   }
@@ -1920,7 +1921,7 @@ cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
   _build_cell_epcd_cen(cm, fluxes, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, csys)) {
+  if (cs_dbg_cw_test(eqp, cm, NULL)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
     cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
   }
@@ -2049,7 +2050,7 @@ cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
   _vcb_stabilization_part2(cm, stab_coef, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, csys)) {
+  if (cs_dbg_cw_test(eqp, cm, NULL)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix (CW version)");
     cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
   }
@@ -2168,7 +2169,7 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
   _vcb_stabilization_part2(cm, stab_coef, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, csys)) {
+  if (cs_dbg_cw_test(eqp, cm, NULL)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
     cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
 #if CS_CDO_ADVECTION_DBG > 2
