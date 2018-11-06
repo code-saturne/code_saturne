@@ -1366,7 +1366,7 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
                          csys);
 #endif
 
-      /* Remaing part of boundary conditions */
+      /* Remaining part of boundary conditions */
       _fb_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
@@ -1610,7 +1610,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
                          csys);
 #endif
 
-      /* Remaing part of BOUNDARY CONDITIONS
+      /* Remaining part of BOUNDARY CONDITIONS
        * =================================== */
 
       _fb_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
@@ -1904,7 +1904,7 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
                          csys);
 #endif
 
-      /* Remaing part of BOUNDARY CONDITIONS
+      /* Remaining part of BOUNDARY CONDITIONS
        * =================================== */
 
       _fb_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);

@@ -768,6 +768,7 @@ _svb_cost_nitsche(const double              pcoef,
 
 }
 
+#if 0  /* Lack of robustness w.r.t the linear algebra */
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Using the local (cellwise) "normal trace gradient" matrix takes
@@ -822,6 +823,7 @@ _wbs_nitsche(const double              pcoef,
   }  /* Loop on face vertices vi */
 
 }
+#endif
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -1262,7 +1264,6 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
   const double  chi =
     eqp->bc_penalization_coeff * fabs(cb->eig_ratio)*cb->eig_max;
-  const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
@@ -1270,6 +1271,7 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   _compute_kappa_f(h_info, cm, cb, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
+  const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
   cs_sdm_t *bc_op = cb->loc;
   cs_sdm_square_init(n_dofs, bc_op);
 
@@ -2802,6 +2804,8 @@ cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
                                cs_cell_builder_t          *cb,
                                cs_real_t                  *flux)
 {
+  CS_UNUSED(eqp);
+
   if (flux == NULL)
     return;
 

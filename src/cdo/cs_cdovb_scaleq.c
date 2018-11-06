@@ -96,7 +96,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDOVB_SCALEQ_DBG     3
+#define CS_CDOVB_SCALEQ_DBG     0
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
@@ -2153,7 +2153,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
       if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX)
         eqc->get_mass_matrix(eqc->hdg_mass, cm, cb); /* stored in cb->hdg */
 
-      /* UNSTEADY TERM */
+      /* Unsteady term */
       if (cs_equation_param_has_time(eqp)) {
 
         /* Set the value of the previous potential */
@@ -2216,7 +2216,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
       } /* Switch on time scheme */
 
-      /* REACTION TERM */
+      /* Reaction term */
       if (cs_equation_param_has_reaction(eqp)) {
 
         /* Define the local reaction property */
@@ -2230,9 +2230,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
                                                   time_eval);
 
         cs_real_t  *res = cb->values;
-        for (short int v = 0; v < cm->n_vc; v++)
-          res[v] = 0.;
-
+        memset(res, 0, cm->n_vc*sizeof(cs_real_t));
         cs_sdm_square_matvec(cb->hdg, p_theta, res);
 
         for (short int v = 0; v < cm->n_vc; v++) {
@@ -2240,9 +2238,9 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
           eb->reaction_term[cm->v_ids[v]] += rpty_val * res[v];
         }
 
-      } /* REACTION */
+      } /* Reaction */
 
-      /* DIFFUSION */
+      /* Diffusion */
       if (cs_equation_param_has_diffusion(eqp)) {
 
         /* Define the local stiffness matrix */
@@ -2254,9 +2252,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
         eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
 
         cs_real_t  *res = cb->values;
-        for (short int v = 0; v < cm->n_vc; v++)
-          res[v] = 0.;
-
+        memset(res, 0, cm->n_vc*sizeof(cs_real_t));
         cs_sdm_square_matvec(cb->loc, p_theta, res);
 
         for (short int v = 0; v < cm->n_vc; v++) {
@@ -2264,18 +2260,16 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
           eb->diffusion_term[cm->v_ids[v]] += res[v];
         }
 
-      } /* DIFFUSION */
+      } /* Diffusion */
 
-      /* ADVECTION TERM */
+      /* Advection term */
       if (cs_equation_param_has_convection(eqp)) {
 
         /* Define the local advection matrix */
         eqc->get_advection_matrix(eqp, cm, time_eval, fm, cb);
 
         cs_real_t  *res = cb->values;
-        for (short int v = 0; v < cm->n_vc; v++)
-          res[v] = 0.;
-
+        memset(res, 0, cm->n_vc*sizeof(cs_real_t));
         cs_sdm_square_matvec(cb->loc, p_theta, res);
 
         for (short int v = 0; v < cm->n_vc; v++) {
@@ -2283,9 +2277,9 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
           eb->advection_term[cm->v_ids[v]] += res[v];
         }
 
-      } /* END OF ADVECTION */
+      } /* End of advection */
 
-      /* SOURCE TERM */
+      /* Source term */
       if (cs_equation_param_has_sourceterm(eqp)) {
 
         cs_real_t  *src = cb->values;
@@ -2311,7 +2305,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
       } /* End of term source */
 
-      /* BOUNDARY CONDITIONS */
+      /* Boundary conditions */
       if (cell_flag &  CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;

@@ -2195,7 +2195,7 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
     /* Specific diagonal contribution */
     hi[vfi] += 2 * default_coef * cs_math_onethird;
 
-  } // Loop on face vertices
+  } /* Loop on face vertices */
 
   /* Specific extra-diag contribution */
   for (short int e = 0; e < fm->n_ef; e++) {
