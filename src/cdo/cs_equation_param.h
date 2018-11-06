@@ -225,21 +225,18 @@ typedef struct {
 
   /*!
    * @}
-   * @name Settings related to the resolution of the algebraic system
+   * @name Numerical settings for the time-dependent parameters
    * @{
    *
-   * \var solver_class
-   * Class of solver available to solve the algebraic system
+   * \var n_ic_defs
+   * Number of definitions for setting the intial condition
    *
-   * \var itsol_info
-   * Set of parameters to specify how to to solve the algebraic
-   * - iterative solver
-   * - preconditionner
-   * - tolerance...
+   * \var ic_defs
+   * List of pointers to the definition of the inititial condition
    */
 
-  cs_equation_solver_class_t    solver_class;
-  cs_param_itsol_t              itsol_info;
+  int                           n_ic_defs;
+  cs_xdef_t                   **ic_defs;
 
   /*!
    * @}
@@ -269,21 +266,6 @@ typedef struct {
   cs_param_time_scheme_t        time_scheme;
   cs_real_t                     theta;
   bool                          do_lumping;
-
-  /*!
-   * @}
-   * @name Numerical settings for the time-dependent parameters
-   * @{
-   *
-   * \var n_ic_defs
-   * Number of definitions for setting the intial condition
-   *
-   * \var ic_defs
-   * List of pointers to the definition of the inititial condition
-   */
-
-  int                           n_ic_defs;
-  cs_xdef_t                   **ic_defs;
 
   /*!
    * @}
@@ -367,8 +349,6 @@ typedef struct {
   int                           n_source_terms;
   cs_xdef_t                   **source_terms;
 
-  /*! @} */
-
   /*!
    * @}
    * @name Enforcement of values in the computational domain
@@ -390,6 +370,24 @@ typedef struct {
   cs_lnum_t                   n_enforced_dofs;
   cs_lnum_t                  *enforced_dof_ids;
   cs_real_t                  *enforced_dof_values;
+
+  /*!
+   * @}
+   * @name Settings related to the resolution of the algebraic system
+   * @{
+   *
+   * \var solver_class
+   * Class of solver available to solve the algebraic system
+   *
+   * \var itsol_info
+   * Set of parameters to specify how to to solve the algebraic
+   * - iterative solver
+   * - preconditionner
+   * - tolerance...
+   */
+
+  cs_equation_solver_class_t    solver_class;
+  cs_param_itsol_t              itsol_info;
 
   /*! @} */
 

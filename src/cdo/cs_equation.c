@@ -1214,6 +1214,39 @@ cs_equation_log_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a parameter attached to a keyname for the default settigns
+ *
+ * \param[in] key      key related to the member of eq to set
+ * \param[in] keyval   accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_default_param(cs_equation_key_t      key,
+                              const char            *keyval)
+{
+  if (_n_equations == 0)
+    return;
+
+  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
+
+    cs_equation_t  *eq = _equations[eq_id];
+    if (eq == NULL)
+      continue;
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
+
+    cs_equation_set_param(eq->param, key, keyval);
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  } /* Loop on equations */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Setup the linear algebra requirements
  */
 /*----------------------------------------------------------------------------*/

@@ -358,6 +358,19 @@ cs_equation_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a parameter attached to a keyname for the default settigns
+ *
+ * \param[in] key      key related to the member of eq to set
+ * \param[in] keyval   accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_default_param(cs_equation_key_t      key,
+                              const char            *keyval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Setup the linear algebra requirements
  */
 /*----------------------------------------------------------------------------*/
