@@ -138,14 +138,13 @@ cs_var_t    *cs_glob_var = NULL;
  *
  * parameters:
  *   param    <-- label of the numerical parameter
- *   keyword  <-- value of the numerical parameter
+ *   value    <-- value of the numerical parameter
  *----------------------------------------------------------------------------*/
 
 static void
 _numerical_double_parameters(const char  *param,
-                             double      *keyword)
+                             double      *value)
 {
-  double result = 0.0;
   cs_tree_node_t *tn = NULL;
   char *path0 = NULL;
   BFT_MALLOC(path0, strlen("numerical_parameters/") + strlen(param) + 1, char);
@@ -154,8 +153,8 @@ _numerical_double_parameters(const char  *param,
   tn = cs_tree_get_node(cs_glob_tree, path0);
   BFT_FREE(path0);
 
-  cs_gui_node_get_real(tn, &result);
-  *keyword = result;
+  /* value not changed if path not found */
+  cs_gui_node_get_real(tn, value);
 }
 
 /*----------------------------------------------------------------------------
