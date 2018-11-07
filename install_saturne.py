@@ -410,8 +410,6 @@ class Package:
             line = re.sub(re_intsize32, '', line)
             line = re.sub(re_intsize64, '', line)
             line = re.sub(re_idxsize64, '-DIDXSIZE64 -DINTSIZE64', line)
-            if ldflags_add and line[0:7] == 'LDFLAGS':
-                line = line[:-1] + ldflags_add
 
             fd.write(line)
 
