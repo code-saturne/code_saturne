@@ -254,55 +254,6 @@ typedef cs_equation_balance_t *
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the diffusive and convective flux across a list of faces
- *
- * \param[in]       normal     indicate in which direction flux is > 0
- * \param[in]       pdi        pointer to an array of field values
- * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
- * \param[in]       eqp        pointer to a cs_equation_param_t structure
- * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to data specific for this scheme
- * \param[in, out]  d_flux     pointer to the value of the diffusive flux
- * \param[in, out]  c_flux     pointer to the value of the convective flux
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_equation_flux_plane_t)(const cs_real_t             normal[],
-                           const cs_real_t            *pdi,
-                           int                         ml_id,
-                           const cs_equation_param_t  *eqp,
-                           cs_equation_builder_t      *eqb,
-                           void                       *data,
-                           double                     *d_flux,
-                           double                     *c_flux);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Cellwise computation of the diffusive flux across all faces.
- *         Primal or dual faces are considered according to the space scheme
- *
- * \param[in]       fvals       pointer to an array of field values
- * \param[in]       eqp         pointer to a cs_equation_param_t structure
- * \param[in]       t_eval      time at which one performs the evaluation
- * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  data        pointer to a generic data structure
- * \param[in, out]  location    where the flux is defined
- * \param[in, out]  diff_flux   pointer to the value of the diffusive flux
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_equation_cell_difflux_t)(const cs_real_t            *fvals,
-                             const cs_equation_param_t  *eqp,
-                             cs_real_t                   t_eval,
-                             cs_equation_builder_t      *eqb,
-                             void                       *data,
-                             cs_flag_t                   location,
-                             cs_real_t                  *d_flux);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Extra-operation related to this equation
  *
  * \param[in]       eqname     name of the equation
@@ -417,8 +368,6 @@ struct _cs_equation_t {
   cs_equation_solve_t              *solve;
 
   cs_equation_get_balance_t        *compute_balance;
-  cs_equation_flux_plane_t         *compute_flux_across_plane;
-  cs_equation_cell_difflux_t       *compute_cellwise_diff_flux;
   cs_equation_extra_op_t           *postprocess;
   cs_equation_restart_t            *read_restart;
   cs_equation_restart_t            *write_restart;
@@ -434,9 +383,9 @@ struct _cs_equation_t {
   cs_equation_prepare_solve_t      *prepare_solving;
   cs_equation_update_field_t       *update_field;
 
-  /* Timer statistic for a "light" profiling */
-  int     main_ts_id;   /* Id of the main timer states structure related
-                           to this equation */
+  /* Timer statistic for a coarse profiling */
+  int     main_ts_id;   /* Id of the main timer stats for this equation */
+
 };
 
 /*============================================================================

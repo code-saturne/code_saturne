@@ -647,7 +647,7 @@ _vbs_solve_system(cs_sles_t                    *sles,
 
   }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 3
   cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, n_vertices, x, 6);
   cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_vertices, rhs, 6);
 #endif
@@ -2436,37 +2436,38 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the diffusive and convective flux across a list of faces
+ *         Case of scalar-valued CDO-Vb schemes
  *
  * \param[in]       normal     indicate in which direction flux is > 0
  * \param[in]       pdi        pointer to an array of field values
- * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to data specific for this scheme
+ * \param[in, out]  context    pointer to data specific for this scheme
  * \param[in, out]  d_flux     pointer to the value of the diffusive flux
  * \param[in, out]  c_flux     pointer to the value of the convective flux
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
-                                          const cs_real_t            *pdi,
-                                          int                         ml_id,
-                                          const cs_equation_param_t  *eqp,
-                                          cs_equation_builder_t      *eqb,
-                                          void                       *data,
-                                          double                     *d_flux,
-                                          double                     *c_flux)
+cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
+                                  const cs_real_t            *pdi,
+                                  const cs_equation_param_t  *eqp,
+                                  int                         ml_id,
+                                  cs_equation_builder_t      *eqb,
+                                  void                       *context,
+                                  double                     *d_flux,
+                                  double                     *c_flux)
 {
-  CS_UNUSED(data);
-
-  cs_mesh_location_type_t  ml_t = cs_mesh_location_get_type(ml_id);
+  CS_UNUSED(context);
 
   *d_flux = 0.;
   *c_flux = 0.;
 
   if (pdi == NULL)
     return;
+
+  cs_mesh_location_type_t  ml_t = cs_mesh_location_get_type(ml_id);
 
   if (ml_t != CS_MESH_LOCATION_INTERIOR_FACES &&
       ml_t != CS_MESH_LOCATION_BOUNDARY_FACES) {
@@ -2489,7 +2490,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
   cs_real_3_t  gc, pty_gc;
   cs_real_33_t  pty_tens;
 
-  if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) { // Belongs to only one cell
+  if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) { /* Belongs to only one cell */
 
     const cs_lnum_t  n_i_faces = connect->n_faces[2];
     const cs_lnum_t  *cell_ids = f2c->ids + f2c->idx[n_i_faces];
@@ -2553,7 +2554,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
 
         if (cs_equation_param_has_diffusion(eqp)) {
 
-          const double  coef = 0.5 * sgn * f.meas; // mean value at the face
+          const double  coef = 0.5 * sgn * f.meas; /* mean value at the face */
 
           /* Compute the local diffusive flux */
           cs_reco_grad_cell_from_pv(c_id, connect, quant, pdi, gc);
@@ -2581,14 +2582,14 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
 
           cs_real_t  fconv_flux = 0;
           if (dpc > 0) {
-            if (f2c->sgn[j] > 0) // nf points outward c; adv.nf > 0
+            if (f2c->sgn[j] > 0) /* nf points outward c; adv.nf > 0 */
               fconv_flux = adv_c.meas * dpc * sgn * f.meas * pf;
           }
           else if (dpc < 0) {
-            if (f2c->sgn[j] < 0) // nf points inward c; adv.nf < 0
+            if (f2c->sgn[j] < 0) /* nf points inward c; adv.nf < 0 */
               fconv_flux = adv_c.meas * dpc * sgn * f.meas * pf;
           }
-          else  // centered approach
+          else  /* centered approach */
             fconv_flux = 0.5 * adv_c.meas * dpc * sgn * f.meas * pf;
 
           *c_flux += fconv_flux;
@@ -2599,7 +2600,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
 
     }  /* Loop on selected interior faces */
 
-  } // Set of interior or border faces
+  } /* Set of interior or border faces */
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
@@ -2607,136 +2608,90 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux
+ * \brief  Cellwise computation of an approximation of a constant diffusive
+ *         flux (a vector) in each cell.
+ *         Case of scalar-valued CDO-Vb schemes
  *
  * \param[in]       values      discrete values for the potential
  * \param[in]       eqp         pointer to a cs_equation_param_t structure
  * \param[in]       t_eval      time at which one performs the evaluation
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  data        pointer to cs_cdovb_scaleq_t structure
- * \param[in, out]  location    where the flux is defined
+ * \param[in, out]  context     pointer to cs_cdovb_scaleq_t structure
  * \param[in, out]  diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
+cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
                                    const cs_equation_param_t   *eqp,
                                    cs_real_t                    t_eval,
                                    cs_equation_builder_t       *eqb,
-                                   void                        *data,
-                                   cs_flag_t                    location,
+                                   void                        *context,
                                    cs_real_t                   *diff_flux)
 {
-  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t  *)data;
-  CS_UNUSED(eqc);
+  CS_UNUSED(context);
+
+  if (diff_flux == NULL)
+    return ;
 
   /* Sanity checks */
-  assert(diff_flux != NULL && eqp != NULL && eqc != NULL && eqb != NULL);
+  assert(eqp != NULL && eqb != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
-  if (!cs_flag_test(location, cs_flag_primal_cell) &&
-      !cs_flag_test(location, cs_flag_dual_face_byc))
-    bft_error(__FILE__, __LINE__, 0,
-              " Incompatible location.\n"
-              " Stop computing a cellwise diffusive flux.");
-
   /* If no diffusion, return after resetting */
   if (cs_equation_param_has_diffusion(eqp) == false) {
-
-    size_t  size = 0;
-    if (cs_flag_test(location, cs_flag_primal_cell))
-      size = 3*quant->n_cells;
-    else if (cs_flag_test(location, cs_flag_dual_face_byc))
-      size = connect->c2e->idx[quant->n_cells];
-
-#   pragma omp parallel for if (size > CS_THR_MIN)
-    for (size_t i = 0; i < size; i++) diff_flux[i] = 0;
-
+    memset(diff_flux, 0, 3*quant->n_cells*sizeof(cs_real_t));
     return;
   }
 
   cs_timer_t  t0 = cs_timer_time();
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)          \
-  shared(t_eval, quant, connect, location, eqp, eqb, eqc, diff_flux, values, \
-         _vbs_cell_builder)
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \
+  shared(t_eval, quant, connect, eqp, eqb, diff_flux, values, _vbs_cell_builder)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
 #else
     int  t_id = 0;
 #endif
+
     double  *pot = NULL;
+    BFT_MALLOC(pot, connect->n_max_vbyc + 1, double); /* +1 for WBS */
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
-    cs_flag_t  msh_flag = CS_CDO_LOCAL_PV;
-    cs_hodge_t  *get_diffusion_hodge = NULL;
     cs_cdo_cellwise_diffusion_flux_t  *compute_flux = NULL;
-
+    cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
 #if defined(DEBUG) && !defined(NDEBUG)
     cs_cell_mesh_reset(cm);
 #endif
 
+    cs_flag_t  msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_EV;
+
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
-      BFT_MALLOC(pot, connect->n_max_vbyc, double);
-
-      msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
-        CS_CDO_LOCAL_PVQ;
-
-      /* Set function pointers */
-      if (cs_flag_test(location, cs_flag_primal_cell)) {
-        msh_flag |= CS_CDO_LOCAL_EV;
-        compute_flux = cs_cdo_diffusion_vbcost_get_cell_flux;
-      }
-      else if (cs_flag_test(location, cs_flag_dual_face_byc)) {
-        get_diffusion_hodge = cs_hodge_epfd_cost_get;
-        compute_flux = cs_cdo_diffusion_vbcost_get_dfbyc_flux;
-      }
-
+      msh_flag |= CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PVQ;
+      compute_flux = cs_cdo_diffusion_vbcost_get_cell_flux;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
-      BFT_MALLOC(pot, connect->n_max_vbyc, double);
-
-      /* Set function pointers */
-      get_diffusion_hodge = cs_hodge_epfd_voro_get;
-      if (cs_flag_test(location, cs_flag_primal_cell))
-        compute_flux = cs_cdo_diffusion_vbcost_get_cell_flux;
-      else if (cs_flag_test(location, cs_flag_dual_face_byc))
-        compute_flux = cs_cdo_diffusion_vbcost_get_dfbyc_flux;
-
-      msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
-        CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_PVQ;
+      msh_flag |= CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_PVQ;
+      compute_flux = cs_cdo_diffusion_vbcost_get_cell_flux;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
-      BFT_MALLOC(pot, connect->n_max_vbyc + 1, double);
-
-      msh_flag |= CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PEQ |
-        CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ |
-        CS_CDO_LOCAL_EV;
-
-      /* Set function pointers */
-      if (cs_flag_test(location, cs_flag_primal_cell)) {
-        compute_flux = cs_cdo_diffusion_wbs_get_cell_flux;
-        msh_flag |= CS_CDO_LOCAL_HFQ;
-      }
-      else if (cs_flag_test(location, cs_flag_dual_face_byc)) {
-        compute_flux = cs_cdo_diffusion_wbs_get_dfbyc_flux;
-        msh_flag |= CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EFQ;
-      }
+      msh_flag |= CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
+        CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+      compute_flux = cs_cdo_diffusion_wbs_get_cell_flux;
       break;
 
     default:
-      bft_error(__FILE__, __LINE__, 0, " Invalid Hodge algorithm");
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid Hodge algorithm", __func__);
 
     } /* Switch hodge algo. */
 
@@ -2750,7 +2705,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
       if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
 #endif
 
@@ -2764,49 +2719,179 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
           cb->dpty_val = cb->dpty_mat[0][0];
       }
 
-      /* Build the local dense matrix related to this operator
-         (store in cb->hdg) */
+      /* Define a local buffer keeping the value of the discrete potential
+         for the current cell */
+      for (short int v = 0; v < cm->n_vc; v++)
+        pot[v] = values[cm->v_ids[v]];
+
+      if (eqp->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
+        /* Interpolate also the value of the potential at the cell center */
+        pot[cm->n_vc] = 0.;
+        for (short int v = 0; v < cm->n_vc; v++)
+          pot[cm->n_vc] += cm->wvc[v]*pot[v];
+      }
+
+      compute_flux(cm, pot, cb, diff_flux + 3*c_id);
+
+    } /* Loop on cells */
+
+    BFT_FREE(pot);
+
+  } /* OMP Section */
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Cellwise computation of the diffusive flux accross dual faces
+ *         (a scalar) in each cell.
+ *         Case of scalar-valued CDO-Vb schemes
+ *
+ * \param[in]       values      discrete values for the potential
+ * \param[in]       eqp         pointer to a cs_equation_param_t structure
+ * \param[in]       t_eval      time at which one performs the evaluation
+ * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context     pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out]  diff_flux   value of the diffusive flux
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
+                                 const cs_equation_param_t   *eqp,
+                                 cs_real_t                    t_eval,
+                                 cs_equation_builder_t       *eqb,
+                                 void                        *context,
+                                 cs_real_t                   *diff_flux)
+{
+  CS_UNUSED(context);
+
+  if (diff_flux == NULL)
+    return ;
+
+  /* Sanity checks */
+  assert(eqp != NULL && eqb != NULL);
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  /* If no diffusion, return after resetting */
+  if (cs_equation_param_has_diffusion(eqp) == false) {
+    memset(diff_flux, 0, connect->c2e->idx[quant->n_cells]*sizeof(cs_real_t));
+    return;
+  }
+
+  cs_timer_t  t0 = cs_timer_time();
+
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
+  shared(t_eval, quant, connect, eqp, eqb, diff_flux, values,           \
+         _vbs_cell_builder)
+  {
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+    /* Each thread get back its related structures:
+       Get the cellwise view of the mesh and the algebraic system */
+    cs_hodge_t  *get_diffusion_hodge = NULL;
+    cs_cdo_cellwise_diffusion_flux_t  *compute_flux = NULL;
+    cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+#if defined(DEBUG) && !defined(NDEBUG)
+    cs_cell_mesh_reset(cm);
+#endif
+
+    double  *pot = NULL;
+    BFT_MALLOC(pot, connect->n_max_vbyc + 1, double); /* +1for WBS algo. */
+
+    cs_flag_t  msh_flag = CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PV |
+      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ;
+
+    switch (eqp->diffusion_hodge.algo) {
+
+    case CS_PARAM_HODGE_ALGO_COST:
+      get_diffusion_hodge = cs_hodge_epfd_cost_get;
+      compute_flux = cs_cdo_diffusion_vbcost_get_dfbyc_flux;
+      break;
+
+    case CS_PARAM_HODGE_ALGO_VORONOI:
+      msh_flag |= CS_CDO_LOCAL_EFQ;
+      get_diffusion_hodge = cs_hodge_epfd_voro_get;
+      compute_flux = cs_cdo_diffusion_vbcost_get_dfbyc_flux;
+      break;
+
+    case CS_PARAM_HODGE_ALGO_WBS:
+      msh_flag |= CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
+        CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EFQ;
+      compute_flux = cs_cdo_diffusion_wbs_get_dfbyc_flux;
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid Hodge algorithm", __func__);
+      break;
+
+    } /* Switch hodge algo. */
+
+    if (eqb->diff_pty_uniform)  /* c_id = 0, cell_flag = 0 */
+      cs_equation_set_diffusion_property(eqp, 0, t_eval, 0, cb);
+
+    /* Define the flux by cellwise contributions */
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      /* Set the local mesh structure for the current cell */
+      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+      if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
+#endif
+
+      if (!eqb->diff_pty_uniform) {
+        cs_property_tensor_in_cell(cm,
+                                   eqp->diffusion_property,
+                                   t_eval,
+                                   eqp->diffusion_hodge.inv_pty,
+                                   cb->dpty_mat);
+        if (eqp->diffusion_hodge.is_iso)
+          cb->dpty_val = cb->dpty_mat[0][0];
+      }
+
+      /* Define a local buffer keeping the value of the discrete potential
+         for the current cell */
+      for (short int v = 0; v < cm->n_vc; v++)
+        pot[v] = values[cm->v_ids[v]];
+
       switch (eqp->diffusion_hodge.algo) {
 
       case CS_PARAM_HODGE_ALGO_COST:
       case CS_PARAM_HODGE_ALGO_VORONOI:
-
-        if (cs_flag_test(location, cs_flag_dual_face_byc))
-          get_diffusion_hodge(eqp->diffusion_hodge, cm, cb);
-
-        /* Define a local buffer keeping the value of the discrete potential
-           for the current cell */
-        for (short int v = 0; v < cm->n_vc; v++)
-          pot[v] = values[cm->v_ids[v]];
-
+        /* Compute the local Hodge operator and store it in cb->hdg */
+        get_diffusion_hodge(eqp->diffusion_hodge, cm, cb);
         break;
 
       case CS_PARAM_HODGE_ALGO_WBS:
-
-        /* Define a local buffer keeping the value of the discrete potential
-           for the current cell */
         pot[cm->n_vc] = 0.;
-        for (short int v = 0; v < cm->n_vc; v++) {
-          pot[v] = values[cm->v_ids[v]];
+        for (short int v = 0; v < cm->n_vc; v++)
           pot[cm->n_vc] += cm->wvc[v]*pot[v];
-        }
         break;
 
       default:
-        bft_error(__FILE__, __LINE__, 0, " Invalid Hodge algorithm");
+        break; /* Nothing else to do */
 
-      } // End of switch
+      } /* End of switch */
 
-      if (cs_flag_test(location, cs_flag_primal_cell))
-        compute_flux(cm, pot, cb, diff_flux + 3*c_id);
-      else if (cs_flag_test(location, cs_flag_dual_face_byc))
-        compute_flux(cm, pot, cb, diff_flux + connect->c2e->idx[c_id]);
+      /* Compute and store the flux */
+      compute_flux(cm, pot, cb, diff_flux + connect->c2e->idx[c_id]);
 
-    } // Loop on cells
+    } /* Loop on cells */
 
     BFT_FREE(pot);
 
-  } // OMP Section
+  } /* OMP Section */
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

@@ -342,8 +342,6 @@ _set_scal_hho_function_pointers(cs_equation_t  *eq)
   eq->build_system = cs_hho_scaleq_build_system;
   eq->prepare_solving = _prepare_fb_solving;
   eq->update_field = cs_hho_scaleq_update_field;
-  eq->compute_flux_across_plane = NULL;
-  eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = cs_hho_scaleq_extra_op;
   eq->read_restart = cs_hho_scaleq_read_restart;
   eq->write_restart = cs_hho_scaleq_write_restart;
@@ -375,8 +373,6 @@ _set_vect_hho_function_pointers(cs_equation_t  *eq)
   eq->build_system = cs_hho_vecteq_build_system;
   eq->prepare_solving = _prepare_fb_solving;
   eq->update_field = cs_hho_vecteq_update_field;
-  eq->compute_flux_across_plane = NULL;
-  eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = cs_hho_vecteq_extra_op;
   eq->read_restart = cs_hho_vecteq_read_restart;
   eq->write_restart = cs_hho_vecteq_write_restart;
@@ -1022,8 +1018,6 @@ cs_equation_add(const char            *eqname,
 
   /* Postprocessing */
   eq->compute_balance = NULL;
-  eq->compute_flux_across_plane = NULL;
-  eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = NULL;
 
   /* Restart */
@@ -1538,9 +1532,6 @@ cs_equation_assign_functions(void)
         }
 
         eq->compute_balance = cs_cdovb_scaleq_balance;
-        eq->compute_flux_across_plane =
-          cs_cdovb_scaleq_compute_flux_across_plane;
-        eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
         eq->postprocess = cs_cdovb_scaleq_extra_op;
 
         eq->read_restart = NULL;
@@ -1580,9 +1571,6 @@ cs_equation_assign_functions(void)
                     __func__, eqp->name);
         }
 
-        eq->compute_flux_across_plane =
-          cs_cdovb_vecteq_compute_flux_across_plane;
-        eq->compute_cellwise_diff_flux = cs_cdovb_vecteq_cellwise_diff_flux;
         eq->postprocess = cs_cdovb_vecteq_extra_op;
 
         eq->read_restart = NULL;
@@ -1635,9 +1623,6 @@ cs_equation_assign_functions(void)
                     __func__, eqp->name);
         }
 
-        eq->compute_flux_across_plane =
-          cs_cdovcb_scaleq_compute_flux_across_plane;
-        eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
         eq->postprocess = cs_cdovcb_scaleq_extra_op;
         eq->read_restart = cs_cdovcb_scaleq_read_restart;
         eq->write_restart = cs_cdovcb_scaleq_write_restart;
@@ -1689,8 +1674,6 @@ cs_equation_assign_functions(void)
                     __func__, eqp->name);
         }
 
-        eq->compute_flux_across_plane = NULL;
-        eq->compute_cellwise_diff_flux = NULL;
         eq->compute_balance = cs_cdofb_scaleq_balance;
         eq->postprocess = cs_cdofb_scaleq_extra_op;
 
@@ -1716,8 +1699,6 @@ cs_equation_assign_functions(void)
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_cdofb_vecteq_update_field;
 
-        eq->compute_flux_across_plane = NULL;
-        eq->compute_cellwise_diff_flux = NULL;
         eq->postprocess = cs_cdofb_vecteq_extra_op;
 
         eq->read_restart = cs_cdofb_vecteq_read_restart;
@@ -2252,36 +2233,56 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
-  assert(eq->param != NULL);
-
-  if (eq->compute_flux_across_plane == NULL) {
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Computation of the diffusive and convective flux across\n"
-                " a plane is not available for equation %s\n"),
-              __func__, eq->param->name);
-    return; /* Avoid a warning */
-  }
 
   /* Get the mesh location id from its name */
   const int  ml_id = cs_mesh_location_get_id_by_name(ml_name);
-
   if (ml_id == -1)
     bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Invalid mesh location name %s.\n"
-                " This mesh location is not already defined.\n"),
+              " %s: Invalid mesh location name %s.\n"
+              " This mesh location is not already defined.\n",
               __func__, ml_name);
+
+  const char  emsg[] = " %s: Computation of the diffusive and convective flux"
+    " across a plane\n is not available for equation %s\n";
 
   /* Retrieve the field from its id */
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
-  /* Perform the computation */
-  eq->compute_flux_across_plane(direction,
-                                fld->val,
-                                ml_id,
-                                eq->param,
-                                eq->builder,
-                                eq->scheme_context,
-                                diff_flux, conv_flux);
+  cs_equation_param_t  *eqp = eq->param;
+  assert(eqp != NULL && fld != NULL);
+
+  if (eqp->dim > 1)
+    bft_error(__FILE__, __LINE__, 0, emsg, __func__, eqp->name);
+
+
+  /* Scalar-valued equation */
+  switch (eqp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    cs_cdovb_scaleq_flux_across_plane(direction,
+                                      fld->val,
+                                      eqp,
+                                      ml_id,
+                                      eq->builder,
+                                      eq->scheme_context,
+                                      diff_flux, conv_flux);
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    cs_cdovcb_scaleq_flux_across_plane(direction,
+                                       fld->val,
+                                       eqp,
+                                       ml_id,
+                                       eq->builder,
+                                       eq->scheme_context,
+                                       diff_flux, conv_flux);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, emsg, __func__, eqp->name);
+
+  } /* End of switch */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2302,31 +2303,69 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
                                        cs_real_t              t_eval,
                                        cs_real_t             *diff_flux)
 {
+  if (diff_flux == NULL)
+    return;
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
-  assert(eq->param != NULL);
 
-  if (eq->compute_cellwise_diff_flux == NULL) {
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Cellwise computation of the diffusive flux is not\n"
-                " available for equation %s\n"), __func__, eq->param->name);
-    return; /* Avoid a warning */
-  }
-
-  if (eq->builder == NULL)
-    return;
+  cs_equation_param_t  *eqp = eq->param;
+  assert(eqp != NULL);
 
   /* Retrieve the field from its id */
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
-  /* Perform the computation */
-  eq->compute_cellwise_diff_flux(fld->val,
-                                 eq->param,
-                                 t_eval,
-                                 eq->builder,
-                                 eq->scheme_context,
-                                 location,
-                                 diff_flux);
+  const char  fmsg[] = " %s: (Eq. %s) Stop computing the diffusive flux.\n"
+    " This functionality is not available for this scheme.";
+  const char  lmsg[] = " %s: (Eq. %s) Stop computing the diffusive flux.\n"
+    " This mesh location is not available for this scheme.";
+
+  if (eqp->dim > 1)
+    bft_error(__FILE__, __LINE__, 0, fmsg, __func__, eqp->name);
+
+  switch (eqp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    if (cs_flag_test(location, cs_flag_primal_cell))
+      cs_cdovb_scaleq_diff_flux_in_cells(fld->val,
+                                         eqp,
+                                         t_eval,
+                                         eq->builder,
+                                         eq->scheme_context,
+                                         diff_flux);
+    else if (cs_flag_test(location, cs_flag_dual_face_byc))
+      cs_cdovb_scaleq_diff_flux_dfaces(fld->val,
+                                       eqp,
+                                       t_eval,
+                                       eq->builder,
+                                       eq->scheme_context,
+                                       diff_flux);
+    else
+      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, eqp->name);
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    if (cs_flag_test(location, cs_flag_primal_cell))
+      cs_cdovcb_scaleq_diff_flux_in_cells(fld->val,
+                                          eqp,
+                                          t_eval,
+                                          eq->builder,
+                                          eq->scheme_context,
+                                          diff_flux);
+    else if (cs_flag_test(location, cs_flag_dual_face_byc))
+      cs_cdovcb_scaleq_diff_flux_dfaces(fld->val,
+                                        eqp,
+                                        t_eval,
+                                        eq->builder,
+                                        eq->scheme_context,
+                                        diff_flux);
+    else
+      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, eqp->name);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, fmsg, __func__, eqp->name);
+
+  } /* End of switch on the space scheme */
 
 }
 
