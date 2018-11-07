@@ -200,6 +200,11 @@ if test "${HAVE_PYMOD_MPI4PY}" = "yes"; then
   AC_DEFINE([HAVE_MPI4PY], 1, [mpi4py module])
 fi
 
+AM_CONDITIONAL(HAVE_SWIG, [test "${SWIG}" != ""])
+if test "${SWIG}" != ""; then
+  AC_DEFINE([HAVE_SWIG], 1, [swig presence])
+fi
+
 # Default compiler options (may be modified
 # by defining CFLAGS in the environment)
 #------------------------------------------

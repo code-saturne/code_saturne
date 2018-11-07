@@ -21,6 +21,7 @@
 
 # Main part
 
+if HAVE_SWIG
 if HAVE_MPI4PY
 
 AM_CPPFLAGS = $(MPI_CPPFLAGS)
@@ -43,4 +44,5 @@ _pyple_la_LIBADD = ../src/libple.la
 $(PYSWIG_SOURCES) : $(SWIG_SOURCES)
 	$(SWIG) $(AX_SWIG_PYTHON_OPT) -I. $(AX_SWIG_PYTHON_CPPFLAGS) -I$(srcdir)/../src -o $@ $<
 
+endif
 endif
