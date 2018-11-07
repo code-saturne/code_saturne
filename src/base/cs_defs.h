@@ -58,6 +58,11 @@ extern "C" {
 
 #else
 
+#  define _LIBINTL_H /* Prevent inclusion of <libintl.h> by other files
+                        with incorrect or missing checks;
+                        TODO locate files causing issues to avoid
+                        requiring this workaround */
+
 #  define _(String) (String)
 #  define N_(String) String
 #  define textdomain(String) (String)
