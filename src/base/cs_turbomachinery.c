@@ -910,6 +910,8 @@ _update_mesh(bool     restart_mode,
     cs_lnum_t boundary_changed = 0;
     double eps_dt = 0.;
 
+    const cs_time_step_t *ts = cs_glob_time_step;
+
     do {
 
       n_retry -= 1;
@@ -994,8 +996,8 @@ _update_mesh(bool     restart_mode,
                     (unsigned long long)cs_glob_mesh->n_g_b_faces);
         }
         else {
-          double dt = cs_glob_time_step->t_cur - cs_glob_time_step->t_prev;
-          eps_dt += tbm->dt_retry * dt;
+          double dt = ts->t_cur - ts->t_prev;
+          eps_dt += tbm->dt_retry * dt / (ts->nt_cur - ts->nt_prev);
           bft_printf(_(join_err_fmt),
                      (unsigned long long)n_g_b_faces_ref,
                      (unsigned long long)cs_glob_mesh->n_g_b_faces);
