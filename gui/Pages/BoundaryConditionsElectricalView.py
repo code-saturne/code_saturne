@@ -353,9 +353,9 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotPotVectorFormula -> %s" % str(result))
