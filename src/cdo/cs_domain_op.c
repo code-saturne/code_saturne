@@ -475,6 +475,10 @@ cs_domain_post(cs_domain_t  *domain,
                              domain->time_step,
                              domain->dt_cur);
 
+    /* 5. Specific operations for the GWF module */
+    if (cs_gwf_is_activated())
+      cs_gwf_extra_op(domain->connect, domain->cdo_quantities);
+
   } /* Needs a new log */
 
   /* Predefined extra-operations related to

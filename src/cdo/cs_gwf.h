@@ -55,16 +55,6 @@ BEGIN_C_DECLS
  * \def CS_GWF_GRAVITATION
  * \brief Gravitation effects are taken into account in the Richards equation
  *
- * \def CS_GWF_POST_CAPACITY
- * \brief Activate the post-processing of the capacity (property in front of
- *        the unsteady term in Richards equation)
- *
- * \def CS_GWF_POST_MOISTURE
- * \brief Activate the post-processing of the moisture content
- *
- * \def CS_GWF_POST_PERMEABILITY
- * \brief Activate the post-processing of the permeability field
- *
  * \def CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE
  * \brief Compute the mean-value of the hydraulic head field and subtract this
  *        mean-value to get a field with zero mean-value. It's important to set
@@ -86,13 +76,46 @@ BEGIN_C_DECLS
 
 #define CS_GWF_FORCE_RICHARDS_ITERATIONS       (1 << 0)
 #define CS_GWF_GRAVITATION                     (1 << 1)
-#define CS_GWF_POST_CAPACITY                   (1 << 2)
-#define CS_GWF_POST_MOISTURE                   (1 << 3)
-#define CS_GWF_POST_PERMEABILITY               (1 << 4)
-#define CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE (1 << 5)
-#define CS_GWF_RICHARDS_UNSTEADY               (1 << 6)
-#define CS_GWF_SOIL_PROPERTY_UNSTEADY          (1 << 7)
-#define CS_GWF_SOIL_ALL_SATURATED              (1 << 8)
+#define CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE (1 << 2)
+#define CS_GWF_RICHARDS_UNSTEADY               (1 << 3)
+#define CS_GWF_SOIL_PROPERTY_UNSTEADY          (1 << 4)
+#define CS_GWF_SOIL_ALL_SATURATED              (1 << 5)
+
+/*! @}
+ *!
+ * @name Flags specifying the kind of post-processing to perform in
+ *       the groundwater flow module
+ * @{
+ *
+ * \def CS_GWF_POST_CAPACITY
+ * \brief Activate the post-processing of the capacity (property in front of
+ *        the unsteady term in Richards equation)
+ *
+ * \def CS_GWF_POST_MOISTURE
+ * \brief Activate the post-processing of the moisture content
+ *
+ * \def CS_GWF_POST_PERMEABILITY
+ * \brief Activate the post-processing of the permeability field
+ *
+ * \def CS_GWF_POST_DARCY_FLUX_BALANCE
+ * \brief Compute the overall balance at the different boundaries of
+ *        the Darcy flux
+ *
+ * \def CS_GWF_POST_DARCY_FLUX_DIVERGENCE
+ * \brief Compute in each control volume (vertices or cells w.r.t the space
+ *        scheme) the divergence of the Darcy flux
+ *
+ * \def CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY
+ * \brief Define a field at boundary faces for the Darcy flux and activate the
+ *        post-processing
+ */
+
+#define CS_GWF_POST_CAPACITY                   (1 << 0)
+#define CS_GWF_POST_MOISTURE                   (1 << 1)
+#define CS_GWF_POST_PERMEABILITY               (1 << 2)
+#define CS_GWF_POST_DARCY_FLUX_BALANCE         (1 << 3)
+#define CS_GWF_POST_DARCY_FLUX_DIVERGENCE      (1 << 4)
+#define CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY     (1 << 5)
 
 /*! @} */
 
@@ -151,6 +174,17 @@ cs_gwf_destroy_all(void);
 
 void
 cs_gwf_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the flag dedicated to the post-processing of the GWF module
+ *
+ * \param[in]  post_flag             flag to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_set_post_options(cs_flag_t       post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -345,6 +379,19 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
                         const cs_cdo_quantities_t  *cdoq,
                         const cs_gwf_tracer_t      *tracer,
                         const char                 *z_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations for the groundwater flow module
+ *
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
+                const cs_cdo_quantities_t   *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -99,7 +99,10 @@ BEGIN_C_DECLS
 
 struct _gwf_t {
 
-  cs_flag_t          flag;
+  cs_flag_t          flag;      /* Flag dedicated to general options to handle
+                                 * the GWF module*/
+  cs_flag_t          post_flag; /* Flag dedicated to the post-processing
+                                 * of the GWF module */
 
   /* Gravity effect */
   cs_real_3_t        gravity;
@@ -171,8 +174,12 @@ static cs_gwf_t  *cs_gwf_main_structure = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the normal diffusive flux across boundary faces
+ * \brief  Compute the associated boundary Darcy flux for each vertex of
+ *         boundary faces.
+ *         Case of a vertex-based discretization.
  *
+ * \param[in]  t_eval     time at which one performs the evaluation
+ * \param[in]  gw         pointer to the cs_gwf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -612,6 +619,7 @@ _gwf_create(void)
 
   /* Default initialization */
   gw->flag = 0;
+  gw->post_flag = CS_GWF_POST_DARCY_FLUX_BALANCE;
 
   gw->richards = NULL;
   gw->n_tracers = 0;
@@ -781,27 +789,79 @@ cs_gwf_log_setup(void)
   cs_log_printf(CS_LOG_SETUP, "\tSummary of the groundwater module\n");
   cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
-  if (gw->flag & CS_GWF_GRAVITATION)
-    cs_log_printf(CS_LOG_SETUP,
-                  "  <GWF/Gravitation> true -- Axis = [%.2f %.2f %.2f]\n",
-                  gw->gravity[0], gw->gravity[1], gw->gravity[2]);
-  else
-    cs_log_printf(CS_LOG_SETUP, "  <GWF/Gravitation> false\n");
-
-  if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
-    cs_log_printf(CS_LOG_SETUP, "  <GWF> Force to resolve Richards equation\n");
-  if (gw->flag & CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE)
-    cs_log_printf(CS_LOG_SETUP, "  <GWF> Rescale head w.r.t zero mean value\n");
-  cs_log_printf(CS_LOG_SETUP, "  <GWF/Darcy location> %s\n",
-                cs_flag_str_location(gw->flux_location));
-
   /* Tracers */
   cs_log_printf(CS_LOG_SETUP,
-                "  <GWF/Tracer> n_tracer_equations %d\n", gw->n_tracers);
+                " <GWF/Tracer> n_tracer_equations %d\n", gw->n_tracers);
+
+  cs_log_printf(CS_LOG_SETUP, " <GWF/Darcy flux location> %s\n",
+                cs_flag_str_location(gw->flux_location));
+
+  /* Display information on the general options */
+  if (gw->flag & CS_GWF_GRAVITATION)
+    cs_log_printf(CS_LOG_SETUP,
+                  " <GWF/Gravitation> true -- Axis = [%.2f %.2f %.2f]\n",
+                  gw->gravity[0], gw->gravity[1], gw->gravity[2]);
+  else
+    cs_log_printf(CS_LOG_SETUP, " <GWF/Gravitation> false\n");
+
+  if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
+    cs_log_printf(CS_LOG_SETUP, " <GWF> Force to solve Richards equation"
+                  " at each time step\n");
+  if (gw->flag & CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE)
+    cs_log_printf(CS_LOG_SETUP, " <GWF> Rescale head w.r.t zero mean value\n");
+
+  /* Display information on the post-processing options */
+  _Bool  post_capacity = (gw->post_flag & CS_GWF_POST_CAPACITY) ? true : false;
+  _Bool  post_moisture = (gw->post_flag & CS_GWF_POST_MOISTURE) ? true : false;
+  _Bool  post_perm = (gw->post_flag & CS_GWF_POST_PERMEABILITY) ? true : false;
+  cs_log_printf(CS_LOG_SETUP, " <GWF/Post> Capacity: %s; Moisture: %s;"
+                " Permeability: %s\n",
+                cs_base_strtf(post_capacity), cs_base_strtf(post_moisture),
+                cs_base_strtf(post_perm));
+
+  _Bool  do_balance =
+    (gw->post_flag & CS_GWF_POST_DARCY_FLUX_BALANCE) ? true : false;
+  _Bool  do_divergence =
+    (gw->post_flag & CS_GWF_POST_DARCY_FLUX_DIVERGENCE) ? true : false;
+  _Bool  post_boundary =
+    (gw->post_flag & CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY) ? true : false;
+  cs_log_printf(CS_LOG_SETUP,
+                " <GWF/Darcy_flux_post> Balance: %s; Divergence: %s;"
+                " At_boundary_faces: %s\n",
+                cs_base_strtf(do_balance), cs_base_strtf(do_divergence),
+                cs_base_strtf(post_boundary));
 
   /* Soils */
+  if (gw->flag & CS_GWF_SOIL_ALL_SATURATED)
+    cs_log_printf(CS_LOG_SETUP, " <GWF> All soils are saturated\n");
+  if (gw->flag & CS_GWF_SOIL_PROPERTY_UNSTEADY)
+    cs_log_printf(CS_LOG_SETUP, " <GWF> Soil properties are unsteady\n");
+
+  /* Detailed setup of the soil properties */
   cs_gwf_soil_log_setup();
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the flag dedicated to the post-processing of the GWF module
+ *
+ * \param[in]  post_flag             flag to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_set_post_options(cs_flag_t       post_flag)
+{
+  if (cs_gwf_main_structure == NULL)
+    return;
+
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+
+  gw->post_flag = post_flag;
+  if (gw->post_flag & CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY)
+    cs_advection_field_set_option(gw->adv_field,
+                                  CS_ADVKEY_DEFINE_AT_BOUNDARY_FACES);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1063,23 +1123,23 @@ cs_gwf_init_setup(void)
 
   if (pty_has_previous)
     cs_field_set_key_int(gw->moisture_field, log_key, 1);
-  if (gw->flag & CS_GWF_POST_MOISTURE)
+  if (gw->post_flag & CS_GWF_POST_MOISTURE)
     cs_field_set_key_int(gw->moisture_field, post_key, 1);
 
-  if (!(gw->flag & CS_GWF_SOIL_ALL_SATURATED)) {
+  if (!(gw->flag & CS_GWF_SOIL_ALL_SATURATED) ||
+      gw->post_flag & CS_GWF_POST_PERMEABILITY) {
 
     /* Set the values for the permeability and the moisture content
        and if needed set also the value of the soil capacity */
     int  permeability_dim;
     switch (gw->permeability->type) {
+
     case CS_PROPERTY_ISO:
       permeability_dim = 1;
       break;
-
     case CS_PROPERTY_ORTHO:
       permeability_dim = 3;
       break;
-
     case CS_PROPERTY_ANISO:
       permeability_dim = 9;
       break;
@@ -1099,25 +1159,25 @@ cs_gwf_init_setup(void)
                                        pty_has_previous);
 
     cs_field_set_key_int(gw->permea_field, log_key, 1);
-    if (gw->flag & CS_GWF_POST_PERMEABILITY)
+    if (gw->post_flag & CS_GWF_POST_PERMEABILITY)
       cs_field_set_key_int(gw->permea_field, post_key, 1);
 
-    /* Create a capacity field attached to cells */
-    if (gw->flag & CS_GWF_RICHARDS_UNSTEADY) {
+  } /* Need to create a field for the permeability */
 
-      gw->capacity_field = cs_field_create("soil_capacity",
-                                           pty_mask,
-                                           c_loc_id,
-                                           1,   /* dimension */
-                                           pty_has_previous);
+  /* Create a capacity field attached to cells */
+  if (gw->flag & CS_GWF_RICHARDS_UNSTEADY) {
 
-      cs_field_set_key_int(gw->capacity_field, log_key, 1);
-      if (gw->flag & CS_GWF_POST_CAPACITY)
-        cs_field_set_key_int(gw->capacity_field, post_key, 1);
+    gw->capacity_field = cs_field_create("soil_capacity",
+                                         pty_mask,
+                                         c_loc_id,
+                                         1,   /* dimension */
+                                         pty_has_previous);
 
-    }
+    cs_field_set_key_int(gw->capacity_field, log_key, 1);
+    if (gw->post_flag & CS_GWF_POST_CAPACITY)
+      cs_field_set_key_int(gw->capacity_field, post_key, 1);
 
-  } /* Some soils are unsaturated */
+  }
 
   /* Add default post-processing related to groundwater flow module */
   cs_post_add_time_mesh_dep_output(cs_gwf_extra_post, gw);
@@ -1269,10 +1329,20 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
 
   /* Set permeability, moisture content and soil capacity according to the
      soil settings */
-  if (gw->flag & CS_GWF_SOIL_ALL_SATURATED)
+  if (gw->flag & CS_GWF_SOIL_ALL_SATURATED) {
+
     cs_gwf_soil_set_all_saturated(gw->permeability,
                                   gw->moisture_content,
                                   gw->moisture_field);
+
+    if (gw->permea_field != NULL) /* Fill the values of the permeability field
+                                     for post-processing */
+
+      cs_property_eval_at_cells(0, /* Should be a steady-state property */
+                                gw->permeability,
+                                gw->permea_field->val);
+
+  }
   else
     cs_gwf_soil_set_by_field(gw->permeability,
                              gw->permea_field,
@@ -1632,6 +1702,137 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Predefined extra-operations for the groundwater flow module
+ *
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
+                const cs_cdo_quantities_t   *cdoq)
+{
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+
+  if (gw == NULL)
+    return;
+  if (cs_flag_test(gw->post_flag, CS_GWF_POST_DARCY_FLUX_BALANCE) == false)
+    return; /* Nothing to do */
+
+  const cs_lnum_t  n_b_faces = cdoq->n_b_faces;
+  const cs_adv_field_t  *adv = gw->adv_field;
+  assert(adv != NULL);
+  const cs_field_t  *nflx =
+    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  cs_real_t  *flux_val = (nflx == NULL) ? gw->darcian_boundary_flux : nflx->val;
+
+  if (flux_val == NULL && n_b_faces > 0) /* No value on which operates */
+    return;
+
+  /* Define the balance by zone (using the splitting arising from the settings
+     of the boundary conditions for the Richards equation) */
+
+  const cs_equation_t  *richards = gw->richards;
+  const cs_equation_param_t  *eqp = cs_equation_get_param(richards);
+
+  _Bool  *is_counted = NULL;
+  BFT_MALLOC(is_counted, n_b_faces, _Bool);
+# pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+  for (int i = 0; i < n_b_faces; i++) is_counted[i] = false;
+
+  cs_real_t  *balances = NULL;
+  BFT_MALLOC(balances, eqp->n_bc_defs + 1, cs_real_t);
+
+  for (int ibc = 0; ibc < eqp->n_bc_defs; ibc++) {
+
+    const cs_xdef_t  *def = eqp->bc_defs[ibc];
+    const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
+
+    balances[ibc] = 0;
+
+    if (nflx == NULL) { /* The definition of the boundary flux relies on the
+                           bf2v adjacency */
+
+#if defined(DEBUG) && !defined(NDEBUG)
+      cs_xdef_t  *_def = adv->bdy_flux_defs[0];
+      cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)_def->input;
+
+      assert(adv->n_bdy_flux_defs == 1 && _def->type == CS_XDEF_BY_ARRAY);
+      assert(cs_flag_test(ai->loc, cs_flag_dual_closure_byf) == true);
+#endif
+
+      const cs_adjacency_t  *bf2v = connect->bf2v;
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+        const cs_lnum_t  bf_id = z->elt_ids[i];
+        is_counted[bf_id] = true;
+        for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++)
+          balances[ibc] += flux_val[j];
+      }
+
+    }
+    else {
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+        const cs_lnum_t  bf_id = z->elt_ids[i];
+        is_counted[bf_id] = true;
+        balances[ibc] += flux_val[bf_id];
+      }
+
+    } /* nflux is NULL ? */
+
+  } /* Loop on BC definitions */
+
+  _Bool  display = false;
+  balances[eqp->n_bc_defs] = 0.;
+  for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
+    if (is_counted[bf_id] == false) {
+
+      display = true;
+      if (nflx == NULL) {
+
+        const cs_adjacency_t  *bf2v = connect->bf2v;
+        for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++)
+          balances[eqp->n_bc_defs] += flux_val[j];
+
+      }
+      else
+        balances[eqp->n_bc_defs] += flux_val[bf_id];
+
+    } /* Not already counted */
+  } /* Loop on boundary faces */
+
+  int display_flag = display ? 1 : 0;
+
+  if (cs_glob_n_ranks > 1) {
+#if defined(HAVE_MPI)
+    cs_parall_max(1, CS_INT_TYPE, &display_flag);
+    cs_parall_sum(eqp->n_bc_defs + 1, CS_REAL_TYPE, balances);
+#endif
+  }
+
+  /* Output */
+  cs_log_printf(CS_LOG_DEFAULT,
+                "-b- Balance of the Darcy flux across the boundary zones:\n");
+
+  for (int ibc = 0; ibc < eqp->n_bc_defs; ibc++) {
+    const cs_zone_t  *z = cs_boundary_zone_by_id((eqp->bc_defs[ibc])->z_id);
+    cs_log_printf(CS_LOG_DEFAULT, "-b- %-32s: % -5.3e\n",
+                  z->name, balances[ibc]);
+  }
+
+  if (display_flag > 0)
+    cs_log_printf(CS_LOG_DEFAULT, "-b- %-32s: % -5.3e\n",
+                  "Remaining part of the boundary", balances[eqp->n_bc_defs]);
+
+  BFT_FREE(is_counted);
+  BFT_FREE(balances);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined post-processing output for the groundwater flow module
  *         prototype of this function is fixed since it is a function pointer
  *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
@@ -1682,80 +1883,31 @@ cs_gwf_extra_post(void                      *input,
 
   const cs_gwf_t  *gw = (const cs_gwf_t *)input;
 
-  if (mesh_id == CS_POST_MESH_BOUNDARY) {
-
-    const cs_field_t  *nflx =
-      cs_advection_field_get_field(gw->adv_field,
-                                   CS_MESH_LOCATION_BOUNDARY_FACES);
-
-    if (nflx == NULL)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Null pointer encounter\n", __func__);
-
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "-b- Balance of the Darcy flux across the domain boundary\n");
-
-    cs_real_t balance = 0;
-    for (cs_lnum_t  i = 0; i < n_b_faces; i++)
-      balance += nflx->val[i];
-
-    cs_real_t  default_balance = balance;
-    if (cs_glob_n_ranks > 1)
-      cs_parall_sum(1, CS_REAL_TYPE, &default_balance);
-
-    for (int def_id = 0; def_id < gw->adv_field->n_bdy_flux_defs; def_id++) {
-
-      const cs_xdef_t  *def = gw->adv_field->bdy_flux_defs[def_id];
-      const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
-      assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
-
-      if (z->elt_ids == NULL || def->meta & CS_FLAG_FULL_LOC)
-        break; /* Nothing to do (balance = default_balance) */
-      else {
-        balance = 0;
-        for (cs_lnum_t i = 0; i < z->n_elts; i++)
-          balance += nflx->val[z->elt_ids[i]];
-      }
-
-      if (cs_glob_n_ranks > 1)
-        cs_parall_sum(1, CS_REAL_TYPE, &balance);
-
-      cs_log_printf(CS_LOG_DEFAULT, " %32s: % -5.3e\n", z->name, balance);
-      default_balance -= balance;
-
-    } /* Loop on boundary definitions for the Darcy flux */
-
-    if (gw->adv_field->n_bdy_flux_defs < 2)
-      cs_log_printf(CS_LOG_DEFAULT,
-                    " %32s: % -5.3e\n", "Whole boundary", default_balance);
-    else
-      cs_log_printf(CS_LOG_DEFAULT, " %32s: % -5.3e\n",
-                    "Remaining boundary", default_balance);
-
-  } /* boundary mesh_id */
-
   if (mesh_id == CS_POST_MESH_VOLUME) {
 
-    /* Only case avalaible up to now */
-    if (cs_advection_field_get_deftype(gw->adv_field) == CS_XDEF_BY_ARRAY) {
+    if (gw->post_flag & CS_GWF_POST_DARCY_FLUX_DIVERGENCE) {
 
-      cs_real_t  *divergence =
-        cs_advection_field_divergence_at_vertices(gw->adv_field,
-                                                  time_step->t_cur);
+      /* Only case avalaible up to now */
+      if (cs_advection_field_get_deftype(gw->adv_field) == CS_XDEF_BY_ARRAY) {
 
-      cs_post_write_vertex_var(mesh_id,
-                               CS_POST_WRITER_DEFAULT,
-                               "darcy_flux_divergence",
-                               1,
-                               false,
-                               false,
-                               CS_POST_TYPE_cs_real_t,
-                               divergence,
-                               time_step);
+        cs_real_t  *divergence =
+          cs_advection_field_divergence_at_vertices(gw->adv_field,
+                                                    time_step->t_cur);
 
-      BFT_FREE(divergence);
-    }
+        cs_post_write_vertex_var(mesh_id,
+                                 CS_POST_WRITER_DEFAULT,
+                                 "darcy_flux_divergence",
+                                 1,
+                                 false,
+                                 false,
+                                 CS_POST_TYPE_cs_real_t,
+                                 divergence,
+                                 time_step);
 
+        BFT_FREE(divergence);
+      }
+
+    } /* Post-processing of the divergence is requested */
   } /* volume mesh id */
 
 }
