@@ -3,7 +3,8 @@ Release 5.3.1 - (unreleased)
 
 Bug fixes:
 
-- GUI: fix default value of relaxation coefficient for pressure.
+- GUI: * fix default value of relaxation coefficient for pressure
+       * hide initialization page if no initialization zone defined.
 
 - Fixes for parallel runs in sedimentation source term with humid atmosphere
   model.

@@ -667,6 +667,7 @@ Calculation management
         # self.setRowClose(self.tr('Surface solution control'))
         self.setRowClose(self.tr('Time settings'))
         self.setRowClose(self.tr('Fluid structure interaction'))
+        self.setRowClose(self.tr('Initialization'))
         self.setRowClose(self.tr('Source terms'))
         self.setRowClose(self.tr('Head losses'))
         self.setRowClose(self.tr('Porosity'))
@@ -839,12 +840,15 @@ Calculation management
         # Source terms view
         node_domain = case.xmlGetNode('solution_domain')
         node_vol = node_domain.xmlGetNode('volumic_conditions')
+        nb_zone_init = 0
         nb_zone = 0
         nb_zone_losses = 0
         nb_zone_porosity = 0
         nb_zone_groundwater = 0
 
         for node in node_vol.xmlGetChildNodeList('zone'):
+            if (node['initialization'] == 'on'):
+                nb_zone_init = nb_zone_init + 1
             if node['momentum_source_term'] == 'on':
                 nb_zone = nb_zone + 1
             elif node['mass_source_term'] == 'on':
@@ -860,6 +864,8 @@ Calculation management
             if node['groundwater_law'] == 'on':
                 nb_zone_groundwater = nb_zone_groundwater + 1
 
+        if nb_zone_init > 0:
+            self.setRowOpen(self.tr('Initialization'))
         if nb_zone > 0:
             self.setRowOpen(self.tr('Source terms'))
         if nb_zone_losses > 0:
