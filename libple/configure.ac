@@ -187,13 +187,28 @@ if test "${relocatable}" = yes ; then
   AC_DEFINE([HAVE_RELOCATABLE], 1, [Relocatable installation])
 fi
 
+# Optionally install the code with python wrappers
 
-# SWIG
-AX_PKG_SWIG(1.3.21) # check swig version
-AX_SWIG_PYTHON
-AM_PATH_PYTHON(2.3)
-AX_PYTHON_DEVEL([>='2.5'])
-AX_PYTHON_MODULE(mpi4py)
+AC_ARG_ENABLE(python,
+  [AS_HELP_STRING([--enable-python], [enable python installation])],
+  [
+    case "${enableval}" in
+      yes) python_bindings=yes ;;
+      no)  python_bindings=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-python]) ;;
+    esac
+  ],
+  [ python_bindings=no ]
+)
+AC_SUBST(python_bindings)
+
+if test "${python_bindings}" = "yes" ; then
+  AX_PKG_SWIG(1.3.21) # check swig version
+  AX_SWIG_PYTHON
+  AM_PATH_PYTHON(2.6)
+  AX_PYTHON_DEVEL([>='2.6'])
+  AX_PYTHON_MODULE(mpi4py)
+fi
 
 AM_CONDITIONAL(HAVE_MPI4PY, [test "${HAVE_PYMOD_MPI4PY}" = yes])
 if test "${HAVE_PYMOD_MPI4PY}" = "yes"; then
