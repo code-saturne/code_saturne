@@ -680,7 +680,6 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         # Combo models
         self.modelContinuousMomentumTransfer = ComboModel(self.comboBoxContinuousMomentumTransfer, 3, 1)
         self.modelContinuousMomentumTransfer.addItem(self.tr('none'), 'none')
-        self.modelContinuousMomentumTransfer.addItem(self.tr('separated phases'), 'separate_phases')
         self.modelContinuousMomentumTransfer.addItem(self.tr('Large Interface Model'), 'Large_Interface_Model')
         self.modelContinuousMomentumTransfer.addItem(self.tr('Large Bubble Model'), 'Large_Bubble_Model')
 

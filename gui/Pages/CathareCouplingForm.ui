@@ -137,16 +137,16 @@
    <item>
     <widget class="QGroupBox" name="groupBoxCathareCpls">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Include conjugate heat transfers by coupling Code_Saturne and SYRTHES. The zones where the coupling occurs be must defined and a projection axis can be specified in case of 2D coupling.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;CFD and SYSTEM scales coupling of NEPTUNE_CFD and CATHARE2. The zones where the coupling occurs are defined based on the boundary conditions in NEPTUNE_CFD and circuit elements for CATHARE2.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
-      <string>CFD/SYTEM Coupling : NEPTUNE_CFD/CATHARE</string>
+      <string>CFD/SYSTEM Coupling : NEPTUNE_CFD/CATHARE</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QTableView" name="tableViewCathare">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Include conjugate heat transfers by coupling Code_Saturne and SYRTHES. The zones where the coupling occurs be must defined and a projection axis can be specified in case of 2D coupling.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;CFD and SYSTEM scales coupling of NEPTUNE_CFD and CATHARE2. The zones where the coupling occurs are defined based on the boundary conditions in NEPTUNE_CFD and circuit elements for CATHARE2.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>

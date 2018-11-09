@@ -250,7 +250,7 @@ class CathareCouplingModel(Variables, Model):
         return value
 
     #------------------------------------------------------------------
-    # Syrthes instance name
+    # API type: Stand alone NCFD, coupled NCFD or coupled CATHARE
     #------------------------------------------------------------------
     @Variables.undoLocal
     def setApiType(self, value):
@@ -263,7 +263,7 @@ class CathareCouplingModel(Variables, Model):
         return self.__node_nepcat.xmlGetInt('api_type')
 
     #------------------------------------------------------------------
-    # Syrthes instance name
+    # Number of coupled phases
     #------------------------------------------------------------------
     @Variables.undoLocal
     def setNphases(self, value):
@@ -276,7 +276,7 @@ class CathareCouplingModel(Variables, Model):
         return self.__node_nepcat.xmlGetInt('nphases')
 
     #------------------------------------------------------------------
-    # Syrthes instance name
+    # Cathare coupled element name
     #------------------------------------------------------------------
     @Variables.undoLocal
     def setCathareEltName(self, num, value):
@@ -309,7 +309,7 @@ class CathareCouplingModel(Variables, Model):
                                     self.setCathareEltName)
 
     #------------------------------------------------------------------
-    # Syrthes verbosity
+    # Coupled cells in the Cathare element
     #------------------------------------------------------------------
     @Variables.undoLocal
     def setCathareFCell(self, num, value):
@@ -343,7 +343,7 @@ class CathareCouplingModel(Variables, Model):
                                  self.setCathareFCell)
 
     #------------------------------------------------------------------
-    # Syrthes visualization output
+    # Coupled cells in the Cathare element
     #------------------------------------------------------------------
     @Variables.undoLocal
     def setCathareLCell(self, num, value):
@@ -377,7 +377,7 @@ class CathareCouplingModel(Variables, Model):
                                  self.setCathareLCell)
 
     #------------------------------------------------------------------
-    # Projection axis
+    # Coupled Boundary condition
     #------------------------------------------------------------------
     @Variables.undoLocal
     def setNeptuneBc(self, num, value):
