@@ -530,7 +530,7 @@ else
       call field_get_key_struct_var_cal_opt(f_id, vcopt)
       if (vcopt%imligr.eq.-999) then
         vcopt%imligr = 1
-        call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+        call field_set_key_struct_var_cal_opt(f_id, vcopt)
       endif
     endif
   enddo
