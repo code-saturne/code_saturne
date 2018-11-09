@@ -1311,9 +1311,143 @@ cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the area of the triangles with basis each edge of the face
+ *         and apex the face center.
+ *         Case of interior faces.
+ *         Storage in agreement with the if2v adjacency structure
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       f_id      interior face id
+ * \param[in, out]  tef       quantities to compute (pre-allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_i_tef(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     f_id,
+                                cs_real_t                     tef[])
+{
+  if (tef == NULL) return;
+
+  const cs_real_t  *xf = cdoq->i_face_center + 3*f_id;
+  const cs_lnum_t  *idx = connect->if2v->idx + f_id;
+  const cs_lnum_t  *ids = connect->if2v->ids + idx[0];
+  const int  n_ef = idx[1] - idx[0]; /* n_ef = n_vf */
+
+  cs_lnum_t  _v0, _v1;
+  for (int  e = 0; e < n_ef; e++) { /* Compute */
+
+    if (e < n_ef - 1)
+      _v0 = ids[e], _v1 = ids[e+1];
+    else
+      _v0 = ids[n_ef-1], _v1 = ids[0];
+
+    tef[e] = cs_math_surftri(cdoq->vtx_coord + 3*_v0,
+                             cdoq->vtx_coord + 3*_v1,
+                             xf);
+
+  } /* Loop on face edges */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the area of the triangles with basis each edge of the face
+ *         and apex the face center.
+ *         Case of boundary faces.
+ *         Storage in agreement with the bf2v adjacency structure
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       bf_id     border face id
+ * \param[in, out]  tef       quantities to compute (pre-allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_b_tef(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     bf_id,
+                                cs_real_t                     tef[])
+{
+  if (tef == NULL) return;
+
+  const cs_real_t  *xf = cdoq->b_face_center + 3*bf_id;
+  const cs_lnum_t  *idx = connect->bf2v->idx + bf_id;
+  const cs_lnum_t  *ids = connect->bf2v->ids + idx[0];
+  const int  n_ef = idx[1] - idx[0]; /* n_ef = n_vf */
+
+  cs_lnum_t  _v0, _v1;
+  for (int  e = 0; e < n_ef; e++) { /* Compute */
+
+    if (e < n_ef - 1)
+      _v0 = ids[e], _v1 = ids[e+1];
+    else
+      _v0 = ids[n_ef-1], _v1 = ids[0];
+
+    tef[e] = cs_math_surftri(cdoq->vtx_coord + 3*_v0,
+                             cdoq->vtx_coord + 3*_v1,
+                             xf);
+
+  } /* Loop on face edges */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the weight related to each vertex of a face. This weight
  *         ensures a 2nd order approximation if the face center is the face
- *         barycenter
+ *         barycenter.
+ *         Case of interior faces.
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       f_id      interior face id
+ * \param[in, out]  wvf       quantities to compute (pre-allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_i_wvf(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     f_id,
+                                cs_real_t                     wvf[])
+{
+  if (wvf == NULL) return;
+
+  const cs_real_t  *xf = cdoq->i_face_center + 3*f_id;
+  const cs_lnum_t  *idx = connect->if2v->idx + f_id;
+  const cs_lnum_t  *ids = connect->if2v->ids + idx[0];
+  const int  n_vf = idx[1] - idx[0];
+
+  for (cs_lnum_t  v = 0; v < n_vf; v++) wvf[v] = 0.; /* Init */
+
+  int  _v0, _v1;
+  for (cs_lnum_t  v = 0; v < n_vf; v++) { /* Compute */
+
+    if (v < n_vf - 1)
+      _v0 = v, _v1 = v+1;
+    else
+      _v0 = n_vf-1, _v1 = 0;
+
+    const double  tef = cs_math_surftri(cdoq->vtx_coord + 3*ids[_v0],
+                                        cdoq->vtx_coord + 3*ids[_v1],
+                                        xf);
+    wvf[_v0] += tef;
+    wvf[_v1] += tef;
+
+  } /* Loop on face vertices */
+
+  const cs_real_t  coef = 0.5/cdoq->i_face_surf[f_id];
+  for (cs_lnum_t  v = 0; v < n_vf; v++) wvf[v] *= coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the weight related to each vertex of a face. This weight
+ *         ensures a 2nd order approximation if the face center is the face
+ *         barycenter.
+ *         Case of boundary faces.
  *
  * \param[in]       connect   pointer to a cs_cdo_connect_t structure
  * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
@@ -1323,12 +1457,12 @@ cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_compute_wvf(const cs_cdo_connect_t       *connect,
-                              const cs_cdo_quantities_t    *cdoq,
-                              cs_lnum_t                     bf_id,
-                              cs_real_t                     wvf[])
+cs_cdo_quantities_compute_b_wvf(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     bf_id,
+                                cs_real_t                     wvf[])
 {
-  assert(wvf != NULL);
+  if (wvf == NULL) return;
 
   const cs_real_t  *xf = cdoq->b_face_center + 3*bf_id;
   const cs_lnum_t  *idx = connect->bf2v->idx + bf_id;

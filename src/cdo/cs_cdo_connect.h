@@ -86,6 +86,8 @@ typedef struct {
   cs_adjacency_t    *f2e;         /* face --> edges connectivity */
   cs_adjacency_t    *bf2v;        /* border face --> vertices connectivity
                                      (map from cs_mesh_t) */
+  cs_adjacency_t    *if2v;        /* interior face --> vertices connectivity
+                                     (map from cs_mesh_t) */
 
   /* Cell-related members */
   fvm_element_t     *cell_type;   /* type of cell */

@@ -752,6 +752,13 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
                                                     mesh->b_face_vtx_idx,
                                                     mesh->b_face_vtx_lst,
                                                     NULL);
+
+  /* Map the interior face --> vertices connectivity */
+  connect->if2v = cs_adjacency_create_from_i_arrays(mesh->n_i_faces,
+                                                    mesh->i_face_vtx_idx,
+                                                    mesh->i_face_vtx_lst,
+                                                    NULL);
+
   /* Build the cell --> faces connectivity */
   connect->c2f = cs_mesh_adjacency_c2f(mesh, 1);
 
@@ -887,6 +894,7 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
     return connect;
 
   cs_adjacency_destroy(&(connect->bf2v));
+  cs_adjacency_destroy(&(connect->if2v));
 
   cs_adjacency_destroy(&(connect->e2v));
   cs_adjacency_destroy(&(connect->f2e));
@@ -1043,6 +1051,7 @@ cs_cdo_connect_dump(const cs_cdo_connect_t  *connect)
   cs_adjacency_dump("Cell   --> Faces",    fdump, connect->c2f);
   cs_adjacency_dump("Face   --> Edges",    fdump, connect->f2e);
   cs_adjacency_dump("Bd Face--> Vertices", fdump, connect->bf2v);
+  cs_adjacency_dump("In Face--> Vertices", fdump, connect->if2v);
   cs_adjacency_dump("Edge   --> Vertices", fdump, connect->e2v);
   cs_adjacency_dump("Face   --> Cells",    fdump, connect->f2c);
   cs_adjacency_dump("Cell   --> Edges",    fdump, connect->c2e);
