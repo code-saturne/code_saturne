@@ -116,7 +116,8 @@ _space_scheme_key[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
 
 static const char
 _time_scheme_key[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
-  { "euler_implicit",
+  { "steady",
+    "euler_implicit",
     "euler_explicit",
     "crank_nicolson",
     "theta_scheme"
