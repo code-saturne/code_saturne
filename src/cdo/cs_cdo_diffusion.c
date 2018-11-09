@@ -347,8 +347,8 @@ _vb_cost_normal_flux_op(const short int           f,
                         cs_cell_builder_t        *cb,
                         cs_sdm_t                 *ntrgrd)
 {
-  cs_real_t  *nflux = cb->values;                  /* size = cm->n_vc */
-  cs_real_3_t  *grd_cell = cb->vectors + cm->n_vc; /* size = cm->n_vc */
+  cs_real_t  *nflux = cb->values;       /* size = cm->n_vc */
+  cs_real_3_t  *grd_cell = cb->vectors; /* size = cm->n_vc */
 
   /* Initialize the local operator */
   cs_sdm_square_init(cm->n_vc, ntrgrd);
