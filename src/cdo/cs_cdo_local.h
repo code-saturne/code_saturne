@@ -48,21 +48,22 @@ BEGIN_C_DECLS
 /* According to the flag which are set, different quantities or connectivities
    are built on-the-fly and stored in a local cache structure (cell/base) */
 
-#define CS_CDO_LOCAL_PV   (1 <<  0) //     1: local info. for vertices
-#define CS_CDO_LOCAL_PVQ  (1 <<  1) //     2: local quant. on vertices
-#define CS_CDO_LOCAL_PE   (1 <<  2) //     4: local info. for edges
-#define CS_CDO_LOCAL_PEQ  (1 <<  3) //     8: local quant. on edges
-#define CS_CDO_LOCAL_DFQ  (1 <<  4) //    16: local quant. on dual faces
-#define CS_CDO_LOCAL_PF   (1 <<  5) //    32: local info. for faces
-#define CS_CDO_LOCAL_PFQ  (1 <<  6) //    64: local quant. on faces
-#define CS_CDO_LOCAL_DEQ  (1 <<  7) //   128: local quant. on dual edges
-#define CS_CDO_LOCAL_EV   (1 <<  8) //   256: local e2v connectivity
-#define CS_CDO_LOCAL_FE   (1 <<  9) //   512: local f2e connectivity
-#define CS_CDO_LOCAL_FEQ  (1 << 10) //  1024: local f2e quantities
-#define CS_CDO_LOCAL_EF   (1 << 11) //  2048: local e2f connectivity
-#define CS_CDO_LOCAL_EFQ  (1 << 12) //  4096: local e2f quantities
-#define CS_CDO_LOCAL_HFQ  (1 << 13) //  8192: local quant. on face pyramids
-#define CS_CDO_LOCAL_DIAM (1 << 14) // 16384: local diameters on faces/cell
+#define CS_CDO_LOCAL_PV   (1 <<  0) /*     1: local info. for vertices */
+#define CS_CDO_LOCAL_PVQ  (1 <<  1) /*     2: local quant. on vertices */
+#define CS_CDO_LOCAL_PE   (1 <<  2) /*     4: local info. for edges */
+#define CS_CDO_LOCAL_PEQ  (1 <<  3) /*     8: local quant. on edges */
+#define CS_CDO_LOCAL_DFQ  (1 <<  4) /*    16: local quant. on dual faces */
+#define CS_CDO_LOCAL_PF   (1 <<  5) /*    32: local info. for faces */
+#define CS_CDO_LOCAL_PFQ  (1 <<  6) /*    64: local quant. on faces */
+#define CS_CDO_LOCAL_DEQ  (1 <<  7) /*   128: local quant. on dual edges */
+#define CS_CDO_LOCAL_EV   (1 <<  8) /*   256: local e2v connectivity */
+#define CS_CDO_LOCAL_FE   (1 <<  9) /*   512: local f2e connectivity */
+#define CS_CDO_LOCAL_FEQ  (1 << 10) /*  1024: local f2e quantities */
+#define CS_CDO_LOCAL_FV   (1 << 11) /*  2048: local f2v connectivity */
+#define CS_CDO_LOCAL_EF   (1 << 12) /*  4096: local e2f connectivity */
+#define CS_CDO_LOCAL_EFQ  (1 << 13) /*  8192: local e2f quantities */
+#define CS_CDO_LOCAL_HFQ  (1 << 14) /* 16384: local quant. on face pyramids */
+#define CS_CDO_LOCAL_DIAM (1 << 15) /* 32768: local diameters on faces/cell */
 
 /*============================================================================
  * Type definitions
@@ -201,6 +202,10 @@ typedef struct {
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
   short int   *e2v_ids; /*!< cell-wise edge->vertices connectivity */
   short int   *e2v_sgn; /*!< cell-wise edge->vertices orientation (-1 or +1) */
+
+  /* Local f2v connectivity: size = 2*n_max_ebyc */
+  short int   *f2v_idx; /*!< size n_fc + 1 */
+  short int   *f2v_ids; /*!< size 2*n_max_ebyc */
 
   /* Local f2e connectivity: size = 2*n_max_ebyc */
   short int   *f2e_idx; /*!< size n_fc + 1 */

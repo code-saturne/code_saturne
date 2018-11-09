@@ -88,7 +88,7 @@ static int  cs_cdo_local_n_structures = 0;
 
 /* Store predefined flags */
 static const cs_flag_t  cs_cdo_local_flag_v =
-  CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV;
+  CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FV;
 static const cs_flag_t  cs_cdo_local_flag_e =
   CS_CDO_LOCAL_PE | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
   CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EF  | CS_CDO_LOCAL_EFQ;
@@ -96,7 +96,8 @@ static const cs_flag_t  cs_cdo_local_flag_peq =
   CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ;
 static const cs_flag_t  cs_cdo_local_flag_f =
   CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FE |
-  CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_HFQ;
+  CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_HFQ |
+  CS_CDO_LOCAL_FV;
 static const cs_flag_t  cs_cdo_local_flag_pfq =
   CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ;
 static const cs_flag_t  cs_cdo_local_flag_deq =
@@ -579,6 +580,10 @@ cs_cell_mesh_create(const cs_cdo_connect_t   *connect)
   BFT_MALLOC(cm->face, cm->n_max_fbyc, cs_quant_t);
   BFT_MALLOC(cm->dedge, cm->n_max_fbyc, cs_nvec3_t);
 
+  /* face --> vertices connectivity */
+  BFT_MALLOC(cm->f2v_idx, cm->n_max_fbyc + 1, short int);
+  BFT_MALLOC(cm->f2v_ids, 2*cm->n_max_ebyc, short int);
+
   /* face --> edges connectivity */
   BFT_MALLOC(cm->f2e_idx, cm->n_max_fbyc + 1, short int);
   BFT_MALLOC(cm->f2e_ids, 2*cm->n_max_ebyc, short int);
@@ -626,26 +631,26 @@ cs_cdo_local_get_cell_mesh(int    mesh_id)
 void
 cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
 {
-  cm->n_vc = SHRT_MAX;
-  cm->n_ec = SHRT_MAX;
-  cm->n_fc = SHRT_MAX;
+  cm->n_vc = -1;
+  cm->n_ec = -1;
+  cm->n_fc = -1;
 
   /* Cell information */
-  cm->c_id = SHRT_MIN;
+  cm->c_id = -1;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = -DBL_MAX;
   cm->vol_c = -DBL_MAX;
   cm->diam_c = -DBL_MAX;
 
   /* Vertex information */
   for (short int v = 0; v < cm->n_max_vbyc; v++) {
-    cm->v_ids[v] = SHRT_MIN;
+    cm->v_ids[v] = -1;
     cm->wvc[v] = -DBL_MAX;
     cm->xv[3*v] = cm->xv[3*v+1] = cm->xv[3*v+2] = -DBL_MAX;
   }
 
   /* Edge information */
   for (short int e = 0; e < cm->n_max_ebyc; e++) {
-    cm->e_ids[e] = SHRT_MIN;
+    cm->e_ids[e] = -1;
     cm->e2v_sgn[e] = 0;
     cm->edge[e].meas = cm->dface[e].meas = -DBL_MAX;
     cm->edge[e].unitv[0] = cm->dface[e].unitv[0] = -DBL_MAX;
@@ -658,7 +663,7 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
 
   /* Face information */
   for (short int f = 0; f < cm->n_max_fbyc; f++) {
-    cm->f_ids[f] = SHRT_MIN;
+    cm->f_ids[f] = -1;
     cm->f_sgn[f] = 0;
     cm->f_diam[f] = -DBL_MAX;
     cm->hfc[f] = -DBL_MAX;
@@ -674,10 +679,10 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
 
   /* face --> edges connectivity */
   for (short int f = 0; f < cm->n_max_fbyc + 1; f++)
-    cm->f2e_idx[f] = SHRT_MIN;
+    cm->f2e_idx[f] = cm->f2v_idx[f] = -1;
 
   for (int i = 0; i < 2*cm->n_max_ebyc; i++) {
-    cm->e2v_ids[i] = cm->e2f_ids[i] = cm->f2e_ids[i] = SHRT_MIN;
+    cm->e2v_ids[i] = cm->e2f_ids[i] = cm->f2e_ids[i] = cm->f2v_ids[i] = -1;
     cm->tef[i] = cm->sefc[i].meas = -DBL_MAX;
     cm->sefc[i].unitv[0]=cm->sefc[i].unitv[1]=cm->sefc[i].unitv[2] = -DBL_MAX;
   }
@@ -830,6 +835,9 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
   BFT_FREE(cm->e2v_ids);
   BFT_FREE(cm->e2v_sgn);
 
+  BFT_FREE(cm->f2v_idx);
+  BFT_FREE(cm->f2v_ids);
+
   BFT_FREE(cm->f2e_idx);
   BFT_FREE(cm->f2e_ids);
   BFT_FREE(cm->tef);
@@ -965,39 +973,6 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } /* Edge-related quantities */
 
-  if (build_flag & CS_CDO_LOCAL_EV) {
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int t_id = omp_get_thread_num();
-    assert(t_id < cs_glob_n_threads);
-#else
-    int t_id = 0;
-#endif /* openMP */
-
-    short int  *kbuf = cs_cdo_local_kbuf[t_id];
-
-    /* Store in compact way: mesh --> cell mesh ids for vertices */
-    cs_lnum_t  shift = cm->v_ids[0];
-    for (short int v = 1; v < cm->n_vc; v++)
-      if (cm->v_ids[v] < shift)
-        shift = cm->v_ids[v];
-    for (short int v = 0; v < cm->n_vc; v++)
-      kbuf[cm->v_ids[v]-shift] = v;
-
-    for (short int e = 0; e < cm->n_ec; e++) {
-
-      const cs_lnum_t  e_id = cm->e_ids[e];
-
-      /* Store only the sign related to the first vertex since the sign
-         related to the second one is minus the first one */
-      cm->e2v_sgn[e] = connect->e2v->sgn[2*e_id];
-      cm->e2v_ids[2*e]   = kbuf[connect->e2v->ids[2*e_id] - shift];
-      cm->e2v_ids[2*e+1] = kbuf[connect->e2v->ids[2*e_id+1] - shift];
-
-    } /* Loop on cell edges */
-
-  } /* edge-vertices information */
-
   /* Information related to primal faces */
   if (build_flag & cs_cdo_local_flag_f) {
 
@@ -1064,6 +1039,91 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     } /* Quantities related to the pyramid of base f */
 
   } /* Face information */
+
+  if (build_flag & CS_CDO_LOCAL_EV ||
+      build_flag & CS_CDO_LOCAL_FV) {
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int t_id = omp_get_thread_num();
+    assert(t_id < cs_glob_n_threads);
+#else
+    int t_id = 0;
+#endif /* openMP */
+
+    short int  *kbuf = cs_cdo_local_kbuf[t_id];
+
+    /* Store in a compact way ids for vertices: mesh --> cell mesh */
+    cs_lnum_t  v_shift = cm->v_ids[0];
+    for (short int v = 1; v < cm->n_vc; v++)
+      if (cm->v_ids[v] < v_shift)
+        v_shift = cm->v_ids[v];
+    for (short int v = 0; v < cm->n_vc; v++)
+      kbuf[cm->v_ids[v]-v_shift] = v;
+
+    if (build_flag & CS_CDO_LOCAL_EV) {
+      for (short int e = 0; e < cm->n_ec; e++) {
+
+        const cs_lnum_t  e_id = cm->e_ids[e];
+
+        /* Store only the sign related to the first vertex since the sign
+           related to the second one is minus the first one */
+        cm->e2v_sgn[e] = connect->e2v->sgn[2*e_id];
+        cm->e2v_ids[2*e]   = kbuf[connect->e2v->ids[2*e_id] - v_shift];
+        cm->e2v_ids[2*e+1] = kbuf[connect->e2v->ids[2*e_id+1] - v_shift];
+
+      } /* Loop on cell edges */
+    } /* edge-vertices information */
+
+    if (build_flag & CS_CDO_LOCAL_FV) {
+
+      const cs_adjacency_t  *if2v = connect->if2v;
+      const cs_adjacency_t  *bf2v = connect->bf2v;
+
+      /* Build the index */
+      cm->f2v_idx[0] = 0;
+      for (short int f = 0; f < cm->n_fc; f++) {
+
+        const cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+
+        int  n_vf = 0;
+        if (bf_id > -1) /* Boundary face */
+          n_vf = bf2v->idx[bf_id+1] - bf2v->idx[bf_id];
+        else
+          n_vf = if2v->idx[cm->f_ids[f]+1] - if2v->idx[cm->f_ids[f]];
+
+        cm->f2v_idx[f+1] = cm->f2v_idx[f] + n_vf;
+
+      } /* Loop on cell faces */
+
+      assert(cm->f2v_idx[cm->n_fc] == 2*cm->n_ec);
+
+      /* Fill the list of vertices */
+      for (short int f = 0; f < cm->n_fc; f++) {
+
+        const cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+
+        short int  *_ids = cm->f2v_ids + cm->f2v_idx[f];
+
+        if (bf_id > -1) { /* Boundary face */
+
+          const cs_lnum_t  *v_ids = bf2v->ids + bf2v->idx[bf_id];
+          for (short int i = 0; i < cm->f2v_idx[f+1]-cm->f2v_idx[f]; i++)
+            _ids[i] = kbuf[v_ids[i] - v_shift];
+
+        }
+        else { /* Interior face */
+
+          const cs_lnum_t  *v_ids = if2v->ids + if2v->idx[cm->f_ids[f]];
+          for (short int i = 0; i < cm->f2v_idx[f+1]-cm->f2v_idx[f]; i++)
+            _ids[i] = kbuf[v_ids[i] - v_shift];
+
+        }
+
+      } /* Loop on cell faces */
+
+    } /* face --> vertices connectivity */
+
+  } /* EV or FV flag */
 
   if (build_flag & cs_cdo_local_flag_fe) {
 
