@@ -1026,29 +1026,32 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
                                         cs_quadrature_type_t       qtype,
                                         cs_real_t                 *eval)
 {
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
+
+  const cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  const cs_quant_t  fq = cm->face[f];
 
   switch (qtype) {
 
   case CS_QUADRATURE_NONE:
   case CS_QUADRATURE_BARY:
     {
-      cs_real_3_t  flux_xc = {0, 0, 0};
+      cs_real_3_t  flux_xf = {0, 0, 0};
 
       /* Evaluate the function for this time at the given coordinates */
-      anai->func(time_eval, 1, NULL, cm->xc, true, /* compacted output ? */
+      anai->func(time_eval, 1, NULL, fq.center, true, /* compacted output ? */
                  anai->input,
-                 flux_xc);
+                 flux_xf);
 
       /* Plug into the evaluation by value now */
-      cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, time_eval, flux_xc, eval);
+      cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, time_eval, flux_xf, eval);
     }
     break;
 
   case CS_QUADRATURE_BARY_SUBDIV:
     {
-      const cs_quant_t  fq = cm->face[f];
-
+      assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ));
       cs_real_3_t  _val[2], _xyz[2];
 
       if (cs_flag_test(cm->flag, CS_CDO_LOCAL_FEQ)) {
@@ -1113,10 +1116,9 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
   case CS_QUADRATURE_HIGHER:
     {
+      assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ));
       cs_real_t  w[2];
       cs_real_3_t  gpts[6], _val[6];
-
-      const cs_quant_t  fq = cm->face[f];
 
       if (cs_flag_test(cm->flag, CS_CDO_LOCAL_FEQ)) {
 
