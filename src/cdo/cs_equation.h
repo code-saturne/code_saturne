@@ -539,6 +539,35 @@ cs_equation_get_reaction_property(const cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return the type of numerical scheme used for the discretization in
+ *         time
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  a cs_param_time_scheme_t variable
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_time_scheme_t
+cs_equation_get_time_scheme(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the value of the theta parameter in theta time scheme
+ *         discretization
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  the value of the theta coefficient. -1 if the time scheme is not
+ *          a theta time scheme
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_equation_get_theta_time_val(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the type of numerical scheme used for the discretization in
  *         space
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
