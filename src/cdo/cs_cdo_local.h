@@ -286,6 +286,99 @@ extern cs_face_mesh_t        **cs_cdo_local_face_meshes;
 extern cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light;
 
 /*============================================================================
+ * Staic inline function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Retrieve the list of vertices attached to a face
+ *
+ * \param[in]       v_id    vertex id in the cell numbering
+ * \param[in]       cm      pointer to a cs_cell_mesh_t structure
+ *
+ * \return the vertex id in the cell numbering or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline short int
+cs_cell_mesh_get_v(const cs_lnum_t              v_id,
+                   const cs_cell_mesh_t  *const cm)
+{
+  short int v = -1;
+  for (v = 0; v < cm->n_vc; v++)
+    if (cm->v_ids[v] == v_id)
+      break;
+  return v;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Retrieve the list of vertices attached to a face
+ *
+ * \param[in]       f       face id in the cell numbering
+ * \param[in]       cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  n_vf    pointer of pointer to a cellwise view of the mesh
+ * \param[in, out]  v_ids   list of vertex ids in the cell numbering
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cell_mesh_get_f2v(short int                    f,
+                     const cs_cell_mesh_t        *cm,
+                     short int                   *n_vf,
+                     short int                   *v_ids)
+{
+  /* Reset */
+  *n_vf = 0;
+  for (short int v = 0; v < cm->n_vc; v++) v_ids[v] = -1;
+
+  /* Tag vertices belonging to the current face f */
+  for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+    const short int  shift_e = (short int)2*cm->f2e_ids[i];
+    v_ids[cm->e2v_ids[shift_e]] = 1;
+    v_ids[cm->e2v_ids[shift_e+1]] = 1;
+
+  } /* Loop on face edges */
+
+  for (short int v = 0; v < cm->n_vc; v++) {
+    if (v_ids[v] > 0)
+      v_ids[*n_vf] = v, *n_vf += 1;
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the next three vertices in a row from a face to edge connectivity
+ *         and a edge to vertex connectivity
+ *
+ * \param[in]       f2e_ids     face-edge connectivity
+ * \param[in]       e2v_ids     edge-vertex connectivity
+ * \param[in, out]  v0          id of the first vertex
+ * \param[in, out]  v1          id of the second vertex
+ * \param[in, out]  v2          id of the third vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cell_mesh_get_next_3_vertices(const short int   *f2e_ids,
+                                 const short int   *e2v_ids,
+                                 short int         *v0,
+                                 short int         *v1,
+                                 short int         *v2)
+{
+  const short int e0  = f2e_ids[0];
+  const short int e1  = f2e_ids[1];
+  const short int tmp = e2v_ids[2*e1];
+
+  *v0 = e2v_ids[2*e0];
+  *v1 = e2v_ids[2*e0+1];
+  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
+}
+
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -468,72 +561,6 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
                    const cs_cdo_connect_t      *connect,
                    const cs_cdo_quantities_t   *quant,
                    cs_cell_mesh_t              *cm);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Retrieve the list of vertices attached to a face
- *
- * \param[in]       f       face id in the cell numbering
- * \param[in]       cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out]  n_vf    pointer of pointer to a cellwise view of the mesh
- * \param[in, out]  v_ids   list of vertex ids in the cell numbering
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_cell_mesh_get_f2v(short int                    f,
-                     const cs_cell_mesh_t        *cm,
-                     short int                   *n_vf,
-                     short int                   *v_ids)
-{
-  /* Reset */
-  *n_vf = 0;
-  for (short int v = 0; v < cm->n_vc; v++) v_ids[v] = -1;
-
-  /* Tag vertices belonging to the current face f */
-  for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
-
-    const short int  shift_e = (short int)2*cm->f2e_ids[i];
-    v_ids[cm->e2v_ids[shift_e]] = 1;
-    v_ids[cm->e2v_ids[shift_e+1]] = 1;
-
-  } /* Loop on face edges */
-
-  for (short int v = 0; v < cm->n_vc; v++) {
-    if (v_ids[v] > 0)
-      v_ids[*n_vf] = v, *n_vf += 1;
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the next three vertices in a row from a face to edge connectivity
- *         and a edge to vertex connectivity
- *
- * \param[in]       f2e_ids     face-edge connectivity
- * \param[in]       e2v_ids     edge-vertex connectivity
- * \param[in, out]  v0          id of the first vertex
- * \param[in, out]  v1          id of the second vertex
- * \param[in, out]  v2          id of the third vertex
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_cell_mesh_get_next_3_vertices(const short int   *f2e_ids,
-                                 const short int   *e2v_ids,
-                                 short int         *v0,
-                                 short int         *v1,
-                                 short int         *v2)
-{
-  const short int e0  = f2e_ids[0];
-  const short int e1  = f2e_ids[1];
-  const short int tmp = e2v_ids[2*e1];
-
-  *v0 = e2v_ids[2*e0];
-  *v1 = e2v_ids[2*e0+1];
-  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
-}
 
 /*----------------------------------------------------------------------------*/
 /*!

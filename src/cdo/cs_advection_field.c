@@ -108,16 +108,16 @@ static cs_adv_field_t  **_adv_fields = NULL;
 /*----------------------------------------------------------------------------*/
 
 static void
-_fill_uniform_boundary_flux(const cs_cdo_quantities_t  *cdoq,
-                            const cs_adjacency_t       *f2e,
-                            const cs_adjacency_t       *e2v,
+_fill_uniform_boundary_flux(const cs_cdo_quantities_t  *const cdoq,
+                            const cs_adjacency_t       *const f2e,
+                            const cs_adjacency_t       *const e2v,
                             cs_lnum_t                   bf_id,
                             cs_real_t                   face_flux,
                             cs_real_t                  *fluxes)
 {
   const cs_real_t  face_coef = 0.5*face_flux/cdoq->b_face_surf[bf_id];
-  const cs_lnum_t  f_id = cdoq->n_i_faces + bf_id;
   const cs_real_t  *xf = cdoq->b_face_center + 3*bf_id;
+  const cs_lnum_t  f_id = cdoq->n_i_faces + bf_id;
 
   for (cs_lnum_t i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
 
@@ -127,7 +127,6 @@ _fill_uniform_boundary_flux(const cs_cdo_quantities_t  *cdoq,
     const double  tef = cs_math_surftri(cdoq->vtx_coord + 3*v0,
                                         cdoq->vtx_coord + 3*v1,
                                         xf);
-
     const double  weighted_flux = tef * face_coef;
 
     fluxes[v0] += weighted_flux;
@@ -149,7 +148,7 @@ _fill_uniform_boundary_flux(const cs_cdo_quantities_t  *cdoq,
 /*----------------------------------------------------------------------------*/
 
 static void
-_fill_cw_uniform_boundary_flux(const cs_cell_mesh_t   *cm,
+_cw_fill_uniform_boundary_flux(const cs_cell_mesh_t   *cm,
                                short int               f,
                                cs_real_t               face_flux,
                                cs_real_t              *fluxes)
@@ -381,7 +380,7 @@ cs_advection_field_destroy_all(void)
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_advection_field_check_name(const cs_adv_field_t   *adv,
                               const char             *ref_name)
 {
@@ -399,94 +398,6 @@ cs_advection_field_check_name(const cs_adv_field_t   *adv,
   }
   else
     return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  returns true if the advection field is uniform, otherwise false
- *
- * \param[in]    adv    pointer to a property to test
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_advection_field_is_uniform(const cs_adv_field_t   *adv)
-{
-  if (adv == NULL)
-    return false;
-
-  if (adv->definition->state & CS_FLAG_STATE_UNIFORM)
-    return true;
-  else
-    return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  returns true if the advection field is uniform in each cell
- *         otherwise false
- *
- * \param[in]    adv    pointer to a property to test
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_advection_field_is_cellwise(const cs_adv_field_t   *adv)
-{
-  if (adv == NULL)
-    return false;
-
-  cs_flag_t  state = adv->definition->state;
-
-  if (state & CS_FLAG_STATE_UNIFORM)
-    return true;
-  if (state & CS_FLAG_STATE_CELLWISE)
-    return true;
-  else
-    return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the name of an advection field
- *
- * \param[in]    adv    pointer to an advection field structure
- *
- * \return  the name of the related advection field
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_advection_field_get_name(const cs_adv_field_t   *adv)
-{
-  if (adv == NULL)
-    return NULL;
-
-  return adv->name;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the type of definition used to set the current advection
- *         field structure
- *
- * \param[in]    adv    pointer to an advection field structure
- *
- * \return  the type of definition
- */
-/*----------------------------------------------------------------------------*/
-
-cs_xdef_type_t
-cs_advection_field_get_deftype(const cs_adv_field_t   *adv)
-{
-  if (adv == NULL)
-    return CS_N_XDEF_TYPES;
-
-  return cs_xdef_get_type(adv->definition);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -514,19 +425,19 @@ cs_advection_field_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, " <AdvectionField/%s> id: %d\n",
                   adv->name, adv->id);
 
+    /* Type of advection field */
     switch (adv->type) {
+
     case CS_ADVECTION_FIELD_NAVSTO:
       cs_log_printf(CS_LOG_SETUP,
                     " <AdvectionField/%s> Related to Navier-Stokes\n",
                     adv->name);
       break;
-
     case CS_ADVECTION_FIELD_GWF:
       cs_log_printf(CS_LOG_SETUP,
                     " <AdvectionField/%s> Related to the \"Groundwater Flow\""
                     " module\n", adv->name);
       break;
-
     case CS_ADVECTION_FIELD_USER:
       cs_log_printf(CS_LOG_SETUP,
                     " <AdvectionField/%s> User-defined\n", adv->name);
@@ -536,21 +447,36 @@ cs_advection_field_log_setup(void)
       break;
     }
 
-    if (adv->cell_field_id > -1)
-      cs_log_printf(CS_LOG_SETUP, " <AdvectionField/%s> Defined at cells\n",
-                    adv->name);
-    if (adv->vtx_field_id > -1)
-      cs_log_printf(CS_LOG_SETUP, " <AdvectionField/%s> Defined at vertices\n",
-                    adv->name);
+    if (adv->flag & CS_ADVECTION_FIELD_STEADY)
+      cs_log_printf(CS_LOG_SETUP,
+                    " <AdvectionField/%s> Steady-state\n", adv->name);
+    else
+      cs_log_printf(CS_LOG_SETUP,
+                    " <AdvectionField/%s> Unsteady\n", adv->name);
+
+    cs_xdef_log(adv->definition);
+
+    /* Where fields are defined */
+    _Bool  at_cells = (adv->cell_field_id > -1) ? true : false;
+    _Bool  at_vertices = (adv->vtx_field_id > -1) ? true : false;
+    _Bool  at_bfaces = (adv->bdy_field_id > -1) ? true : false;
+
+    cs_log_printf(CS_LOG_SETUP, " <AdvectionField/%s> Defined at"
+                  " cells: %s; vertices: %s; boundary faces: %s\n", adv->name,
+                  cs_base_strtf(at_cells), cs_base_strtf(at_vertices),
+                  cs_base_strtf(at_bfaces));
+
     if (adv->flag & CS_ADVECTION_FIELD_POST_COURANT)
       cs_log_printf(CS_LOG_SETUP,
                     " <AdvectionField/%s> Postprocess the Courant number\n",
                     adv->name);
-    if (adv->flag & CS_ADVECTION_FIELD_STEADY)
-      cs_log_printf(CS_LOG_SETUP,
-                    " <AdvectionField/%s> Steady-state\n", adv->name);
 
-    cs_xdef_log(adv->definition);
+    /* Boundary flux definition */
+    cs_log_printf(CS_LOG_SETUP,
+                  " <AdvectionField/%s> number of definitions related to"
+                  " the boundary flux: %d\n", adv->name, adv->n_bdy_flux_defs);
+    for (int ib = 0; ib < adv->n_bdy_flux_defs; ib++)
+      cs_xdef_log(adv->bdy_flux_defs[ib]);
 
   }  /* Loop on advection fields */
 
@@ -576,6 +502,9 @@ cs_advection_field_set_option(cs_adv_field_t            *adv,
 
   case CS_ADVKEY_DEFINE_AT_VERTICES:
     adv->vtx_field_id = -2;     /* To be created */
+    break;
+  case CS_ADVKEY_DEFINE_AT_BOUNDARY_FACES:
+    adv->bdy_field_id = -3;     /* To be created */
     break;
   case CS_ADVKEY_POST_COURANT:
     adv->flag |= CS_ADVECTION_FIELD_POST_COURANT;
@@ -857,32 +786,8 @@ cs_advection_field_create_fields(void)
     cs_adv_field_t  *adv = _adv_fields[i];
     assert(adv != NULL);
 
-    bool  has_previous = (adv->flag & CS_ADVECTION_FIELD_STEADY) ? true:false;
+    _Bool  has_previous = (adv->flag & CS_ADVECTION_FIELD_STEADY) ? true:false;
     int  field_mask = CS_FIELD_PROPERTY;
-
-    {  /* (Normal flux) Field at boundary faces:
-          Always create a field at the boundary faces for taking into account
-          the normal flux used in the treatment of the boundary conditions */
-
-      /* Define the name of the field */
-      len = strlen(adv->name) + strlen("_boundary_flux") + 1;
-      BFT_MALLOC(field_name, len, char);
-      sprintf(field_name, "%s_boundary_flux", adv->name);
-
-      cs_field_t  *fld = cs_field_create(field_name,
-                                         field_mask,
-                                         CS_MESH_LOCATION_BOUNDARY_FACES,
-                                         1,   /* always a scalar-valued field */
-                                         has_previous);
-
-      cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-      cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
-
-      adv->bdy_field_id = cs_field_id_by_name(field_name);
-
-      BFT_FREE(field_name);
-
-    } /* Add a field attached to boundary faces */
 
     { /* Add a field attached to cells (Always created since it may be used to
          define the numerical scheme for advection, to compute adimensional
@@ -938,6 +843,32 @@ cs_advection_field_create_fields(void)
       BFT_FREE(field_name);
 
     } /* Add a field attached to vertices */
+
+    if (adv->bdy_field_id == -3) { /* Add a field attached to boundary faces */
+
+      /* (Normal flux) Field at boundary faces:
+         Always create a field at the boundary faces for taking into account
+         the normal flux used in the treatment of the boundary conditions */
+
+      /* Define the name of the field */
+      len = strlen(adv->name) + strlen("_boundary_flux") + 1;
+      BFT_MALLOC(field_name, len, char);
+      sprintf(field_name, "%s_boundary_flux", adv->name);
+
+      cs_field_t  *fld = cs_field_create(field_name,
+                                         field_mask,
+                                         CS_MESH_LOCATION_BOUNDARY_FACES,
+                                         1,   /* always a scalar-valued field */
+                                         has_previous);
+
+      cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+      cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
+
+      adv->bdy_field_id = cs_field_id_by_name(field_name);
+
+      BFT_FREE(field_name);
+
+    } /* Add a field attached to boundary faces */
 
   } /* Loop on advection fields */
 
@@ -1040,9 +971,7 @@ cs_advection_field_in_cells(const cs_adv_field_t  *adv,
   const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
 
   cs_xdef_t  *def = adv->definition;
-
-  /* Sanity checks */
-  assert(def != NULL);
+  assert(def != NULL);  /* Sanity checks */
 
   switch (def->type) {
 
@@ -1312,11 +1241,11 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_eval_at_xyz(const cs_adv_field_t  *adv,
-                               const cs_cell_mesh_t  *cm,
-                               const cs_real_3_t      xyz,
-                               cs_real_t              time_eval,
-                               cs_nvec3_t            *eval)
+cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
+                                  const cs_cell_mesh_t  *cm,
+                                  const cs_real_3_t      xyz,
+                                  cs_real_t              time_eval,
+                                  cs_nvec3_t            *eval)
 {
   if (adv == NULL)
     return;
@@ -1388,7 +1317,8 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
   if (adv->n_bdy_flux_defs == 0) {
 
-    /* No specific definition of the boundary flux */
+    /* No specific definition of the boundary flux. Use the definition
+       related to the volume */
     cs_xdef_t  *def = adv->definition;
 
     assert(def->dim == 3);
@@ -1475,7 +1405,8 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
     } /* Type of definition */
 
   }
-  else {
+  else { /* Consider the definition of the boundary flux for updating the field
+            values */
 
     for (int def_id = 0; def_id < adv->n_bdy_flux_defs; def_id++) {
 
@@ -1602,17 +1533,18 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
 
   if (fluxes == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              " fluxes array should be allocated before the call.");
+              " %s: Array of fluxes should be allocated before the call.",
+              __func__);
 
   cs_lnum_t  bf_id = cm->f_ids[f] - cs_cdo_quant->n_i_faces;
   assert(bf_id > -1);
   assert(cs_flag_test(cm->flag,  CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
 
+  /* Reset flux values */
   for (short int v = 0; v < cm->n_vc; v++) fluxes[v] = 0;
 
   if (adv->n_bdy_flux_defs == 0) {
-
     /* Implicit definition of the boundary flux from the definition of the
        advection field inside the computational domain */
     cs_xdef_t  *def = adv->definition;
@@ -1657,26 +1589,17 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
       break;
 
     default:
-      {
-        const cs_field_t  *bflx =
-          cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
-
-        _fill_cw_uniform_boundary_flux(cm, f, bflx->val[bf_id], fluxes);
-      }
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid type of definition", __func__);
       break;
 
     } /* End of switch */
 
   }
-  else {
+  else { /* Consider the definition of the boundary flux to set the values */
 
-    cs_xdef_t  *def = NULL;
-    if (adv->bdy_def_ids == NULL) {
-      def = adv->bdy_flux_defs[0];
-      assert(adv->n_bdy_flux_defs == 1);
-    }
-    else
-      def = adv->bdy_flux_defs[adv->bdy_def_ids[bf_id]];
+    const cs_xdef_t  *def = (adv->bdy_def_ids == NULL) ?
+      adv->bdy_flux_defs[0] : adv->bdy_flux_defs[adv->bdy_def_ids[bf_id]];
 
 #if defined(DEBUG) && !defined(NDEBUG) /* Useful for assert */
     const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
@@ -1688,8 +1611,7 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
       {
         const cs_real_t  *constant_val = (cs_real_t *)def->input;
 
-        _fill_cw_uniform_boundary_flux(cm, f, constant_val[0], fluxes);
-
+        _cw_fill_uniform_boundary_flux(cm, f, constant_val[0], fluxes);
       }
       break; /* by value */
 
@@ -1703,7 +1625,7 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
         assert(z->id == 0);
 
         if (cs_flag_test(input->loc, cs_flag_primal_face))
-          _fill_cw_uniform_boundary_flux(cm, f, val[bf_id], fluxes);
+          _cw_fill_uniform_boundary_flux(cm, f, val[bf_id], fluxes);
 
         else if (cs_flag_test(input->loc, cs_flag_dual_closure_byf)) {
 
@@ -1712,11 +1634,7 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
           assert(idx == input->index);
 
           for (cs_lnum_t i = idx[bf_id]; i < idx[bf_id+1]; i++) {
-            const cs_lnum_t  v_id = bf2v->ids[i];
-            short int v = -1;
-            for (v = 0; v < cm->n_vc; v++)
-              if (cm->v_ids[v] == v_id)
-                break;
+            const short int v = cs_cell_mesh_get_v(bf2v->ids[i], cm);
             assert(v > -1 && v != cm->n_vc);
             fluxes[v] += val[i];
           }
@@ -2091,7 +2009,7 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
 void
 cs_advection_field_update(cs_real_t    t_eval,
-                          bool         cur2prev)
+                          _Bool        cur2prev)
 {
   for (int i = 0; i < _n_adv_fields; i++) {
 
@@ -2105,19 +2023,8 @@ cs_advection_field_update(cs_real_t    t_eval,
 
     if (adv->type == CS_ADVECTION_FIELD_USER) {
 
-      assert(adv->bdy_field_id > -1 && adv->cell_field_id > -1);
-
-      /* Field storing the boundary normal flux */
-      cs_field_t  *bfld = cs_field_by_id(adv->bdy_field_id);
-
-      /* Copy current field values to previous values */
-      if (cur2prev)
-        cs_field_current_to_previous(bfld);
-
-      /* Set the new values */
-      cs_advection_field_across_boundary(adv, t_eval, bfld->val);
-
       /* Field stored at cell centers */
+      assert(adv->cell_field_id > -1);
       cs_field_t  *cfld = cs_field_by_id(adv->cell_field_id);
 
       /* Copy current field values to previous values */
@@ -2126,6 +2033,20 @@ cs_advection_field_update(cs_real_t    t_eval,
 
       /* Set the new values */
       cs_advection_field_in_cells(adv, t_eval, cfld->val);
+
+      /* Set the new values */
+      if (adv->bdy_field_id > -1) {
+
+        /* Field storing the boundary normal flux */
+        cs_field_t  *bfld = cs_field_by_id(adv->bdy_field_id);
+
+        /* Copy current field values to previous values */
+        if (cur2prev)
+          cs_field_current_to_previous(bfld);
+
+        cs_advection_field_across_boundary(adv, t_eval, bfld->val);
+
+      }
 
     }
 
@@ -2172,7 +2093,7 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
   cs_real_3_t  ptydir;
   cs_nvec3_t  adv_c;
 
-  const bool  pty_uniform = cs_property_is_uniform(diff);
+  const _Bool  pty_uniform = cs_property_is_uniform(diff);
   const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
 
   /* Get the value of the material property at the first cell center */
@@ -2290,7 +2211,7 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
               const cs_lnum_t  eshift = 2*e_id;
               const cs_lnum_t  v0 = e2v->ids[eshift];
               const cs_lnum_t  v1 = e2v->ids[eshift+1];
-              const short int  sgn = e2v->sgn[eshift];
+              const short int  sgn = e2v->sgn[eshift]; /* Sign for v0 */
 
               divergence[v0] += -sgn*flx;
               divergence[v1] +=  sgn*flx;

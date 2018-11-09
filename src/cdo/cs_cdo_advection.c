@@ -842,7 +842,7 @@ _vcb_consistent_part(const cs_adv_field_t     *adv_field,
 
     for (int k = 0; k < 3; k++)
       xg[k] = 0.25 * (fm->xv[3*v1+k]+fm->xv[3*v2+k]+fm->xc[k]+pfq.center[k]);
-    cs_advection_field_eval_at_xyz(adv_field, cm, xg, t_eval, &bnv);
+    cs_advection_field_cw_eval_at_xyz(adv_field, cm, xg, t_eval, &bnv);
 
     const double  bgc = _dp3(grd_c, bnv.unitv);
     const double  pef_coef = 0.25 * bnv.meas * hf_coef * fm->tef[e];
