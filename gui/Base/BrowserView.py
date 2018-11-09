@@ -971,17 +971,18 @@ Calculation management
 
         self.setRowShow(self.tr('Volume conditions'), True)
         self.setRowShow(self.tr('Volume regions definition'), True)
-        self.setRowShow(self.tr('Main fields initialization'), is_ncfd)
-        self.setRowShow(self.tr('Initialization'), (not is_ncfd))
 
         node_domain = case.xmlGetNode('solution_domain')
         node_vol = node_domain.xmlGetNode('volumic_conditions')
+        init = False
         z_st = False
         z_head_loss = False
         z_porosity = False
         z_groundwater = False
 
         for node in node_vol.xmlGetChildNodeList('zone'):
+            if (node['initialization'] == 'on'):
+                init = True
             if (node['momentum_source_term'] == 'on'
                 or node['mass_source_term'] == 'on'
                 or node['thermal_source_term'] == 'on'
@@ -994,6 +995,8 @@ Calculation management
             if node['groundwater_law'] == 'on':
                 z_groundwater = True
 
+        self.setRowShow(self.tr('Main fields initialization'), is_ncfd and init)
+        self.setRowShow(self.tr('Initialization'), (not is_ncfd) and init)
         self.setRowShow(self.tr('Head losses'), z_head_loss)
         self.setRowShow(self.tr('Porosity'), z_porosity)
         self.setRowShow(self.tr('Source terms'), z_st)
