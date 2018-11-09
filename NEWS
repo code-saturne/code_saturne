@@ -5,6 +5,8 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- Avoid error preventing run when checking remaining time using SLURM job array.
+
 - Fixes for parallel runs in sedimentation source term with humid atmosphere
   model.
 
