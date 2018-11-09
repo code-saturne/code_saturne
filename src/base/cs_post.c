@@ -5838,7 +5838,7 @@ cs_post_add_time_dep_output(cs_post_time_dep_output_t  *function,
 {
   /* Resize array of registered post-processings if necessary */
 
-  if (_cs_post_n_output_tp <= _cs_post_n_output_tp_max) {
+  if (_cs_post_n_output_tp >= _cs_post_n_output_tp_max) {
     if (_cs_post_n_output_tp_max == 0)
       _cs_post_n_output_tp_max = 8;
     else
