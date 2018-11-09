@@ -127,10 +127,10 @@ _free_saturated_soil(void       *input)
  *         a soil with a saturated.
  *         Case of an isotropic permeability and an unsteady Richards eq.
  *
+ * \param[in]      t_eval       time at which one performs the evaluation
  * \param[in]      mesh         pointer to a cs_mesh_t structure
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      head_values  array of values for head used in law
  * \param[in]      zone         pointer to a cs_zone_t
  * \param[in, out] input        pointer to a structure cast on-the-fly
@@ -138,10 +138,10 @@ _free_saturated_soil(void       *input)
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_update_saturated_iso_soil(const cs_mesh_t             *mesh,
+_update_saturated_iso_soil(const cs_real_t              t_eval,
+                           const cs_mesh_t             *mesh,
                            const cs_cdo_connect_t      *connect,
                            const cs_cdo_quantities_t   *quant,
-                           const cs_time_step_t        *ts,
                            const cs_real_t             *head_values,
                            const cs_zone_t             *zone,
                            void                        *input)
@@ -149,7 +149,7 @@ _update_saturated_iso_soil(const cs_mesh_t             *mesh,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
-  CS_UNUSED(ts);
+  CS_UNUSED(t_eval);
   CS_UNUSED(head_values);
 
   /* Retrieve field values associated to properties to update */
@@ -186,10 +186,10 @@ _update_saturated_iso_soil(const cs_mesh_t             *mesh,
  *         a soil with a saturated.
  *         Case of an anisotropic permeability and an unsteady Richards eq.
  *
+ * \param[in]      t_eval       time at which one performs the evaluation
  * \param[in]      mesh         pointer to a cs_mesh_t structure
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      head_values  array of values for head used in law
  * \param[in]      zone         pointer to a cs_zone_t
  * \param[in, out] input        pointer to a structure cast on-the-fly
@@ -197,18 +197,18 @@ _update_saturated_iso_soil(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_update_saturated_aniso_soil(const cs_mesh_t             *mesh,
+_update_saturated_aniso_soil(const cs_real_t              t_eval,
+                             const cs_mesh_t             *mesh,
                              const cs_cdo_connect_t      *connect,
                              const cs_cdo_quantities_t   *quant,
-                             const cs_time_step_t        *ts,
                              const cs_real_t             *head_values,
                              const cs_zone_t             *zone,
                              void                        *input)
 {
+  CS_UNUSED(t_eval);
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
-  CS_UNUSED(ts);
   CS_UNUSED(head_values);
 
   /* Retrieve field values associated to properties to update */
@@ -262,10 +262,10 @@ _free_genuchten_soil(void          *input)
  *         a soil with a Van Genuchten-Mualen.
  *         Case of an isotropic permeability and an unsteady Richards eq.
  *
+ * \param[in]      t_eval       time at which one performs the evaluation
  * \param[in]      mesh         pointer to a cs_mesh_t structure
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      head_values  array of values for head used in law
  * \param[in]      zone         pointer to a cs_zone_t
  * \param[in, out] input        pointer to a structure cast on-the-fly
@@ -273,18 +273,18 @@ _free_genuchten_soil(void          *input)
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_update_genuchten_iso_soil(const cs_mesh_t             *mesh,
+_update_genuchten_iso_soil(const cs_real_t              t_eval,
+                           const cs_mesh_t             *mesh,
                            const cs_cdo_connect_t      *connect,
                            const cs_cdo_quantities_t   *quant,
-                           const cs_time_step_t        *ts,
                            const cs_real_t             *head_values,
                            const cs_zone_t             *zone,
                            void                        *input)
 {
+  CS_UNUSED(t_eval);
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
-  CS_UNUSED(ts);
 
   /* Sanity checks */
   assert(head_values != NULL);

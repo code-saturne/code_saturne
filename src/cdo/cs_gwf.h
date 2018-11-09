@@ -48,17 +48,20 @@ BEGIN_C_DECLS
  * @name Flags specifying the general behavior of the groundwater flow module
  * @{
  *
+ * \def CS_GWF_GRAVITATION
+ * \brief Gravitation effects are taken into account in the Richards equation
+ *
  * \def CS_GWF_FORCE_RICHARDS_ITERATIONS
  * \brief Even if the Richards equation is steady-state, this equation is
  *        solved at each iteration.
- *
- * \def CS_GWF_GRAVITATION
- * \brief Gravitation effects are taken into account in the Richards equation
  *
  * \def CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE
  * \brief Compute the mean-value of the hydraulic head field and subtract this
  *        mean-value to get a field with zero mean-value. It's important to set
  *        this flag if no boundary condition is given.
+ *
+ * \def CS_GWF_ENFORCE_DIVERGENCE_FREE
+ * \brief Activate a treatment to enforce a Darcy flux to be divergence-free
  *
  * \def CS_GWF_RICHARDS_UNSTEADY
  * \brief Richards equation is unsteady (unsatured behavior)
@@ -74,12 +77,13 @@ BEGIN_C_DECLS
  *
  */
 
-#define CS_GWF_FORCE_RICHARDS_ITERATIONS       (1 << 0)
-#define CS_GWF_GRAVITATION                     (1 << 1)
+#define CS_GWF_GRAVITATION                     (1 << 0)
+#define CS_GWF_FORCE_RICHARDS_ITERATIONS       (1 << 1)
 #define CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE (1 << 2)
-#define CS_GWF_RICHARDS_UNSTEADY               (1 << 3)
-#define CS_GWF_SOIL_PROPERTY_UNSTEADY          (1 << 4)
-#define CS_GWF_SOIL_ALL_SATURATED              (1 << 5)
+#define CS_GWF_ENFORCE_DIVERGENCE_FREE         (1 << 3)
+#define CS_GWF_RICHARDS_UNSTEADY               (1 << 4)
+#define CS_GWF_SOIL_PROPERTY_UNSTEADY          (1 << 5)
+#define CS_GWF_SOIL_ALL_SATURATED              (1 << 6)
 
 /*! @}
  *!

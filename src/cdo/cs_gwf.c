@@ -169,6 +169,55 @@ static const char _err_empty_gw[] =
 static cs_gwf_t  *cs_gwf_main_structure = NULL;
 
 /*============================================================================
+ * Private static inline function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate
+ *
+ * \param[in] gw         pointer to the cs_gwf_t structure
+ * \param[in] t_cur      current physical time
+ * \param[in] dt_cur     current time step
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_get_time_eval(const cs_gwf_t  *const gw,
+               const cs_real_t        t_cur,
+               const cs_real_t        dt_cur)
+{
+  cs_param_time_scheme_t rt_scheme = cs_equation_get_time_scheme(gw->richards);
+  cs_real_t  t_eval = 0.;
+  cs_real_t  theta = -1;
+
+  switch (rt_scheme) {
+
+  case CS_TIME_SCHEME_STEADY:
+  case CS_TIME_N_SCHEMES:
+    /* Look for tracer equations */
+    for (int ieq = 0; ieq < gw->n_tracers; ieq++)
+      theta = fmax(theta, cs_equation_get_theta_time_val(gw->tracers[ieq]->eq));
+    if (theta > 0)
+      t_eval = t_cur + theta*dt_cur;
+    else
+      t_eval = t_cur;
+    break;
+
+  case CS_TIME_SCHEME_IMPLICIT:
+  case CS_TIME_SCHEME_EXPLICIT:
+  case CS_TIME_SCHEME_THETA:    /* One assumes that theta != 0 and != 1 */
+  case CS_TIME_SCHEME_CRANKNICO:
+    theta = cs_equation_get_theta_time_val(gw->richards);
+    t_eval = t_cur + theta*dt_cur;
+    break;
+
+  } /* End of switch on time scheme for the Richards equation */
+
+  return t_eval;
+}
+
+/*============================================================================
  * Private function prototypes
  *============================================================================*/
 
@@ -184,163 +233,29 @@ static cs_gwf_t  *cs_gwf_main_structure = NULL;
 /*----------------------------------------------------------------------------*/
 
 static void
-_vb_enforce_boundary_divergence(const cs_cdo_connect_t        *connect,
-                                const cs_cdo_quantities_t     *cdoq,
-                                cs_gwf_t                      *gw,
-                                cs_real_t                      t_cur)
+_update_darcy_vb_flux_at_boundary(cs_real_t                      t_eval,
+                                  const cs_gwf_t                *gw)
 {
-  const cs_equation_t  *richards = gw->richards;
-  const cs_equation_builder_t  *eqb = cs_equation_get_builder(richards);
-  const cs_adjacency_t  *c2e = connect->c2e;
-  const cs_adjacency_t  *e2v = connect->e2v;
-  const cs_adjacency_t  *bf2v = connect->bf2v;
-  const cs_adjacency_t  *f2c = connect->f2c;
-  const cs_lnum_t  *bf2c = f2c->ids + + f2c->idx[cdoq->n_i_faces];
-  const cs_lnum_t  n_b_faces = cdoq->n_b_faces;
-  const cs_lnum_t  n_vertices = cdoq->n_vertices;
+  cs_adv_field_t  *adv = gw->adv_field;
 
-#if defined(DEBUG) && !defined(NDEBUG) /* Used in an assert */
-  const cs_equation_param_t  *eqp = cs_equation_get_param(richards);
-#endif
-  assert(cs_flag_test(gw->flux_location, cs_flag_dual_face_byc));
-  assert(cs_equation_param_has_diffusion(eqp));
-
-  if (gw->adv_field->n_bdy_flux_defs > 1 ||
-      gw->adv_field->bdy_flux_defs[0]->type != CS_XDEF_BY_ARRAY ||
-      gw->adv_field->definition->type != CS_XDEF_BY_ARRAY)
+  if (adv->n_bdy_flux_defs > 1 ||
+      adv->bdy_flux_defs[0]->type != CS_XDEF_BY_ARRAY)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field at the boundary",
               __func__);
 
-  cs_xdef_t  *def = gw->adv_field->bdy_flux_defs[0];
+  cs_xdef_t  *def = adv->bdy_flux_defs[0];
   cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)def->input;
+  cs_real_t  *nflx_val = ai->values;
 
   if (cs_flag_test(ai->loc, cs_flag_dual_closure_byf) == false)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field at the boundary",
               __func__);
 
-  cs_field_t  *vel = cs_advection_field_get_field(gw->adv_field,
-                                                  CS_MESH_LOCATION_CELLS);
-  cs_real_t  *nflx_val = ai->values;
-  /* Initial guess (Nothing has to be done) */
-  memset(nflx_val, 0, sizeof(cs_real_t)*bf2v->idx[n_b_faces]);
+  const cs_equation_t  *richards = gw->richards;
 
-  /* Compute the divergence on dual cells attached to the boundary */
-  cs_real_t  *divergence = NULL;
-  BFT_MALLOC(divergence, n_vertices, cs_real_t);
-  memset(divergence, 0, sizeof(cs_real_t)*n_vertices);
-
-  for (cs_lnum_t  c_id = 0; c_id < cdoq->n_cells; c_id++) {
-    if (connect->cell_flag[c_id] & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
-      /* TODO: Take into account boundary cells by vertices ? */
-
-      /* Compute divergence */
-      for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
-
-        const cs_lnum_t  e_id = c2e->ids[j];
-        const cs_real_t  flx = gw->darcian_flux[j];
-        const cs_lnum_t  eshift = 2*e_id;
-        const cs_lnum_t  v0 = e2v->ids[eshift];
-        const cs_lnum_t  v1 = e2v->ids[eshift+1];
-        const short int  sgn = e2v->sgn[eshift];
-
-        divergence[v0] += -sgn*flx;
-        divergence[v1] +=  sgn*flx;
-
-      } /* Loop on cell edges */
-
-    }   /* Is a boundary cell ? */
-  } /* Loop on cells */
-
-  /* Parallel synchronisation */
-  if (cs_glob_n_ranks > 1)
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
-                         cdoq->n_vertices,
-                         1,            /* stride */
-                         false,        /* interlace (not useful here) */
-                         CS_REAL_TYPE,
-                         divergence);
-
-  cs_real_t  *correction = NULL;
-  BFT_MALLOC(correction, n_vertices, cs_real_t);
-  memset(correction, 0, sizeof(cs_real_t)*n_vertices);
-
-  cs_nvec3_t  vc;
-  cs_real_t  *wvf = NULL;
-  BFT_MALLOC(wvf, connect->n_max_vbyf, cs_real_t);
-
-  for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
-
-    if (cs_cdo_bc_is_dirichlet(eqb->face_bc->flag[bf_id])) {
-
-      const cs_lnum_t  f_id = cdoq->n_i_faces + bf_id;
-      const cs_nvec3_t  pfq = cs_quant_set_face_nvec(f_id, cdoq);
-      const cs_lnum_t  c_id = bf2c[bf_id];
-      const cs_lnum_t  *idx  = bf2v->idx + bf_id;
-      const cs_lnum_t  *v_ids  = bf2v->ids + idx[0];
-      const int  n_vf = idx[1] - idx[0];
-      cs_real_t  *_flx = nflx_val + idx[0];
-
-      /* Compute the weight for each vertex of the face */
-      cs_cdo_quantities_compute_wvf(connect, cdoq, bf_id, wvf);
-
-      cs_nvec3(vel->val + 3*c_id, &vc);
-
-      const cs_real_t  fflx = _dp3(vc.unitv, pfq.unitv) * vc.meas * pfq.meas;
-
-      for (short int v = 0; v < n_vf; v++) {
-        if (fabs(divergence[v_ids[v]]) > cs_math_epzero) {
-          _flx[v] = fflx * wvf[v];
-          correction[v_ids[v]] += _flx[v];
-        }
-      }
-
-    } /* Dirichlet BC */
-
-  } /* Loop on boundary faces */
-
-  BFT_FREE(wvf);
-
-  /* Parallel synchronisation */
-  if (cs_glob_n_ranks > 1)
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
-                         cdoq->n_vertices,
-                         1,            /* stride */
-                         false,        /* interlace (not useful here) */
-                         CS_REAL_TYPE,
-                         correction);
-
-  /* Compute the correction coefficient */
-  for (cs_lnum_t v = 0; v < n_vertices; v++) {
-    if (fabs(correction[v]) > cs_math_epzero)
-      correction[v] = fabs(divergence[v]/correction[v]);
-    else
-      correction[v] = 1.0;
-  }
-
-  /* Apply the correction coefficient */
-  for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
-
-    const cs_lnum_t  *idx  = bf2v->idx + bf_id;
-    const cs_lnum_t  *v_ids  = bf2v->ids + idx[0];
-    cs_real_t  *_flx = nflx_val + idx[0];
-
-    for (short int v = 0; v < idx[1] - idx[0]; v++)
-      if (fabs(divergence[v_ids[v]]) > cs_math_epzero)
-        _flx[v] *= correction[v_ids[v]];
-
-  } /* Loop on boundary faces */
-
-  cs_field_t  *bdy_nflx =
-    cs_advection_field_get_field(gw->adv_field,
-                                 CS_MESH_LOCATION_BOUNDARY_FACES);
-
-  /* Set the new values of the field related to the normal boundary flux */
-  cs_advection_field_across_boundary(gw->adv_field, t_cur, bdy_nflx->val);
-
-  BFT_FREE(correction);
-  BFT_FREE(divergence);
+  cs_equation_compute_boundary_diff_flux(t_eval, richards, nflx_val);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -514,42 +429,29 @@ _update_head(cs_gwf_t                    *gw,
 /*!
  * \brief  Update the advection field related to the Darcean flux
  *
- * \param[in, out] gw          pointer to a cs_gwf_t structure
- * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
- * \param[in]      connect     pointer to a cs_cdo_connect_t structure
- * \param[in]      ts          pointer to a cs_time_step_t structure
- * \param[in]      dt_cur      current value of the time step
- * \param[in]      cur2prev    true or false
+ * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in, out] gw         pointer to a cs_gwf_t structure
+ * \param[in]      cur2prev   true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_darcy_velocity(cs_gwf_t                    *gw,
-                       const cs_cdo_quantities_t   *cdoq,
-                       const cs_cdo_connect_t      *connect,
-                       const cs_time_step_t        *ts,
-                       double                       dt_cur,
-                       bool                         cur2prev)
+_update_darcy_flux(const cs_real_t              t_eval,
+                   cs_gwf_t                    *gw,
+                   bool                         cur2prev)
 {
   const cs_equation_t  *richards = gw->richards;
-  const cs_real_t  t_eval_pty = ts->t_cur + 0.5*dt_cur;
+  const cs_adv_field_t  *adv = gw->adv_field;
 
-  cs_field_t  *vel = cs_advection_field_get_field(gw->adv_field,
-                                                  CS_MESH_LOCATION_CELLS);
-  cs_field_t  *nflx =
-    cs_advection_field_get_field(gw->adv_field,
-                                 CS_MESH_LOCATION_BOUNDARY_FACES);
+  /* Update the velocity field at cell centers induced by the Darcy flux */
+  cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
 
-  /* Sanity checks */
-  assert(vel != NULL && nflx != NULL);
-  assert(richards != NULL);
-
-  if (cur2prev) {
+  assert(vel != NULL); /* Sanity check */
+  if (cur2prev)
     cs_field_current_to_previous(vel);
-    cs_field_current_to_previous(nflx);
-  }
 
-  /* Compute the darcian flux and the darcian velocity inside each cell */
+  /* Update arrays related to the Darcy flux:
+   * Compute the new darcian flux and darcian velocity inside each cell */
   switch (cs_equation_get_space_scheme(richards)) {
 
   case CS_SPACE_SCHEME_CDOVB:
@@ -559,32 +461,34 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
     if (cs_flag_test(gw->flux_location, cs_flag_dual_face_byc)) {
 
       assert(gw->darcian_flux != NULL);
+      if (adv->definition->type != CS_XDEF_BY_ARRAY)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid definition of the advection field", __func__);
+
       cs_equation_compute_diff_flux_cellwise(richards,
                                              gw->flux_location,
-                                             t_eval_pty,
+                                             t_eval,
                                              gw->darcian_flux);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 2
-      if (cs_flag_test(gw->flux_location, cs_flag_dual_face_byc))
-        cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
-                                 connect->c2e->idx[cdoq->n_cells],
-                                 gw->darcian_flux, 8);
+      cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
+                               connect->c2e->idx[cdoq->n_cells],
+                               gw->darcian_flux, 8);
 #endif
 
       /* Set the new values of the vector field at cell centers */
-      cs_advection_field_in_cells(gw->adv_field, t_eval_pty, vel->val);
+      cs_advection_field_in_cells(gw->adv_field, t_eval, vel->val);
 
-      /* Enforce the normal boundary flux so that it is compatible with the
-       divergence in the computational domain */
-      _vb_enforce_boundary_divergence(connect, cdoq, gw, ts->t_cur);
 
     }
     else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell))
       cs_equation_compute_diff_flux_cellwise(richards,
                                              gw->flux_location,
-                                             t_eval_pty,
+                                             t_eval,
                                              vel->val);
 
+    /* Update the Darcy flux at the boundary */
+    _update_darcy_vb_flux_at_boundary(t_eval, gw);
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
@@ -600,6 +504,20 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
   cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL", 3*cdoq->n_cells, vel->val, 3);
 #endif
+
+  cs_field_t  *bdy_nflx =
+    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  if (bdy_nflx != NULL) { /* Values of the Darcy flux at boundary face exist */
+
+    if (cur2prev)
+      cs_field_current_to_previous(bdy_nflx);
+
+    /* Set the new values of the field related to the normal boundary flux */
+    cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -804,6 +722,9 @@ cs_gwf_log_setup(void)
   else
     cs_log_printf(CS_LOG_SETUP, " <GWF/Gravitation> false\n");
 
+  if (gw->flag & CS_GWF_ENFORCE_DIVERGENCE_FREE)
+    cs_log_printf(CS_LOG_SETUP, " <GWF> Enforce the divergence-free constraint"
+                  " for the Darcy flux\n");
   if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
     cs_log_printf(CS_LOG_SETUP, " <GWF> Force to solve Richards equation"
                   " at each time step\n");
@@ -1229,6 +1150,7 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
 
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
+  const cs_field_t  *hydraulic_head = cs_equation_get_field(gw->richards);
   const cs_param_space_scheme_t  richards_scheme =
     cs_equation_get_space_scheme(gw->richards);
   const cs_lnum_t  n_cells = connect->n_cells;
@@ -1237,47 +1159,15 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
     cs_advection_field_get_field(gw->adv_field, CS_MESH_LOCATION_CELLS);
   assert(cell_adv_field != NULL);
 
-  /* Set the Darcian flux */
-  if (cs_flag_test(gw->flux_location, cs_flag_dual_face_byc)) {
+  /* Set the Darcian flux (in the volume and at the boundary) */
+  switch (richards_scheme) {
 
-    /* Darcian flux settings */
-    const cs_adjacency_t  *c2e = connect->c2e;
-    const cs_adjacency_t  *bf2v = connect->bf2v;
-
-    array_size = c2e->idx[n_cells];
-    BFT_MALLOC(gw->darcian_flux, array_size, cs_real_t);
-    memset(gw->darcian_flux, 0, array_size*sizeof(cs_real_t));
-
-    /* Define and then link the advection field to each tracer equations */
-    array_location = CS_FLAG_SCALAR | gw->flux_location;
-    cs_advection_field_def_by_array(gw->adv_field,
-                                    array_location,
-                                    gw->darcian_flux,
-                                    c2e->idx);
-
-    /* Define the boundary flux */
-    array_size = bf2v->idx[quant->n_b_faces];
-    BFT_MALLOC(gw->darcian_boundary_flux, array_size, cs_real_t);
-    memset(gw->darcian_boundary_flux, 0, array_size*sizeof(cs_real_t));
-
-    array_location = CS_FLAG_SCALAR | cs_flag_dual_closure_byf;
-    cs_advection_field_def_boundary_flux_by_array(gw->adv_field,
-                                                  NULL,
-                                                  array_location,
-                                                  gw->darcian_boundary_flux,
-                                                  bf2v->idx);
-
-  }
-  else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell)) {
-
-    cs_advection_field_def_by_field(gw->adv_field, cell_adv_field);
-
-    if (richards_scheme == CS_SPACE_SCHEME_CDOVB ||
-        richards_scheme == CS_SPACE_SCHEME_CDOVCB) {
-
+  case CS_SPACE_SCHEME_CDOVB:
+  case CS_SPACE_SCHEME_CDOVCB:
+    {
       const cs_adjacency_t  *bf2v = connect->bf2v;
 
-      /* Define the boundary flux */
+      /* Define the flux of the advection field at the boundary */
       array_size = bf2v->idx[quant->n_b_faces];
       BFT_MALLOC(gw->darcian_boundary_flux, array_size, cs_real_t);
       memset(gw->darcian_boundary_flux, 0, array_size*sizeof(cs_real_t));
@@ -1288,44 +1178,59 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
                                                     array_location,
                                                     gw->darcian_boundary_flux,
                                                     bf2v->idx);
+
+      /* Define the advection field in the volume */
+      if (cs_flag_test(gw->flux_location, cs_flag_dual_face_byc)) {
+
+        /* Darcian flux settings */
+        const cs_adjacency_t  *c2e = connect->c2e;
+
+        array_size = c2e->idx[n_cells];
+        BFT_MALLOC(gw->darcian_flux, array_size, cs_real_t);
+        memset(gw->darcian_flux, 0, array_size*sizeof(cs_real_t));
+
+        array_location = CS_FLAG_SCALAR | gw->flux_location;
+        cs_advection_field_def_by_array(gw->adv_field,
+                                        array_location,
+                                        gw->darcian_flux,
+                                        c2e->idx);
+
+
+      }
+      else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell)) {
+
+        cs_advection_field_def_by_field(gw->adv_field, cell_adv_field);
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid location for defining the Darcian flux.",
+                  __func__);
+
+      /* Allocate a head array defined at cells used to update the soil
+         properties */
+      BFT_MALLOC(gw->head_in_law, n_cells, cs_real_t);
+
     }
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid location for defining the Darcian flux.");
-
-  const cs_field_t  *hydraulic_head = cs_equation_get_field(gw->richards);
-
-  if (richards_scheme == CS_SPACE_SCHEME_CDOFB ||
-      richards_scheme == CS_SPACE_SCHEME_HHO_P0 ||
-      richards_scheme == CS_SPACE_SCHEME_HHO_P1 ||
-      richards_scheme == CS_SPACE_SCHEME_HHO_P2)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Richards eq. is only available for vertex-based schemes.",
-              __func__);
-
-  /* Up to now Richards equation is only set with vertex-based schemes
-     TODO: Face-based schemes */
-  switch (richards_scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-  case CS_SPACE_SCHEME_CDOVCB:
-    BFT_MALLOC(gw->head_in_law, n_cells, cs_real_t);
     break;
 
-  case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO_P0:
+  case CS_SPACE_SCHEME_CDOFB:   /* TODO */
+
+    /* Set the head array defined at cells used to update the soil properties */
     if (gw->flag & CS_GWF_GRAVITATION)
       gw->head_in_law = gw->pressure_head->val;
     else
       gw->head_in_law = hydraulic_head->val;
+
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Fb space scheme not fully implemented.", __func__);
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.", __func__);
     break;
 
-  }
+  } /* Switch on Richards scheme */
 
   /* Set permeability, moisture content and soil capacity according to the
      soil settings */
@@ -1351,9 +1256,11 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
                              gw->soil_capacity,
                              gw->capacity_field);
 
+  /* Store the soil id for each cell */
   cs_gwf_build_cell2soil(n_cells);
 
-  /* Loop on tracer equations */
+  /* Loop on tracer equations. Link the advection field to each tracer
+     equation */
   for (int i = 0; i < gw->n_tracers; i++)
     gw->finalize_tracer_setup[i](connect, quant, gw->tracers[i]);
 
@@ -1386,10 +1293,16 @@ cs_gwf_update(const cs_mesh_t             *mesh,
   /* Sanity checks */
   if (gw == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              " Groundwater module is not allocated.");
+              "%s: Groundwater module is not allocated.", __func__);
 
   /* Update head */
   _update_head(gw, quant, connect, cur2prev);
+
+  cs_real_t  time_eval = cur2prev ?
+    _get_time_eval(gw, ts->t_cur, dt_cur) : ts->t_cur;
+
+  /* Update the advection field related to the groundwater flow module */
+  _update_darcy_flux(time_eval, gw, cur2prev);
 
   /* Update properties related to soils.
      Handle the moisture content field: do something only if the moisture
@@ -1398,7 +1311,7 @@ cs_gwf_update(const cs_mesh_t             *mesh,
 
     /* Handle only the moisture field if this is the initialization */
     if (cur2prev == false)
-      cs_property_eval_at_cells(ts->t_cur + 0.5*dt_cur,
+      cs_property_eval_at_cells(time_eval,
                                 gw->moisture_content,
                                 gw->moisture_field->val);
 
@@ -1422,7 +1335,7 @@ cs_gwf_update(const cs_mesh_t             *mesh,
       cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(i);
       const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
 
-      soil->update_properties(mesh, connect, quant, ts,
+      soil->update_properties(time_eval, mesh, connect, quant,
                               gw->head_in_law,
                               zone,
                               soil->input);
@@ -1437,15 +1350,12 @@ cs_gwf_update(const cs_mesh_t             *mesh,
                            gw->moisture_field->val, 8);
 #endif
 
-  /* Update the advection field related to the groundwater flow module */
-  _update_darcy_velocity(gw, quant, connect, ts, dt_cur, cur2prev);
-
   /* Update the diffusivity associated to each tracer equation if needed */
   for (int i = 0; i < gw->n_tracers; i++) {
 
     cs_gwf_tracer_t  *tracer = gw->tracers[i];
     if (tracer->update_properties != NULL)
-      tracer->update_properties(tracer, mesh, connect, quant, ts->t_cur);
+      tracer->update_properties(tracer, mesh, connect, quant, time_eval);
 
   }
 
