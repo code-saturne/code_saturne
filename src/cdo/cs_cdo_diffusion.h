@@ -468,7 +468,8 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the diffusive flux across dual faces for a given cell
- *          Use the COST algo. for computing the discrete Hodge op.
+ *          The discrete Hodge operator has been previously computed using a
+ *          COST algorithm.
  *          This function is dedicated to vertex-based schemes.
  *                       Flux = -Hdg * GRAD(pot)
  *
@@ -504,6 +505,29 @@ cs_cdo_diffusion_vbcost_get_cell_flux(const cs_cell_mesh_t      *cm,
                                       const double              *pot,
                                       cs_cell_builder_t         *cb,
                                       double                    *flx);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the normal flux for a face assuming only the knowledge
+ *          of the potential at cell vertices. CO+ST algorithm is used for
+ *          reconstructing the normal flux from the degrees of freedom.
+ *
+ * \param[in]  f              face id in the cell mesh
+ * \param[in]  eqp            pointer to a cs_equation_param_t structure
+ * \param[in]  cm             pointer to a cs_cell_mesh_t structure
+ * \param[in]  pot            array of values of the potential (all the mesh)
+ * \param[in, out] cb         auxiliary structure dedicated to diffusion
+ * \param[in, out] vf_flux    array of values to set (size: n_vc)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vbcost_vbyf_flux(short int                   f,
+                                  const cs_equation_param_t  *eqp,
+                                  const cs_cell_mesh_t       *cm,
+                                  const cs_real_t            *pot,
+                                  cs_cell_builder_t          *cb,
+                                  cs_real_t                  *flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -548,27 +572,26 @@ cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the normal flux for a face assuming only the knowledge
- *          of the potential at cell vertices. COST algorithm is used for
- *          reconstructing a piecewise constant gradient from the degrees of
- *          freedom.
+ *          of the potential at cell vertices (and at cell center).
+ *          WBS algorithm is used for reconstructing the normal flux from the
+ *          degrees of freedom.
  *
- * \param[in]      cm           pointer to a cs_cell_mesh_t structure
- * \param[in]      diff_tensor  property tensor times the face normal
- * \param[in]      pot_values   array of values of the potential (all the mesh)
- * \param[in]      f            face id in the cell mesh
- * \param[in]      t_eval       time at which one evaluates the advection field
- * \param[in, out] fluxes       values of the fluxes related to each vertex
- *
+ * \param[in]  f              face id in the cell mesh
+ * \param[in]  eqp            pointer to a cs_equation_param_t structure
+ * \param[in]  cm             pointer to a cs_cell_mesh_t structure
+ * \param[in]  pot            array of values of the potential (all the mesh)
+ * \param[in, out] cb         auxiliary structure dedicated to diffusion
+ * \param[in, out] vf_flux    array of values to set (size: n_vc)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_p0_face_flux(const cs_cell_mesh_t     *cm,
-                                const cs_real_3_t        *diff_tensor,
-                                const cs_real_t          *pot_values,
-                                short int                 f,
-                                cs_real_t                 t_eval,
-                                cs_real_t                *fluxes);
+cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
+                               const cs_equation_param_t  *eqp,
+                               const cs_cell_mesh_t       *cm,
+                               const cs_real_t            *pot,
+                               cs_cell_builder_t          *cb,
+                               cs_real_t                  *flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -598,26 +621,24 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
 /*!
  * \brief   Compute the normal flux for a face assuming only the knowledge
  *          of the potential at cell vertices. COST algorithm is used for
- *          reconstructing the degrees of freedom.
+ *          reconstructing a piecewise constant gradient from the degrees of
+ *          freedom.
  *
- * \param[in]   f             face id in the cell mesh
- * \param[in]   cm            pointer to a cs_cell_mesh_t structure
- * \param[in]   diff_tensor   property tensor times the face normal
- * \param[in]   pot_values    array of values of the potential (all the mesh)
- * \param[in]   beta          value of the stabilization coef. related to reco.
- * \param[in, out]  cb        auxiliary structure dedicated to diffusion
+ * \param[in]      f            face id in the cell mesh
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      diff_tensor  property tensor times the face normal
+ * \param[in]      pot_values   array of values of the potential (all the mesh)
+ * \param[in, out] fluxes       values of the fluxes related to each vertex
  *
- * \return the diffusive flux across the face f
  */
 /*----------------------------------------------------------------------------*/
 
-double
-cs_cdo_diffusion_vbcost_face_flux(short int                 f,
-                                  const cs_cell_mesh_t     *cm,
-                                  const cs_real_3_t        *diff_tensor,
-                                  const cs_real_t          *pot_values,
-                                  double                    beta,
-                                  cs_cell_builder_t        *cb);
+void
+cs_cdovb_diffusion_p0_face_flux(const short int           f,
+                                const cs_cell_mesh_t     *cm,
+                                const cs_real_3_t        *diff_tensor,
+                                const cs_real_t          *pot_values,
+                                cs_real_t                *fluxes);
 
 /*----------------------------------------------------------------------------*/
 

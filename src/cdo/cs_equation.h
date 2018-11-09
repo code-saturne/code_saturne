@@ -663,6 +663,24 @@ cs_equation_get_vertex_values(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the diffusive flux across all boundary faces
+ *         According to the space discretization scheme, the size of the
+ *         resulting array differs.
+ *         For Vb and VCb schemes, this array relies on the bf2v adjacency.
+ *
+ * \param[in]      t_eval     time at which one performs the property evaluation
+ * \param[in]      eq         pointer to a cs_equation_t structure
+ * \param[in, out] diff_flux  value of the diffusive part of the flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
+                                       const cs_equation_t   *eq,
+                                       cs_real_t             *diff_flux);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the diffusive and convective flux across a plane defined
  *         by a mesh location structure attached to the name ml_name.
  *

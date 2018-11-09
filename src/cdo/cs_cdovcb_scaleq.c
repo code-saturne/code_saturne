@@ -2490,8 +2490,197 @@ cs_cdovcb_scaleq_get_cell_values(void     *context)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute for each vertex of a boundary face, the portion of diffusive
+ *         flux across the boundary face. The surface attached to each vertex
+ *         corresponds to the intersection of its dual cell (associated to
+ *         a vertex of the face) with the face.
+ *         Case of scalar-valued CDO-VCb schemes
+ *
+ * \param[in]       t_eval     time at which one performs the evaluation
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in]       pot_v      pointer to an array of field values at vertices
+ * \param[in]       pot_c      pointer to an array of field values at cells
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  vf_flux    pointer to the values of the diffusive flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
+                                    const cs_equation_param_t   *eqp,
+                                    const cs_real_t             *pot_v,
+                                    const cs_real_t             *pot_c,
+                                    cs_equation_builder_t       *eqb,
+                                    cs_real_t                   *vf_flux)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  if (cs_equation_param_has_diffusion(eqp) == false) {
+    memset(vf_flux, 0, connect->bf2v->idx[quant->n_b_faces]*sizeof(cs_real_t));
+    return;
+  }
+
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \
+  shared(quant, connect, eqp, eqb, vf_flux, pot_v, pot_c, _vcbs_cell_builder)
+  {
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
+    const cs_adjacency_t  *bf2v = connect->bf2v;
+    const cs_adjacency_t  *f2c = connect->f2c;
+    const cs_lnum_t  fidx_shift = f2c->idx[quant->n_i_faces];
+
+    cs_real_t  *pot = NULL, *flux = NULL;
+    BFT_MALLOC(pot, connect->n_max_vbyc + 1, cs_real_t);
+    BFT_MALLOC(flux, connect->n_max_vbyc , cs_real_t);
+
+    /* Each thread get back its related structures:
+       Get the cellwise view of the mesh and the algebraic system */
+    cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+    cs_cell_mesh_reset(cm);
+#endif
+
+    /* msh_flag for Neumann and Robin BCs. Add add_flag for the other cases
+       when one has to reconstruct a flux */
+    cs_flag_t  msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_FV;
+    cs_flag_t  add_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_PEQ |
+      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ;
+
+    if (eqb->diff_pty_uniform)  /* c_id = 0, cell_flag = 0 */
+      cs_equation_set_diffusion_property(eqp, 0, t_eval, 0, cb);
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
+
+      const cs_flag_t  bc_flag = face_bc->flag[bf_id];
+      const cs_lnum_t  f_id = bf_id + quant->n_i_faces;
+      const cs_lnum_t  c_id = f2c->ids[bf_id + fidx_shift];
+      const cs_lnum_t  *idx  = bf2v->idx + bf_id;
+
+      cs_real_t  *_flx = vf_flux + idx[0];
+
+      switch (bc_flag) {
+
+      case CS_CDO_BC_HMG_NEUMANN:
+        memset(_flx, 0, (idx[1]-idx[0])*sizeof(cs_real_t));
+        break;
+
+      case CS_CDO_BC_NEUMANN:
+        {
+          cs_real_t  *neu_values = cb->values;
+
+          /* Set the local mesh structure for the current cell */
+          cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+
+          const short int  f = cs_cell_mesh_get_f(f_id, cm);
+
+          cs_equation_compute_neumann_sv(t_eval,
+                                         face_bc->def_ids[bf_id],
+                                         f,
+                                         quant,
+                                         eqp,
+                                         cm,
+                                         neu_values);
+
+          short int n_vf = 0;
+          for (int i = cm->f2v_idx[f]; i < cm->f2v_idx[f+1]; i++)
+            _flx[n_vf++] = neu_values[cm->f2v_ids[i]];
+
+        }
+        break;
+
+      case CS_CDO_BC_ROBIN:
+        {
+          cs_real_t  *robin_values = cb->values;
+          cs_real_t  *wvf = cb->values + 3;
+
+          /* Set the local mesh structure for the current cell */
+          cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+
+          const short int  f = cs_cell_mesh_get_f(f_id, cm);
+          const cs_real_t  f_area = quant->b_face_surf[bf_id];
+
+          /* Robin BC expression: K du/dn + alpha*(p - p0) = g */
+          cs_equation_compute_robin(t_eval,
+                                    face_bc->def_ids[bf_id],
+                                    f,
+                                    quant,
+                                    eqp,
+                                    cm,
+                                    robin_values);
+
+          const cs_real_t  alpha = robin_values[0];
+          const cs_real_t  p0 = robin_values[1];
+          const cs_real_t  g = robin_values[2];
+
+          cs_cdo_quantities_compute_b_wvf(connect, quant, bf_id, wvf);
+
+          short int n_vf = 0;
+          for (int i = cm->f2v_idx[f]; i < cm->f2v_idx[f+1]; i++) {
+            const cs_real_t  pv = pot_v[cm->v_ids[cm->f2v_ids[i]]];
+            _flx[n_vf] = f_area*wvf[n_vf]*(alpha*(p0 - pv) + g);
+            n_vf++;
+          }
+        }
+        break;
+
+      default:
+        { /* Reconstruct a normal flux at the boundary face */
+
+          /* Set the local mesh structure for the current cell */
+          cs_cell_mesh_build(c_id, msh_flag | add_flag, connect, quant, cm);
+
+          const short int  f = cs_cell_mesh_get_f(f_id, cm);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+          if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
+#endif
+          if (!eqb->diff_pty_uniform)
+            cs_property_tensor_in_cell(cm,
+                                       eqp->diffusion_property,
+                                       t_eval,
+                                       eqp->diffusion_hodge.inv_pty,
+                                       cb->dpty_mat);
+
+          /* Define a local buffer keeping the value of the discrete potential
+             for the current cell */
+          for (short int v = 0; v < cm->n_vc; v++)
+            pot[v] = pot_v[cm->v_ids[v]];
+          pot[cm->n_vc] = pot_c[c_id];
+
+          cs_cdo_diffusion_wbs_vbyf_flux(f, eqp, cm, pot, cb, flux);
+
+          /* Fill the global flux array */
+          short int n_vf = 0;
+          for (int i = cm->f2v_idx[f]; i < cm->f2v_idx[f+1]; i++)
+            _flx[n_vf++] = flux[cm->f2v_ids[i]];
+
+        }
+        break;
+
+      } /* End of switch */
+
+    } /* End of loop on boundary faces */
+
+    BFT_FREE(pot);
+    BFT_FREE(flux);
+
+  } /* End of Open block */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the diffusive and convective flux across a list of faces
- *         Case of scalar-valued CDO-Vcb schemes
+ *         Case of scalar-valued CDO-VCb schemes
  *
  * \param[in]       normal     indicate in which direction flux is > 0
  * \param[in]       pdi        pointer to an array of field values

@@ -2283,6 +2283,74 @@ cs_equation_get_vertex_values(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the diffusive flux across all boundary faces
+ *         According to the space discretization scheme, the size of the
+ *         resulting array differs.
+ *         For Vb and VCb schemes, this array relies on the bf2v adjacency.
+ *
+ * \param[in]      t_eval     time at which one performs the property evaluation
+ * \param[in]      eq         pointer to a cs_equation_t structure
+ * \param[in, out] diff_flux  value of the diffusive part of the flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
+                                       const cs_equation_t   *eq,
+                                       cs_real_t             *diff_flux)
+{
+  if (diff_flux == NULL)
+    return;
+
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
+
+  const cs_equation_param_t  *eqp = eq->param;
+
+  assert(eqp != NULL);
+  if (eqp->dim > 1)
+    bft_error(__FILE__, __LINE__, 0, "%s: (Eq. %s) Not implemented",
+              __func__, eqp->name);
+
+  /* Scalar-valued equation */
+  switch (eqp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    {
+      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq);
+
+      cs_cdovb_scaleq_boundary_diff_flux(t_eval,
+                                         eqp,
+                                         p_v,
+                                         eq->builder,
+                                         diff_flux);
+    }
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    {
+      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq);
+      const cs_real_t  *p_c = cs_equation_get_cell_values(eq);
+
+      cs_cdovcb_scaleq_boundary_diff_flux(t_eval,
+                                          eqp,
+                                          p_v,
+                                          p_c,
+                                          eq->builder,
+                                          diff_flux);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: (Eq. %s). Not implemented.", __func__, eqp->name);
+
+  } /* End of switch */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the diffusive and convective flux across a plane defined
  *         by a mesh location structure attached to the name ml_name.
  *
@@ -2291,7 +2359,7 @@ cs_equation_get_vertex_values(const cs_equation_t    *eq)
  * \param[in]      direction   vector indicating in which direction flux is > 0
  * \param[in, out] diff_flux   value of the diffusive part of the flux
  * \param[in, out] conv_flux   value of the convective part of the flux
-  */
+ */
 /*----------------------------------------------------------------------------*/
 
 void

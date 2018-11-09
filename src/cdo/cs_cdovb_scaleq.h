@@ -321,6 +321,29 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute for each vertex of a boundary face, the portion of diffusive
+ *         flux across the boundary face. The surface attached to each vertex
+ *         corresponds to the intersection of its dual cell (associated to
+ *         a vertex of the face) with the face.
+ *         Case of scalar-valued CDO-Vb schemes
+ *
+ * \param[in]       t_eval     time at which one performs the evaluation
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in]       pdi        pointer to an array of field values
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  vf_flux    pointer to the values of the diffusive flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
+                                   const cs_equation_param_t   *eqp,
+                                   const cs_real_t             *pdi,
+                                   cs_equation_builder_t       *eqb,
+                                   cs_real_t                   *vf_flux);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the diffusive and convective flux across a list of faces
  *         Case of scalar-valued CDO-Vb schemes
  *

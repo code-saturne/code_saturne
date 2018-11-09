@@ -370,6 +370,31 @@ cs_cdovcb_scaleq_get_cell_values(void     *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute for each vertex of a boundary face, the portion of diffusive
+ *         flux across the boundary face. The surface attached to each vertex
+ *         corresponds to the intersection of its dual cell (associated to
+ *         a vertex of the face) with the face.
+ *         Case of scalar-valued CDO-VCb schemes
+ *
+ * \param[in]       t_eval     time at which one performs the evaluation
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in]       pot_v      pointer to an array of field values at vertices
+ * \param[in]       pot_c      pointer to an array of field values at cells
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  vf_flux    pointer to the values of the diffusive flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
+                                    const cs_equation_param_t   *eqp,
+                                    const cs_real_t             *pot_v,
+                                    const cs_real_t             *pot_c,
+                                    cs_equation_builder_t       *eqb,
+                                    cs_real_t                   *vf_flux);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the diffusive and convective flux across a list of faces
  *         Case of scalar-valued CDO-Vcb schemes
  *
