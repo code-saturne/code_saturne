@@ -806,7 +806,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
-  eqb->bd_msh_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ;
+  eqb->bd_msh_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ;
 
   /* Set members and structures related to the management of the BCs
      Translate user-defined information about BC into a structure well-suited
