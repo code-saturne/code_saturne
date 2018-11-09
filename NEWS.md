@@ -3,6 +3,8 @@ Release 5.3.1 - (unreleased)
 
 Bug fixes:
 
+- Avoid error preventing run when checking remaining time using SLURM job array.
+
 - GUI: * fix default value of relaxation coefficient for pressure
        * hide initialization page if no initialization zone defined.
 

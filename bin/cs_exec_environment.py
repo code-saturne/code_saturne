@@ -877,7 +877,9 @@ class batch_info:
             rtime = get_command_output(cmd)
         elif self.batch_type == 'SLURM':
             cmd = "squeue -h -j $SLURM_JOBID -o %L"
-            rtime = cs_batch.parse_wall_time_slurm(get_command_output(cmd))
+            # In case of job array, check on first line
+            rs = get_command_output(cmd).splitlines()[0]
+            rtime = cs_batch.parse_wall_time_slurm(rs)
 
         return rtime
 
