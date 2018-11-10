@@ -296,9 +296,10 @@ extern cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Retrieve the list of vertices attached to a face
+ * \brief   Retrieve the vertex id in the cellwise numbering associated to the
+ *          given vertex id in the mesh numbering
  *
- * \param[in]       v_id    vertex id in the cell numbering
+ * \param[in]       v_id    vertex id in the mesh numbering
  * \param[in]       cm      pointer to a cs_cell_mesh_t structure
  *
  * \return the vertex id in the cell numbering or -1 if not found
@@ -309,11 +310,32 @@ static inline short int
 cs_cell_mesh_get_v(const cs_lnum_t              v_id,
                    const cs_cell_mesh_t  *const cm)
 {
-  short int v = -1;
-  for (v = 0; v < cm->n_vc; v++)
+  for (short int v = 0; v < cm->n_vc; v++)
     if (cm->v_ids[v] == v_id)
-      break;
-  return v;
+      return v;
+  return -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Retrieve the face id in the cellwise numbering associated to the
+ *          given face id in the mesh numbering
+ *
+ * \param[in]       f_id    face id in the mesh numbering
+ * \param[in]       cm      pointer to a cs_cell_mesh_t structure
+ *
+ * \return the face id in the cell numbering or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline short int
+cs_cell_mesh_get_f(const cs_lnum_t              f_id,
+                   const cs_cell_mesh_t  *const cm)
+{
+  for (short int f = 0; f < cm->n_fc; f++)
+    if (cm->f_ids[f] == f_id)
+      return f;
+  return -1;
 }
 
 /*----------------------------------------------------------------------------*/
