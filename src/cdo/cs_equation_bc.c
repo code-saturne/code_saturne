@@ -874,7 +874,8 @@ cs_equation_compute_neumann_sv(short int                   def_id,
 {
   assert(neu_values != NULL && cm != NULL && eqp != NULL);
   assert(def_id > -1);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FV));
 
   const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
@@ -913,15 +914,14 @@ cs_equation_compute_neumann_sv(short int                   def_id,
                                            array_input->values + 3*bf_id,
                                            neu_values);
 
-      else if (cs_flag_test(array_input->loc, cs_flag_dual_face_byc)) {
+      else if (cs_flag_test(array_input->loc, cs_flag_dual_closure_byf)) {
 
         assert(array_input->index != NULL);
 
-        const short int  n_vf = cm->f2e_idx[f+1] - cm->f2e_idx[f];
         /* Retrieve the bf2v->idx stored in the cs_cdo_connect_t structure */
-        const cs_lnum_t  shift = array_input->index[bf_id];
-        for (short int v = 0; v < n_vf; v++)
-          neu_values[f2v_ids[v]] = array_input->values[shift + v];
+        cs_lnum_t  shift = array_input->index[bf_id];
+        for (short int iv = cm->f2v_idx[f]; iv < cm->f2v_idx[f+1]; iv++)
+          neu_values[cm->f2v_ids[iv]] = array_input->values[shift++];
 
       }
       else
