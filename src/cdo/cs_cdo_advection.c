@@ -2207,13 +2207,11 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
   /* Sanity checks */
   assert(cs_flag_test(cm->flag,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ |
-                      CS_CDO_LOCAL_EV));
+                      CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FV));
 
-  short int  n_vf;
   cs_real_t  *tmp_rhs = cb->values;
   cs_real_t  *mat_diag = cb->values + cm->n_vc;
   cs_real_t  *v_nflx = cb->values + 2*cm->n_vc;
-  short int  *v_ids = cb->ids;
 
   const cs_adv_field_t  *adv = eqp->adv_field;
 
@@ -2229,8 +2227,6 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
 
     cs_advection_field_get_f2v_boundary_flux(cm, adv, f, t_eval, v_nflx);
 
-    cs_cell_mesh_get_f2v(f, cm, &n_vf, v_ids);
-
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys)) {
       cs_log_printf(CS_LOG_DEFAULT, " %s: f:%d --> bndy_flux:", __func__, f);
@@ -2242,9 +2238,9 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
 
     if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV) {
 
-      for (short int v = 0; v < n_vf; v++) {
+      for (int iv = cm->f2v_idx[f]; iv < cm->f2v_idx[f+1]; iv++) {
 
-        const short int  v_id = v_ids[v];
+        const short int  v_id = cm->f2v_ids[iv];
 
         if (v_nflx[v_id] < 0) {
           /* advection field is inward w.r.t. the face normal */
@@ -2260,9 +2256,9 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
     }
     else { /* Non-conservative formulation */
 
-      for (short int v = 0; v < n_vf; v++) {
+      for (int iv = cm->f2v_idx[f]; iv < cm->f2v_idx[f+1]; iv++) {
 
-        const short int  v_id = v_ids[v];
+        const short int  v_id = cm->f2v_ids[iv];
 
         if (v_nflx[v_id] < 0) {
 
