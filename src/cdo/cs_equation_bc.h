@@ -207,25 +207,23 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
  * \brief   Compute the values of the Neumann BCs when DoFs are scalar-valued
  *          and attached to vertices.
  *
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
  * \param[in]      f           local face number in the cs_cell_mesh_t
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      f2v_ids     vertex ids of the face in the cell numbering
- * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] neu_values  array storing the Neumann values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_neumann_sv(short int                   def_id,
+cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
+                               short int                   def_id,
                                short int                   f,
                                const cs_cdo_quantities_t  *quant,
                                const cs_equation_param_t  *eqp,
                                const cs_cell_mesh_t       *cm,
-                               const short int            *f2v_ids,
-                               cs_real_t                   t_eval,
                                double                     *neu_values);
 
 /*----------------------------------------------------------------------------*/
@@ -233,32 +231,32 @@ cs_equation_compute_neumann_sv(short int                   def_id,
  * \brief   Compute the values of the Neumann BCs when DoFs are attached to
  *          faces.
  *
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
  * \param[in]      f           local face number in the cs_cell_mesh_t
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] neu_values  array storing Neumann values to use
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_neumann_fb(short int                    def_id,
+cs_equation_compute_neumann_fb(cs_real_t                    t_eval,
+                               short int                    def_id,
                                short int                    f,
                                const cs_cdo_quantities_t   *quant,
                                const cs_equation_param_t   *eqp,
                                const cs_cell_mesh_t        *cm,
-                               cs_real_t                    t_eval,
                                double                      *neu_values);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the values of the Robin BCs
  *
+ * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
  * \param[in]      f           local face number in the cs_cell_mesh_t
- * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
@@ -267,9 +265,9 @@ cs_equation_compute_neumann_fb(short int                    def_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_robin(short int                    def_id,
+cs_equation_compute_robin(cs_real_t                    t_eval,
+                          short int                    def_id,
                           short int                    f,
-                          cs_real_t                    t_eval,
                           const cs_cdo_quantities_t   *quant,
                           const cs_equation_param_t   *eqp,
                           const cs_cell_mesh_t        *cm,
