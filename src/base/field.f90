@@ -349,18 +349,6 @@ module field
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function mapping field values
-
-    subroutine cs_field_map_values(f, var, var_prev)  &
-      bind(C, name='cs_field_map_values')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: f
-      real(kind=c_double), dimension(*) :: var, var_prev
-    end subroutine cs_field_map_values
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function allocating boundary condition coefficients
 
     subroutine cs_field_allocate_bc_coeffs(f, have_flux_bc, have_mom_bc,  &
@@ -1127,39 +1115,6 @@ contains
     return
 
   end subroutine field_allocate_values
-
-  !=============================================================================
-
-  !> \brief  Map existing value arrays to field descriptor.
-
-  !> \param[in]  id       field id
-  !> \param[in]  val      pointer to array of values
-  !> \param[in]  val_pre  pointer to array of previous values (ignored if
-  !>                      field was defined with have_previous = .false.)
-
-  subroutine field_map_values(id, val, val_pre)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)                        :: id
-    double precision, intent(in), dimension(*) :: val, val_pre
-
-    ! Local variables
-
-    integer(c_int) :: c_id
-    type(c_ptr)    :: f
-
-    c_id = id
-
-    f = cs_field_by_id(c_id)
-    call cs_field_map_values(f, val, val_pre)
-
-    return
-
-  end subroutine field_map_values
 
   !=============================================================================
 
