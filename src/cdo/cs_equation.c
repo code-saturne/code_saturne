@@ -996,6 +996,10 @@ cs_equation_uses_new_mechanism(const cs_equation_t    *eq)
         (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB))
       return true;
   }
+  else if (eq->param->dim == 3) {
+    if (eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB)
+      return true;
+  }
 
   return false;
 }

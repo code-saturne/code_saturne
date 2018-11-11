@@ -31,10 +31,11 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <float.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <assert.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -61,6 +62,7 @@
 #include "cs_reco.h"
 #include "cs_scheme_geometry.h"
 #include "cs_search.h"
+#include "cs_sles.h"
 #include "cs_source_term.h"
 #include "cs_timer.h"
 
@@ -438,9 +440,6 @@ _vbv_advection_diffusion_reaction(double                         time_eval,
       }
     }
 
-    /* Add the local diffusion operator to the local system */
-    cs_sdm_add(csys->mat, cb->loc);
-
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after adding diffusion", csys);
@@ -552,6 +551,95 @@ _vbv_enforce_values(const cs_equation_param_t     *eqp,
                        csys);
 #endif
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve a linear system arising from a vector-valued CDO-Vb scheme
+ *
+ * \param[in, out] sles     pointer to a cs_sles_t structure
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in]      x0       initial guess for the linear system
+ * \param[in]      rhs      pointer to a cs_mesh_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      xsol     pointer to an array storing the solution of
+ *                          the linear system
+ *
+ * \return the number of iterations of the linear solver
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_vbv_solve_system(cs_sles_t                    *sles,
+                  const cs_matrix_t            *matrix,
+                  const cs_real_t              *x0,
+                  const cs_real_t              *rhs,
+                  const cs_equation_param_t    *eqp,
+                  cs_real_t                    *p_xsol[])
+{
+  cs_real_t  *x = NULL, *b = NULL;
+  int  n_iters = 0;
+  double  residual = DBL_MAX;
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_vertices = quant->n_vertices;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
+
+  /* Prepare solving (handle parallelism) */
+  cs_gnum_t  nnz = cs_equation_prepare_system(1,            /* stride */
+                                              3*n_vertices, /* n_scatter_elts */
+                                              x0,
+                                              rhs,
+                                              matrix,
+                                              rset,
+                                              &x, &b);
+
+  /* Solve the linear solver */
+  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
+  const cs_param_itsol_t  itsol_info = eqp->itsol_info;
+
+  cs_sles_convergence_state_t  code = cs_sles_solve(sles,
+                                                    matrix,
+                                                    CS_HALO_ROTATION_IGNORE,
+                                                    itsol_info.eps,
+                                                    r_norm,
+                                                    &n_iters,
+                                                    &residual,
+                                                    b,
+                                                    x,
+                                                    0,      /* aux. size */
+                                                    NULL);  /* aux. buffers */
+
+  /* Output information about the convergence of the resolution */
+  if (eqp->sles_verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d n_iters %d"
+                  " residual % -8.4e nnz %lu\n",
+                  eqp->name, code, n_iters, residual, nnz);
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE, 1, /* type and stride */
+                         x,
+                         x);
+
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 3
+  cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, n_vertices, x, 6);
+  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_vertices, rhs, 6);
+#endif
+
+  /* Free what can be freed at this stage */
+  if (b != rhs)
+    BFT_FREE(b);
+  cs_sles_free(sles);
+
+  /* Return pointer to the computed solution */
+  *p_xsol = x;
+
+  return n_iters;
 }
 
 /*============================================================================
@@ -788,6 +876,10 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     } /* Switch on Hodge algo. */
 
   } /* Has diffusion */
+
+  /* Boundary conditions */
+  BFT_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
+  cs_equation_set_vertex_bc_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
 
   eqc->enforce_dirichlet = NULL;
   switch (eqp->enforcement) {
@@ -1247,11 +1339,12 @@ cs_cdovb_vecteq_solve_steady_state(double                      dt_cur,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      cs_equation_assemble_matrix(csys, rs, mav); /* Matrix assembly */
+      cs_equation_assemble_block_matrix(csys, rs, 3, mav); /* Matrix assembly */
 
-      for (short int v = 0; v < 3*cm->n_vc; v++) /* Assemble RHS */
+      /* n_dofs = 3*cm->n_vc */
+      for (short int i = 0; i < csys->n_dofs; i++) /* Assemble RHS */
 #       pragma omp atomic
-        rhs[cm->v_ids[v]] += csys->rhs[v];
+        rhs[csys->dof_ids[i]] += csys->rhs[i];
 
       /* **********************  END OF ASSEMBLY PROCESS  ******************* */
 
@@ -1271,31 +1364,31 @@ cs_cdovb_vecteq_solve_steady_state(double                      dt_cur,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-/*   /\* Now solve the system *\/ */
-/*   cs_real_t  *x_sol = NULL; */
-/*   cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL); */
+  /* Now solve the system */
+  cs_real_t  *x_sol = NULL;
+  cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
 
-/*   _solve_system(sles, matrix, fld->val, rhs, eqp, &x_sol); */
+  _vbv_solve_system(sles, matrix, fld->val, rhs, eqp, &x_sol);
 
-/*   /\* Update field *\/ */
-/*   t0 = cs_timer_time(); */
+  /* Update field */
+  t0 = cs_timer_time();
 
-/*   /\* Copy current field values to previous values *\/ */
-/*   cs_field_current_to_previous(fld); */
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(fld);
 
-/*   /\* Overwrite the initial guess with the computed solution *\/ */
-/* # pragma omp parallel for if (n_vertices > CS_THR_MIN) */
-/*   for (cs_lnum_t i = 0; i < n_vertices; i++) */
-/*     fld->val[i] = x_sol[i]; */
+  /* Overwrite the initial guess with the computed solution */
+# pragma omp parallel for if (n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < 3*n_vertices; i++)
+    fld->val[i] = x_sol[i];
 
-/*   t1 = cs_timer_time(); */
-/*   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1); */
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
 
-/*   /\* Free remaining buffers *\/ */
-/*   BFT_FREE(x_sol); */
-/*   BFT_FREE(rhs); */
-/*   cs_matrix_destroy(&matrix); */
-/*   cs_sles_free(sles); */
+  /* Free remaining buffers */
+  BFT_FREE(x_sol);
+  BFT_FREE(rhs);
+  cs_matrix_destroy(&matrix);
+  cs_sles_free(sles);
 }
 
 /*----------------------------------------------------------------------------*/
