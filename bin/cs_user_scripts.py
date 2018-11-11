@@ -112,13 +112,6 @@ def define_domain_parameters(domain):
     Define domain execution parameters.
     """
 
-    # Read parameters file
-    # (already done just prior to this stage when
-    # running script with --param option)
-
-    if False:
-        domain.read_parameter_file('param2.xml')
-
     # Reusing output from previous runs
     #----------------------------------
 
