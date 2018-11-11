@@ -3203,7 +3203,7 @@ cs_field_set_key_str(cs_field_t  *f,
       if (kv->is_locked)
         retval = CS_FIELD_LOCKED;
       else {
-        if (kv->is_set == false)
+        if (kv->is_set == 0)
           kv->val.v_p = NULL;
         BFT_REALLOC(kv->val.v_p, strlen(str) + 1, char);
         strcpy(kv->val.v_p, str);
@@ -3320,7 +3320,7 @@ cs_field_set_key_struct(cs_field_t  *f,
       if (kv->is_locked)
         retval = CS_FIELD_LOCKED;
       else {
-        if (kv->is_set == false)
+        if (kv->is_set == 0)
           BFT_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
         memcpy(kv->val.v_p, s, kd->type_size);
         kv->is_set = 1;
@@ -3441,7 +3441,7 @@ cs_field_get_key_struct_ptr(cs_field_t  *f,
       if (kv->is_locked)
         errcode = CS_FIELD_LOCKED;
       else {
-        if (kv->is_set == false) {
+        if (kv->is_set == 0) {
           BFT_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
           cs_field_get_key_struct(f, key_id, kv->val.v_p);
         }

@@ -565,8 +565,7 @@ elseif (itytur.eq.3) then
     ! allocate a temporary array
     allocate(gradts(6,3,ncelet))
 
-    call field_gradient_tensor(ivarfl(irij), iprev, imrgra, inc,  &
-         gradts)
+    call field_gradient_tensor(ivarfl(irij), iprev, imrgra, inc, gradts)
 
     do ipt = 1, nptdis
 

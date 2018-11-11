@@ -123,7 +123,6 @@ BEGIN_C_DECLS
         method to compute interior mass flux due to ALE mesh velocity
         - 1: based on cell center mesh velocity
         - 0: based on nodes displacement
-
 */
 
 /*----------------------------------------------------------------------------*/

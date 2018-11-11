@@ -9599,8 +9599,6 @@ cs_face_diffusion_potential(const int                 f_id,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict diipf
     = (const cs_real_3_t *restrict)fvq->diipf;
   const cs_real_3_t *restrict djjpf
@@ -10423,8 +10421,6 @@ cs_diffusion_potential(const int                 f_id,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict diipf
     = (const cs_real_3_t *restrict)fvq->diipf;
   const cs_real_3_t *restrict djjpf

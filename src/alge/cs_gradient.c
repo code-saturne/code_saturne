@@ -3734,8 +3734,8 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
 
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++)
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
         grad[cell_id][i][j] = grad[cell_id][i][j] * cell_f_vol[cell_id];
     }
   }
@@ -6887,22 +6887,28 @@ void CS_PROCF (grdpor, GRDPOR)
   const cs_int_t *restrict c_solid_flag = mq->c_solid_flag;
   int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
 
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
   if (f_i_poro_duq_0 == NULL)
     return;
-  cs_real_t *i_poro_duq_0;
 
-  i_poro_duq_0 = f_i_poro_duq_0->val;
+  cs_real_t *i_poro_duq_0 = f_i_poro_duq_0->val;
   cs_real_t *i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
   cs_real_t *b_poro_duq = cs_field_by_name("b_poro_duq")->val;
-  cs_real_3_t *c_poro_div_duq =
-    (cs_real_3_t *restrict)cs_field_by_name("poro_div_duq")->val;
+  cs_real_3_t *c_poro_div_duq
+    = (cs_real_3_t *restrict)cs_field_by_name("poro_div_duq")->val;
 
-
+# pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     for (cs_lnum_t i = 0; i < 3; i++)
       c_poro_div_duq[cell_id][i] = 0.;
@@ -6911,73 +6917,96 @@ void CS_PROCF (grdpor, GRDPOR)
   if (*inc == 1) {
 
     /* Inner faces corrections */
-    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-      cs_lnum_t ii = i_face_cells[face_id][0];
-      cs_lnum_t jj = i_face_cells[face_id][1];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-      cs_real_3_t normal;
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-      cs_math_3_normalise(i_face_normal[face_id], normal);
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
 
-      cs_real_t *vel_i = &(CS_F_(u)->val_pre[3*ii]);
-      cs_real_t *vel_j = &(CS_F_(u)->val_pre[3*jj]);
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
-      cs_real_t veli_dot_n = (1. - i_f_face_factor[face_id][0])
-        * cs_math_3_dot_product(vel_i, normal);
-      cs_real_t velj_dot_n = (1. - i_f_face_factor[face_id][1])
-        * cs_math_3_dot_product(vel_j, normal);
+          cs_real_3_t normal;
 
-      cs_real_t d_f_surf = 0.;
-      if (  c_solid_flag[is_p * ii] == 0
-          &&c_solid_flag[is_p * jj] == 0)
-        d_f_surf = 1.
-          / CS_MAX(i_f_face_surf[face_id], cs_math_epzero * i_face_surf[face_id]);
+          cs_math_3_normalise(i_face_normal[face_id], normal);
 
-      i_poro_duq_0[face_id] = veli_dot_n * i_massflux[face_id] * d_f_surf;
-      i_poro_duq_1[face_id] = velj_dot_n * i_massflux[face_id] * d_f_surf;
+          cs_real_t *vel_i = &(CS_F_(u)->val_pre[3*ii]);
+          cs_real_t *vel_j = &(CS_F_(u)->val_pre[3*jj]);
 
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        c_poro_div_duq[ii][i] += i_poro_duq_0[face_id] * i_f_face_normal[face_id][i];
-        c_poro_div_duq[jj][i] -= i_poro_duq_1[face_id] * i_f_face_normal[face_id][i];
+          cs_real_t veli_dot_n =    (1. - i_f_face_factor[face_id][0])
+                                  * cs_math_3_dot_product(vel_i, normal);
+          cs_real_t velj_dot_n =    (1. - i_f_face_factor[face_id][1])
+                                  * cs_math_3_dot_product(vel_j, normal);
+
+          cs_real_t d_f_surf = 0.;
+          if (  c_solid_flag[is_p * ii] == 0
+              &&c_solid_flag[is_p * jj] == 0)
+            d_f_surf = 1. / CS_MAX(i_f_face_surf[face_id],
+                                   cs_math_epzero * i_face_surf[face_id]);
+
+          i_poro_duq_0[face_id] = veli_dot_n * i_massflux[face_id] * d_f_surf;
+          i_poro_duq_1[face_id] = velj_dot_n * i_massflux[face_id] * d_f_surf;
+
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            c_poro_div_duq[ii][i] +=   i_poro_duq_0[face_id]
+                                     * i_f_face_normal[face_id][i];
+            c_poro_div_duq[jj][i] -=   i_poro_duq_1[face_id]
+                                    * i_f_face_normal[face_id][i];
+          }
+        }
       }
 
     }
 
     /* Boundary faces corrections */
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
-      cs_lnum_t ii = b_face_cells[face_id];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-      cs_real_3_t normal;
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-      cs_math_3_normalise(b_face_normal[face_id], normal);
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+             face_id++) {
 
-      cs_real_t *vel_i = &(CS_F_(u)->val_pre[3*ii]);
+          cs_lnum_t ii = b_face_cells[face_id];
 
-      cs_real_t veli_dot_n = (1. - b_f_face_factor[face_id])
-        * cs_math_3_dot_product(vel_i, normal);
+          cs_real_3_t normal;
 
-      cs_real_t d_f_surf = 0.;
-      if (c_solid_flag[is_p * ii] == 0)
-        d_f_surf = 1.
-          / CS_MAX(b_f_face_surf[face_id], cs_math_epzero * b_face_surf[face_id]);
+          cs_math_3_normalise(b_face_normal[face_id], normal);
 
-      b_poro_duq[face_id] = veli_dot_n * b_massflux[face_id] * d_f_surf;
+          cs_real_t *vel_i = &(CS_F_(u)->val_pre[3*ii]);
 
-      for (cs_lnum_t i = 0; i < 3; i++)
-        c_poro_div_duq[ii][i] += b_poro_duq[face_id] * b_f_face_normal[face_id][i];
+          cs_real_t veli_dot_n =   (1. - b_f_face_factor[face_id])
+                                 * cs_math_3_dot_product(vel_i, normal);
 
+          cs_real_t d_f_surf = 0.;
+          if (c_solid_flag[is_p * ii] == 0)
+            d_f_surf = 1. / CS_MAX(b_f_face_surf[face_id],
+                                   cs_math_epzero * b_face_surf[face_id]);
+
+          b_poro_duq[face_id] = veli_dot_n * b_massflux[face_id] * d_f_surf;
+
+          for (cs_lnum_t i = 0; i < 3; i++)
+            c_poro_div_duq[ii][i] +=   b_poro_duq[face_id]
+                                     * b_f_face_normal[face_id][i];
+        }
+
+        /* Finalisation of cell terms */
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+          /* Is the cell fully solid? */
+          cs_real_t dvol = 0.;
+          if (c_solid_flag[is_p * cell_id] == 0)
+            dvol = 1. / cell_f_vol[cell_id];
+
+          for (cs_lnum_t i = 0; i < 3; i++)
+            c_poro_div_duq[cell_id][i] *= dvol;
+        }
+      }
     }
 
-    /* Finalisation of cell terms */
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      /* Is the cell fully solid? */
-      cs_real_t dvol = 0.;
-      if (c_solid_flag[is_p * cell_id] == 0)
-        dvol = 1. / cell_f_vol[cell_id];
-
-      for (cs_lnum_t i = 0; i < 3; i++)
-        c_poro_div_duq[cell_id][i] *= dvol;
-    }
     /* Handle parallelism and periodicity */
     if (halo != NULL)
       cs_halo_sync_var_strided(halo,
@@ -6985,14 +7014,15 @@ void CS_PROCF (grdpor, GRDPOR)
                                (cs_real_t *)c_poro_div_duq,
                                3);
 
-  } else {
+  }
+  else {
+#   pragma omp parallel for
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
       i_poro_duq_0[face_id] = 0.;
       i_poro_duq_1[face_id] = 0.;
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------
