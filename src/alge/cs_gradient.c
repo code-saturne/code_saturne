@@ -6334,6 +6334,7 @@ _gradient_scalar(const char                    *var_name,
 
   cs_real_4_t  *restrict rhsv;
 
+  cs_lnum_t n_b_faces = mesh->n_b_faces;
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
   static int last_fvm_count = 0;
@@ -6343,6 +6344,24 @@ _gradient_scalar(const char                    *var_name,
     last_fvm_count = cs_mesh_quantities_compute_count();
     if (last_fvm_count != prev_fvq_count)
       recompute_cocg = true;
+  }
+
+  /* Use Neumann BC's as default if not provided */
+
+  cs_real_t *_bc_coeff_a = NULL;
+  cs_real_t *_bc_coeff_b = NULL;
+
+  if (bc_coeff_a == NULL) {
+    BFT_MALLOC(_bc_coeff_a, n_b_faces, cs_real_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
+      _bc_coeff_a[i] = 0;
+    bc_coeff_a = _bc_coeff_a;
+  }
+  if (bc_coeff_b == NULL) {
+    BFT_MALLOC(_bc_coeff_b, n_b_faces, cs_real_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
+      _bc_coeff_b[i] = 1;
+    bc_coeff_b = _bc_coeff_b;
   }
 
   /* Allocate work arrays */
@@ -6499,6 +6518,9 @@ _gradient_scalar(const char                    *var_name,
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
     cs_bad_cells_regularisation_vector(grad, 0);
 
+  BFT_FREE(_bc_coeff_a);
+  BFT_FREE(_bc_coeff_b);
+
   BFT_FREE(rhsv);
 }
 
@@ -6548,6 +6570,31 @@ _gradient_vector(const char                    *var_name,
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+
+  /* Use Neumann BC's as default if not provided */
+
+  cs_real_3_t *_bc_coeff_a = NULL;
+  cs_real_33_t *_bc_coeff_b = NULL;
+
+  if (bc_coeff_a == NULL) {
+    BFT_MALLOC(_bc_coeff_a, n_b_faces, cs_real_3_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
+        _bc_coeff_a[i][j] = 0;
+    }
+    bc_coeff_a = (const cs_real_3_t *)_bc_coeff_a;
+  }
+  if (bc_coeff_b == NULL) {
+    BFT_MALLOC(_bc_coeff_b, n_b_faces, cs_real_33_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        for (cs_lnum_t k = 0; k < 3; k++)
+          _bc_coeff_b[i][j][j] = 1;
+      }
+    }
+    bc_coeff_b = (const cs_real_33_t *)_bc_coeff_b;
+  }
 
   /* Compute gradient */
 
@@ -6660,8 +6707,10 @@ _gradient_vector(const char                    *var_name,
                             grad);
 
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
-    cs_bad_cells_regularisation_tensor(grad, 0);
+    cs_bad_cells_regularisation_tensor((cs_real_9_t *)grad, 0);
 
+  BFT_FREE(_bc_coeff_a);
+  BFT_FREE(_bc_coeff_b);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6702,6 +6751,32 @@ _gradient_tensor(const char                *var_name,
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+
+  /* Use Neumann BC's as default if not provided */
+
+  cs_real_6_t *_bc_coeff_a = NULL;
+  cs_real_66_t *_bc_coeff_b = NULL;
+
+  if (bc_coeff_a == NULL) {
+    BFT_MALLOC(_bc_coeff_a, n_b_faces, cs_real_6_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      for (cs_lnum_t j = 0; j < 6; j++)
+        _bc_coeff_a[i][j] = 0;
+    }
+    bc_coeff_a = (const cs_real_6_t *)_bc_coeff_a;
+  }
+  if (bc_coeff_b == NULL) {
+    BFT_MALLOC(_bc_coeff_b, n_b_faces, cs_real_66_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      for (cs_lnum_t j = 0; j < 6; j++) {
+        for (cs_lnum_t k = 0; k < 6; k++)
+          _bc_coeff_b[i][j][j] = 1;
+      }
+    }
+    bc_coeff_b = (const cs_real_66_t *)_bc_coeff_b;
+  }
 
   /* Compute gradient */
 
@@ -6762,6 +6837,9 @@ _gradient_tensor(const char                *var_name,
                            grad);
 
   }
+
+  BFT_FREE(_bc_coeff_a);
+  BFT_FREE(_bc_coeff_b);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -6780,7 +6858,6 @@ void CS_PROCF (grdpor, GRDPOR)
  const cs_int_t   *const inc          /* <-- 0 or 1: increment or not         */
 )
 {
-
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
   const cs_halo_t  *halo = m->halo;
