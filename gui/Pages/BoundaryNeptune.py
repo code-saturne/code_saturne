@@ -43,7 +43,7 @@ log.setLevel(GuiParam.DEBUG)
 # Main class
 #-------------------------------------------------------------------------------
 
-class Boundary(MainFieldsModel) :
+class Boundary(object, MainFieldsModel) :
     """
     Abstract class
     """

@@ -64,7 +64,7 @@ class GlobalNumericalParametersModel(Model):
         default['MaxPressure']                          = 1.e15
         default['upwind_scheme']                        = 'on'
         default['stop_no_convergence']                  = 'off'
-        default['velocity_predictor_algorithm_std']     = 'standard_difvit'
+        default['velocity_predictor_algorithm_std']     = 'coupled_difvitc'
         default['velocity_predictor_algorithm_bubble']  = 'mean_velocity_relative_velocity'
         default['pressure_gradient']                    = 'mass_ponderation'
         return default

@@ -928,7 +928,7 @@ Calculation management
         self.setRowShow(self.tr('Calculation features'), True)
         self.setRowShow(self.tr('Main fields'), (p_module == 'neptune_cfd'))
         self.setRowShow(self.tr('Deformable mesh'), (m_ale > -1))
-        self.setRowShow(self.tr('Turbulence models'), (p_module == ''))
+        self.setRowShow(self.tr('Turbulence models'))
         self.setRowShow(self.tr('Thermal model'), (m_thermal > -1))
         self.setRowShow(self.tr('Gas combustion'), m_gas_comb)
         self.setRowShow(self.tr('Pulverized fuel combustion'), m_sf_comb)
@@ -936,7 +936,7 @@ Calculation management
         self.setRowShow(self.tr('Radiative transfers'), m_rad)
         self.setRowShow(self.tr('Conjugate heat transfer'), m_cht)
         self.setRowShow(self.tr('Atmospheric flows'), m_atmo)
-        self.setRowShow(self.tr('Species transport'), True)
+        self.setRowShow(self.tr('Species transport'))
         self.setRowShow(self.tr('Turbomachinery'), m_tbm)
         self.setRowShow(self.tr('Groundwater flows'), m_gwf)
         self.setRowShow(self.tr('Fans'), m_fans)
@@ -1005,9 +1005,8 @@ Calculation management
 
         # Boundary conditions
 
-        self.setRowShow(self.tr('Boundary conditions'), True)
+        self.setRowShow(self.tr('Boundary conditions'))
         self.setRowShow(self.tr('Boundary regions definition'), True)
-        self.setRowShow(self.tr('Boundary conditions'), True)
         self.setRowShow(self.tr('Particle boundary conditions'), m_lagr)
         self.setRowShow(self.tr('Fluid structure interaction'), (m_ale > 0))
         self.setRowShow(self.tr('Cathare Coupling'), is_ncfd)
@@ -1015,7 +1014,7 @@ Calculation management
         # Numerical parameters
 
         self.setRowShow(self.tr('Numerical parameters'))
-        self.setRowShow(self.tr('Global parameters'), (not is_ncfd))
+        self.setRowShow(self.tr('Global parameters'))
         self.setRowShow(self.tr('Equation parameters'), (not is_ncfd))
         self.setRowShow(self.tr('Time settings'))
 

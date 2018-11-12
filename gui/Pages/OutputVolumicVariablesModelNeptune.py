@@ -74,7 +74,57 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
 
         model = XMLmodel(self.case)
 
+        self.fieldIdToLabel = {}
+
         self.updateList()
+
+    def _getListOfGlobalVariables(self):
+        """
+        Private method: return list of global variables
+        """
+
+        nodeList = []
+        for tag in ('variable', 'property', 'scalar', 'time_average'):
+            for node in self.case.xmlGetNodeList(tag, field_id = 'none'):
+                if not node['name'].startswith("wall_"):
+                    if node:
+                        nodeList.append(node)
+
+        return nodeList
+
+    def _getListOfFieldVariables(self, fieldId):
+        """
+        Private method: return list of variables for a given field id
+        """
+
+        nodeList = []
+        for tag in ('variable', 'property', 'scalar', 'time_average'):
+            for node in self.case.xmlGetNodeList(tag, field_id = fieldId):
+                if not node['name'].startswith("wall_"):
+                    if node:
+                        nodeList.append(node)
+
+        return nodeList
+
+
+    def _idFromLabel(self, fid):
+
+        if fid in self.fieldIdToLabel.values():
+            rid = self.fieldIdToLabel.keys()[self.fieldIdToLabel.values().index(fid)]
+        else:
+            rid = fid
+
+        return rid
+
+    def _nameFromPhaseName(self, name, pid):
+
+        if name[-(len(str(pid))+1):] == '_'+str(pid):
+            rname = name[:-(len(str(pid))+1)]
+        else:
+            rname = name
+
+        return rname
+
 
     def defaultValues(self):
         default = {}
@@ -88,32 +138,44 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
 
         model = XMLmodel(self.case)
 
+        self.listNodeVolum = [self._getListOfGlobalVariables()]
+        for field in self.getFieldIdList():
+            self.listNodeVolum.append(self._getListOfFieldVariables(field))
+
         self.listNode = []
+        phase_dico = {}
 
-        fieldId = 'none'
-        for variableType in ('variable', 'property', 'scalar', 'time_average') :
-            for node in self.case.xmlGetNodeList(variableType, field_id = "none"):
-                if not node['name'].startswith("User_"):
-                    self.listNode.append([node, fieldId])
+        phase_dico['Global'] = {}
+        for p in self._getListOfGlobalVariables():
+            self.listNode.append([p, 'Global'])
+            phase_dico['Global'][p['name']] = p['name']
 
+        fid = self.getFieldIdList()
+        flb = self.getFieldLabelsList()
+        for i in range(len(fid)):
+            label = flb[i]
+            field = fid[i]
+            phase_dico[label] = {}
+            for p in self._getListOfFieldVariables(field):
+                self.listNode.append([p, label])
+                phase_dico[label][p['name']] = p['name'] + "_" + field
 
         #On recupere les fields :
-        fd = []
-        fd.append('none')
-        thermo = self.case.xmlGetNode('thermophysical_models')
-        fields = thermo.xmlGetNode('fields')
-        for node in fields.xmlInitChildNodeList('field'):
-            field_id = node.xmlGetAttribute('field_id')
-            fd.append(field_id)
+        tfd = ['none'] + self.getFieldIdList()
+        tfl = ['Global'] + self.getFieldLabelsList()
 
-        for variableType in ('variable', 'property', 'scalar'):
-            for field in fd :
-                for node in self.case.xmlGetNodeList(variableType, field_id = field):
-                    self.listNode.append([node, field])
+        for i in range(len(tfd)):
+            self.fieldIdToLabel[tfd[i]] = tfl[i]
+
+#        for variableType in ('variable', 'property', 'scalar', 'time_average'):
+#            for field in self.fieldIdToLabel.keys() :
+#                for node in self.case.xmlGetNodeList(variableType, field_id = field):
+#                    if not node['name'].startswith("wall_"):
+#                        self.listNode.append([node, field])
 
         self.dicoLabelName = {}
         self.list_name = []
-        self._updateDictLabelName()
+        self._updateDictLabelName(dico_parent=phase_dico)#dico_parent=self.fieldIdToLabel)
 
 
     #This method was written based on neptune_cfd.gui.OutputFieldsModel.OutputFieldsModel.getListingStatus method
@@ -124,10 +186,14 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
         """
         lst = self.getFieldIdList()
         lst.append("none")
-        self.isInList(fieldId, lst)
+
+        real_id = self._idFromLabel(fieldId)
+        rname = self._nameFromPhaseName(name, real_id)
+
+        self.isInList(real_id, lst)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
-            node = self.case.xmlGetNode(variableType, field_id = str(fieldId), name = name)
+            node = self.case.xmlGetNode(variableType, field_id = str(real_id), name = rname)
             if node != None:
                 break
 
@@ -138,7 +204,7 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
                 value = n['status']
             return value
         else :
-            msg = "This variable " + name + " doesn't exist"
+            msg = "This variable " + rname + " doesn't exist"
             raise ValueError(msg)
 
 
@@ -151,10 +217,14 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
 
         lst = self.getFieldIdList()
         lst.append("none")
-        self.isInList(fieldId, lst)
+
+        real_id = self._idFromLabel(fieldId)
+        rname = self._nameFromPhaseName(name, real_id)
+
+        self.isInList(real_id, lst)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
-            node = self.case.xmlGetNode(variableType, field_id = str(fieldId), name = name)
+            node = self.case.xmlGetNode(variableType, field_id = str(real_id), name = rname)
             if node != None:
                 break
 
@@ -165,7 +235,7 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
                 value = n['status']
             return value
         else :
-            msg = "This variable " + name + " doesn't exist"
+            msg = "This variable " + rname + " doesn't exist"
             raise ValueError(msg)
 
 
@@ -177,12 +247,17 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
 
         lst = self.getFieldIdList()
         lst.append("none")
-        self.isInList(fieldId, lst)
+
+        real_id = self._idFromLabel(fieldId)
+        rname = self._nameFromPhaseName(name, real_id)
+
+        self.isInList(real_id, lst)
+
         status = self._defaultValues()['status']
 
         for variableType in ('variable', 'property', 'scalar', 'time_average'):
-            for parent in self.case.xmlGetNodeList(variableType, field_id = str(fieldId)):
-                if parent['name'] == name :
+            for parent in self.case.xmlGetNodeList(variableType, field_id = str(real_id)):
+                if parent['name'] == rname :
                     node_post = parent.xmlGetChildNode('probes_recording', 'status')
                     if node_post :
                         status = node_post['status']
@@ -199,10 +274,14 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
         self.isOnOff(status)
         lst = self.getFieldIdList()
         lst.append("none")
-        self.isInList(fieldId, lst)
+
+        real_id = self._idFromLabel(fieldId)
+        rname = self._nameFromPhaseName(name, real_id)
+
+        self.isInList(real_id, lst)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
-            node = self.case.xmlGetNode(variableType, field_id = str(fieldId), name = name)
+            node = self.case.xmlGetNode(variableType, field_id = str(real_id), name = rname)
             if node != None:
                 break
 
@@ -210,7 +289,7 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
             n = node.xmlInitNode('listing_printing')
             n['status'] = status
         else :
-            msg = "This variable " + name + " doesn't exist"
+            msg = "This variable " + rname + " doesn't exist"
             raise ValueError(msg)
 
 
@@ -224,10 +303,14 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
         self.isOnOff(status)
         lst = self.getFieldIdList()
         lst.append("none")
-        self.isInList(fieldId, lst)
+
+        real_id = self._idFromLabel(fieldId)
+        rname = self._nameFromPhaseName(name, real_id)
+
+        self.isInList(real_id, lst)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
-            node = self.case.xmlGetNode(variableType, field_id = str(fieldId), name = name)
+            node = self.case.xmlGetNode(variableType, field_id = str(real_id), name = rname)
             if node != None:
                 break
 
@@ -235,7 +318,7 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
             n = node.xmlInitNode('postprocessing_recording')
             n['status'] = status
         else :
-            msg = "This variable " + name + " doesn't exist"
+            msg = "This variable " + rname + " doesn't exist"
             raise ValueError(msg)
 
 
@@ -249,10 +332,14 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
         self.isOnOff(status)
         lst = self.getFieldIdList()
         lst.append("none")
-        self.isInList(fieldId, lst)
+
+        real_id = self._idFromLabel(fieldId)
+        rname = self._nameFromPhaseName(name, real_id)
+
+        self.isInList(real_id, lst)
 
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
-            node = self.case.xmlGetNode(variableType, field_id = str(fieldId), name = name)
+            node = self.case.xmlGetNode(variableType, field_id = str(real_id), name = rname)
             if node != None:
                 break
 
@@ -263,7 +350,7 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
                 if node.xmlGetChildNode('probes_recording'):
                     node.xmlRemoveChild('probes_recording')
         else :
-            msg = "This variable " + name + " doesn't exist"
+            msg = "This variable " + rname + " doesn't exist"
             raise ValueError(msg)
 
 

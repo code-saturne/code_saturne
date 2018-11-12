@@ -141,7 +141,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         self._updateDictLabelName()
 
 
-    def _updateDictLabelName(self):
+    def _updateDictLabelName(self, dico_parent=None):
         """
         Update dictionaries of labels for all variables, properties .....
         """
@@ -150,6 +150,10 @@ class OutputVolumicVariablesModel(Variables, Model):
             tpe  = nodeList[1]
 
             name = node['name']
+
+            if dico_parent and name:
+                name = dico_parent[tpe][name]
+
             if not name:
                 name = node['label']
             if not node['label']:

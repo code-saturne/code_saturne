@@ -125,12 +125,8 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         thisPage = Page.ElectricalView(root, case, stbar)
 
     elif page_name == tr("Radiative transfers"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
-            import code_saturne.Pages.ThermalRadiationView as Page
-            thisPage = Page.ThermalRadiationView(root, case, tree)
-        else:
-            import code_saturne.Pages.ThermalRadiationView as Page
-            thisPage = Page.ThermalRadiationView(root, case, tree)
+        import code_saturne.Pages.ThermalRadiationView as Page
+        thisPage = Page.ThermalRadiationView(root, case, tree)
 
     elif page_name == tr("Conjugate heat transfer"):
         import code_saturne.Pages.ConjugateHeatTransferView as Page
@@ -289,6 +285,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
             thisPage = Page.NumericalParamEquationView(root, case)
 
     elif page_name == tr("Global parameters"):
+#    elif page_name == tr("Global numerical parameters"):
         if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
             import code_saturne.Pages.GlobalNumericalParametersView as Page
             thisPage = Page.GlobalNumericalParametersView(root, case)
