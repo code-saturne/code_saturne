@@ -94,6 +94,106 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement by a
+ *          penalization technique with a huge value
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
+                                const cs_cell_mesh_t            *cm,
+                                cs_face_mesh_t                  *fm,
+                                cs_cell_builder_t               *cb,
+                                cs_cell_sys_t                   *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement by a
+ *          penalization technique with a huge value.
+ *          Case of a cellwise system defined by block.
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
+                                      const cs_cell_mesh_t            *cm,
+                                      cs_face_mesh_t                  *fm,
+                                      cs_cell_builder_t               *cb,
+                                      cs_cell_sys_t                   *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
+ *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
+ *          The corresponding DoFs are algebraically "removed" of the system
+ *
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.bd |
+ *          |------------| --> |------------| and |--| --> |----------|
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
+ *
+ * where xd is the value of the Dirichlet BC
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
+                                const cs_cell_mesh_t            *cm,
+                                cs_face_mesh_t                  *fm,
+                                cs_cell_builder_t               *cb,
+                                cs_cell_sys_t                   *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
+ *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
+ *          The corresponding DoFs are algebraically "removed" of the system
+ *          Block version.
+ *
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
+ *          |------------| --> |------------| and |--| --> |----------|
+ *          |      |     |     |      |     |     |  |     |          |
+ *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
+ *
+ * where xd is the value of the Dirichlet BC
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
+                                      const cs_cell_mesh_t            *cm,
+                                      cs_face_mesh_t                  *fm,
+                                      cs_cell_builder_t               *cb,
+                                      cs_cell_sys_t                   *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique.
  *          Case of scalar-valued CDO Face-based schemes
@@ -194,11 +294,11 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vbcost_robin(const cs_equation_param_t      *eqp,
-                              const cs_cell_mesh_t           *cm,
-                              cs_face_mesh_t                 *fm,
-                              cs_cell_builder_t              *cb,
-                              cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
+                                const cs_cell_mesh_t           *cm,
+                                cs_face_mesh_t                 *fm,
+                                cs_cell_builder_t              *cb,
+                                cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -214,11 +314,11 @@ cs_cdo_diffusion_vbcost_robin(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vbwbs_robin(const cs_equation_param_t      *eqp,
-                             const cs_cell_mesh_t           *cm,
-                             cs_face_mesh_t                 *fm,
-                             cs_cell_builder_t              *cb,
-                             cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
+                               const cs_cell_mesh_t           *cm,
+                               cs_face_mesh_t                 *fm,
+                               cs_cell_builder_t              *cb,
+                               cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -236,11 +336,11 @@ cs_cdo_diffusion_vbwbs_robin(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vbcost_generic(const cs_equation_param_t      *eqp,
-                                const cs_cell_mesh_t           *cm,
-                                cs_face_mesh_t                 *fm,
-                                cs_cell_builder_t              *cb,
-                                cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
+                                  const cs_cell_mesh_t           *cm,
+                                  cs_face_mesh_t                 *fm,
+                                  cs_cell_builder_t              *cb,
+                                  cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -256,11 +356,11 @@ cs_cdo_diffusion_vbcost_generic(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vbcost_weak_dirichlet(const cs_equation_param_t      *eqp,
-                                       const cs_cell_mesh_t           *cm,
-                                       cs_face_mesh_t                 *fm,
-                                       cs_cell_builder_t              *cb,
-                                       cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                         const cs_cell_mesh_t           *cm,
+                                         cs_face_mesh_t                 *fm,
+                                         cs_cell_builder_t              *cb,
+                                         cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -277,11 +377,11 @@ cs_cdo_diffusion_vbcost_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vbcost_wsym_dirichlet(const cs_equation_param_t      *eqp,
-                                       const cs_cell_mesh_t           *cm,
-                                       cs_face_mesh_t                 *fm,
-                                       cs_cell_builder_t              *cb,
-                                       cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_svb_cost_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                         const cs_cell_mesh_t           *cm,
+                                         cs_face_mesh_t                 *fm,
+                                         cs_cell_builder_t              *cb,
+                                         cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -297,11 +397,11 @@ cs_cdo_diffusion_vbcost_wsym_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vbwbs_weak_dirichlet(const cs_equation_param_t      *eqp,
-                                      const cs_cell_mesh_t           *cm,
-                                      cs_face_mesh_t                 *fm,
-                                      cs_cell_builder_t              *cb,
-                                      cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                        const cs_cell_mesh_t           *cm,
+                                        cs_face_mesh_t                 *fm,
+                                        cs_cell_builder_t              *cb,
+                                        cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -318,11 +418,11 @@ cs_cdo_diffusion_vbwbs_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vbwbs_wsym_dirichlet(const cs_equation_param_t      *eqp,
-                                      const cs_cell_mesh_t           *cm,
-                                      cs_face_mesh_t                 *fm,
-                                      cs_cell_builder_t              *cb,
-                                      cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                        const cs_cell_mesh_t           *cm,
+                                        cs_face_mesh_t                 *fm,
+                                        cs_cell_builder_t              *cb,
+                                        cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -367,106 +467,6 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
- *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
- *          The corresponding DoFs are algebraically "removed" of the system
- *
- *          |      |     |     |      |     |     |  |     |          |
- *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.bd |
- *          |------------| --> |------------| and |--| --> |----------|
- *          |      |     |     |      |     |     |  |     |          |
- *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
- *
- * where xd is the value of the Dirichlet BC
- *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
-                                const cs_cell_mesh_t            *cm,
-                                cs_face_mesh_t                  *fm,
-                                cs_cell_builder_t               *cb,
-                                cs_cell_sys_t                   *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Take into account Dirichlet BCs by keeping the DoFs related to
- *          Dirichlet BCs in the algebraic system (i.e. a weak enforcement)
- *          The corresponding DoFs are algebraically "removed" of the system
- *          Block version.
- *
- *          |      |     |     |      |     |     |  |     |          |
- *          | Aii  | Aid |     | Aii  |  0  |     |bi|     |bi-Aid.xd |
- *          |------------| --> |------------| and |--| --> |----------|
- *          |      |     |     |      |     |     |  |     |          |
- *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
- *
- * where xd is the value of the Dirichlet BC
- *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
-                                      const cs_cell_mesh_t            *cm,
-                                      cs_face_mesh_t                  *fm,
-                                      cs_cell_builder_t               *cb,
-                                      cs_cell_sys_t                   *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement by a
- *          penalization technique with a huge value
- *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
-                                const cs_cell_mesh_t            *cm,
-                                cs_face_mesh_t                  *fm,
-                                cs_cell_builder_t               *cb,
-                                cs_cell_sys_t                   *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement by a
- *          penalization technique with a huge value.
- *          Case of a cellwise system defined by block.
- *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
-                                      const cs_cell_mesh_t            *cm,
-                                      cs_face_mesh_t                  *fm,
-                                      cs_cell_builder_t               *cb,
-                                      cs_cell_sys_t                   *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Compute the diffusive flux across dual faces for a given cell
  *          The discrete Hodge operator has been previously computed using a
  *          COST algorithm.
@@ -481,10 +481,10 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vbcost_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
-                                       const double              *pot,
-                                       cs_cell_builder_t         *cb,
-                                       double                    *flx);
+cs_cdo_diffusion_svb_cost_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
+                                         const double              *pot,
+                                         cs_cell_builder_t         *cb,
+                                         double                    *flx);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -501,10 +501,10 @@ cs_cdo_diffusion_vbcost_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vbcost_get_cell_flux(const cs_cell_mesh_t      *cm,
-                                      const double              *pot,
-                                      cs_cell_builder_t         *cb,
-                                      double                    *flx);
+cs_cdo_diffusion_svb_cost_get_cell_flux(const cs_cell_mesh_t      *cm,
+                                        const double              *pot,
+                                        cs_cell_builder_t         *cb,
+                                        double                    *flx);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -522,12 +522,12 @@ cs_cdo_diffusion_vbcost_get_cell_flux(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vbcost_vbyf_flux(short int                   f,
-                                  const cs_equation_param_t  *eqp,
-                                  const cs_cell_mesh_t       *cm,
-                                  const cs_real_t            *pot,
-                                  cs_cell_builder_t          *cb,
-                                  cs_real_t                  *flux);
+cs_cdo_diffusion_svb_cost_vbyf_flux(short int                   f,
+                                    const cs_equation_param_t  *eqp,
+                                    const cs_cell_mesh_t       *cm,
+                                    const cs_real_t            *pot,
+                                    cs_cell_builder_t          *cb,
+                                    cs_real_t                  *flux);
 
 /*----------------------------------------------------------------------------*/
 /*!

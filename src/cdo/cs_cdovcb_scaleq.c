@@ -911,7 +911,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->apply_robin_bc = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
     eqc->get_stiffness_matrix = cs_hodge_vcb_get_stiffness;
-    eqc->apply_robin_bc = cs_cdo_diffusion_vbwbs_robin;
+    eqc->apply_robin_bc = cs_cdo_diffusion_svb_wbs_robin;
   }
 
   /* Dirichlet boundary condition enforcement */

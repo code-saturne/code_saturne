@@ -859,7 +859,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_stiffness;
 
       eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
-      eqc->apply_robin_bc = cs_cdo_diffusion_vbcost_robin;
+      eqc->apply_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
@@ -867,14 +867,14 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
 
       eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
-      eqc->apply_robin_bc = cs_cdo_diffusion_vbcost_robin;
+      eqc->apply_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
       eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
         | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_wbs_get_stiffness;
-      eqc->apply_robin_bc = cs_cdo_diffusion_vbwbs_robin;
+      eqc->apply_robin_bc = cs_cdo_diffusion_svb_wbs_robin;
       break;
 
     default:
@@ -907,10 +907,10 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_PARAM_HODGE_ALGO_COST:
     case CS_PARAM_HODGE_ALGO_VORONOI:
-      eqc->enforce_dirichlet = cs_cdo_diffusion_vbcost_weak_dirichlet;
+      eqc->enforce_dirichlet = cs_cdo_diffusion_svb_cost_weak_dirichlet;
       break;
     case CS_PARAM_HODGE_ALGO_WBS:
-      eqc->enforce_dirichlet = cs_cdo_diffusion_vbwbs_weak_dirichlet;
+      eqc->enforce_dirichlet = cs_cdo_diffusion_svb_wbs_weak_dirichlet;
       break;
 
     default:
@@ -927,10 +927,10 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_PARAM_HODGE_ALGO_COST:
     case CS_PARAM_HODGE_ALGO_VORONOI:
-      eqc->enforce_dirichlet = cs_cdo_diffusion_vbcost_wsym_dirichlet;
+      eqc->enforce_dirichlet = cs_cdo_diffusion_svb_cost_wsym_dirichlet;
       break;
     case CS_PARAM_HODGE_ALGO_WBS:
-      eqc->enforce_dirichlet = cs_cdo_diffusion_vbwbs_wsym_dirichlet;
+      eqc->enforce_dirichlet = cs_cdo_diffusion_svb_wbs_wsym_dirichlet;
       break;
 
     default:
@@ -2622,7 +2622,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
           }
           else
-            cs_cdo_diffusion_vbcost_vbyf_flux(f, eqp, cm, pot, cb, flux);
+            cs_cdo_diffusion_svb_cost_vbyf_flux(f, eqp, cm, pot, cb, flux);
 
           /* Fill the global flux array */
           short int n_vf = 0;
@@ -2884,12 +2884,12 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
 
     case CS_PARAM_HODGE_ALGO_COST:
       msh_flag |= CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PVQ;
-      compute_flux = cs_cdo_diffusion_vbcost_get_cell_flux;
+      compute_flux = cs_cdo_diffusion_svb_cost_get_cell_flux;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
       msh_flag |= CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PVQ;
-      compute_flux = cs_cdo_diffusion_vbcost_get_cell_flux;
+      compute_flux = cs_cdo_diffusion_svb_cost_get_cell_flux;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
@@ -3023,13 +3023,13 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 
     case CS_PARAM_HODGE_ALGO_COST:
       get_diffusion_hodge = cs_hodge_epfd_cost_get;
-      compute_flux = cs_cdo_diffusion_vbcost_get_dfbyc_flux;
+      compute_flux = cs_cdo_diffusion_svb_cost_get_dfbyc_flux;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
       msh_flag |= CS_CDO_LOCAL_EFQ;
       get_diffusion_hodge = cs_hodge_epfd_voro_get;
-      compute_flux = cs_cdo_diffusion_vbcost_get_dfbyc_flux;
+      compute_flux = cs_cdo_diffusion_svb_cost_get_dfbyc_flux;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
