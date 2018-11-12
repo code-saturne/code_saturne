@@ -133,6 +133,32 @@ cs_var_t    *cs_glob_var = NULL;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Remove a node inside a tree.
+ *
+ * The node is removed from the tree but not destroyed, so it may be inserted
+ * in another position.
+ *
+ * \param[in, out]  tn    tree node to remove
+ *----------------------------------------------------------------------------*/
+
+static void
+_tree_node_remove(cs_tree_node_t  *tn)
+{
+  if (tn->prev != NULL)
+    tn->prev->next = tn->next;
+  if (tn->next != NULL)
+    tn->next->prev = tn->prev;
+
+  if (tn->parent != NULL) {
+    if (tn->parent->children == tn)
+      tn->parent->children = tn->next;
+  }
+
+  tn->prev = NULL;
+  tn->next = NULL;
+}
+
 /*-----------------------------------------------------------------------------
  * Modify double numerical parameters.
  *
@@ -1505,6 +1531,183 @@ _v_zone_node_by_id(cs_tree_node_t  *tn_vc,
     }
   }
   return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Ensure volume and boundary zones defined through the GUI are ordered
+ * (modifying tree if necessary)
+ *----------------------------------------------------------------------------*/
+
+static void
+_ensure_zones_order(void)
+{
+  cs_tree_node_t *tn_parent = NULL;
+
+  /* Volume zones */
+  /*------------- */
+
+  tn_parent = cs_tree_get_node(cs_glob_tree,
+                               "solution_domain/volumic_conditions");
+
+  /* Check if volume zones are defined in increasing id order */
+
+  bool need_reorder = false;
+
+  int z_id_prev = -1;
+  int id = 0;
+
+  for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_parent, "zone");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), id++) {
+    if (_v_zone_t_id(tn, id) < z_id_prev)
+      need_reorder = true;
+  }
+
+  const int n_v_zones = id;
+
+  if (need_reorder) {
+
+    cs_lnum_t *order = NULL, *z_ids = NULL;
+
+    /* Build ordering array */
+
+    BFT_MALLOC(z_ids, n_v_zones, cs_lnum_t);
+    BFT_MALLOC(order, n_v_zones, cs_lnum_t);
+
+    /* Loop on volume condition zones */
+
+    id = 0;
+    for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_parent, "zone");
+         tn != NULL;
+         tn = cs_tree_node_get_next_of_name(tn), id++) {
+      z_ids[id] = _v_zone_t_id(tn, id);
+    }
+
+    cs_order_lnum_allocated(NULL, z_ids, order, n_v_zones);
+
+    /* Now loop on zones in id order */
+
+    cs_tree_node_t *tn_head = NULL;
+    cs_tree_node_t *tn_tail = NULL;
+
+    for (int i = 0; i < n_v_zones; i++) {
+
+      int z_id = z_ids[order[i]];
+
+      cs_tree_node_t *tn = _v_zone_node_by_id(tn_parent, z_id);
+      _tree_node_remove(tn);
+      if (tn_head == NULL) {
+        tn_head = tn;
+        tn_tail = tn;
+      }
+      else {
+        tn->prev = tn_tail;
+        tn_tail->next = tn;
+        tn_tail = tn;
+      }
+
+    }
+
+    if (tn_parent->children != NULL)
+      tn_parent->children->prev = tn_tail;
+    tn_tail->next = tn_parent->children;
+    tn_parent->children = tn_head;
+
+    BFT_FREE(order);
+    BFT_FREE(z_ids);
+  }
+
+  /* Boundary zones */
+  /*--------------- */
+
+  /* Loop on boundary condition zones */
+
+  tn_parent = cs_tree_get_node(cs_glob_tree,
+                               "boundary_conditions");
+
+  need_reorder = false;
+  int z_id_max = 0;
+
+  id = 0;
+  for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_parent, "boundary");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), id++) {
+
+    /* Zone id in tree; note that the name tag for boundary zones actually
+       defines an integer (1 to n). This tag should be removed in the
+       future to only use the zone label (the actual zone name). */
+
+    const char *id_s = cs_tree_node_get_tag(tn, "name");
+    if (id_s != NULL) {
+      int z_t_id = atoi(id_s);
+      if (z_t_id != id + 1)
+        need_reorder = true;
+      z_id_max = CS_MAX(z_id_max, z_t_id);
+    }
+
+  }
+
+  const int n_b_zones = id;
+
+  if (need_reorder) {
+
+    cs_lnum_t *order = NULL, *z_ids = NULL;
+    cs_tree_node_t **tn_bcs = NULL;
+
+    /* Build ordering array */
+
+    BFT_MALLOC(z_ids, n_b_zones, cs_lnum_t);
+    BFT_MALLOC(order, n_b_zones, cs_lnum_t);
+    BFT_MALLOC(tn_bcs, n_b_zones, cs_tree_node_t *);
+
+    /* Loop on volume condition zones */
+
+    id = 0;
+    for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_parent, "boundary");
+         tn != NULL;
+         tn = cs_tree_node_get_next_of_name(tn), id++) {
+      const char *id_s = cs_tree_node_get_tag(tn, "name");
+      if (id_s != NULL) {
+        z_ids[id] = atoi(id_s);
+      }
+      else
+        z_ids[id] = z_id_max + 1 + id;
+      tn_bcs[id] = tn;
+    }
+
+    cs_order_lnum_allocated(NULL, z_ids, order, n_b_zones);
+
+    BFT_FREE(z_ids);
+
+    /* Now loop on zones in id order */
+
+    cs_tree_node_t *tn_head = NULL;
+    cs_tree_node_t *tn_tail = NULL;
+
+    for (int i = 0; i < n_b_zones; i++) {
+
+      cs_tree_node_t *tn = tn_bcs[order[i]];
+      _tree_node_remove(tn);
+      if (tn_head == NULL) {
+        tn_head = tn;
+        tn_tail = tn;
+      }
+      else {
+        tn->prev = tn_tail;
+        tn_tail->next = tn;
+        tn_tail = tn;
+      }
+
+    }
+
+    if (tn_parent->children != NULL)
+      tn_parent->children->prev = tn_tail;
+    tn_tail->next = tn_parent->children;
+    tn_parent->children = tn_head;
+
+    BFT_FREE(order);
+    BFT_FREE(tn_bcs);
+  }
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -5510,6 +5713,10 @@ cs_gui_zones(void)
 {
   if (!cs_gui_file_is_loaded())
     return;
+
+  /* Ensure zones ordering for safety (should be removed in the future)*/
+
+  _ensure_zones_order();
 
   int id = 0;
 
