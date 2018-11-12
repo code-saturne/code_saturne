@@ -1144,32 +1144,20 @@ integer id
 ! Local variables
 type(var_cal_opt) :: vcopt
 
+! Most values set by default at in _var_cal_opt default;
+! see cs_parameters.c
+
 call field_get_key_struct_var_cal_opt(id, vcopt)
-vcopt%iwarni = 0
-vcopt%iconv  = 1
-vcopt%istat  = 1
-vcopt%idiff  = 1
-vcopt%idifft = 1
-vcopt%idften = ISOTROPIC_DIFFUSION
-vcopt%iswdyn = 0
-vcopt%ischcv = 1
-vcopt%ibdtso = 1
+
 vcopt%isstpc = -1
-vcopt%nswrgr = 100
 vcopt%nswrsm = -1
-vcopt%imrgra = 0
 vcopt%imligr = -999
-vcopt%ircflu = 1
-vcopt%iwgrec = 0
 vcopt%thetav = -1.d0
 vcopt%blencv = -1.d0
-vcopt%blend_st = 0.d0
 vcopt%epsilo = -1.d0
 vcopt%epsrsm = -1.d0
-vcopt%epsrgr = 1.d-5
-vcopt%climgr = 1.5d0
-vcopt%extrag = 0.d0
 vcopt%relaxv = -1.d0
+
 call field_set_key_struct_var_cal_opt(id, vcopt)
 
 return
