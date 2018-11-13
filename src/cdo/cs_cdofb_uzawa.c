@@ -427,7 +427,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
     int  t_id = 0;
 #endif
 
-    const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
+    const cs_real_t  time_eval = t_cur + dt_cur;
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -616,7 +616,37 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system matrix before condensation", csys);
+        cs_cell_sys_dump(">> Local system matrix after "
+                         "weak BC and pressure contribution", csys);
+#endif
+
+      /* 4- TIME CONTRIBUTION */
+      /* ==================== */
+
+      if (cs_equation_param_has_time(eqp)) {
+        /* !!! ATTENTION !!!
+         * Forcing diagonal implicit
+         */
+        assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
+        assert(eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG);
+        const short int nf = cm->n_fc;
+        /* Get cell-cell block */
+        cs_sdm_t *acc = cs_sdm_get_block(csys->mat, nf, nf);
+
+        const double  ptyc = cb->tpty_val * cm->vol_c * odt;
+
+        for (short int k = 0; k < 3; k++) {
+          csys->rhs[3*nf + k] += ptyc * csys->val_n[3*nf+k];
+        /* Simply add an entry in mat[cell, cell] */
+          acc->val[4*k] += ptyc;
+        } /* Loop on k */
+
+      } /* Time block */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> Local system matrix after time contribution and"
+                         " before condensation", csys);
 #endif
 
       /* 5- (STATIC CONDENSATION AND) UPDATE OF THE LOCAL SYSTEM */
@@ -709,7 +739,7 @@ _update_pr_div_rhs(const cs_property_t          *relax,
                    cs_real_t                    *rhs)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_real_t  time_eval = cs_shared_time_step->t_cur + 0.5*dt_cur;
+  const cs_real_t  time_eval = cs_shared_time_step->t_cur + dt_cur;
   const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
   const bool  rlx_n_unif = !(cs_property_is_uniform(relax));
   const cs_flag_t *bc_flag = eqb->face_bc->flag;
@@ -1188,6 +1218,30 @@ cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
   cs_real_t  *vel_f = mom_eq->get_face_values(mom_eqc);
   cs_real_t  *div = sc->divergence->val;
 
+  /* Update pressure and velocity fields */
+  /* ----------------------------------- */
+
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(sc->velocity);
+
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(sc->pressure);
+
+  /* If residual normalization is needed */
+  /* ----------------------------------- */
+  cs_real_t norm_res = 1.;
+  if (cs_shared_time_step->nt_cur > 0 ||
+      nsp->n_pressure_ic_defs > 0) {
+    cs_real_t l2_p = sqrt(cs_dot_wxx(quant->n_cells,quant->cell_vol,pr));
+
+#if defined(HAVE_MPI)
+    if (cs_glob_n_ranks > 1)
+      cs_parall_sum(1, CS_REAL_TYPE, &l2_p);
+#endif
+    if (l2_p > 10*mom_eq->param->itsol_info.eps)
+      norm_res =  1. / l2_p;
+  } /* If needs a normalization */
+
   /**********  INNER ITERATIONS - START  ***********/
   /* Convergence code:
    *  1 = OK,
@@ -1259,7 +1313,7 @@ cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
 #endif
 
   /* Compute residual */
-  res = _compute_residual(iter, div);
+  res = _compute_residual(iter, div) * norm_res;
 
   /*********** FIRST ITERATION - END ***************/
 
@@ -1342,7 +1396,7 @@ cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
 #endif
 
       /* Compute residual */
-      res = _compute_residual(iter, div);
+      res = _compute_residual(iter, div) * norm_res;
 
       if (res > 1e8) {
         cvg_code = -3;
@@ -1381,15 +1435,6 @@ cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
 
   sc->last_iter = iter;
   sc->residual = res;
-
-  /* Update pressure and velocity fields */
-  /* ----------------------------------- */
-
-  /* Copy current field values to previous values */
-  cs_field_current_to_previous(sc->velocity);
-
-  /* Copy current field values to previous values */
-  cs_field_current_to_previous(sc->pressure);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
   cs_dbg_darray_to_listing("FINAL_OUTER_SOLUTION", 3*n_faces, vel_f, 9);
