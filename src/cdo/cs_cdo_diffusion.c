@@ -354,9 +354,6 @@ _vb_cost_normal_flux_op(const short int           f,
   cs_real_t  *nflux = cb->values;       /* size = cm->n_vc */
   cs_real_3_t  *grd_cell = cb->vectors; /* size = cm->n_vc */
 
-  /* Initialize the local operator */
-  cs_sdm_square_init(cm->n_vc, ntrgrd);
-
   /* Compute the cellwise-constant gradient for each array of the canonical
    * basis of the potential DoFs (size = cm->n_vc)
    */
@@ -706,6 +703,42 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
     }  /* Loop on face vertices (vj) */
 
   }  /* Loop on face vertices (vi) */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Weak enforcement of Dirichlet BCs using a Nitsche technique.
+ *          Scalar-valued case of CO+ST algorithm for CDO-VB or CDO-VCb schemes
+ *
+ * \param[in]       pcoef     value of the penalization coefficient
+ * \param[in]       fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  ntrgrd    pointer to a local matrix structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_svb_cost_nitsche(const double              pcoef,
+                  const cs_face_mesh_t     *fm,
+                  cs_sdm_t                 *ntrgrd,
+                  cs_cell_sys_t            *csys)
+{
+  /* Sanity checks */
+  assert(pcoef > 0);
+  assert(csys->mat->n_rows == ntrgrd->n_rows);
+
+  /* Update local RHS and system */
+  for (short int v = 0; v < fm->n_vf; v++) {
+
+    /* Set the penalty diagonal coefficient */
+    const double  pcoef_v = pcoef * fm->wvf[v];
+    const short int  vi = fm->v_ids[v];
+
+    ntrgrd->val[vi*(1 + ntrgrd->n_rows)] += pcoef_v;
+    csys->rhs[vi] += pcoef_v * csys->dir_values[vi];
+
+  }  /* Dirichlet or homogeneous Dirichlet */
 
 }
 
@@ -1138,12 +1171,10 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   } /* Loop boundary faces */
 
-  /* Second pass: add the bc_op matrix, add the BC */
-
-  /* !!! ATTENTION !!!
-   * Two passes in order to avoid truncation error if the arbitrary coefficient
-   * of the Nitsche algorithm is large
-   */
+  /* Second pass: Update the cell system with the bc_op matrix and the Dirichlet
+     values. Avoid a truncation error if the arbitrary coefficient of the
+     Nitsche algorithm is large
+  */
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
@@ -1233,11 +1264,9 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   } /* Loop boundary faces */
 
-  /* Second pass: add the bc_op matrix, add the BC */
-
-  /* !!! ATTENTION !!!
-   * Two passes in order to avoid truncation error if the arbitrary coefficient
-   * of the Nitsche algorithm is large
+  /* Second pass: Update the cell system with the bc_op matrix and the Dirichlet
+   * values. Avoid a truncation error if the arbitrary coefficient of the
+   * Nitsche algorithm is large
    */
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -1342,11 +1371,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
   } /* Loop boundary faces */
 
-  /* Second pass: add the bc_op matrix, add the BC */
-  /* !!! ATTENTION !!!
-   * Two passes in order to avoid truncation error if the arbitrary coefficient
-   * of the Nitsche algo is large
-   */
+  /* Symmetrize the Nitsche contribution */
   cs_real_t *dir_val = cb->values, *u0_trgradv = cb->values + n_dofs;
 
   /* Putting the face DoFs of the BC, into a face- and cell-DoFs array */
@@ -1358,6 +1383,10 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   cs_sdm_square_add_transpose(bc_op, bc_op_t);
   cs_sdm_square_matvec(bc_op_t, dir_val, u0_trgradv);
 
+  /* Second pass: Update the cell system with the bc_op matrix and the Dirichlet
+     values. Avoid a truncation error if the arbitrary coefficient of the
+     Nitsche algorithm is large
+  */
   for (short int i = 0; i < n_dofs; i++) /* Cell too! */
     csys->rhs[i] += u0_trgradv[i];
 
@@ -1477,10 +1506,10 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     csys->rhs[3*i+2] += uz[i];
   }
 
-  /* !!! ATTENTION !!!
-   * Two passes in order to avoid truncation error if the arbitrary coefficient
-   * of the Nitsche algorithm is large
-   */
+  /* Second pass: Update the cell system with the bc_op matrix and the Dirichlet
+     values. Avoid a truncation error if the arbitrary coefficient of the
+     Nitsche algorithm is large
+  */
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
@@ -1558,6 +1587,9 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
   cs_real_t  *x = cb->values;
   cs_sdm_t  *bc_op = cb->loc;
 
+  /* Reset local operator */
+  cs_sdm_square_init(cm->n_vc, bc_op);
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
@@ -1565,11 +1597,14 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
 
     if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
 
-      /* Reset local operator */
-      cs_sdm_square_init(cm->n_vc, bc_op);
-
       /* Compute the face-view of the mesh */
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_log_printf(CS_LOG_DEFAULT,
+                      ">> Cell Vb COST Robin (f_id: %d)", fm->f_id);
+#endif
 
       /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
       /* ------------------------------------------------- */
@@ -1592,20 +1627,18 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
         bc_op->val[vi*(1 + bc_op->n_rows)] += alpha*pcoef_v;
       }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
-      if (cs_dbg_cw_test(eqp, cm, csys)) {
-        cs_log_printf(CS_LOG_DEFAULT,
-                      ">> Cell Vb COST Robin bc matrix (f_id: %d)", fm->f_id);
-        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
-      }
-#endif
-
-      /* Add contribution to the linear system */
-      cs_sdm_add(csys->mat, bc_op);
-
     }  /* Robin face */
   } /* Loop on boundary faces */
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+  if (cs_dbg_cw_test(eqp, cm, csys)) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Cell Vb COST Robin bc matrix");
+    cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+  }
+#endif
+
+  /* Add contribution to the linear system */
+  cs_sdm_add(csys->mat, bc_op);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1761,9 +1794,13 @@ cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
     return;  /* Nothing to do */
 
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const double chi = eqp->bc_penalization_coeff*fabs(cb->eig_ratio)*cb->eig_max;
+  const double chi =
+    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
+
+  /* Initialize the local operator */
+  cs_sdm_square_init(cm->n_vc, ntrgrd);
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -1786,33 +1823,20 @@ cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
       _vb_cost_normal_flux_op(f, cm, pty_nuf, h_info.coef, cb, ntrgrd);
 
       /* Update the RHS and the local system matrix */
-      const double  pcoef = chi/sqrt(cm->face[f].meas);
-
-      for (short int v = 0; v < fm->n_vf; v++) {
-
-        const short int  vi = fm->v_ids[v];
-
-        /* Set the penalty diagonal coefficient */
-        const double  pcoef_v = pcoef * fm->wvf[v];
-
-        ntrgrd->val[vi + vi*ntrgrd->n_rows] += pcoef_v;
-        csys->rhs[vi] += pcoef_v * csys->dir_values[vi];
-
-      }  /* Dirichlet or homogeneous Dirichlet */
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
-      if (cs_dbg_cw_test(eqp, cm, csys)) {
-        cs_log_printf(CS_LOG_DEFAULT,
-                      ">> Cell Vb.COST Weak bc matrix (f_id: %d)", fm->f_id);
-        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
-      }
-#endif
-      /* Add contribution to the linear system */
-      cs_sdm_add(csys->mat, ntrgrd);
+      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+  if (cs_dbg_cw_test(eqp, cm, csys)) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Cell Vb.COST Weak bc matrix");
+    cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+  }
+#endif
+
+  /* Add contribution to the linear system */
+  cs_sdm_add(csys->mat, ntrgrd);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1844,7 +1868,8 @@ cs_cdo_diffusion_svb_cost_wsym_dirichlet(const cs_equation_param_t      *eqp,
     return;  /* Nothing to do */
 
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const double chi = eqp->bc_penalization_coeff*fabs(cb->eig_ratio)*cb->eig_max;
+  const double chi =
+    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
   cs_sdm_t  *ntrgrd_tr = cb->aux;
@@ -1861,9 +1886,11 @@ cs_cdo_diffusion_svb_cost_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
-                           fm->face.unitv,
+      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, fm->face.unitv,
                            pty_nuf);
+
+      /* Initialize the local operator */
+      cs_sdm_square_init(cm->n_vc, ntrgrd);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
@@ -1878,19 +1905,10 @@ cs_cdo_diffusion_svb_cost_wsym_dirichlet(const cs_equation_param_t      *eqp,
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
-      const double  pcoef = chi/sqrt(cm->face[f].meas);
+      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 
-      for (short int v = 0; v < fm->n_vf; v++) {
-
-        const short int  vi = fm->v_ids[v];
-
-        /* Set the penalty diagonal coefficient */
-        const double  pcoef_v = pcoef * fm->wvf[v];
-
-        ntrgrd->val[vi + vi*ntrgrd->n_rows] += pcoef_v;
-        csys->rhs[vi] += pcoef_v * csys->dir_values[vi];
-
-      }  /* Dirichlet or homogeneous Dirichlet */
+      /* Add contribution to the linear system */
+      cs_sdm_add(csys->mat, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
@@ -1899,10 +1917,6 @@ cs_cdo_diffusion_svb_cost_wsym_dirichlet(const cs_equation_param_t      *eqp,
         cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
       }
 #endif
-
-      /* Add contribution to the linear system */
-      cs_sdm_add(csys->mat, ntrgrd);
-
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
 
@@ -2032,7 +2046,8 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const double chi = eqp->bc_penalization_coeff*fabs(cb->eig_ratio)*cb->eig_max;
+  const double chi =
+    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2057,9 +2072,14 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
       _vb_wbs_normal_flux_op(fm, cm, pty_nuf, cb, ntrgrd);
 
       /* Update the RHS and the local system matrix */
-      const double  pcoef = chi/sqrt(cm->face[f].meas);
+#if 1
+      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+#else  /* This option seems less robust w.r.t the linear algebra */
+      _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
+#endif
 
-      _wbs_nitsche(pcoef, fm, ntrgrd, cb, csys);
+      /* Add contribution to the linear system */
+      cs_sdm_add(csys->mat, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
@@ -2068,10 +2088,6 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
         cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
       }
 #endif
-
-      /* Add contribution to the linear system */
-      cs_sdm_add(csys->mat, ntrgrd);
-
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
 
@@ -2140,8 +2156,14 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
-      const double  pcoef = chi/sqrt(cm->face[f].meas);
-      _wbs_nitsche(pcoef, fm, ntrgrd, cb, csys);
+#if 1
+      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+#else  /* This option seems less robust w.r.t the linear algebra */
+      _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
+#endif
+
+      /* Add contribution to the linear system */
+      cs_sdm_add(csys->mat, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
@@ -2150,10 +2172,6 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
         cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
       }
 #endif
-
-      /* Add contribution to the linear system */
-      cs_sdm_add(csys->mat, ntrgrd);
-
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
 
@@ -2211,9 +2229,14 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
       _vcb_wbs_normal_flux_op(fm, cm, pty_nuf, cb, ntrgrd);
 
       /* Update the RHS and the local system matrix */
-      const double  pcoef = chi/sqrt(cm->face[f].meas);
+#if 1
+      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+#else  /* This option seems less robust w.r.t the linear algebra */
+      _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
+#endif
 
-      _wbs_nitsche(pcoef, fm, ntrgrd, cb, csys);
+      /* Add contribution to the linear system */
+      cs_sdm_add(csys->mat, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
@@ -2222,10 +2245,6 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
         cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
       }
 #endif
-
-      /* Add contribution to the linear system */
-      cs_sdm_add(csys->mat, ntrgrd);
-
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
 
@@ -2259,7 +2278,8 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const double chi = eqp->bc_penalization_coeff*fabs(cb->eig_ratio)*cb->eig_max;
+  const double chi =
+    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2294,8 +2314,14 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
-      const double  pcoef = chi/sqrt(cm->face[f].meas);
-      _wbs_nitsche(pcoef, fm, ntrgrd, cb, csys);
+#if 1
+      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+#else  /* This option seems less robust w.r.t the linear algebra */
+      _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
+#endif
+
+      /* Add contribution to the linear system */
+      cs_sdm_add(csys->mat, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
@@ -2304,10 +2330,6 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
         cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
       }
 #endif
-
-      /* Add contribution to the linear system */
-      cs_sdm_add(csys->mat, ntrgrd);
-
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
 
