@@ -440,26 +440,5 @@ cs_cdofb_ac_compute(const cs_mesh_t              *mesh,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the values of the velocity on the faces
- *
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
- *
- * \return a pointer to an array of \ref cs_real_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_ac_get_face_velocity(void    *scheme_context)
-{
-  if (scheme_context == NULL)
-    return NULL;
-
-  cs_cdofb_ac_t  *sc = (cs_cdofb_ac_t *)scheme_context;
-
-  return sc->face_velocity;
-}
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

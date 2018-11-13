@@ -162,8 +162,13 @@ cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_cdofb_uzawa_get_face_velocity(void    *scheme_context);
+inline static cs_real_t *
+cs_cdofb_uzawa_get_face_velocity(void    *scheme_context)
+{
+  CS_UNUSED(scheme_context);
+
+  return cs_equation_get_face_values(cs_equation_by_name("momentum"));
+}
 
 /*----------------------------------------------------------------------------*/
 

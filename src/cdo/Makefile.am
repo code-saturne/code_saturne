@@ -91,6 +91,7 @@ cs_mesh_deform.h \
 cs_navsto_coupling.h \
 cs_navsto_param.h \
 cs_navsto_system.h \
+cs_navsto_utilities.h \
 cs_param.h \
 cs_param_cdo.h \
 cs_property.h \
@@ -151,6 +152,7 @@ cs_mesh_deform.c \
 cs_navsto_coupling.c \
 cs_navsto_param.c \
 cs_navsto_system.c \
+cs_navsto_utilities.c \
 cs_param.c \
 cs_param_cdo.c \
 cs_property.c \

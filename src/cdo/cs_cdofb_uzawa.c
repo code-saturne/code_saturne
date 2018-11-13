@@ -64,6 +64,7 @@
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
+#include "cs_navsto_utilities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -181,10 +182,7 @@ typedef struct {
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDOFB_UZAWA_DBG      3
-
-#define _dp3  cs_math_3_dot_product
-#define _n3   cs_math_3_norm
+#define CS_CDOFB_UZAWA_DBG      2
 
 /*============================================================================
  * Private variables
@@ -200,158 +198,6 @@ static const cs_matrix_structure_t   *cs_shared_vect_ms;
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the divergence of a cell using the \ref cs_cdo_quantities_t
- *         structure
- *
- * \param[in]     c_id         cell ID
- * \param[in]     quant        pointer to a \ref cs_cdo_quantities_t
- * \param[in]     c2f          pointer to cell-to-face \ref cs_adjacency_t
- * \param[in]     f_dof        values of the face DoFs
- *
- * \return the divergence for the corresponding cell
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_real_t
-_get_cell_divergence(const cs_lnum_t               c_id,
-                     const cs_cdo_quantities_t    *quant,
-                     const cs_adjacency_t         *c2f,
-                     const cs_real_t              *f_dof)
-{
-  cs_real_t  div = 0.0;
-
-  for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id+1]; f++) {
-
-    const cs_lnum_t  f_id = c2f->ids[f];
-    const cs_real_t  *_val = f_dof + 3*f_id;
-
-    if (f_id < quant->n_i_faces) {
-      const cs_real_t *_nuf = quant->i_face_normal + 3*f_id;
-
-      div += c2f->sgn[f]*quant->i_face_surf[f_id]*_dp3(_val, _nuf)/_n3(_nuf);
-
-    }
-    else {
-
-      const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
-      const cs_real_t  *_nuf = quant->b_face_normal + 3*bf_id;
-
-      div += c2f->sgn[f]*quant->b_face_surf[bf_id]*_dp3(_val, _nuf)/_n3(_nuf);
-
-    } /* Boundary face */
-  } /* Loop on cell faces */
-
-  div /= quant->cell_vol[c_id];
-
-  return div;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the divergence vector associated to the current cell.
- *         WARNING: mind that, differently form the original definition, the
- *         result here is not divided by the cell volume
- *
- * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
- * \param[in, out] div        array related to the divergence operator
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_get_divergence_vect(const cs_cell_mesh_t  *cm,
-                     cs_real_t              div[])
-{
-  /* D(\hat{u}) = \frac{1}{|c|} \sum_{f_c} \iota_{fc} u_f.f
-   * But, when integrating [[ p, q ]]_{P_c} = |c| p_c q_c
-   * Thus, the volume in the divergence drops
-   */
-
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_quant_t  pfq = cm->face[f];
-    const cs_real_t  i_f = cm->f_sgn[f] * pfq.meas;
-
-    cs_real_t  *_div_f = div + 3*f;
-    _div_f[0] = i_f * pfq.unitv[0];
-    _div_f[1] = i_f * pfq.unitv[1];
-    _div_f[2] = i_f * pfq.unitv[2];
-
-  } /* Loop on cell faces */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add the grad-div part to the local matrix (i.e. for the current
- *         cell)
- *
- * \param[in]      n_fc       local number of faces for the current cell
- * \param[in]      zeta       scalar coefficient for the grad-div operator
- * \param[in]      div        divergence
- * \param[in, out] mat        local system matrix to update
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_add_grad_div(short int          n_fc,
-              const cs_real_t    zeta,
-              const cs_real_t    div[],
-              cs_sdm_t          *mat)
-{
-  cs_sdm_t  *b = NULL;
-
-  /* Avoid dealing with cell DoFs which are not impacted */
-  for (short int bi = 0; bi < n_fc; bi++) {
-
-    const cs_real_t  *divi = div + 3*bi;
-    const cs_real_t  zt_di[3] = {zeta*divi[0], zeta*divi[1], zeta*divi[2]};
-
-    /* Begin with the diagonal block */
-    b = cs_sdm_get_block(mat, bi, bi);
-    assert(b->n_rows == b->n_cols && b->n_rows == 3);
-    for (short int l = 0; l < 3; l++) {
-      cs_real_t *m_l = b->val + 3*l;
-      for (short int m = 0; m < 3; m++)
-        m_l[m] += zt_di[l] * divi[m];
-    }
-
-    /* Continue with the extra-diag. blocks */
-    for (short int bj = bi+1; bj < n_fc; bj++) {
-
-      b = cs_sdm_get_block(mat, bi, bj);
-      assert(b->n_rows == b->n_cols && b->n_rows == 3);
-      cs_real_t *mij  = b->val;
-      b = cs_sdm_get_block(mat, bj, bi);
-      assert(b->n_rows == b->n_cols && b->n_rows == 3);
-      cs_real_t *mji  = b->val;
-
-      const cs_real_t *divj = div + 3*bj;
-
-      for (short int l = 0; l < 3; l++) {
-
-        /* Diagonal: 3*l+l = 4*l */
-        const cs_real_t  gd_coef_ll = zt_di[l]*divj[l];
-        mij[4*l] += gd_coef_ll;
-        mji[4*l] += gd_coef_ll;
-
-        /* Extra-diagonal: Use the symmetry of the grad-div */
-        for (short int m = l+1; m < 3; m++) {
-          const short int  lm = 3*l+m, ml = 3*m+l;
-          const cs_real_t  gd_coef_lm = zt_di[l]*divj[m];
-          mij[lm] += gd_coef_lm;
-          mji[ml] += gd_coef_lm;
-          const cs_real_t  gd_coef_ml = zt_di[m]*divj[l];
-          mij[ml] += gd_coef_ml;
-          mji[lm] += gd_coef_ml;
-        }
-      }
-
-    } /* Loop on column blocks: bj */
-  } /* Loop on row blocks: bi */
-
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -532,7 +378,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
       /* 2- PRESSURE (SCALAR) EQUATION */
       /* ============================= */
-      _get_divergence_vect(cm, cb->aux->val);
+      cs_navsto_get_divergence_vect(cm, cb->aux->val);
 
       const cs_real_t *div = cb->aux->val, ovol = 1. / cm->vol_c;
 
@@ -553,7 +399,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
       if ( !(sc->is_gdscale_uniform) )
         zeta_c = cs_property_value_in_cell(cm, zeta, time_eval);
 
-      _add_grad_div(n_fc, zeta_c*ovol, div, csys->mat);
+      cs_navsto_add_grad_div(n_fc, zeta_c*ovol, div, csys->mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
@@ -580,11 +426,6 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
         for (int k = 0; k < 3; k++) /* DoFs related to the cell velocity */
           csys->rhs[3*cm->n_fc + k] += csys->source[3*cm->n_fc + k];
-
-        /* Reset the value of the source term for the cell DoF
-           Source term is only hold by the cell DoF in face-based schemes */
-        for (int k = 0; k < 3; k++)
-          eqc->source_terms[3*c_id + k] = csys->source[3*n_fc + k];
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
         if (cs_dbg_cw_test(eqp, cm, csys))
@@ -757,7 +598,8 @@ _update_pr_div_rhs(const cs_property_t          *relax,
     if (rlx_n_unif) rlx = cs_property_get_cell_value(c_id, time_eval, relax);
 
     /* Compute divergence and store it */
-    const cs_real_t  div_c = _get_cell_divergence(c_id, quant, c2f, vel_f);
+    const cs_real_t  div_c =
+      cs_navsto_get_cell_divergence(c_id, quant, c2f, vel_f);
 
     /* Compute the increment for the pressure */
     const cs_real_t  delta_pc = rlx * div_c;
@@ -880,84 +722,6 @@ _prepare_incremental_solve(cs_equation_t      *eq,
     assert(b == eq->rhs);
 
   }
-}
-
-/*----------------------------------------------------------------------------*/
- /*!
- * \brief  Solve the Uzawa linear system (adaptation of cs_equation_solve())
- *
- * \param[in, out]  eq    pointer to the momentum cs_equation_t structure
- * \param[in, out]  x     pointer to temporary velocity on faces
- * \param[in, out]  b     pointer to auxiliary rhs, should be NULL
- */
-/*----------------------------------------------------------------------------*/
-
-static int
-_uzawa_solve(cs_equation_t   *eq,
-             cs_real_t       *x,
-             cs_real_t       *b)
-{
-  int  n_iters = 0;
-  double  residual = DBL_MAX;
-  cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
-
-  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
-  const cs_param_itsol_t  itsol_info = eq->param->itsol_info;
-
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_start(eq->main_ts_id);
-
-  cs_sles_convergence_state_t code = cs_sles_solve(sles,
-                                                   eq->matrix,
-                                                   CS_HALO_ROTATION_IGNORE,
-                                                   itsol_info.eps,
-                                                   r_norm,
-                                                   &n_iters,
-                                                   &residual,
-                                                   b,
-                                                   x,
-                                                   0,      /* aux. size */
-                                                   NULL);  /* aux. buffers */
-
-  if (eq->param->sles_verbosity > 0) {
-
-    const cs_lnum_t  size = eq->n_sles_gather_elts;
-    const cs_lnum_t  *row_index, *col_id;
-    const cs_real_t  *d_val, *x_val;
-
-    cs_matrix_get_msr_arrays(eq->matrix, &row_index, &col_id, &d_val, &x_val);
-
-    cs_gnum_t  nnz = row_index[size];
-    if (cs_glob_n_ranks > 1)
-      cs_parall_counter(&nnz, 1);
-
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "  <%s/sles_cvg> code  %-d n_iters  %d residual  % -8.4e"
-                  " nnz %lu\n",
-                  eq->param->name, code, n_iters, residual, nnz);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG
-    cs_dbg_dump_linear_system(eq->param->name, size, CS_CDOFB_UZAWA_DBG,
-                              x, b,
-                              row_index, col_id, x_val, d_val);
-#endif
-  }
-
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    cs_range_set_scatter(eq->rset, CS_REAL_TYPE, 1, /* type and stride */
-                         x, x);                     /* in/out */
-
-    cs_range_set_scatter(eq->rset, CS_REAL_TYPE, 1, /* type and stride */
-                         b, eq->rhs);               /* in/out */
-
-  }
-
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_stop(eq->main_ts_id);
-
-  return  n_iters; /* Number of inner iterations for solving the linear system
-                      at this step */
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1087,6 +851,7 @@ cs_cdofb_uzawa_init_velocity(const cs_navsto_param_t     *nsp,
      momentum equation */
   return;
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize the pressure values
@@ -1289,7 +1054,7 @@ cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
   mom_eq->prepare_solving(mom_eq, &x_f, &b);
 
   /* First iteration: The Uzawa system is not formulated with an increment */
-  solv_iter += _uzawa_solve(mom_eq, x_f, b);
+  solv_iter += cs_navsto_solve(mom_eq, x_f, b);
 
   /* Update the velocity field: u_{c,k=1} and u_{f,k=1} */
   cs_cdofb_vecteq_update_field(x_f, mom_eq->rhs, mom_eq->param,
@@ -1344,7 +1109,7 @@ cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
       _prepare_incremental_solve(mom_eq, delta_vel_f, b);
 
       /* Solve */
-      solv_iter += (loc_solv_iter = _uzawa_solve(mom_eq, delta_vel_f, b));
+      solv_iter += (loc_solv_iter = cs_navsto_solve(mom_eq, delta_vel_f, b));
       if (loc_solv_iter == 0) {
         cs_log_printf(CS_LOG_DEFAULT,
                       "\n  The inner iterations stagnated. Stopping.\n");
@@ -1451,27 +1216,6 @@ cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t0, &t1);
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the values of the velocity on the faces
- *
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
- *
- * \return a pointer to an array of \ref cs_real_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_uzawa_get_face_velocity(void    *scheme_context)
-{
-  CS_UNUSED(scheme_context);
-
-  return NULL;  /* Not in the scheme context */
-}
-
-#undef _dp3
-#undef _n3
 
 /*----------------------------------------------------------------------------*/
 

@@ -41,6 +41,7 @@
 #include "cs_base.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
+#include "cs_equation.h"
 #include "cs_equation_common.h"
 #include "cs_equation_param.h"
 #include "cs_field.h"
@@ -162,8 +163,13 @@ cs_cdofb_ac_compute(const cs_mesh_t              *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_cdofb_ac_get_face_velocity(void    *scheme_context);
+inline static cs_real_t *
+cs_cdofb_ac_get_face_velocity(void    *scheme_context)
+{
+  CS_UNUSED(scheme_context);
+
+  return cs_equation_get_face_values(cs_equation_by_name("momentum"));
+}
 
 /*----------------------------------------------------------------------------*/
 
