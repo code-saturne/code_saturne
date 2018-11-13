@@ -1453,81 +1453,68 @@ cs_parameters_check(void)
                                   "cs_glob_turb_rans_model->igrake",
                                   cs_glob_turb_rans_model->igrake,
                                   0, 2);
+  }
 
-    /* if relaxv(ik) was modified by the user, and if ikecou=1, we warn the
-       user that relaxv settings won't have any effect,
-       otherwise check that relaxv is in range [O,1] (already done in steady) */
+  /* if relaxv of k, epsilon or omega was modified by the user, and if ikecou=1,
+     we warn the user that relaxv settings won't have any effect,
+     otherwise check that relaxv is in range [O,1] (already done in steady) */
 
-    if (cs_glob_turb_model->itytur == 6) { /* k-omega */
-      cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &var_cal_opt);
-      cs_real_t relaxvk = var_cal_opt.relaxv;
-      cs_field_get_key_struct(CS_F_(omg), key_cal_opt_id, &var_cal_opt);
-      cs_real_t relaxvo = var_cal_opt.relaxv;
+  /* relaxv takes the value 1. in modini if not modified by the user
+     if idtvar >= 0 */
 
-      if (   CS_ABS(relaxvk + 999.) > cs_math_epzero
-          || CS_ABS(relaxvo + 999.) > cs_math_epzero) {
-        cs_parameters_is_equal_int(CS_ABORT_DELAYED,
-                                   _("while reading input data,\n"
-                                     "modifications of relaxation coefficients "
-                                     "for turbulence variables k and omega "
-                                     "will be ignored"),
-                                   "cs_glob_turb_rans_model->ikecou",
-                                   cs_glob_turb_rans_model->ikecou,
-                                   0);
-      }
+  if (   (   cs_glob_turb_model->itytur == 2
+          || cs_glob_turb_model->itytur == 6)
+      && cs_glob_time_step_options->idtvar >= 0) {
+    cs_field_t *f_eo = (cs_glob_turb_model->itytur == 2) ? CS_F_(eps) : CS_F_(omg);
+    int f_ids[2] = {CS_F_(k)->id, f_eo->id};
 
-      if (   cs_glob_turb_rans_model->ikecou == 0
-          && cs_glob_time_step_options->idtvar >= 0) {
+    for (int ii = 0; ii < 2; ii++) {
+      cs_field_t *f = cs_field_by_id(f_ids[ii]);
+      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
+      if (cs_glob_turb_rans_model->ikecou == 1) {
+        f_desc = _field_section_desc(f,
+                                     "while reading input data,\n"
+                                     "modifications of relaxation "
+                                     "coefficients will be ignored with ikecou=1 "
+                                     " for variable");
+
+        cs_parameters_is_equal_double(CS_WARNING,
+                                      _(f_desc),
+                                      "var_cal_opt.relaxv",
+                                      var_cal_opt.relaxv,
+                                      1.);
+      } else { /* ikecou = 0 */
+        f_desc = _field_section_desc(f, "while reading numerical "
+                                        "parameters for variable");
+
         cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
-                                         _("while reading input data "
-                                           "for turbulent variable k"),
+                                         _(f_desc),
                                          "var_cal_opt.relaxv",
-                                         relaxvk,
-                                         0, 1);
-        cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
-                                         _("while reading input data "
-                                           "for turbulent variable omega"),
-                                         "var_cal_opt.relaxv",
-                                         relaxvo,
-                                         0, 1);
-      }
-    } else { /* k-epsilon */
-      cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &var_cal_opt);
-      cs_real_t relaxvk = var_cal_opt.relaxv;
-      cs_field_get_key_struct(CS_F_(eps), key_cal_opt_id, &var_cal_opt);
-      cs_real_t relaxve = var_cal_opt.relaxv;
-
-      if (   CS_ABS(relaxvk + 999.) > cs_math_epzero
-          || CS_ABS(relaxve + 999.) > cs_math_epzero) {
-        cs_parameters_is_equal_int(CS_ABORT_DELAYED,
-                                   _("while reading input data,\n"
-                                     "modifications of relaxation coefficients "
-                                     "for turbulence variables k and epsilon "
-                                     "will be ignored"),
-                                   "cs_glob_turb_rans_model->ikecou",
-                                   cs_glob_turb_rans_model->ikecou,
-                                   0);
-      }
-
-      if (   cs_glob_turb_rans_model->ikecou == 0
-          && cs_glob_time_step_options->idtvar >= 0) {
-        cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
-                                         _("while reading input data "
-                                           "for turbulent variable k"),
-                                         "var_cal_opt.relaxv",
-                                         relaxvk,
-                                         0, 1);
-        cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
-                                         _("while reading input data "
-                                           "for turbulent variable epsilon"),
-                                         "var_cal_opt.relaxv",
-                                         relaxve,
+                                         var_cal_opt.relaxv,
                                          0, 1);
       }
     }
   }
 
-  /* Specifique Rij-epsilon */
+  /* Check that relaxv is in [0,1] for Spallart-Allmaras nu variable
+     (already done for steady) */
+  if (   cs_glob_turb_model->itytur == 7
+      && cs_glob_time_step_options->idtvar >= 0) {
+      cs_field_t *f = CS_F_(nusa);
+      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
+      f_desc = _field_section_desc(f, "while reading numerical "
+                                      "parameters for variable");
+
+      cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
+                                       _(f_desc),
+                                       "var_cal_opt.relaxv",
+                                       var_cal_opt.relaxv,
+                                       0, 1);
+  }
+
+  /* checks for RSM models */
   if (cs_glob_turb_model->itytur == 3) {
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("while reading input data"),
