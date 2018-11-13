@@ -79,19 +79,19 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_dbg_cw_test(const cs_equation_param_t   *eqp,
                const cs_cell_mesh_t        *cm,
                const cs_cell_sys_t         *csys)
 {
 #if 1 /* Example: Only search debug information for a givan equation */
-  bool has_name = false;
+  _Bool has_name = false;
   if (eqp != NULL) {
     if (strcmp(eqp->name, "Tracer1") == 0)
       has_name=true;
   }
 #else
-  bool has_name = true;
+  _Bool has_name = true;
 #endif
 
   if (has_name) {

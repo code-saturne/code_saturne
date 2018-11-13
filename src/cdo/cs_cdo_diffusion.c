@@ -49,6 +49,10 @@
 #include "cs_reco.h"
 #include "cs_scheme_geometry.h"
 
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -384,7 +388,7 @@ _vb_cost_normal_flux_op(const short int           f,
 
   } /* Loop on face edges */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 2
   cs_log_printf(CS_LOG_DEFAULT,
                 ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)",
                 cm->c_id, cm->f_ids[f]);
@@ -461,7 +465,7 @@ _vb_cost_full_flux_op(const short int           f,
 
   } /* Loop on face edges */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 2
   cs_log_printf(CS_LOG_DEFAULT,
                 ">> Full flux.Op (NGRD.NGRD) matrix (c_id: %d,f_id: %d)",
                 cm->c_id, cm->f_ids[f]);
@@ -591,7 +595,7 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 
   }  /* Loop on face vertices (vi) */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 2
   cs_log_printf(CS_LOG_DEFAULT,
                 ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)",
                 cm->c_id,cm->f_ids[fm->f_id]);
@@ -1588,10 +1592,12 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
         bc_op->val[vi*(1 + bc_op->n_rows)] += alpha*pcoef_v;
       }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Cell Vb COST Robin bc matrix (f_id: %d)", fm->f_id);
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
+        cs_log_printf(CS_LOG_DEFAULT,
+                      ">> Cell Vb COST Robin bc matrix (f_id: %d)", fm->f_id);
+        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+      }
 #endif
 
       /* Add contribution to the linear system */
@@ -1711,10 +1717,12 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
       cs_sdm_square_2symm(ntrgrd_tr); /* ntrgrd_tr is now a symmetric matrix */
       cs_sdm_add_mult(bc_op, -flux_coef, ntrgrd_tr);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Cell Vb COST generic bc matrix (f_id: %d)", fm->f_id);
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
+        cs_log_printf(CS_LOG_DEFAULT,
+                      ">> Cell Vb COST generic bc matrix (f_id: %d)", fm->f_id);
+        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+      }
 #endif
 
       /* Add contribution to the linear system */
@@ -1792,12 +1800,13 @@ cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       }  /* Dirichlet or homogeneous Dirichlet */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Cell Vb.COST Weak bc matrix (f_id: %d)", fm->f_id);
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
+        cs_log_printf(CS_LOG_DEFAULT,
+                      ">> Cell Vb.COST Weak bc matrix (f_id: %d)", fm->f_id);
+        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+      }
 #endif
-
       /* Add contribution to the linear system */
       cs_sdm_add(csys->mat, ntrgrd);
 
@@ -1883,10 +1892,12 @@ cs_cdo_diffusion_svb_cost_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       }  /* Dirichlet or homogeneous Dirichlet */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Cell Vb COST WeakSym bc matrix (f_id: %d)", fm->f_id);
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
+        cs_log_printf(CS_LOG_DEFAULT,
+                      ">> Cell Vb COST WeakSym bc matrix (f_id: %d)", fm->f_id);
+        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+      }
 #endif
 
       /* Add contribution to the linear system */
@@ -1978,10 +1989,12 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
 
       }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Cell Vb WBS Robin bc matrix (f_id: %d)", fm->f_id);
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
+        cs_log_printf(CS_LOG_DEFAULT,
+                      ">> Cell Vb WBS Robin bc matrix (f_id: %d)", fm->f_id);
+        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+      }
 #endif
 
       /* Add contribution to the linear system */
@@ -2048,10 +2061,12 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       _wbs_nitsche(pcoef, fm, ntrgrd, cb, csys);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Cell Vb WBS Weak bc matrix (f_id: %d)", fm->f_id);
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
+        cs_log_printf(CS_LOG_DEFAULT,
+                      ">> Cell Vb WBS Weak bc matrix (f_id: %d)", fm->f_id);
+        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+      }
 #endif
 
       /* Add contribution to the linear system */
@@ -2128,10 +2143,12 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
       const double  pcoef = chi/sqrt(cm->face[f].meas);
       _wbs_nitsche(pcoef, fm, ntrgrd, cb, csys);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Cell Vb WBS WeakSym bc matrix (f_id: %d)", fm->f_id);
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
+        cs_log_printf(CS_LOG_DEFAULT,
+                      ">> Cell Vb WBS WeakSym bc matrix (f_id: %d)", fm->f_id);
+        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+      }
 #endif
 
       /* Add contribution to the linear system */
@@ -2198,10 +2215,12 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       _wbs_nitsche(pcoef, fm, ntrgrd, cb, csys);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Cell VCb Weak bc matrix (f_id: %d)", fm->f_id);
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
+        cs_log_printf(CS_LOG_DEFAULT,
+                      ">> Cell VCb Weak bc matrix (f_id: %d)", fm->f_id);
+        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+      }
 #endif
 
       /* Add contribution to the linear system */
@@ -2278,10 +2297,12 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
       const double  pcoef = chi/sqrt(cm->face[f].meas);
       _wbs_nitsche(pcoef, fm, ntrgrd, cb, csys);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT,
-                    ">> Cell VCb WeakSym bc matrix (f_id: %d)", fm->f_id);
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
+        cs_log_printf(CS_LOG_DEFAULT,
+                      ">> Cell VCb WeakSym bc matrix (f_id: %d)", fm->f_id);
+        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+      }
 #endif
 
       /* Add contribution to the linear system */
