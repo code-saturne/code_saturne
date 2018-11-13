@@ -337,11 +337,12 @@ _set_scal_hho_function_pointers(cs_equation_t  *eq)
 
   eq->init_context = cs_hho_scaleq_init_context;
   eq->free_context = cs_hho_scaleq_free_context;
-  eq->initialize_system = cs_hho_scaleq_initialize_system;
-  eq->set_dir_bc = NULL;
-  eq->build_system = cs_hho_scaleq_build_system;
-  eq->prepare_solving = _prepare_fb_solving;
-  eq->update_field = cs_hho_scaleq_update_field;
+
+  /* New functions */
+  eq->init_field_values = cs_hho_scaleq_init_values;
+  eq->solve = NULL;
+  eq->solve_steady_state = NULL;
+
   eq->postprocess = cs_hho_scaleq_extra_op;
   eq->read_restart = cs_hho_scaleq_read_restart;
   eq->write_restart = cs_hho_scaleq_write_restart;
@@ -350,6 +351,13 @@ _set_scal_hho_function_pointers(cs_equation_t  *eq)
   eq->get_vertex_values = NULL;
   eq->get_cell_values = cs_hho_scaleq_get_cell_values;
   eq->get_face_values = cs_hho_scaleq_get_face_values;
+
+  /* Deprecated functions */
+  eq->initialize_system = cs_hho_scaleq_initialize_system;
+  eq->set_dir_bc = NULL;
+  eq->build_system = cs_hho_scaleq_build_system;
+  eq->prepare_solving = _prepare_fb_solving;
+  eq->update_field = cs_hho_scaleq_update_field;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -369,10 +377,12 @@ _set_vect_hho_function_pointers(cs_equation_t  *eq)
 
   eq->init_context = cs_hho_vecteq_init_context;
   eq->free_context = cs_hho_vecteq_free_context;
-  eq->initialize_system = cs_hho_vecteq_initialize_system;
-  eq->build_system = cs_hho_vecteq_build_system;
-  eq->prepare_solving = _prepare_fb_solving;
-  eq->update_field = cs_hho_vecteq_update_field;
+
+  /* New functions */
+  eq->init_field_values = cs_hho_vecteq_init_values;
+  eq->solve = NULL;
+  eq->solve_steady_state = NULL;
+
   eq->postprocess = cs_hho_vecteq_extra_op;
   eq->read_restart = cs_hho_vecteq_read_restart;
   eq->write_restart = cs_hho_vecteq_write_restart;
@@ -381,6 +391,12 @@ _set_vect_hho_function_pointers(cs_equation_t  *eq)
   eq->get_vertex_values = NULL;
   eq->get_cell_values = cs_hho_vecteq_get_cell_values;
   eq->get_face_values = cs_hho_vecteq_get_face_values;
+
+  /* Deprecated functions */
+  eq->initialize_system = cs_hho_vecteq_initialize_system;
+  eq->build_system = cs_hho_vecteq_build_system;
+  eq->prepare_solving = _prepare_fb_solving;
+  eq->update_field = cs_hho_vecteq_update_field;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
