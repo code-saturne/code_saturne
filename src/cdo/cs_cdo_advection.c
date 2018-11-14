@@ -590,10 +590,10 @@ _build_cell_vpfd_mcu(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the temporary system with the contributions arising from
+ * \brief  Update the cellwise system with the contributions arising from
  *         the boundary conditions
  *
- * \param[in]      beta_nf   coefficient related to the advection field
+ * \param[in]      beta_nf   advection field coefficient
  * \param[in]      fm        pointer to a cs_face_mesh_t structure
  * \param[in]      matf      pointer to a local dense matrix related to a face
  * \param[in, out] csys      pointer to a cs_cell_sys_t structure
@@ -601,7 +601,7 @@ _build_cell_vpfd_mcu(const cs_cell_mesh_t    *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_vcb_system_with_bc(const double                 beta_nf,
+_update_vcb_system_with_bc(const cs_real_t              beta_nf,
                            const cs_face_mesh_t        *fm,
                            const cs_sdm_t              *matf,
                            cs_cell_sys_t               *csys)
@@ -640,8 +640,10 @@ _update_vcb_system_with_bc(const double                 beta_nf,
     const double  *mfi = matf->val + vfi*fm->n_vf;
     double  *mi = matc + fm->v_ids[vfi]*n_cell_dofs;
 
-    for (short int vfj = 0; vfj < fm->n_vf; vfj++)
-      mi[fm->v_ids[vfj]] += beta_nf * mfi[vfj];
+    for (short int vfj = 0; vfj < fm->n_vf; vfj++) {
+      const short int  vj = fm->v_ids[vfj];
+      mi[vj] += beta_nf * mfi[vfj];
+    }
 
   }  /* Loop on face vertices */
 
@@ -2307,10 +2309,11 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
                             cs_cell_builder_t           *cb,
                             cs_cell_sys_t               *csys)
 {
-  CS_UNUSED(t_eval);
+  if (csys == NULL)
+    return;
 
   /* Sanity checks */
-  assert(csys != NULL && cm != NULL && eqp != NULL);
+  assert(cm != NULL && eqp != NULL);
   assert(csys->mat->n_rows == cm->n_vc + 1);
   assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
   assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
@@ -2318,27 +2321,34 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
                       CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  const cs_adv_field_t  *adv_field = eqp->adv_field;
-  const cs_field_t  *normal_bdy_flux =
-    cs_advection_field_get_field(adv_field, CS_MESH_LOCATION_BOUNDARY_FACES);
+  const cs_adv_field_t  *adv = eqp->adv_field;
 
   /* Loop on border faces */
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
-    const cs_real_t  nflx = normal_bdy_flux->val[csys->bf_ids[f]];
-    const double  beta_nf = 0.5 * (fabs(nflx) - nflx);
+    const cs_real_t  nflx = cs_advection_field_cw_boundary_face_flux(t_eval, f,
+                                                                     cm, adv);
+    const cs_real_t  beta_nflx = 0.5 * (fabs(nflx) - nflx);
 
-    if (beta_nf > 0) {
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_log_printf(CS_LOG_DEFAULT, " %s: f:%d --> bndy_flux: %e\n",
+                    __func__, f, nflx);
+#endif
+
+
+
+    if (beta_nflx > 0) {
 
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       cs_hodge_compute_wbs_surfacic(fm, cb->aux);
 
-      _update_vcb_system_with_bc(beta_nf/fm->face.meas, fm, cb->aux, csys);
+      _update_vcb_system_with_bc(beta_nflx/fm->face.meas, fm, cb->aux, csys);
 
-    }  /* beta_nf > 0 */
+    }  /* At least for one face vertex, beta_nf > 0 */
 
   }  /* Loop on border faces */
 
