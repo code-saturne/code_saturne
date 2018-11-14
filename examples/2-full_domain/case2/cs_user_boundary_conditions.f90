@@ -330,7 +330,7 @@
 !>
 !> Cell value field ids
 !>
-!> - Density:                        \c icrom
+!> - Density:                        \c irom
 !> - Dynamic molecular viscosity:    \c iviscl
 !> - Turbulent viscosity:            \c ivisct
 !> - Specific heat:                  \c icp
@@ -447,9 +447,9 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer ilelt, ifac, nlelt
-
 integer, allocatable, dimension(:) :: lstelt
+
+integer          ielt, nlelt, ifac
 
 !===============================================================================
 
@@ -469,18 +469,18 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 !   - set the boundary condition for each face
 !===============================================================================
 
-call getfbr('1',nlelt,lstelt)
+call getfbr('1', nlelt, lstelt)
 
 if (ttcabs.lt.3.8d0) then
-  do ilelt = 1, nlelt
-    ifac = lstelt(ilelt)
-    rcodcl(ifac,isca(2),1) = 20.d0 + 100.d0*ttcabs
-  enddo
+ do ielt = 1, nlelt
+    ifac = lstelt(ielt)
+    rcodcl(ifac, isca(2),1) = 20.d0 + 100.d0*ttcabs
+ enddo
 else
-  do ilelt = 1, nlelt
-    ifac = lstelt(ilelt)
-    rcodcl(ifac,isca(2),1) = 400.d0
-  enddo
+ do ielt = 1, nlelt
+    ifac = lstelt(ielt)
+    rcodcl(ifac, isca(2),1) = 400.d0
+ enddo
 endif
 
 !--------

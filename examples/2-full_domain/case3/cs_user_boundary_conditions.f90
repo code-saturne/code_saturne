@@ -197,7 +197,7 @@
 !> The values of the 3 \c rcodcl components are:
 !>  - \c rcodcl(ifac, ivar, 1):
 !>     - Dirichlet for the variable          if \c icodcl(ifac, ivar) = 1 or 13
-!>     - Wall value (sliding velocity, temp) if \c icodcl(ifac, ivar) = 5
+!>     - Wall value (sliding velocity, temp) if \c icodcl(ifac, ivar) =  5
 !>     .
 !>     The dimension of \c rcodcl(ifac, ivar, 1) is that of the
 !>     resolved variable, for instance:
@@ -330,7 +330,7 @@
 !>
 !> Cell value field ids
 !>
-!> - Density:                        \c icrom
+!> - Density:                        \c irom
 !> - Dynamic molecular viscosity:    \c iviscl
 !> - Turbulent viscosity:            \c ivisct
 !> - Specific heat:                  \c icp
@@ -447,9 +447,9 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer ilelt, ifac, nlelt
-
 integer, allocatable, dimension(:) :: lstelt
+
+integer          ielt, nlelt, ifac
 
 !===============================================================================
 
@@ -472,13 +472,13 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 call getfbr('1',nlelt,lstelt)
 
 if (ttcabs.lt.3.8d0) then
-  do ilelt = 1, nlelt
-    ifac = lstelt(ilelt)
+  do ielt = 1, nlelt
+    ifac = lstelt(ielt)
     rcodcl(ifac,isca(2),1) = 20.d0 + 100.d0*ttcabs
   enddo
 else
-  do ilelt = 1, nlelt
-    ifac = lstelt(ilelt)
+  do ielt = 1, nlelt
+    ifac = lstelt(ielt)
     rcodcl(ifac,isca(2),1) = 400.d0
   enddo
 endif

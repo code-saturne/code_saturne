@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="case1" solver_version="5.0" study="2-full_domain" version="2.0">
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="case3" solver_version="5.2;5.3-alpha" study="full_domain" version="2.0">
 	<additional_scalars>
 		<variable label="scalar2" name="scalar2" type="user">
 			<blending_factor>1</blending_factor>
-			<formula zone_id="1">scalar2 = 10.;</formula>
+			<formula zone_id="1">scalar2 = 10;</formula>
 			<max_value>400</max_value>
 			<min_value>0</min_value>
-			<property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
+			<property choice="constant" label="Dscal1" name="scalar2_diffusivity">
 				<initial_value>8.55e-05</initial_value>
 			</property>
 			<rhs_reconstruction>1</rhs_reconstruction>
@@ -13,6 +13,7 @@
 		</variable>
 	</additional_scalars>
 	<analysis_control>
+		<error_estimator/>
 		<output>
 			<listing_printing_frequency>1</listing_printing_frequency>
 			<mesh id="-1" label="Fluid domain" type="cells">
@@ -65,29 +66,36 @@
 				<probe_y>0.75</probe_y>
 				<probe_z>0</probe_z>
 			</probe>
-			<probe_format choice="DAT"/>
-			<probe_recording_frequency_time>0.1</probe_recording_frequency_time>
+			<probe name="9" status="on">
+				<probe_x>-0.5</probe_x>
+				<probe_y>2.25</probe_y>
+				<probe_z>0</probe_z>
+			</probe>
+			<probe_format choice="CSV"/>
+			<probe_recording_frequency>1</probe_recording_frequency>
 			<writer id="-1" label="results">
 				<directory name="postprocessing"/>
-				<format name="ensight" options="binary"/>
+				<format name="ensight" options="separate_meshes"/>
 				<frequency period="time_step">2</frequency>
 				<output_at_end status="on"/>
 				<time_dependency choice="fixed_mesh"/>
 			</writer>
 		</output>
 		<profiles/>
-		<steady_management status="off"/>
+		<scalar_balances/>
 		<time_averages/>
 		<time_parameters>
-			<iterations>300</iterations>
+			<iterations>900</iterations>
 			<property label="CourantNb" name="courant_number">
 				<postprocessing_recording status="off"/>
 			</property>
 			<property label="FourierNb" name="fourier_number">
 				<postprocessing_recording status="off"/>
 			</property>
+			<relaxation_coefficient>0.7</relaxation_coefficient>
+			<thermal_time_step status="off"/>
 			<time_passing>0</time_passing>
-			<time_step_ref>0.05</time_step_ref>
+			<time_step_ref>0.01</time_step_ref>
 			<zero_time_step status="off"/>
 		</time_parameters>
 	</analysis_control>
@@ -95,17 +103,17 @@
 		<boundary label="Inlet" name="1" nature="inlet">1</boundary>
 		<boundary label="Outlet" name="2" nature="outlet">34</boundary>
 		<boundary label="Symmetry" name="3" nature="symmetry">8 or 9 or 28 or 29 or 38 or 39</boundary>
-		<boundary label="Wall_1" name="4" nature="wall">24 and 0.1 &lt;= x and 0.5 &gt;= x</boundary>
+		<boundary label="Wall_1" name="4" nature="wall">24 and 0.1 &lt;x and 0.5 &gt; x</boundary>
 		<boundary label="Wall_2" name="5" nature="wall">2 or 3</boundary>
 		<boundary label="Wall_3" name="6" nature="wall">4 or 7 or 21 or 22 or 23</boundary>
 		<boundary label="Wall_4" name="7" nature="wall">6 and y &gt; 1</boundary>
-		<boundary label="Wall_5" name="8" nature="wall">6 and y &lt;= 1</boundary>
-		<boundary label="Wall_6" name="9" nature="wall">31 or 33</boundary>
+		<boundary label="Wall_5" name="8" nature="wall">6 and y &lt; 1</boundary>
+		<boundary label="wall_6" name="9" nature="wall">31 or 33</boundary>
 		<inlet field_id="none" label="Inlet">
-			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
+			<scalar choice="dirichlet" name="scalar2" type="user">
 				<dirichlet>200</dirichlet>
 			</scalar>
-			<scalar choice="dirichlet" label="TempC" name="temperature" type="thermal">
+			<scalar choice="dirichlet" name="temperature" type="thermal">
 				<dirichlet>300</dirichlet>
 			</scalar>
 			<turbulence choice="hydraulic_diameter">
@@ -119,20 +127,19 @@
 			</velocity_pressure>
 		</inlet>
 		<outlet field_id="none" label="Outlet">
-			<scalar choice="neumann" label="scalar2" name="scalar2" type="user">
+			<scalar choice="neumann" name="scalar2" type="user">
 				<neumann>0</neumann>
 			</scalar>
-			<scalar choice="neumann" label="TempC" name="temperature" type="thermal">
+			<scalar choice="neumann" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
 		</outlet>
 		<symmetry field_id="none" label="Symmetry"/>
-		<variable/>
 		<wall field_id="none" label="Wall_1">
-			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
+			<scalar choice="dirichlet" name="scalar2" type="user">
 				<dirichlet>0</dirichlet>
 			</scalar>
-			<scalar choice="neumann" label="TempC" name="temperature" type="thermal">
+			<scalar choice="neumann" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
 			<velocity_pressure choice="off">
@@ -142,55 +149,68 @@
 			</velocity_pressure>
 		</wall>
 		<wall field_id="none" label="Wall_2">
-			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
+			<scalar choice="dirichlet" name="scalar2" type="user">
 				<dirichlet>5</dirichlet>
 			</scalar>
-			<scalar choice="neumann" label="TempC" name="temperature" type="thermal">
+			<scalar choice="neumann" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
 			<velocity_pressure choice="off"/>
 		</wall>
 		<wall field_id="none" label="Wall_3">
-			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
+			<scalar choice="dirichlet" name="scalar2" type="user">
 				<dirichlet>0</dirichlet>
 			</scalar>
-			<scalar choice="neumann" label="TempC" name="temperature" type="thermal">
+			<scalar choice="neumann" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
 			<velocity_pressure choice="off"/>
 		</wall>
 		<wall field_id="none" label="Wall_4">
-			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
+			<scalar choice="dirichlet" name="scalar2" type="user">
 				<dirichlet>25</dirichlet>
 			</scalar>
-			<scalar choice="neumann" label="TempC" name="temperature" type="thermal">
+			<scalar choice="neumann" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
 			<velocity_pressure choice="off"/>
 		</wall>
 		<wall field_id="none" label="Wall_5">
-			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
+			<scalar choice="dirichlet" name="scalar2" type="user">
 				<dirichlet>320</dirichlet>
 			</scalar>
-			<scalar choice="neumann" label="TempC" name="temperature" type="thermal">
+			<scalar choice="neumann" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
-			<velocity_pressure choice="off"/>
+			<velocity_pressure choice="off">
+				<dirichlet component="0" name="velocity">0</dirichlet>
+				<dirichlet component="1" name="velocity">0</dirichlet>
+				<dirichlet component="2" name="velocity">0</dirichlet>
+			</velocity_pressure>
 		</wall>
-		<wall field_id="none" label="Wall_6">
-			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
+		<wall field_id="none" label="wall_6">
+			<scalar choice="dirichlet" name="scalar2" type="user">
 				<dirichlet>40</dirichlet>
 			</scalar>
-			<scalar choice="neumann" label="TempC" name="temperature" type="thermal">
+			<scalar choice="neumann" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
-			<velocity_pressure choice="off"/>
+			<velocity_pressure choice="off">
+				<dirichlet component="0" name="velocity">0</dirichlet>
+				<dirichlet component="1" name="velocity">0</dirichlet>
+				<dirichlet component="2" name="velocity">0</dirichlet>
+			</velocity_pressure>
 		</wall>
 	</boundary_conditions>
-	<calculation_management/>
-	<lagrangian model="off">
-		<output/>
-	</lagrangian>
+	<calculation_management>
+		<block_io/>
+		<partitioning/>
+		<run_type>standard</run_type>
+		<start_restart>
+			<frozen_field status="off"/>
+		</start_restart>
+	</calculation_management>
+	<lagrangian model="off"/>
 	<numerical_parameters>
 		<gradient_reconstruction choice="0"/>
 		<gradient_transposed status="on"/>
@@ -206,10 +226,16 @@
 		<fluid_properties>
 			<material choice="user_material"/>
 			<method choice="user_properties"/>
-			<property choice="constant" label="Density" name="density">
+			<property choice="variable" label="Density" name="density">
+				<formula># density flaw
+#
+
+A = -4.0668e-3;
+B = -5.0754e-2;
+C = 1000.9;
+
+density = temperature*(A*temperature +B) + C;</formula>
 				<initial_value>725.735</initial_value>
-				<listing_printing status="off"/>
-				<postprocessing_recording status="off"/>
 			</property>
 			<property choice="constant" label="LamVisc" name="molecular_viscosity">
 				<initial_value>8.951e-05</initial_value>
@@ -230,11 +256,18 @@
 		</fluid_properties>
 		<gravity>
 			<gravity_x>0</gravity_x>
-			<gravity_y>0</gravity_y>
+			<gravity_y>-9.81</gravity_y>
 			<gravity_z>0</gravity_z>
 		</gravity>
+		<notebook/>
+		<omega>
+			<omega_x>0</omega_x>
+			<omega_y>0</omega_y>
+			<omega_z>0</omega_z>
+		</omega>
 	</physical_properties>
 	<solution_domain>
+		<extrusion/>
 		<faces_cutting status="off"/>
 		<joining>
 			<face_joining name="1">
@@ -252,29 +285,55 @@
 			<mesh name="pic.des"/>
 		</meshes_list>
 		<periodicity/>
+		<thin_walls/>
 		<volumic_conditions>
-			<zone head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
+			<zone groundwater_law="off" head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
+			<zone groundwater_law="off" head_losses="on" id="2" initialization="off" label="Zone_1" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">x&gt;=0.2 and x&lt;=0.4 and y&gt;= -0.75 and y&lt;=-0.25</zone>
 		</volumic_conditions>
 	</solution_domain>
 	<thermophysical_models>
-		<ale_method status="off"/>
+		<ale_method status="off">
+			<formula>mesh_viscosity_1 = 1;</formula>
+			<mesh_viscosity type="isotrop"/>
+		</ale_method>
 		<atmospheric_flows model="off"/>
 		<compressible_model model="off"/>
 		<conjugate_heat_transfer>
 			<external_coupling/>
 		</conjugate_heat_transfer>
+		<fans/>
 		<gas_combustion model="off" option="off"/>
 		<groundwater_model model="off"/>
+		<head_losses>
+			<head_loss zone_id="2">
+				<a11>1</a11>
+				<a12>0</a12>
+				<a13>0</a13>
+				<a21>0</a21>
+				<a22>1</a22>
+				<a23>0</a23>
+				<a31>0</a31>
+				<a32>0</a32>
+				<a33>1</a33>
+				<choice>off</choice>
+				<kxx>20000</kxx>
+				<kyy>20000</kyy>
+				<kzz>20000</kzz>
+			</head_loss>
+		</head_losses>
 		<joule_effect model="off"/>
-		<radiative_transfer model="off"/>
+		<radiative_transfer model="off">
+			<absorption_coefficient type="constant">0</absorption_coefficient>
+			<restart status="on"/>
+		</radiative_transfer>
 		<reference_values>
 			<pressure>101325</pressure>
-			<temperature>1273.15</temperature>
+			<temperature>20</temperature>
 			<velocity>1</velocity>
 		</reference_values>
 		<solid_fuels model="off"/>
 		<thermal_scalar model="temperature_celsius">
-			<property label="Boundary layer Nusselt" name="boundary_layer_nusselt" support="boundary">
+			<property label="Dimensionless Thermal flux" name="boundary_layer_nusselt" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
 			<property label="Boundary temperature" name="boundary_temperature" support="boundary"/>
@@ -291,14 +350,19 @@
 				<turbulent_flux_model>SGDH</turbulent_flux_model>
 			</variable>
 		</thermal_scalar>
+		<turbomachinery model="off">
+			<joining/>
+		</turbomachinery>
 		<turbulence model="k-epsilon">
 			<initialization choice="reference_value" zone_id="1"/>
 			<property label="TurbVisc" name="turbulent_viscosity"/>
 			<variable label="epsilon" name="epsilon">
+				<blending_factor>0</blending_factor>
 				<listing_printing status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 			</variable>
 			<variable label="k" name="k">
+				<blending_factor>0</blending_factor>
 				<listing_printing status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 			</variable>

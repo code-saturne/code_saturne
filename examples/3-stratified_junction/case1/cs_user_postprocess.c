@@ -72,10 +72,12 @@ BEGIN_C_DECLS
 /*============================================================================
  * Local (user defined) function definitions
  *============================================================================*/
-
 /*----------------------------------------------------------------------------
- * Example function for selection of cells with a temperature below 21
- * degrees.
+ * Example function for selection of cells with scalar field values above
+ * a certain threshold.
+ *
+ * In this case, the selection is base on the value of the temperaturefield
+ * being above 21 degrees.
  *
  * parameters:
  *   input    <-> pointer to input (unused here)
@@ -89,7 +91,6 @@ _t_lt_21_select(void        *input,
                 cs_lnum_t  **cell_ids)
 {
   cs_lnum_t i;
-
   cs_lnum_t _n_cells = 0;
   cs_lnum_t *_cell_ids = NULL;
 
@@ -125,7 +126,6 @@ _t_lt_21_select(void        *input,
   *n_cells = _n_cells;
   *cell_ids = _cell_ids;
 }
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -149,13 +149,14 @@ cs_user_postprocess_writers(void)
   cs_post_define_writer(1,                            /* writer_id */
                         "user",                       /* writer name */
                         "postprocessing",             /* directory name */
-                        "EnSight Gold",               /* format name */
-                        "",                           /* format options */
+                        "EnSight Gold",               /* format_name */
+                        "",                           /* format_options */
                         FVM_WRITER_TRANSIENT_CONNECT, /* time dependency */
-                        false,                        /* output at start */
-                        true,                         /* output at end */
-                        5,                            /* time step frequency */
-                        -1);                          /* Time value frequency */
+                        false,                        /* output_at_start */
+                        true,                         /* output_at_end */
+                        5,                            /* frequency_n */
+                        -1);                          /* frequency_t */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -182,7 +183,7 @@ cs_user_postprocess_meshes(void)
   cs_post_define_volume_mesh_by_func(1,               /* mesh id */
                                      "T_lt_21",
                                      _t_lt_21_select,
-                                     NULL,            /* _t_lt_21_select input */
+                                     NULL,            /* _t_lt_21_select_input */
                                      true,            /* time varying */
                                      false,           /* add_groups */
                                      false,           /* auto_variables */
@@ -249,26 +250,6 @@ cs_user_postprocess_values(const char            *mesh_name,
                       NULL,                           /* b_face_vals */
                       ts);
   }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * Override default frequency or calculation end based output.
- *
- * This allows fine-grained control of activation or deactivation,
- *
- * \param  nt_max_abs  maximum time step number
- * \param  nt_cur_abs  current time step number
- * \param  t_cur_abs   absolute time at the current time step
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_postprocess_activate(int     nt_max_abs,
-                             int     nt_cur_abs,
-                             double  t_cur_abs)
-{
 
 }
 
