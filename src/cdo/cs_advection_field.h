@@ -675,8 +675,9 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the flux of the advection field across the
- *         the closure of the dual cell related to each vertex
+ * \brief  Compute the value of the normal flux of the advection field across
+ *         the closure of the dual cell related to each vertex belonging to the
+ *         boundary face f
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in]      adv        pointer to a cs_adv_field_t structure
@@ -692,6 +693,26 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
                                          short int               f,
                                          cs_real_t               time_eval,
                                          cs_real_t              *fluxes);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the normal flux of the advection field across
+ *         a boundary face f (cellwise version)
+ *
+ * \param[in] time_eval   physical time at which one evaluates the term
+ * \param[in] f           face id in the cellwise numbering
+ * \param[in] cm          pointer to a cs_cell_mesh_t structure
+ * \param[in] adv         pointer to a cs_adv_field_t structure
+ *
+ * \return  the normal boundary flux for the face f
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
+                                         const short int          f,
+                                         const cs_cell_mesh_t    *cm,
+                                         const cs_adv_field_t    *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!

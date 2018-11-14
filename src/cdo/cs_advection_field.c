@@ -1413,6 +1413,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
       const cs_xdef_t  *def = adv->bdy_flux_defs[def_id];
       const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
       assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
+      assert(def->dim == 1);
 
       switch (def->type) {
 
@@ -1510,8 +1511,209 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the flux of the advection field across the
- *         the closure of the dual cell related to each vertex
+ * \brief  Compute the value of the normal flux of the advection field across
+ *         a boundary face f (cellwise version)
+ *
+ * \param[in] time_eval   physical time at which one evaluates the term
+ * \param[in] f           face id in the cellwise numbering
+ * \param[in] cm          pointer to a cs_cell_mesh_t structure
+ * \param[in] adv         pointer to a cs_adv_field_t structure
+ *
+ * \return  the normal boundary flux for the face f
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
+                                         const short int          f,
+                                         const cs_cell_mesh_t    *cm,
+                                         const cs_adv_field_t    *adv)
+{
+  cs_real_t  f_flux = 0.;
+
+  if (adv == NULL)
+    return f_flux;
+
+  const cs_quant_t  pfq = cm->face[f];
+  const cs_lnum_t  bf_id = cm->f_ids[f] - cs_cdo_quant->n_i_faces;
+
+  assert(bf_id > -1);
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
+
+  if (adv->n_bdy_flux_defs == 0) { /* No specific definition of the boundary
+                                      flux. Use the definition related to the
+                                      volume */
+    cs_xdef_t  *def = adv->definition;
+    assert(def->dim == 3);
+
+    switch (def->type) {
+
+    case CS_XDEF_BY_VALUE:
+      {
+        const cs_real_t  *constant_val = (cs_real_t *)def->input;
+
+        f_flux = pfq.meas * _dp3(pfq.unitv, constant_val);
+      }
+      break;
+
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+      {
+        cs_real_t  adv_val[3] = {0, 0, 0};
+        cs_quadrature_tria_integral_t *compute_integral =
+          cs_quadrature_get_tria_integral(def->dim, def->qtype);
+        cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
+
+        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_FEQ |
+                            CS_CDO_LOCAL_EV));
+
+        const cs_lnum_t  start_idx = cm->f2e_idx[f];
+        const cs_lnum_t  end_idx = cm->f2e_idx[f+1];
+        const short int  n_vf = end_idx - start_idx;  /* #vertices (=#edges) */
+        const short int  *f2e_ids = cm->f2e_ids + start_idx;
+
+        switch (n_vf) {
+
+        case CS_TRIANGLE_CASE: /* Triangle: one-shot computation */
+          {
+            short int  v1, v2, v3;
+            cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids,
+                                             &v1, &v2, &v3);
+
+            compute_integral(time_eval,
+                             cm->xv + 3*v1, cm->xv + 3*v2, cm->xv + 3*v3,
+                             pfq.meas, anai->func, anai->input,
+                             adv_val);
+            }
+            break;
+
+        default:
+          {
+            const double  *tef = cm->tef + start_idx;
+
+            for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+              const short int  _2e = 2*f2e_ids[e];
+              const cs_real_t  *xv1 = cm->xv + 3*cm->e2v_ids[_2e];
+              const cs_real_t  *xv2 = cm->xv + 3*cm->e2v_ids[_2e+1];
+
+              /* adv_val is updated (+=) */
+              compute_integral(time_eval, xv1, xv2, pfq.center, tef[e],
+                               anai->func, anai->input,
+                               adv_val);
+            }
+
+          } /* Loop on face edges */
+
+        } /* End of switch */
+
+        f_flux = _dp3(pfq.unitv, adv_val);
+
+      }
+      break; /* definition by analytic */
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, " %s: Incompatible type of definition.",
+                __func__);
+      break;
+
+    } /* Type of definition */
+
+  }
+  else { /* Consider the definition of the boundary flux for updating the field
+            values */
+
+    const cs_xdef_t  *def = (adv->bdy_def_ids == NULL) ?
+      adv->bdy_flux_defs[0] : adv->bdy_flux_defs[adv->bdy_def_ids[bf_id]];
+
+#if defined(DEBUG) && !defined(NDEBUG) /* Useful for assert */
+    const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
+#endif
+    assert(def != NULL);
+    assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
+
+    switch (def->type) {
+
+    case CS_XDEF_BY_VALUE:
+      {
+        const cs_real_t  *constant_val = (cs_real_t *)def->input;
+        f_flux = constant_val[0];
+      }
+      break;
+
+    case CS_XDEF_BY_ARRAY:
+      {
+        const cs_xdef_array_input_t  *input =
+          (cs_xdef_array_input_t *)def->input;
+        const cs_real_t  *val = input->values;
+
+        assert(input->stride == 1);
+
+        if (cs_flag_test(input->loc, cs_flag_primal_face))
+          f_flux = val[bf_id];
+
+        else if (cs_flag_test(input->loc, cs_flag_dual_closure_byf)) {
+
+          const cs_adjacency_t  *bf2v = cs_cdo_connect->bf2v;
+          const cs_lnum_t  *idx = bf2v->idx;
+          assert(idx == input->index);
+
+          for (cs_lnum_t i = idx[bf_id]; i < idx[bf_id+1]; i++)
+            f_flux += val[i];
+
+        }
+        else
+          bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.", __func__);
+
+      }
+      break; /* definition by array */
+
+    case CS_XDEF_BY_FIELD:
+      {
+        cs_field_t  *field = (cs_field_t *)def->input;
+        assert(field->dim == 1);
+
+        if (field->location_id ==
+            cs_mesh_location_get_id_by_name(N_("boundary faces"))) {
+
+          f_flux = field->val[bf_id];
+
+        }
+        else
+          bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.", __func__);
+
+      }
+      break; /* definition by field */
+
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+      {
+        cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
+
+        anai->func(time_eval,
+                   1, NULL, pfq.center,
+                   true,   /* compacted output ? */
+                   anai->input,
+                   &f_flux);
+
+      }
+      break; /* definition by analytic */
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Incompatible type of definition.", __func__);
+      break;
+
+    } /* Type of definition */
+
+  } /* There is at least one definition of the normal boundary flux */
+
+  return f_flux;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the normal flux of the advection field across
+ *         the closure of the dual cell related to each vertex belonging to the
+ *         boundary face f
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in]      adv        pointer to a cs_adv_field_t structure
@@ -1536,13 +1738,14 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
               " %s: Array of fluxes should be allocated before the call.",
               __func__);
 
-  cs_lnum_t  bf_id = cm->f_ids[f] - cs_cdo_quant->n_i_faces;
+  /* Reset flux values */
+  for (short int v = 0; v < cm->n_vc; v++) fluxes[v] = 0;
+
+  const cs_quant_t  pfq = cm->face[f];
+  const cs_lnum_t  bf_id = cm->f_ids[f] - cs_cdo_quant->n_i_faces;
   assert(bf_id > -1);
   assert(cs_flag_test(cm->flag,  CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_FEQ |
                       CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
-
-  /* Reset flux values */
-  for (short int v = 0; v < cm->n_vc; v++) fluxes[v] = 0;
 
   if (adv->n_bdy_flux_defs == 0) {
     /* Implicit definition of the boundary flux from the definition of the
@@ -1559,7 +1762,6 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
                                                               def->qtype);
         cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
 
-        const cs_quant_t  pfq = cm->face[f];
         const short int  end_idx = cm->f2e_idx[f+1], start_idx = cm->f2e_idx[f];
         const short int n_ef = end_idx - start_idx; /* #vertices (= #edges) */
         const short int *f2e_ids = cm->f2e_ids + start_idx;
@@ -1645,6 +1847,36 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
 
       }
       break; /* by_array */
+
+    case CS_XDEF_BY_FIELD:
+      {
+        cs_field_t  *field = (cs_field_t *)def->input;
+        assert(field->dim == 1);
+
+        if (field->location_id ==
+            cs_mesh_location_get_id_by_name(N_("boundary faces")))
+          _cw_fill_uniform_boundary_flux(cm, f, field->val[bf_id], fluxes);
+
+        else
+          bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.", __func__);
+
+      }
+      break; /* definition by field */
+
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+      {
+        cs_real_t  f_flux = 0;
+        cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
+
+        anai->func(time_eval,
+                   1, NULL, pfq.center,
+                   true,   /* compacted output ? */
+                   anai->input,
+                   &f_flux);
+
+        _cw_fill_uniform_boundary_flux(cm, f, f_flux, fluxes);
+      }
+      break; /* definition by analytic */
 
     default:
       bft_error(__FILE__, __LINE__, 0, " %s: Invalid case", __func__);
