@@ -902,7 +902,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
         if (cs_equation_param_has_diffusion(eqp)) {
-          eqc->adv_func = cs_cdo_advection_fb_upwcsvdi;
+          eqc->adv_func = cs_cdo_advection_fb_upwcsv_di;
           eqc->adv_func_bc = cs_cdo_advection_fb_bc_wdi;
         }
         else {
@@ -924,7 +924,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
         if (cs_equation_param_has_diffusion(eqp)) {
-          eqc->adv_func = cs_cdo_advection_fb_upwnocdi;
+          eqc->adv_func = cs_cdo_advection_fb_upwnoc_di;
           eqc->adv_func_bc = cs_cdo_advection_fb_bc_wdi;
         }
         else {

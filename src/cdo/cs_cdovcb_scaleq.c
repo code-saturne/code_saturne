@@ -953,12 +953,12 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqb->msh_flag |= CS_CDO_LOCAL_EF;
       _set_cip_coef(eqp);
 
-      eqc->add_advection_bc = cs_cdo_advection_add_vcb_bc;
+      eqc->add_advection_bc = cs_cdo_advection_vcb_bc;
 
       if (cs_advection_field_is_cellwise(eqp->adv_field))
-        eqc->get_advection_matrix = cs_cdo_advection_get_vcb_cw;
+        eqc->get_advection_matrix = cs_cdo_advection_vcb_cw_cst;
       else
-        eqc->get_advection_matrix = cs_cdo_advection_get_vcb;
+        eqc->get_advection_matrix = cs_cdo_advection_vcb;
 
       break;
 

@@ -609,6 +609,26 @@ cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the value of the advection field at a specific location
+ *         inside a cell
+ *
+ * \param[in]      adv          pointer to a cs_adv_field_t structure
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      xyz          location where to perform the evaluation
+ * \param[in]      time_eval    physical time at which one evaluates the term
+ * \param[in, out] eval         pointer to a cs_nvec3_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
+                                  const cs_cell_mesh_t  *cm,
+                                  const cs_real_3_t      xyz,
+                                  cs_real_t              time_eval,
+                                  cs_nvec3_t            *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the mean-value of the advection field inside each cell
  *
  * \param[in]      adv           pointer to a cs_adv_field_t structure
@@ -636,26 +656,6 @@ void
 cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
                                cs_real_t              time_eval,
                                cs_real_t             *vtx_values);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value of the advection field at a specific location
- *         inside a cell
- *
- * \param[in]      adv          pointer to a cs_adv_field_t structure
- * \param[in]      cm           pointer to a cs_cell_mesh_t structure
- * \param[in]      xyz          location where to perform the evaluation
- * \param[in]      time_eval    physical time at which one evaluates the term
- * \param[in, out] eval         pointer to a cs_nvec3_t
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
-                                  const cs_cell_mesh_t  *cm,
-                                  const cs_real_3_t      xyz,
-                                  cs_real_t              time_eval,
-                                  cs_nvec3_t            *eval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -688,11 +688,11 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
-                                         const cs_adv_field_t   *adv,
-                                         short int               f,
-                                         cs_real_t               time_eval,
-                                         cs_real_t              *fluxes);
+cs_advection_field_cw_boundary_f2v_flux(const cs_cell_mesh_t   *cm,
+                                        const cs_adv_field_t   *adv,
+                                        short int               f,
+                                        cs_real_t               time_eval,
+                                        cs_real_t              *fluxes);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -727,10 +727,10 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_cw_face_flux(const cs_cell_mesh_t       *cm,
-                                    const cs_adv_field_t       *adv,
-                                    cs_real_t                   time_eval,
-                                    cs_real_t                  *fluxes);
+cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
+                                const cs_adv_field_t       *adv,
+                                cs_real_t                   time_eval,
+                                cs_real_t                  *fluxes);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -745,10 +745,10 @@ cs_advection_field_get_cw_face_flux(const cs_cell_mesh_t       *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
-                                     const cs_adv_field_t     *adv,
-                                     cs_real_t                 time_eval,
-                                     cs_real_t                *fluxes);
+cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
+                                 const cs_adv_field_t     *adv,
+                                 cs_real_t                 time_eval,
+                                 cs_real_t                *fluxes);
 
 /*----------------------------------------------------------------------------*/
 /*!

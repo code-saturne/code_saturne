@@ -251,9 +251,9 @@ cs_cdo_advection_fb_upwcsv(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_upwcsvdi(const cs_cell_mesh_t      *cm,
-                             const cs_real_t            fluxes[],
-                             cs_sdm_t                  *adv);
+cs_cdo_advection_fb_upwcsv_di(const cs_cell_mesh_t      *cm,
+                              const cs_real_t            fluxes[],
+                              cs_sdm_t                  *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -295,9 +295,9 @@ cs_cdo_advection_fb_upwnoc(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_upwnocdi(const cs_cell_mesh_t      *cm,
-                             const cs_real_t            fluxes[],
-                             cs_sdm_t                  *adv);
+cs_cdo_advection_fb_upwnoc_di(const cs_cell_mesh_t      *cm,
+                              const cs_real_t            fluxes[],
+                              cs_sdm_t                  *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -315,11 +315,11 @@ cs_cdo_advection_fb_upwnocdi(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
-                                 const cs_cell_mesh_t        *cm,
-                                 cs_real_t                    t_eval,
-                                 cs_face_mesh_t              *fm,
-                                 cs_cell_builder_t           *cb);
+cs_cdo_advection_vb_upwcsv_di(const cs_equation_param_t   *eqp,
+                              const cs_cell_mesh_t        *cm,
+                              cs_real_t                    t_eval,
+                              cs_face_mesh_t              *fm,
+                              cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -337,11 +337,11 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
-                               const cs_cell_mesh_t        *cm,
-                               cs_real_t                    t_eval,
-                               cs_face_mesh_t              *fm,
-                               cs_cell_builder_t           *cb);
+cs_cdo_advection_vb_upwcsv(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           cs_real_t                    t_eval,
+                           cs_face_mesh_t              *fm,
+                           cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -359,11 +359,11 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
-                               const cs_cell_mesh_t        *cm,
-                               cs_real_t                    t_eval,
-                               cs_face_mesh_t              *fm,
-                               cs_cell_builder_t           *cb);
+cs_cdo_advection_vb_cencsv(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           cs_real_t                    t_eval,
+                           cs_face_mesh_t              *fm,
+                           cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -381,11 +381,11 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_mcucsv(const cs_equation_param_t   *eqp,
-                               const cs_cell_mesh_t        *cm,
-                               cs_real_t                    t_eval,
-                               cs_face_mesh_t              *fm,
-                               cs_cell_builder_t           *cb);
+cs_cdo_advection_vb_mcucsv(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           cs_real_t                    t_eval,
+                           cs_face_mesh_t              *fm,
+                           cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -403,11 +403,11 @@ cs_cdo_advection_get_vb_mcucsv(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
-                                 const cs_cell_mesh_t        *cm,
-                                 cs_real_t                    t_eval,
-                                 cs_face_mesh_t              *fm,
-                                 cs_cell_builder_t           *cb);
+cs_cdo_advection_vb_upwnoc_di(const cs_equation_param_t   *eqp,
+                              const cs_cell_mesh_t        *cm,
+                              cs_real_t                    t_eval,
+                              cs_face_mesh_t              *fm,
+                              cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -425,11 +425,11 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
-                               const cs_cell_mesh_t        *cm,
-                               cs_real_t                    t_eval,
-                               cs_face_mesh_t              *fm,
-                               cs_cell_builder_t           *cb);
+cs_cdo_advection_vb_upwnoc(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           cs_real_t                    t_eval,
+                           cs_face_mesh_t              *fm,
+                           cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -447,11 +447,11 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
-                               const cs_cell_mesh_t         *cm,
-                               cs_real_t                     t_eval,
-                               cs_face_mesh_t               *fm,
-                               cs_cell_builder_t            *cb);
+cs_cdo_advection_vb_cennoc(const cs_equation_param_t    *eqp,
+                           const cs_cell_mesh_t         *cm,
+                           cs_real_t                     t_eval,
+                           cs_face_mesh_t               *fm,
+                           cs_cell_builder_t            *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -468,7 +468,7 @@ cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
+cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
                             const cs_cell_mesh_t        *cm,
                             cs_real_t                    t_eval,
                             cs_face_mesh_t              *fm,
@@ -488,11 +488,11 @@ cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
-                         const cs_cell_mesh_t        *cm,
-                         cs_real_t                    t_eval,
-                         cs_face_mesh_t              *fm,
-                         cs_cell_builder_t           *cb);
+cs_cdo_advection_vcb(const cs_equation_param_t   *eqp,
+                     const cs_cell_mesh_t        *cm,
+                     cs_real_t                    t_eval,
+                     cs_face_mesh_t              *fm,
+                     cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -508,12 +508,12 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
-                           const cs_equation_param_t  *eqp,
-                           cs_real_t                   t_eval,
-                           cs_face_mesh_t             *fm,
-                           cs_cell_builder_t          *cb,
-                           cs_cell_sys_t              *csys);
+cs_cdo_advection_vb_bc(const cs_cell_mesh_t       *cm,
+                       const cs_equation_param_t  *eqp,
+                       cs_real_t                   t_eval,
+                       cs_face_mesh_t             *fm,
+                       cs_cell_builder_t          *cb,
+                       cs_cell_sys_t              *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -530,17 +530,17 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
-                            const cs_equation_param_t   *eqp,
-                            cs_real_t                    t_eval,
-                            cs_face_mesh_t              *fm,
-                            cs_cell_builder_t           *cb,
-                            cs_cell_sys_t               *csys);
+cs_cdo_advection_vcb_bc(const cs_cell_mesh_t        *cm,
+                        const cs_equation_param_t   *eqp,
+                        cs_real_t                    t_eval,
+                        cs_face_mesh_t              *fm,
+                        cs_cell_builder_t           *cb,
+                        cs_cell_sys_t               *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the value in each cell of the upwinding coefficient given
- *          a related Peclet number
+ * \brief   Compute the value of the upwinding coefficient in each cell knowing
+ *          the related Peclet number
  *
  * \param[in]      cdoq      pointer to the cdo quantities structure
  * \param[in]      scheme    type of scheme used for the advection term
@@ -551,9 +551,9 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_upwind_coef_cell(const cs_cdo_quantities_t    *cdoq,
-                                      cs_param_advection_scheme_t   scheme,
-                                      cs_real_t                     coefval[]);
+cs_cdo_advection_cell_upwind_coef(const cs_cdo_quantities_t    *cdoq,
+                                  cs_param_advection_scheme_t   scheme,
+                                  cs_real_t                     coefval[]);
 
 /*----------------------------------------------------------------------------*/
 

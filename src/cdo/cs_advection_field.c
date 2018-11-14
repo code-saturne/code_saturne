@@ -952,6 +952,69 @@ cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the value of the advection field at a specific location
+ *         inside a cell
+ *
+ * \param[in]      adv          pointer to a cs_adv_field_t structure
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      xyz          location where to perform the evaluation
+ * \param[in]      time_eval    physical time at which one evaluates the term
+ * \param[in, out] eval         pointer to a cs_nvec3_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
+                                  const cs_cell_mesh_t  *cm,
+                                  const cs_real_3_t      xyz,
+                                  cs_real_t              time_eval,
+                                  cs_nvec3_t            *eval)
+{
+  if (adv == NULL)
+    return;
+
+  cs_xdef_t  *def = adv->definition;
+  cs_real_3_t  vector_values = {0, 0, 0};
+
+  switch (def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    {
+      const cs_real_t  *constant_val = (cs_real_t *)def->input;
+
+      cs_nvec3(constant_val, eval);
+    }
+    break; /* definition by value */
+
+  case CS_XDEF_BY_ARRAY:
+    cs_xdef_cw_eval_vector_at_xyz_by_array(cm, 1, xyz, time_eval, def->input,
+                                           vector_values);
+    cs_nvec3(vector_values, eval);
+    break;
+
+  case CS_XDEF_BY_FIELD:
+    cs_xdef_cw_eval_vector_at_xyz_by_field(cm, 1, xyz, time_eval, def->input,
+                                           vector_values);
+    cs_nvec3(vector_values, eval);
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    cs_xdef_cw_eval_at_xyz_by_analytic(cm, 1, xyz, time_eval, def->input,
+                                       vector_values);
+    cs_nvec3(vector_values, eval);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Incompatible type of definition.",
+              __func__);
+    break;
+
+  } /* Type of definition */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the mean-value of the advection field inside each cell
  *
  * \param[in]      adv           pointer to a cs_adv_field_t structure
@@ -1217,69 +1280,6 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
       cs_evaluate_potential_by_analytic(dof_flag, def, time_eval, vtx_values);
     }
     break; /* definition by analytic */
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, " %s: Incompatible type of definition.",
-              __func__);
-    break;
-
-  } /* Type of definition */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value of the advection field at a specific location
- *         inside a cell
- *
- * \param[in]      adv          pointer to a cs_adv_field_t structure
- * \param[in]      cm           pointer to a cs_cell_mesh_t structure
- * \param[in]      xyz          location where to perform the evaluation
- * \param[in]      time_eval    physical time at which one evaluates the term
- * \param[in, out] eval         pointer to a cs_nvec3_t
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
-                                  const cs_cell_mesh_t  *cm,
-                                  const cs_real_3_t      xyz,
-                                  cs_real_t              time_eval,
-                                  cs_nvec3_t            *eval)
-{
-  if (adv == NULL)
-    return;
-
-  cs_xdef_t  *def = adv->definition;
-  cs_real_3_t  vector_values = {0, 0, 0};
-
-  switch (def->type) {
-
-  case CS_XDEF_BY_VALUE:
-    {
-      const cs_real_t  *constant_val = (cs_real_t *)def->input;
-
-      cs_nvec3(constant_val, eval);
-    }
-    break; /* definition by value */
-
-  case CS_XDEF_BY_ARRAY:
-    cs_xdef_cw_eval_vector_at_xyz_by_array(cm, 1, xyz, time_eval, def->input,
-                                           vector_values);
-    cs_nvec3(vector_values, eval);
-    break;
-
-  case CS_XDEF_BY_FIELD:
-    cs_xdef_cw_eval_vector_at_xyz_by_field(cm, 1, xyz, time_eval, def->input,
-                                           vector_values);
-    cs_nvec3(vector_values, eval);
-    break;
-
-  case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_xdef_cw_eval_at_xyz_by_analytic(cm, 1, xyz, time_eval, def->input,
-                                       vector_values);
-    cs_nvec3(vector_values, eval);
-    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, " %s: Incompatible type of definition.",
@@ -1724,11 +1724,11 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
-                                         const cs_adv_field_t   *adv,
-                                         short int               f,
-                                         cs_real_t               time_eval,
-                                         cs_real_t              *fluxes)
+cs_advection_field_cw_boundary_f2v_flux(const cs_cell_mesh_t   *cm,
+                                        const cs_adv_field_t   *adv,
+                                        short int               f,
+                                        cs_real_t               time_eval,
+                                        cs_real_t              *fluxes)
 {
   if (adv == NULL)
     return;
@@ -1901,10 +1901,10 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_cw_face_flux(const cs_cell_mesh_t       *cm,
-                                    const cs_adv_field_t       *adv,
-                                    cs_real_t                   time_eval,
-                                    cs_real_t                  *fluxes)
+cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
+                                const cs_adv_field_t       *adv,
+                                cs_real_t                   time_eval,
+                                cs_real_t                  *fluxes)
 {
   if (adv == NULL)
     return;
@@ -2026,10 +2026,10 @@ cs_advection_field_get_cw_face_flux(const cs_cell_mesh_t       *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
-                                     const cs_adv_field_t     *adv,
-                                     cs_real_t                 time_eval,
-                                     cs_real_t                *fluxes)
+cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
+                                 const cs_adv_field_t     *adv,
+                                 cs_real_t                 time_eval,
+                                 cs_real_t                *fluxes)
 {
   if (adv == NULL)
     return;

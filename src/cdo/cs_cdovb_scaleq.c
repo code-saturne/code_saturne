@@ -972,12 +972,12 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
         eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
-        eqc->get_advection_matrix = cs_cdo_advection_get_vb_cencsv;
+        eqc->get_advection_matrix = cs_cdo_advection_vb_cencsv;
         break;
 
       case CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND:
         eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
-        eqc->get_advection_matrix = cs_cdo_advection_get_vb_mcucsv;
+        eqc->get_advection_matrix = cs_cdo_advection_vb_mcucsv;
         break;
 
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
@@ -985,9 +985,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       case CS_PARAM_ADVECTION_SCHEME_SG:
         eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
         if (cs_equation_param_has_diffusion(eqp))
-          eqc->get_advection_matrix = cs_cdo_advection_get_vb_upwcsvdi;
+          eqc->get_advection_matrix = cs_cdo_advection_vb_upwcsv_di;
         else
-          eqc->get_advection_matrix = cs_cdo_advection_get_vb_upwcsv;
+          eqc->get_advection_matrix = cs_cdo_advection_vb_upwcsv;
         break;
 
       default:
@@ -1000,7 +1000,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
       switch (eqp->adv_scheme) {
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        eqc->get_advection_matrix = cs_cdo_advection_get_vb_cennoc;
+        eqc->get_advection_matrix = cs_cdo_advection_vb_cennoc;
         break;
 
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
@@ -1008,9 +1008,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       case CS_PARAM_ADVECTION_SCHEME_SG:
         eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
         if (cs_equation_param_has_diffusion(eqp))
-          eqc->get_advection_matrix = cs_cdo_advection_get_vb_upwnocdi;
+          eqc->get_advection_matrix = cs_cdo_advection_vb_upwnoc_di;
         else
-          eqc->get_advection_matrix = cs_cdo_advection_get_vb_upwnoc;
+          eqc->get_advection_matrix = cs_cdo_advection_vb_upwnoc;
         break;
 
       default:
@@ -1026,7 +1026,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     /* Boundary conditions for advection */
     eqb->bd_msh_flag |= CS_CDO_LOCAL_PEQ;
-    eqc->add_advection_bc = cs_cdo_advection_add_vb_bc;
+    eqc->add_advection_bc = cs_cdo_advection_vb_bc;
 
   }
   else {
@@ -2368,11 +2368,11 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
             /* Advective flux */
             if (cs_equation_param_has_convection(eqp)) {
-              cs_advection_field_get_f2v_boundary_flux(cm,
-                                                       eqp->adv_field,
-                                                       f,
-                                                       time_eval,
-                                                       cb->values);
+              cs_advection_field_cw_boundary_f2v_flux(cm,
+                                                      eqp->adv_field,
+                                                      f,
+                                                      time_eval,
+                                                      cb->values);
 
               for (short int v = 0; v < cm->n_vc; v++) {
                 const cs_real_t  adv_flux = cb->values[v] * p_cur[v];
@@ -3140,21 +3140,21 @@ cs_cdovb_scaleq_extra_op(const char                 *eqname,
 
       /* Compute in each cell an evaluation of upwind weight value */
       cs_real_t  *work_c = cs_equation_get_tmpbuf();
-      cs_cdo_advection_get_upwind_coef_cell(cs_shared_quant,
-                                            eqp->adv_scheme,
-                                            work_c);
+      cs_cdo_advection_cell_upwind_coef(cs_shared_quant,
+                                        eqp->adv_scheme,
+                                        work_c);
 
       cs_post_write_var(CS_POST_MESH_VOLUME,
                         CS_POST_WRITER_ALL_ASSOCIATED,
                         postlabel,
                         1,
-                        true,                 // interlace
-                        true,                 // true = original mesh
+                        true,                 /* interlace */
+                        true,                 /* true = original mesh */
                         CS_POST_TYPE_cs_real_t,
-                        work_c,               // values on cells
-                        NULL,                 // values at internal faces
-                        NULL,                 // values at border faces
-                        cs_shared_time_step); // time step management struct.
+                        work_c,               /* values on cells */
+                        NULL,                 /* values at internal faces */
+                        NULL,                 /* values at border faces */
+                        cs_shared_time_step); /* time step management struct. */
 
       BFT_FREE(postlabel);
 

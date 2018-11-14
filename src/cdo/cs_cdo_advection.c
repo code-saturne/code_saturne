@@ -1165,8 +1165,7 @@ cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
   cs_sdm_square_init(cm->n_fc + 1, adv);
 
   /* Compute the flux across the primal faces. Store in cb->adv_fluxes */
-  cs_advection_field_get_cw_face_flux(cm, eqp->adv_field, t_eval,
-                                      cb->adv_fluxes);
+  cs_advection_field_cw_face_flux(cm, eqp->adv_field, t_eval, cb->adv_fluxes);
 
   /* Define the local operator for advection */
   build_func(cm, cb->adv_fluxes, adv);
@@ -1371,9 +1370,9 @@ cs_cdo_advection_fb_upwcsv(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_upwcsvdi(const cs_cell_mesh_t      *cm,
-                             const cs_real_t            fluxes[],
-                             cs_sdm_t                  *adv)
+cs_cdo_advection_fb_upwcsv_di(const cs_cell_mesh_t      *cm,
+                              const cs_real_t            fluxes[],
+                              cs_sdm_t                  *adv)
 {
   const short int  c = cm->n_fc;  /* current cell's location in the matrix */
 
@@ -1486,9 +1485,9 @@ cs_cdo_advection_fb_upwnoc(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_upwnocdi(const cs_cell_mesh_t      *cm,
-                             const cs_real_t            fluxes[],
-                             cs_sdm_t                  *adv)
+cs_cdo_advection_fb_upwnoc_di(const cs_cell_mesh_t      *cm,
+                              const cs_real_t            fluxes[],
+                              cs_sdm_t                  *adv)
 {
   const short int  c = cm->n_fc;  /* current cell's location in the matrix */
 
@@ -1537,11 +1536,11 @@ cs_cdo_advection_fb_upwnocdi(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
-                                 const cs_cell_mesh_t        *cm,
-                                 cs_real_t                    t_eval,
-                                 cs_face_mesh_t              *fm,
-                                 cs_cell_builder_t           *cb)
+cs_cdo_advection_vb_upwcsv_di(const cs_equation_param_t   *eqp,
+                              const cs_cell_mesh_t        *cm,
+                              cs_real_t                    t_eval,
+                              cs_face_mesh_t              *fm,
+                              cs_cell_builder_t           *cb)
 {
   CS_UNUSED(fm);
   /* Sanity checks */
@@ -1558,7 +1557,7 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values;  /* size n_ec */
-  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1613,11 +1612,11 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
-                               const cs_cell_mesh_t        *cm,
-                               cs_real_t                    t_eval,
-                               cs_face_mesh_t              *fm,
-                               cs_cell_builder_t           *cb)
+cs_cdo_advection_vb_upwcsv(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           cs_real_t                    t_eval,
+                           cs_face_mesh_t              *fm,
+                           cs_cell_builder_t           *cb)
 {
   CS_UNUSED(fm);
 
@@ -1634,7 +1633,7 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values;  /* size n_ec */
-  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1672,11 +1671,11 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
-                               const cs_cell_mesh_t        *cm,
-                               cs_real_t                    t_eval,
-                               cs_face_mesh_t              *fm,
-                               cs_cell_builder_t           *cb)
+cs_cdo_advection_vb_cencsv(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           cs_real_t                    t_eval,
+                           cs_face_mesh_t              *fm,
+                           cs_cell_builder_t           *cb)
 {
   CS_UNUSED(fm);
 
@@ -1690,7 +1689,7 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values;  /* size n_ec */
-  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Define the local operator for advection */
   _build_cell_vpfd_cen(cm, fluxes, adv);
@@ -1719,11 +1718,11 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_mcucsv(const cs_equation_param_t   *eqp,
-                               const cs_cell_mesh_t        *cm,
-                               cs_real_t                    t_eval,
-                               cs_face_mesh_t              *fm,
-                               cs_cell_builder_t           *cb)
+cs_cdo_advection_vb_mcucsv(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           cs_real_t                    t_eval,
+                           cs_face_mesh_t              *fm,
+                           cs_cell_builder_t           *cb)
 {
   CS_UNUSED(fm);
 
@@ -1737,7 +1736,7 @@ cs_cdo_advection_get_vb_mcucsv(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values;  /* size n_ec */
-  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Define the local operator for advection */
   _build_cell_vpfd_mcu(cm, eqp->upwind_portion, fluxes, adv);
@@ -1766,11 +1765,11 @@ cs_cdo_advection_get_vb_mcucsv(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
-                                 const cs_cell_mesh_t        *cm,
-                                 cs_real_t                    t_eval,
-                                 cs_face_mesh_t              *fm,
-                                 cs_cell_builder_t           *cb)
+cs_cdo_advection_vb_upwnoc_di(const cs_equation_param_t   *eqp,
+                              const cs_cell_mesh_t        *cm,
+                              cs_real_t                    t_eval,
+                              cs_face_mesh_t              *fm,
+                              cs_cell_builder_t           *cb)
 {
   CS_UNUSED(fm);
 
@@ -1787,7 +1786,7 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values;  /* size n_ec */
-  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1840,11 +1839,11 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
-                               const cs_cell_mesh_t        *cm,
-                               cs_real_t                    t_eval,
-                               cs_face_mesh_t              *fm,
-                               cs_cell_builder_t           *cb)
+cs_cdo_advection_vb_upwnoc(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           cs_real_t                    t_eval,
+                           cs_face_mesh_t              *fm,
+                           cs_cell_builder_t           *cb)
 {
   CS_UNUSED(fm);
 
@@ -1861,7 +1860,7 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values;  /* size n_ec */
-  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
@@ -1899,11 +1898,11 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
-                               const cs_cell_mesh_t         *cm,
-                               cs_real_t                     t_eval,
-                               cs_face_mesh_t               *fm,
-                               cs_cell_builder_t            *cb)
+cs_cdo_advection_vb_cennoc(const cs_equation_param_t    *eqp,
+                           const cs_cell_mesh_t         *cm,
+                           cs_real_t                     t_eval,
+                           cs_face_mesh_t               *fm,
+                           cs_cell_builder_t            *cb)
 {
   CS_UNUSED(fm);
 
@@ -1917,7 +1916,7 @@ cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
 
   /* Compute the flux across the dual face attached to each edge of the cell */
   cs_real_t  *fluxes = cb->values;  /* size n_ec */
-  cs_advection_field_get_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
+  cs_advection_field_cw_dface_flux(cm, eqp->adv_field, t_eval, fluxes);
 
   /* Define the local operator for advection */
   _build_cell_epcd_cen(cm, fluxes, adv);
@@ -1945,7 +1944,7 @@ cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
+cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
                             const cs_cell_mesh_t        *cm,
                             cs_real_t                    t_eval,
                             cs_face_mesh_t              *fm,
@@ -2076,11 +2075,11 @@ cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
-                         const cs_cell_mesh_t        *cm,
-                         cs_real_t                    t_eval,
-                         cs_face_mesh_t              *fm,
-                         cs_cell_builder_t           *cb)
+cs_cdo_advection_vcb(const cs_equation_param_t   *eqp,
+                     const cs_cell_mesh_t        *cm,
+                     cs_real_t                    t_eval,
+                     cs_face_mesh_t              *fm,
+                     cs_cell_builder_t           *cb)
 {
   CS_UNUSED(t_eval);
 
@@ -2197,12 +2196,12 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
-                           const cs_equation_param_t  *eqp,
-                           cs_real_t                   t_eval,
-                           cs_face_mesh_t             *fm,
-                           cs_cell_builder_t          *cb,
-                           cs_cell_sys_t              *csys)
+cs_cdo_advection_vb_bc(const cs_cell_mesh_t       *cm,
+                       const cs_equation_param_t  *eqp,
+                       cs_real_t                   t_eval,
+                       cs_face_mesh_t             *fm,
+                       cs_cell_builder_t          *cb,
+                       cs_cell_sys_t              *csys)
 {
   CS_UNUSED(fm);
 
@@ -2227,7 +2226,7 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
     /* Get the boundary face in the cell numbering */
     const short int  f = csys->_f_ids[i];
 
-    cs_advection_field_get_f2v_boundary_flux(cm, adv, f, t_eval, v_nflx);
+    cs_advection_field_cw_boundary_f2v_flux(cm, adv, f, t_eval, v_nflx);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys)) {
@@ -2302,12 +2301,12 @@ cs_cdo_advection_add_vb_bc(const cs_cell_mesh_t       *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
-                            const cs_equation_param_t   *eqp,
-                            cs_real_t                    t_eval,
-                            cs_face_mesh_t              *fm,
-                            cs_cell_builder_t           *cb,
-                            cs_cell_sys_t               *csys)
+cs_cdo_advection_vcb_bc(const cs_cell_mesh_t        *cm,
+                        const cs_equation_param_t   *eqp,
+                        cs_real_t                    t_eval,
+                        cs_face_mesh_t              *fm,
+                        cs_cell_builder_t           *cb,
+                        cs_cell_sys_t               *csys)
 {
   if (csys == NULL)
     return;
@@ -2338,8 +2337,6 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
                     __func__, f, nflx);
 #endif
 
-
-
     if (beta_nflx > 0) {
 
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
@@ -2356,8 +2353,8 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the value in each cell of the upwinding coefficient given
- *          a related Peclet number
+ * \brief   Compute the value of the upwinding coefficient in each cell knowing
+ *          the related Peclet number
  *
  * \param[in]      cdoq      pointer to the cdo quantities structure
  * \param[in]      scheme    type of scheme used for the advection term
@@ -2368,9 +2365,9 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_mesh_t        *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_get_upwind_coef_cell(const cs_cdo_quantities_t    *cdoq,
-                                      cs_param_advection_scheme_t   scheme,
-                                      cs_real_t                     coefval[])
+cs_cdo_advection_cell_upwind_coef(const cs_cdo_quantities_t    *cdoq,
+                                  cs_param_advection_scheme_t   scheme,
+                                  cs_real_t                     coefval[])
 {
   /* Sanity check */
   assert(coefval != NULL);
