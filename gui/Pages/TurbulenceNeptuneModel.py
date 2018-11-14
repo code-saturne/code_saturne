@@ -244,7 +244,9 @@ class TurbulenceModel(MainFieldsModel):
         if (self.getTurbulenceModel(fieldId) == "k-epsilon" \
          or self.getTurbulenceModel(fieldId) == "k-epsilon_linear_production" \
          or self.getTurbulenceModel(fieldId) == "rij-epsilon_ssg" \
-         or self.getTurbulenceModel(fieldId) == "rij-epsilon_ebrsm"):
+         or self.getTurbulenceModel(fieldId) == "rij-epsilon_ebrsm" \
+         or self.getTurbulenceModel(fieldId) == "les_smagorinsky" \
+         or self.getTurbulenceModel(fieldId) == "les_wale" ):
             flag = 1
         return flag
 

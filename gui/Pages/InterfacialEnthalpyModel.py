@@ -186,6 +186,7 @@ class InterfacialEnthalpyModel(MainFieldsModel, Variables, Model):
         default['solid']            = "none"
         default['relaxation_time']  = 0.01
         default['ponderation_coef'] = 'alp1'
+        default['pool_boiling']     = "off"
 
         return default
 
@@ -470,6 +471,9 @@ class InterfacialEnthalpyModel(MainFieldsModel, Variables, Model):
         node = self.XMLInterfEnthalpyNode.xmlGetNode('enthalpy', field_id_a = fieldaId, field_id_b = fieldbId)
         node.xmlRemoveNode()
 
+        node_pool = self.XMLInterfEnthalpyNode.xmlGetNode('pool_boiling_model')
+        node_pool.xmlRemoveNode()
+
         # update free couples
         self.__freeCouples.append((fieldaId, fieldbId))
 
@@ -495,6 +499,29 @@ class InterfacialEnthalpyModel(MainFieldsModel, Variables, Model):
             value = n['model']
         else :
             self.setSolidEnergyTransfer(value)
+
+        return value
+
+    @Variables.undoLocal
+    def setPoolBoiling(self, state):
+        """
+        Activate or deactivate pool boiling model.
+        """
+        n = self.XMLInterfEnthalpyNode.xmlInitNode('pool_boiling_model')
+        if state == True:
+            n['state'] = 'on'
+        else:
+            n['state'] = 'off'
+
+
+    @Variables.noUndo
+    def getPoolBoiling(self):
+        value = self.defaultValues()['pool_boiling']
+        n = self.XMLInterfEnthalpyNode.xmlGetNode('pool_boiling_model')
+        if n != None:
+            value = n['state']
+        else:
+            self.setPoolBoiling(value)
 
         return value
 

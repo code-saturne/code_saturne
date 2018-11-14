@@ -56,6 +56,7 @@ from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from InterfacialEnthalpy import Ui_InterfacialEnthalpy
 from InterfacialEnthalpyModel import InterfacialEnthalpyModel
 from NonCondensableModel import NonCondensableModel
+from InterfacialForcesModel import InterfacialForcesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -339,6 +340,13 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         else :
             self.groupBoxLiquidGasEnergyTransfer.show()
 
+            if len(NonCondensableModel(self.case).getNonCondensableLabelList()) > 0 \
+            and InterfacialForcesModel(self.case).getContinuousCouplingModel() \
+                == 'Large_Interface_Model':
+                self.checkBoxActivatePool.show()
+            else:
+                self.checkBoxActivatePool.hide()
+
         # Validators
         validatorRelaxa = DoubleValidator(self.lineEditRelaxationTimeFielda, min = 0.0)
         validatorRelaxb = DoubleValidator(self.lineEditRelaxationTimeFieldb, min = 0.0)
@@ -357,6 +365,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.lineEditRelaxationTimeFielda.textChanged[str].connect(self.slotRelaxationTimeFielda)
         self.lineEditRelaxationTimeFieldb.textChanged[str].connect(self.slotRelaxationTimeFieldb)
         self.comboBoxSolidEnergyTransfer.activated[str].connect(self.slotSolidEnergyTransfer)
+        self.checkBoxActivatePool.stateChanged.connect(self.slotPoolBoilingModel)
 
         for couple in self.mdl.getEnthalpyCoupleList() :
             self.tableModelLiquidGasEnergyTransfer.newItem(couple)
@@ -566,4 +575,12 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         """
         choice = self.modelSolidEnergyTransfer.dicoV2M[text]
         self.mdl.setSolidEnergyTransfer(choice)
+
+
+    @pyqtSlot()
+    def slotPoolBoilingModel(self):
+        """
+        Activate or deactivate the pool boiling model
+        """
+        self.mdl.setPoolBoiling(state = self.checkBoxActivatePool.isChecked() )
 

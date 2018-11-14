@@ -54,8 +54,10 @@ from code_saturne.Base.XMLmodel import XMLmodel
 class TurbulenceModelsDescribing:
     """
     """
-    continuousTurbulenceModels = ['none', 'mixing_length', 'k-epsilon',
-                                  'k-epsilon_linear_production', 'rij-epsilon_ssg', 'rij-epsilon_ebrsm']
+    continuousTurbulenceModels = ['none', 'mixing_length',
+                                  'k-epsilon', 'k-epsilon_linear_production',
+                                  'rij-epsilon_ssg', 'rij-epsilon_ebrsm',
+                                  'les_smagorinsky', 'les_wale']
     dispersedTurbulenceModels  = ['none','tchen','q2-q12', 'r2-q12', 'r2-r12-tchen']
 
     continuousCouplingModels = ['none','separate_phase','separate_phase_cond']
@@ -70,6 +72,8 @@ class TurbulenceModelsDescribing:
                         'ReynoldsStressYY', 'ReynoldsStressYZ', 'ReynoldsStressZZ', 'TurbDissip']
     turbulenceVariables['rij-epsilon_ebrsm'] = ['ReynoldsStressXX', 'ReynoldsStressXY', 'ReynoldsStressXZ',
                         'ReynoldsStressYY', 'ReynoldsStressYZ', 'ReynoldsStressZZ', 'TurbDissip']
+    turbulenceVariables['les_smagorinsky'] = []
+    turbulenceVariables['les_wale'] = []
     turbulenceVariables['tchen'] = []
     turbulenceVariables['q2-q12'] = ['TurbKineEner_q2', 'Covariance_q12']
     turbulenceVariables['r2-q12'] = ['ReynoldsStressXX', 'ReynoldsStressXY', 'ReynoldsStressXZ',
@@ -78,9 +82,14 @@ class TurbulenceModelsDescribing:
                                            'ReynoldsStressYY', 'ReynoldsStressYZ', 'ReynoldsStressZZ',
                                            'R12XX','R12XY','R12XZ','R12YY','R12YZ','R12ZZ']
 
-    turbulenceVariables['all'] = turbulenceVariables['k-epsilon'] + turbulenceVariables['k-epsilon_linear_production'] \
-                               + turbulenceVariables['rij-epsilon_ssg'] + turbulenceVariables['rij-epsilon_ebrsm'] \
-                               + turbulenceVariables['q2-q12'] + turbulenceVariables['r2-q12'] \
+    turbulenceVariables['all'] = turbulenceVariables['k-epsilon'] \
+                               + turbulenceVariables['k-epsilon_linear_production'] \
+                               + turbulenceVariables['rij-epsilon_ssg'] \
+                               + turbulenceVariables['rij-epsilon_ebrsm'] \
+                               + turbulenceVariables['les_smagorinsky'] \
+                               + turbulenceVariables['les_wale'] \
+                               + turbulenceVariables['q2-q12'] \
+                               + turbulenceVariables['r2-q12'] \
                                + turbulenceVariables['r2-r12-tchen']
 
     turbulenceProperties = {}
@@ -90,6 +99,8 @@ class TurbulenceModelsDescribing:
     turbulenceProperties['k-epsilon_linear_production'] = ["turb_viscosity"]
     turbulenceProperties['rij-epsilon_ssg'] = ["turb_viscosity"]
     turbulenceProperties['rij-epsilon_ebrsm'] = ["turb_viscosity"]
+    turbulenceProperties['les_smagorinsky'] = ["turb_viscosity"]
+    turbulenceProperties['les_wale'] = ["turb_viscosity"]
     turbulenceProperties['tchen'] = ["TurbKineEner_q2", "Covariance_q12", "turb_viscosity"]
     turbulenceProperties['q2-q12'] = ["turb_viscosity"]
     turbulenceProperties['r2-q12'] = ["turb_viscosity"]
