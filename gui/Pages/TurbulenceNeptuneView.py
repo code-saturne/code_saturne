@@ -188,6 +188,60 @@ class CouplingDelegate(QItemDelegate):
     def tr(self, text):
         return text
 
+#-------------------------------------------------------------------------------
+# Combo box delegate for the thermal turbulent fluxes
+#-------------------------------------------------------------------------------
+
+class TurbFluxDelegate(QItemDelegate):
+    """
+    Use of a combobox in the table.
+    """
+
+    def __init__(self, parent, mdl, dicoM2V, dicoV2M):
+        super(TurbFluxDelegate, self).__init__(parent)
+        self.parent   = parent
+        self.mdl      = mdl
+        self.dicoM2V  = dicoM2V
+        self.dicoV2M  = dicoV2M
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        self.modelCombo = ComboModel(editor, 1, 1)
+        fieldId = index.row() + 1
+
+        if self.mdl.useAdvancedThermalFluxes(fieldId) == True:
+            for turbFlux in TurbulenceModelsDescribing.ThermalTurbFluxModels:
+                self.modelCombo.addItem(self.tr(self.dicoM2V[turbFlux]), turbFlux)
+
+        else:
+            turb_flux = TurbulenceModelsDescribing.ThermalTurbFluxModels[0]
+            self.modelCombo.addItem(self.tr(self.dicoM2V[turbFlux]), turbFlux)
+            self.modelCombo.disableItem(index=0)
+
+        editor.setMinimumSize(editor.sizeHint())
+        editor.installEventFilter(self)
+        return editor
+
+    def setEditorData(self, comboBox, index):
+        row = index.row()
+        col = index.column()
+        string = index.model().getData(index)[col]
+        self.modelCombo.setItem(str_view=string)
+
+    def setModelData(self, comboBox, model, index):
+        txt = str(comboBox.currentText())
+        value = self.modelCombo.dicoV2M[txt]
+        log.debug("TurbFluxDelegate value = %s"%value)
+
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, to_qvariant(self.dicoM2V[value]), Qt.DisplayRole)
+
+
+    def tr(self, text):
+        return text
+
 
 #-------------------------------------------------------------------------------
 # StandarItemModelMainFields class
@@ -203,6 +257,7 @@ class StandardItemModelTurbulence(QStandardItemModel):
         self.headers = [ self.tr("Field label"),
                          self.tr("Carrier field"),
                          self.tr("Turbulence model"),
+                         self.tr("Thermal turbulent flux"),
                          self.tr("Reverse coupling")]
 
         self.setColumnCount(len(self.headers))
@@ -240,7 +295,12 @@ class StandardItemModelTurbulence(QStandardItemModel):
             return Qt.ItemIsEnabled
         if index.column() == 2 :
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-        elif index.column() == 3 :
+        if index.column() == 3 :
+            if self.mdl.useAdvancedThermalFluxes(index.row()+1) == True:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            else:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        elif index.column() == 4 :
             if self.mdl.getCriterion(index.row()+1) == "continuous" :
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable
             else :
@@ -270,8 +330,15 @@ class StandardItemModelTurbulence(QStandardItemModel):
             self.mdl.setTurbulenceModel(FieldId, self.dicoV2M[new_pmodel])
             self.updateItem()
 
-        # two way coupling
+        # Turbulent thermal fluxes (for continuous phases)
         elif col == 3:
+            new_pmodel = from_qvariant(value, to_text_string)
+            self._data[row][col] = new_pmodel
+            self.mdl.setThermalTurbulentFlux(FieldId, self.dicoV2M[new_pmodel])
+            self.updateItem()
+
+        # two way coupling
+        elif col == 4:
             new_pmodel = from_qvariant(value, to_text_string)
             self._data[row][col] = new_pmodel
             self.mdl.setTwoWayCouplingModel(FieldId, self.dicoV2M[new_pmodel])
@@ -299,9 +366,10 @@ class StandardItemModelTurbulence(QStandardItemModel):
         else :
             carrierLabel = carrier
         turbulence = self.dicoM2V[self.mdl.getTurbulenceModel(fieldId)]
+        turb_flux  = self.dicoM2V[self.mdl.getThermalTurbulentFlux(fieldId)]
         twoway     = self.dicoM2V[self.mdl.getTwoWayCouplingModel(fieldId)]
 
-        field = [label, carrierLabel, turbulence, twoway]
+        field = [label, carrierLabel, turbulence, turb_flux, twoway]
 
         self._data.append(field)
         self.setRowCount(row+1)
@@ -313,7 +381,8 @@ class StandardItemModelTurbulence(QStandardItemModel):
         """
         for id in self.mdl.getFieldIdList() :
             self._data[int(id)-1][2] = self.dicoM2V[self.mdl.getTurbulenceModel(id)]
-            self._data[int(id)-1][3] = self.dicoM2V[self.mdl.getTwoWayCouplingModel(id)]
+            self._data[int(id)-1][3] = self.dicoM2V[self.mdl.getThermalTurbulentFlux(id)]
+            self._data[int(id)-1][4] = self.dicoM2V[self.mdl.getTwoWayCouplingModel(id)]
 
 
 #-------------------------------------------------------------------------------
@@ -353,7 +422,9 @@ class TurbulenceView(QWidget, Ui_Turbulence):
                        "separate_phase"              : 'separate phase',
                        "separate_phase_cond"         : 'separate phase cond',
                        "small_inclusions"            : 'small inclusions',
-                       "large_inclusions"            : 'large inclusions'}
+                       "large_inclusions"            : 'large inclusions',
+                       "sgdh"                        : 'SGDH',
+                       "ggdh"                        : 'GGDH'}
 
         self.dicoV2M= {"none"                        : 'none',
                        "mixing length"               : 'mixing_length',
@@ -370,7 +441,9 @@ class TurbulenceView(QWidget, Ui_Turbulence):
                        "separate phase"              : 'separate_phase',
                        "separate phase cond"         : 'separate_phase_cond',
                        "small inclusions"            : 'small_inclusions',
-                       "large inclusions"            : 'large_inclusions'}
+                       "large inclusions"            : 'large_inclusions',
+                       "SGDH"                        : 'sgdh',
+                       "GGDH"                        : 'ggdh'}
 
 
         # Validators
@@ -394,9 +467,11 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         self.tableViewTurbulence.setSelectionMode(QAbstractItemView.SingleSelection)
 
         delegateTurbulence = TurbulenceDelegate(self.tableViewTurbulence, self.mdl, self.dicoM2V, self.dicoV2M)
+        delegateTurbFlux   = TurbFluxDelegate(self.tableViewTurbulence, self.mdl, self.dicoM2V, self.dicoV2M)
         delegateCoupling   = CouplingDelegate(self.tableViewTurbulence, self.mdl, self.dicoM2V, self.dicoV2M)
         self.tableViewTurbulence.setItemDelegateForColumn(2, delegateTurbulence)
-        self.tableViewTurbulence.setItemDelegateForColumn(3, delegateCoupling)
+        self.tableViewTurbulence.setItemDelegateForColumn(3, delegateTurbFlux)
+        self.tableViewTurbulence.setItemDelegateForColumn(4, delegateCoupling)
 
         # Combo models
         self.modelContinuousCoupling = ComboModel(self.comboBoxContinuousCoupling, 3, 1)

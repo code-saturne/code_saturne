@@ -58,10 +58,13 @@ class TurbulenceModelsDescribing:
                                   'k-epsilon', 'k-epsilon_linear_production',
                                   'rij-epsilon_ssg', 'rij-epsilon_ebrsm',
                                   'les_smagorinsky', 'les_wale']
+
     dispersedTurbulenceModels  = ['none','tchen','q2-q12', 'r2-q12', 'r2-r12-tchen']
 
     continuousCouplingModels = ['none','separate_phase','separate_phase_cond']
     dispersedCouplingModels  = ['none','small_inclusions','large_inclusions']
+
+    ThermalTurbFluxModels = ['sgdh', 'ggdh']
 
     turbulenceVariables = {}
     turbulenceVariables['none'] = []

@@ -54,6 +54,7 @@ class TurbulenceModel(MainFieldsModel):
         default['length_scale']     = 1.0
         default['two_way_coupling'] = "none"
         default['model']            = TurbulenceModelsDescribing.continuousTurbulenceModels[0]
+        default['turb_flux']        = TurbulenceModelsDescribing.ThermalTurbFluxModels[0]
         default['length']           = 10.0
         return default
 
@@ -80,10 +81,12 @@ class TurbulenceModel(MainFieldsModel):
             if criterion == "continuous":
                 self.XMLturbulence.xmlInitChildNode('field', field_id = fieldId,
                                                     model = model,
+                                                    turb_flux = self.defaultValues()['turb_flux'],
                                                     two_way_coupling = TurbulenceModelsDescribing.continuousCouplingModels[0])
             else:
                 self.XMLturbulence.xmlInitChildNode('field', field_id = fieldId,
                                                     model = model,
+                                                    turb_flux = self.defaultValues()['turb_flux'],
                                                     two_way_coupling = TurbulenceModelsDescribing.dispersedCouplingModels[0])
         else:
             oldmodel = node['model']
@@ -142,6 +145,46 @@ class TurbulenceModel(MainFieldsModel):
             node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         model = node['model']
 
+        return model
+
+    @Variables.undoLocal
+    def setThermalTurbulentFlux(self, fieldId, model):
+
+        self.isInList(str(fieldId), self.getFieldIdList())
+
+        self.isInList(model,TurbulenceModelsDescribing.ThermalTurbFluxModels)
+
+        node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
+
+        critrerion =  self.getCriterion(fieldId)
+        if node == None:
+            if criterion == "continuous":
+                self.XMLturbulence.xmlInitChildNode('field',
+                                                    field_id = fieldId,
+                                                    model = self.defaultValues()['model'],
+                                                    turb_flux = model,
+                                                    two_way_coupling = TurbulenceModelsDescribing.continuousCouplingModels[0])
+            else:
+                self.XMLturbulence.xmlInitChildNode('field',
+                                                    field_id = fieldId,
+                                                    model = self.defaultValues()['model'],
+                                                    turb_flux = model,
+                                                    two_way_coupling = TurbulenceModelsDescribing.dispersedCouplingModels[0])
+
+        node['turb_flux'] = model
+
+
+    @Variables.noUndo
+    def getThermalTurbulentFlux(self, fieldId):
+
+        self.isInList(str(fieldId),self.getFieldIdList())
+
+        node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
+        if node == None:
+            self.setThermalTurbulentFlux(fieldId,
+                                         self.defaultValues()['turb_flux'])
+
+        model = node['turb_flux']
         return model
 
 
@@ -248,6 +291,16 @@ class TurbulenceModel(MainFieldsModel):
          or self.getTurbulenceModel(fieldId) == "les_smagorinsky" \
          or self.getTurbulenceModel(fieldId) == "les_wale" ):
             flag = 1
+        return flag
+
+    def useAdvancedThermalFluxes(self, fieldId):
+        flag = False
+
+        if self.getCriterion(fieldId) == 'continuous' and \
+           'rij-epsilon' in self.getTurbulenceModel(fieldId):
+
+            flag = True
+
         return flag
 
 #-------------------------------------------------------------------------------

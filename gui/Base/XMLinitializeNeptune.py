@@ -208,6 +208,7 @@ class XMLinitNeptune(Variables):
             self.__backwardCompatibilityFrom_2_2()
         elif from_vers <= "5.0":
             self.__backwardCompatibilityFrom_4_2()
+            self.__backwardCompatibilityFrom_5_0()
 
 
     def __backwardCompatibilityFrom_2_0(self):
@@ -304,6 +305,13 @@ class XMLinitNeptune(Variables):
             if node['name'] == 'wall_temperature':
                 node['name']  = 'boundary_temperature'
 
+    def __backwardCompatibilityFrom_5_0(self):
+
+        tnode = self.case.xmlGetNode('turbulence')
+        for node in tnode.xmlGetNodeList('field'):
+            if node['turb_flux'] == None:
+                node['turb_flux'] = 'sgdh'
+
 
     def __backwardCompatibilityCurrentVersion(self):
         """
@@ -377,6 +385,11 @@ class XMLinitNeptune(Variables):
         for node in self.case.xmlGetNodeList('property'):
             if node['name'] == 'wall_temperature':
                 node['name']  = 'boundary_temperature'
+
+        tnode = self.case.xmlGetNode('turbulence')
+        for node in tnode.xmlGetNodeList('field'):
+            if node['turb_flux'] == None:
+                node['turb_flux'] = 'sgdh'
 
 
 #-------------------------------------------------------------------------------

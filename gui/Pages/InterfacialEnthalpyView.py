@@ -372,6 +372,10 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
 
         self.groupBoxLiquidVaporModel.hide()
 
+        # Initial state of Pool boiling model
+        if self.mdl.getPoolBoiling() == 'on':
+            self.checkBoxActivatePool.setChecked(True)
+
         self.case.undoStartGlobal()
 
 
