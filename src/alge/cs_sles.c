@@ -1205,7 +1205,7 @@ cs_sles_push(int          f_id,
   if (retval->name != NULL)
     bft_error
       (__FILE__, __LINE__, 0,
-       _("cs_slesh_push() only allows a stack of depth 1:\n"
+       _("cs_sles_push() only allows a stack of depth 1:\n"
          "  it  may not be called multiple times for a given field (id %d)\n"
          "  without calling cs_sles_pop between those calls."), f_id);
   else {

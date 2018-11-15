@@ -56,9 +56,9 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_MULTIGRID_V_CYCLE,        /* Use a V-cycle */
-  CS_MULTIGRID_K_CYCLE,        /* Use a V-cycle */
-  CS_MULTIGRID_N_TYPES         /* Number of multigrid types */
+  CS_MULTIGRID_V_CYCLE,        /*!< Use a V-cycle */
+  CS_MULTIGRID_K_CYCLE,        /*!< Use a K-cycle */
+  CS_MULTIGRID_N_TYPES         /*!< Number of multigrid types */
 
 } cs_multigrid_type_t;
 

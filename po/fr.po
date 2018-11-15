@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-10-15 16:26+0200\n"
+"POT-Creation-Date: 2018-11-16 18:08+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3955,7 +3955,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"cs_slesh_push() only allows a stack of depth 1:\n"
+"cs_sles_push() only allows a stack of depth 1:\n"
 "  it  may not be called multiple times for a given field (id %d)\n"
 "  without calling cs_sles_pop between those calls."
 msgstr ""
@@ -4541,6 +4541,10 @@ msgstr "L'interpolation optimale avec id %d n'est pas définie."
 #, c-format
 msgid "Optimal interpolation \"%s\" is not defined."
 msgstr "L'interpolation optimale \"%s\" n'est pas définie."
+
+#, c-format
+msgid "Error while trying to find symbol %s in lib %s: %s\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -9584,8 +9588,9 @@ msgstr ""
 msgid " Key not implemented for setting an advection field."
 msgstr ""
 
+#, c-format
 msgid ""
-" Incompatible type of boundary condition by default.\n"
+" %s: Incompatible type of boundary condition by default.\n"
 " Please modify your settings.\n"
 msgstr ""
 
@@ -9695,22 +9700,6 @@ msgid ""
 " Please check your settings.\n"
 msgstr ""
 
-#, c-format
-msgid "%s: Incompatible type of variable for the equation %s."
-msgstr "%s : type de variable incompatible pour l'équation %s."
-
-#, c-format
-msgid "%s: Invalid space scheme for the equation %s."
-msgstr ""
-
-#, c-format
-msgid " Incompatible reduction for equation %s.\n"
-msgstr " Réduction incompatible pour l'équation %s.\n"
-
-#, c-format
-msgid " %s: Invalid way to initialize equation %s.\n"
-msgstr ""
-
 msgid ""
 " No variable name associated to an equation structure.\n"
 " Check your initialization."
@@ -9746,38 +9735,20 @@ msgstr ""
 msgid " Invalid mesh location id (= -1) for the current field\n"
 msgstr ""
 
-#, c-format
-msgid ""
-" %s: Computation of the diffusive and convective flux across\n"
-" a plane is not available for equation %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Invalid mesh location name %s.\n"
-" This mesh location is not already defined.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Cellwise computation of the diffusive flux is not\n"
-" available for equation %s\n"
-msgstr ""
-
 msgid ""
 " Stop setting an empty cs_equation_param_t structure.\n"
 " Please check your settings.\n"
 msgstr ""
 
 #, c-format
+msgid " %s: Invalid key for setting the equation %s."
+msgstr "%s : type de clé invalide pour l'équation %s."
+
+#, c-format
 msgid ""
 " %s: Equation %s is not modifiable anymore.\n"
 " Please check your settings."
 msgstr ""
-
-#, c-format
-msgid " %s: Invalid key for setting the equation %s."
-msgstr "%s : type de clé invalide pour l'équation %s."
 
 #, c-format
 msgid ""
@@ -9812,9 +9783,6 @@ msgid " %s: Invalid dimension of analytical function.\n"
 msgstr ""
 
 msgid " Groundwater module is activated but no soil is defined."
-msgstr ""
-
-msgid " Richards eq. is only available for vertex-based schemes."
 msgstr ""
 
 msgid " Unknown cell-type.\n"
@@ -9950,6 +9918,9 @@ msgid "Neumann"
 msgstr ""
 
 msgid "Robin"
+msgstr ""
+
+msgid "Sliding"
 msgstr ""
 
 msgid "weak using an algebraic manipulation"
@@ -15604,3 +15575,9 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
+#~ msgid "%s: Incompatible type of variable for the equation %s."
+#~ msgstr "%s : type de variable incompatible pour l'équation %s."
+
+#~ msgid " Incompatible reduction for equation %s.\n"
+#~ msgstr " Réduction incompatible pour l'équation %s.\n"

@@ -719,7 +719,7 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
+cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
                                            int                       idiffp,
                                            double                    thetap,
                                            const cs_real_66_t        cofbfu[],

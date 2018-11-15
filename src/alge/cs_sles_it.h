@@ -377,7 +377,7 @@ cs_sles_it_set_shareable(cs_sles_it_t        *context,
  *
  * The system is solved only on ranks with a non-NULL communicator or
  * if the caller communicator has less than 2 ranks. convergence info
- * is the broadcast across the caller communicator.
+ * is broadcast across the caller communicator.
  *
  * \param[in, out]  context      pointer to iterative solver info and context
  * \param[in]       comm         MPI communicator for solving
