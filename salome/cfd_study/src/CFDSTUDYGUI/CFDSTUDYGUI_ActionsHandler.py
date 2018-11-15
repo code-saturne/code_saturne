@@ -1089,7 +1089,10 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         QApplication.setOverrideCursor(cursor)
 
         _SetCFDCode(dialog.code)
-        iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath   = dialog.StudyPath,
+        if CFDSTUDYGUI_Commons.isaCFDCase(dialog.StudyPath):
+            iok = CFDSTUDYGUI_DataModel._SetCaseLocation(dialog.StudyPath)
+        else:
+            iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath   = dialog.StudyPath,
                                                       theCaseNames   = dialog.CaseNames,
                                                       theCreateOpt   = dialog.CreateOption,
                                                       theCopyOpt     = dialog.CopyFromOption,
@@ -1758,14 +1761,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         boo,StudyPath,CasePath = self.checkCFDCaseDir(xmlfileName)
         if boo and StudyPath != "" and CasePath != "" :
             CaseName = os.path.basename(CasePath)
-            iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath   = StudyPath,
-                                                          theCaseNames   = CasePath,
-                                                          theCreateOpt   = False,
-                                                          theCopyOpt     = False,
-                                                          theNameRef     = "",
-                                                          theSyrthesOpt  = False,
-                                                          theSyrthesCase = "",
-                                                          theNprocs      = "")
+            iok = CFDSTUDYGUI_DataModel._SetCaseLocation(CasePath)
             studyObj = CFDSTUDYGUI_DataModel.FindStudyByPath(StudyPath)
             caseObj  = CFDSTUDYGUI_DataModel.getSObject(studyObj,CaseName)
             DATAObj  = CFDSTUDYGUI_DataModel.getSObject(caseObj,"DATA")
@@ -1802,9 +1798,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         repDATA = os.path.dirname(filepath)
         if os.path.isdir(repDATA) and os.path.basename(repDATA) == "DATA":
             CasePath = os.path.dirname(repDATA)
-            repListe = os.listdir(CasePath)
-            for i in ['SRC', 'RESU', 'DATA', 'SCRIPTS'] :
-                boo = boo and os.path.isdir(os.path.join(CasePath,i))
+            boo = CFDSTUDYGUI_Commons.isaCFDCase(CasePath)
             if not boo :
                 mess = cfdstudyMess.trMessage(self.tr("ENV_DLG_CASE_FILE"),[filepath,CasePath])
                 cfdstudyMess.aboutMessage(mess)

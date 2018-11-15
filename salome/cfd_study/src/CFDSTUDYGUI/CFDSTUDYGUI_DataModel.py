@@ -422,6 +422,29 @@ def _findOrCreateComponent():
 
     return father
 
+def _SetCaseLocation(theCasePath):
+    log.debug("_SetCaseLocation")
+    study         = _getStudy()
+    builder       = study.NewBuilder()
+    father        = _findOrCreateComponent()
+    theStudyPath  = os.path.dirname(theCasePath)
+
+    aCaseName      = os.path.basename(theCasePath)
+    studyObject   = FindStudyByPath(theStudyPath)
+    if studyObject == None:
+        if CFDSTUDYGUI_Commons.isaCFDStudy(theStudyPath):
+            studyObject  = builder.NewObject(father)
+            attr = builder.FindOrCreateAttribute(studyObject, "AttributeLocalID")
+            attr.SetValue(dict_object["Study"])
+            attr = builder.FindOrCreateAttribute(studyObject, "AttributePixMap")
+            attr.SetPixMap(str(ObjectTR.tr("CFDSTUDY_STUDY_OBJ_ICON")))
+            attr = builder.FindOrCreateAttribute(studyObject, "AttributeName")
+            attr.SetValue(os.path.basename(theStudyPath))
+            attr = builder.FindOrCreateAttribute(studyObject, "AttributeComment")
+            attr.SetValue(os.path.dirname(theStudyPath))
+    _CreateItem(studyObject,aCaseName)
+    caseObject = getSObject(studyObject,aCaseName)
+    UpdateSubTree(caseObject)
 
 def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
                       theCopyOpt, theNameRef = "", theSyrthesOpt =False, theSyrthesCase = "",theNprocs=""):
@@ -435,11 +458,14 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
     @type theCaseNames: C{String}
     @param theCaseNames: unix pathes of the new CFD cases to be build.
     """
+    log.debug("_SetStudyLocation")
+
     iok = True
     if theCopyOpt:
         if not os.path.exists(theNameRef):
             raise ValueError("reference case is not a repository")
     if os.path.exists(theStudyPath) :
+
         if theCreateOpt:
             mess = cfdstudyMess.trMessage(ObjectTR.tr("STUDY_DIRECTORY_ALREADY_EXISTS"),[""])
             cfdstudyMess.criticalMessage(mess)
@@ -540,6 +566,7 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
     @type theCaseNames: C{String}
     @param theCaseNames: unix pathes of the new CFD cases to be build.
     """
+    log.debug("_CallCreateScript")
     mess = ""
     scrpt, c ,mess = BinCode()
     if mess == "" :
@@ -616,11 +643,11 @@ def UpdateSubTree(theObject=None):
     @type theObject: C{SObject}
     @param theObject: branch of a tree of data to update.
     """
+    log.debug("UpdateSubTree")
     if theObject != None:
         log.debug("_RebuildTreeRecursively -> path: %s" % _GetPath(theObject))
         _RebuildTreeRecursively(theObject)
     else:
-        log.debug("UpdateStudy")
         _UpdateStudy()
     # --- update object browser from a thread different of the main thread is not safe !
     studyId = sgPyQt.getStudyId()
@@ -659,7 +686,6 @@ def _RebuildTreeRecursively(theObject):
         return
     log.debug("_RebuildTreeRecursively -> %s childs: %s" % (theObject.GetName(), ScanChildNames(theObject,  ".*")))
     theObjectPath = _GetPath(theObject)
-    log.debug("_RebuildTreeRecursively -> path: %s" % theObjectPath)
 
     if theObjectPath == None:
         return
@@ -667,7 +693,6 @@ def _RebuildTreeRecursively(theObject):
     study   = _getStudy()
     builder = study.NewBuilder()
     attr = builder.FindOrCreateAttribute(theObject, "AttributeLocalID")
-
     # clean the SObject, if the corresponding file or directory
     # does not exist any more in the file system
 
@@ -868,14 +893,11 @@ def _FillObject(theObject, theParent, theBuilder):
         if Trace(): print("_FillObject : parent is Study ", theParent.GetName())
         #check for case
         if os.path.isdir(path):
-            dirList = os.listdir(path)
-            if dirList.count("DATA") and \
-               dirList.count("SRC")  and \
-               dirList.count("RESU") and \
-               dirList.count("SCRIPTS"):
+            if CFDSTUDYGUI_Commons.isaCFDCase(path):
                 objectId = dict_object["Case"]
             else:
                 boo = False
+                dirList = os.listdir(path)
                 for i in dirList:
                     if re.match(".*\.syd$", i) or re.match(".*\.syd_example$", i): boo = True
                 if boo :
@@ -1277,7 +1299,6 @@ def _GetPath(theObject):
     study   = _getStudy()
     builder = study.NewBuilder()
     path = str(theObject.GetName())
-
     attr = builder.FindOrCreateAttribute(theObject, "AttributeLocalID")
     if attr.Value() == dict_object["Study"] or attr.Value() == dict_object["CouplingStudy"]:
         dir = builder.FindOrCreateAttribute(theObject, "AttributeComment")
@@ -1307,7 +1328,6 @@ def _GetDirList(theObject):
     lst = []
     if os.path.isdir(path):
         lst = os.listdir(path)
-
     lst.sort()
     return lst
 
@@ -1473,6 +1493,33 @@ def FindStudyByPath(theStudyPath):
 
     return None
 
+def FindCaseByPath(theCasePath):
+    """
+    Returns a CFD study described by the unix path I{theCasePath}.
+
+    @type theCasePath: C{String}
+    @param theCasePath: unix path of the CFD study.
+    @return: the CFD study.
+    @rtype: C{SObject} or C{None}
+    """
+    component = _getComponent()
+    if component == None:
+        return None
+
+    study = _getStudy()
+    builder = study.NewBuilder()
+    studyCfdObject = FindStudyByPath(os.path.dirname(theCasePath))
+    iter  = study.NewChildIterator(studyCfdObject)
+    while iter.More():
+        attr = builder.FindOrCreateAttribute(iter.Value(), "AttributeLocalID")
+        if attr.Value() == dict_object["Case"]:
+            #compare case path
+            aCurCasePath = _GetPath(iter.Value())
+            if aCurCasePath == theCasePath:
+                return iter.Value()
+        iter.Next()
+
+    return None
 
 def GetCaseNameList(theStudy):
     """

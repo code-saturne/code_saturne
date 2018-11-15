@@ -428,10 +428,12 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
                 return False
             if not CFDSTUDYGUI_Commons.isaSaturneSyrthesCouplingStudy(self.StudyPath):
                 if not CFDSTUDYGUI_Commons.isaCFDStudy(self.StudyPath):
-                    mess = cfdstudyMess.trMessage(self.tr("NOT_A_STUDY_DIRECTORY"),[self.StudyPath,"CFD","SYRTHES"])
-                    cfdstudyMess.criticalMessage(mess)
-                    self.reinit()
-                    return False
+#                   search if the cfd study directory self.StudyPath is in fact a cfd case directory: by calling  method isaCFDCase
+                    if not CFDSTUDYGUI_Commons.isaCFDCase(self.StudyPath):
+                        mess = cfdstudyMess.trMessage(self.tr("NOT_A_STUDY_OR_CASE_DIRECTORY"),[self.StudyPath,"CFD","SYRTHES"])
+                        cfdstudyMess.criticalMessage(mess)
+                        self.reinit()
+                        return False
 
         # ckeck case name
         if self.checkBoxCreate.isChecked() :

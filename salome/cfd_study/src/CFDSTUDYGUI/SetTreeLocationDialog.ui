@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>CFD study localization or creation</string>
+   <string>CFD study/case localization or study creation</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_5">
    <item>
@@ -41,7 +41,7 @@
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Load existing study</string>
+         <string>Load existing study or case</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -94,7 +94,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Study location</string>
+         <string>Study/Case location</string>
         </property>
         <property name="wordWrap">
          <bool>false</bool>
@@ -120,7 +120,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Study name</string>
+         <string>Study/Case name</string>
         </property>
         <property name="wordWrap">
          <bool>false</bool>

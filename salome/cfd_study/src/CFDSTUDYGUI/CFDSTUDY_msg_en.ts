@@ -563,8 +563,8 @@
             <translation>Study directory you want to create already exists.</translation>
         </message>
         <message>
-            <source>NOT_A_STUDY_DIRECTORY</source>
-            <translation>Study directory: %s, is neither a %s study nor a CFD study coupling with %s.</translation>
+            <source>NOT_A_STUDY_OR_CASE_DIRECTORY</source>
+            <translation>Study or case directory: %s, is neither a %s study or case nor a CFD study coupling with %s.</translation>
         </message>
         <message>
             <source>OPEN_SYRTHES-CASE_FILE_ACTION_TEXT</source>
@@ -609,24 +609,24 @@
     <context>
         <name>SetTreeLocationDialog</name>
         <message>
-            <source>CFD study localization or creation</source>
-            <translation>CFD study localization or creation</translation>
+            <source>CFD study/case localization or study creation</source>
+            <translation>CFD study/case localization or study creation</translation>
         </message>
         <message>
-            <source>Load existing study</source>
-            <translation>Load existing study</translation>
+            <source>Load existing study or case</source>
+            <translation>Load existing study or case</translation>
         </message>
         <message>
             <source>Create study</source>
             <translation>Create study</translation>
         </message>
         <message>
-            <source>Study location</source>
-            <translation>Study location</translation>
+            <source>Study/Case location</source>
+            <translation>Study/Case location</translation>
         </message>
         <message>
-            <source>Study name</source>
-            <translation>Study name</translation>
+            <source>Study/Case name</source>
+            <translation>Study/Case name</translation>
         </message>
         <message>
             <source>Cases</source>

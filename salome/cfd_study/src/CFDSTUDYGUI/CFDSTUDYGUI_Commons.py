@@ -33,7 +33,7 @@ from code_saturne.Base.QtCore    import *
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import os, re
+import os, re, subprocess
 import logging
 
 #-------------------------------------------------------------------------------
@@ -206,11 +206,14 @@ def isaCFDCase(theCasePath):
     boo = os.path.isdir(theCasePath)
     if os.path.isdir(theCasePath):
         dirList = os.walk(theCasePath).next()[1]
-        if not (dirList.count("DATA") and \
+        if (dirList.count("DATA") and \
            dirList.count("SRC")  and \
-           dirList.count("RESU") and \
            dirList.count("SCRIPTS")):
+            if not (dirList.count("RESU")):
+                subprocess.call(["mkdir","-p",os.path.join(theCasePath,"RESU")])
+        else:
             iok = False
+
     return iok
 
 def isaCFDStudy(theStudyPath):
