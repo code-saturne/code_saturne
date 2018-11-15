@@ -268,6 +268,15 @@ class VolumicZone(Zone):
                 if node_darcy['model'] != 'off':
                     self._natureList.append('groundwater_law')
                     self._natureDict['groundwater_law']  = self.tr("Groundwater\n volumic law")
+        else:
+            self._natureList.append('head_losses')
+            self._natureList.append('porosity')
+            #self._natureList.append('momentum_source_term')
+
+            self._natureDict['head_losses']          = self.tr("Head losses")
+            self._natureDict['porosity']             = self.tr("Porosity")
+            #self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
+
 
         node = self.case.xmlGetNode('additional_scalars')
         number = len(node.xmlGetNodeList('variable', type='user'))

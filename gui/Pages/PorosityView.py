@@ -142,9 +142,14 @@ class PorosityView(QWidget, Ui_PorosityForm):
         self.treeView.setModel(self.modelPorosity)
 
         # Combo model
-        self.modelPorosityType = ComboModel(self.comboBoxType, 2, 1)
-        self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
-        self.modelPorosityType.addItem(self.tr("anisotropic"), 'anisotropic')
+        if self.case['package'].name == 'code_saturne':
+            self.modelPorosityType = ComboModel(self.comboBoxType, 2, 1)
+            self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
+            self.modelPorosityType.addItem(self.tr("anisotropic"), 'anisotropic')
+        else:
+            self.modelPorosityType = ComboModel(self.comboBoxType, 1, 1)
+            self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
+            self.modelPorosityType.disableItem(index=0)
 
         # Connections
         self.treeView.clicked[QModelIndex].connect(self.slotSelectPorosityZones)

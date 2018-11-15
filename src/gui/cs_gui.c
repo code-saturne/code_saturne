@@ -4643,14 +4643,16 @@ cs_gui_add_notebook_variables(mei_tree_t  *ev_law)
  * Head loss tensor coefficients for each cell are organized as follows:
  * cku11, cku22, cku33, cku12, cku13, cku23.
  *
- * \param[in]       zone  pointer to zone structure
- * \param[in, out]  cku   head loss coefficients
+ * \param[in]       zone       pointer to zone structure
+ * \param[in]       cvara_vel  pointer to the velocity values of the previous time step
+ * \param[in, out]  cku        head loss coefficients
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gui_head_losses(const cs_zone_t  *zone,
-                   cs_real_t         cku[][6])
+cs_gui_head_losses(const cs_zone_t   *zone,
+                   const cs_real_3_t *cvara_vel,
+                   cs_real_t          cku[][6])
 {
   if (!cs_gui_file_is_loaded())
     return;
@@ -4659,8 +4661,6 @@ cs_gui_head_losses(const cs_zone_t  *zone,
     return;
 
   double c11, c12, c13, c21, c22, c23, c31, c32, c33;
-
-  const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(u)->val_pre);
 
   const cs_lnum_t n_cells = zone->n_elts;
   const cs_lnum_t *cell_ids = zone->elt_ids;
