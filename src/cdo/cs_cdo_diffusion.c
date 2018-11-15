@@ -1868,6 +1868,111 @@ cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique.
+ *          A Dirichlet is set for the three components of the vector.
+ *          Case of vector-valued CDO-Vb schemes with a CO+ST algorithm.
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vvb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                         const cs_cell_mesh_t           *cm,
+                                         cs_face_mesh_t                 *fm,
+                                         cs_cell_builder_t              *cb,
+                                         cs_cell_sys_t                  *csys)
+{
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+
+  /* Enforcement of the Dirichlet BCs */
+  if (csys->has_dirichlet == false)
+    return;  /* Nothing to do */
+
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const double chi =
+    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
+
+  cs_sdm_t  *ntrgrd = cb->loc;
+
+  /* Initialize the local operator */
+  cs_sdm_square_init(cm->n_vc, ntrgrd);
+
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
+
+      /* Compute the face-view of the mesh */
+      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
+
+      /* Compute the product: matpty*face unit normal */
+      cs_real_3_t  pty_nuf;
+      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, fm->face.unitv,
+                           pty_nuf);
+
+      /* Compute the flux operator related to the trace on the current face
+         of the normal gradient */
+      _vb_cost_normal_flux_op(f, cm, pty_nuf, h_info.coef, cb, ntrgrd);
+
+      /* Update the RHS and the local system matrix */
+      const double  pcoef = chi/sqrt(cm->face[f].meas);
+
+      for (short int v = 0; v < fm->n_vf; v++) {
+
+        /* Set the penalty diagonal coefficient */
+        const short int  vi = fm->v_ids[v];
+        const double  pcoef_v = pcoef * fm->wvf[v];
+
+        ntrgrd->val[vi*(1 + ntrgrd->n_rows)] += pcoef_v;
+
+        /* Update the RHS */
+        for (int k = 0; k < 3; k++)
+          csys->rhs[3*vi+k] += pcoef_v * csys->dir_values[3*vi+k];
+
+      }  /* Dirichlet or homogeneous Dirichlet */
+
+    }  /* Dirichlet face */
+  } /* Loop on boundary faces */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+  if (cs_dbg_cw_test(eqp, cm, csys)) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Cell Vb.COST Weak bc matrix");
+    cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+  }
+#endif
+
+  /* Add contribution to the linear system */
+  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
+
+  for (int bvi = 0; bvi < cm->n_vc; bvi++) {
+    for (int bvj = 0; bvj < cm->n_vc; bvj++) {
+
+      /* Retrieve the 3x3 matrix */
+      cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bvi, bvj);
+      assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+
+      const cs_real_t  _val = ntrgrd->val[cm->n_vc*bvi + bvj];
+      /* Update diagonal terms only */
+      bij->val[0] += _val;
+      bij->val[4] += _val;
+      bij->val[8] += _val;
+
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment. Case of CDO-Vb schemes with a
  *          CO+ST algorithm.
  *

@@ -482,8 +482,8 @@ _vbv_apply_weak_bc(cs_real_t                      time_eval,
     if (cs_equation_param_has_diffusion(eqp)) {
 
       if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED)
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
           eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
     }
@@ -892,6 +892,10 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PEQ;
+    eqc->enforce_dirichlet = cs_cdo_diffusion_vvb_cost_weak_dirichlet;
+    break;
+
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
   default:
     bft_error(__FILE__, __LINE__, 0,
