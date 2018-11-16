@@ -3,6 +3,18 @@ Master (not on release branches yet)
 
 Bug fixes:
 
+- Compressible: fix density time scheme in transported passive scalar/vector
+  balance to ensure conservativity with compressible algorithm.
+
+- Fixes for time scheme of density in unsteady term of momentum, transported
+  scalars / vectors balances.
+  * Use density at time n in momentum balance unsteady term if mass flux is
+    predicted.
+  * Use EOS density in momentum balance unsteady term if mass accumulation is
+    not taken into account. This falls back to former algorithm in this case.
+  * Use same time schemes for vector transport equation as for scalar transport
+    equation.
+
 - Fixes for parallel runs in sedimentation source term with humid atmosphere
   model.
 
