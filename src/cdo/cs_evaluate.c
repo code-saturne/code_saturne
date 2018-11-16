@@ -2242,7 +2242,9 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
   } /* End of switch on dimension */
 
   if (cs_glob_n_ranks > 1)
-    cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
+    /* Stride=1 since the global numbering is adapted in each case
+     * (scalar-, vector-valued equations) */
+    cs_range_set_sync(rs, CS_DOUBLE, 1, (void *)retval);
 }
 
 /*----------------------------------------------------------------------------*/
