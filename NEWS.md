@@ -3,6 +3,9 @@ Release 5.3.1 - (unreleased)
 
 Bug fixes:
 
+- Compressible: fix density time scheme in transported passive scalar/vector
+  balance to ensure conservativity with compressible algorithm.
+
 - Fixes for time scheme of density in unsteady term of momentum, transported
   scalars / vectors balances.
   * Use density at time n in momentum balance unsteady term if mass flux is
