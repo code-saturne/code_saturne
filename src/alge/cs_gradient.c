@@ -6810,6 +6810,7 @@ void CS_PROCF (grdpor, GRDPOR)
   const cs_int_t *restrict c_solid_flag = mq->c_solid_flag;
   int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
 
+  const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
 
   /*Additional terms due to porosity */
@@ -6892,7 +6893,7 @@ void CS_PROCF (grdpor, GRDPOR)
     }
 
     /* Finalisation of cell terms */
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       /* Is the cell fully solid? */
       cs_real_t dvol = 0.;
       if (c_solid_flag[is_p * cell_id] == 0)
