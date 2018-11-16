@@ -962,9 +962,13 @@ if (st_prv_id .ge. 0) then
   enddo
 endif
 
+! Low Mach compressible algos with mass flux prediction
+if (idilat.gt.1.and.ipredfl.eq.1.and.irovar.eq.1) then
+  pcrom => croma
+
 ! Low Mach compressible algos (conservative in time).
 ! Same algo. for Volume of Fluid method
-if ((idilat.gt.1 .or. ivofmt.ge.0 .or. ipredfl.eq.0).and.irovar.eq.1) then
+else if ((idilat.gt.1.or.ivofmt.ge.0).and.irovar.eq.1) then
   if (iterns.eq.1) then
     call field_get_val_prev2_s(icrom_scal, pcrom)
   else

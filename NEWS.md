@@ -3,6 +3,15 @@ Release 5.3.1 - (unreleased)
 
 Bug fixes:
 
+- Fixes for time scheme of density in unsteady term of momentum, transported
+  scalars / vectors balances.
+  * Use density at time n in momentum balance unsteady term if mass flux is
+    predicted.
+  * Use EOS density in momentum balance unsteady term if mass accumulation is
+    not taken into account. This falls back to former algorithm in this case.
+  * Use same time schemes for vector transport equation as for scalar transport
+    equation.
+
 - Fix loop on cells in computation of steady balance preparing pressure gradient
   computation with porous modelling (integral formulation).
 
