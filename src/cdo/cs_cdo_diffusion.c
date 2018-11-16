@@ -379,7 +379,7 @@ _vb_cost_normal_flux_op(const short int           f,
 
     for (short int v = 0; v < cm->n_vc; v++) {
 
-      const double  contrib_v = nflux[v] * tekf;
+      const double  contrib_v = 0.5 * nflux[v] * tekf;
 
       ntrgrd->val[_vk[0]*cm->n_vc + v] += contrib_v;
       ntrgrd->val[_vk[1]*cm->n_vc + v] += contrib_v;
