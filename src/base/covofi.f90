@@ -171,8 +171,8 @@ double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
-double precision smbexp, dvar, cprovol, prod, expkdt
-double precision temp, idifftp, roskpl, kplskm, ctot_tmp
+double precision smbexp, dvar, cprovol, prod
+double precision temp, idifftp
 double precision turb_schmidt
 double precision xR, prdtl, alpha_theta
 double precision normp
