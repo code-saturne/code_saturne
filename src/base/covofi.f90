@@ -963,8 +963,9 @@ if (st_prv_id .ge. 0) then
   enddo
 endif
 
-! Low Mach compressible algos with mass flux prediction
-if (idilat.gt.1.and.ipredfl.eq.1.and.irovar.eq.1) then
+! Compressible algorithm
+! or Low Mach compressible algos with mass flux prediction
+if (ippmod(icompf).ge.0.or.(idilat.gt.1.and.ipredfl.eq.1.and.irovar.eq.1)) then
   pcrom => croma
 
 ! Low Mach compressible algos (conservative in time).
