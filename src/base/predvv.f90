@@ -327,19 +327,22 @@ if (vcopt_u%thetav .lt. 1.d0 .and. iappel.eq.1 .and. iterns.gt.1) then
   if (irovar.eq.1) then
     ! remap the density pointer: n-1/2
     do iel = 1, ncelet
-      cproa_rho_tc(iel) = vcopt_u%thetav * croma(iel) + (1.d0 - vcopt_u%thetav) * cromaa(iel)
+      cproa_rho_tc(iel) =  vcopt_u%thetav * croma(iel)              &
+                         + (1.d0 - vcopt_u%thetav) * cromaa(iel)
     enddo
     pcrom => cproa_rho_tc
   endif
 
   ! Inner mass flux interpolation: n-1/2->n+1/2
   do ifac = 1, nfac
-    imasfl(ifac) = vcopt_u%thetav * imasfl(ifac) + (1.d0 - vcopt_u%thetav) * imasfl_prev(ifac)
+    imasfl(ifac) =  vcopt_u%thetav * imasfl(ifac)                   &
+                  + (1.d0 - vcopt_u%thetav) * imasfl_prev(ifac)
   enddo
 
   ! Boundary mass flux interpolation: n-1/2->n+1/2
   do ifac = 1, nfabor
-    bmasfl(ifac) = vcopt_u%thetav * bmasfl(ifac) + (1.d0 - vcopt_u%thetav) * bmasfl_prev(ifac)
+    bmasfl(ifac) =  vcopt_u%thetav * bmasfl(ifac)                   &
+                  + (1.d0 - vcopt_u%thetav) * bmasfl_prev(ifac)
   enddo
 
 endif
