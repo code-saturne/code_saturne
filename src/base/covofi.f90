@@ -930,8 +930,9 @@ if (st_prv_id .ge. 0) then
 endif
 
 ! Low Mach compressible algos (conservative in time).
-! Same algo. for Volume of Fluid method
-if (idilat.gt.1 .or. ivofmt.ge.0) then
+! Same algo. for Volume of Fluid method and compressible
+! algorithm
+if (ippmod(icompf).ge.0.or.idilat.gt.1.or.ivofmt.ge.0) then
   call field_get_val_prev_s(icrom_scal, pcrom)
 
 ! Standard algo
