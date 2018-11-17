@@ -551,19 +551,19 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 
   for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
 
-    short int  vi = fm->v_ids[vfi];
-    double  *ntrgrd_i = ntrgrd->val + vi*cm->n_vc;
+    const short int  vi = fm->v_ids[vfi];
+    double  *ntrgrd_vi = ntrgrd->val + vi*cm->n_vc;
 
     /* Default contribution for this line */
     const double  default_coef = pfq.meas * fm->wvf[vfi] * mng_cf;
     for (short int vj = 0; vj < cm->n_vc; vj++)
-      ntrgrd_i[vj] = default_coef * cm->wvc[vj];  /* two contributions */
+      ntrgrd_vi[vj] = default_coef * cm->wvc[vj];  /* two contributions */
 
     /* Block Vf x Vf */
     for (short int vfj = 0; vfj < fm->n_vf; vfj++) {
 
       short int vj = fm->v_ids[vfj];
-      ntrgrd_i[vj] += sum_ef * fm->wvf[vfi] * fm->wvf[vfj];
+      ntrgrd_vi[vj] += sum_ef * fm->wvf[vfi] * fm->wvf[vfj];
 
       double  entry_ij = 0.;
       for (short int e = 0; e < fm->n_ef; e++) {
@@ -573,7 +573,7 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 
         if (vfj == v1)
           entry_ij += mng_ef[e][0] * fm->wvf[vfi];
-        if (vfj == v2)
+        else if (vfj == v2)
           entry_ij += mng_ef[e][1] * fm->wvf[vfi];
 
         if (vfi == v1 || vfi == v2) { /* i in e */
@@ -586,11 +586,21 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 
       }  /* Loop on face edges */
 
-      ntrgrd_i[vj] += entry_ij;
+      ntrgrd_vi[vj] += entry_ij;
 
     }  /* Loop on face vertices (vj) */
 
   }  /* Loop on face vertices (vi) */
+
+  /* The flux is -1 times the reconstruction of the gradient */
+  for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
+
+    const short int  vi = fm->v_ids[vfi];
+    double  *ntrgrd_vi = ntrgrd->val + vi*cm->n_vc;
+    for (short int vj = 0; vj < cm->n_vc; vj++)
+      ntrgrd_vi[vj] *= -1;
+
+  }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 2
   cs_log_printf(CS_LOG_DEFAULT,
@@ -670,10 +680,10 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
   for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
 
     short int  vi = fm->v_ids[vfi];
-    double  *ntrgrd_i = ntrgrd->val + vi*ntrgrd->n_rows;
+    double  *ntrgrd_vi = ntrgrd->val + vi*ntrgrd->n_rows;
 
     /* Contribution to the cell column */
-    ntrgrd_i[cm->n_vc] = fm->wvf[vfi] * pfq.meas * mng_cf;
+    ntrgrd_vi[cm->n_vc] = fm->wvf[vfi] * pfq.meas * mng_cf;
 
     /* Block Vf x Vf */
     for (short int vfj = 0; vfj < fm->n_vf; vfj++) {
@@ -698,12 +708,28 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 
       }  /* Loop on face edges */
 
-      ntrgrd_i[fm->v_ids[vfj]] += entry_ij;
+      ntrgrd_vi[fm->v_ids[vfj]] += entry_ij;
 
     }  /* Loop on face vertices (vj) */
 
   }  /* Loop on face vertices (vi) */
 
+  /* The flux is -1 times the reconstruction of the gradient */
+  for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
+
+    const short int  vi = fm->v_ids[vfi];
+    double  *ntrgrd_vi = ntrgrd->val + vi*ntrgrd->n_rows;
+    for (short int vj = 0; vj < ntrgrd->n_rows; vj++)
+      ntrgrd_vi[vj] *= -1;
+
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 2
+  cs_log_printf(CS_LOG_DEFAULT,
+                ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)",
+                cm->c_id,cm->f_ids[fm->f_id]);
+  cs_sdm_dump(cm->c_id,  NULL, NULL, ntrgrd);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -782,14 +808,14 @@ _wbs_nitsche(const double              pcoef,
     const double  *hi = hloc->val + vfi*fm->n_vf;
     const short int  vi = fm->v_ids[vfi];
 
-    double  *ntrg_i = ntrgrd->val + vi*n_csys;
+    double  *ntrg_vi = ntrgrd->val + vi*n_csys;
 
     for (short int vfj = 0; vfj < fm->n_vf; vfj++) {
 
       const double  pcoef_ij = pcoef * hi[vfj];
       const short int  vj = fm->v_ids[vfj];
 
-      ntrg_i[vj] += pcoef_ij;
+      ntrg_vi[vj] += pcoef_ij;
       csys->rhs[vi] += pcoef_ij * csys->dir_values[vj];
 
     }  /* Loop on face vertices vj */
@@ -2204,7 +2230,8 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const double chi = eqp->bc_penalization_coeff*fabs(cb->eig_ratio)*cb->eig_max;
+  const double chi =
+    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
