@@ -59,7 +59,6 @@
 #include "cs_matrix_default.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
@@ -99,9 +98,6 @@ BEGIN_C_DECLS
  * through at least 2012) */
 
 #define CS_SIMD_SIZE(s) (((s-1)/16+1)*16)
-
-#define POST_ON_CELLS     1
-#define POST_ON_VERTICES  2
 
 /*=============================================================================
  * Local Type Definitions
@@ -259,14 +255,14 @@ struct _cs_multigrid_t {
 
   /* Data for postprocessing callback */
 
-  int        post_location;      /* 1: cells, 2: vertices */
+  int        post_location;      /* associated mesh location */
   int        n_levels_post;      /* Current number of postprocessed levels */
 
-  int      **post_cell_num;      /* If post_row_max > 0, array of
+  int      **post_row_num;       /* If post_row_max > 0, array of
                                     (n_levels - 1) arrays of projected
                                     coarse cell numbers on the base grid */
 
-  int      **post_cell_rank;     /* If post_row_max > 0 and grid merging
+  int      **post_row_rank;      /* If post_row_max > 0 and grid merging
                                     is active, array of (n_levels - 1) arrays
                                     of projected coarse cell ranks on the
                                     base grid */
@@ -796,18 +792,18 @@ _multigrid_add_level(cs_multigrid_t  *mg,
 
   mgd->grid_hierarchy[mgd->n_levels] = grid;
 
-  if (mg->post_cell_num != NULL) {
+  if (mg->post_row_num != NULL) {
     int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
-    BFT_REALLOC(mg->post_cell_num, mgd->n_levels_alloc, int *);
+    BFT_REALLOC(mg->post_row_num, mgd->n_levels_alloc, int *);
     for (ii = n_max_post_levels + 1; ii < mgd->n_levels_alloc; ii++)
-      mg->post_cell_num[ii] = NULL;
+      mg->post_row_num[ii] = NULL;
   }
 
-  if (mg->post_cell_rank != NULL) {
+  if (mg->post_row_rank != NULL) {
     int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
-    BFT_REALLOC(mg->post_cell_rank, mgd->n_levels_alloc, int *);
+    BFT_REALLOC(mg->post_row_rank, mgd->n_levels_alloc, int *);
     for (ii = n_max_post_levels + 1; ii < mgd->n_levels_alloc; ii++)
-      mg->post_cell_rank[ii] = NULL;
+      mg->post_row_rank[ii] = NULL;
   }
 
   /* Update associated info */
@@ -912,7 +908,7 @@ static void
 _multigrid_add_post(cs_multigrid_t  *mg,
                     const char      *name,
                     int              post_location,
-                    cs_lnum_t        n_base_cells)
+                    cs_lnum_t        n_base_rows)
 {
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
 
@@ -933,32 +929,32 @@ _multigrid_add_post(cs_multigrid_t  *mg,
 
   /* Reallocate arrays if necessary */
 
-  if (mg->post_cell_num == NULL) {
-    BFT_MALLOC(mg->post_cell_num, mg->n_levels_max, int *);
+  if (mg->post_row_num == NULL) {
+    BFT_MALLOC(mg->post_row_num, mg->n_levels_max, int *);
     for (ii = 0; ii < mg->n_levels_max; ii++)
-      mg->post_cell_num[ii] = NULL;
+      mg->post_row_num[ii] = NULL;
   }
 
-  if (mg->post_cell_rank == NULL && cs_grid_get_merge_stride() > 1) {
-    BFT_MALLOC(mg->post_cell_rank, mg->n_levels_max, int *);
+  if (mg->post_row_rank == NULL && cs_grid_get_merge_stride() > 1) {
+    BFT_MALLOC(mg->post_row_rank, mg->n_levels_max, int *);
     for (ii = 0; ii < mg->n_levels_max; ii++)
-      mg->post_cell_rank[ii] = NULL;
+      mg->post_row_rank[ii] = NULL;
   }
 
   for (ii = 0; ii < mg->n_levels_post; ii++) {
-    BFT_REALLOC(mg->post_cell_num[ii], n_base_cells, int);
+    BFT_REALLOC(mg->post_row_num[ii], n_base_rows, int);
     cs_grid_project_row_num(mgd->grid_hierarchy[ii+1],
-                            n_base_cells,
+                            n_base_rows,
                             mg->post_row_max,
-                            mg->post_cell_num[ii]);
+                            mg->post_row_num[ii]);
   }
 
-  if (mg->post_cell_rank != NULL) {
+  if (mg->post_row_rank != NULL) {
     for (ii = 0; ii < mg->n_levels_post; ii++) {
-      BFT_REALLOC(mg->post_cell_rank[ii], n_base_cells, int);
+      BFT_REALLOC(mg->post_row_rank[ii], n_base_rows, int);
       cs_grid_project_row_rank(mgd->grid_hierarchy[ii+1],
-                               n_base_cells,
-                               mg->post_cell_rank[ii]);
+                               n_base_rows,
+                               mg->post_row_rank[ii]);
     }
   }
 }
@@ -988,8 +984,15 @@ _cs_multigrid_post_function(void                  *mgh,
   if (mg == NULL)
     return;
 
-  if (mg->post_cell_num == NULL || cs_post_mesh_exists(-1) != true)
+  if (mg->post_row_num == NULL || cs_post_mesh_exists(-1) != true)
     return;
+
+  int *s_num = NULL;
+  const cs_range_set_t *rs = NULL;
+  if (mg->post_location == CS_MESH_LOCATION_VERTICES) {
+    BFT_MALLOC(s_num, cs_glob_mesh->n_vertices, int);
+    rs = cs_glob_mesh->vtx_range_set;
+  }
 
   /* Allocate name buffer */
 
@@ -1001,10 +1004,9 @@ _cs_multigrid_post_function(void                  *mgh,
 
   for (ii = 0; ii < mg->n_levels_post; ii++) {
 
-    sprintf(var_name, "mg %s %2d",
-            base_name, (ii+1));
+    sprintf(var_name, "mg %s %2d", base_name, (ii+1));
 
-    if (mg->post_location ==  POST_ON_CELLS)
+    if (mg->post_location == CS_MESH_LOCATION_CELLS)
       cs_post_write_var(CS_POST_MESH_VOLUME,
                         CS_POST_WRITER_ALL_ASSOCIATED,
                         var_name,
@@ -1012,12 +1014,13 @@ _cs_multigrid_post_function(void                  *mgh,
                         false,
                         true,
                         CS_POST_TYPE_int,
-                        mg->post_cell_num[ii],
+                        mg->post_row_num[ii],
                         NULL,
                         NULL,
                         cs_glob_time_step);
 
-    else if (mg->post_location == POST_ON_VERTICES)
+    else if (mg->post_location == CS_MESH_LOCATION_VERTICES) {
+      cs_range_set_scatter(rs, CS_INT_TYPE, 1, mg->post_row_num[ii], s_num);
       cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                                CS_POST_WRITER_ALL_ASSOCIATED,
                                var_name,
@@ -1025,21 +1028,22 @@ _cs_multigrid_post_function(void                  *mgh,
                                false,
                                true,
                                CS_POST_TYPE_int,
-                               mg->post_cell_num[ii],
+                               s_num,
                                cs_glob_time_step);
+    }
 
     else
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Invalid location for post-processing.\n", __func__);
 
-    BFT_FREE(mg->post_cell_num[ii]);
+    BFT_FREE(mg->post_row_num[ii]);
 
-    if (mg->post_cell_rank != NULL) {
+    if (mg->post_row_rank != NULL) {
 
       sprintf(var_name, "rk %s %2d",
               base_name, (ii+1));
 
-      if (mg->post_location ==  POST_ON_CELLS)
+      if (mg->post_location == CS_MESH_LOCATION_CELLS)
         cs_post_write_var(CS_POST_MESH_VOLUME,
                           CS_POST_WRITER_ALL_ASSOCIATED,
                           var_name,
@@ -1047,11 +1051,12 @@ _cs_multigrid_post_function(void                  *mgh,
                           false,
                           true,
                           CS_POST_TYPE_int,
-                          mg->post_cell_rank[ii],
+                          mg->post_row_rank[ii],
                           NULL,
                           NULL,
                           cs_glob_time_step);
-      else if (mg->post_location == POST_ON_VERTICES)
+      else if (mg->post_location == CS_MESH_LOCATION_VERTICES) {
+        cs_range_set_scatter(rs, CS_INT_TYPE, 1, mg->post_row_rank[ii], s_num);
         cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                                  CS_POST_WRITER_ALL_ASSOCIATED,
                                  var_name,
@@ -1059,16 +1064,18 @@ _cs_multigrid_post_function(void                  *mgh,
                                  false,
                                  true,
                                  CS_POST_TYPE_int,
-                                 mg->post_cell_rank[ii],
+                                 s_num,
                                  cs_glob_time_step);
+      }
 
-      BFT_FREE(mg->post_cell_rank[ii]);
+      BFT_FREE(mg->post_row_rank[ii]);
 
     }
 
   }
   mg->n_levels_post = 0;
 
+  BFT_FREE(s_num);
   BFT_FREE(var_name);
 }
 
@@ -2925,8 +2932,8 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
   }
 #endif
 
-  mg->post_cell_num = NULL;
-  mg->post_cell_rank = NULL;
+  mg->post_row_num = NULL;
+  mg->post_row_rank = NULL;
   mg->post_name = NULL;
 
   mg->plot_base_name = NULL;
@@ -2980,20 +2987,20 @@ cs_multigrid_destroy(void  **context)
 
   BFT_FREE(mg->lv_info);
 
-  if (mg->post_cell_num != NULL) {
+  if (mg->post_row_num != NULL) {
     int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
     for (int i = 0; i < n_max_post_levels; i++)
-      if (mg->post_cell_num[i] != NULL)
-        BFT_FREE(mg->post_cell_num[i]);
-    BFT_FREE(mg->post_cell_num);
+      if (mg->post_row_num[i] != NULL)
+        BFT_FREE(mg->post_row_num[i]);
+    BFT_FREE(mg->post_row_num);
   }
 
-  if (mg->post_cell_rank != NULL) {
+  if (mg->post_row_rank != NULL) {
     int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
     for (int i = 0; i < n_max_post_levels; i++)
-      if (mg->post_cell_rank[i] != NULL)
-        BFT_FREE(mg->post_cell_rank[i]);
-    BFT_FREE(mg->post_cell_rank);
+      if (mg->post_row_rank[i] != NULL)
+        BFT_FREE(mg->post_row_rank[i]);
+    BFT_FREE(mg->post_row_rank);
   }
 
   BFT_FREE(mg->post_name);
@@ -3442,19 +3449,29 @@ cs_multigrid_setup_conv_diff(void               *context,
 
   if (mg->post_row_max > 0) {
     if (mg->info.n_calls[0] == 0) {
-      int i = 0;
+      int l_id = 0;
       const cs_lnum_t n_rows_a = cs_matrix_get_n_rows(a);
       if (n_rows_a == mesh->n_cells)
-        i = POST_ON_CELLS;
-      else if (n_rows_a == mesh->n_vertices)
-        i = POST_ON_VERTICES;
-      int j = i;
-      cs_parall_min(1, CS_INT_TYPE, &j);
-      int k = i;
-      cs_parall_max(1, CS_INT_TYPE, &k);
-      if (i != 0 && j == i && k == i) {
+        l_id = CS_MESH_LOCATION_CELLS;
+      else if (n_rows_a <= mesh->n_vertices) {
+        l_id = CS_MESH_LOCATION_VERTICES;
+        if (mesh->vtx_range_set != NULL) {
+          if (mesh->vtx_range_set->n_elts[0] != n_rows_a)
+            l_id = CS_MESH_LOCATION_NONE;
+        }
+      }
+#if defined(HAVE_MPI)
+      if (mg->caller_n_ranks > 1) {
+        int _l_id = l_id;
+        MPI_Allreduce(&_l_id, &l_id, 1, MPI_INT, MPI_MAX, mg->caller_comm);
+        if (l_id != _l_id)
+          _l_id = CS_MESH_LOCATION_NONE;
+        MPI_Allreduce(&_l_id, &l_id, 1, MPI_INT, MPI_MIN, mg->caller_comm);
+      }
+#endif
+      if (l_id != CS_MESH_LOCATION_NONE) {
         cs_post_add_time_dep_output(_cs_multigrid_post_function, (void *)mg);
-        _multigrid_add_post(mg, name, i, n_rows_a);
+        _multigrid_add_post(mg, name, l_id, n_rows_a);
       }
     }
   }
@@ -3840,6 +3857,8 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
   int mesh_id = cs_post_init_error_writer_cells();
   int location_id = CS_MESH_LOCATION_CELLS;
 
+  const cs_range_set_t  *rs = NULL;
+
   if (mesh_id != 0) {
 
     char var_name[32];
@@ -3852,7 +3871,7 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
     int eb_size[4] = {1, 1, 1, 1};
 
     const cs_grid_t *g = mgd->grid_hierarchy[0];
-    const cs_lnum_t n_base_cells = cs_grid_get_n_rows(g);
+    const cs_lnum_t n_base_rows = cs_grid_get_n_rows(g);
     const cs_matrix_t  *_matrix = NULL;
 
     BFT_MALLOC(var, cs_grid_get_n_cols_ext(g), cs_real_t);
@@ -3884,11 +3903,11 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
                        NULL,
                        NULL);
 
-
       _matrix = cs_grid_get_matrix(g);
 
       cs_matrix_copy_diagonal(_matrix, da);
-      cs_grid_project_var(g, n_base_cells, da, var);
+      cs_grid_project_var(g, n_base_rows, da, var);
+      cs_range_set_scatter(rs, CS_REAL_TYPE, db_size[1], var, var);
       sprintf(var_name, "Diag_%04d", lv_id);
       cs_sles_post_output_var(var_name,
                               mesh_id,
@@ -3897,7 +3916,8 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
                               db_size[1],
                               var);
 
-      cs_grid_project_diag_dom(g, n_base_cells, var);
+      cs_grid_project_diag_dom(g, n_base_rows, var);
+      cs_range_set_scatter(rs, CS_REAL_TYPE, db_size[1], var, var);
       sprintf(var_name, "Diag_Dom_%04d", lv_id);
       cs_sles_post_output_var(var_name,
                               mesh_id,
@@ -3930,7 +3950,8 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
                        NULL,
                        NULL);
 
-      cs_grid_project_var(g, n_base_cells, mgd->rhs_vx[level*2], var);
+      cs_grid_project_var(g, n_base_rows, mgd->rhs_vx[level*2], var);
+      cs_range_set_scatter(rs, CS_REAL_TYPE, db_size[1], var, var);
       sprintf(var_name, "RHS_%04d", level);
       cs_sles_post_output_var(var_name,
                               mesh_id,
@@ -3939,7 +3960,8 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
                               db_size[1],
                               var);
 
-      cs_grid_project_var(g, n_base_cells, mgd->rhs_vx[level*2+1], var);
+      cs_grid_project_var(g, n_base_rows, mgd->rhs_vx[level*2+1], var);
+      cs_range_set_scatter(rs, CS_REAL_TYPE, db_size[1], var, var);
       sprintf(var_name, "X_%04d", level);
       cs_sles_post_output_var(var_name,
                               mesh_id,
@@ -3966,7 +3988,8 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
             = fabs(c_res[ii*db_size[1] + i] - c_rhs_lv[ii*db_size[1] + i]);
       }
 
-      cs_grid_project_var(g, n_base_cells, c_res, var);
+      cs_grid_project_var(g, n_base_rows, c_res, var);
+      cs_range_set_scatter(rs, CS_REAL_TYPE, db_size[1], var, var);
 
       BFT_FREE(c_res);
 
