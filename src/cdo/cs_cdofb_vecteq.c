@@ -456,7 +456,8 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
-  eqb->bd_msh_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ;
+  eqb->bd_msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE |
+    CS_CDO_LOCAL_FEQ;
 
   BFT_MALLOC(eqc->face_values, 3*n_faces, cs_real_t);
   BFT_MALLOC(eqc->rc_tilda, 3*n_cells, cs_real_t);
