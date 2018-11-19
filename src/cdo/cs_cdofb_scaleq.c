@@ -1878,6 +1878,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_real_t  t_cur = cs_shared_time_step->t_cur;
   const cs_real_t  dt_cur = cs_shared_time_step->dt[0];
+  const cs_real_t  inv_dtcur = 1./dt_cur;
   const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
 
   cs_timer_t  t0 = cs_timer_time();
@@ -1908,10 +1909,10 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
     cs_real_t  _p_cur[10], _p_prev[10], _p_theta[10];
     cs_real_t  *p_cur = NULL, *p_prev = NULL, *p_theta = NULL;
 
-    if (connect->n_max_vbyc > 10) {
-      BFT_MALLOC(p_cur, connect->n_max_vbyc, cs_real_t);
-      BFT_MALLOC(p_prev, connect->n_max_vbyc, cs_real_t);
-      BFT_MALLOC(p_theta, connect->n_max_vbyc, cs_real_t);
+    if (connect->n_max_fbyc > 10) {
+      BFT_MALLOC(p_cur, connect->n_max_fbyc, cs_real_t);
+      BFT_MALLOC(p_prev, connect->n_max_fbyc, cs_real_t);
+      BFT_MALLOC(p_theta, connect->n_max_fbyc, cs_real_t);
     }
     else {
       p_cur = _p_cur;
@@ -1935,63 +1936,100 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
+      /* Initialize the properties at a cellwise level */
+      cs_equation_init_properties_cw(eqp, eqb, time_eval, cell_flag, cm, cb);
+
       /* Set the value of the current potential */
       for (short int f = 0; f < cm->n_fc; f++)
         p_cur[f] = eqc->face_values[cm->f_ids[f]];
       p_cur[cm->n_fc] = pot->val[cm->c_id];
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 3
-      if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
-#endif
+      /* Unsteady term + time scheme */
+      if (cs_equation_param_has_time(eqp)) {
+
+        /* Set the value of the current potential */
+        for (short int f = 0; f < cm->n_fc; f++)
+          p_prev[f] = eqc->face_values_pre[cm->f_ids[f]];
+        p_prev[cm->n_fc] = pot->val_pre[cm->c_id];
+
+        /* Get the value of the time property */
+        const double  tptyc = inv_dtcur * cb->tpty_val;
+
+        /* Assign local matrix to a mass matrix to define */
+        cs_sdm_t  *mass_mat = cb->loc;
+        assert(mass_mat->n_rows == mass_mat->n_cols);
+        assert(mass_mat->n_rows == cm->n_fc + 1);
+
+        if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG)
+          eb->unsteady_term[c_id] += tptyc * cm->vol_c *
+            (p_cur[cm->n_fc] - p_prev[cm->n_fc]);
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Not implemented yet.", __func__);
+
+      } /* End of time contribution */
 
       /* Set p_theta */
       switch (eqp->time_scheme) {
+
       case CS_TIME_SCHEME_EULER_EXPLICIT:
         for (short int i = 0; i < cm->n_fc + 1; i++)
           p_theta[i] = p_prev[i];
         break;
-
       case CS_TIME_SCHEME_CRANKNICO:
         for (short int i = 0; i < cm->n_fc + 1; i++)
           p_theta[i] = 0.5*(p_cur[i] + p_prev[i]);
         break;
-
       case CS_TIME_SCHEME_THETA:
         for (short int i = 0; i < cm->n_fc + 1; i++)
           p_theta[i] = eqp->theta*p_cur[i] + (1-eqp->theta)*p_prev[i];
         break;
 
-      default:
+      default:                  /* Implicit */
         for (short int i = 0; i < cm->n_fc + 1; i++)
           p_theta[i] = p_cur[i];
         break;
 
       } /* Switch on time scheme */
 
-      /* DIFFUSION TERM */
-      if (cs_equation_param_has_diffusion(eqp)) {
+       /* Reaction term */
+      if (cs_equation_param_has_reaction(eqp)) {
 
-        /* Define the local stiffness matrix */
-        if (!(eqb->diff_pty_uniform))
-          cs_equation_set_diffusion_property_cw(eqp, cm, time_eval, cell_flag,
-                                                cb);
+        /* Define the local reaction property */
+        const double  rpty_val = cb->rpty_val * cm->vol_c;
+        eb->reaction_term[c_id] += rpty_val * p_theta[cm->n_fc];
+
+      } /* Reaction */
+
+      /* Diffusion term */
+      if (cs_equation_param_has_diffusion(eqp)) {
 
         /* local matrix owned by the cellwise builder (store in cb->loc) */
         eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
 
         cs_real_t  *res = cb->values;
-        for (short int v = 0; v < cm->n_vc; v++)
-          res[v] = 0.;
-
+        memset(res, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
         cs_sdm_square_matvec(cb->loc, p_theta, res);
 
-        eb->diffusion_term[cm->c_id] = res[cm->n_fc];
+        eb->diffusion_term[cm->c_id] += res[cm->n_fc];
 
-      } /* END OF DIFFUSION */
+      } /* End of diffusion */
 
-      /* SOURCE TERM */
-      /* =========== */
+      /* Advection term */
+      if (cs_equation_param_has_convection(eqp)) {
 
+        /* Define the local advection matrix */
+        cs_cdofb_advection_build(eqp, cm, time_eval, eqc->adv_func, cb);
+
+        cs_real_t  *res = cb->values;
+        memset(res, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
+        cs_sdm_square_matvec(cb->loc, p_theta, res);
+
+        eb->advection_term[cm->c_id] += res[cm->n_fc];
+
+      } /* End of advection */
+
+      /* Source term */
       if (cs_equation_param_has_sourceterm(eqp)) {
 
         /* Reset the local contribution */
@@ -2014,48 +2052,6 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
         eb->source_term[cm->c_id] += src[cm->n_fc];
 
       } /* End of term source contribution */
-
-      /* /\* UNSTEADY TERM + TIME SCHEME *\/ */
-      /* /\* =========================== *\/ */
-
-      /* if (cs_equation_param_has_time(eqp)) { */
-
-      /*   /\* Get the value of the time property *\/ */
-      /*   double  tpty_val = 1/dt_cur; */
-      /*   if (eqb->time_pty_uniform) */
-      /*     tpty_val *= time_pty_val; */
-      /*   else */
-      /*     tpty_val *= cs_property_get_cell_value(c_id, time_eval, */
-      /*                                            eqp->time_property); */
-
-      /*   /\* Assign local matrix to a mass matrix to define *\/ */
-      /*   cs_sdm_t  *mass_mat = cb->loc; */
-      /*   assert(mass_mat->n_rows == mass_mat->n_cols); */
-      /*   assert(mass_mat->n_rows == cm->n_fc + 1); */
-
-      /*   if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { */
-
-      /*     /\* Use a vector to deal with the diagonal matrix *\/ */
-      /*     memset(mass_mat->val, 0, sizeof(cs_real_t)*(cm->n_fc + 1)); */
-      /*     mass_mat->val[cm->n_fc] = cm->vol_c * tpty_val; */
-
-      /*   } */
-      /*   else { */
-
-      /*     memset(mass_mat->val, 0, */
-      /*            sizeof(cs_real_t)*(cm->n_fc + 1)*(cm->n_fc + 1)); */
-
-      /*     bft_error(__FILE__, __LINE__, 0, */
-      /*               "%s: Not implemented yet.", __func__); */
-
-      /*   } */
-
-      /*   /\* Apply the time discretization to the local system. */
-      /*      Update csys (matrix and rhs) *\/ */
-      /*   eqc->apply_time_scheme(eqp, tpty_val, mass_mat, eqb->sys_flag, cb, */
-      /*                          csys); */
-
-      /* } /\* END OF TIME CONTRIBUTION *\/ */
 
 
     } /* Main loop on cells */
