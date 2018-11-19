@@ -1022,7 +1022,8 @@ cs_sdm_square_add_transpose(cs_sdm_t  *mat,
                             cs_sdm_t  *tr)
 {
   /* Sanity check */
-  assert(mat != NULL && tr != NULL && tr->n_max_rows == mat->n_max_rows);
+  assert(mat != NULL && tr != NULL);
+  assert(mat->n_rows <= tr->n_max_cols && mat->n_cols <= tr->n_max_rows);
   assert(mat->n_rows == mat->n_cols);
 
   if (mat->n_rows < 1 || mat->n_cols < 1)
