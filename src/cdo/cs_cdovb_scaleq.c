@@ -573,7 +573,7 @@ static int
 _vbs_solve_system(cs_sles_t                    *sles,
                   const cs_matrix_t            *matrix,
                   const cs_real_t              *x0,
-                  const cs_real_t              *rhs,
+                  cs_real_t                    *rhs,
                   const cs_equation_param_t    *eqp,
                   cs_real_t                    *p_xsol[])
 {

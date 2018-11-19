@@ -370,7 +370,7 @@ cs_gnum_t
 cs_equation_prepare_system(int                   stride,
                            cs_lnum_t             x_size,
                            const cs_real_t      *x0,
-                           const cs_real_t      *rhs,
+                           cs_real_t            *rhs,
                            const cs_matrix_t    *matrix,
                            cs_range_set_t       *rset,
                            cs_real_t            *p_x[],
