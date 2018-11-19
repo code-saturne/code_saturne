@@ -1049,81 +1049,52 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the diffusion property inside a cell and its related quantities
+ * \brief  Initialize all properties for a given cell when building the
+ *         algebraic system. If the property is uniform, a first call has to
+ *         be done before the loop on cells
+ *         Call \ref cs_eqution_init_properties for instance
  *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      c_id    id of the cell to deal with
- * \param[in]      t_eval  time at which one performs the evaluation
- * \param[in]      c_flag  flag related to this cell
- * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      eqb        pointer to a cs_equation_builder_t structure
+ * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in]      cell_flag  flag related to the current cell
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ *                            (diffusion property is stored inside)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_diffusion_property(const cs_equation_param_t   *eqp,
-                                   cs_lnum_t                    c_id,
-                                   cs_real_t                    t_eval,
-                                   cs_flag_t                    c_flag,
-                                   cs_cell_builder_t           *cb)
+cs_equation_init_properties_cw(const cs_equation_param_t     *eqp,
+                               const cs_equation_builder_t   *eqb,
+                               const cs_real_t                t_eval,
+                               const cs_flag_t                cell_flag,
+                               const cs_cell_mesh_t          *cm,
+                               cs_cell_builder_t             *cb)
 {
-  cs_property_get_cell_tensor(c_id,
-                              t_eval,
-                              eqp->diffusion_property,
-                              eqp->diffusion_hodge.inv_pty,
-                              cb->dpty_mat);
+  /* Set the diffusion property */
+  if (cs_equation_param_has_diffusion(eqp))
+    if (!(eqb->diff_pty_uniform))
+      cs_equation_set_diffusion_property_cw(eqp, cm, t_eval, cell_flag, cb);
 
-  if (cs_property_is_isotropic(eqp->diffusion_property))
-    cb->dpty_val = cb->dpty_mat[0][0];
+  /* Set the (linear) reaction property */
+  if (cs_equation_param_has_reaction(eqp)) {
 
-  /* Set additional quantities in case of more advanced way of enforcing the
-     Dirichlet BCs */
-  if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
-    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-        eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-      cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
-                       &(cb->eig_ratio),
-                       &(cb->eig_max));
+    /* Define the local reaction property */
+    cb->rpty_val = 0;
+    for (int r = 0; r < eqp->n_reaction_terms; r++)
+      if (eqb->reac_pty_uniform[r])
+        cb->rpty_val += cb->rpty_vals[r];
+      else
+        cb->rpty_val += cs_property_value_in_cell(cm,
+                                                  eqp->reaction_properties[r],
+                                                  t_eval);
+
   }
-}
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the diffusion property inside a cell and its related quantities.
- *         Cellwise version using a cs_cell_mesh_t structure
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval  time at which one performs the evaluation
- * \param[in]      c_flag  flag related to this cell
- * \param[in, out] cb      pointer to a cs_cell_builder_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_diffusion_property_cw(const cs_equation_param_t     *eqp,
-                                      const cs_cell_mesh_t          *cm,
-                                      cs_real_t                      t_eval,
-                                      cs_flag_t                      c_flag,
-                                      cs_cell_builder_t             *cb)
-{
-  cs_property_tensor_in_cell(cm,
-                             eqp->diffusion_property,
-                             t_eval,
-                             eqp->diffusion_hodge.inv_pty,
-                             cb->dpty_mat);
-
-  if (cs_property_is_isotropic(eqp->diffusion_property))
-    cb->dpty_val = cb->dpty_mat[0][0];
-
-  /* Set additional quantities in case of more advanced way of enforcing the
-     Dirichlet BCs */
-  if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
-    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-        eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-      cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
-                       &(cb->eig_ratio),
-                       &(cb->eig_max));
-  }
+  if (cs_equation_param_has_time(eqp))
+    if (!(eqb->time_pty_uniform))
+      cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property, t_eval);
 }
 
 /*----------------------------------------------------------------------------*/

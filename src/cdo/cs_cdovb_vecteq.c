@@ -356,28 +356,8 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
 
   } /* Internal enforcement */
 
-  /* Set the diffusion property */
-  if (cs_equation_param_has_diffusion(eqp))
-    if (!(eqb->diff_pty_uniform))
-      cs_equation_set_diffusion_property_cw(eqp, cm, t_eval, cell_flag, cb);
-
-  /* Set the (linear) reaction property */
-  if (cs_equation_param_has_reaction(eqp)) {
-
-    /* Define the local reaction property */
-    cb->rpty_val = 0;
-    for (int r = 0; r < eqp->n_reaction_terms; r++)
-      if (eqb->reac_pty_uniform[r])
-        cb->rpty_val += cb->rpty_vals[r];
-      else
-        cb->rpty_val += cs_property_value_in_cell(cm,
-                                                  eqp->reaction_properties[r],
-                                                  t_eval);
-  }
-
-  if (cs_equation_param_has_time(eqp))
-    if (!(eqb->time_pty_uniform))
-      cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property, t_eval);
+  /* Set the properties for this cell if not uniform */
+  cs_equation_init_properties_cw(eqp, eqb, t_eval, cell_flag, cm, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);

@@ -337,29 +337,8 @@ _vbs_init_cell_system(cs_real_t                      t_eval,
 
   }
 
-  /* Set the diffusion property */
-  if (cs_equation_param_has_diffusion(eqp))
-    if (!(eqb->diff_pty_uniform))
-      cs_equation_set_diffusion_property_cw(eqp, cm, t_eval, cell_flag, cb);
-
-  /* Set the (linear) reaction property */
-  if (cs_equation_param_has_reaction(eqp)) {
-
-    /* Define the local reaction property */
-    cb->rpty_val = 0;
-    for (int r = 0; r < eqp->n_reaction_terms; r++)
-      if (eqb->reac_pty_uniform[r])
-        cb->rpty_val += cb->rpty_vals[r];
-      else
-        cb->rpty_val += cs_property_value_in_cell(cm,
-                                                  eqp->reaction_properties[r],
-                                                  t_eval);
-
-  }
-
-  if (cs_equation_param_has_time(eqp))
-    if (!(eqb->time_pty_uniform))
-      cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property, t_eval);
+  /* Set the properties for this cell if not uniform */
+  cs_equation_init_properties_cw(eqp, eqb, t_eval, cell_flag, cm, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
@@ -2146,6 +2125,9 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
+      /* Initialize the properties at a cellwise level */
+      cs_equation_init_properties_cw(eqp, eqb, time_eval, cell_flag, cm, cb);
+
       /* Set the value of the current potential */
       for (short int v = 0; v < cm->n_vc; v++)
         p_cur[v] = pot->val[cm->v_ids[v]];
@@ -2220,14 +2202,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
       if (cs_equation_param_has_reaction(eqp)) {
 
         /* Define the local reaction property */
-        double  rpty_val = 0;
-        for (int r = 0; r < eqp->n_reaction_terms; r++)
-          if (eqb->reac_pty_uniform[r])
-            rpty_val += cb->rpty_vals[r];
-          else
-            rpty_val += cs_property_value_in_cell(cm,
-                                                  eqp->reaction_properties[r],
-                                                  time_eval);
+        const double  rpty_val = cb->rpty_val;
 
         cs_real_t  *res = cb->values;
         memset(res, 0, cm->n_vc*sizeof(cs_real_t));
@@ -2242,11 +2217,6 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
       /* Diffusion */
       if (cs_equation_param_has_diffusion(eqp)) {
-
-        /* Define the local stiffness matrix */
-        if (!(eqb->diff_pty_uniform))
-          cs_equation_set_diffusion_property_cw(eqp, cm, time_eval, cell_flag,
-                                                cb);
 
         /* local matrix owned by the cellwise builder (store in cb->loc) */
         eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
