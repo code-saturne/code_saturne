@@ -1229,51 +1229,6 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the boundary conditions known from the settings when the fields
- *         stem from a scalar CDO vertex-based scheme.
- *
- * \param[in]      t_eval      time at which one evaluates BCs
- * \param[in]      mesh        pointer to a cs_mesh_t structure
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out] context     pointer to the scheme context (cast on-the-fly)
- * \param[in, out] field_val   pointer to the values of the variable field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_scaleq_set_dir_bc(cs_real_t                     t_eval,
-                           const cs_mesh_t              *mesh,
-                           const cs_equation_param_t    *eqp,
-                           cs_equation_builder_t        *eqb,
-                           void                         *context,
-                           cs_real_t                     field_val[])
-{
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
-
-  assert(eqc->vtx_bc_flag != NULL); /* Sanity check */
-
-  cs_timer_t  t0 = cs_timer_time();
-
-  /* Compute the values of the Dirichlet BC */
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _vbs_cell_builder[0], /* static variable */
-                                   eqc->vtx_bc_flag,
-                                   field_val);
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Build and solve the linear system arising from a scalar steady-state
  *         convection/diffusion/reaction equation with a CDO-Vb scheme
  *         One works cellwise and then process to the assembly

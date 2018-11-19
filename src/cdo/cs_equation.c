@@ -159,91 +159,6 @@ _post_balance_at_vertices(const cs_equation_t   *eq,
 /*----------------------------------------------------------------------------*/
 
 static void
-_prepare_vb_solving(void              *eq_to_cast,
-                    cs_real_t         *p_x[],
-                    cs_real_t         *p_rhs[])
-{
-  cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
-  const cs_field_t  *fld = cs_field_by_id(eq->field_id);
-  const int  stride = 1;  /* Since the global numbering is adapted in each
-                             case (scalar-, vector-valued equations) */
-
-  cs_real_t  *x = NULL, *b = NULL;
-
-  BFT_MALLOC(x, CS_MAX(eq->n_sles_scatter_elts,
-                       cs_matrix_get_n_columns(eq->matrix)), cs_real_t);
-
-  /* x and b are a "gathered" view of field->val and eq->rhs respectively
-     through the range set operation.
-     Their size is equal to n_sles_gather_elts <= n_sles_scatter_elts */
-
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    /* Compact numbering to fit the algebraic decomposition */
-    cs_range_set_gather(eq->rset,
-                        CS_REAL_TYPE, /* type */
-                        stride,       /* stride */
-                        fld->val,     /* in: size = n_sles_scatter_elts */
-                        x);           /* out: size = n_sles_gather_elts */
-
-    /* The right-hand side stems from a cellwise building on this rank.
-       Other contributions from distant ranks may contribute to an element
-       owned by the local rank */
-    BFT_MALLOC(b, eq->n_sles_scatter_elts, cs_real_t);
-
-#if defined(HAVE_OPENMP)
-#   pragma omp parallel for if (eq->n_sles_scatter_elts > CS_THR_MIN)
-    for (cs_lnum_t  i = 0; i < eq->n_sles_scatter_elts; i++)
-      b[i] = eq->rhs[i];
-#else
-    memcpy(b, eq->rhs, eq->n_sles_scatter_elts * sizeof(cs_real_t));
-#endif
-
-    cs_interface_set_sum(eq->rset->ifs,
-                         eq->n_sles_scatter_elts, stride, false, CS_REAL_TYPE,
-                         b);
-
-    cs_range_set_gather(eq->rset,
-                        CS_REAL_TYPE,/* type */
-                        stride,      /* stride */
-                        b,           /* in: size = n_sles_scatter_elts */
-                        b);          /* out: size = n_sles_gather_elts */
-  }
-  else { /* Serial mode *** without periodicity *** */
-
-    assert(eq->n_sles_gather_elts == eq->n_sles_scatter_elts);
-
-#if defined(HAVE_OPENMP)
-#   pragma omp parallel for if (eq->n_sles_scatter_elts > CS_THR_MIN)
-    for (cs_lnum_t  i = 0; i < eq->n_sles_scatter_elts; i++)
-      x[i] = fld->val[i];
-#else
-    memcpy(x, fld->val, eq->n_sles_scatter_elts * sizeof(cs_real_t));
-#endif
-
-    /* Nothing to do for the right-hand side */
-    b = eq->rhs;
-
-  }
-
-  /* Return pointers */
-  *p_x = x;
-  *p_rhs = b;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Carry out operations for allocating and/or initializing the solution
- *         array and the right hand side of the linear system to solve.
- *         Handle parallelism thanks to cs_range_set_t structure.
- *
- * \param[in, out] eq_to_cast   pointer to generic builder structure
- * \param[in, out] p_x          pointer of pointer to the solution array
- * \param[in, out] p_rhs        pointer of pointer to the RHS array
- */
-/*----------------------------------------------------------------------------*/
-
-static void
 _prepare_fb_solving(void              *eq_to_cast,
                     cs_real_t         *p_x[],
                     cs_real_t         *p_rhs[])
@@ -1595,7 +1510,7 @@ cs_equation_assign_functions(void)
         eq->init_field_values = cs_cdovb_scaleq_init_values;
 
         /* deprecated */
-        eq->set_dir_bc = cs_cdovb_scaleq_set_dir_bc;
+        eq->set_dir_bc = NULL;
         eq->initialize_system = NULL;
         eq->build_system = NULL;
         eq->prepare_solving = NULL;
@@ -1685,11 +1600,11 @@ cs_equation_assign_functions(void)
         eq->init_field_values = cs_cdovcb_scaleq_init_values;
 
         /* Deprecated */
-        eq->set_dir_bc = cs_cdovcb_scaleq_set_dir_bc;
-        eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
-        eq->build_system = cs_cdovcb_scaleq_build_system;
-        eq->prepare_solving = _prepare_vb_solving;
-        eq->update_field = cs_cdovcb_scaleq_update_field;
+        eq->set_dir_bc = NULL;
+        eq->initialize_system = NULL;
+        eq->build_system = NULL;
+        eq->prepare_solving = NULL;
+        eq->update_field = NULL;
 
         /* New mechanism */
         eq->solve_steady_state = cs_cdovcb_scaleq_solve_steady_state;
