@@ -1317,7 +1317,7 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   } /* Loop on boundary faces */
 
-  assert(h_info.is_iso == false); /* if not the case something else TODO ? */
+  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
 
   /* Update the local system matrix */
   for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
@@ -1487,7 +1487,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   _compute_kappa_f(h_info, cm, cb, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
-  cs_sdm_t *bc_op = cb->loc, *bc_op_t = cb->aux;
+  cs_sdm_t *bc_op = cb->hdg, *bc_op_t = cb->aux;
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* First pass: build the bc_op matrix */
@@ -1528,7 +1528,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   /* Resulting rhs has to be interlaced to update the rhs */
   const cs_real_t  *ux = u0_trgradv, *uy = u0_trgradv + n_dofs,
     *uz = u0_trgradv + 2*n_dofs;
-  for (short int i = 0; i < n_dofs; i++) {/* Cell too! */
+  for (short int i = 0; i < n_dofs; i++) { /* Cell too! */
     csys->rhs[3*i  ] += ux[i];
     csys->rhs[3*i+1] += uy[i];
     csys->rhs[3*i+2] += uz[i];
@@ -1559,7 +1559,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
   } /* Loop on boundary faces */
 
-  assert(h_info.is_iso == false); /* if not the case something else TODO ? */
+  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
 
   /* Update the local system matrix */
   for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */

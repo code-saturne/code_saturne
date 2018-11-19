@@ -117,13 +117,14 @@ static cs_cell_builder_t *
 _cell_builder_create(const cs_cdo_connect_t   *connect)
 {
   const int  n_fc = connect->n_max_fbyc;
+  const int  n_dofs = n_fc + 1;
 
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
-  BFT_MALLOC(cb->ids, n_fc + 1, short int);
-  memset(cb->ids, 0, (n_fc + 1)*sizeof(short int));
+  BFT_MALLOC(cb->ids, n_dofs, short int);
+  memset(cb->ids, 0, n_dofs*sizeof(short int));
 
-  int  size = CS_MAX(n_fc*(n_fc+1), 6*n_fc);
+  int  size = CS_MAX(n_fc*n_dofs, 6*n_dofs);
   BFT_MALLOC(cb->values, size, double);
   memset(cb->values, 0, size*sizeof(cs_real_t));
 
@@ -132,14 +133,15 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
   short int  *block_sizes = cb->ids;
-  for (int i = 0; i < n_fc + 1; i++)
+  for (int i = 0; i < n_dofs; i++)
     block_sizes[i] = 3;
 
   /* Local square dense matrices used during the construction of
      operators */
-  cb->hdg = cs_sdm_square_create(n_fc);
-  cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, block_sizes, block_sizes);
-  cb->aux = cs_sdm_square_create(n_fc + 1);
+  cb->hdg = cs_sdm_square_create(n_dofs);
+  cb->aux = cs_sdm_square_create(n_dofs);
+
+  cb->loc = cs_sdm_block_create(n_dofs, n_dofs, block_sizes, block_sizes);
 
   return cb;
 }
@@ -515,10 +517,12 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_vfb_weak_dirichlet;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_vfb_wsym_dirichlet;
     break;
 
@@ -963,6 +967,15 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
         if (csys->has_nhmg_neumann) {
           for (short int f = 0; f < 3*cm->n_fc; f++)
             csys->rhs[f] += csys->neu_values[f];
+        }
+
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE) {
+
+          /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+             csys is updated inside (matrix and rhs) */
+          eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
+
         }
 
       } /* Boundary cell */
