@@ -95,7 +95,7 @@ cs_equation_by_name(const char    *eqname);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_equation_has_field_name(const cs_equation_t  *eq,
                            const char           *fld_name);
 
@@ -272,7 +272,7 @@ cs_equation_get_scheme_context(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_equation_is_steady(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
@@ -285,7 +285,7 @@ cs_equation_is_steady(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_equation_uses_new_mechanism(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
@@ -401,7 +401,7 @@ cs_equation_assign_range_set(const cs_cdo_connect_t   *connect);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_equation_assign_functions(void);
 
 /*----------------------------------------------------------------------------*/

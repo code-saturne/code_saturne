@@ -381,7 +381,7 @@ cs_equation_by_name(const char    *eqname)
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_equation_has_field_name(const cs_equation_t  *eq,
                            const char           *fld_name)
 {
@@ -890,7 +890,7 @@ cs_equation_get_type(const cs_equation_t    *eq)
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_equation_is_steady(const cs_equation_t    *eq)
 {
   if (eq == NULL)
@@ -914,7 +914,7 @@ cs_equation_is_steady(const cs_equation_t    *eq)
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_equation_uses_new_mechanism(const cs_equation_t    *eq)
 {
   if (eq == NULL)
@@ -1472,7 +1472,7 @@ cs_equation_assign_range_set(const cs_cdo_connect_t   *connect)
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_equation_assign_functions(void)
 {
   if (_n_equations == 0)
@@ -1484,7 +1484,7 @@ cs_equation_assign_functions(void)
     "%s: Only the scalar-valued and vector-valued case are handled"
     "for this scheme.\n";
 
-  bool  all_are_steady = true;
+  _Bool  all_are_steady = true;
 
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
@@ -1651,11 +1651,11 @@ cs_equation_assign_functions(void)
         eq->init_field_values = cs_cdofb_scaleq_init_values;
 
         /* Deprecated */
-        eq->set_dir_bc = cs_cdofb_scaleq_set_dir_bc;
-        eq->initialize_system = cs_cdofb_scaleq_initialize_system;
-        eq->build_system = cs_cdofb_scaleq_build_system;
-        eq->prepare_solving = _prepare_fb_solving;
-        eq->update_field = cs_cdofb_scaleq_update_field;
+        eq->set_dir_bc = NULL;
+        eq->initialize_system = NULL;
+        eq->build_system = NULL;
+        eq->prepare_solving = NULL;
+        eq->update_field = NULL;
 
         /* New mechanism */
         eq->solve_steady_state = cs_cdofb_scaleq_solve_steady_state;
