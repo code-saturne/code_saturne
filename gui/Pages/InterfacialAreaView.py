@@ -85,27 +85,29 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         self.mdl = InterfacialAreaModel(self.case)
 
         # Combo box models
-
+        id_to_set = -1
         self.modelField = ComboModel(self.comboBoxField, 1, 1)
+
+        # For consistency with the previous pages, the second phase of the
+        # Large Interface Model is set before the dispersed fields
+        if InterfacialForcesModel(self.case).getBubblesForLIMStatus() == 'on':
+            id_to_set = 2
+            label = self.mdl.getLabel(id_to_set)
+            name = str(id_to_set)
+            self.modelField.addItem(self.tr(label), name)
+            self.modelField.setItem(str_model = name)
+
         for fieldId in self.mdl.getDispersedFieldList() :
             label = self.mdl.getLabel(fieldId)
             name = str(fieldId)
             self.modelField.addItem(self.tr(label), name)
 
-        if len(self.mdl.getDispersedFieldList()) > 0 :
-            self.currentid = self.mdl.getDispersedFieldList()[0]
-            self.modelField.setItem(str_model = self.currentid)
-        elif InterfacialForcesModel(self.case).getBubblesForLIMStatus() == 'on':
-            self.currentid = 2
-            label = self.mdl.getLabel(self.currentid)
-            name = str(self.currentid)
-            self.modelField.addItem(self.tr(label), name)
-            self.modelField.setItem(str_model = name)
-        else :
-            self.currentid = -1
+        if len(self.mdl.getDispersedFieldList()) > 0 and id_to_set == -1:
+            id_to_set = self.mdl.getDispersedFieldList()[0]
+            self.modelField.setItem(str_model = id_to_set)
 
-            # case no field
-            self.currentid = -1
+        # case no field
+        self.currentid = id_to_set
 
         self.modelModel = ComboModel(self.comboBoxModel, 2, 1)
         self.modelModel.addItem(self.tr("constant"),"constant")

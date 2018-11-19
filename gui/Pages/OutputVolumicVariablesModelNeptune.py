@@ -167,12 +167,6 @@ class OutputVolumicVariablesModelNeptune(OutputVolumicVariablesModel, MainFields
         for i in range(len(tfd)):
             self.fieldIdToLabel[tfd[i]] = tfl[i]
 
-#        for variableType in ('variable', 'property', 'scalar', 'time_average'):
-#            for field in self.fieldIdToLabel.keys() :
-#                for node in self.case.xmlGetNodeList(variableType, field_id = field):
-#                    if not node['name'].startswith("wall_"):
-#                        self.listNode.append([node, field])
-
         self.dicoLabelName = {}
         self.list_name = []
         self._updateDictLabelName(dico_parent=phase_dico)#dico_parent=self.fieldIdToLabel)

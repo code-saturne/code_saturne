@@ -80,6 +80,10 @@ class OutputSurfacicFieldsModel(Model):
                 msg = "xml node named "+ name +" has no label"
                 raise ValueError(msg)
             self.list_label.append(node['label'])
+
+            field_id = node['field_id']
+            if field_id != "none":
+                name += str(field_id)
             self.dicoLabelName[name] = node['label']
             self.list_name.append(name)
 
