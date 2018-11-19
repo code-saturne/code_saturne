@@ -271,11 +271,16 @@ class VolumicZone(Zone):
         else:
             self._natureList.append('head_losses')
             self._natureList.append('porosity')
-            #self._natureList.append('momentum_source_term')
 
             self._natureDict['head_losses']          = self.tr("Head losses")
             self._natureDict['porosity']             = self.tr("Porosity")
-            #self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
+            # Thermal source term for enthalpy
+            from code_saturne.Pages.MainFieldsModel import MainFieldsModel
+            if len(MainFieldsModel(self.case).getFieldIdList()) > 0:
+                if MainFieldsModel(self.case).getEnergyResolution(1) != "off":
+                    self._natureList.append('thermal_source_term')
+                    self._natureDict['thermal_source_term'] = self.tr("Thermal source term")
+            del MainFieldsModel
 
 
         node = self.case.xmlGetNode('additional_scalars')

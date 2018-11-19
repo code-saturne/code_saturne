@@ -64,8 +64,6 @@ class OutputVolumicVariablesModel(Variables, Model):
         self.node_means     = self.analysis_ctrl.xmlInitNode('time_averages')
         self.node_error     = self.analysis_ctrl.xmlInitNode('error_estimator')
 
-        model = XMLmodel(self.case)
-
         self.updateList()
 
 

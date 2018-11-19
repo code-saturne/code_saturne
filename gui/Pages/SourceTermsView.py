@@ -55,6 +55,7 @@ from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, Local
 from code_saturne.Pages.SourceTermsModel import SourceTermsModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from code_saturne.Pages.OutputVolumicVariablesModelNeptune import OutputVolumicVariablesModelNeptune
 from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 from code_saturne.Pages.NotebookModel import NotebookModel
 
@@ -91,7 +92,10 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.therm   = ThermalScalarModel(self.case)
         self.th_sca  = DefineUserScalarsModel(self.case)
         self.volzone = LocalizationModel('VolumicZone', self.case)
-        self.m_out   = OutputVolumicVariablesModel(self.case)
+        if self.case['package'].name == 'code_saturne':
+            self.m_out   = OutputVolumicVariablesModel(self.case)
+        else:
+            self.m_out   = OutputVolumicVariablesModelNeptune(self.case)
 
 
         # 0/ Read label names from XML file
@@ -113,8 +117,9 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         zones = self.volzone.getZones()
         for zone in zones:
             active = 0
-            if (zone.getNature()['momentum_source_term'] == "on"):
-                active = 1
+            if ('momentum_source_term' in zone.getNature().keys()):
+                if (zone.getNature()['momentum_source_term'] == "on"):
+                    active = 1
 
             if ('thermal_source_term' in zone.getNature().keys()):
                 if (zone.getNature()['thermal_source_term']  == "on"):
@@ -211,6 +216,8 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         if zone['thermal_source_term']  == "on":
             self.pushButtonThermal.show()
             self.labelThermal.show()
+            if self.case['package'].name != "code_saturne" and self.th_sca_name=="":
+                self.th_sca_name = 'enthalpy'
             exp = self.mdl.getThermalFormula(self.zone, self.th_sca_name)
             if exp:
                 self.pushButtonThermal.setToolTip(exp)
@@ -465,12 +472,16 @@ dSudu = - rho / tau; # Jacobian of the source term"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        if self.therm.getThermalScalarModel() == 'enthalpy':
-            sym.append(('enthalpy', 'thermal scalar'))
-        if self.therm.getThermalScalarModel() == 'total_energy':
-            sym.append(('total_energy', 'thermal scalar'))
+
+        if self.case['package'].name == 'code_saturne':
+            if self.therm.getThermalScalarModel() == 'enthalpy':
+                sym.append(('enthalpy', 'thermal scalar'))
+            if self.therm.getThermalScalarModel() == 'total_energy':
+                sym.append(('total_energy', 'thermal scalar'))
+            else:
+                sym.append(('temperature', 'thermal scalar'))
         else:
-            sym.append(('temperature', 'thermal scalar'))
+            sym.append(('enthalpy', 'Enthalpy'))
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))

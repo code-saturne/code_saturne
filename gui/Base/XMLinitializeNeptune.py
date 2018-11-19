@@ -387,9 +387,10 @@ class XMLinitNeptune(Variables):
                 node['name']  = 'boundary_temperature'
 
         tnode = self.case.xmlGetNode('turbulence')
-        for node in tnode.xmlGetNodeList('field'):
-            if node['turb_flux'] == None:
-                node['turb_flux'] = 'sgdh'
+        if tnode != None:
+            for node in tnode.xmlGetNodeList('field'):
+                if node['turb_flux'] == None:
+                    node['turb_flux'] = 'sgdh'
 
 
 #-------------------------------------------------------------------------------
