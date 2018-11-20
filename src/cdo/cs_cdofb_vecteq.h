@@ -291,6 +291,75 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build and solve the linear system arising from a vector steady-state
+ *         diffusion equation with a CDO-Fb scheme
+ *         One works cellwise and then process to the assembly
+ *
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      field_id   id of the variable field related to this equation
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdofb_vecteq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_solve_steady_state(double                      dt_cur,
+                                   const cs_mesh_t            *mesh,
+                                   const int                   field_id,
+                                   const cs_equation_param_t  *eqp,
+                                   cs_equation_builder_t      *eqb,
+                                   void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve the linear system arising from a vector diffusion
+ *         equation with a CDO-Fb scheme and an implicit Euler scheme.
+ *         One works cellwise and then process to the assembly
+ *
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      field_id   id of the variable field related to this equation
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdofb_vecteq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_solve_implicit(double                      dt_cur,
+                               const cs_mesh_t            *mesh,
+                               const int                   field_id,
+                               const cs_equation_param_t  *eqp,
+                               cs_equation_builder_t      *eqb,
+                               void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve the linear system arising from a vector diffusion
+ *         equation with a CDO-Fb scheme and an implicit/explicit theta scheme.
+ *         One works cellwise and then process to the assembly
+ *
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      field_id   id of the variable field related to this equation
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdofb_vecteq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_solve_theta(double                      dt_cur,
+                            const cs_mesh_t            *mesh,
+                            const int                   field_id,
+                            const cs_equation_param_t  *eqp,
+                            cs_equation_builder_t      *eqb,
+                            void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Store solution(s) of the linear system into a field structure
  *         Update extra-field values if required (for hybrid discretization)
  *

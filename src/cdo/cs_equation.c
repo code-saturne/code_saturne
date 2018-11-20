@@ -928,7 +928,8 @@ cs_equation_uses_new_mechanism(const cs_equation_t    *eq)
       return true;
   }
   else if (eq->param->dim == 3) {
-    if (eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB)
+    if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB) ||
+        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB))
       return true;
   }
 
@@ -1703,6 +1704,28 @@ cs_equation_assign_functions(void)
         eq->build_system = cs_cdofb_vecteq_build_system;
         eq->prepare_solving = _prepare_fb_solving;
         eq->update_field = cs_cdofb_vecteq_update_field;
+
+        /* New mechanism */
+        eq->solve_steady_state = cs_cdofb_vecteq_solve_steady_state;
+        switch (eqp->time_scheme) {
+        case CS_TIME_SCHEME_STEADY:
+          eq->solve = eq->solve_steady_state;
+          break;
+
+        case CS_TIME_SCHEME_IMPLICIT:
+          eq->solve = cs_cdofb_vecteq_solve_implicit;
+          break;
+
+        case CS_TIME_SCHEME_THETA:
+        case CS_TIME_SCHEME_CRANKNICO:
+          eq->solve = cs_cdofb_vecteq_solve_theta;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__, eqp->name);
+        }
 
         eq->postprocess = cs_cdofb_vecteq_extra_op;
 
