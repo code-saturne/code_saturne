@@ -400,9 +400,9 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
 
       domain->time_options.dtmin = dtmin;
       domain->time_options.dtmax = dtmax;
-      // TODO: Check how the following value is set in FORTRAN
-      // domain->time_options.dtref = 0.5*(dtmin + dtmax);
-      if (domain->time_options.dtref < 0) // Should be the initial val.
+      /* TODO: Check how the following value is set in FORTRAN
+       * domain->time_options.dtref = 0.5*(dtmin + dtmax); */
+      if (domain->time_options.dtref < 0) /* Should be the initial val. */
         domain->time_options.dtref = domain->dt_cur;
 
     }
@@ -414,10 +414,10 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
   }
 
   /* Check if this is the last iteration */
-  if (ts->t_max > 0) // t_max has been set
+  if (ts->t_max > 0) /* t_max has been set */
     if (t_cur + domain->dt_cur > ts->t_max)
       domain->is_last_iter = true;
-  if (ts->nt_max > 0) // nt_max has been set
+  if (ts->nt_max > 0) /* nt_max has been set */
     if (nt_cur + 1 > ts->nt_max)
       domain->is_last_iter = true;
 }
@@ -435,33 +435,12 @@ cs_domain_increment_time(cs_domain_t  *domain)
 {
   cs_time_step_t  *ts = domain->time_step;
 
-  /* Increment time iteration */
-  ts->t_prev = ts->t_cur;
-
   /* Use Kahan's trick to limit the truncation error */
   double  z = domain->dt_cur - cs_domain_kahan_time_compensation;
   double  t = ts->t_cur + z;
 
   cs_domain_kahan_time_compensation = (t - ts->t_cur) - z;
   ts->t_cur = t;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the time step after one temporal iteration
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_increment_time_step(cs_domain_t  *domain)
-{
-  cs_time_step_t  *ts = domain->time_step;
-
-  /* Increment time iteration */
-  ts->nt_prev = ts->nt_cur;
-  ts->nt_cur++;
 }
 
 /*----------------------------------------------------------------------------*/

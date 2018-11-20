@@ -125,6 +125,27 @@ extern cs_domain_t *cs_glob_domain; /* Pointer to main computational domain
                                        used in CDO/HHO schmes */
 
 /*============================================================================
+ * Static inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the time step after one temporal iteration
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_domain_increment_time_step(cs_domain_t  *domain)
+{
+  cs_time_step_t  *ts = domain->time_step;
+
+  /* Increment time iteration */
+  ts->nt_cur++;
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -224,17 +245,6 @@ cs_domain_define_current_time_step(cs_domain_t   *domain);
 
 void
 cs_domain_increment_time(cs_domain_t  *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the time step after one temporal iteration
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_increment_time_step(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
