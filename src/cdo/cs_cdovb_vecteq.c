@@ -49,6 +49,7 @@
 #include "cs_cdo_diffusion.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_time.h"
+#include "cs_cdovb_priv.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
 #include "cs_evaluate.h"
@@ -99,6 +100,13 @@ BEGIN_C_DECLS
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/* Algebraic system for CDO vertex-based discretization */
+typedef struct _cs_cdovb_t cs_cdovb_vecteq_t;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

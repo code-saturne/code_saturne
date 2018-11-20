@@ -144,6 +144,13 @@ struct _cs_cdovcb_scaleq_t {
 
 };
 
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/* Algebraic system for CDO vertex-based discretization */
+typedef struct _cs_cdovcb_scaleq_t cs_cdovcb_scaleq_t;
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================

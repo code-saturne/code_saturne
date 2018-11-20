@@ -34,7 +34,6 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
-#include "cs_cdovb_priv.h"
 #include "cs_equation_common.h"
 #include "cs_equation_param.h"
 #include "cs_field.h"
@@ -54,9 +53,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/* Algebraic system for CDO vertex-based discretization */
-typedef struct _cs_cdovb_t cs_cdovb_vecteq_t;
 
 /*============================================================================
  * Public function prototypes
