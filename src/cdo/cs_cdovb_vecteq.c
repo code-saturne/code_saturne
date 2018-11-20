@@ -980,6 +980,7 @@ cs_cdovb_vecteq_free_context(void   *builder)
 
   BFT_FREE(eqc->source_terms);
   BFT_FREE(eqc->cell_values);
+  BFT_FREE(eqc->vtx_bc_flag);
 
   /* Last free */
   BFT_FREE(eqc);
