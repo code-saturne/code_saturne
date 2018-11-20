@@ -1401,8 +1401,6 @@ endif  ! Fin si calcul sur champ de vitesse fige SUITE
 ! Re enable solid cells in fluid_solid mode
 if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(0)
 
-!     Ici on peut liberer les eventuels tableaux SKW et DIVUKW
-
 !===============================================================================
 ! 15.  RESOLUTION DES SCALAIRES
 !===============================================================================

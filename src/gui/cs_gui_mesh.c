@@ -169,6 +169,8 @@ _get_periodicity_rotation(cs_tree_node_t  *node,
     }
 
   }
+  else
+    *angle = 0.0;
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
