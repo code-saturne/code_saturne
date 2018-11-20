@@ -81,7 +81,7 @@ BEGIN_C_DECLS
  * Local private variables
  *============================================================================*/
 
-static const cs_real_t  _bc_weak_penalization_coef_by_default = 5.;
+static const cs_real_t  _bc_weak_penalization_coef_by_default = 50.;
 static const cs_real_t  _bc_strong_penalization_coef_by_default = 1e12;
 
 static const char _err_empty_eqp[] =
