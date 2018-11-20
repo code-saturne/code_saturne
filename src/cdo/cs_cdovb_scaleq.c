@@ -1683,7 +1683,8 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
-  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
   const double  tcoef = 1 - eqp->theta;
 
   assert(cs_equation_param_has_time(eqp) == true);
@@ -1711,14 +1712,17 @@ cs_cdovb_scaleq_solve_theta(double                      dt_cur,
   for (cs_lnum_t i = 0; i < n_vertices; i++) rhs[i] = 0.0;
 
   /* Detect the first call (in this case, we compute the initial source term)*/
-  bool  compute_initial_source = false;
-  if (cs_shared_time_step->nt_cur == cs_shared_time_step->nt_prev) {
+  _Bool  compute_initial_source = false;
+  if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0) {
+
     compute_initial_source = true;
+
   }
   else { /* Add contribution of the previous computed source term */
 
     if (eqc->source_terms != NULL) {
 
+      assert(cs_equation_param_has_sourceterm(eqp));
       for (cs_lnum_t v = 0; v < n_vertices; v++)
         rhs[v] += tcoef * eqc->source_terms[v];
       memset(eqc->source_terms, 0, n_vertices * sizeof(cs_real_t));

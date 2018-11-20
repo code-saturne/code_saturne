@@ -1638,8 +1638,8 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_lnum_t  n_vertices = quant->n_vertices;
+  const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
   const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
   const cs_real_t  tcoef = 1 - eqp->theta;
@@ -1675,9 +1675,10 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
   /* Detect the first call (in this case, we compute the initial source term)*/
   bool  compute_initial_source = false;
   if (cs_equation_param_has_sourceterm(eqp)) {
-    if (ts->nt_cur == ts->nt_prev) {
+
+    if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
       compute_initial_source = true; /* First iteration */
-    }
+
     else { /* Add contribution of the previous computed source term */
 
       /* Only vertices (and not cells) since there is an assembly process

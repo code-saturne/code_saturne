@@ -1594,7 +1594,8 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
   const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
   const double  tcoef = 1 - eqp->theta;
 
@@ -1609,8 +1610,8 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
   cs_timer_t  t0 = cs_timer_time();
 
   /* Detect the first call (in this case, we compute the initial source term)*/
-  bool  compute_initial_source = false;
-  if (cs_shared_time_step->nt_cur == cs_shared_time_step->nt_prev)
+  _Bool  compute_initial_source = false;
+  if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
     compute_initial_source = true;
 
   /* Build an array storing the Dirichlet values at faces (dt_cur is a dummy
