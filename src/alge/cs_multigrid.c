@@ -2229,7 +2229,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
   /* Convergence test in beginning of cycle (fine mesh) */
 
-  if (level == 0 || c_cvg < CS_SLES_BREAKDOWN) {
+  if ((level == 0 && mg->info.n_max_cycles > 1) || c_cvg < CS_SLES_BREAKDOWN) {
 
     if (c_cvg >= CS_SLES_BREAKDOWN)
       cvg = _convergence_test(mg,
@@ -3650,11 +3650,10 @@ cs_multigrid_solve(void                *context,
 
   /* Cycle to solution */
 
-  while (cvg == CS_SLES_ITERATING) {
+  if (mg->type == CS_MULTIGRID_V_CYCLE) {
 
-    int cycle_id = n_cycles + 1;
-
-    if (mg->type == CS_MULTIGRID_V_CYCLE)
+    for (n_cycles = 0; cvg == CS_SLES_ITERATING; n_cycles++) {
+      int cycle_id = n_cycles+1;
       cvg = _multigrid_v_cycle(mg,
                                lv_names,
                                verbosity,
@@ -3669,8 +3668,15 @@ cs_multigrid_solve(void                *context,
                                vx,
                                _aux_size - lv_names_size,
                                _aux_buf + lv_names_size);
+    }
 
-    else if (mg->type == CS_MULTIGRID_K_CYCLE)
+  }
+  else if (mg->type == CS_MULTIGRID_K_CYCLE) {
+
+    for (n_cycles = 0;
+         n_cycles < (unsigned)mg->info.n_max_cycles && cvg == CS_SLES_ITERATING;
+         n_cycles++) {
+      int cycle_id = n_cycles+1;
       cvg = _multigrid_k_cycle(mg,
                                0,
                                lv_names,
@@ -3686,8 +3692,7 @@ cs_multigrid_solve(void                *context,
                                vx,
                                _aux_size - lv_names_size,
                                _aux_buf + lv_names_size);
-
-    n_cycles++;
+    }
   }
 
   if (_aux_buf != aux_vectors)
