@@ -78,11 +78,8 @@ struct  _cs_cdofb_t {
   cs_cdo_diffusion_enforce_bc_t   *enforce_dirichlet;
 
   /* Pointer of function to build the advection term */
-  cs_cdofb_advection_t              *adv_func;
-  cs_cdofb_advection_bc_t           *adv_func_bc;
-
-  /* Pointer of function to apply the time scheme */
-  cs_cdo_time_scheme_t            *apply_time_scheme;
+  cs_cdofb_advection_t            *adv_func;
+  cs_cdofb_advection_bc_t         *adv_func_bc;
 
   /* If one needs to build a local hodge op. for time and reaction */
   cs_param_hodge_t                 hdg_mass;

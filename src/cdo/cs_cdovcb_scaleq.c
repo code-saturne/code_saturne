@@ -138,9 +138,6 @@ struct _cs_cdovcb_scaleq_t {
   cs_cdo_advection_t              *get_advection_matrix;
   cs_cdo_advection_bc_t           *add_advection_bc;
 
-  /* Pointer of function to apply the time scheme */
-  cs_cdo_time_scheme_t            *apply_time_scheme;
-
   /* If one needs to build a local hodge op. for time and reaction */
   cs_param_hodge_t                 hdg_mass;
   cs_hodge_t                      *get_mass_matrix;
@@ -981,8 +978,6 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
     }
 
   }
-
-  eqc->apply_time_scheme = cs_cdo_time_get_scheme_function(eqb->sys_flag, eqp);
 
   /* Source term part */
   /* ---------------- */

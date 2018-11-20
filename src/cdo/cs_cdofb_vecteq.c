@@ -1687,7 +1687,6 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->adv_func_bc = NULL;
 
   /* Time part */
-  eqc->apply_time_scheme = NULL;
   if (cs_equation_param_has_time(eqp)) {
 
     if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
@@ -1702,8 +1701,6 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
       }
     }
 
-    eqc->apply_time_scheme = cs_cdo_time_get_scheme_function(eqb->sys_flag,
-                                                             eqp);
   }
 
   /* Source term part */

@@ -47,7 +47,6 @@
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
-#include "cs_cdofb_priv.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
 #include "cs_evaluate.h"
@@ -939,7 +938,6 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   } /* Reaction */
 
   /* Time part */
-  eqc->apply_time_scheme = NULL;
   if (cs_equation_param_has_time(eqp)) {
 
     if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
@@ -954,8 +952,6 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       }
     }
 
-    eqc->apply_time_scheme = cs_cdo_time_get_scheme_function(eqb->sys_flag,
-                                                             eqp);
   }
 
   /* Source term part */

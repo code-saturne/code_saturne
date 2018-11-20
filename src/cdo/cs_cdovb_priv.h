@@ -86,9 +86,6 @@ struct _cs_cdovb_t {
   cs_cdo_advection_t              *get_advection_matrix;
   cs_cdo_advection_bc_t           *add_advection_bc;
 
-  /* Pointer of function to apply the time scheme */
-  cs_cdo_time_scheme_t            *apply_time_scheme;
-
   /* If one needs to build a local hodge op. for time and reaction */
   cs_param_hodge_t                 hdg_mass;
   cs_hodge_t                      *get_mass_matrix;
