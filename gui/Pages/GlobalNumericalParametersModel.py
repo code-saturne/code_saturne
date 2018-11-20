@@ -67,6 +67,7 @@ class GlobalNumericalParametersModel(Model):
         default['velocity_predictor_algorithm_std']     = 'coupled_difvitc'
         default['velocity_predictor_algorithm_bubble']  = 'mean_velocity_relative_velocity'
         default['pressure_gradient']                    = 'mass_ponderation'
+        default['regulate_bad_cells']                   = 'off'
         return default
 
 
@@ -144,6 +145,31 @@ class GlobalNumericalParametersModel(Model):
         value = self.defaultValues()['faces_reconstruction']
         node = self._numericalNode.xmlGetNode('max_faces_reconstruction')
         if node :
+            value = node['status']
+        return value
+
+
+    @Variables.undoLocal
+    def setRegulateBadCells(self, status):
+        """
+        Activate bad cells regulations.
+        """
+        self.isOnOff(status)
+        if status == self.defaultValues()['regulate_bad_cells']:
+            self._numericalNode.xmlRemoveChild('regulate_bad_cells')
+        else:
+            node = self._numericalNode.xmlInitNode('regulate_bad_cells')
+            node['status'] = status
+
+
+    @Variables.noUndo
+    def getRegulateBadCElls(self):
+        """
+        Get bad cells regulation activation status.
+        """
+        value = self.defaultValues()['regulate_bad_cells']
+        node  = self._numericalNode.xmlGetNode('regulate_bad_cells')
+        if node:
             value = node['status']
         return value
 

@@ -14,13 +14,26 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_7">
-   <item row="0" column="0">
+   <item row="3" column="0">
+    <spacer>
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>641</width>
+       <height>16</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="0">
     <widget class="QGroupBox" name="groupBoxGlobalNumericalParam">
      <property name="title">
       <string>Global numerical parameters</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_5">
-      <item row="0" column="0">
+      <item row="1" column="0">
        <spacer>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -33,7 +46,7 @@
         </property>
        </spacer>
       </item>
-      <item row="0" column="1">
+      <item row="1" column="1">
        <widget class="QGroupBox" name="groupBox">
         <property name="title">
          <string>Thermal Mass Pressure Coupling</string>
@@ -296,7 +309,7 @@ after last restart</string>
         </layout>
        </widget>
       </item>
-      <item row="0" column="2">
+      <item row="1" column="2">
        <spacer>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -309,7 +322,7 @@ after last restart</string>
         </property>
        </spacer>
       </item>
-      <item row="1" column="1">
+      <item row="2" column="1">
        <widget class="QGroupBox" name="groupBox_4">
         <property name="title">
          <string>Pressure</string>
@@ -439,7 +452,7 @@ after last restart</string>
         </layout>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="3" column="1">
        <widget class="QGroupBox" name="groupBox_5">
         <property name="title">
          <string>Velocity</string>
@@ -505,7 +518,7 @@ after last restart</string>
         </layout>
        </widget>
       </item>
-      <item row="3" column="1">
+      <item row="4" column="1">
        <widget class="QGroupBox" name="groupBox_3">
         <property name="title">
          <string>Reconstruction</string>
@@ -581,7 +594,7 @@ after last restart</string>
         </layout>
        </widget>
       </item>
-      <item row="4" column="1">
+      <item row="5" column="1">
        <layout class="QHBoxLayout">
         <property name="spacing">
          <number>6</number>
@@ -636,7 +649,7 @@ after last restart</string>
              <string/>
             </property>
             <property name="icon">
-             <iconset resource="resources_gui.qrc">
+             <iconset>
               <normaloff>:/new/prefix1/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/icons/22x22/preferences-system.png</iconset>
             </property>
             <property name="iconSize">
@@ -664,25 +677,77 @@ after last restart</string>
         </item>
        </layout>
       </item>
+      <item row="6" column="1">
+       <widget class="QGroupBox" name="gridGroupBox">
+        <property name="title">
+         <string>Mesh Robustness</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_9">
+         <item row="1" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>Activate regulations on bad cells</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_5">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBoxRegulBadCells">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="1" column="2">
+          <spacer name="horizontalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="1" column="0">
+          <spacer name="horizontalSpacer_7">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
-   <item row="1" column="0">
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>641</width>
-       <height>16</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
   </layout>
  </widget>
- <resources>
- </resources>
+ <resources/>
  <connections/>
 </ui>

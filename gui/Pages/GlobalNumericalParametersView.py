@@ -233,6 +233,8 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         self.checkBoxStopRestart.clicked.connect(self.slotStopRestart)
         self.comboBoxVelocityAlgorithm.activated[str].connect(self.slotVelocityAlgorithm)
 
+        self.checkBoxRegulBadCells.clicked.connect(self.slotRegulateBadCells)
+
         # Initialize widget
         status = self.mdl.getRestartTimeStep()
         if status == 'on':
@@ -270,6 +272,9 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.checkBoxFacesReconstruction.setChecked(1)
         else :
             self.checkBoxFacesReconstruction.setChecked(0)
+
+        status = self.mdl.getRegulateBadCElls()
+        self.checkBoxRegulBadCells.setChecked(status == 'on')
 
         status = self.mdl.getMultigridStatus()
         if status == 'on':
@@ -457,6 +462,16 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         model = self.modelVelocityAlgorithm.dicoV2M[str(text)]
         self.mdl.setVelocityPredictorAlgo(model)
 
+
+    @pyqtSlot()
+    def slotRegulateBadCells(self):
+        """
+        Activate bad cells regulations.
+        """
+        if self.checkBoxRegulBadCells.isChecked():
+            self.mdl.setRegulateBadCells('on')
+        else:
+            self.mdl.setRegulateBadCells('off')
 
     def tr(self, text):
         """
