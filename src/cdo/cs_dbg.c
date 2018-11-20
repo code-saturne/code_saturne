@@ -91,6 +91,7 @@ cs_dbg_cw_test(const cs_equation_param_t   *eqp,
       has_name=true;
   }
 #else
+  CS_UNUSED(eqp);
   _Bool has_name = true;
 #endif
 
@@ -98,6 +99,7 @@ cs_dbg_cw_test(const cs_equation_param_t   *eqp,
 #if 1 /* First example: Look for the cells which have the vertex 441 */
     const short int _v = cs_cell_mesh_get_v(441, cm);
 #else
+    CS_UNUSED(_v);
     const short int _v = 0;
 #endif
 
@@ -107,6 +109,8 @@ cs_dbg_cw_test(const cs_equation_param_t   *eqp,
       if (csys->val_n[_v] > 0.06)
         return true;
     }
+#else
+    CS_UNUSED(csys);
 #endif
   } /* The current equation has the requested name */
 
