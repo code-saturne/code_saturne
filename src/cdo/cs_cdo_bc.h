@@ -86,16 +86,16 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  bool        is_steady;    /* Do we need to update BC faces during the
-                               computation */
-  cs_lnum_t   n_b_faces;    /* Number of boundary faces */
+  bool         is_steady;    /* Do we need to update BC faces during the
+                                computation */
+  cs_lnum_t    n_b_faces;    /* Number of boundary faces */
 
   /* Type of boundary conditions associated to a face. Size: n_b_faces */
-  cs_flag_t  *flag;
+  cs_flag_t   *flag;
 
   /* Id of the boundary condition definition or CS_BC_DEFAULT (=-1) if this face
      is related to the default boundary condition. Size = n_b_faces */
-  short int  *def_ids;
+  short int   *def_ids;
 
   /* List of face ids by type of boundary conditions. Homogeneous types don't
    * need to rely on a definition since it can be the default bc. Moreover, some
@@ -103,24 +103,24 @@ typedef struct {
    */
 
   /* Dirichlet */
-  cs_lnum_t   n_hmg_dir_faces;
-  cs_lnum_t  *hmg_dir_ids;
-  cs_lnum_t   n_nhmg_dir_faces;
-  cs_lnum_t  *nhmg_dir_ids;
+  cs_lnum_t    n_hmg_dir_faces;
+  cs_lnum_t   *hmg_dir_ids;
+  cs_lnum_t    n_nhmg_dir_faces;
+  cs_lnum_t   *nhmg_dir_ids;
 
   /* Neumann */
-  cs_lnum_t   n_hmg_neu_faces;
-  cs_lnum_t  *hmg_neu_ids;
-  cs_lnum_t   n_nhmg_neu_faces;
-  cs_lnum_t  *nhmg_neu_ids;
+  cs_lnum_t    n_hmg_neu_faces;
+  cs_lnum_t   *hmg_neu_ids;
+  cs_lnum_t    n_nhmg_neu_faces;
+  cs_lnum_t   *nhmg_neu_ids;
 
   /* Robin */
-  cs_lnum_t   n_robin_faces;
-  cs_lnum_t  *robin_ids;
+  cs_lnum_t    n_robin_faces;
+  cs_lnum_t   *robin_ids;
 
   /* Sliding wall */
-  cs_lnum_t   n_sliding_faces;
-  cs_lnum_t  *sliding_ids;
+  cs_lnum_t    n_sliding_faces;
+  cs_lnum_t   *sliding_ids;
 
 } cs_cdo_bc_face_t;
 

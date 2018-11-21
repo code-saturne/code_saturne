@@ -851,8 +851,7 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_diffusion_enforce_bc_t.
-     Hence the unused parameters */
+  /* Prototype common to cs_cdo_enforce_bc_t. Hence the unused parameters */
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(cb);
@@ -900,8 +899,7 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_diffusion_enforce_bc_t. Hence the unused
-     parameters */
+  /* Prototype common to cs_cdo_enforce_bc_t. Hence the unused parameters */
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(cb);
@@ -974,8 +972,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_diffusion_enforce_bc_t
-     Hence the unused parameters */
+  /* Prototype common to cs_cdo_enforce_bc_t Hence the unused parameters */
   CS_UNUSED(eqp);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
@@ -1050,8 +1047,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_diffusion_enforce_bc_t. Hence the unused
-     parameters */
+  /* Prototype common to cs_cdo_enforce_bc_t. Hence the unused parameters */
   CS_UNUSED(eqp);
   CS_UNUSED(fm);
   CS_UNUSED(cm);

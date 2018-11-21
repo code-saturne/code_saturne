@@ -485,8 +485,8 @@ _vbs_apply_weak_bc(cs_real_t                      time_eval,
     if (cs_equation_param_has_diffusion(eqp)) {
 
       if (csys->has_robin) {
-        assert(eqc->apply_robin_bc != NULL);
-        eqc->apply_robin_bc(eqp, cm, fm, cb, csys);
+        assert(eqc->enforce_robin_bc != NULL);
+        eqc->enforce_robin_bc(eqp, cm, fm, cb, csys);
       }
 
       if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
@@ -836,7 +836,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
-  eqc->apply_robin_bc = NULL;
+  eqc->enforce_robin_bc = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
 
     switch (eqp->diffusion_hodge.algo) {
@@ -846,7 +846,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_stiffness;
 
       eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
-      eqc->apply_robin_bc = cs_cdo_diffusion_svb_cost_robin;
+      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
@@ -854,14 +854,14 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
 
       eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
-      eqc->apply_robin_bc = cs_cdo_diffusion_svb_cost_robin;
+      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
       eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
         | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_wbs_get_stiffness;
-      eqc->apply_robin_bc = cs_cdo_diffusion_svb_wbs_robin;
+      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_wbs_robin;
       break;
 
     default:
@@ -2797,7 +2797,7 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
-    cs_cdo_cellwise_diffusion_flux_t  *compute_flux = NULL;
+    cs_cdo_diffusion_cw_flux_t  *compute_flux = NULL;
     cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -2932,7 +2932,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
     cs_hodge_t  *get_diffusion_hodge = NULL;
-    cs_cdo_cellwise_diffusion_flux_t  *compute_flux = NULL;
+    cs_cdo_diffusion_cw_flux_t  *compute_flux = NULL;
     cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
 #if defined(DEBUG) && !defined(NDEBUG)

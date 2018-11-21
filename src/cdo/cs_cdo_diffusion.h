@@ -62,31 +62,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdo_cellwise_diffusion_flux_t)(const cs_cell_mesh_t     *cm,
-                                   const cs_real_t          *pot,
-                                   cs_cell_builder_t        *cb,
-                                   cs_real_t                *flx);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Enforce the Dirichlet BCs when a diffusion term is present. This
- *          routine define an operator which reconstructs the normal diffusive
- *          flux from the knowledge of the potential at degrees of freedom
- *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_cdo_diffusion_enforce_bc_t)(const cs_equation_param_t      *eqp,
-                                 const cs_cell_mesh_t           *cm,
-                                 cs_face_mesh_t                 *fm,
-                                 cs_cell_builder_t              *cb,
-                                 cs_cell_sys_t                  *csys);
+(cs_cdo_diffusion_cw_flux_t)(const cs_cell_mesh_t     *cm,
+                             const cs_real_t          *pot,
+                             cs_cell_builder_t        *cb,
+                             cs_real_t                *flx);
 
 /*============================================================================
  * Public function prototypes

@@ -98,15 +98,16 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdo_advection_t)(const cs_equation_param_t   *eqp,
-                     const cs_cell_mesh_t        *cm,
-                     cs_real_t                    t_eval,
-                     cs_face_mesh_t              *fm,
-                     cs_cell_builder_t           *cb);
+(cs_cdovb_advection_t)(const cs_equation_param_t   *eqp,
+                       const cs_cell_mesh_t        *cm,
+                       cs_real_t                    t_eval,
+                       cs_face_mesh_t              *fm,
+                       cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the BC contribution for the advection operator
+ * \brief   Compute the BC contribution for the advection operator in CDO
+ *          vertex-based (or vertex+cell-based) schemes
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      eqp     pointer to a cs_equation_param_t structure
@@ -118,12 +119,12 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdo_advection_bc_t)(const cs_cell_mesh_t       *cm,
-                        const cs_equation_param_t  *eqp,
-                        cs_real_t                   t_eval,
-                        cs_face_mesh_t             *fm,
-                        cs_cell_builder_t          *cb,
-                        cs_cell_sys_t              *csys);
+(cs_cdovb_advection_bc_t)(const cs_cell_mesh_t       *cm,
+                          const cs_equation_param_t  *eqp,
+                          cs_real_t                   t_eval,
+                          cs_face_mesh_t             *fm,
+                          cs_cell_builder_t          *cb,
+                          cs_cell_sys_t              *csys);
 
 /*============================================================================
  * Global variables

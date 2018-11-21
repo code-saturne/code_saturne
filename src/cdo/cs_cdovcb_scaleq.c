@@ -48,7 +48,6 @@
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
 #include "cs_cdo_local.h"
-#include "cs_cdo_time.h"
 #include "cs_defs.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
@@ -128,19 +127,21 @@ struct _cs_cdovcb_scaleq_t {
   /* Array storing the value of the contribution of all source terms */
   cs_real_t   *source_terms;
 
+  /* Boundary conditions */
+  cs_cdo_enforce_bc_t      *enforce_dirichlet;
+  cs_cdo_enforce_bc_t      *enforce_robin_bc;
+  cs_flag_t                *vtx_bc_flag;
+
   /* Pointer of function to build the diffusion term */
-  cs_hodge_t                      *get_stiffness_matrix;
-  cs_cdo_diffusion_enforce_bc_t   *enforce_dirichlet;
-  cs_cdo_diffusion_enforce_bc_t   *apply_robin_bc;
-  cs_flag_t                       *vtx_bc_flag;
+  cs_hodge_t               *get_stiffness_matrix;
 
   /* Pointer of function to build the advection term */
-  cs_cdo_advection_t              *get_advection_matrix;
-  cs_cdo_advection_bc_t           *add_advection_bc;
+  cs_cdovb_advection_t     *get_advection_matrix;
+  cs_cdovb_advection_bc_t  *add_advection_bc;
 
   /* If one needs to build a local hodge op. for time and reaction */
-  cs_param_hodge_t                 hdg_mass;
-  cs_hodge_t                      *get_mass_matrix;
+  cs_param_hodge_t          hdg_mass;
+  cs_hodge_t               *get_mass_matrix;
 
 };
 
@@ -478,8 +479,8 @@ _vcb_apply_weak_bc(cs_real_t                      time_eval,
     if (cs_equation_param_has_diffusion(eqp)) {
 
       if (csys->has_robin) {
-        assert(eqc->apply_robin_bc != NULL);
-        eqc->apply_robin_bc(eqp, cm, fm, cb, csys);
+        assert(eqc->enforce_robin_bc != NULL);
+        eqc->enforce_robin_bc(eqp, cm, fm, cb, csys);
       }
 
       if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
@@ -892,10 +893,10 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Diffusion part */
   eqc->get_stiffness_matrix = NULL;
-  eqc->apply_robin_bc = NULL;
+  eqc->enforce_robin_bc = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
     eqc->get_stiffness_matrix = cs_hodge_vcb_get_stiffness;
-    eqc->apply_robin_bc = cs_cdo_diffusion_svb_wbs_robin;
+    eqc->enforce_robin_bc = cs_cdo_diffusion_svb_wbs_robin;
   }
 
   /* Dirichlet boundary condition enforcement */

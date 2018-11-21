@@ -31,9 +31,8 @@
 
 #include "cs_defs.h"
 #include "cs_hodge.h"
-#include "cs_cdo_diffusion.h"
 #include "cs_cdo_advection.h"
-#include "cs_cdo_time.h"
+#include "cs_equation_bc.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -76,19 +75,21 @@ struct _cs_cdovb_t {
   /* Array for extra-operations */
   cs_real_t   *cell_values;     /* NULL if not requested */
 
+  /* Boundary conditions */
+  cs_flag_t                *vtx_bc_flag;
+  cs_cdo_enforce_bc_t      *enforce_dirichlet;
+  cs_cdo_enforce_bc_t      *enforce_robin_bc;
+
   /* Pointer of function to build the diffusion term */
-  cs_hodge_t                      *get_stiffness_matrix;
-  cs_cdo_diffusion_enforce_bc_t   *enforce_dirichlet;
-  cs_cdo_diffusion_enforce_bc_t   *apply_robin_bc;
-  cs_flag_t                       *vtx_bc_flag;
+  cs_hodge_t               *get_stiffness_matrix;
 
   /* Pointer of function to build the advection term */
-  cs_cdo_advection_t              *get_advection_matrix;
-  cs_cdo_advection_bc_t           *add_advection_bc;
+  cs_cdovb_advection_t     *get_advection_matrix;
+  cs_cdovb_advection_bc_t  *add_advection_bc;
 
   /* If one needs to build a local hodge op. for time and reaction */
-  cs_param_hodge_t                 hdg_mass;
-  cs_hodge_t                      *get_mass_matrix;
+  cs_param_hodge_t          hdg_mass;
+  cs_hodge_t               *get_mass_matrix;
 
 };
 

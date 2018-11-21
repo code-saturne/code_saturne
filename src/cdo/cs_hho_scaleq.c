@@ -48,6 +48,7 @@
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
+#include "cs_equation_bc.h"
 #include "cs_equation_common.h"
 #include "cs_hho_builder.h"
 #include "cs_hodge.h"
@@ -119,7 +120,7 @@ struct _cs_hho_scaleq_t {
   short int                      *bf2def_ids;
 
   /* Pointer of function to build the diffusion term */
-  cs_cdo_diffusion_enforce_bc_t  *enforce_dirichlet;
+  cs_cdo_enforce_bc_t            *enforce_dirichlet;
 
   /* Static condensation members */
   /* =========================== */
