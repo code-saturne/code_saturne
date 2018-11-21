@@ -2947,6 +2947,8 @@ do ifac = 1, nfabor
   ! Test on the presence of a smooth wall condition (start)
   if (icodcl(ifac,iu).eq.5) then
 
+    iel = ifabor(ifac)
+
     srfbnf = surfbn(ifac)
 
     ! Local framework
