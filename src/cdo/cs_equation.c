@@ -960,16 +960,16 @@ cs_equation_add(const char            *eqname,
   /* Sanity checks */
   if (varname == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _(" No variable name associated to an equation structure.\n"
-                " Check your initialization."));
+              _(" %s: No variable name associated to an equation structure.\n"
+                " Check your initialization."), __func__);
   if (eqname == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _(" No equation name associated to an equation structure.\n"
-                " Check your initialization."));
+              _(" %s No equation name associated to an equation structure.\n"
+                " Check your initialization."), __func__);
   if (cs_equation_by_name(eqname) != NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _(" Stop adding a new equation.\n"
-                " Equation name %s is already defined."), eqname);
+              _(" %s: Stop adding a new equation.\n"
+                " Equation name %s is already defined."), __func__, eqname);
 
   cs_equation_t  *eq = NULL;
 
@@ -993,8 +993,8 @@ cs_equation_add(const char            *eqname,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              " This type of equation is not handled.\n"
-              " Stop adding a new equation.");
+              " %s: This type of equation is not handled.\n"
+              " Stop adding a new equation.", __func__);
     break;
 
   }
@@ -1078,24 +1078,24 @@ cs_equation_add_user(const char            *eqname,
                      cs_param_bc_type_t     default_bc)
 {
   if (eqname == NULL)
-    bft_error(__FILE__, __LINE__, 0, " Empty equation name.");
+    bft_error(__FILE__, __LINE__, 0, " %s: Empty equation name.", __func__);
   if (varname == NULL)
-    bft_error(__FILE__, __LINE__, 0, " Empty variable name.");
+    bft_error(__FILE__, __LINE__, 0, " %s: Empty variable name.", __func__);
 
   if ((default_bc != CS_PARAM_BC_HMG_DIRICHLET) &&
       (default_bc != CS_PARAM_BC_HMG_NEUMANN))
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of boundary condition by default.\n"
+              _(" %s: Invalid type of boundary condition by default.\n"
                 " Valid choices are CS_PARAM_BC_HMG_DIRICHLET or"
-                " CS_PARAM_BC_HMG_NEUMANN"));
+                " CS_PARAM_BC_HMG_NEUMANN"), __func__);
 
   /* Add a new user equation */
   cs_equation_t  *eq =
-    cs_equation_add(eqname,                // equation name
-                    varname,               // variable name
-                    CS_EQUATION_TYPE_USER, // type of equation
-                    dim,                   // dimension of the variable
-                    default_bc);           // default BC
+    cs_equation_add(eqname,                /* equation name */
+                    varname,               /* variable name */
+                    CS_EQUATION_TYPE_USER, /* type of equation */
+                    dim,                   /* dimension of the variable */
+                    default_bc);           /* default BC */
 
   return eq;
 }

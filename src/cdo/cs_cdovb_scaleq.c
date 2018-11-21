@@ -2347,15 +2347,23 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
                                    cs_equation_builder_t       *eqb,
                                    cs_real_t                   *vf_flux)
 {
+  if (vf_flux == NULL)
+    return;
+
+  cs_timer_t  t0 = cs_timer_time();
+
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
     memset(vf_flux, 0, connect->bf2v->idx[quant->n_b_faces]*sizeof(cs_real_t));
+
+    cs_timer_t  t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
     return;
   }
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(quant, connect, eqp, eqb, vf_flux, pdi, _vbs_cell_builder)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -2411,14 +2419,13 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
 
-      const cs_flag_t  bc_flag = face_bc->flag[bf_id];
       const cs_lnum_t  f_id = bf_id + quant->n_i_faces;
       const cs_lnum_t  c_id = f2c->ids[bf_id + fidx_shift];
       const cs_lnum_t  *idx  = bf2v->idx + bf_id;
 
       cs_real_t  *_flx = vf_flux + idx[0];
 
-      switch (bc_flag) {
+      switch (face_bc->flag[bf_id]) {
 
       case CS_CDO_BC_HMG_NEUMANN:
         memset(_flx, 0, (idx[1]-idx[0])*sizeof(cs_real_t));
@@ -2534,6 +2541,8 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
   } /* End of Open block */
 
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/

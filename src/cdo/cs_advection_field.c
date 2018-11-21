@@ -1647,6 +1647,7 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
         const cs_real_t  *val = input->values;
 
         assert(input->stride == 1);
+        assert(z->id == 0);
 
         if (cs_flag_test(input->loc, cs_flag_primal_face))
           f_flux = val[bf_id];

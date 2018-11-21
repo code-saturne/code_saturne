@@ -1959,7 +1959,7 @@ cs_sdm_block_dump(cs_lnum_t           parent_id,
   cs_log_printf(CS_LOG_DEFAULT, " n_row_blocks: %d; n_col_blocks: %d\n",
                 n_b_rows, n_b_cols);
 
-  const char _sep[] = ".............";
+  const char _sep[] = "------------------------------------------------------";
   for (short int bi = 0; bi < n_b_rows; bi++) {
 
     const cs_sdm_t  *bi0 = blocks + bi*n_b_cols;
