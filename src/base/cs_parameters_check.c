@@ -1084,7 +1084,7 @@ cs_parameters_check(void)
         cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                       _(f_desc),
                                       "var_cal_opt.isstpc (limiter type)",
-                                      var_cal_opt.relaxv,
+                                      var_cal_opt.isstpc,
                                       -1, 2);
 
         BFT_FREE(f_desc);
