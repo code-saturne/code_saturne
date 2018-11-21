@@ -876,6 +876,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ |
     CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_EV |
     CS_CDO_LOCAL_FE  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+  eqb->bd_msh_flag = 0;
 
   /* Store the last computed values of the field at cell centers and the data
      needed to compute the cell values from the vertex values.
@@ -922,6 +923,11 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
               " %s: Invalid type of algorithm to enforce Dirichlet BC.",
               __func__);
     break;
+  }
+
+  /* Non-homogeneous Neumann BCs */
+  if (eqb->face_bc->n_nhmg_neu_faces > 0) {
+    eqb->bd_msh_flag = CS_CDO_LOCAL_FV;
   }
 
   /* Advection part */

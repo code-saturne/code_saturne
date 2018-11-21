@@ -843,10 +843,12 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_sfb_weak_dirichlet;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_sfb_wsym_dirichlet;
     break;
 
