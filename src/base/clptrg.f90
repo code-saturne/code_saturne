@@ -231,7 +231,7 @@ data             ntlast , iaff /-1 , 0/
 save             ntlast , iaff
 
 type(var_cal_opt) :: vcopt
-type(var_cal_opt) :: vcopt_u, vcopt_rij, vcopt_ep
+type(var_cal_opt) :: vcopt_rij, vcopt_ep
 
 !===============================================================================
 

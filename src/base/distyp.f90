@@ -104,16 +104,15 @@ double precision visvdr(ncelet)
 
 ! Local variables
 
-integer          idtva0, f_id0, f_id  , iconvp, idiffp
+integer          idtva0, f_id  , iconvp, idiffp
 integer          f_id_yplus
 integer          ndircp
 integer          iphydp
 integer          ifac  , iel   , init
-integer          inc   , iccocg, isym  , isweep
+integer          inc   , iccocg, isweep
 integer          imucpp, idftnp
 integer          nswrgp, nswrsp
 integer          icvflb, iescap, imligp, ircflp, iswdyp, isstpp, ischcp, iwarnp
-integer          isou  , jsou
 integer          iflmas, iflmab
 
 integer          infpar

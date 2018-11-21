@@ -78,7 +78,7 @@ integer          ii    , iis   , jj    , iisct
 integer          iscal , iest  , iiesca, ivar
 integer          f_id, n_fields
 integer          indest, iiidef, istop
-integer          kscmin, kscmax, ifcvsl
+integer          kscmin, kscmax
 integer          keyvar, keysca
 integer          key_t_ext_id, icpext
 integer          iviext

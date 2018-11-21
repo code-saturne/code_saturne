@@ -8260,7 +8260,6 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     i_secvis      secondary viscosity at interior faces
  * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
@@ -8283,7 +8282,6 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
                                       const cs_real_33_t          cofbfv[],
                                       const cs_real_t             i_visc[],
                                       const cs_real_t             b_visc[],
-                                      const cs_real_t             i_secvis[],
                                       cs_real_6_t     *restrict   viscel,
                                       const cs_real_2_t           weighf[],
                                       const cs_real_t             weighb[],

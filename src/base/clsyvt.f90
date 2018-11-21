@@ -123,7 +123,7 @@ double precision clsyme
 double precision eloglo(3,3), alpha(6,6)
 double precision srfbnf, rcodcn, hint, visclc, visctc, distbf
 double precision cpp
-double precision vismsh(3), hintv(6), rnn(6), htnn(6)
+double precision hintv(6), rnn(6), htnn(6)
 double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 

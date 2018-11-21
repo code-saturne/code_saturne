@@ -64,7 +64,7 @@ integer          nvar
 ! Local variables
 
 integer          numcpl
-integer          imobmx , ialemx , nvcpmx, ifcpmx
+integer          ialemx , nvcpmx, ifcpmx
 
 !===============================================================================
 

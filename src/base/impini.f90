@@ -74,9 +74,8 @@ implicit none
 
 ! Local variables
 
-character        name*300, chaine*80
+character        chaine*80
 integer          ii    , iiesca, iest
-integer          iwar  , kval
 integer          kscmin, kscmax, keyvar
 integer          f_id, n_fields
 integer          igg, ige
@@ -776,41 +775,13 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 5010 format(                                                     &
-                                                                /,&
-' ** SOLVEURS ITERATIFS DE BASE',                               /,&
-'    --------------------------',                               /,&
-                                                                /,&
-'------------------------------------',                         /,&
-' Variable              EPSILO IDIRCL',                         /,&
-'------------------------------------'                           )
  5020 format(                                                     &
  1x,    a16,    e12.4,    i7                                      )
- 5030 format(                                                     &
-'------------------------------------',                         /,&
-                                                                /,&
-'       EPSILO =                (precision de la resolution)',  /,&
-'       IDIRCL = 0 ou 1         (decalage de la diagonale si',  /,&
-'                                ISTAT=0 et pas de Dirichlet)', /)
 
 #else
 
- 5010 format(                                                     &
-                                                                /,&
-' ** BASE ITERATIVE SOLVERS',                                   /,&
-'    ----------------------',                                   /,&
-                                                                /,&
-'------------------------------------',                         /,&
-' Variable              EPSILO IDIRCL',                         /,&
-'------------------------------------'                          )
  5020 format(                                                     &
  1x,    a16,    e12.4,    i7                                      )
- 5030 format(                                                     &
-'------------------------------------',                          /,&
-                                                                 /,&
-'       EPSILO =                (resolution precision)',         /,&
-'       IDIRCL = 0 ou 1         (shift diagonal if',             /,&
-'                                ISTAT=0 and no Dirichlet)',     /)
 
 #endif
 

@@ -106,7 +106,6 @@ integer          iel   , ifac, ii, istr, nlfld, iscal
 integer          iz, kk
 integer          idecal, iclapc, icha  , icla
 integer          jdtvar
-integer          jortvm
 integer          ierror, itysup, nbval
 integer          nberro, inierr, ivers(1)
 integer          ilu   , ierrch
@@ -119,8 +118,6 @@ integer          iviext
 integer          ival(1), ngbstr(2)
 double precision rval(1), tmpstr(27)
 
-character(len=80) :: fname
-
 logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
 
 type(c_ptr) :: rp
@@ -131,7 +128,6 @@ double precision, dimension(:,:), pointer :: disale
 
 double precision, allocatable, dimension(:,:) :: tmurbf
 double precision, allocatable, dimension(:) :: tparbf
-double precision, allocatable, dimension(:) :: vismbf
 
 !===============================================================================
 

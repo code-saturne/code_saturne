@@ -191,7 +191,7 @@ double precision sigma , cpp   , rkl
 double precision hint  , hext  , pimp  , qimp, cfl
 double precision pinf  , ratio
 double precision hintt(6)
-double precision flumbf, visclc, visctc, distbf, srfbn2
+double precision flumbf, visclc, visctc, distbf
 double precision xxp0, xyp0, xzp0
 double precision srfbnf, normal(3)
 double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
