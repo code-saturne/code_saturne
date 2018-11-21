@@ -1824,6 +1824,7 @@ class python_domain(base_domain):
         Copy results dummy function: Does nothing for a standard python script
         """
         # Nothing to do
+        pass
 
     #---------------------------------------------------------------------------
 
@@ -1858,7 +1859,7 @@ class python_domain(base_domain):
         if self.data_file:
             args += ' -d ' + enquote_arg(self.data_file)
 
-        args += ' --nprocs ' + str(self.n_procs)
+        args += ' -n ' + str(self.n_procs)
 
         args += ' --name ' + enquote_arg(self.name)
 
