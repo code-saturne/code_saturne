@@ -185,6 +185,9 @@ if (iscalt.gt.0) then
 
   do iloc = 1, nfbrps
 
+    ifac = lstfbr(iloc)
+    iel = ifabor(ifac)
+
     if (iscacp(iscalt).eq.1) then
       if (icp.ge.0) then
         cpp = cpro_cp(iel)
