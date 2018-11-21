@@ -306,7 +306,7 @@ _build_system_ac(const cs_mesh_t       *mesh,
        */
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      cs_cdofb_vecteq_init_cell_system(cell_flag, cm, eqp, eqb, eqc,
+      cs_cdofb_vecteq_init_cell_system_depr(cell_flag, cm, eqp, eqb, eqc,
                                        dir_values, vel_vals, time_eval, /* in */
                                        csys, cb);                      /* out */
 
