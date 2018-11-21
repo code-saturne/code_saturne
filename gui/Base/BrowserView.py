@@ -755,7 +755,7 @@ Calculation management
 
         self.setRowClose(self.tr('Time averages'))
         self.setRowClose(self.tr('Additional user arrays'))
-        self.setRowClose(self.tr('Output control'))
+        self.setRowShow(self.tr('Output control'))
         self.setRowClose(self.tr('Volume solution control'))
         self.setRowClose(self.tr('Surface solution control'))
         self.setRowClose(self.tr('Lagrangian solution control'))
