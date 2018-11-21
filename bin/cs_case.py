@@ -147,6 +147,8 @@ class case:
 
         if ast_domain == None:
             self.ast_domains = []
+        elif type(ast_domain) == list:
+            self.ast_domains = ast_domain
         else:
             self.ast_domains = [ast_domain]
 
