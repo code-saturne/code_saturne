@@ -285,7 +285,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
             thisPage = Page.NumericalParamEquationView(root, case)
 
     elif page_name == tr("Global parameters"):
-#    elif page_name == tr("Global numerical parameters"):
         if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
             import code_saturne.Pages.GlobalNumericalParametersView as Page
             thisPage = Page.GlobalNumericalParametersView(root, case)

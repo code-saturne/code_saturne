@@ -1015,7 +1015,7 @@ Calculation management
 
         self.setRowShow(self.tr('Numerical parameters'))
         self.setRowShow(self.tr('Global parameters'))
-        self.setRowShow(self.tr('Equation parameters'), (not is_ncfd))
+        self.setRowShow(self.tr('Equation parameters'))
         self.setRowShow(self.tr('Time settings'))
 
         # Calculation control
