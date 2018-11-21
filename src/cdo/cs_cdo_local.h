@@ -144,6 +144,9 @@ typedef struct {
   bool        has_robin;
   double     *rob_values;    /*!< Robin BCs values; size = 3*n_dofs */
 
+  /* Sliding BCs */
+  bool        has_sliding;
+
   /* Internal enforcement of DoFs */
   bool        has_internal_enforcement;  /*!< Internal enforcement ? */
   cs_lnum_t  *intern_forced_ids;         /*!< Id in the enforcement array */

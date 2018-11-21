@@ -274,12 +274,17 @@ cs_cell_sys_create(int          n_max_dofbyc,
   csys->_f_ids = NULL;
   csys->bf_ids = NULL;
   csys->bf_flag = NULL;
+
   csys->has_dirichlet = false;
-  csys->has_nhmg_neumann = false;
-  csys->has_robin = false;
   csys->dir_values = NULL;
+
+  csys->has_nhmg_neumann = false;
   csys->neu_values = NULL;
+
+  csys->has_robin = false;
   csys->rob_values = NULL;
+
+  csys->has_sliding = false;
 
   if (n_max_fbyc > 0) {
 

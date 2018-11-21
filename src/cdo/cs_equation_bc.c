@@ -304,8 +304,8 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
 
   } /* Loop on cell vertices */
 
-  /* Second pass: BC related to faces (Neumann or Robin)
-     Identify which face is a boundary face */
+  /* Second pass: BC related to faces. Neumann or Robin or sliding condition
+     (for vector-valued equations). Identify which face is a boundary face */
   for (short int f = 0; f < cm->n_fc; f++) {
     if (csys->bf_ids[f] > -1) { /* This a boundary face */
 
@@ -336,6 +336,9 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
                                   cm,
                                   csys->rob_values);
         break;
+
+      case CS_CDO_BC_SLIDING:
+        csys->has_sliding = true;
 
       default:   /* Nothing to do for */
         /* case CS_CDO_BC_HMG_DIRICHLET: */

@@ -1971,6 +1971,126 @@ cs_cdo_diffusion_vvb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique.
+ *          A Dirichlet is set for the three components of the vector.
+ *          Case of vector-valued CDO-Vb schemes with a CO+ST algorithm.
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vvb_cost_sliding(const cs_equation_param_t      *eqp,
+                                  const cs_cell_mesh_t           *cm,
+                                  cs_face_mesh_t                 *fm,
+                                  cs_cell_builder_t              *cb,
+                                  cs_cell_sys_t                  *csys)
+{
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
+
+  /* Enforcement of the sliding BCs */
+  if (csys->has_sliding == false)
+    return;  /* Nothing to do */
+
+  cs_sdm_t  *ntrgrd = cb->loc;
+
+  /* Initialize the local operator (same as the scalar-valued one) */
+  cs_sdm_square_init(cm->n_vc, ntrgrd);
+
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (csys->bf_flag[f] & CS_CDO_BC_SLIDING) {
+
+      /* Compute the face-view of the mesh */
+      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
+
+      const cs_real_t  nf[3] = {fm->face.unitv[0],
+                                fm->face.unitv[1],
+                                fm->face.unitv[2]};
+
+      /* Compute the product: matpty*face unit normal */
+      cs_real_t  pty_nuf[3] = {cb->dpty_val * nf[0],
+                               cb->dpty_val * nf[1],
+                               cb->dpty_val * nf[2]};
+
+      /* Compute the flux operator related to the trace on the current face
+       * of the normal gradient
+       * cb->values (size = cm->n_vc) is used inside
+       */
+      _vb_cost_normal_flux_op(f, cm, pty_nuf, h_info.coef, cb, ntrgrd);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys)) {
+        cs_log_printf(CS_LOG_DEFAULT, ">> Cell Vb.COST Sliding bc matrix");
+        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+      }
+#endif
+
+      /* Add contribution to the linear system of the penalized part */
+      const double  pcoef = eqp->bc_penalization_coeff/sqrt(cm->face[f].meas);
+
+      for (int vfi = 0; vfi < fm->n_vf; vfi++) {
+
+        const short int  bvi = fm->v_ids[vfi];
+
+        /* Retrieve the diagonal 3x3 block matrix */
+        cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, bvi, bvi);
+
+        /* Penalized part (u.n)(v.n) and tangential flux part */
+        const cs_real_t  vcoef = pcoef * fm->wvf[vfi];
+        const cs_real_t  nii = ntrgrd->val[cm->n_vc*bvi + bvi];
+        const cs_real_t  bval = vcoef + 2*nii;
+
+        for (int k = 0; k < 3; k++) {
+          bii->val[3*k  ] += bval * nf[0]*nf[k];
+          bii->val[3*k+1] += bval * nf[1]*nf[k];
+          bii->val[3*k+2] += bval * nf[2]*nf[k];
+        }
+
+      } /* Loop on face vertices */
+
+      /* Update the system matrix on the extra-diagonal blocks */
+      for (int bvi = 0; bvi < cm->n_vc; bvi++) {
+        for (int bvj = 0; bvj < cm->n_vc; bvj++) {
+
+          if (bvi == bvj)
+            continue;
+
+          /* Retrieve the 3x3 matrix */
+          cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bvi, bvj);
+          assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+
+          const cs_real_t  nij = ntrgrd->val[cm->n_vc*bvi + bvj];
+          const cs_real_t  nji = ntrgrd->val[cm->n_vc*bvj + bvi];
+
+          for (int k = 0; k < 3; k++) {
+            bij->val[3*k  ] += nf[0]*nf[k] * (nij + nji);
+            bij->val[3*k+1] += nf[1]*nf[k] * (nij + nji);
+            bij->val[3*k+2] += nf[2]*nf[k] * (nij + nji);
+          }
+
+        } /* vfj */
+      } /* vfi */
+
+    }  /* Sliding face */
+  } /* Loop on boundary faces */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment. Case of CDO-Vb schemes with a
  *          CO+ST algorithm.
  *

@@ -476,6 +476,9 @@ _vbv_apply_weak_bc(cs_real_t                      time_eval,
 
     }
 
+    if (csys->has_sliding)
+      eqc->enforce_sliding(eqp, cm, fm, cb, csys);
+
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after BC treatment", csys);
@@ -890,6 +893,13 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
               " %s: Invalid type of algorithm to enforce Dirichlet BC.",
               __func__);
 
+  }
+
+  eqc->enforce_sliding = NULL;
+  if (eqb->face_bc->n_sliding_faces > 0) {
+    /* There is at least one face with a sliding condition to handle */
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PEQ;
+    eqc->enforce_sliding = cs_cdo_diffusion_vvb_cost_sliding;
   }
 
   /* Advection part */
