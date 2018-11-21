@@ -294,6 +294,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         if self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
             return
 
+        from code_saturne.cs_package import package as cs_package
+        self.case['package'] = cs_package()
+
         from code_saturne.Base.XMLinitialize import XMLinit
 
         self.case.root().xmlRemoveChild("additional_scalars")
@@ -576,8 +579,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             title = self.parent.windowTitle()
             title = title.replace("NEPTUNE_CFD", "Code_Saturne")
             self.parent.setWindowTitle(title)
-
-            self.case['package'].name = 'code_saturne'
 
             eval('self.radioButton'+checkCur+'.setChecked(True)')
 
