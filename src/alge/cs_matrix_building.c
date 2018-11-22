@@ -1311,7 +1311,7 @@ cs_matrix_vector(const cs_mesh_t            *m,
     is_p = 1;
   }
   else {
-    i_f_face_factor = _i_f_face_factor;
+    i_f_face_factor = &_i_f_face_factor;
     b_f_face_factor = &_b_f_face_factor;
   }
 
@@ -1905,7 +1905,7 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
     is_p = 1;
   }
   else {
-    i_f_face_factor = _i_f_face_factor;
+    i_f_face_factor = &_i_f_face_factor;
     b_f_face_factor = &_b_f_face_factor;
   }
 
