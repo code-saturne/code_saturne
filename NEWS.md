@@ -1,3 +1,16 @@
+Release 5.3.2 (unreleased)
+--------------------------
+
+Bug fixes:
+
+- Fix uncompatible pointer type assignment warning on fluid factors at face
+  in fully fluid case in mass flux compuation and matrix building.
+
+- Fix coherency check of slope test indicator with SIMPLE algorithm.
+
+- Fix unitialized indices in wall law for additional transported vectors and
+  post-processing of thermal flux at boundary.
+
 Release 5.3.1 - November 21, 2018
 ---------------------------------
 
