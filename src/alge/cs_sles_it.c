@@ -4258,8 +4258,10 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
 
       cs_real_t vx0 = rhs[ii];
 
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
+        if (col_id[jj] > ii) break;
         vx0 -= (m_row[jj]*vx[col_id[jj]]);
+      }
 
       vx0 *= ad_inv[ii];
 
@@ -4283,6 +4285,7 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
       }
 
       for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
+        if (col_id[jj] > ii) break;
         for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
           vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
       }
@@ -4376,10 +4379,12 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
 
       cs_real_t vx0 = rhs[ii];
 
-      for (cs_lnum_t jj = n_cols-1; jj > -1; jj--)
+      for (cs_lnum_t jj = n_cols-1; jj > -1; jj--) {
+        if (col_id[jj] < ii) break;
         vx0 -= (m_row[jj]*vx[col_id[jj]]);
+      }
 
-      vx0 *= ad_inv[ii];
+      vx0 *= 2*ad_inv[ii];
 
       vx[ii] = vx0;
     }
@@ -4401,6 +4406,7 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
       }
 
       for (cs_lnum_t jj = n_cols-1; jj > -1; jj--) {
+        if (col_id[jj] < ii) break;
         for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
           vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
       }
