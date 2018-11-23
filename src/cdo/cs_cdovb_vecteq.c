@@ -1329,7 +1329,7 @@ cs_cdovb_vecteq_solve_steady_state(double                      dt_cur,
                                         csys->source);
 
         /* Update the RHS */
-        for (short int v = 0; v < cm->n_vc; v++)
+        for (short int v = 0; v < csys->n_dofs; v++)
           csys->rhs[v] += csys->source[v];
 
       } /* End of source term */

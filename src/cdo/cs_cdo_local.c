@@ -439,10 +439,12 @@ cs_cell_sys_dump(const char             msg[],
 
     if (csys->cell_flag > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    ">> dirichlet: %s, nhmg_neumann: %s, robin: %s\n",
+                    ">> dirichlet: %s, nhmg_neumann: %s, robin: %s,"
+                    " sliding: %s\n",
                     cs_base_strtf(csys->has_dirichlet),
                     cs_base_strtf(csys->has_nhmg_neumann),
-                    cs_base_strtf(csys->has_robin));
+                    cs_base_strtf(csys->has_robin),
+                    cs_base_strtf(csys->has_sliding));
       cs_log_printf(CS_LOG_DEFAULT, ">> Boundary faces\n"
                     ">> %-10s | %-10s | %-10s\n", "_ID", "ID", "FLAG");
       for (int i = 0; i < csys->n_bc_faces; i++) {
