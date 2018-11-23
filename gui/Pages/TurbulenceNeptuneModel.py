@@ -181,8 +181,17 @@ class TurbulenceModel(MainFieldsModel):
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         if node == None:
-            self.setThermalTurbulentFlux(fieldId,
-                                         self.defaultValues()['turb_flux'])
+            if self.getEnergyResolution(fieldId) == 'on':
+                self.setThermalTurbulentFlux(fieldId,
+                                             self.defaultValues()['turb_flux'])
+            else:
+                self.setThermalTurbulentFlux(fieldId, 'none')
+        else:
+            if self.getEnergyResolution(fieldId) != 'on':
+                node['turb_flux'] = 'none'
+            elif node['turb_flux'] == 'none':
+               node['turb_flux'] = 'sgdh'
+
 
         model = node['turb_flux']
         return model

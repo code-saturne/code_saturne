@@ -209,14 +209,18 @@ class TurbFluxDelegate(QItemDelegate):
         self.modelCombo = ComboModel(editor, 1, 1)
         fieldId = index.row() + 1
 
-        if self.mdl.useAdvancedThermalFluxes(fieldId) == True:
-            for turbFlux in TurbulenceModelsDescribing.ThermalTurbFluxModels:
-                self.modelCombo.addItem(self.tr(self.dicoM2V[turbFlux]), turbFlux)
+        if self.mdl.getEnergyResolution(fieldId) == 'on':
+            if self.mdl.useAdvancedThermalFluxes(fieldId) == True:
+                for turbFlux in TurbulenceModelsDescribing.ThermalTurbFluxModels:
+                    self.modelCombo.addItem(self.tr(self.dicoM2V[turbFlux]), turbFlux)
 
+            else:
+                turb_flux = TurbulenceModelsDescribing.ThermalTurbFluxModels[0]
+                self.modelCombo.addItem(self.tr(self.dicoM2V[turbFlux]), turbFlux)
+                self.modelCombo.disableItem(index=0)
         else:
-            turb_flux = TurbulenceModelsDescribing.ThermalTurbFluxModels[0]
-            self.modelCombo.addItem(self.tr(self.dicoM2V[turbFlux]), turbFlux)
-            self.modelCombo.disableItem(index=0)
+            self.modelCombo.addItem(self.tr(self.dicoM2V['none']), 'none')
+            self.modelCombo.setItem(str_view='none')
 
         editor.setMinimumSize(editor.sizeHint())
         editor.installEventFilter(self)
@@ -296,10 +300,11 @@ class StandardItemModelTurbulence(QStandardItemModel):
         if index.column() == 2 :
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         if index.column() == 3 :
-            if self.mdl.useAdvancedThermalFluxes(index.row()+1) == True:
+            if self.mdl.useAdvancedThermalFluxes(index.row()+1) == True \
+                and self.mdl.getEnergyResolution(index.row()+1) == 'on':
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
             else:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                return Qt.NoItemFlags
         elif index.column() == 4 :
             if self.mdl.getCriterion(index.row()+1) == "continuous" :
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable
@@ -527,12 +532,18 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         show groupBoxMixingLength if necessary
         """
         fieldId = row + 1
-        turbModel = self.mdl.getTurbulenceModel(fieldId)
-        if turbModel == "mixing_length" :
-            self.groupBoxMixingLength.show()
-            self.lineEditMixingLength.setText(str(self.mdl.getMixingLength(fieldId)))
-        else :
-            self.groupBoxMixingLength.hide()
+        if fieldId != 0:
+            turbModel = self.mdl.getTurbulenceModel(fieldId)
+            if turbModel == "mixing_length" :
+                self.groupBoxMixingLength.show()
+                self.lineEditMixingLength.setText(str(self.mdl.getMixingLength(fieldId)))
+            else :
+                self.groupBoxMixingLength.hide()
+                # If the user chose GGDH for a RSM turbulence model, we set
+                # the thermal fluxes model back to SGDH for consistency
+                if 'rij_epsilon' not in turbModel and \
+                        self.mdl.getThermalTurbulentFlux(fieldId) == 'ggdh':
+                    self.mdl.setThermalTurbulentFlux(fieldId, 'sgdh')
 
 
     @pyqtSlot(str)
