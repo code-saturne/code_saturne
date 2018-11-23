@@ -121,8 +121,11 @@ class Parser(object):
                 data = current.firstChild.data
             else:
                 data = None
+        elif len(l) == 0:
+            print("Error: in getDataFromNode no markup %s found." %  childName)
+            sys.exit(1)
         else:
-            print("Error: in getDataFromNode several markup %s found." %  childName)
+            print("Error: in getDataFromNode several markups %s found." %  childName)
             sys.exit(1)
 
         return data

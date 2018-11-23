@@ -1243,8 +1243,9 @@ class Case(Dico, XMLDocument):
             rootNode = '<' + self['package'].code_name +'_GUI study="" case="" version="2.0"/>'
         else:
             rootNode = '<' + '_GUI study="" case="" version="2.0"/>'
+
         if studymanager:
-            rootNode = '<' + 'studymanager version="2.0"/>'
+            rootNode = '<studymanager/>'
 
         if file_name:
             self.parse(file_name)
@@ -1333,10 +1334,10 @@ class Case(Dico, XMLDocument):
             self.xml_saved = s
             self['saved'] = "yes"
             d.doc.unlink()
-        except IOError:
-            msg = "Error: unable to save the XML document file." ,
-            "(XMLengine module, Case class, xmlSaveDocument method)"
+        except IOError as e:
+            msg = "Error: unable to save the XML document file."
             print(msg)
+            print("I/O error({0}): {1}".format(e.errno, e.strerror))
 
 
     def pythonSaveDocument(self):

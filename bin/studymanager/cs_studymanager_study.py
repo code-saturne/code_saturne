@@ -45,6 +45,9 @@ import cs_create
 from cs_create import set_executable
 import cs_runcase
 
+from code_saturne.Base import XMLengine
+from code_saturne.studymanager_gui import PathesModel
+
 from studymanager.cs_studymanager_parser import Parser
 from studymanager.cs_studymanager_texmaker import Report1, Report2
 
@@ -70,6 +73,80 @@ log.setLevel(logging.NOTSET)
 def nodot(item):
     return item[0] != '.'
 
+#-------------------------------------------------------------------------------
+
+def create_base_xml_file(filepath):
+    """Create studymanager XML file.
+    """
+
+    filename = os.path.basename(filepath)
+    if os.path.isfile(filepath):
+        print("Can not create XML file of parameter:\n" \
+              + filepath + " already exists.")
+        sys.exit(1)
+
+    # using xml engine from Code_Saturne GUI
+    smgr = XMLengine.Case(None, studymanager=True)
+    smgr['xmlfile'] = filename
+    pm = PathesModel.PathesModel(smgr)
+
+    # empty repo and dest
+    pm.setRepositoryPath('')
+    pm.setDestinationPath('')
+
+    return smgr
+
+#-------------------------------------------------------------------------------
+
+def init_xml_file_with_study(smgr, studyp):
+    """Initialize XML file with study content and save it.
+    """
+
+    smgr_node = smgr.xmlGetNode('studymanager')
+
+    studyd = os.path.basename(studyp)
+    st_node = smgr_node.xmlInitChildNode('study', label = studyd)
+    st_node['status'] = "on"
+
+    cases = []
+    for elt in os.listdir(studyp):
+        eltd = os.path.join(studyp, elt)
+        if os.path.isdir(eltd):
+            if isCase(eltd):
+                cases.append(elt)
+
+    cases.sort()
+    for case in cases:
+        c_node = st_node.xmlInitChildNode("case", label = case)
+        c_node['status']  = "on"
+        c_node['compute'] = "on"
+        c_node['post']    = "on"
+
+    smgr.xmlSaveDocument()
+
+#-------------------------------------------------------------------------------
+
+def isStudy(dirpath):
+    """Try to determine if dirpath is a Code_Saturne study directory.
+    """
+
+    postd = os.path.join(dirpath, 'POST')
+    meshd = os.path.join(dirpath, 'MESH')
+    is_study = os.path.isdir(postd) and os.path.isdir(meshd)
+
+    return is_study
+
+#-------------------------------------------------------------------------------
+
+def isCase(dirpath):
+    """Try to determine if dirpath is a Code_Saturne case directory.
+    """
+
+    datad = os.path.join(dirpath, 'DATA')
+    scriptd = os.path.join(dirpath, 'SCRIPTS')
+    is_case = os.path.isdir(datad) and os.path.isdir(scriptd)
+
+    return is_case
 
 #===============================================================================
 # Case class
@@ -1016,29 +1093,50 @@ class Studies(object):
         @param dif: name of the diff executable: C{cs_io_dump -d}.
         """
 
-        f = options.filename
-        if f == None:
-            print("A file of parameters must be specified for studymanager to run.\n"
-                  "See help message and use '--file' or '-f' option.")
+        # try to determine if current directory is a study one
+        cwd = os.getcwd()
+        is_study = isStudy(cwd)
+
+        studyd = None
+        if is_study:
+            # default study directory is current one
+            studyp = cwd
+
+        # Create file of parameters
+
+        filename = options.filename
+        if options.create_xml and is_study:
+            if filename == None:
+                studyd = os.path.basename(cwd)
+                filename = "smgr_" + studyd + ".xml"
+
+            filepath = os.path.join(cwd, filename)
+            smgr = create_base_xml_file(filepath)
+
+            init_xml_file_with_study(smgr, studyp)
+
+        elif options.create_xml and not is_study:
+            print("Can not create XML file of parameter:\n" \
+                  + "current directory is not a study.")
+            sys.exit(1)
+
+        if filename == None:
+            print("A file of parameters must be specified or created " \
+                  "for studymanager to run.\n"
+                  "See help message and use '--file' or '--create-xml' option.")
             sys.exit(1)
 
         # create a first xml parser only for
         #   the repository verification and
         #   the destination creation
 
-        if os.path.isfile(options.filename):
-            self.__parser = Parser(f)
+        if os.path.isfile(filename):
+            self.__parser = Parser(filename)
         else:
             print("Specified XML parameter file for studymanager does not exist.")
             sys.exit(1)
 
         self.__xmlupdate = options.update_xml
-
-        # try to determine if current directory is a study one
-        cwd = os.getcwd()
-        postd = os.path.join(cwd, 'POST')
-        meshd = os.path.join(cwd, 'MESH')
-        is_study = os.path.isdir(postd) and os.path.isdir(meshd)
 
         # set repository
         if len(options.repo_path) > 0:
@@ -1071,7 +1169,6 @@ class Studies(object):
                 # if current directory is a study
                 # set destination as a directory "../RUN_(study_name)
                 if is_study:
-                    studyd = os.path.basename(cwd)
                     self.__parser.setDestination(os.path.join(cwd,
                                                               "../RUN_"+studyd))
                     self.__dest = self.__parser.getDestination()
@@ -1086,9 +1183,9 @@ class Studies(object):
             os.makedirs(self.__dest)
 
         # copy the xml file of parameters for update and restart
-        file = os.path.join(self.__dest, os.path.basename(f))
+        file = os.path.join(self.__dest, os.path.basename(filename))
         try:
-            shutil.copyfile(f, file)
+            shutil.copyfile(filename, file)
         except:
             pass
 

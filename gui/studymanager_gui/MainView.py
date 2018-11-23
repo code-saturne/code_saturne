@@ -401,7 +401,7 @@ class MainView(object):
         """
         Public slot.
 
-        create new Code_Saturne case
+        create new Code_Saturne studymanager parameter file
         """
         if not hasattr(self, 'case'):
             self.case = XMLengine.Case(package=self.package, studymanager=True)

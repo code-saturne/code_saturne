@@ -83,6 +83,7 @@ class PathesModel(Model):
         """
         return len(self.case.xmlGetNodeList("study"))
 
+
     def loadStudyAndCases(self, dirname):
         """
         automatic load

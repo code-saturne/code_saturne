@@ -162,6 +162,10 @@ def process_cmd_line(argv, pkg):
                       dest="without_tags", default="",
                       help="exclude any run with one of specified tags (separated by commas)")
 
+    parser.add_option("--create-xml", action="store_true",
+                      dest="create_xml", default=False,
+                      help="create xml from study (current directory has to be a study)")
+
     (options, args) = parser.parse_args(argv)
 
     return  options
@@ -298,7 +302,7 @@ def run_studymanager(pkg, options):
     else:
         os.chdir(studies.getRepository())
 
-    # Print header
+    # Print first part of header
 
     studies.reporting(" -------------")
     studies.reporting(" Study Manager")
@@ -307,8 +311,9 @@ def run_studymanager(pkg, options):
     studies.reporting(" Kernel version:    " + pkg.version)
     studies.reporting(" Install directory: " + pkg.get_dir('exec_prefix'))
     studies.reporting(" File dump:         " + dif)
-    studies.reporting(" Repository:        " + studies.getRepository())
-    studies.reporting(" Destination:       " + studies.getDestination())
+
+    # Print second part of header
+
     studies.reporting("\n Informations:")
     studies.reporting(" -------------\n")
     studies.reporting(" Date:               " + datetime.now().strftime("%A %B %d %H:%M:%S %Y"))
@@ -316,6 +321,8 @@ def run_studymanager(pkg, options):
     studies.reporting(" Computer:           " + platform.uname()[1] + "  " + release())
     studies.reporting(" Process Id:         " + str(os.getpid()))
     studies.reporting(" User name:          " + getpass.getuser())
+    studies.reporting(" Repository:        " + studies.getRepository())
+    studies.reporting(" Destination:       " + studies.getDestination())
     studies.reporting(" Working directory:  " + os.getcwd())
     studies.reporting("\n")
 
