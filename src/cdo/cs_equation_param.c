@@ -859,8 +859,8 @@ cs_equation_create_param(const char            *name,
     .precond = CS_PARAM_PRECOND_DIAG, /* preconditioner */
     .solver = CS_PARAM_ITSOL_GMRES,   /* iterative solver */
     .amg_type = CS_PARAM_AMG_NONE,    /* No predefined AMG type */
-    .n_max_iter = 2500,               /* max. number of iterations */
-    .eps = 1e-10,                     /* stopping criterion on the accuracy */
+    .n_max_iter = 10000,              /* max. number of iterations */
+    .eps = 1e-8,                      /* stopping criterion on the accuracy */
     .resid_normalized = false         /* normalization of the residual (true or
                                          false) */
   };
