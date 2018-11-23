@@ -1815,8 +1815,6 @@ cs_equation_create_fields(void)
     const cs_equation_param_t  *eqp = eq->param;
 
     _Bool has_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
-    if (!has_previous)
-      field_mask |= CS_FIELD_STEADY;
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);

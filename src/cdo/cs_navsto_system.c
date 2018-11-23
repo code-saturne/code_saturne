@@ -348,8 +348,6 @@ cs_navsto_system_init_setup(void)
   /* Set field metadata */
   const bool  has_previous = cs_navsto_param_is_steady(nsp) ? false : true;
   int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
-  if (!has_previous)
-    field_mask |= CS_FIELD_STEADY;
 
   /* Set the location id to define a mesh location support */
   int  location_id = -1;
