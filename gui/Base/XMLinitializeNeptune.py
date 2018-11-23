@@ -301,16 +301,31 @@ class XMLinitNeptune(Variables):
         Change XML in order to ensure backward compatibility from versions prior to 4.3
         Reason: Renaming of wall_temperature as boundary_temperature
         """
+        # For versions prior to 5.0,renaming of wall_temperature as boundary_temperature
         for node in self.case.xmlGetNodeList('property'):
             if node['name'] == 'wall_temperature':
                 node['name']  = 'boundary_temperature'
 
     def __backwardCompatibilityFrom_5_0(self):
 
-        tnode = self.case.xmlGetNode('turbulence')
+        # Add the choice between SGDH and GGDH turbulent thermal flux models
+        cnode = self.case.xmlGetNode('closure_modeling')
+        tnode = cnode.xmlGetNode('turbulence')
         for node in tnode.xmlGetNodeList('field'):
             if node['turb_flux'] == None:
                 node['turb_flux'] = 'sgdh'
+
+        # Modify the rad transfer xml node name for particles to allow a correct
+        # workflow with the RTE SOLVER
+        tpnode = self.case.xmlGetNode('thermophysical_models')
+        fnode  = tpnode.xmlGetNode('fields')
+        if fnode != None:
+            for node in fnode.xmlGetNodeList('field'):
+                rn = node.xmlGetNode('radiative_transfer')
+                if rn != None:
+                    st = rn['status']
+                    node.xmlRemoveChild('radiative_transfer')
+                    node.xmlInitChildNode('particles_radiative_transfer', status=st)
 
 
     def __backwardCompatibilityCurrentVersion(self):
@@ -380,18 +395,33 @@ class XMLinitNeptune(Variables):
                 node.xmlInitChildNode('listing_printing')
                 node.xmlInitChildNode('postprocessing_recording')
 
+        # ------------------------------------------------------------
         # FIXME: TO REMOVE ONCE NCFD 5.0 is out!
         # For versions prior to 5.0,renaming of wall_temperature as boundary_temperature
         for node in self.case.xmlGetNodeList('property'):
             if node['name'] == 'wall_temperature':
                 node['name']  = 'boundary_temperature'
 
+        # Add the choice between SGDH and GGDH turbulent thermal flux models
         cnode = self.case.xmlGetNode('closure_modeling')
         tnode = cnode.xmlGetNode('turbulence')
         if tnode != None:
             for node in tnode.xmlGetNodeList('field'):
                 if node['turb_flux'] == None:
                     node['turb_flux'] = 'sgdh'
+
+        # Modify the rad transfer xml node name for particles to allow a correct
+        # workflow with the RTE SOLVER
+        tpnode = self.case.xmlGetNode('thermophysical_models')
+        fnode  = tpnode.xmlGetNode('fields')
+        if fnode != None:
+            for node in fnode.xmlGetNodeList('field'):
+                rn = node.xmlGetNode('radiative_transfer')
+                if rn != None:
+                    st = rn['status']
+                    node.xmlRemoveChild('radiative_transfer')
+                    node.xmlInitChildNode('particles_radiative_transfer', status=st)
+        # ------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

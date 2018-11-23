@@ -435,7 +435,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isOnOff(status)
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        childNode = node.xmlInitChildNode('radiative_transfer')
+        childNode = node.xmlInitChildNode('particles_radiative_transfer')
         childNode.xmlSetAttribute(status = status)
 
 
@@ -447,11 +447,11 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isInList(str(fieldId),self.getFieldIdList())
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        nodeh= node.xmlGetNode('radiative_transfer')
+        nodeh= node.xmlGetNode('particles_radiative_transfer')
         if nodeh == None :
             rad = self.defaultValues()['radiative']
             self.setRadiativeTransferStatus(fieldId,rad)
-        rad = node.xmlGetNode('radiative_transfer')['status']
+        rad = node.xmlGetNode('particles_radiative_transfer')['status']
         return rad
 
 
@@ -1081,7 +1081,7 @@ class ThermodynamicsTestCase(ModelTest):
                                  <phase choice="liquid"/>
                                  <hresolution status="on"/>
                                  <compressible status="off"/>
-                                 <radiative_transfer status="on"/>
+                                 <particles_radiative_transfer status="on"/>
                          </field>
                  </fields>'''
         assert mdl.getXMLNodefieldsNode() == self.xmlNodeFromString(doc),\
