@@ -477,41 +477,35 @@ _fb_apply_remaining_bc(const cs_equation_param_t     *eqp,
  *
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in]      x0       initial guess for the linear system
- * \param[in]      rhs      pointer to a cs_mesh_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      xsol     pointer to an array storing the solution of
- *                          the linear system
+ * \param[in, out] x        solution of the linear system (in: initial guess)
+ * \param[in, out] b        right-hand side (scatter/gather if needed)
  *
  * \return the number of iterations of the linear solver
  */
 /*----------------------------------------------------------------------------*/
 
 static int
-_solve_fb_system(cs_sles_t                    *sles,
-                 const cs_matrix_t            *matrix,
-                 const cs_real_t              *x0,
-                 cs_real_t                    *rhs,
-                 const cs_equation_param_t    *eqp,
-                 cs_real_t                    *p_xsol[])
+_solve_fbs_system(cs_sles_t                    *sles,
+                  const cs_matrix_t            *matrix,
+                  const cs_equation_param_t    *eqp,
+                  cs_real_t                    *x,
+                  cs_real_t                    *b)
 {
-  cs_real_t  *x = NULL, *b = NULL;
-  int  n_iters = 0;
-  double  residual = DBL_MAX;
-
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
   cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+  int  n_iters = 0;
+  double  residual = DBL_MAX;
 
   /* Prepare solving (handle parallelism) */
   cs_gnum_t  nnz = cs_equation_prepare_system(1,        /* stride */
                                               n_faces,  /* n_scatter_elts */
-                                              x0,
-                                              rhs,
                                               matrix,
                                               rset,
-                                              &x, &b);
+                                              x, b);
 
   /* Solve the linear solver */
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
@@ -546,16 +540,18 @@ _solve_fb_system(cs_sles_t                    *sles,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 3
   cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, n_faces, x, 6);
-  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_faces, rhs, 6);
+
+  if (cs_glob_n_ranks > 1) /* Parallel mode */
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE, 1, /* type and stride */
+                         b,
+                         b);
+
+  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_faces, b, 6);
 #endif
 
   /* Free what can be freed at this stage */
-  if (b != rhs)
-    BFT_FREE(b);
   cs_sles_free(sles);
-
-  /* Return pointer to the computed solution */
-  *p_xsol = x;
 
   return n_iters;
 }
@@ -564,21 +560,18 @@ _solve_fb_system(cs_sles_t                    *sles,
 /*!
  * \brief  Update the variables related to CDO-Fb system after a resolution
  *
- * \param[in]      solu    array with the solution of the linear system
+ * \param[in, out] tce     pointer to a timer counter
  * \param[in, out] fld     pointer to a cs_field_t structure
  * \param[in, out] eqc     pointer to a context structure
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_update_fields(const cs_real_t         *solu,
+static inline void
+_update_fields(cs_timer_counter_t      *tce,
                cs_field_t              *fld,
                cs_cdofb_scaleq_t       *eqc)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-
-  /* Set computed solution in builder->face_values */
-  memcpy(eqc->face_values, solu, quant->n_faces*sizeof(cs_real_t));
+  cs_timer_t  t0 = cs_timer_time();
 
   /* Copy current field values to previous values */
   cs_field_current_to_previous(fld);
@@ -588,8 +581,11 @@ _update_fields(const cs_real_t         *solu,
   cs_static_condensation_recover_scalar(cs_shared_connect->c2f,
                                         eqc->rc_tilda,
                                         eqc->acf_tilda,
-                                        solu,
+                                        eqc->face_values,
                                         fld->val);
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(tce, &t0, &t1);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1298,24 +1294,16 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   /* Now solve the system */
-  cs_real_t  *x_sol = NULL;
-  cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
-
-  _solve_fb_system(sles, matrix, eqc->face_values, rhs, eqp, &x_sol);
+  _solve_fbs_system(cs_sles_find_or_add(field_id, NULL),
+                    matrix, eqp,
+                    eqc->face_values, rhs);
 
   /* Update field */
-  t0 = cs_timer_time();
-
-  _update_fields(x_sol, fld, eqc);
-
-  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+  _update_fields(&(eqb->tce), fld, eqc);
 
   /* Free remaining buffers */
-  BFT_FREE(x_sol);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
-  cs_sles_free(sles);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1544,24 +1532,16 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   /* Now solve the system */
-  cs_real_t  *x_sol = NULL;
-  cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
-
-  _solve_fb_system(sles, matrix, eqc->face_values, rhs, eqp, &x_sol);
+  _solve_fbs_system(cs_sles_find_or_add(field_id, NULL),
+                    matrix, eqp,
+                    eqc->face_values, rhs);
 
   /* Update field */
-  t0 = cs_timer_time();
-
-  _update_fields(x_sol, fld, eqc);
-
-  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+  _update_fields(&(eqb->tce), fld, eqc);
 
   /* Free remaining buffers */
-  BFT_FREE(x_sol);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
-  cs_sles_free(sles);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1836,24 +1816,16 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   /* Now solve the system */
-  cs_real_t  *x_sol = NULL;
-  cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
-
-  _solve_fb_system(sles, matrix, eqc->face_values, rhs, eqp, &x_sol);
+  _solve_fbs_system(cs_sles_find_or_add(field_id, NULL),
+                    matrix, eqp,
+                    eqc->face_values, rhs);
 
   /* Update field */
-  t0 = cs_timer_time();
-
-  _update_fields(x_sol, fld, eqc);
-
-  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+  _update_fields(&(eqb->tce), fld, eqc);
 
   /* Free remaining buffers */
-  BFT_FREE(x_sol);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
-  cs_sles_free(sles);
 }
 
 /*----------------------------------------------------------------------------*/

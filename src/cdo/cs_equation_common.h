@@ -355,12 +355,10 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder);
  *
  * \param[in]      stride   stride to apply to the range set operations
  * \param[in]      x_size   size of the vector unknows (scatter view)
- * \param[in]      x0       pointer to an array (unknows to compute)
- * \param[in]      rhs      pointer to an array (right-hand side)
  * \param[in]      matrix   pointer to a cs_matrix_t structure
  * \param[in]      rset     pointer to a range set structure
- * \param[in, out] p_x      pointer of pointer to the linear solver unknows
- * \param[in, out] p_rhs    pointer of pointer to the right-hand side
+ * \param[in, out] x        array of unknows (in: initial guess)
+ * \param[in, out] b        right-hand side
  *
  * \returns the number of non-zeros in the matrix
  */
@@ -369,12 +367,10 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder);
 cs_gnum_t
 cs_equation_prepare_system(int                   stride,
                            cs_lnum_t             x_size,
-                           const cs_real_t      *x0,
-                           cs_real_t            *rhs,
                            const cs_matrix_t    *matrix,
                            cs_range_set_t       *rset,
-                           cs_real_t            *p_x[],
-                           cs_real_t            *p_rhs[]);
+                           cs_real_t            *x,
+                           cs_real_t            *b);
 
 /*----------------------------------------------------------------------------*/
 /*!

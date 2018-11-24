@@ -555,11 +555,9 @@ _vcb_enforce_values(const cs_equation_param_t     *eqp,
  *
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in]      x0       initial guess for the linear system
- * \param[in]      rhs      pointer to a cs_mesh_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      xsol     pointer to an array storing the solution of
- *                          the linear system
+ * \param[in, out] x        solution of the linear system (in: initial guess)
+ * \param[in, out] b        right-hand side (scatter/gather if needed)
  *
  * \return the number of iterations of the linear solver
  */
@@ -568,28 +566,22 @@ _vcb_enforce_values(const cs_equation_param_t     *eqp,
 static int
 _solve_vcb_system(cs_sles_t                    *sles,
                   const cs_matrix_t            *matrix,
-                  const cs_real_t              *x0,
-                  cs_real_t                    *rhs,
                   const cs_equation_param_t    *eqp,
-                  cs_real_t                    *p_xsol[])
+                  cs_real_t                    *x,
+                  cs_real_t                    *b)
 {
-  cs_real_t  *x = NULL, *b = NULL;
+  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
+
+  cs_range_set_t *rset = cs_shared_connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
   int  n_iters = 0;
   double  residual = DBL_MAX;
-
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_vertices = quant->n_vertices;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
 
   /* Prepare solving (handle parallelism) */
   cs_gnum_t  nnz = cs_equation_prepare_system(1,          /* stride */
                                               n_vertices, /* n_scatter_elts */
-                                              x0,
-                                              rhs,
                                               matrix,
                                               rset,
-                                              &x, &b);
+                                              x, b);
 
   /* Solve the linear solver */
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
@@ -624,47 +616,20 @@ _solve_vcb_system(cs_sles_t                    *sles,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
   cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, n_vertices, x, 6);
-  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_vertices, rhs, 6);
+
+  if (cs_glob_n_ranks > 1) /* Parallel mode */
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE, 1, /* type and stride */
+                         b,
+                         b);
+
+  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_vertices, b, 6);
 #endif
 
   /* Free what can be freed at this stage */
-  if (b != rhs)
-    BFT_FREE(b);
   cs_sles_free(sles);
 
-  /* Return pointer to the computed solution */
-  *p_xsol = x;
-
   return n_iters;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the variables related to CDO-VCb system after a resolution
- *
- * \param[in]      solu    array with the solution of the linear system
- * \param[in, out] fld     pointer to a cs_field_t structure
- * \param[in, out] eqc     pointer to a context structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_update_vcb_fields(const cs_real_t         *solu,
-                   cs_field_t              *fld,
-                   cs_cdovcb_scaleq_t      *eqc)
-{
-  /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
-
-  /* Set the values at vertices */
-  memcpy(fld->val, solu, sizeof(cs_real_t) * cs_shared_quant->n_vertices);
-
-  /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
-  cs_static_condensation_recover_scalar(cs_shared_connect->c2v,
-                                        eqc->rc_tilda,
-                                        eqc->acv_tilda,
-                                        solu,
-                                        eqc->cell_values);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1338,25 +1303,30 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  /* Solve the linear system */
-  cs_real_t  *x_sol = NULL;
-  cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(fld);
 
-  _solve_vcb_system(sles, matrix, fld->val, rhs, eqp, &x_sol);
+  /* Solve the linear system */
+  _solve_vcb_system(cs_sles_find_or_add(field_id, NULL),
+                    matrix, eqp,
+                    fld->val, rhs);
 
   /* Update field */
   t0 = cs_timer_time();
 
-  _update_vcb_fields(x_sol, fld, eqc);
+  /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
+  cs_static_condensation_recover_scalar(cs_shared_connect->c2v,
+                                        eqc->rc_tilda,
+                                        eqc->acv_tilda,
+                                        fld->val,
+                                        eqc->cell_values);
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
 
   /* Free remaining buffers */
-  BFT_FREE(x_sol);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
-  cs_sles_free(sles);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1599,25 +1569,30 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  /* Solve the linear system */
-  cs_real_t  *x_sol = NULL;
-  cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(fld);
 
-  _solve_vcb_system(sles, matrix, fld->val, rhs, eqp, &x_sol);
+  /* Solve the linear system */
+  _solve_vcb_system(cs_sles_find_or_add(field_id, NULL),
+                    matrix, eqp,
+                    fld->val, rhs);
 
   /* Update field */
   t0 = cs_timer_time();
 
-  _update_vcb_fields(x_sol, fld, eqc);
+  /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
+  cs_static_condensation_recover_scalar(cs_shared_connect->c2v,
+                                        eqc->rc_tilda,
+                                        eqc->acv_tilda,
+                                        fld->val,
+                                        eqc->cell_values);
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
 
   /* Free remaining buffers */
-  BFT_FREE(x_sol);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
-  cs_sles_free(sles);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1938,25 +1913,30 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  /* Solve the linear system */
-  cs_real_t  *x_sol = NULL;
-  cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(fld);
 
-  _solve_vcb_system(sles, matrix, fld->val, rhs, eqp, &x_sol);
+  /* Solve the linear system */
+  _solve_vcb_system(cs_sles_find_or_add(field_id, NULL),
+                    matrix, eqp,
+                    fld->val, rhs);
 
   /* Update field */
   t0 = cs_timer_time();
 
-  _update_vcb_fields(x_sol, fld, eqc);
+  /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
+  cs_static_condensation_recover_scalar(cs_shared_connect->c2v,
+                                        eqc->rc_tilda,
+                                        eqc->acv_tilda,
+                                        fld->val,
+                                        eqc->cell_values);
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
 
   /* Free remaining buffers */
-  BFT_FREE(x_sol);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
-  cs_sles_free(sles);
 }
 
 /*----------------------------------------------------------------------------*/

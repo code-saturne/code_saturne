@@ -844,12 +844,10 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder)
  *
  * \param[in]      stride   stride to apply to the range set operations
  * \param[in]      x_size   size of the vector unknows (scatter view)
- * \param[in]      x0       pointer to an array (unknows to compute)
- * \param[in]      rhs      pointer to an array (right-hand side)
  * \param[in]      matrix   pointer to a cs_matrix_t structure
  * \param[in]      rset     pointer to a range set structure
- * \param[in, out] p_x      pointer of pointer to the linear solver unknows
- * \param[in, out] p_rhs    pointer of pointer to the right-hand side
+ * \param[in, out] x        array of unknows (in: initial guess)
+ * \param[in, out] b        right-hand side
  *
  * \returns the number of non-zeros in the matrix
  */
@@ -858,15 +856,11 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder)
 cs_gnum_t
 cs_equation_prepare_system(int                   stride,
                            cs_lnum_t             x_size,
-                           const cs_real_t      *x0,
-                           cs_real_t            *rhs,
                            const cs_matrix_t    *matrix,
                            cs_range_set_t       *rset,
-                           cs_real_t            *p_x[],
-                           cs_real_t            *p_rhs[])
+                           cs_real_t            *x,
+                           cs_real_t            *b)
 {
-  cs_real_t  *x = NULL, *b = NULL;
-
   const cs_lnum_t  n_scatter_elts = x_size; /* size of x and rhs */
   const cs_lnum_t  n_gather_elts = cs_matrix_get_n_rows(matrix);
 
@@ -883,35 +877,25 @@ cs_equation_prepare_system(int                   stride,
                 cs_matrix_get_n_columns(matrix));
 #endif
 
-  BFT_MALLOC(x, CS_MAX(n_scatter_elts,
-                       cs_matrix_get_n_columns(matrix)), cs_real_t);
-
-  /* p_x and b are a "gathered" view of x0 and rhs respectively through the
-     range set operation.
-     Their size is equal to n_sles_gather_elts <= n_sles_scatter_elts */
+  assert(cs_matrix_get_n_columns(matrix) <= n_scatter_elts);
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
                              /* ============= */
+
+    /* x and b should be changed to have a "gathered" view through the range set
+       operation.  Their size is equal to n_sles_gather_elts <=
+       n_sles_scatter_elts */
 
     /* Compact numbering to fit the algebraic decomposition */
     cs_range_set_gather(rset,
                         CS_REAL_TYPE, /* type */
                         stride,       /* stride */
-                        x0,           /* in: size = n_sles_scatter_elts */
+                        x,            /* in: size = n_sles_scatter_elts */
                         x);           /* out: size = n_sles_gather_elts */
 
     /* The right-hand side stems from a cellwise building on this rank.
        Other contributions from distant ranks may contribute to an element
        owned by the local rank */
-    BFT_MALLOC(b, n_scatter_elts, cs_real_t);
-
-#if defined(HAVE_OPENMP)
-#   pragma omp parallel for if (n_scatter_elts > CS_THR_MIN)
-    for (cs_lnum_t  i = 0; i < n_scatter_elts; i++) b[i] = rhs[i];
-#else
-    memcpy(b, rhs, n_scatter_elts * sizeof(cs_real_t));
-#endif
-
     cs_interface_set_sum(rset->ifs,
                          n_scatter_elts, stride, false, CS_REAL_TYPE,
                          b);
@@ -922,22 +906,6 @@ cs_equation_prepare_system(int                   stride,
                         b,           /* in: size = n_sles_scatter_elts */
                         b);          /* out: size = n_sles_gather_elts */
   }
-  else { /* Sequential mode *** without periodicity *** */
-         /* ===============     ===================     */
-
-    assert(n_gather_elts == n_scatter_elts);
-
-#if defined(HAVE_OPENMP)
-#   pragma omp parallel for if (n_scatter_elts > CS_THR_MIN)
-    for (cs_lnum_t  i = 0; i < n_scatter_elts; i++) x[i] = x0[i];
-#else
-    memcpy(x, x0, n_scatter_elts * sizeof(cs_real_t));
-#endif
-
-    /* Nothing to do for the right-hand side */
-    b = rhs;
-
-  }
 
   /* Output information related to the linear system */
   const cs_lnum_t  *row_index, *col_id;
@@ -945,7 +913,7 @@ cs_equation_prepare_system(int                   stride,
 
   cs_matrix_get_msr_arrays(matrix, &row_index, &col_id, &d_val, &x_val);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 2
   cs_dbg_dump_linear_system("Dump linear system",
                             n_gather_elts, CS_EQUATION_COMMON_DBG,
                             x, b,
@@ -954,10 +922,6 @@ cs_equation_prepare_system(int                   stride,
 
   cs_gnum_t  nnz = row_index[n_gather_elts];
   if (cs_glob_n_ranks > 1) cs_parall_counter(&nnz, 1);
-
-  /* Return pointers */
-  *p_x = x;
-  *p_rhs = b;
 
   return nnz;
 }
