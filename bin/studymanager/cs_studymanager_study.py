@@ -1179,10 +1179,12 @@ class Studies(object):
                     sys.exit(msg)
 
         # create if necessary the destination directory
+
         if not os.path.isdir(self.__dest):
             os.makedirs(self.__dest)
 
         # copy the xml file of parameters for update and restart
+
         file = os.path.join(self.__dest, os.path.basename(filename))
         try:
             shutil.copyfile(filename, file)
@@ -1203,6 +1205,7 @@ class Studies(object):
             self.__plotter = None
 
         # create list of restricting and excluding tags
+
         self.__with_tags = None
         if options.with_tags:
             with_tags = re.split(',', options.with_tags)
@@ -1231,6 +1234,7 @@ class Studies(object):
                 print(" >> Append study ", l)
 
         # start the report
+
         self.report = os.path.join(self.__dest, "report.txt")
         self.reportFile = open(self.report, mode='w')
         self.reportFile.write('\n')
@@ -1251,6 +1255,7 @@ class Studies(object):
         self.__pdflatex    = not options.disable_pdflatex
 
         # in case of restart
+
         iok = 0
         for l, s in self.studies:
             for case in s.cases:
@@ -1294,8 +1299,6 @@ class Studies(object):
     def reporting(self, msg, stdout=True, report=True, status=False):
         """
         Write message on standard output and/or in report.
-        http://www.developpez.net/forums/d651999/autres-langages/python-zope/general-python/console-ecrire-ligne-precedente/
-        Carriage return "chr(13)" renvoi en debut de ligne et line feed "chr(10)" effectue un saut de ligne.
         @type l: C{String}
         @param l: the sentence to be written.
         """
