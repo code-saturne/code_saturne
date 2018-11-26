@@ -642,6 +642,30 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the normal diffusive flux for a face assuming only the
+ *          knowledge of the potential at faces and cell.
+ *          CO+ST algorithm is used for reconstructing the normal flux from
+ *          the degrees of freedom.
+ *
+ * \param[in]      f       face id in the cell mesh
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot     array of values of the potential (all the mesh)
+ * \param[in, out] cb      auxiliary structure dedicated to diffusion
+ * \param[out]     flux    pointer to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_sfb_cost_flux(short int                   f,
+                               const cs_equation_param_t  *eqp,
+                               const cs_cell_mesh_t       *cm,
+                               const cs_real_t            *pot,
+                               cs_cell_builder_t          *cb,
+                               cs_real_t                  *flux);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the normal flux for a face assuming only the knowledge
  *          of the potential at cell vertices. COST algorithm is used for
  *          reconstructing a piecewise constant gradient from the degrees of

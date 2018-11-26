@@ -286,6 +286,28 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the diffusive flux across each boundary face.
+ *         Case of scalar-valued CDO-Fb schemes
+ *
+ * \param[in]       t_eval    time at which one performs the evaluation
+ * \param[in]       eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       pot_f     array of values at faces
+ * \param[in]       pot_c     array of values at cells
+ * \param[in, out]  eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out]  bflux     pointer to the values of the diffusive flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
+                                   const cs_equation_param_t   *eqp,
+                                   const cs_real_t             *pot_f,
+                                   const cs_real_t             *pot_c,
+                                   cs_equation_builder_t       *eqb,
+                                   cs_real_t                   *bflux);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation

@@ -2072,6 +2072,150 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the diffusive flux across each boundary face.
+ *         Case of scalar-valued CDO-Fb schemes
+ *
+ * \param[in]       t_eval    time at which one performs the evaluation
+ * \param[in]       eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       pot_f     array of values at faces
+ * \param[in]       pot_c     array of values at cells
+ * \param[in, out]  eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out]  bflux     pointer to the values of the diffusive flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
+                                   const cs_equation_param_t   *eqp,
+                                   const cs_real_t             *pot_f,
+                                   const cs_real_t             *pot_c,
+                                   cs_equation_builder_t       *eqb,
+                                   cs_real_t                   *bflux)
+{
+  if (bflux == NULL)
+    return;
+
+  cs_timer_t  t0 = cs_timer_time();
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  if (cs_equation_param_has_diffusion(eqp) == false) {
+    memset(bflux, 0, quant->n_b_faces*sizeof(cs_real_t));
+
+    cs_timer_t  t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+    return;
+  }
+
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
+  shared(quant, connect, eqp, eqb, bflux, pot_c, pot_f,                 \
+         cs_cdofb_cell_bld)
+  {
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
+    const cs_adjacency_t  *f2c = connect->f2c;
+    const cs_lnum_t  fidx_shift = f2c->idx[quant->n_i_faces];
+
+    cs_real_t  *pot = NULL;
+    BFT_MALLOC(pot, connect->n_max_fbyc + 1, cs_real_t); /* +1 for cell */
+
+    /* Each thread get back its related structures:
+       Get the cellwise view of the mesh and the algebraic system */
+    cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+    cs_cell_mesh_reset(cm);
+#endif
+
+    cs_flag_t  msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ;
+    cs_flag_t  add_flag = CS_CDO_LOCAL_DEQ;
+
+    if (eqb->diff_pty_uniform) /* c_id = 0, cell_flag = 0 */
+      cs_equation_set_diffusion_property(eqp, 0, t_eval, 0, cb);
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
+
+      const cs_lnum_t  f_id = bf_id + quant->n_i_faces;
+      const cs_lnum_t  c_id = f2c->ids[bf_id + fidx_shift];
+
+      switch (face_bc->flag[bf_id]) {
+
+      case CS_CDO_BC_HMG_NEUMANN:
+        bflux[bf_id] = 0.;
+        break;
+
+      case CS_CDO_BC_NEUMANN:
+        {
+          cs_real_t  *neu_values = cb->values;
+
+          /* Set the local mesh structure for the current cell */
+          cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+
+          const short int  f = cs_cell_mesh_get_f(f_id, cm);
+
+          cs_equation_compute_neumann_fb(t_eval,
+                                         face_bc->def_ids[bf_id],
+                                         f,
+                                         quant,
+                                         eqp,
+                                         cm,
+                                         neu_values);
+
+          bflux[bf_id] = neu_values[f];
+        }
+        break;
+
+      default:
+        { /* Reconstruct a normal flux at the boundary face */
+
+          /* Set the local mesh structure for the current cell */
+          cs_cell_mesh_build(c_id, msh_flag | add_flag, connect, quant, cm);
+
+          const short int  f = cs_cell_mesh_get_f(f_id, cm);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
+          if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
+#endif
+          if (!eqb->diff_pty_uniform)
+            cs_property_tensor_in_cell(cm,
+                                       eqp->diffusion_property,
+                                       t_eval,
+                                       eqp->diffusion_hodge.inv_pty,
+                                       cb->dpty_mat);
+
+          /* Define a local buffer keeping the value of the discrete potential
+             for the current cell */
+          for (short int ff = 0; ff < cm->n_fc; ff++)
+            pot[ff] = pot_f[cm->f_ids[ff]];
+          pot[cm->n_fc] = pot_c[c_id];
+
+          /* Compute the boundary flux and store it */
+          cs_cdo_diffusion_sfb_cost_flux(f, eqp, cm, pot, cb, bflux + bf_id);
+        }
+        break;
+
+      } /* End of switch */
+
+    } /* End of loop on boundary faces */
+
+    BFT_FREE(pot);
+
+  } /* End of OpenMP block */
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation

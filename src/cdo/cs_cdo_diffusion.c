@@ -146,7 +146,7 @@ _compute_kappa_f(const cs_param_hodge_t     h_info,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute \f$ \int_{fb} \nabla (u) \cdot \nu_{fb} v \f$ where \p fb
- *         is a boundary faces (Co+St algorithm)
+ *         is a boundary face (Co+St algorithm)
  *
  * \param[in]       fb       index of the boundary face on the local numbering
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -3067,6 +3067,78 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
   }  /* Loop on face edges */
 
   return f_flux;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the normal diffusive flux for a face assuming only the
+ *          knowledge of the potential at faces and cell.
+ *          CO+ST algorithm is used for reconstructing the normal flux from
+ *          the degrees of freedom.
+ *
+ * \param[in]      f       face id in the cell mesh
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot     array of values of the potential (all the mesh)
+ * \param[in, out] cb      auxiliary structure dedicated to diffusion
+ * \param[out]     flux    pointer to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_sfb_cost_flux(short int                   f,
+                               const cs_equation_param_t  *eqp,
+                               const cs_cell_mesh_t       *cm,
+                               const cs_real_t            *pot,
+                               cs_cell_builder_t          *cb,
+                               cs_real_t                  *flux)
+{
+  if (flux == NULL)
+    return;
+
+  assert(eqp->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
+
+  const cs_real_t  beta = eqp->diffusion_hodge.coef;
+  const cs_quant_t  pfq = cm->face[f];
+
+  /* Compute the product: matpty*face unit normal */
+  cs_real_t  pty_nuf[3] = {0, 0, 0};
+  cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, pfq.unitv,
+                       pty_nuf);
+
+  /* Define a cellwise constant and consistent gradient */
+  /* -------------------------------------------------- */
+
+  cs_real_t  grd_cc[3] = {0, 0, 0};
+  cs_real_t  *g = cb->values;
+
+  /* Cellwise DoFs related to the discrete gradient (size: n_fc) */
+  for (short int ff = 0; ff < cm->n_fc; ff++) {
+
+    /* Delta of the potential along the dual edge (x_f - x_c) */
+    g[ff] = cm->f_sgn[ff]*(pot[ff] - pot[cm->n_fc]);
+
+    const double  gcoef = g[ff] * cm->face[ff].meas;
+    for (int k = 0; k < 3; k++)
+      grd_cc[k] += gcoef * cm->face[ff].unitv[k];
+
+  }  /* Loop on cell faces */
+
+  const double  invvol = 1/cm->vol_c;
+  for (int k = 0; k < 3; k++) grd_cc[k] *= invvol;
+
+  /* Add the stabilisation part which is constant on p_{f,c} */
+  const cs_nvec3_t  *deq = cm->dedge + f;
+  const cs_real_t  pfc_coef = 3*beta/(_dp3(pfq.unitv, deq->unitv));
+  const cs_real_t  delta = g[f] - deq->meas*_dp3(deq->unitv, grd_cc);
+  const cs_real_t  stab_coef = pfc_coef * delta;
+
+  cs_real_t  grd_reco[3] = {0., 0., 0.};
+  for (int k = 0; k < 3; k++)
+    grd_reco[k] = grd_cc[k] + stab_coef * pfq.unitv[k];
+
+  *flux = -pfq.meas * _dp3(grd_reco, pty_nuf);
 }
 
 /*----------------------------------------------------------------------------*/

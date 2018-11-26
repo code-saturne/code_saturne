@@ -2297,6 +2297,20 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
     }
     break;
 
+  case CS_SPACE_SCHEME_CDOFB:
+    {
+      const cs_real_t  *p_f = cs_equation_get_face_values(eq);
+      const cs_real_t  *p_c = cs_equation_get_cell_values(eq);
+
+      cs_cdofb_scaleq_boundary_diff_flux(t_eval,
+                                         eqp,
+                                         p_f,
+                                         p_c,
+                                         eq->builder,
+                                         diff_flux);
+    }
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               "%s: (Eq. %s). Not implemented.", __func__, eqp->name);
