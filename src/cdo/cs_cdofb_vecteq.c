@@ -484,7 +484,7 @@ _solve_fbv_system(cs_sles_t                    *sles,
                                               n_scatter_elts,
                                               matrix,
                                               rset,
-                                              x, b);
+                                              xsol, b);
 
   /* Solve the linear solver */
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
@@ -498,7 +498,7 @@ _solve_fbv_system(cs_sles_t                    *sles,
                                                     &n_iters,
                                                     &residual,
                                                     b,
-                                                    x,
+                                                    xsol,
                                                     0,      /* aux. size */
                                                     NULL);  /* aux. buffers */
 
@@ -1718,7 +1718,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 void *
 cs_cdofb_vecteq_free_context(void   *data)
 {
-  cs_cdofb_vecteq_t   *eqc  = (cs_cdofb_vecteq_t *)data;
+  cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)data;
 
   if (eqc == NULL)
     return eqc;
