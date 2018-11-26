@@ -527,7 +527,7 @@ _solve_fbv_system(cs_sles_t                    *sles,
 
   }
 
-  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, 3*n_faces, rhs, 6);
+  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, 3*n_faces, b, 6);
 #endif
 
   /* Free what can be freed at this stage */
