@@ -589,13 +589,24 @@ _vbs_solve_system(cs_sles_t                    *sles,
   cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
   int  n_iters = 0;
   double  residual = DBL_MAX;
+  cs_real_t  *xsol = NULL;
+
+  const cs_lnum_t  n_scatter_elts = n_vertices;
+  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+
+  if (n_cols > n_scatter_elts) {
+    assert(cs_glob_n_ranks > 1);
+    BFT_MALLOC(xsol, n_cols, cs_real_t);
+  }
+  else
+    xsol = x;
 
   /* Prepare solving (handle parallelism) */
   cs_gnum_t  nnz = cs_equation_prepare_system(1,          /* stride */
-                                              n_vertices, /* n_scatter_elts */
+                                              n_scatter_elts,
                                               matrix,
                                               rset,
-                                              x, b);
+                                              xsol, b);
 
   /* Solve the linear solver */
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
@@ -609,7 +620,7 @@ _vbs_solve_system(cs_sles_t                    *sles,
                                                     &n_iters,
                                                     &residual,
                                                     b,
-                                                    x,
+                                                    xsol,
                                                     0,      /* aux. size */
                                                     NULL);  /* aux. buffers */
 
@@ -623,8 +634,7 @@ _vbs_solve_system(cs_sles_t                    *sles,
 
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, /* type and stride */
-                         x,
-                         x);
+                         xsol, x);
 
   }
 
@@ -634,14 +644,16 @@ _vbs_solve_system(cs_sles_t                    *sles,
   if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, /* type and stride */
-                         b,
-                         b);
+                         b, b);
 
   cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_vertices, rhs, 6);
 #endif
 
   /* Free what can be freed at this stage */
   cs_sles_free(sles);
+
+  if (n_cols > n_scatter_elts)
+    BFT_FREE(xsol);
 
   return n_iters;
 }

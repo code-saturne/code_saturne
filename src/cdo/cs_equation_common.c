@@ -877,8 +877,6 @@ cs_equation_prepare_system(int                   stride,
                 cs_matrix_get_n_columns(matrix));
 #endif
 
-  assert(cs_matrix_get_n_columns(matrix) <= n_scatter_elts);
-
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
                              /* ============= */
 
