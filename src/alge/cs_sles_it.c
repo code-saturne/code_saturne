@@ -4384,7 +4384,7 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
         vx0 -= (m_row[jj]*vx[col_id[jj]]);
       }
 
-      vx0 *= 2*ad_inv[ii];
+      vx0 *= ad_inv[ii];
 
       vx[ii] = vx0;
     }
