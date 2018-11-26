@@ -271,7 +271,7 @@ class XMLElement:
             if not unicode characters are replaced by '?' character.
             Warning: do not use this method for comparison purpose!
             """
-            unicode_obj = self.el.toprettyxml()
+            unicode_obj = self.el.toprettyxml(indent='  ')
             try:
                 return unicode_obj.encode("utf-8", 'replace')
             except:
@@ -288,9 +288,9 @@ class XMLElement:
             try:
                 # self.el.toprettyxml() would be enough, except for the root,
                 # where the encoding type is written only where specified.
-                return self.el.toprettyxml("utf-8").decode()
+                return self.el.toprettyxml(encoding="utf-8", indent='  ').decode()
             except:
-                unicode_obj = self.el.toprettyxml(encoding=sys.stdout.encoding)
+                unicode_obj = self.el.toprettyxml(encoding=sys.stdout.encoding, indent='  ')
                 return unicode_obj.decode()
 
 
@@ -1095,13 +1095,13 @@ class XMLDocument(XMLElement):
             Return the XMLDocument to a byte string with \n and \t.
             Unicode characters are encoded.
             """
-            return self.doc.toprettyxml(encoding = "utf-8")
+            return self.doc.toprettyxml(encoding="utf-8", indent='  ')
     else:
         def toPrettyString(self):
             """
             Return the XMLDocument to a string with \n and \t.
             """
-            return self.doc.toprettyxml(encoding = "utf-8").decode()
+            return self.doc.toprettyxml(encoding="utf-8", indent='  ').decode()
 
 
     if sys.version[0] == '2':
@@ -1114,7 +1114,7 @@ class XMLDocument(XMLElement):
             header, because it is already encoded!
             Warning: do not use this method for comparison purpose!
             """
-            unicode_obj = self.el.toprettyxml()
+            unicode_obj = self.el.toprettyxml(indent='  ')
             try:
                 return unicode_obj.encode("utf-8",'replace')
             except:
@@ -1130,9 +1130,9 @@ class XMLDocument(XMLElement):
             Warning: do not use this method for comparison purposes!
             """
             try:
-                return self.el.toprettyxml("utf-8").decode()
+                return self.el.toprettyxml(encoding="utf-8", indent='  ').decode()
             except:
-                unicode_obj = self.el.toprettyxml(encoding=sys.stdout.encoding)
+                unicode_obj = self.el.toprettyxml(encoding=sys.stdout.encoding, indent='  ')
                 return unicode_obj.decode()
 
 
