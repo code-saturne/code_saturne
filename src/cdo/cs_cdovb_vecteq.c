@@ -580,6 +580,7 @@ _vbv_solve_system(cs_sles_t                    *sles,
   if (n_cols > n_scatter_elts) {
     assert(cs_glob_n_ranks > 1);
     BFT_MALLOC(xsol, n_cols, cs_real_t);
+    memcpy(xsol, x, n_scatter_elts*sizeof(cs_real_t));
   }
   else
     xsol = x;
