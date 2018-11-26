@@ -1873,7 +1873,9 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                        retval);
 
     if (cs_glob_n_ranks > 1)
-      cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
+      /* Stride=1 since the global numbering is adapted in each case
+       * (scalar-, vector-valued equations) */
+      cs_range_set_sync(rs, CS_DOUBLE, 1, (void *)retval);
 
   } /* Located at primal vertices */
 
@@ -1921,7 +1923,9 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                        retval);
 
     if (cs_glob_n_ranks > 1)
-      cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
+      /* Stride=1 since the global numbering is adapted in each case
+       * (scalar-, vector-valued equations) */
+      cs_range_set_sync(rs, CS_DOUBLE, 1, (void *)retval);
 
   } /* Located at primal faces */
 
@@ -2182,7 +2186,9 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
     }
 
     if (cs_glob_n_ranks > 1)
-      cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
+      /* Stride=1 since the global numbering is adapted in each case
+       * (scalar-, vector-valued equations) */
+      cs_range_set_sync(rs, CS_DOUBLE, 1, (void *)retval);
 
   } /* Deal with a selection of cells */
 
