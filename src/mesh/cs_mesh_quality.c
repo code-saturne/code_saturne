@@ -899,7 +899,7 @@ _compute_warp_error(const cs_mesh_t              *mesh,
         tens[ki][kj] *= invvol_c;
 
     warp_error[c_id] =
-      fabs(cs_math_33_determinant((const cs_real_t (*)[3])tens) - 1);
+      fabs(cs_math_33_determinant((const cs_real_t (*)[3])tens) - 1.);
 
   } // Loop on cells
 

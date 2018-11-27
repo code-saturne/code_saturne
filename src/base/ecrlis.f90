@@ -20,35 +20,33 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file ecrlis.f90
+!>
+!> \brief This subroutine writes listing information on equation convergence.
+!
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ncel          total number of cells
+!> \param[in]     ncelet        total number of cells including halo
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     cell_f_vol    (fluid) cell volume
+!_______________________________________________________________________________
+
+
 subroutine ecrlis &
 !================
 
  ( ncelet , ncel   ,                                     &
-   dt     , volume )
-
-!===============================================================================
-!  FONCTION  :
-!  ---------
-
-! ROUTINE D'ECRITURE DES INFOS LISTING
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! dt   (ncelet)    ! tr ! <-- ! valeur du pas de temps                         !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet)         !    !     !                                                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+   dt     , cell_f_vol )
 
 !===============================================================================
 ! Module files
@@ -74,7 +72,7 @@ use cs_c_bindings
 implicit none
 
 integer          ncelet, ncel
-double precision dt(ncelet), volume(ncelet)
+double precision dt(ncelet), cell_f_vol(ncelet)
 
 ! Local variables
 
@@ -191,10 +189,10 @@ do f_id = 0, nfld - 1
       call field_get_val_prev_s(f_id, field_s_vp)
 
       do icel = 1, ncel
-        w1(icel) = volume(icel)*(field_s_v(icel)-field_s_vp(icel))/sqrt(dt(icel))
+        w1(icel) = (field_s_v(icel)-field_s_vp(icel))/sqrt(dt(icel))
       enddo
 
-      dervar(1) = cs_gres(ncel,volume,w1,w1)
+      dervar(1) = cs_gres(ncel,cell_f_vol,w1,w1)
 
     ! Pressure time drift (computed in resopv.f90)
     else if (f_dim.eq.1) then
@@ -209,11 +207,10 @@ do f_id = 0, nfld - 1
       do c_id = 1, f_dim
 
         do icel = 1, ncel
-          w1(icel) = volume(icel) &
-                   * (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/sqrt(dt(icel))
+          w1(icel) = (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/sqrt(dt(icel))
         enddo
 
-        dervar(c_id) = cs_gres(ncel,volume,w1,w1)
+        dervar(c_id) = cs_gres(ncel,cell_f_vol,w1,w1)
 
       enddo
 
@@ -236,14 +233,14 @@ do f_id = 0, nfld - 1
       call field_get_val_s(f_id, field_s_v)
       call field_get_val_prev_s(f_id, field_s_vp)
       do icel = 1, ncel
-        w1(icel) = volume(icel)*(field_s_v(icel)-field_s_vp(icel))/dt(icel)
-        w2(icel) = volume(icel)*field_s_v(icel)
+        w1(icel) = (field_s_v(icel)-field_s_vp(icel))/dt(icel)
+        w2(icel) = field_s_v(icel)
       enddo
 
       ! L2 error, square root
 
-      varres(1) = sqrt(cs_gres(ncel,volume,w1,w1))
-      varnrm(1) = sqrt(cs_gres(ncel,volume,w2,w2))
+      varres(1) = sqrt(cs_gres(ncel,cell_f_vol,w1,w1))
+      varnrm(1) = sqrt(cs_gres(ncel,cell_f_vol,w2,w2))
 
       if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
       sinfo%l2residual = varres(1)
@@ -257,15 +254,14 @@ do f_id = 0, nfld - 1
       do c_id = 1, f_dim
 
         do icel = 1, ncel
-          w1(icel) = volume(icel) &
-                   * (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/dt(icel)
-          w2(icel) = volume(icel)*field_v_v(c_id, icel)
+          w1(icel) = (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/dt(icel)
+          w2(icel) = field_v_v(c_id, icel)
         enddo
 
         ! L2 error, NO square root
 
-        varres(c_id) = cs_gres(ncel,volume,w1,w1)
-        varnrm(c_id) = cs_gres(ncel,volume,w2,w2)
+        varres(c_id) = cs_gres(ncel,cell_f_vol,w1,w1)
+        varnrm(c_id) = cs_gres(ncel,cell_f_vol,w2,w2)
 
         if (c_id.gt.1) then
           varres(1) = varres(1) + varres(c_id)

@@ -1157,10 +1157,6 @@ do while (iterns.le.nterup)
 
   endif
 
-  !     CALCUL DE L'AMORTISSEMENT DE VAN DRIEST
-  !     OU CALCUL DE Y+ POUR LE LAGRANGIEN
-
-
   ! Compute y+ if needed
   ! and Van Driest "amortissement"
   if (itytur.eq.4 .and. idries.eq.1) then

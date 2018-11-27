@@ -1024,7 +1024,7 @@ else
 endif
 if (modntl.eq.0) then
 
-  call ecrlis(ncelet, ncel, dt, volume)
+  call ecrlis(ncelet, ncel, dt, cell_f_vol)
 
   call log_iteration
 

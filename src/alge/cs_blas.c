@@ -664,7 +664,7 @@ _cs_dot_xx_yy_xy_xz_yz_superblock(cs_lnum_t                    n,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the global residual of 2 extensive vectors:
- *        1/sum(vol) . sum(X.Y/vol)
+ *        1/sum(vol) . sum(X.Y.vol)
  *        using a superblock algorithm.
  *
  * In parallel mode, the local results are summed on the default
@@ -716,7 +716,7 @@ _cs_gres_superblock(cs_lnum_t         n,
         double cdot = 0.;
         double cvtot = 0.;
         for (cs_lnum_t i = start_id; i < end_id; i++) {
-          cdot += _x[i]*_y[i]/_vol[i];
+          cdot += _x[i] * _y[i] * _vol[i];
           cvtot += _vol[i];
         }
         sdot += cdot;
@@ -1147,7 +1147,7 @@ _cs_dot_xx_yy_xy_xz_yz_kahan(cs_lnum_t                    n,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the global residual of 2 extensive vectors:
- *        1/sum(vol) . sum(X.Y/vol)
+ *        1/sum(vol) . sum(X.Y.vol)
  *        using Kahan summation.
  *
  * In parallel mode, the local results are summed on the default
@@ -1186,7 +1186,7 @@ _cs_gres_kahan(cs_lnum_t         n,
 
     for (cs_lnum_t i = 0; i < _n; i++) {
       double t[2];
-      double u[2] = {(_x[i]*_y[i]/_vol[i]) - c[0],
+      double u[2] = {(_x[i]*_y[i]*_vol[i]) - c[0],
                      _vol[i]               - c[1]};
       for (int j = 0; j < 2; j++) {
         t[j] = s[j] + u[j];
