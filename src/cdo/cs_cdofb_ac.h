@@ -42,10 +42,6 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_equation.h"
-#include "cs_equation_common.h"
-#include "cs_equation_param.h"
-#include "cs_field.h"
-#include "cs_matrix.h"
 #include "cs_mesh.h"
 #include "cs_navsto_coupling.h"
 #include "cs_navsto_param.h"
@@ -63,6 +59,28 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/*============================================================================
+ * Inline static function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the values of the velocity on the faces
+ *
+ * \param[in] scheme_context  pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t *
+cs_cdofb_ac_get_face_velocity(void    *scheme_context)
+{
+  CS_UNUSED(scheme_context);
+
+  return cs_equation_get_face_values(cs_equation_by_name("momentum"));
+}
 
 /*============================================================================
  * Public function prototypes
@@ -139,8 +157,8 @@ cs_cdofb_ac_init_pressure(const cs_navsto_param_t     *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
- *         a Ac-Lagrangian Augmented approach.
+ * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
+ *         using a Artificial Compressibility approach and an Euler time scheme
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
@@ -149,27 +167,25 @@ cs_cdofb_ac_init_pressure(const cs_navsto_param_t     *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_ac_compute(const cs_mesh_t              *mesh,
-                    const cs_navsto_param_t      *nsp,
-                    void                         *scheme_context);
+cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
+                             const cs_navsto_param_t      *nsp,
+                             void                         *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the values of the velocity on the faces
+ * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
+ *         using a Artificial Compressibility approach and a theta time scheme
  *
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
- *
- * \return a pointer to an array of \ref cs_real_t
+ * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
+ * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
-inline static cs_real_t *
-cs_cdofb_ac_get_face_velocity(void    *scheme_context)
-{
-  CS_UNUSED(scheme_context);
-
-  return cs_equation_get_face_values(cs_equation_by_name("momentum"));
-}
+void
+cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
+                          const cs_navsto_param_t      *nsp,
+                          void                         *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 

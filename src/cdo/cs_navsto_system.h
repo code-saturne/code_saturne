@@ -220,9 +220,15 @@ typedef struct {
    */
   cs_navsto_init_values_t           *init_pressure;
 
+  /*! \var compute_steady
+   *  Pointer of functions related to resolution of the Navier-Stokes steady
+   *  system. Handle the build of the system and its resolution
+   */
+  cs_navsto_compute_t               *compute_steady;
+
   /*! \var compute
-   *  Pointer of functions related to resolution of the Navier-Stokes system
-   *  Handle the build of the system and its resolution
+   *  Pointer of functions related to resolution of the Navier-Stokes unsteady
+   *  system. Handle the build of the system and its resolution
    */
   cs_navsto_compute_t               *compute;
 

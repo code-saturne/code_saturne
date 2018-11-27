@@ -40,27 +40,13 @@
 #include "cs_base.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
-#include "cs_sdm.h"
-#include "cs_math.h"
 #include "cs_equation.h"
+#include "cs_math.h"
+#include "cs_sdm.h"
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add the grad-div part to the local matrix (i.e. for the current
- *         cell)
- *
- * \param[in]      n_fc       local number of faces for the current cell
- * \param[in]      zeta       scalar coefficient for the grad-div operator
- * \param[in]      div        divergence
- * \param[in, out] mat        local system matrix to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_add_grad_div(short int          n_fc,
-                       const cs_real_t    zeta,
-                       const cs_real_t    div[],
-                       cs_sdm_t          *mat);
+/*============================================================================
+ * Static inline public function prototypes
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -76,7 +62,7 @@ cs_navsto_add_grad_div(short int          n_fc,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static cs_real_t
+static inline cs_real_t
 cs_navsto_get_cell_divergence(const cs_lnum_t               c_id,
                               const cs_cdo_quantities_t    *quant,
                               const cs_adjacency_t         *c2f,
@@ -105,6 +91,7 @@ cs_navsto_get_cell_divergence(const cs_lnum_t               c_id,
         cs_math_3_dot_product(_val, _nuf) / cs_math_3_norm(_nuf);
 
     } /* Boundary face */
+
   } /* Loop on cell faces */
 
   div /= quant->cell_vol[c_id];
@@ -123,7 +110,7 @@ cs_navsto_get_cell_divergence(const cs_lnum_t               c_id,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+static inline void
 cs_navsto_get_divergence_vect(const cs_cell_mesh_t  *cm,
                               cs_real_t              div[])
 {
@@ -145,22 +132,27 @@ cs_navsto_get_divergence_vect(const cs_cell_mesh_t  *cm,
   } /* Loop on cell faces */
 }
 
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
- /*!
- * \brief  Solve the linear system (adaptation of cs_equation_solve())
+/*!
+ * \brief  Add the grad-div part to the local matrix (i.e. for the current
+ *         cell)
  *
- * \param[in, out]  eq    pointer to the momentum cs_equation_t structure
- * \param[in, out]  x     pointer to temporary velocity on faces
- * \param[in, out]  b     pointer to auxiliary rhs, should be NULL
- *
- * \return the number of iterations of the linear solver
+ * \param[in]      n_fc       local number of faces for the current cell
+ * \param[in]      zeta       scalar coefficient for the grad-div operator
+ * \param[in]      div        divergence
+ * \param[in, out] mat        local system matrix to update
  */
 /*----------------------------------------------------------------------------*/
 
-int
-cs_navsto_solve(cs_equation_t   *eq,
-                cs_real_t       *x,
-                cs_real_t       *b);
+void
+cs_navsto_add_grad_div(short int          n_fc,
+                       const cs_real_t    zeta,
+                       const cs_real_t    div[],
+                       cs_sdm_t          *mat);
 
 /*----------------------------------------------------------------------------*/
 

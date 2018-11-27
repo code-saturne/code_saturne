@@ -137,7 +137,8 @@ _allocate_navsto_system(void)
   navsto->free_scheme_context = NULL;
   navsto->init_velocity = NULL;
   navsto->init_pressure = NULL;
-  navsto->compute = NULL;
+  navsto->compute_steady = NULL;
+  navsto->compute= NULL;
 
   return navsto;
 }
@@ -507,7 +508,22 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
       ns->free_scheme_context = cs_cdofb_uzawa_free_scheme_context;
       ns->init_velocity = cs_cdofb_uzawa_init_velocity;
       ns->init_pressure = cs_cdofb_uzawa_init_pressure;
-      ns->compute = cs_cdofb_uzawa_compute;
+      ns->compute_steady = cs_cdofb_uzawa_compute_steady;
+      switch (nsp->time_scheme) {
+      case CS_TIME_SCHEME_EULER_IMPLICIT:
+        ns->compute = cs_cdofb_uzawa_compute_implicit;
+        break;
+      case CS_TIME_SCHEME_THETA:
+      case CS_TIME_SCHEME_CRANKNICO:
+        ns->compute = cs_cdofb_uzawa_compute_theta;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+            "%s: Invalid time scheme for the Uzawa coupling", __func__);
+        break;
+
+      } /* Switch */
 
       cs_cdofb_uzawa_init_common(quant, connect, time_step);
       break;
@@ -517,7 +533,26 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
       ns->free_scheme_context = cs_cdofb_ac_free_scheme_context;
       ns->init_velocity = cs_cdofb_ac_init_velocity;
       ns->init_pressure = cs_cdofb_ac_init_pressure;
-      ns->compute = cs_cdofb_ac_compute;
+      ns->compute_steady = NULL;
+      switch (nsp->time_scheme) {
+      case CS_TIME_SCHEME_STEADY:
+        bft_error(__FILE__, __LINE__, 0, "%s: The Artificial Compressibility "
+            "can be used only in unsteady problems", __func__);
+
+      case CS_TIME_SCHEME_EULER_IMPLICIT:
+        ns->compute = cs_cdofb_ac_compute_implicit;
+        break;
+      case CS_TIME_SCHEME_THETA:
+      case CS_TIME_SCHEME_CRANKNICO:
+        ns->compute = cs_cdofb_ac_compute_theta;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, "%s: Invalid time scheme for the "
+            " Artificial Compressibility coupling", __func__);
+        break;
+
+      } /* Switch */
 
       cs_cdofb_ac_init_common(quant, connect, time_step);
       break;
@@ -617,7 +652,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t      *mesh)
 
   /* Build and solve the Navier-Stokes system */
   if (nsp->time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
-    ns->compute(mesh, ns->param, ns->scheme_context);
+    ns->compute_steady(mesh, ns->param, ns->scheme_context);
 
   /* TODO: Update the variable states */
 

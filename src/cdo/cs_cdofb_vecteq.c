@@ -626,7 +626,7 @@ cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
 
   }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 0
   cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, 3*n_faces, x, 6);
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
@@ -641,8 +641,6 @@ cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
 #endif
 
   /* Free what can be freed at this stage */
-  cs_sles_free(sles);
-
   if (n_cols > n_scatter_elts)
     BFT_FREE(xsol);
 
@@ -840,15 +838,33 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  /* Now solve the system */
-  cs_cdofb_vecteq_solve_system(cs_sles_find_or_add(field_id, NULL),
-                               matrix, eqp,
-                               eqc->face_values, rhs);
+  /* Copy current field values to previous values
+   * Steady, but let us suppose we have an initial condition */
+  cs_field_current_to_previous(fld);
+
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t1, &t2);
+
+  /* Now solve the system. face_val is overwritten during the solve step */
+  cs_real_t *face_val = eqc->face_values;
+  cs_sles_t *sles = cs_sles_find_or_add(field_id, NULL);
+
+  cs_cdofb_vecteq_solve_system(sles, matrix, eqp, face_val, rhs);
 
   /* Update field */
-  cs_cdofb_vecteq_update_fields(&(eqb->tce), fld, eqc);
+  cs_timer_t  t3 = cs_timer_time();
+
+  /* Compute values at cells pc from values at faces pf
+     pc = acc^-1*(RHS - Acf*pf) */
+  cs_static_condensation_recover_vector(cs_shared_connect->c2f,
+                                        eqc->rc_tilda, eqc->acf_tilda,
+                                        face_val, fld->val);
+
+  cs_timer_t  t4 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t3, &t4);
 
   /* Free remaining buffers */
+  cs_sles_free(sles);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
 }
@@ -1042,15 +1058,32 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  /* Now solve the system */
-  cs_cdofb_vecteq_solve_system(cs_sles_find_or_add(field_id, NULL),
-                               matrix, eqp,
-                               eqc->face_values, rhs);
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(fld);
 
-  /* Update field */
-  cs_cdofb_vecteq_update_fields(&(eqb->tce), fld, eqc);
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t1, &t2);
+
+  /* Now solve the system. face_val is overwritten during the solve step */
+  cs_real_t *face_val = eqc->face_values;
+  cs_sles_t *sles = cs_sles_find_or_add(field_id, NULL);
+
+  cs_cdofb_vecteq_solve_system(sles, matrix, eqp, face_val, rhs);
+
+  cs_timer_t  t3 = cs_timer_time();
+
+  /* Update field.
+   * Compute values at cells pc from values at faces pf
+   * pc = acc^-1*(RHS - Acf*pf) */
+  cs_static_condensation_recover_vector(cs_shared_connect->c2f,
+                                        eqc->rc_tilda, eqc->acf_tilda,
+                                        face_val, fld->val);
+
+  cs_timer_t  t4 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t3, &t4);
 
   /* Free remaining buffers */
+  cs_sles_free(sles);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
 }
@@ -1282,15 +1315,32 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  /* Now solve the system */
-  cs_cdofb_vecteq_solve_system(cs_sles_find_or_add(field_id, NULL),
-                               matrix, eqp,
-                               eqc->face_values, rhs);
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(fld);
 
-  /* Update field */
-  cs_cdofb_vecteq_update_fields(&(eqb->tce), fld, eqc);
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t1, &t2);
+
+  /* Now solve the system. face_val is overwritten during the solve step */
+  cs_real_t  *face_val = eqc->face_values;
+  cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
+
+  cs_cdofb_vecteq_solve_system(sles, matrix, eqp, face_val, rhs);
+
+  cs_timer_t  t3 = cs_timer_time();
+
+  /* Update field
+   * Compute values at cells pc from values at faces pf
+   * pc = acc^-1*(RHS - Acf*pf) */
+  cs_static_condensation_recover_vector(cs_shared_connect->c2f,
+                                        eqc->rc_tilda, eqc->acf_tilda,
+                                        face_val, fld->val);
+
+  cs_timer_t  t4 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t3, &t4);
 
   /* Free remaining buffers */
+  cs_sles_free(sles);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
 }
