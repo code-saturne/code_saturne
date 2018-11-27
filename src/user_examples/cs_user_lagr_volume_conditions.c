@@ -48,6 +48,7 @@
 #include "cs_base.h"
 #include "cs_volume_zone.h"
 #include "cs_math.h"
+#include "cs_notebook.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"

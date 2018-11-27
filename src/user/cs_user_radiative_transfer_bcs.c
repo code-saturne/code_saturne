@@ -64,6 +64,7 @@
 #include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_multigrid.h"
+#include "cs_notebook.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_properties.h"

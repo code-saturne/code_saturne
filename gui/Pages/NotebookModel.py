@@ -230,7 +230,7 @@ class NotebookModel(Model):
         otval = node['oturns']
         if not otval:
             otval = self.defaultNotebookValues()['oturns']
-            self.setVariableValue(idx, otval)
+            self.setVariableOt(idx, otval)
 
         return otval
 

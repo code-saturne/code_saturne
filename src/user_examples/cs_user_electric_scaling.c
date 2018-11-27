@@ -46,6 +46,7 @@
 #include "bft_printf.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_notebook.h"
 #include "cs_parall.h"
 #include "cs_physical_model.h"
 

@@ -62,6 +62,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_halo.h"
 #include "cs_log.h"
+#include "cs_notebook.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"

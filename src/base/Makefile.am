@@ -118,6 +118,7 @@ cs_map.h \
 cs_math.h \
 cs_measures_util.h \
 cs_rank_neighbors.h \
+cs_notebook.h \
 cs_numbering.h \
 cs_opts.h \
 cs_order.h \
@@ -268,6 +269,7 @@ cs_interpolate.c \
 csinit.f90 \
 cs_log_iteration.c \
 cs_log_setup.c \
+cs_notebook.c \
 cs_numbering.c \
 cs_measures_util.c \
 cs_mesh_tagmr.f90 \

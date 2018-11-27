@@ -57,6 +57,7 @@
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_quantities.h"
+#include "cs_notebook.h"
 #include "cs_parameters.h"
 #include "cs_physical_model.h"
 #include "cs_time_step.h"
