@@ -33,7 +33,7 @@ called by CFDSTUDYGUI_SolverGUI.
 #-------------------------------------------------------------------------------
 
 from __future__ import print_function
-import os, sys, string, logging
+import os, sys, logging
 
 
 #-------------------------------------------------------------------------------

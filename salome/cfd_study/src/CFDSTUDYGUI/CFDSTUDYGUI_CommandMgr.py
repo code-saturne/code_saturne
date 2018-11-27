@@ -178,7 +178,7 @@ def runCommand(cmd, start_directory, prefix, *args):
         pipe = subprocess.Popen(cmd, bufsize = 0, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         while True:
-            text = pipe.stdout.readline()
+            text = pipe.stdout.readline().decode()
             if not text:
                 break
 

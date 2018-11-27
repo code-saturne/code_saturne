@@ -80,8 +80,7 @@ log.setLevel(logging.NOTSET)
 # Global definitions
 #-------------------------------------------------------------------------------
 __MODULE_NAME__ = "CFDSTUDY"
-studyId = salome.myStudyId
-d_activation = {}
+
 
 # Desktop manager: instance of CFDSTUDYGUI_DesktopMgr class to store the SALOME Workspace
 _DesktopMgr = CFDSTUDYGUI_DesktopMgr.CFDSTUDYGUI_DesktopMgr()
@@ -133,12 +132,12 @@ def windows():
     return winMap
 
 
-def closeStudy(aStudyId) :
-    """
-    This method is called when salome study is closed (Salome desktop button File -> close -> close w/o saving button) and Salome Main window desktop is already available
-    """
-    if salome_version.getVersion() >= '7.5.0' :
-        CFDSTUDYGUI_SolverGUI._c_CFDGUI.cleanAllDock(sgPyQt.getDesktop())
+#MPdef closeStudy(aStudyId) :
+#MP    """
+#MP    This method is called when salome study is closed (Salome desktop button File -> close -> close w/o saving button) and Salome Main window desktop is already available
+#MP    """
+#MP    if salome_version.getVersion() >= '7.5.0' :
+#MP        CFDSTUDYGUI_SolverGUI._c_CFDGUI.cleanAllDock(sgPyQt.getDesktop())
 
 
 def views():
@@ -205,9 +204,9 @@ def activate():
     @return: C{True} only if the activation is successful.
     """
     log.debug("activate")
-    global d_activation, studyId
+#MP    global d_activation, studyId
     dsk = sgPyQt.getDesktop()
-    studyId = sgPyQt.getStudyId()
+#MP    studyId = sgPyQt.getStudyId()
     dsk.setTabPosition(Qt.RightDockWidgetArea,QTabWidget.South)
     dsk.setTabPosition(Qt.LeftDockWidgetArea,QTabWidget.South)
 
@@ -218,42 +217,42 @@ def activate():
     # instance of the CFDSTUDYGUI_ActionsHandler class for the current desktop
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
 
-    if studyId not in list(d_activation.keys()):
-        d_activation[studyId] = 1
+#MP    if studyId not in list(d_activation.keys()):
+#MP        d_activation[studyId] = 1
 
-    if d_activation[studyId] == 1:
-        d_activation[studyId] = 0
-        env_saturne, mess1 = CheckCFD_CodeEnv(CFD_Saturne)
-        env_neptune, mess2 = CheckCFD_CodeEnv(CFD_Neptune)
+#MP    if d_activation[studyId] == 1:
+#MP        d_activation[studyId] = 0
+    env_saturne, mess1 = CheckCFD_CodeEnv(CFD_Saturne)
+    env_neptune, mess2 = CheckCFD_CodeEnv(CFD_Neptune)
 
-        log.debug("activate -> env_saturne = %s" % env_saturne)
-        log.debug("activate -> env_neptune = %s" % env_neptune)
+    log.debug("activate -> env_saturne = %s" % env_saturne)
+    log.debug("activate -> env_neptune = %s" % env_neptune)
 
-        if not env_saturne and not env_neptune:
-            QMessageBox.critical(ActionHandler.dskAgent().workspace(),
-                                 "Error", mess1, QMessageBox.Ok, 0)
-            QMessageBox.critical(ActionHandler.dskAgent().workspace(),
-                                 "Error", mess2, QMessageBox.Ok, 0)
-            d_activation[studyId] = 1
+    if not env_saturne and not env_neptune:
+        QMessageBox.critical(ActionHandler.dskAgent().workspace(),
+                             "Error", mess1, QMessageBox.Ok, 0)
+        QMessageBox.critical(ActionHandler.dskAgent().workspace(),
+                             "Error", mess2, QMessageBox.Ok, 0)
+#MP        d_activation[studyId] = 1
+        return False
+
+    if env_neptune:
+        if mess2 != "":
+            mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
+            cfdstudyMess.aboutMessage(mess)
+#MP            d_activation[studyId] = 1
             return False
+        else:
+            ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, env_neptune)
 
-        if env_neptune:
-            if mess2 != "":
-                mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
-                cfdstudyMess.aboutMessage(mess)
-                d_activation[studyId] = 1
-                return False
-            else:
-                ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, env_neptune)
-
-        elif env_saturne:
-            if mess1 != "":
-                mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
-                cfdstudyMess.aboutMessage(mess)
-                d_activation[studyId] = 1
-                return False
-            else:
-                ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, False)
+    elif env_saturne:
+        if mess1 != "":
+            mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
+            cfdstudyMess.aboutMessage(mess)
+#MP            d_activation[studyId] = 1
+            return False
+        else:
+            ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, False)
 
     ActionHandler._SalomeSelection.currentSelectionChanged.connect(ActionHandler.updateActions)
 
@@ -328,8 +327,8 @@ def createPopupMenu(popup, context):
                             dictSobj[sobj] = id
 
         if dictSobj != {}:
-            if CFDSTUDYGUI_DataModel.isASmeshListObject(dictSobj.keys()) :
-                for sobj in dictSobj.keys():
+            if CFDSTUDYGUI_DataModel.isASmeshListObject(list(dictSobj.keys())) :
+                for sobj in list(dictSobj.keys()):
                     if sobj.GetFatherComponent().GetName() == "Mesh":
                         if CFDSTUDYGUI_DataModel.getMeshFromMesh(sobj) == None:
                             meshGroupObject,group = CFDSTUDYGUI_DataModel.getMeshFromGroup(sobj)
@@ -342,9 +341,9 @@ def createPopupMenu(popup, context):
                             ActionHandler.customPopup(id, popup)
                             popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
 
-            elif CFDSTUDYGUI_DataModel.isACFDSTUDYListObject(dictSobj.keys()):
-                if CFDSTUDYGUI_DataModel.hasTheSameType(dictSobj.keys()):
-                    for sobj in dictSobj.keys():
+            elif CFDSTUDYGUI_DataModel.isACFDSTUDYListObject(list(dictSobj.keys())):
+                if CFDSTUDYGUI_DataModel.hasTheSameType(list(dictSobj.keys())):
+                    for sobj in list(dictSobj.keys()):
                         id = dictSobj[sobj]
                         ActionHandler.customPopup(id, popup)
                         fathername = sobj.GetFather().GetName()

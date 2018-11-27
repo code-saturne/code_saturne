@@ -35,7 +35,7 @@ the selected code in the SALOME workspace.
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import os, sys, string, logging
+import os, sys, logging
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -53,7 +53,7 @@ from code_saturne.Base.QtWidgets import *
 # Application modules
 #-------------------------------------------------------------------------------
 
-from CFDSTUDYGUI_Commons import CFD_Code, CFD_Saturne, CFD_Neptune, sgPyQt
+from CFDSTUDYGUI_Commons import CFD_Code, CFD_Saturne, CFD_Neptune, sgPyQt, sg
 from CFDSTUDYGUI_Commons import LoggingMgr
 import CFDSTUDYGUI_DataModel
 from CFDSTUDYGUI_Management import CFDGUI_Management
@@ -82,7 +82,7 @@ _c_CFDGUI = CFDGUI_Management()
 def getObjectBrowserDock():
     dock = None
     dsk = sgPyQt.getDesktop()
-    studyId = sgPyQt.getStudyId()
+    studyId = 1
     for dock in dsk.findChildren(QDockWidget):
         dockTitle = str(dock.windowTitle())
         if (dockTitle == 'Object Browser'):
@@ -109,8 +109,7 @@ def updateObjectBrowser():
     """
     force le regroupement en onglets des QTreeView apres updateObjBrowser
     """
-    studyId = sgPyQt.getStudyId()
-    sgPyQt.updateObjBrowser(studyId, 1)
+    sg.updateObjBrowser()
     tabObjectBrowser()
 
 
@@ -182,7 +181,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
 
     def isActive(self):
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         if _c_CFDGUI.getDocks(studyId) == {}:
             self._CurrentWindow = None
 
@@ -234,17 +233,17 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         Build the Dock Title Name STUDY.CASE.file.xml with the entire file Name path
         """
-        lnames = string.split(xml_file, "/")
+        lnames = xml_file.split("/")
         if len(lnames) < 4:
             return None
         xmlname   = lnames[-1]
         casename  = lnames[-3]
         studyname = lnames[-4]
-        return string.join([studyname, casename, xmlname], ".")
+        return '.'.join([studyname, casename, xmlname])
 
 
     def getDockTitleNameFromOB(self, studyname, casename, xmlname):
-        return string.join([studyname, casename, xmlname], ".")
+        return '.'.join([studyname, casename, xmlname])
 
 
     def onUndo(self):
@@ -403,7 +402,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         dock.raise_()
 
         #Add Dock windows are managed by CFDGUI_Management class
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         aStudyCFD = aCase.GetFather()
         aCaseCFD  = aCase
         xmlFileName = str(Title)
@@ -424,7 +423,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         istoggled referred to CFD Window dock widget
         """
         log.debug("setdockWB")
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         dock = self.sender().parent()
         log.debug("setdockWB -> %s" % (dock,))
 
@@ -450,7 +449,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         istoggled referred to Window browser dock widget
         """
         log.debug("setdock")
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         dockWB = self.sender().parent()
         log.debug("setdock -> %s" % (dockWB,))
 
@@ -477,7 +476,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         When we click on a cfd study window tab, the cfd study window appears and the associated CFD window browser raises too
         """
 
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         dock = self.sender()
         log.debug("setdockWindowBrowserActivated -> %s" % (dock,))
 
@@ -507,7 +506,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         mv is the Main CFD window allocated by MainView code
         When we click on a  CFD window browser tab, the CFD window browser appears and the associated cfd study window raises too
         """
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         dockWB = self.sender()
         log.debug("setdockWindowActivated -> %s" % (dockWB,))
 
@@ -538,7 +537,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         We can have one or several of them with the right click on the main menu bar of
         Salome
         """
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         if _c_CFDGUI != None:
           _c_CFDGUI.hideDocks(studyId)
 
@@ -547,7 +546,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         Show all the dock windows of CFDSTUDY GUI, when activating Salome CFDSTUDY module
         """
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         if _c_CFDGUI != None:
             _c_CFDGUI.showDocks(studyId)
             _c_CFDGUI.tabifyDockWindows(sgPyQt.getDesktop(),studyId)
@@ -564,14 +563,14 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
 
     def getStudyCaseXmlNames(self, mw):
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         if _c_CFDGUI != None:
             studyCFDName, caseName, xmlName  = _c_CFDGUI.getStudyCaseXmlNames(studyId, mw)
         return studyCFDName, caseName, xmlName
 
 
     def getCase(self, mw):
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         if _c_CFDGUI != None:
             case  = _c_CFDGUI.getCase(studyId,mw)
         return case
@@ -583,7 +582,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         log.debug("removeDockWindow -> %s %s" % (studyCFDName, caseName))
         dsk = sgPyQt.getDesktop()
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         if _c_CFDGUI != None:
            _c_CFDGUI.delDockfromStudyAndCaseNames(dsk, studyId, studyCFDName, caseName)
 
@@ -594,7 +593,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         log.debug("removeDockWindow -> %s %s %s" % (studyCFDName, caseName, xmlName))
         dsk = sgPyQt.getDesktop()
-        studyId = sgPyQt.getStudyId()
+        studyId = 1
         if _c_CFDGUI != None:
            _c_CFDGUI.delDock(dsk, studyId, studyCFDName, caseName, xmlName)
 

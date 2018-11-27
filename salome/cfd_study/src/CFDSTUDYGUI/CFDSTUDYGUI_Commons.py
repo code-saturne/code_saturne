@@ -66,7 +66,7 @@ ObjectTR = QObject()
 _CFD_Code = None #By default
 
 # True or false for log tracing
-_Trace = False  #True
+_Trace = False  #
 
 # If True all stdout redirected to MassageWindow
 _LogModeOn = True
@@ -95,6 +95,7 @@ def CFD_Code():
 
 
 def _SetCFDCode(var):
+    log.debug("_SetCFDCode : var = %s" % var)
     global _CFD_Code
     _CFD_Code = var
 
@@ -203,9 +204,12 @@ def BinCode():
 def isaCFDCase(theCasePath):
     log.debug("isaCFDCase")
     iok = True
-    boo = os.path.isdir(theCasePath)
+    dirList = []
     if os.path.isdir(theCasePath):
-        dirList = os.walk(theCasePath).next()[1]
+        try:#python3
+            dirList = os.walk(theCasePath).__next__()[1]
+        except: #python27
+            dirList = os.walk(theCasePath).next()[1]
         if (dirList.count("DATA") and \
            dirList.count("SRC")  and \
            dirList.count("SCRIPTS")):
@@ -213,14 +217,16 @@ def isaCFDCase(theCasePath):
                 subprocess.call(["mkdir","-p",os.path.join(theCasePath,"RESU")])
         else:
             iok = False
-
     return iok
 
 def isaCFDStudy(theStudyPath):
     log.debug("isaCFDStudy")
+    dirList = []
     if os.path.isdir(theStudyPath):
-        dirList = os.walk(theStudyPath).next()[1]
-
+        try:#python3
+            dirList = os.walk(theStudyPath).__next__()[1]
+        except: #python27
+            dirList = os.walk(theStudyPath).next()[1]
         for i in dirList:
             if i not in ["MESH"] :
                 if isaCFDCase(os.path.join(theStudyPath,i)) :

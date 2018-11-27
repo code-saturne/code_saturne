@@ -415,12 +415,6 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
             self.code = "Code_Saturne"
 
         if self.checkBoxLoad.isChecked():
-            studyObj = CFDSTUDYGUI_DataModel.FindStudyByPath(self.StudyPath)
-            if studyObj != None:
-                mess = cfdstudyMess.trMessage(self.tr("LOCATION_DLG_ERROR_OPEN_MESS"),[self.StudyPath])
-                cfdstudyMess.aboutMessage(mess)
-                self.reinit()
-                return False
             if self.StudyName == '':
                 mess = cfdstudyMess.trMessage(self.tr("LOCATION_DLG_ERROR_MESS"),[])
                 cfdstudyMess.criticalMessage(mess)
@@ -434,7 +428,6 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
                         cfdstudyMess.criticalMessage(mess)
                         self.reinit()
                         return False
-
         # ckeck case name
         if self.checkBoxCreate.isChecked() :
             if self.StudyName == '':

@@ -82,9 +82,9 @@ from omniORB import CORBA
 #-------------------------------------------------------------------------------
 # Salome modules
 #-------------------------------------------------------------------------------
-
-from SALOME_NamingServicePy import *
-from LifeCycleCORBA import *
+from omniORB import CORBA
+from SALOME_NamingServicePy import SALOME_NamingServicePy_i
+from LifeCycleCORBA import LifeCycleCORBA
 import SALOMEDS
 import SALOMEDS_Attributes_idl
 
@@ -95,7 +95,7 @@ import salome
 # Application modules
 #-------------------------------------------------------------------------------
 
-from CFDSTUDYGUI_Commons import CFD_Code, BinCode, Trace, sgPyQt, sg
+from CFDSTUDYGUI_Commons import CFD_Code, BinCode, Trace, sg
 from CFDSTUDYGUI_Commons import CaseInProcessStart, CaseInProcessEnd
 from CFDSTUDYGUI_Commons import CFD_Saturne, CFD_Neptune
 import CFDSTUDYGUI_SolverGUI
@@ -295,68 +295,66 @@ icon_collection[dict_object["CouplingStudy"]]         = "CFDSTUDY_STUDY_OBJ_ICON
 ObjectTR = QObject()
 
 #-------------------------------------------------------------------------------
-# CORBA
-#-------------------------------------------------------------------------------
-
-# init ORB
-orb = CORBA.ORB_init([''], CORBA.ORB_ID)
-
-# create naming service instance
-naming_service = SALOME_NamingServicePy_i(orb)
-
-# create life cycle CORBA instance
-lcc = LifeCycleCORBA(orb)
-
-#-------------------------------------------------------------------------------
-# Get Study manager
-#-------------------------------------------------------------------------------
-# Interface to manipulate SALOME Studies. You will find in this interface the
-# methods to create, open, close, and save a SALOME Study. Since a SALOME
-# session is multi-document, you will also find methods allowing to navigate
-# through a collection of SALOME Studies currently present in a session.
-
-obj = naming_service.Resolve('/myStudyManager')
-studyManager = obj._narrow(SALOMEDS.StudyManager)
-
-#-------------------------------------------------------------------------------
 # Internal methods
 #-------------------------------------------------------------------------------
 
-def _getEngine():
-    """
-    Gets component engine.
+###
+# Get ORB reference
+###
+__orb__ = None
+def getORB():
+    global __orb__
+    if __orb__ is None:
+        __orb__ = CORBA.ORB_init( [''], CORBA.ORB_ID )
+        pass
+    return __orb__
 
-    @return: engine part of the module CFDSTUDY.
-    @rtype: C{Engine}
-    """
-    import CFDSTUDY_ORB
-    engine = lcc.FindOrLoadComponent("FactoryServerPy", __MODULE_NAME__)
-    return engine
+#--------------------------------------------------------------------------
+###
+# Get naming service instance
+###
+__naming_service__ = None
+def getNS():
+    global __naming_service__
+    if __naming_service__ is None:
+        __naming_service__ = SALOME_NamingServicePy_i( getORB() )
+        pass
+    return __naming_service__
+
+#--------------------------------------------------------------------------
+##
+# Get life cycle CORBA instance
+##
+__lcc__ = None
+def getLCC():
+    global __lcc__
+    if __lcc__ is None:
+        __lcc__ = LifeCycleCORBA( getORB() )
+        pass
+    return __lcc__
 
 
+#--------------------------------------------------------------------------
+##
+# Get study
+###
+__study__ = None
 def _getStudy():
-    """
-    Gets active SALOME Study. C{Study} is a warehouse of data. It can be understood as a document,
-    the data storage of the upper level. SALOME Study contains data of multiple components, it's a
-    single document for all components. Most of operations on a SALOME Study object are handled by
-    C{StudyManager} and C{StudyBuilder} interfaces.
+    global __study__
+    if __study__ is None:
+        obj = getNS().Resolve( '/Study' )
+        __study__ = obj._narrow( SALOMEDS.Study )
+        pass
+    return __study__
 
-    @return: active Study.
-    @rtype: C{Study}
-    """
-    # getStudyId() -> get study associated to component instance
-    # return -1: not initialised (Internal Error)
-    #         0: multistudy component instance
-    #        >0: study id associated to this instance
-
-    studyId = sgPyQt.getStudyId()
-    study = studyManager.GetStudyByID(studyId)
-    return study
-
-
-def _getStudy_Id(studyName) :
-    s = studyManager.GetStudyByName(studyName)
-    return s._get_StudyId()
+#--------------------------------------------------------------------------
+__engine__ = None
+def _getEngine():
+    global __engine__
+    if __engine__ is None:
+        __engine__ = getLCC().FindOrLoadComponent( "FactoryServerPy", __MODULE_NAME__() )
+        pass
+    return __engine__
 
 
 def _getNewBuilder():
@@ -403,6 +401,7 @@ def _findOrCreateComponent():
     @return: the root C{SObject} for the Object browser representation.
     @rtype: C{SObject}
     """
+    log.debug("_findOrCreateComponent")
     study = _getStudy()
     father = study.FindComponent(__MODULE_NAME__)
     if father is None:
@@ -419,7 +418,6 @@ def _findOrCreateComponent():
             builder.DefineComponentInstance(father, _getEngine())
         except:
             pass
-
     return father
 
 def _SetCaseLocation(theCasePath):
@@ -428,7 +426,6 @@ def _SetCaseLocation(theCasePath):
     builder       = study.NewBuilder()
     father        = _findOrCreateComponent()
     theStudyPath  = os.path.dirname(theCasePath)
-
     aCaseName      = os.path.basename(theCasePath)
     studyObject   = FindStudyByPath(theStudyPath)
     if studyObject == None:
@@ -478,7 +475,6 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
     builder = study.NewBuilder()
     father  = _findOrCreateComponent()
     studyObject = FindStudyByPath(theStudyPath)
-
     if studyObject == None:
         #obtain name and dir for new study
         lst = os.path.split(theStudyPath)
@@ -534,6 +530,7 @@ def replaceOrInsertCouplingPath(The_coupling_parameters_path):
     """
     coupling_parameters.py file is updated according to syrthes path needed
     """
+    log.debug("replaceOrInsertCouplingPath")
     f = open(The_coupling_parameters_path,"r")
     l = f.readlines()
     f.close()
@@ -605,6 +602,7 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
 
 def updateCasePath(theCasePath):
 
+    log.debug("updateCasePath")
     mess = ""
     scrpt, c ,mess = BinCode()
     if mess == "" :
@@ -625,6 +623,7 @@ def _UpdateStudy():
     """
     Updates CFD study tree of data from the root.
     """
+    log.debug("_UpdateStudy")
     study   = _getStudy()
     component = study.FindComponent(__MODULE_NAME__)
     if component == None:
@@ -645,13 +644,12 @@ def UpdateSubTree(theObject=None):
     """
     log.debug("UpdateSubTree")
     if theObject != None:
-        log.debug("_RebuildTreeRecursively -> path: %s" % _GetPath(theObject))
+        log.debug("UpdateSubTree -> path: %s" % _GetPath(theObject))
         _RebuildTreeRecursively(theObject)
     else:
         _UpdateStudy()
     # --- update object browser from a thread different of the main thread is not safe !
-    studyId = sgPyQt.getStudyId()
-    sgPyQt.updateObjBrowser(studyId,1)
+    sg.updateObjBrowser()
 
 def closeCFDStudyTree(theObject):
     """
@@ -842,6 +840,7 @@ def _CreateItem(theFather,theNewName) :
 def getNameCodeFromXmlCasePath(XMLCasePath) :
     """
     """
+    log.debug("getNameCodeFromXmlCasePath")
     code = ""
     if os.path.isfile(XMLCasePath):
         fd = os.open(XMLCasePath,os.O_RDONLY)
@@ -881,13 +880,14 @@ def _FillObject(theObject, theParent, theBuilder):
     @type theBuilder: C{SUIT_Study}
     @param theBuilder: C{SObject} constructor for create an attribut.
     """
+    log.debug("_FillObject")
     attr = theBuilder.FindOrCreateAttribute(theParent, "AttributeLocalID")
     parentId = attr.Value()
     name = theObject.GetName()
     objectId = dict_object["OtherFile"]
     path = os.path.join(_GetPath(theParent), name)
-    #log.debug("_FillObject: %s" % name)
-
+    log.debug("_FillObject Object Name : %s" % name)
+    log.debug("_FillObject Parent Name : %s" % theParent.GetName())
     # Parent is study
     if parentId == dict_object["Study"] or parentId == dict_object["CouplingStudy"]:
         if Trace(): print("_FillObject : parent is Study ", theParent.GetName())
@@ -1405,7 +1405,7 @@ def GetCase(theObject):
         attr = builder.FindOrCreateAttribute(cur, "AttributeLocalID")
         if Trace():
             print("attr:",attr)
-            print("Value", attr.Value())
+            print("Value for Case", attr.Value())
         value = attr.Value()
         if value == dict_object["Case"]:
             return cur
@@ -1474,6 +1474,7 @@ def FindStudyByPath(theStudyPath):
     @return: the CFD study.
     @rtype: C{SObject} or C{None}
     """
+    log.debug("FindStudyByPath")
     component = _getComponent()
     if component == None:
         return None
@@ -1502,6 +1503,7 @@ def FindCaseByPath(theCasePath):
     @return: the CFD study.
     @rtype: C{SObject} or C{None}
     """
+    log.debug("FindCaseByPath")
     component = _getComponent()
     if component == None:
         return None
@@ -1606,7 +1608,7 @@ def getXmlCaseNameList(theCase):
     while iter.More():
         aName = iter.Value().GetName()
         if aName != "" :
-            if "XML" in subprocess.check_output(["file",_GetPath(iter.Value())]):
+            if "XML" in subprocess.check_output(["file",_GetPath(iter.Value())]).decode():
                 XmlCaseNameList.append(iter.Value().GetName())
         iter.Next()
     return XmlCaseNameList
@@ -1678,16 +1680,15 @@ def getType(theObject):
     return attr.Value()
 
 def hasTheSameType(ListObject):
-
     if ListObject == []:
         return False
     typListBool = True
     typListBoolRESUSub = None
     typList = []
-    typ     = getType(ListObject[0])
+    typ     = getType(list(ListObject)[0])
     typList.append(typ)
     if len(ListObject)> 1:
-        for SObject in ListObject[1:]:
+        for SObject in list(ListObject)[1:]:
             typListBool = typListBool and getType(SObject) == typ
             typList.append(getType(SObject))
         if not typListBool:
@@ -1905,6 +1906,7 @@ def setCaseInProcess(theCasePath, isInProcess):
     @type isInProcess: C{True} or C{False}
     @param isInProcess: if C{True}, shows the I{CaseInProcess} icon.
     """
+    log.debug("setCaseInProcess")
     aStudyPath, aCaseName = os.path.split(theCasePath)
     aStudyObj = FindStudyByPath(aStudyPath)
     if not aStudyPath:
@@ -1968,7 +1970,6 @@ def getOrLoadObject(item):
     object = item.GetObject()
     if object is None: # the engine has not been loaded yet
         sComponent = item.GetFatherComponent()
-        #self.loadComponentEngine(sComponent)
         study   = _getStudy()
         builder = study.NewBuilder()
         engine = _getEngine()
@@ -2010,7 +2011,6 @@ def getMeshFromGroup(meshGroupItem):
     group = None
     meshItem = None
     obj = getOrLoadObject(meshGroupItem)
-    #obj = self.editor.getOrLoadObject(meshGroupItem) # version 515
 
     if obj is not None:
         group = obj._narrow(SMESH.SMESH_GroupBase)
