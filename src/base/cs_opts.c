@@ -54,6 +54,7 @@
 
 #include "cs_base.h"
 #include "cs_gui_util.h"
+#include "cs_notebook.h"
 #include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_system_info.h"
