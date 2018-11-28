@@ -117,10 +117,10 @@ call field_get_key_id('post_vis', keyvis)
 call field_get_key_id("inner_mass_flux_id", kimasf)
 call field_get_key_id("boundary_mass_flux_id", kbmasf)
 
-call field_get_key_id("scalar_diffusivity_id", kivisl)
-call field_get_key_id("scalar_diffusivity_ref", kvisl0)
+call field_get_key_id("diffusivity_id", kivisl)
+call field_get_key_id("diffusivity_ref", kvisl0)
 
-call field_get_key_id("scalar_density_id", kromsl)
+call field_get_key_id("density_id", kromsl)
 
 call field_get_key_id("gradient_weighting_id", kwgrec)
 

@@ -923,11 +923,12 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("variable_id", -1, 0); /* inverse of ivarfl(ivar) */
   cs_field_define_key_int("scalar_id", -1, 0);   /* inverse of isca(iscal) */
 
-  cs_field_define_key_int("scalar_diffusivity_id", -1, CS_FIELD_VARIABLE);
-  cs_field_define_key_double("scalar_diffusivity_ref",
+  cs_field_define_key_int("diffusivity_id", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_double("diffusivity_ref",
                              -1.e12*10., CS_FIELD_VARIABLE); /* visls0(iscal) */
+  cs_field_define_key_int("turbulent_diffusivity_id", -1, CS_FIELD_VARIABLE);
 
-  cs_field_define_key_int("scalar_density_id", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_int("density_id", -1, CS_FIELD_VARIABLE);
 
   /* is the field buoyant? -1 if not, 1 if yes */
   cs_field_define_key_int("is_buoyant", 0, CS_FIELD_VARIABLE);

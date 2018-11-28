@@ -339,7 +339,7 @@ call indsui(isuite)
 if (ippmod(icompf).ge.0) then
   ! ieos has been set above in uippmo with the GUI or in usppmo without the GUI.
   ! The variability of the thermal conductivity
-  ! (scalar_diffusivity_id for itempk) and the volume viscosity (iviscv) has
+  ! (diffusivity_id for itempk) and the volume viscosity (iviscv) has
   ! been set in fldprp.
 
   ! Here call to uscfx2 to get visls0(itempk), viscv0, xmasmr, ivivar and

@@ -26,26 +26,26 @@
 
 /*!
   \page physical_properties Define user laws for physical properties
- 
+
   \section cs_user_physical_properties_h_intro Introduction
 
   This page provides examples of code blocks that may be used
-  to define physical variable laws. 
+  to define physical variable laws.
 
   \warning
- 
+
   It is \b forbidden to modify turbulent viscosity \c visct here
   (a specific subroutine is dedicated to that: \ref usvist)
- 
+
   - icp = 1 must <b> have been specified </b>
      in \ref usipsu if we wish to define a variable specific heat
      cpro_cp (otherwise: memory overwrite).
- 
-  - the kivisl field integer key (scalar_diffusivity_id)
+
+  - the kivisl field integer key (diffusivity_id)
     must <b> have been specified </b>
     in \ref usipsu if we wish to define a variable viscosity
     \c viscls.
- 
+
   \remarks
    - This routine is called at the beginning of each time step
      Thus, <b> AT THE FIRST TIME STEP </b> (non-restart case), the only
@@ -56,32 +56,32 @@
        - in the GUI or \ref cs_user_initialization
               - calculation variables (initialized at 0 by defaut
               or to the value given in the GUI or in \ref cs_user_initialization)
- 
+
    - We may define here variation laws for cell properties, for:
       - density:                                    rom    kg/m3
       - density at boundary faces:                  romb   kg/m3)
       - molecular viscosity:                        cpro_viscl  kg/(m s)
       - specific heat:                              cpro_cp     J/(kg degrees)
       - diffusivities associated with scalars:      cpro_vscalt kg/(m s)
- 
+
   \warning: if the scalar is the temperature, cpro_vscalt corresponds
   to its conductivity (Lambda) in W/(m K)
- 
+
   The types of boundary faces at the previous time step are available
     (except at the first time step, where arrays \c itypfb and \c itrifb have
     not been initialized yet)
- 
+
   It is recommended to keep only the minimum necessary in this file
     (i.e. remove all unused example code)
 
- 
+
   \section example1_comp Molecular viscosity varying with temperature
 
   The values of the molecular viscosity are provided as a function of
   the temperature. All variables are evaluated at the cell centers.
 
   Here is the corresponding code:
-  
+
   \snippet cs_user_physical_properties-compressible_flow.f90 example_1
 
 
@@ -91,9 +91,9 @@
   of the temperature. All variables are evaluated at the cell centers.
 
   Here is the corresponding code:
-  
+
   \snippet cs_user_physical_properties-compressible_flow.f90 example_2
- 
+
 
   \section example3_comp Isobaric specific heat varying with temperature
 
@@ -107,9 +107,9 @@
   using the thermodynamics laws.
 
   Here is the corresponding code:
-  
+
   \snippet cs_user_physical_properties-compressible_flow.f90 example_3
- 
+
 
   \section example4_comp Molecular thermal conductivity varying with temperature
 
@@ -117,10 +117,10 @@
   of the temperature. All variables are evaluated at the cell centers.
 
   Here is the corresponding code:
-  
+
   \snippet cs_user_physical_properties-compressible_flow.f90 example_4
-  
- 
+
+
   \section example5_comp Molecular diffusivity of user-defined scalars varying with temperature
 
   The molecular diffusivity can be set for all the user-defined scalars
@@ -134,8 +134,8 @@
   of the temperature. All variables are evaluated at the cell centers.
 
   Here is the corresponding code:
-  
+
   \snippet cs_user_physical_properties-compressible_flow.f90 example_5
-  
- 
+
+
 */

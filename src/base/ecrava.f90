@@ -455,7 +455,7 @@ if (iecaux.eq.1) then
     endif
   endif
 
-  call restart_write_linked_fields(rp, "scalar_diffusivity_id", iecr)
+  call restart_write_linked_fields(rp, "diffusivity_id", iecr)
 
 #if defined(_CS_LANG_FR)
   car54 =' Fin de l''ecriture des proprietes physiques          '

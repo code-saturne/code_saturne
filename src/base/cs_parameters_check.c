@@ -808,8 +808,8 @@ cs_parameters_check(void)
   const int kscavr = cs_field_key_id("first_moment_id");
   const int keyvar = cs_field_key_id("variable_id");
   const int kcpsyr = cs_field_key_id("syrthes_coupling");
-  const int kivisl = cs_field_key_id("scalar_diffusivity_id");
-  const int kvisls0 = cs_field_key_id("scalar_diffusivity_ref");
+  const int kivisl = cs_field_key_id("diffusivity_id");
+  const int kvisls0 = cs_field_key_id("diffusivity_ref");
   const int restart_file_key_id = cs_field_key_id("restart_file");
   const int key_limiter = cs_field_key_id("limiter_choice");
 
@@ -1908,7 +1908,7 @@ cs_parameters_check(void)
       if (isca > -1 && diff_id == -1) {
         cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                         _(f_desc),
-                                        "key scalar_diffusivity_ref",
+                                        "key diffusivity_ref",
                                         visls0,
                                         0.);
       }

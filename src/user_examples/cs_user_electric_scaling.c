@@ -103,7 +103,7 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
   const cs_real_3_t *cdgfac = (const cs_real_3_t *) mesh_quantities->i_face_cog;
 
   cs_elec_option_t *elec_opt = cs_get_glob_elec_option();
-  const int kivisl = cs_field_key_id("scalar_diffusivity_id");
+  const int kivisl = cs_field_key_id("diffusivity_id");
 
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 

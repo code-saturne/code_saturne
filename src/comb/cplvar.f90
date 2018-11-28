@@ -143,7 +143,7 @@ call field_set_key_double(f_id, kscmax, 0.25d0)
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!    - PROPRES AUX SCALAIRES   : scalar_diffusivity_id
+!    - PROPRES AUX SCALAIRES   : diffusivity_id
 !      Rq : pas de variance associee a un scalaire dans notre cas
 !    - PROPRES A LA SUSPENSION : icp
 !===============================================================================

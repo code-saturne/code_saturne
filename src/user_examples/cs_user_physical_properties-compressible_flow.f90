@@ -64,7 +64,7 @@
 !> selected by the user.
 !>
 !> To set a variable diffusivity for a given user-defined scalar, the
-!> variable integer key kivisl (scalar_diffusivity_id) must have been set to 0
+!> variable integer key kivisl (diffusivity_id) must have been set to 0
 !> or a field id for the matching field in the user subroutine \ref usipsu or
 !> in the GUI (otherwise, a memory problem is expected).
 !>

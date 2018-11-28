@@ -421,7 +421,7 @@ _physical_property(const char       *param,
       for (i = 0; i < 3; i++) {
         if (_th_f[i]) {
           if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
-            int k = cs_field_key_id("scalar_diffusivity_id");
+            int k = cs_field_key_id("diffusivity_id");
             int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
             if (cond_diff_id > -1)
               c_prop = cs_field_by_id(cond_diff_id);
@@ -1952,7 +1952,7 @@ void CS_PROCF (csivis, CSIVIS) (void)
   cs_var_t  *vars = cs_glob_var;
 
   const int keysca = cs_field_key_id("scalar_id");
-  const int kivisl = cs_field_key_id("scalar_diffusivity_id");
+  const int kivisl = cs_field_key_id("diffusivity_id");
   const int kscavr = cs_field_key_id("first_moment_id");
   const int n_fields = cs_field_n_fields();
   const int itherm = cs_glob_thermal_model->itherm;
@@ -3855,7 +3855,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
     for (i = 0; i < 3; i++)
       if (_th_f[i]) {
         if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
-          int k = cs_field_key_id("scalar_diffusivity_id");
+          int k = cs_field_key_id("diffusivity_id");
           int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
           if (cond_diff_id > -1) {
             cond_dif = cs_field_by_id(cond_diff_id);
@@ -3890,7 +3890,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
   /* law for scalar diffusivity */
   int user_id = -1;
   int n_fields = cs_field_n_fields();
-  const int kivisl = cs_field_key_id("scalar_diffusivity_id");
+  const int kivisl = cs_field_key_id("diffusivity_id");
   const int kscavr = cs_field_key_id("first_moment_id");
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
@@ -3950,7 +3950,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
           /* get DYNAMIC scalar diffusivity reference and divide by reference
            * density to get the reference KINEMATIC viscosity */
           cs_real_t scal_diff_ref =
-            cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"))
+            cs_field_get_key_double(f, cs_field_key_id("diffusivity_ref"))
             / cs_glob_fluid_properties->ro0;
           mei_tree_insert(ev_law,"x",0.0);
           mei_tree_insert(ev_law,"y",0.0);
@@ -4353,7 +4353,7 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
 
       }
 
-      const int kivisl = cs_field_key_id("scalar_diffusivity_id");
+      const int kivisl = cs_field_key_id("diffusivity_id");
       int n_fields = cs_field_n_fields();
 
 

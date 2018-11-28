@@ -441,7 +441,7 @@ endif
 !       (et qu'elle est variable, et que le scalaire n'est pas une variance)
 
 nlfld = 0
-call restart_read_linked_fields(rp, oflmap, "scalar_diffusivity_id", nlfld)
+call restart_read_linked_fields(rp, oflmap, "diffusivity_id", nlfld)
 
 !     Si erreur, on previent mais pas stop :
 !       auparavant on n'avait pas stocke les prop phy

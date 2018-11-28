@@ -740,7 +740,7 @@ _read_linked_fields_legacy(cs_restart_t  *r,
     category = 1;
   else if (strcmp(key, "boundary_mass_flux_id") == 0)
     category = 2;
-  else if (strcmp(key, "scalar_diffusivity_id") == 0)
+  else if (strcmp(key, "diffusivity_id") == 0)
     category = 3;
 
   for (int f_id = 0; f_id < n_fields; f_id++) {

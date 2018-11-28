@@ -586,7 +586,7 @@ enddo
 '@    des fluctuations du champ ', i10                         ,/,&
 '@    d''apres la valeur du mot cle first_moment_id'           ,/,&
 '@'                                                            ,/,&
-'@  Le mot cle scalar_diffusivity_id'                          ,/,&
+'@  Le mot cle diffusivity_id'                                 ,/,&
 '@    ne doit pas etre renseigne.'                             ,/,&
 '@  Il sera pris automatiquement egal a celui du scalaire'     ,/,&
 '@    associe, soit ',i10                                      ,/,&
@@ -608,7 +608,7 @@ enddo
 '@    of fluctuations of the field ', i10                      ,/,&
 '@    according to value of keyword first_moment_id'           ,/,&
 '@'                                                            ,/,&
-'@  The scalar_diffusivity_id keyword must not be set'         ,/,&
+'@  The diffusivity_id keyword must not be set'                ,/,&
 '@  It will be automatically set equal to that of the'         ,/,&
 '@    associated scalar ',i10                                  ,/,&
 '@'                                                            ,/,&

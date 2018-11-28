@@ -1050,7 +1050,7 @@ cs_elec_physical_properties(const cs_mesh_t             *mesh,
   int nt_cur = cs_glob_time_step->nt_cur;
   int isrrom = 0;
   cs_lnum_t  n_cells = mesh->n_cells;
-  const int keysca = cs_field_key_id("scalar_diffusivity_id");
+  const int keysca = cs_field_key_id("diffusivity_id");
   int diff_id = cs_field_get_key_int(CS_F_(potr), keysca);
   cs_field_t *c_prop = NULL;
   if (diff_id > -1)
@@ -1367,7 +1367,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 {
   cs_lnum_t  n_cells   = mesh->n_cells;
   cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
-  const int keysca  = cs_field_key_id("scalar_diffusivity_id");
+  const int keysca  = cs_field_key_id("diffusivity_id");
 
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
@@ -1767,7 +1767,7 @@ cs_elec_add_variable_fields(void)
 
   const int kscmin = cs_field_key_id("min_scalar_clipping");
   const int kscmax = cs_field_key_id("max_scalar_clipping");
-  const int kivisl = cs_field_key_id("scalar_diffusivity_id");
+  const int kivisl = cs_field_key_id("diffusivity_id");
 
   const cs_data_elec_t  *e_props = cs_glob_elec_properties; /* local name */
 

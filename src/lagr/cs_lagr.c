@@ -693,10 +693,10 @@ _lagr_map_fields_default(void)
     if (_lagr_extra_module.scal_t != NULL) {
         _lagr_extra_module.visls0
             = cs_field_get_key_double(_lagr_extra_module.scal_t,
-                    cs_field_key_id("scalar_diffusivity_ref"));
+                    cs_field_key_id("diffusivity_ref"));
 
         int l_id = cs_field_get_key_int(_lagr_extra_module.scal_t,
-                cs_field_key_id("scalar_diffusivity_id"));
+                cs_field_key_id("diffusivity_id"));
         if (l_id >= 0)
             _lagr_extra_module.cpro_viscls = cs_field_by_id(l_id);
     }
