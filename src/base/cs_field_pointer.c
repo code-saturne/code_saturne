@@ -311,7 +311,7 @@ cs_field_pointer_map_base(void)
 
   cs_field_pointer_map(CS_ENUMF_(phi), cs_field_by_name_try("phi"));
   cs_field_pointer_map(CS_ENUMF_(f_bar), cs_field_by_name_try("f_bar"));
-  cs_field_pointer_map(CS_ENUMF_(alpha), cs_field_by_name_try("alpha"));
+  cs_field_pointer_map(CS_ENUMF_(alp_bl), cs_field_by_name_try("alpha"));
 
   cs_field_pointer_map(CS_ENUMF_(omg), cs_field_by_name_try("omega"));
   cs_field_pointer_map(CS_ENUMF_(nusa), cs_field_by_name_try("nu_tilda"));

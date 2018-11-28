@@ -84,7 +84,7 @@ integer          ifcvsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
 integer          f_id, potr, poti, flag
-integer          f_vis, f_log, iut, ialpha
+integer          f_vis, f_log, ivtmp
 integer          kturt, kfturt
 integer          kfturt_alpha
 integer          keycpl, keydri
@@ -176,8 +176,8 @@ do ii = 1, nscal
       f_name = trim(name)//'_turbulent_flux'
 
       if (ityturt(ii).eq.3) then
-        call add_variable_field(f_name, f_name, 3, iut, iloc1)
-        iflid = ivarfl(iut)
+        call add_variable_field(f_name, f_name, 3, ivtmp, iloc1)
+        iflid = ivarfl(ivtmp)
 
         call field_set_key_int(iflid, keycpl, 1)
         ! Tensorial diffusivity
@@ -201,8 +201,8 @@ do ii = 1, nscal
       if (iturt(ii).eq.11 .or. iturt(ii).eq.21 .or. iturt(ii).eq.31) then
         f_name = trim(name)//'_alpha'
 
-        call add_variable_field(f_name, f_name, 1, ialpha, iloc1)
-        iflid = ivarfl(ialpha)
+        call add_variable_field(f_name, f_name, 1, ivtmp, iloc1)
+        iflid = ivarfl(ivtmp)
 
         ! Elliptic equation (no convection, no time term)
         call field_get_key_struct_var_cal_opt(iflid, vcopt_alpha)

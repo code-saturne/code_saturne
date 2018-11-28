@@ -478,7 +478,7 @@ _read_field_vals_legacy(cs_restart_t  *r,
       strncpy(old_name, "eps", 127);
     else if (f == CS_F_(f_bar))
       strncpy(old_name, "fb", 127);
-    else if (f == CS_F_(alpha)) {
+    else if (f == CS_F_(alp_bl)) {
       /* Special case: "al" also possible here, depending on turbulence model;
          check for either, with one test for main restart, the other for
          the auxilairy restart */

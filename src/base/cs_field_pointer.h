@@ -80,11 +80,12 @@ typedef enum {
 
   CS_ENUMF_(phi),          /*!< \f$ \phi \f$ for \f$ \phi-f_b \f$ model */
   CS_ENUMF_(f_bar),        /*!< \f$ f_b \f$ for \f$ \phi-f_b \f$ model */
-  CS_ENUMF_(alpha),        /*!< \f$ \alpha \f$ for \f$ Bl-v^2-k \f$
-                             or EBRSM model */
+  CS_ENUMF_(alp_bl),        /*!< \f$ \alpha \f$ for \f$ Bl-v^2-k \f$
+                                 or EBRSM model */
 
   CS_ENUMF_(omg),          /*!< \f$ \omega \f$ for \f$ k-\omega \f$ SST model */
-  CS_ENUMF_(nusa),         /*!< \f$ \widetilde{\nu}_T \f$ for Spalart Allmaras */
+  CS_ENUMF_(nusa),         /*!< \f$ \widetilde{\nu}_T \f$ for Spalart-
+                                Allmaras */
 
   CS_ENUMF_(hybrid_blend), /*!< Blending factor for DDES*/
 
