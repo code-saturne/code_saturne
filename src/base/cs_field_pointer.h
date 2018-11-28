@@ -65,7 +65,7 @@ typedef enum {
   CS_ENUMF_(dt),           /*!< local time step */
 
   CS_ENUMF_(p),            /*!< pressure */
-  CS_ENUMF_(vel),            /*!< velocity */
+  CS_ENUMF_(vel),          /*!< velocity */
 
   CS_ENUMF_(k),            /*!< turbulent kinetic energy \f$ k \f$ */
   CS_ENUMF_(eps),          /*!< turbulent dissipation \f$ \varepsilon \f$ */
