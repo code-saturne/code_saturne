@@ -630,8 +630,8 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t              *m,
                                   cs_real_33_t                 *cocgb,
                                   cs_real_33_t                 *cocg)
 {
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
