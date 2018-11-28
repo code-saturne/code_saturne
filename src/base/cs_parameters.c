@@ -938,7 +938,7 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("alpha_turbulent_flux_id", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_double("turbulent_schmidt",
-                             -1.e12*10., CS_FIELD_VARIABLE); /* sigmas(iscal) */
+                             1., CS_FIELD_VARIABLE); /* sigmas(iscal) */
 
   cs_field_define_key_int("gradient_weighting_id", -1, CS_FIELD_VARIABLE);
 
