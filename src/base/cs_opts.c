@@ -423,8 +423,10 @@ cs_opts_define(int         argc,
       cs_exit(EXIT_SUCCESS);
   }
 
-  if (s_param != NULL)
+  if (s_param != NULL) {
     cs_gui_load_file(s_param);
+    cs_notebook_load_from_file();
+  }
 
   /* If application name has not been defined, use working directory
      base name as default. */

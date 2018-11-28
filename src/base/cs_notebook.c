@@ -104,6 +104,13 @@ cs_notebook_parameter_value_by_name(char *name)
 {
 
   cs_tree_node_t *n = cs_tree_node_get_sibling_with_tag(_notebook, "name", name);
+
+  if (n == NULL) {
+    bft_error(__FILE__, __LINE__, 0,
+              "Variable %s was not defined in the notebook\n",
+              name);
+  }
+
   const char *c_value = cs_tree_node_get_tag(n, "value");
 
   cs_real_t val = atof(c_value);
@@ -135,6 +142,12 @@ cs_notebook_parameter_get_openturns_status(char *name)
                                                         "name",
                                                         name);
 
+  if (n == NULL) {
+    bft_error(__FILE__, __LINE__, 0,
+              "Variable %s was not defined in the notebook\n",
+              name);
+  }
+
   const char *c_value = cs_tree_node_get_tag(n, "oturns");
 
   int status = -1;
@@ -162,9 +175,16 @@ cs_notebook_parameter_get_openturns_status(char *name)
 const char *
 cs_notebook_parameter_get_description(char *name)
 {
+
   cs_tree_node_t *n = cs_tree_node_get_sibling_with_tag(_notebook,
                                                         "name",
                                                         name);
+
+  if (n == NULL) {
+    bft_error(__FILE__, __LINE__, 0,
+              "Variable %s was not defined in the notebook\n",
+              name);
+  }
 
   const char *d = cs_tree_node_get_tag(n, "description");
   return d;
