@@ -361,9 +361,9 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
   CS_TIMER_COUNTER_INIT(tcc); /* connectivity */
 
   /* Two types of mat. ass. are considered:
-     - The one related to matrix based on vertices
-     - The one related to matrix based on faces
-  */
+   *  - The one related to matrix based on vertices
+   *  - The one related to matrix based on faces
+   */
   BFT_MALLOC(cs_equation_common_ma,
              CS_CDO_CONNECT_N_CASES, cs_matrix_assembler_t *);
   for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)

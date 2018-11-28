@@ -261,8 +261,8 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
 
   cs_property_t  *conductivity = cs_property_by_name("unity");
 
-  /* Retrieve the equation to set
-     >> cs_equation_t  *eq = cs_equation_by_name("eq_name");  */
+  /* Retrieve the equation parameter to set
+     >> cs_equation_param_t  *eqp = cs_equation_param_by_name("eq_name");  */
 
   const char *eq_name[] = {"mesh_deform_x", "mesh_deform_y", "mesh_deform_z"};
 
