@@ -73,7 +73,7 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         Gives a formula for pressure
         """
         self.__verifyZone(zone)
-        node = self.XMLvariables.xmlGetNode('variable', field_id="none", name="Pressure")
+        node = self.XMLvariables.xmlGetNode('variable', field_id="none", name="pressure")
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -88,7 +88,7 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         Return a formula for pressure
         """
         self.__verifyZone(zone)
-        node = self.XMLvariables.xmlGetNode('variable', field_id="none", name="Pressure")
+        node = self.XMLvariables.xmlGetNode('variable', field_id="none", name="pressure")
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -245,7 +245,7 @@ class MainFieldsInitializationTestCase(ModelTest):
         mdl.setInitialVelocity(zone, '1', 'VelocityY', -2.5)
         mdl.setInitialVelocity(zone, '1', 'VelocityZ', 8.5)
         doc = '''<variables>
-                         <variable field_id="none" label="Pressure" name="Pressure">
+                         <variable field_id="none" label="Pressure" name="pressure">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
@@ -291,7 +291,7 @@ class MainFieldsInitializationTestCase(ModelTest):
         mdl = MainFieldsInitializationModel(self.case)
         mdl.setInitialFraction('1','1',0.1)
         doc = '''<variables>
-                         <variable field_id="none" label="Pressure" name="Pressure">
+                         <variable field_id="none" label="Pressure" name="pressure">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
@@ -331,7 +331,7 @@ class MainFieldsInitializationTestCase(ModelTest):
         mdl = MainFieldsInitializationModel(self.case)
         mdl.setInitialEnergy('1','1',10)
         doc = '''<variables>
-                         <variable field_id="none" label="Pressure" name="Pressure">
+                         <variable field_id="none" label="Pressure" name="pressure">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
@@ -394,7 +394,7 @@ class MainFieldsInitializationTestCase(ModelTest):
         mdl = MainFieldsInitializationModel(self.case)
         mdl.setEnergyModel('1','1','temperature')
         doc = '''<variables>
-                         <variable field_id="none" label="Pressure" name="Pressure">
+                         <variable field_id="none" label="Pressure" name="pressure">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
@@ -435,7 +435,7 @@ class MainFieldsInitializationTestCase(ModelTest):
         zone = '1'
         mdl.setInitialValuePressure(zone, 700000)
         doc = '''<variables>
-                         <variable field_id="none" label="Pressure" name="Pressure">
+                         <variable field_id="none" label="Pressure" name="pressure">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_value zone_id="1">
@@ -444,9 +444,9 @@ class MainFieldsInitializationTestCase(ModelTest):
                          </variable>
                  </variables>'''
         assert mdl.XMLvariables == self.xmlNodeFromString(doc),\
-            'Could not set Initial Value Pressure'
+            'Could not set Initial Value pressure'
         assert mdl.getInitialValuePressure('1') == 700000,\
-            'Could not get Initial Value Pressure'
+            'Could not get Initial Value pressure'
 
 
 

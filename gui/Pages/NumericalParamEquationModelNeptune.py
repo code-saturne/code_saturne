@@ -120,7 +120,7 @@ class NumericalParamEquatModel(Model):
         """
         Return : 1 if name of node is 'pressure', 0 if not
         """
-        if node and node['name'] == 'Pressure':
+        if node and node['name'] == 'pressure':
             return 1
         else:
             return 0
@@ -369,8 +369,8 @@ class NumericalParamEquatTestCase(ModelTest):
         from MainFieldsModel import MainFieldsModel
         MainFieldsModel(self.case).addField()
         mdl = NumericalParamEquatModel(self.case)
-        mdl.setSchemeModel('Pressure','solu')
-        doc = '''<variable field_id="none" label="Pressure" name="Pressure">
+        mdl.setSchemeModel('pressure','solu')
+        doc = '''<variable field_id="none" label="Pressure" name="pressure">
                          <listing_printing status="on"/>
                          <postprocessing_recording status="on"/>
                          <scheme choice="solu"/>
@@ -387,7 +387,7 @@ class NumericalParamEquatTestCase(ModelTest):
         MainFieldsModel(self.case).addField()
         mdl = NumericalParamEquatModel(self.case)
         mdl.setSlopeTestStatus('Pressure','off')
-        doc = '''<variable field_id="none" label="Pressure" name="Pressure">
+        doc = '''<variable field_id="none" label="Pressure" name="pressure">
                          <listing_printing status="on"/>
                          <postprocessing_recording status="on"/>
                          <slope_test status="off"/>
@@ -404,7 +404,7 @@ class NumericalParamEquatTestCase(ModelTest):
         MainFieldsModel(self.case).addField()
         mdl = NumericalParamEquatModel(self.case)
         mdl.setSolverModel('Pressure','jacobi')
-        doc = '''<variable field_id="none" label="Pressure" name="Pressure">
+        doc = '''<variable field_id="none" label="Pressure" name="pressure">
                          <listing_printing status="on"/>
                          <postprocessing_recording status="on"/>
                          <solver choice="jacobi"/>
@@ -421,7 +421,7 @@ class NumericalParamEquatTestCase(ModelTest):
         MainFieldsModel(self.case).addField()
         mdl = NumericalParamEquatModel(self.case)
         mdl.setSolverPrecision('Pressure',56.23)
-        doc = '''<variable field_id="none" label="Pressure" name="Pressure">
+        doc = '''<variable field_id="none" label="Pressure" name="pressure">
                          <listing_printing status="on"/>
                          <postprocessing_recording status="on"/>
                          <solver_precision>
@@ -440,7 +440,7 @@ class NumericalParamEquatTestCase(ModelTest):
         MainFieldsModel(self.case).addField()
         mdl = NumericalParamEquatModel(self.case)
         mdl.setMaximumIteration('Pressure',18)
-        doc = '''<variable field_id="none" label="Pressure" name="Pressure">
+        doc = '''<variable field_id="none" label="Pressure" name="pressure">
                          <listing_printing status="on"/>
                          <postprocessing_recording status="on"/>
                          <max_iter_number>

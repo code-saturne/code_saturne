@@ -327,6 +327,16 @@ class XMLinitNeptune(Variables):
                     node.xmlRemoveChild('radiative_transfer')
                     node.xmlInitChildNode('particles_radiative_transfer', status=st)
 
+        # Renaming of Pressure
+        vnode = tpnode.xmlGetNode('variables')
+        for node in vnode.xmlGetNodeList('variable'):
+            if node['name'] == 'Pressure':
+                node['name'] = 'pressure'
+                for nzi in node.xmlGetNodeList('initial_value'):
+                    nf = nzi.xmlGetNode('formula')
+                    f = nzi.xmlGetString('formula')
+                    nf.xmlSetTextNode(f.replace("Pressure", "pressure"))
+
 
     def __backwardCompatibilityCurrentVersion(self):
         """
@@ -421,6 +431,17 @@ class XMLinitNeptune(Variables):
                     st = rn['status']
                     node.xmlRemoveChild('radiative_transfer')
                     node.xmlInitChildNode('particles_radiative_transfer', status=st)
+
+        # Renaming of Pressure
+        vnode = tpnode.xmlGetNode('variables')
+        for node in vnode.xmlGetNodeList('variable'):
+            if node['name'] == 'Pressure':
+                node['name'] = 'pressure'
+                for nzi in node.xmlGetNodeList('initial_value'):
+                    nf = nzi.xmlGetNode('formula')
+                    f = nzi.xmlGetString('formula')
+                    nf.xmlSetTextNode(f.replace("Pressure", "pressure"))
+
         # ------------------------------------------------------------
 
 #-------------------------------------------------------------------------------

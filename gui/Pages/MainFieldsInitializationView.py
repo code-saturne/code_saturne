@@ -428,8 +428,8 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         exp = self.mdl.getFormulaPressure(self.zone)
         if not exp:
-            exp = """Pressure = 101325.;\n"""
-        req = [("Pressure", str("Pressure"))]
+            exp = """pressure = 101325.;\n"""
+        req = [("pressure", str("pressure"))]
 
         sym = [('x', "X cell's gravity center"),
                ('y', "Y cell's gravity center"),
@@ -439,7 +439,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 rho0 = 1.8;
 zmax = 1.2;
 Po = 1.e6;
-Pressure = P0 + rho0 * g * (zmax - z);"""
+pressure = P0 + rho0 * g * (zmax - z);"""
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
