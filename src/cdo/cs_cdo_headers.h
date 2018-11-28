@@ -53,7 +53,6 @@
 #include "cs_cdovcb_scaleq.h"
 #include "cs_dbg.h"
 #include "cs_domain.h"
-#include "cs_domain_boundary.h"
 #include "cs_domain_op.h"
 #include "cs_domain_setup.h"
 #include "cs_equation.h"

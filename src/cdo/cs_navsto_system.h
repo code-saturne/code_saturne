@@ -250,6 +250,7 @@ cs_navsto_system_is_activated(void);
 /*!
  * \brief  Allocate and initialize the Navier-Stokes (NS) system
  *
+ * \param[in] boundaries     pointer to the domain boundaries
  * \param[in] model          type of model related to the NS system
  * \param[in] time_state     state of the time for the NS equations
  * \param[in] algo_coupling  algorithm used for solving the NS system
@@ -259,7 +260,8 @@ cs_navsto_system_is_activated(void);
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_system_t *
-cs_navsto_system_activate(cs_navsto_param_model_t        model,
+cs_navsto_system_activate(const cs_boundary_t           *boundaries,
+                          cs_navsto_param_model_t        model,
                           cs_navsto_param_time_state_t   time_state,
                           cs_navsto_param_coupling_t     algo_coupling);
 

@@ -111,9 +111,11 @@ cs_user_cdo_init_setup(cs_domain_t   *domain)
      Boundary of the domain
      ====================== */
 
+  cs_boundary_t  *boundaries = domain->boundaries;
+
   /* Choose a boundary by default.
-     Valid choice is CS_DOMAIN_BOUNDARY_WALL or CS_DOMAIN_BOUNDARY_SYMMETRY */
-  cs_domain_set_default_boundary(domain, CS_DOMAIN_BOUNDARY_SYMMETRY);
+     Valid choice is CS_BOUNDARY_WALL or CS_BOUNDARY_SYMMETRY */
+  cs_boundary_set_default(boundaries, CS_BOUNDARY_SYMMETRY);
 
   /* Add a new boundary
      >> cs_domain_add_boundary(domain,
@@ -123,23 +125,23 @@ cs_user_cdo_init_setup(cs_domain_t   *domain)
      * mesh_location_name is either a predefined mesh location or one defined
      by the user
      * type_of_boundary is one of the following keyword
-        CS_DOMAIN_BOUNDARY_WALL,
-        CS_DOMAIN_BOUNDARY_INLET,
-        CS_DOMAIN_BOUNDARY_OUTLET,
-        CS_DOMAIN_BOUNDARY_SYMMETRY
+        CS_BOUNDARY_WALL,
+        CS_BOUNDARY_INLET,
+        CS_BOUNDARY_OUTLET,
+        CS_BOUNDARY_SYMMETRY
   */
 
-  cs_domain_add_boundary(domain, CS_DOMAIN_BOUNDARY_INLET, "left");
-  cs_domain_add_boundary(domain, CS_DOMAIN_BOUNDARY_OUTLET, "right");
+  cs_boundary_add(boundaries, CS_BOUNDARY_INLET, "left");
+  cs_boundary_add(boundaries, CS_BOUNDARY_OUTLET, "right");
 
   /* =========================
      Generic output management
      ========================= */
 
   cs_domain_set_output_param(domain,
-                             -1,     // restart frequency
-                             100,    // output log frequency
-                             3);     // verbosity (-1: no, 0, ...)
+                             -1,     /* restart frequency */
+                             100,    /* output log frequency */
+                             3);     /* verbosity (-1: no, 0, ...) */
 
   /* ====================
      Time step management

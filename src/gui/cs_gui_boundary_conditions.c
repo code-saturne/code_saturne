@@ -171,7 +171,7 @@ typedef struct {
 
   ple_locator_t **locator;   /* locator for mapped inlet */
 
-} cs_boundary_t;
+} cs_gui_boundary_t;
 
 /*============================================================================
  * Static global variables
@@ -179,7 +179,7 @@ typedef struct {
 
 /* Pointer on the main boundaries structure */
 
-static cs_boundary_t *boundaries = NULL;
+static cs_gui_boundary_t *boundaries = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -936,7 +936,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
   int n_zones = cs_tree_get_node_count(cs_glob_tree,
                                        "boundary_conditions/boundary");
 
-  BFT_MALLOC(boundaries, 1, cs_boundary_t);
+  BFT_MALLOC(boundaries, 1, cs_gui_boundary_t);
 
   boundaries->n_zones = n_zones;
   boundaries->n_coals = 0;

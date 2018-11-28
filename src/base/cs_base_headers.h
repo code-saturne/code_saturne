@@ -32,6 +32,7 @@
 
 #include "cs_1d_wall_thermal.h"
 #include "cs_base.h"
+#include "cs_boundary.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
 #include "cs_defs.h"

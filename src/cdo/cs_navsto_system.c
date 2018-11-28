@@ -49,12 +49,12 @@
 #include "cs_cdofb_uzawa.h"
 #include "cs_hho_stokes.h"
 #include "cs_equation.h"
+#include "cs_evaluate.h"
+#include "cs_flag.h"
 #include "cs_log.h"
 #include "cs_navsto_coupling.h"
 #include "cs_post.h"
-#include "cs_flag.h"
 #include "cs_volume_zone.h"
-#include "cs_evaluate.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -170,6 +170,7 @@ cs_navsto_system_is_activated(void)
 /*!
  * \brief  Allocate and initialize the Navier-Stokes (NS) system
  *
+ * \param[in] boundaries     pointer to the domain boundaries
  * \param[in] model          type of model related to the NS system
  * \param[in] time_state     state of the time for the NS equations
  * \param[in] algo_coupling  algorithm used for solving the NS system
@@ -179,7 +180,8 @@ cs_navsto_system_is_activated(void)
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_system_t *
-cs_navsto_system_activate(cs_navsto_param_model_t        model,
+cs_navsto_system_activate(const cs_boundary_t           *boundaries,
+                          cs_navsto_param_model_t        model,
                           cs_navsto_param_time_state_t   time_state,
                           cs_navsto_param_coupling_t     algo_coupling)
 {
@@ -201,12 +203,12 @@ cs_navsto_system_activate(cs_navsto_param_model_t        model,
   /* Set the default boundary condition for the equations of the Navier-Stokes
      system according to the default domain boundary */
   cs_param_bc_type_t  default_bc = CS_PARAM_N_BC_TYPES;
-  switch (cs_domain_boundary_get_default()) {
+  switch (boundaries->default_type) {
 
-  case CS_DOMAIN_BOUNDARY_WALL:
+  case CS_BOUNDARY_WALL:
     default_bc = CS_PARAM_BC_HMG_DIRICHLET;
     break;
-  case CS_DOMAIN_BOUNDARY_SYMMETRY:
+  case CS_BOUNDARY_SYMMETRY:
     default_bc = CS_PARAM_BC_HMG_NEUMANN;
     break;
 

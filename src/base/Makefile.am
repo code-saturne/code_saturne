@@ -86,6 +86,7 @@ cs_base.h \
 cs_base_fortran.h \
 cs_block_dist.h \
 cs_block_to_part.h \
+cs_boundary.h \
 cs_boundary_conditions.h \
 cs_boundary_zone.h \
 cs_calcium.h \
@@ -241,6 +242,7 @@ cs_ale.c \
 cs_array_reduce.c \
 cs_ast_coupling.c \
 cs_base_fortran.c \
+cs_boundary.c \
 cs_boundary_conditions.c \
 cs_boundary_zone.c \
 cs_calcium.c \

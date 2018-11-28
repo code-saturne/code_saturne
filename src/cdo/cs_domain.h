@@ -30,9 +30,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_boundary.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
-#include "cs_domain_boundary.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_time_step.h"
@@ -93,6 +93,9 @@ typedef struct {
   */
   cs_cdo_connect_t              *connect;
   cs_cdo_quantities_t           *cdo_quantities;
+
+  /* Boundary of the computational domain */
+  cs_boundary_t                 *boundaries;
 
   /* Time step management */
   bool                      only_steady;

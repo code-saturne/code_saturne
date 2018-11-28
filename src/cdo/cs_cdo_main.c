@@ -42,11 +42,11 @@
 
 #include "cs_ale.h"
 #include "cs_base.h"
+#include "cs_boundary.h"
 #include "cs_boundary_zone.h"
 #include "cs_control.h"
 #include "cs_defs.h"
 #include "cs_domain.h"
-#include "cs_domain_boundary.h"
 #include "cs_domain_op.h"
 #include "cs_domain_setup.h"
 #include "cs_equation.h"
@@ -304,7 +304,7 @@ _log_setup(const cs_domain_t   *domain)
   cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
   /* Boundaries of the domain */
-  cs_domain_boundary_log_setup();
+  cs_boundary_log_setup(domain->boundaries);
 
   /* Time step summary */
   cs_log_printf(CS_LOG_SETUP, "\n  Time step information\n");

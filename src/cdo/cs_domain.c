@@ -51,7 +51,6 @@
 #include <bft_mem.h>
 
 #include "cs_boundary_zone.h"
-#include "cs_domain_boundary.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
@@ -195,7 +194,7 @@ cs_domain_create(void)
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
 
   /* By default a wall is defined for the whole boundary of the domain */
-  cs_domain_boundary_set_default(CS_DOMAIN_BOUNDARY_WALL);
+  cs_boundary_create(CS_BOUNDARY_WALL);
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(domain->tcp); /* domain post */
@@ -236,7 +235,7 @@ cs_domain_free(cs_domain_t   **p_domain)
     BFT_FREE(domain->cdo_context);
 
   /* Free arrays related to the domain boundary */
-  cs_domain_boundary_free();
+  cs_boundary_free(&(domain->boundaries));
 
   /* Free CDO structures related to geometric quantities and connectivity */
   domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);

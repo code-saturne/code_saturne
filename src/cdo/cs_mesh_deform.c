@@ -53,7 +53,6 @@
 
 #include "cs_boundary_zone.h"
 #include "cs_domain.h"
-#include "cs_domain_boundary.h"
 #include "cs_domain_setup.h"
 #include "cs_equation.h"
 #include "cs_mesh_builder.h"
@@ -266,10 +265,6 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
      >> cs_equation_t  *eq = cs_equation_by_name("eq_name");  */
 
   const char *eq_name[] = {"mesh_deform_x", "mesh_deform_y", "mesh_deform_z"};
-
-  /* TODO implement a finer control to make mesh deformation
-     compatible with other CDO modules */
-  cs_domain_boundary_set_default(CS_DOMAIN_BOUNDARY_SYMMETRY);
 
   for (int i = 0; i < 3; i++) {
 

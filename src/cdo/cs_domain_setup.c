@@ -394,7 +394,7 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   /* Add a boundary zone gathering all "wall" boundaries */
   if (cs_navsto_system_is_activated() ||
       cs_walldistance_is_activated())
-    cs_domain_boundary_def_wall_zones();
+    cs_boundary_def_wall_zones(domain->boundaries);
 
   /* Setup predefined equations which are activated. At this stage,
    * no equation is added. Space discretization scheme and the related
