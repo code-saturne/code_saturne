@@ -83,7 +83,8 @@ cs_lagr_sde.h \
 cs_lagr_sde_model.h \
 cs_lagr_lec.h \
 cs_lagr_log.h \
-cs_lagr_prototypes.h
+cs_lagr_prototypes.h \
+cs_lagr_headers.h
 
 # Library source files
 

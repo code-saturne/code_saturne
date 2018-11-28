@@ -37,7 +37,8 @@ bft_backtrace.h \
 bft_error.h \
 bft_mem.h \
 bft_mem_usage.h \
-bft_printf.h
+bft_printf.h \
+cs_bft_headers.h
 
 # Library source files
 

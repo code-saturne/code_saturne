@@ -81,7 +81,8 @@ cs_rad_transfer_solve.h \
 cs_rad_transfer_modak.h \
 cs_rad_transfer_source_terms.h \
 cs_rad_transfer_restart.h \
-cs_rad_transfer.h
+cs_rad_transfer.h \
+cs_rayt_headers.h
 
 # Library source files
 

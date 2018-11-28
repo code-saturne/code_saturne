@@ -64,7 +64,8 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_ctwr_air_props.h \
-cs_ctwr.h
+cs_ctwr.h \
+cs_ctwr_headers.h
 
 # Library source files
 

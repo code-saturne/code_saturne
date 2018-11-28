@@ -105,7 +105,8 @@ cs_static_condensation.h \
 cs_walldistance.h \
 cs_xdef.h \
 cs_xdef_cw_eval.h \
-cs_xdef_eval.h
+cs_xdef_eval.h \
+cs_cdo_headers.h
 
 # Library source files
 

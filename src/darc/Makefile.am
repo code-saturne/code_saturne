@@ -67,7 +67,8 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_gwf_parameters.h \
-cs_gwf_physical_properties.h
+cs_gwf_physical_properties.h \
+cs_darc_headers.h
 
 # Library source files
 

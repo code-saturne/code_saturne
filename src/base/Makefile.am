@@ -161,7 +161,9 @@ cs_tree.h \
 cs_turbomachinery.h \
 cs_volume_zone.h \
 cs_wall_functions.h \
-cs_zone.h
+cs_zone.h \
+cs_base_headers.h \
+cs_headers.h
 
 # Library source files
 

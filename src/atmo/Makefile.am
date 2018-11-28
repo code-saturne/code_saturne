@@ -56,7 +56,8 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_at_plugin.h \
 cs_at_opt_interp.h \
-cs_at_data_assim.h
+cs_at_data_assim.h \
+cs_atmo_headers.h
 
 # Library source files
 
