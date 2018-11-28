@@ -996,8 +996,7 @@ _update_mesh(bool     restart_mode,
                     (unsigned long long)cs_glob_mesh->n_g_b_faces);
         }
         else {
-          double dt = ts->t_cur - ts->t_prev;
-          eps_dt += tbm->dt_retry * dt / (ts->nt_cur - ts->nt_prev);
+          eps_dt += tbm->dt_retry * ts->dt[0];
           bft_printf(_(join_err_fmt),
                      (unsigned long long)n_g_b_faces_ref,
                      (unsigned long long)cs_glob_mesh->n_g_b_faces);

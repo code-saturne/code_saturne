@@ -67,6 +67,10 @@ typedef struct {
   double        t_cur;        /* current absolute time */
   double        t_max;        /* maximum absolute time */
 
+  double        dt[3];        /* n, n-1, and n-2 time steps */
+  double        dt_ref;       /* reference time step. */
+  double        dt_next;      /* next (predicted) time step. */
+
 } cs_time_step_t;
 
 

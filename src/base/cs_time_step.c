@@ -231,7 +231,10 @@ static cs_time_step_t  _time_step = {
   .nt_ini = 2,
   .t_prev = 0.,
   .t_cur = 0.,
-  .t_max = -1.
+  .t_max = -1.,
+  .dt = {0., 0., 0.},
+  .dt_ref = 0.1,
+  .dt_next = 0.1
 };
 
 static cs_time_step_options_t  _time_step_options =
@@ -252,6 +255,8 @@ static cs_time_step_options_t  _time_step_options =
 const cs_time_step_t  *cs_glob_time_step = &_time_step;
 
 const cs_time_step_options_t  *cs_glob_time_step_options = &_time_step_options;
+
+static double _c = 0; /* compensation term for Kahan sum */
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -366,6 +371,33 @@ cs_f_time_step_options_get_pointers(int    **inpdt0,
   *dtmin  = &(_time_step_options.dtmin );
   *dtmax  = &(_time_step_options.dtmax );
   *relxst = &(_time_step_options.relxst);
+}
+
+/*=============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update Kahan compensation.
+ *
+ * Called as a function to help avoid compiler optimizating Kahan
+ * summation out (though aggressive or LTO optimizations might).
+ *
+ * new copensation term is (a - b) - c
+ *
+ * \param[in]  a  a
+ * \param[in]  b  b
+ * \param[in]  c  c
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_kahan_compensation(double  a,
+                           double  b,
+                           double  c)
+{
+  _c = (a - b) - c;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -494,6 +526,17 @@ cs_time_step_increment(double  dt)
 {
   _time_step.nt_cur += 1;
   _time_step.t_cur += dt;
+
+  _time_step.dt[2] = _time_step.dt[1];
+  _time_step.dt[1] = _time_step.dt[0];
+  _time_step.dt[0] = dt;
+
+  double z = _time_step.t_cur - _c;
+  double t = _time_step.t_cur + z;
+
+  _update_kahan_compensation(t, _time_step.t_cur, z);
+
+  _time_step.t_cur = t;
 }
 
 /*----------------------------------------------------------------------------*/
