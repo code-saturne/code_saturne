@@ -452,7 +452,7 @@ _read_field_vals_legacy(cs_restart_t  *r,
 
   else if (r_name == f->name) {
     snprintf(old_name, 127, "%s", f->name);
-    if (f == CS_F_(u)) {
+    if (f == CS_F_(vel)) {
       if (t_id == 0)
         strncpy(old_name, "vitesse", 127);
       else if (t_id == 1)
@@ -1838,14 +1838,14 @@ cs_restart_read_variables(cs_restart_t               *r,
 
       /* standard calculation */
       if (CS_F_(p)) {
-        if (!(_read_flag[CS_F_(u)->id] & 1) || !(_read_flag[CS_F_(p)->id] & 1))
+        if (!(_read_flag[CS_F_(vel)->id] & 1) || !(_read_flag[CS_F_(p)->id] & 1))
           bft_error
             (__FILE__, __LINE__, 0,
              _("Error reading velocity/pressure values in restart file \"%s\"."),
              cs_restart_get_name(r));
         /* ground water flow calculation */
       } else if (CS_F_(head)) {
-        if (   !(_read_flag[CS_F_(u)->id] & 1)
+        if (   !(_read_flag[CS_F_(vel)->id] & 1)
             || !(_read_flag[CS_F_(head)->id] & 1))
           bft_error
             (__FILE__, __LINE__, 0,

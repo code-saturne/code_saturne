@@ -180,7 +180,7 @@ _free_surface(cs_real_t           time,
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
   /* Boundary mass flux */
-  int iflmab = cs_field_get_key_int(CS_F_(u),
+  int iflmab = cs_field_get_key_int(CS_F_(vel),
                                     cs_field_key_id("boundary_mass_flux_id"));
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
@@ -342,9 +342,9 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   const cs_real_t *i_massflux
-    = cs_field_by_id(cs_field_get_key_int(CS_F_(u), kimasf))->val;
+    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
   const cs_real_t *b_massflux
-    = cs_field_by_id(cs_field_get_key_int(CS_F_(u), kbmasf))->val;
+    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
 
   /* 1. Initialization */
 

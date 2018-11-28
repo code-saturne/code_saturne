@@ -931,7 +931,7 @@ cs_cf_thermo_wall_bc(cs_real_t *wbfa,
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
 
   /*  Map field arrays */
-  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(u)->val;
+  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *cvar_pr = CS_F_(p)->val;
   cs_real_t *crom = CS_F_(rho)->val;
 
@@ -1041,7 +1041,7 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
   cs_real_t ci, c1, mi, a, b, sigma1, pinf;
 
   /*  Map field arrays */
-  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(u)->val;
+  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *cvar_pr = CS_F_(p)->val;
   cs_real_t *cvar_en = CS_F_(energy)->val;
   cs_real_t *crom = CS_F_(rho)->val;
@@ -1289,7 +1289,7 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
   cs_real_3_t dir;
 
   /*  Map field arrays */
-  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(u)->val;
+  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *cvar_pr = CS_F_(p)->val;
   cs_real_t *cvar_en = CS_F_(energy)->val;
   cs_real_t *crom = CS_F_(rho)->val;
@@ -1684,7 +1684,7 @@ cs_cf_thermo(const int    iccfth,
     cell_id = b_face_cells[face_id];
 
   /*  Map field arrays */
-  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(u)->val;
+  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *cvar_pr = (cs_real_t *)CS_F_(p)->val;
   cs_real_t *crom = (cs_real_t *)CS_F_(rho)->val;
   cs_real_t *brom = (cs_real_t *)CS_F_(rho_b)->val;

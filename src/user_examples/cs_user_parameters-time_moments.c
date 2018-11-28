@@ -192,7 +192,7 @@ _velocity_moment_data(const void  *input,
   const int location_id = CS_MESH_LOCATION_CELLS;
 
   const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
-  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(u)->val);
+  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
 
   const cs_real_3_t  *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
@@ -287,7 +287,7 @@ cs_user_time_moments(void)
     /* Moment <U> calculated starting from time step 1000. */
 
     /*! [tmom_u] */
-    int moment_f_id[] = {CS_F_(u)->id};
+    int moment_f_id[] = {CS_F_(vel)->id};
     int moment_c_id[] = {-1};
     int n_fields = 1;
     cs_time_moment_define_by_field_ids("U_mean",
@@ -306,7 +306,7 @@ cs_user_time_moments(void)
   {
     /* Moment <U> calculated starting from time step 1000. */
 
-    int moment_f_id[] = {CS_F_(rho)->id, CS_F_(u)->id};
+    int moment_f_id[] = {CS_F_(rho)->id, CS_F_(vel)->id};
     int moment_c_id[] = {-1, -1};
     int n_fields = 2;
     cs_time_moment_define_by_field_ids("U_mean",
@@ -326,7 +326,7 @@ cs_user_time_moments(void)
        (reinitialized at each restart). */
 
     /*! [tmom_rho_u_v] */
-    int moment_f_id[] = {CS_F_(rho)->id, CS_F_(u)->id, CS_F_(u)->id};
+    int moment_f_id[] = {CS_F_(rho)->id, CS_F_(vel)->id, CS_F_(vel)->id};
     int moment_c_id[] = {-1, 0, 1};
     int n_fields = 3;
     cs_time_moment_define_by_field_ids("rho_u_v_mean",

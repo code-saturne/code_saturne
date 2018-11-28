@@ -6934,8 +6934,8 @@ void CS_PROCF (grdpor, GRDPOR)
 
           cs_math_3_normalise(i_face_normal[face_id], normal);
 
-          cs_real_t *vel_i = &(CS_F_(u)->val_pre[3*ii]);
-          cs_real_t *vel_j = &(CS_F_(u)->val_pre[3*jj]);
+          cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
+          cs_real_t *vel_j = &(CS_F_(vel)->val_pre[3*jj]);
 
           cs_real_t veli_dot_n =    (1. - i_f_face_factor[face_id][0])
                                   * cs_math_3_dot_product(vel_i, normal);
@@ -6978,7 +6978,7 @@ void CS_PROCF (grdpor, GRDPOR)
 
           cs_math_3_normalise(b_face_normal[face_id], normal);
 
-          cs_real_t *vel_i = &(CS_F_(u)->val_pre[3*ii]);
+          cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
 
           cs_real_t veli_dot_n =   (1. - b_f_face_factor[face_id])
                                  * cs_math_3_dot_product(vel_i, normal);

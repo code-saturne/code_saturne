@@ -3438,7 +3438,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   var_name[31] = '\0';
 
   /* Discontinuous porous treatment */
-  if (cs_glob_porous_model == 3 && f == CS_F_(u)) {
+  if (cs_glob_porous_model == 3 && f == CS_F_(vel)) {
     i_f_face_factor = fvq->i_f_face_factor;
     b_f_face_factor = fvq->b_f_face_factor;
   }

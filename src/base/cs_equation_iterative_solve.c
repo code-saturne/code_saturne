@@ -1370,7 +1370,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                     icvfli,
                     smbrp);
 
-  if (CS_F_(u)->id == f_id) {
+  if (CS_F_(vel)->id == f_id) {
     f = cs_field_by_name_try("velocity_explicit_balance");
 
     if (f != NULL) {

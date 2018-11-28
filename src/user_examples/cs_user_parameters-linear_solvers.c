@@ -367,7 +367,7 @@ cs_user_linear_solvers(void)
     cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, NULL);
     cs_sles_set_post_output(sles_p, CS_POST_WRITER_DEFAULT);
 
-    cs_sles_t *sles_u = cs_sles_find_or_add(CS_F_(u)->id, NULL);
+    cs_sles_t *sles_u = cs_sles_find_or_add(CS_F_(vel)->id, NULL);
     cs_sles_set_post_output(sles_u, CS_POST_WRITER_DEFAULT);
   }
   /*! [sles_viz_1] */

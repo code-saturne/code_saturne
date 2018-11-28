@@ -118,7 +118,7 @@ cs_user_head_losses(const  cs_zone_t  *zone,
                     cs_real_t          cku[][6])
 {
   /*! [map_field_arrays] */
-  const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(u)->val_pre);
+  const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(vel)->val_pre);
   /*! [map_field_arrays] */
 
   /* Note that in the following examples, we check the zone name, so we

@@ -293,7 +293,7 @@ cs_field_pointer_map_base(void)
 
   cs_field_pointer_map(CS_ENUMF_(p),
                        cs_field_by_name_try("pressure"));
-  cs_field_pointer_map(CS_ENUMF_(u),
+  cs_field_pointer_map(CS_ENUMF_(vel),
                        cs_field_by_name_try("velocity"));
 
   cs_field_pointer_map(CS_ENUMF_(k),

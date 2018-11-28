@@ -273,7 +273,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
     const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
 
-    const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(u)->val;
+    const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
     const cs_real_t uref = cs_glob_turb_ref_values->uref;
     const cs_real_t uref2 = uref*uref;
 

@@ -258,7 +258,7 @@ cs_user_extra_operations(void)
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max){
 
-    cs_real_3_t *vel = (cs_real_3_t *)CS_F_(u)->val;
+    cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
 
     cs_field_t *f_mom_wr = NULL, *f_mom_wt = NULL;
 

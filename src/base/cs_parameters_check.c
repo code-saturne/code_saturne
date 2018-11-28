@@ -972,8 +972,8 @@ cs_parameters_check(void)
    * there is more than 5% of upwind.
    * Centered scheme with/without slope test, nwsrsm */
   if (cs_glob_turb_model->itytur == 4) {
-    cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
-    f_desc = _field_section_desc(CS_F_(u), "in LES, while reading time "
+    cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
+    f_desc = _field_section_desc(CS_F_(vel), "in LES, while reading time "
                                            "scheme parameters for variable");
 
     cs_parameters_is_equal_double(CS_WARNING,
@@ -984,7 +984,7 @@ cs_parameters_check(void)
 
     BFT_FREE(f_desc);
 
-    f_desc = _field_section_desc(CS_F_(u), "in LES, while reading "
+    f_desc = _field_section_desc(CS_F_(vel), "in LES, while reading "
                                            "convection scheme "
                                            "parameters for variable");
 
@@ -1629,7 +1629,7 @@ cs_parameters_check(void)
 
     cs_real_t arakfr = cs_glob_stokes_model->arak;
     if (cs_glob_time_step_options->idtvar < 0) {
-      cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
+      cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
       arakfr *= var_cal_opt.relaxv;
     }
 
@@ -1647,7 +1647,7 @@ cs_parameters_check(void)
                                 cs_glob_stokes_model->ipucou,
                                 0, 2);
 
-  cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
+  cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
   /* steady or variable time step time algorithm not compatible with theta
      scheme with theta different from 1 for the velocity */
   if (cs_glob_time_step_options->idtvar != 0) {
@@ -1803,7 +1803,7 @@ cs_parameters_check(void)
           cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
         }
 
-        if (f->id == CS_F_(u)->id) {
+        if (f->id == CS_F_(vel)->id) {
           cs_parameters_is_equal_int(CS_WARNING,
                                      _("Dynamic relaxation enabled for "
                                        "variable velocity.\n"

@@ -426,7 +426,7 @@ cs_post_turbomachinery_head(const char               *criteria_in,
   cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
 
   cs_real_t *total_pressure = cs_field_by_name("total_pressure")->val;
-  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(u)->val;
+  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *density = CS_F_(rho)->val;
 
   cs_real_t pabs_in = 0.;
@@ -700,7 +700,7 @@ cs_post_evm_reynolds_stresses(cs_lnum_t        n_loc_cells,
 
   bool use_previous_t = false;
   int inc = 1;
-  cs_field_gradient_vector(CS_F_(u),
+  cs_field_gradient_vector(CS_F_(vel),
                            use_previous_t,
                            inc,
                            gradv);
@@ -757,7 +757,7 @@ cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
 
   bool use_previous_t = false;
   int inc = 1;
-  cs_field_gradient_vector(CS_F_(u),
+  cs_field_gradient_vector(CS_F_(vel),
                            use_previous_t,
                            inc,
                            gradv);

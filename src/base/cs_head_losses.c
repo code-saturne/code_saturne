@@ -136,7 +136,7 @@ cs_head_losses_compute(cs_real_6_t cku[])
     }
   }
 
-  const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(u)->val_pre);
+  const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(vel)->val_pre);
 
   /* Loop on head loss zones */
 

@@ -1609,7 +1609,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
   const cs_real_t *rho = CS_F_(rho)->val;
   const cs_field_t *f_pres = CS_F_(p);
   const cs_real_t *pressure = f_pres->val;
-  const cs_field_t *f_vel = CS_F_(u);
+  const cs_field_t *f_vel = CS_F_(vel);
   const cs_real_3_t *velocity =  (const cs_real_3_t *)f_vel->val;
   cs_real_3_t gravity = {cs_glob_physical_constants->gravity[0],
                          cs_glob_physical_constants->gravity[1],

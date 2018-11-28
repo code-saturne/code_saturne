@@ -4108,7 +4108,7 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
-  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(u)->val);
+  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
 
   cs_field_t *fsaturation   = cs_field_by_name_try("saturation");
   cs_field_t *fcapacity     = cs_field_by_name_try("capacity");

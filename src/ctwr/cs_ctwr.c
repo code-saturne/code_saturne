@@ -1736,7 +1736,7 @@ cs_ctwr_source_term(int              f_id,
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
 
   cs_real_t  *rho_h = (cs_real_t *)CS_F_(rho)->val; /* humid air (bulk) density */
-  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(u)->val;   /* humid air (bulk) */
+  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val;   /* humid air (bulk) */
 
   cs_real_t *y_w = (cs_real_t *)CS_F_(ym_w)->val; /* Water mass fraction
                                                      in humid air */

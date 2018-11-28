@@ -448,7 +448,7 @@ cs_stokes_model_log_setup(void)
          "    arak:        %14.5e (Arakawa factor)\n"),
        var_cal_opt.relaxv, f_pot_label, cs_glob_stokes_model->arak);
   } else {
-    cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
+    cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
     cs_log_printf
       (CS_LOG_SETUP,
        _("    arak:        %14.5e (Arakawa factor)\n"),

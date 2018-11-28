@@ -2755,7 +2755,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         if (f->type & CS_FIELD_VARIABLE) {
           int interpolate = 0;
           int normalize = 0;
-          if (f == CS_F_(u))
+          if (f == CS_F_(vel))
             normalize = 1;
           else {
             const int keysca = cs_field_key_id("scalar_id");
