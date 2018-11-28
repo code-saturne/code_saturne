@@ -323,7 +323,7 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .diftl0 = 0,
      .cmu = 0,
      .visls0 = 0,
-     .uetbor = NULL,
+     .ustar = NULL,
      .cromf = NULL,
      .pressure = NULL,
      .scal_t = NULL,
@@ -667,9 +667,40 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.cromf       = cs_field_by_name_try("density");
   }
 
-  if (cs_field_by_name_try("pressure") != NULL) {
+  _lagr_extra_module.pressure    = cs_field_by_name_try("pressure");
+
+  _lagr_extra_module.luminance   = cs_field_by_name_try("luminance");
+  if (cs_field_by_name_try("velocity_1") != NULL) {
+    /* we are probably using NEPTUNE_CFD */
+    _lagr_extra_module.vel         = cs_field_by_name_try("velocity_1");
+
+    _lagr_extra_module.cvar_k      = cs_field_by_name_try("lagr_k");
+    _lagr_extra_module.cvar_ep     = cs_field_by_name_try("lagr_epsilon");
+    _lagr_extra_module.cvar_omg    = NULL;
+    _lagr_extra_module.cvar_r11    = cs_field_by_name_try("lagr_r11");
+    _lagr_extra_module.cvar_r22    = cs_field_by_name_try("lagr_r22");
+    _lagr_extra_module.cvar_r33    = cs_field_by_name_try("lagr_r33");
+    _lagr_extra_module.cvar_rij    = cs_field_by_name_try("lagr_rij");
+    _lagr_extra_module.viscl       = cs_field_by_name_try
+                                       ("lagr_molecular_viscosity");
+    _lagr_extra_module.scal_t      = cs_field_by_name_try("lagr_enthalpy");
+    _lagr_extra_module.cpro_viscls = cs_field_by_name_try
+                                       ("lagr_thermal_conductivity");
+    _lagr_extra_module.cpro_cp     = cs_field_by_name_try("lagr_specific_heat");
+    _lagr_extra_module.temperature = cs_field_by_name_try("lagr_temperature");
+    _lagr_extra_module.t_gaz       = NULL;
+    _lagr_extra_module.luminance   = cs_field_by_name_try("luminance");
+    _lagr_extra_module.x_oxyd      = NULL;
+    _lagr_extra_module.x_eau       = NULL;
+    _lagr_extra_module.x_m         = NULL;
+    _lagr_extra_module.cromf       = cs_field_by_name_try("lagr_density");
+    /* TODO FIXME */
+    _lagr_extra_module.visls0      = 0.;
+
+    _lagr_extra_module.ustar   = cs_field_by_name_try("wall_friction_velocity");
+  }
+  else {
     /* we use Code_Saturne */
-    _lagr_extra_module.pressure    = cs_field_by_name_try("pressure");
     _lagr_extra_module.vel         = cs_field_by_name_try("velocity");
     _lagr_extra_module.cvar_k      = cs_field_by_name_try("k");
     _lagr_extra_module.cvar_ep     = cs_field_by_name_try("epsilon");
@@ -704,49 +735,11 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.cpro_cp     = cs_field_by_name_try("specific_heat");
     _lagr_extra_module.temperature = cs_field_by_name_try("temperature");
     _lagr_extra_module.t_gaz       = cs_field_by_name_try("t_gas");
-    _lagr_extra_module.luminance   = cs_field_by_name_try("luminance");
     _lagr_extra_module.x_oxyd      = cs_field_by_name_try("ym_o2");
     _lagr_extra_module.x_eau       = cs_field_by_name_try("ym_h2o");
     _lagr_extra_module.x_m         = cs_field_by_name_try("xm");
 
-    cs_field_t *f = cs_field_by_name_try("ustar");
-    if (f != NULL)
-        _lagr_extra_module.uetbor = f->val;
-    else
-        _lagr_extra_module.uetbor = NULL;
-  }
-  else {
-    /* we are probably using NEPTUNE_CFD */
-    _lagr_extra_module.pressure    = cs_field_by_name_try("Pressure");
-    _lagr_extra_module.vel         = cs_field_by_name_try("lagr_velocity");
-    _lagr_extra_module.cvar_k      = cs_field_by_name_try("lagr_k");
-    _lagr_extra_module.cvar_ep     = cs_field_by_name_try("lagr_epsilon");
-    _lagr_extra_module.cvar_omg    = NULL;
-    _lagr_extra_module.cvar_r11    = cs_field_by_name_try("lagr_r11");
-    _lagr_extra_module.cvar_r22    = cs_field_by_name_try("lagr_r22");
-    _lagr_extra_module.cvar_r33    = cs_field_by_name_try("lagr_r33");
-    _lagr_extra_module.cvar_rij    = cs_field_by_name_try("lagr_rij");
-    _lagr_extra_module.viscl       = cs_field_by_name_try
-                                       ("lagr_molecular_viscosity");
-    _lagr_extra_module.scal_t      = cs_field_by_name_try("lagr_enthalpy");
-    _lagr_extra_module.cpro_viscls = cs_field_by_name_try
-                                       ("lagr_thermal_conductivity");
-    _lagr_extra_module.cpro_cp     = cs_field_by_name_try("lagr_specific_heat");
-    _lagr_extra_module.temperature = cs_field_by_name_try("lagr_temperature");
-    _lagr_extra_module.t_gaz       = NULL;
-    _lagr_extra_module.luminance   = cs_field_by_name_try("luminance");
-    _lagr_extra_module.x_oxyd      = NULL;
-    _lagr_extra_module.x_eau       = NULL;
-    _lagr_extra_module.x_m         = NULL;
-    _lagr_extra_module.cromf       = cs_field_by_name_try("lagr_density");
-    /* TODO FIX ME */
-    _lagr_extra_module.visls0      = 0.;
-
-    cs_field_t *f = cs_field_by_name_try("wall_friction_velocity");
-    if (f != NULL)
-      _lagr_extra_module.uetbor  = f->val;
-    else
-      _lagr_extra_module.uetbor  = NULL;
+    _lagr_extra_module.ustar  = cs_field_by_name_try("ustar");
   }
 }
 
@@ -1591,7 +1584,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
           cs_real_t romf   = extra->cromf->val[iel];
           cs_real_t visccf = extra->viscl->val[iel] / romf;
 
-          cs_real_t _ustar = CS_MAX(extra->uetbor[ifac], 1e-15);
+          cs_real_t _ustar = CS_MAX(extra->ustar->val[ifac], 1e-15);
 
           cs_real_t surfb = surfbo[ifac];
           ustarmoy     = ustarmoy + surfb * _ustar;

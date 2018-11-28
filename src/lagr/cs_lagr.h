@@ -905,7 +905,7 @@ typedef struct {
      ----------------- */
 
   /* wall ustar */
-  cs_real_t *uetbor;
+  cs_field_t *ustar;
 
   /* Fluid density */
   cs_field_t *cromf;

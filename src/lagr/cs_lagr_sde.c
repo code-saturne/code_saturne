@@ -798,7 +798,7 @@ _lagesd(cs_real_t           dtp,
   cs_lnum_t face_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                 CS_LAGR_NEIGHBOR_FACE_ID);
 
-  cs_real_t ustar = extra->uetbor[face_id];
+  cs_real_t ustar = extra->ustar->val[face_id];
   cs_real_t lvisq = vislen[face_id];
 
   cs_real_t tvisq;
