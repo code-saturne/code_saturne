@@ -245,7 +245,7 @@ call field_get_key_id("time_extrapolated", key_t_ext_id)
 ! If the scalar is buoyant, it is inside the Navier Stokes loop, and so iterns >=1
 ! otherwise it is outside of the loop and iterns = -1.
 if (  (is_buoyant_fld.eq. 1 .and. iterns.eq.-1) &
-  .or.(is_buoyant_fld.eq.-1 .and. iterns.ne.-1)) return
+  .or.(is_buoyant_fld.eq. 0 .and. iterns.ne.-1)) return
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
