@@ -963,7 +963,7 @@ class resource_info(batch_info):
             s = os.getenv('LSB_MCPU_HOSTS')
             if s != None:
                 mcpu_list = s.split(' ')
-                self.n_nodes = len(mcpu_list)/2
+                self.n_nodes = len(mcpu_list) // 2
                 for i in range(self.n_nodes):
                     self.n_procs += int(mcpu_list[i*2 + 1])
             else:
@@ -996,7 +996,7 @@ class resource_info(batch_info):
                     self.n_procs = self.n_nodes*16
                     if n_threads:
                         if n_threads > 4:
-                            self.n_procs = self.n_nodes*16*4/n_threads
+                            self.n_procs = self.n_nodes*16*4 // n_threads
             s = os.getenv('LOADL_HOSTFILE')
             if s != None:
                 self.manager = 'LOADL'
@@ -1106,7 +1106,7 @@ class resource_info(batch_info):
 
         ppn = None
         if self.n_procs != None and  self.n_nodes != None:
-            ppn = self.n_procs / self.n_nodes
+            ppn = self.n_procs // self.n_nodes
 
         return ppn
 
@@ -1183,7 +1183,7 @@ class resource_info(batch_info):
             if s != None:
                 mcpu_list = s.split(' ')
                 hosts_list = []
-                for i in range(len(mcpu_list)/2):
+                for i in range(len(mcpu_list) // 2):
                     host = mcpu_list[i*2]
                     count = int(mcpu_list[i*2 + 1])
                     for j in range(count):
