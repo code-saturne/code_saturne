@@ -139,7 +139,7 @@ cs_cf_thermo_default_init(void)
   /* Default initializations
      t0 is positive (this assumption has been checked in verini) */
   cs_real_t *crom = CS_F_(rho)->val;
-  cs_real_t *cvar_en = CS_F_(energy)->val;
+  cs_real_t *cvar_en = CS_F_(e_tot)->val;
 
   int ieos = cs_glob_fluid_properties->ieos;
 
@@ -1043,7 +1043,7 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
   /*  Map field arrays */
   cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *cvar_pr = CS_F_(p)->val;
-  cs_real_t *cvar_en = CS_F_(energy)->val;
+  cs_real_t *cvar_en = CS_F_(e_tot)->val;
   cs_real_t *crom = CS_F_(rho)->val;
   cs_real_t *brom = CS_F_(rho_b)->val;
 
@@ -1291,7 +1291,7 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
   /*  Map field arrays */
   cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *cvar_pr = CS_F_(p)->val;
-  cs_real_t *cvar_en = CS_F_(energy)->val;
+  cs_real_t *cvar_en = CS_F_(e_tot)->val;
   cs_real_t *crom = CS_F_(rho)->val;
   cs_real_t *brom = CS_F_(rho_b)->val;
 
@@ -1689,7 +1689,7 @@ cs_cf_thermo(const int    iccfth,
   cs_real_t *crom = (cs_real_t *)CS_F_(rho)->val;
   cs_real_t *brom = (cs_real_t *)CS_F_(rho_b)->val;
   cs_real_t *cvar_tk = (cs_real_t *)CS_F_(t)->val;
-  cs_real_t *cvar_en = (cs_real_t *)CS_F_(energy)->val;
+  cs_real_t *cvar_en = (cs_real_t *)CS_F_(e_tot)->val;
 
   /* Map specific heats field arrays - handle uniform cases */
   cs_real_t *cpro_cp = NULL;

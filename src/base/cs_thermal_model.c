@@ -213,7 +213,7 @@ cs_thermal_model_field(void)
     th_f = CS_F_(h);
     break;
   case CS_THERMAL_MODEL_TOTAL_ENERGY:
-    th_f = CS_F_(energy);
+    th_f = CS_F_(e_tot);
     break;
   default:
     th_f = NULL;

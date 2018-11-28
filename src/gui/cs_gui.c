@@ -416,7 +416,7 @@ _physical_property(const char       *param,
     else if (cs_gui_strcmp(param, "thermal_conductivity")) {
       property = CS_PHYS_PROP_THERMAL_CONDUCTIVITY;
 
-      cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(energy)};
+      cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(e_tot)};
 
       for (i = 0; i < 3; i++) {
         if (_th_f[i]) {
@@ -452,9 +452,9 @@ _physical_property(const char       *param,
       if (CS_F_(h)->type & CS_FIELD_VARIABLE)
         _thermal_f_val = CS_F_(h)->val;
     }
-    else if (CS_F_(energy) != NULL) {
+    else if (CS_F_(e_tot) != NULL) {
       if (CS_F_(h)->type & CS_FIELD_VARIABLE) {
-        _thermal_f_val = CS_F_(energy)->val;
+        _thermal_f_val = CS_F_(e_tot)->val;
         thermodynamic_pressure = CS_F_(p)->val;
         thermodynamic_pressure_stride = 1;
       }
@@ -570,7 +570,7 @@ _compressible_physical_property(const char       *param,
 
       assert(itherm == CS_THERMAL_MODEL_TOTAL_ENERGY);
 
-      cs_field_t *f = CS_F_(energy);
+      cs_field_t *f = CS_F_(e_tot);
 
       for (cs_lnum_t iel = 0; iel < ncel; iel++) {
         mei_tree_insert(ev_law, "x", cell_cen[iel][0]);
@@ -3850,7 +3850,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
 
     cs_field_t  *cond_dif = NULL;
 
-    cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(energy)};
+    cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(e_tot)};
 
     for (i = 0; i < 3; i++)
       if (_th_f[i]) {

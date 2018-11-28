@@ -471,7 +471,7 @@ cs_field_pointer_map_coal_combustion(int  n_coals,
 void
 cs_field_pointer_map_compressible(void)
 {
-  cs_field_pointer_map(CS_ENUMF_(energy),
+  cs_field_pointer_map(CS_ENUMF_(e_tot),
                        cs_field_by_name_try("total_energy"));
 
   cs_field_pointer_map(CS_ENUMF_(t_kelvin),

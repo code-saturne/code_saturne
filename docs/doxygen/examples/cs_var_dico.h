@@ -293,7 +293,7 @@
 
   Fortran code                                                                   | C code                        | Description
   ------------------------------------------------------------------------------ | ----------------------------- | ------------
-  <tt> call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ienerg "ienerg"), cvar_energ) | CS_F_(energy)->val   | Total energy
+  <tt> call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ienerg "ienerg"), cvar_energ) | CS_F_(e_tot)->val   | Total energy
   call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::itempk "itempk"), cvar_tempk)      | CS_F_(t_kelvin)->val | Temperature, in Kelvin </tt>
 
 
