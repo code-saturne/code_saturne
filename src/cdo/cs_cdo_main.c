@@ -420,6 +420,13 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
                              cs_mesh_t             *m,
                              cs_mesh_quantities_t  *mq)
 {
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: cs_domain_t structure is not allocated.\n", __func__);
+
+  domain->mesh = m;
+  domain->mesh_quantities = mq;
+
   if (cs_domain_get_cdo_mode(domain) == CS_DOMAIN_CDO_MODE_OFF)
     return;
 

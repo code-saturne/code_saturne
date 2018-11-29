@@ -461,9 +461,6 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
                                      t_interval,
                                      wt_interval);
 
-  domain->mesh = mesh;
-  domain->mesh_quantities = mesh_quantities;
-
   /* Build additional connectivity structures
      Update mesh structure with range set structures */
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
