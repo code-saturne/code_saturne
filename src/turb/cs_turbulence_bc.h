@@ -219,6 +219,42 @@ cs_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_id,
                                       double     *rcodcl);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set inlet boundary condition values for turbulence variables based
+ *        on given k and epsilon values.
+ *
+ * \param[in]     face_id    boundary face id
+ * \param[in]     k          turbulent kinetic energy
+ * \param[in]     eps        turbulent dissipation
+ * \param[out]    rcodcl     boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
+                             double      k,
+                             double      eps,
+                             double     *rcodcl);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set inlet boundary condition values for turbulence variables based
+ *        on given k and epsilon values only if not already initialized.
+ *
+ * \param[in]     face_id    boundary face id
+ * \param[in]     k          turbulent kinetic energy
+ * \param[in]     eps        turbulent dissipation
+ * \param[out]    rcodcl     boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
+                                        double      k,
+                                        double      eps,
+                                        double     *rcodcl);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

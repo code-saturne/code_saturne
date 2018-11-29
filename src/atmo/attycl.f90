@@ -299,14 +299,11 @@ do ifac = 1, nfabor
 
     if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
 
-      if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0)             &
-           rcodcl(ifac,iu,1) = xuent
-      if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0)             &
-           rcodcl(ifac,iv,1) = xvent
-      if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0)             &
-           rcodcl(ifac,iw,1) = 0.d0
+      if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0) rcodcl(ifac,iu,1) = xuent
+      if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0) rcodcl(ifac,iv,1) = xvent
+      if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0) rcodcl(ifac,iw,1) = 0.d0
 
-      call turbulence_bc_inlet_k_eps(ifac, xkent, xeent, rcodcl)
+      call turbulence_bc_set_uninit_inlet_k_eps(ifac, xkent, xeent, rcodcl)
 
       if (iscalt.ne.-1) then
 
@@ -351,7 +348,7 @@ do ifac = 1, nfabor
         rcodcl(ifac,ipr,1) = coefap(ifac)
 
         ! Dirichlet on turbulent variables
-        call turbulence_bc_inlet_k_eps(ifac, xkent, xeent, rcodcl)
+        call turbulence_bc_set_uninit_inlet_k_eps(ifac, xkent, xeent, rcodcl)
 
         if (iautom(ifac).eq.1) then
 
