@@ -719,7 +719,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
                                    m->b_face_vtx_idx[ifbr],
                                    m->b_face_vtx_idx[ifbr+1],
                                    m->b_face_vtx_lst, impale, disale,
-                                   cs_glob_time_step_options->dtref,
+                                   cs_glob_time_step->dt_ref,
                                    cs_glob_time_step->t_cur,
                                    cs_glob_time_step->nt_cur);
       }
@@ -730,7 +730,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
       _uialcl_fixed_velocity(tn_w, *iuma, *ivma, *iwma, *ivimpo,
                              m->n_b_faces, n_faces, faces_list,
                              ialtyb, rcodcl,
-                             cs_glob_time_step_options->dtref,
+                             cs_glob_time_step->dt_ref,
                              cs_glob_time_step->t_cur,
                              cs_glob_time_step->nt_cur);
       cs_gui_add_mei_time(cs_timer_wtime() - t0);
@@ -1029,7 +1029,7 @@ cs_gui_mesh_viscosity(void)
   /* Init mei */
   mei_tree_t *ev = _init_mei_tree(mvisc_expr, variables,
                                   nd, symbols, 0, 3,
-                                  cs_glob_time_step_options->dtref,
+                                  cs_glob_time_step->dt_ref,
                                   cs_glob_time_step->t_cur,
                                   cs_glob_time_step->nt_cur);
 
@@ -1066,7 +1066,7 @@ void
 cs_gui_mobile_mesh_get_fixed_velocity(const char*    label,
                                       cs_real_3_t    vel)
 {
-  cs_real_t dtref = cs_glob_time_step_options->dtref;
+  cs_real_t dtref = cs_glob_time_step->dt_ref;
   cs_real_t ttcabs = cs_glob_time_step->t_cur;
   int ntcabs = cs_glob_time_step->nt_cur;
 

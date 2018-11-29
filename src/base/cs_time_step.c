@@ -114,7 +114,7 @@ BEGIN_C_DECLS
         If the time step is uniform (\ref cs_time_step_options_t::idtvar "idtvar"
         = 0 or 1), \ref t_cur increases of \ref dt (value of the time step) at each iteration.
         If the time step is non-uniform (\ref cs_time_step_options_t::idtvar "idtvar"=2),
-        \ref t_cur increases of \ref cs_time_step_options_t::dtref "dtref" at each time step.\n
+        \ref t_cur increases of \ref cs_time_step_t::dt_ref "dt_ref" at each time step.\n
         \ref t_cur is initialised and updated automatically by the code,
         its value is not to be modified by the user.
   \var  cs_time_step_t::t_max
@@ -164,7 +164,7 @@ BEGIN_C_DECLS
         If the numerical scheme is a second-order in time, only the
         option 0 is allowed.
 
-  \var  cs_time_step_options_t::dtref
+  \var  cs_time_step_t::dt_ref
         Reference time step.\n
 
         This is the time step value used in the case of a calculation run with a
@@ -242,7 +242,6 @@ static cs_time_step_options_t  _time_step_options =
   .inpdt0 = 0,
   .iptlro = 0,
   .idtvar = 0,
-  .dtref  = -1.e12*10.,
   .coumax = 1.,
   .cflmmx = 0.99,
   .foumax = 10.,
@@ -268,6 +267,7 @@ cs_f_time_step_get_pointers(int     **nt_prev,
                             int     **nt_cur,
                             int     **nt_max,
                             int     **nt_ini,
+                            double  **dtref,
                             double  **t_prev,
                             double  **t_cur,
                             double  **t_max);
@@ -276,7 +276,6 @@ void
 cs_f_time_step_options_get_pointers(int    **inpdt0,
                                     int    **iptlro,
                                     int    **idtvar,
-                                    double **dtref,
                                     double **coumax,
                                     double **cflmmx,
                                     double **foumax,
@@ -304,6 +303,7 @@ cs_f_time_step_options_get_pointers(int    **inpdt0,
  *   nt_cur  --> pointer to cs_glob_time_step->nt_cur
  *   nt_max  --> pointer to cs_glob_time_step->nt_max
  *   nt_ini  --> pointer to cs_glob_time_step->nt_ini
+ *   dt_ref  --> pointer to cs_glob_time_step->dt_ref
  *   t_prev  --> pointer to cs_glob_time_step->t_prev
  *   t_cur   --> pointer to cs_glob_time_step->t_cur
  *   t_max   --> pointer to cs_glob_time_step->t_ax
@@ -314,6 +314,7 @@ cs_f_time_step_get_pointers(int      **nt_prev,
                             int      **nt_cur,
                             int      **nt_max,
                             int      **nt_ini,
+                            double   **dtref,
                             double   **t_prev,
                             double   **t_cur,
                             double   **t_max)
@@ -322,6 +323,7 @@ cs_f_time_step_get_pointers(int      **nt_prev,
   *nt_cur = &(_time_step.nt_cur);
   *nt_max = &(_time_step.nt_max);
   *nt_ini = &(_time_step.nt_ini);
+  *dtref  = &(_time_step.dt_ref);
   *t_prev = &(_time_step.t_prev);
   *t_cur = &(_time_step.t_cur);
   *t_max = &(_time_step.t_max);
@@ -337,7 +339,6 @@ cs_f_time_step_get_pointers(int      **nt_prev,
  *   inpdt0 --> pointer to cs_glob_time_step_options->inpdt0
  *   iptlro --> pointer to cs_glob_time_step_options->iptlro
  *   idtvar --> pointer to cs_glob_time_step_options->idtvar
- *   dtref  --> pointer to cs_glob_time_step_options->dtref
  *   coumax --> pointer to cs_glob_time_step_options->coumax
  *   cflmmx --> pointer to cs_glob_time_step_options->cflmmx
  *   foumax --> pointer to cs_glob_time_step_options->foumax
@@ -351,7 +352,6 @@ void
 cs_f_time_step_options_get_pointers(int    **inpdt0,
                                     int    **iptlro,
                                     int    **idtvar,
-                                    double **dtref,
                                     double **coumax,
                                     double **cflmmx,
                                     double **foumax,
@@ -363,7 +363,6 @@ cs_f_time_step_options_get_pointers(int    **inpdt0,
   *inpdt0 = &(_time_step_options.inpdt0);
   *iptlro = &(_time_step_options.iptlro);
   *idtvar = &(_time_step_options.idtvar);
-  *dtref  = &(_time_step_options.dtref );
   *coumax = &(_time_step_options.coumax);
   *cflmmx = &(_time_step_options.cflmmx);
   *foumax = &(_time_step_options.foumax);
@@ -617,7 +616,7 @@ cs_time_step_log_setup(void)
          cs_glob_time_step_options->varrdt,
          cs_glob_time_step_options->dtmin,
          cs_glob_time_step_options->dtmax,
-         cs_glob_time_step_options->dtref);
+         cs_glob_time_step->dt_ref);
 
     /* Frozen velocity field */
     cs_log_printf

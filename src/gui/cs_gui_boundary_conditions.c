@@ -407,7 +407,7 @@ _boundary_scalar_init_mei_tree(const char   *formula,
   int i = 0;
   double ttcabs = cs_glob_time_step->t_cur;
   int    ntcabs = cs_glob_time_step->nt_cur;
-  double dtref  = cs_glob_time_step_options->dtref;
+  double dtref  = cs_glob_time_step->dt_ref;
 
   /* return an empty interpreter */
   mei_tree_t *tree = mei_tree_new(formula);
@@ -1670,7 +1670,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                   = boundaries->scalar[f->id][izone * f->dim + i];
                 mei_tree_insert(ev_formula, "t", ts->t_cur);
                 mei_tree_insert(ev_formula, "dt",
-                                cs_glob_time_step_options->dtref);
+                                cs_glob_time_step->dt_ref);
                 mei_tree_insert(ev_formula, "iter", ts->nt_cur);
                 _set_mei_coords(ev_formula, b_face_cog[ifbr]);
 
@@ -1704,7 +1704,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                   = boundaries->scalar[f->id][izone * f->dim + i];
                 mei_tree_insert(ev_formula, "t", ts->t_cur);
                 mei_tree_insert(ev_formula, "dt",
-                                cs_glob_time_step_options->dtref);
+                                cs_glob_time_step->dt_ref);
                 mei_tree_insert(ev_formula, "iter", ts->nt_cur);
 
                 /* add variable from notebook */
@@ -1726,7 +1726,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                   = boundaries->scalar[f->id][izone * f->dim + i];
                 mei_tree_insert(ev_formula, "t", ts->t_cur);
                 mei_tree_insert(ev_formula, "dt",
-                                cs_glob_time_step_options->dtref);
+                                cs_glob_time_step->dt_ref);
                 mei_tree_insert(ev_formula, "iter", ts->nt_cur);
 
                 /* add variable from notebook */
@@ -1858,7 +1858,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             || cs_gui_strcmp(choice_v, "flow2_formula")) {
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
           mei_tree_insert(boundaries->velocity[izone], "dt",
-                          cs_glob_time_step_options->dtref);
+                          cs_glob_time_step->dt_ref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
@@ -1910,7 +1910,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         if (boundaries->velocity[izone] != NULL) {
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
           mei_tree_insert(boundaries->velocity[izone], "dt",
-                          cs_glob_time_step_options->dtref);
+                          cs_glob_time_step->dt_ref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
@@ -2001,7 +2001,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
           mei_tree_insert(boundaries->velocity[izone], "dt",
-                          cs_glob_time_step_options->dtref);
+                          cs_glob_time_step->dt_ref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
@@ -2075,7 +2075,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
           mei_tree_insert(boundaries->velocity[izone], "dt",
-                          cs_glob_time_step_options->dtref);
+                          cs_glob_time_step->dt_ref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
@@ -2115,7 +2115,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
         mei_tree_insert(boundaries->direction[izone], "t", ts->t_cur);
         mei_tree_insert(boundaries->direction[izone], "dt",
-                        cs_glob_time_step_options->dtref);
+                        cs_glob_time_step->dt_ref);
         mei_tree_insert(boundaries->direction[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
@@ -2175,7 +2175,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
           mei_tree_insert(boundaries->velocity[izone], "dt",
-                          cs_glob_time_step_options->dtref);
+                          cs_glob_time_step->dt_ref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
@@ -2245,7 +2245,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(ev_formula,"y", 0.0);
           mei_tree_insert(ev_formula,"z", 0.0);
           mei_tree_insert(ev_formula, "t", ts->t_cur);
-          mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(ev_formula, "dt", cs_glob_time_step->dt_ref);
           mei_tree_insert(ev_formula, "iter", ts->nt_cur);
 
           /* add variable from notebook */
@@ -2628,7 +2628,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
         mei_tree_insert(boundaries->headLoss[izone], "t", ts->t_cur);
         mei_tree_insert(boundaries->headLoss[izone], "dt",
-                        cs_glob_time_step_options->dtref);
+                        cs_glob_time_step->dt_ref);
         mei_tree_insert(boundaries->headLoss[izone], "iter", ts->nt_cur);
 
         /* add variable from notebook */
@@ -2707,7 +2707,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         else if (cs_gui_strcmp(choice_d, "dirichlet_formula")) {
           mei_tree_t *ev_formula = boundaries->groundwat[izone];
           mei_tree_insert(ev_formula, "t", ts->t_cur);
-          mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(ev_formula, "dt", cs_glob_time_step->dt_ref);
           mei_tree_insert(ev_formula, "iter", ts->nt_cur);
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = face_ids[ifac];

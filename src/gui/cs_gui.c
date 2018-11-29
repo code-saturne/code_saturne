@@ -2136,7 +2136,7 @@ void CS_PROCF (cstime, CSTIME) (void)
   cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
   cs_time_step_t *time_stp = cs_get_glob_time_step();
 
-  cs_gui_node_get_child_real(tn, "time_step_ref", &(time_opt->dtref));
+  cs_gui_node_get_child_real(tn, "time_step_ref", &(time_stp->dt_ref));
   cs_gui_node_get_child_real(tn, "time_step_min_factor", &cdtmin);
   cs_gui_node_get_child_real(tn, "time_step_max_factor", &cdtmax);
   cs_gui_node_get_child_real(tn, "max_courant_num", &(time_opt->coumax));
@@ -2144,8 +2144,8 @@ void CS_PROCF (cstime, CSTIME) (void)
   cs_gui_node_get_child_real(tn, "time_step_var", &(time_opt->varrdt));
   cs_gui_node_get_child_real(tn, "relaxation_coefficient", &(time_opt->relxst));
 
-  time_opt->dtmin = cdtmin * time_opt->dtref;
-  time_opt->dtmax = cdtmax * time_opt->dtref;
+  time_opt->dtmin = cdtmin * time_stp->dt_ref;
+  time_opt->dtmax = cdtmax * time_stp->dt_ref;
 
   /* We keep these two lines in case we read an old XML file... */
   cs_gui_node_get_child_real(tn, "time_step_min", &(time_opt->dtmin));

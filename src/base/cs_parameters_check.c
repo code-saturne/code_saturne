@@ -1221,8 +1221,8 @@ cs_parameters_check(void)
   if (cs_glob_time_step_options->idtvar >= 0) {
     cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                     _("while reading input data"),
-                                    "cs_glob_time_step_options->dtref",
-                                    cs_glob_time_step_options->dtref,
+                                    "cs_glob_time_step->dt_ref",
+                                    cs_glob_time_step->dt_ref,
                                     0.);
   }
 

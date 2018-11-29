@@ -100,8 +100,6 @@ typedef struct {
                        -  1: time step constant in space but variable in time
                        -  2: variable time step in space and in time. */
 
-  double    dtref;  /* Reference time step. */
-
   double    coumax; /* Maximum Courant number (when idtvar is
                        different from 0). */
 

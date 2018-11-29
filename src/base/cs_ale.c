@@ -190,10 +190,10 @@ _fixed_displacement(cs_real_t           time,
     const cs_lnum_t id = (pt_ids != NULL) ? pt_ids[p] : p;
     const cs_lnum_t off = (compact) ? p : id;
 
-    for (int c_id = 0; c_id < 3; c_id++) {
-      const cs_real_t  ddep =
-        disale[id][c_id] + _vtx_coord0[id][c_id] - vtx_coord[id][c_id];
-      resv[off][c_id] = ddep / cs_glob_time_step_options->dtref;
+    for (cs_lnum_t c_id = 0; c_id < 3; c_id++) {
+      const cs_real_t  ddep
+        = disale[id][c_id] + _vtx_coord0[id][c_id] - vtx_coord[id][c_id];
+      resv[off][c_id] = ddep / cs_glob_time_step->dt_ref;
     }
 
   }
@@ -390,9 +390,9 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
 
   for (cs_lnum_t v = 0; v < m->n_vertices; v++) {
     if (impale[v] == 0) {
-      for (int c_id = 0; c_id < 3; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < 3; c_id++) {
         disale[v][c_id] =  disala[v][c_id]
-                         + m_vel[v][c_id]*cs_glob_time_step_options->dtref;
+                         + m_vel[v][c_id]*cs_glob_time_step->dt_ref;
       }
     }
   }

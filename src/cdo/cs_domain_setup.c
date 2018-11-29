@@ -342,7 +342,7 @@ cs_domain_def_time_step_by_function(cs_domain_t          *domain,
      To be changed at first call to cs_domain_time_step_increment() */
 
   domain->dt_cur = domain->time_step->t_max;
-  domain->time_options.dtref =  domain->time_step->t_max;
+  domain->time_step->dt_ref =  domain->time_step->t_max;
   domain->time_options.dtmin =  domain->time_step->t_max;
   domain->time_options.dtmax = 0.;
 }
@@ -371,7 +371,7 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
                                                   &dt);
 
   domain->dt_cur = dt;
-  domain->time_options.dtref = domain->dt_cur;
+  domain->time_step->dt_ref = domain->dt_cur;
   domain->time_options.dtmin = domain->dt_cur;
   domain->time_options.dtmax = domain->dt_cur;
 }

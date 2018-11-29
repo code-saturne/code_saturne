@@ -1323,25 +1323,25 @@ module optcal
     ! global time step structure
 
     subroutine cs_f_time_step_get_pointers(nt_prev, nt_cur, nt_max, nt_ini,  &
-                                           t_prev, t_cur, t_max)             &
+                                           dt_ref, t_prev, t_cur, t_max)     &
       bind(C, name='cs_f_time_step_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: nt_prev, nt_cur, nt_max, nt_ini
-      type(c_ptr), intent(out) :: t_prev, t_cur, t_max
+      type(c_ptr), intent(out) :: dt_ref, t_prev, t_cur, t_max
     end subroutine cs_f_time_step_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! global time step options structure
 
     subroutine cs_f_time_step_options_get_pointers(inpdt0, iptlro, idtvar, &
-                                                   dtref, coumax, cflmmx,  &
+                                                   coumax, cflmmx,         &
                                                    foumax, varrdt, dtmin,  &
                                                    dtmax, relxst)          &
       bind(C, name='cs_f_time_step_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: inpdt0, iptlro, idtvar, dtref, coumax, cflmmx
+      type(c_ptr), intent(out) :: inpdt0, iptlro, idtvar, coumax, cflmmx
       type(c_ptr), intent(out) :: foumax, varrdt, dtmin, dtmax, relxst
     end subroutine cs_f_time_step_options_get_pointers
 
@@ -1518,16 +1518,17 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_ntpabs, c_ntcabs, c_ntmabs, c_ntinit
-    type(c_ptr) :: c_ttpabs, c_ttcabs, c_ttmabs
+    type(c_ptr) :: c_dtref, c_ttpabs, c_ttcabs, c_ttmabs
 
     call cs_f_time_step_get_pointers(c_ntpabs, c_ntcabs, c_ntmabs, c_ntinit, &
-                                     c_ttpabs, c_ttcabs, c_ttmabs)
+                                     c_dtref, c_ttpabs, c_ttcabs, c_ttmabs)
 
     call c_f_pointer(c_ntpabs, ntpabs)
     call c_f_pointer(c_ntcabs, ntcabs)
     call c_f_pointer(c_ntmabs, ntmabs)
     call c_f_pointer(c_ntinit, ntinit)
 
+    call c_f_pointer(c_dtref,  dtref)
     call c_f_pointer(c_ttpabs, ttpabs)
     call c_f_pointer(c_ttcabs, ttcabs)
     call c_f_pointer(c_ttmabs, ttmabs)
@@ -1545,19 +1546,18 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_inpdt0, c_iptlro, c_idtvar
-    type(c_ptr) :: c_dtref, c_coumax, c_cflmmx
+    type(c_ptr) :: c_coumax, c_cflmmx
     type(c_ptr) :: c_foumax, c_varrdt, c_dtmin
     type(c_ptr) :: c_dtmax, c_relxst
 
     call cs_f_time_step_options_get_pointers(c_inpdt0, c_iptlro, c_idtvar, &
-                                             c_dtref, c_coumax, c_cflmmx,  &
+                                             c_coumax, c_cflmmx,  &
                                              c_foumax, c_varrdt, c_dtmin,  &
                                              c_dtmax, c_relxst)
 
     call c_f_pointer(c_inpdt0, inpdt0)
     call c_f_pointer(c_iptlro, iptlro)
     call c_f_pointer(c_idtvar, idtvar)
-    call c_f_pointer(c_dtref,  dtref)
     call c_f_pointer(c_coumax, coumax)
     call c_f_pointer(c_cflmmx, cflmmx)
     call c_f_pointer(c_foumax, foumax)

@@ -171,8 +171,10 @@ cs_domain_create(void)
 
   /* Global structure for time step management */
   domain->time_step = cs_get_glob_time_step();
+  domain->time_step->dt_ref = default_time_step;
 
   /* Time options () */
+
   domain->time_options.inpdt0 = 0; /* standard calculation */
   domain->time_options.iptlro = 0;
   domain->time_options.idtvar = 0; /* constant time step by default */
@@ -180,7 +182,6 @@ cs_domain_create(void)
   domain->time_options.cflmmx = 0.99;
   domain->time_options.foumax = 10.;
   domain->time_options.varrdt = 0.1;
-  domain->time_options.dtref = default_time_step;
   domain->time_options.dtmin = default_time_step;
   domain->time_options.dtmax = default_time_step;
   domain->time_options.relxst = 0.7; /* Not useful in CDO schemes */
@@ -402,8 +403,8 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
       domain->time_options.dtmax = dtmax;
       /* TODO: Check how the following value is set in FORTRAN
        * domain->time_options.dtref = 0.5*(dtmin + dtmax); */
-      if (domain->time_options.dtref < 0) /* Should be the initial val. */
-        domain->time_options.dtref = domain->dt_cur;
+      if (domain->time_step->dt_ref < 0) /* Should be the initial val. */
+        domain->time_step->dt_ref = domain->dt_cur;
 
     }
     else

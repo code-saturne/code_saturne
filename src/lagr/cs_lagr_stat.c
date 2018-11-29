@@ -60,6 +60,7 @@
 #include "cs_parall.h"
 #include "cs_restart_default.h"
 #include "cs_timer_stats.h"
+#include "cs_time_step.h"
 
 #include "cs_log.h"
 #include "cs_array_reduce.h"
@@ -640,7 +641,7 @@ _dt_val(void)
   else if (f != NULL)
     dt_val = f->val;
   else
-    dt_val = &(cs_glob_time_step_options->dtref);
+    dt_val = &(cs_glob_time_step->dt_ref);
 
   return dt_val;
 }
