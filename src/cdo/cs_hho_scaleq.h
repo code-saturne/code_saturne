@@ -198,7 +198,6 @@ cs_hho_scaleq_initialize_system(const cs_equation_param_t  *eqp,
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
  * \param[in, out] data       pointer to cs_hho_scaleq_t structure
@@ -210,7 +209,6 @@ cs_hho_scaleq_initialize_system(const cs_equation_param_t  *eqp,
 void
 cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
                            const cs_real_t            *field_val,
-                           double                      dt_cur,
                            const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
                            void                       *data,

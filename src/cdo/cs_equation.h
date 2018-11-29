@@ -452,14 +452,12 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
  *         unsteady term
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure
- * \param[in]       dt_cur      value of the current time step
  * \param[in, out]  eq          pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_solve(const cs_mesh_t            *mesh,
-                  double                      dt_cur,
                   cs_equation_t              *eq);
 
 /*----------------------------------------------------------------------------*/
@@ -467,16 +465,12 @@ cs_equation_solve(const cs_mesh_t            *mesh,
  * \brief  Build the linear system for this equation
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure
- * \param[in]       time_step   pointer to a time step structure
- * \param[in]       dt_cur      value of the current time step
  * \param[in, out]  eq          pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_build_system(const cs_mesh_t            *mesh,
-                         const cs_time_step_t       *time_step,
-                         double                      dt_cur,
                          cs_equation_t              *eq);
 
 /*----------------------------------------------------------------------------*/
@@ -778,7 +772,6 @@ cs_equation_write_extra_restart(cs_restart_t   *restart);
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
  * \param[in]  ts        pointer to a cs_time_step_t struct.
- * \param[in]  dt_cur    value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
@@ -786,8 +779,7 @@ void
 cs_equation_post_balance(const cs_mesh_t            *mesh,
                          const cs_cdo_connect_t     *connect,
                          const cs_cdo_quantities_t  *cdoq,
-                         const cs_time_step_t       *ts,
-                         double                      dt_cur);
+                         const cs_time_step_t       *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!

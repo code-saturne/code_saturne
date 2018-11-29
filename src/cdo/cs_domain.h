@@ -88,9 +88,9 @@ typedef struct {
   const  cs_mesh_quantities_t   *mesh_quantities;
 
   /* CDO structures:
-     - cs_cdo_connect_t contains additional information about connectivity
-     - cs_cdo_quantities_t contains additional information on mesh quantities
-  */
+   * - cs_cdo_connect_t contains additional information about connectivity
+   * - cs_cdo_quantities_t contains additional information on mesh quantities
+   */
   cs_cdo_connect_t              *connect;
   cs_cdo_quantities_t           *cdo_quantities;
 
@@ -99,11 +99,10 @@ typedef struct {
 
   /* Time step management */
   bool                      only_steady;
-  bool                      is_last_iter;     // true or false
-  double                    dt_cur;           // current time step
-  cs_xdef_t                *time_step_def;    // Definition of the time_step
-  cs_time_step_t           *time_step;        // time step descriptor
-  cs_time_step_options_t    time_options;     // time step options
+  bool                      is_last_iter;     /* true or false */
+  cs_xdef_t                *time_step_def;    /* Definition of the time_step */
+  cs_time_step_t           *time_step;        /* time step descriptor */
+  cs_time_step_options_t    time_options;     /* time step options */
 
   /* Output options */
   int        output_nt;   /* Log information every nt iterations */

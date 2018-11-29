@@ -1127,7 +1127,6 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
  *         convection/diffusion/reaction equation with a CDO-Fb scheme
  *         One works cellwise and then process to the assembly
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1137,8 +1136,7 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
-                                   const cs_mesh_t            *mesh,
+cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,
@@ -1148,18 +1146,17 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_real_t  time_eval = dt_cur; /* dummy variable */
+  const cs_real_t  time_eval = 0; /* dummy variable */
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
 
   cs_timer_t  t0 = cs_timer_time();
 
-  /* Build an array storing the Dirichlet values at faces (dt_cur is a dummy
-     argument) */
+  /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
 
-  _setup_bc(dt_cur, mesh, eqp, eqb, &dir_values);
+  _setup_bc(time_eval, mesh, eqp, eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1174,7 +1171,7 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,   \
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
          dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1326,7 +1323,6 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
  *         implicit Euler scheme.
  *         One works cellwise and then process to the assembly
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1336,8 +1332,7 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
-                               const cs_mesh_t            *mesh,
+cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
                                const int                   field_id,
                                const cs_equation_param_t  *eqp,
                                cs_equation_builder_t      *eqb,
@@ -1347,8 +1342,11 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
+  const cs_real_t  dt_cur = ts->dt[0];
   const cs_real_t  time_eval = t_cur + dt_cur;
+  const cs_real_t  inv_dtcur = 1./dt_cur;
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
@@ -1359,8 +1357,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  /* Build an array storing the Dirichlet values at faces (dt_cur is a dummy
-     argument) */
+  /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
 
   _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values);
@@ -1378,7 +1375,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,   \
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
          dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1459,7 +1456,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping
                                                       or Hodge-Voronoi */
 
-        const double  ptyc = cb->tpty_val * cm->vol_c / dt_cur;
+        const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* Simply add an entry in mat[cell, cell] */
         csys->rhs[cm->n_fc] += ptyc * csys->val_n[cm->n_fc];
@@ -1468,7 +1465,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
       }
       else { /* Use the mass matrix */
 
-        const double  tpty_coef = cb->tpty_val/dt_cur;
+        const double  tpty_coef = cb->tpty_val * inv_dtcur;
         const cs_sdm_t  *mass_mat = cb->hdg;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -1564,7 +1561,6 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
  *         implicit/explicit theta scheme.
  *         One works cellwise and then process to the assembly
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1574,8 +1570,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_solve_theta(double                      dt_cur,
-                            const cs_mesh_t            *mesh,
+cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
                             const int                   field_id,
                             const cs_equation_param_t  *eqp,
                             cs_equation_builder_t      *eqb,
@@ -1587,7 +1582,9 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
+  const cs_real_t  dt_cur = ts->dt[0];
   const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
+  const cs_real_t  inv_dtcur = 1./dt_cur;
   const double  tcoef = 1 - eqp->theta;
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
@@ -1605,10 +1602,10 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
   if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
     compute_initial_source = true;
 
-  /* Build an array storing the Dirichlet values at faces (dt_cur is a dummy
-     argument) */
+  /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
 
+  /* Should not be t_eval since one sets the Dirichlet values */
   _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
@@ -1623,9 +1620,9 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)      \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,     \
-         dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld,           \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
+         dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld,         \
          compute_initial_source)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1744,7 +1741,7 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
        *  b) add to rhs mass_mat * p_n */
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
-        const double  ptyc = cb->tpty_val * cm->vol_c / dt_cur;
+        const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* Only the cell row is involved in the time evolution */
         csys->rhs[cm->n_fc] += ptyc*csys->val_n[cm->n_fc];
@@ -1755,7 +1752,7 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
       }
       else { /* Use the mass matrix */
 
-        const double  tpty_coef = cb->tpty_val / dt_cur;
+        const double  tpty_coef = cb->tpty_val * inv_dtcur;
         const cs_sdm_t  *mass_mat = cb->hdg;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -1850,7 +1847,6 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
  * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb       pointer to a \ref cs_equation_builder_t structure
  * \param[in, out] context   pointer to a scheme builder structure
- * \param[in]      dt_cur    current value of the time step
  *
  * \return a pointer to a \ref cs_equation_balance_t structure
  */
@@ -1859,12 +1855,12 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
 cs_equation_balance_t *
 cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
                         cs_equation_builder_t         *eqb,
-                        void                          *context,
-                        cs_real_t                      dt_cur)
+                        void                          *context)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_real_t  t_cur = cs_shared_time_step->t_cur;
+  const cs_real_t  dt_cur = cs_shared_time_step->dt[0];
   const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
 
   cs_timer_t  t0 = cs_timer_time();
@@ -1879,8 +1875,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
   cs_equation_balance_reset(eb);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, pot,                    \
-         eb, cs_cdofb_cell_bld)
+  shared(quant, connect, eqp, eqb, eqc, pot, eb, cs_cdofb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();

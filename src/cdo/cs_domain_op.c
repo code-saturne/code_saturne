@@ -168,15 +168,13 @@ _analyze_cell_array(const cs_cdo_quantities_t   *cdoq,
  * \param[in]  adv         pointer to a cs_adv_field_t structure
  * \param[in]  cdoq        pointer to a cs_cdo_quantities_t struct.
  * \param[in]  time_step   pointer to a cs_time_step_t struct.
- * \param[in]  dt_cur      value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _post_courant_number(const cs_adv_field_t       *adv,
                      const cs_cdo_quantities_t  *cdoq,
-                     const cs_time_step_t       *time_step,
-                     double                      dt_cur)
+                     const cs_time_step_t       *time_step)
 {
   if (adv == NULL)
     return;
@@ -190,7 +188,7 @@ _post_courant_number(const cs_adv_field_t       *adv,
 
   cs_real_t  *courant = cs_equation_get_tmpbuf();
 
-  cs_advection_get_courant(adv, dt_cur, courant);
+  cs_advection_get_courant(adv, time_step->dt[0], courant);
 
   /* Brief output for the listing */
   _analyze_cell_array(cdoq, label, courant);
@@ -267,15 +265,13 @@ _post_peclet_number(const cs_equation_t        *eq,
  * \param[in]  pty         pointer to a cs_property_t structure
  * \param[in]  cdoq        pointer to a cs_cdo_quantities_t struct.
  * \param[in]  time_step   pointer to a cs_time_step_t struct.
- * \param[in]  dt_cur      value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _post_fourier_number(const cs_property_t        *pty,
                      const cs_cdo_quantities_t  *cdoq,
-                     const cs_time_step_t       *time_step,
-                     double                      dt_cur)
+                     const cs_time_step_t       *time_step)
 {
   if (pty == NULL)
     return;
@@ -284,7 +280,7 @@ _post_fourier_number(const cs_property_t        *pty,
 
   cs_real_t  *fourier = cs_equation_get_tmpbuf();
 
-  cs_property_get_fourier(pty, time_step->t_cur, dt_cur, fourier);
+  cs_property_get_fourier(pty, time_step->t_cur, time_step->dt[0], fourier);
 
   int  len = strlen(pty->name) + 8 + 1;
   char  *label = NULL;
@@ -445,8 +441,7 @@ cs_domain_post(cs_domain_t  *domain,
       for (int adv_id = 0; adv_id < n_adv_fields; adv_id++)
         _post_courant_number(cs_advection_field_by_id(adv_id),
                              domain->cdo_quantities,
-                             domain->time_step,
-                             domain->dt_cur);
+                             domain->time_step);
 
       /* 2. Peclet numbers */
       int n_equations = cs_equation_get_n_equations();
@@ -460,8 +455,7 @@ cs_domain_post(cs_domain_t  *domain,
       for (int i = 0; i < n_properties; i++)
         _post_fourier_number(cs_property_by_id(i),
                              domain->cdo_quantities,
-                             domain->time_step,
-                             domain->dt_cur);
+                             domain->time_step);
 
       cs_log_printf(CS_LOG_DEFAULT,
                     " ------------------------------------------------------------\n");
@@ -472,8 +466,7 @@ cs_domain_post(cs_domain_t  *domain,
     cs_equation_post_balance(domain->mesh,
                              domain->connect,
                              domain->cdo_quantities,
-                             domain->time_step,
-                             domain->dt_cur);
+                             domain->time_step);
 
     /* 5. Specific operations for the GWF module */
     if (cs_gwf_is_activated())

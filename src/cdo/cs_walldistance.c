@@ -533,7 +533,7 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
     assert(cs_equation_is_steady(eq));
 
     /* Define the algebraic system */
-    cs_equation_build_system(mesh, time_step, dt_cur, eq);
+    cs_equation_build_system(mesh, eq);
 
     /* Solve the algebraic system */
     cs_equation_solve_deprecated(eq);

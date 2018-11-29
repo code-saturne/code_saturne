@@ -170,7 +170,6 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
  *         convection/diffusion/reaction equation with a CDO-VCb scheme
  *         One works cellwise and then process to the assembly.
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -180,8 +179,7 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
-                                    const cs_mesh_t            *mesh,
+cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
                                     const int                   field_id,
                                     const cs_equation_param_t  *eqp,
                                     cs_equation_builder_t      *eqb,
@@ -194,7 +192,6 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
  *         Time scheme is an implicit Euler
  *         One works cellwise and then process to the assembly.
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -204,8 +201,7 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
-                                const cs_mesh_t            *mesh,
+cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
                                 const int                   field_id,
                                 const cs_equation_param_t  *eqp,
                                 cs_equation_builder_t      *eqb,
@@ -218,7 +214,6 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
  *         Time scheme is a theta scheme.
  *         One works cellwise and then process to the assembly.
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -228,8 +223,7 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
-                             const cs_mesh_t            *mesh,
+cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
                              const int                   field_id,
                              const cs_equation_param_t  *eqp,
                              cs_equation_builder_t      *eqb,

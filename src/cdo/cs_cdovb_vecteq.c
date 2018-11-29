@@ -1203,7 +1203,6 @@ cs_cdovb_vecteq_set_dir_bc(cs_real_t                     t_eval,
  *         convection/diffusion/reaction equation with a CDO-Vb scheme.
  *         One works cellwise and then process to the assembly.
  *
- * \param[in]      dt_cur     current value of the time step (dummy arg.)
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1213,15 +1212,12 @@ cs_cdovb_vecteq_set_dir_bc(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_solve_steady_state(double                      dt_cur,
-                                   const cs_mesh_t            *mesh,
+cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,
                                    void                       *context)
 {
-  CS_UNUSED(dt_cur);
-
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -1233,13 +1229,12 @@ cs_cdovb_vecteq_solve_steady_state(double                      dt_cur,
   cs_field_t  *fld = cs_field_by_id(field_id);
 
   /* Build an array storing the Dirichlet values at vertices and another one
-     with a tags to detect vertices related to a Neumann BC (dt_cur is a dummy
-     argument) */
+     with a tags to detect vertices related to a Neumann BC*/
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *forced_ids = NULL;
 
-  _vbv_setup(dt_cur, mesh, eqp, eqb, eqc->vtx_bc_flag,
-             &dir_values, &forced_ids);
+  /* First argument is set to 0: this a dummy argument in steady-state case */
+  _vbv_setup(0, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values, &forced_ids);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1259,9 +1254,8 @@ cs_cdovb_vecteq_solve_steady_state(double                      dt_cur,
   /* ------------------------- */
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, forced_ids, fld, rs,                               \
-         _vbv_cell_system, _vbv_cell_builder)
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav,               \
+         dir_values, forced_ids, fld, rs, _vbv_cell_system, _vbv_cell_builder)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1272,7 +1266,7 @@ cs_cdovb_vecteq_solve_steady_state(double                      dt_cur,
     int  t_id = 0;
 #endif
 
-    const cs_real_t  time_eval = dt_cur; /* dummy variable */
+    const cs_real_t  time_eval = 0; /* dummy variable */
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */

@@ -312,7 +312,6 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]  ts         pointer to a cs_time_step_t structure
- * \param[in]  dt_cur     current value of the time step
  * \param[in]  cur2prev   true or false
  */
 /*----------------------------------------------------------------------------*/
@@ -322,7 +321,6 @@ cs_gwf_update(const cs_mesh_t             *mesh,
               const cs_cdo_connect_t      *connect,
               const cs_cdo_quantities_t   *quant,
               const cs_time_step_t        *ts,
-              double                       dt_cur,
               bool                         cur2prev);
 
 /*----------------------------------------------------------------------------*/
@@ -349,7 +347,6 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      time_step  pointer to a cs_time_step_t structure
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
  */
@@ -358,7 +355,6 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
 void
 cs_gwf_compute(const cs_mesh_t              *mesh,
                const cs_time_step_t         *time_step,
-               double                        dt_cur,
                const cs_cdo_connect_t       *connect,
                const cs_cdo_quantities_t    *cdoq);
 

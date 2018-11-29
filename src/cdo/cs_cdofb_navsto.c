@@ -369,7 +369,6 @@ cs_cdofb_navsto_free_context(const cs_navsto_param_t      *nsp)
  *         an Artificial Compressibility - VPP approach.
  *
  * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
- * \param[in]      dt_cur      current value of the time step
  * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
  *                             structure cast on-the-fly
@@ -378,16 +377,16 @@ cs_cdofb_navsto_free_context(const cs_navsto_param_t      *nsp)
 
 void
 cs_cdofb_navsto_ac_vpp_compute(const cs_mesh_t              *mesh,
-                               double                        dt_cur,
                                const cs_navsto_param_t      *nsp,
                                void                         *nsc_input)
 {
-  CS_UNUSED(nsp);
-
   cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
   cs_navsto_ac_vpp_t  *nscc = (cs_navsto_ac_vpp_t *)nsc_input;
-
   cs_equation_t *mom_eq = nscc->momentum;
+
+  CS_UNUSED(nsp);
+  CS_UNUSED(mesh);
+  CS_UNUSED(mom_eq);
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -403,7 +402,6 @@ cs_cdofb_navsto_ac_vpp_compute(const cs_mesh_t              *mesh,
  *         an incremental correction-projection approach.
  *
  * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
- * \param[in]      dt_cur      current value of the time step
  * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
  *                             structure cast on-the-fly
@@ -412,19 +410,17 @@ cs_cdofb_navsto_ac_vpp_compute(const cs_mesh_t              *mesh,
 
 void
 cs_cdofb_navsto_proj_compute(const cs_mesh_t              *mesh,
-                             double                        dt_cur,
                              const cs_navsto_param_t      *nsp,
                              void                         *nsc_input)
 {
-  CS_UNUSED(dt_cur);
-
   cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
   cs_navsto_projection_t  *nscc = (cs_navsto_projection_t *)nsc_input;
 
   cs_timer_t  t0 = cs_timer_time();
 
   /* TODO */
-  CS_UNUSED(nssc);
+  CS_UNUSED(mesh);
+  CS_UNUSED(nsp);
   CS_UNUSED(nscc);
 
   cs_timer_t  t1 = cs_timer_time();

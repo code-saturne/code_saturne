@@ -217,7 +217,6 @@ cs_cdovb_vecteq_set_dir_bc(cs_real_t                     t_eval,
  *         convection/diffusion/reaction equation with a CDO-Vb scheme.
  *         One works cellwise and then process to the assembly.
  *
- * \param[in]      dt_cur     current value of the time step (dummy arg.)
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -227,8 +226,7 @@ cs_cdovb_vecteq_set_dir_bc(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_solve_steady_state(double                      dt_cur,
-                                   const cs_mesh_t            *mesh,
+cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,

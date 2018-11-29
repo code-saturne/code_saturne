@@ -109,7 +109,6 @@ typedef void
 /*!
  * \brief  Build and solve a linear system within the CDO framework
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
  * \param[in]      field_id   id related to the variable field of this equation
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
@@ -119,8 +118,7 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_solve_t)(double                      dt_cur,
-                      const cs_mesh_t            *mesh,
+(cs_equation_solve_t)(const cs_mesh_t            *mesh,
                       const int                   field_id,
                       const cs_equation_param_t  *eqp,
                       cs_equation_builder_t      *eqb,
@@ -174,7 +172,6 @@ typedef void
  *
  * \param[in]      m          pointer to a \ref cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  * \param[in, out] data       pointer to a scheme builder structure
@@ -186,7 +183,6 @@ typedef void
 typedef void
 (cs_equation_build_system_t)(const cs_mesh_t            *mesh,
                              const cs_real_t            *field_val,
-                             double                      dt_cur,
                              const cs_equation_param_t  *eqp,
                              cs_equation_builder_t      *eqb,
                              void                       *data,
@@ -240,7 +236,6 @@ typedef void
  * \param[in]      eqp             pointer to a \ref cs_equation_param_t
  * \param[in, out] eqb             pointer to a \ref cs_equation_builder_t
  * \param[in, out] context         pointer to a scheme builder structure
- * \param[in]      dt_cur          current value of the time step
  *
  * \return a pointer to a cs_equation_balance_t structure
  */
@@ -249,8 +244,7 @@ typedef void
 typedef cs_equation_balance_t *
 (cs_equation_get_balance_t)(const cs_equation_param_t    *eqp,
                             cs_equation_builder_t        *eqb,
-                            void                         *context,
-                            cs_real_t                     dt_cur);
+                            void                         *context);
 
 /*----------------------------------------------------------------------------*/
 /*!

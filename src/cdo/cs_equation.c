@@ -1945,20 +1945,15 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
  * \brief  Build the linear system for this equation
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure
- * \param[in]       time_step   pointer to a time step structure
- * \param[in]       dt_cur      value of the current time step
  * \param[in, out]  eq          pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_build_system(const cs_mesh_t            *mesh,
-                         const cs_time_step_t       *time_step,
-                         double                      dt_cur,
                          cs_equation_t              *eq)
 {
   assert(eq != NULL);
-  CS_UNUSED(time_step);
 
   const cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
@@ -1976,7 +1971,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
                         &(eq->rhs));
 
   /* Build the algebraic system to solve */
-  eq->build_system(mesh, fld->val, dt_cur,
+  eq->build_system(mesh, fld->val,
                    eq->param,
                    eq->builder,
                    eq->scheme_context,
@@ -2098,42 +2093,6 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build and then solve the linear system for an equation with an
- *         unsteady term
- *
- * \param[in]       mesh        pointer to a cs_mesh_t structure
- * \param[in]       dt_cur      value of the current time step
- * \param[in, out]  eq          pointer to a cs_equation_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_solve(const cs_mesh_t            *mesh,
-                  double                      dt_cur,
-                  cs_equation_t              *eq)
-{
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
-
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_start(eq->main_ts_id);
-
-  /* Allocate, build and solve the algebraic system:
-     The linear solver is called inside and the field value is updated inside
-  */
-  eq->solve(dt_cur,        /* dummy time step value */
-            mesh,
-            eq->field_id,
-            eq->param,
-            eq->builder,
-            eq->scheme_context);
-
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_stop(eq->main_ts_id);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Build and then solve the linear system for this equation when the
  *         goal is to find the steady state
  *
@@ -2154,12 +2113,36 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
   /* Allocate, build and solve the algebraic system:
      The linear solver is called inside and the field value is updated inside
   */
-  eq->solve(-1.0,        /* dummy time step value */
-            mesh,
-            eq->field_id,
-            eq->param,
-            eq->builder,
-            eq->scheme_context);
+  eq->solve(mesh, eq->field_id, eq->param, eq->builder, eq->scheme_context);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and then solve the linear system for an equation with an
+ *         unsteady term
+ *
+ * \param[in]       mesh        pointer to a cs_mesh_t structure
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_solve(const cs_mesh_t            *mesh,
+                  cs_equation_t              *eq)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  /* Allocate, build and solve the algebraic system:
+     The linear solver is called inside and the field value is updated inside
+  */
+  eq->solve(mesh, eq->field_id, eq->param, eq->builder, eq->scheme_context);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
@@ -2620,7 +2603,6 @@ cs_equation_write_extra_restart(cs_restart_t   *restart)
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
  * \param[in]  ts        pointer to a cs_time_step_t struct.
- * \param[in]  dt_cur    value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2628,8 +2610,7 @@ void
 cs_equation_post_balance(const cs_mesh_t            *mesh,
                          const cs_cdo_connect_t     *connect,
                          const cs_cdo_quantities_t  *cdoq,
-                         const cs_time_step_t       *ts,
-                         double                      dt_cur)
+                         const cs_time_step_t       *ts)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
@@ -2656,8 +2637,7 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
 
     cs_equation_balance_t  *b = eq->compute_balance(eqp,
                                                     eq->builder,
-                                                    eq->scheme_context,
-                                                    dt_cur);
+                                                    eq->scheme_context);
 
     char *postlabel = NULL;
     int len = strlen(eqp->name) + 13 + 1;

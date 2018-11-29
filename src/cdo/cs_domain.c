@@ -166,15 +166,16 @@ cs_domain_create(void)
   /* Default initialization of the time step */
   domain->only_steady = true;
   domain->is_last_iter = false;
-  domain->dt_cur = default_time_step;
   domain->time_step_def = NULL;
 
   /* Global structure for time step management */
   domain->time_step = cs_get_glob_time_step();
   domain->time_step->dt_ref = default_time_step;
+  domain->time_step->dt[0] = default_time_step;
+  domain->time_step->dt[1] = default_time_step;
+  domain->time_step->dt[2] = default_time_step;
 
   /* Time options () */
-
   domain->time_options.inpdt0 = 0; /* standard calculation */
   domain->time_options.iptlro = 0;
   domain->time_options.idtvar = 0; /* constant time step by default */
@@ -375,48 +376,52 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
   if (domain->only_steady)
     return;
 
-  const cs_time_step_t  *ts = domain->time_step;
-  const double  t_cur = ts->t_cur;
-  const int  nt_cur = ts->nt_cur;
-
+  cs_time_step_t  *ts = domain->time_step;
   cs_xdef_t  *ts_def = domain->time_step_def;
 
   if (ts_def == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              " Please check your settings: Unsteady computation but no"
-              " current time step defined.\n");
+              " %s: Please check your settings: Unsteady computation but no"
+              " current time step defined.\n", __func__);
+
+  const double  t_cur = ts->t_cur;
+  const int  nt_cur = ts->nt_cur;
 
   if (ts_def->type != CS_XDEF_BY_VALUE) { /* dt_cur may change */
+
+    ts->dt[2] = ts->dt[1];
+    ts->dt[1] = ts->dt[0];
 
     if (ts_def->type == CS_XDEF_BY_TIME_FUNCTION) {
 
       /* Compute current time step */
       cs_xdef_timestep_input_t  *param =
         (cs_xdef_timestep_input_t *)ts_def->input;
-      domain->dt_cur = param->func(nt_cur, t_cur, param->input);
+      ts->dt[0] = param->func(nt_cur, t_cur, param->input);
 
       /* Update time_options */
-      double  dtmin = CS_MIN(domain->time_options.dtmin, domain->dt_cur);
-      double  dtmax = CS_MAX(domain->time_options.dtmax, domain->dt_cur);
+      double  dtmin = CS_MIN(domain->time_options.dtmin, ts->dt[0]);
+      double  dtmax = CS_MAX(domain->time_options.dtmax, ts->dt[0]);
 
       domain->time_options.dtmin = dtmin;
       domain->time_options.dtmax = dtmax;
+
       /* TODO: Check how the following value is set in FORTRAN
        * domain->time_options.dtref = 0.5*(dtmin + dtmax); */
       if (domain->time_step->dt_ref < 0) /* Should be the initial val. */
-        domain->time_step->dt_ref = domain->dt_cur;
+        domain->time_step->dt_ref = ts->dt[0];
 
     }
     else
       bft_error(__FILE__, __LINE__, 0,
-                " Invalid way of defining the current time step.\n"
-                " Please modify your settings.");
+                " %s: Invalid way of defining the current time step.\n"
+                " Please modify your settings.", __func__);
 
   }
 
   /* Check if this is the last iteration */
   if (ts->t_max > 0) /* t_max has been set */
-    if (t_cur + domain->dt_cur > ts->t_max)
+    if (t_cur + ts->dt[0] > ts->t_max)
       domain->is_last_iter = true;
   if (ts->nt_max > 0) /* nt_max has been set */
     if (nt_cur + 1 > ts->nt_max)
@@ -437,7 +442,7 @@ cs_domain_increment_time(cs_domain_t  *domain)
   cs_time_step_t  *ts = domain->time_step;
 
   /* Use Kahan's trick to limit the truncation error */
-  double  z = domain->dt_cur - cs_domain_kahan_time_compensation;
+  double  z = ts->dt[0] - cs_domain_kahan_time_compensation;
   double  t = ts->t_cur + z;
 
   cs_domain_kahan_time_compensation = (t - ts->t_cur) - z;

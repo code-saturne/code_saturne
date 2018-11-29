@@ -381,7 +381,7 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
   else { /* Deprecated */
 
     /* Define the algebraic system */
-    cs_equation_build_system(m, domain->time_step, domain->dt_cur, eq);
+    cs_equation_build_system(m, eq);
 
     /* Solve the algebraic system */
     cs_equation_solve_deprecated(eq);

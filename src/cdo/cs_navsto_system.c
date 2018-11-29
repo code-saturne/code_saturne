@@ -618,7 +618,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t      *mesh)
 
   /* Build and solve the Navier-Stokes system */
   if (nsp->time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
-    ns->compute(mesh, ns->param, dt_cur, ns->scheme_context);
+    ns->compute(mesh, ns->param, ns->scheme_context);
 
   /* TODO: Update the variable states */
 
@@ -629,20 +629,18 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t      *mesh)
  * \brief  Build, solve and update the Navier-Stokes system
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      dt_cur     current value of the time step
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute(const cs_mesh_t              *mesh,
-                         double                        dt_cur)
+cs_navsto_system_compute(const cs_mesh_t       *mesh)
 {
   cs_navsto_system_t  *ns = cs_navsto_system;
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   /* Build and solve the Navier-Stokes system */
-  ns->compute(mesh, ns->param, dt_cur, ns->scheme_context);
+  ns->compute(mesh, ns->param, ns->scheme_context);
 
   /* TODO: Update the variable states */
 

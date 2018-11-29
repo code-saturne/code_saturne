@@ -1136,7 +1136,6 @@ cs_hho_vecteq_initialize_system(const cs_equation_param_t   *eqp,
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
  * \param[in, out] data       pointer to cs_hho_vecteq_t structure
@@ -1148,7 +1147,6 @@ cs_hho_vecteq_initialize_system(const cs_equation_param_t   *eqp,
 void
 cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
                            const cs_real_t            *field_val,
-                           double                      dt_cur,
                            const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
                            void                       *data,
@@ -1176,6 +1174,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_real_t  t_cur = cs_shared_time_step->t_cur;
+  const cs_real_t  dt_cur = cs_shared_time_step->dt[0];
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -1183,8 +1182,8 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,        \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav,               \
          field_val, cs_hho_cell_sys, cs_hho_cell_bld, cs_hho_builders)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */

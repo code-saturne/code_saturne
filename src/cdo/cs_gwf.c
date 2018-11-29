@@ -1275,7 +1275,6 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]  ts         pointer to a cs_time_step_t structure
- * \param[in]  dt_cur     current value of the time step
  * \param[in]  cur2prev   true or false
  */
 /*----------------------------------------------------------------------------*/
@@ -1285,7 +1284,6 @@ cs_gwf_update(const cs_mesh_t             *mesh,
               const cs_cdo_connect_t      *connect,
               const cs_cdo_quantities_t   *quant,
               const cs_time_step_t        *ts,
-              double                       dt_cur,
               bool                         cur2prev)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
@@ -1298,7 +1296,8 @@ cs_gwf_update(const cs_mesh_t             *mesh,
   /* Update head */
   _update_head(gw, quant, connect, cur2prev);
 
-  cs_real_t  time_eval = cur2prev ?
+  const cs_real_t  dt_cur = ts->dt[0];
+  const cs_real_t  time_eval = cur2prev ?
     _get_time_eval(gw, ts->t_cur, dt_cur) : ts->t_cur;
 
   /* Update the advection field related to the groundwater flow module */
@@ -1382,8 +1381,6 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
   cs_gwf_t  *gw = cs_gwf_main_structure;
   cs_equation_t  *richards = gw->richards;
 
-  double  dt_cur = 0.;  /* Useless in case of steady-state computation */
-
   /* Sanity check */
   assert(richards != NULL);
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
@@ -1398,7 +1395,7 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
     else { /* Deprecated */
 
       /* Define the algebraic system */
-      cs_equation_build_system(mesh, time_step, dt_cur, richards);
+      cs_equation_build_system(mesh, richards);
 
       /* Solve the algebraic system */
       cs_equation_solve_deprecated(richards);
@@ -1406,7 +1403,7 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
     }
 
     /* Update the variables related to the groundwater flow system */
-    cs_gwf_update(mesh, connect, cdoq, time_step, dt_cur, true);
+    cs_gwf_update(mesh, connect, cdoq, time_step, true);
 
   }
 
@@ -1422,7 +1419,7 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
       else { /* Deprecated */
 
         /* Define the algebraic system */
-        cs_equation_build_system(mesh, time_step, dt_cur, tracer->eq);
+        cs_equation_build_system(mesh, tracer->eq);
 
         /* Solve the algebraic system */
         cs_equation_solve_deprecated(tracer->eq);
@@ -1441,7 +1438,6 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      time_step  pointer to a cs_time_step_t structure
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
  */
@@ -1450,7 +1446,6 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
 void
 cs_gwf_compute(const cs_mesh_t              *mesh,
                const cs_time_step_t         *time_step,
-               double                        dt_cur,
                const cs_cdo_connect_t       *connect,
                const cs_cdo_quantities_t    *cdoq)
 {
@@ -1466,12 +1461,12 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
       gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS) {
 
     if (cs_equation_uses_new_mechanism(richards))
-      cs_equation_solve(mesh, dt_cur, richards);
+      cs_equation_solve(mesh, richards);
 
     else { /* Deprecated */
 
       /* Define the algebraic system */
-      cs_equation_build_system(mesh, time_step, dt_cur, richards);
+      cs_equation_build_system(mesh, richards);
 
       /* Solve the algebraic system */
       cs_equation_solve_deprecated(richards);
@@ -1479,7 +1474,7 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
     }
 
     /* Update the variables related to the groundwater flow system */
-    cs_gwf_update(mesh, connect, cdoq, time_step, dt_cur, true);
+    cs_gwf_update(mesh, connect, cdoq, time_step, true);
 
   }
 
@@ -1490,12 +1485,12 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
     if (!cs_equation_is_steady(tracer->eq)) { /* unsteady ? */
 
       if (cs_equation_uses_new_mechanism(tracer->eq))
-        cs_equation_solve(mesh, dt_cur, tracer->eq);
+        cs_equation_solve(mesh, tracer->eq);
 
       else { /* Deprecated */
 
         /* Define the algebraic system */
-        cs_equation_build_system(mesh, time_step, dt_cur, tracer->eq);
+        cs_equation_build_system(mesh, tracer->eq);
 
         /* Solve the algebraic system */
         cs_equation_solve_deprecated(tracer->eq);

@@ -364,10 +364,7 @@ cs_mesh_deform_solve_displacement(cs_domain_t  *domain)
       assert(cs_equation_is_steady(eq));
 
       /* Define the algebraic system */
-      cs_equation_build_system(domain->mesh,
-                               domain->time_step,
-                               domain->dt_cur,
-                               eq);
+      cs_equation_build_system(domain->mesh, eq);
 
       /* Solve the algebraic system */
       cs_equation_solve_deprecated(eq);

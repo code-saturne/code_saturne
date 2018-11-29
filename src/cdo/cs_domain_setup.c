@@ -334,14 +334,14 @@ cs_domain_def_time_step_by_function(cs_domain_t          *domain,
                                    .func = func};
 
   domain->time_step_def = cs_xdef_timestep_create(CS_XDEF_BY_TIME_FUNCTION,
-                                                  0, // state flag
-                                                  0, // meta flag
+                                                  0,     /* state flag */
+                                                  0,     /* meta flag */
                                                   &def);
 
   /* Default initialization.
      To be changed at first call to cs_domain_time_step_increment() */
 
-  domain->dt_cur = domain->time_step->t_max;
+  domain->time_step->dt[0] = domain->time_step->t_max;
   domain->time_step->dt_ref =  domain->time_step->t_max;
   domain->time_options.dtmin =  domain->time_step->t_max;
   domain->time_options.dtmax = 0.;
@@ -362,18 +362,18 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
-  domain->time_step->is_variable = 0; // constant time step
-  domain->time_options.idtvar = 0;    // constant time step by default
+  domain->time_step->is_variable = 0; /* constant time step */
+  domain->time_options.idtvar = 0;    /* constant time step by default */
 
   domain->time_step_def = cs_xdef_timestep_create(CS_XDEF_BY_VALUE,
-                                                  0, // state flag
-                                                  0, // meta flag
+                                                  0, /* state flag */
+                                                  0, /* meta flag */
                                                   &dt);
 
-  domain->dt_cur = dt;
-  domain->time_step->dt_ref = domain->dt_cur;
-  domain->time_options.dtmin = domain->dt_cur;
-  domain->time_options.dtmax = domain->dt_cur;
+  domain->time_step->dt[0] = dt;
+  domain->time_step->dt_ref = dt;
+  domain->time_options.dtmin = dt;
+  domain->time_options.dtmax = dt;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -599,7 +599,6 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                   domain->connect,
                   domain->cdo_quantities,
                   domain->time_step,
-                  domain->dt_cur,
                   false); /* operate current to previous ? */
 }
 

@@ -111,7 +111,6 @@ typedef void
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in]      dt_cur          current value of the time step
  * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
@@ -119,7 +118,6 @@ typedef void
 typedef void
 (cs_navsto_compute_t)(const cs_mesh_t              *mesh,
                       const cs_navsto_param_t      *nsp,
-                      double                        dt_cur,
                       void                         *scheme_context);
 
 /*=============================================================================
@@ -345,13 +343,11 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t      *mesh);
  * \brief  Build, solve and update the Navier-Stokes system
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      dt_cur     current value of the time step
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute(const cs_mesh_t              *mesh,
-                         double                        dt_cur);
+cs_navsto_system_compute(const cs_mesh_t              *mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!

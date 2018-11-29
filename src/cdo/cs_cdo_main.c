@@ -111,13 +111,8 @@ _compute_steady_user_equations(cs_domain_t   *domain)
 
         else { /* Deprecated */
 
-          double  dt_cur = 0.; /* Useless for steady-state equations */
-
           /* Define the algebraic system */
-          cs_equation_build_system(domain->mesh,
-                                   domain->time_step,
-                                   dt_cur,
-                                   eq);
+          cs_equation_build_system(domain->mesh, eq);
 
           /* Solve the algebraic system */
           cs_equation_solve_deprecated(eq);
@@ -160,15 +155,12 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
         if (type == CS_EQUATION_TYPE_USER) {
 
           if (cs_equation_uses_new_mechanism(eq))
-            cs_equation_solve(domain->mesh, domain->dt_cur, eq);
+            cs_equation_solve(domain->mesh, eq);
 
           else { /* Deprecated */
 
             /* Define the algebraic system */
-            cs_equation_build_system(domain->mesh,
-                                     domain->time_step,
-                                     domain->dt_cur,
-                                     eq);
+            cs_equation_build_system(domain->mesh, eq);
 
             /* Solve domain */
             cs_equation_solve_deprecated(eq);
@@ -248,31 +240,33 @@ _solve_steady_state_domain(cs_domain_t  *domain)
 static void
 _solve_domain(cs_domain_t  *domain)
 {
-  int  nt_cur = domain->time_step->nt_cur;
+  const cs_time_step_t  *ts = domain->time_step;
+  const int  nt_cur = ts->nt_cur;
+
   bool  do_output = cs_domain_needs_log(domain);
 
   /* Output information */
   if (do_output) {
 
-    double  t_cur = domain->time_step->t_cur;
+    const double  t_cur = ts->t_cur;
+    const double  dt_cur = ts->dt[0];
 
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
     cs_log_printf(CS_LOG_DEFAULT,
-                  "-ite- %d >> Solve domain from time=%6.4e to %6.4e;"
-                  " dt=%5.3e",
-                  nt_cur, t_cur, t_cur + domain->dt_cur, domain->dt_cur);
+                  "-ite- %d >> Solve domain from time=%6.4e to %6.4e; dt=%5.3e",
+                  nt_cur, t_cur, t_cur + dt_cur, dt_cur);
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+
   }
 
   if (cs_gwf_is_activated())
     cs_gwf_compute(domain->mesh,
                    domain->time_step,
-                   domain->dt_cur,
                    domain->connect,
                    domain->cdo_quantities);
 
   if (cs_navsto_system_is_activated())
-    cs_navsto_system_compute(domain->mesh, domain->dt_cur);
+    cs_navsto_system_compute(domain->mesh);
 
   /* User-defined equations */
   _compute_unsteady_user_equations(domain, nt_cur);
