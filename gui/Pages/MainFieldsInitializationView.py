@@ -174,7 +174,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.groupBoxDefinition.show()
             self.initializeVariables(self.zone, self.currentid)
 
-            exp = self.mdl.getFormula(self.zone, self.currentid, 'Velocity')
+            exp = self.mdl.getFormula(self.zone, self.currentid, 'velocity')
             if exp:
                 self.pushButtonVelocity.setStyleSheet("background-color: green")
                 self.pushButtonVelocity.setToolTip(exp)
@@ -235,7 +235,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.currentid = self.modelField.dicoV2M[str(text)]
         self.initializeVariables(self.zone, self.currentid)
 
-        exp = self.mdl.getFormula(self.zone, self.currentid, 'Velocity')
+        exp = self.mdl.getFormula(self.zone, self.currentid, 'velocity')
         if exp:
             self.pushButtonVelocity.setStyleSheet("background-color: green")
             self.pushButtonVelocity.setToolTip(exp)
@@ -330,7 +330,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         Formula for velocity
         """
-        exp = self.mdl.getFormula(self.zone, self.currentid, 'Velocity')
+        exp = self.mdl.getFormula(self.zone, self.currentid, 'velocity')
         if not exp:
             exp = "u = 0.;\nv = 0.;\nw = 0.;"
         req = [('u', 'Velocity along X'),
@@ -352,7 +352,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormula(self.zone, self.currentid, 'Velocity', result)
+            self.mdl.setFormula(self.zone, self.currentid, 'velocity', result)
             self.pushButtonVelocity.setStyleSheet("background-color: green")
             self.pushButtonVelocity.setToolTip(result)
 

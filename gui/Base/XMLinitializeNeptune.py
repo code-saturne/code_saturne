@@ -337,6 +337,14 @@ class XMLinitNeptune(Variables):
                     f = nzi.xmlGetString('formula')
                     nf.xmlSetTextNode(f.replace("Pressure", "pressure"))
 
+            elif node['name'] == 'Velocity':
+                node['name'] = 'velocity'
+                for nzi in node.xmlGetNodeList('initial_value'):
+                    nf = nzi.xmlGetNode('formula')
+                    f  = nzi.xmlGetString('formula')
+                    nf.xmlSetTextNode(f.replace("Velocity", "velocity"))
+
+
 
     def __backwardCompatibilityCurrentVersion(self):
         """
@@ -441,6 +449,13 @@ class XMLinitNeptune(Variables):
                     nf = nzi.xmlGetNode('formula')
                     f = nzi.xmlGetString('formula')
                     nf.xmlSetTextNode(f.replace("Pressure", "pressure"))
+
+            elif node['name'] == 'Velocity':
+                node['name'] = 'velocity'
+                for nzi in node.xmlGetNodeList('initial_value'):
+                    nf = nzi.xmlGetNode('formula')
+                    f  = nzi.xmlGetString('formula')
+                    nf.xmlSetTextNode(f.replace("Velocity", "velocity"))
 
         # ------------------------------------------------------------
 

@@ -179,7 +179,7 @@ class MainFieldsModel(FieldAttributesDescribing, Variables, Model):
         add XML variable and properties
         """
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "VolumeFraction", "alpha"+str(labNum), post = True)
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "Velocity", "U"+str(labNum), dim='3', post = True)
+        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "velocity", "U"+str(labNum), dim='3', post = True)
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "Enthalpy", "enthalpy"+str(labNum), post = True)
 
         Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "density", "density"+str(labNum))

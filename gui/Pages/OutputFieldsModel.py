@@ -395,13 +395,13 @@ class OutputFieldsTestCase(ModelTest):
         MainFieldsModel(self.case).addField()
         mdl = OutputFieldsModel(self.case)
         mdl.setVariableLabel('1','Vitesse1','U1')
-        doc = '''<variable field_id="1" label="Vitesse1" name="VelocityX">
+        doc = '''<variable field_id="1" label="Vitesse1" name="velocityX">
                          <listing_printing status="on"/>
                          <postprocessing_recording status="on"/>
                  </variable>'''
         assert mdl.case.xmlGetNode('variable', field_id = str('1'), label = 'Vitesse1') == self.xmlNodeFromString(doc),\
             'Could not set VariableLabel'
-        assert mdl.getVariableLabel('1','VelocityX') == 'Vitesse1',\
+        assert mdl.getVariableLabel('1','velocityX') == 'Vitesse1',\
             'Could not get VariableLabel'
 
 
@@ -410,13 +410,13 @@ class OutputFieldsTestCase(ModelTest):
         MainFieldsModel(self.case).addField()
         mdl = OutputFieldsModel(self.case)
         mdl.setListingStatus('1','U1','off')
-        doc = '''<variable field_id="1" label="U1" name="VelocityX">
+        doc = '''<variable field_id="1" label="U1" name="velocityX">
                          <listing_printing status="off"/>
                          <postprocessing_recording status="on"/>
                  </variable>'''
         assert mdl.case.xmlGetNode('variable', field_id = str('1'), label = 'U1') == self.xmlNodeFromString(doc),\
             'Could not set ListingStatus'
-        assert mdl.getListingStatus('1','VelocityX') == 'off',\
+        assert mdl.getListingStatus('1','velocityX') == 'off',\
             'Could not get ListingStatus'
 
 
@@ -425,13 +425,13 @@ class OutputFieldsTestCase(ModelTest):
         MainFieldsModel(self.case).addField()
         mdl = OutputFieldsModel(self.case)
         mdl.setPostProcessingStatus('1','U1','off')
-        doc = '''<variable field_id="1" label="U1" name="VelocityX">
+        doc = '''<variable field_id="1" label="U1" name="velocityX">
                          <listing_printing status="on"/>
                          <postprocessing_recording status="off"/>
                  </variable>'''
         assert mdl.case.xmlGetNode('variable', field_id = str('1'), label = 'U1') == self.xmlNodeFromString(doc),\
             'Could not set PostProcessingStatus'
-        assert mdl.getPostProcessingStatus('1','VelocityX') == 'off',\
+        assert mdl.getPostProcessingStatus('1','velocityX') == 'off',\
             'Could not get PostProcessingStatus'
 
 
@@ -440,7 +440,7 @@ class OutputFieldsTestCase(ModelTest):
         MainFieldsModel(self.case).addField()
         mdl = OutputFieldsModel(self.case)
         mdl.setProbesList('1','U1','1')
-        doc = '''<variable field_id="1" label="U1" name="VelocityX">
+        doc = '''<variable field_id="1" label="U1" name="velocityX">
                          <listing_printing status="on"/>
                          <postprocessing_recording status="on"/>
                          <probes>
@@ -449,7 +449,7 @@ class OutputFieldsTestCase(ModelTest):
                  </variable>'''
         assert mdl.case.xmlGetNode('variable', field_id = str('1'), label = 'U1') == self.xmlNodeFromString(doc),\
             'Could not set ProbesList'
-        assert mdl.getProbesList('1','VelocityX') == ['1'],\
+        assert mdl.getProbesList('1','velocityX') == ['1'],\
             'Could not get ProbesList'
 
 
