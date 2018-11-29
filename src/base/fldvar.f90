@@ -1150,7 +1150,7 @@ type(var_cal_opt) :: vcopt
 
 call field_get_key_struct_var_cal_opt(id, vcopt)
 
-vcopt%isstpc = -1
+vcopt%isstpc = -999
 vcopt%nswrsm = -1
 vcopt%imligr = -999
 vcopt%thetav = -1.d0

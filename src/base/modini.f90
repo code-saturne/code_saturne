@@ -354,14 +354,14 @@ endif
 if (itytur.eq.4) then
   ii = iu
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-  if (vcopt%isstpc.eq.-1) then
+  if (vcopt%isstpc.eq.-999) then
     vcopt%isstpc = 1
     call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   endif
   do jj = 1, nscal
     ii = isca(jj)
     call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-    if (vcopt%isstpc.eq.-1) then
+    if (vcopt%isstpc.eq.-999) then
       vcopt%isstpc = 0
       call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
     endif
@@ -373,7 +373,7 @@ do f_id = 0, nfld - 1
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
     call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if (vcopt%isstpc.eq.-1) then
+    if (vcopt%isstpc.eq.-999) then
       vcopt%isstpc = 0
       call field_set_key_struct_var_cal_opt(f_id, vcopt)
     endif
