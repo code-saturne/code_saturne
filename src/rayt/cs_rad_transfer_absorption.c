@@ -168,7 +168,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       if (CS_F_(t) != NULL)
         cpro_temp = CS_F_(t)->val;
       else
-        cpro_temp = CS_FI(t,0)->val;
+        cpro_temp = CS_FI_(t,0)->val;
 
       const cs_real_t *cpro_ym1 = cs_field_by_name("ym_fuel")->val;
       const cs_real_t *cpro_ym2 = cs_field_by_name("ym_oxyd")->val;
