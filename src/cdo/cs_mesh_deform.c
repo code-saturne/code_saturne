@@ -347,13 +347,6 @@ cs_mesh_deform_prescribe_displacement(cs_lnum_t          n_vertices,
 void
 cs_mesh_deform_solve_displacement(cs_domain_t  *domain)
 {
-  static bool initialized = false;
-
-  if (initialized == false) {
-    cs_domain_initialize_systems(domain);
-    initialized = true;
-  }
-
   /* Build and solve equations related to the deformation */
 
   const char *eq_name[] = {"mesh_deform_x", "mesh_deform_y", "mesh_deform_z"};

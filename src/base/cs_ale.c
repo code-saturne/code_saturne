@@ -178,10 +178,10 @@ _fixed_displacement(cs_real_t           time,
   CS_UNUSED(time);
   CS_UNUSED(input);
 
-  const cs_real_3_t *restrict  disale =
-    (const cs_real_3_t *restrict)cs_field_by_name("disale")->val;
-  const cs_real_3_t *restrict  vtx_coord =
-    (const cs_real_3_t *restrict)cs_glob_mesh->vtx_coord;
+  const cs_real_3_t *restrict  disale
+    = (const cs_real_3_t *restrict)cs_field_by_name("disale")->val;
+  const cs_real_3_t *restrict  vtx_coord
+    = (const cs_real_3_t *restrict)cs_glob_mesh->vtx_coord;
 
   cs_real_3_t *resv = (cs_real_3_t *)res;
 
@@ -234,8 +234,8 @@ _free_surface(cs_real_t           time,
   const cs_real_3_t *restrict vtx_coord
     = (const cs_real_3_t *restrict)m->vtx_coord;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *restrict  b_face_normal =
-    (const cs_real_3_t *restrict)mq->b_face_normal;
+  const cs_real_3_t *restrict  b_face_normal
+    = (const cs_real_3_t *restrict)mq->b_face_normal;
   const cs_real_3_t *restrict  b_face_cog
     = (const cs_real_3_t *restrict)mq->b_face_cog;
 
@@ -364,10 +364,6 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
 
     cs_ale_setup_boundaries(impale, ale_bc_type);
 
-    cs_equation_initialize(m,
-                           domain->connect,
-                           domain->cdo_quantities,
-                           domain->time_step);
   }
 
   /* Build and solve equation on the mesh velocity */
@@ -1006,10 +1002,11 @@ cs_ale_activate(void)
 
   cs_domain_set_cdo_mode(cs_glob_domain, CS_DOMAIN_CDO_MODE_WITH_FV);
 
-  cs_equation_t  *eq = cs_equation_add("mesh_velocity", /* equation name */
+  cs_equation_t  *eq
+    = cs_equation_add("mesh_velocity", /* equation name */
                       "mesh_velocity", /* associated variable field name */
                       CS_EQUATION_TYPE_PREDEFINED,
-                      3, /* dimension of the unknown */
+                      3,                        /* dimension of the unknown */
                       CS_PARAM_BC_HMG_NEUMANN); /* default boundary */
 
   cs_equation_param_t  *eqp = cs_equation_get_param(eq);
@@ -1060,7 +1057,6 @@ void
 cs_ale_init_setup(cs_domain_t *domain)
 {
   const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
 
   /* Mesh viscosity (iso or ortho)
    * TODO declare it before: add in activate, def here...  */
@@ -1070,6 +1066,7 @@ cs_ale_init_setup(cs_domain_t *domain)
 
   cs_property_def_by_field(viscosity, cs_field_by_name("mesh_viscosity"));
 
+  cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(CS_F_(mesh_u), key_cal_opt_id, &var_cal_opt);
 
   //FIXME should be done elsewhere
@@ -1093,8 +1090,8 @@ cs_ale_init_setup(cs_domain_t *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_setup_boundaries(const int           impale[],
-                        const int           ale_bc_type[])
+cs_ale_setup_boundaries(const int      impale[],
+                        const int      ale_bc_type[])
 {
   int face_type, imp_dis;
 

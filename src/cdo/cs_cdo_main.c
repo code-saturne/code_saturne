@@ -442,6 +442,10 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   cs_log_printf(CS_LOG_DEFAULT, "#      Start main loop\n");
   cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
 
+  /*  Build high-level structures and create algebraic systems
+      Set the initial values of the fields and properties */
+  cs_domain_initialize_systems(domain);
+
   /* Flush listing and setup.log files */
   cs_log_printf_flush(CS_LOG_DEFAULT);
   cs_log_printf_flush(CS_LOG_SETUP);
@@ -533,10 +537,6 @@ cs_cdo_main(cs_domain_t   *domain)
 
   /* Timer statistics */
   cs_timer_stats_start(cs_cdo_ts_id);
-
-  /*  Build high-level structures and create algebraic systems
-      Set the initial values of the fields and properties */
-  cs_domain_initialize_systems(domain);
 
   /* Read a restart file if needed */
   cs_domain_read_restart(domain);
