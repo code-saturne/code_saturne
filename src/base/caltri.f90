@@ -1017,6 +1017,10 @@ endif
 
 if (ntlist.gt.0) then
   modntl = mod(ntcabs,ntlist)
+  ! Always print 10 first iterations
+  if (ntcabs - ntpabs.le.10) then
+    modntl = 0
+  endif
 elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
   modntl = 0
 else
