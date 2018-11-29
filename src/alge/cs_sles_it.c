@@ -433,7 +433,7 @@ _convergence_test(cs_sles_it_t              *c,
 
   /* If not converged */
   else if (n_iter >= convergence->n_iterations_max) {
-    if (verbosity > 0) {
+    if (verbosity > -1) {
       if (verbosity == 1) /* Already output if verbosity > 1 */
         bft_printf("%s [%s]:\n", cs_sles_it_type_name[c->type],
             convergence->name);
