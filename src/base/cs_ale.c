@@ -260,9 +260,16 @@ _free_surface(cs_real_t           time,
   for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
 
     const cs_lnum_t face_id = z->elt_ids[elt_id];
-    const cs_real_t g_dot_s = cs_math_3_dot_product(grav,
-                                                    b_face_normal[face_id]);
+    const cs_real_t mf_inv_rho_g_dot_s = b_mass_flux[face_id] /
+      (cs_math_3_dot_product(grav, b_face_normal[face_id])
+       * CS_F_(rho_b)->val[face_id]);
     const cs_real_t inv_surf = 1. / mq->b_face_surf[face_id];
+
+    cs_real_3_t f_vel = {
+      grav[0] * mf_inv_rho_g_dot_s,
+      grav[1] * mf_inv_rho_g_dot_s,
+      grav[2] * mf_inv_rho_g_dot_s
+    };
 
     cs_real_3_t normal;
     cs_math_3_normalise(b_face_normal[face_id], normal);
@@ -273,8 +280,8 @@ _free_surface(cs_real_t           time,
     /* Compute the portion of surface associated to v_id_1 */
     for (cs_lnum_t k = s; k < e; k++) {
 
-      const cs_lnum_t  k_1 = (k+1 < e) ? k+1 : k+1-e;
-      const cs_lnum_t  k_2 = (k+2 < e) ? k+2 : k+2-e;
+      const cs_lnum_t k_1 = (k+1 < e) ? k+1 : k+1-(e-s);
+      const cs_lnum_t k_2 = (k+2 < e) ? k+2 : k+2-(e-s);
       const cs_lnum_t v_id0 = m->b_face_vtx_lst[k];
       const cs_lnum_t v_id1 = m->b_face_vtx_lst[k_1];
       const cs_lnum_t v_id2 = m->b_face_vtx_lst[k_2];
@@ -295,13 +302,12 @@ _free_surface(cs_real_t           time,
         b_face_cog[face_id][2] - vtx_coord[v_id1][2],
       };
 
-      cs_real_t portion_surf = 0.5 * inv_surf * (
+      cs_real_t portion_surf = 0.25 * inv_surf * (
           cs_math_3_triple_product(v0v1, v1_cog, normal)
           + cs_math_3_triple_product(v1v2, v1_cog, normal));
 
       for (int i = 0; i < 3; i++)
-        _mesh_vel[v_id1][i] += b_mass_flux[face_id] * grav[i] * portion_surf
-          / (g_dot_s * CS_F_(rho_b)->val[face_id]);
+        _mesh_vel[v_id1][i] += f_vel[i] * portion_surf;
     }
   }
 
