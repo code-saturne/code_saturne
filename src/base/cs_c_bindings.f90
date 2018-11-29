@@ -750,6 +750,27 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Set inlet boundary condition values for turbulence variables based
+    !>        on given k and epsilon values only if not initialized already.
+    !>
+    !> \param[in]     face_id       boundary face id
+    !> \param[in]     k             turbulent kinetic energy
+    !> \param[in]     epsilon       turbulent dissipation
+    !> \param[out]    rcodcl        boundary condition values
+
+    subroutine turbulence_bc_set_uninit_inlet_k_eps(face_num,                  &
+                                                    k, eps,                    &
+                                                    rcodcl)                    &
+      bind(C, name='cs_f_turbulence_bc_set_uninit_inlet_k_eps')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: face_num
+      real(c_double), value :: k, eps
+      real(kind=c_double), dimension(*) :: rcodcl
+    end subroutine turbulence_bc_set_uninit_inlet_k_eps
+
+    !---------------------------------------------------------------------------
+
     !> \brief  General user parameters
 
     subroutine user_parameters()  &

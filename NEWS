@@ -5,6 +5,10 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- Fix bug in automatic turbulent BCs. They were only set if not already
+  initialized. Cases calling turbulent_bc_inlet_k_eps in user sources to
+  overwrite GUI settings were impacted.
+
 - Fix coherency check of slope test indicator with SIMPLE algorithm.
 
 - Compressible: fix density time scheme in transported passive scalar/vector

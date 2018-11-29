@@ -171,6 +171,18 @@ cs_f_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_num,
                                         double      dh,
                                         double     *rcodcl);
 
+void
+cs_f_turbulence_bc_inlet_k_eps(cs_lnum_t   face_num,
+                               double      k,
+                               double      eps,
+                               double     *rcodcl);
+
+void
+cs_f_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_num,
+                                          double      k,
+                                          double      eps,
+                                          double     *rcodcl);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -308,6 +320,84 @@ _inlet_bc(cs_lnum_t   face_id,
 
   if (cs_glob_turb_model->itytur == 2) {
 
+    rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
+    rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+
+  }
+
+  else if (cs_glob_turb_model->itytur == 3) {
+
+    double d2s3 = 2./3.;
+    if (_turb_bc_id.rij == -1) {
+      rcodcl[_turb_bc_id.r11*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[_turb_bc_id.r22*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[_turb_bc_id.r33*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[_turb_bc_id.r12*n_b_faces + face_id] = 0.;
+      rcodcl[_turb_bc_id.r13*n_b_faces + face_id] = 0.;
+      rcodcl[_turb_bc_id.r23*n_b_faces + face_id] = 0.;
+      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    }
+    else {
+      rcodcl[_turb_bc_id.rij*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[(_turb_bc_id.rij + 1)*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[(_turb_bc_id.rij + 2)*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[(_turb_bc_id.rij + 3)*n_b_faces + face_id] = 0.;
+      rcodcl[(_turb_bc_id.rij + 4)*n_b_faces + face_id] = 0.;
+      rcodcl[(_turb_bc_id.rij + 5)*n_b_faces + face_id] = 0.;
+      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    }
+
+    if (cs_glob_turb_model->iturb == 32)
+      rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] = 1.;
+
+  }
+  else if (cs_glob_turb_model->itytur == 5) {
+
+    rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
+    rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+
+    rcodcl[_turb_bc_id.phi*n_b_faces + face_id] = 2./3.;
+    if (cs_glob_turb_model->iturb == 50) {
+      rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] = 0.;
+    }
+    else if (cs_glob_turb_model->iturb == 51) {
+      rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] = 0.;
+    }
+
+  }
+  else if (cs_glob_turb_model->itytur == 6) {
+
+    rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
+    rcodcl[_turb_bc_id.omg*n_b_faces + face_id] = eps/cs_turb_cmu/k;
+
+  }
+  else if (cs_glob_turb_model->itytur == 7) {
+
+    rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] = cs_turb_cmu*k*k/eps;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*
+ * Assign turbulent boundary condition to a given face only if unitialized.
+ *
+ * parameters:
+ *   face_id <-- face id
+ *   k       <-- k
+ *   eps     <-- epsilon
+ *   rcodcl  <-> boundary condition values
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_set_uninit_inlet_bc(cs_lnum_t   face_id,
+                     double      k,
+                     double      eps,
+                     double     *rcodcl)
+{
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+  if (cs_glob_turb_model->itytur == 2) {
+
     if (rcodcl[_turb_bc_id.k  *n_b_faces + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
 
@@ -366,13 +456,15 @@ _inlet_bc(cs_lnum_t   face_id,
 
     if (rcodcl[_turb_bc_id.phi*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[_turb_bc_id.phi*n_b_faces + face_id] = 2./3.;
-    if (cs_glob_turb_model->iturb == 50)
+
+    if (cs_glob_turb_model->iturb == 50) {
       if (rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
         rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] = 0.;
-    else if (cs_glob_turb_model->iturb == 51)
+    }
+    else if (cs_glob_turb_model->iturb == 51) {
         if (rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
           rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] = 0.;
-
+    }
   }
   else if (cs_glob_turb_model->itytur == 6) {
 
@@ -453,9 +545,8 @@ cs_f_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_num,
  *
  * parameters:
  *   face_num    <-- face number
- *   uref2       <-- square of the reference flow velocity
- *   t_intensity <-- turbulence intensity
- *   dh          <-- hydraulic diameter \f$ D_H \f$
+ *   k           <-- turbulent kinetic energy
+ *   eps         <-- turbulent dissipation
  *   rcodcl      <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
@@ -466,6 +557,26 @@ cs_f_turbulence_bc_inlet_k_eps(cs_lnum_t   face_num,
                                double     *rcodcl)
 {
   _inlet_bc(face_num - 1, k, eps, rcodcl);
+}
+
+/*----------------------------------------------------------------------------
+ * Equivalent of cs_turbulence_bc_set_uninit_inlet_ke for Fortran calls
+ * (using 1-based face number instead of id).
+ *
+ * parameters:
+ *   face_num    <-- face number
+ *   k           <-- turbulent kinetic energy
+ *   eps         <-- turbulent dissipation
+ *   rcodcl      <-> boundary condition values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_num,
+                                          double      k,
+                                          double      eps,
+                                          double     *rcodcl)
+{
+  _set_uninit_inlet_bc(face_num - 1, k, eps, rcodcl);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -684,6 +795,48 @@ cs_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_id,
   _ke_turb_intensity(uref2, t_intensity, dh, &k, &eps);
 
   _inlet_bc(face_id, k, eps, rcodcl);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set inlet boundary condition values for turbulence variables based
+ *        on given k and epsilon values.
+ *
+ * \param[in]     face_id    boundary face id
+ * \param[in]     k          turbulent kinetic energy
+ * \param[in]     eps        turbulent dissipation
+ * \param[out]    rcodcl     boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
+                             double      k,
+                             double      eps,
+                             double     *rcodcl)
+{
+  _inlet_bc(face_id, k, eps, rcodcl);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set inlet boundary condition values for turbulence variables based
+ *        on given k and epsilon values only if not already initialized.
+ *
+ * \param[in]     face_id    boundary face id
+ * \param[in]     k          turbulent kinetic energy
+ * \param[in]     eps        turbulent dissipation
+ * \param[out]    rcodcl     boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
+                                        double      k,
+                                        double      eps,
+                                        double     *rcodcl)
+{
+  _set_uninit_inlet_bc(face_id, k, eps, rcodcl);
 }
 
 /*----------------------------------------------------------------------------*/
