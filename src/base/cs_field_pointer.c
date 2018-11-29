@@ -324,9 +324,6 @@ cs_field_pointer_map_base(void)
   cs_field_pointer_map(CS_ENUMF_(void_f),
                        cs_field_by_name_try("void_fraction"));
 
-  cs_field_pointer_map(CS_ENUMF_(vol_f),
-                       cs_field_by_name_try("volume_fraction"));
-
   cs_field_pointer_map(CS_ENUMF_(h),
                        cs_field_by_name_try("enthalpy"));
   cs_field_pointer_map(CS_ENUMF_(t),

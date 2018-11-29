@@ -200,6 +200,7 @@ typedef enum {
   CS_ENUMF_(pack_zone_id),   /*!< Id of the packing zone */
 
   /* NCFD fields */
+  CS_ENUMF_(yf_ncond),       /*!< non-condensable mass fraction */
   CS_ENUMF_(qp),             /*!< Turbulent Kinetic Energy q2 */
   CS_ENUMF_(qfp),            /*!< Covariance q12 */
 
