@@ -3,6 +3,10 @@ Release 5.3.2 (unreleased)
 
 Bug fixes:
 
+- Fix bug in automatic turbulent BCs. They were only set if not already
+  initialized. Cases calling turbulent_bc_inlet_k_eps in user sources to
+  overwrite GUI settings were impacted.
+
 - Fix uncompatible pointer type assignment warning on fluid factors at face
   in fully fluid case in mass flux compuation and matrix building.
 
