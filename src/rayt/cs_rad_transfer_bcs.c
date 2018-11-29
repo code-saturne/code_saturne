@@ -913,6 +913,8 @@ cs_rad_transfer_bcs(int         nvar,
   if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
 
     cs_field_t *f_temp = CS_F_(t);
+    if (t_temp == NULL)
+      t_temp = CS_FI_(t,0);
 
     if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
 
