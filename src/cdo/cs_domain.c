@@ -194,7 +194,8 @@ cs_domain_create(void)
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
 
   /* By default a wall is defined for the whole boundary of the domain */
-  cs_boundary_create(CS_BOUNDARY_WALL);
+  cs_glob_boundaries = cs_boundary_create(CS_BOUNDARY_WALL);
+  domain->boundaries = cs_glob_boundaries;
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(domain->tcp); /* domain post */
