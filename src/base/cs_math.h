@@ -627,6 +627,32 @@ cs_math_3_cross_product(const cs_real_t u[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the triple product
+ *
+ * \param[in]     u             vector of 3 real values
+ * \param[in]     v             vector of 3 real values
+ * \param[in]     w             vector of 3 real values
+ *
+ * \return the scalar triple product
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(__INTEL_COMPILER)
+#pragma optimization_level 0 /* Bug with O1 or above with icc 15.0.1 20141023 */
+#endif
+
+static inline cs_real_t
+cs_math_3_triple_product(const cs_real_t u[3],
+                         const cs_real_t v[3],
+                         const cs_real_t w[3])
+{
+  return (u[1]*v[2] - u[2]*v[1]) * w[0]
+    + (u[2]*v[0] - u[0]*v[2]) * w[1]
+    + (u[0]*v[1] - u[1]*v[0]) * w[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Inverse a 3x3 matrix
  *
  * \param[in]  in    matrix to inverse

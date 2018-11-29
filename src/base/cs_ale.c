@@ -173,6 +173,11 @@ _free_surface(cs_real_t           time,
 
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *restrict vtx_coord
+    = (const cs_real_3_t *restrict)m->vtx_coord;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)mq->b_face_cog;
+
   cs_ale_bc_input_t *bc_input = (cs_ale_bc_input_t *)input;
   const cs_zone_t *z = cs_boundary_zone_by_name(bc_input->z_name);
   const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
@@ -202,13 +207,47 @@ _free_surface(cs_real_t           time,
     cs_real_t distance = b_mass_flux[face_id]
                        / CS_F_(rho_b)->val[face_id];
     cs_real_t g_dot_s = cs_math_3_dot_product(grav, b_face_normal[face_id]);
+    cs_real_t inv_surf = 1. / mq->b_face_surf[face_id];
+
+    cs_real_3_t normal;
+    cs_math_3_normalise(b_face_normal[face_id], normal);
+
     cs_lnum_t s = m->b_face_vtx_idx[face_id];
     cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
-    for (cs_lnum_t k = s; k < e; k++) {
-      cs_lnum_t v_id = m->b_face_vtx_lst[k];
+
+    /* Compute the portion of surface associated to v_id_1 */
+    for (int k = s; k < e; k++) {
+
+      int k_1 = (k+1 < e) ? k+1 : k+1-e;
+      int k_2 = (k+2 < e) ? k+2 : k+2-e;
+
+      cs_lnum_t v_id0 = m->b_face_vtx_lst[k];
+      cs_lnum_t v_id1 = m->b_face_vtx_lst[k_1];
+      cs_lnum_t v_id2 = m->b_face_vtx_lst[k_2];
+
+      cs_real_3_t v0v1 = {
+        vtx_coord[v_id1][0] - vtx_coord[v_id0][0],
+        vtx_coord[v_id1][1] - vtx_coord[v_id0][1],
+        vtx_coord[v_id1][2] - vtx_coord[v_id0][2],
+      };
+      cs_real_3_t v1v2 = {
+        vtx_coord[v_id2][0] - vtx_coord[v_id1][0],
+        vtx_coord[v_id2][1] - vtx_coord[v_id1][1],
+        vtx_coord[v_id2][2] - vtx_coord[v_id1][2],
+      };
+      cs_real_3_t v1_cog = {
+        b_face_cog[face_id][0] - vtx_coord[v_id1][0],
+        b_face_cog[face_id][1] - vtx_coord[v_id1][1],
+        b_face_cog[face_id][2] - vtx_coord[v_id1][2],
+      };
+
+      cs_real_t portion_surf = 0.5 * inv_surf * (
+          cs_math_3_triple_product(v0v1, v1_cog, normal)
+          + cs_math_3_triple_product(v1v2, v1_cog, normal));
+
       for (int i = 0; i < 3; i++)
-        _mesh_vel[v_id][i] += b_mass_flux[face_id] * grav[i]
-          / (g_dot_s * CS_F_(rho_b)->val[face_id]); //FIXME portion
+        _mesh_vel[v_id1][i] += b_mass_flux[face_id] * grav[i] * portion_surf
+          / (g_dot_s * CS_F_(rho_b)->val[face_id]);
     }
   }
 
@@ -630,7 +669,7 @@ cs_ale_project_displacement(const int           ale_bc_type[],
     = (const cs_real_3_t *restrict)m->vtx_coord;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)mq->cell_cen;
-  const cs_real_3_t *restrict face_cen
+  const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)mq->b_face_cog;
 
   BFT_MALLOC(vtx_counter, n_vertices, cs_real_t);
@@ -741,7 +780,7 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
         cs_real_3_t face_node;
         for (int i = 0; i < 3; i++)
-          face_node[i] = vtx_coord[vtx_id][i] - face_cen[face_id][i];
+          face_node[i] = vtx_coord[vtx_id][i] - b_face_cog[face_id][i];
 
         /* 1st order extrapolation of the mesh velocity at the face center
          * to the node */
@@ -967,6 +1006,7 @@ cs_ale_setup(cs_domain_t *domain)
  * \param[in]     ale_bc_type   Type of boundary for ALE
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_ale_setup_boundaries(const int           impale[],
                         const int           ale_bc_type[])
