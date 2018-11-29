@@ -419,7 +419,7 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
 
   /* ALE mesh velocity */
   if (cs_ale_is_activated())
-    cs_ale_setup(domain);
+    cs_ale_init_setup(domain);
 
   /* Add variables related to user-defined and predefined equations */
   cs_equation_create_fields();

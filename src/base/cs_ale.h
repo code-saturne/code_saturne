@@ -47,7 +47,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 typedef struct {
+
   const char         *z_name;
+
 } cs_ale_bc_input_t;
 
 /*----------------------------------------------------------------------------
@@ -55,9 +57,11 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 enum {
+
   CS_ALE_NONE = 0,
   CS_ALE_LEGACY = 1,
   CS_ALE_CDO = 2
+
 };
 
 /*=============================================================================
@@ -129,6 +133,7 @@ cs_ale_project_displacement(const int           ale_bc_type[],
  * \param[in]       xyzno0        nodes coordinates of the initial mesh
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_ale_update_mesh(const int           itrale,
                    const cs_real_3_t  *xyzno0);
@@ -153,30 +158,10 @@ cs_ale_solve_mesh_velocity(const int   iterns,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Setup the equations related to mesh deformation.
- *
- * \param[in, out]   domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-void
-cs_ale_setup(cs_domain_t *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Setup the equations solving the mesh velocity
- *
- * \param[in, out]   domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-void
-cs_ale_setup_boundaries(const int           impale[],
-                        const int           ale_bc_type[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Activate the mesh velocity solving with CDO
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_ale_activate(void);
 
@@ -187,8 +172,32 @@ cs_ale_activate(void);
  * \return true ifmesh velocity solving with CDO is requested, false otherwise
  */
 /*----------------------------------------------------------------------------*/
+
 bool
 cs_ale_is_activated(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup the equations related to mesh deformation.
+ *
+ * \param[in, out]   domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_init_setup(cs_domain_t *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup the equations solving the mesh velocity
+ *
+ * \param[in, out]   domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_setup_boundaries(const int           impale[],
+                        const int           ale_bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
