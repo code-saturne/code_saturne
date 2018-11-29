@@ -392,11 +392,11 @@ cs_f_time_step_options_get_pointers(int    **inpdt0,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_kahan_compensation(double  a,
-                           double  b,
-                           double  c)
+_update_kahan_compensation(double  *a,
+                           double  *b,
+                           double  *c)
 {
-  _c = (a - b) - c;
+  _c = (*a - *b) - *c;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -523,19 +523,17 @@ cs_time_step_define_prev(int     nt_prev,
 void
 cs_time_step_increment(double  dt)
 {
-  _time_step.nt_cur += 1;
-  _time_step.t_cur += dt;
-
   _time_step.dt[2] = _time_step.dt[1];
   _time_step.dt[1] = _time_step.dt[0];
   _time_step.dt[0] = dt;
 
-  double z = _time_step.t_cur - _c;
+  double z = dt - _c;
   double t = _time_step.t_cur + z;
 
-  _update_kahan_compensation(t, _time_step.t_cur, z);
+  _update_kahan_compensation(&t, &_time_step.t_cur, &z);
 
   _time_step.t_cur = t;
+  _time_step.nt_cur += 1;
 }
 
 /*----------------------------------------------------------------------------*/
