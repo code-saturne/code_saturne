@@ -237,7 +237,6 @@ cs_opts_define(int         argc,
   /* Local variables */
 
   const char *s;
-  const char *s_param = NULL;
   int arg_id = 0, argerr = 0;
 
   const char moduleoptbase[] = "--yacs-module=";
@@ -340,13 +339,6 @@ cs_opts_define(int         argc,
 
 #endif /* defined(HAVE_MPI) */
 
-    else if (strcmp(s, "-p") == 0 || strcmp(s, "--param") == 0) {
-      if (arg_id + 1 < argc)
-        s_param = argv[++arg_id];
-      else
-        argerr = 1;
-    }
-
     else if (strcmp(s, "--preprocess") == 0)
       opts->preprocess = true;
 
@@ -422,11 +414,6 @@ cs_opts_define(int         argc,
       cs_exit(EXIT_FAILURE);
     else
       cs_exit(EXIT_SUCCESS);
-  }
-
-  if (s_param != NULL) {
-    cs_gui_load_file(s_param);
-    cs_notebook_load_from_file();
   }
 
   /* If application name has not been defined, use working directory

@@ -689,6 +689,18 @@ class domain(base_domain):
                     self.symlink(partition_input,
                                  os.path.join(self.exec_dir, 'partition_input'))
 
+        # Fixed parameter name
+
+        setup_ref = "setup.xml"
+        if self.param != None and self.param != "setup.xml":
+            link_path = os.path.join(self.exec_dir, setup_ref)
+            self.purge_result(link_path) # in case of previous run here
+            try:
+                os.symlink(self.param, link_path)
+            except Exception:
+                src_path = os.path.join(self.exec_dir, self.param)
+                shutil.copy2(src_path, link_path)
+
         if err_str:
             sys.stderr.write(err_str)
             self.error = 'data preparation'
@@ -832,9 +844,6 @@ class domain(base_domain):
         # Build kernel command-line arguments
 
         args = ''
-
-        if self.param != None:
-            args += ' --param ' + enquote_arg(self.param)
 
         if self.logging_args != None:
             args += ' ' + self.logging_args

@@ -641,6 +641,14 @@ main(int    argc,
 
   cs_base_logfile_head(argc, argv);
 
+  /* Load setup parameters if present */
+
+  const char s_param[] = "setup.xml";
+  if (cs_file_isreg(s_param)) {
+    cs_gui_load_file(s_param);
+    cs_notebook_load_from_file();
+  }
+
   /* Running as a standalone SALOME component, load YACS component
      library and run yacsinit() component initialization and event loop,
      which should itself include the standard run routine */
