@@ -197,7 +197,11 @@ typedef enum {
   CS_ENUMF_(y_l_pack),       /*!< Mass of liquid per unit volume of cell */
   CS_ENUMF_(thermal_diff_h), /*!< Humid air thermal diffusivity  */
   CS_ENUMF_(thermal_diff_l), /*!< Injected liquid water thermal diffusivity */
-  CS_ENUMF_(pack_zone_id),    /*!< Id of the packing zone */
+  CS_ENUMF_(pack_zone_id),   /*!< Id of the packing zone */
+
+  /* NCFD fields */
+  CS_ENUMF_(qp),             /*!< Turbulent Kinetic Energy q2 */
+  CS_ENUMF_(qfp),            /*!< Covariance q12 */
 
   /* Added variables (scalars) */
   CS_ENUMF_(add_var),        /*!< User added variables */
