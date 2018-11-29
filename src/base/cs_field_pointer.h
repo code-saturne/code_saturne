@@ -199,6 +199,9 @@ typedef enum {
   CS_ENUMF_(thermal_diff_l), /*!< Injected liquid water thermal diffusivity */
   CS_ENUMF_(pack_zone_id),    /*!< Id of the packing zone */
 
+  /* Added variables (scalars) */
+  CS_ENUMF_(add_var),        /*!< User added variables */
+
   /* End of attributes */
 
   CS_FIELD_N_POINTERS
