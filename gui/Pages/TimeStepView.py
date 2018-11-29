@@ -171,7 +171,6 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         if model != 'off':
             if idtvar not in [0, 1]:
                 idtvar = 0
-            self.modelTimeOptions.disableItem(str_model='1')
             self.modelTimeOptions.disableItem(str_model='2')
             self.modelTimeOptions.disableItem(str_model='-1')
             self.labelNTERUP.setText("Velocity-Pressure algorithm\nsub-iterations on Navier-Stokes")
