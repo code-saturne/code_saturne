@@ -184,7 +184,7 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         self.isInList(model, ('enthalpy', 'temperature', 'hsat_P'))
         self.isInList(str(fieldId),self.getFieldIdList())
 
-        node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name="Enthalpy")
+        node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name="enthalpy")
         if not node:
             msg = "There is an error: this node " + str(node) + " should be existed"
             raise ValueError(msg)
@@ -207,7 +207,7 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         self.__verifyZone(zone)
         self.isInList(str(fieldId),self.getFieldIdList())
 
-        node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name="Enthalpy")
+        node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name="enthalpy")
         if not node:
             msg = "There is an error: this node " + str(node) + " should be existed"
             raise ValueError(msg)
@@ -249,11 +249,11 @@ class MainFieldsInitializationTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
-                         <variable field_id="1" label="enthalpy1" name="Enthalpy">
+                         <variable field_id="1" label="enthalpy1" name="enthalpy">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
-                         <variable field_id="1" label="alpha1" name="VolumeFraction">
+                         <variable field_id="1" label="alpha1" name="volume_fraction">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
@@ -295,11 +295,11 @@ class MainFieldsInitializationTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
-                         <variable field_id="1" label="enthalpy1" name="Enthalpy">
+                         <variable field_id="1" label="enthalpy1" name="enthalpy">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
-                         <variable field_id="1" label="alpha1" name="VolumeFraction">
+                         <variable field_id="1" label="alpha1" name="volume_fraction">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_value zone_id="1">
@@ -335,14 +335,14 @@ class MainFieldsInitializationTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
-                         <variable field_id="1" label="enthalpy1" name="Enthalpy">
+                         <variable field_id="1" label="enthalpy1" name="enthalpy">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_value zone_id="1">
                                          10
                                  </initial_value>
                          </variable>
-                         <variable field_id="1" label="alpha1" name="VolumeFraction">
+                         <variable field_id="1" label="alpha1" name="volume_fraction">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
@@ -398,14 +398,14 @@ class MainFieldsInitializationTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
-                         <variable field_id="1" label="enthalpy1" name="Enthalpy">
+                         <variable field_id="1" label="enthalpy1" name="enthalpy">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_type zone_id="1">
                                          temperature
                                  </initial_type>
                          </variable>
-                         <variable field_id="1" label="alpha1" name="VolumeFraction">
+                         <variable field_id="1" label="alpha1" name="volume_fraction">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>

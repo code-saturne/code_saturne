@@ -329,21 +329,27 @@ class XMLinitNeptune(Variables):
 
         # Renaming of Pressure
         vnode = tpnode.xmlGetNode('variables')
-        for node in vnode.xmlGetNodeList('variable'):
-            if node['name'] == 'Pressure':
-                node['name'] = 'pressure'
-                for nzi in node.xmlGetNodeList('initial_value'):
-                    nf = nzi.xmlGetNode('formula')
-                    f = nzi.xmlGetString('formula')
-                    nf.xmlSetTextNode(f.replace("Pressure", "pressure"))
+        rdico = {'Enthalpy':'enthalpy',
+                 'Pressure':'pressure',
+                 'Velocity':'velocity',
+                 'VolumeFraction':'volume_fraction'}
 
-            elif node['name'] == 'Velocity':
-                node['name'] = 'velocity'
+        for node in vnode.xmlGetNodeList('variable'):
+            vname = node['name']
+            if vname in rdico.keys():
+                node['name'] = rdico[vname]
                 for nzi in node.xmlGetNodeList('initial_value'):
                     nf = nzi.xmlGetNode('formula')
                     f  = nzi.xmlGetString('formula')
-                    nf.xmlSetTextNode(f.replace("Velocity", "velocity"))
+                    nf.xmlSetTextNode(f.replace(vname, rdico[vname]))
 
+        bcnode = self.case.xmlGetNode('boundary_conditions')
+        bc_list = ['inlet', 'wall', 'outlet']
+        for bc_type in bc_list:
+            for nb in bcnode.xmlGetNodeList(bc_type):
+                for nv in nb.xmlGetNodeList('variable'):
+                    if nv['name'] in rdico.keys():
+                        nv['name'] = rdico[nv['name']]
 
 
     def __backwardCompatibilityCurrentVersion(self):
@@ -442,20 +448,28 @@ class XMLinitNeptune(Variables):
 
         # Renaming of Pressure
         vnode = tpnode.xmlGetNode('variables')
-        for node in vnode.xmlGetNodeList('variable'):
-            if node['name'] == 'Pressure':
-                node['name'] = 'pressure'
-                for nzi in node.xmlGetNodeList('initial_value'):
-                    nf = nzi.xmlGetNode('formula')
-                    f = nzi.xmlGetString('formula')
-                    nf.xmlSetTextNode(f.replace("Pressure", "pressure"))
+        rdico = {'Enthalpy':'enthalpy',
+                 'Pressure':'pressure',
+                 'Velocity':'velocity',
+                 'VolumeFraction':'volume_fraction'}
 
-            elif node['name'] == 'Velocity':
-                node['name'] = 'velocity'
+        for node in vnode.xmlGetNodeList('variable'):
+            vname = node['name']
+            if vname in rdico.keys():
+                node['name'] = rdico[vname]
                 for nzi in node.xmlGetNodeList('initial_value'):
                     nf = nzi.xmlGetNode('formula')
                     f  = nzi.xmlGetString('formula')
-                    nf.xmlSetTextNode(f.replace("Velocity", "velocity"))
+                    nf.xmlSetTextNode(f.replace(vname, rdico[vname]))
+
+        bcnode = self.case.xmlGetNode('boundary_conditions')
+        bc_list = ['inlet', 'wall', 'outlet']
+        for bc_type in bc_list:
+            for nb in bcnode.xmlGetNodeList(bc_type):
+                for nv in nb.xmlGetNodeList('variable'):
+                    if nv['name'] in rdico.keys():
+                        nv['name'] = rdico[nv['name']]
+
 
         # ------------------------------------------------------------
 
