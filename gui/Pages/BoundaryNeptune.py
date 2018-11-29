@@ -167,7 +167,7 @@ class InletBoundary(Boundary):
         dico['flow1_formula'] = "q_m = 1;"
         dico['norm_formula'] = "u_norm = 1;"
         dico['direction_formula'] = "dir_x = 1;\ndir_y = 0;\ndir_z = 0;\n"
-        dico['Enthalpy'] = 0.
+        dico['enthalpy'] = 0.
         dico['EnthalpyModel'] = 'flux'
         dico['fraction'] = 0.
         dico['diameter'] = 1.e-3
@@ -534,7 +534,7 @@ R12-23 = 5e-05;"""
         """
         self.isInList(str(fieldId), self.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
-        XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='enthalpy')
 
         choice = XMLEnergyNode['choice']
         if not choice:
@@ -554,7 +554,7 @@ R12-23 = 5e-05;"""
         Model().isInList(value, ['dirichlet','flux','timp_K','hsat_P'])
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
-        XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='enthalpy')
 
         XMLEnergyNode['choice'] = value
 
@@ -571,13 +571,13 @@ R12-23 = 5e-05;"""
         """
         self.isInList(str(fieldId), self.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
-        XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='enthalpy')
 
         Model().isInList(XMLEnergyNode['choice'], ['dirichlet','flux','timp_K'])
 
         Childnode = XMLEnergyNode.xmlGetChildNode('value')
         if Childnode == None :
-            value = self.__defaultValues(fieldId)['Enthalpy']
+            value = self.__defaultValues(fieldId)['enthalpy']
             self.setEnthalpy(fieldId, value)
 
         value = XMLEnergyNode.xmlGetChildDouble('value')
@@ -593,7 +593,7 @@ R12-23 = 5e-05;"""
         Model().isFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
-        XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='enthalpy')
         XMLEnergyNode.xmlSetData('value', str(value))
 
 
@@ -604,7 +604,7 @@ R12-23 = 5e-05;"""
         """
         self.isInList(str(fieldId), self.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
-        XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='VolumeFraction')
+        XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='volume_fraction')
 
         Childnode = XMLFractionNode.xmlGetChildNode('value')
         if Childnode == None :
@@ -624,7 +624,7 @@ R12-23 = 5e-05;"""
         Model().isPositiveFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
-        XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='VolumeFraction')
+        XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='volume_fraction')
         XMLFractionNode.xmlSetData('value', str(value))
         # TODO
         # Check (sum(fractions) <= 1)
@@ -754,7 +754,7 @@ class OutletBoundary(Boundary) :
         """
         dico = {}
         dico['reference_pressure'] = 101325.0
-        dico['Enthalpy']           = 0.
+        dico['enthalpy']           = 0.
         dico['EnthalpyModel']      = 'flux'
         dico['FractionModel']      = 'automatic'
         dico['fraction']           = 0.
@@ -794,7 +794,7 @@ class OutletBoundary(Boundary) :
         """
         self.isInList(str(fieldId), self.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
-        XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='enthalpy')
 
         choice = XMLEnergyNode['choice']
         if not choice:
@@ -812,7 +812,7 @@ class OutletBoundary(Boundary) :
         Model().isInList(value, ['dirichlet','flux','timp_K','hsat_P'])
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
-        XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='enthalpy')
 
         XMLEnergyNode['choice'] = value
 
@@ -829,13 +829,13 @@ class OutletBoundary(Boundary) :
         """
         self.isInList(str(fieldId), self.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
-        XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='enthalpy')
 
         Model().isInList(XMLEnergyNode['choice'], ['dirichlet','flux','timp_K'])
 
         Childnode = XMLEnergyNode.xmlGetChildNode('value')
         if Childnode == None :
-            value = self.__defaultValues()['Enthalpy']
+            value = self.__defaultValues()['enthalpy']
             self.setEnthalpy(fieldId, value)
 
         value = XMLEnergyNode.xmlGetChildDouble('value')
@@ -851,7 +851,7 @@ class OutletBoundary(Boundary) :
         Model().isFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
-        XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='enthalpy')
         XMLEnergyNode.xmlSetData('value', str(value))
 
 
@@ -862,7 +862,7 @@ class OutletBoundary(Boundary) :
         """
         self.isInList(str(fieldId), self.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
-        XMLFractionNode = node.xmlInitNode('variable', 'choice', name='VolumeFraction')
+        XMLFractionNode = node.xmlInitNode('variable', 'choice', name='volume_fraction')
 
         choice = XMLFractionNode['choice']
         if not choice:
@@ -880,7 +880,7 @@ class OutletBoundary(Boundary) :
         Model().isInList(value, ['dirichlet','automatic'])
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
-        XMLFractionNode = node.xmlInitNode('variable', 'choice', name='VolumeFraction')
+        XMLFractionNode = node.xmlInitNode('variable', 'choice', name='volume_fraction')
 
         XMLFractionNode['choice'] = value
 
@@ -897,7 +897,7 @@ class OutletBoundary(Boundary) :
         """
         self.isInList(str(fieldId), self.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
-        XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='VolumeFraction')
+        XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='volume_fraction')
 
         Childnode = XMLFractionNode.xmlGetChildNode('value')
         if Childnode == None :
@@ -917,7 +917,7 @@ class OutletBoundary(Boundary) :
         Model().isPositiveFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
-        XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='VolumeFraction')
+        XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='volume_fraction')
         XMLFractionNode.xmlSetData('value', str(value))
         # TODO
         # Check (sum(fractions) <= 1)
@@ -1045,7 +1045,7 @@ class WallBoundary(Boundary) :
         """
         Get the enthalpy choice for field
         """
-        XMLEnergyNode = self.boundNode.xmlInitNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = self.boundNode.xmlInitNode('variable', 'choice', name='enthalpy')
 
         choice = XMLEnergyNode['choice']
         if not choice:
@@ -1061,7 +1061,7 @@ class WallBoundary(Boundary) :
         """
         Model().isInList(value, ['temperature','flux'])
 
-        XMLEnergyNode = self.boundNode.xmlInitNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = self.boundNode.xmlInitNode('variable', 'choice', name='enthalpy')
 
         XMLEnergyNode['choice'] = value
 
@@ -1071,7 +1071,7 @@ class WallBoundary(Boundary) :
         """
         Get energy value for field
         """
-        XMLEnergyNode = self.boundNode.xmlGetChildNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = self.boundNode.xmlGetChildNode('variable', 'choice', name='enthalpy')
 
         Model().isInList(XMLEnergyNode['choice'], ['temperature','flux'])
 
@@ -1091,7 +1091,7 @@ class WallBoundary(Boundary) :
         """
         Model().isFloat(value)
 
-        XMLEnergyNode = self.boundNode.xmlGetChildNode('variable', 'choice', name='Enthalpy')
+        XMLEnergyNode = self.boundNode.xmlGetChildNode('variable', 'choice', name='enthalpy')
         XMLEnergyNode.xmlSetData('value', str(value))
 
 
@@ -1399,7 +1399,7 @@ class InletBoundaryTestCase(ModelTest):
                                                  1
                                          </norm>
                                  </velocity>
-                                 <variable choice="timp_K" name="Enthalpy"/>
+                                 <variable choice="timp_K" name="enthalpy"/>
                          </inlet>
                  </boundary_conditions>'''
         assert mdl.getXMLBoundaryConditionNode() == self.xmlNodeFromString(doc),\
@@ -1430,7 +1430,7 @@ class InletBoundaryTestCase(ModelTest):
                                                  1
                                          </norm>
                                  </velocity>
-                                 <variable choice="flux" name="Enthalpy">
+                                 <variable choice="flux" name="enthalpy">
                                          <value>
                                                  875.2
                                          </value>
@@ -1464,7 +1464,7 @@ class InletBoundaryTestCase(ModelTest):
                                                  1
                                          </norm>
                                  </velocity>
-                                 <variable choice="dirichlet" name="VolumeFraction">
+                                 <variable choice="dirichlet" name="volume_fraction">
                                          <value>
                                                  12.5
                                          </value>
@@ -1615,7 +1615,7 @@ class OutletBoundaryTestCase(ModelTest):
                                  </dirichlet>
                          </outlet>
                          <outlet field_id="1" label="">
-                                 <variable choice="timp_K" name="Enthalpy"/>
+                                 <variable choice="timp_K" name="enthalpy"/>
                          </outlet>
                  </boundary_conditions>'''
         assert mdl.getXMLBoundaryConditionNode() == self.xmlNodeFromString(doc),\
@@ -1636,7 +1636,7 @@ class OutletBoundaryTestCase(ModelTest):
                                  </dirichlet>
                          </outlet>
                          <outlet field_id="1" label="">
-                                 <variable choice="dirichlet" name="VolumeFraction">
+                                 <variable choice="dirichlet" name="volume_fraction">
                                          <value>
                                                  12.5
                                          </value>
@@ -1662,7 +1662,7 @@ class OutletBoundaryTestCase(ModelTest):
                                  </dirichlet>
                          </outlet>
                          <outlet field_id="1" label="">
-                                 <variable choice="flux" name="Enthalpy">
+                                 <variable choice="flux" name="enthalpy">
                                          <value>
                                                  45.26
                                          </value>
@@ -1747,7 +1747,7 @@ class WallBoundaryTestCase(ModelTest):
         mdl.setEnthalpyChoice('none','flux')
         mdl.setEnthalpy('none',45.23)
         doc = '''<wall field_id="none" label="">
-                         <variable choice="flux" name="Enthalpy">
+                         <variable choice="flux" name="enthalpy">
                                  <value>
                                          45.23
                                  </value>

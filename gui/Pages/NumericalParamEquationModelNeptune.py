@@ -140,7 +140,7 @@ class NumericalParamEquatModel(Model):
         """
         Return : 1 if name of node is 'alpha', 0 if not
         """
-        if node and node['name'] == 'VolumeFraction':
+        if node and node['name'] == 'volume_fraction':
             return 1
         else:
             return 0
@@ -150,7 +150,7 @@ class NumericalParamEquatModel(Model):
         """
         Return : 1 if name of node is 'enthalpy', 0 if not
         """
-        if node and node['name'] == 'Enthalpy':
+        if node and node['name'] == 'enthalpy':
             return 1
         else:
             return 0

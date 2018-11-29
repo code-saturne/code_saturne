@@ -178,9 +178,9 @@ class MainFieldsModel(FieldAttributesDescribing, Variables, Model):
         """
         add XML variable and properties
         """
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "VolumeFraction", "alpha"+str(labNum), post = True)
+        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "volume_fraction", "alpha"+str(labNum), post = True)
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "velocity", "U"+str(labNum), dim='3', post = True)
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "Enthalpy", "enthalpy"+str(labNum), post = True)
+        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy", "enthalpy"+str(labNum), post = True)
 
         Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "density", "density"+str(labNum))
         Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "molecular_viscosity", "Lam_vis"+str(labNum))
@@ -439,10 +439,10 @@ class MainFieldsModel(FieldAttributesDescribing, Variables, Model):
             oldstatus = childNode['status']
             if status != oldstatus:
                if status == "on":
-                  Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "Enthalpy", "enthalpy"+str(fieldId), post = True)
+                  Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "enthalpy", "enthalpy"+str(fieldId), post = True)
                   Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "Temperature", "Temp"+str(fieldId), post = True)
                else :
-                  Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "Enthalpy")
+                  Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "enthalpy")
                   Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "Temperature")
         childNode.xmlSetAttribute(status = status)
 
