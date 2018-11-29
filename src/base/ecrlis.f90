@@ -238,9 +238,10 @@ do f_id = 0, nfld - 1
       enddo
 
       ! L2 error, square root
+      ! (fabs because in ALE the volume might become negative)
 
-      varres(1) = sqrt(cs_gres(ncel,cell_f_vol,w1,w1))
-      varnrm(1) = sqrt(cs_gres(ncel,cell_f_vol,w2,w2))
+      varres(1) = sqrt(fabs(cs_gres(ncel,cell_f_vol,w1,w1)))
+      varnrm(1) = sqrt(fabs(cs_gres(ncel,cell_f_vol,w2,w2)))
 
       if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
       sinfo%l2residual = varres(1)
@@ -271,7 +272,8 @@ do f_id = 0, nfld - 1
       enddo
 
       if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
-      sinfo%l2residual = sqrt(varres(1))
+      ! (fabs because in ALE the volume might become negative)
+      sinfo%l2residual = sqrt(fabs(varres(1)))
 
     endif
 
