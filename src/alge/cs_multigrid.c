@@ -1496,7 +1496,7 @@ _convergence_test(const cs_multigrid_t  *mg,
 
   else if (cycle_id > n_max_cycles) {
 
-    if (verbosity > -1) {
+    if ((verbosity > -1 && !(mg->info.is_pc)) || verbosity > 0) {
       if (verbosity == 1)
         bft_printf(_(cycle_fmt), cycle_id, n_iters, *residue/r_norm);
       else if (verbosity > 1) {
