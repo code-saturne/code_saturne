@@ -98,6 +98,7 @@ typedef enum {
   CS_ENUMF_(t),            /*!< temperature*/
   CS_ENUMF_(t_b),          /*!< temperature (at boundary faces)*/
   CS_ENUMF_(e_tot),       /*!< total energy */
+  CS_ENUMF_(h_tot),        /*!< total enthalpy */
 
   CS_ENUMF_(rho),          /*!< density (at cells) */
   CS_ENUMF_(rho_b),        /*!< density (at boundary faces) */
