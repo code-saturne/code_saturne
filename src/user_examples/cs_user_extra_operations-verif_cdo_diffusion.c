@@ -82,7 +82,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_cdo_extra_op-verif-diffusion.c
+ * \file cs_user_extra_operations-verif-diffusion.c
  *
  * \brief Additional user-defined post-processing and analysis functions
 */
@@ -305,7 +305,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_extra_op(cs_domain_t          *domain)
+cs_user_extra_operations(cs_domain_t          *domain)
 {
   const cs_cdo_connect_t  *connect = domain->connect;
   const cs_cdo_quantities_t  *cdoq = domain->cdo_quantities;

@@ -90,6 +90,8 @@ BEGIN_C_DECLS
  * \brief This function is called at the end of each time step, and has a very
  * general purpose (i.e. anything that does not have another dedicated
  * user function).
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -102,7 +104,7 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(void)
+cs_user_extra_operations(cs_domain_t     *domain)
 {
 
   /* Local variables */
@@ -110,10 +112,10 @@ cs_user_extra_operations(void)
   cs_lnum_t *face_list;
 
   int cell_id, cell_id1, cell_id2, face_id;
-  int nt_cur = cs_glob_time_step->nt_cur;
+  int nt_cur = domain->time_step->nt_cur;
 
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_mesh_t *m = domain->mesh;
+  const cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
   const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
@@ -123,9 +125,9 @@ cs_user_extra_operations(void)
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *b_face_cells = (const cs_lnum_t *)m->b_face_cells;
 
-  const cs_real_t *cell_vol = fvq->cell_vol;
-  const cs_real_3_t *diipb = (const cs_real_3_t *)fvq->diipb;
-  const cs_real_t *b_face_surf = (const cs_real_t *)fvq->b_face_surf;
+  const cs_real_t *cell_vol = mq->cell_vol;
+  const cs_real_3_t *diipb = (const cs_real_3_t *)mq->diipb;
+  const cs_real_t *b_face_surf = (const cs_real_t *)mq->b_face_surf;
 
   /* Get physical fields */
   const cs_real_t *dt = CS_F_(dt)->val;

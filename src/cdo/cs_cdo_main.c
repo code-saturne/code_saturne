@@ -482,7 +482,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
   cs_timer_stats_start(cs_cdo_ts_id);
 
   /* Finalize user-defined extra operations */
-  cs_user_cdo_end_extra_op(domain);
+  cs_user_extra_operations_finalize(domain);
 
   /* Write a restart file if needed */
   cs_domain_write_restart(domain);
@@ -545,7 +545,7 @@ cs_cdo_main(cs_domain_t   *domain)
   /* Initialization for user-defined extra operations. Should be done
      after the domain initialization if one wants to overwrite the field
      initialization for instance */
-  cs_user_cdo_start_extra_op(cs_glob_domain);
+  cs_user_extra_operations_initialize(cs_glob_domain);
 
   /* Build and solve equations related to the computational domain in case of
      steady-state equations */

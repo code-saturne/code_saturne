@@ -298,15 +298,50 @@ cs_user_boundary_conditions(int         nvar,
                             int         bc_type[],
                             cs_real_t   rcodcl[]);
 
-/*----------------------------------------------------------------------------
- * This function is called at the end of each time step.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize variables.
+ *
+ * This function is called at beginning of the computation
+ * (restart or not) before the time step loop.
+ *
+ * This is intended to initialize or modify (when restarted)
+ * variable and time step values.
+
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_extra_operations_initialize(cs_domain_t     *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called at the end of each time step.
  *
  * It has a very general purpose, although it is recommended to handle
  * mainly postprocessing or data-extraction type operations.
- *----------------------------------------------------------------------------*/
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(void);
+cs_user_extra_operations(cs_domain_t     *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called at the end of the calculation.
+ *
+ * It has a very general purpose, although it is recommended to handle
+ * mainly postprocessing or data-extraction type operations.
+
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_extra_operations_finalize(cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------
  * This function is called one time step to initialize problem.
@@ -707,18 +742,6 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
 
 void
 cs_user_cdo_finalize_setup(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initial step for user-defined operations on results provided by the
- *         CDO kernel.
- *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_start_extra_op(cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

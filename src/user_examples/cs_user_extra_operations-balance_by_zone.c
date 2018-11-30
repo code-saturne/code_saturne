@@ -105,11 +105,13 @@ BEGIN_C_DECLS
  *
  * It has a very general purpose, although it is recommended to handle
  * mainly postprocessing or data-extraction type operations.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(void)
+cs_user_extra_operations(cs_domain_t     *domain)
 {
   //!< [example_1]
 
@@ -142,7 +144,7 @@ cs_user_extra_operations(void)
 
     cs_real_t balance[CS_BALANCE_P_N_TERMS];
 
-    BFT_MALLOC(selected_cells, cs_glob_mesh->n_cells, cs_lnum_t);
+    BFT_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_cells,
@@ -181,7 +183,7 @@ cs_user_extra_operations(void)
 
     cs_real_t balance[CS_BALANCE_P_N_TERMS];
 
-    BFT_MALLOC(selected_cells, cs_glob_mesh->n_cells, cs_lnum_t);
+    BFT_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_cells,

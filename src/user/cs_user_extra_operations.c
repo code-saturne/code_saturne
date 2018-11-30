@@ -101,17 +101,56 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is called at the end of each time step.
+ * \brief Initialize variables.
  *
- * It has a very general purpose, although it is recommended to handle
- * mainly postprocessing or data-extraction type operations.
+ * This function is called at beginning of the computation
+ * (restart or not) before the time step loop.
+ *
+ * This is intended to initialize or modify (when restarted)
+ * variable and time step values.
+
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(void)
+cs_user_extra_operations_initialize(cs_domain_t     *domain)
 {
+  CS_UNUSED(domain);
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called at the end of each time step.
+ *
+ * It has a very general purpose, although it is recommended to handle
+ * mainly postprocessing or data-extraction type operations.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_extra_operations(cs_domain_t     *domain)
+{
+  CS_UNUSED(domain);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called at the end of the calculation.
+ *
+ * It has a very general purpose, although it is recommended to handle
+ * mainly postprocessing or data-extraction type operations.
+
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_extra_operations_finalize(cs_domain_t     *domain)
+{
+  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/

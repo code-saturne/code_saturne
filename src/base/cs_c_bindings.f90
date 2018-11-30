@@ -1554,8 +1554,14 @@ module cs_c_bindings
 
     ! Interface to C user function for extra operations
 
+    subroutine user_extra_operations_initialize()  &
+      bind(C, name='cs_user_extra_operations_initialize_wrapper')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine user_extra_operations_initialize
+
     subroutine user_extra_operations()  &
-      bind(C, name='cs_user_extra_operations')
+      bind(C, name='cs_user_extra_operations_wrapper')
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine user_extra_operations

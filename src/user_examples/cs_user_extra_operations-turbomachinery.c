@@ -110,6 +110,7 @@ BEGIN_C_DECLS
  * in a given rotation zone.
  *
  * parameters:
+ *   domain  <-- pointer to a cs_domain_t structure
  *   r       <-- id of the rotation zone
  *   coords  <-- point coordinates
  *   node    --> cell id
@@ -117,15 +118,16 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 static void
-_findpt_r(const cs_rotation_t  *r,
+_findpt_r(cs_domain_t          *domain,
+          const cs_rotation_t  *r,
           const cs_real_3_t     coords,
           cs_lnum_t            *node,
           cs_lnum_t            *rank)
 {
   cs_real_t d[3];
 
-  cs_lnum_t n_cells = cs_glob_mesh-> n_cells;
-  cs_real_3_t *cell_cen = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
+  cs_lnum_t n_cells = domain->mesh-> n_cells;
+  cs_real_3_t *cell_cen = (cs_real_3_t *)domain->mesh_quantities->cell_cen;
 
   *node = (int)(n_cells + 1)/2 - 1;
 
@@ -164,19 +166,21 @@ _findpt_r(const cs_rotation_t  *r,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Example of extra operations for turbomachinery studies.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(void)
+cs_user_extra_operations(cs_domain_t     *domain)
 {
 
   /* Mesh-related variables */
 
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
 
   const cs_real_3_t  *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+    = (const cs_real_3_t *restrict)domain->mesh_quantities->cell_cen;
 
   /* 0. Initialization
      ================= */
@@ -304,7 +308,7 @@ cs_user_extra_operations(void)
       cs_lnum_t cell_id, rank_id;
 
       /* Find the closest cell in this rotor */
-      _findpt_r(ref_rot, xyz, &cell_id, &rank_id);
+      _findpt_r(domain, ref_rot, xyz, &cell_id, &rank_id);
 
       if ((cell_id != cell_id1) || (rank_id != rank_id1)) {
         cell_id1 = cell_id;

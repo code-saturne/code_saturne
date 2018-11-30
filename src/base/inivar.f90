@@ -231,7 +231,7 @@ else
 endif
 
 call user_initialization()
-
+call user_extra_operations_initialize()
 
 ! Pressure / Total pressure initialisation
 

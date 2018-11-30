@@ -600,6 +600,20 @@ cs_base_fortran_bft_printf_to_f(void)
   ple_printf_function_set(_bft_printf_f);
 }
 
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_user_extra_operations
+ * ---------------------------------------------------------------------------*/
+
+void
+cs_user_extra_operations_initialize_wrapper(void)
+{
+  cs_user_extra_operations_initialize(cs_glob_domain);
+}
+
+void
+cs_user_extra_operations_wrapper(void)
+{
+  cs_user_extra_operations(cs_glob_domain);
+}
 
 END_C_DECLS
