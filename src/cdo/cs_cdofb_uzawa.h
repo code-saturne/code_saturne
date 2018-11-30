@@ -143,7 +143,6 @@ cs_cdofb_uzawa_init_pressure(const cs_navsto_param_t     *nsp,
  *
  * \param[in] mesh            pointer to a \ref cs_mesh_t structure
  * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] dt_cur          current value of the time step
  * \param[in] scheme_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
@@ -151,7 +150,6 @@ cs_cdofb_uzawa_init_pressure(const cs_navsto_param_t     *nsp,
 void
 cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
                        const cs_navsto_param_t      *nsp,
-                       double                        dt_cur,
                        void                         *scheme_context);
 
 /*----------------------------------------------------------------------------*/

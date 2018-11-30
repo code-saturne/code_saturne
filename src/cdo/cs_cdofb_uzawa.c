@@ -1158,7 +1158,6 @@ cs_cdofb_uzawa_init_pressure(const cs_navsto_param_t     *nsp,
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in]      dt_cur          current value of the time step
  * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
@@ -1166,10 +1165,8 @@ cs_cdofb_uzawa_init_pressure(const cs_navsto_param_t     *nsp,
 void
 cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
                        const cs_navsto_param_t      *nsp,
-                       double                        dt_cur,
                        void                         *scheme_context)
 {
-  CS_UNUSED(dt_cur);
   CS_UNUSED(nsp);
 
   cs_timer_t  t0 = cs_timer_time();
@@ -1184,6 +1181,7 @@ cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
   const size_t  rsize = sizeof(cs_real_t);
   const cs_property_t  *zeta = cc->zeta;
   const cs_lnum_t  n_cells = quant->n_cells, n_faces = quant->n_faces;
+  const cs_real_t  dt_cur = cs_shared_time_step->dt[0];
 
   cs_real_t  *pr = sc->pressure->val;
   cs_real_t  *vel_c = sc->velocity->val;

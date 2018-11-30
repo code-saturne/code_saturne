@@ -610,7 +610,6 @@ void
 cs_navsto_system_compute_steady_state(const cs_mesh_t      *mesh)
 {
   cs_navsto_system_t  *ns = cs_navsto_system;
-  double  dt_cur = 0.;  /* Useless for steady-state system */
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 

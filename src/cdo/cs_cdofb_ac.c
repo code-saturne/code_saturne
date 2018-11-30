@@ -417,7 +417,6 @@ cs_cdofb_ac_init_pressure(const cs_navsto_param_t     *nsp,
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in]      dt_cur          current value of the time step
  * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
@@ -425,7 +424,6 @@ cs_cdofb_ac_init_pressure(const cs_navsto_param_t     *nsp,
 void
 cs_cdofb_ac_compute(const cs_mesh_t              *mesh,
                     const cs_navsto_param_t      *nsp,
-                    double                        dt_cur,
                     void                         *scheme_context)
 {
   cs_cdofb_ac_t  *sc = (cs_cdofb_ac_t *)scheme_context;
@@ -433,7 +431,6 @@ cs_cdofb_ac_compute(const cs_mesh_t              *mesh,
   cs_timer_t  t0 = cs_timer_time();
 
   /* TODO */
-  CS_UNUSED(dt_cur);
   CS_UNUSED(mesh);
   CS_UNUSED(nsp);
   CS_UNUSED(sc);
