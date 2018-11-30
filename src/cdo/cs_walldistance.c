@@ -517,6 +517,8 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
                         const cs_cdo_connect_t       *connect,
                         const cs_cdo_quantities_t    *cdoq)
 {
+  CS_UNUSED(time_step);
+
   /* First step:
      Solve the equation related to the definition of the wall distance. */
 
@@ -526,8 +528,6 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
     cs_equation_solve_steady_state(mesh, eq);
 
   else { /* Deprecated */
-
-    double  dt_cur = 0.;  /* Wall distance is a steady-stae equation */
 
     /* Sanity check */
     assert(cs_equation_is_steady(eq));

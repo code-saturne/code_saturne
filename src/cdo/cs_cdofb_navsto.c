@@ -477,17 +477,20 @@ cs_cdofb_navsto_get_face_pressure(void)
 
 void
 cs_cdofb_navsto_update_fields(const cs_real_t              *solu,
-                             const cs_real_t              *rhs,
-                             const cs_equation_param_t    *eqp,
-                             cs_equation_builder_t        *eqb,
-                             void                         *data,
-                             cs_real_t                    *field_val)
+                              const cs_real_t              *rhs,
+                              const cs_equation_param_t    *eqp,
+                              cs_equation_builder_t        *eqb,
+                              void                         *data,
+                              cs_real_t                    *field_val)
 {
   CS_UNUSED(rhs);
+  CS_UNUSED(solu);
+  CS_UNUSED(field_val);
 
   cs_cdofb_navsto_t  *eqc = (cs_cdofb_navsto_t *)data;
   cs_timer_t  t0 = cs_timer_time();
 
+  CS_UNUSED(eqc);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
