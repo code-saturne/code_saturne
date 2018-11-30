@@ -363,6 +363,38 @@ cs_log_strpadl(char        *dest,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Pretty-print int-32 based bit field to string
+ *
+ * \param[in]   code  value to print
+ * \param[out]  buf   output buffer (must be at least 33 bytes).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_binary_pp_int32(int32_t     code,
+                       char     buf[33])
+{
+  int i;
+  int32_t n = code;
+
+  for (i = 0; i < 33; i++)
+    buf[i] = ' ';
+  buf[32] = '\0';
+  buf[31] = '0';
+
+  i = 31;
+  while (n && i > -1) {
+    if (n & 1)
+      buf[i] = '1';
+    else
+      buf[i] = '0';
+    n = n >> 1;
+    i--;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print log info to a given log type.
  *
  * The format and variable arguments are similar to those of the vprintf()
