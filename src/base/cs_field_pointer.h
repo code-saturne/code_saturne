@@ -97,7 +97,7 @@ typedef enum {
   CS_ENUMF_(h),            /*!< enthalpy */
   CS_ENUMF_(t),            /*!< temperature*/
   CS_ENUMF_(t_b),          /*!< temperature (at boundary faces)*/
-  CS_ENUMF_(e_tot),       /*!< total energy */
+  CS_ENUMF_(e_tot),        /*!< total energy */
   CS_ENUMF_(h_tot),        /*!< total enthalpy */
 
   CS_ENUMF_(rho),          /*!< density (at cells) */
@@ -203,6 +203,30 @@ typedef enum {
   CS_ENUMF_(yf_ncond),       /*!< non-condensable mass fraction */
   CS_ENUMF_(qp),             /*!< Turbulent Kinetic Energy q2 */
   CS_ENUMF_(qfp),            /*!< Covariance q12 */
+  CS_ENUMF_(qfpxx),          /*!< XX component of qfp */
+  CS_ENUMF_(qfpxy),          /*!< XY component of qfp */
+  CS_ENUMF_(qfpxz),          /*!< XZ component of qfp */
+  CS_ENUMF_(qfpyx),          /*!< YX component of qfp */
+  CS_ENUMF_(qfpyy),          /*!< YY component of qfp */
+  CS_ENUMF_(qfpyz),          /*!< YZ component of qfp */
+  CS_ENUMF_(qfpzx),          /*!< ZX component of qfp */
+  CS_ENUMF_(qfpzy),          /*!< ZY component of qfp */
+  CS_ENUMF_(qfpzz),          /*!< ZZ component of qfp */
+  CS_ENUMF_(gamma),          /*!< Interfacial mass transfer */
+  CS_ENUMF_(ia),             /*!< Interfacial area    */
+  CS_ENUMF_(x2),             /*!< x2 for droplets     */
+  CS_ENUMF_(d32),            /*!< Sauter diameter     */
+  CS_ENUMF_(drag),           /*!< Phases drag         */
+  CS_ENUMF_(ad_mass),        /*!< Added mass          */
+  CS_ENUMF_(lambda),         /*!< Thermal conductivity */
+  CS_ENUMF_(th_diff),        /*!< Thermal diffusivity */
+  CS_ENUMF_(th_diff_t),      /*!< Turbulent thermal diffusivity */
+  CS_ENUMF_(drho_dp),        /*!< drho over dp        */
+  CS_ENUMF_(drho_dh),        /*!< drho over dh        */
+  CS_ENUMF_(tau12_t),        /*!< turbulent tau12     */
+  CS_ENUMF_(lift),           /*!< Particles lift      */
+  CS_ENUMF_(disp_t),         /*!< Turbulent dispersion */
+  CS_ENUMF_(drift_vel),      /*!< Particles drift velocity */
 
   /* Added variables (scalars) */
   CS_ENUMF_(add_var),        /*!< User added variables */
