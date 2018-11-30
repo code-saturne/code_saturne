@@ -2116,30 +2116,31 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
         case CS_QUADRATURE_HIGHER:
           {
-            cs_real_t  w[2];
-            cs_real_3_t  gpts[6], eval[6];
+            cs_real_t  w0[2*3], eval0[2*3*3];
+            cs_real_t *eval1 = eval0 + 3*3, *w1 = w0 + 3;
+            cs_real_3_t  gpts[2*3];
 
             /* Two triangles composing the dual face inside a cell */
             cs_quadrature_tria_3pts(edge.center, fq0.center, cm->xc,
                                     sef0.meas,
-                                    gpts, w);
+                                    gpts, w0);
 
             /* Evaluate the field at the three quadrature points */
             cs_quadrature_tria_3pts(edge.center, fq1.center, cm->xc,
                                     sef1.meas,
-                                    gpts + 3, w + 1);
+                                    gpts + 3, w1);
 
             cs_xdef_cw_eval_at_xyz_by_analytic(cm,
-                                               6, (const cs_real_t *)gpts,
+                                               2*3, (const cs_real_t *)gpts,
                                                time_eval,
                                                def->input,
-                                               (cs_real_t *)eval);
+                                               eval0);
 
             cs_real_t  add0 = 0, add1 = 0;
-            for (int p = 0; p < 3; p++) add0 += _dp3(eval[p], sef0.unitv);
-            add0 *= w[0];
-            for (int p = 0; p < 3; p++) add1 += _dp3(eval[p+3], sef1.unitv);
-            add1 *= w[1];
+            for (int p = 0; p < 3; p++) {
+              add0 += w0[p] * _dp3(eval0 + 3*p, sef0.unitv);
+              add1 += w1[p] * _dp3(eval1 + 3*p, sef1.unitv);
+          }
 
             fluxes[e] = add0 + add1;
           }

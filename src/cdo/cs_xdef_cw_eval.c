@@ -1117,10 +1117,16 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
   case CS_QUADRATURE_HIGHER:
     {
       assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ));
-      cs_real_t  w[2];
-      cs_real_3_t  gpts[6], _val[6];
 
-      if (cs_flag_test(cm->flag, CS_CDO_LOCAL_FEQ)) {
+      /* Two triangles svef related to a vertex and three values by triangle
+       * --> 2*3 = 6 Gauss points
+       * The flux returns by the analytic function is a vector. So the size
+       * of _val is 6*3
+       */
+      cs_real_t _val[18], w[6];
+      cs_real_3_t  gpts[6];
+
+      if (cs_flag_test(cm->flag, CS_CDO_LOCAL_FEQ)) { /* tef is pre-computed */
 
         /* Loop on face edges */
         for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
@@ -1138,19 +1144,19 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           cs_quadrature_tria_3pts(cm->edge[e].center, fq.center, cm->xv + 3*v2,
                                   svef,
-                                  gpts + 3, w + 1);
+                                  gpts + 3, w + 3);
 
           /* Evaluate the function for this time at the given coordinates */
           anai->func(time_eval, 6, NULL,
                      (const cs_real_t *)gpts, true, /* compacted output ? */
                      anai->input,
-                     (cs_real_t *)_val);
+                     _val);
 
           cs_real_t  add0 = 0, add1 = 0;
-          for (int p = 0; p < 3; p++) add0 += _dp3(_val[p], fq.unitv);
-          add0 *= w[0];
-          for (int p = 0; p < 3; p++) add1 += _dp3(_val[p+3], fq.unitv);
-          add1 *= w[1];
+          for (int p = 0; p < 3; p++) {
+            add0 += w[    p] * _dp3(_val + 3*p,     fq.unitv);
+            add1 += w[3 + p] * _dp3(_val + 3*(3+p), fq.unitv);
+          }
 
           eval[v1] += add0;
           eval[v2] += add1;
@@ -1177,19 +1183,19 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           cs_quadrature_tria_3pts(cm->edge[e].center, fq.center, cm->xv + 3*v2,
                                   svef,
-                                  gpts + 3, w + 1);
+                                  gpts + 3, w + 3);
 
           /* Evaluate the function for this time at the given coordinates */
           anai->func(time_eval, 6, NULL,
                      (const cs_real_t *)gpts, true, /* compacted output ? */
                      anai->input,
-                     (cs_real_t *)_val);
+                     _val);
 
           cs_real_t  add0 = 0, add1 = 0;
-          for (int p = 0; p < 3; p++) add0 += _dp3(_val[p], fq.unitv);
-          add0 *= w[0];
-          for (int p = 0; p < 3; p++) add1 += _dp3(_val[p+3], fq.unitv);
-          add1 *= w[1];
+          for (int p = 0; p < 3; p++) {
+            add0 += w[    p] * _dp3(_val + 3*p,     fq.unitv);
+            add1 += w[3 + p] * _dp3(_val + 3*(3+p), fq.unitv);
+          }
 
           eval[v1] += add0;
           eval[v2] += add1;
@@ -1290,8 +1296,9 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
   case CS_QUADRATURE_HIGHER:
     {
-      cs_real_t  w;
-      cs_real_3_t  gpts[3], _val[3];
+      cs_real_t  w[3];
+      cs_real_3_t  gpts[3];
+      cs_real_t _val[9];   /* The flux is vector-valued: 9 = 3*3 */
 
       const cs_quant_t  fq = cm->face[f];
 
@@ -1306,19 +1313,20 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
         /* Evaluate the field at the three quadrature points */
         cs_quadrature_tria_3pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
-                                cm->tef[e],
-                                gpts, &w);
+                                cm->tef[i],
+                                gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
         anai->func(time_eval, 3, NULL,
                    (const cs_real_t *)gpts, true,  /* compacted output ? */
                    anai->input,
-                   (cs_real_t *)_val);
+                   _val);
 
         cs_real_t  add = 0;
-        for (int p = 0; p < 3; p++) add += _dp3(_val[p], fq.unitv);
+        for (int p = 0; p < 3; p++)
+          add += w[p] * _dp3(_val+3*p, fq.unitv);
 
-        eval[f] += w * add;
+        eval[f] += add;
 
       }
 
@@ -1415,7 +1423,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
   case CS_QUADRATURE_HIGHER:
     {
-      cs_real_t  w;
+      cs_real_t  w[3];
       cs_real_3_t  gpts[3], _val;
       cs_real_33_t  _eval[3];
 
@@ -1433,7 +1441,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
         /* Evaluate the field at the three quadrature points */
         cs_quadrature_tria_3pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
                                 cm->tef[e],
-                                gpts, &w);
+                                gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
         anai->func(time_eval, 3, NULL,
@@ -1441,12 +1449,11 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
                    anai->input,
                    (cs_real_t *)_eval);
 
-        const cs_real_t coef = w * cm->tef[i];
         for (int p = 0; p < 3; p++) {
           cs_math_33_3_product((const cs_real_t (*)[3])_eval[p], fq.unitv,
                                _val);
           for (int k = 0; k < 3; k++)
-            eval[3*f+k] += coef * _val[k];
+            eval[3*f+k] += w[p] * cm->tef[i] * _val[k];
         }
 
       }
