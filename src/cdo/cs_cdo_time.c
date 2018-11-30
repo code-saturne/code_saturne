@@ -90,14 +90,14 @@ cs_cdo_time_get_scheme_function(const cs_flag_t             sys_flag,
 
   switch (eqp->time_scheme) {
 
-  case CS_TIME_SCHEME_IMPLICIT:
+  case CS_TIME_SCHEME_EULER_IMPLICIT:
     if (sys_flag & CS_FLAG_SYS_TIME_DIAG)
       return cs_cdo_time_diag_imp;
     else
       return cs_cdo_time_imp;
     break;
 
-  case CS_TIME_SCHEME_EXPLICIT:
+  case CS_TIME_SCHEME_EULER_EXPLICIT:
     if (sys_flag & CS_FLAG_SYS_TIME_DIAG)
       return cs_cdo_time_diag_exp;
     else
@@ -152,7 +152,7 @@ cs_cdo_time_update_rhs(const cs_equation_param_t    *eqp,
 
     switch (eqp->time_scheme) {
 
-    case CS_TIME_SCHEME_EXPLICIT:
+    case CS_TIME_SCHEME_EULER_EXPLICIT:
       if (stride > 1) {
 
         for (cs_lnum_t i = 0; i < n_dofs; i++)
@@ -183,7 +183,7 @@ cs_cdo_time_update_rhs(const cs_equation_param_t    *eqp,
       }
       break;
 
-    case CS_TIME_SCHEME_IMPLICIT:
+    case CS_TIME_SCHEME_EULER_IMPLICIT:
     default: // Nothing to do
       break;
 
@@ -194,7 +194,7 @@ cs_cdo_time_update_rhs(const cs_equation_param_t    *eqp,
 
     switch (eqp->time_scheme) {
 
-    case CS_TIME_SCHEME_EXPLICIT:
+    case CS_TIME_SCHEME_EULER_EXPLICIT:
       for (cs_lnum_t i = 0; i < stride*n_dofs; i++) rhs[i] += values[i];
       break;
 
@@ -208,7 +208,7 @@ cs_cdo_time_update_rhs(const cs_equation_param_t    *eqp,
       }
       break;
 
-    case CS_TIME_SCHEME_IMPLICIT:
+    case CS_TIME_SCHEME_EULER_IMPLICIT:
     default: // Nothing to do
       break;
 
@@ -249,7 +249,7 @@ cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
   cs_sdm_t  *adr = csys->mat;
 
   /* Sanity checks */
-  assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
   assert(csys->n_dofs == adr->n_rows);
   assert(system_flag & CS_FLAG_SYS_TIME_DIAG);
 
@@ -298,7 +298,7 @@ cs_cdo_time_imp(const cs_equation_param_t   *eqp,
   cs_sdm_t  *adr = csys->mat;
 
   /* Sanity checks */
-  assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
   assert(csys->n_dofs == adr->n_rows);
   assert(mass_mat != NULL);
   assert(mass_mat->n_rows == adr->n_rows);
@@ -355,7 +355,7 @@ cs_cdo_time_diag_exp(const cs_equation_param_t  *eqp,
   CS_UNUSED(system_flag);
 
   /* Sanity checks */
-  assert(eqp->time_scheme == CS_TIME_SCHEME_EXPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_EXPLICIT);
   assert(system_flag & CS_FLAG_SYS_TIME_DIAG);
 
   cs_sdm_t  *adr = csys->mat;
@@ -417,7 +417,7 @@ cs_cdo_time_exp(const cs_equation_param_t  *eqp,
   cs_sdm_t  *adr = csys->mat;
 
   /* Sanity checks */
-  assert(eqp->time_scheme == CS_TIME_SCHEME_EXPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_EXPLICIT);
   assert(csys->n_dofs == adr->n_rows);
   assert(mass_mat != NULL);
 

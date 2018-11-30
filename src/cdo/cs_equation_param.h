@@ -581,11 +581,11 @@ typedef struct {
  *
  * \var CS_EQKEY_TIME_SCHEME
  * Set the scheme for the temporal discretization. Available choices are:
- * - "implicit": first-order in time (inconditionnally stable)
- * - "explicit":
+ * - "euler_implicit": first-order in time (inconditionnally stable)
+ * - "euler_explicit":
  * - "crank_nicolson": second_order in time
- * - "theta_scheme": generic time scheme. One recovers "implicit" with theta
- *   equal to "1", "explicit" with "0", "crank_nicolson" with "0.5"
+ * - "theta_scheme": generic time scheme. One recovers "euler_implicit" with
+ *   theta equal to "1", "explicit" with "0", "crank_nicolson" with "0.5"
  *
  * \var CS_EQKEY_TIME_THETA
  * Set the value of theta. Only useful if CS_EQKEY_TIME_SCHEME is set to

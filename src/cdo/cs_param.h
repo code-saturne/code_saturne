@@ -164,10 +164,10 @@ typedef enum {
  * \var CS_TIME_SCHEME_STEADY
  * No time scheme. Steady-state computation.
  *
- * \var CS_TIME_SCHEME_IMPLICIT
+ * \var CS_TIME_SCHEME_EULER_IMPLICIT
  * fully implicit (forward Euler/theta-scheme = 1)
  *
- * \var CS_TIME_SCHEME_EXPLICIT
+ * \var CS_TIME_SCHEME_EULER_EXPLICIT
  * fully explicit (backward Euler/theta-scheme = 0)
  *
  * \var CS_TIME_SCHEME_CRANKNICO
@@ -180,8 +180,8 @@ typedef enum {
 typedef enum {
 
   CS_TIME_SCHEME_STEADY,
-  CS_TIME_SCHEME_IMPLICIT,
-  CS_TIME_SCHEME_EXPLICIT,
+  CS_TIME_SCHEME_EULER_IMPLICIT,
+  CS_TIME_SCHEME_EULER_EXPLICIT,
   CS_TIME_SCHEME_CRANKNICO,
   CS_TIME_SCHEME_THETA,
 

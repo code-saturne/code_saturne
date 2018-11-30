@@ -1353,7 +1353,7 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   /* Sanity checks */
   assert(cs_equation_param_has_time(eqp) == true);
-  assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -1931,7 +1931,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
       /* Set p_theta */
       switch (eqp->time_scheme) {
-      case CS_TIME_SCHEME_EXPLICIT:
+      case CS_TIME_SCHEME_EULER_EXPLICIT:
         for (short int i = 0; i < cm->n_fc + 1; i++)
           p_theta[i] = p_prev[i];
         break;

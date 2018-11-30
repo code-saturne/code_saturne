@@ -704,12 +704,12 @@ _set_key(const char            *label,
     if (strcmp(keyval, "no") == 0 || strcmp(keyval, "steady") == 0) {
       eqp->time_scheme = CS_TIME_SCHEME_STEADY;
     }
-    else if (strcmp(keyval, "implicit") == 0) {
-      eqp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
+    else if (strcmp(keyval, "euler_implicit") == 0) {
+      eqp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
       eqp->theta = 1.;
     }
-    else if (strcmp(keyval, "explicit") == 0) {
-      eqp->time_scheme = CS_TIME_SCHEME_EXPLICIT;
+    else if (strcmp(keyval, "euler_explicit") == 0) {
+      eqp->time_scheme = CS_TIME_SCHEME_EULER_EXPLICIT;
       eqp->theta = 0.;
     }
     else if (strcmp(keyval, "crank_nicolson") == 0) {
@@ -802,7 +802,7 @@ cs_equation_create_param(const char            *name,
 
   /* Description of the time discretization (default values) */
   eqp->time_property = NULL;
-  eqp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
+  eqp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
   eqp->theta = 1.0;
   eqp->do_lumping = false;
   eqp->time_hodge = (cs_param_hodge_t) {

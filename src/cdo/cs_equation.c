@@ -778,10 +778,10 @@ cs_equation_get_theta_time_val(const cs_equation_t    *eq)
     case CS_TIME_SCHEME_CRANKNICO:
       theta = 0.5;
       break;
-    case CS_TIME_SCHEME_IMPLICIT:
+    case CS_TIME_SCHEME_EULER_IMPLICIT:
       theta = 1;
       break;
-    case CS_TIME_SCHEME_EXPLICIT:
+    case CS_TIME_SCHEME_EULER_EXPLICIT:
       theta = 0.;
       break;
 
@@ -1523,7 +1523,7 @@ cs_equation_assign_functions(void)
         case CS_TIME_SCHEME_STEADY:
           eq->solve = eq->solve_steady_state;
           break;
-        case CS_TIME_SCHEME_IMPLICIT:
+        case CS_TIME_SCHEME_EULER_IMPLICIT:
           eq->solve = cs_cdovb_scaleq_solve_implicit;
           break;
         case CS_TIME_SCHEME_THETA:
@@ -1568,7 +1568,7 @@ cs_equation_assign_functions(void)
         case CS_TIME_SCHEME_STEADY:
         eq->solve = eq->solve_steady_state;
           break;
-        case CS_TIME_SCHEME_IMPLICIT:
+        case CS_TIME_SCHEME_EULER_IMPLICIT:
         case CS_TIME_SCHEME_THETA:
         case CS_TIME_SCHEME_CRANKNICO:
         default:
@@ -1614,7 +1614,7 @@ cs_equation_assign_functions(void)
           eq->solve = eq->solve_steady_state;
           break;
 
-        case CS_TIME_SCHEME_IMPLICIT:
+        case CS_TIME_SCHEME_EULER_IMPLICIT:
           eq->solve = cs_cdovcb_scaleq_solve_implicit;
           break;
 
@@ -1665,7 +1665,7 @@ cs_equation_assign_functions(void)
           eq->solve = eq->solve_steady_state;
           break;
 
-        case CS_TIME_SCHEME_IMPLICIT:
+        case CS_TIME_SCHEME_EULER_IMPLICIT:
           eq->solve = cs_cdofb_scaleq_solve_implicit;
           break;
 
@@ -1712,7 +1712,7 @@ cs_equation_assign_functions(void)
           eq->solve = eq->solve_steady_state;
           break;
 
-        case CS_TIME_SCHEME_IMPLICIT:
+        case CS_TIME_SCHEME_EULER_IMPLICIT:
           eq->solve = cs_cdofb_vecteq_solve_implicit;
           break;
 

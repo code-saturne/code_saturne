@@ -920,7 +920,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
 
   /* Sanity checks */
   assert(cs_equation_param_has_time(eqp) == true);
-  assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -2131,7 +2131,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
 
       if (cs_equation_param_has_time(eqp)) {
 
-        if (eqp->time_scheme != CS_TIME_SCHEME_IMPLICIT)
+        if (eqp->time_scheme != CS_TIME_SCHEME_EULER_IMPLICIT)
           bft_error(__FILE__, __LINE__, 0, " %s: Only implicit time treatment "
               "available so far.\n", __func__);
 

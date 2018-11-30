@@ -116,8 +116,8 @@ _space_scheme_key[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
 
 static const char
 _time_scheme_key[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
-  { "implicit",
-    "explicit",
+  { "euler_implicit",
+    "euler_explicit",
     "crank_nicolson",
     "theta_scheme"
   };
@@ -202,7 +202,7 @@ cs_navsto_param_create(cs_navsto_param_model_t        model,
   param->verbosity = 1;
 
   /* Default numerical settings */
-  param->time_scheme =   CS_TIME_SCHEME_IMPLICIT;
+  param->time_scheme =   CS_TIME_SCHEME_EULER_IMPLICIT;
   param->theta = 1.0;
   param->space_scheme = CS_SPACE_SCHEME_CDOFB;
   param->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
@@ -367,12 +367,12 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_TIME_SCHEME:
-    if (strcmp(val, "implicit") == 0) {
-      nsp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
+    if (strcmp(val, "euler_implicit") == 0) {
+      nsp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
       nsp->theta = 1.;
     }
-    else if (strcmp(val, "explicit") == 0) {
-      nsp->time_scheme = CS_TIME_SCHEME_EXPLICIT;
+    else if (strcmp(val, "euler_explicit") == 0) {
+      nsp->time_scheme = CS_TIME_SCHEME_EULER_EXPLICIT;
       nsp->theta = 0.;
     }
     else if (strcmp(val, "crank_nicolson") == 0) {

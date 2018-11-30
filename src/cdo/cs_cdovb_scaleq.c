@@ -1429,7 +1429,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   const cs_real_t  inv_dtcur = 1./dt_cur;
 
   assert(cs_equation_param_has_time(eqp) == true);
-  assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -2142,7 +2142,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
       /* Set p_theta */
       switch (eqp->time_scheme) {
-      case CS_TIME_SCHEME_EXPLICIT:
+      case CS_TIME_SCHEME_EULER_EXPLICIT:
         for (short int v = 0; v < cm->n_vc; v++)
           p_theta[v] = p_prev[v];
         break;

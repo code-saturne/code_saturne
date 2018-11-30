@@ -1375,7 +1375,7 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   cs_field_t  *fld = cs_field_by_id(field_id);
 
   assert(cs_equation_param_has_time(eqp) == true);
-  assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
 
   cs_timer_t  t0 = cs_timer_time();
 
