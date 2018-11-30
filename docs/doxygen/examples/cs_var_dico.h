@@ -346,6 +346,40 @@
   \ref CS_F_(fconv)->val            | Boundary radiative convective flux
   \ref CS_F_(hconv)->val            | Radiative exchange coefficient </tt>
 
+
+  \subsection cs_var_dico_multiphase Eulerian-Eulerian multiphase flows
+
+  Defined in\ref cs_field_pointer.h.
+
+  C code                            | Description
+  --------------------------------- | ------------
+  \ref CS_FI_(yf_ncond,inc)->val    | Non-condensable gas mass fractions
+  \ref CS_FI_(qp,ip)->val           | Particles turbulent kinetic energy Q2
+  \ref CS_FI_(qfp,ip)->val          | Covariance of the turbulent Q12
+  \ref CS_FI_(qfpxx,ip)->val        | XX component of qfp
+  \ref CS_FI_(qfpxy,ip)->val        | XY component of qfp
+  \ref CS_FI_(qfpxz,ip)->val        | XZ component of qfp
+  \ref CS_FI_(qfpyx,ip)->val        | YX component of qfp
+  \ref CS_FI_(qfpyy,ip)->val        | YY component of qfp
+  \ref CS_FI_(qfpyz,ip)->val        | YZ component of qfp
+  \ref CS_FI_(qfpzx,ip)->val        | ZX component of qfp
+  \ref CS_FI_(qfpzy,ip)->val        | ZY component of qfp
+  \ref CS_FI_(qfpzz,ip)->val        | ZZ component of qfp
+  \ref CS_FI_(gamma,ip)->val        | Interfacial mass transfer
+  \ref CS_FI_(ia,ip)->val           | Interfacial area
+  \ref CS_FI_(x2,ip)->val           | Droplets x2
+  \ref CS_FI_(d32,ip)->val          | Droplets Sauter mean diameter
+  \ref CS_FI_(drag,ipcpl)->val      | Drag between phases
+  \ref CS_FI_(ad_mass,ip)->val      | Added mass
+  \ref CS_FI_(th_diff,ip)->val      | Thermal diffusivity
+  \ref CS_FI_(th_diff_t,ip)->val    | Turbulent thermal diffusivity
+  \ref CS_FI_(drho_dp,ip)->val      | dRho over dP
+  \ref CS_FI_(drho_dh,ip)->val      | dRho over dH
+  \ref CS_FI_(tau12_t,ip)->val      | Turbulent tau12 for particles
+  \ref CS_FI_(lift,ip)->val         | Particles lift
+  \ref CS_FI_(disp_t,ip)->val       | Particles turbulent dispersion
+  \ref CS_FI_(drift_vel,ip)->val    | Particles drift velocity
+
 */
 // _____________________________________________________________________________
 /*!
