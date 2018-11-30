@@ -112,7 +112,7 @@ base/vof.lo: base/cstphy.lo base/field.lo base/numvar.lo base/optcal.lo \
  base/rotation.lo base/turbomachinery.lo
 base/cplsat.lo: base/paramx.lo
 base/cstphy.lo: base/paramx.lo
-base/cs_c_bindings.lo: base/paramx.lo base/mesh.lo base/period.lo \
+base/cs_c_bindings.lo: base/paramx.lo base/entsor.lo base/mesh.lo base/period.lo \
  base/field.lo base/field_operator.lo
 base/cs_f_interfaces.lo: base/cs_c_bindings.lo base/paramx.lo base/dimens.lo \
  base/mesh.lo base/optcal.lo base/field.lo lagr/lagran.lo
