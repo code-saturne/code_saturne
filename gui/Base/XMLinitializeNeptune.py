@@ -334,22 +334,23 @@ class XMLinitNeptune(Variables):
                  'Velocity':'velocity',
                  'VolumeFraction':'volume_fraction'}
 
-        for node in vnode.xmlGetNodeList('variable'):
-            vname = node['name']
-            if vname in rdico.keys():
-                node['name'] = rdico[vname]
-                for nzi in node.xmlGetNodeList('initial_value'):
-                    nf = nzi.xmlGetNode('formula')
-                    f  = nzi.xmlGetString('formula')
-                    nf.xmlSetTextNode(f.replace(vname, rdico[vname]))
+        if vnode != None:
+            for node in vnode.xmlGetNodeList('variable'):
+                vname = node['name']
+                if vname in rdico.keys():
+                    node['name'] = rdico[vname]
+                    for nzi in node.xmlGetNodeList('initial_value'):
+                        nf = nzi.xmlGetNode('formula')
+                        f  = nzi.xmlGetString('formula')
+                        nf.xmlSetTextNode(f.replace(vname, rdico[vname]))
 
-        bcnode = self.case.xmlGetNode('boundary_conditions')
-        bc_list = ['inlet', 'wall', 'outlet']
-        for bc_type in bc_list:
-            for nb in bcnode.xmlGetNodeList(bc_type):
-                for nv in nb.xmlGetNodeList('variable'):
-                    if nv['name'] in rdico.keys():
-                        nv['name'] = rdico[nv['name']]
+            bcnode = self.case.xmlGetNode('boundary_conditions')
+            bc_list = ['inlet', 'wall', 'outlet']
+            for bc_type in bc_list:
+                for nb in bcnode.xmlGetNodeList(bc_type):
+                    for nv in nb.xmlGetNodeList('variable'):
+                        if nv['name'] in rdico.keys():
+                            nv['name'] = rdico[nv['name']]
 
 
     def __backwardCompatibilityCurrentVersion(self):
@@ -453,22 +454,23 @@ class XMLinitNeptune(Variables):
                  'Velocity':'velocity',
                  'VolumeFraction':'volume_fraction'}
 
-        for node in vnode.xmlGetNodeList('variable'):
-            vname = node['name']
-            if vname in rdico.keys():
-                node['name'] = rdico[vname]
-                for nzi in node.xmlGetNodeList('initial_value'):
-                    nf = nzi.xmlGetNode('formula')
-                    f  = nzi.xmlGetString('formula')
-                    nf.xmlSetTextNode(f.replace(vname, rdico[vname]))
+        if vnode != None:
+            for node in vnode.xmlGetNodeList('variable'):
+                vname = node['name']
+                if vname in rdico.keys():
+                    node['name'] = rdico[vname]
+                    for nzi in node.xmlGetNodeList('initial_value'):
+                        nf = nzi.xmlGetNode('formula')
+                        f  = nzi.xmlGetString('formula')
+                        nf.xmlSetTextNode(f.replace(vname, rdico[vname]))
 
-        bcnode = self.case.xmlGetNode('boundary_conditions')
-        bc_list = ['inlet', 'wall', 'outlet']
-        for bc_type in bc_list:
-            for nb in bcnode.xmlGetNodeList(bc_type):
-                for nv in nb.xmlGetNodeList('variable'):
-                    if nv['name'] in rdico.keys():
-                        nv['name'] = rdico[nv['name']]
+            bcnode = self.case.xmlGetNode('boundary_conditions')
+            bc_list = ['inlet', 'wall', 'outlet']
+            for bc_type in bc_list:
+                for nb in bcnode.xmlGetNodeList(bc_type):
+                    for nv in nb.xmlGetNodeList('variable'):
+                        if nv['name'] in rdico.keys():
+                            nv['name'] = rdico[nv['name']]
 
 
         # ------------------------------------------------------------
